@@ -30,7 +30,7 @@ from .version import __version__
 
 # TODO we may want to start extracting shared copy like this to some central location.
 REPO_TARGET_WARNING = (
-    'Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m.'
+    "Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m."
 )
 
 
@@ -39,17 +39,17 @@ def create_dagster_graphql_cli():
 
 
 def execute_query(workspace, query, variables=None, use_sync_executor=False, instance=None):
-    check.inst_param(workspace, 'workspace', Workspace)
-    check.str_param(query, 'query')
-    check.opt_dict_param(variables, 'variables')
+    check.inst_param(workspace, "workspace", Workspace)
+    check.str_param(query, "query")
+    check.opt_dict_param(variables, "variables")
     instance = (
-        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(instance, "instance", DagsterInstance)
         if instance
         else DagsterInstance.get()
     )
-    check.bool_param(use_sync_executor, 'use_sync_executor')
+    check.bool_param(use_sync_executor, "use_sync_executor")
 
-    query = query.strip('\'" \n\t')
+    query = query.strip("'\" \n\t")
 
     context = DagsterGraphQLContext(workspace=workspace, instance=instance, version=__version__,)
 
@@ -74,23 +74,23 @@ def execute_query(workspace, query, variables=None, use_sync_executor=False, ins
     # has thrown, typically) we serialize the stack trace of that exception
     # in the 'stack_trace' property of each error to ease debugging
 
-    if 'errors' in result_dict:
-        check.invariant(len(result_dict['errors']) == len(result.errors))
-        for python_error, error_dict in zip(result.errors, result_dict['errors']):
-            if hasattr(python_error, 'original_error') and python_error.original_error:
-                error_dict['stack_trace'] = get_stack_trace_array(python_error.original_error)
+    if "errors" in result_dict:
+        check.invariant(len(result_dict["errors"]) == len(result.errors))
+        for python_error, error_dict in zip(result.errors, result_dict["errors"]):
+            if hasattr(python_error, "original_error") and python_error.original_error:
+                error_dict["stack_trace"] = get_stack_trace_array(python_error.original_error)
 
     return result_dict
 
 
 def execute_query_from_cli(workspace, query, instance, variables=None, output=None):
-    check.inst_param(workspace, 'workspace', Workspace)
-    check.str_param(query, 'query')
-    check.inst_param(instance, 'instance', DagsterInstance)
-    check.opt_str_param(variables, 'variables')
-    check.opt_str_param(output, 'output')
+    check.inst_param(workspace, "workspace", Workspace)
+    check.str_param(query, "query")
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.opt_str_param(variables, "variables")
+    check.opt_str_param(output, "output")
 
-    query = query.strip('\'" \n\t')
+    query = query.strip("'\" \n\t")
 
     result_dict = execute_query(
         workspace,
@@ -103,9 +103,9 @@ def execute_query_from_cli(workspace, query, instance, variables=None, output=No
     # Since this the entry point for CLI execution, some tests depend on us putting the result on
     # stdout
     if output:
-        check.str_param(output, 'output')
-        with open(output, 'w') as f:
-            f.write(str_res + '\n')
+        check.str_param(output, "output")
+        with open(output, "w") as f:
+            f.write(str_res + "\n")
     else:
         print(str_res)  # pylint: disable=print-call
 
@@ -116,20 +116,20 @@ def execute_query_against_remote(host, query, variables):
     parsed_url = urlparse(host)
     if not (parsed_url.scheme and parsed_url.netloc):
         raise click.UsageError(
-            'Host {host} is not a valid URL. Host URL should include scheme ie http://localhost'.format(
+            "Host {host} is not a valid URL. Host URL should include scheme ie http://localhost".format(
                 host=host
             )
         )
 
-    sanity_check = requests.get(urljoin(host, '/dagit_info'))
+    sanity_check = requests.get(urljoin(host, "/dagit_info"))
     sanity_check.raise_for_status()
-    if 'dagit' not in sanity_check.text:
+    if "dagit" not in sanity_check.text:
         raise click.UsageError(
-            'Host {host} failed sanity check. It is not a dagit server.'.format(host=host)
+            "Host {host} failed sanity check. It is not a dagit server.".format(host=host)
         )
 
     response = requests.post(
-        urljoin(host, '/graphql'), params={'query': query, 'variables': variables}
+        urljoin(host, "/graphql"), params={"query": query, "variables": variables}
     )
     response.raise_for_status()
     str_res = response.json()
@@ -137,76 +137,76 @@ def execute_query_against_remote(host, query, variables):
 
 
 PREDEFINED_QUERIES = {
-    'executeRunInProcess': EXECUTE_RUN_IN_PROCESS_MUTATION,
-    'executePlan': EXECUTE_PLAN_MUTATION,
-    'launchPipelineExecution': LAUNCH_PIPELINE_EXECUTION_MUTATION,
+    "executeRunInProcess": EXECUTE_RUN_IN_PROCESS_MUTATION,
+    "executePlan": EXECUTE_PLAN_MUTATION,
+    "launchPipelineExecution": LAUNCH_PIPELINE_EXECUTION_MUTATION,
 }
 
 
 @workspace_target_argument
 @click.command(
-    name='ui',
+    name="ui",
     help=(
-        'Run a GraphQL query against the dagster interface to a specified repository or pipeline.'
-        '\n\n{warning}'.format(warning=REPO_TARGET_WARNING)
+        "Run a GraphQL query against the dagster interface to a specified repository or pipeline."
+        "\n\n{warning}".format(warning=REPO_TARGET_WARNING)
     )
     + (
-        '\n\n Examples:'
-        '\n\n1. dagster-graphql'
-        '\n\n2. dagster-graphql -y path/to/{default_filename}'
-        '\n\n3. dagster-graphql -f path/to/file.py -n define_repo'
-        '\n\n4. dagster-graphql -m some_module -n define_repo'
-        '\n\n5. dagster-graphql -f path/to/file.py -n define_pipeline'
-        '\n\n6. dagster-graphql -m some_module -n define_pipeline'
+        "\n\n Examples:"
+        "\n\n1. dagster-graphql"
+        "\n\n2. dagster-graphql -y path/to/{default_filename}"
+        "\n\n3. dagster-graphql -f path/to/file.py -n define_repo"
+        "\n\n4. dagster-graphql -m some_module -n define_repo"
+        "\n\n5. dagster-graphql -f path/to/file.py -n define_pipeline"
+        "\n\n6. dagster-graphql -m some_module -n define_pipeline"
     ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
 )
 @click.version_option(version=__version__)
 @click.option(
-    '--text', '-t', type=click.STRING, help='GraphQL document to execute passed as a string'
+    "--text", "-t", type=click.STRING, help="GraphQL document to execute passed as a string"
 )
 @click.option(
-    '--file', '-f', type=click.File(), help='GraphQL document to execute passed as a file'
+    "--file", "-f", type=click.File(), help="GraphQL document to execute passed as a file"
 )
 @click.option(
-    '--predefined',
-    '-p',
+    "--predefined",
+    "-p",
     type=click.Choice(PREDEFINED_QUERIES.keys()),
-    help='GraphQL document to execute, from a predefined set provided by dagster-graphql.',
+    help="GraphQL document to execute, from a predefined set provided by dagster-graphql.",
 )
 @click.option(
-    '--variables',
-    '-v',
+    "--variables",
+    "-v",
     type=click.STRING,
-    help='A JSON encoded string containing the variables for GraphQL execution.',
+    help="A JSON encoded string containing the variables for GraphQL execution.",
 )
 @click.option(
-    '--remote',
-    '-r',
+    "--remote",
+    "-r",
     type=click.STRING,
-    help='A URL for a remote instance running dagit server to send the GraphQL request to.',
+    help="A URL for a remote instance running dagit server to send the GraphQL request to.",
 )
 @click.option(
-    '--output',
-    '-o',
+    "--output",
+    "-o",
     type=click.STRING,
-    help='A file path to store the GraphQL response to. This flag is useful when making pipeline '
-    'execution queries, since pipeline execution causes logs to print to stdout and stderr.',
+    help="A file path to store the GraphQL response to. This flag is useful when making pipeline "
+    "execution queries, since pipeline execution causes logs to print to stdout and stderr.",
 )
 @click.option(
-    '--remap-sigterm', is_flag=True, default=False, help='Remap SIGTERM signal to SIGINT handler',
+    "--remap-sigterm", is_flag=True, default=False, help="Remap SIGTERM signal to SIGINT handler",
 )
 def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwargs):
     query = None
     if text is not None and file is None and predefined is None:
-        query = text.strip('\'" \n\t')
+        query = text.strip("'\" \n\t")
     elif file is not None and text is None and predefined is None:
         query = file.read()
     elif predefined is not None and text is None and file is None:
         query = PREDEFINED_QUERIES[predefined]
     else:
         raise click.UsageError(
-            'Must select one and only one of text (-t), file (-f), or predefined (-p) '
-            'to select GraphQL document to execute.'
+            "Must select one and only one of text (-t), file (-f), or predefined (-p) "
+            "to select GraphQL document to execute."
         )
 
     if remap_sigterm:

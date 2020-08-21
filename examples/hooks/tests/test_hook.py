@@ -5,28 +5,28 @@ from ..repo import a, notif_all, selective_notif, slack_on_failure, slack_on_suc
 
 
 def test_notif_all_pipeline():
-    result = execute_pipeline(notif_all, mode='dev', raise_on_error=False)
+    result = execute_pipeline(notif_all, mode="dev", raise_on_error=False)
     assert not result.success
 
     for event in result.event_list:
         if event.is_hook_event:
             if event.event_type == DagsterEventType.HOOK_SKIPPED:
-                assert event.step_key == 'a.compute'
+                assert event.step_key == "a.compute"
 
             if event.event_type == DagsterEventType.HOOK_COMPLETED:
-                assert event.step_key == 'b.compute'
+                assert event.step_key == "b.compute"
 
 
 def test_selective_notif_pipeline():
-    result = execute_pipeline(selective_notif, mode='dev', raise_on_error=False)
+    result = execute_pipeline(selective_notif, mode="dev", raise_on_error=False)
     assert not result.success
 
     for event in result.event_list:
         if event.is_hook_event:
             if event.event_type == DagsterEventType.HOOK_SKIPPED:
-                assert event.step_key == 'a.compute'
+                assert event.step_key == "a.compute"
             if event.event_type == DagsterEventType.HOOK_COMPLETED:
-                assert event.step_key == 'a.compute'
+                assert event.step_key == "a.compute"
 
 
 def test_hook_resource():
@@ -35,8 +35,8 @@ def test_hook_resource():
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                'unittest',
-                resource_defs={'slack': ResourceDefinition.hardcoded_resource(slack_mock)},
+                "unittest",
+                resource_defs={"slack": ResourceDefinition.hardcoded_resource(slack_mock)},
             ),
         ]
     )

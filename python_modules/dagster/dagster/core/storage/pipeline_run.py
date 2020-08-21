@@ -18,20 +18,20 @@ from .tags import (
 
 @whitelist_for_serdes
 class PipelineRunStatus(Enum):
-    NOT_STARTED = 'NOT_STARTED'
-    MANAGED = 'MANAGED'
-    STARTED = 'STARTED'
-    SUCCESS = 'SUCCESS'
-    FAILURE = 'FAILURE'
+    NOT_STARTED = "NOT_STARTED"
+    MANAGED = "MANAGED"
+    STARTED = "STARTED"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
 
 
 @whitelist_for_serdes
 class PipelineRunStatsSnapshot(
     namedtuple(
-        '_PipelineRunStatsSnapshot',
+        "_PipelineRunStatsSnapshot",
         (
-            'run_id steps_succeeded steps_failed materializations '
-            'expectations start_time end_time'
+            "run_id steps_succeeded steps_failed materializations "
+            "expectations start_time end_time"
         ),
     )
 ):
@@ -47,31 +47,31 @@ class PipelineRunStatsSnapshot(
     ):
         return super(PipelineRunStatsSnapshot, cls).__new__(
             cls,
-            run_id=check.str_param(run_id, 'run_id'),
-            steps_succeeded=check.int_param(steps_succeeded, 'steps_succeeded'),
-            steps_failed=check.int_param(steps_failed, 'steps_failed'),
-            materializations=check.int_param(materializations, 'materializations'),
-            expectations=check.int_param(expectations, 'expectations'),
-            start_time=check.opt_float_param(start_time, 'start_time'),
-            end_time=check.opt_float_param(end_time, 'end_time'),
+            run_id=check.str_param(run_id, "run_id"),
+            steps_succeeded=check.int_param(steps_succeeded, "steps_succeeded"),
+            steps_failed=check.int_param(steps_failed, "steps_failed"),
+            materializations=check.int_param(materializations, "materializations"),
+            expectations=check.int_param(expectations, "expectations"),
+            start_time=check.opt_float_param(start_time, "start_time"),
+            end_time=check.opt_float_param(end_time, "end_time"),
         )
 
 
 @whitelist_for_persistence
 class PipelineRun(
     namedtuple(
-        '_PipelineRun',
+        "_PipelineRun",
         (
-            'pipeline_name run_id run_config mode solid_selection solids_to_execute '
-            'step_keys_to_execute status tags root_run_id parent_run_id '
-            'pipeline_snapshot_id execution_plan_snapshot_id'
+            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
+            "step_keys_to_execute status tags root_run_id parent_run_id "
+            "pipeline_snapshot_id execution_plan_snapshot_id"
         ),
     ),
     Persistable,
 ):
-    '''Serializable internal representation of a pipeline run, as stored in a
+    """Serializable internal representation of a pipeline run, as stored in a
     :py:class:`~dagster.core.storage.runs.RunStorage`.
-    '''
+    """
 
     def __new__(
         cls,
@@ -93,35 +93,35 @@ class PipelineRun(
             (root_run_id is not None and parent_run_id is not None)
             or (root_run_id is None and parent_run_id is None),
             (
-                'Must set both root_run_id and parent_run_id when creating a PipelineRun that '
-                'belongs to a run group'
+                "Must set both root_run_id and parent_run_id when creating a PipelineRun that "
+                "belongs to a run group"
             ),
         )
         # a frozenset which contains the names of the solids to execute
-        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         # a list of solid queries provided by the user
         # possible to be None when only solids_to_execute is set by the user directly
-        check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
-        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+        check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         return super(PipelineRun, cls).__new__(
             cls,
-            pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
-            run_id=check.opt_str_param(run_id, 'run_id', default=make_new_run_id()),
-            run_config=check.opt_dict_param(run_config, 'run_config', key_type=str),
-            mode=check.opt_str_param(mode, 'mode'),
+            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            run_id=check.opt_str_param(run_id, "run_id", default=make_new_run_id()),
+            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
+            mode=check.opt_str_param(mode, "mode"),
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
             status=check.opt_inst_param(
-                status, 'status', PipelineRunStatus, PipelineRunStatus.NOT_STARTED
+                status, "status", PipelineRunStatus, PipelineRunStatus.NOT_STARTED
             ),
-            tags=check.opt_dict_param(tags, 'tags', key_type=str),
-            root_run_id=check.opt_str_param(root_run_id, 'root_run_id'),
-            parent_run_id=check.opt_str_param(parent_run_id, 'parent_run_id'),
-            pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, 'pipeline_snapshot_id'),
+            tags=check.opt_dict_param(tags, "tags", key_type=str),
+            root_run_id=check.opt_str_param(root_run_id, "root_run_id"),
+            parent_run_id=check.opt_str_param(parent_run_id, "parent_run_id"),
+            pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
             execution_plan_snapshot_id=check.opt_str_param(
-                execution_plan_snapshot_id, 'execution_plan_snapshot_id'
+                execution_plan_snapshot_id, "execution_plan_snapshot_id"
             ),
         )
 
@@ -169,7 +169,7 @@ class PipelineRun(
         if environment_dict:
             check.invariant(
                 not run_config,
-                'Cannot set both run_config and environment_dict. Use run_config parameter.',
+                "Cannot set both run_config and environment_dict. Use run_config parameter.",
             )
             run_config = environment_dict
 
@@ -179,13 +179,13 @@ class PipelineRun(
             root_run_id = previous_run_id
 
         # back compat for selector => pipeline_name, solids_to_execute
-        selector = check.opt_inst_param(selector, 'selector', ExecutionSelector)
+        selector = check.opt_inst_param(selector, "selector", ExecutionSelector)
         if selector:
             check.invariant(
                 pipeline_name is None or selector.name == pipeline_name,
                 (
-                    'Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: '
-                    'selector was passed with pipeline {selector_pipeline}'.format(
+                    "Conflicting pipeline name {pipeline_name} in arguments to PipelineRun: "
+                    "selector was passed with pipeline {selector_pipeline}".format(
                         pipeline_name=pipeline_name, selector_pipeline=selector.name
                     )
                 ),
@@ -196,8 +196,8 @@ class PipelineRun(
             check.invariant(
                 solids_to_execute is None or set(selector.solid_subset) == solids_to_execute,
                 (
-                    'Conflicting solids_to_execute {solids_to_execute} in arguments to PipelineRun: '
-                    'selector was passed with subset {selector_subset}'.format(
+                    "Conflicting solids_to_execute {solids_to_execute} in arguments to PipelineRun: "
+                    "selector was passed with subset {selector_subset}".format(
                         solids_to_execute=solids_to_execute, selector_subset=selector.solid_subset
                     )
                 ),
@@ -209,14 +209,14 @@ class PipelineRun(
                 )
 
         # back compat for solid_subset => solids_to_execute
-        check.opt_list_param(solid_subset, 'solid_subset', of_type=str)
+        check.opt_list_param(solid_subset, "solid_subset", of_type=str)
         if solid_subset:
             solids_to_execute = frozenset(solid_subset)
 
         # warn about unused arguments
         if len(kwargs):
             warnings.warn(
-                'Found unhandled arguments from stored PipelineRun: {args}'.format(
+                "Found unhandled arguments from stored PipelineRun: {args}".format(
                     args=kwargs.keys()
                 )
             )
@@ -267,7 +267,7 @@ class PipelineRun(
 
     @property
     def is_resume_retry(self):
-        return self.tags.get(RESUME_RETRY_TAG) == 'true'
+        return self.tags.get(RESUME_RETRY_TAG) == "true"
 
     @property
     def previous_run_id(self):
@@ -288,17 +288,17 @@ class PipelineRun(
 
 
 @whitelist_for_serdes
-class PipelineRunsFilter(namedtuple('_PipelineRunsFilter', 'run_ids pipeline_name status tags')):
+class PipelineRunsFilter(namedtuple("_PipelineRunsFilter", "run_ids pipeline_name status tags")):
     def __new__(
         cls, run_ids=None, pipeline_name=None, status=None, tags=None,
     ):
-        run_ids = check.opt_list_param(run_ids, 'run_ids', of_type=str)
+        run_ids = check.opt_list_param(run_ids, "run_ids", of_type=str)
         return super(PipelineRunsFilter, cls).__new__(
             cls,
             run_ids=run_ids,
-            pipeline_name=check.opt_str_param(pipeline_name, 'pipeline_name'),
+            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
             status=status,
-            tags=check.opt_dict_param(tags, 'tags', key_type=str, value_type=str),
+            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
 
     @staticmethod
@@ -327,16 +327,16 @@ class PipelineRunsFilter(namedtuple('_PipelineRunsFilter', 'run_ids pipeline_nam
 
 
 @whitelist_for_serdes
-class ExecutionSelector(namedtuple('_ExecutionSelector', 'name solid_subset')):
-    '''
+class ExecutionSelector(namedtuple("_ExecutionSelector", "name solid_subset")):
+    """
     Kept here to maintain loading of PipelineRuns from when it was still alive.
-    '''
+    """
 
     def __new__(cls, name, solid_subset=None):
         return super(ExecutionSelector, cls).__new__(
             cls,
-            name=check.str_param(name, 'name'),
+            name=check.str_param(name, "name"),
             solid_subset=None
             if solid_subset is None
-            else check.list_param(solid_subset, 'solid_subset', of_type=str),
+            else check.list_param(solid_subset, "solid_subset", of_type=str),
         )

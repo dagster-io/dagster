@@ -12,7 +12,7 @@ from dagster.grpc.types import ScheduleExecutionDataMode
 from .utils import get_bar_repo_handle
 
 
-@pytest.mark.parametrize('schedule_name', ['foo_schedule', 'foo_schedule_never_execute'])
+@pytest.mark.parametrize("schedule_name", ["foo_schedule", "foo_schedule_never_execute"])
 def test_external_schedule_execution_data_api_preview(schedule_name):
     repository_handle = get_bar_repo_handle()
     with seven.TemporaryDirectory() as temp_dir:
@@ -22,8 +22,8 @@ def test_external_schedule_execution_data_api_preview(schedule_name):
         )
         assert isinstance(execution_data, ExternalScheduleExecutionData)
 
-        assert execution_data.run_config == {'fizz': 'buzz'}
-        assert execution_data.tags == {'dagster/schedule_name': schedule_name}
+        assert execution_data.run_config == {"fizz": "buzz"}
+        assert execution_data.tags == {"dagster/schedule_name": schedule_name}
         assert execution_data.should_execute is None
 
 
@@ -34,12 +34,12 @@ def test_external_schedule_execution_data_api_launch():
         execution_data = sync_get_external_schedule_execution_data(
             instance,
             repository_handle,
-            'foo_schedule',
+            "foo_schedule",
             ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
         )
         assert isinstance(execution_data, ExternalScheduleExecutionData)
-        assert execution_data.run_config == {'fizz': 'buzz'}
-        assert execution_data.tags == {'dagster/schedule_name': 'foo_schedule'}
+        assert execution_data.run_config == {"fizz": "buzz"}
+        assert execution_data.tags == {"dagster/schedule_name": "foo_schedule"}
         assert execution_data.should_execute == True
 
 
@@ -50,7 +50,7 @@ def test_external_schedule_execution_data_api_never_execute():
         execution_data = sync_get_external_schedule_execution_data(
             instance,
             repository_handle,
-            'foo_schedule_never_execute',
+            "foo_schedule_never_execute",
             ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
         )
         assert isinstance(execution_data, ExternalScheduleExecutionData)
@@ -59,7 +59,7 @@ def test_external_schedule_execution_data_api_never_execute():
         assert execution_data.should_execute == False
 
 
-@pytest.mark.parametrize('schedule_name', ['foo_schedule', 'foo_schedule_never_execute'])
+@pytest.mark.parametrize("schedule_name", ["foo_schedule", "foo_schedule_never_execute"])
 def test_external_schedule_execution_data_api_preview_grpc(schedule_name):
     repository_handle = get_bar_repo_handle()
     with seven.TemporaryDirectory() as temp_dir:
@@ -69,8 +69,8 @@ def test_external_schedule_execution_data_api_preview_grpc(schedule_name):
         )
         assert isinstance(execution_data, ExternalScheduleExecutionData)
 
-        assert execution_data.run_config == {'fizz': 'buzz'}
-        assert execution_data.tags == {'dagster/schedule_name': schedule_name}
+        assert execution_data.run_config == {"fizz": "buzz"}
+        assert execution_data.tags == {"dagster/schedule_name": schedule_name}
         assert execution_data.should_execute is None
 
 
@@ -81,12 +81,12 @@ def test_external_schedule_execution_data_api_grpc():
         execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
             instance,
             repository_handle,
-            'foo_schedule',
+            "foo_schedule",
             ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
         )
         assert isinstance(execution_data, ExternalScheduleExecutionData)
-        assert execution_data.run_config == {'fizz': 'buzz'}
-        assert execution_data.tags == {'dagster/schedule_name': 'foo_schedule'}
+        assert execution_data.run_config == {"fizz": "buzz"}
+        assert execution_data.tags == {"dagster/schedule_name": "foo_schedule"}
         assert execution_data.should_execute == True
 
 
@@ -97,7 +97,7 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
         execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
             instance,
             repository_handle,
-            'foo_schedule_never_execute',
+            "foo_schedule_never_execute",
             ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
         )
         assert isinstance(execution_data, ExternalScheduleExecutionData)

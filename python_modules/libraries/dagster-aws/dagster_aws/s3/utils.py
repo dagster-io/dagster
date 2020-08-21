@@ -11,7 +11,7 @@ class S3Callback(object):
         self._seen_so_far += bytes_amount
         percentage = (self._seen_so_far / self._size) * 100
         self._logger(
-            'Download of {bucket}/{key} to {target_path}: {percentage}% complete'.format(
+            "Download of {bucket}/{key} to {target_path}: {percentage}% complete".format(
                 bucket=self._bucket,
                 key=self._key,
                 target_path=self._filename,

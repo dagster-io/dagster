@@ -26,11 +26,11 @@ from .util import (
     get_aws_environment,
 )
 
-DOCKER_TEMPDIR = '/tmp'
+DOCKER_TEMPDIR = "/tmp"
 
 
 class DagsterDockerOperator(DockerOperator):
-    '''Dagster operator for Apache Airflow.
+    """Dagster operator for Apache Airflow.
 
     Wraps a modified DockerOperator incorporating https://github.com/apache/airflow/pull/4315.
 
@@ -45,52 +45,52 @@ class DagsterDockerOperator(DockerOperator):
     Parameters:
     host_tmp_dir (str): Specify the location of the temporary directory on the host which will
         be mapped to tmp_dir. If not provided defaults to using the standard system temp directory.
-    '''
+    """
 
     # py2 compat
     # pylint: disable=keyword-arg-before-vararg
     def __init__(self, dagster_operator_parameters, *args):
         kwargs = dagster_operator_parameters.op_kwargs
-        tmp_dir = kwargs.pop('tmp_dir', DOCKER_TEMPDIR)
-        host_tmp_dir = kwargs.pop('host_tmp_dir', seven.get_system_temp_directory())
+        tmp_dir = kwargs.pop("tmp_dir", DOCKER_TEMPDIR)
+        host_tmp_dir = kwargs.pop("host_tmp_dir", seven.get_system_temp_directory())
         self.host_tmp_dir = host_tmp_dir
 
         run_config = dagster_operator_parameters.run_config
-        if 'filesystem' in run_config['storage']:
+        if "filesystem" in run_config["storage"]:
             if (
-                'config' in (run_config['storage'].get('filesystem', {}) or {})
-                and 'base_dir'
-                in ((run_config['storage'].get('filesystem', {}) or {}).get('config', {}) or {})
-                and run_config['storage']['filesystem']['config']['base_dir'] != tmp_dir
+                "config" in (run_config["storage"].get("filesystem", {}) or {})
+                and "base_dir"
+                in ((run_config["storage"].get("filesystem", {}) or {}).get("config", {}) or {})
+                and run_config["storage"]["filesystem"]["config"]["base_dir"] != tmp_dir
             ):
                 warnings.warn(
-                    'Found base_dir \'{base_dir}\' set in filesystem storage config, which was not '
-                    'the tmp_dir we expected (\'{tmp_dir}\', mounting host_tmp_dir '
-                    '\'{host_tmp_dir}\' from the host). We assume you know what you are doing, but '
-                    'if you are having trouble executing containerized workloads, this may be the '
-                    'issue'.format(
-                        base_dir=run_config['storage']['filesystem']['config']['base_dir'],
+                    "Found base_dir '{base_dir}' set in filesystem storage config, which was not "
+                    "the tmp_dir we expected ('{tmp_dir}', mounting host_tmp_dir "
+                    "'{host_tmp_dir}' from the host). We assume you know what you are doing, but "
+                    "if you are having trouble executing containerized workloads, this may be the "
+                    "issue".format(
+                        base_dir=run_config["storage"]["filesystem"]["config"]["base_dir"],
                         tmp_dir=tmp_dir,
                         host_tmp_dir=host_tmp_dir,
                     )
                 )
             else:
-                run_config['storage']['filesystem'] = dict(
-                    run_config['storage']['filesystem'] or {},
+                run_config["storage"]["filesystem"] = dict(
+                    run_config["storage"]["filesystem"] or {},
                     **{
-                        'config': dict(
+                        "config": dict(
                             (
-                                (run_config['storage'].get('filesystem', {}) or {}).get(
-                                    'config', {}
+                                (run_config["storage"].get("filesystem", {}) or {}).get(
+                                    "config", {}
                                 )
                                 or {}
                             ),
-                            **{'base_dir': tmp_dir}
+                            **{"base_dir": tmp_dir}
                         )
                     }
                 )
 
-        self.docker_conn_id_set = kwargs.get('docker_conn_id') is not None
+        self.docker_conn_id_set = kwargs.get("docker_conn_id") is not None
         self.run_config = run_config
         self.pipeline_name = dagster_operator_parameters.pipeline_name
         self.pipeline_snapshot = dagster_operator_parameters.pipeline_snapshot
@@ -117,10 +117,10 @@ class DagsterDockerOperator(DockerOperator):
             except Exception:  # pylint: disable=broad-except
                 pass
             else:
-                kwargs['docker_conn_id'] = True
+                kwargs["docker_conn_id"] = True
 
-        if 'environment' not in kwargs:
-            kwargs['environment'] = get_aws_environment()
+        if "environment" not in kwargs:
+            kwargs["environment"] = get_aws_environment()
 
         super(DagsterDockerOperator, self).__init__(
             task_id=dagster_operator_parameters.task_id,
@@ -140,8 +140,8 @@ class DagsterDockerOperator(DockerOperator):
         yield self.host_tmp_dir
 
     def execute_raw(self, context):
-        '''Modified only to use the get_host_tmp_dir helper.'''
-        self.log.info('Starting docker container from image %s', self.image)
+        """Modified only to use the get_host_tmp_dir helper."""
+        self.log.info("Starting docker container from image %s", self.image)
 
         tls_config = self.__get_tls_config()
         if self.docker_conn_id:
@@ -150,18 +150,18 @@ class DagsterDockerOperator(DockerOperator):
             self.cli = APIClient(base_url=self.docker_url, version=self.api_version, tls=tls_config)
 
         if self.force_pull or len(self.cli.images(name=self.image)) == 0:
-            self.log.info('Pulling docker image %s', self.image)
+            self.log.info("Pulling docker image %s", self.image)
             for l in self.cli.pull(self.image, stream=True):
-                output = seven.json.loads(l.decode('utf-8').strip())
-                if 'status' in output:
-                    self.log.info("%s", output['status'])
+                output = seven.json.loads(l.decode("utf-8").strip())
+                if "status" in output:
+                    self.log.info("%s", output["status"])
 
         with self.get_host_tmp_dir() as host_tmp_dir:
-            self.environment['AIRFLOW_TMP_DIR'] = self.tmp_dir
-            self.volumes.append('{0}:{1}'.format(host_tmp_dir, self.tmp_dir))
+            self.environment["AIRFLOW_TMP_DIR"] = self.tmp_dir
+            self.volumes.append("{0}:{1}".format(host_tmp_dir, self.tmp_dir))
 
             self.container = self.cli.create_container(
-                command=self.get_docker_command(context.get('ts')),
+                command=self.get_docker_command(context.get("ts")),
                 environment=self.environment,
                 host_config=self.cli.create_host_config(
                     auto_remove=self.auto_remove,
@@ -177,22 +177,22 @@ class DagsterDockerOperator(DockerOperator):
                 user=self.user,
                 working_dir=self.working_dir,
             )
-            self.cli.start(self.container['Id'])
+            self.cli.start(self.container["Id"])
 
             res = []
-            line = ''
-            for new_line in self.cli.logs(container=self.container['Id'], stream=True):
+            line = ""
+            for new_line in self.cli.logs(container=self.container["Id"], stream=True):
                 line = new_line.strip()
-                if hasattr(line, 'decode'):
-                    line = line.decode('utf-8')
+                if hasattr(line, "decode"):
+                    line = line.decode("utf-8")
                 self.log.info(line)
                 res.append(line)
 
-            result = self.cli.wait(self.container['Id'])
-            if result['StatusCode'] != 0:
+            result = self.cli.wait(self.container["Id"])
+            if result["StatusCode"] != 0:
                 raise AirflowException(
-                    'docker container failed with result: {result} and logs: {logs}'.format(
-                        result=repr(result), logs='\n'.join(res)
+                    "docker container failed with result: {result} and logs: {logs}".format(
+                        result=repr(result), logs="\n".join(res)
                     )
                 )
 
@@ -210,12 +210,12 @@ class DagsterDockerOperator(DockerOperator):
     @property
     def run_id(self):
         if self._run_id is None:
-            return ''
+            return ""
         else:
             return self._run_id
 
     def query(self, airflow_ts):
-        check.opt_str_param(airflow_ts, 'airflow_ts')
+        check.opt_str_param(airflow_ts, "airflow_ts")
 
         variables = construct_execute_plan_variables(
             self.recon_repo,
@@ -227,23 +227,23 @@ class DagsterDockerOperator(DockerOperator):
         )
 
         tags = airflow_tags_for_ts(airflow_ts)
-        variables['executionParams']['executionMetadata']['tags'] = tags
+        variables["executionParams"]["executionMetadata"]["tags"] = tags
 
         self.log.info(
-            'Executing GraphQL query: {query}\n'.format(query=RAW_EXECUTE_PLAN_MUTATION)
-            + 'with variables:\n'
+            "Executing GraphQL query: {query}\n".format(query=RAW_EXECUTE_PLAN_MUTATION)
+            + "with variables:\n"
             + seven.json.dumps(variables, indent=2)
         )
 
-        return 'dagster-graphql -v \'{variables}\' -t \'{query}\''.format(
+        return "dagster-graphql -v '{variables}' -t '{query}'".format(
             variables=seven.json.dumps(variables), query=RAW_EXECUTE_PLAN_MUTATION
         )
 
     def get_docker_command(self, airflow_ts):
-        '''Deliberately renamed from get_command to avoid shadoowing the method of the base class'''
-        check.opt_str_param(airflow_ts, 'airflow_ts')
+        """Deliberately renamed from get_command to avoid shadoowing the method of the base class"""
+        check.opt_str_param(airflow_ts, "airflow_ts")
 
-        if self.command is not None and self.command.strip().find('[') == 0:
+        if self.command is not None and self.command.strip().find("[") == 0:
             commands = ast.literal_eval(self.command)
         elif self.command is not None:
             commands = self.command
@@ -262,14 +262,14 @@ class DagsterDockerOperator(DockerOperator):
         return _DummyHook()
 
     def execute(self, context):
-        if 'run_id' in self.params:
-            self._run_id = self.params['run_id']
-        elif 'dag_run' in context and context['dag_run'] is not None:
-            self._run_id = context['dag_run'].run_id
+        if "run_id" in self.params:
+            self._run_id = self.params["run_id"]
+        elif "dag_run" in context and context["dag_run"] is not None:
+            self._run_id = context["dag_run"].run_id
 
         try:
             if self.instance:
-                tags = {AIRFLOW_EXECUTION_DATE_STR: context.get('ts')} if 'ts' in context else {}
+                tags = {AIRFLOW_EXECUTION_DATE_STR: context.get("ts")} if "ts" in context else {}
 
                 run = self.instance.register_managed_run(
                     pipeline_name=self.pipeline_name,
@@ -287,12 +287,12 @@ class DagsterDockerOperator(DockerOperator):
                 )
 
             raw_res = self.execute_raw(context)
-            self.log.info('Finished executing container.')
+            self.log.info("Finished executing container.")
 
             res = parse_raw_log_lines(raw_res)
 
             try:
-                handle_execution_errors(res, 'executePlan')
+                handle_execution_errors(res, "executePlan")
             except DagsterGraphQLClientError as err:
                 if self.instance:
                     self.instance.report_engine_event(

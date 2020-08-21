@@ -24,28 +24,28 @@ from dagster.utils import merge_dicts
 
 
 def env_with_fs(run_config):
-    return merge_dicts(run_config, {'storage': {'filesystem': {}}})
+    return merge_dicts(run_config, {"storage": {"filesystem": {}}})
 
 
 def define_addy_pipeline():
-    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
-    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
     def add_two(num):
         return num + 2
 
-    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
     def add_three(num):
         return num + 3
 
     pipeline_def = PipelineDefinition(
-        name='execution_plan_reexecution',
+        name="execution_plan_reexecution",
         solid_defs=[add_one, add_two, add_three],
         dependencies={
-            'add_two': {'num': DependencyDefinition('add_one')},
-            'add_three': {'num': DependencyDefinition('add_two')},
+            "add_two": {"num": DependencyDefinition("add_one")},
+            "add_three": {"num": DependencyDefinition("add_two")},
         },
     )
     return pipeline_def
@@ -54,7 +54,7 @@ def define_addy_pipeline():
 def test_execution_plan_reexecution():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
-    run_config = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
+    run_config = env_with_fs({"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}})
     result = execute_pipeline(pipeline_def, run_config=run_config, instance=instance,)
 
     assert result.success
@@ -63,11 +63,11 @@ def test_execution_plan_reexecution():
         instance.intermediates_directory, result.run_id
     )
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
         == 4
     )
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_two.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two.compute")).obj
         == 6
     )
 
@@ -84,7 +84,7 @@ def test_execution_plan_reexecution():
     )
 
     step_events = execute_plan(
-        execution_plan.build_subset_plan(['add_two.compute']),
+        execution_plan.build_subset_plan(["add_two.compute"]),
         run_config=run_config,
         pipeline_run=pipeline_run,
         instance=instance,
@@ -94,23 +94,23 @@ def test_execution_plan_reexecution():
         instance.intermediates_directory, result.run_id
     )
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
         == 4
     )
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_two.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two.compute")).obj
         == 6
     )
 
-    assert not get_step_output_event(step_events, 'add_one.compute')
-    assert get_step_output_event(step_events, 'add_two.compute')
+    assert not get_step_output_event(step_events, "add_one.compute")
+    assert get_step_output_event(step_events, "add_two.compute")
 
 
 def test_execution_plan_wrong_run_id():
     pipeline_def = define_addy_pipeline()
 
-    unrun_id = 'not_a_run'
-    run_config = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
+    unrun_id = "not_a_run"
+    run_config = env_with_fs({"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}})
 
     instance = DagsterInstance.ephemeral()
 
@@ -129,7 +129,7 @@ def test_execution_plan_wrong_run_id():
             execution_plan, run_config=run_config, pipeline_run=pipeline_run, instance=instance,
         )
 
-    assert str(exc_info.value) == 'Run id {} set as parent run id was not found in instance'.format(
+    assert str(exc_info.value) == "Run id {} set as parent run id was not found in instance".format(
         unrun_id
     )
 
@@ -139,7 +139,7 @@ def test_execution_plan_wrong_run_id():
 def test_execution_plan_reexecution_with_in_memory():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
-    run_config = {'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}}
+    run_config = {"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}}
     result = execute_pipeline(pipeline_def, run_config=run_config, instance=instance)
 
     assert result.success
@@ -158,7 +158,7 @@ def test_execution_plan_reexecution_with_in_memory():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_plan(
-            execution_plan.build_subset_plan(['add_two.compute']),
+            execution_plan.build_subset_plan(["add_two.compute"]),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -168,7 +168,7 @@ def test_execution_plan_reexecution_with_in_memory():
 def test_pipeline_step_key_subset_execution():
     pipeline_def = define_addy_pipeline()
     instance = DagsterInstance.ephemeral()
-    run_config = env_with_fs({'solids': {'add_one': {'inputs': {'num': {'value': 3}}}}})
+    run_config = env_with_fs({"solids": {"add_one": {"inputs": {"num": {"value": 3}}}}})
     result = execute_pipeline(pipeline_def, run_config=run_config, instance=instance)
 
     assert result.success
@@ -177,11 +177,11 @@ def test_pipeline_step_key_subset_execution():
         instance.intermediates_directory, result.run_id
     )
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
         == 4
     )
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_two.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two.compute")).obj
         == 6
     )
 
@@ -191,7 +191,7 @@ def test_pipeline_step_key_subset_execution():
         pipeline_def,
         parent_run_id=result.run_id,
         run_config=run_config,
-        step_keys_to_execute=['add_two.compute'],
+        step_keys_to_execute=["add_two.compute"],
         instance=instance,
     )
 
@@ -204,24 +204,24 @@ def test_pipeline_step_key_subset_execution():
         instance.intermediates_directory, result.run_id
     )
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
         == 4
     )
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_two.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two.compute")).obj
         == 6
     )
 
-    assert not get_step_output_event(step_events, 'add_one.compute')
-    assert get_step_output_event(step_events, 'add_two.compute')
+    assert not get_step_output_event(step_events, "add_one.compute")
+    assert get_step_output_event(step_events, "add_two.compute")
 
     with pytest.raises(
-        DagsterExecutionStepNotFoundError, match='Execution plan does not contain step'
+        DagsterExecutionStepNotFoundError, match="Execution plan does not contain step"
     ):
         reexecute_pipeline(
             pipeline_def,
             parent_run_id=result.run_id,
             run_config=run_config,
-            step_keys_to_execute=['nope.compute'],
+            step_keys_to_execute=["nope.compute"],
             instance=instance,
         )

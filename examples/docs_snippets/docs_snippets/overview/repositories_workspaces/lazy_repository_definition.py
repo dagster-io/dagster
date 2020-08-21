@@ -15,12 +15,12 @@ def return_two():
     return 2
 
 
-@lambda_solid(input_defs=[InputDefinition('left'), InputDefinition('right')])
+@lambda_solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
 def add(left, right):
     return left + right
 
 
-@lambda_solid(input_defs=[InputDefinition('left'), InputDefinition('right')])
+@lambda_solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
 def subtract(left, right):
     return left - right
 
@@ -43,7 +43,7 @@ def load_subtraction_pipeline():
 
 def load_daily_addition_schedule():
     @daily_schedule(
-        pipeline_name='addition_pipeline', start_date=datetime.datetime(2020, 1, 1),
+        pipeline_name="addition_pipeline", start_date=datetime.datetime(2020, 1, 1),
     )
     def daily_addition_schedule(date):
         return {}
@@ -57,9 +57,9 @@ def my_lazy_repository():
     # pipeline definitions. This allows us to construct pipelines lazily,
     # if, e.g., initializing a pipeline involves any heavy compute
     return {
-        'pipelines': {
-            'addition_pipeline': load_addition_pipeline,
-            'subtraction_pipeline': load_subtraction_pipeline,
+        "pipelines": {
+            "addition_pipeline": load_addition_pipeline,
+            "subtraction_pipeline": load_subtraction_pipeline,
         },
-        'schedules': {'daily_addition_schedule': load_daily_addition_schedule},
+        "schedules": {"daily_addition_schedule": load_daily_addition_schedule},
     }

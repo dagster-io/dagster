@@ -16,13 +16,13 @@ from dagster.core.utils import make_new_run_id
 def test_generator_exit():
     def generator():
         try:
-            yield 'A'
+            yield "A"
         finally:
-            yield 'EXIT'
+            yield "EXIT"
 
     gen = generator()
     next(gen)
-    with pytest.raises(RuntimeError, match='generator ignored GeneratorExit'):
+    with pytest.raises(RuntimeError, match="generator ignored GeneratorExit"):
         gen.close()
 
 
@@ -36,34 +36,34 @@ def gen_basic_resource_pipeline(called=None, cleaned=None):
     @resource
     def resource_a(_):
         try:
-            called.append('A')
-            yield 'A'
+            called.append("A")
+            yield "A"
         finally:
-            cleaned.append('A')
+            cleaned.append("A")
 
     @resource
     def resource_b(_):
         try:
-            called.append('B')
-            yield 'B'
+            called.append("B")
+            yield "B"
         finally:
-            cleaned.append('B')
+            cleaned.append("B")
 
-    @solid(required_resource_keys={'a', 'b'})
+    @solid(required_resource_keys={"a", "b"})
     def resource_solid(_):
         pass
 
     return PipelineDefinition(
-        name='basic_resource_pipeline',
+        name="basic_resource_pipeline",
         solid_defs=[resource_solid],
-        mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})],
+        mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})],
     )
 
 
 def test_clean_event_generator_exit():
-    ''' Testing for generator cleanup
+    """ Testing for generator cleanup
     (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/)
-    '''
+    """
     from dagster.core.execution.context.init import InitResourceContext
 
     pipeline_def = gen_basic_resource_pipeline()
@@ -88,7 +88,7 @@ def test_clean_event_generator_exit():
     generator.close()
 
     generator = resource_initialization_event_generator(
-        execution_plan, environment_config, pipeline_run, log_manager, {'a'}
+        execution_plan, environment_config, pipeline_run, log_manager, {"a"}
     )
     next(generator)
     generator.close()

@@ -22,14 +22,14 @@ from dagster.serdes import (
 from ..pynotify import await_pg_notifications
 from ..utils import pg_config, pg_url_from_config
 
-CHANNEL_NAME = 'run_events'
+CHANNEL_NAME = "run_events"
 
 # Why? Because this is about as long as we expect a roundtrip to RDS to take.
 WATCHER_POLL_INTERVAL = 0.2
 
 
 class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
-    '''Postgres-backed event log storage.
+    """Postgres-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
@@ -46,14 +46,14 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
     Note that the fields in this config are :py:class:`~dagster.StringSource` and
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
 
-    '''
+    """
 
     def __init__(self, postgres_url, inst_data=None):
-        self.postgres_url = check.str_param(postgres_url, 'postgres_url')
+        self.postgres_url = check.str_param(postgres_url, "postgres_url")
         self._event_watcher = PostgresEventWatcher(self.postgres_url)
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._engine = create_engine(
-            self.postgres_url, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
+            self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
         SqlEventLogStorageMetadata.create_all(self._engine)
 
@@ -82,11 +82,11 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         return inst
 
     def store_event(self, event):
-        '''Store an event corresponding to a pipeline run.
+        """Store an event corresponding to a pipeline run.
         Args:
             event (EventRecord): The event to store.
-        '''
-        check.inst_param(event, 'event', EventRecord)
+        """
+        check.inst_param(event, "event", EventRecord)
         sql_statement = self.prepare_insert_statement(event)  # from SqlEventLogStorage.py
         result_proxy = self._engine.execute(
             sql_statement.returning(SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id)
@@ -94,8 +94,8 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         res = result_proxy.fetchone()
         result_proxy.close()
         self._engine.execute(
-            '''NOTIFY {channel}, %s; '''.format(channel=CHANNEL_NAME),
-            (res[0] + '_' + str(res[1]),),
+            """NOTIFY {channel}, %s; """.format(channel=CHANNEL_NAME),
+            (res[0] + "_" + str(res[1]),),
         )
 
     @contextmanager
@@ -120,11 +120,11 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         self._event_watcher.close()
 
 
-EventWatcherProcessStartedEvent = namedtuple('EventWatcherProcessStartedEvent', '')
-EventWatcherStart = namedtuple('EventWatcherStart', '')
-EventWatcherEvent = namedtuple('EventWatcherEvent', 'payload')
-EventWatchFailed = namedtuple('EventWatchFailed', 'message')
-EventWatcherEnd = namedtuple('EventWatcherEnd', '')
+EventWatcherProcessStartedEvent = namedtuple("EventWatcherProcessStartedEvent", "")
+EventWatcherStart = namedtuple("EventWatcherStart", "")
+EventWatcherEvent = namedtuple("EventWatcherEvent", "payload")
+EventWatchFailed = namedtuple("EventWatchFailed", "message")
+EventWatcherEnd = namedtuple("EventWatcherEnd", "")
 
 EventWatcherThreadEvents = (
     EventWatcherProcessStartedEvent,
@@ -138,7 +138,7 @@ EventWatcherThreadEndEvents = (EventWatchFailed, EventWatcherEnd)
 
 POLLING_CADENCE = 0.25
 
-TERMINATE_EVENT_LOOP = 'TERMINATE_EVENT_LOOP'
+TERMINATE_EVENT_LOOP = "TERMINATE_EVENT_LOOP"
 
 
 def watcher_thread(conn_string, run_id_dict, handlers_dict, dict_lock, watcher_thread_exit):
@@ -155,7 +155,7 @@ def watcher_thread(conn_string, run_id_dict, handlers_dict, dict_lock, watcher_t
                 if watcher_thread_exit.is_set():
                     break
             else:
-                run_id, index_str = notif.payload.split('_')
+                run_id, index_str = notif.payload.split("_")
                 if run_id not in run_id_dict:
                     continue
 
@@ -164,7 +164,7 @@ def watcher_thread(conn_string, run_id_dict, handlers_dict, dict_lock, watcher_t
                     handlers = handlers_dict.get(run_id, [])
 
                 engine = create_engine(
-                    conn_string, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
+                    conn_string, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
                 )
                 try:
                     res = engine.execute(

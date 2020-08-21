@@ -39,17 +39,17 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
 
     if len(errors) == 0 and len(changeset) == 0:
         if preview:
-            print_fn(click.style('No planned changes to schedules.', fg='magenta', bold=True))
-            print_fn('{num} schedules will remain unchanged'.format(num=len(external_schedules)))
+            print_fn(click.style("No planned changes to schedules.", fg="magenta", bold=True))
+            print_fn("{num} schedules will remain unchanged".format(num=len(external_schedules)))
         else:
-            print_fn(click.style('No changes to schedules.', fg='magenta', bold=True))
-            print_fn('{num} schedules unchanged'.format(num=len(external_schedules)))
+            print_fn(click.style("No changes to schedules.", fg="magenta", bold=True))
+            print_fn("{num} schedules unchanged".format(num=len(external_schedules)))
         return
 
     if len(errors):
         print_fn(
             click.style(
-                'Planned Error Fixes:' if preview else 'Errors Resolved:', fg='magenta', bold=True
+                "Planned Error Fixes:" if preview else "Errors Resolved:", fg="magenta", bold=True
             )
         )
         print_fn("\n".join(debug_info.errors))
@@ -57,7 +57,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     if len(changeset):
         print_fn(
             click.style(
-                'Planned Schedule Changes:' if preview else 'Changes:', fg='magenta', bold=True
+                "Planned Schedule Changes:" if preview else "Changes:", fg="magenta", bold=True
             )
         )
 
@@ -67,45 +67,45 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         if change_type == "add":
             print_fn(
                 click.style(
-                    '  + {name} (add) [{id}]'.format(name=schedule_name, id=schedule_origin_id),
-                    fg='green',
+                    "  + {name} (add) [{id}]".format(name=schedule_name, id=schedule_origin_id),
+                    fg="green",
                 )
             )
 
         if change_type == "change":
             print_fn(
                 click.style(
-                    '  ~ {name} (update) [{id}]'.format(name=schedule_name, id=schedule_origin_id),
-                    fg='yellow',
+                    "  ~ {name} (update) [{id}]".format(name=schedule_name, id=schedule_origin_id),
+                    fg="yellow",
                 )
             )
             for change_name, diff in changes:
                 if len(diff) == 2:
                     old, new = diff
                     print_fn(
-                        click.style('\t %s: ' % change_name, fg='yellow')
-                        + click.style(old, fg='red')
+                        click.style("\t %s: " % change_name, fg="yellow")
+                        + click.style(old, fg="red")
                         + " => "
-                        + click.style(new, fg='green')
+                        + click.style(new, fg="green")
                     )
                 else:
                     print_fn(
-                        click.style('\t %s: ' % change_name, fg='yellow')
-                        + click.style(diff, fg='green')
+                        click.style("\t %s: " % change_name, fg="yellow")
+                        + click.style(diff, fg="green")
                     )
 
         if change_type == "remove":
             print_fn(
                 click.style(
-                    '  - {name} (delete) [{id}]'.format(name=schedule_name, id=schedule_origin_id),
-                    fg='red',
+                    "  - {name} (delete) [{id}]".format(name=schedule_name, id=schedule_origin_id),
+                    fg="red",
                 )
             )
 
 
 def check_repo_and_scheduler(repository, instance):
-    check.inst_param(repository, 'repository', ExternalRepository)
-    check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(repository, "repository", ExternalRepository)
+    check.inst_param(instance, "instance", DagsterInstance)
 
     repository_name = repository.name
 
@@ -116,15 +116,15 @@ def check_repo_and_scheduler(repository, instance):
 
     if not instance.scheduler:
         raise click.UsageError(
-            'A scheduler must be configured to run schedule commands.\n'
-            'You can configure a scheduler on your instance using dagster.yaml.\n'
-            'For more information, see:\n\n'
-            'https://docs.dagster.io/deploying/instance/#scheduler'
+            "A scheduler must be configured to run schedule commands.\n"
+            "You can configure a scheduler on your instance using dagster.yaml.\n"
+            "For more information, see:\n\n"
+            "https://docs.dagster.io/deploying/instance/#scheduler"
         )
 
 
 @click.command(
-    name='preview', help='Preview changes that will be performed by `dagster schedule up'
+    name="preview", help="Preview changes that will be performed by `dagster schedule up"
 )
 @repository_target_argument
 def schedule_preview_command(**kwargs):
@@ -140,15 +140,15 @@ def execute_preview_command(cli_args, print_fn):
 
 
 @click.command(
-    name='up',
-    help='Updates the internal dagster representation of schedules to match the list '
-    'of ScheduleDefinitions defined in the repository. Use `dagster schedule up --preview` or '
-    '`dagster schedule preview` to preview what changes will be applied. New ScheduleDefinitions '
-    'will not start running by default when `up` is called. Use `dagster schedule start` and '
-    '`dagster schedule stop` to start and stop a schedule. If a ScheduleDefinition is deleted, the '
-    'corresponding running schedule will be stopped and deleted.',
+    name="up",
+    help="Updates the internal dagster representation of schedules to match the list "
+    "of ScheduleDefinitions defined in the repository. Use `dagster schedule up --preview` or "
+    "`dagster schedule preview` to preview what changes will be applied. New ScheduleDefinitions "
+    "will not start running by default when `up` is called. Use `dagster schedule start` and "
+    "`dagster schedule stop` to start and stop a schedule. If a ScheduleDefinition is deleted, the "
+    "corresponding running schedule will be stopped and deleted.",
 )
-@click.option('--preview', help="Preview changes", is_flag=True, default=False)
+@click.option("--preview", help="Preview changes", is_flag=True, default=False)
 @repository_target_argument
 def schedule_up_command(preview, **kwargs):
     return execute_up_command(preview, kwargs, click.echo)
@@ -170,12 +170,12 @@ def execute_up_command(preview, cli_args, print_fn):
 
 
 @click.command(
-    name='list', help="List all schedules that correspond to a repository.",
+    name="list", help="List all schedules that correspond to a repository.",
 )
 @repository_target_argument
-@click.option('--running', help="Filter for running schedules", is_flag=True, default=False)
-@click.option('--stopped', help="Filter for stopped schedules", is_flag=True, default=False)
-@click.option('--name', help="Only display schedule schedule names", is_flag=True, default=False)
+@click.option("--running", help="Filter for running schedules", is_flag=True, default=False)
+@click.option("--stopped", help="Filter for stopped schedules", is_flag=True, default=False)
+@click.option("--name", help="Only display schedule schedule names", is_flag=True, default=False)
 def schedule_list_command(running, stopped, name, **kwargs):
     return execute_list_command(running, stopped, name, kwargs, click.echo)
 
@@ -188,9 +188,9 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
         repository_name = external_repo.name
 
         if not name_filter:
-            title = 'Repository {name}'.format(name=repository_name)
+            title = "Repository {name}".format(name=repository_name)
             print_fn(title)
-            print_fn('*' * len(title))
+            print_fn("*" * len(title))
 
         first = True
 
@@ -216,15 +216,15 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 continue
 
             flag = "[{status}]".format(status=schedule_state.status.value) if schedule_state else ""
-            schedule_title = 'Schedule: {name} {flag}'.format(name=schedule_state.name, flag=flag)
+            schedule_title = "Schedule: {name} {flag}".format(name=schedule_state.name, flag=flag)
 
             if not first:
-                print_fn('*' * len(schedule_title))
+                print_fn("*" * len(schedule_title))
             first = False
 
             print_fn(schedule_title)
             print_fn(
-                'Cron Schedule: {cron_schedule}'.format(cron_schedule=schedule_state.cron_schedule)
+                "Cron Schedule: {cron_schedule}".format(cron_schedule=schedule_state.cron_schedule)
             )
 
 
@@ -234,22 +234,22 @@ def extract_schedule_name(schedule_name):
             return schedule_name[0]
         else:
             check.failed(
-                'Can only handle zero or one schedule args. Got {schedule_name}'.format(
+                "Can only handle zero or one schedule args. Got {schedule_name}".format(
                     schedule_name=repr(schedule_name)
                 )
             )
 
 
-@click.command(name='start', help="Start an existing schedule")
-@click.argument('schedule_name', nargs=-1)  # , required=True)
-@click.option('--start-all', help="start all schedules", is_flag=True, default=False)
+@click.command(name="start", help="Start an existing schedule")
+@click.argument("schedule_name", nargs=-1)  # , required=True)
+@click.option("--start-all", help="start all schedules", is_flag=True, default=False)
 @repository_target_argument
 def schedule_start_command(schedule_name, start_all, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     if schedule_name is None and start_all is False:
         print(  # pylint: disable=print-call
-            'Noop: dagster schedule start was called without any arguments specifying which '
-            'schedules to start. Pass a schedule name or the --start-all flag to start schedules.'
+            "Noop: dagster schedule start was called without any arguments specifying which "
+            "schedules to start. Pass a schedule name or the --start-all flag to start schedules."
         )
         return
     return execute_start_command(schedule_name, start_all, kwargs, click.echo)
@@ -286,8 +286,8 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
             print_fn("Started schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
-@click.command(name='stop', help="Stop an existing schedule")
-@click.argument('schedule_name', nargs=-1)
+@click.command(name="stop", help="Stop an existing schedule")
+@click.argument("schedule_name", nargs=-1)
 @repository_target_argument
 def schedule_stop_command(schedule_name, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
@@ -309,15 +309,15 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
         print_fn("Stopped schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
-@click.command(name='logs', help="Get logs for a schedule")
-@click.argument('schedule_name', nargs=-1)
+@click.command(name="logs", help="Get logs for a schedule")
+@click.argument("schedule_name", nargs=-1)
 @repository_target_argument
 def schedule_logs_command(schedule_name, **kwargs):
     schedule_name = extract_schedule_name(schedule_name)
     if schedule_name is None:
         print(  # pylint: disable=print-call
-            'Noop: dagster schedule logs was called without any arguments specifying which '
-            'schedules to retrieve logs for. Pass a schedule name'
+            "Noop: dagster schedule logs was called without any arguments specifying which "
+            "schedules to retrieve logs for. Pass a schedule name"
         )
         return
     return execute_logs_command(schedule_name, kwargs, click.echo)
@@ -335,10 +335,10 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
         print_fn(logs_path)
 
 
-@click.command(name='restart', help="Restart a running schedule")
-@click.argument('schedule_name', nargs=-1)
+@click.command(name="restart", help="Restart a running schedule")
+@click.argument("schedule_name", nargs=-1)
 @click.option(
-    '--restart-all-running',
+    "--restart-all-running",
     help="restart previously running schedules",
     is_flag=True,
     default=False,
@@ -390,7 +390,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             print_fn("Restarted schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
-@click.command(name='wipe', help="Deletes all schedules and schedule cron jobs.")
+@click.command(name="wipe", help="Deletes all schedules and schedule cron jobs.")
 @repository_target_argument
 def schedule_wipe_command(**kwargs):
     return execute_wipe_command(kwargs, click.echo)
@@ -402,16 +402,16 @@ def execute_wipe_command(cli_args, print_fn):
         check_repo_and_scheduler(external_repo, instance)
 
         confirmation = click.prompt(
-            'Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE'
+            "Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE"
         )
-        if confirmation == 'DELETE':
+        if confirmation == "DELETE":
             instance.wipe_all_schedules()
             print_fn("Wiped all schedules and schedule cron jobs")
         else:
-            click.echo('Exiting without deleting all schedules and schedule cron jobs')
+            click.echo("Exiting without deleting all schedules and schedule cron jobs")
 
 
-@click.command(name='debug', help="Debug information about the scheduler")
+@click.command(name="debug", help="Debug information about the scheduler")
 def schedule_debug_command():
     return execute_debug_command(click.echo)
 

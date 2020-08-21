@@ -11,8 +11,8 @@ def is_callable_valid_config_arg(config):
     return BuiltinEnum.contains(config) or is_supported_config_python_builtin(config)
 
 
-class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_schema')):
-    '''Defines a config mapping for a composite solid.
+class ConfigMapping(namedtuple("_ConfigMapping", "config_fn config_schema")):
+    """Defines a config mapping for a composite solid.
 
     By specifying a config mapping function, you can override the configuration for the child
     solids contained within a composite solid.
@@ -26,16 +26,16 @@ class ConfigMapping(namedtuple('_ConfigMapping', 'config_fn config_schema')):
         config_fn (Callable[[dict], dict]): The function that will be called
             to map the composite config to a config appropriate for the child solids.
         config_schema (ConfigSchema): The schema of the composite config.
-    '''
+    """
 
     def __new__(cls, config_fn, config_schema=None):
         return super(ConfigMapping, cls).__new__(
             cls,
-            config_fn=check.callable_param(config_fn, 'config_fn'),
-            config_schema=check_user_facing_opt_config_param(config_schema, 'config_schema'),
+            config_fn=check.callable_param(config_fn, "config_fn"),
+            config_schema=check_user_facing_opt_config_param(config_schema, "config_schema"),
         )
 
     @property
     def config_field(self):
-        rename_warning('config_schema', 'config_field', '0.9.0')
+        rename_warning("config_schema", "config_field", "0.9.0")
         return self.config_schema

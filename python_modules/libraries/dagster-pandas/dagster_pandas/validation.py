@@ -20,13 +20,13 @@ from pandas.core.dtypes.common import (
 
 from dagster import DagsterInvariantViolationError, check
 
-PANDAS_NUMERIC_TYPES = {'int64', 'float'}
+PANDAS_NUMERIC_TYPES = {"int64", "float"}
 
 
 def _construct_keyword_constraints(non_nullable, unique, ignore_missing_vals):
-    non_nullable = check.bool_param(non_nullable, 'exists')
-    unique = check.bool_param(unique, 'unique')
-    ignore_missing_vals = check.bool_param(ignore_missing_vals, 'ignore_missing_vals')
+    non_nullable = check.bool_param(non_nullable, "exists")
+    unique = check.bool_param(unique, "unique")
+    ignore_missing_vals = check.bool_param(ignore_missing_vals, "ignore_missing_vals")
     if non_nullable and ignore_missing_vals:
         raise DagsterInvariantViolationError(
             "PandasColumn cannot have a non-null constraint while also ignore missing values"
@@ -40,7 +40,7 @@ def _construct_keyword_constraints(non_nullable, unique, ignore_missing_vals):
 
 
 class PandasColumn:
-    '''
+    """
     The main API for expressing column level schemas and constraints for your custom dataframe
     types.
 
@@ -51,12 +51,12 @@ class PandasColumn:
             If th column exists, the validate function will validate the column. Defaults to True.
         constraints (Optional[List[Constraint]]): List of constraint objects that indicate the
             validation rules for the pandas column.
-    '''
+    """
 
     def __init__(self, name, constraints=None, is_required=None):
-        self.name = check.str_param(name, 'name')
-        self.is_required = check.opt_bool_param(is_required, 'is_required', default=True)
-        self.constraints = check.opt_list_param(constraints, 'constraints', of_type=Constraint)
+        self.name = check.str_param(name, "name")
+        self.is_required = check.opt_bool_param(is_required, "is_required", default=True)
+        self.constraints = check.opt_list_param(constraints, "constraints", of_type=Constraint)
 
     def validate(self, dataframe):
         if self.name not in dataframe.columns:
@@ -73,7 +73,7 @@ class PandasColumn:
 
     @staticmethod
     def exists(name, non_nullable=False, unique=False, ignore_missing_vals=False, is_required=None):
-        '''
+        """
         Simple constructor for PandasColumns that expresses existence constraints.
 
         Args:
@@ -86,9 +86,9 @@ class PandasColumn:
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
             is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
                 If the column exists the validate function will validate the column. Default to True.
-        '''
+        """
         return PandasColumn(
-            name=check.str_param(name, 'name'),
+            name=check.str_param(name, "name"),
             constraints=_construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
             ),
@@ -99,7 +99,7 @@ class PandasColumn:
     def boolean_column(
         name, non_nullable=False, unique=False, ignore_missing_vals=False, is_required=None
     ):
-        '''
+        """
         Simple constructor for PandasColumns that expresses boolean constraints on boolean dtypes.
 
         Args:
@@ -112,9 +112,9 @@ class PandasColumn:
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
             is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
                 If the column exists the validate function will validate the column. Default to True.
-        '''
+        """
         return PandasColumn(
-            name=check.str_param(name, 'name'),
+            name=check.str_param(name, "name"),
             constraints=[ColumnDTypeFnConstraint(is_bool_dtype)]
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
@@ -125,14 +125,14 @@ class PandasColumn:
     @staticmethod
     def numeric_column(
         name,
-        min_value=-float('inf'),
-        max_value=float('inf'),
+        min_value=-float("inf"),
+        max_value=float("inf"),
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
         is_required=None,
     ):
-        '''
+        """
         Simple constructor for PandasColumns that expresses numeric constraints numeric dtypes.
 
         Args:
@@ -147,14 +147,14 @@ class PandasColumn:
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
             is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
                 If the column exists the validate function will validate the column. Default to True.
-        '''
+        """
         return PandasColumn(
-            name=check.str_param(name, 'name'),
+            name=check.str_param(name, "name"),
             constraints=[
                 ColumnDTypeFnConstraint(is_numeric_dtype),
                 InRangeColumnConstraint(
-                    check.numeric_param(min_value, 'min_value'),
-                    check.numeric_param(max_value, 'max_value'),
+                    check.numeric_param(min_value, "min_value"),
+                    check.numeric_param(max_value, "max_value"),
                     ignore_missing_vals=ignore_missing_vals,
                 ),
             ]
@@ -167,14 +167,14 @@ class PandasColumn:
     @staticmethod
     def integer_column(
         name,
-        min_value=-float('inf'),
-        max_value=float('inf'),
+        min_value=-float("inf"),
+        max_value=float("inf"),
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
         is_required=None,
     ):
-        '''
+        """
         Simple constructor for PandasColumns that expresses numeric constraints on integer dtypes.
 
         Args:
@@ -189,14 +189,14 @@ class PandasColumn:
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
             is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
                 If the column exists the validate function will validate the column. Default to True.
-        '''
+        """
         return PandasColumn(
-            name=check.str_param(name, 'name'),
+            name=check.str_param(name, "name"),
             constraints=[
                 ColumnDTypeFnConstraint(is_integer_dtype),
                 InRangeColumnConstraint(
-                    check.numeric_param(min_value, 'min_value'),
-                    check.numeric_param(max_value, 'max_value'),
+                    check.numeric_param(min_value, "min_value"),
+                    check.numeric_param(max_value, "max_value"),
                     ignore_missing_vals=ignore_missing_vals,
                 ),
             ]
@@ -209,14 +209,14 @@ class PandasColumn:
     @staticmethod
     def float_column(
         name,
-        min_value=-float('inf'),
-        max_value=float('inf'),
+        min_value=-float("inf"),
+        max_value=float("inf"),
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
         is_required=None,
     ):
-        '''
+        """
         Simple constructor for PandasColumns that expresses numeric constraints on float dtypes.
 
         Args:
@@ -231,14 +231,14 @@ class PandasColumn:
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
             is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
                 If the column exists the validate function will validate the column. Default to True.
-        '''
+        """
         return PandasColumn(
-            name=check.str_param(name, 'name'),
+            name=check.str_param(name, "name"),
             constraints=[
                 ColumnDTypeFnConstraint(is_float_dtype),
                 InRangeColumnConstraint(
-                    check.numeric_param(min_value, 'min_value'),
-                    check.numeric_param(max_value, 'max_value'),
+                    check.numeric_param(min_value, "min_value"),
+                    check.numeric_param(max_value, "max_value"),
                     ignore_missing_vals=ignore_missing_vals,
                 ),
             ]
@@ -258,7 +258,7 @@ class PandasColumn:
         ignore_missing_vals=False,
         is_required=None,
     ):
-        '''
+        """
         Simple constructor for PandasColumns that expresses datetime constraints on 'datetime64[ns]' dtypes.
 
         Args:
@@ -275,11 +275,11 @@ class PandasColumn:
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
             is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
                 If the column exists the validate function will validate the column. Default to True.
-        '''
+        """
         return PandasColumn(
-            name=check.str_param(name, 'name'),
+            name=check.str_param(name, "name"),
             constraints=[
-                ColumnDTypeInSetConstraint({'datetime64[ns]'}),
+                ColumnDTypeInSetConstraint({"datetime64[ns]"}),
                 InRangeColumnConstraint(
                     min_datetime, max_datetime, ignore_missing_vals=ignore_missing_vals
                 ),
@@ -294,7 +294,7 @@ class PandasColumn:
     def string_column(
         name, non_nullable=False, unique=False, ignore_missing_vals=False, is_required=None
     ):
-        '''
+        """
         Simple constructor for PandasColumns that expresses constraints on string dtypes.
 
         Args:
@@ -307,9 +307,9 @@ class PandasColumn:
                 only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
             is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
                 If the column exists the validate function will validate the column. Default to True.
-        '''
+        """
         return PandasColumn(
-            name=check.str_param(name, 'name'),
+            name=check.str_param(name, "name"),
             constraints=[ColumnDTypeFnConstraint(is_string_dtype)]
             + _construct_keyword_constraints(
                 non_nullable=non_nullable, unique=unique, ignore_missing_vals=ignore_missing_vals
@@ -321,13 +321,13 @@ class PandasColumn:
     def categorical_column(
         name,
         categories,
-        of_types='object',
+        of_types="object",
         non_nullable=False,
         unique=False,
         ignore_missing_vals=False,
         is_required=None,
     ):
-        '''
+        """
         Simple constructor for PandasColumns that expresses categorical constraints on specified dtypes.
 
         Args:
@@ -343,10 +343,10 @@ class PandasColumn:
                 constraint will only evaluate non-null data. Ignore_missing_vals and non_nullable cannot both be True.
             is_required (Optional[bool]): Flag indicating the optional/required presence of the column.
                 If the column exists the validate function will validate the column. Default to True.
-        '''
+        """
         of_types = {of_types} if isinstance(of_types, str) else of_types
         return PandasColumn(
-            name=check.str_param(name, 'name'),
+            name=check.str_param(name, "name"),
             constraints=[
                 ColumnDTypeInSetConstraint(of_types),
                 CategoricalColumnConstraint(categories, ignore_missing_vals=ignore_missing_vals),
@@ -359,12 +359,12 @@ class PandasColumn:
 
 
 def validate_constraints(dataframe, pandas_columns=None, dataframe_constraints=None):
-    dataframe = check.inst_param(dataframe, 'dataframe', DataFrame)
+    dataframe = check.inst_param(dataframe, "dataframe", DataFrame)
     pandas_columns = check.opt_list_param(
-        pandas_columns, 'column_constraints', of_type=PandasColumn
+        pandas_columns, "column_constraints", of_type=PandasColumn
     )
     dataframe_constraints = check.opt_list_param(
-        dataframe_constraints, 'dataframe_constraints', of_type=DataFrameConstraint
+        dataframe_constraints, "dataframe_constraints", of_type=DataFrameConstraint
     )
 
     if pandas_columns:

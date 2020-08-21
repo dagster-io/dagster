@@ -3,7 +3,7 @@ from dagster import pipeline, solid
 
 @solid
 def hello_logs(context):
-    context.log.info('Hello, world!')
+    context.log.info("Hello, world!")
 
 
 @pipeline

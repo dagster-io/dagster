@@ -17,7 +17,7 @@ def test_closed_python_dict():
     assert is_closed_python_dict_type(typing.Dict) is False
     assert is_closed_python_dict_type(None) is False
     assert is_closed_python_dict_type(1) is False
-    assert is_closed_python_dict_type('foobar') is False
+    assert is_closed_python_dict_type("foobar") is False
     assert is_closed_python_dict_type(typing.Optional) is False
     assert is_closed_python_dict_type(typing.List) is False
 
@@ -28,7 +28,7 @@ def test_is_typing_optional_py_3():
     assert not is_closed_python_optional_type(None)
     assert not is_closed_python_optional_type(int)
     assert not is_closed_python_optional_type(list)
-    assert not is_closed_python_optional_type('foobar')
+    assert not is_closed_python_optional_type("foobar")
 
 
 def test_get_inner_optional_py_3():
@@ -41,7 +41,7 @@ def test_closed_tuple_type():
     assert is_closed_python_tuple_type(tuple) is False
     assert is_closed_python_tuple_type(typing.Tuple) is False
     assert is_closed_python_tuple_type(1) is False
-    assert is_closed_python_tuple_type('foobar') is False
+    assert is_closed_python_tuple_type("foobar") is False
     assert is_closed_python_tuple_type(typing.Optional) is False
     assert is_closed_python_tuple_type(typing.List) is False
 
@@ -51,7 +51,7 @@ def test_closed_set_type():
     assert is_closed_python_set_type(set) is False
     assert is_closed_python_set_type(typing.Set) is False
     assert is_closed_python_set_type(1) is False
-    assert is_closed_python_set_type('foobar') is False
+    assert is_closed_python_set_type("foobar") is False
     assert is_closed_python_set_type(typing.Optional) is False
     assert is_closed_python_set_type(typing.List) is False
     assert is_closed_python_set_type(typing.Dict) is False
@@ -67,7 +67,7 @@ def test_closed_list_type():
     assert is_closed_python_list_type(list) is False
     assert is_closed_python_list_type(None) is False
     assert is_closed_python_list_type(1) is False
-    assert is_closed_python_list_type('foobar') is False
+    assert is_closed_python_list_type("foobar") is False
     assert is_closed_python_list_type(typing.Optional) is False
     assert is_closed_python_list_type(typing.Dict) is False
     assert is_closed_python_list_type(typing.Dict[int, str]) is False

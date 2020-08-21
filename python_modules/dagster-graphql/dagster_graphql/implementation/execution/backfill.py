@@ -21,24 +21,24 @@ from .run_lifecycle import create_valid_pipeline_run
 
 @capture_dauphin_error
 def create_and_launch_partition_backfill(graphene_info, backfill_params):
-    partition_set_selector = backfill_params.get('selector')
-    partition_set_name = partition_set_selector.get('partitionSetName')
+    partition_set_selector = backfill_params.get("selector")
+    partition_set_name = partition_set_selector.get("partitionSetName")
     repository_selector = RepositorySelector.from_graphql_input(
-        partition_set_selector.get('repositorySelector')
+        partition_set_selector.get("repositorySelector")
     )
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
     matches = [
         partition_set
         for partition_set in repository.get_external_partition_sets()
-        if partition_set.name == partition_set_selector.get('partitionSetName')
+        if partition_set.name == partition_set_selector.get("partitionSetName")
     ]
     if not matches:
-        return graphene_info.schema.type_named('PartitionSetNotFoundError')(partition_set_name)
+        return graphene_info.schema.type_named("PartitionSetNotFoundError")(partition_set_name)
 
     check.invariant(
         len(matches) == 1,
-        'Partition set names must be unique: found {num} matches for {partition_set_name}'.format(
+        "Partition set names must be unique: found {num} matches for {partition_set_name}".format(
             num=len(matches), partition_set_name=partition_set_name
         ),
     )
@@ -52,7 +52,7 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
         solid_selection=external_partition_set.solid_selection,
     )
 
-    partition_names = backfill_params.get('partitionNames')
+    partition_names = backfill_params.get("partitionNames")
 
     backfill_id = make_new_backfill_id()
     result = graphene_info.context.get_external_partition_set_execution_param_data(
@@ -60,7 +60,7 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
     )
 
     if isinstance(result, ExternalPartitionExecutionErrorData):
-        return graphene_info.schema.type_named('PythonError')(result.error)
+        return graphene_info.schema.type_named("PythonError")(result.error)
 
     assert isinstance(result, ExternalPartitionSetExecutionParamData)
 
@@ -79,7 +79,7 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
         graphene_info.context.instance.launch_run(pipeline_run.run_id, external_pipeline)
         launched_run_ids.append(pipeline_run.run_id)
 
-    return graphene_info.schema.type_named('PartitionBackfillSuccess')(
+    return graphene_info.schema.type_named("PartitionBackfillSuccess")(
         backfill_id=backfill_id, launched_run_ids=launched_run_ids
     )
 
@@ -92,21 +92,21 @@ def _build_execution_param_list_for_backfill(
     pipeline_selector,
     external_partition_set,
 ):
-    check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(instance, "instance", DagsterInstance)
     check.list_param(
-        partition_data_list, 'partition_data_list', of_type=ExternalPartitionExecutionParamData
+        partition_data_list, "partition_data_list", of_type=ExternalPartitionExecutionParamData
     )
-    check.str_param(backfill_id, 'backfill_id')
-    check.dict_param(backfill_params, 'backfill_params')
-    check.inst_param(pipeline_selector, 'pipeline_selector', PipelineSelector)
-    check.inst_param(external_partition_set, 'external_partition_set', ExternalPartitionSet)
+    check.str_param(backfill_id, "backfill_id")
+    check.dict_param(backfill_params, "backfill_params")
+    check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
+    check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
     backfill_tags = PipelineRun.tags_for_backfill_id(backfill_id)
 
     execution_param_list = []
     for partition_data in partition_data_list:
         tags = merge_dicts(partition_data.tags, backfill_tags)
-        if not backfill_params.get('fromFailure') and not backfill_params.get('reexecutionSteps'):
+        if not backfill_params.get("fromFailure") and not backfill_params.get("reexecutionSteps"):
             # full pipeline execution
             execution_param_list.append(
                 ExecutionParams(
@@ -121,7 +121,7 @@ def _build_execution_param_list_for_backfill(
 
         last_run = _fetch_last_run(instance, external_partition_set, partition_data.name)
 
-        if backfill_params.get('fromFailure'):
+        if backfill_params.get("fromFailure"):
             if not last_run or last_run.status != PipelineRunStatus.FAILURE:
                 continue
 
@@ -132,7 +132,7 @@ def _build_execution_param_list_for_backfill(
                     mode=external_partition_set.mode,
                     execution_metadata=ExecutionMetadata(
                         run_id=None,
-                        tags=merge_dicts(tags, {RESUME_RETRY_TAG: 'true'}),
+                        tags=merge_dicts(tags, {RESUME_RETRY_TAG: "true"}),
                         root_run_id=last_run.root_run_id or last_run.run_id,
                         parent_run_id=last_run.run_id,
                     ),
@@ -156,7 +156,7 @@ def _build_execution_param_list_for_backfill(
                     root_run_id=last_run.root_run_id or last_run.run_id,
                     parent_run_id=last_run.run_id,
                 ),
-                step_keys=backfill_params['reexecutionSteps'],
+                step_keys=backfill_params["reexecutionSteps"],
             )
         )
         continue
@@ -165,9 +165,9 @@ def _build_execution_param_list_for_backfill(
 
 
 def _fetch_last_run(instance, external_partition_set, partition_name):
-    check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(external_partition_set, 'external_partition_set', ExternalPartitionSet)
-    check.str_param(partition_name, 'partition_name')
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
+    check.str_param(partition_name, "partition_name")
 
     runs = instance.get_runs(
         PipelineRunsFilter(

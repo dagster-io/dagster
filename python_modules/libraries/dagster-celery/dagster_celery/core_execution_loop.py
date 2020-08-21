@@ -19,22 +19,22 @@ from .tags import (
 )
 
 TICK_SECONDS = 1
-DELEGATE_MARKER = 'celery_queue_wait'
+DELEGATE_MARKER = "celery_queue_wait"
 
 
 def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_fn):
 
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.callable_param(step_execution_fn, 'step_execution_fn')
+    check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.callable_param(step_execution_fn, "step_execution_fn")
 
     executor = pipeline_context.executor
 
     # https://github.com/dagster-io/dagster/issues/2440
     check.invariant(
         execution_plan.artifacts_persisted,
-        'Cannot use in-memory storage with Celery, use filesystem (on top of NFS or '
-        'similar system that allows files to be available to all nodes), S3, or GCS',
+        "Cannot use in-memory storage with Celery, use filesystem (on top of NFS or "
+        "similar system that allows files to be available to all nodes), S3, or GCS",
     )
 
     app = make_app(executor.app_args())
@@ -119,7 +119,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
             except Exception:
                 yield DagsterEvent.engine_event(
                     pipeline_context,
-                    'Encountered error during celery task submission.'.format(),
+                    "Encountered error during celery task submission.".format(),
                     event_specific_data=EngineEventData.engine_error(
                         serializable_error_info_from_exc_info(sys.exc_info()),
                     ),
@@ -130,10 +130,10 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
 
     if step_errors:
         raise DagsterSubprocessError(
-            'During celery execution errors occurred in workers:\n{error_list}'.format(
-                error_list='\n'.join(
+            "During celery execution errors occurred in workers:\n{error_list}".format(
+                error_list="\n".join(
                     [
-                        '[{step}]: {err}'.format(step=key, err=err.to_string())
+                        "[{step}]: {err}".format(step=key, err=err.to_string())
                         for key, err in step_errors.items()
                     ]
                 )
@@ -143,9 +143,9 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
 
 
 def _get_step_priority(context, step):
-    '''Step priority is (currently) set as the overall pipeline run priority plus the individual
+    """Step priority is (currently) set as the overall pipeline run priority plus the individual
     step priority.
-    '''
+    """
     run_priority = _get_run_priority(context)
     step_priority = int(step.tags.get(DAGSTER_CELERY_STEP_PRIORITY_TAG, task_default_priority))
     priority = run_priority + step_priority
@@ -175,5 +175,5 @@ def _warn_on_priority_misuse(context, execution_plan):
         context.log.warn(
             'The following steps do not have "dagster-celery/priority" set but do '
             'have "dagster/priority" set which is not applicable for the celery engine: [{}]. '
-            'Consider using a function to set both keys.'.format(', '.join(bad_keys))
+            "Consider using a function to set both keys.".format(", ".join(bad_keys))
         )

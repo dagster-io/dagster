@@ -7,4 +7,4 @@ def test_fan_in_pipeline():
     result = execute_pipeline(tags_pipeline)
     assert result.success
 
-    assert result.result_for_solid('get_tag').output_value() == 'ml_team'
+    assert result.result_for_solid("get_tag").output_value() == "ml_team"

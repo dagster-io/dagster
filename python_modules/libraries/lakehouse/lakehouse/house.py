@@ -14,7 +14,7 @@ from .asset import Asset
 
 
 class Lakehouse:
-    '''A Lakehouse is a scheme for storing and retrieving assets across heterogeneous compute and
+    """A Lakehouse is a scheme for storing and retrieving assets across heterogeneous compute and
     heterogeneous storage.
 
     It combines a set of storages, e.g. databases or file systems, with "policies" for
@@ -70,12 +70,12 @@ class Lakehouse:
                 preset_defs=[preset_def],
                 type_storage_policies=[DataFrameLocalFileSystemPolicy],
             )
-    '''
+    """
 
     def __init__(
         self, preset_defs=None, mode_defs=None, in_memory_type_resource_keys=None,
     ):
-        '''
+        """
         Args:
             preset_defs (List[PresetDefinition]): Each preset gives the config necessary to
                 instantiate one of the modes.
@@ -84,7 +84,7 @@ class Lakehouse:
             in_memory_type_resource_keys (Dict[type, List[str]]): For any type, declares resource
                 keys that need to be around when that type is an input or output of an asset
                 derivation, e.g. "pyspark" for asset whose derivation involves PySpark DataFrames.
-        '''
+        """
         self._preset_defs = preset_defs
         self._mode_defs = mode_defs
         self._in_memory_type_resource_keys = in_memory_type_resource_keys or {}
@@ -95,7 +95,7 @@ class Lakehouse:
             if asset.computation:
                 solid_defs[asset.path] = self.get_computed_asset_solid_def(asset, assets_to_update)
             else:
-                check.failed('All elements of assets_to_update must have computations')
+                check.failed("All elements of assets_to_update must have computations")
 
         solid_deps = {
             solid_defs[asset.path].name: {
@@ -126,7 +126,7 @@ class Lakehouse:
             if dep.asset in assets_in_pipeline:
                 input_dagster_type = dep.asset.dagster_type
                 input_def = InputDefinition(
-                    name='__'.join(dep.asset.path), dagster_type=input_dagster_type
+                    name="__".join(dep.asset.path), dagster_type=input_dagster_type
                 )
                 input_defs.append(input_def)
 
@@ -142,7 +142,7 @@ class Lakehouse:
         )
 
         return SolidDefinition(
-            name='__'.join(computed_asset.path),
+            name="__".join(computed_asset.path),
             input_defs=input_defs,
             compute_fn=self._create_asset_solid_compute_wrapper(
                 computed_asset, input_defs, output_def
@@ -154,9 +154,9 @@ class Lakehouse:
         )
 
     def _create_asset_solid_compute_wrapper(self, asset, input_defs, output_def):
-        check.inst_param(asset, 'asset', Asset)
-        check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
-        check.inst_param(output_def, 'output_def', OutputDefinition)
+        check.inst_param(asset, "asset", Asset)
+        check.list_param(input_defs, "input_defs", of_type=InputDefinition)
+        check.inst_param(output_def, "output_def", OutputDefinition)
 
         @wraps(asset.computation.compute_fn)
         def compute(context, _input_defs):

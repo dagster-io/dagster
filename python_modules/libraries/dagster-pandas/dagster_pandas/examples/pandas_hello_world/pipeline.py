@@ -11,31 +11,31 @@ from dagster import (
 
 
 @lambda_solid(
-    input_defs=[InputDefinition('num', dagster_pd.DataFrame)],
+    input_defs=[InputDefinition("num", dagster_pd.DataFrame)],
     output_def=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_solid(num):
     sum_df = num.copy()
-    sum_df['sum'] = sum_df['num1'] + sum_df['num2']
+    sum_df["sum"] = sum_df["num1"] + sum_df["num2"]
     return sum_df
 
 
 @lambda_solid(
-    input_defs=[InputDefinition('sum_df', dagster_pd.DataFrame)],
+    input_defs=[InputDefinition("sum_df", dagster_pd.DataFrame)],
     output_def=OutputDefinition(dagster_pd.DataFrame),
 )
 def sum_sq_solid(sum_df):
     sum_sq_df = sum_df.copy()
-    sum_sq_df['sum_sq'] = sum_df['sum'] ** 2
+    sum_sq_df["sum_sq"] = sum_df["sum"] ** 2
     return sum_sq_df
 
 
 @lambda_solid(
-    input_defs=[InputDefinition('sum_sq_solid', dagster_pd.DataFrame)],
+    input_defs=[InputDefinition("sum_sq_solid", dagster_pd.DataFrame)],
     output_def=OutputDefinition(dagster_pd.DataFrame),
 )
 def always_fails_solid(**_kwargs):
-    raise Exception('I am a programmer and I make error')
+    raise Exception("I am a programmer and I make error")
 
 
 @pipeline
@@ -46,15 +46,15 @@ def pandas_hello_world_fails():
 @pipeline(
     preset_defs=[
         PresetDefinition.from_files(
-            'test',
+            "test",
             config_files=[
-                file_relative_path(__file__, 'environments/pandas_hello_world_test.yaml')
+                file_relative_path(__file__, "environments/pandas_hello_world_test.yaml")
             ],
         ),
         PresetDefinition.from_files(
-            'prod',
+            "prod",
             config_files=[
-                file_relative_path(__file__, 'environments/pandas_hello_world_prod.yaml')
+                file_relative_path(__file__, "environments/pandas_hello_world_prod.yaml")
             ],
         ),
     ]

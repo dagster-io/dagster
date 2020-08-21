@@ -1,4 +1,4 @@
-ERROR_FRAGMENT = '''
+ERROR_FRAGMENT = """
 fragment errorFragment on PythonError {
   message
   className
@@ -14,11 +14,11 @@ fragment errorFragment on PythonError {
     }
   }
 }
-'''
+"""
 
 STEP_EVENT_FRAGMENTS = (
     ERROR_FRAGMENT
-    + '''
+    + """
 fragment metadataEntryFragment on EventMetadataEntry {
   __typename
   label
@@ -144,11 +144,11 @@ fragment stepEventFragment on StepEvent {
 
 
 }
-'''
+"""
 )
 
 MESSAGE_EVENT_FRAGMENTS = (
-    '''
+    """
 fragment messageEventFragment on MessageEvent {
   runId
   message
@@ -161,13 +161,13 @@ fragment messageEventFragment on MessageEvent {
     }
   }
 }
-'''
+"""
     + STEP_EVENT_FRAGMENTS
 )
 
 EXECUTE_RUN_IN_PROCESS_MUTATION = (
     ERROR_FRAGMENT
-    + '''
+    + """
 mutation(
   $repositoryLocationName: String!
   $repositoryName: String!
@@ -233,11 +233,11 @@ mutation(
     }
   }
 }
-'''
+"""
 )
 
 EXECUTE_PLAN_MUTATION = (
-    '''
+    """
 mutation(
   $executionParams: ExecutionParams!
   $retries: Retries
@@ -279,11 +279,11 @@ mutation(
     }
   }
 }
-'''
+"""
     + STEP_EVENT_FRAGMENTS
 )
 
-RAW_EXECUTE_PLAN_MUTATION = '''
+RAW_EXECUTE_PLAN_MUTATION = """
 mutation(
   $executionParams: ExecutionParams!
   $retries: Retries
@@ -326,11 +326,11 @@ mutation(
     }
   }
 }
-'''
+"""
 
 SUBSCRIPTION_QUERY = (
     MESSAGE_EVENT_FRAGMENTS
-    + '''
+    + """
 subscription subscribeTest($runId: ID!) {
   pipelineRunLogs(runId: $runId) {
     __typename
@@ -370,12 +370,12 @@ subscription subscribeTest($runId: ID!) {
   }
 }
 
-'''
+"""
 )
 
 LAUNCH_PIPELINE_EXECUTION_MUTATION = (
     ERROR_FRAGMENT
-    + '''
+    + """
 mutation($executionParams: ExecutionParams!) {
   launchPipelineExecution(executionParams: $executionParams) {
     __typename
@@ -427,13 +427,13 @@ mutation($executionParams: ExecutionParams!) {
     }
   }
 }
-'''
+"""
 )
 
 
 LAUNCH_PIPELINE_REEXECUTION_MUTATION = (
     ERROR_FRAGMENT
-    + '''
+    + """
 mutation($executionParams: ExecutionParams!) {
   launchPipelineReexecution(executionParams: $executionParams) {
     __typename
@@ -487,10 +487,10 @@ mutation($executionParams: ExecutionParams!) {
     }
   }
 }
-'''
+"""
 )
 
-PIPELINE_REEXECUTION_INFO_QUERY = '''
+PIPELINE_REEXECUTION_INFO_QUERY = """
 query ReexecutionInfoQuery($runId: ID!) {
   pipelineRunOrError(runId: $runId) {
     __typename
@@ -499,11 +499,11 @@ query ReexecutionInfoQuery($runId: ID!) {
       }
     }
   }
-'''
+"""
 
 LAUNCH_PARTITION_BACKFILL_MUTATION = (
     ERROR_FRAGMENT
-    + '''
+    + """
 mutation($backfillParams: PartitionBackfillParams!) {
   launchPartitionBackfill(backfillParams: $backfillParams) {
     __typename
@@ -519,5 +519,5 @@ mutation($backfillParams: PartitionBackfillParams!) {
     }
   }
 }
-'''
+"""
 )

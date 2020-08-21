@@ -16,9 +16,9 @@ from .dagster_types import to_dauphin_dagster_type
 
 class DauphinExecutionPlan(dauphin.ObjectType):
     class Meta(object):
-        name = 'ExecutionPlan'
+        name = "ExecutionPlan"
 
-    steps = dauphin.non_null_list('ExecutionStep')
+    steps = dauphin.non_null_list("ExecutionStep")
     artifactsPersisted = dauphin.NonNull(dauphin.Boolean)
 
     def __init__(self, external_execution_plan):
@@ -42,18 +42,18 @@ class DauphinExecutionPlan(dauphin.ObjectType):
 
 class DauphinExecutionStepOutput(dauphin.ObjectType):
     class Meta(object):
-        name = 'ExecutionStepOutput'
+        name = "ExecutionStepOutput"
 
     name = dauphin.NonNull(dauphin.String)
-    type = dauphin.Field(dauphin.NonNull('DagsterType'))
+    type = dauphin.Field(dauphin.NonNull("DagsterType"))
 
     def __init__(self, pipeline_snapshot, step_output_snap):
         super(DauphinExecutionStepOutput, self).__init__()
         self._step_output_snap = check.inst_param(
-            step_output_snap, 'step_output_snap', ExecutionStepOutputSnap
+            step_output_snap, "step_output_snap", ExecutionStepOutputSnap
         )
         self._pipeline_snapshot = check.inst_param(
-            pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+            pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
         )
 
     def resolve_name(self, _graphene_info):
@@ -67,22 +67,22 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
     class Meta(object):
-        name = 'ExecutionStepInput'
+        name = "ExecutionStepInput"
 
     name = dauphin.NonNull(dauphin.String)
-    type = dauphin.Field(dauphin.NonNull('DagsterType'))
-    dependsOn = dauphin.non_null_list('ExecutionStep')
+    type = dauphin.Field(dauphin.NonNull("DagsterType"))
+    dependsOn = dauphin.non_null_list("ExecutionStep")
 
     def __init__(self, pipeline_snapshot, step_input_snap, external_execution_plan):
         super(DauphinExecutionStepInput, self).__init__()
         self._step_input_snap = check.inst_param(
-            step_input_snap, 'step_input_snap', ExecutionStepInputSnap
+            step_input_snap, "step_input_snap", ExecutionStepInputSnap
         )
         self._pipeline_snapshot = check.inst_param(
-            pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot
+            pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
         )
         self._external_execution_plan = check.inst_param(
-            external_execution_plan, 'external_execution_plan', ExternalExecutionPlan
+            external_execution_plan, "external_execution_plan", ExternalExecutionPlan
         )
 
     def resolve_name(self, _graphene_info):
@@ -95,7 +95,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
 
     def resolve_dependsOn(self, graphene_info):
         return [
-            graphene_info.schema.type_named('ExecutionStep')(
+            graphene_info.schema.type_named("ExecutionStep")(
                 self._external_execution_plan, self._external_execution_plan.get_step_by_key(key),
             )
             # We filter at this layer to ensure that we do not return outputs that
@@ -108,50 +108,50 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
 
 class DauphinStepKind(dauphin.Enum):
     class Meta(object):
-        name = 'StepKind'
+        name = "StepKind"
 
-    COMPUTE = 'COMPUTE'
+    COMPUTE = "COMPUTE"
 
     @property
     def description(self):
         # self ends up being the internal class "EnumMeta" in dauphin
         # so we can't do a dictionary lookup which is awesome
         if self == DauphinStepKind.COMPUTE:
-            return 'This is the user-defined computation step'
+            return "This is the user-defined computation step"
         else:
             return None
 
 
 class DauphinExecutionStep(dauphin.ObjectType):
     class Meta(object):
-        name = 'ExecutionStep'
+        name = "ExecutionStep"
 
     key = dauphin.NonNull(dauphin.String)
-    inputs = dauphin.non_null_list('ExecutionStepInput')
-    outputs = dauphin.non_null_list('ExecutionStepOutput')
+    inputs = dauphin.non_null_list("ExecutionStepInput")
+    outputs = dauphin.non_null_list("ExecutionStepOutput")
     solidHandleID = dauphin.NonNull(dauphin.String)
-    kind = dauphin.NonNull('StepKind')
-    metadata = dauphin.non_null_list('MetadataItemDefinition')
+    kind = dauphin.NonNull("StepKind")
+    metadata = dauphin.non_null_list("MetadataItemDefinition")
 
     def __init__(self, external_execution_plan, execution_step_snap):
         super(DauphinExecutionStep, self).__init__()
         self._external_execution_plan = check.inst_param(
-            external_execution_plan, 'external_execution_plan', ExternalExecutionPlan
+            external_execution_plan, "external_execution_plan", ExternalExecutionPlan
         )
         self._plan_snapshot = external_execution_plan.execution_plan_snapshot
         self._step_snap = check.inst_param(
-            execution_step_snap, 'execution_step_snap', ExecutionStepSnap
+            execution_step_snap, "execution_step_snap", ExecutionStepSnap
         )
 
     def resolve_metadata(self, graphene_info):
         return [
-            graphene_info.schema.type_named('MetadataItemDefinition')(key=mdi.key, value=mdi.value)
+            graphene_info.schema.type_named("MetadataItemDefinition")(key=mdi.key, value=mdi.value)
             for mdi in self._step_snap.metadata_items
         ]
 
     def resolve_inputs(self, graphene_info):
         return [
-            graphene_info.schema.type_named('ExecutionStepInput')(
+            graphene_info.schema.type_named("ExecutionStepInput")(
                 self._external_execution_plan.represented_pipeline.pipeline_snapshot,
                 inp,
                 self._external_execution_plan,
@@ -161,7 +161,7 @@ class DauphinExecutionStep(dauphin.ObjectType):
 
     def resolve_outputs(self, graphene_info):
         return [
-            graphene_info.schema.type_named('ExecutionStepOutput')(
+            graphene_info.schema.type_named("ExecutionStepOutput")(
                 self._external_execution_plan.represented_pipeline.pipeline_snapshot, out,
             )
             for out in self._step_snap.outputs

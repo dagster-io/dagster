@@ -19,12 +19,12 @@ from .schema import ScheduleTable, ScheduleTickTable
 
 
 class SqlScheduleStorage(ScheduleStorage):
-    '''Base class for SQL backed schedule storage
-    '''
+    """Base class for SQL backed schedule storage
+    """
 
     @abstractmethod
     def connect(self):
-        '''Context manager yielding a sqlalchemy.engine.Connection.'''
+        """Context manager yielding a sqlalchemy.engine.Connection."""
 
     def execute(self, query):
         with self.connect() as conn:
@@ -51,7 +51,7 @@ class SqlScheduleStorage(ScheduleStorage):
         return self._deserialize_rows(rows)
 
     def get_schedule_state(self, schedule_origin_id):
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         query = (
             db.select([ScheduleTable.c.schedule_body])
@@ -63,7 +63,7 @@ class SqlScheduleStorage(ScheduleStorage):
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
     def get_schedule_ticks(self, schedule_origin_id):
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         query = (
             db.select([ScheduleTickTable.c.id, ScheduleTickTable.c.tick_body])
@@ -78,7 +78,7 @@ class SqlScheduleStorage(ScheduleStorage):
         )
 
     def get_schedule_tick_stats(self, schedule_origin_id):
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         query = (
             db.select([ScheduleTickTable.c.status, db.func.count()])
@@ -101,7 +101,7 @@ class SqlScheduleStorage(ScheduleStorage):
         )
 
     def create_schedule_tick(self, schedule_tick_data):
-        check.inst_param(schedule_tick_data, 'schedule_tick_data', ScheduleTickData)
+        check.inst_param(schedule_tick_data, "schedule_tick_data", ScheduleTickData)
 
         with self.connect() as conn:
             try:
@@ -117,7 +117,7 @@ class SqlScheduleStorage(ScheduleStorage):
             except db.exc.IntegrityError as exc:
                 six.raise_from(
                     DagsterInvariantViolationError(
-                        'Unable to insert ScheduleTick for schedule {schedule_name} in storage'.format(
+                        "Unable to insert ScheduleTick for schedule {schedule_name} in storage".format(
                             schedule_name=schedule_tick_data.schedule_name,
                         )
                     ),
@@ -125,7 +125,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
 
     def update_schedule_tick(self, tick):
-        check.inst_param(tick, 'tick', ScheduleTick)
+        check.inst_param(tick, "tick", ScheduleTick)
 
         with self.connect() as conn:
             conn.execute(
@@ -140,7 +140,7 @@ class SqlScheduleStorage(ScheduleStorage):
         return tick
 
     def add_schedule_state(self, schedule):
-        check.inst_param(schedule, 'schedule', ScheduleState)
+        check.inst_param(schedule, "schedule", ScheduleState)
         with self.connect() as conn:
             try:
                 schedule_insert = ScheduleTable.insert().values(  # pylint: disable=no-value-for-parameter
@@ -153,8 +153,8 @@ class SqlScheduleStorage(ScheduleStorage):
             except db.exc.IntegrityError as exc:
                 six.raise_from(
                     DagsterInvariantViolationError(
-                        'ScheduleState {id} is already present '
-                        'in storage'.format(id=schedule.schedule_origin_id,)
+                        "ScheduleState {id} is already present "
+                        "in storage".format(id=schedule.schedule_origin_id,)
                     ),
                     exc,
                 )
@@ -162,10 +162,10 @@ class SqlScheduleStorage(ScheduleStorage):
         return schedule
 
     def update_schedule_state(self, schedule):
-        check.inst_param(schedule, 'schedule', ScheduleState)
+        check.inst_param(schedule, "schedule", ScheduleState)
         if not self.get_schedule_state(schedule.schedule_origin_id):
             raise DagsterInvariantViolationError(
-                'ScheduleState {id} is not present in storage'.format(
+                "ScheduleState {id} is not present in storage".format(
                     id=schedule.schedule_origin_id
                 )
             )
@@ -181,11 +181,11 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
     def delete_schedule_state(self, schedule_origin_id):
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         if not self.get_schedule_state(schedule_origin_id):
             raise DagsterInvariantViolationError(
-                'ScheduleState {id} is not present in storage'.format(id=schedule_origin_id)
+                "ScheduleState {id} is not present in storage".format(id=schedule_origin_id)
             )
 
         with self.connect() as conn:
@@ -196,7 +196,7 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
     def wipe(self):
-        '''Clears the schedule storage.'''
+        """Clears the schedule storage."""
         with self.connect() as conn:
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(ScheduleTable.delete())  # pylint: disable=no-value-for-parameter

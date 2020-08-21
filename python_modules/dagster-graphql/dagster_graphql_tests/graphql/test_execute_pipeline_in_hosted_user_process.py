@@ -29,13 +29,13 @@ class TestStartPipelineForCreatedRunInHostedUserProcess(
             graphql_context,
             EXECUTE_RUN_IN_PROCESS_MUTATION,
             variables={
-                'runId': pipeline_run.run_id,
-                'repositoryLocationName': main_repo_location_name(),
-                'repositoryName': main_repo_name(),
+                "runId": pipeline_run.run_id,
+                "repositoryLocationName": main_repo_location_name(),
+                "repositoryName": main_repo_name(),
             },
         )
         assert result.data
-        assert result.data['executeRunInProcess']['__typename'] == 'ExecuteRunInProcessSuccess'
+        assert result.data["executeRunInProcess"]["__typename"] == "ExecuteRunInProcessSuccess"
 
     def test_synchronously_execute_run_within_hosted_user_process_not_found(self, graphql_context):
         run_id = make_new_run_id()
@@ -43,14 +43,14 @@ class TestStartPipelineForCreatedRunInHostedUserProcess(
             graphql_context,
             EXECUTE_RUN_IN_PROCESS_MUTATION,
             variables={
-                'runId': run_id,
-                'repositoryLocationName': main_repo_location_name(),
-                'repositoryName': main_repo_name(),
+                "runId": run_id,
+                "repositoryLocationName": main_repo_location_name(),
+                "repositoryName": main_repo_name(),
             },
         )
 
         assert result.data
-        assert result.data['executeRunInProcess']['__typename'] == 'PipelineRunNotFoundError'
+        assert result.data["executeRunInProcess"]["__typename"] == "PipelineRunNotFoundError"
 
 
 # should be removed as https://github.com/dagster-io/dagster/issues/2608 is completed
@@ -65,24 +65,24 @@ def test_shameful_workaround():
         graphql_context,
         EXECUTE_RUN_IN_PROCESS_MUTATION,
         variables={
-            'runId': pipeline_run.run_id,
+            "runId": pipeline_run.run_id,
             # in corect in process name represents launching from user process
-            'repositoryLocationName': IN_PROCESS_NAME,
-            'repositoryName': main_repo_name(),
+            "repositoryLocationName": IN_PROCESS_NAME,
+            "repositoryName": main_repo_name(),
         },
     )
     assert result.data
-    assert result.data['executeRunInProcess']['__typename'] == 'ExecuteRunInProcessSuccess'
+    assert result.data["executeRunInProcess"]["__typename"] == "ExecuteRunInProcessSuccess"
 
     result = execute_dagster_graphql(
         graphql_context,
         EXECUTE_RUN_IN_PROCESS_MUTATION,
         variables={
-            'runId': pipeline_run.run_id,
+            "runId": pipeline_run.run_id,
             # but we don't apply workaround to other names
-            'repositoryLocationName': 'some_other_name',
-            'repositoryName': main_repo_name(),
+            "repositoryLocationName": "some_other_name",
+            "repositoryName": main_repo_name(),
         },
     )
     assert result.data
-    assert result.data['executeRunInProcess']['__typename'] == 'PipelineNotFoundError'
+    assert result.data["executeRunInProcess"]["__typename"] == "PipelineNotFoundError"

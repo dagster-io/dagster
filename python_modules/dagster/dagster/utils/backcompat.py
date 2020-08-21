@@ -4,15 +4,15 @@ from functools import wraps
 from dagster import check
 
 EXPERIMENTAL_WARNING_HELP = (
-    'To mute warnings for experimental functionality, set'
-    ' PYTHONWARNINGS=ignore::ExperimentalWarning in your environment or use one of the other '
-    ' methods described at'
-    ' https://docs.python.org/3/library/warnings.html#describing-warning-filters.'
+    "To mute warnings for experimental functionality, set"
+    " PYTHONWARNINGS=ignore::ExperimentalWarning in your environment or use one of the other "
+    " methods described at"
+    " https://docs.python.org/3/library/warnings.html#describing-warning-filters."
 )
 
 
 def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, breaking_version, **kwargs):
-    '''
+    """
     Utility for managing backwards compatibility of two related arguments.
 
     For example if you had an existing function
@@ -44,17 +44,17 @@ def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, breaking_ve
     , warn, and then execute.
 
     canonicalize_backcompat_args returns the value as if *only* new_val were specified
-    '''
-    coerce_old_to_new = kwargs.get('coerce_old_to_new')
-    additional_warn_txt = kwargs.get('additional_warn_txt')
+    """
+    coerce_old_to_new = kwargs.get("coerce_old_to_new")
+    additional_warn_txt = kwargs.get("additional_warn_txt")
     # stacklevel=3 punches up to the caller of canonicalize_backcompat_args
-    stacklevel = kwargs.get('stacklevel', 3)
+    stacklevel = kwargs.get("stacklevel", 3)
 
-    check.str_param(new_arg, 'new_arg')
-    check.str_param(old_arg, 'old_arg')
-    check.opt_callable_param(coerce_old_to_new, 'coerce_old_to_new')
-    check.opt_str_param(additional_warn_txt, 'additional_warn_txt')
-    check.opt_int_param(stacklevel, 'stacklevel')
+    check.str_param(new_arg, "new_arg")
+    check.str_param(old_arg, "old_arg")
+    check.opt_callable_param(coerce_old_to_new, "coerce_old_to_new")
+    check.opt_str_param(additional_warn_txt, "additional_warn_txt")
+    check.opt_int_param(stacklevel, "stacklevel")
     if new_val is not None:
         if old_val is not None:
             check.failed(
@@ -68,7 +68,7 @@ def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, breaking_ve
             '"{old_arg}" is deprecated and will be removed in {breaking_version}, use "{new_arg}" instead.'.format(
                 old_arg=old_arg, new_arg=new_arg, breaking_version=breaking_version
             )
-            + ((' ' + additional_warn_txt) if additional_warn_txt else ''),
+            + ((" " + additional_warn_txt) if additional_warn_txt else ""),
             stacklevel=stacklevel,
         )
         return coerce_old_to_new(old_val) if coerce_old_to_new else old_val
@@ -77,14 +77,14 @@ def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, breaking_ve
 
 
 def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=None, stacklevel=3):
-    '''
+    """
     Common utility for managing backwards compatibility of renaming.
-    '''
+    """
     warnings.warn(
         '"{old_name}" is deprecated and will be removed in {breaking_version}, use "{new_name}" instead.'.format(
             old_name=old_name, new_name=new_name, breaking_version=breaking_version,
         )
-        + ((' ' + additional_warn_txt) if additional_warn_txt else ''),
+        + ((" " + additional_warn_txt) if additional_warn_txt else ""),
         stacklevel=stacklevel,
     )
 
@@ -94,17 +94,17 @@ class ExperimentalWarning(Warning):
 
 
 def experimental_fn_warning(name, stacklevel=3):
-    '''Utility for warning that a function is experimental'''
+    """Utility for warning that a function is experimental"""
     warnings.warn(
         '"{name}" is an experimental function. It may break in future versions, even between dot'
-        ' releases. {help}'.format(name=name, help=EXPERIMENTAL_WARNING_HELP),
+        " releases. {help}".format(name=name, help=EXPERIMENTAL_WARNING_HELP),
         ExperimentalWarning,
         stacklevel=stacklevel,
     )
 
 
 def experimental_class_warning(name, stacklevel=3):
-    '''Utility for warning that a class is experimental. Expected to be called from the class's
+    """Utility for warning that a class is experimental. Expected to be called from the class's
     __init__ method.
 
     Usage:
@@ -115,20 +115,20 @@ def experimental_class_warning(name, stacklevel=3):
             def __init__(self, some_arg):
                 experimental_class_warning('MyExperimentalClass')
                 # do other initialization stuff
-    '''
+    """
     warnings.warn(
         '"{name}" is an experimental class. It may break in future versions, even between dot'
-        ' releases. {help}'.format(name=name, help=EXPERIMENTAL_WARNING_HELP),
+        " releases. {help}".format(name=name, help=EXPERIMENTAL_WARNING_HELP),
         ExperimentalWarning,
         stacklevel=stacklevel,
     )
 
 
 def experimental_arg_warning(arg_name, fn_name, stacklevel=3):
-    '''Utility for warning that an argument to a function is experimental'''
+    """Utility for warning that an argument to a function is experimental"""
     warnings.warn(
         '"{arg_name}" is an experimental argument to function "{fn_name}". '
-        'It may break in future versions, even between dot releases. {help}'.format(
+        "It may break in future versions, even between dot releases. {help}".format(
             arg_name=arg_name, fn_name=fn_name, help=EXPERIMENTAL_WARNING_HELP
         ),
         ExperimentalWarning,
@@ -137,7 +137,7 @@ def experimental_arg_warning(arg_name, fn_name, stacklevel=3):
 
 
 def experimental(fn):
-    '''
+    """
     Spews an "experimental" warning whenever the given callable is called. If the argument is a
     class, this means the warning will be emitted when the class is instantiated.
 
@@ -148,8 +148,8 @@ def experimental(fn):
             @experimental
             def my_experimental_function(my_arg):
                 do_stuff()
-    '''
-    check.callable_param(fn, 'fn')
+    """
+    check.callable_param(fn, "fn")
 
     @wraps(fn)
     def _inner(*args, **kwargs):
@@ -160,15 +160,15 @@ def experimental(fn):
 
 
 def canonicalize_run_config(run_config, environment_dict, stacklevel=3):
-    check.opt_dict_param(run_config, 'run_config')
-    check.opt_dict_param(environment_dict, 'environment_dict')
+    check.opt_dict_param(run_config, "run_config")
+    check.opt_dict_param(environment_dict, "environment_dict")
     check.invariant(
         not (run_config is not None and environment_dict is not None),
-        'Cannot set both run_config and environment_dict. Use run_config parameter.',
+        "Cannot set both run_config and environment_dict. Use run_config parameter.",
     )
 
     if environment_dict is not None:
-        rename_warning('run_config', 'environment_dict', '0.9.0', stacklevel=stacklevel + 1)
+        rename_warning("run_config", "environment_dict", "0.9.0", stacklevel=stacklevel + 1)
         return environment_dict
     else:
         return run_config

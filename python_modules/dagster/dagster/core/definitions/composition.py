@@ -29,19 +29,19 @@ def assert_in_composition(solid_name):
     if len(_composition_stack) < 1:
         raise DagsterInvariantViolationError(
             'Attempted to call solid "{solid_name}" outside of a composition function. '
-            'Calling solids is only valid in a function decorated with '
-            '@pipeline or @composite_solid.'.format(solid_name=solid_name)
+            "Calling solids is only valid in a function decorated with "
+            "@pipeline or @composite_solid.".format(solid_name=solid_name)
         )
 
 
 class InProgressCompositionContext(object):
-    '''This context captures invocations of solids within a
+    """This context captures invocations of solids within a
     composition function such as @composite_solid or @pipeline
-    '''
+    """
 
     def __init__(self, name, source):
-        self.name = check.str_param(name, 'name')
-        self.source = check.str_param(source, 'source')
+        self.name = check.str_param(name, "name")
+        self.source = check.str_param(source, "source")
         self._invocations = {}
         self._collisions = {}
 
@@ -52,7 +52,7 @@ class InProgressCompositionContext(object):
             solid_name = solid_def.name
             if self._collisions.get(solid_name):
                 self._collisions[solid_name] += 1
-                solid_name = '{solid_name}_{n}'.format(
+                solid_name = "{solid_name}_{n}".format(
                     solid_name=solid_name, n=self._collisions[solid_name]
                 )
             else:
@@ -62,7 +62,7 @@ class InProgressCompositionContext(object):
 
         if self._invocations.get(solid_name):
             raise DagsterInvalidDefinitionError(
-                '{source} {name} invoked the same solid ({solid_name}) twice without aliasing.'.format(
+                "{source} {name} invoked the same solid ({solid_name}) twice without aliasing.".format(
                     source=self.source, name=self.name, solid_name=solid_name
                 )
             )
@@ -74,17 +74,17 @@ class InProgressCompositionContext(object):
 
     def complete(self, output):
         return CompleteCompositionContext(
-            self.name, self._invocations, check.opt_dict_param(output, 'output')
+            self.name, self._invocations, check.opt_dict_param(output, "output")
         )
 
 
 class CompleteCompositionContext(
     namedtuple(
-        '_CompositionContext', 'name solid_defs dependencies input_mappings output_mapping_dict'
+        "_CompositionContext", "name solid_defs dependencies input_mappings output_mapping_dict"
     )
 ):
-    '''The processed information from capturing solid invocations during a composition function.
-    '''
+    """The processed information from capturing solid invocations during a composition function.
+    """
 
     def __new__(cls, name, invocations, output_mapping_dict):
 
@@ -113,7 +113,7 @@ class CompleteCompositionContext(
                         [DependencyDefinition(call.solid_name, call.output_name) for call in node]
                     )
                 else:
-                    check.failed('Unexpected input binding - got {node}'.format(node=node))
+                    check.failed("Unexpected input binding - got {node}".format(node=node))
 
             dep_dict[
                 SolidInvocation(
@@ -133,15 +133,15 @@ class CompleteCompositionContext(
 
 
 class CallableSolidNode(object):
-    '''An intermediate object in solid composition to allow for binding information such as
+    """An intermediate object in solid composition to allow for binding information such as
     an alias before invoking.
-    '''
+    """
 
     def __init__(self, solid_def, given_alias=None, tags=None, hook_defs=None):
         self.solid_def = solid_def
-        self.given_alias = check.opt_str_param(given_alias, 'given_alias')
-        self.tags = check.opt_inst_param(tags, 'tags', frozentags)
-        self.hook_defs = check.opt_set_param(hook_defs, 'hook_defs', HookDefinition)
+        self.given_alias = check.opt_str_param(given_alias, "given_alias")
+        self.tags = check.opt_inst_param(tags, "tags", frozentags)
+        self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
 
     def __call__(self, *args, **kwargs):
         solid_name = self.given_alias if self.given_alias else self.solid_def.name
@@ -154,8 +154,8 @@ class CallableSolidNode(object):
         for idx, output_node in enumerate(args):
             if idx >= len(self.solid_def.input_defs):
                 raise DagsterInvalidDefinitionError(
-                    'In {source} {name}, received too many inputs for solid '
-                    'invocation {solid_name}. Only {def_num} defined, received {arg_num}'.format(
+                    "In {source} {name}, received too many inputs for solid "
+                    "invocation {solid_name}. Only {def_num} defined, received {arg_num}".format(
                         source=current_context().source,
                         name=current_context().name,
                         solid_name=solid_name,
@@ -167,9 +167,9 @@ class CallableSolidNode(object):
             input_name = self.solid_def.resolve_input_name_at_position(idx)
             if input_name is None:
                 raise DagsterInvalidDefinitionError(
-                    'In {source} {name}, could not resolve input based on position at '
-                    'index {idx} for solid invocation {solid_name}. Use keyword args instead, '
-                    'available inputs are: {inputs}'.format(
+                    "In {source} {name}, could not resolve input based on position at "
+                    "index {idx} for solid invocation {solid_name}. Use keyword args instead, "
+                    "available inputs are: {inputs}".format(
                         idx=idx,
                         source=current_context().source,
                         name=current_context().name,
@@ -184,7 +184,7 @@ class CallableSolidNode(object):
                 input_name,
                 input_mappings,
                 input_bindings,
-                '(at position {idx})'.format(idx=idx),
+                "(at position {idx})".format(idx=idx),
             )
 
         # then **kwargs
@@ -195,7 +195,7 @@ class CallableSolidNode(object):
                 input_name,
                 input_mappings,
                 input_bindings,
-                '(passed by keyword)',
+                "(passed by keyword)",
             )
 
         solid_name = current_context().observe_invocation(
@@ -215,7 +215,7 @@ class CallableSolidNode(object):
             return InvokedSolidOutputHandle(solid_name, output_name)
 
         outputs = [output_def.name for output_def in self.solid_def.output_defs]
-        return namedtuple('_{solid_def}_outputs'.format(solid_def=self.solid_def.name), outputs)(
+        return namedtuple("_{solid_def}_outputs".format(solid_def=self.solid_def.name), outputs)(
             **{output: InvokedSolidOutputHandle(solid_name, output) for output in outputs}
         )
 
@@ -233,9 +233,9 @@ class CallableSolidNode(object):
 
             else:
                 raise DagsterInvalidDefinitionError(
-                    'In {source} {name}, received a list containing invalid types for input '
+                    "In {source} {name}, received a list containing invalid types for input "
                     '"{input_name}" {arg_desc} in solid invocation {solid_name}. '
-                    'Lists can only contain the output from previous solid invocations.'.format(
+                    "Lists can only contain the output from previous solid invocations.".format(
                         source=current_context().source,
                         name=current_context().name,
                         arg_desc=arg_desc,
@@ -248,9 +248,9 @@ class CallableSolidNode(object):
             map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)
         ):
             raise DagsterInvalidDefinitionError(
-                'In {source} {name}, received a tuple of multiple outputs for '
+                "In {source} {name}, received a tuple of multiple outputs for "
                 'input "{input_name}" {arg_desc} in solid invocation {solid_name}. '
-                'Must pass individual output, available from tuple: {options}'.format(
+                "Must pass individual output, available from tuple: {options}".format(
                     source=current_context().source,
                     name=current_context().name,
                     arg_desc=arg_desc,
@@ -263,9 +263,9 @@ class CallableSolidNode(object):
             output_node, ISolidDefinition
         ):
             raise DagsterInvalidDefinitionError(
-                'In {source} {name}, received an un-invoked solid for input '
+                "In {source} {name}, received an un-invoked solid for input "
                 '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
-                'Did you forget parentheses?'.format(
+                "Did you forget parentheses?".format(
                     source=current_context().source,
                     name=current_context().name,
                     arg_desc=arg_desc,
@@ -275,10 +275,10 @@ class CallableSolidNode(object):
             )
         else:
             raise DagsterInvalidDefinitionError(
-                'In {source} {name}, received invalid type {type} for input '
+                "In {source} {name}, received invalid type {type} for input "
                 '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
-                'Must pass the output from previous solid invocations or inputs to the '
-                'composition function as inputs when invoking solids during composition.'.format(
+                "Must pass the output from previous solid invocations or inputs to the "
+                "composition function as inputs when invoking solids during composition.".format(
                     source=current_context().source,
                     name=current_context().name,
                     type=type(output_node),
@@ -300,7 +300,7 @@ class CallableSolidNode(object):
         )
 
     def with_hooks(self, hook_defs):
-        hook_defs = check.set_param(hook_defs, 'hook_defs', of_type=HookDefinition)
+        hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
         return CallableSolidNode(
             self.solid_def, self.given_alias, self.tags, hook_defs.union(self.hook_defs)
         )
@@ -308,41 +308,41 @@ class CallableSolidNode(object):
 
 class InvokedSolidNode(
     namedtuple(
-        '_InvokedSolidNode', 'solid_name solid_def input_bindings input_mappings tags hook_defs'
+        "_InvokedSolidNode", "solid_name solid_def input_bindings input_mappings tags hook_defs"
     )
 ):
-    '''The metadata about a solid invocation saved by the current composition context.
-    '''
+    """The metadata about a solid invocation saved by the current composition context.
+    """
 
     def __new__(
         cls, solid_name, solid_def, input_bindings, input_mappings, tags=None, hook_defs=None
     ):
         return super(cls, InvokedSolidNode).__new__(
             cls,
-            check.str_param(solid_name, 'solid_name'),
-            check.inst_param(solid_def, 'solid_def', ISolidDefinition),
-            check.dict_param(input_bindings, 'input_bindings', key_type=str),
+            check.str_param(solid_name, "solid_name"),
+            check.inst_param(solid_def, "solid_def", ISolidDefinition),
+            check.dict_param(input_bindings, "input_bindings", key_type=str),
             check.dict_param(
-                input_mappings, 'input_mappings', key_type=str, value_type=InputMappingNode
+                input_mappings, "input_mappings", key_type=str, value_type=InputMappingNode
             ),
-            check.opt_inst_param(tags, 'tags', frozentags),
-            check.opt_set_param(hook_defs, 'hook_defs', HookDefinition),
+            check.opt_inst_param(tags, "tags", frozentags),
+            check.opt_set_param(hook_defs, "hook_defs", HookDefinition),
         )
 
 
 class InvokedSolidOutputHandle(object):
-    '''The return value for an output when invoking a solid in a composition function.
-    '''
+    """The return value for an output when invoking a solid in a composition function.
+    """
 
     def __init__(self, solid_name, output_name):
-        self.solid_name = check.str_param(solid_name, 'solid_name')
-        self.output_name = check.str_param(output_name, 'output_name')
+        self.solid_name = check.str_param(solid_name, "solid_name")
+        self.output_name = check.str_param(output_name, "output_name")
 
     def __iter__(self):
         raise DagsterInvariantViolationError(
             'Attempted to iterate over an {cls}. This object represents the output "{out}" '
             'from the solid "{solid}". Consider yielding multiple Outputs if you seek to pass '
-            'different parts of this output to different solids.'.format(
+            "different parts of this output to different solids.".format(
                 cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
             )
         )
@@ -351,16 +351,16 @@ class InvokedSolidOutputHandle(object):
         raise DagsterInvariantViolationError(
             'Attempted to index in to an {cls}. This object represents the output "{out}" '
             'from the solid "{solid}". Consider yielding multiple Outputs if you seek to pass '
-            'different parts of this output to different solids.'.format(
+            "different parts of this output to different solids.".format(
                 cls=self.__class__.__name__, out=self.output_name, solid=self.solid_name
             )
         )
 
     def alias(self, _):
         raise DagsterInvariantViolationError(
-            'In {source} {name}, attempted to call alias method for {cls}. This object '
+            "In {source} {name}, attempted to call alias method for {cls}. This object "
             'represents the output "{out}" from the already invoked solid "{solid}". Consider '
-            'checking the location of parentheses.'.format(
+            "checking the location of parentheses.".format(
                 source=current_context().source,
                 name=current_context().name,
                 cls=self.__class__.__name__,
@@ -371,9 +371,9 @@ class InvokedSolidOutputHandle(object):
 
     def with_hooks(self, _):
         raise DagsterInvariantViolationError(
-            'In {source} {name}, attempted to call hook method for {cls}. This object '
+            "In {source} {name}, attempted to call hook method for {cls}. This object "
             'represents the output "{out}" from the already invoked solid "{solid}". Consider '
-            'checking the location of parentheses.'.format(
+            "checking the location of parentheses.".format(
                 source=current_context().source,
                 name=current_context().name,
                 cls=self.__class__.__name__,
@@ -390,8 +390,8 @@ class InputMappingNode(object):
 
 def composite_mapping_from_output(output, output_defs, solid_name):
     # output can be different types
-    check.list_param(output_defs, 'output_defs', OutputDefinition)
-    check.str_param(solid_name, 'solid_name')
+    check.list_param(output_defs, "output_defs", OutputDefinition)
+    check.str_param(solid_name, "solid_name")
 
     # single output
     if isinstance(output, InvokedSolidOutputHandle):
@@ -400,9 +400,9 @@ def composite_mapping_from_output(output, output_defs, solid_name):
             return {defn.name: defn.mapping_from(output.solid_name, output.output_name)}
         else:
             raise DagsterInvalidDefinitionError(
-                'Returned a single output ({solid_name}.{output_name}) in '
-                '@composite_solid {name} but {num} outputs are defined. '
-                'Return a dict to map defined outputs.'.format(
+                "Returned a single output ({solid_name}.{output_name}) in "
+                "@composite_solid {name} but {num} outputs are defined. "
+                "Return a dict to map defined outputs.".format(
                     solid_name=output.solid_name,
                     output_name=output.output_name,
                     name=solid_name,
@@ -420,9 +420,9 @@ def composite_mapping_from_output(output, output_defs, solid_name):
         for handle in output:
             if handle.output_name not in output_def_dict:
                 raise DagsterInvalidDefinitionError(
-                    'Output name mismatch returning output tuple in @composite_solid {name}. '
-                    'No matching OutputDefinition named {output_name} for {solid_name}.{output_name}.'
-                    'Return a dict to map to the desired OutputDefinition'.format(
+                    "Output name mismatch returning output tuple in @composite_solid {name}. "
+                    "No matching OutputDefinition named {output_name} for {solid_name}.{output_name}."
+                    "Return a dict to map to the desired OutputDefinition".format(
                         name=solid_name,
                         output_name=handle.output_name,
                         solid_name=handle.solid_name,
@@ -439,16 +439,16 @@ def composite_mapping_from_output(output, output_defs, solid_name):
         for name, handle in output.items():
             if name not in output_def_dict:
                 raise DagsterInvalidDefinitionError(
-                    '@composite_solid {name} referenced key {key} which does not match any '
-                    'OutputDefinitions. Valid options are: {options}'.format(
+                    "@composite_solid {name} referenced key {key} which does not match any "
+                    "OutputDefinitions. Valid options are: {options}".format(
                         name=solid_name, key=name, options=list(output_def_dict.keys())
                     )
                 )
             if not isinstance(handle, InvokedSolidOutputHandle):
                 raise DagsterInvalidDefinitionError(
-                    '@composite_solid {name} returned problematic dict entry under '
-                    'key {key} of type {type}. Dict values must be outputs of '
-                    'invoked solids'.format(name=solid_name, key=name, type=type(handle))
+                    "@composite_solid {name} returned problematic dict entry under "
+                    "key {key} of type {type}. Dict values must be outputs of "
+                    "invoked solids".format(name=solid_name, key=name, type=type(handle))
                 )
 
             output_mapping_dict[name] = output_def_dict[name].mapping_from(
@@ -460,9 +460,9 @@ def composite_mapping_from_output(output, output_defs, solid_name):
     # error
     if output is not None:
         raise DagsterInvalidDefinitionError(
-            '@composite_solid {name} returned problematic value '
-            'of type {type}. Expected return value from invoked solid or dict mapping '
-            'output name to return values from invoked solids'.format(
+            "@composite_solid {name} returned problematic value "
+            "of type {type}. Expected return value from invoked solid or dict mapping "
+            "output name to return values from invoked solids".format(
                 name=solid_name, type=type(output)
             )
         )

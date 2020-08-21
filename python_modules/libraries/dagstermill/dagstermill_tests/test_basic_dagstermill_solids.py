@@ -50,7 +50,7 @@ def cleanup_result_notebook(result):
     if not result:
         return
     materialization_events = [
-        x for x in result.step_event_list if x.event_type_value == 'STEP_MATERIALIZATION'
+        x for x in result.step_event_list if x.event_type_value == "STEP_MATERIALIZATION"
     ]
     for materialization_event in materialization_events:
         result_path = get_path(materialization_event)
@@ -61,7 +61,7 @@ def cleanup_result_notebook(result):
 @contextmanager
 def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
-    recon_pipeline = ReconstructablePipeline.for_module('dagstermill.examples.repository', fn_name)
+    recon_pipeline = ReconstructablePipeline.for_module("dagstermill.examples.repository", fn_name)
 
     try:
         result = execute_pipeline(
@@ -79,92 +79,92 @@ def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
 
 @pytest.mark.notebook_test
 def test_hello_world():
-    with exec_for_test('define_hello_world_pipeline') as result:
+    with exec_for_test("define_hello_world_pipeline") as result:
         assert result.success
 
 
 @pytest.mark.notebook_test
 def test_hello_world_with_config():
-    with exec_for_test('define_hello_world_config_pipeline') as result:
+    with exec_for_test("define_hello_world_config_pipeline") as result:
         assert result.success
 
 
 @pytest.mark.notebook_test
 def test_hello_world_with_output_notebook():
-    with exec_for_test('define_hello_world_with_output_notebook_pipeline') as result:
+    with exec_for_test("define_hello_world_with_output_notebook_pipeline") as result:
         assert result.success
         materializations = [
-            x for x in result.event_list if x.event_type_value == 'STEP_MATERIALIZATION'
+            x for x in result.event_list if x.event_type_value == "STEP_MATERIALIZATION"
         ]
         assert len(materializations) == 1
 
-        assert result.result_for_solid('hello_world_with_output_notebook').success
+        assert result.result_for_solid("hello_world_with_output_notebook").success
         assert (
-            'notebook' in result.result_for_solid('hello_world_with_output_notebook').output_values
+            "notebook" in result.result_for_solid("hello_world_with_output_notebook").output_values
         )
         assert os.path.exists(
-            result.result_for_solid('hello_world_with_output_notebook')
-            .output_values['notebook']
+            result.result_for_solid("hello_world_with_output_notebook")
+            .output_values["notebook"]
             .path_desc
         )
         assert (
             materializations[0]
             .event_specific_data.materialization.metadata_entries[0]
             .entry_data.path
-            == result.result_for_solid('hello_world_with_output_notebook')
-            .output_values['notebook']
+            == result.result_for_solid("hello_world_with_output_notebook")
+            .output_values["notebook"]
             .path_desc
         )
 
-        assert result.result_for_solid('load_notebook_solid').success
-        assert result.result_for_solid('load_notebook_solid').output_value() is True
+        assert result.result_for_solid("load_notebook_solid").success
+        assert result.result_for_solid("load_notebook_solid").output_value() is True
 
 
 @pytest.mark.notebook_test
 def test_hello_world_with_config_escape():
     with exec_for_test(
-        'define_hello_world_config_pipeline',
-        env={'solids': {'hello_world_config': {'config': {'greeting': "'"}}}},
+        "define_hello_world_config_pipeline",
+        env={"solids": {"hello_world_config": {"config": {"greeting": "'"}}}},
     ) as result:
         assert result.success
 
     with exec_for_test(
-        'define_hello_world_config_pipeline',
-        env={'solids': {'hello_world_config': {'config': {'greeting': '"'}}}},
+        "define_hello_world_config_pipeline",
+        env={"solids": {"hello_world_config": {"config": {"greeting": '"'}}}},
     ) as result:
         assert result.success
 
     with exec_for_test(
-        'define_hello_world_config_pipeline',
-        env={'solids': {'hello_world_config': {'config': {'greeting': '\\'}}}},
+        "define_hello_world_config_pipeline",
+        env={"solids": {"hello_world_config": {"config": {"greeting": "\\"}}}},
     ) as result:
         assert result.success
 
     with exec_for_test(
-        'define_hello_world_config_pipeline',
-        env={'solids': {'hello_world_config': {'config': {'greeting': '}'}}}},
+        "define_hello_world_config_pipeline",
+        env={"solids": {"hello_world_config": {"config": {"greeting": "}"}}}},
     ) as result:
         assert result.success
 
     with exec_for_test(
-        'define_hello_world_config_pipeline',
-        env={'solids': {'hello_world_config': {'config': {'greeting': '\n'}}}},
+        "define_hello_world_config_pipeline",
+        env={"solids": {"hello_world_config": {"config": {"greeting": "\n"}}}},
     ) as result:
         assert result.success
 
 
 @pytest.mark.notebook_test
 def test_reexecute_result_notebook():
-    with exec_for_test('define_hello_world_pipeline') as result:
+    with exec_for_test("define_hello_world_pipeline") as result:
         assert result.success
 
         materialization_events = [
-            x for x in result.step_event_list if x.event_type_value == 'STEP_MATERIALIZATION'
+            x for x in result.step_event_list if x.event_type_value == "STEP_MATERIALIZATION"
         ]
         for materialization_event in materialization_events:
             result_path = get_path(materialization_event)
 
-        if result_path.endswith('.ipynb'):
+        if result_path.endswith(".ipynb"):
             with open(result_path) as fd:
                 nb = nbformat.read(fd, as_version=4)
             ep = ExecutePreprocessor()
@@ -175,94 +175,94 @@ def test_reexecute_result_notebook():
 
 @pytest.mark.notebook_test
 def test_hello_world_with_output():
-    with exec_for_test('define_hello_world_with_output_pipeline') as result:
+    with exec_for_test("define_hello_world_with_output_pipeline") as result:
         assert result.success
-        assert result.result_for_solid('hello_world_output').output_value() == 'hello, world'
+        assert result.result_for_solid("hello_world_output").output_value() == "hello, world"
 
 
 @pytest.mark.notebook_test
 def test_hello_world_explicit_yield():
-    with exec_for_test('define_hello_world_explicit_yield_pipeline') as result:
+    with exec_for_test("define_hello_world_explicit_yield_pipeline") as result:
         materializations = [
-            x for x in result.event_list if x.event_type_value == 'STEP_MATERIALIZATION'
+            x for x in result.event_list if x.event_type_value == "STEP_MATERIALIZATION"
         ]
         assert len(materializations) == 2
-        assert get_path(materializations[1]) == '/path/to/file'
+        assert get_path(materializations[1]) == "/path/to/file"
 
 
 @pytest.mark.notebook_test
 def test_add_pipeline():
     with exec_for_test(
-        'define_add_pipeline', {'loggers': {'console': {'config': {'log_level': 'ERROR'}}}}
+        "define_add_pipeline", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
     ) as result:
         assert result.success
-        assert result.result_for_solid('add_two_numbers').output_value() == 3
+        assert result.result_for_solid("add_two_numbers").output_value() == 3
 
 
 @pytest.mark.notebook_test
 def test_notebook_dag():
     with exec_for_test(
-        'define_test_notebook_dag_pipeline',
-        {'solids': {'load_a': {'config': 1}, 'load_b': {'config': 2}}},
+        "define_test_notebook_dag_pipeline",
+        {"solids": {"load_a": {"config": 1}, "load_b": {"config": 2}}},
     ) as result:
         assert result.success
-        assert result.result_for_solid('add_two').output_value() == 3
-        assert result.result_for_solid('mult_two').output_value() == 6
+        assert result.result_for_solid("add_two").output_value() == 3
+        assert result.result_for_solid("mult_two").output_value() == 6
 
 
 @pytest.mark.notebook_test
 def test_error_notebook():
     with pytest.raises(PapermillExecutionError) as exc:
-        with exec_for_test('define_error_pipeline') as result:
+        with exec_for_test("define_error_pipeline") as result:
             pass
 
-    assert 'Someone set up us the bomb' in str(exc.value)
+    assert "Someone set up us the bomb" in str(exc.value)
 
-    with exec_for_test('define_error_pipeline', raise_on_error=False) as result:
+    with exec_for_test("define_error_pipeline", raise_on_error=False) as result:
         assert not result.success
-        assert result.step_event_list[1].event_type.value == 'STEP_MATERIALIZATION'
-        assert result.step_event_list[2].event_type.value == 'STEP_FAILURE'
+        assert result.step_event_list[1].event_type.value == "STEP_MATERIALIZATION"
+        assert result.step_event_list[2].event_type.value == "STEP_FAILURE"
 
 
 @pytest.mark.nettest
 @pytest.mark.notebook_test
 @pytest.mark.skipif(
     not (DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT),
-    reason='tutorial_pipeline reqs not present: dagster_pandas, sklearn, matplotlib',
+    reason="tutorial_pipeline reqs not present: dagster_pandas, sklearn, matplotlib",
 )
 def test_tutorial_pipeline():
     with exec_for_test(
-        'define_tutorial_pipeline', {'loggers': {'console': {'config': {'log_level': 'DEBUG'}}}}
+        "define_tutorial_pipeline", {"loggers": {"console": {"config": {"log_level": "DEBUG"}}}}
     ) as result:
         assert result.success
 
 
 @pytest.mark.notebook_test
 def test_hello_world_reexecution():
-    with exec_for_test('define_hello_world_pipeline') as result:
+    with exec_for_test("define_hello_world_pipeline") as result:
         assert result.success
 
         output_notebook_path = get_path(
-            [x for x in result.step_event_list if x.event_type_value == 'STEP_MATERIALIZATION'][0]
+            [x for x in result.step_event_list if x.event_type_value == "STEP_MATERIALIZATION"][0]
         )
 
-        with tempfile.NamedTemporaryFile('w+', suffix='.py') as reexecution_notebook_file:
+        with tempfile.NamedTemporaryFile("w+", suffix=".py") as reexecution_notebook_file:
             reexecution_notebook_file.write(
                 (
-                    'from dagster import PipelineDefinition\n'
-                    'from dagstermill import define_dagstermill_solid\n\n\n'
-                    'reexecution_solid = define_dagstermill_solid(\n'
-                    '    \'hello_world_reexecution\', \'{output_notebook_path}\'\n'
-                    ')\n\n'
-                    'def define_reexecution_pipeline():\n'
-                    '    return PipelineDefinition([reexecution_solid])\n'
+                    "from dagster import PipelineDefinition\n"
+                    "from dagstermill import define_dagstermill_solid\n\n\n"
+                    "reexecution_solid = define_dagstermill_solid(\n"
+                    "    'hello_world_reexecution', '{output_notebook_path}'\n"
+                    ")\n\n"
+                    "def define_reexecution_pipeline():\n"
+                    "    return PipelineDefinition([reexecution_solid])\n"
                 ).format(output_notebook_path=output_notebook_path)
             )
             reexecution_notebook_file.flush()
 
             result = None
             reexecution_pipeline = ReconstructablePipeline.for_file(
-                reexecution_notebook_file.name, 'define_reexecution_pipeline'
+                reexecution_notebook_file.name, "define_reexecution_pipeline"
             )
 
             try:
@@ -279,17 +279,17 @@ def test_hello_world_reexecution():
 def test_resources_notebook():
     with safe_tempfile_path() as path:
         with exec_for_test(
-            'define_resource_pipeline', {'resources': {'list': {'config': path}}}, mode='prod',
+            "define_resource_pipeline", {"resources": {"list": {"config": path}}}, mode="prod",
         ) as result:
             assert result.success
 
             # Expect something like:
             # ['e8d636: Opened', 'e8d636: Hello, solid!', '9d438e: Opened',
             #  '9d438e: Hello, notebook!', '9d438e: Closed', 'e8d636: Closed']
-            with open(path, 'rb') as fd:
+            with open(path, "rb") as fd:
                 messages = pickle.load(fd)
 
-            messages = [message.split(': ') for message in messages]
+            messages = [message.split(": ") for message in messages]
 
             resource_ids = [x[0] for x in messages]
             assert len(set(resource_ids)) == 2
@@ -297,10 +297,10 @@ def test_resources_notebook():
             assert resource_ids[2] == resource_ids[3] == resource_ids[4]
 
             msgs = [x[1] for x in messages]
-            assert msgs[0] == msgs[2] == 'Opened'
-            assert msgs[4] == msgs[5] == 'Closed'
-            assert msgs[1] == 'Hello, solid!'
-            assert msgs[3] == 'Hello, notebook!'
+            assert msgs[0] == msgs[2] == "Opened"
+            assert msgs[4] == msgs[5] == "Closed"
+            assert msgs[1] == "Hello, solid!"
+            assert msgs[3] == "Hello, notebook!"
 
 
 @pytest.mark.notebook_test
@@ -308,23 +308,23 @@ def test_resources_notebook_with_exception():
     result = None
     with safe_tempfile_path() as path:
         with exec_for_test(
-            'define_resource_with_exception_pipeline',
-            {'resources': {'list': {'config': path}}},
+            "define_resource_with_exception_pipeline",
+            {"resources": {"list": {"config": path}}},
             raise_on_error=False,
         ) as result:
             assert not result.success
-            assert result.step_event_list[6].event_type.value == 'STEP_FAILURE'
+            assert result.step_event_list[6].event_type.value == "STEP_FAILURE"
             assert (
-                'raise Exception()' in result.step_event_list[6].event_specific_data.error.message
+                "raise Exception()" in result.step_event_list[6].event_specific_data.error.message
             )
 
             # Expect something like:
             # ['e8d636: Opened', 'e8d636: Hello, solid!', '9d438e: Opened',
             #  '9d438e: Hello, notebook!', '9d438e: Closed', 'e8d636: Closed']
-            with open(path, 'rb') as fd:
+            with open(path, "rb") as fd:
                 messages = pickle.load(fd)
 
-            messages = [message.split(': ') for message in messages]
+            messages = [message.split(": ") for message in messages]
 
             resource_ids = [x[0] for x in messages]
             assert len(set(resource_ids)) == 2
@@ -332,52 +332,52 @@ def test_resources_notebook_with_exception():
             assert resource_ids[2] == resource_ids[3] == resource_ids[4]
 
             msgs = [x[1] for x in messages]
-            assert msgs[0] == msgs[2] == 'Opened'
-            assert msgs[4] == msgs[5] == 'Closed'
-            assert msgs[1] == 'Hello, solid!'
-            assert msgs[3] == 'Hello, notebook!'
+            assert msgs[0] == msgs[2] == "Opened"
+            assert msgs[4] == msgs[5] == "Closed"
+            assert msgs[1] == "Hello, solid!"
+            assert msgs[3] == "Hello, notebook!"
 
 
 @pytest.mark.notebook_test
 def test_bad_kernel_pipeline():
     with pytest.raises(NoSuchKernel):
-        with exec_for_test('define_bad_kernel_pipeline'):
+        with exec_for_test("define_bad_kernel_pipeline"):
             pass
 
 
 @pytest.mark.notebook_test
 def test_hello_logging():
-    with exec_for_test('define_hello_logging_pipeline') as result:
+    with exec_for_test("define_hello_logging_pipeline") as result:
         assert result.success
 
 
 @pytest.mark.notebook_test
 def test_reimport():
-    with exec_for_test('reimport_pipeline') as result:
+    with exec_for_test("reimport_pipeline") as result:
         assert result.success
-        assert result.result_for_solid('reimport').output_value() == 6
+        assert result.result_for_solid("reimport").output_value() == 6
 
 
 @pytest.mark.notebook_test
 def test_yield_3_pipeline():
-    with exec_for_test('yield_3_pipeline') as result:
+    with exec_for_test("yield_3_pipeline") as result:
         assert result.success
-        assert result.result_for_solid('yield_3').output_value() == 3
+        assert result.result_for_solid("yield_3").output_value() == 3
 
 
 @pytest.mark.notebook_test
 def test_yield_obj_pipeline():
-    with exec_for_test('yield_obj_pipeline') as result:
+    with exec_for_test("yield_obj_pipeline") as result:
         assert result.success
-        assert result.result_for_solid('yield_obj').output_value().x == 3
+        assert result.result_for_solid("yield_obj").output_value().x == 3
 
 
 def test_non_reconstructable_pipeline():
-    foo_solid = define_dagstermill_solid('foo', file_relative_path(__file__, 'notebooks/foo.ipynb'))
+    foo_solid = define_dagstermill_solid("foo", file_relative_path(__file__, "notebooks/foo.ipynb"))
 
     @pipeline
     def non_reconstructable():
         foo_solid()
 
-    with pytest.raises(DagstermillError, match='pipeline that is not reconstructable.'):
+    with pytest.raises(DagstermillError, match="pipeline that is not reconstructable."):
         execute_pipeline(non_reconstructable)

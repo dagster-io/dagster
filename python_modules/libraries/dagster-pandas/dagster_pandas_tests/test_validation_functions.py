@@ -36,7 +36,7 @@ def test_dtypes():
     testfunc = dtype_in_set_validation_factory((int, float))
     assert testfunc(1)[0]
     assert testfunc(1.5)[0]
-    assert not testfunc('a')[0]
+    assert not testfunc("a")[0]
 
 
 def test_nonnull():

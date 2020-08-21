@@ -15,27 +15,27 @@ def get_conn(conn_string):
 def pg_config():
     return Selector(
         {
-            'postgres_url': str,
-            'postgres_db': {
-                'username': StringSource,
-                'password': StringSource,
-                'hostname': StringSource,
-                'db_name': StringSource,
-                'port': Field(IntSource, is_required=False, default_value=5432),
+            "postgres_url": str,
+            "postgres_db": {
+                "username": StringSource,
+                "password": StringSource,
+                "hostname": StringSource,
+                "db_name": StringSource,
+                "port": Field(IntSource, is_required=False, default_value=5432),
             },
         }
     )
 
 
 def pg_url_from_config(config_value):
-    if config_value.get('postgres_url'):
-        return config_value['postgres_url']
+    if config_value.get("postgres_url"):
+        return config_value["postgres_url"]
 
-    return get_conn_string(**config_value['postgres_db'])
+    return get_conn_string(**config_value["postgres_db"])
 
 
-def get_conn_string(username, password, hostname, db_name, port='5432'):
-    return 'postgresql://{username}:{password}@{hostname}:{port}/{db_name}'.format(
+def get_conn_string(username, password, hostname, db_name, port="5432"):
+    return "postgresql://{username}:{password}@{hostname}:{port}/{db_name}".format(
         username=username,
         password=urlquote(password),
         hostname=hostname,
@@ -58,4 +58,4 @@ def wait_for_connection(conn_string):
         retry_limit -= 1
 
     assert retry_limit == 0
-    raise Exception('too many retries for db at {conn_string}'.format(conn_string=conn_string))
+    raise Exception("too many retries for db at {conn_string}".format(conn_string=conn_string))

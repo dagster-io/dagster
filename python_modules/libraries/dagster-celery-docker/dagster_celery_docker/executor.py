@@ -26,41 +26,41 @@ from dagster.serdes import serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts
 
-CELERY_DOCKER_CONFIG_KEY = 'celery-docker'
+CELERY_DOCKER_CONFIG_KEY = "celery-docker"
 
 
 def celery_docker_config():
     additional_config = {
-        'docker': Field(
+        "docker": Field(
             {
-                'image': Field(
+                "image": Field(
                     StringSource,
                     is_required=True,
-                    description='The docker image to be used for step execution.',
+                    description="The docker image to be used for step execution.",
                 ),
-                'registry': Field(
+                "registry": Field(
                     {
-                        'url': Field(StringSource),
-                        'username': Field(StringSource),
-                        'password': Field(StringSource),
+                        "url": Field(StringSource),
+                        "username": Field(StringSource),
+                        "password": Field(StringSource),
                     },
                     is_required=False,
-                    description='Information for using a non local/public docker registry',
+                    description="Information for using a non local/public docker registry",
                 ),
-                'env_vars': Field(
+                "env_vars": Field(
                     [str],
                     is_required=False,
-                    description='The list of environment variables names to forward from the celery worker in to the docker container',
+                    description="The list of environment variables names to forward from the celery worker in to the docker container",
                 ),
             },
             is_required=True,
-            description='The configuration for interacting with docker in the celery worker.',
+            description="The configuration for interacting with docker in the celery worker.",
         ),
-        'repo_location_name': Field(
+        "repo_location_name": Field(
             StringSource,
             is_required=False,
             default_value=IN_PROCESS_NAME,
-            description='[temporary workaround] The repository location name to use for execution.',
+            description="[temporary workaround] The repository location name to use for execution.",
         ),
     }
 
@@ -70,7 +70,7 @@ def celery_docker_config():
 
 @executor(name=CELERY_DOCKER_CONFIG_KEY, config_schema=celery_docker_config())
 def celery_docker_executor(init_context):
-    '''Celery-based executor which launches tasks in docker containers.
+    """Celery-based executor which launches tasks in docker containers.
 
     The Celery executor exposes config settings for the underlying Celery app under
     the ``config_source`` key. This config corresponds to the "new lowercase settings" introduced
@@ -132,19 +132,19 @@ def celery_docker_executor(init_context):
 
     In deployments where the celery_k8s_job_executor is used all appropriate celery and dagster_celery
     commands must be invoked with the `-A dagster_celery_docker.app` argument.
-    '''
+    """
     check_cross_process_constraints(init_context)
 
     exc_cfg = init_context.executor_config
 
     return CeleryDockerExecutor(
-        broker=exc_cfg.get('broker'),
-        backend=exc_cfg.get('backend'),
-        config_source=exc_cfg.get('config_source'),
-        include=exc_cfg.get('include'),
-        retries=Retries.from_config(exc_cfg.get('retries')),
-        docker_config=exc_cfg.get('docker'),
-        repo_location_name=exc_cfg.get('repo_location_name'),
+        broker=exc_cfg.get("broker"),
+        backend=exc_cfg.get("backend"),
+        config_source=exc_cfg.get("config_source"),
+        include=exc_cfg.get("include"),
+        retries=Retries.from_config(exc_cfg.get("retries")),
+        docker_config=exc_cfg.get("docker"),
+        repo_location_name=exc_cfg.get("repo_location_name"),
     )
 
 
@@ -159,15 +159,15 @@ class CeleryDockerExecutor(Executor):
         config_source=None,
         repo_location_name=None,
     ):
-        self._retries = check.inst_param(retries, 'retries', Retries)
-        self.broker = check.opt_str_param(broker, 'broker', default=broker_url)
-        self.backend = check.opt_str_param(backend, 'backend', default=result_backend)
-        self.include = check.opt_list_param(include, 'include', of_type=str)
+        self._retries = check.inst_param(retries, "retries", Retries)
+        self.broker = check.opt_str_param(broker, "broker", default=broker_url)
+        self.backend = check.opt_str_param(backend, "backend", default=result_backend)
+        self.include = check.opt_list_param(include, "include", of_type=str)
         self.config_source = dict_wrapper(
-            dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
+            dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, "config_source"))
         )
-        self.docker_config = check.dict_param(docker_config, 'docker_config')
-        self.repo_location_name = check.str_param(repo_location_name, 'repo_location_name')
+        self.docker_config = check.dict_param(docker_config, "docker_config")
+        self.repo_location_name = check.str_param(repo_location_name, "repo_location_name")
 
     @property
     def retries(self):
@@ -181,11 +181,11 @@ class CeleryDockerExecutor(Executor):
 
     def app_args(self):
         return {
-            'broker': self.broker,
-            'backend': self.backend,
-            'include': self.include,
-            'config_source': self.config_source,
-            'retries': self.retries,
+            "broker": self.broker,
+            "backend": self.backend,
+            "include": self.include,
+            "config_source": self.config_source,
+            "retries": self.retries,
         }
 
 
@@ -207,12 +207,12 @@ def _submit_task_docker(app, pipeline_context, step, queue, priority):
     return task_signature.apply_async(
         priority=priority,
         queue=queue,
-        routing_key='{queue}.execute_step_docker'.format(queue=queue),
+        routing_key="{queue}.execute_step_docker".format(queue=queue),
     )
 
 
 def create_docker_task(celery_app, **task_kwargs):
-    @celery_app.task(bind=True, name='execute_step_docker', **task_kwargs)
+    @celery_app.task(bind=True, name="execute_step_docker", **task_kwargs)
     def _execute_step_docker(
         _self,
         instance_ref_dict,
@@ -224,53 +224,53 @@ def create_docker_task(celery_app, **task_kwargs):
         run_id,
         docker_config,
     ):
-        '''Run step execution in a Docker container.
-        '''
+        """Run step execution in a Docker container.
+        """
         instance_ref = InstanceRef.from_dict(instance_ref_dict)
         instance = DagsterInstance.from_ref(instance_ref)
         pipeline_run = instance.get_run_by_id(run_id)
-        check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
+        check.invariant(pipeline_run, "Could not load run {}".format(run_id))
 
         step_keys_str = ", ".join(step_keys)
 
         variables = {
-            'executionParams': {
-                'runConfigData': run_config,
-                'mode': mode,
-                'selector': {
-                    'repositoryLocationName': repo_location_name,
-                    'repositoryName': repo_name,
-                    'pipelineName': pipeline_run.pipeline_name,
-                    'solidSelection': list(pipeline_run.solids_to_execute)
+            "executionParams": {
+                "runConfigData": run_config,
+                "mode": mode,
+                "selector": {
+                    "repositoryLocationName": repo_location_name,
+                    "repositoryName": repo_name,
+                    "pipelineName": pipeline_run.pipeline_name,
+                    "solidSelection": list(pipeline_run.solids_to_execute)
                     if pipeline_run.solids_to_execute
                     else None,
                 },
-                'executionMetadata': {'runId': run_id},
-                'stepKeys': step_keys,
+                "executionMetadata": {"runId": run_id},
+                "stepKeys": step_keys,
             }
         }
 
-        command = 'dagster-graphql -v \'{variables}\' -p executePlan'.format(
+        command = "dagster-graphql -v '{variables}' -p executePlan".format(
             variables=seven.json.dumps(variables)
         )
-        docker_image = docker_config['image']
+        docker_image = docker_config["image"]
         client = docker.client.from_env()
 
-        if docker_config.get('registry'):
+        if docker_config.get("registry"):
             client.login(
-                registry=docker_config['registry']['url'],
-                username=docker_config['registry']['username'],
-                password=docker_config['registry']['password'],
+                registry=docker_config["registry"]["url"],
+                username=docker_config["registry"]["username"],
+                password=docker_config["registry"]["password"],
             )
 
         # Post event for starting execution
         engine_event = instance.report_engine_event(
-            'Executing steps {} in Docker container {}'.format(step_keys_str, docker_image),
+            "Executing steps {} in Docker container {}".format(step_keys_str, docker_image),
             pipeline_run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(step_keys_str, 'Step keys'),
-                    EventMetadataEntry.text(docker_image, 'Image'),
+                    EventMetadataEntry.text(step_keys_str, "Step keys"),
+                    EventMetadataEntry.text(docker_image, "Image"),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
@@ -281,8 +281,8 @@ def create_docker_task(celery_app, **task_kwargs):
         events = [engine_event]
 
         docker_env = {}
-        if docker_config.get('env_vars'):
-            docker_env = {env_name: os.getenv(env_name) for env_name in docker_config['env_vars']}
+        if docker_config.get("env_vars"):
+            docker_env = {env_name: os.getenv(env_name) for env_name in docker_config["env_vars"]}
 
         try:
             docker_response = client.containers.run(
@@ -297,12 +297,12 @@ def create_docker_task(celery_app, **task_kwargs):
 
         except docker.errors.ContainerError as err:
             instance.report_engine_event(
-                'Failed to run steps {} in Docker container {}'.format(step_keys_str, docker_image),
+                "Failed to run steps {} in Docker container {}".format(step_keys_str, docker_image),
                 pipeline_run,
                 EngineEventData(
                     [
-                        EventMetadataEntry.text(docker_image, 'Job image'),
-                        EventMetadataEntry.text(err.stderr, 'Docker stderr'),
+                        EventMetadataEntry.text(docker_image, "Job image"),
+                        EventMetadataEntry.text(err.stderr, "Docker stderr"),
                     ],
                 ),
                 CeleryDockerExecutor,
@@ -312,14 +312,14 @@ def create_docker_task(celery_app, **task_kwargs):
 
         except JSONDecodeError:
             instance.report_engine_event(
-                'Failed to parse response for steps {} from Docker container {}'.format(
+                "Failed to parse response for steps {} from Docker container {}".format(
                     step_keys_str, docker_image
                 ),
                 pipeline_run,
                 EngineEventData(
                     [
-                        EventMetadataEntry.text(docker_image, 'Job image'),
-                        EventMetadataEntry.text(docker_response, 'Docker Response'),
+                        EventMetadataEntry.text(docker_image, "Job image"),
+                        EventMetadataEntry.text(docker_response, "Docker Response"),
                     ],
                 ),
                 CeleryDockerExecutor,
@@ -328,7 +328,7 @@ def create_docker_task(celery_app, **task_kwargs):
             raise
 
         else:
-            handle_execution_errors(res, 'executePlan')
+            handle_execution_errors(res, "executePlan")
             step_events = handle_execute_plan_result(res)
 
         events += step_events

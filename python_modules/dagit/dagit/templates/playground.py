@@ -1,6 +1,6 @@
 # TODO - figure out how to use files as templates
 
-TEMPLATE = '''<!DOCTYPE html>
+TEMPLATE = """<!DOCTYPE html>
 
 <html>
 
@@ -542,4 +542,4 @@ TEMPLATE = '''<!DOCTYPE html>
     })
   </script>
 </body>
-</html>'''
+</html>"""

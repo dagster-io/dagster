@@ -25,7 +25,7 @@ from .child_process_executor import (
     execute_child_process_command,
 )
 
-DELEGATE_MARKER = 'multiprocess_subprocess_init'
+DELEGATE_MARKER = "multiprocess_subprocess_init"
 
 
 class InProcessExecutorChildProcessCommand(ChildProcessCommand):
@@ -54,12 +54,12 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
         ).build_subset_plan([self.step_key])
 
         yield instance.report_engine_event(
-            'Executing step {} in subprocess'.format(self.step_key),
+            "Executing step {} in subprocess".format(self.step_key),
             self.pipeline_run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(str(os.getpid()), 'pid'),
-                    EventMetadataEntry.text(self.step_key, 'step_key'),
+                    EventMetadataEntry.text(str(os.getpid()), "pid"),
+                    EventMetadataEntry.text(self.step_key, "step_key"),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
@@ -80,24 +80,24 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 class MultiprocessExecutor(Executor):
     def __init__(self, pipeline, retries, max_concurrent=None):
 
-        self.pipeline = check.inst_param(pipeline, 'pipeline', ReconstructablePipeline)
-        self._retries = check.inst_param(retries, 'retries', Retries)
+        self.pipeline = check.inst_param(pipeline, "pipeline", ReconstructablePipeline)
+        self._retries = check.inst_param(retries, "retries", Retries)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
-        self.max_concurrent = check.int_param(max_concurrent, 'max_concurrent')
+        self.max_concurrent = check.int_param(max_concurrent, "max_concurrent")
 
     @property
     def retries(self):
         return self._retries
 
     def execute(self, pipeline_context, execution_plan):
-        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)
+        check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
         limit = self.max_concurrent
 
         yield DagsterEvent.engine_event(
             pipeline_context,
-            'Executing steps using multiprocess engine: parent process (pid: {pid})'.format(
+            "Executing steps using multiprocess engine: parent process (pid: {pid})".format(
                 pid=os.getpid()
             ),
             event_specific_data=EngineEventData.multiprocess(
@@ -152,8 +152,8 @@ class MultiprocessExecutor(Executor):
                             yield DagsterEvent.engine_event(
                                 pipeline_context,
                                 (
-                                    'Multiprocess executor: child process for step {step_key} '
-                                    'unexpectedly exited with code {exit_code}'
+                                    "Multiprocess executor: child process for step {step_key} "
+                                    "unexpectedly exited with code {exit_code}"
                                 ).format(step_key=key, exit_code=crash.exit_code),
                                 EngineEventData.engine_error(serializable_error),
                                 step_key=key,
@@ -187,7 +187,7 @@ class MultiprocessExecutor(Executor):
                 except KeyboardInterrupt:
                     yield DagsterEvent.engine_event(
                         pipeline_context,
-                        'Multiprocess engine: received KeyboardInterrupt - forwarding to active child processes',
+                        "Multiprocess engine: received KeyboardInterrupt - forwarding to active child processes",
                         EngineEventData.interrupted(list(term_events.keys())),
                     )
                     stopping = True
@@ -197,10 +197,10 @@ class MultiprocessExecutor(Executor):
             errs = {pid: err for pid, err in errors.items() if err}
             if errs:
                 raise DagsterSubprocessError(
-                    'During multiprocess execution errors occurred in child processes:\n{error_list}'.format(
-                        error_list='\n'.join(
+                    "During multiprocess execution errors occurred in child processes:\n{error_list}".format(
+                        error_list="\n".join(
                             [
-                                'In process {pid}: {err}'.format(pid=pid, err=err.to_string())
+                                "In process {pid}: {err}".format(pid=pid, err=err.to_string())
                                 for pid, err in errs.items()
                             ]
                         )
@@ -210,7 +210,7 @@ class MultiprocessExecutor(Executor):
 
         yield DagsterEvent.engine_event(
             pipeline_context,
-            'Multiprocess engine: parent process exiting after {duration} (pid: {pid})'.format(
+            "Multiprocess engine: parent process exiting after {duration} (pid: {pid})".format(
                 duration=format_duration(timer_result.millis), pid=os.getpid()
             ),
             event_specific_data=EngineEventData.multiprocess(os.getpid()),
@@ -229,7 +229,7 @@ class MultiprocessExecutor(Executor):
 
         yield DagsterEvent.engine_event(
             step_context,
-            'Launching subprocess for {}'.format(step.key),
+            "Launching subprocess for {}".format(step.key),
             EngineEventData(marker_start=DELEGATE_MARKER),
             step_key=step.key,
         )
@@ -243,10 +243,10 @@ class MultiprocessExecutor(Executor):
             elif isinstance(ret, KeyboardInterrupt):
                 yield DagsterEvent.engine_event(
                     step_context,
-                    'Multiprocess engine: received KeyboardInterrupt - forwarding to active child processes',
+                    "Multiprocess engine: received KeyboardInterrupt - forwarding to active child processes",
                     EngineEventData.interrupted(list(term_events.keys())),
                 )
                 for term_event in term_events.values():
                     term_event.set()
             else:
-                check.failed('Unexpected return value from child process {}'.format(type(ret)))
+                check.failed("Unexpected return value from child process {}".format(type(ret)))

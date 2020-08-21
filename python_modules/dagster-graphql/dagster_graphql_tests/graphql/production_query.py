@@ -1,4 +1,4 @@
-PRODUCTION_QUERY = '''
+PRODUCTION_QUERY = """
 query AppQuery {
   repositoriesOrError {
     ... on PythonError {
@@ -222,4 +222,4 @@ fragment SolidNodeFragment on Solid {
   }
   __typename
 }
-'''
+"""

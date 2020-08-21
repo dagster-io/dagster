@@ -1,5 +1,5 @@
 class ConfigSchema(object):
-    '''
+    """
     ConfigSchema is a placeholder type.  Any time that it appears in documentation, it means
     that any of the following types are acceptable:
 
@@ -40,9 +40,9 @@ class ConfigSchema(object):
         * ``[{'some_config': str}]`` is equivalent to ``Array(Shape({'some_config: str}))``.
 
     #. An instance of :py:class:`~dagster.Field`.
-    '''
+    """
 
     def __init__(self):
         raise NotImplementedError(
-            'ConfigSchema is a placeholder type and should not be instantiated.'
+            "ConfigSchema is a placeholder type and should not be instantiated."
         )

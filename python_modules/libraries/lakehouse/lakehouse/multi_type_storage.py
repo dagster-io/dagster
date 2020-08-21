@@ -30,15 +30,15 @@ class MultiTypeAssetStorage(AssetStorage):
         matching_policies = self._storages_for_type(in_memory_type)
         check.invariant(
             matching_policies,
-            'Missing storage for in-memory type {in_memory_type}. '
-            'Supported types: {supported_types}.'.format(
+            "Missing storage for in-memory type {in_memory_type}. "
+            "Supported types: {supported_types}.".format(
                 in_memory_type=in_memory_type,
                 supported_types=list(map(str, self._type_storages.keys())),
             ),
         )
         check.invariant(
             len(matching_policies) < 2,
-            'Multiple matching storages for in-memory type {in_memory_type} '.format(
+            "Multiple matching storages for in-memory type {in_memory_type} ".format(
                 in_memory_type=in_memory_type
             ),
         )
@@ -56,7 +56,7 @@ def multi_type_asset_storage(
         for storage in type_storages.values():
             check.invariant(
                 isinstance(storage, AssetStorage),
-                'Storages within multi-type asset storages must be AssetStorages',
+                "Storages within multi-type asset storages must be AssetStorages",
             )
         return MultiTypeAssetStorage(type_storages)
 

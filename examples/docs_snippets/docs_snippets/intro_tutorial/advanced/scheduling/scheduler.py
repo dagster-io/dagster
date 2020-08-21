@@ -9,11 +9,11 @@ from dagster.utils import file_relative_path
 def hello_cereal(context, date):
     dataset_path = file_relative_path(__file__, "cereal.csv")
     context.log.info(dataset_path)
-    with open(dataset_path, 'r') as fd:
+    with open(dataset_path, "r") as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
     context.log.info(
-        'Today is {date}. Found {n_cereals} cereals'.format(
+        "Today is {date}. Found {n_cereals} cereals".format(
             date=date, n_cereals=len(cereals)
         )
     )
@@ -25,15 +25,15 @@ def hello_cereal_pipeline():
 
 
 @daily_schedule(
-    pipeline_name='hello_cereal_pipeline',
+    pipeline_name="hello_cereal_pipeline",
     start_date=datetime(2020, 6, 1),
     execution_time=time(6, 45),
 )
 def good_morning_schedule(date):
     return {
-        'solids': {
-            'hello_cereal': {
-                'inputs': {'date': {'value': date.strftime('%Y-%m-%d')}}
+        "solids": {
+            "hello_cereal": {
+                "inputs": {"date": {"value": date.strftime("%Y-%m-%d")}}
             }
         }
     }
@@ -51,16 +51,16 @@ def weekday_filter():
 
 
 @daily_schedule(
-    pipeline_name='hello_cereal_pipeline',
+    pipeline_name="hello_cereal_pipeline",
     start_date=datetime(2020, 6, 1),
     execution_time=time(6, 45),
     should_execute=weekday_filter,
 )
 def good_weekday_morning_schedule(date):
     return {
-        'solids': {
-            'hello_cereal': {
-                'inputs': {'date': {'value': date.strftime('%Y-%m-%d')}}
+        "solids": {
+            "hello_cereal": {
+                "inputs": {"date": {"value": date.strftime("%Y-%m-%d")}}
             }
         }
     }

@@ -27,20 +27,20 @@ from dagster.utils.test.postgres_instance import TestPostgresInstance
 
 def get_main_recon_repo():
     return ReconstructableRepository.from_legacy_repository_yaml(
-        file_relative_path(__file__, 'repo.yaml')
+        file_relative_path(__file__, "repo.yaml")
     )
 
 
 @contextmanager
 def graphql_postgres_instance():
     with TestPostgresInstance.docker_service_up_or_skip(
-        file_relative_path(__file__, 'docker-compose.yml'), 'test-postgres-db-graphql',
+        file_relative_path(__file__, "docker-compose.yml"), "test-postgres-db-graphql",
     ) as pg_conn_string:
         yield pg_conn_string
 
 
 class MarkedManager:
-    '''
+    """
     MarkedManagers are passed to GraphQLContextVariants. They contain
     a contextmanager function "manager_fn" that yield the relevant
     instace, and it includes marks that will be applied to any
@@ -49,11 +49,11 @@ class MarkedManager:
     See InstanceManagers for an example construction.
 
     See GraphQLContextVariant for further information
-    '''
+    """
 
     def __init__(self, manager_fn, marks):
-        self.manager_fn = check.callable_param(manager_fn, 'manager_fn')
-        self.marks = check.list_param(marks, 'marks')
+        self.manager_fn = check.callable_param(manager_fn, "manager_fn")
+        self.marks = check.list_param(marks, "marks")
 
 
 class InstanceManagers:
@@ -101,14 +101,14 @@ class InstanceManagers:
                 instance = DagsterInstance.local_temp(
                     temp_dir,
                     overrides={
-                        'scheduler': {
-                            'module': 'dagster.utils.test',
-                            'class': 'FilesystemTestScheduler',
-                            'config': {'base_dir': temp_dir},
+                        "scheduler": {
+                            "module": "dagster.utils.test",
+                            "class": "FilesystemTestScheduler",
+                            "config": {"base_dir": temp_dir},
                         },
-                        'run_launcher': {
-                            'module': 'dagster_graphql.test.exploding_run_launcher',
-                            'class': 'ExplodingRunLauncher',
+                        "run_launcher": {
+                            "module": "dagster_graphql.test.exploding_run_launcher",
+                            "class": "ExplodingRunLauncher",
                         },
                     },
                 )
@@ -146,14 +146,14 @@ class InstanceManagers:
                 instance = DagsterInstance.local_temp(
                     temp_dir,
                     overrides={
-                        'scheduler': {
-                            'module': 'dagster.utils.test',
-                            'class': 'FilesystemTestScheduler',
-                            'config': {'base_dir': temp_dir},
+                        "scheduler": {
+                            "module": "dagster.utils.test",
+                            "class": "FilesystemTestScheduler",
+                            "config": {"base_dir": temp_dir},
                         },
-                        'run_launcher': {
-                            'module': 'dagster.core.launcher.sync_in_memory_run_launcher',
-                            'class': 'SyncInMemoryRunLauncher',
+                        "run_launcher": {
+                            "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                            "class": "SyncInMemoryRunLauncher",
                         },
                     },
                 )
@@ -169,12 +169,12 @@ class InstanceManagers:
                 with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
-                        'scheduler': {
-                            'module': 'dagster.utils.test',
-                            'class': 'FilesystemTestScheduler',
-                            'config': {'base_dir': temp_dir},
+                        "scheduler": {
+                            "module": "dagster.utils.test",
+                            "class": "FilesystemTestScheduler",
+                            "config": {"base_dir": temp_dir},
                         },
-                        'run_launcher': {'module': 'dagster', 'class': 'DefaultRunLauncher',},
+                        "run_launcher": {"module": "dagster", "class": "DefaultRunLauncher",},
                     },
                 ) as instance:
                     yield instance
@@ -256,7 +256,7 @@ class EnvironmentManagers:
     def user_code_in_host_process():
         @contextmanager
         def _mgr_fn(recon_repo):
-            check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
             with Workspace(
                 [RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)]
             ) as workspace:
@@ -268,8 +268,8 @@ class EnvironmentManagers:
     def out_of_process():
         @contextmanager
         def _mgr_fn(recon_repo):
-            '''Goes out of process but same process as host process'''
-            check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+            """Goes out of process but same process as host process"""
+            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             # this is "ok" because we know the test host process containers the user code
             loadable_target_origin = LoadableTargetOrigin.from_python_origin(
@@ -278,7 +278,7 @@ class EnvironmentManagers:
             with Workspace(
                 [
                     RepositoryLocationHandle.create_python_env_location(
-                        loadable_target_origin=loadable_target_origin, location_name='test',
+                        loadable_target_origin=loadable_target_origin, location_name="test",
                     )
                 ]
             ) as workspace:
@@ -290,8 +290,8 @@ class EnvironmentManagers:
     def managed_grpc():
         @contextmanager
         def _mgr_fn(recon_repo):
-            '''Goes out of process via grpc'''
-            check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+            """Goes out of process via grpc"""
+            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             loadable_target_origin = LoadableTargetOrigin.from_python_origin(
                 recon_repo.get_origin()
@@ -299,7 +299,7 @@ class EnvironmentManagers:
             with Workspace(
                 [
                     RepositoryLocationHandle.create_process_bound_grpc_server_location(
-                        loadable_target_origin=loadable_target_origin, location_name='test',
+                        loadable_target_origin=loadable_target_origin, location_name="test",
                     )
                 ]
             ) as workspace:
@@ -311,7 +311,7 @@ class EnvironmentManagers:
     def deployed_grpc():
         @contextmanager
         def _mgr_fn(recon_repo):
-            check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             loadable_target_origin = LoadableTargetOrigin.from_python_origin(
                 recon_repo.get_origin()
@@ -326,7 +326,7 @@ class EnvironmentManagers:
                                 port=api_client.port,
                                 socket=api_client.socket,
                                 host=api_client.host,
-                                location_name='test',
+                                location_name="test",
                             )
                         ]
                     ) as workspace:
@@ -340,11 +340,11 @@ class EnvironmentManagers:
     def multi_location():
         @contextmanager
         def _mgr_fn(recon_repo):
-            '''Goes out of process but same process as host process'''
-            check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
+            """Goes out of process but same process as host process"""
+            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             empty_repo = ReconstructableRepository.from_legacy_repository_yaml(
-                file_relative_path(__file__, 'empty_repo.yaml')
+                file_relative_path(__file__, "empty_repo.yaml")
             )
 
             with Workspace(
@@ -352,19 +352,19 @@ class EnvironmentManagers:
                     RepositoryLocationHandle.create_python_env_location(
                         loadable_target_origin=LoadableTargetOrigin(
                             executable_path=sys.executable,
-                            python_file=file_relative_path(__file__, 'setup.py'),
-                            attribute='test_repo',
+                            python_file=file_relative_path(__file__, "setup.py"),
+                            attribute="test_repo",
                         ),
-                        location_name='test',
+                        location_name="test",
                     ),
                     RepositoryLocationHandle.create_in_process_location(empty_repo.pointer),
                     RepositoryLocationHandle.create_python_env_location(
                         loadable_target_origin=LoadableTargetOrigin(
                             executable_path=sys.executable,
-                            python_file=file_relative_path(__file__, 'setup.py'),
-                            attribute='empty_repo',
+                            python_file=file_relative_path(__file__, "setup.py"),
+                            attribute="empty_repo",
                         ),
-                        location_name='empty_repo',
+                        location_name="empty_repo",
                     ),
                 ]
             ) as workspace:
@@ -407,7 +407,7 @@ def none_manager():
 
 
 class GraphQLContextVariant:
-    '''
+    """
     An instance of this class represents a context variant that will be run
     against *every* method in the test class, defined as a class
     created by inheriting from make_graphql_context_test_suite.
@@ -443,16 +443,16 @@ class GraphQLContextVariant:
     of code coverage while being very fast to run.
 
     All tests managed by this system are marked with "graphql_context_test_suite".
-    '''
+    """
 
     def __init__(self, marked_instance_mgr, marked_environment_mgr, test_id=None):
         self.marked_instance_mgr = check.inst_param(
-            marked_instance_mgr, 'marked_instance_mgr', MarkedManager
+            marked_instance_mgr, "marked_instance_mgr", MarkedManager
         )
         self.marked_environment_mgr = check.inst_param(
-            marked_environment_mgr, 'marked_environment_mgr', MarkedManager
+            marked_environment_mgr, "marked_environment_mgr", MarkedManager
         )
-        self.test_id = check.opt_str_param(test_id, 'test_id')
+        self.test_id = check.opt_str_param(test_id, "test_id")
         self.marks = marked_instance_mgr.marks + marked_environment_mgr.marks
 
     @property
@@ -465,26 +465,26 @@ class GraphQLContextVariant:
 
     @staticmethod
     def in_memory_instance_in_process_env():
-        '''
+        """
         Good for tests with read-only metadata queries. Does not work
         if you have to go through the run launcher.
-        '''
+        """
         return GraphQLContextVariant(
             InstanceManagers.in_memory_instance(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='in_memory_instance_in_process_env',
+            test_id="in_memory_instance_in_process_env",
         )
 
     @staticmethod
     def in_memory_instance_out_of_process_env():
-        '''
+        """
         Good for tests with read-only metadata queries. Does not work
         if you have to go through the run launcher.
-        '''
+        """
         return GraphQLContextVariant(
             InstanceManagers.in_memory_instance(),
             EnvironmentManagers.out_of_process(),
-            test_id='in_memory_instance_out_of_process_env',
+            test_id="in_memory_instance_out_of_process_env",
         )
 
     @staticmethod
@@ -492,7 +492,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_sync_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='sqlite_with_sync_run_launcher_in_process_env',
+            test_id="sqlite_with_sync_run_launcher_in_process_env",
         )
 
     @staticmethod
@@ -500,7 +500,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='sqlite_with_default_run_launcher_in_process_env',
+            test_id="sqlite_with_default_run_launcher_in_process_env",
         )
 
     @staticmethod
@@ -508,7 +508,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.out_of_process(),
-            test_id='sqlite_with_default_run_launcher_out_of_process_env',
+            test_id="sqlite_with_default_run_launcher_out_of_process_env",
         )
 
     @staticmethod
@@ -516,7 +516,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.managed_grpc(),
-            test_id='sqlite_with_default_run_launcher_managed_grpc_env',
+            test_id="sqlite_with_default_run_launcher_managed_grpc_env",
         )
 
     @staticmethod
@@ -524,7 +524,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.sqlite_instance_with_default_run_launcher(),
             EnvironmentManagers.deployed_grpc(),
-            test_id='sqlite_with_default_run_launcher_deployed_grpc_env',
+            test_id="sqlite_with_default_run_launcher_deployed_grpc_env",
         )
 
     @staticmethod
@@ -532,7 +532,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.postgres_instance_with_sync_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='postgres_with_sync_run_launcher_in_process_env',
+            test_id="postgres_with_sync_run_launcher_in_process_env",
         )
 
     @staticmethod
@@ -540,7 +540,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.postgres_instance_with_default_run_launcher(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='postgres_with_default_run_launcher_in_process_env',
+            test_id="postgres_with_default_run_launcher_in_process_env",
         )
 
     @staticmethod
@@ -548,7 +548,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_sqlite_instance(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='readonly_sqlite_instance_in_process_env',
+            test_id="readonly_sqlite_instance_in_process_env",
         )
 
     @staticmethod
@@ -556,7 +556,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_sqlite_instance(),
             EnvironmentManagers.out_of_process(),
-            test_id='readonly_sqlite_instance_out_of_process_env',
+            test_id="readonly_sqlite_instance_out_of_process_env",
         )
 
     @staticmethod
@@ -564,7 +564,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_sqlite_instance(),
             EnvironmentManagers.multi_location(),
-            test_id='readonly_sqlite_instance_multi_location',
+            test_id="readonly_sqlite_instance_multi_location",
         )
 
     @staticmethod
@@ -572,7 +572,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_sqlite_instance(),
             EnvironmentManagers.managed_grpc(),
-            test_id='readonly_sqlite_instance_managed_grpc_env',
+            test_id="readonly_sqlite_instance_managed_grpc_env",
         )
 
     @staticmethod
@@ -580,7 +580,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_sqlite_instance(),
             EnvironmentManagers.deployed_grpc(),
-            test_id='readonly_sqlite_instance_deployed_grpc_env',
+            test_id="readonly_sqlite_instance_deployed_grpc_env",
         )
 
     @staticmethod
@@ -588,7 +588,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_postgres_instance(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='readonly_postgres_instance_in_process_env',
+            test_id="readonly_postgres_instance_in_process_env",
         )
 
     @staticmethod
@@ -596,7 +596,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_postgres_instance(),
             EnvironmentManagers.out_of_process(),
-            test_id='readonly_postgres_instance_out_of_process_env',
+            test_id="readonly_postgres_instance_out_of_process_env",
         )
 
     @staticmethod
@@ -604,7 +604,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_postgres_instance(),
             EnvironmentManagers.multi_location(),
-            test_id='readonly_postgres_instance_multi_location',
+            test_id="readonly_postgres_instance_multi_location",
         )
 
     @staticmethod
@@ -612,7 +612,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_postgres_instance(),
             EnvironmentManagers.managed_grpc(),
-            test_id='readonly_postgres_instance_managed_grpc_env',
+            test_id="readonly_postgres_instance_managed_grpc_env",
         )
 
     @staticmethod
@@ -620,7 +620,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='readonly_in_memory_instance_in_process_env',
+            test_id="readonly_in_memory_instance_in_process_env",
         )
 
     @staticmethod
@@ -628,7 +628,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.out_of_process(),
-            test_id='readonly_in_memory_instance_out_of_process_env',
+            test_id="readonly_in_memory_instance_out_of_process_env",
         )
 
     @staticmethod
@@ -636,7 +636,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.multi_location(),
-            test_id='readonly_in_memory_instance_multi_location',
+            test_id="readonly_in_memory_instance_multi_location",
         )
 
     @staticmethod
@@ -644,7 +644,7 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.readonly_in_memory_instance(),
             EnvironmentManagers.managed_grpc(),
-            test_id='readonly_in_memory_instance_managed_grpc_env',
+            test_id="readonly_in_memory_instance_managed_grpc_env",
         )
 
     @staticmethod
@@ -652,16 +652,16 @@ class GraphQLContextVariant:
         return GraphQLContextVariant(
             InstanceManagers.asset_aware_sqlite_instance(),
             EnvironmentManagers.user_code_in_host_process(),
-            test_id='asset_aware_instance_in_process_env',
+            test_id="asset_aware_instance_in_process_env",
         )
 
     @staticmethod
     def all_variants():
-        '''
+        """
         There is a test case that keeps this up-to-date. If you add a static
         method that returns a GraphQLContextVariant you have to add it to this
         list in order for tests to pass.
-        '''
+        """
         return [
             GraphQLContextVariant.in_memory_instance_in_process_env(),
             GraphQLContextVariant.in_memory_instance_out_of_process_env(),
@@ -710,9 +710,9 @@ class GraphQLContextVariant:
 
     @staticmethod
     def all_readonly_variants():
-        '''
+        """
         Return all readonly variants. If you try to start or launch these will error
-        '''
+        """
         return _variants_with_mark(GraphQLContextVariant.all_variants(), pytest.mark.readonly)
 
 
@@ -755,19 +755,19 @@ class _GraphQLContextTestSuite(six.with_metaclass(ABCMeta)):
     def graphql_context_for_request(self, request):
         check.param_invariant(
             isinstance(request.param, GraphQLContextVariant),
-            'request',
-            'params in fixture must be List[GraphQLContextVariant]',
+            "request",
+            "params in fixture must be List[GraphQLContextVariant]",
         )
         with manage_graphql_context(request.param, self.recon_repo()) as graphql_context:
             yield graphql_context
 
 
 def graphql_context_variants_fixture(context_variants):
-    check.list_param(context_variants, 'context_variants', of_type=GraphQLContextVariant)
+    check.list_param(context_variants, "context_variants", of_type=GraphQLContextVariant)
 
     def _wrap(fn):
         return pytest.fixture(
-            name='graphql_context',
+            name="graphql_context",
             params=[
                 pytest.param(
                     context_variant,
@@ -782,7 +782,7 @@ def graphql_context_variants_fixture(context_variants):
 
 
 def make_graphql_context_test_suite(context_variants, recon_repo=None):
-    '''
+    """
     Arguments:
 
     runs (List[GraphQLContextVariant]): List of runs to run per test in this class.
@@ -811,10 +811,10 @@ class TestAThing(
 ):
     def test_graphql_context_exists(self, graphql_context):
         assert graphql_context
-    '''
-    check.list_param(context_variants, 'context_variants', of_type=GraphQLContextVariant)
+    """
+    check.list_param(context_variants, "context_variants", of_type=GraphQLContextVariant)
     recon_repo = check.inst_param(
-        recon_repo if recon_repo else get_main_recon_repo(), 'recon_repo', ReconstructableRepository
+        recon_repo if recon_repo else get_main_recon_repo(), "recon_repo", ReconstructableRepository
     )
 
     class _SpecificTestSuiteBase(_GraphQLContextTestSuite):

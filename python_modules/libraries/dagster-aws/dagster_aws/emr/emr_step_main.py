@@ -15,15 +15,15 @@ DONE = object()
 
 
 def main(step_run_ref_bucket, s3_dir_key):
-    session = boto3.client('s3')
-    file_manager = S3FileManager(session, step_run_ref_bucket, '')
+    session = boto3.client("s3")
+    file_manager = S3FileManager(session, step_run_ref_bucket, "")
     file_handle = S3FileHandle(step_run_ref_bucket, s3_dir_key)
     step_run_ref_data = file_manager.read_data(file_handle)
 
     step_run_ref = pickle.loads(step_run_ref_data)
 
     events_bucket = step_run_ref_bucket
-    events_s3_key = os.path.dirname(s3_dir_key) + '/' + PICKLED_EVENTS_FILE_NAME
+    events_s3_key = os.path.dirname(s3_dir_key) + "/" + PICKLED_EVENTS_FILE_NAME
 
     def put_events(events):
         file_obj = io.BytesIO(pickle.dumps(events))
@@ -80,5 +80,5 @@ def event_writing_loop(events_queue, put_events_fn):
             time_posted_last_batch = time.time()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])

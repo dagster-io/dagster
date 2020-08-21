@@ -7,7 +7,7 @@ from dagster.core.execution.plan.objects import StepSuccessData
 
 def test_filter_dagster_events_from_pod_logs():
 
-    sameple_output = '''
+    sameple_output = """
     2020-07-17 11:31:58 - dagster - DEBUG - foo - new_run - STEP_START - Started execution of step "do_something.compute".
                  pid = 2467
                solid = "do_something"
@@ -55,8 +55,8 @@ def test_filter_dagster_events_from_pod_logs():
     solid_definition = "do_input"
             step_key = "do_input.compute"
 {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 13.923579000000075}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline": "foo", "solid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Finished execution of step \\"do_input.compute\\" in 13ms.", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}
-'''.split(
-        '\n'
+""".split(
+        "\n"
     )
     res = utils.filter_dagster_events_from_pod_logs(sameple_output)
 
@@ -68,13 +68,13 @@ def test_filter_dagster_events_from_pod_logs():
 
 
 def test_filter_dagster_events_from_pod_logs_coalesce():
-    logs = '''
+    logs = """
     {"__class__": "DagsterEvent", "event_specific
     _data": {"__class__": "StepSuccessData", "duration_ms": 13.923579000000075}, "event_typ
     e_value": "STEP_SUCCESS", "logging_tags": {"pipeline": "foo", "so
     lid": "do_input", "solid_definition": "do_input", "step_key": "do_input.compute"}, "message": "Finished execution of step \\"do_input.compute\\" in 13ms.", "pid": 2467, "pipeline_name": "foo", "solid_handle": {"__class__": "SolidHandle", "name": "do_input", "parent": null}, "step_key": "do_input.compute", "step_kind_value": "COMPUTE"}
-    '''.split(
-        '\n'
+    """.split(
+        "\n"
     )
     res = utils.filter_dagster_events_from_pod_logs(logs)
     assert len(res) == 1

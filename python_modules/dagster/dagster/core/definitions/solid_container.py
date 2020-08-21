@@ -15,22 +15,22 @@ from .dependency import DependencyStructure, IDependencyDefinition, Solid, Solid
 class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractproperty
     def solids(self):
-        '''List[Solid]: Top-level solids in the container.'''
+        """List[Solid]: Top-level solids in the container."""
 
     @abstractproperty
     def dependency_structure(self):
-        '''DependencyStructure: The dependencies between top-level solids in the container.'''
+        """DependencyStructure: The dependencies between top-level solids in the container."""
 
     @abstractmethod
     def solid_named(self, name):
-        '''Return the (top-level) solid with a given name.
+        """Return the (top-level) solid with a given name.
 
         Args:
             name (str): The name of the top level solid.
 
         Returns:
             Solid: The solid with the given name
-        '''
+        """
 
     def _solids_in_topological_order(self):
         _forward_edges, backward_edges = _create_adjacency_lists(
@@ -48,8 +48,8 @@ class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
 
 
 def _create_adjacency_lists(solids, dep_structure):
-    check.list_param(solids, 'solids', Solid)
-    check.inst_param(dep_structure, 'dep_structure', DependencyStructure)
+    check.list_param(solids, "solids", Solid)
+    check.inst_param(dep_structure, "dep_structure", DependencyStructure)
 
     visit_dict = {s.name: False for s in solids}
     forward_edges = {s.name: set() for s in solids}
@@ -78,7 +78,7 @@ def _create_adjacency_lists(solids, dep_structure):
 def validate_dependency_dict(dependencies):
     prelude = (
         'The expected type for "dependencies" is dict[Union[str, SolidInvocation], dict[str, '
-        'DependencyDefinition]]. '
+        "DependencyDefinition]]. "
     )
 
     if dependencies is None:
@@ -87,7 +87,7 @@ def validate_dependency_dict(dependencies):
     if not isinstance(dependencies, dict):
         raise DagsterInvalidDefinitionError(
             prelude
-            + 'Received value {val} of type {type} at the top level.'.format(
+            + "Received value {val} of type {type} at the top level.".format(
                 val=dependencies, type=type(dependencies)
             )
         )
@@ -95,21 +95,21 @@ def validate_dependency_dict(dependencies):
     for key, dep_dict in dependencies.items():
         if not (isinstance(key, six.string_types) or isinstance(key, SolidInvocation)):
             raise DagsterInvalidDefinitionError(
-                prelude + 'Expected str or SolidInvocation key in the top level dict. '
-                'Received value {val} of type {type}'.format(val=key, type=type(key))
+                prelude + "Expected str or SolidInvocation key in the top level dict. "
+                "Received value {val} of type {type}".format(val=key, type=type(key))
             )
         if not isinstance(dep_dict, dict):
             if isinstance(dep_dict, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude
-                    + 'Received a IDependencyDefinition one layer too high under key {key}. '
-                    'The DependencyDefinition should be moved in to a dict keyed on '
-                    'input name.'.format(key=key)
+                    + "Received a IDependencyDefinition one layer too high under key {key}. "
+                    "The DependencyDefinition should be moved in to a dict keyed on "
+                    "input name.".format(key=key)
                 )
             else:
                 raise DagsterInvalidDefinitionError(
-                    prelude + 'Under key {key} received value {val} of type {type}. '
-                    'Expected dict[str, DependencyDefinition]'.format(
+                    prelude + "Under key {key} received value {val} of type {type}. "
+                    "Expected dict[str, DependencyDefinition]".format(
                         key=key, val=dep_dict, type=type(dep_dict)
                     )
                 )
@@ -118,13 +118,13 @@ def validate_dependency_dict(dependencies):
             if not isinstance(input_key, six.string_types):
                 raise DagsterInvalidDefinitionError(
                     prelude
-                    + 'Received non-sting key in the inner dict for key {key}.'.format(key=key)
+                    + "Received non-sting key in the inner dict for key {key}.".format(key=key)
                 )
             if not isinstance(dep, IDependencyDefinition):
                 raise DagsterInvalidDefinitionError(
                     prelude
                     + 'Expected IDependencyDefinition for solid "{key}" input "{input_key}". '
-                    'Received value {val} of type {type}.'.format(
+                    "Received value {val} of type {type}.".format(
                         key=key, input_key=input_key, val=dep, type=type(dep)
                     )
                 )
@@ -133,7 +133,7 @@ def validate_dependency_dict(dependencies):
 
 
 def create_execution_structure(solid_defs, dependencies_dict, container_definition):
-    '''This builder takes the dependencies dictionary specified during creation of the
+    """This builder takes the dependencies dictionary specified during creation of the
     PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
     dictionary.
 
@@ -173,18 +173,18 @@ def create_execution_structure(solid_defs, dependencies_dict, container_definiti
     }
 
     as well as a dagster.core.definitions.dependency.DependencyStructure object.
-    '''
+    """
     from .solid import ISolidDefinition, CompositeSolidDefinition
 
-    check.list_param(solid_defs, 'solid_defs', of_type=ISolidDefinition)
+    check.list_param(solid_defs, "solid_defs", of_type=ISolidDefinition)
     check.dict_param(
         dependencies_dict,
-        'dependencies_dict',
+        "dependencies_dict",
         key_type=six.string_types + (SolidInvocation,),
         value_type=dict,
     )
     # container_definition is none in the context of a pipeline
-    check.opt_inst_param(container_definition, 'container_definition', CompositeSolidDefinition)
+    check.opt_inst_param(container_definition, "container_definition", CompositeSolidDefinition)
 
     # Same as dep_dict but with SolidInvocation replaced by alias string
     aliased_dependencies_dict = {}
@@ -257,7 +257,7 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                 if from_solid == dep.solid:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Invalid dependencies: circular reference detected in solid '
+                            "Invalid dependencies: circular reference detected in solid "
                             '"{from_solid}" input "{from_input}"'
                         ).format(from_solid=from_solid, from_input=from_input)
                     )
@@ -267,7 +267,7 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                     if aliased_solid == from_solid:
                         raise DagsterInvalidDefinitionError(
                             'Invalid dependencies: solid "{solid}" in dependency dictionary not '
-                            'found in solid list'.format(solid=from_solid)
+                            "found in solid list".format(solid=from_solid)
                         )
                     else:
                         raise DagsterInvalidDefinitionError(
@@ -281,7 +281,7 @@ def _validate_dependencies(dependencies, solid_dict, alias_to_name):
                     raise DagsterInvalidDefinitionError(
                         'Invalid dependencies: solid "{from_solid}" does not have input '
                         '"{from_input}". '.format(from_solid=from_solid, from_input=from_input)
-                        + 'Available inputs: {input_list}'.format(input_list=input_list)
+                        + "Available inputs: {input_list}".format(input_list=input_list)
                     )
 
                 if not dep.solid in solid_dict:
@@ -321,14 +321,14 @@ def _validate_input_output_pair(input_def, output_def, from_solid, dep):
                 '"{output_def.name}" from solid "{dep.solid}". '
                 'Input "{input_def.name}" expects a value of type '
                 '{input_def.dagster_type.display_name} and output "{output_def.name}" returns '
-                'type {output_def.dagster_type.display_name}{extra}.'
+                "type {output_def.dagster_type.display_name}{extra}."
             ).format(
                 from_solid=from_solid,
                 dep=dep,
                 output_def=output_def,
                 input_def=input_def,
-                extra=' (which produces no value)'
+                extra=" (which produces no value)"
                 if output_def.dagster_type.kind == DagsterTypeKind.NOTHING
-                else '',
+                else "",
             )
         )

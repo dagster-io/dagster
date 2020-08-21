@@ -14,8 +14,8 @@ DEFAULT_JOB_POD_COUNT = 1  # expect job:pod to be 1:1 by default
 
 
 class WaitForPodState(Enum):
-    Ready = 'READY'
-    Terminated = 'TERMINATED'
+    Ready = "READY"
+    Terminated = "TERMINATED"
 
 
 class DagsterK8sError(Exception):
@@ -27,12 +27,12 @@ class DagsterK8sPipelineStatusException(Exception):
 
 
 class KubernetesWaitingReasons:
-    PodInitializing = 'PodInitializing'
-    ContainerCreating = 'ContainerCreating'
-    ErrImagePull = 'ErrImagePull'
-    ImagePullBackOff = 'ImagePullBackOff'
-    CrashLoopBackOff = 'CrashLoopBackOff'
-    RunContainerError = 'RunContainerError'
+    PodInitializing = "PodInitializing"
+    ContainerCreating = "ContainerCreating"
+    ErrImagePull = "ErrImagePull"
+    ImagePullBackOff = "ImagePullBackOff"
+    CrashLoopBackOff = "CrashLoopBackOff"
+    RunContainerError = "RunContainerError"
 
 
 class DagsterKubernetesClient:
@@ -56,15 +56,15 @@ class DagsterKubernetesClient:
     def delete_job(
         self, job_name, namespace,
     ):
-        '''Delete Kubernetes Job. We also need to delete corresponding pods due to:
+        """Delete Kubernetes Job. We also need to delete corresponding pods due to:
         https://github.com/kubernetes-client/python/issues/234
 
         Args:
             job_name (str): Name of the job to wait for.
             namespace (str): Namespace in which the job is located.
-        '''
-        check.str_param(job_name, 'job_name')
-        check.str_param(namespace, 'namespace')
+        """
+        check.str_param(job_name, "job_name")
+        check.str_param(namespace, "namespace")
 
         pod_names = self.get_pod_names_for_job(job_name, namespace)
 
@@ -87,29 +87,29 @@ class DagsterKubernetesClient:
                 for error in errors:
                     if not (
                         isinstance(error, kubernetes.client.rest.ApiException)
-                        and error.reason == 'Not Found'
+                        and error.reason == "Not Found"
                     ):
                         raise error
                 raise errors[0]
 
             return True
         except kubernetes.client.rest.ApiException as e:
-            if e.reason == 'Not Found':
+            if e.reason == "Not Found":
                 return False
             raise e
 
     def get_pod_names_for_job(self, job_name, namespace):
-        '''Get pod names that corresponds to job name
+        """Get pod names that corresponds to job name
 
         Args:
             job_name (str): Name of the job to wait for.
             namespace (str): Namespace in which the job is located.
-        '''
-        check.str_param(job_name, 'job_name')
-        check.str_param(namespace, 'namespace')
+        """
+        check.str_param(job_name, "job_name")
+        check.str_param(namespace, "namespace")
 
         pods = self.core_api.list_namespaced_pod(
-            label_selector='job-name=={}'.format(job_name), namespace=namespace
+            label_selector="job-name=={}".format(job_name), namespace=namespace
         )
 
         pod_names = []
@@ -128,7 +128,7 @@ class DagsterKubernetesClient:
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
         num_pods_to_wait_for=DEFAULT_JOB_POD_COUNT,
     ):
-        '''Poll a job for successful completion.
+        """Poll a job for successful completion.
 
         Args:
             job_name (str): Name of the job to wait for.
@@ -140,14 +140,14 @@ class DagsterKubernetesClient:
 
         Raises:
             DagsterK8sError: Raised when wait_timeout is exceeded or an error is encountered.
-        '''
-        check.str_param(job_name, 'job_name')
-        check.str_param(namespace, 'namespace')
-        check.opt_inst_param(instance, 'instance', DagsterInstance)
-        check.opt_str_param(run_id, 'run_id')
-        check.numeric_param(wait_timeout, 'wait_timeout')
-        check.numeric_param(wait_time_between_attempts, 'wait_time_between_attempts')
-        check.int_param(num_pods_to_wait_for, 'num_pods_to_wait_for')
+        """
+        check.str_param(job_name, "job_name")
+        check.str_param(namespace, "namespace")
+        check.opt_inst_param(instance, "instance", DagsterInstance)
+        check.opt_str_param(run_id, "run_id")
+        check.numeric_param(wait_timeout, "wait_timeout")
+        check.numeric_param(wait_time_between_attempts, "wait_time_between_attempts")
+        check.int_param(num_pods_to_wait_for, "num_pods_to_wait_for")
 
         job = None
         start = self.timer()
@@ -156,7 +156,7 @@ class DagsterKubernetesClient:
         while not job:
             if self.timer() - start > wait_timeout:
 
-                raise DagsterK8sError('Timed out while waiting for job to launch')
+                raise DagsterK8sError("Timed out while waiting for job to launch")
 
             jobs = self.batch_api.list_namespaced_job(namespace=namespace)
             job = next((j for j in jobs.items if j.metadata.name == job_name), None)
@@ -168,14 +168,14 @@ class DagsterKubernetesClient:
         # Wait for job completed status
         while True:
             if self.timer() - start > wait_timeout:
-                raise DagsterK8sError('Timed out while waiting for job to complete')
+                raise DagsterK8sError("Timed out while waiting for job to complete")
 
             # See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#jobstatus-v1-batch
             status = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace).status
 
             if status.failed and status.failed > 0:
                 pods = self.core_api.list_namespaced_pod(
-                    label_selector='job-name=={}'.format(job_name), namespace=namespace
+                    label_selector="job-name=={}".format(job_name), namespace=namespace
                 )
                 logs = {}
                 for pod in pods.items:
@@ -188,7 +188,7 @@ class DagsterKubernetesClient:
                         logs[pod_name] = e
 
                 raise DagsterK8sError(
-                    'Encountered failed job pods with status: {}, and logs: {}'.format(status, logs)
+                    "Encountered failed job pods with status: {}, and logs: {}".format(status, logs)
                 )
 
             # done waiting for pod completion
@@ -203,7 +203,7 @@ class DagsterKubernetesClient:
             self.sleeper(wait_time_between_attempts)
 
     def retrieve_pod_logs(self, pod_name, namespace):
-        '''Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
+        """Retrieves the raw pod logs for the pod named `pod_name` from Kubernetes.
 
         Args:
             pod_name (str): The name of the pod from which to retrieve logs.
@@ -211,9 +211,9 @@ class DagsterKubernetesClient:
 
         Returns:
             str: The raw logs retrieved from the pod.
-        '''
-        check.str_param(pod_name, 'pod_name')
-        check.str_param(namespace, 'namespace')
+        """
+        check.str_param(pod_name, "pod_name")
+        check.str_param(namespace, "namespace")
 
         # We set _preload_content to False here to prevent the k8 python api from processing the response.
         # If the logs happen to be JSON - it will parse in to a dict and then coerce back to a str leaving
@@ -233,7 +233,7 @@ class DagsterKubernetesClient:
         wait_timeout=DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
     ):
-        ''' Wait for a job to launch and be running.
+        """ Wait for a job to launch and be running.
 
         Args:
             job_name (str): Name of the job to wait for.
@@ -245,11 +245,11 @@ class DagsterKubernetesClient:
 
         Raises:
             DagsterK8sError: Raised when wait_timeout is exceeded or an error is encountered.
-        '''
-        check.str_param(job_name, 'job_name')
-        check.str_param(namespace, 'namespace')
-        check.numeric_param(wait_timeout, 'wait_timeout')
-        check.numeric_param(wait_time_between_attempts, 'wait_time_between_attempts')
+        """
+        check.str_param(job_name, "job_name")
+        check.str_param(namespace, "namespace")
+        check.numeric_param(wait_timeout, "wait_timeout")
+        check.numeric_param(wait_time_between_attempts, "wait_time_between_attempts")
 
         job = None
 
@@ -257,7 +257,7 @@ class DagsterKubernetesClient:
         # Ensure we found the job that we launched
         while not job:
             if self.timer() - start > wait_timeout:
-                raise DagsterK8sError('Timed out while waiting for job to launch')
+                raise DagsterK8sError("Timed out while waiting for job to launch")
 
             jobs = self.batch_api.list_namespaced_job(namespace=namespace)
             job = next((j for j in jobs.items if j.metadata.name == job_name), None)
@@ -274,7 +274,7 @@ class DagsterKubernetesClient:
         wait_timeout=DEFAULT_WAIT_TIMEOUT,
         wait_time_between_attempts=DEFAULT_WAIT_BETWEEN_ATTEMPTS,
     ):
-        '''Wait for a pod to launch and be running, or wait for termination (useful for job pods).
+        """Wait for a pod to launch and be running, or wait for termination (useful for job pods).
 
         Args:
             pod_name (str): Name of the pod to wait for.
@@ -288,12 +288,12 @@ class DagsterKubernetesClient:
 
         Raises:
             DagsterK8sError: Raised when wait_timeout is exceeded or an error is encountered
-        '''
-        check.str_param(pod_name, 'pod_name')
-        check.str_param(namespace, 'namespace')
-        check.inst_param(wait_for_state, 'wait_for_state', WaitForPodState)
-        check.numeric_param(wait_timeout, 'wait_timeout')
-        check.numeric_param(wait_time_between_attempts, 'wait_time_between_attempts')
+        """
+        check.str_param(pod_name, "pod_name")
+        check.str_param(namespace, "namespace")
+        check.inst_param(wait_for_state, "wait_for_state", WaitForPodState)
+        check.numeric_param(wait_timeout, "wait_timeout")
+        check.numeric_param(wait_time_between_attempts, "wait_time_between_attempts")
 
         self.logger('Waiting for pod "%s"' % pod_name)
 
@@ -302,13 +302,13 @@ class DagsterKubernetesClient:
         while True:
 
             pods = self.core_api.list_namespaced_pod(
-                namespace=namespace, field_selector='metadata.name=%s' % pod_name
+                namespace=namespace, field_selector="metadata.name=%s" % pod_name
             ).items
             pod = pods[0] if pods else None
 
             if self.timer() - start > wait_timeout:
                 raise DagsterK8sError(
-                    'Timed out while waiting for pod to become ready with pod info: %s' % str(pod)
+                    "Timed out while waiting for pod to become ready with pod info: %s" % str(pod)
                 )
 
             if pod is None:
@@ -317,7 +317,7 @@ class DagsterKubernetesClient:
                 continue
 
             if not pod.status.container_statuses:
-                self.logger('Waiting for pod container status to be set by kubernetes...')
+                self.logger("Waiting for pod container status to be set by kubernetes...")
                 self.sleeper(wait_time_between_attempts)
                 continue
 
@@ -341,7 +341,7 @@ class DagsterKubernetesClient:
                         break
                 else:
                     check.invariant(
-                        wait_for_state == WaitForPodState.Terminated, 'New invalid WaitForPodState'
+                        wait_for_state == WaitForPodState.Terminated, "New invalid WaitForPodState"
                     )
                     self.sleeper(wait_time_between_attempts)
                     continue
@@ -353,7 +353,7 @@ class DagsterKubernetesClient:
                     self.sleeper(wait_time_between_attempts)
                     continue
                 elif state.waiting.reason == KubernetesWaitingReasons.ContainerCreating:
-                    self.logger('Waiting for container creation...')
+                    self.logger("Waiting for container creation...")
                     self.sleeper(wait_time_between_attempts)
                     continue
                 elif state.waiting.reason in [
@@ -368,7 +368,7 @@ class DagsterKubernetesClient:
                         )
                     )
                 else:
-                    raise DagsterK8sError('Unknown issue: %s' % state.waiting)
+                    raise DagsterK8sError("Unknown issue: %s" % state.waiting)
 
             # https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#containerstateterminated-v1-core
             elif state.terminated is not None:
@@ -379,14 +379,14 @@ class DagsterKubernetesClient:
                         % (state.terminated.message, str(raw_logs))
                     )
                 else:
-                    self.logger('Pod {pod_name} exitted successfully'.format(pod_name=pod_name))
+                    self.logger("Pod {pod_name} exitted successfully".format(pod_name=pod_name))
                 break
 
             else:
-                raise DagsterK8sError('Should not get here, unknown pod state')
+                raise DagsterK8sError("Should not get here, unknown pod state")
 
     def get_pod_names_in_job(self, job_name, namespace):
-        '''Get the names of pods launched by the job ``job_name``.
+        """Get the names of pods launched by the job ``job_name``.
 
         Args:
             job_name (str): Name of the job to inspect.
@@ -394,11 +394,11 @@ class DagsterKubernetesClient:
 
         Returns:
             List[str]: List of all pod names that have been launched by the job ``job_name``.
-        '''
-        check.str_param(job_name, 'job_name')
-        check.str_param(namespace, 'namespace')
+        """
+        check.str_param(job_name, "job_name")
+        check.str_param(namespace, "namespace")
 
         pods = self.core_api.list_namespaced_pod(
-            namespace=namespace, label_selector='job-name={}'.format(job_name)
+            namespace=namespace, label_selector="job-name={}".format(job_name)
         ).items
         return [p.metadata.name for p in pods]

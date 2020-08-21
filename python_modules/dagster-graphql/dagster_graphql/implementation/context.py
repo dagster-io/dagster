@@ -11,7 +11,7 @@ from dagster.grpc.types import ScheduleExecutionDataMode
 
 class DagsterGraphQLContext:
     def __init__(self, instance, workspace, version=None):
-        self._instance = check.inst_param(instance, 'instance', DagsterInstance)
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._workspace = workspace
         self._repository_locations = {}
         for handle in self._workspace.repository_location_handles:
@@ -48,7 +48,7 @@ class DagsterGraphQLContext:
         return new_location
 
     def get_subset_external_pipeline(self, selector):
-        check.inst_param(selector, 'selector', PipelineSelector)
+        check.inst_param(selector, "selector", PipelineSelector)
         # We have to grab the pipeline from the location instead of the repository directly
         # since we may have to request a subset we don't have in memory yet
 
@@ -75,7 +75,7 @@ class DagsterGraphQLContext:
         )
 
     def has_external_pipeline(self, selector):
-        check.inst_param(selector, 'selector', PipelineSelector)
+        check.inst_param(selector, "selector", PipelineSelector)
         if selector.location_name in self._repository_locations:
             loc = self._repository_locations[selector.location_name]
             if loc.has_repository(selector.repository_name):
@@ -161,10 +161,10 @@ class DagsterGraphQLContext:
         )
 
     def drain_outstanding_executions(self):
-        '''
+        """
         This ensures that any outstanding executions of runs are waited on.
         Useful for tests contexts when you want to ensure a started run
         has ended in order to verify its results.
-        '''
+        """
         if self.instance.run_launcher:
             self.instance.run_launcher.join()

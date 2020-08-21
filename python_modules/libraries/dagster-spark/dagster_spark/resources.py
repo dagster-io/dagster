@@ -10,11 +10,11 @@ from .utils import construct_spark_shell_command
 
 class SparkResource:
     def __init__(self, logger):
-        self.logger = check.inst_param(logger, 'logger', DagsterLogManager)
+        self.logger = check.inst_param(logger, "logger", DagsterLogManager)
 
     def run_spark_job(self, config, main_class):
-        check.dict_param(config, 'config')
-        check.str_param(main_class, 'main_class')
+        check.dict_param(config, "config")
+        check.str_param(main_class, "main_class")
 
         # Extract parameters from config
         (
@@ -27,20 +27,20 @@ class SparkResource:
         ) = [
             config.get(k)
             for k in (
-                'master_url',
-                'deploy_mode',
-                'application_jar',
-                'spark_conf',
-                'application_arguments',
-                'spark_home',
+                "master_url",
+                "deploy_mode",
+                "application_jar",
+                "spark_conf",
+                "application_arguments",
+                "spark_home",
             )
         ]
 
         if not os.path.exists(application_jar):
             raise SparkSolidError(
                 (
-                    'Application jar {} does not exist. A valid jar must be '
-                    'built before running this solid.'.format(application_jar)
+                    "Application jar {} does not exist. A valid jar must be "
+                    "built before running this solid.".format(application_jar)
                 )
             )
 
@@ -53,12 +53,12 @@ class SparkResource:
             application_arguments=application_arguments,
             spark_home=spark_home,
         )
-        self.logger.info('Running spark-submit: ' + ' '.join(spark_shell_cmd))
+        self.logger.info("Running spark-submit: " + " ".join(spark_shell_cmd))
 
-        retcode = subprocess.call(' '.join(spark_shell_cmd), shell=True)
+        retcode = subprocess.call(" ".join(spark_shell_cmd), shell=True)
 
         if retcode != 0:
-            raise SparkSolidError('Spark job failed. Please consult your logs.')
+            raise SparkSolidError("Spark job failed. Please consult your logs.")
 
 
 @resource

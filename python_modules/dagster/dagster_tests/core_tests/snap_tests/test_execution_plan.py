@@ -49,22 +49,22 @@ def test_create_execution_plan_with_dep(snapshot):
 
 
 def test_create_with_composite(snapshot):
-    @solid(output_defs=[OutputDefinition(name='out_num', dagster_type=int)])
+    @solid(output_defs=[OutputDefinition(name="out_num", dagster_type=int)])
     def return_one(_):
         return 1
 
     @solid(
-        input_defs=[InputDefinition(name='num', dagster_type=int)],
+        input_defs=[InputDefinition(name="num", dagster_type=int)],
         output_defs=[OutputDefinition(int)],
     )
     def add_one(_, num):
         return num + 1
 
-    @composite_solid(output_defs=[OutputDefinition(name='named_output', dagster_type=int)])
+    @composite_solid(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
     def comp_1():
         return add_one(return_one())
 
-    @composite_solid(output_defs=[OutputDefinition(name='named_output', dagster_type=int)])
+    @composite_solid(output_defs=[OutputDefinition(name="named_output", dagster_type=int)])
     def comp_2():
         return add_one(return_one())
 
@@ -88,7 +88,7 @@ def test_create_with_composite(snapshot):
 
 
 def test_create_noop_execution_plan_with_tags(snapshot):
-    @solid(tags={'foo': 'bar', 'bar': 'baaz'})
+    @solid(tags={"foo": "bar", "bar": "baaz"})
     def noop_solid(_):
         pass
 

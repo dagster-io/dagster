@@ -1,7 +1,7 @@
 from dagster import DagsterInstance, execute_pipeline, pipeline, reconstructable, solid
 
 
-@solid(tags={'dagster/priority': '-1'})
+@solid(tags={"dagster/priority": "-1"})
 def low(_):
     pass
 
@@ -11,7 +11,7 @@ def none(_):
     pass
 
 
-@solid(tags={'dagster/priority': '1'})
+@solid(tags={"dagster/priority": "1"})
 def high(_):
     pass
 
@@ -32,7 +32,7 @@ def test_priorities():
     assert result.success
     assert [
         str(event.solid_handle) for event in result.step_event_list if event.is_step_success
-    ] == ['high', 'high_2', 'none', 'none_2', 'low', 'low_2']
+    ] == ["high", "high_2", "none", "none_2", "low", "low_2"]
 
 
 def test_priorities_mp():
@@ -40,12 +40,12 @@ def test_priorities_mp():
     result = execute_pipeline(
         pipe,
         {
-            'execution': {'multiprocess': {'config': {'max_concurrent': 1}}},
-            'storage': {'filesystem': {}},
+            "execution": {"multiprocess": {"config": {"max_concurrent": 1}}},
+            "storage": {"filesystem": {}},
         },
         instance=DagsterInstance.local_temp(),
     )
     assert result.success
     assert [
         str(event.solid_handle) for event in result.step_event_list if event.is_step_success
-    ] == ['high', 'high_2', 'none', 'none_2', 'low', 'low_2']
+    ] == ["high", "high_2", "none", "none_2", "low", "low_2"]

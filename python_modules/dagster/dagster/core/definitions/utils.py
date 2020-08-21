@@ -13,30 +13,30 @@ from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disab
 from dagster.utils import frozentags
 from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
-DEFAULT_OUTPUT = 'result'
+DEFAULT_OUTPUT = "result"
 
 DISALLOWED_NAMES = set(
     [
-        'context',
-        'conf',
-        'config',
-        'meta',
-        'arg_dict',
-        'dict',
-        'input_arg_dict',
-        'output_arg_dict',
-        'int',
-        'str',
-        'float',
-        'bool',
-        'input',
-        'output',
-        'type',
+        "context",
+        "conf",
+        "config",
+        "meta",
+        "arg_dict",
+        "dict",
+        "input_arg_dict",
+        "output_arg_dict",
+        "int",
+        "str",
+        "float",
+        "bool",
+        "input",
+        "output",
+        "type",
     ]
     + keyword.kwlist  # just disallow all python keywords
 )
 
-VALID_NAME_REGEX_STR = r'^[A-Za-z0-9_]+$'
+VALID_NAME_REGEX_STR = r"^[A-Za-z0-9_]+$"
 VALID_NAME_REGEX = re.compile(VALID_NAME_REGEX_STR)
 
 
@@ -45,13 +45,13 @@ def has_valid_name_chars(name):
 
 
 def check_valid_name(name):
-    check.str_param(name, 'name')
+    check.str_param(name, "name")
     if name in DISALLOWED_NAMES:
-        raise DagsterInvalidDefinitionError('{name} is not allowed.'.format(name=name))
+        raise DagsterInvalidDefinitionError("{name} is not allowed.".format(name=name))
 
     if not has_valid_name_chars(name):
         raise DagsterInvalidDefinitionError(
-            '{name} must be in regex {regex}'.format(name=name, regex=VALID_NAME_REGEX_STR)
+            "{name} must be in regex {regex}".format(name=name, regex=VALID_NAME_REGEX_STR)
         )
     return name
 
@@ -62,13 +62,13 @@ def _kv_str(key, value):
 
 def struct_to_string(name, **kwargs):
     # Sort the kwargs to ensure consistent representations across Python versions
-    props_str = ', '.join([_kv_str(key, value) for key, value in sorted(kwargs.items())])
-    return '{name}({props_str})'.format(name=name, props_str=props_str)
+    props_str = ", ".join([_kv_str(key, value) for key, value in sorted(kwargs.items())])
+    return "{name}({props_str})".format(name=name, props_str=props_str)
 
 
 def validate_tags(tags):
     valid_tags = {}
-    for key, value in check.opt_dict_param(tags, 'tags', key_type=str).items():
+    for key, value in check.opt_dict_param(tags, "tags", key_type=str).items():
         if not check.is_str(value):
             valid = False
             err_reason = 'Could not JSON encode value "{}"'.format(value)
@@ -85,7 +85,7 @@ def validate_tags(tags):
             if not valid:
                 raise DagsterInvalidDefinitionError(
                     'Invalid value for tag "{key}", {err_reason}. Tag values must be strings '
-                    'or meet the constraint that json.loads(json.dumps(value)) == value.'.format(
+                    "or meet the constraint that json.loads(json.dumps(value)) == value.".format(
                         key=key, err_reason=err_reason
                     )
                 )
@@ -98,7 +98,7 @@ def validate_tags(tags):
 
 
 def config_from_files(config_files):
-    '''Constructs run config from YAML files.
+    """Constructs run config from YAML files.
 
     Args:
         config_files (List[str]): List of paths or glob patterns for yaml files
@@ -111,8 +111,8 @@ def config_from_files(config_files):
         FileNotFoundError: When a config file produces no results
         DagsterInvariantViolationError: When one of the YAML files is invalid and has a parse
             error.
-    '''
-    config_files = check.opt_list_param(config_files, 'config_files')
+    """
+    config_files = check.opt_list_param(config_files, "config_files")
 
     filenames = []
     for file_glob in config_files or []:
@@ -120,7 +120,7 @@ def config_from_files(config_files):
         if not globbed_files:
             raise DagsterInvariantViolationError(
                 'File or glob pattern "{file_glob}" for "config_files"'
-                'produced no results.'.format(file_glob=file_glob)
+                "produced no results.".format(file_glob=file_glob)
             )
 
         filenames += [os.path.realpath(globbed_file) for globbed_file in globbed_files]
@@ -130,8 +130,8 @@ def config_from_files(config_files):
     except yaml.YAMLError as err:
         six.raise_from(
             DagsterInvariantViolationError(
-                'Encountered error attempting to parse yaml. Parsing files {file_set} '
-                'loaded by file/patterns {files}.'.format(file_set=filenames, files=config_files)
+                "Encountered error attempting to parse yaml. Parsing files {file_set} "
+                "loaded by file/patterns {files}.".format(file_set=filenames, files=config_files)
             ),
             err,
         )
@@ -140,7 +140,7 @@ def config_from_files(config_files):
 
 
 def config_from_yaml_strings(yaml_strings):
-    '''Static constructor for run configs from YAML strings.
+    """Static constructor for run configs from YAML strings.
 
     Args:
         yaml_strings (List[str]): List of yaml strings to parse as the run config.
@@ -151,15 +151,15 @@ def config_from_yaml_strings(yaml_strings):
     Raises:
         DagsterInvariantViolationError: When one of the YAML documents is invalid and has a
             parse error.
-    '''
-    yaml_strings = check.opt_list_param(yaml_strings, 'yaml_strings', of_type=str)
+    """
+    yaml_strings = check.opt_list_param(yaml_strings, "yaml_strings", of_type=str)
 
     try:
         run_config = merge_yaml_strings(yaml_strings)
     except yaml.YAMLError as err:
         six.raise_from(
             DagsterInvariantViolationError(
-                'Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} '.format(
+                "Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} ".format(
                     yaml_strings=yaml_strings
                 )
             ),
@@ -170,7 +170,7 @@ def config_from_yaml_strings(yaml_strings):
 
 
 def config_from_pkg_resources(pkg_resource_defs):
-    '''Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
+    """Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
 
     Example:
 
@@ -194,8 +194,8 @@ def config_from_pkg_resources(pkg_resource_defs):
     Raises:
         DagsterInvariantViolationError: When one of the YAML documents is invalid and has a
             parse error.
-    '''
-    pkg_resource_defs = check.opt_list_param(pkg_resource_defs, 'pkg_resource_defs', of_type=tuple)
+    """
+    pkg_resource_defs = check.opt_list_param(pkg_resource_defs, "pkg_resource_defs", of_type=tuple)
 
     try:
         yaml_strings = [
@@ -205,8 +205,8 @@ def config_from_pkg_resources(pkg_resource_defs):
     except (ModuleNotFoundError, FileNotFoundError, UnicodeDecodeError) as err:
         six.raise_from(
             DagsterInvariantViolationError(
-                'Encountered error attempting to parse yaml. Loading YAMLs from '
-                'package resources {pkg_resource_defs}.'.format(pkg_resource_defs=pkg_resource_defs)
+                "Encountered error attempting to parse yaml. Loading YAMLs from "
+                "package resources {pkg_resource_defs}.".format(pkg_resource_defs=pkg_resource_defs)
             ),
             err,
         )

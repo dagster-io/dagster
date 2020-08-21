@@ -10,20 +10,20 @@ from .utils import execute_command_in_subprocess
 
 
 def sync_launch_scheduled_execution(schedule_origin):
-    check.inst_param(schedule_origin, 'schedule_origin', ScheduleOrigin)
+    check.inst_param(schedule_origin, "schedule_origin", ScheduleOrigin)
 
     with get_temp_file_name() as output_file:
         parts = (
             [
                 schedule_origin.executable_path,
-                '-m',
-                'dagster',
-                'api',
-                'launch_scheduled_execution',
+                "-m",
+                "dagster",
+                "api",
+                "launch_scheduled_execution",
                 output_file,
             ]
             + xplat_shlex_split(schedule_origin.get_repo_cli_args())
-            + ['--schedule_name={}'.format(schedule_origin.schedule_name),]
+            + ["--schedule_name={}".format(schedule_origin.schedule_name),]
         )
         execute_command_in_subprocess(parts)
         result = read_unary_response(output_file)
@@ -32,10 +32,10 @@ def sync_launch_scheduled_execution(schedule_origin):
         elif isinstance(result, IPCErrorMessage):
             error = result.serializable_error_info
             raise DagsterSubprocessError(
-                'Error in API subprocess: {message}\n\n{err}'.format(
+                "Error in API subprocess: {message}\n\n{err}".format(
                     message=result.message, err=error.to_string()
                 ),
                 subprocess_error_infos=[error],
             )
         else:
-            check.failed('Unexpected result {}'.format(result))
+            check.failed("Unexpected result {}".format(result))

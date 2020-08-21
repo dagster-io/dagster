@@ -15,7 +15,7 @@ def get_day_partition():
 
 def run_config_for_day_partition(partition):
     day = partition.value
-    return {'solids': {'process_data_for_day': {'config': {'day_of_week': day}}}}
+    return {"solids": {"process_data_for_day": {"config": {"day_of_week": day}}}}
 
 
 day_partition_set = PartitionSetDefinition(

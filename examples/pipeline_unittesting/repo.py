@@ -31,25 +31,25 @@ def do_math():
 
 
 @solid(
-    input_defs=[InputDefinition(name='input_num', dagster_type=int)],
+    input_defs=[InputDefinition(name="input_num", dagster_type=int)],
     # with multiple outputs, you must specify your outputs via
     # OutputDefinitions, rather than type annotations
     output_defs=[
-        OutputDefinition(name='a_num', dagster_type=int),
-        OutputDefinition(name='a_string', dagster_type=str),
+        OutputDefinition(name="a_num", dagster_type=int),
+        OutputDefinition(name="a_string", dagster_type=str),
     ],
 )
 def emit_events_solid(_, input_num):
     a_num = input_num + 1
-    a_string = 'foo'
+    a_string = "foo"
     yield ExpectationResult(
-        success=a_num > 0, label='positive', description='A num must be positive'
+        success=a_num > 0, label="positive", description="A num must be positive"
     )
     yield AssetMaterialization(
-        asset_key='persisted_string', description='Let us pretend we persisted the string somewhere'
+        asset_key="persisted_string", description="Let us pretend we persisted the string somewhere"
     )
-    yield Output(value=a_num, output_name='a_num')
-    yield Output(value=a_string, output_name='a_string')
+    yield Output(value=a_num, output_name="a_num")
+    yield Output(value=a_string, output_name="a_string")
 
 
 @pipeline

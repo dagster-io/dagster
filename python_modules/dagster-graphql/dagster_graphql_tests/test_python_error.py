@@ -7,7 +7,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 def test_python_error():
     def func():
-        raise Exception('bar')
+        raise Exception("bar")
 
     try:
         func()
@@ -18,4 +18,4 @@ def test_python_error():
     assert isinstance(python_error.message, str)
     assert isinstance(python_error.stack, list)
     assert len(python_error.stack) == 2
-    assert 'bar' in python_error.stack[1]
+    assert "bar" in python_error.stack[1]

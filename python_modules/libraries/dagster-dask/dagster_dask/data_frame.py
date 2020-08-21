@@ -21,11 +21,11 @@ from dagster import (
 from dagster.config.field_utils import Selector
 
 WriteCompressionTextOptions = Enum(
-    'WriteCompressionText', [EnumValue('gzip'), EnumValue('bz2'), EnumValue('xz'),],
+    "WriteCompressionText", [EnumValue("gzip"), EnumValue("bz2"), EnumValue("xz"),],
 )
 
 EngineParquetOptions = Enum(
-    'EngineParquet', [EnumValue('auto'), EnumValue('fastparquet'), EnumValue('pyarrow'),],
+    "EngineParquet", [EnumValue("auto"), EnumValue("fastparquet"), EnumValue("pyarrow"),],
 )
 
 
@@ -36,14 +36,14 @@ def dict_without_keys(ddict, *keys):
 @dagster_type_materializer(
     Selector(
         {
-            'csv': Permissive(
+            "csv": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="str or list, Path glob indicating the naming scheme for the output files",
                     ),
-                    'single_file': Field(
+                    "single_file": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -54,7 +54,7 @@ def dict_without_keys(ddict, *keys):
                             A warning will be issued when writing to a file that is not backed by a local filesystem.
                         """,
                     ),
-                    'encoding': Field(
+                    "encoding": Field(
                         String,
                         is_required=False,
                         description="""
@@ -62,10 +62,10 @@ def dict_without_keys(ddict, *keys):
                             defaults to 'ascii' on Python 2 and 'utf-8' on Python 3.
                         """,
                     ),
-                    'mode': Field(
+                    "mode": Field(
                         String, is_required=False, description="Python write mode, default 'w'",
                     ),
-                    'compression': Field(
+                    "compression": Field(
                         WriteCompressionTextOptions,
                         is_required=False,
                         description="""
@@ -73,7 +73,7 @@ def dict_without_keys(ddict, *keys):
                             allowed values are 'gzip', 'bz2', 'xz'.
                         """,
                     ),
-                    'compute': Field(
+                    "compute": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -81,12 +81,12 @@ def dict_without_keys(ddict, *keys):
                             If False, returns a set of delayed objects, which can be computed at a later time.
                         """,
                     ),
-                    'storage_options': Field(
+                    "storage_options": Field(
                         Permissive(),
                         is_required=False,
                         description="Parameters passed on to the backend filesystem class.",
                     ),
-                    'header_first_partition_only': Field(
+                    "header_first_partition_only": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -97,16 +97,16 @@ def dict_without_keys(ddict, *keys):
                             It must not be `False` under the single file mode.
                         """,
                     ),
-                    'compute_kwargs': Field(
+                    "compute_kwargs": Field(
                         Permissive(),
                         is_required=False,
                         description="Options to be passed in to the compute method",
                     ),
                 }
             ),
-            'parquet': Permissive(
+            "parquet": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -114,7 +114,7 @@ def dict_without_keys(ddict, *keys):
                             Prepend with protocol like ``s3://`` or ``hdfs://`` for remote data.
                         """,
                     ),
-                    'engine': Field(
+                    "engine": Field(
                         EngineParquetOptions,
                         is_required=False,
                         description="""
@@ -122,7 +122,7 @@ def dict_without_keys(ddict, *keys):
                             If only one library is installed, it will use that one; if both, it will use 'fastparquet'.
                         """,
                     ),
-                    'compression': Field(
+                    "compression": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -131,12 +131,12 @@ def dict_without_keys(ddict, *keys):
                         The default is ``'default'``, which uses the default compression for whichever engine is selected.
                         """,
                     ),
-                    'write_index': Field(
+                    "write_index": Field(
                         Bool,
                         is_required=False,
                         description="Whether or not to write the index. Defaults to True.",
                     ),
-                    'append': Field(
+                    "append": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -145,7 +145,7 @@ def dict_without_keys(ddict, *keys):
                             In the latter case, the data-set must exist, and the schema must match the input data.
                         """,
                     ),
-                    'ignore_divisions': Field(
+                    "ignore_divisions": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -153,7 +153,7 @@ def dict_without_keys(ddict, *keys):
                             Ignored if append=False.
                         """,
                     ),
-                    'partition_on': Field(
+                    "partition_on": Field(
                         list,
                         is_required=False,
                         description="""
@@ -161,17 +161,17 @@ def dict_without_keys(ddict, *keys):
                             Each dask partition will result in one or more datafiles, there will be no global groupby.
                         """,
                     ),
-                    'storage_options': Field(
+                    "storage_options": Field(
                         Permissive(),
                         is_required=False,
                         description="Key/value pairs to be passed on to the file-system backend, if any.",
                     ),
-                    'write_metadata_file': Field(
+                    "write_metadata_file": Field(
                         Bool,
                         is_required=False,
                         description="Whether to write the special '_metadata' file.",
                     ),
-                    'compute': Field(
+                    "compute": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -179,16 +179,16 @@ def dict_without_keys(ddict, *keys):
                             If False then a ``dask.delayed`` object is returned for future computation.
                         """,
                     ),
-                    'compute_kwargs': Field(
+                    "compute_kwargs": Field(
                         Permissive(),
                         is_required=False,
                         description="Options to be passed in to the compute method.",
                     ),
                 }
             ),
-            'hdf': Permissive(
+            "hdf": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -197,7 +197,7 @@ def dict_without_keys(ddict, *keys):
                             May contain a ``*`` to denote many filenames.
                         """,
                     ),
-                    'key': Field(
+                    "key": Field(
                         String,
                         is_required=True,
                         description="""
@@ -205,7 +205,7 @@ def dict_without_keys(ddict, *keys):
                             May contain a ``*`` to denote many locations.
                         """,
                     ),
-                    'compute': Field(
+                    "compute": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -213,16 +213,16 @@ def dict_without_keys(ddict, *keys):
                             If False then this returns a ``dask.Delayed`` value.
                         """,
                     ),
-                    'scheduler': Field(
+                    "scheduler": Field(
                         String,
                         is_required=False,
                         description="The scheduler to use, like 'threads' or 'processes'.",
                     ),
                 }
             ),
-            'json': Permissive(
+            "json": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -233,22 +233,22 @@ def dict_without_keys(ddict, *keys):
                             Supports protocol specifications such as ``'s3://'``.
                         """,
                     ),
-                    'encoding': Field(
+                    "encoding": Field(
                         String,
                         is_required=False,
                         description="default is 'utf-8', The text encoding to implement, e.g., 'utf-8'.",
                     ),
-                    'errors': Field(
+                    "errors": Field(
                         String,
                         is_required=False,
                         description="default is 'strict', how to respond to errors in the conversion (see ``str.encode()``).",
                     ),
-                    'storage_options': Field(
+                    "storage_options": Field(
                         Permissive(),
                         is_required=False,
                         description="Passed to backend file-system implementation",
                     ),
-                    'compute': Field(
+                    "compute": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -256,30 +256,30 @@ def dict_without_keys(ddict, *keys):
                             If False, returns a set of delayed objects, which can be computed at a later time.
                         """,
                     ),
-                    'compute_kwargs': Field(
+                    "compute_kwargs": Field(
                         Permissive(),
                         is_required=False,
                         description="Options to be passed in to the compute method",
                     ),
-                    'compression': Field(
+                    "compression": Field(
                         String, is_required=False, description="String like 'gzip' or 'xz'.",
                     ),
                 },
             ),
-            'sql': Permissive(
+            "sql": Permissive(
                 {
-                    'name': Field(String, is_required=True, description="Name of SQL table",),
-                    'uri': Field(
+                    "name": Field(String, is_required=True, description="Name of SQL table",),
+                    "uri": Field(
                         String,
                         is_required=True,
                         description="Full sqlalchemy URI for the database connection",
                     ),
-                    'schema': Field(
+                    "schema": Field(
                         String,
                         is_required=False,
                         description="Specify the schema (if database flavor supports this). If None, use default schema.",
                     ),
-                    'if_exists': Field(
+                    "if_exists": Field(
                         String,
                         is_required=False,
                         description="""
@@ -290,7 +290,7 @@ def dict_without_keys(ddict, *keys):
                             * append: Insert new values to the existing table.
                         """,
                     ),
-                    'index': Field(
+                    "index": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -298,7 +298,7 @@ def dict_without_keys(ddict, *keys):
                             Uses `index_label` as the column name in the table.
                         """,
                     ),
-                    'index_label': Field(
+                    "index_label": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -307,7 +307,7 @@ def dict_without_keys(ddict, *keys):
                             A sequence should be given if the DataFrame uses MultiIndex.
                         """,
                     ),
-                    'chunksize': Field(
+                    "chunksize": Field(
                         Int,
                         is_required=False,
                         description="""
@@ -315,7 +315,7 @@ def dict_without_keys(ddict, *keys):
                             By default, all rows will be written at once.
                         """,
                     ),
-                    'dtype': Field(
+                    "dtype": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -325,7 +325,7 @@ def dict_without_keys(ddict, *keys):
                             If a scalar is provided, it will be applied to all columns.
                         """,
                     ),
-                    'method': Field(
+                    "method": Field(
                         String,
                         is_required=False,
                         description="""
@@ -338,7 +338,7 @@ def dict_without_keys(ddict, *keys):
                             section :ref:`insert method <io.sql.method>`.
                         """,
                     ),
-                    'compute': Field(
+                    "compute": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -346,7 +346,7 @@ def dict_without_keys(ddict, *keys):
                             otherwise, return a Dask object (or array of per-block objects when parallel=True).
                         """,
                     ),
-                    'parallel': Field(
+                    "parallel": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -361,22 +361,22 @@ def dict_without_keys(ddict, *keys):
     )
 )
 def dataframe_materializer(_context, config, dask_df):
-    check.inst_param(dask_df, 'dask_df', dd.DataFrame)
+    check.inst_param(dask_df, "dask_df", dd.DataFrame)
     file_type, file_options = list(config.items())[0]
-    path = file_options.get('path')
+    path = file_options.get("path")
 
-    if file_type == 'csv':
-        dask_df.to_csv(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'parquet':
-        dask_df.to_parquet(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'hdf':
-        dask_df.to_hdf(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'json':
-        dask_df.to_json(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'sql':
+    if file_type == "csv":
+        dask_df.to_csv(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "parquet":
+        dask_df.to_parquet(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "hdf":
+        dask_df.to_hdf(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "json":
+        dask_df.to_json(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "sql":
         dask_df.to_sql(**file_options)
     else:
-        check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
+        check.failed("Unsupported file_type {file_type}".format(file_type=file_type))
 
     return AssetMaterialization.file(path)
 
@@ -384,9 +384,9 @@ def dataframe_materializer(_context, config, dask_df):
 @dagster_type_loader(
     Selector(
         {
-            'csv': Permissive(
+            "csv": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -396,7 +396,7 @@ def dataframe_materializer(_context, config, dask_df):
                             with the caveat that they must all have the same protocol.
                         """,
                     ),
-                    'blocksize': Field(
+                    "blocksize": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -405,12 +405,12 @@ def dataframe_materializer(_context, config, dask_df):
                         Can be a number like 64000000` or a string like ``'64MB'. If None, a single block is used for each file.
                         """,
                     ),
-                    'sample': Field(
+                    "sample": Field(
                         Int,
                         is_required=False,
                         description="Number of bytes to use when determining dtypes.",
                     ),
-                    'assume_missing': Field(
+                    "assume_missing": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -418,7 +418,7 @@ def dataframe_materializer(_context, config, dask_df):
                             and are converted to floats. Default is False.
                         """,
                     ),
-                    'storage_options': Field(
+                    "storage_options": Field(
                         Permissive(),
                         is_required=False,
                         description="""
@@ -426,7 +426,7 @@ def dataframe_materializer(_context, config, dask_df):
                             e.g. host, port, username, password, etc.
                         """,
                     ),
-                    'include_path_column': Field(
+                    "include_path_column": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -437,9 +437,9 @@ def dataframe_materializer(_context, config, dask_df):
                     ),
                 }
             ),
-            'parquet': Permissive(
+            "parquet": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -449,7 +449,7 @@ def dataframe_materializer(_context, config, dask_df):
                             with the caveat that they must all have the same protocol.
                         """,
                     ),
-                    'columns': Field(
+                    "columns": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -458,7 +458,7 @@ def dataframe_materializer(_context, config, dask_df):
                             Provide a single field name instead of a list to read in the data as a Series.
                         """,
                     ),
-                    'index': Field(
+                    "index": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -467,7 +467,7 @@ def dataframe_materializer(_context, config, dask_df):
                             Use False to read all fields as columns.
                         """,
                     ),
-                    'categories': Field(
+                    "categories": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -478,12 +478,12 @@ def dataframe_materializer(_context, config, dask_df):
                             if None, will load categories automatically for data written by dask/fastparquet, not otherwise.
                         """,
                     ),
-                    'storage_options': Field(
+                    "storage_options": Field(
                         Permissive(),
                         is_required=False,
                         description="Key/value pairs to be passed on to the file-system backend, if any.",
                     ),
-                    'engine': Field(
+                    "engine": Field(
                         EngineParquetOptions,
                         is_required=False,
                         description="""
@@ -492,7 +492,7 @@ def dataframe_materializer(_context, config, dask_df):
                             if both, it will use ‘fastparquet’.
                         """,
                     ),
-                    'gather_statistics': Field(
+                    "gather_statistics": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -502,7 +502,7 @@ def dataframe_materializer(_context, config, dask_df):
                             because the footer of every file will be parsed (which is very slow on some systems).
                         """,
                     ),
-                    'split_row_groups:': Field(
+                    "split_row_groups:": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -512,7 +512,7 @@ def dataframe_materializer(_context, config, dask_df):
                             Only the “pyarrow” engine currently supports this argument.
                         """,
                     ),
-                    'chunksize': Field(
+                    "chunksize": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -523,9 +523,9 @@ def dataframe_materializer(_context, config, dask_df):
                     ),
                 }
             ),
-            'hdf': Permissive(
+            "hdf": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -534,42 +534,42 @@ def dataframe_materializer(_context, config, dask_df):
                             Can contain wildcards.
                         """,
                     ),
-                    'Key': Field(
+                    "Key": Field(
                         Any,
                         is_required=True,
                         description="group identifier in the store. Can contain wildcards.",
                     ),
-                    'start': Field(
+                    "start": Field(
                         Int,
                         is_required=False,
                         description="defaults to 0, row number to start at.",
                     ),
-                    'stop': Field(
+                    "stop": Field(
                         Int,
                         is_required=False,
                         description="defaults to None (the last row), row number to stop at.",
                     ),
-                    'columns': Field(
+                    "columns": Field(
                         list,
                         is_required=False,
                         description="A list of columns that if not None, will limit the return columns (default is None).",
                     ),
-                    'chunksize': Field(
+                    "chunksize": Field(
                         Any,
                         is_required=False,
                         description="Maximal number of rows per partition (default is 1000000).",
                     ),
-                    'sorted_index': Field(
+                    "sorted_index": Field(
                         Bool,
                         is_required=False,
                         description="Option to specify whether or not the input hdf files have a sorted index (default is False).",
                     ),
-                    'lock': Field(
+                    "lock": Field(
                         Bool,
                         is_required=False,
                         description="Option to use a lock to prevent concurrency issues (default is True).",
                     ),
-                    'mode': Field(
+                    "mode": Field(
                         String,
                         is_required=False,
                         description="""
@@ -581,9 +581,9 @@ def dataframe_materializer(_context, config, dask_df):
                     ),
                 }
             ),
-            'json': Permissive(
+            "json": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -592,25 +592,25 @@ def dataframe_materializer(_context, config, dask_df):
                             Supports protocol specifications such as 's3://'.
                         """,
                     ),
-                    'encoding': Field(
+                    "encoding": Field(
                         String,
                         is_required=False,
                         description="The text encoding to implement, e.g., “utf-8”.",
                     ),
-                    'errors': Field(
+                    "errors": Field(
                         String,
                         is_required=False,
                         description="how to respond to errors in the conversion (see str.encode()).",
                     ),
-                    'orient': Field(
+                    "orient": Field(
                         String, is_required=False, description="The JSON string format."
                     ),
-                    'storage_option': Field(
+                    "storage_option": Field(
                         Permissive(),
                         is_required=False,
                         description="Passed to backend file-system implementation.",
                     ),
-                    'blocksize': Field(
+                    "blocksize": Field(
                         Int,
                         is_required=False,
                         description="""
@@ -619,7 +619,7 @@ def dataframe_materializer(_context, config, dask_df):
                             each partition will be approximately this size in bytes, to the nearest newline character.
                         """,
                     ),
-                    'sample': Field(
+                    "sample": Field(
                         Int,
                         is_required=False,
                         description="""
@@ -628,26 +628,26 @@ def dataframe_materializer(_context, config, dask_df):
                             Only relevant is using blocksize.
                         """,
                     ),
-                    'compression': Field(
+                    "compression": Field(
                         String,
                         is_required=False,
                         description="default is None, String like ‘gzip’ or ‘xz’.",
                     ),
                 }
             ),
-            'sql_table': Permissive(
+            "sql_table": Permissive(
                 {
-                    'table': Field(
+                    "table": Field(
                         Any,
                         is_required=True,
                         description="str or sqlalchemy expression, Select columns from here.",
                     ),
-                    'uri': Field(
+                    "uri": Field(
                         String,
                         is_required=True,
                         description="Full sqlalchemy URI for the database connection.",
                     ),
-                    'index_col': Field(
+                    "index_col": Field(
                         String,
                         is_required=True,
                         description="""
@@ -662,7 +662,7 @@ def dataframe_materializer(_context, config, dask_df):
                         Labeling columns created by functions or arithmetic operations is required
                         """,
                     ),
-                    'divisions': Field(
+                    "divisions": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -674,7 +674,7 @@ def dataframe_materializer(_context, config, dask_df):
                             with the implicit assumption that each partition contains similar numbers of records.
                         """,
                     ),
-                    'npartitions': Field(
+                    "npartitions": Field(
                         Int,
                         is_required=False,
                         description="""
@@ -683,7 +683,7 @@ def dataframe_materializer(_context, config, dask_df):
                             The index column must be numeric or time for this to work.
                         """,
                     ),
-                    'columns': Field(
+                    "columns": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -693,7 +693,7 @@ def dataframe_materializer(_context, config, dask_df):
                             Labeling columns created by functions or arithmetic operations is recommended.
                         """,
                     ),
-                    'bytes_per_chunk': Field(
+                    "bytes_per_chunk": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -701,12 +701,12 @@ def dataframe_materializer(_context, config, dask_df):
                             this is the target size of each partition, in bytes.
                         """,
                     ),
-                    'head_rows': Field(
+                    "head_rows": Field(
                         Int,
                         is_required=False,
                         description="How many rows to load for inferring the data-types, unless passing meta.",
                     ),
-                    'schema': Field(
+                    "schema": Field(
                         String,
                         is_required=False,
                         description="""
@@ -716,9 +716,9 @@ def dataframe_materializer(_context, config, dask_df):
                     ),
                 }
             ),
-            'table': Permissive(
+            "table": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -728,7 +728,7 @@ def dataframe_materializer(_context, config, dask_df):
                             with the caveat that they must all have the same protocol.
                         """,
                     ),
-                    'blocksize': Field(
+                    "blocksize": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -738,12 +738,12 @@ def dataframe_materializer(_context, config, dask_df):
                             If None, a single block is used for each file.
                         """,
                     ),
-                    'sample': Field(
+                    "sample": Field(
                         Int,
                         is_required=False,
                         description="Number of bytes to use when determining dtypes.",
                     ),
-                    'assume_missing': Field(
+                    "assume_missing": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -751,7 +751,7 @@ def dataframe_materializer(_context, config, dask_df):
                             and are converted to floats. Default is False.
                         """,
                     ),
-                    'storage_options': Field(
+                    "storage_options": Field(
                         Permissive(),
                         is_required=False,
                         description="""
@@ -759,7 +759,7 @@ def dataframe_materializer(_context, config, dask_df):
                             e.g. host, port, username, password, etc.
                         """,
                     ),
-                    'include_path_column': Field(
+                    "include_path_column": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -770,9 +770,9 @@ def dataframe_materializer(_context, config, dask_df):
                     ),
                 }
             ),
-            'fwf': Permissive(
+            "fwf": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -782,7 +782,7 @@ def dataframe_materializer(_context, config, dask_df):
                             with the caveat that they must all have the same protocol.
                         """,
                     ),
-                    'blocksize': Field(
+                    "blocksize": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -793,12 +793,12 @@ def dataframe_materializer(_context, config, dask_df):
                             If None, a single block is used for each file.
                         """,
                     ),
-                    'sample': Field(
+                    "sample": Field(
                         Int,
                         is_required=False,
                         description="Number of bytes to use when determining dtypes.",
                     ),
-                    'assume_missing': Field(
+                    "assume_missing": Field(
                         Bool,
                         is_required=False,
                         description="""
@@ -807,7 +807,7 @@ def dataframe_materializer(_context, config, dask_df):
                             Default is False.
                         """,
                     ),
-                    'storage_options': Field(
+                    "storage_options": Field(
                         Permissive(),
                         is_required=False,
                         description="""
@@ -815,7 +815,7 @@ def dataframe_materializer(_context, config, dask_df):
                             e.g. host, port, username, password, etc.
                         """,
                     ),
-                    'include_path_column': Field(
+                    "include_path_column": Field(
                         Any,
                         is_required=False,
                         description="""
@@ -826,9 +826,9 @@ def dataframe_materializer(_context, config, dask_df):
                     ),
                 }
             ),
-            'orc': Permissive(
+            "orc": Permissive(
                 {
-                    'path': Field(
+                    "path": Field(
                         Any,
                         is_required=True,
                         description="""
@@ -837,10 +837,10 @@ def dataframe_materializer(_context, config, dask_df):
                             and may include glob character if a single string.
                         """,
                     ),
-                    'columns': Field(
+                    "columns": Field(
                         list, is_required=False, description="Columns to load. If None, loads all.",
                     ),
-                    'storage_options': Field(
+                    "storage_options": Field(
                         Permissive(),
                         is_required=False,
                         description="Further parameters to pass to the bytes backend.",
@@ -852,27 +852,27 @@ def dataframe_materializer(_context, config, dask_df):
 )
 def dataframe_loader(_context, config):
     file_type, file_options = list(config.items())[0]
-    path = file_options.get('path')
+    path = file_options.get("path")
 
-    if file_type == 'csv':
-        return dd.read_csv(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'parquet':
-        return dd.read_parquet(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'hdf':
-        return dd.read_hdf(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'json':
-        return dd.read_json(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'sql_table':
+    if file_type == "csv":
+        return dd.read_csv(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "parquet":
+        return dd.read_parquet(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "hdf":
+        return dd.read_hdf(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "json":
+        return dd.read_json(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "sql_table":
         return dd.read_sql_table(**file_options)
-    elif file_type == 'table':
-        return dd.read_table(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'fwf':
-        return dd.read_fwf(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'orc':
-        return dd.read_orc(path, **dict_without_keys(file_options, 'path'))
+    elif file_type == "table":
+        return dd.read_table(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "fwf":
+        return dd.read_fwf(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "orc":
+        return dd.read_orc(path, **dict_without_keys(file_options, "path"))
     else:
         raise DagsterInvariantViolationError(
-            'Unsupported file_type {file_type}'.format(file_type=file_type)
+            "Unsupported file_type {file_type}".format(file_type=file_type)
         )
 
 
@@ -883,17 +883,17 @@ def df_type_check(_, value):
         success=True,
         metadata_entries=[
             # string cast columns since they may be things like datetime
-            EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
+            EventMetadataEntry.json({"columns": list(map(str, value.columns))}, "metadata"),
         ],
     )
 
 
 DataFrame = DagsterType(
-    name='DaskDataFrame',
-    description='''A Dask DataFrame is a large parallel DataFrame composed of many smaller Pandas DataFrames, split along the index.
+    name="DaskDataFrame",
+    description="""A Dask DataFrame is a large parallel DataFrame composed of many smaller Pandas DataFrames, split along the index.
     These Pandas DataFrames may live on disk for larger-than-memory computing on a single machine, or on many different machines in a cluster.
     One Dask DataFrame operation triggers many operations on the constituent Pandas DataFrames.
-    See https://docs.dask.org/en/latest/dataframe.html''',
+    See https://docs.dask.org/en/latest/dataframe.html""",
     loader=dataframe_loader,
     materializer=dataframe_materializer,
     type_check_fn=df_type_check,

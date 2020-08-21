@@ -19,11 +19,11 @@ from dagster.config.validate import validate_config
 
 
 def define_test_enum_type():
-    return ConfigEnum(name='TestEnum', enum_values=[EnumValue('VALUE_ONE')])
+    return ConfigEnum(name="TestEnum", enum_values=[EnumValue("VALUE_ONE")])
 
 
 def test_config_enums():
-    assert validate_config(define_test_enum_type(), 'VALUE_ONE').success
+    assert validate_config(define_test_enum_type(), "VALUE_ONE").success
 
 
 def test_config_enum_error_none():
@@ -35,38 +35,38 @@ def test_config_enum_error_wrong_type():
 
 
 def test_config_enum_error():
-    assert not validate_config(define_test_enum_type(), 'NOT_PRESENT').success
+    assert not validate_config(define_test_enum_type(), "NOT_PRESENT").success
 
 
 def test_enum_in_pipeline_execution():
     called = {}
 
     @solid(
-        config_schema={'int_field': Int, 'enum_field': Enum('AnEnum', [EnumValue('ENUM_VALUE')]),}
+        config_schema={"int_field": Int, "enum_field": Enum("AnEnum", [EnumValue("ENUM_VALUE")]),}
     )
     def config_me(context):
-        assert context.solid_config['int_field'] == 2
-        assert context.solid_config['enum_field'] == 'ENUM_VALUE'
-        called['yup'] = True
+        assert context.solid_config["int_field"] == 2
+        assert context.solid_config["enum_field"] == "ENUM_VALUE"
+        called["yup"] = True
 
-    pipeline_def = PipelineDefinition(name='enum_in_pipeline', solid_defs=[config_me])
+    pipeline_def = PipelineDefinition(name="enum_in_pipeline", solid_defs=[config_me])
 
     result = execute_pipeline(
         pipeline_def,
-        {'solids': {'config_me': {'config': {'int_field': 2, 'enum_field': 'ENUM_VALUE'}}}},
+        {"solids": {"config_me": {"config": {"int_field": 2, "enum_field": "ENUM_VALUE"}}}},
     )
 
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
             pipeline_def,
-            {'solids': {'config_me': {'config': {'int_field': 2, 'enum_field': 'NOPE'}}}},
+            {"solids": {"config_me": {"config": {"int_field": 2, "enum_field": "NOPE"}}}},
         )
 
     assert (
-        'Value at path root:solids:config_me:config:enum_field not in enum type AnEnum got NOPE'
+        "Value at path root:solids:config_me:config:enum_field not in enum type AnEnum got NOPE"
         in str(exc_info.value)
     )
 
@@ -78,10 +78,10 @@ class NativeEnum(PythonEnum):
 
 def test_native_enum_dagster_enum():
     dagster_enum = Enum(
-        'DagsterNativeEnum',
+        "DagsterNativeEnum",
         [
-            EnumValue(config_value='FOO', python_value=NativeEnum.FOO),
-            EnumValue(config_value='BAR', python_value=NativeEnum.BAR),
+            EnumValue(config_value="FOO", python_value=NativeEnum.FOO),
+            EnumValue(config_value="BAR", python_value=NativeEnum.BAR),
         ],
     )
 
@@ -90,15 +90,15 @@ def test_native_enum_dagster_enum():
     @solid(config_schema=dagster_enum)
     def dagster_enum_me(context):
         assert context.solid_config == NativeEnum.BAR
-        called['yup'] = True
+        called["yup"] = True
 
     pipeline_def = PipelineDefinition(
-        name='native_enum_dagster_pipeline', solid_defs=[dagster_enum_me]
+        name="native_enum_dagster_pipeline", solid_defs=[dagster_enum_me]
     )
 
-    result = execute_pipeline(pipeline_def, {'solids': {'dagster_enum_me': {'config': 'BAR'}}})
+    result = execute_pipeline(pipeline_def, {"solids": {"dagster_enum_me": {"config": "BAR"}}})
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_native_enum_dagster_enum_from_classmethod():
@@ -108,15 +108,15 @@ def test_native_enum_dagster_enum_from_classmethod():
     @solid(config_schema=dagster_enum)
     def dagster_enum_me(context):
         assert context.solid_config == NativeEnum.BAR
-        called['yup'] = True
+        called["yup"] = True
 
     pipeline_def = PipelineDefinition(
-        name='native_enum_dagster_pipeline', solid_defs=[dagster_enum_me]
+        name="native_enum_dagster_pipeline", solid_defs=[dagster_enum_me]
     )
 
-    result = execute_pipeline(pipeline_def, {'solids': {'dagster_enum_me': {'config': 'BAR'}}})
+    result = execute_pipeline(pipeline_def, {"solids": {"dagster_enum_me": {"config": "BAR"}}})
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_native_enum_not_allowed_as_default_value():
@@ -140,10 +140,10 @@ def test_list_enum_with_default_value():
 
     called = {}
 
-    @solid(config_schema=Field([dagster_enum], is_required=False, default_value=['BAR']))
+    @solid(config_schema=Field([dagster_enum], is_required=False, default_value=["BAR"]))
     def enum_list(context):
         assert context.solid_config == [NativeEnum.BAR]
-        called['yup'] = True
+        called["yup"] = True
 
     @pipeline
     def enum_list_pipeline():
@@ -152,7 +152,7 @@ def test_list_enum_with_default_value():
     result = execute_pipeline(enum_list_pipeline)
 
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_dict_enum_with_default():
@@ -160,10 +160,10 @@ def test_dict_enum_with_default():
 
     called = {}
 
-    @solid(config_schema={'enum': Field(dagster_enum, is_required=False, default_value='BAR')})
+    @solid(config_schema={"enum": Field(dagster_enum, is_required=False, default_value="BAR")})
     def enum_dict(context):
-        assert context.solid_config['enum'] == NativeEnum.BAR
-        called['yup'] = True
+        assert context.solid_config["enum"] == NativeEnum.BAR
+        called["yup"] = True
 
     @pipeline
     def enum_dict_pipeline():
@@ -172,7 +172,7 @@ def test_dict_enum_with_default():
     result = execute_pipeline(enum_dict_pipeline)
 
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_list_enum_with_bad_default_value():
@@ -188,8 +188,8 @@ def test_list_enum_with_bad_default_value():
 
     # This error message is bad
     # https://github.com/dagster-io/dagster/issues/2339
-    assert 'Invalid default_value for Field.' in str(exc_info.value)
-    assert 'Error 1: Value at path root[0] for enum type NativeEnum must be a string' in str(
+    assert "Invalid default_value for Field." in str(exc_info.value)
+    assert "Error 1: Value at path root[0] for enum type NativeEnum must be a string" in str(
         exc_info.value
     )
 
@@ -201,7 +201,7 @@ def test_dict_enum_with_bad_default():
 
         @solid(
             config_schema={
-                'enum': Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR)
+                "enum": Field(dagster_enum, is_required=False, default_value=NativeEnum.BAR)
             }
         )
         def _enum_bad_dict(_):

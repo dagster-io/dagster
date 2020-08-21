@@ -20,8 +20,8 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 
 
 def inner_plan_execution_iterator(pipeline_context, execution_plan):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
     retries = pipeline_context.retries
 
@@ -45,8 +45,8 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
         check.invariant(
             len(missing_resources) == 0,
             (
-                'Expected step context for solid {solid_name} to have all required resources, but '
-                'missing {missing_resources}.'
+                "Expected step context for solid {solid_name} to have all required resources, but "
+                "missing {missing_resources}."
             ).format(solid_name=step_context.solid.name, missing_resources=missing_resources),
         )
 
@@ -64,8 +64,8 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
 
                 step_context.log.info(
                     (
-                        'Not all inputs covered for {step}. Not executing. Output missing for '
-                        'inputs: {uncovered_inputs}'
+                        "Not all inputs covered for {step}. Not executing. Output missing for "
+                        "inputs: {uncovered_inputs}"
                     ).format(uncovered_inputs=uncovered_inputs, step=step.key)
                 )
                 step_event = DagsterEvent.step_skipped_event(step_context)
@@ -94,7 +94,7 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
 
 
 def _trigger_hook(step_context, step_event_list):
-    '''Trigger hooks and record hook's operatonal events'''
+    """Trigger hooks and record hook's operatonal events"""
     hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)
     # when the solid doesn't have a hook configured
     if hook_defs is None:
@@ -108,7 +108,7 @@ def _trigger_hook(step_context, step_event_list):
         try:
             with user_code_error_boundary(
                 HookExecutionError,
-                lambda: 'Error occurred during the execution of hook_fn triggered for solid '
+                lambda: "Error occurred during the execution of hook_fn triggered for solid "
                 '"{solid_name}"'.format(solid_name=step_context.solid.name),
             ):
                 hook_execution_result = hook_def.hook_fn(hook_context, step_event_list)
@@ -122,8 +122,8 @@ def _trigger_hook(step_context, step_event_list):
         check.invariant(
             isinstance(hook_execution_result, HookExecutionResult),
             (
-                'Error in hook {hook_name}: hook unexpectedly returned result {result} of '
-                'type {type_}. Should be a HookExecutionResult'
+                "Error in hook {hook_name}: hook unexpectedly returned result {result} of "
+                "type {type_}. Should be a HookExecutionResult"
             ).format(
                 hook_name=hook_def.name,
                 result=hook_execution_result,
@@ -147,8 +147,8 @@ def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
     if nonoptionals:
         raise DagsterStepOutputNotFoundError(
             (
-                'When executing {step} discovered required outputs missing '
-                'from previous step: {nonoptionals}'
+                "When executing {step} discovered required outputs missing "
+                "from previous step: {nonoptionals}"
             ).format(nonoptionals=nonoptionals, step=step_key),
             step_key=nonoptionals[0].step_key,
             output_name=nonoptionals[0].output_name,
@@ -156,7 +156,7 @@ def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
 
 
 def _dagster_event_sequence_for_step(step_context, retries):
-    '''
+    """
     Yield a sequence of dagster events for the given step with the step context.
 
     This function also processes errors. It handles a few error cases:
@@ -196,10 +196,10 @@ def _dagster_event_sequence_for_step(step_context, retries):
 
     For tools, however, this option should be false, and a sensible error message
     signaled to the user within that tool.
-    '''
+    """
 
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.inst_param(retries, 'retries', Retries)
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(retries, "retries", Retries)
     try:
         prior_attempt_count = retries.get_attempt_count(step_context.step.key)
         if step_context.step_launcher:
@@ -216,7 +216,7 @@ def _dagster_event_sequence_for_step(step_context, retries):
 
         if retries.disabled:
             fail_err = SerializableErrorInfo(
-                message='RetryRequested but retries are disabled',
+                message="RetryRequested but retries are disabled",
                 stack=retry_err_info.stack,
                 cls_name=retry_err_info.cls_name,
                 cause=retry_err_info.cause,
@@ -229,7 +229,7 @@ def _dagster_event_sequence_for_step(step_context, retries):
             prev_attempts = retries.get_attempt_count(step_context.step.key)
             if prev_attempts >= retry_request.max_retries:
                 fail_err = SerializableErrorInfo(
-                    message='Exceeded max_retries of {}'.format(retry_request.max_retries),
+                    message="Exceeded max_retries of {}".format(retry_request.max_retries),
                     stack=retry_err_info.stack,
                     cls_name=retry_err_info.cls_name,
                     cause=retry_err_info.cause,
@@ -252,7 +252,7 @@ def _dagster_event_sequence_for_step(step_context, retries):
             step_context,
             sys.exc_info(),
             UserFailureData(
-                label='intentional-failure',
+                label="intentional-failure",
                 description=failure.description,
                 metadata_entries=failure.metadata_entries,
             ),

@@ -14,32 +14,32 @@ from dagster import (
 
 
 @hourly_schedule(
-    pipeline_name='metrics_pipeline',
+    pipeline_name="metrics_pipeline",
     start_date=datetime.datetime(2019, 12, 1),
     execution_time=datetime.time(),
 )
 def daily_ingest_schedule(date):
-    date_path = date.strftime('%Y/%m/%d/%H')
+    date_path = date.strftime("%Y/%m/%d/%H")
     return {
-        'solids': {
-            'save_metrics': {
-                'inputs': {'data_path': {'value': 's3://bucket-name/data/{}'.format(date_path)}}
+        "solids": {
+            "save_metrics": {
+                "inputs": {"data_path": {"value": "s3://bucket-name/data/{}".format(date_path)}}
             }
         },
     }
 
 
 @daily_schedule(
-    pipeline_name='rollup_pipeline',
+    pipeline_name="rollup_pipeline",
     start_date=datetime.datetime(2019, 12, 1),
     execution_time=datetime.time(hour=3, minute=0),
 )
 def daily_rollup_schedule(date):
-    date_path = date.strftime('%Y/%m/%d')
+    date_path = date.strftime("%Y/%m/%d")
     return {
-        'solids': {
-            'rollup_data': {
-                'inputs': {'data_path': {'value': 's3://bucket-name/data/{}'.format(date_path)}}
+        "solids": {
+            "rollup_data": {
+                "inputs": {"data_path": {"value": "s3://bucket-name/data/{}".format(date_path)}}
             }
         },
     }
@@ -50,9 +50,9 @@ def daily_rollup_schedule(date):
 )
 def test_schedule(_):
     return {
-        'solids': {
-            'save_metrics': {
-                'inputs': {'data_path': {'value': 's3://bucket-name/data/{}'.format("date")}}
+        "solids": {
+            "save_metrics": {
+                "inputs": {"data_path": {"value": "s3://bucket-name/data/{}".format("date")}}
             }
         },
     }

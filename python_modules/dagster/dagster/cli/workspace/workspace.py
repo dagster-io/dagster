@@ -6,7 +6,7 @@ class Workspace:
     def __init__(self, repository_location_handles):
         check.list_param(
             repository_location_handles,
-            'repository_location_handles',
+            "repository_location_handles",
             of_type=RepositoryLocationHandle,
         )
         self._location_handle_dict = {rlh.location_name: rlh for rlh in repository_location_handles}
@@ -20,11 +20,11 @@ class Workspace:
         return list(self._location_handle_dict.keys())
 
     def has_repository_location_handle(self, location_name):
-        check.str_param(location_name, 'location_name')
+        check.str_param(location_name, "location_name")
         return location_name in self._location_handle_dict
 
     def get_repository_location_handle(self, location_name):
-        check.str_param(location_name, 'location_name')
+        check.str_param(location_name, "location_name")
         return self._location_handle_dict[location_name]
 
     def reload_repository_location(self, location_name):

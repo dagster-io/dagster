@@ -14,14 +14,14 @@ def a_solid(_):
 
 
 @pipeline(
-    mode_defs=[ModeDefinition('default'), ModeDefinition('mode_one')],
+    mode_defs=[ModeDefinition("default"), ModeDefinition("mode_one")],
     preset_defs=[
-        PresetDefinition(name='plain_preset'),
+        PresetDefinition(name="plain_preset"),
         PresetDefinition(
-            name='kitchen_sink_preset',
-            run_config={'foo': 'bar'},
-            solid_selection=['a_solid'],
-            mode='mode_one',
+            name="kitchen_sink_preset",
+            run_config={"foo": "bar"},
+            solid_selection=["a_solid"],
+            mode="mode_one",
         ),
     ],
 )
@@ -30,7 +30,7 @@ def a_pipeline():
 
 
 @daily_schedule(
-    pipeline_name='a_pipeline',
+    pipeline_name="a_pipeline",
     start_date=datetime(year=2019, month=1, day=1),
     end_date=datetime(year=2019, month=2, day=1),
 )
@@ -44,9 +44,9 @@ def test_external_repository_data(snapshot):
         return [a_pipeline, a_schedule]
 
     external_repo_data = external_repository_data_from_def(repo)
-    assert external_repo_data.get_external_pipeline_data('a_pipeline')
-    assert external_repo_data.get_external_schedule_data('a_schedule')
-    assert external_repo_data.get_external_partition_set_data('a_schedule_partitions')
+    assert external_repo_data.get_external_pipeline_data("a_pipeline")
+    assert external_repo_data.get_external_schedule_data("a_schedule")
+    assert external_repo_data.get_external_partition_set_data("a_schedule_partitions")
     snapshot.assert_match(serialize_pp(external_repo_data))
 
 

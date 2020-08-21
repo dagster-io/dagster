@@ -2,7 +2,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
 
 
 def all_solids_query():
-    return '''
+    return """
     query AllSolidsQuery($repositorySelector: RepositorySelector!) {
         repositoryOrError(repositorySelector: $repositorySelector) {
            ... on Repository {
@@ -14,11 +14,11 @@ def all_solids_query():
             }
         }
     }
-    '''
+    """
 
 
 def get_solid_query_exists():
-    return '''
+    return """
     query SolidsQuery($repositorySelector: RepositorySelector!) {
         repositoryOrError(repositorySelector: $repositorySelector) {
             ... on Repository {
@@ -32,13 +32,13 @@ def get_solid_query_exists():
             }
         }
     }
-    '''
+    """
 
 
 def test_query_all_solids(graphql_context, snapshot):
     selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
-        graphql_context, all_solids_query(), variables={'repositorySelector': selector}
+        graphql_context, all_solids_query(), variables={"repositorySelector": selector}
     )
     snapshot.assert_match(result.data)
 
@@ -46,9 +46,9 @@ def test_query_all_solids(graphql_context, snapshot):
 def test_query_get_solid_exists(graphql_context):
     selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
-        graphql_context, get_solid_query_exists(), variables={'repositorySelector': selector}
+        graphql_context, get_solid_query_exists(), variables={"repositorySelector": selector}
     )
 
     assert not result.errors
-    print(result.data['repositoryOrError'])  # pylint: disable=print-call
-    assert result.data['repositoryOrError']['usedSolid']['definition']['name'] == 'sum_solid'
+    print(result.data["repositoryOrError"])  # pylint: disable=print-call
+    assert result.data["repositoryOrError"]["usedSolid"]["definition"]["name"] == "sum_solid"

@@ -28,7 +28,7 @@ from dagster.utils import safe_tempfile_path, segfault
 def test_diamond_simple_execution():
     result = execute_pipeline(define_diamond_pipeline())
     assert result.success
-    assert result.result_for_solid('adder').output_value() == 11
+    assert result.result_for_solid("adder").output_value() == 11
 
 
 def compute_event(result, solid_name):
@@ -39,12 +39,12 @@ def test_diamond_multi_execution():
     pipe = reconstructable(define_diamond_pipeline)
     result = execute_pipeline(
         pipe,
-        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
         instance=DagsterInstance.local_temp(),
     )
     assert result.success
 
-    assert result.result_for_solid('adder').output_value() == 11
+    assert result.result_for_solid("adder").output_value() == 11
 
     # https://github.com/dagster-io/dagster/issues/1875
     # pids_by_solid = {}
@@ -60,28 +60,28 @@ def define_diamond_pipeline():
     def return_two():
         return 2
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def add_three(num):
         return num + 3
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def mult_three(num):
         return num * 3
 
-    @lambda_solid(input_defs=[InputDefinition('left'), InputDefinition('right')])
+    @lambda_solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
     def adder(left, right):
         return left + right
 
     @pipeline(
         preset_defs=[
             PresetDefinition(
-                'just_adder',
+                "just_adder",
                 {
-                    'storage': {'filesystem': {}},
-                    'execution': {'multiprocess': {}},
-                    'solids': {'adder': {'inputs': {'left': {'value': 1}, 'right': {'value': 1}}}},
+                    "storage": {"filesystem": {}},
+                    "execution": {"multiprocess": {}},
+                    "solids": {"adder": {"inputs": {"left": {"value": 1}, "right": {"value": 1}}}},
                 },
-                solid_selection=['adder'],
+                solid_selection=["adder"],
             )
         ],
     )
@@ -99,7 +99,7 @@ def define_error_pipeline():
 
     @lambda_solid
     def throw_error():
-        raise Exception('bad programmer')
+        raise Exception("bad programmer")
 
     @pipeline
     def error_pipeline():
@@ -117,7 +117,7 @@ def test_error_pipeline():
 def test_error_pipeline_multiprocess():
     result = execute_pipeline(
         reconstructable(define_error_pipeline),
-        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
         instance=DagsterInstance.local_temp(),
     )
     assert not result.success
@@ -126,7 +126,7 @@ def test_error_pipeline_multiprocess():
 def test_mem_storage_error_pipeline_multiprocess():
     result = execute_pipeline(
         reconstructable(define_diamond_pipeline),
-        run_config={'execution': {'multiprocess': {}}},
+        run_config={"execution": {"multiprocess": {}}},
         instance=DagsterInstance.local_temp(),
         raise_on_error=False,
     )
@@ -138,7 +138,7 @@ def test_mem_storage_error_pipeline_multiprocess():
 def test_invalid_instance():
     result = execute_pipeline(
         reconstructable(define_diamond_pipeline),
-        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
     )
@@ -147,15 +147,15 @@ def test_invalid_instance():
     assert result.event_list[0].is_failure
     assert (
         result.event_list[0].pipeline_init_failure_data.error.cls_name
-        == 'DagsterUnmetExecutorRequirementsError'
+        == "DagsterUnmetExecutorRequirementsError"
     )
-    assert 'non-ephemeral instance' in result.event_list[0].pipeline_init_failure_data.error.message
+    assert "non-ephemeral instance" in result.event_list[0].pipeline_init_failure_data.error.message
 
 
 def test_no_handle():
     result = execute_pipeline(
         define_diamond_pipeline(),
-        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
     )
@@ -164,19 +164,19 @@ def test_no_handle():
     assert result.event_list[0].is_failure
     assert (
         result.event_list[0].pipeline_init_failure_data.error.cls_name
-        == 'DagsterUnmetExecutorRequirementsError'
+        == "DagsterUnmetExecutorRequirementsError"
     )
-    assert 'is not reconstructable' in result.event_list[0].pipeline_init_failure_data.error.message
+    assert "is not reconstructable" in result.event_list[0].pipeline_init_failure_data.error.message
 
 
 def test_solid_selection():
     pipe = reconstructable(define_diamond_pipeline)
 
-    result = execute_pipeline(pipe, preset='just_adder', instance=DagsterInstance.local_temp())
+    result = execute_pipeline(pipe, preset="just_adder", instance=DagsterInstance.local_temp())
 
     assert result.success
 
-    assert result.result_for_solid('adder').output_value() == 2
+    assert result.result_for_solid("adder").output_value() == 2
 
 
 def define_subdag_pipeline():
@@ -189,15 +189,15 @@ def define_subdag_pipeline():
                 return
 
     @solid(
-        input_defs=[InputDefinition('after', Nothing)], config_schema=Field(String),
+        input_defs=[InputDefinition("after", Nothing)], config_schema=Field(String),
     )
     def writer(context):
-        with open(context.solid_config, 'w') as fd:
-            fd.write('1')
+        with open(context.solid_config, "w") as fd:
+            fd.write("1")
         return
 
     @lambda_solid(
-        input_defs=[InputDefinition('after', Nothing)], output_def=OutputDefinition(Nothing),
+        input_defs=[InputDefinition("after", Nothing)], output_def=OutputDefinition(Nothing),
     )
     def noop():
         pass
@@ -205,9 +205,9 @@ def define_subdag_pipeline():
     @pipeline
     def separate():
         waiter()
-        a = noop.alias('noop_1')()
-        b = noop.alias('noop_2')(a)
-        c = noop.alias('noop_3')(b)
+        a = noop.alias("noop_1")()
+        b = noop.alias("noop_2")(a)
+        c = noop.alias("noop_3")(b)
         writer(c)
 
     return separate
@@ -220,9 +220,9 @@ def test_separate_sub_dags():
         result = execute_pipeline(
             pipe,
             run_config={
-                'storage': {'filesystem': {}},
-                'execution': {'multiprocess': {'config': {'max_concurrent': 2}}},
-                'solids': {'waiter': {'config': filename}, 'writer': {'config': filename},},
+                "storage": {"filesystem": {}},
+                "execution": {"multiprocess": {"config": {"max_concurrent": 2}}},
+                "solids": {"waiter": {"config": filename}, "writer": {"config": filename},},
             },
             instance=DagsterInstance.local_temp(),
         )
@@ -233,7 +233,7 @@ def test_separate_sub_dags():
     order = [str(event.solid_handle) for event in result.step_event_list if event.is_step_success]
 
     # the writer and waiter my finish in different orders so just ensure the proceeding chain
-    assert order[0:3] == ['noop_1', 'noop_2', 'noop_3']
+    assert order[0:3] == ["noop_1", "noop_2", "noop_3"]
 
 
 def test_ephemeral_event_log():
@@ -241,31 +241,31 @@ def test_ephemeral_event_log():
     # override event log to in memory
     instance = DagsterInstance.local_temp(
         overrides={
-            'event_log_storage': {
-                'module': 'dagster.core.storage.event_log',
-                'class': 'InMemoryEventLogStorage',
+            "event_log_storage": {
+                "module": "dagster.core.storage.event_log",
+                "class": "InMemoryEventLogStorage",
             }
         }
     )
 
     result = execute_pipeline(
         pipe,
-        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
         instance=instance,
     )
     assert result.success
 
-    assert result.result_for_solid('adder').output_value() == 11
+    assert result.result_for_solid("adder").output_value() == 11
 
 
 @solid(
     output_defs=[
-        OutputDefinition(name='option_1', is_required=False),
-        OutputDefinition(name='option_2', is_required=False),
+        OutputDefinition(name="option_1", is_required=False),
+        OutputDefinition(name="option_2", is_required=False),
     ]
 )
 def either_or(_context):
-    yield Output(1, 'option_1')
+    yield Output(1, "option_1")
 
 
 @lambda_solid
@@ -288,7 +288,7 @@ def test_optional_outputs():
 
     multi_result = execute_pipeline(
         reconstructable(optional_stuff),
-        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
         instance=DagsterInstance.local_temp(),
     )
     assert multi_result.success
@@ -299,9 +299,9 @@ def test_optional_outputs():
 @lambda_solid
 def throw():
     raise Failure(
-        description='it Failure',
+        description="it Failure",
         metadata_entries=[
-            EventMetadataEntry.text(label='label', text='text', description='description')
+            EventMetadataEntry.text(label="label", text="text", description="description")
         ],
     )
 
@@ -314,29 +314,29 @@ def failure():
 def test_failure_multiprocessing():
     result = execute_pipeline(
         reconstructable(failure),
-        run_config={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
+        run_config={"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
         instance=DagsterInstance.local_temp(),
         raise_on_error=False,
     )
     assert not result.success
-    failure_data = result.result_for_solid('throw').failure_data
+    failure_data = result.result_for_solid("throw").failure_data
     assert failure_data
-    assert failure_data.error.cls_name == 'Failure'
+    assert failure_data.error.cls_name == "Failure"
 
     # hard coded
-    assert failure_data.user_failure_data.label == 'intentional-failure'
+    assert failure_data.user_failure_data.label == "intentional-failure"
     # from Failure
-    assert failure_data.user_failure_data.description == 'it Failure'
-    assert failure_data.user_failure_data.metadata_entries[0].label == 'label'
-    assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == 'text'
-    assert failure_data.user_failure_data.metadata_entries[0].description == 'description'
+    assert failure_data.user_failure_data.description == "it Failure"
+    assert failure_data.user_failure_data.metadata_entries[0].label == "label"
+    assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
+    assert failure_data.user_failure_data.metadata_entries[0].description == "description"
 
 
 @solid
 def sys_exit(context):
-    context.log.info('Informational message')
-    print('Crashy output to stdout')  # pylint: disable=print-call
-    sys.exit('Crashy output to stderr')
+    context.log.info("Informational message")
+    print("Crashy output to stdout")  # pylint: disable=print-call
+    sys.exit("Crashy output to stderr")
 
 
 @pipeline
@@ -344,26 +344,26 @@ def sys_exit_pipeline():
     sys_exit()
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Different crash output on Windows: See issue #2791")
+@pytest.mark.skipif(os.name == "nt", reason="Different crash output on Windows: See issue #2791")
 def test_crash_multiprocessing():
     instance = DagsterInstance.local_temp()
     result = execute_pipeline(
         reconstructable(sys_exit_pipeline),
-        run_config={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
+        run_config={"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
         instance=instance,
         raise_on_error=False,
     )
     assert not result.success
-    failure_data = result.result_for_solid('sys_exit').failure_data
+    failure_data = result.result_for_solid("sys_exit").failure_data
     assert failure_data
-    assert failure_data.error.cls_name == 'ChildProcessCrashException'
+    assert failure_data.error.cls_name == "ChildProcessCrashException"
 
     assert failure_data.user_failure_data is None
 
     assert (
-        'Crashy output to stdout'
+        "Crashy output to stdout"
         in instance.compute_log_manager.read_logs_file(
-            result.run_id, 'sys_exit.compute', ComputeIOType.STDOUT
+            result.run_id, "sys_exit.compute", ComputeIOType.STDOUT
         ).data
     )
 
@@ -382,8 +382,8 @@ def test_crash_multiprocessing():
 # segfault test
 @solid
 def segfault_solid(context):
-    context.log.info('Informational message')
-    print('Crashy output to stdout')  # pylint: disable=print-call
+    context.log.info("Informational message")
+    print("Crashy output to stdout")  # pylint: disable=print-call
     segfault()
 
 
@@ -392,19 +392,19 @@ def segfault_pipeline():
     segfault_solid()
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Different exception on Windows: See issue #2791")
+@pytest.mark.skipif(os.name == "nt", reason="Different exception on Windows: See issue #2791")
 def test_crash_hard_multiprocessing():
     instance = DagsterInstance.local_temp()
     result = execute_pipeline(
         reconstructable(segfault_pipeline),
-        run_config={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
+        run_config={"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
         instance=instance,
         raise_on_error=False,
     )
     assert not result.success
-    failure_data = result.result_for_solid('segfault_solid').failure_data
+    failure_data = result.result_for_solid("segfault_solid").failure_data
     assert failure_data
-    assert failure_data.error.cls_name == 'ChildProcessCrashException'
+    assert failure_data.error.cls_name == "ChildProcessCrashException"
 
     assert failure_data.user_failure_data is None
 

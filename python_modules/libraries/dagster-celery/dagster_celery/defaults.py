@@ -1,16 +1,16 @@
 import os
 
-broker_url = 'pyamqp://guest@{hostname}:5672//'.format(
-    hostname=os.getenv('DAGSTER_CELERY_BROKER_HOST', 'localhost')
+broker_url = "pyamqp://guest@{hostname}:5672//".format(
+    hostname=os.getenv("DAGSTER_CELERY_BROKER_HOST", "localhost")
 )
 
-backend = 'rpc://'
+backend = "rpc://"
 
 result_backend = backend
 
 task_default_priority = 5
 
-task_default_queue = 'dagster'
+task_default_queue = "dagster"
 
 worker_prefetch_multiplier = 4
 

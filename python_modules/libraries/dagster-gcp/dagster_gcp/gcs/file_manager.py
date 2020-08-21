@@ -16,8 +16,8 @@ from dagster.core.storage.file_manager import (
 @usable_as_dagster_type
 class GCSFileHandle(FileHandle):
     def __init__(self, gcs_bucket, gcs_key):
-        self._gcs_bucket = check.str_param(gcs_bucket, 'gcs_bucket')
-        self._gcs_key = check.str_param(gcs_key, 'gcs_key')
+        self._gcs_bucket = check.str_param(gcs_bucket, "gcs_bucket")
+        self._gcs_key = check.str_param(gcs_key, "gcs_key")
 
     @property
     def gcs_bucket(self):
@@ -33,14 +33,14 @@ class GCSFileHandle(FileHandle):
 
     @property
     def gcs_path(self):
-        return 'gs://{bucket}/{key}'.format(bucket=self.gcs_bucket, key=self.gcs_key)
+        return "gs://{bucket}/{key}".format(bucket=self.gcs_bucket, key=self.gcs_key)
 
 
 class GCSFileManager(FileManager):
     def __init__(self, client, gcs_bucket, gcs_base_key):
-        self._client = check.inst_param(client, 'client', storage.client.Client)
-        self._gcs_bucket = check.str_param(gcs_bucket, 'gcs_bucket')
-        self._gcs_base_key = check.str_param(gcs_base_key, 'gcs_base_key')
+        self._client = check.inst_param(client, "client", storage.client.Client)
+        self._gcs_bucket = check.str_param(gcs_bucket, "gcs_bucket")
+        self._gcs_base_key = check.str_param(gcs_base_key, "gcs_base_key")
         self._local_handle_cache = {}
         self._temp_file_manager = TempfileManager()
 
@@ -60,10 +60,10 @@ class GCSFileManager(FileManager):
         return file_handle
 
     @contextmanager
-    def read(self, file_handle, mode='rb'):
-        check.inst_param(file_handle, 'file_handle', GCSFileHandle)
-        check.str_param(mode, 'mode')
-        check.param_invariant(mode in {'r', 'rb'}, 'mode')
+    def read(self, file_handle, mode="rb"):
+        check.inst_param(file_handle, "file_handle", GCSFileHandle)
+        check.str_param(mode, "mode")
+        check.param_invariant(mode in {"r", "rb"}, "mode")
 
         self._download_if_not_cached(file_handle)
 
@@ -77,22 +77,22 @@ class GCSFileManager(FileManager):
         return self._local_handle_cache[file_handle.gcs_path]
 
     def read_data(self, file_handle):
-        with self.read(file_handle, mode='rb') as file_obj:
+        with self.read(file_handle, mode="rb") as file_obj:
             return file_obj.read()
 
     def write_data(self, data, ext=None):
-        check.inst_param(data, 'data', bytes)
-        return self.write(io.BytesIO(data), mode='wb', ext=ext)
+        check.inst_param(data, "data", bytes)
+        return self.write(io.BytesIO(data), mode="wb", ext=ext)
 
-    def write(self, file_obj, mode='wb', ext=None):
+    def write(self, file_obj, mode="wb", ext=None):
         check_file_like_obj(file_obj)
-        gcs_key = self.get_full_key(str(uuid.uuid4()) + (('.' + ext) if ext is not None else ''))
+        gcs_key = self.get_full_key(str(uuid.uuid4()) + (("." + ext) if ext is not None else ""))
         bucket_obj = self._client.get_bucket(self._gcs_bucket)
         bucket_obj.blob(gcs_key).upload_from_file(file_obj)
         return GCSFileHandle(self._gcs_bucket, gcs_key)
 
     def get_full_key(self, file_key):
-        return '{base_key}/{file_key}'.format(base_key=self._gcs_base_key, file_key=file_key)
+        return "{base_key}/{file_key}".format(base_key=self._gcs_base_key, file_key=file_key)
 
     def delete_local_temp(self):
         self._temp_file_manager.close()

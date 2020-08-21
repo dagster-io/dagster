@@ -36,27 +36,27 @@ from .ref import InstanceRef, compute_logs_directory
 # 'execution_date' used in Airflow operator execution and 'is_airflow_ingest_pipeline' determines
 # whether 'airflow_execution_date' is needed.
 # https://github.com/dagster-io/dagster/issues/2403
-AIRFLOW_EXECUTION_DATE_STR = 'airflow_execution_date'
-IS_AIRFLOW_INGEST_PIPELINE_STR = 'is_airflow_ingest_pipeline'
+AIRFLOW_EXECUTION_DATE_STR = "airflow_execution_date"
+IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 
 def _is_dagster_home_set():
-    return bool(os.getenv('DAGSTER_HOME'))
+    return bool(os.getenv("DAGSTER_HOME"))
 
 
 def _dagster_home():
-    dagster_home_path = os.getenv('DAGSTER_HOME')
+    dagster_home_path = os.getenv("DAGSTER_HOME")
 
     if not dagster_home_path:
         raise DagsterInvariantViolationError(
-            'DAGSTER_HOME is not set, check is_dagster_home_set before invoking.'
+            "DAGSTER_HOME is not set, check is_dagster_home_set before invoking."
         )
 
     dagster_home_path = os.path.expanduser(dagster_home_path)
 
     if not os.path.isabs(dagster_home_path):
         raise DagsterInvariantViolationError(
-            'DAGSTER_HOME must be absolute path: {}'.format(dagster_home_path)
+            "DAGSTER_HOME must be absolute path: {}".format(dagster_home_path)
         )
 
     if not (os.path.exists(dagster_home_path) and os.path.isdir(dagster_home_path)):
@@ -68,8 +68,8 @@ def _dagster_home():
 
 
 def _check_run_equality(pipeline_run, candidate_run):
-    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    check.inst_param(candidate_run, 'candidate_run', PipelineRun)
+    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(candidate_run, "candidate_run", PipelineRun)
 
     field_diff = {}
     for field in pipeline_run._fields:
@@ -82,12 +82,12 @@ def _check_run_equality(pipeline_run, candidate_run):
 
 
 def _format_field_diff(field_diff):
-    return '\n'.join(
+    return "\n".join(
         [
             (
-                '    {field_name}:\n'
-                + '        Expected: {expected_value}\n'
-                + '        Received: {candidate_value}'
+                "    {field_name}:\n"
+                + "        Expected: {expected_value}\n"
+                + "        Received: {candidate_value}"
             ).format(
                 field_name=field_name,
                 expected_value=expected_value,
@@ -120,18 +120,18 @@ class _EventListenerLogHandler(logging.Handler):
             self._instance.handle_new_event(event)
 
         except Exception as e:  # pylint: disable=W0703
-            logging.critical('Error during instance event listen')
+            logging.critical("Error during instance event listen")
             logging.exception(str(e))
             raise
 
 
 class InstanceType(Enum):
-    PERSISTENT = 'PERSISTENT'
-    EPHEMERAL = 'EPHEMERAL'
+    PERSISTENT = "PERSISTENT"
+    EPHEMERAL = "EPHEMERAL"
 
 
 class DagsterInstance:
-    '''Core abstraction for managing Dagster's access to storage and other resources.
+    """Core abstraction for managing Dagster's access to storage and other resources.
 
     Use DagsterInstance.get() to grab the current DagsterInstance which will load based on
     the values in the ``dagster.yaml`` file in ``$DAGSTER_HOME`` if set, otherwise fallback
@@ -175,7 +175,7 @@ class DagsterInstance:
             keys.
         ref (Optional[InstanceRef]): Used by internal machinery to pass instances across process
             boundaries.
-    '''
+    """
 
     _PROCESS_TEMPDIR = None
 
@@ -200,25 +200,25 @@ class DagsterInstance:
         from dagster.core.scheduler import Scheduler
         from dagster.core.launcher import RunLauncher
 
-        self._instance_type = check.inst_param(instance_type, 'instance_type', InstanceType)
+        self._instance_type = check.inst_param(instance_type, "instance_type", InstanceType)
         self._local_artifact_storage = check.inst_param(
-            local_artifact_storage, 'local_artifact_storage', LocalArtifactStorage
+            local_artifact_storage, "local_artifact_storage", LocalArtifactStorage
         )
-        self._event_storage = check.inst_param(event_storage, 'event_storage', EventLogStorage)
-        self._run_storage = check.inst_param(run_storage, 'run_storage', RunStorage)
+        self._event_storage = check.inst_param(event_storage, "event_storage", EventLogStorage)
+        self._run_storage = check.inst_param(run_storage, "run_storage", RunStorage)
         self._compute_log_manager = check.inst_param(
-            compute_log_manager, 'compute_log_manager', ComputeLogManager
+            compute_log_manager, "compute_log_manager", ComputeLogManager
         )
         self._schedule_storage = check.opt_inst_param(
-            schedule_storage, 'schedule_storage', ScheduleStorage
+            schedule_storage, "schedule_storage", ScheduleStorage
         )
-        self._scheduler = check.opt_inst_param(scheduler, 'scheduler', Scheduler)
-        self._run_launcher = check.inst_param(run_launcher, 'run_launcher', RunLauncher)
+        self._scheduler = check.opt_inst_param(scheduler, "scheduler", Scheduler)
+        self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)
         self._run_launcher.initialize(self)
 
-        self._settings = check.opt_dict_param(settings, 'settings')
+        self._settings = check.opt_dict_param(settings, "settings")
 
-        self._ref = check.opt_inst_param(ref, 'ref', InstanceRef)
+        self._ref = check.opt_inst_param(ref, "ref", InstanceRef)
 
         self._subscribers = defaultdict(list)
 
@@ -274,7 +274,7 @@ class DagsterInstance:
 
     @staticmethod
     def from_ref(instance_ref):
-        check.inst_param(instance_ref, 'instance_ref', InstanceRef)
+        check.inst_param(instance_ref, "instance_ref", InstanceRef)
         return DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=instance_ref.local_artifact_storage,
@@ -302,7 +302,7 @@ class DagsterInstance:
         if self._ref:
             return self._ref
 
-        check.failed('Can not produce an instance reference for {t}'.format(t=self))
+        check.failed("Can not produce an instance reference for {t}".format(t=self))
 
     @property
     def root_directory(self):
@@ -315,19 +315,19 @@ class DagsterInstance:
         return DagsterInstance._PROCESS_TEMPDIR.name
 
     def _info(self, component):
-        prefix = '     '
+        prefix = "     "
         # ConfigurableClass may not have inst_data if it's a direct instantiation
         # which happens for ephemeral instances
         if isinstance(component, ConfigurableClass) and component.inst_data:
             return component.inst_data.info_str(prefix)
         if type(component) is dict:
             return prefix + yaml.dump(component, default_flow_style=False).replace(
-                '\n', '\n' + prefix
+                "\n", "\n" + prefix
             )
-        return '{}{}\n'.format(prefix, component.__class__.__name__)
+        return "{}{}\n".format(prefix, component.__class__.__name__)
 
     def info_str_for_component(self, component_name, component):
-        return '{component_name}:\n{component}\n'.format(
+        return "{component_name}:\n{component}\n".format(
             component_name=component_name, component=self._info(component)
         )
 
@@ -336,14 +336,14 @@ class DagsterInstance:
         settings = self._settings if self._settings else None
 
         return (
-            'local_artifact_storage:\n{artifact}\n'
-            'run_storage:\n{run}\n'
-            'event_log_storage:\n{event}\n'
-            'compute_logs:\n{compute}\n'
-            'schedule_storage:\n{schedule_storage}\n'
-            'scheduler:\n{scheduler}\n'
-            'run_launcher:\n{run_launcher}\n'
-            ''.format(
+            "local_artifact_storage:\n{artifact}\n"
+            "run_storage:\n{run}\n"
+            "event_log_storage:\n{event}\n"
+            "compute_logs:\n{compute}\n"
+            "schedule_storage:\n{schedule_storage}\n"
+            "scheduler:\n{scheduler}\n"
+            "run_launcher:\n{run_launcher}\n"
+            "".format(
                 artifact=self._info(self._local_artifact_storage),
                 run=self._info(self._run_storage),
                 event=self._info(self._event_storage),
@@ -352,9 +352,9 @@ class DagsterInstance:
                 scheduler=self._info(self._scheduler),
                 run_launcher=self._info(self._run_launcher),
             )
-            + '\n'.join(
+            + "\n".join(
                 [
-                    '{settings_key}:\n{settings_value}'.format(
+                    "{settings_key}:\n{settings_value}".format(
                         settings_key=settings_key, settings_value=self._info(settings_value)
                     )
                     for settings_key, settings_value in settings.items()
@@ -387,7 +387,7 @@ class DagsterInstance:
         return self._compute_log_manager
 
     def get_settings(self, settings_key):
-        check.str_param(settings_key, 'settings_key')
+        check.str_param(settings_key, "settings_key")
         if self._settings and settings_key in self._settings:
             return self._settings.get(settings_key)
         return {}
@@ -399,26 +399,26 @@ class DagsterInstance:
 
         dagster_telemetry_enabled_default = True
 
-        telemetry_settings = self.get_settings('telemetry')
+        telemetry_settings = self.get_settings("telemetry")
 
         if not telemetry_settings:
             return dagster_telemetry_enabled_default
 
-        if 'enabled' in telemetry_settings:
-            return telemetry_settings['enabled']
+        if "enabled" in telemetry_settings:
+            return telemetry_settings["enabled"]
         else:
             return dagster_telemetry_enabled_default
 
     def upgrade(self, print_fn=lambda _: None):
         with upgrading_instance(self):
 
-            print_fn('Updating run storage...')
+            print_fn("Updating run storage...")
             self._run_storage.upgrade()
 
-            print_fn('Updating event storage...')
+            print_fn("Updating event storage...")
             self._event_storage.upgrade()
 
-            print_fn('Updating schedule storage...')
+            print_fn("Updating schedule storage...")
             self._schedule_storage.upgrade()
 
     def dispose(self):
@@ -486,24 +486,24 @@ class DagsterInstance:
         from dagster.core.execution.plan.plan import ExecutionPlan
         from dagster.core.snap import snapshot_from_execution_plan
 
-        check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-        check.opt_inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+        check.opt_inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
         # note that solids_to_execute is required to execute the solid subset, which is the
         # frozenset version of the previous solid_subset.
         # solid_selection is not required and will not be converted to solids_to_execute here.
         # i.e. this function doesn't handle solid queries.
         # solid_selection is only used to pass the user queries further down.
-        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
-        check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        check.opt_list_param(solid_selection, "solid_selection", of_type=str)
 
         if solids_to_execute:
             if isinstance(pipeline_def, PipelineSubsetDefinition):
                 # for the case when pipeline_def is created by ExecutablePipeline or ExternalPipeline
                 check.invariant(
                     solids_to_execute == pipeline_def.solids_to_execute,
-                    'Cannot create a PipelineRun from pipeline subset {pipeline_solids_to_execute} '
-                    'that conflicts with solids_to_execute arg {solids_to_execute}'.format(
+                    "Cannot create a PipelineRun from pipeline subset {pipeline_solids_to_execute} "
+                    "that conflicts with solids_to_execute arg {solids_to_execute}".format(
                         pipeline_solids_to_execute=str_format_list(pipeline_def.solids_to_execute),
                         solids_to_execute=str_format_list(solids_to_execute),
                     ),
@@ -526,7 +526,7 @@ class DagsterInstance:
             pipeline_name=pipeline_def.name,
             run_id=run_id,
             run_config=run_config,
-            mode=check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name()),
+            mode=check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name()),
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,
             step_keys_to_execute=step_keys_to_execute,
@@ -566,9 +566,9 @@ class DagsterInstance:
 
         check.invariant(
             not (not pipeline_snapshot and execution_plan_snapshot),
-            'It is illegal to have an execution plan snapshot and not have a pipeline snapshot. '
-            'It is possible to have no execution plan snapshot since we persist runs '
-            'that do not successfully compile execution plans in the scheduled case.',
+            "It is illegal to have an execution plan snapshot and not have a pipeline snapshot. "
+            "It is possible to have no execution plan snapshot since we persist runs "
+            "that do not successfully compile execution plans in the scheduled case.",
         )
 
         pipeline_snapshot_id = (
@@ -604,8 +604,8 @@ class DagsterInstance:
     def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):
         from dagster.core.snap import create_pipeline_snapshot_id, PipelineSnapshot
 
-        check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
-        check.opt_inst_param(parent_pipeline_snapshot, 'parent_pipeline_snapshot', PipelineSnapshot)
+        check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
+        check.opt_inst_param(parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot)
 
         if pipeline_snapshot.lineage_snapshot:
             if not self._run_storage.has_pipeline_snapshot(
@@ -614,7 +614,7 @@ class DagsterInstance:
                 check.invariant(
                     create_pipeline_snapshot_id(parent_pipeline_snapshot)
                     == pipeline_snapshot.lineage_snapshot.parent_snapshot_id,
-                    'Parent pipeline snapshot id out of sync with passed parent pipeline snapshot',
+                    "Parent pipeline snapshot id out of sync with passed parent pipeline snapshot",
                 )
 
                 returned_pipeline_snapshot_id = self._run_storage.add_pipeline_snapshot(
@@ -642,14 +642,14 @@ class DagsterInstance:
             create_execution_plan_snapshot_id,
         )
 
-        check.inst_param(execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot)
-        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
-        check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+        check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
+        check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
+        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         check.invariant(
             execution_plan_snapshot.pipeline_snapshot_id == pipeline_snapshot_id,
             (
-                'Snapshot mismatch: Snapshot ID in execution plan snapshot is '
+                "Snapshot mismatch: Snapshot ID in execution plan snapshot is "
                 '"{ep_pipeline_snapshot_id}" and snapshot_id created in memory is '
                 '"{pipeline_snapshot_id}"'
             ).format(
@@ -663,10 +663,10 @@ class DagsterInstance:
             if step_keys_to_execute
             else set(execution_plan_snapshot.step_keys_to_execute)
             == set([step.key for step in execution_plan_snapshot.steps]),
-            'We encode step_keys_to_execute twice in our stack, unfortunately. This check '
-            'ensures that they are consistent. We check that step_keys_to_execute in the plan '
-            'matches the step_keys_to_execute params if it is set. If it is not, this indicates '
-            'a full execution plan, and so we verify that.',
+            "We encode step_keys_to_execute twice in our stack, unfortunately. This check "
+            "ensures that they are consistent. We check that step_keys_to_execute in the plan "
+            "matches the step_keys_to_execute params if it is set. If it is not, this indicates "
+            "a full execution plan, and so we verify that.",
         )
 
         execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
@@ -767,8 +767,8 @@ class DagsterInstance:
 
             if field_diff:
                 raise DagsterRunConflict(
-                    'Found conflicting existing run with same id {run_id}. Runs differ in:'
-                    '\n{field_diff}'.format(
+                    "Found conflicting existing run with same id {run_id}. Runs differ in:"
+                    "\n{field_diff}".format(
                         run_id=pipeline_run.run_id, field_diff=_format_field_diff(field_diff),
                     ),
                 )
@@ -832,9 +832,9 @@ class DagsterInstance:
         check.invariant(
             self.is_asset_aware,
             (
-                'Asset queries can only be performed on instances with asset-aware event log '
-                'storage. Use `instance.is_asset_aware` to verify that the instance is configured '
-                'with an EventLogStorage that implements `AssetAwareEventLogStorage`'
+                "Asset queries can only be performed on instances with asset-aware event log "
+                "storage. Use `instance.is_asset_aware` to verify that the instance is configured "
+                "with an EventLogStorage that implements `AssetAwareEventLogStorage`"
             ),
         )
 
@@ -843,17 +843,17 @@ class DagsterInstance:
         return self._event_storage.get_all_asset_keys()
 
     def events_for_asset_key(self, asset_key, cursor=None, limit=None):
-        check.inst_param(asset_key, 'asset_key', AssetKey)
+        check.inst_param(asset_key, "asset_key", AssetKey)
         self.check_asset_aware()
         return self._event_storage.get_asset_events(asset_key, cursor, limit)
 
     def run_ids_for_asset_key(self, asset_key):
-        check.inst_param(asset_key, 'asset_key', AssetKey)
+        check.inst_param(asset_key, "asset_key", AssetKey)
         self.check_asset_aware()
         return self._event_storage.get_asset_run_ids(asset_key)
 
     def wipe_assets(self, asset_keys):
-        check.list_param(asset_keys, 'asset_keys', of_type=AssetKey)
+        check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         self.check_asset_aware()
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
@@ -861,7 +861,7 @@ class DagsterInstance:
     # event subscriptions
 
     def get_logger(self):
-        logger = logging.Logger('__event_listener')
+        logger = logging.Logger("__event_listener")
         logger.addHandler(_EventListenerLogHandler(self))
         logger.setLevel(10)
         return logger
@@ -883,17 +883,17 @@ class DagsterInstance:
     def report_engine_event(
         self, message, pipeline_run, engine_event_data=None, cls=None, step_key=None,
     ):
-        '''
+        """
         Report a EngineEvent that occurred outside of a pipeline execution context.
-        '''
+        """
         from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
         from dagster.core.events.log import DagsterEventRecord
 
-        check.class_param(cls, 'cls')
-        check.str_param(message, 'message')
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        check.class_param(cls, "cls")
+        check.str_param(message, "message")
+        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
         engine_event_data = check.opt_inst_param(
-            engine_event_data, 'engine_event_data', EngineEventData, EngineEventData([]),
+            engine_event_data, "engine_event_data", EngineEventData, EngineEventData([]),
         )
 
         if cls:
@@ -928,7 +928,7 @@ class DagsterInstance:
         from dagster.core.events import DagsterEvent, DagsterEventType
         from dagster.core.events.log import DagsterEventRecord
 
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
         message = "This pipeline run has been marked as failed from outside the execution context"
 
         dagster_event = DagsterEvent(
@@ -963,7 +963,7 @@ class DagsterInstance:
     # Run launcher
 
     def launch_run(self, run_id, external_pipeline):
-        '''Launch a pipeline run.
+        """Launch a pipeline run.
 
         This method delegates to the ``RunLauncher``, if any, configured on the instance, and will
         call its implementation of ``RunLauncher.launch_run()`` to begin the execution of the
@@ -973,7 +973,7 @@ class DagsterInstance:
 
         Args:
             run_id (str): The id of the run the launch.
-        '''
+        """
         run = self.get_run_by_id(run_id)
         return self._run_launcher.launch_run(self, run, external_pipeline=external_pipeline)
 
@@ -1039,7 +1039,7 @@ class DagsterInstance:
             schedules.append(yaml.safe_dump(schedule_info, default_flow_style=False))
 
         return SchedulerDebugInfo(
-            scheduler_config_info=self.info_str_for_component('Scheduler', self.scheduler),
+            scheduler_config_info=self.info_str_for_component("Scheduler", self.scheduler),
             scheduler_info=self.scheduler.debug_info(),
             schedule_storage=schedules,
             errors=errors,

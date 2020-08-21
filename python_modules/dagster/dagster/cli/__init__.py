@@ -15,18 +15,18 @@ from .schedule import schedule_cli
 
 def create_dagster_cli():
     commands = {
-        'api': api_cli,
-        'pipeline': pipeline_cli,
-        'run': run_cli,
-        'instance': instance_cli,
-        'schedule': schedule_cli,
-        'asset': asset_cli,
+        "api": api_cli,
+        "pipeline": pipeline_cli,
+        "run": run_cli,
+        "instance": instance_cli,
+        "schedule": schedule_cli,
+        "asset": asset_cli,
     }
 
     @click.group(commands=commands)
     @click.version_option(version=__version__)
     def group():
-        'CLI tools for working with dagster.'
+        "CLI tools for working with dagster."
 
     return group
 

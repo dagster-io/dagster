@@ -18,7 +18,7 @@ from dagster.utils.temp_file import get_temp_dir
 
 def execute_solid_with_resources(solid_def, resource_defs, run_config):
     @pipeline(
-        name='{}_solid_test'.format(solid_def.name),
+        name="{}_solid_test".format(solid_def.name),
         mode_defs=[ModeDefinition(resource_defs=resource_defs)],
     )
     def test_pipeline():
@@ -34,17 +34,17 @@ def test_cache_file_from_s3_basic():
             cache_file_from_s3,
             ModeDefinition(
                 resource_defs={
-                    'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(s3_session),
+                    "file_cache": fs_file_cache,
+                    "s3": ResourceDefinition.hardcoded_resource(s3_session),
                 }
             ),
             run_config={
-                'solids': {
-                    'cache_file_from_s3': {
-                        'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
+                "solids": {
+                    "cache_file_from_s3": {
+                        "inputs": {"s3_coordinate": {"bucket": "some-bucket", "key": "some-key"}}
                     }
                 },
-                'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
+                "resources": {"file_cache": {"config": {"target_folder": temp_dir}}},
             },
         )
 
@@ -57,13 +57,13 @@ def test_cache_file_from_s3_basic():
         assert len(expectation_results) == 1
         expectation_result = expectation_results[0]
         assert expectation_result.success
-        assert expectation_result.label == 'file_handle_exists'
+        assert expectation_result.label == "file_handle_exists"
         path_in_metadata = expectation_result.metadata_entries[0].entry_data.path
         assert isinstance(path_in_metadata, str)
         assert os.path.exists(path_in_metadata)
 
         assert isinstance(solid_result.output_value(), LocalFileHandle)
-        assert 'some-key' in solid_result.output_value().path_desc
+        assert "some-key" in solid_result.output_value().path_desc
 
 
 def test_cache_file_from_s3_specify_target_key():
@@ -73,18 +73,18 @@ def test_cache_file_from_s3_specify_target_key():
             cache_file_from_s3,
             ModeDefinition(
                 resource_defs={
-                    'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(s3_session),
+                    "file_cache": fs_file_cache,
+                    "s3": ResourceDefinition.hardcoded_resource(s3_session),
                 }
             ),
             run_config={
-                'solids': {
-                    'cache_file_from_s3': {
-                        'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}},
-                        'config': {'file_key': 'specified-file-key'},
+                "solids": {
+                    "cache_file_from_s3": {
+                        "inputs": {"s3_coordinate": {"bucket": "some-bucket", "key": "some-key"}},
+                        "config": {"file_key": "specified-file-key"},
                     }
                 },
-                'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
+                "resources": {"file_cache": {"config": {"target_folder": temp_dir}}},
             },
         )
 
@@ -92,7 +92,7 @@ def test_cache_file_from_s3_specify_target_key():
         assert s3_session.download_file.call_count == 1
         assert solid_result.success
         assert isinstance(solid_result.output_value(), LocalFileHandle)
-        assert 'specified-file-key' in solid_result.output_value().path_desc
+        assert "specified-file-key" in solid_result.output_value().path_desc
 
 
 def test_cache_file_from_s3_skip_download():
@@ -102,17 +102,17 @@ def test_cache_file_from_s3_skip_download():
             cache_file_from_s3,
             ModeDefinition(
                 resource_defs={
-                    'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(s3_session_one),
+                    "file_cache": fs_file_cache,
+                    "s3": ResourceDefinition.hardcoded_resource(s3_session_one),
                 }
             ),
             run_config={
-                'solids': {
-                    'cache_file_from_s3': {
-                        'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
+                "solids": {
+                    "cache_file_from_s3": {
+                        "inputs": {"s3_coordinate": {"bucket": "some-bucket", "key": "some-key"}}
                     }
                 },
-                'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
+                "resources": {"file_cache": {"config": {"target_folder": temp_dir}}},
             },
         )
 
@@ -124,17 +124,17 @@ def test_cache_file_from_s3_skip_download():
             cache_file_from_s3,
             ModeDefinition(
                 resource_defs={
-                    'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(s3_session_two),
+                    "file_cache": fs_file_cache,
+                    "s3": ResourceDefinition.hardcoded_resource(s3_session_two),
                 }
             ),
             run_config={
-                'solids': {
-                    'cache_file_from_s3': {
-                        'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
+                "solids": {
+                    "cache_file_from_s3": {
+                        "inputs": {"s3_coordinate": {"bucket": "some-bucket", "key": "some-key"}}
                     }
                 },
-                'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
+                "resources": {"file_cache": {"config": {"target_folder": temp_dir}}},
             },
         )
 
@@ -149,18 +149,18 @@ def test_cache_file_from_s3_overwrite():
             cache_file_from_s3,
             ModeDefinition(
                 resource_defs={
-                    'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(s3_session_one),
+                    "file_cache": fs_file_cache,
+                    "s3": ResourceDefinition.hardcoded_resource(s3_session_one),
                 }
             ),
             run_config={
-                'solids': {
-                    'cache_file_from_s3': {
-                        'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
+                "solids": {
+                    "cache_file_from_s3": {
+                        "inputs": {"s3_coordinate": {"bucket": "some-bucket", "key": "some-key"}}
                     }
                 },
-                'resources': {
-                    'file_cache': {'config': {'target_folder': temp_dir, 'overwrite': True}}
+                "resources": {
+                    "file_cache": {"config": {"target_folder": temp_dir, "overwrite": True}}
                 },
             },
         )
@@ -173,18 +173,18 @@ def test_cache_file_from_s3_overwrite():
             cache_file_from_s3,
             ModeDefinition(
                 resource_defs={
-                    'file_cache': fs_file_cache,
-                    's3': ResourceDefinition.hardcoded_resource(s3_session_two),
+                    "file_cache": fs_file_cache,
+                    "s3": ResourceDefinition.hardcoded_resource(s3_session_two),
                 }
             ),
             run_config={
-                'solids': {
-                    'cache_file_from_s3': {
-                        'inputs': {'s3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}}
+                "solids": {
+                    "cache_file_from_s3": {
+                        "inputs": {"s3_coordinate": {"bucket": "some-bucket", "key": "some-key"}}
                     }
                 },
-                'resources': {
-                    'file_cache': {'config': {'target_folder': temp_dir, 'overwrite': True}}
+                "resources": {
+                    "file_cache": {"config": {"target_folder": temp_dir, "overwrite": True}}
                 },
             },
         )
@@ -198,15 +198,15 @@ def test_missing_resources():
         with get_temp_dir() as temp_dir:
             execute_solid(
                 cache_file_from_s3,
-                ModeDefinition(resource_defs={'file_cache': fs_file_cache}),
+                ModeDefinition(resource_defs={"file_cache": fs_file_cache}),
                 run_config={
-                    'solids': {
-                        'cache_file_from_s3': {
-                            'inputs': {
-                                's3_coordinate': {'bucket': 'some-bucket', 'key': 'some-key'}
+                    "solids": {
+                        "cache_file_from_s3": {
+                            "inputs": {
+                                "s3_coordinate": {"bucket": "some-bucket", "key": "some-key"}
                             }
                         }
                     },
-                    'resources': {'file_cache': {'config': {'target_folder': temp_dir}}},
+                    "resources": {"file_cache": {"config": {"target_folder": temp_dir}}},
                 },
             )

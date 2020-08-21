@@ -31,8 +31,8 @@ def test_fs_stores():
     def simple():
         @solid
         def easy(context):
-            context.log.info('easy')
-            return 'easy'
+            context.log.info("easy")
+            return "easy"
 
         easy()
 
@@ -65,8 +65,8 @@ def test_fs_stores():
 
 def test_init_compute_log_with_bad_config():
     with seven.TemporaryDirectory() as tmpdir_path:
-        with open(os.path.join(tmpdir_path, 'dagster.yaml'), 'w') as fd:
-            yaml.dump({'compute_logs': {'garbage': 'flargh'}}, fd, default_flow_style=False)
+        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w") as fd:
+            yaml.dump({"compute_logs": {"garbage": "flargh"}}, fd, default_flow_style=False)
         with pytest.raises(DagsterInvalidConfigError, match='Undefined field "garbage"'):
             DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
@@ -75,19 +75,19 @@ def test_init_compute_log_with_bad_config_override():
     with seven.TemporaryDirectory() as tmpdir_path:
         with pytest.raises(DagsterInvalidConfigError, match='Undefined field "garbage"'):
             DagsterInstance.from_ref(
-                InstanceRef.from_dir(tmpdir_path, overrides={'compute_logs': {'garbage': 'flargh'}})
+                InstanceRef.from_dir(tmpdir_path, overrides={"compute_logs": {"garbage": "flargh"}})
             )
 
 
 def test_init_compute_log_with_bad_config_module():
     with seven.TemporaryDirectory() as tmpdir_path:
-        with open(os.path.join(tmpdir_path, 'dagster.yaml'), 'w') as fd:
+        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w") as fd:
             yaml.dump(
-                {'compute_logs': {'module': 'flargh', 'class': 'Woble', 'config': {}}},
+                {"compute_logs": {"module": "flargh", "class": "Woble", "config": {}}},
                 fd,
                 default_flow_style=False,
             )
-        with pytest.raises(check.CheckError, match='Couldn\'t import module'):
+        with pytest.raises(check.CheckError, match="Couldn't import module"):
             DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
 
@@ -99,7 +99,7 @@ def test_get_run_by_id():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
         assert instance.get_runs() == []
-        pipeline_run = PipelineRun('foo_pipeline', 'new_run')
+        pipeline_run = PipelineRun("foo_pipeline", "new_run")
         assert instance.get_run_by_id(pipeline_run.run_id) is None
 
         instance._run_storage.add_run(pipeline_run)  # pylint: disable=protected-access
@@ -111,14 +111,14 @@ def test_get_run_by_id():
     # Run is created after we check whether it exists
     with seven.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun(pipeline_name='foo_pipeline', run_id='bar_run')
+        run = PipelineRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
             # This is uglier than we would like because there is no nonlocal keyword in py2
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(PipelineRun(pipeline_name='foo_pipeline', run_id=run_id))
+                self._run_storage.add_run(PipelineRun(pipeline_name="foo_pipeline", run_id=run_id))
                 return False
             else:
                 return self._run_storage.has_run(run_id)
@@ -132,13 +132,13 @@ def test_get_run_by_id():
     MOCK_HAS_RUN_CALLED = False
     with seven.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
-        run = PipelineRun(pipeline_name='foo_pipeline', run_id='bar_run')
+        run = PipelineRun(pipeline_name="foo_pipeline", run_id="bar_run")
 
         def _has_run(self, run_id):
             global MOCK_HAS_RUN_CALLED  # pylint: disable=global-statement
             # pylint: disable=protected-access
             if not self._run_storage.has_run(run_id) and not MOCK_HAS_RUN_CALLED:
-                self._run_storage.add_run(PipelineRun(pipeline_name='foo_pipeline', run_id=run_id))
+                self._run_storage.add_run(PipelineRun(pipeline_name="foo_pipeline", run_id=run_id))
                 MOCK_HAS_RUN_CALLED = True
                 return False
             elif self._run_storage.has_run(run_id) and MOCK_HAS_RUN_CALLED:
@@ -156,17 +156,17 @@ def test_run_step_stats():
     def simple():
         @solid
         def should_succeed(context):
-            context.log.info('succeed')
-            return 'yay'
+            context.log.info("succeed")
+            return "yay"
 
-        @solid(input_defs=[InputDefinition('_input', str)], output_defs=[OutputDefinition(str)])
+        @solid(input_defs=[InputDefinition("_input", str)], output_defs=[OutputDefinition(str)])
         def should_fail(context, _input):
-            context.log.info('fail')
-            raise Exception('booo')
+            context.log.info("fail")
+            raise Exception("booo")
 
         @solid
         def should_skip(context, _input):
-            context.log.info('skip')
+            context.log.info("skip")
             return _input
 
         should_skip(should_fail(should_succeed()))
@@ -176,12 +176,12 @@ def test_run_step_stats():
         result = execute_pipeline(simple, instance=instance, raise_on_error=False)
         step_stats = sorted(instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time)
         assert len(step_stats) == 3
-        assert step_stats[0].step_key == 'should_succeed.compute'
+        assert step_stats[0].step_key == "should_succeed.compute"
         assert step_stats[0].status == StepEventStatus.SUCCESS
         assert step_stats[0].end_time > step_stats[0].start_time
-        assert step_stats[1].step_key == 'should_fail.compute'
+        assert step_stats[1].step_key == "should_fail.compute"
         assert step_stats[1].status == StepEventStatus.FAILURE
         assert step_stats[1].end_time > step_stats[0].start_time
-        assert step_stats[2].step_key == 'should_skip.compute'
+        assert step_stats[2].step_key == "should_skip.compute"
         assert step_stats[2].status == StepEventStatus.SKIPPED
         assert step_stats[2].end_time > step_stats[0].start_time

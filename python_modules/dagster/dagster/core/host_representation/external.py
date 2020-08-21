@@ -17,15 +17,15 @@ from .represented import RepresentedPipeline
 
 
 class ExternalRepository:
-    '''
+    """
     ExternalRepository is a object that represents a loaded repository definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
-    '''
+    """
 
     def __init__(self, external_repository_data, repository_handle):
         self.external_repository_data = check.inst_param(
-            external_repository_data, 'external_repository_data', ExternalRepositoryData
+            external_repository_data, "external_repository_data", ExternalRepositoryData
         )
         self._pipeline_index_map = OrderedDict(
             (
@@ -37,7 +37,7 @@ class ExternalRepository:
             )
             for external_pipeline_data in external_repository_data.external_pipeline_datas
         )
-        self._handle = check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+        self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
     @property
     def name(self):
@@ -79,7 +79,7 @@ class ExternalRepository:
         ]
 
     def get_full_external_pipeline(self, pipeline_name):
-        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(pipeline_name, "pipeline_name")
         return ExternalPipeline(
             self.external_repository_data.get_external_pipeline_data(pipeline_name),
             repository_handle=self.handle,
@@ -96,23 +96,23 @@ class ExternalRepository:
         return self._handle.get_origin()
 
     def get_origin_id(self):
-        '''
+        """
         A means of identifying the repository this ExternalRepository represents based on
         where it came from.
-        '''
+        """
         return self.get_origin().get_id()
 
 
 class ExternalPipeline(RepresentedPipeline):
-    '''
+    """
     ExternalPipeline is a object that represents a loaded pipeline definition that
     is resident in another process or container. Host processes such as dagit use
     objects such as these to interact with user-defined artifacts.
-    '''
+    """
 
     def __init__(self, external_pipeline_data, repository_handle):
-        check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
-        check.inst_param(external_pipeline_data, 'external_pipeline_data', ExternalPipelineData)
+        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+        check.inst_param(external_pipeline_data, "external_pipeline_data", ExternalPipelineData)
 
         super(ExternalPipeline, self).__init__(
             pipeline_index=PipelineIndex(
@@ -170,15 +170,15 @@ class ExternalPipeline(RepresentedPipeline):
         return self._pipeline_index.pipeline_snapshot.solid_names
 
     def has_solid_invocation(self, solid_name):
-        check.str_param(solid_name, 'solid_name')
+        check.str_param(solid_name, "solid_name")
         return self._pipeline_index.has_solid_invocation(solid_name)
 
     def has_preset(self, preset_name):
-        check.str_param(preset_name, 'preset_name')
+        check.str_param(preset_name, "preset_name")
         return preset_name in self._active_preset_dict
 
     def get_preset(self, preset_name):
-        check.str_param(preset_name, 'preset_name')
+        check.str_param(preset_name, "preset_name")
         return self._active_preset_dict[preset_name]
 
     @property
@@ -186,11 +186,11 @@ class ExternalPipeline(RepresentedPipeline):
         return self._pipeline_index.available_modes
 
     def has_mode(self, mode_name):
-        check.str_param(mode_name, 'mode_name')
+        check.str_param(mode_name, "mode_name")
         return self._pipeline_index.has_mode_def(mode_name)
 
     def root_config_key_for_mode(self, mode_name):
-        check.opt_str_param(mode_name, 'mode_name')
+        check.opt_str_param(mode_name, "mode_name")
         return self.get_mode_def_snap(
             mode_name if mode_name else self.get_default_mode_name()
         ).root_config_key
@@ -226,17 +226,17 @@ class ExternalPipeline(RepresentedPipeline):
 
 
 class ExternalExecutionPlan:
-    '''
+    """
     ExternalExecution is a object that represents an execution plan that
     was compiled in another process or persisted in an instance.
-    '''
+    """
 
     def __init__(self, execution_plan_snapshot, represented_pipeline):
         self.execution_plan_snapshot = check.inst_param(
-            execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot
+            execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
         )
         self.represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
 
         self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
@@ -261,11 +261,11 @@ class ExternalExecutionPlan:
         return list(self._step_keys_in_plan)
 
     def has_step(self, key):
-        check.str_param(key, 'key')
+        check.str_param(key, "key")
         return key in self._step_index
 
     def get_step_by_key(self, key):
-        check.str_param(key, 'key')
+        check.str_param(key, "key")
         return self._step_index[key]
 
     def get_steps_in_plan(self):
@@ -319,10 +319,10 @@ class ExternalExecutionPlan:
 class ExternalSchedule:
     def __init__(self, external_schedule_data, handle):
         self._external_schedule_data = check.inst_param(
-            external_schedule_data, 'external_schedule_data', ExternalScheduleData
+            external_schedule_data, "external_schedule_data", ExternalScheduleData
         )
         self._handle = ScheduleHandle(
-            self._external_schedule_data.name, check.inst_param(handle, 'handle', RepositoryHandle)
+            self._external_schedule_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 
     @property
@@ -367,10 +367,10 @@ class ExternalSchedule:
 class ExternalPartitionSet:
     def __init__(self, external_partition_set_data, handle):
         self._external_partition_set_data = check.inst_param(
-            external_partition_set_data, 'external_partition_set_data', ExternalPartitionSetData
+            external_partition_set_data, "external_partition_set_data", ExternalPartitionSetData
         )
         self._handle = PartitionSetHandle(
-            external_partition_set_data.name, check.inst_param(handle, 'handle', RepositoryHandle)
+            external_partition_set_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 
     @property
@@ -390,13 +390,13 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.pipeline_name
 
 
-class ExternalPipelineExecutionResult(namedtuple('_ExternalPipelineExecutionResult', 'event_list')):
+class ExternalPipelineExecutionResult(namedtuple("_ExternalPipelineExecutionResult", "event_list")):
     def __new__(cls, event_list):
         return super(ExternalPipelineExecutionResult, cls).__new__(
-            cls, check.list_param(event_list, 'event_list', of_type=DagsterEvent)
+            cls, check.list_param(event_list, "event_list", of_type=DagsterEvent)
         )
 
     @property
     def success(self):
-        '''bool: Whether all steps in the execution were successful.'''
+        """bool: Whether all steps in the execution were successful."""
         return all([not event.is_failure for event in self.event_list])

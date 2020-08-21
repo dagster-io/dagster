@@ -32,12 +32,12 @@ def test_execute_on_dask_local():
         result = execute_pipeline(
             reconstructable(dask_engine_pipeline),
             run_config={
-                'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
-                'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
+                "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
             },
             instance=DagsterInstance.local_temp(),
         )
-        assert result.result_for_solid('simple').output_value() == 1
+        assert result.result_for_solid("simple").output_value() == 1
 
 
 def dask_composite_pipeline():
@@ -50,15 +50,15 @@ def test_composite_execute():
     result = execute_pipeline(
         reconstructable(dask_composite_pipeline),
         run_config={
-            'storage': {'filesystem': {}},
-            'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
+            "storage": {"filesystem": {}},
+            "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
         },
         instance=DagsterInstance.local_temp(),
     )
     assert result.success
 
 
-@solid(input_defs=[InputDefinition('df', dagster_pd.DataFrame)])
+@solid(input_defs=[InputDefinition("df", dagster_pd.DataFrame)])
 def pandas_solid(_, df):  # pylint: disable=unused-argument
     pass
 
@@ -70,9 +70,9 @@ def pandas_pipeline():
 
 def test_pandas_dask():
     run_config = {
-        'solids': {
-            'pandas_solid': {
-                'inputs': {'df': {'csv': {'path': file_relative_path(__file__, 'ex.csv')}}}
+        "solids": {
+            "pandas_solid": {
+                "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "ex.csv")}}}
             }
         }
     }
@@ -80,8 +80,8 @@ def test_pandas_dask():
     result = execute_pipeline(
         ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
         run_config={
-            'storage': {'filesystem': {}},
-            'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
+            "storage": {"filesystem": {}},
+            "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
             **run_config,
         },
         instance=DagsterInstance.local_temp(),
@@ -90,7 +90,7 @@ def test_pandas_dask():
     assert result.success
 
 
-@solid(input_defs=[InputDefinition('df', DataFrame)])
+@solid(input_defs=[InputDefinition("df", DataFrame)])
 def dask_solid(_, df):  # pylint: disable=unused-argument
     pass
 
@@ -102,9 +102,9 @@ def dask_pipeline():
 
 def test_dask():
     run_config = {
-        'solids': {
-            'dask_solid': {
-                'inputs': {'df': {'csv': {'path': file_relative_path(__file__, 'ex*.csv')}}}
+        "solids": {
+            "dask_solid": {
+                "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
             }
         }
     }
@@ -112,8 +112,8 @@ def test_dask():
     result = execute_pipeline(
         ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
         run_config={
-            'storage': {'filesystem': {}},
-            'execution': {'dask': {'config': {'cluster': {'local': {'timeout': 30}}}}},
+            "storage": {"filesystem": {}},
+            "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
             **run_config,
         },
         instance=DagsterInstance.local_temp(),

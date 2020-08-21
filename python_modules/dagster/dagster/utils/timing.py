@@ -4,9 +4,9 @@ from dagster import check, seven
 
 
 def format_duration(milliseconds):
-    '''Given milliseconds, return human readable duration string such as:
+    """Given milliseconds, return human readable duration string such as:
     533ms, 2.1s, 4m52s, 34m12s, 1h4m
-    '''
+    """
 
     # under 1 ms
     # ex: 0.83ms
@@ -46,7 +46,7 @@ class TimerResult(object):
 
     @property
     def seconds(self):
-        check.invariant(self.end_time is not None, 'end time is not set')
+        check.invariant(self.end_time is not None, "end time is not set")
         return self.end_time - self.start_time
 
     @property
@@ -56,7 +56,7 @@ class TimerResult(object):
 
 @contextmanager
 def time_execution_scope():
-    '''Usage:
+    """Usage:
 
     from solid_util.timing import time_execution_scope
     with time_execution_scope() as timer_result:
@@ -67,7 +67,7 @@ def time_execution_scope():
             timer_result=timer_result
         )
     )
-    '''
+    """
 
     timer_result = TimerResult()
     yield timer_result

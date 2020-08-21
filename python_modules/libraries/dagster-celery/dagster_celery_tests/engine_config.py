@@ -1,1 +1,1 @@
-broker_transport_options = {'visibility_timeout': 18000}
+broker_transport_options = {"visibility_timeout": 18000}

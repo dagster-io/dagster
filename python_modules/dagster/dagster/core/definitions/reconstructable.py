@@ -19,17 +19,17 @@ from .executable import ExecutablePipeline
 
 
 def get_ephemeral_repository_name(pipeline_name):
-    check.str_param(pipeline_name, 'pipeline_name')
-    return '<<pipeline:{pipeline_name}>>'.format(pipeline_name=pipeline_name)
+    check.str_param(pipeline_name, "pipeline_name")
+    return "<<pipeline:{pipeline_name}>>".format(pipeline_name=pipeline_name)
 
 
 @whitelist_for_serdes
-class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointer')):
+class ReconstructableRepository(namedtuple("_ReconstructableRepository", "pointer")):
     def __new__(
         cls, pointer,
     ):
         return super(ReconstructableRepository, cls).__new__(
-            cls, pointer=check.inst_param(pointer, 'pointer', CodePointer),
+            cls, pointer=check.inst_param(pointer, "pointer", CodePointer),
         )
 
     @lru_cache(maxsize=1)
@@ -57,7 +57,7 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
 
     @classmethod
     def from_legacy_repository_yaml(cls, file_path):
-        check.str_param(file_path, 'file_path')
+        check.str_param(file_path, "file_path")
         absolute_file_path = os.path.abspath(os.path.expanduser(file_path))
         return cls(pointer=CodePointer.from_legacy_repository_yaml(absolute_file_path))
 
@@ -71,20 +71,20 @@ class ReconstructableRepository(namedtuple('_ReconstructableRepository', 'pointe
 @whitelist_for_serdes
 class ReconstructablePipeline(
     namedtuple(
-        '_ReconstructablePipeline',
-        'repository pipeline_name solid_selection_str solids_to_execute',
+        "_ReconstructablePipeline",
+        "repository pipeline_name solid_selection_str solids_to_execute",
     ),
     ExecutablePipeline,
 ):
     def __new__(
         cls, repository, pipeline_name, solid_selection_str=None, solids_to_execute=None,
     ):
-        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(ReconstructablePipeline, cls).__new__(
             cls,
-            repository=check.inst_param(repository, 'repository', ReconstructableRepository),
-            pipeline_name=check.str_param(pipeline_name, 'pipeline_name'),
-            solid_selection_str=check.opt_str_param(solid_selection_str, 'solid_selection_str'),
+            repository=check.inst_param(repository, "repository", ReconstructableRepository),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
             solids_to_execute=solids_to_execute,
         )
 
@@ -103,11 +103,11 @@ class ReconstructablePipeline(
     def _resolve_solid_selection(self, solid_selection):
         # resolve a list of solid selection queries to a frozenset of qualified solid names
         # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-        check.list_param(solid_selection, 'solid_selection', of_type=str)
+        check.list_param(solid_selection, "solid_selection", of_type=str)
         solids_to_execute = parse_solid_selection(self.get_definition(), solid_selection)
         if len(solids_to_execute) == 0:
             raise DagsterInvalidSubsetError(
-                'No qualified solids to execute found for solid_selection={requested}'.format(
+                "No qualified solids to execute found for solid_selection={requested}".format(
                     requested=solid_selection
                 )
             )
@@ -134,7 +134,7 @@ class ReconstructablePipeline(
 
     def subset_for_execution(self, solid_selection):
         # take a list of solid queries and resolve the queries to names of solids to execute
-        check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+        check.opt_list_param(solid_selection, "solid_selection", of_type=str)
         solids_to_execute = (
             self._resolve_solid_selection(solid_selection) if solid_selection else None
         )
@@ -144,7 +144,7 @@ class ReconstructablePipeline(
     def subset_for_execution_from_existing_pipeline(self, solids_to_execute):
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
-        check.opt_set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
 
         return self._subset_for_execution(solids_to_execute)
 
@@ -168,12 +168,12 @@ class ReconstructablePipeline(
 
     @staticmethod
     def from_dict(val):
-        check.dict_param(val, 'val')
+        check.dict_param(val, "val")
 
         inst = unpack_value(val)
         check.invariant(
             isinstance(inst, ReconstructablePipeline),
-            'Deserialized object is not instance of ReconstructablePipeline, got {type}'.format(
+            "Deserialized object is not instance of ReconstructablePipeline, got {type}".format(
                 type=type(inst)
             ),
         )
@@ -187,14 +187,14 @@ class ReconstructablePipeline(
 
 
 @whitelist_for_serdes
-class ReconstructableSchedule(namedtuple('_ReconstructableSchedule', 'repository schedule_name',)):
+class ReconstructableSchedule(namedtuple("_ReconstructableSchedule", "repository schedule_name",)):
     def __new__(
         cls, repository, schedule_name,
     ):
         return super(ReconstructableSchedule, cls).__new__(
             cls,
-            repository=check.inst_param(repository, 'repository', ReconstructableRepository),
-            schedule_name=check.str_param(schedule_name, 'schedule_name'),
+            repository=check.inst_param(repository, "repository", ReconstructableRepository),
+            schedule_name=check.str_param(schedule_name, "schedule_name"),
         )
 
     def get_origin(self):
@@ -209,36 +209,36 @@ class ReconstructableSchedule(namedtuple('_ReconstructableSchedule', 'repository
 
 
 def reconstructable(target):
-    '''
+    """
     Create a ReconstructablePipeline from a function that returns a PipelineDefinition
     or a @pipeline decorated function.
-    '''
+    """
     from dagster.core.definitions import PipelineDefinition
 
     if not seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
         raise DagsterInvariantViolationError(
-            'Reconstructable target should be a function or definition produced '
-            'by a decorated function, got {type}.'.format(type=type(target)),
+            "Reconstructable target should be a function or definition produced "
+            "by a decorated function, got {type}.".format(type=type(target)),
         )
 
     if seven.is_lambda(target):
         raise DagsterInvariantViolationError(
-            'Reconstructable target can not be a lambda. Use a function or '
-            'decorated function defined at module scope instead.'
+            "Reconstructable target can not be a lambda. Use a function or "
+            "decorated function defined at module scope instead."
         )
 
     if seven.qualname_differs(target):
         raise DagsterInvariantViolationError(
             'Reconstructable target "{target.__name__}" has a different '
             '__qualname__ "{target.__qualname__}" indicating it is not '
-            'defined at module scope. Use a function or decorated function '
-            'defined at module scope instead.'.format(target=target)
+            "defined at module scope. Use a function or decorated function "
+            "defined at module scope instead.".format(target=target)
         )
 
     python_file = get_python_file_from_previous_stack_frame()
-    if python_file.endswith('<stdin>'):
+    if python_file.endswith("<stdin>"):
         raise DagsterInvariantViolationError(
-            'reconstructable() can not reconstruct pipelines from <stdin>, unable to target file {}. '.format(
+            "reconstructable() can not reconstruct pipelines from <stdin>, unable to target file {}. ".format(
                 python_file
             )
         )
@@ -267,8 +267,8 @@ def _check_is_loadable(definition):
     if not isinstance(definition, (PipelineDefinition, RepositoryDefinition)):
         raise DagsterInvariantViolationError(
             (
-                'Loadable attributes must be either a PipelineDefinition or a '
-                'RepositoryDefinition. Got {definition}.'
+                "Loadable attributes must be either a PipelineDefinition or a "
+                "RepositoryDefinition. Got {definition}."
             ).format(definition=repr(definition))
         )
     return definition
@@ -297,8 +297,8 @@ def def_from_pointer(pointer):
 
     if seven.get_args(target):
         raise DagsterInvariantViolationError(
-            'Error invoking function at {target} with no arguments. '
-            'Reconstructable target must be callable with no arguments'.format(
+            "Error invoking function at {target} with no arguments. "
+            "Reconstructable target must be callable with no arguments".format(
                 target=pointer.describe()
             )
         )
@@ -315,8 +315,8 @@ def pipeline_def_from_pointer(pointer):
         return target
 
     raise DagsterInvariantViolationError(
-        'CodePointer ({str}) must resolve to a PipelineDefinition. '
-        'Received a {type}'.format(str=pointer.describe(), type=type(target))
+        "CodePointer ({str}) must resolve to a PipelineDefinition. "
+        "Received a {type}".format(str=pointer.describe(), type=type(target))
     )
 
 
@@ -342,8 +342,8 @@ def repository_def_from_pointer(pointer):
     repo_def = repository_def_from_target_def(target)
     if not repo_def:
         raise DagsterInvariantViolationError(
-            'CodePointer ({str}) must resolve to a '
-            'RepositoryDefinition or a PipelineDefinition. '
-            'Received a {type}'.format(str=pointer.describe(), type=type(target))
+            "CodePointer ({str}) must resolve to a "
+            "RepositoryDefinition or a PipelineDefinition. "
+            "Received a {type}".format(str=pointer.describe(), type=type(target))
         )
     return repo_def

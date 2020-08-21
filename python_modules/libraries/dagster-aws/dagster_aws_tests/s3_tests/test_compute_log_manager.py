@@ -14,8 +14,8 @@ from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 
-HELLO_WORLD = 'Hello World'
-SEPARATOR = os.linesep if (os.name == 'nt' and sys.version_info < (3,)) else '\n'
+HELLO_WORLD = "Hello World"
+SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
 EXPECTED_LOGS = [
     'STEP_START - Started execution of step "easy.compute".',
     'STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).',
@@ -29,20 +29,20 @@ def test_compute_log_manager(s3_bucket):
     def simple():
         @solid
         def easy(context):
-            context.log.info('easy')
+            context.log.info("easy")
             print(HELLO_WORLD)  # pylint: disable=print-call
-            return 'easy'
+            return "easy"
 
         easy()
 
     # Uses mock S3
-    s3 = boto3.client('s3')
+    s3 = boto3.client("s3")
     s3.create_bucket(Bucket=s3_bucket)
 
     with seven.TemporaryDirectory() as temp_dir:
         run_store = SqliteRunStorage.from_local(temp_dir)
         event_store = SqliteEventLogStorage(temp_dir)
-        manager = S3ComputeLogManager(bucket=s3_bucket, prefix='my_prefix', local_dir=temp_dir)
+        manager = S3ComputeLogManager(bucket=s3_bucket, prefix="my_prefix", local_dir=temp_dir)
         instance = DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=LocalArtifactStorage(temp_dir),
@@ -70,16 +70,16 @@ def test_compute_log_manager(s3_bucket):
         # Check S3 directly
         s3_object = s3.get_object(
             Bucket=s3_bucket,
-            Key='{prefix}/storage/{run_id}/compute_logs/easy.compute.err'.format(
-                prefix='my_prefix', run_id=result.run_id
+            Key="{prefix}/storage/{run_id}/compute_logs/easy.compute.err".format(
+                prefix="my_prefix", run_id=result.run_id
             ),
         )
-        stderr_s3 = six.ensure_str(s3_object['Body'].read())
+        stderr_s3 = six.ensure_str(s3_object["Body"].read())
         for expected in EXPECTED_LOGS:
             assert expected in stderr_s3
 
         # Check download behavior by deleting locally cached logs
-        compute_logs_dir = os.path.join(temp_dir, result.run_id, 'compute_logs')
+        compute_logs_dir = os.path.join(temp_dir, result.run_id, "compute_logs")
         for filename in os.listdir(compute_logs_dir):
             os.unlink(os.path.join(compute_logs_dir, filename))
 
@@ -93,9 +93,9 @@ def test_compute_log_manager(s3_bucket):
 
 @mock_s3
 def test_compute_log_manager_from_config(s3_bucket):
-    s3_prefix = 'foobar'
+    s3_prefix = "foobar"
 
-    dagster_yaml = '''
+    dagster_yaml = """
 compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
@@ -103,12 +103,12 @@ compute_logs:
     bucket: "{s3_bucket}"
     local_dir: "/tmp/cool"
     prefix: "{s3_prefix}"
-'''.format(
+""".format(
         s3_bucket=s3_bucket, s3_prefix=s3_prefix
     )
 
     with seven.TemporaryDirectory() as tempdir:
-        with open(os.path.join(tempdir, 'dagster.yaml'), 'wb') as f:
+        with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
             f.write(six.ensure_binary(dagster_yaml))
 
         instance = DagsterInstance.from_config(tempdir)

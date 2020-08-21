@@ -22,7 +22,7 @@ def _is_alive(popen):
 
 
 class CliApiRunLauncher(RunLauncher, ConfigurableClass):
-    '''
+    """
     This run launcher launches a new process by invoking the command `dagster api execute_run`.
 
     This run launcher, the associated CLI, and the homegrown IPC mechanism used to communicate with
@@ -31,7 +31,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
     Instead, use the :py:class:`dagster.DefaultRunLauncher`, which is aware of instance- and
     repository-level options governing whether repositories should be loaded over the CLI or over
     GRPC, and able to switch between both.
-    '''
+    """
 
     def __init__(self, inst_data=None):
         self._instance_ref = None
@@ -59,8 +59,8 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         return self._instance_ref() if self._instance_ref else None
 
     def initialize(self, instance):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.invariant(self._instance is None, 'Must only call initialize once')
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.invariant(self._instance is None, "Must only call initialize once")
 
         # Store a weakref to avoid a circular reference / enable GC
         self._instance_ref = weakref.ref(instance)
@@ -70,7 +70,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         self._thread.start()
 
     def _generate_synthetic_error_from_crash(self, run):
-        message = 'Pipeline execution process for {run_id} unexpectedly exited.'.format(
+        message = "Pipeline execution process for {run_id} unexpectedly exited.".format(
             run_id=run.run_id
         )
         self._instance.report_engine_event(message, run, cls=self.__class__)
@@ -81,23 +81,23 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
             return {run_id: process for run_id, process in self._living_process_by_run_id.items()}
 
     def _clock(self):
-        '''
+        """
         This function polls the instance to synchronize it with the state of processes managed
         by this manager instance. On every tick (every 0.5 seconds currently) it checks for zombie
         processes
-        '''
+        """
         while not self._stopping:
             self._check_for_zombies()
 
             time.sleep(SUBPROCESS_TICK)
 
     def _check_for_zombies(self):
-        '''
+        """
         Checks the current index of run_id => process and sees if any of them are dead. If they are,
         it queries the instance to see if the runs are in a proper terminal state (success or
         failure). If not, then we can assume that the underlying process died unexpected and clean
         everything. In either case, the dead process is removed from the run_id => process index.
-        '''
+        """
         runs_to_clear = []
 
         living_process_snapshot = self._living_process_snapshot()
@@ -132,13 +132,13 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
             del self._output_files_by_run_id[run_id]
 
     def launch_run(self, instance, run, external_pipeline):
-        '''Subclasses must implement this method.'''
+        """Subclasses must implement this method."""
 
-        check.inst_param(run, 'run', PipelineRun)
-        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        check.inst_param(run, "run", PipelineRun)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
         output_file = os.path.join(
-            get_system_temp_directory(), 'cli-api-execute-run-{}'.format(run.run_id)
+            get_system_temp_directory(), "cli-api-execute-run-{}".format(run.run_id)
         )
 
         process = cli_api_launch_run(
@@ -186,12 +186,12 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
             return self._living_process_by_run_id.get(run_id)
 
     def is_process_running(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
         process = self._get_process(run_id)
         return _is_alive(process) if process else False
 
     def can_terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         process = self._get_process(run_id)
 
@@ -204,7 +204,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         process = self._get_process(run_id)
 

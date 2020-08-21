@@ -3,7 +3,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
-GET_ASSET_KEY_QUERY = '''
+GET_ASSET_KEY_QUERY = """
 {
     assetsOrError {
         __typename
@@ -16,9 +16,9 @@ GET_ASSET_KEY_QUERY = '''
         }
     }
 }
-'''
+"""
 
-GET_ASSET_MATERIALIZATION = '''
+GET_ASSET_MATERIALIZATION = """
     query AssetQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
@@ -32,9 +32,9 @@ GET_ASSET_MATERIALIZATION = '''
             }
         }
     }
-'''
+"""
 
-GET_ASSET_RUNS = '''
+GET_ASSET_RUNS = """
     query AssetRunsQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
@@ -44,7 +44,7 @@ GET_ASSET_RUNS = '''
             }
         }
     }
-'''
+"""
 
 
 class TestAssetAwareEventLog(
@@ -57,62 +57,62 @@ class TestAssetAwareEventLog(
     )
 ):
     def test_get_all_asset_keys(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, 'multi_asset_pipeline')
+        selector = infer_pipeline_selector(graphql_context, "multi_asset_pipeline")
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={'executionParams': {'selector': selector, 'mode': 'default'}},
+            variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
-        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
 
         result = execute_dagster_graphql(graphql_context, GET_ASSET_KEY_QUERY)
         assert result.data
-        assert result.data['assetsOrError']
-        assert result.data['assetsOrError']['nodes']
+        assert result.data["assetsOrError"]
+        assert result.data["assetsOrError"]["nodes"]
 
         # sort by materialization asset key to keep list order is consistent for snapshot
-        result.data['assetsOrError']['nodes'].sort(key=lambda e: e['key']['path'][0])
+        result.data["assetsOrError"]["nodes"].sort(key=lambda e: e["key"]["path"][0])
 
         snapshot.assert_match(result.data)
 
     def test_get_asset_key_materialization(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, 'single_asset_pipeline')
+        selector = infer_pipeline_selector(graphql_context, "single_asset_pipeline")
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={'executionParams': {'selector': selector, 'mode': 'default'}},
+            variables={"executionParams": {"selector": selector, "mode": "default"}},
         )
-        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
         result = execute_dagster_graphql(
-            graphql_context, GET_ASSET_MATERIALIZATION, variables={'assetKey': {'path': ['a']}}
+            graphql_context, GET_ASSET_MATERIALIZATION, variables={"assetKey": {"path": ["a"]}}
         )
         assert result.data
         snapshot.assert_match(result.data)
 
     def test_get_asset_runs(self, graphql_context):
-        single_selector = infer_pipeline_selector(graphql_context, 'single_asset_pipeline')
-        multi_selector = infer_pipeline_selector(graphql_context, 'multi_asset_pipeline')
+        single_selector = infer_pipeline_selector(graphql_context, "single_asset_pipeline")
+        multi_selector = infer_pipeline_selector(graphql_context, "multi_asset_pipeline")
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={'executionParams': {'selector': single_selector, 'mode': 'default'}},
+            variables={"executionParams": {"selector": single_selector, "mode": "default"}},
         )
-        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
-        single_run_id = result.data['launchPipelineExecution']['run']['runId']
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        single_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
         result = execute_dagster_graphql(
             graphql_context,
             LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={'executionParams': {'selector': multi_selector, 'mode': 'default'}},
+            variables={"executionParams": {"selector": multi_selector, "mode": "default"}},
         )
-        assert result.data['launchPipelineExecution']['__typename'] == 'LaunchPipelineRunSuccess'
-        multi_run_id = result.data['launchPipelineExecution']['run']['runId']
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        multi_run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
         result = execute_dagster_graphql(
-            graphql_context, GET_ASSET_RUNS, variables={'assetKey': {'path': ['a']}}
+            graphql_context, GET_ASSET_RUNS, variables={"assetKey": {"path": ["a"]}}
         )
         assert result.data
-        fetched_runs = [run['runId'] for run in result.data['assetOrError']['runs']]
+        fetched_runs = [run["runId"] for run in result.data["assetOrError"]["runs"]]
         assert len(fetched_runs) == 2
         assert multi_run_id in fetched_runs
         assert single_run_id in fetched_runs

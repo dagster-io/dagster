@@ -22,12 +22,12 @@ def run_config_fn_for_date(partition):
     previous_month_first_day = previous_month_last_day.replace(day=1)
 
     return {
-        'solids': {
-            'query_historical_stock_data': {
-                'config': {
-                    'ds_start': previous_month_first_day.strftime("%Y-%m-%d"),
-                    'ds_end': previous_month_last_day.strftime("%Y-%m-%d"),
-                    'symbol': 'AAPL',
+        "solids": {
+            "query_historical_stock_data": {
+                "config": {
+                    "ds_start": previous_month_first_day.strftime("%Y-%m-%d"),
+                    "ds_end": previous_month_last_day.strftime("%Y-%m-%d"),
+                    "symbol": "AAPL",
                 }
             }
         }

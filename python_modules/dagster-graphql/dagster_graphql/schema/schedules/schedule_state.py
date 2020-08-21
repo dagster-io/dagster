@@ -14,44 +14,44 @@ from .ticks import tick_specific_data_from_dagster_tick
 
 class DapuphinScheduleStateOrError(dauphin.Union):
     class Meta(object):
-        name = 'ScheduleStateOrError'
-        types = ('ScheduleState', DauphinScheduleStateNotFoundError, DauphinPythonError)
+        name = "ScheduleStateOrError"
+        types = ("ScheduleState", DauphinScheduleStateNotFoundError, DauphinPythonError)
 
 
 class DauphinScheduleStates(dauphin.ObjectType):
     class Meta(object):
-        name = 'ScheduleStates'
+        name = "ScheduleStates"
 
-    results = dauphin.non_null_list('ScheduleState')
+    results = dauphin.non_null_list("ScheduleState")
 
 
 class DauphinScheduleStatesOrError(dauphin.Union):
     class Meta(object):
-        name = 'ScheduleStatesOrError'
+        name = "ScheduleStatesOrError"
         types = (DauphinScheduleStates, DauphinRepositoryNotFoundError, DauphinPythonError)
 
 
 class DauphinScheduleState(dauphin.ObjectType):
     class Meta(object):
-        name = 'ScheduleState'
+        name = "ScheduleState"
 
     schedule_origin_id = dauphin.NonNull(dauphin.String)
     schedule_name = dauphin.NonNull(dauphin.String)
     cron_schedule = dauphin.NonNull(dauphin.String)
-    status = dauphin.NonNull('ScheduleStatus')
+    status = dauphin.NonNull("ScheduleStatus")
 
-    runs = dauphin.Field(dauphin.non_null_list('PipelineRun'), limit=dauphin.Int())
+    runs = dauphin.Field(dauphin.non_null_list("PipelineRun"), limit=dauphin.Int())
     runs_count = dauphin.NonNull(dauphin.Int)
-    ticks = dauphin.Field(dauphin.non_null_list('ScheduleTick'), limit=dauphin.Int())
+    ticks = dauphin.Field(dauphin.non_null_list("ScheduleTick"), limit=dauphin.Int())
     ticks_count = dauphin.NonNull(dauphin.Int)
-    stats = dauphin.NonNull('ScheduleTickStatsSnapshot')
+    stats = dauphin.NonNull("ScheduleTickStatsSnapshot")
     logs_path = dauphin.NonNull(dauphin.String)
     running_schedule_count = dauphin.NonNull(dauphin.Int)
     repository_origin_id = dauphin.NonNull(dauphin.String)
     id = dauphin.NonNull(dauphin.ID)
 
     def __init__(self, _graphene_info, schedule_state):
-        self._schedule_state = check.inst_param(schedule_state, 'schedule', ScheduleState)
+        self._schedule_state = check.inst_param(schedule_state, "schedule", ScheduleState)
         self._external_schedule_origin_id = self._schedule_state.schedule_origin_id
 
         super(DauphinScheduleState, self).__init__(
@@ -74,7 +74,7 @@ class DauphinScheduleState(dauphin.ObjectType):
         stats = graphene_info.context.instance.get_schedule_tick_stats(
             self._external_schedule_origin_id
         )
-        return graphene_info.schema.type_named('ScheduleTickStatsSnapshot')(stats)
+        return graphene_info.schema.type_named("ScheduleTickStatsSnapshot")(stats)
 
     def resolve_ticks(self, graphene_info, limit=None):
 
@@ -88,7 +88,7 @@ class DauphinScheduleState(dauphin.ObjectType):
             tick_subset = ticks[:limit]
 
         return [
-            graphene_info.schema.type_named('ScheduleTick')(
+            graphene_info.schema.type_named("ScheduleTick")(
                 tick_id=tick.tick_id,
                 status=tick.status,
                 timestamp=tick.timestamp,
@@ -103,10 +103,10 @@ class DauphinScheduleState(dauphin.ObjectType):
 
     def resolve_runs(self, graphene_info, **kwargs):
         return [
-            graphene_info.schema.type_named('PipelineRun')(r)
+            graphene_info.schema.type_named("PipelineRun")(r)
             for r in graphene_info.context.instance.get_runs(
                 filters=PipelineRunsFilter.for_schedule(self._schedule_state),
-                limit=kwargs.get('limit'),
+                limit=kwargs.get("limit"),
             )
         ]
 

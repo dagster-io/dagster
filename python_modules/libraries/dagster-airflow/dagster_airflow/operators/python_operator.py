@@ -1,4 +1,4 @@
-'''The dagster-airflow operators.'''
+"""The dagster-airflow operators."""
 from dagster_airflow.operators.util import invoke_steps_within_python_operator
 from dagster_airflow.vendor.python_operator import PythonOperator
 

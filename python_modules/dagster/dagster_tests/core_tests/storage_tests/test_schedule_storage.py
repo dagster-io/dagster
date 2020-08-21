@@ -19,7 +19,7 @@ TestScheduleStorage.__test__ = False
 class TestSqliteScheduleStorage(TestScheduleStorage):
     __test__ = True
 
-    @pytest.fixture(name='storage', params=[create_sqlite_schedule_storage])
+    @pytest.fixture(name="storage", params=[create_sqlite_schedule_storage])
     def schedule_storage(self, request):
         with request.param() as s:
             yield s

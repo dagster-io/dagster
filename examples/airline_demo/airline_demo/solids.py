@@ -1,4 +1,4 @@
-'''A fully fleshed out demo dagster repository with many configurable options.'''
+"""A fully fleshed out demo dagster repository with many configurable options."""
 
 import os
 import re
@@ -30,7 +30,7 @@ from dagster.core.types.dagster_type import create_string_type
 from .cache_file_from_s3 import cache_file_from_s3
 from .unzip_file_handle import unzip_file_handle
 
-SqlTableName = create_string_type('SqlTableName', description='The name of a database table')
+SqlTableName = create_string_type("SqlTableName", description="The name of a database table")
 
 
 # Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
@@ -39,11 +39,11 @@ make_python_type_usable_as_dagster_type(
 )
 
 
-PARQUET_SPECIAL_CHARACTERS = r'[ ,;{}()\n\t=]'
+PARQUET_SPECIAL_CHARACTERS = r"[ ,;{}()\n\t=]"
 
 
 def _notebook_path(name):
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'notebooks', name)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "notebooks", name)
 
 
 def notebook_solid(name, notebook_path, input_defs, output_defs, required_resource_keys):
@@ -58,7 +58,7 @@ def notebook_solid(name, notebook_path, input_defs, output_defs, required_resour
 
 # need a sql context w a sqlalchemy engine
 def sql_solid(name, select_statement, materialization_strategy, table_name=None, input_defs=None):
-    '''Return a new solid that executes and materializes a SQL select statement.
+    """Return a new solid that executes and materializes a SQL select statement.
 
     Args:
         name (str): The name of the new solid.
@@ -73,11 +73,11 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
     Returns:
         function:
             The new SQL solid.
-    '''
-    input_defs = check.opt_list_param(input_defs, 'input_defs', InputDefinition)
+    """
+    input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
 
     materialization_strategy_output_types = {  # pylint:disable=C0103
-        'table': SqlTableName,
+        "table": SqlTableName,
         # 'view': String,
         # 'query': SqlAlchemyQueryType,
         # 'subquery': SqlAlchemySubqueryType,
@@ -87,32 +87,32 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
 
     if materialization_strategy not in materialization_strategy_output_types:
         raise Exception(
-            'Invalid materialization strategy {materialization_strategy}, must '
-            'be one of {materialization_strategies}'.format(
+            "Invalid materialization strategy {materialization_strategy}, must "
+            "be one of {materialization_strategies}".format(
                 materialization_strategy=materialization_strategy,
                 materialization_strategies=str(list(materialization_strategy_output_types.keys())),
             )
         )
 
-    if materialization_strategy == 'table':
+    if materialization_strategy == "table":
         if table_name is None:
-            raise Exception('Missing table_name: required for materialization strategy \'table\'')
+            raise Exception("Missing table_name: required for materialization strategy 'table'")
 
     output_description = (
-        'The string name of the new table created by the solid'
-        if materialization_strategy == 'table'
-        else 'The materialized SQL statement. If the materialization_strategy is '
-        '\'table\', this is the string name of the new table created by the solid.'
+        "The string name of the new table created by the solid"
+        if materialization_strategy == "table"
+        else "The materialized SQL statement. If the materialization_strategy is "
+        "'table', this is the string name of the new table created by the solid."
     )
 
-    description = '''This solid executes the following SQL statement:
-    {select_statement}'''.format(
+    description = """This solid executes the following SQL statement:
+    {select_statement}""".format(
         select_statement=select_statement
     )
 
     # n.b., we will eventually want to make this resources key configurable
     sql_statement = (
-        'drop table if exists {table_name};\n' 'create table {table_name} as {select_statement};'
+        "drop table if exists {table_name};\n" "create table {table_name} as {select_statement};"
     ).format(table_name=table_name, select_statement=select_statement)
 
     @solid(
@@ -125,11 +125,11 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
             )
         ],
         description=description,
-        required_resource_keys={'db_info'},
-        tags={'kind': 'sql', 'sql': sql_statement},
+        required_resource_keys={"db_info"},
+        tags={"kind": "sql", "sql": sql_statement},
     )
     def _sql_solid(context, **input_defs):  # pylint: disable=unused-argument
-        '''Inner function defining the new solid.
+        """Inner function defining the new solid.
 
         Args:
             context (SolidExecutionContext): Must expose a `db` resource with an `execute` method,
@@ -138,19 +138,19 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         Returns:
             str:
                 The table name of the newly materialized SQL select statement.
-        '''
+        """
         context.log.info(
-            'Executing sql statement:\n{sql_statement}'.format(sql_statement=sql_statement)
+            "Executing sql statement:\n{sql_statement}".format(sql_statement=sql_statement)
         )
         context.resources.db_info.engine.execute(text(sql_statement))
-        yield Output(value=table_name, output_name='result')
+        yield Output(value=table_name, output_name="result")
 
     return _sql_solid
 
 
 @solid(
-    required_resource_keys={'pyspark_step_launcher', 'pyspark', 'file_manager'},
-    description='''Take a file handle that contains a csv with headers and load it
+    required_resource_keys={"pyspark_step_launcher", "pyspark", "file_manager"},
+    description="""Take a file handle that contains a csv with headers and load it
 into a Spark DataFrame. It infers header names but does *not* infer schema.
 
 It also ensures that the column names are valid parquet column names by
@@ -158,7 +158,7 @@ filtering out any of the following characters from column names:
 
 Characters (within quotations): "`{chars}`"
 
-'''.format(
+""".format(
         chars=PARQUET_SPECIAL_CHARACTERS
     ),
 )
@@ -174,9 +174,9 @@ def ingest_csv_file_handle_to_spark(context, csv_file_handle: FileHandle) -> Dat
     # the spark APIs to load directly from whatever object store, rather
     # than using any interleaving temp files.
     data_frame = (
-        context.resources.pyspark.spark_session.read.format('csv')
+        context.resources.pyspark.spark_session.read.format("csv")
         .options(
-            header='true',
+            header="true",
             # inferSchema='true',
         )
         .load(temp_file_name)
@@ -184,7 +184,7 @@ def ingest_csv_file_handle_to_spark(context, csv_file_handle: FileHandle) -> Dat
 
     # parquet compat
     return rename_spark_dataframe_columns(
-        data_frame, lambda x: re.sub(PARQUET_SPECIAL_CHARACTERS, '', x)
+        data_frame, lambda x: re.sub(PARQUET_SPECIAL_CHARACTERS, "", x)
     )
 
 
@@ -193,12 +193,12 @@ def rename_spark_dataframe_columns(data_frame, fn):
 
 
 def do_prefix_column_names(df, prefix):
-    check.inst_param(df, 'df', DataFrame)
-    check.str_param(prefix, 'prefix')
-    return rename_spark_dataframe_columns(df, lambda c: '{prefix}{c}'.format(prefix=prefix, c=c))
+    check.inst_param(df, "df", DataFrame)
+    check.str_param(prefix, "prefix")
+    return rename_spark_dataframe_columns(df, lambda c: "{prefix}{c}".format(prefix=prefix, c=c))
 
 
-@solid(required_resource_keys={'pyspark_step_launcher'})
+@solid(required_resource_keys={"pyspark_step_launcher"})
 def canonicalize_column_names(_context, data_frame: DataFrame) -> DataFrame:
     return rename_spark_dataframe_columns(data_frame, lambda c: c.lower())
 
@@ -207,55 +207,55 @@ def replace_values_spark(data_frame, old, new):
     return data_frame.na.replace(old, new)
 
 
-@solid(required_resource_keys={'pyspark_step_launcher'})
+@solid(required_resource_keys={"pyspark_step_launcher"})
 def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame:
-    normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, 'M', None)
+    normalized_sfo_weather_data = replace_values_spark(sfo_weather_data, "M", None)
     return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
 
 
 @solid(
-    output_defs=[OutputDefinition(name='table_name', dagster_type=String)],
-    config_schema={'table_name': String},
-    required_resource_keys={'db_info', 'pyspark_step_launcher'},
+    output_defs=[OutputDefinition(name="table_name", dagster_type=String)],
+    config_schema={"table_name": String},
+    required_resource_keys={"db_info", "pyspark_step_launcher"},
 )
 def load_data_to_database_from_spark(context, data_frame: DataFrame):
-    context.resources.db_info.load_table(data_frame, context.solid_config['table_name'])
+    context.resources.db_info.load_table(data_frame, context.solid_config["table_name"])
 
-    table_name = context.solid_config['table_name']
+    table_name = context.solid_config["table_name"]
     yield AssetMaterialization(
-        asset_key='table:{table_name}'.format(table_name=table_name),
+        asset_key="table:{table_name}".format(table_name=table_name),
         description=(
-            'Persisted table {table_name} in database configured in the db_info resource.'
+            "Persisted table {table_name} in database configured in the db_info resource."
         ).format(table_name=table_name),
         metadata_entries=[
-            EventMetadataEntry.text(label='Host', text=context.resources.db_info.host),
-            EventMetadataEntry.text(label='Db', text=context.resources.db_info.db_name),
+            EventMetadataEntry.text(label="Host", text=context.resources.db_info.host),
+            EventMetadataEntry.text(label="Db", text=context.resources.db_info.db_name),
         ],
     )
-    yield Output(value=table_name, output_name='table_name')
+    yield Output(value=table_name, output_name="table_name")
 
 
 @solid(
-    required_resource_keys={'pyspark_step_launcher'},
-    description='Subsample a spark dataset via the configuration option.',
+    required_resource_keys={"pyspark_step_launcher"},
+    description="Subsample a spark dataset via the configuration option.",
     config_schema={
-        'subsample_pct': Field(
-            Int, description='The integer percentage of rows to sample from the input dataset.',
+        "subsample_pct": Field(
+            Int, description="The integer percentage of rows to sample from the input dataset.",
         )
     },
 )
 def subsample_spark_dataset(context, data_frame: DataFrame) -> DataFrame:
     return data_frame.sample(
-        withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
+        withReplacement=False, fraction=context.solid_config["subsample_pct"] / 100.0
     )
 
 
 @composite_solid(
-    description='''Ingest a zipped csv file from s3,
+    description="""Ingest a zipped csv file from s3,
 stash in a keyed file store (does not download if already
 present by default), unzip that file, and load it into a
 Spark Dataframe. See documentation in constituent solids for
-more detail.'''
+more detail."""
 )
 def s3_to_df(s3_coordinate: S3Coordinate, archive_member: String) -> DataFrame:
     return ingest_csv_file_handle_to_spark(
@@ -265,15 +265,15 @@ def s3_to_df(s3_coordinate: S3Coordinate, archive_member: String) -> DataFrame:
 
 @composite_solid(
     config_fn=lambda cfg: {
-        'subsample_spark_dataset': {'config': {'subsample_pct': cfg['subsample_pct']}},
-        'load_data_to_database_from_spark': {'config': {'table_name': cfg['table_name']}},
+        "subsample_spark_dataset": {"config": {"subsample_pct": cfg["subsample_pct"]}},
+        "load_data_to_database_from_spark": {"config": {"table_name": cfg["table_name"]}},
     },
-    config_schema={'subsample_pct': int, 'table_name': str},
-    description='''Ingest zipped csv file from s3, load into a Spark
+    config_schema={"subsample_pct": int, "table_name": str},
+    description="""Ingest zipped csv file from s3, load into a Spark
 DataFrame, optionally subsample it (via configuring the
 subsample_spark_dataset, solid), canonicalize the column names, and then
 load it into a data warehouse.
-''',
+""",
 )
 def s3_to_dw_table(s3_coordinate: S3Coordinate, archive_member: String) -> String:
     return load_data_to_database_from_spark(
@@ -282,33 +282,33 @@ def s3_to_dw_table(s3_coordinate: S3Coordinate, archive_member: String) -> Strin
 
 
 q2_sfo_outbound_flights = sql_solid(
-    'q2_sfo_outbound_flights',
-    '''
+    "q2_sfo_outbound_flights",
+    """
     select * from q2_on_time_data
     where origin = 'SFO'
-    ''',
-    'table',
-    table_name='q2_sfo_outbound_flights',
+    """,
+    "table",
+    table_name="q2_sfo_outbound_flights",
 )
 
 average_sfo_outbound_avg_delays_by_destination = sql_solid(
-    'average_sfo_outbound_avg_delays_by_destination',
-    '''
+    "average_sfo_outbound_avg_delays_by_destination",
+    """
     select
         cast(cast(arrdelay as float) as integer) as arrival_delay,
         cast(cast(depdelay as float) as integer) as departure_delay,
         origin,
         dest as destination
     from q2_sfo_outbound_flights
-    ''',
-    'table',
-    table_name='average_sfo_outbound_avg_delays_by_destination',
-    input_defs=[InputDefinition('q2_sfo_outbound_flights', dagster_type=SqlTableName)],
+    """,
+    "table",
+    table_name="average_sfo_outbound_avg_delays_by_destination",
+    input_defs=[InputDefinition("q2_sfo_outbound_flights", dagster_type=SqlTableName)],
 )
 
 ticket_prices_with_average_delays = sql_solid(
-    'tickets_with_destination',
-    '''
+    "tickets_with_destination",
+    """
     select
         tickets.*,
         coupons.dest,
@@ -324,14 +324,14 @@ ticket_prices_with_average_delays = sql_solid(
         q2_coupon_data as coupons
     where
         tickets.itinid = coupons.itinid;
-    ''',
-    'table',
-    table_name='tickets_with_destination',
+    """,
+    "table",
+    table_name="tickets_with_destination",
 )
 
 tickets_with_destination = sql_solid(
-    'tickets_with_destination',
-    '''
+    "tickets_with_destination",
+    """
     select
         tickets.*,
         coupons.dest,
@@ -347,14 +347,14 @@ tickets_with_destination = sql_solid(
         q2_coupon_data as coupons
     where
         tickets.itinid = coupons.itinid;
-    ''',
-    'table',
-    table_name='tickets_with_destination',
+    """,
+    "table",
+    table_name="tickets_with_destination",
 )
 
 delays_vs_fares = sql_solid(
-    'delays_vs_fares',
-    '''
+    "delays_vs_fares",
+    """
     with avg_fares as (
         select
             tickets.origin,
@@ -383,18 +383,18 @@ delays_vs_fares = sql_solid(
         avg_fares.dest,
         avg_delays.destination
     )
-    ''',
-    'table',
-    table_name='delays_vs_fares',
+    """,
+    "table",
+    table_name="delays_vs_fares",
     input_defs=[
-        InputDefinition('tickets_with_destination', SqlTableName),
-        InputDefinition('average_sfo_outbound_avg_delays_by_destination', SqlTableName),
+        InputDefinition("tickets_with_destination", SqlTableName),
+        InputDefinition("average_sfo_outbound_avg_delays_by_destination", SqlTableName),
     ],
 )
 
 eastbound_delays = sql_solid(
-    'eastbound_delays',
-    '''
+    "eastbound_delays",
+    """
     select
         avg(cast(cast(arrdelay as float) as integer)) as avg_arrival_delay,
         avg(cast(cast(depdelay as float) as integer)) as avg_departure_delay,
@@ -415,14 +415,14 @@ eastbound_delays = sql_solid(
     group by (origin,destination)
     order by num_flights desc
     limit 100;
-    ''',
-    'table',
-    table_name='eastbound_delays',
+    """,
+    "table",
+    table_name="eastbound_delays",
 )
 
 westbound_delays = sql_solid(
-    'westbound_delays',
-    '''
+    "westbound_delays",
+    """
     select
         avg(cast(cast(arrdelay as float) as integer)) as avg_arrival_delay,
         avg(cast(cast(depdelay as float) as integer)) as avg_departure_delay,
@@ -443,81 +443,81 @@ westbound_delays = sql_solid(
     group by (origin,destination)
     order by num_flights desc
     limit 100;
-    ''',
-    'table',
-    table_name='westbound_delays',
+    """,
+    "table",
+    table_name="westbound_delays",
 )
 
 delays_by_geography = notebook_solid(
-    'delays_by_geography',
-    'Delays_by_Geography.ipynb',
+    "delays_by_geography",
+    "Delays_by_Geography.ipynb",
     input_defs=[
         InputDefinition(
-            'westbound_delays',
+            "westbound_delays",
             SqlTableName,
-            description='The SQL table containing westbound delays.',
+            description="The SQL table containing westbound delays.",
         ),
         InputDefinition(
-            'eastbound_delays',
+            "eastbound_delays",
             SqlTableName,
-            description='The SQL table containing eastbound delays.',
+            description="The SQL table containing eastbound delays.",
         ),
     ],
     output_defs=[
         OutputDefinition(
             dagster_type=FileHandle,
             # name='plots_pdf_path',
-            description='The saved PDF plots.',
+            description="The saved PDF plots.",
         )
     ],
-    required_resource_keys={'db_info'},
+    required_resource_keys={"db_info"},
 )
 
 delays_vs_fares_nb = notebook_solid(
-    'fares_vs_delays',
-    'Fares_vs_Delays.ipynb',
+    "fares_vs_delays",
+    "Fares_vs_Delays.ipynb",
     input_defs=[
         InputDefinition(
-            'table_name', SqlTableName, description='The SQL table to use for calcuations.'
+            "table_name", SqlTableName, description="The SQL table to use for calcuations."
         )
     ],
     output_defs=[
         OutputDefinition(
             dagster_type=FileHandle,
             # name='plots_pdf_path',
-            description='The path to the saved PDF plots.',
+            description="The path to the saved PDF plots.",
         )
     ],
-    required_resource_keys={'db_info'},
+    required_resource_keys={"db_info"},
 )
 
 sfo_delays_by_destination = notebook_solid(
-    'sfo_delays_by_destination',
-    'SFO_Delays_by_Destination.ipynb',
+    "sfo_delays_by_destination",
+    "SFO_Delays_by_Destination.ipynb",
     input_defs=[
         InputDefinition(
-            'table_name', SqlTableName, description='The SQL table to use for calcuations.'
+            "table_name", SqlTableName, description="The SQL table to use for calcuations."
         )
     ],
     output_defs=[
         OutputDefinition(
             dagster_type=FileHandle,
             # name='plots_pdf_path',
-            description='The path to the saved PDF plots.',
+            description="The path to the saved PDF plots.",
         )
     ],
-    required_resource_keys={'db_info'},
+    required_resource_keys={"db_info"},
 )
 
 
 @solid(
-    required_resource_keys={'pyspark_step_launcher', 'pyspark'},
-    config_schema={'subsample_pct': Int},
-    description='''
+    required_resource_keys={"pyspark_step_launcher", "pyspark"},
+    config_schema={"subsample_pct": Int},
+    description="""
     This solid takes April, May, and June data and coalesces it into a q2 data set.
     It then joins the that origin and destination airport with the data in the
     master_cord_data.
-    ''',
+    """,
 )
 def join_q2_data(
     context,
@@ -527,46 +527,46 @@ def join_q2_data(
     master_cord_data: DataFrame,
 ) -> DataFrame:
 
-    dfs = {'april': april_data, 'may': may_data, 'june': june_data}
+    dfs = {"april": april_data, "may": may_data, "june": june_data}
 
     missing_things = []
 
-    for required_column in ['DestAirportSeqID', 'OriginAirportSeqID']:
+    for required_column in ["DestAirportSeqID", "OriginAirportSeqID"]:
         for month, df in dfs.items():
             if required_column not in df.columns:
-                missing_things.append({'month': month, 'missing_column': required_column})
+                missing_things.append({"month": month, "missing_column": required_column})
 
     yield ExpectationResult(
         success=not bool(missing_things),
-        label='airport_ids_present',
-        description='Sequence IDs present in incoming monthly flight data.',
+        label="airport_ids_present",
+        description="Sequence IDs present in incoming monthly flight data.",
         metadata_entries=[
-            EventMetadataEntry.json(label='metadata', data={'missing_columns': missing_things})
+            EventMetadataEntry.json(label="metadata", data={"missing_columns": missing_things})
         ],
     )
 
     yield ExpectationResult(
         success=set(april_data.columns) == set(may_data.columns) == set(june_data.columns),
-        label='flight_data_same_shape',
+        label="flight_data_same_shape",
         metadata_entries=[
-            EventMetadataEntry.json(label='metadata', data={'columns': april_data.columns})
+            EventMetadataEntry.json(label="metadata", data={"columns": april_data.columns})
         ],
     )
 
     q2_data = april_data.union(may_data).union(june_data)
     sampled_q2_data = q2_data.sample(
-        withReplacement=False, fraction=context.solid_config['subsample_pct'] / 100.0
+        withReplacement=False, fraction=context.solid_config["subsample_pct"] / 100.0
     )
-    sampled_q2_data.createOrReplaceTempView('q2_data')
+    sampled_q2_data.createOrReplaceTempView("q2_data")
 
-    dest_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'DEST_')
-    dest_prefixed_master_cord_data.createOrReplaceTempView('dest_cord_data')
+    dest_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, "DEST_")
+    dest_prefixed_master_cord_data.createOrReplaceTempView("dest_cord_data")
 
-    origin_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, 'ORIGIN_')
-    origin_prefixed_master_cord_data.createOrReplaceTempView('origin_cord_data')
+    origin_prefixed_master_cord_data = do_prefix_column_names(master_cord_data, "ORIGIN_")
+    origin_prefixed_master_cord_data.createOrReplaceTempView("origin_cord_data")
 
     full_data = context.resources.pyspark.spark_session.sql(
-        '''
+        """
         SELECT * FROM origin_cord_data
         LEFT JOIN (
             SELECT * FROM q2_data
@@ -574,7 +574,7 @@ def join_q2_data(
             q2_data.DestAirportSeqID = dest_cord_data.DEST_AIRPORT_SEQ_ID
         ) q2_dest_data
         ON origin_cord_data.ORIGIN_AIRPORT_SEQ_ID = q2_dest_data.OriginAirportSeqID
-        '''
+        """
     )
 
     yield Output(rename_spark_dataframe_columns(full_data, lambda c: c.lower()))

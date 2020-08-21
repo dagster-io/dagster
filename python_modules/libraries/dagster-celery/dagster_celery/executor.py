@@ -6,36 +6,36 @@ from .config import DEFAULT_CONFIG, dict_wrapper
 from .defaults import broker_url, result_backend
 
 CELERY_CONFIG = {
-    'broker': Field(
+    "broker": Field(
         Noneable(StringSource),
         is_required=False,
         description=(
-            'The URL of the Celery broker. Default: '
-            '\'pyamqp://guest@{os.getenv(\'DAGSTER_CELERY_BROKER_HOST\','
-            '\'localhost\')}//\'.'
+            "The URL of the Celery broker. Default: "
+            "'pyamqp://guest@{os.getenv('DAGSTER_CELERY_BROKER_HOST',"
+            "'localhost')}//'."
         ),
     ),
-    'backend': Field(
+    "backend": Field(
         Noneable(StringSource),
         is_required=False,
-        default_value='rpc://',
-        description='The URL of the Celery results backend. Default: \'rpc://\'.',
+        default_value="rpc://",
+        description="The URL of the Celery results backend. Default: 'rpc://'.",
     ),
-    'include': Field(
-        [str], is_required=False, description='List of modules every worker should import'
+    "include": Field(
+        [str], is_required=False, description="List of modules every worker should import"
     ),
-    'config_source': Field(
+    "config_source": Field(
         Noneable(Permissive()),
         is_required=False,
-        description='Additional settings for the Celery app.',
+        description="Additional settings for the Celery app.",
     ),
-    'retries': get_retries_config(),
+    "retries": get_retries_config(),
 }
 
 
-@executor(name='celery', config_schema=CELERY_CONFIG)
+@executor(name="celery", config_schema=CELERY_CONFIG)
 def celery_executor(init_context):
-    '''Celery-based executor.
+    """Celery-based executor.
 
     The Celery executor exposes config settings for the underlying Celery app under
     the ``config_source`` key. This config corresponds to the "new lowercase settings" introduced
@@ -83,15 +83,15 @@ def celery_executor(init_context):
     workers on which you hope to run were started. If, for example, you point the executor at a
     different broker than the one your workers are listening to, the workers will never be able to
     pick up tasks for execution.
-    '''
+    """
     check_cross_process_constraints(init_context)
 
     return CeleryExecutor(
-        broker=init_context.executor_config.get('broker'),
-        backend=init_context.executor_config.get('backend'),
-        config_source=init_context.executor_config.get('config_source'),
-        include=init_context.executor_config.get('include'),
-        retries=Retries.from_config(init_context.executor_config['retries']),
+        broker=init_context.executor_config.get("broker"),
+        backend=init_context.executor_config.get("backend"),
+        config_source=init_context.executor_config.get("config_source"),
+        include=init_context.executor_config.get("include"),
+        retries=Retries.from_config(init_context.executor_config["retries"]),
     )
 
 
@@ -108,7 +108,7 @@ def _submit_task(app, pipeline_context, step, queue, priority):
         retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
     )
     return task_signature.apply_async(
-        priority=priority, queue=queue, routing_key='{queue}.execute_plan'.format(queue=queue),
+        priority=priority, queue=queue, routing_key="{queue}.execute_plan".format(queue=queue),
     )
 
 
@@ -116,13 +116,13 @@ class CeleryExecutor(Executor):
     def __init__(
         self, retries, broker=None, backend=None, include=None, config_source=None,
     ):
-        self.broker = check.opt_str_param(broker, 'broker', default=broker_url)
-        self.backend = check.opt_str_param(backend, 'backend', default=result_backend)
-        self.include = check.opt_list_param(include, 'include', of_type=str)
+        self.broker = check.opt_str_param(broker, "broker", default=broker_url)
+        self.backend = check.opt_str_param(backend, "backend", default=result_backend)
+        self.include = check.opt_list_param(include, "include", of_type=str)
         self.config_source = dict_wrapper(
-            dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, 'config_source'))
+            dict(DEFAULT_CONFIG, **check.opt_dict_param(config_source, "config_source"))
         )
-        self._retries = check.inst_param(retries, 'retries', Retries)
+        self._retries = check.inst_param(retries, "retries", Retries)
 
     @property
     def retries(self):
@@ -147,9 +147,9 @@ class CeleryExecutor(Executor):
 
     def app_args(self):
         return {
-            'broker': self.broker,
-            'backend': self.backend,
-            'include': self.include,
-            'config_source': self.config_source,
-            'retries': self.retries,
+            "broker": self.broker,
+            "backend": self.backend,
+            "include": self.include,
+            "config_source": self.config_source,
+            "retries": self.retries,
         }

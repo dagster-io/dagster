@@ -1,4 +1,4 @@
-'''
+"""
 This module contains serializable classes that contain all the meta information
 in our definitions and type systems. The purpose is to be able to represent
 user-defined code artifacts (e.g. Pipelines Solids) in a serializable format
@@ -27,7 +27,7 @@ For example we do not persist preset configuration blocks since config
 can contain sensitive information. However this information needs to be
 communicated between user repositories and host processes such as dagit.
 
-'''
+"""
 
 from dagster.config.snap import (
     ConfigEnumValueSnap,

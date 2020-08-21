@@ -44,9 +44,9 @@ from .results import PipelineExecutionResult
 
 
 def execute_run_iterator(pipeline, pipeline_run, instance):
-    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
-    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(pipeline, "pipeline", ExecutablePipeline)
+    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(instance, "instance", DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
     if pipeline_run.solids_to_execute:
@@ -54,8 +54,8 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
                 pipeline_run.solids_to_execute == pipeline.solids_to_execute,
-                'Cannot execute PipelineRun with solids_to_execute {solids_to_execute} that conflicts '
-                'with pipeline subset {pipeline_solids_to_execute}.'.format(
+                "Cannot execute PipelineRun with solids_to_execute {solids_to_execute} that conflicts "
+                "with pipeline subset {pipeline_solids_to_execute}.".format(
                     pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
                     solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
                 ),
@@ -90,7 +90,7 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
 
 
 def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
-    '''Executes an existing pipeline run synchronously.
+    """Executes an existing pipeline run synchronously.
 
     Synchronous version of execute_run_iterator.
 
@@ -103,18 +103,18 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
 
     Returns:
         PipelineExecutionResult: The result of the execution.
-    '''
+    """
     if isinstance(pipeline, PipelineDefinition):
         raise DagsterInvariantViolationError(
-            'execute_run requires an ExecutablePipeline but received a PipelineDefinition '
-            'directly instead. To support hand-off to other processes provide a '
-            'ReconstructablePipeline which can be done using reconstructable(). For in '
-            'process only execution you can use InMemoryExecutablePipeline.'
+            "execute_run requires an ExecutablePipeline but received a PipelineDefinition "
+            "directly instead. To support hand-off to other processes provide a "
+            "ReconstructablePipeline which can be done using reconstructable(). For in "
+            "process only execution you can use InMemoryExecutablePipeline."
         )
 
-    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
-    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    check.inst_param(instance, 'instance', DagsterInstance)
+    check.inst_param(pipeline, "pipeline", ExecutablePipeline)
+    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(instance, "instance", DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
 
     pipeline_def = pipeline.get_definition()
@@ -122,8 +122,8 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
         if isinstance(pipeline_def, PipelineSubsetDefinition):
             check.invariant(
                 pipeline_run.solids_to_execute == pipeline.solids_to_execute,
-                'Cannot execute PipelineRun with solids_to_execute {solids_to_execute} that '
-                'conflicts with pipeline subset {pipeline_solids_to_execute}.'.format(
+                "Cannot execute PipelineRun with solids_to_execute {solids_to_execute} that "
+                "conflicts with pipeline subset {pipeline_solids_to_execute}.".format(
                     pipeline_solids_to_execute=str_format_set(pipeline.solids_to_execute),
                     solids_to_execute=str_format_set(pipeline_run.solids_to_execute),
                 ),
@@ -184,7 +184,7 @@ def execute_pipeline_iterator(
     solid_selection=None,
     instance=None,
 ):
-    '''Execute a pipeline iteratively.
+    """Execute a pipeline iteratively.
 
     Rather than package up the result of running a pipeline into a single object, like
     :py:func:`execute_pipeline`, this function yields the stream of events resulting from pipeline
@@ -216,7 +216,7 @@ def execute_pipeline_iterator(
 
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
-    '''
+    """
 
     (
         pipeline,
@@ -258,7 +258,7 @@ def execute_pipeline(
     instance=None,
     raise_on_error=True,
 ):
-    '''Execute a pipeline synchronously.
+    """Execute a pipeline synchronously.
 
     Users will typically call this API when testing pipeline execution, or running standalone
     scripts.
@@ -293,7 +293,7 @@ def execute_pipeline(
 
     This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
     ``dagster.core.execution.api.execute_plan()``.
-    '''
+    """
     instance = instance or DagsterInstance.ephemeral()
     return _logged_execute_pipeline(
         pipeline,
@@ -337,7 +337,7 @@ def _logged_execute_pipeline(
         instance=instance,
     )
 
-    log_repo_stats(instance=instance, pipeline=pipeline, source='execute_pipeline')
+    log_repo_stats(instance=instance, pipeline=pipeline, source="execute_pipeline")
 
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline.get_definition(),
@@ -362,7 +362,7 @@ def reexecute_pipeline(
     instance=None,
     raise_on_error=True,
 ):
-    '''Reexecute an existing pipeline run.
+    """Reexecute an existing pipeline run.
 
     Users will typically call this API when testing pipeline reexecution, or running standalone
     scripts.
@@ -389,8 +389,8 @@ def reexecute_pipeline(
       :py:class:`PipelineExecutionResult`: The result of pipeline execution.
 
     For the asynchronous version, see :py:func:`reexecute_pipeline_iterator`.
-    '''
-    check.str_param(parent_run_id, 'parent_run_id')
+    """
+    check.str_param(parent_run_id, "parent_run_id")
 
     (pipeline, run_config, instance, mode, tags, _, _) = _check_execute_pipeline_args(
         pipeline=pipeline,
@@ -404,7 +404,7 @@ def reexecute_pipeline(
     parent_pipeline_run = instance.get_run_by_id(parent_run_id)
     check.invariant(
         parent_pipeline_run,
-        'No parent run with id {parent_run_id} found in instance.'.format(
+        "No parent run with id {parent_run_id} found in instance.".format(
             parent_run_id=parent_run_id
         ),
     )
@@ -434,7 +434,7 @@ def reexecute_pipeline_iterator(
     tags=None,
     instance=None,
 ):
-    '''Reexecute a pipeline iteratively.
+    """Reexecute a pipeline iteratively.
 
     Rather than package up the result of running a pipeline into a single object, like
     :py:func:`reexecute_pipeline`, this function yields the stream of events resulting from pipeline
@@ -461,8 +461,8 @@ def reexecute_pipeline_iterator(
 
     Returns:
       Iterator[DagsterEvent]: The stream of events resulting from pipeline reexecution.
-    '''
-    check.str_param(parent_run_id, 'parent_run_id')
+    """
+    check.str_param(parent_run_id, "parent_run_id")
 
     (pipeline, run_config, instance, mode, tags, _, _) = _check_execute_pipeline_args(
         pipeline=pipeline,
@@ -476,7 +476,7 @@ def reexecute_pipeline_iterator(
     parent_pipeline_run = instance.get_run_by_id(parent_run_id)
     check.invariant(
         parent_pipeline_run,
-        'No parent run with id {parent_run_id} found in instance.'.format(
+        "No parent run with id {parent_run_id} found in instance.".format(
             parent_run_id=parent_run_id
         ),
     )
@@ -499,11 +499,11 @@ def reexecute_pipeline_iterator(
 def execute_plan_iterator(
     execution_plan, pipeline_run, instance, retries=None, run_config=None,
 ):
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    check.inst_param(instance, 'instance', DagsterInstance)
-    retries = check.opt_inst_param(retries, 'retries', Retries, Retries.disabled_mode())
-    run_config = check.opt_dict_param(run_config, 'run_config')
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(instance, "instance", DagsterInstance)
+    retries = check.opt_inst_param(retries, "retries", Retries, Retries.disabled_mode())
+    run_config = check.opt_dict_param(run_config, "run_config")
 
     return iter(
         _ExecuteRunWithPlanIterable(
@@ -524,14 +524,14 @@ def execute_plan_iterator(
 def execute_plan(
     execution_plan, instance, pipeline_run, run_config=None, retries=None,
 ):
-    '''This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
+    """This is the entry point of dagster-graphql executions. For the dagster CLI entry point, see
     execute_pipeline() above.
-    '''
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    run_config = check.opt_dict_param(run_config, 'run_config')
-    check.opt_inst_param(retries, 'retries', Retries)
+    """
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    run_config = check.opt_dict_param(run_config, "run_config")
+    check.opt_inst_param(retries, "retries", Retries)
 
     return list(
         execute_plan_iterator(
@@ -549,18 +549,18 @@ def _check_pipeline(pipeline):
     if isinstance(pipeline, PipelineDefinition):
         pipeline = InMemoryExecutablePipeline(pipeline)
 
-    check.inst_param(pipeline, 'pipeline', ExecutablePipeline)
+    check.inst_param(pipeline, "pipeline", ExecutablePipeline)
     return pipeline
 
 
 def create_execution_plan(pipeline, run_config=None, mode=None, step_keys_to_execute=None):
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
-    run_config = check.opt_dict_param(run_config, 'run_config', key_type=str)
-    mode = check.opt_str_param(mode, 'mode', default=pipeline_def.get_default_mode_name())
-    check.opt_list_param(step_keys_to_execute, 'step_keys_to_execute', of_type=str)
+    run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
+    mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
+    check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
     environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=mode)
 
@@ -593,15 +593,15 @@ def _core_execution_iterator(pipeline_context, execution_plan, steps_started, pi
 
 
 def _pipeline_execution_iterator(pipeline_context, execution_plan):
-    '''A complete execution of a pipeline. Yields pipeline start, success,
+    """A complete execution of a pipeline. Yields pipeline start, success,
     and failure events.
 
     Args:
         pipeline_context (SystemPipelineExecutionContext):
         execution_plan (ExecutionPlan):
-    '''
-    check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    """
+    check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
     yield DagsterEvent.pipeline_start(pipeline_context)
 
@@ -631,19 +631,19 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan):
 
 
 class _ExecuteRunWithPlanIterable(object):
-    '''Utility class to consolidate execution logic.
+    """Utility class to consolidate execution logic.
 
     This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
     for `PipelineExecutionResult`, we need to pull out the `pipeline_context` after we're done
     yielding events. This broadly follows a pattern we make use of in other places,
     cf. `dagster.utils.EventGenerationManager`.
-    '''
+    """
 
     def __init__(self, execution_plan, iterator, execution_context_manager):
-        self.execution_plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        self.iterator = check.callable_param(iterator, 'iterator')
+        self.execution_plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+        self.iterator = check.callable_param(iterator, "iterator")
         self.execution_context_manager = check.inst_param(
-            execution_context_manager, 'execution_context_manager', ExecutionContextManager
+            execution_context_manager, "execution_context_manager", ExecutionContextManager
         )
 
         self.pipeline_context = None
@@ -676,20 +676,20 @@ def _check_execute_pipeline_args(
 ):
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
-    run_config = check.opt_dict_param(run_config, 'run_config')
-    check.opt_str_param(mode, 'mode')
-    check.opt_str_param(preset, 'preset')
+    run_config = check.opt_dict_param(run_config, "run_config")
+    check.opt_str_param(mode, "mode")
+    check.opt_str_param(preset, "preset")
     check.invariant(
         not (mode is not None and preset is not None),
-        'You may set only one of `mode` (got {mode}) or `preset` (got {preset}).'.format(
+        "You may set only one of `mode` (got {mode}) or `preset` (got {preset}).".format(
             mode=mode, preset=preset
         ),
     )
 
-    tags = check.opt_dict_param(tags, 'tags', key_type=str)
-    check.opt_list_param(solid_selection, 'solid_selection', of_type=str)
+    tags = check.opt_dict_param(tags, "tags", key_type=str)
+    check.opt_list_param(solid_selection, "solid_selection", of_type=str)
 
     if preset is not None:
         pipeline_preset = pipeline_def.get_preset(preset)
@@ -697,8 +697,8 @@ def _check_execute_pipeline_args(
         if pipeline_preset.run_config is not None:
             check.invariant(
                 (not run_config) or (pipeline_preset.run_config == run_config),
-                'The environment set in preset \'{preset}\' does not agree with the environment '
-                'passed in the `run_config` argument.'.format(preset=preset),
+                "The environment set in preset '{preset}' does not agree with the environment "
+                "passed in the `run_config` argument.".format(preset=preset),
             )
 
             run_config = pipeline_preset.run_config
@@ -707,8 +707,8 @@ def _check_execute_pipeline_args(
         if pipeline_preset.solid_selection is not None:
             check.invariant(
                 solid_selection is None or solid_selection == pipeline_preset.solid_selection,
-                'The solid_selection set in preset \'{preset}\', {preset_subset}, does not agree with '
-                'the `solid_selection` argument: {solid_selection}'.format(
+                "The solid_selection set in preset '{preset}', {preset_subset}, does not agree with "
+                "the `solid_selection` argument: {solid_selection}".format(
                     preset=preset,
                     preset_subset=pipeline_preset.solid_selection,
                     solid_selection=solid_selection,
@@ -718,10 +718,8 @@ def _check_execute_pipeline_args(
 
         check.invariant(
             mode is None or mode == pipeline_preset.mode,
-            'Mode {mode} does not agree with the mode set in preset \'{preset}\': '
-            '(\'{preset_mode}\')'.format(
-                preset=preset, preset_mode=pipeline_preset.mode, mode=mode
-            ),
+            "Mode {mode} does not agree with the mode set in preset '{preset}': "
+            "('{preset_mode}')".format(preset=preset, preset_mode=pipeline_preset.mode, mode=mode),
         )
 
         mode = pipeline_preset.mode
@@ -732,8 +730,8 @@ def _check_execute_pipeline_args(
         if not pipeline_def.has_mode_definition(mode):
             raise DagsterInvariantViolationError(
                 (
-                    'You have attempted to execute pipeline {name} with mode {mode}. '
-                    'Available modes: {modes}'
+                    "You have attempted to execute pipeline {name} with mode {mode}. "
+                    "Available modes: {modes}"
                 ).format(
                     name=pipeline_def.name, mode=mode, modes=pipeline_def.available_modes,
                 )
@@ -742,16 +740,16 @@ def _check_execute_pipeline_args(
         if pipeline_def.is_multi_mode:
             raise DagsterInvariantViolationError(
                 (
-                    'Pipeline {name} has multiple modes (Available modes: {modes}) and you have '
-                    'attempted to execute it without specifying a mode. Set '
-                    'mode property on the PipelineRun object.'
+                    "Pipeline {name} has multiple modes (Available modes: {modes}) and you have "
+                    "attempted to execute it without specifying a mode. Set "
+                    "mode property on the PipelineRun object."
                 ).format(name=pipeline_def.name, modes=pipeline_def.available_modes)
             )
         mode = pipeline_def.get_default_mode_name()
 
     tags = merge_dicts(pipeline_def.tags, tags)
 
-    check.opt_inst_param(instance, 'instance', DagsterInstance)
+    check.opt_inst_param(instance, "instance", DagsterInstance)
     instance = instance or DagsterInstance.ephemeral()
 
     # generate pipeline subset from the given solid_selection

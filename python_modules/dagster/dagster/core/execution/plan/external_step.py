@@ -17,15 +17,15 @@ from dagster.core.execution.plan.execute_step import core_dagster_event_sequence
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 
-PICKLED_EVENTS_FILE_NAME = 'events.pkl'
-PICKLED_STEP_RUN_REF_FILE_NAME = 'step_run_ref.pkl'
+PICKLED_EVENTS_FILE_NAME = "events.pkl"
+PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
 
 
 @resource(
     config_schema={
-        'scratch_dir': Field(
+        "scratch_dir": Field(
             StringSource,
-            description='Directory used to pass files between the plan process and step process.',
+            description="Directory used to pass files between the plan process and step process.",
         ),
     },
 )
@@ -34,10 +34,10 @@ def local_external_step_launcher(context):
 
 
 class LocalExternalStepLauncher(StepLauncher):
-    '''Launches each step in its own local process, outside the plan process.'''
+    """Launches each step in its own local process, outside the plan process."""
 
     def __init__(self, scratch_dir):
-        self.scratch_dir = check.str_param(scratch_dir, 'scratch_dir')
+        self.scratch_dir = check.str_param(scratch_dir, "scratch_dir")
 
     def launch_step(self, step_context, prior_attempts_count):
         step_run_ref = step_context_to_step_run_ref(step_context, prior_attempts_count)
@@ -47,19 +47,19 @@ class LocalExternalStepLauncher(StepLauncher):
         os.makedirs(step_run_dir)
 
         step_run_ref_file_path = os.path.join(step_run_dir, PICKLED_STEP_RUN_REF_FILE_NAME)
-        with open(step_run_ref_file_path, 'wb') as step_pickle_file:
+        with open(step_run_ref_file_path, "wb") as step_pickle_file:
             pickle.dump(step_run_ref, step_pickle_file)
 
         command_tokens = [
             sys.executable,
-            '-m',
-            'dagster.core.execution.plan.local_external_step_main',
+            "-m",
+            "dagster.core.execution.plan.local_external_step_main",
             step_run_ref_file_path,
         ]
         subprocess.call(command_tokens, stdout=sys.stdout, stderr=sys.stderr)
 
         events_file_path = os.path.join(step_run_dir, PICKLED_EVENTS_FILE_NAME)
-        file_manager = LocalFileManager('.')
+        file_manager = LocalFileManager(".")
         events_file_handle = LocalFileHandle(events_file_path)
         events_data = file_manager.read_data(events_file_handle)
         events = pickle.loads(events_data)
@@ -73,18 +73,18 @@ def _module_in_package_dir(file_path, package_dir):
     abs_package_dir = os.path.abspath(package_dir)
     check.invariant(
         os.path.commonprefix([abs_path, abs_package_dir]) == abs_package_dir,
-        'File {abs_path} is not underneath package dir {abs_package_dir}'.format(
+        "File {abs_path} is not underneath package dir {abs_package_dir}".format(
             abs_path=abs_path, abs_package_dir=abs_package_dir,
         ),
     )
 
     relative_path = os.path.relpath(abs_path, abs_package_dir)
     without_extension, _ = os.path.splitext(relative_path)
-    return '.'.join(without_extension.split(os.sep))
+    return ".".join(without_extension.split(os.sep))
 
 
 def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir=None):
-    '''
+    """
     Args:
         step_context (SystemStepExecutionContext): The step context.
         prior_attempts_count (int): The number of times this time has been tried before in the same
@@ -97,10 +97,10 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
 
     Returns (StepRunRef):
         A reference to the step.
-    '''
+    """
 
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.int_param(prior_attempts_count, 'prior_attempts_count')
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.int_param(prior_attempts_count, "prior_attempts_count")
 
     retries = step_context.retries
 

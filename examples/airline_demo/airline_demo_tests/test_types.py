@@ -26,25 +26,25 @@ from dagster.core.storage.intermediate_storage import build_fs_intermediate_stor
 from dagster.core.storage.temp_file_manager import tempfile_resource
 
 spark_local_fs_mode = ModeDefinition(
-    name='spark',
+    name="spark",
     resource_defs={
-        'pyspark': pyspark_resource,
-        'tempfile': tempfile_resource,
-        's3': s3_resource,
-        'pyspark_step_launcher': no_step_launcher,
-        'file_manager': local_file_manager,
+        "pyspark": pyspark_resource,
+        "tempfile": tempfile_resource,
+        "s3": s3_resource,
+        "pyspark_step_launcher": no_step_launcher,
+        "file_manager": local_file_manager,
     },
     intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
 
 spark_s3_mode = ModeDefinition(
-    name='spark',
+    name="spark",
     resource_defs={
-        'pyspark': pyspark_resource,
-        'tempfile': tempfile_resource,
-        's3': s3_resource,
-        'pyspark_step_launcher': no_step_launcher,
-        'file_manager': s3_file_manager,
+        "pyspark": pyspark_resource,
+        "tempfile": tempfile_resource,
+        "s3": s3_resource,
+        "pyspark_step_launcher": no_step_launcher,
+        "file_manager": s3_file_manager,
     },
     intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
@@ -53,7 +53,7 @@ spark_s3_mode = ModeDefinition(
 def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
     @solid
     def nonce(_):
-        return LocalFileHandle(file_relative_path(__file__, 'data/test.csv'))
+        return LocalFileHandle(file_relative_path(__file__, "data/test.csv"))
 
     @pipeline(mode_defs=[spark_local_fs_mode])
     def spark_df_test_pipeline():
@@ -63,10 +63,10 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
 
     result = execute_pipeline(
         spark_df_test_pipeline,
-        mode='spark',
+        mode="spark",
         run_config={
-            'intermediate_storage': {'filesystem': {}},
-            'resources': {'pyspark': {'config': {'spark_conf': spark_config}}},
+            "intermediate_storage": {"filesystem": {}},
+            "resources": {"pyspark": {"config": {"spark_conf": spark_config}}},
         },
         instance=instance,
     )
@@ -78,23 +78,23 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
     assert result.success
     result_dir = os.path.join(
         intermediate_storage.root,
-        'intermediates',
-        'ingest_csv_file_handle_to_spark.compute',
-        'result',
+        "intermediates",
+        "ingest_csv_file_handle_to_spark.compute",
+        "result",
     )
 
-    assert '_SUCCESS' in os.listdir(result_dir)
+    assert "_SUCCESS" in os.listdir(result_dir)
 
     spark = SparkSession.builder.getOrCreate()
     df = spark.read.parquet(result_dir)
     assert isinstance(df, pyspark.sql.dataframe.DataFrame)
-    assert df.head()[0] == '1'
+    assert df.head()[0] == "1"
 
 
 def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
-    @solid(required_resource_keys={'file_manager'})
+    @solid(required_resource_keys={"file_manager"})
     def nonce(context):
-        with open(os.path.join(os.path.dirname(__file__), 'data/test.csv'), 'rb') as fd:
+        with open(os.path.join(os.path.dirname(__file__), "data/test.csv"), "rb") as fd:
             return context.resources.file_manager.write_data(fd.read())
 
     @pipeline(mode_defs=[spark_s3_mode])
@@ -105,26 +105,26 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
     result = execute_pipeline(
         spark_df_test_pipeline,
         run_config={
-            'intermediate_storage': {'s3': {'config': {'s3_bucket': s3_bucket}}},
-            'resources': {
-                'pyspark': {'config': {'spark_conf': spark_config}},
-                'file_manager': {'config': {'s3_bucket': s3_bucket}},
+            "intermediate_storage": {"s3": {"config": {"s3_bucket": s3_bucket}}},
+            "resources": {
+                "pyspark": {"config": {"spark_conf": spark_config}},
+                "file_manager": {"config": {"s3_bucket": s3_bucket}},
             },
         },
-        mode='spark',
+        mode="spark",
     )
 
     assert result.success
 
     intermediate_storage = S3IntermediateStorage(s3_bucket=s3_bucket, run_id=result.run_id)
 
-    success_key = '/'.join(
+    success_key = "/".join(
         [
-            intermediate_storage.root.strip('/'),
-            'intermediates',
-            'ingest_csv_file_handle_to_spark.compute',
-            'result',
-            '_SUCCESS',
+            intermediate_storage.root.strip("/"),
+            "intermediates",
+            "ingest_csv_file_handle_to_spark.compute",
+            "result",
+            "_SUCCESS",
         ]
     )
     try:
@@ -132,15 +132,15 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
             Bucket=intermediate_storage.object_store.bucket, Key=success_key
         )
     except botocore.exceptions.ClientError:
-        raise Exception('Couldn\'t find object at {success_key}'.format(success_key=success_key))
+        raise Exception("Couldn't find object at {success_key}".format(success_key=success_key))
 
 
 def test_spark_dataframe_output_csv():
     spark = SparkSession.builder.getOrCreate()
     num_df = (
-        spark.read.format('csv')
-        .options(header='true', inferSchema='true')
-        .load(file_relative_path(__file__, 'num.csv'))
+        spark.read.format("csv")
+        .options(header="true", inferSchema="true")
+        .load(file_relative_path(__file__, "num.csv"))
     )
 
     assert num_df.collect() == [Row(num1=1, num2=2)]
@@ -149,7 +149,7 @@ def test_spark_dataframe_output_csv():
     def emit(_):
         return num_df
 
-    @solid(input_defs=[InputDefinition('df', DataFrame)], output_defs=[OutputDefinition(DataFrame)])
+    @solid(input_defs=[InputDefinition("df", DataFrame)], output_defs=[OutputDefinition(DataFrame)])
     def passthrough_df(_context, df):
         return df
 
@@ -158,23 +158,23 @@ def test_spark_dataframe_output_csv():
         passthrough_df(emit())
 
     with seven.TemporaryDirectory() as tempdir:
-        file_name = os.path.join(tempdir, 'output.csv')
+        file_name = os.path.join(tempdir, "output.csv")
         result = execute_pipeline(
             passthrough,
             run_config={
-                'solids': {
-                    'passthrough_df': {
-                        'outputs': [{'result': {'csv': {'path': file_name, 'header': True}}}]
+                "solids": {
+                    "passthrough_df": {
+                        "outputs": [{"result": {"csv": {"path": file_name, "header": True}}}]
                     }
                 },
             },
         )
 
         from_file_df = (
-            spark.read.format('csv').options(header='true', inferSchema='true').load(file_name)
+            spark.read.format("csv").options(header="true", inferSchema="true").load(file_name)
         )
 
         assert (
-            result.result_for_solid('passthrough_df').output_value().collect()
+            result.result_for_solid("passthrough_df").output_value().collect()
             == from_file_df.collect()
         )

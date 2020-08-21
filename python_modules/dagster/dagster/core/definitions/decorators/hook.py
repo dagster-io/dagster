@@ -10,18 +10,18 @@ from ..hook import HookDefinition
 
 class _Hook(object):
     def __init__(self, name=None, required_resource_keys=None):
-        self.name = check.opt_str_param(name, 'name')
+        self.name = check.opt_str_param(name, "name")
         self.required_resource_keys = check.opt_set_param(
-            required_resource_keys, 'required_resource_keys'
+            required_resource_keys, "required_resource_keys"
         )
 
     def __call__(self, fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
 
-        expected_positionals = ['context', 'event_list']
+        expected_positionals = ["context", "event_list"]
         fn_positionals, _ = split_function_parameters(fn, expected_positionals)
         missing_positional = validate_decorated_fn_positionals(fn_positionals, expected_positionals)
         if missing_positional:
@@ -42,7 +42,7 @@ class _Hook(object):
 
 
 def event_list_hook(name=None, required_resource_keys=None):
-    '''Create a generic hook with the specified parameters from the decorated function.
+    """Create a generic hook with the specified parameters from the decorated function.
 
     This decorator is currently used internally by Dagster machinery to support success_hook and
     failure_hook.
@@ -76,7 +76,7 @@ def event_list_hook(name=None, required_resource_keys=None):
                         context.resources.slack.send_message(message)
 
 
-    '''
+    """
     # This case is for when decorator is used bare, without arguments.
     # e.g. @event_list_hook versus @event_list_hook()
     if callable(name):
@@ -87,7 +87,7 @@ def event_list_hook(name=None, required_resource_keys=None):
 
 
 def success_hook(name=None, required_resource_keys=None):
-    '''Create a hook on step success events with the specified parameters from the decorated function.
+    """Create a hook on step success events with the specified parameters from the decorated function.
 
     Args:
         name (Optional[str]): The name of this hook.
@@ -108,12 +108,12 @@ def success_hook(name=None, required_resource_keys=None):
                 do_something()
 
 
-    '''
+    """
 
     def wrapper(fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
-        expected_positionals = ['context']
+        expected_positionals = ["context"]
         fn_positionals, _ = split_function_parameters(fn, expected_positionals)
         missing_positional = validate_decorated_fn_positionals(fn_positionals, expected_positionals)
         if missing_positional:
@@ -151,7 +151,7 @@ def success_hook(name=None, required_resource_keys=None):
 
 
 def failure_hook(name=None, required_resource_keys=None):
-    '''Create a hook on step failure events with the specified parameters from the decorated function.
+    """Create a hook on step failure events with the specified parameters from the decorated function.
 
     Args:
         name (Optional[str]): The name of this hook.
@@ -172,12 +172,12 @@ def failure_hook(name=None, required_resource_keys=None):
                 do_something()
 
 
-    '''
+    """
 
     def wrapper(fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
-        expected_positionals = ['context']
+        expected_positionals = ["context"]
         fn_positionals, _ = split_function_parameters(fn, expected_positionals)
         missing_positional = validate_decorated_fn_positionals(fn_positionals, expected_positionals)
         if missing_positional:

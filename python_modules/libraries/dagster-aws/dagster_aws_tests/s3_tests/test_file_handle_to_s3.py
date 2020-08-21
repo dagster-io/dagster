@@ -13,7 +13,7 @@ def create_file_handle_pipeline(temp_file_handle, s3_resource):
 
     @pipeline(
         mode_defs=[
-            ModeDefinition(resource_defs={'s3': ResourceDefinition.hardcoded_resource(s3_resource)})
+            ModeDefinition(resource_defs={"s3": ResourceDefinition.hardcoded_resource(s3_resource)})
         ]
     )
     def test():
@@ -24,31 +24,31 @@ def create_file_handle_pipeline(temp_file_handle, s3_resource):
 
 @mock_s3
 def test_successful_file_handle_to_s3():
-    foo_bytes = 'foo'.encode()
+    foo_bytes = "foo".encode()
     with get_temp_file_handle_with_data(foo_bytes) as temp_file_handle:
         # Uses mock S3
-        s3 = boto3.client('s3')
-        s3.create_bucket(Bucket='some-bucket')
+        s3 = boto3.client("s3")
+        s3.create_bucket(Bucket="some-bucket")
 
         result = execute_pipeline(
             create_file_handle_pipeline(temp_file_handle, s3),
             run_config={
-                'solids': {
-                    'file_handle_to_s3': {'config': {'Bucket': 'some-bucket', 'Key': 'some-key'}}
+                "solids": {
+                    "file_handle_to_s3": {"config": {"Bucket": "some-bucket", "Key": "some-key"}}
                 }
             },
         )
 
         assert result.success
 
-        assert s3.get_object(Bucket='some-bucket', Key='some-key')['Body'].read() == foo_bytes
+        assert s3.get_object(Bucket="some-bucket", Key="some-key")["Body"].read() == foo_bytes
 
         materializations = result.result_for_solid(
-            'file_handle_to_s3'
+            "file_handle_to_s3"
         ).materializations_during_compute
         assert len(materializations) == 1
         assert len(materializations[0].metadata_entries) == 1
         assert (
-            materializations[0].metadata_entries[0].entry_data.path == 's3://some-bucket/some-key'
+            materializations[0].metadata_entries[0].entry_data.path == "s3://some-bucket/some-key"
         )
-        assert materializations[0].metadata_entries[0].label == 'some-key'
+        assert materializations[0].metadata_entries[0].label == "some-key"

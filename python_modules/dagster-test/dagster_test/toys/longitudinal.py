@@ -19,64 +19,64 @@ from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
 def _base_config():
     return {
-        'error_rate': Field(float, is_required=False, default_value=0.0),
-        'sleep': Field(float, is_required=False, default_value=0.5),
-        'materialization_key_list': Field(Array(str), is_required=False),
-        'materialization_key': Field(str, is_required=False),
-        'materialization_text': Field(str, is_required=False),
-        'materialization_url': Field(str, is_required=False),
-        'materialization_path': Field(str, is_required=False),
-        'materialization_json': Field(Permissive(), is_required=False),
-        'materialization_value': Field(float, is_required=False),
+        "error_rate": Field(float, is_required=False, default_value=0.0),
+        "sleep": Field(float, is_required=False, default_value=0.5),
+        "materialization_key_list": Field(Array(str), is_required=False),
+        "materialization_key": Field(str, is_required=False),
+        "materialization_text": Field(str, is_required=False),
+        "materialization_url": Field(str, is_required=False),
+        "materialization_path": Field(str, is_required=False),
+        "materialization_json": Field(Permissive(), is_required=False),
+        "materialization_value": Field(float, is_required=False),
     }
 
 
 def _base_compute(context):
-    time.sleep(context.solid_config['sleep'])
+    time.sleep(context.solid_config["sleep"])
 
-    if random() < context.solid_config['error_rate']:
-        raise Exception('blah')
+    if random() < context.solid_config["error_rate"]:
+        raise Exception("blah")
 
     asset_key = None
-    if context.solid_config.get('materialization_key_list') is not None:
-        asset_key = AssetKey(context.solid_config.get('materialization_key_list'))
-    elif context.solid_config.get('materialization_key') is not None:
-        asset_key = AssetKey(context.solid_config.get('materialization_key'))
+    if context.solid_config.get("materialization_key_list") is not None:
+        asset_key = AssetKey(context.solid_config.get("materialization_key_list"))
+    elif context.solid_config.get("materialization_key") is not None:
+        asset_key = AssetKey(context.solid_config.get("materialization_key"))
 
     if asset_key:
         metadata_entries = []
-        if context.solid_config.get('materialization_text') is not None:
+        if context.solid_config.get("materialization_text") is not None:
             metadata_entries.append(
                 EventMetadataEntry.text(
-                    context.solid_config.get('materialization_text'), context.solid.name,
+                    context.solid_config.get("materialization_text"), context.solid.name,
                 )
             )
 
-        if context.solid_config.get('materialization_url') is not None:
+        if context.solid_config.get("materialization_url") is not None:
             metadata_entries.append(
                 EventMetadataEntry.url(
-                    context.solid_config.get('materialization_url'), context.solid.name,
+                    context.solid_config.get("materialization_url"), context.solid.name,
                 )
             )
 
-        if context.solid_config.get('materialization_path') is not None:
+        if context.solid_config.get("materialization_path") is not None:
             metadata_entries.append(
                 EventMetadataEntry.path(
-                    context.solid_config.get('materialization_url'), context.solid.name,
+                    context.solid_config.get("materialization_url"), context.solid.name,
                 )
             )
 
-        if context.solid_config.get('materialization_json') is not None:
+        if context.solid_config.get("materialization_json") is not None:
             metadata_entries.append(
                 EventMetadataEntry.json(
-                    context.solid_config.get('materialization_json'), context.solid.name,
+                    context.solid_config.get("materialization_json"), context.solid.name,
                 )
             )
 
-        if context.solid_config.get('materialization_value') is not None:
+        if context.solid_config.get("materialization_value") is not None:
             metadata_entries = [
                 EventMetadataEntry.float(
-                    context.solid_config.get('materialization_value'), context.solid.name,
+                    context.solid_config.get("materialization_value"), context.solid.name,
                 )
             ]
 
@@ -110,20 +110,20 @@ def base_two_inputs(context, _a, _b):
 
 @pipeline(
     description=(
-        'Demo pipeline that simulates growth of execution-time and data-throughput of a data pipeline '
-        'following a sigmoidal curve'
+        "Demo pipeline that simulates growth of execution-time and data-throughput of a data pipeline "
+        "following a sigmoidal curve"
     )
 )
 def longitudinal_pipeline():
-    ingest_costs = base_no_input.alias('ingest_costs')
-    persist_costs = base_one_input.alias('persist_costs')
-    ingest_traffic = base_no_input.alias('ingest_traffic')
-    persist_traffic = base_one_input.alias('persist_traffic')
-    build_model = base_two_inputs.alias('build_model')
-    train_model = base_one_input.alias('train_model')
-    persist_model = base_one_input.alias('persist_model')
-    build_cost_dashboard = base_one_input.alias('build_cost_dashboard')
-    build_traffic_dashboard = base_one_input.alias('build_traffic_dashboard')
+    ingest_costs = base_no_input.alias("ingest_costs")
+    persist_costs = base_one_input.alias("persist_costs")
+    ingest_traffic = base_no_input.alias("ingest_traffic")
+    persist_traffic = base_one_input.alias("persist_traffic")
+    build_model = base_two_inputs.alias("build_model")
+    train_model = base_one_input.alias("train_model")
+    persist_model = base_one_input.alias("persist_model")
+    build_cost_dashboard = base_one_input.alias("build_cost_dashboard")
+    build_traffic_dashboard = base_one_input.alias("build_traffic_dashboard")
 
     cost_data = persist_costs(ingest_costs())
     traffic_data = persist_traffic(ingest_traffic())
@@ -148,7 +148,7 @@ SLEEP_BUILD = 0.001 * 0.001
 SLEEP_TRAIN = 0.001 * 0.001
 
 
-INITIAL_DATE = datetime.strptime('2020-01-01', DEFAULT_DATE_FORMAT)
+INITIAL_DATE = datetime.strptime("2020-01-01", DEFAULT_DATE_FORMAT)
 
 
 def sigmoid(x):
@@ -163,66 +163,66 @@ def longitudinal_config(partition):
     traffic_data_size = TRAFFIC_CONSTANTS[partition_date.weekday()] * 10000 * growth_rate
 
     return {
-        'storage': {'filesystem': {}},
-        'solids': {
-            'ingest_costs': {
-                'config': {
-                    'error_rate': random() * 0.15,  # ingestion is slightly error prone
-                    'sleep': SLEEP_INGEST * cost_data_size,  # sleep dependent on data size
+        "storage": {"filesystem": {}},
+        "solids": {
+            "ingest_costs": {
+                "config": {
+                    "error_rate": random() * 0.15,  # ingestion is slightly error prone
+                    "sleep": SLEEP_INGEST * cost_data_size,  # sleep dependent on data size
                 }
             },
-            'persist_costs': {
-                'config': {
-                    'error_rate': random() * 0.01,  # ingestion is slightly error prone
-                    'sleep': SLEEP_PERSIST * cost_data_size,  # sleep dependent on data size
-                    'materialization_key': 'cost_db_table',
-                    'materialization_value': cost_data_size,
+            "persist_costs": {
+                "config": {
+                    "error_rate": random() * 0.01,  # ingestion is slightly error prone
+                    "sleep": SLEEP_PERSIST * cost_data_size,  # sleep dependent on data size
+                    "materialization_key": "cost_db_table",
+                    "materialization_value": cost_data_size,
                 }
             },
-            'ingest_traffic': {
-                'config': {
-                    'error_rate': random() * 0.15,  # ingestion is slightly error prone
-                    'sleep': SLEEP_INGEST * traffic_data_size,  # sleep dependent on data size
+            "ingest_traffic": {
+                "config": {
+                    "error_rate": random() * 0.15,  # ingestion is slightly error prone
+                    "sleep": SLEEP_INGEST * traffic_data_size,  # sleep dependent on data size
                 }
             },
-            'persist_traffic': {
-                'config': {
-                    'error_rate': random() * 0.01,  # ingestion is slightly error prone
-                    'sleep': SLEEP_PERSIST * traffic_data_size,
-                    'materialization_key': 'traffic_db_table',
-                    'materialization_value': traffic_data_size,
+            "persist_traffic": {
+                "config": {
+                    "error_rate": random() * 0.01,  # ingestion is slightly error prone
+                    "sleep": SLEEP_PERSIST * traffic_data_size,
+                    "materialization_key": "traffic_db_table",
+                    "materialization_value": traffic_data_size,
                 }
             },
-            'build_cost_dashboard': {
-                'config': {
-                    'materialization_key_list': ['dashboards', 'cost_dashboard'],
-                    'materialization_url': 'http://docs.dagster.io/cost',
+            "build_cost_dashboard": {
+                "config": {
+                    "materialization_key_list": ["dashboards", "cost_dashboard"],
+                    "materialization_url": "http://docs.dagster.io/cost",
                 }
             },
-            'build_traffic_dashboard': {
-                'config': {
-                    'materialization_key_list': ['dashboards', 'traffic_dashboard'],
-                    'materialization_url': 'http://docs.dagster.io/traffic',
+            "build_traffic_dashboard": {
+                "config": {
+                    "materialization_key_list": ["dashboards", "traffic_dashboard"],
+                    "materialization_url": "http://docs.dagster.io/traffic",
                 }
             },
-            'build_model': {
-                'config': {
-                    'sleep': SLEEP_BUILD
+            "build_model": {
+                "config": {
+                    "sleep": SLEEP_BUILD
                     * traffic_data_size
                     * cost_data_size  # sleep dependent on data size
                 }
             },
-            'train_model': {
-                'config': {
-                    'sleep': SLEEP_TRAIN
+            "train_model": {
+                "config": {
+                    "sleep": SLEEP_TRAIN
                     * traffic_data_size
                     * cost_data_size,  # sleep dependent on data size
                 }
             },
-            'persist_model': {
-                'config': {
-                    'materialization_key': 'model',
-                    'materialization_json': {'traffic': traffic_data_size, 'cost': cost_data_size,},
+            "persist_model": {
+                "config": {
+                    "materialization_key": "model",
+                    "materialization_json": {"traffic": traffic_data_size, "cost": cost_data_size,},
                 }
             },
         },

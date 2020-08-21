@@ -1,9 +1,9 @@
 from dagster import pipeline, solid
 
 
-@solid(config_schema={'day_of_week': str})
+@solid(config_schema={"day_of_week": str})
 def process_data_for_day(context):
-    day_of_week = context.solid_config['day_of_week']
+    day_of_week = context.solid_config["day_of_week"]
     context.log.info(day_of_week)
 
 
@@ -12,9 +12,9 @@ def my_pipeline():
     process_data_for_day()
 
 
-@solid(config_schema={'date': str})
+@solid(config_schema={"date": str})
 def process_data_for_date(context):
-    date = context.solid_config['date']
+    date = context.solid_config["date"]
     context.log.info(date)
 
 

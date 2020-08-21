@@ -25,27 +25,27 @@ def test_vanilla_set_output():
 def test_vanilla_set_output_fail():
     @lambda_solid(output_def=OutputDefinition(set))
     def emit_set():
-        return 'foo'
+        return "foo"
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_set)
 
 
 def test_vanilla_set_input():
-    @lambda_solid(input_defs=[InputDefinition(name='tt', dagster_type=set)])
+    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=set)])
     def take_set(tt):
         return tt
 
-    assert execute_solid(take_set, input_values={'tt': {2, 3}}).output_value() == {2, 3}
+    assert execute_solid(take_set, input_values={"tt": {2, 3}}).output_value() == {2, 3}
 
 
 def test_vanilla_set_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name='tt', dagster_type=set)])
+    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=set)])
     def take_set(tt):
         return tt
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(take_set, input_values={'tt': 'fkjdf'})
+        execute_solid(take_set, input_values={"tt": "fkjdf"})
 
 
 def test_open_typing_set_output():
@@ -59,27 +59,27 @@ def test_open_typing_set_output():
 def test_open_typing_set_output_fail():
     @lambda_solid(output_def=OutputDefinition(typing.Set))
     def emit_set():
-        return 'foo'
+        return "foo"
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_set)
 
 
 def test_open_typing_set_input():
-    @lambda_solid(input_defs=[InputDefinition(name='tt', dagster_type=typing.Set)])
+    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set)])
     def take_set(tt):
         return tt
 
-    assert execute_solid(take_set, input_values={'tt': {2, 3}}).output_value() == {2, 3}
+    assert execute_solid(take_set, input_values={"tt": {2, 3}}).output_value() == {2, 3}
 
 
 def test_open_typing_set_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name='tt', dagster_type=typing.Set)])
+    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set)])
     def take_set(tt):
         return tt
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(take_set, input_values={'tt': 'fkjdf'})
+        execute_solid(take_set, input_values={"tt": "fkjdf"})
 
 
 def test_runtime_set_of_int():
@@ -91,10 +91,10 @@ def test_runtime_set_of_int():
     res = set_dagster_type.type_check(None, None)
     assert not res.success
 
-    res = set_dagster_type.type_check(None, 'nope')
+    res = set_dagster_type.type_check(None, "nope")
     assert not res.success
 
-    res = set_dagster_type.type_check(None, {'nope'})
+    res = set_dagster_type.type_check(None, {"nope"})
     assert not res.success
 
 
@@ -105,28 +105,28 @@ def test_runtime_optional_set():
     set_dagster_type.type_check(None, set())
     set_dagster_type.type_check(None, None)
 
-    res = set_dagster_type.type_check(None, 'nope')
+    res = set_dagster_type.type_check(None, "nope")
     assert not res.success
 
-    res = set_dagster_type.type_check(None, {'nope'})
+    res = set_dagster_type.type_check(None, {"nope"})
     assert not res.success
 
 
 def test_closed_typing_set_input():
-    @lambda_solid(input_defs=[InputDefinition(name='tt', dagster_type=typing.Set[int])])
+    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
     def take_set(tt):
         return tt
 
-    assert execute_solid(take_set, input_values={'tt': {2, 3}}).output_value() == {2, 3}
+    assert execute_solid(take_set, input_values={"tt": {2, 3}}).output_value() == {2, 3}
 
 
 def test_closed_typing_set_input_fail():
-    @lambda_solid(input_defs=[InputDefinition(name='tt', dagster_type=typing.Set[int])])
+    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
     def take_set(tt):
         return tt
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(take_set, input_values={'tt': 'fkjdf'})
+        execute_solid(take_set, input_values={"tt": "fkjdf"})
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(take_set, input_values={'tt': {'fkjdf'}})
+        execute_solid(take_set, input_values={"tt": {"fkjdf"}})

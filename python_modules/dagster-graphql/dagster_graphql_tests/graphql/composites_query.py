@@ -1,4 +1,4 @@
-COMPOSITES_QUERY = '''
+COMPOSITES_QUERY = """
 query CompositesQuery($selector: PipelineSelector!) {
   pipelineOrError(params: $selector) {
     __typename
@@ -62,9 +62,9 @@ fragment SolidInfo on Solid {
     }
   }
 }
-'''
+"""
 
-PARENT_ID_QUERY = '''
+PARENT_ID_QUERY = """
 query withParent($selector: PipelineSelector!, $parentHandleID: String) {
   pipelineOrError(params: $selector) {
     __typename
@@ -76,9 +76,9 @@ query withParent($selector: PipelineSelector!, $parentHandleID: String) {
     }
   }
 }
-'''
+"""
 
-SOLID_ID_QUERY = '''
+SOLID_ID_QUERY = """
 query solidFetch($selector: PipelineSelector!, $id: String!) {
   pipelineOrError(params: $selector) {
     __typename
@@ -90,9 +90,9 @@ query solidFetch($selector: PipelineSelector!, $id: String!) {
     }
   }
 }
-'''
+"""
 
-COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE = '''
+COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE = """
 query CompositesQuery($selector: PipelineSelector!) {
   pipelineOrError(params: $selector) {
     __typename
@@ -107,10 +107,10 @@ query CompositesQuery($selector: PipelineSelector!) {
     }
   }
 }
-'''
+"""
 
 
-NESTED_INPUT_DEPENDS_ON = '''
+NESTED_INPUT_DEPENDS_ON = """
 fragment SolidInfo on Solid {
   outputs {
     dependedBy {
@@ -128,9 +128,9 @@ fragment SolidInfo on Solid {
     }
   }
 }
-'''
+"""
 
-NESTED_OUTPUT_DEPENDED_BY = '''
+NESTED_OUTPUT_DEPENDED_BY = """
 fragment SolidInfo on Solid {
   name
   inputs {
@@ -149,4 +149,4 @@ fragment SolidInfo on Solid {
     }
   }
 }
-'''
+"""

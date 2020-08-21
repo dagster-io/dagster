@@ -73,7 +73,7 @@ class GithubResource:
         auth = request.json()
         self.installation_tokens[installation_id] = {
             "value": auth["token"],
-            "expires": to_seconds(datetime.strptime(auth["expires_at"], '%Y-%m-%dT%H:%M:%SZ')),
+            "expires": to_seconds(datetime.strptime(auth["expires_at"], "%Y-%m-%dT%H:%M:%SZ")),
         }
 
     def __check_installation_tokens(self, installation_id):
@@ -152,7 +152,7 @@ class GithubResource:
             description="Github Application Installation ID, for more info see https://developer.github.com/apps/",
         ),
     },
-    description='This resource is for connecting to Github',
+    description="This resource is for connecting to Github",
 )
 def github_resource(context):
     return GithubResource(

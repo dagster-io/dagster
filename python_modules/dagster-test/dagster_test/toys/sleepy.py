@@ -16,12 +16,12 @@ from dagster import (
 
 
 @solid(
-    input_defs=[InputDefinition('units', List[Int])], output_defs=[OutputDefinition(Int, 'total')]
+    input_defs=[InputDefinition("units", List[Int])], output_defs=[OutputDefinition(Int, "total")]
 )
 def sleeper(context, units):
     tot = 0
     for sec in units:
-        context.log.info('Sleeping for {} seconds'.format(sec))
+        context.log.info("Sleeping for {} seconds".format(sec))
         sleep(sec)
         tot += sec
 
@@ -31,10 +31,10 @@ def sleeper(context, units):
 @solid(
     config_schema=Field([int], is_required=False, default_value=[1, 1, 1, 1]),
     output_defs=[
-        OutputDefinition(List[Int], 'out_1'),
-        OutputDefinition(List[Int], 'out_2'),
-        OutputDefinition(List[Int], 'out_3'),
-        OutputDefinition(List[Int], 'out_4'),
+        OutputDefinition(List[Int], "out_1"),
+        OutputDefinition(List[Int], "out_2"),
+        OutputDefinition(List[Int], "out_3"),
+        OutputDefinition(List[Int], "out_4"),
     ],
 )
 def giver(context):
@@ -43,18 +43,18 @@ def giver(context):
     for i, sec in enumerate(units):
         queues[i % 4].append(sec)
 
-    yield Output(queues[0], 'out_1')
-    yield Output(queues[1], 'out_2')
-    yield Output(queues[2], 'out_3')
-    yield Output(queues[3], 'out_4')
+    yield Output(queues[0], "out_1")
+    yield Output(queues[1], "out_2")
+    yield Output(queues[2], "out_3")
+    yield Output(queues[3], "out_4")
 
 
 @solid(
     input_defs=[
-        InputDefinition('in_1', Int),
-        InputDefinition('in_2', Int),
-        InputDefinition('in_3', Int),
-        InputDefinition('in_4', Int),
+        InputDefinition("in_1", Int),
+        InputDefinition("in_2", Int),
+        InputDefinition("in_3", Int),
+        InputDefinition("in_4", Int),
     ],
     output_defs=[OutputDefinition(Int)],
 )
@@ -64,16 +64,16 @@ def total(_, in_1, in_2, in_3, in_4):
 
 @pipeline(
     description=(
-        'Demo diamond-shaped pipeline that has four-path parallel structure of solids.  Execute '
-        'with the `multi` preset to take advantage of multi-process parallelism.'
+        "Demo diamond-shaped pipeline that has four-path parallel structure of solids.  Execute "
+        "with the `multi` preset to take advantage of multi-process parallelism."
     ),
     preset_defs=[
         PresetDefinition(
-            'multi',
+            "multi",
             {
-                'storage': {'filesystem': {}},
-                'execution': {'multiprocess': {}},
-                'solids': {'giver': {'config': [2, 2, 2, 2]}},
+                "storage": {"filesystem": {}},
+                "execution": {"multiprocess": {}},
+                "solids": {"giver": {"config": [2, 2, 2, 2]}},
             },
         )
     ],

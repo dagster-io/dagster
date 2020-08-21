@@ -10,15 +10,15 @@ from dagster import ModeDefinition, execute_solid, solid
 from dagster.seven import mock
 
 REDSHIFT_ENV = {
-    'resources': {
-        'redshift': {
-            'config': {
-                'host': 'foo',
-                'port': 5439,
-                'user': 'dagster',
-                'password': 'baz',
-                'database': 'dev',
-                'schema': 'foobar',
+    "resources": {
+        "redshift": {
+            "config": {
+                "host": "foo",
+                "port": 5439,
+                "user": "dagster",
+                "password": "baz",
+                "database": "dev",
+                "schema": "foobar",
             }
         }
     }
@@ -30,7 +30,7 @@ QUERY_RESULT = [(1,)]
 def mock_execute_query_conn(*_args, **_kwargs):
     cursor_mock = mock.MagicMock(rowcount=1)
     cursor_mock.fetchall.return_value = QUERY_RESULT
-    conn = mock.MagicMock(is_conn='yup')
+    conn = mock.MagicMock(is_conn="yup")
     conn.cursor.return_value.__enter__.return_value = cursor_mock
     m = mock.MagicMock()
     m.return_value.__enter__.return_value = conn
@@ -38,55 +38,55 @@ def mock_execute_query_conn(*_args, **_kwargs):
     return m
 
 
-@solid(required_resource_keys={'redshift'})
+@solid(required_resource_keys={"redshift"})
 def single_redshift_solid(context):
     assert context.resources.redshift
-    return context.resources.redshift.execute_query('SELECT 1', fetch_results=True)
+    return context.resources.redshift.execute_query("SELECT 1", fetch_results=True)
 
 
-@solid(required_resource_keys={'redshift'})
+@solid(required_resource_keys={"redshift"})
 def multi_redshift_solid(context):
     assert context.resources.redshift
     return context.resources.redshift.execute_queries(
-        ['SELECT 1', 'SELECT 1', 'SELECT 1'], fetch_results=True
+        ["SELECT 1", "SELECT 1", "SELECT 1"], fetch_results=True
     )
 
 
-@mock.patch('psycopg2.connect', new_callable=mock_execute_query_conn)
+@mock.patch("psycopg2.connect", new_callable=mock_execute_query_conn)
 def test_single_select(redshift_connect):
     result = execute_solid(
         single_redshift_solid,
         run_config=REDSHIFT_ENV,
-        mode_def=ModeDefinition(resource_defs={'redshift': redshift_resource}),
+        mode_def=ModeDefinition(resource_defs={"redshift": redshift_resource}),
     )
     redshift_connect.assert_called_once_with(
-        host='foo',
+        host="foo",
         port=5439,
-        user='dagster',
-        password='baz',
-        database='dev',
-        schema='foobar',
+        user="dagster",
+        password="baz",
+        database="dev",
+        schema="foobar",
         connect_timeout=5,
-        sslmode='require',
+        sslmode="require",
     )
 
     assert result.success
     assert result.output_value() == QUERY_RESULT
 
 
-@mock.patch('psycopg2.connect', new_callable=mock_execute_query_conn)
+@mock.patch("psycopg2.connect", new_callable=mock_execute_query_conn)
 def test_multi_select(_redshift_connect):
     result = execute_solid(
         multi_redshift_solid,
         run_config=REDSHIFT_ENV,
-        mode_def=ModeDefinition(resource_defs={'redshift': redshift_resource}),
+        mode_def=ModeDefinition(resource_defs={"redshift": redshift_resource}),
     )
     assert result.success
     assert result.output_value() == [QUERY_RESULT] * 3
 
 
 def test_fake_redshift():
-    fake_mode = ModeDefinition(resource_defs={'redshift': fake_redshift_resource})
+    fake_mode = ModeDefinition(resource_defs={"redshift": fake_redshift_resource})
 
     result = execute_solid(single_redshift_solid, run_config=REDSHIFT_ENV, mode_def=fake_mode)
     assert result.success
@@ -97,16 +97,16 @@ def test_fake_redshift():
     assert result.output_value() == [FakeRedshiftResource.QUERY_RESULT] * 3
 
 
-REDSHIFT_CREATE_TABLE_QUERY = '''CREATE TABLE IF NOT EXISTS VENUE1(
+REDSHIFT_CREATE_TABLE_QUERY = """CREATE TABLE IF NOT EXISTS VENUE1(
 VENUEID SMALLINT,
 VENUENAME VARCHAR(100),
 VENUECITY VARCHAR(30),
 VENUESTATE CHAR(2),
 VENUESEATS INTEGER
 ) DISTSTYLE EVEN;
-'''
+"""
 
-REDSHIFT_LOAD_FILE_CONTENTS = b'''
+REDSHIFT_LOAD_FILE_CONTENTS = b"""
 7|BMO Field|Toronto|ON|0
 16|TD Garden|Boston|MA|0
 23|The Palace of Auburn Hills|Auburn Hills|MI|0
@@ -117,9 +117,9 @@ REDSHIFT_LOAD_FILE_CONTENTS = b'''
 59|Scotiabank Saddledome|Calgary|AB|0
 66|SAP Center|San Jose|CA|0
 73|Heinz Field|Pittsburgh|PA|65050
-'''.strip()
+""".strip()
 
-REDSHIFT_FAILED_LOAD_QUERY = '''
+REDSHIFT_FAILED_LOAD_QUERY = """
 SELECT le.query,
 TRIM(le.err_reason) AS err_reason,
 TRIM(le.filename) AS filename,
@@ -130,15 +130,15 @@ FROM stl_load_errors le
 WHERE le.query
 AND le.query = pg_last_copy_id()
 LIMIT 1;
-'''
+"""
 
 
 @pytest.mark.skipif(
-    'AWS_REDSHIFT_TEST_DO_IT_LIVE' not in os.environ,
-    reason='This test only works with a live Redshift cluster',
+    "AWS_REDSHIFT_TEST_DO_IT_LIVE" not in os.environ,
+    reason="This test only works with a live Redshift cluster",
 )
 def test_live_redshift(s3_bucket):
-    '''
+    """
     This test is based on:
 
     https://aws.amazon.com/premiumsupport/knowledge-center/redshift-stl-load-errors/
@@ -150,14 +150,14 @@ def test_live_redshift(s3_bucket):
     REDSHIFT_ENDPOINT - Redshift URL
     REDSHIFT_PASSWORD - Redshift password
 
-    '''
+    """
 
     # Put file to load on S3
     file_key = uuid.uuid4().hex
-    client = boto3.client('s3')
+    client = boto3.client("s3")
     client.put_object(Body=REDSHIFT_LOAD_FILE_CONTENTS, Bucket=s3_bucket, Key=file_key)
 
-    @solid(required_resource_keys={'redshift'})
+    @solid(required_resource_keys={"redshift"})
     def query(context):
         assert context.resources.redshift
 
@@ -171,24 +171,24 @@ def test_live_redshift(s3_bucket):
             )
             cursor.execute(REDSHIFT_FAILED_LOAD_QUERY)
             res = cursor.fetchall()
-            assert res[0][1] == 'Char length exceeds DDL length'
-            assert res[0][2] == 's3://{s3_bucket}/{file_key}'.format(
+            assert res[0][1] == "Char length exceeds DDL length"
+            assert res[0][2] == "s3://{s3_bucket}/{file_key}".format(
                 s3_bucket=s3_bucket, file_key=file_key
             )
             assert res[0][3] == 7
-            assert res[0][4].strip() == '52|PNC Arena|Raleigh|NC  ,25   |0'
-            assert res[0][5].strip() == 'NC  ,25'
+            assert res[0][4].strip() == "52|PNC Arena|Raleigh|NC  ,25   |0"
+            assert res[0][5].strip() == "NC  ,25"
             raise error
 
         return context.resources.redshift.execute_query(
-            '''COPY venue1 FROM 's3://{s3_bucket}/{file_key}'
+            """COPY venue1 FROM 's3://{s3_bucket}/{file_key}'
             IAM_ROLE 'arn:aws:iam::{AWS_ACCOUNT_ID}:role/{REDSHIFT_LOAD_IAM_ROLE}'
             DELIMITER '|';
-            '''.format(
+            """.format(
                 s3_bucket=s3_bucket,
                 file_key=file_key,
-                AWS_ACCOUNT_ID=os.environ['AWS_ACCOUNT_ID'],
-                REDSHIFT_LOAD_IAM_ROLE=os.environ['REDSHIFT_LOAD_IAM_ROLE'],
+                AWS_ACCOUNT_ID=os.environ["AWS_ACCOUNT_ID"],
+                REDSHIFT_LOAD_IAM_ROLE=os.environ["REDSHIFT_LOAD_IAM_ROLE"],
             ),
             fetch_results=True,
             error_callback=error_callback,
@@ -198,17 +198,17 @@ def test_live_redshift(s3_bucket):
         execute_solid(
             query,
             run_config={
-                'resources': {
-                    'redshift': {
-                        'config': {
-                            'host': {'env': 'REDSHIFT_ENDPOINT'},
-                            'port': 5439,
-                            'user': 'dagster',
-                            'password': {'env': 'REDSHIFT_PASSWORD'},
-                            'database': 'dev',
+                "resources": {
+                    "redshift": {
+                        "config": {
+                            "host": {"env": "REDSHIFT_ENDPOINT"},
+                            "port": 5439,
+                            "user": "dagster",
+                            "password": {"env": "REDSHIFT_PASSWORD"},
+                            "database": "dev",
                         }
                     }
                 }
             },
-            mode_def=ModeDefinition(resource_defs={'redshift': redshift_resource}),
+            mode_def=ModeDefinition(resource_defs={"redshift": redshift_resource}),
         )

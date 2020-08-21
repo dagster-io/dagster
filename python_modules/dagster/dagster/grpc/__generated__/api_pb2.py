@@ -21,18 +21,18 @@ _sym_db = _symbol_database.Default()
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
-    name='api.proto',
-    package='api',
-    syntax='proto3',
+    name="api.proto",
+    package="api",
+    syntax="proto3",
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi\"\x07\n\x05\x45mpty\"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t\"=\n\x14StreamingPingRequest\x12\x17\n\x0fsequence_length\x18\x01 \x01(\x05\x12\x0c\n\x04\x65\x63ho\x18\x02 \x01(\t\";\n\x12StreamingPingEvent\x12\x17\n\x0fsequence_number\x18\x01 \x01(\x05\x12\x0c\n\x04\x65\x63ho\x18\x02 \x01(\t\"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t\"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n\"serialized_execution_plan_snapshot\x18\x01 \x01(\t\"H\n\x1d\x45xternalPartitionNamesRequest\x12\'\n\x1fserialized_partition_names_args\x18\x01 \x01(\t\"p\n\x1b\x45xternalPartitionNamesReply\x12Q\nIserialized_external_partition_names_or_external_partition_execution_error\x18\x01 \x01(\t\"C\n\x1e\x45xternalPartitionConfigRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"r\n\x1c\x45xternalPartitionConfigReply\x12R\nJserialized_external_partition_config_or_external_partition_execution_error\x18\x01 \x01(\t\"A\n\x1c\x45xternalPartitionTagsRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t\"n\n\x1a\x45xternalPartitionTagsReply\x12P\nHserialized_external_partition_tags_or_external_partition_execution_error\x18\x01 \x01(\t\"c\n*ExternalPartitionSetExecutionParamsRequest\x12\x35\n-serialized_partition_set_execution_param_args\x18\x01 \x01(\t\"\x90\x01\n(ExternalPartitionSetExecutionParamsReply\x12\x64\n\\serialized_external_partition_set_execution_param_data_or_external_partition_execution_error\x18\x01 \x01(\t\"\x19\n\x17ListRepositoriesRequest\"O\n\x15ListRepositoriesReply\x12\x36\n.serialized_list_repositories_response_or_error\x18\x01 \x01(\t\"Y\n%ExternalPipelineSubsetSnapshotRequest\x12\x30\n(serialized_pipeline_subset_snapshot_args\x18\x01 \x01(\t\"Y\n#ExternalPipelineSubsetSnapshotReply\x12\x32\n*serialized_external_pipeline_subset_result\x18\x01 \x01(\t\"H\n\x19\x45xternalRepositoryRequest\x12+\n#serialized_repository_python_origin\x18\x01 \x01(\t\"F\n\x17\x45xternalRepositoryReply\x12+\n#serialized_external_repository_data\x18\x01 \x01(\t\"W\n ExternalScheduleExecutionRequest\x12\x33\n+serialized_external_schedule_execution_args\x18\x01 \x01(\t\"z\n\x1e\x45xternalScheduleExecutionReply\x12X\nPserialized_external_schedule_execution_data_or_external_schedule_execution_error\x18\x01 \x01(\t\"8\n\x11\x45xecuteRunRequest\x12#\n\x1bserialized_execute_run_args\x18\x01 \x01(\t\"H\n\x0f\x45xecuteRunEvent\x12\x35\n-serialized_dagster_event_or_ipc_error_message\x18\x01 \x01(\t\"@\n\x13ShutdownServerReply\x12)\n!serialized_shutdown_server_result\x18\x01 \x01(\t\"E\n\x16\x43\x61ncelExecutionRequest\x12+\n#serialized_cancel_execution_request\x18\x01 \x01(\t\"B\n\x14\x43\x61ncelExecutionReply\x12*\n\"serialized_cancel_execution_result\x18\x01 \x01(\t\"L\n\x19\x43\x61nCancelExecutionRequest\x12/\n\'serialized_can_cancel_execution_request\x18\x01 \x01(\t\"I\n\x17\x43\x61nCancelExecutionReply\x12.\n&serialized_can_cancel_execution_result\x18\x01 \x01(\t\"6\n\x0fStartRunRequest\x12#\n\x1bserialized_execute_run_args\x18\x01 \x01(\t\"4\n\rStartRunReply\x12#\n\x1bserialized_start_run_result\x18\x01 \x01(\t\"8\n\x14GetCurrentImageReply\x12 \n\x18serialized_current_image\x18\x01 \x01(\t2\xdd\x0b\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12/\n\tHeartbeat\x12\x10.api.PingRequest\x1a\x0e.api.PingReply\"\x00\x12G\n\rStreamingPing\x12\x19.api.StreamingPingRequest\x1a\x17.api.StreamingPingEvent\"\x00\x30\x01\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply\"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply\"\x00\x12`\n\x16\x45xternalPartitionNames\x12\".api.ExternalPartitionNamesRequest\x1a .api.ExternalPartitionNamesReply\"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply\"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply\"\x00\x12\x87\x01\n#ExternalPartitionSetExecutionParams\x12/.api.ExternalPartitionSetExecutionParamsRequest\x1a-.api.ExternalPartitionSetExecutionParamsReply\"\x00\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply\"\x00\x12T\n\x12\x45xternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a\x1c.api.ExternalRepositoryReply\"\x00\x12i\n\x19\x45xternalScheduleExecution\x12%.api.ExternalScheduleExecutionRequest\x1a#.api.ExternalScheduleExecutionReply\"\x00\x12\x38\n\x0eShutdownServer\x12\n.api.Empty\x1a\x18.api.ShutdownServerReply\"\x00\x12>\n\nExecuteRun\x12\x16.api.ExecuteRunRequest\x1a\x14.api.ExecuteRunEvent\"\x00\x30\x01\x12K\n\x0f\x43\x61ncelExecution\x12\x1b.api.CancelExecutionRequest\x1a\x19.api.CancelExecutionReply\"\x00\x12T\n\x12\x43\x61nCancelExecution\x12\x1e.api.CanCancelExecutionRequest\x1a\x1c.api.CanCancelExecutionReply\"\x00\x12\x36\n\x08StartRun\x12\x14.api.StartRunRequest\x1a\x12.api.StartRunReply\"\x00\x12:\n\x0fGetCurrentImage\x12\n.api.Empty\x1a\x19.api.GetCurrentImageReply\"\x00\x62\x06proto3',
+    serialized_pb=b'\n\tapi.proto\x12\x03\x61pi"\x07\n\x05\x45mpty"\x1b\n\x0bPingRequest\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t"\x19\n\tPingReply\x12\x0c\n\x04\x65\x63ho\x18\x01 \x01(\t"=\n\x14StreamingPingRequest\x12\x17\n\x0fsequence_length\x18\x01 \x01(\x05\x12\x0c\n\x04\x65\x63ho\x18\x02 \x01(\t";\n\x12StreamingPingEvent\x12\x17\n\x0fsequence_number\x18\x01 \x01(\x05\x12\x0c\n\x04\x65\x63ho\x18\x02 \x01(\t"O\n\x1c\x45xecutionPlanSnapshotRequest\x12/\n\'serialized_execution_plan_snapshot_args\x18\x01 \x01(\t"H\n\x1a\x45xecutionPlanSnapshotReply\x12*\n"serialized_execution_plan_snapshot\x18\x01 \x01(\t"H\n\x1d\x45xternalPartitionNamesRequest\x12\'\n\x1fserialized_partition_names_args\x18\x01 \x01(\t"p\n\x1b\x45xternalPartitionNamesReply\x12Q\nIserialized_external_partition_names_or_external_partition_execution_error\x18\x01 \x01(\t"C\n\x1e\x45xternalPartitionConfigRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t"r\n\x1c\x45xternalPartitionConfigReply\x12R\nJserialized_external_partition_config_or_external_partition_execution_error\x18\x01 \x01(\t"A\n\x1c\x45xternalPartitionTagsRequest\x12!\n\x19serialized_partition_args\x18\x01 \x01(\t"n\n\x1a\x45xternalPartitionTagsReply\x12P\nHserialized_external_partition_tags_or_external_partition_execution_error\x18\x01 \x01(\t"c\n*ExternalPartitionSetExecutionParamsRequest\x12\x35\n-serialized_partition_set_execution_param_args\x18\x01 \x01(\t"\x90\x01\n(ExternalPartitionSetExecutionParamsReply\x12\x64\n\\serialized_external_partition_set_execution_param_data_or_external_partition_execution_error\x18\x01 \x01(\t"\x19\n\x17ListRepositoriesRequest"O\n\x15ListRepositoriesReply\x12\x36\n.serialized_list_repositories_response_or_error\x18\x01 \x01(\t"Y\n%ExternalPipelineSubsetSnapshotRequest\x12\x30\n(serialized_pipeline_subset_snapshot_args\x18\x01 \x01(\t"Y\n#ExternalPipelineSubsetSnapshotReply\x12\x32\n*serialized_external_pipeline_subset_result\x18\x01 \x01(\t"H\n\x19\x45xternalRepositoryRequest\x12+\n#serialized_repository_python_origin\x18\x01 \x01(\t"F\n\x17\x45xternalRepositoryReply\x12+\n#serialized_external_repository_data\x18\x01 \x01(\t"W\n ExternalScheduleExecutionRequest\x12\x33\n+serialized_external_schedule_execution_args\x18\x01 \x01(\t"z\n\x1e\x45xternalScheduleExecutionReply\x12X\nPserialized_external_schedule_execution_data_or_external_schedule_execution_error\x18\x01 \x01(\t"8\n\x11\x45xecuteRunRequest\x12#\n\x1bserialized_execute_run_args\x18\x01 \x01(\t"H\n\x0f\x45xecuteRunEvent\x12\x35\n-serialized_dagster_event_or_ipc_error_message\x18\x01 \x01(\t"@\n\x13ShutdownServerReply\x12)\n!serialized_shutdown_server_result\x18\x01 \x01(\t"E\n\x16\x43\x61ncelExecutionRequest\x12+\n#serialized_cancel_execution_request\x18\x01 \x01(\t"B\n\x14\x43\x61ncelExecutionReply\x12*\n"serialized_cancel_execution_result\x18\x01 \x01(\t"L\n\x19\x43\x61nCancelExecutionRequest\x12/\n\'serialized_can_cancel_execution_request\x18\x01 \x01(\t"I\n\x17\x43\x61nCancelExecutionReply\x12.\n&serialized_can_cancel_execution_result\x18\x01 \x01(\t"6\n\x0fStartRunRequest\x12#\n\x1bserialized_execute_run_args\x18\x01 \x01(\t"4\n\rStartRunReply\x12#\n\x1bserialized_start_run_result\x18\x01 \x01(\t"8\n\x14GetCurrentImageReply\x12 \n\x18serialized_current_image\x18\x01 \x01(\t2\xdd\x0b\n\nDagsterApi\x12*\n\x04Ping\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12/\n\tHeartbeat\x12\x10.api.PingRequest\x1a\x0e.api.PingReply"\x00\x12G\n\rStreamingPing\x12\x19.api.StreamingPingRequest\x1a\x17.api.StreamingPingEvent"\x00\x30\x01\x12]\n\x15\x45xecutionPlanSnapshot\x12!.api.ExecutionPlanSnapshotRequest\x1a\x1f.api.ExecutionPlanSnapshotReply"\x00\x12N\n\x10ListRepositories\x12\x1c.api.ListRepositoriesRequest\x1a\x1a.api.ListRepositoriesReply"\x00\x12`\n\x16\x45xternalPartitionNames\x12".api.ExternalPartitionNamesRequest\x1a .api.ExternalPartitionNamesReply"\x00\x12\x63\n\x17\x45xternalPartitionConfig\x12#.api.ExternalPartitionConfigRequest\x1a!.api.ExternalPartitionConfigReply"\x00\x12]\n\x15\x45xternalPartitionTags\x12!.api.ExternalPartitionTagsRequest\x1a\x1f.api.ExternalPartitionTagsReply"\x00\x12\x87\x01\n#ExternalPartitionSetExecutionParams\x12/.api.ExternalPartitionSetExecutionParamsRequest\x1a-.api.ExternalPartitionSetExecutionParamsReply"\x00\x12x\n\x1e\x45xternalPipelineSubsetSnapshot\x12*.api.ExternalPipelineSubsetSnapshotRequest\x1a(.api.ExternalPipelineSubsetSnapshotReply"\x00\x12T\n\x12\x45xternalRepository\x12\x1e.api.ExternalRepositoryRequest\x1a\x1c.api.ExternalRepositoryReply"\x00\x12i\n\x19\x45xternalScheduleExecution\x12%.api.ExternalScheduleExecutionRequest\x1a#.api.ExternalScheduleExecutionReply"\x00\x12\x38\n\x0eShutdownServer\x12\n.api.Empty\x1a\x18.api.ShutdownServerReply"\x00\x12>\n\nExecuteRun\x12\x16.api.ExecuteRunRequest\x1a\x14.api.ExecuteRunEvent"\x00\x30\x01\x12K\n\x0f\x43\x61ncelExecution\x12\x1b.api.CancelExecutionRequest\x1a\x19.api.CancelExecutionReply"\x00\x12T\n\x12\x43\x61nCancelExecution\x12\x1e.api.CanCancelExecutionRequest\x1a\x1c.api.CanCancelExecutionReply"\x00\x12\x36\n\x08StartRun\x12\x14.api.StartRunRequest\x1a\x12.api.StartRunReply"\x00\x12:\n\x0fGetCurrentImage\x12\n.api.Empty\x1a\x19.api.GetCurrentImageReply"\x00\x62\x06proto3',
 )
 
 
 _EMPTY = _descriptor.Descriptor(
-    name='Empty',
-    full_name='api.Empty',
+    name="Empty",
+    full_name="api.Empty",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
@@ -43,7 +43,7 @@ _EMPTY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=18,
@@ -52,23 +52,23 @@ _EMPTY = _descriptor.Descriptor(
 
 
 _PINGREQUEST = _descriptor.Descriptor(
-    name='PingRequest',
-    full_name='api.PingRequest',
+    name="PingRequest",
+    full_name="api.PingRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='echo',
-            full_name='api.PingRequest.echo',
+            name="echo",
+            full_name="api.PingRequest.echo",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -84,7 +84,7 @@ _PINGREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=27,
@@ -93,23 +93,23 @@ _PINGREQUEST = _descriptor.Descriptor(
 
 
 _PINGREPLY = _descriptor.Descriptor(
-    name='PingReply',
-    full_name='api.PingReply',
+    name="PingReply",
+    full_name="api.PingReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='echo',
-            full_name='api.PingReply.echo',
+            name="echo",
+            full_name="api.PingReply.echo",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -125,7 +125,7 @@ _PINGREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=56,
@@ -134,16 +134,16 @@ _PINGREPLY = _descriptor.Descriptor(
 
 
 _STREAMINGPINGREQUEST = _descriptor.Descriptor(
-    name='StreamingPingRequest',
-    full_name='api.StreamingPingRequest',
+    name="StreamingPingRequest",
+    full_name="api.StreamingPingRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='sequence_length',
-            full_name='api.StreamingPingRequest.sequence_length',
+            name="sequence_length",
+            full_name="api.StreamingPingRequest.sequence_length",
             index=0,
             number=1,
             type=5,
@@ -161,15 +161,15 @@ _STREAMINGPINGREQUEST = _descriptor.Descriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
-            name='echo',
-            full_name='api.StreamingPingRequest.echo',
+            name="echo",
+            full_name="api.StreamingPingRequest.echo",
             index=1,
             number=2,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -185,7 +185,7 @@ _STREAMINGPINGREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=83,
@@ -194,16 +194,16 @@ _STREAMINGPINGREQUEST = _descriptor.Descriptor(
 
 
 _STREAMINGPINGEVENT = _descriptor.Descriptor(
-    name='StreamingPingEvent',
-    full_name='api.StreamingPingEvent',
+    name="StreamingPingEvent",
+    full_name="api.StreamingPingEvent",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='sequence_number',
-            full_name='api.StreamingPingEvent.sequence_number',
+            name="sequence_number",
+            full_name="api.StreamingPingEvent.sequence_number",
             index=0,
             number=1,
             type=5,
@@ -221,15 +221,15 @@ _STREAMINGPINGEVENT = _descriptor.Descriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.FieldDescriptor(
-            name='echo',
-            full_name='api.StreamingPingEvent.echo',
+            name="echo",
+            full_name="api.StreamingPingEvent.echo",
             index=1,
             number=2,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -245,7 +245,7 @@ _STREAMINGPINGEVENT = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=146,
@@ -254,23 +254,23 @@ _STREAMINGPINGEVENT = _descriptor.Descriptor(
 
 
 _EXECUTIONPLANSNAPSHOTREQUEST = _descriptor.Descriptor(
-    name='ExecutionPlanSnapshotRequest',
-    full_name='api.ExecutionPlanSnapshotRequest',
+    name="ExecutionPlanSnapshotRequest",
+    full_name="api.ExecutionPlanSnapshotRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_execution_plan_snapshot_args',
-            full_name='api.ExecutionPlanSnapshotRequest.serialized_execution_plan_snapshot_args',
+            name="serialized_execution_plan_snapshot_args",
+            full_name="api.ExecutionPlanSnapshotRequest.serialized_execution_plan_snapshot_args",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -286,7 +286,7 @@ _EXECUTIONPLANSNAPSHOTREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=207,
@@ -295,23 +295,23 @@ _EXECUTIONPLANSNAPSHOTREQUEST = _descriptor.Descriptor(
 
 
 _EXECUTIONPLANSNAPSHOTREPLY = _descriptor.Descriptor(
-    name='ExecutionPlanSnapshotReply',
-    full_name='api.ExecutionPlanSnapshotReply',
+    name="ExecutionPlanSnapshotReply",
+    full_name="api.ExecutionPlanSnapshotReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_execution_plan_snapshot',
-            full_name='api.ExecutionPlanSnapshotReply.serialized_execution_plan_snapshot',
+            name="serialized_execution_plan_snapshot",
+            full_name="api.ExecutionPlanSnapshotReply.serialized_execution_plan_snapshot",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -327,7 +327,7 @@ _EXECUTIONPLANSNAPSHOTREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=288,
@@ -336,23 +336,23 @@ _EXECUTIONPLANSNAPSHOTREPLY = _descriptor.Descriptor(
 
 
 _EXTERNALPARTITIONNAMESREQUEST = _descriptor.Descriptor(
-    name='ExternalPartitionNamesRequest',
-    full_name='api.ExternalPartitionNamesRequest',
+    name="ExternalPartitionNamesRequest",
+    full_name="api.ExternalPartitionNamesRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_partition_names_args',
-            full_name='api.ExternalPartitionNamesRequest.serialized_partition_names_args',
+            name="serialized_partition_names_args",
+            full_name="api.ExternalPartitionNamesRequest.serialized_partition_names_args",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -368,7 +368,7 @@ _EXTERNALPARTITIONNAMESREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=362,
@@ -377,23 +377,23 @@ _EXTERNALPARTITIONNAMESREQUEST = _descriptor.Descriptor(
 
 
 _EXTERNALPARTITIONNAMESREPLY = _descriptor.Descriptor(
-    name='ExternalPartitionNamesReply',
-    full_name='api.ExternalPartitionNamesReply',
+    name="ExternalPartitionNamesReply",
+    full_name="api.ExternalPartitionNamesReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_external_partition_names_or_external_partition_execution_error',
-            full_name='api.ExternalPartitionNamesReply.serialized_external_partition_names_or_external_partition_execution_error',
+            name="serialized_external_partition_names_or_external_partition_execution_error",
+            full_name="api.ExternalPartitionNamesReply.serialized_external_partition_names_or_external_partition_execution_error",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -409,7 +409,7 @@ _EXTERNALPARTITIONNAMESREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=436,
@@ -418,23 +418,23 @@ _EXTERNALPARTITIONNAMESREPLY = _descriptor.Descriptor(
 
 
 _EXTERNALPARTITIONCONFIGREQUEST = _descriptor.Descriptor(
-    name='ExternalPartitionConfigRequest',
-    full_name='api.ExternalPartitionConfigRequest',
+    name="ExternalPartitionConfigRequest",
+    full_name="api.ExternalPartitionConfigRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_partition_args',
-            full_name='api.ExternalPartitionConfigRequest.serialized_partition_args',
+            name="serialized_partition_args",
+            full_name="api.ExternalPartitionConfigRequest.serialized_partition_args",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -450,7 +450,7 @@ _EXTERNALPARTITIONCONFIGREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=550,
@@ -459,23 +459,23 @@ _EXTERNALPARTITIONCONFIGREQUEST = _descriptor.Descriptor(
 
 
 _EXTERNALPARTITIONCONFIGREPLY = _descriptor.Descriptor(
-    name='ExternalPartitionConfigReply',
-    full_name='api.ExternalPartitionConfigReply',
+    name="ExternalPartitionConfigReply",
+    full_name="api.ExternalPartitionConfigReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_external_partition_config_or_external_partition_execution_error',
-            full_name='api.ExternalPartitionConfigReply.serialized_external_partition_config_or_external_partition_execution_error',
+            name="serialized_external_partition_config_or_external_partition_execution_error",
+            full_name="api.ExternalPartitionConfigReply.serialized_external_partition_config_or_external_partition_execution_error",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -491,7 +491,7 @@ _EXTERNALPARTITIONCONFIGREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=619,
@@ -500,23 +500,23 @@ _EXTERNALPARTITIONCONFIGREPLY = _descriptor.Descriptor(
 
 
 _EXTERNALPARTITIONTAGSREQUEST = _descriptor.Descriptor(
-    name='ExternalPartitionTagsRequest',
-    full_name='api.ExternalPartitionTagsRequest',
+    name="ExternalPartitionTagsRequest",
+    full_name="api.ExternalPartitionTagsRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_partition_args',
-            full_name='api.ExternalPartitionTagsRequest.serialized_partition_args',
+            name="serialized_partition_args",
+            full_name="api.ExternalPartitionTagsRequest.serialized_partition_args",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -532,7 +532,7 @@ _EXTERNALPARTITIONTAGSREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=735,
@@ -541,23 +541,23 @@ _EXTERNALPARTITIONTAGSREQUEST = _descriptor.Descriptor(
 
 
 _EXTERNALPARTITIONTAGSREPLY = _descriptor.Descriptor(
-    name='ExternalPartitionTagsReply',
-    full_name='api.ExternalPartitionTagsReply',
+    name="ExternalPartitionTagsReply",
+    full_name="api.ExternalPartitionTagsReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_external_partition_tags_or_external_partition_execution_error',
-            full_name='api.ExternalPartitionTagsReply.serialized_external_partition_tags_or_external_partition_execution_error',
+            name="serialized_external_partition_tags_or_external_partition_execution_error",
+            full_name="api.ExternalPartitionTagsReply.serialized_external_partition_tags_or_external_partition_execution_error",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -573,7 +573,7 @@ _EXTERNALPARTITIONTAGSREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=802,
@@ -582,23 +582,23 @@ _EXTERNALPARTITIONTAGSREPLY = _descriptor.Descriptor(
 
 
 _EXTERNALPARTITIONSETEXECUTIONPARAMSREQUEST = _descriptor.Descriptor(
-    name='ExternalPartitionSetExecutionParamsRequest',
-    full_name='api.ExternalPartitionSetExecutionParamsRequest',
+    name="ExternalPartitionSetExecutionParamsRequest",
+    full_name="api.ExternalPartitionSetExecutionParamsRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_partition_set_execution_param_args',
-            full_name='api.ExternalPartitionSetExecutionParamsRequest.serialized_partition_set_execution_param_args',
+            name="serialized_partition_set_execution_param_args",
+            full_name="api.ExternalPartitionSetExecutionParamsRequest.serialized_partition_set_execution_param_args",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -614,7 +614,7 @@ _EXTERNALPARTITIONSETEXECUTIONPARAMSREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=914,
@@ -623,23 +623,23 @@ _EXTERNALPARTITIONSETEXECUTIONPARAMSREQUEST = _descriptor.Descriptor(
 
 
 _EXTERNALPARTITIONSETEXECUTIONPARAMSREPLY = _descriptor.Descriptor(
-    name='ExternalPartitionSetExecutionParamsReply',
-    full_name='api.ExternalPartitionSetExecutionParamsReply',
+    name="ExternalPartitionSetExecutionParamsReply",
+    full_name="api.ExternalPartitionSetExecutionParamsReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_external_partition_set_execution_param_data_or_external_partition_execution_error',
-            full_name='api.ExternalPartitionSetExecutionParamsReply.serialized_external_partition_set_execution_param_data_or_external_partition_execution_error',
+            name="serialized_external_partition_set_execution_param_data_or_external_partition_execution_error",
+            full_name="api.ExternalPartitionSetExecutionParamsReply.serialized_external_partition_set_execution_param_data_or_external_partition_execution_error",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -655,7 +655,7 @@ _EXTERNALPARTITIONSETEXECUTIONPARAMSREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1016,
@@ -664,8 +664,8 @@ _EXTERNALPARTITIONSETEXECUTIONPARAMSREPLY = _descriptor.Descriptor(
 
 
 _LISTREPOSITORIESREQUEST = _descriptor.Descriptor(
-    name='ListRepositoriesRequest',
-    full_name='api.ListRepositoriesRequest',
+    name="ListRepositoriesRequest",
+    full_name="api.ListRepositoriesRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
@@ -676,7 +676,7 @@ _LISTREPOSITORIESREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1162,
@@ -685,23 +685,23 @@ _LISTREPOSITORIESREQUEST = _descriptor.Descriptor(
 
 
 _LISTREPOSITORIESREPLY = _descriptor.Descriptor(
-    name='ListRepositoriesReply',
-    full_name='api.ListRepositoriesReply',
+    name="ListRepositoriesReply",
+    full_name="api.ListRepositoriesReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_list_repositories_response_or_error',
-            full_name='api.ListRepositoriesReply.serialized_list_repositories_response_or_error',
+            name="serialized_list_repositories_response_or_error",
+            full_name="api.ListRepositoriesReply.serialized_list_repositories_response_or_error",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -717,7 +717,7 @@ _LISTREPOSITORIESREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1189,
@@ -726,23 +726,23 @@ _LISTREPOSITORIESREPLY = _descriptor.Descriptor(
 
 
 _EXTERNALPIPELINESUBSETSNAPSHOTREQUEST = _descriptor.Descriptor(
-    name='ExternalPipelineSubsetSnapshotRequest',
-    full_name='api.ExternalPipelineSubsetSnapshotRequest',
+    name="ExternalPipelineSubsetSnapshotRequest",
+    full_name="api.ExternalPipelineSubsetSnapshotRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_pipeline_subset_snapshot_args',
-            full_name='api.ExternalPipelineSubsetSnapshotRequest.serialized_pipeline_subset_snapshot_args',
+            name="serialized_pipeline_subset_snapshot_args",
+            full_name="api.ExternalPipelineSubsetSnapshotRequest.serialized_pipeline_subset_snapshot_args",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -758,7 +758,7 @@ _EXTERNALPIPELINESUBSETSNAPSHOTREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1270,
@@ -767,23 +767,23 @@ _EXTERNALPIPELINESUBSETSNAPSHOTREQUEST = _descriptor.Descriptor(
 
 
 _EXTERNALPIPELINESUBSETSNAPSHOTREPLY = _descriptor.Descriptor(
-    name='ExternalPipelineSubsetSnapshotReply',
-    full_name='api.ExternalPipelineSubsetSnapshotReply',
+    name="ExternalPipelineSubsetSnapshotReply",
+    full_name="api.ExternalPipelineSubsetSnapshotReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_external_pipeline_subset_result',
-            full_name='api.ExternalPipelineSubsetSnapshotReply.serialized_external_pipeline_subset_result',
+            name="serialized_external_pipeline_subset_result",
+            full_name="api.ExternalPipelineSubsetSnapshotReply.serialized_external_pipeline_subset_result",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -799,7 +799,7 @@ _EXTERNALPIPELINESUBSETSNAPSHOTREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1361,
@@ -808,23 +808,23 @@ _EXTERNALPIPELINESUBSETSNAPSHOTREPLY = _descriptor.Descriptor(
 
 
 _EXTERNALREPOSITORYREQUEST = _descriptor.Descriptor(
-    name='ExternalRepositoryRequest',
-    full_name='api.ExternalRepositoryRequest',
+    name="ExternalRepositoryRequest",
+    full_name="api.ExternalRepositoryRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_repository_python_origin',
-            full_name='api.ExternalRepositoryRequest.serialized_repository_python_origin',
+            name="serialized_repository_python_origin",
+            full_name="api.ExternalRepositoryRequest.serialized_repository_python_origin",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -840,7 +840,7 @@ _EXTERNALREPOSITORYREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1452,
@@ -849,23 +849,23 @@ _EXTERNALREPOSITORYREQUEST = _descriptor.Descriptor(
 
 
 _EXTERNALREPOSITORYREPLY = _descriptor.Descriptor(
-    name='ExternalRepositoryReply',
-    full_name='api.ExternalRepositoryReply',
+    name="ExternalRepositoryReply",
+    full_name="api.ExternalRepositoryReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_external_repository_data',
-            full_name='api.ExternalRepositoryReply.serialized_external_repository_data',
+            name="serialized_external_repository_data",
+            full_name="api.ExternalRepositoryReply.serialized_external_repository_data",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -881,7 +881,7 @@ _EXTERNALREPOSITORYREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1526,
@@ -890,23 +890,23 @@ _EXTERNALREPOSITORYREPLY = _descriptor.Descriptor(
 
 
 _EXTERNALSCHEDULEEXECUTIONREQUEST = _descriptor.Descriptor(
-    name='ExternalScheduleExecutionRequest',
-    full_name='api.ExternalScheduleExecutionRequest',
+    name="ExternalScheduleExecutionRequest",
+    full_name="api.ExternalScheduleExecutionRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_external_schedule_execution_args',
-            full_name='api.ExternalScheduleExecutionRequest.serialized_external_schedule_execution_args',
+            name="serialized_external_schedule_execution_args",
+            full_name="api.ExternalScheduleExecutionRequest.serialized_external_schedule_execution_args",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -922,7 +922,7 @@ _EXTERNALSCHEDULEEXECUTIONREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1598,
@@ -931,23 +931,23 @@ _EXTERNALSCHEDULEEXECUTIONREQUEST = _descriptor.Descriptor(
 
 
 _EXTERNALSCHEDULEEXECUTIONREPLY = _descriptor.Descriptor(
-    name='ExternalScheduleExecutionReply',
-    full_name='api.ExternalScheduleExecutionReply',
+    name="ExternalScheduleExecutionReply",
+    full_name="api.ExternalScheduleExecutionReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_external_schedule_execution_data_or_external_schedule_execution_error',
-            full_name='api.ExternalScheduleExecutionReply.serialized_external_schedule_execution_data_or_external_schedule_execution_error',
+            name="serialized_external_schedule_execution_data_or_external_schedule_execution_error",
+            full_name="api.ExternalScheduleExecutionReply.serialized_external_schedule_execution_data_or_external_schedule_execution_error",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -963,7 +963,7 @@ _EXTERNALSCHEDULEEXECUTIONREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1687,
@@ -972,23 +972,23 @@ _EXTERNALSCHEDULEEXECUTIONREPLY = _descriptor.Descriptor(
 
 
 _EXECUTERUNREQUEST = _descriptor.Descriptor(
-    name='ExecuteRunRequest',
-    full_name='api.ExecuteRunRequest',
+    name="ExecuteRunRequest",
+    full_name="api.ExecuteRunRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_execute_run_args',
-            full_name='api.ExecuteRunRequest.serialized_execute_run_args',
+            name="serialized_execute_run_args",
+            full_name="api.ExecuteRunRequest.serialized_execute_run_args",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1004,7 +1004,7 @@ _EXECUTERUNREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1811,
@@ -1013,23 +1013,23 @@ _EXECUTERUNREQUEST = _descriptor.Descriptor(
 
 
 _EXECUTERUNEVENT = _descriptor.Descriptor(
-    name='ExecuteRunEvent',
-    full_name='api.ExecuteRunEvent',
+    name="ExecuteRunEvent",
+    full_name="api.ExecuteRunEvent",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_dagster_event_or_ipc_error_message',
-            full_name='api.ExecuteRunEvent.serialized_dagster_event_or_ipc_error_message',
+            name="serialized_dagster_event_or_ipc_error_message",
+            full_name="api.ExecuteRunEvent.serialized_dagster_event_or_ipc_error_message",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1045,7 +1045,7 @@ _EXECUTERUNEVENT = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1869,
@@ -1054,23 +1054,23 @@ _EXECUTERUNEVENT = _descriptor.Descriptor(
 
 
 _SHUTDOWNSERVERREPLY = _descriptor.Descriptor(
-    name='ShutdownServerReply',
-    full_name='api.ShutdownServerReply',
+    name="ShutdownServerReply",
+    full_name="api.ShutdownServerReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_shutdown_server_result',
-            full_name='api.ShutdownServerReply.serialized_shutdown_server_result',
+            name="serialized_shutdown_server_result",
+            full_name="api.ShutdownServerReply.serialized_shutdown_server_result",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1086,7 +1086,7 @@ _SHUTDOWNSERVERREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=1943,
@@ -1095,23 +1095,23 @@ _SHUTDOWNSERVERREPLY = _descriptor.Descriptor(
 
 
 _CANCELEXECUTIONREQUEST = _descriptor.Descriptor(
-    name='CancelExecutionRequest',
-    full_name='api.CancelExecutionRequest',
+    name="CancelExecutionRequest",
+    full_name="api.CancelExecutionRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_cancel_execution_request',
-            full_name='api.CancelExecutionRequest.serialized_cancel_execution_request',
+            name="serialized_cancel_execution_request",
+            full_name="api.CancelExecutionRequest.serialized_cancel_execution_request",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1127,7 +1127,7 @@ _CANCELEXECUTIONREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=2009,
@@ -1136,23 +1136,23 @@ _CANCELEXECUTIONREQUEST = _descriptor.Descriptor(
 
 
 _CANCELEXECUTIONREPLY = _descriptor.Descriptor(
-    name='CancelExecutionReply',
-    full_name='api.CancelExecutionReply',
+    name="CancelExecutionReply",
+    full_name="api.CancelExecutionReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_cancel_execution_result',
-            full_name='api.CancelExecutionReply.serialized_cancel_execution_result',
+            name="serialized_cancel_execution_result",
+            full_name="api.CancelExecutionReply.serialized_cancel_execution_result",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1168,7 +1168,7 @@ _CANCELEXECUTIONREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=2080,
@@ -1177,23 +1177,23 @@ _CANCELEXECUTIONREPLY = _descriptor.Descriptor(
 
 
 _CANCANCELEXECUTIONREQUEST = _descriptor.Descriptor(
-    name='CanCancelExecutionRequest',
-    full_name='api.CanCancelExecutionRequest',
+    name="CanCancelExecutionRequest",
+    full_name="api.CanCancelExecutionRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_can_cancel_execution_request',
-            full_name='api.CanCancelExecutionRequest.serialized_can_cancel_execution_request',
+            name="serialized_can_cancel_execution_request",
+            full_name="api.CanCancelExecutionRequest.serialized_can_cancel_execution_request",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1209,7 +1209,7 @@ _CANCANCELEXECUTIONREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=2148,
@@ -1218,23 +1218,23 @@ _CANCANCELEXECUTIONREQUEST = _descriptor.Descriptor(
 
 
 _CANCANCELEXECUTIONREPLY = _descriptor.Descriptor(
-    name='CanCancelExecutionReply',
-    full_name='api.CanCancelExecutionReply',
+    name="CanCancelExecutionReply",
+    full_name="api.CanCancelExecutionReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_can_cancel_execution_result',
-            full_name='api.CanCancelExecutionReply.serialized_can_cancel_execution_result',
+            name="serialized_can_cancel_execution_result",
+            full_name="api.CanCancelExecutionReply.serialized_can_cancel_execution_result",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1250,7 +1250,7 @@ _CANCANCELEXECUTIONREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=2226,
@@ -1259,23 +1259,23 @@ _CANCANCELEXECUTIONREPLY = _descriptor.Descriptor(
 
 
 _STARTRUNREQUEST = _descriptor.Descriptor(
-    name='StartRunRequest',
-    full_name='api.StartRunRequest',
+    name="StartRunRequest",
+    full_name="api.StartRunRequest",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_execute_run_args',
-            full_name='api.StartRunRequest.serialized_execute_run_args',
+            name="serialized_execute_run_args",
+            full_name="api.StartRunRequest.serialized_execute_run_args",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1291,7 +1291,7 @@ _STARTRUNREQUEST = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=2301,
@@ -1300,23 +1300,23 @@ _STARTRUNREQUEST = _descriptor.Descriptor(
 
 
 _STARTRUNREPLY = _descriptor.Descriptor(
-    name='StartRunReply',
-    full_name='api.StartRunReply',
+    name="StartRunReply",
+    full_name="api.StartRunReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_start_run_result',
-            full_name='api.StartRunReply.serialized_start_run_result',
+            name="serialized_start_run_result",
+            full_name="api.StartRunReply.serialized_start_run_result",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1332,7 +1332,7 @@ _STARTRUNREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=2357,
@@ -1341,23 +1341,23 @@ _STARTRUNREPLY = _descriptor.Descriptor(
 
 
 _GETCURRENTIMAGEREPLY = _descriptor.Descriptor(
-    name='GetCurrentImageReply',
-    full_name='api.GetCurrentImageReply',
+    name="GetCurrentImageReply",
+    full_name="api.GetCurrentImageReply",
     filename=None,
     file=DESCRIPTOR,
     containing_type=None,
     create_key=_descriptor._internal_create_key,
     fields=[
         _descriptor.FieldDescriptor(
-            name='serialized_current_image',
-            full_name='api.GetCurrentImageReply.serialized_current_image',
+            name="serialized_current_image",
+            full_name="api.GetCurrentImageReply.serialized_current_image",
             index=0,
             number=1,
             type=9,
             cpp_type=9,
             label=1,
             has_default_value=False,
-            default_value=b"".decode('utf-8'),
+            default_value=b"".decode("utf-8"),
             message_type=None,
             enum_type=None,
             containing_type=None,
@@ -1373,416 +1373,416 @@ _GETCURRENTIMAGEREPLY = _descriptor.Descriptor(
     enum_types=[],
     serialized_options=None,
     is_extendable=False,
-    syntax='proto3',
+    syntax="proto3",
     extension_ranges=[],
     oneofs=[],
     serialized_start=2411,
     serialized_end=2467,
 )
 
-DESCRIPTOR.message_types_by_name['Empty'] = _EMPTY
-DESCRIPTOR.message_types_by_name['PingRequest'] = _PINGREQUEST
-DESCRIPTOR.message_types_by_name['PingReply'] = _PINGREPLY
-DESCRIPTOR.message_types_by_name['StreamingPingRequest'] = _STREAMINGPINGREQUEST
-DESCRIPTOR.message_types_by_name['StreamingPingEvent'] = _STREAMINGPINGEVENT
-DESCRIPTOR.message_types_by_name['ExecutionPlanSnapshotRequest'] = _EXECUTIONPLANSNAPSHOTREQUEST
-DESCRIPTOR.message_types_by_name['ExecutionPlanSnapshotReply'] = _EXECUTIONPLANSNAPSHOTREPLY
-DESCRIPTOR.message_types_by_name['ExternalPartitionNamesRequest'] = _EXTERNALPARTITIONNAMESREQUEST
-DESCRIPTOR.message_types_by_name['ExternalPartitionNamesReply'] = _EXTERNALPARTITIONNAMESREPLY
-DESCRIPTOR.message_types_by_name['ExternalPartitionConfigRequest'] = _EXTERNALPARTITIONCONFIGREQUEST
-DESCRIPTOR.message_types_by_name['ExternalPartitionConfigReply'] = _EXTERNALPARTITIONCONFIGREPLY
-DESCRIPTOR.message_types_by_name['ExternalPartitionTagsRequest'] = _EXTERNALPARTITIONTAGSREQUEST
-DESCRIPTOR.message_types_by_name['ExternalPartitionTagsReply'] = _EXTERNALPARTITIONTAGSREPLY
+DESCRIPTOR.message_types_by_name["Empty"] = _EMPTY
+DESCRIPTOR.message_types_by_name["PingRequest"] = _PINGREQUEST
+DESCRIPTOR.message_types_by_name["PingReply"] = _PINGREPLY
+DESCRIPTOR.message_types_by_name["StreamingPingRequest"] = _STREAMINGPINGREQUEST
+DESCRIPTOR.message_types_by_name["StreamingPingEvent"] = _STREAMINGPINGEVENT
+DESCRIPTOR.message_types_by_name["ExecutionPlanSnapshotRequest"] = _EXECUTIONPLANSNAPSHOTREQUEST
+DESCRIPTOR.message_types_by_name["ExecutionPlanSnapshotReply"] = _EXECUTIONPLANSNAPSHOTREPLY
+DESCRIPTOR.message_types_by_name["ExternalPartitionNamesRequest"] = _EXTERNALPARTITIONNAMESREQUEST
+DESCRIPTOR.message_types_by_name["ExternalPartitionNamesReply"] = _EXTERNALPARTITIONNAMESREPLY
+DESCRIPTOR.message_types_by_name["ExternalPartitionConfigRequest"] = _EXTERNALPARTITIONCONFIGREQUEST
+DESCRIPTOR.message_types_by_name["ExternalPartitionConfigReply"] = _EXTERNALPARTITIONCONFIGREPLY
+DESCRIPTOR.message_types_by_name["ExternalPartitionTagsRequest"] = _EXTERNALPARTITIONTAGSREQUEST
+DESCRIPTOR.message_types_by_name["ExternalPartitionTagsReply"] = _EXTERNALPARTITIONTAGSREPLY
 DESCRIPTOR.message_types_by_name[
-    'ExternalPartitionSetExecutionParamsRequest'
+    "ExternalPartitionSetExecutionParamsRequest"
 ] = _EXTERNALPARTITIONSETEXECUTIONPARAMSREQUEST
 DESCRIPTOR.message_types_by_name[
-    'ExternalPartitionSetExecutionParamsReply'
+    "ExternalPartitionSetExecutionParamsReply"
 ] = _EXTERNALPARTITIONSETEXECUTIONPARAMSREPLY
-DESCRIPTOR.message_types_by_name['ListRepositoriesRequest'] = _LISTREPOSITORIESREQUEST
-DESCRIPTOR.message_types_by_name['ListRepositoriesReply'] = _LISTREPOSITORIESREPLY
+DESCRIPTOR.message_types_by_name["ListRepositoriesRequest"] = _LISTREPOSITORIESREQUEST
+DESCRIPTOR.message_types_by_name["ListRepositoriesReply"] = _LISTREPOSITORIESREPLY
 DESCRIPTOR.message_types_by_name[
-    'ExternalPipelineSubsetSnapshotRequest'
+    "ExternalPipelineSubsetSnapshotRequest"
 ] = _EXTERNALPIPELINESUBSETSNAPSHOTREQUEST
 DESCRIPTOR.message_types_by_name[
-    'ExternalPipelineSubsetSnapshotReply'
+    "ExternalPipelineSubsetSnapshotReply"
 ] = _EXTERNALPIPELINESUBSETSNAPSHOTREPLY
-DESCRIPTOR.message_types_by_name['ExternalRepositoryRequest'] = _EXTERNALREPOSITORYREQUEST
-DESCRIPTOR.message_types_by_name['ExternalRepositoryReply'] = _EXTERNALREPOSITORYREPLY
+DESCRIPTOR.message_types_by_name["ExternalRepositoryRequest"] = _EXTERNALREPOSITORYREQUEST
+DESCRIPTOR.message_types_by_name["ExternalRepositoryReply"] = _EXTERNALREPOSITORYREPLY
 DESCRIPTOR.message_types_by_name[
-    'ExternalScheduleExecutionRequest'
+    "ExternalScheduleExecutionRequest"
 ] = _EXTERNALSCHEDULEEXECUTIONREQUEST
-DESCRIPTOR.message_types_by_name['ExternalScheduleExecutionReply'] = _EXTERNALSCHEDULEEXECUTIONREPLY
-DESCRIPTOR.message_types_by_name['ExecuteRunRequest'] = _EXECUTERUNREQUEST
-DESCRIPTOR.message_types_by_name['ExecuteRunEvent'] = _EXECUTERUNEVENT
-DESCRIPTOR.message_types_by_name['ShutdownServerReply'] = _SHUTDOWNSERVERREPLY
-DESCRIPTOR.message_types_by_name['CancelExecutionRequest'] = _CANCELEXECUTIONREQUEST
-DESCRIPTOR.message_types_by_name['CancelExecutionReply'] = _CANCELEXECUTIONREPLY
-DESCRIPTOR.message_types_by_name['CanCancelExecutionRequest'] = _CANCANCELEXECUTIONREQUEST
-DESCRIPTOR.message_types_by_name['CanCancelExecutionReply'] = _CANCANCELEXECUTIONREPLY
-DESCRIPTOR.message_types_by_name['StartRunRequest'] = _STARTRUNREQUEST
-DESCRIPTOR.message_types_by_name['StartRunReply'] = _STARTRUNREPLY
-DESCRIPTOR.message_types_by_name['GetCurrentImageReply'] = _GETCURRENTIMAGEREPLY
+DESCRIPTOR.message_types_by_name["ExternalScheduleExecutionReply"] = _EXTERNALSCHEDULEEXECUTIONREPLY
+DESCRIPTOR.message_types_by_name["ExecuteRunRequest"] = _EXECUTERUNREQUEST
+DESCRIPTOR.message_types_by_name["ExecuteRunEvent"] = _EXECUTERUNEVENT
+DESCRIPTOR.message_types_by_name["ShutdownServerReply"] = _SHUTDOWNSERVERREPLY
+DESCRIPTOR.message_types_by_name["CancelExecutionRequest"] = _CANCELEXECUTIONREQUEST
+DESCRIPTOR.message_types_by_name["CancelExecutionReply"] = _CANCELEXECUTIONREPLY
+DESCRIPTOR.message_types_by_name["CanCancelExecutionRequest"] = _CANCANCELEXECUTIONREQUEST
+DESCRIPTOR.message_types_by_name["CanCancelExecutionReply"] = _CANCANCELEXECUTIONREPLY
+DESCRIPTOR.message_types_by_name["StartRunRequest"] = _STARTRUNREQUEST
+DESCRIPTOR.message_types_by_name["StartRunReply"] = _STARTRUNREPLY
+DESCRIPTOR.message_types_by_name["GetCurrentImageReply"] = _GETCURRENTIMAGEREPLY
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Empty = _reflection.GeneratedProtocolMessageType(
-    'Empty',
+    "Empty",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EMPTY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EMPTY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.Empty)
     },
 )
 _sym_db.RegisterMessage(Empty)
 
 PingRequest = _reflection.GeneratedProtocolMessageType(
-    'PingRequest',
+    "PingRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _PINGREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _PINGREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.PingRequest)
     },
 )
 _sym_db.RegisterMessage(PingRequest)
 
 PingReply = _reflection.GeneratedProtocolMessageType(
-    'PingReply',
+    "PingReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _PINGREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _PINGREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.PingReply)
     },
 )
 _sym_db.RegisterMessage(PingReply)
 
 StreamingPingRequest = _reflection.GeneratedProtocolMessageType(
-    'StreamingPingRequest',
+    "StreamingPingRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _STREAMINGPINGREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _STREAMINGPINGREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.StreamingPingRequest)
     },
 )
 _sym_db.RegisterMessage(StreamingPingRequest)
 
 StreamingPingEvent = _reflection.GeneratedProtocolMessageType(
-    'StreamingPingEvent',
+    "StreamingPingEvent",
     (_message.Message,),
     {
-        'DESCRIPTOR': _STREAMINGPINGEVENT,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _STREAMINGPINGEVENT,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.StreamingPingEvent)
     },
 )
 _sym_db.RegisterMessage(StreamingPingEvent)
 
 ExecutionPlanSnapshotRequest = _reflection.GeneratedProtocolMessageType(
-    'ExecutionPlanSnapshotRequest',
+    "ExecutionPlanSnapshotRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXECUTIONPLANSNAPSHOTREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXECUTIONPLANSNAPSHOTREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExecutionPlanSnapshotRequest)
     },
 )
 _sym_db.RegisterMessage(ExecutionPlanSnapshotRequest)
 
 ExecutionPlanSnapshotReply = _reflection.GeneratedProtocolMessageType(
-    'ExecutionPlanSnapshotReply',
+    "ExecutionPlanSnapshotReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXECUTIONPLANSNAPSHOTREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXECUTIONPLANSNAPSHOTREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExecutionPlanSnapshotReply)
     },
 )
 _sym_db.RegisterMessage(ExecutionPlanSnapshotReply)
 
 ExternalPartitionNamesRequest = _reflection.GeneratedProtocolMessageType(
-    'ExternalPartitionNamesRequest',
+    "ExternalPartitionNamesRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPARTITIONNAMESREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPARTITIONNAMESREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPartitionNamesRequest)
     },
 )
 _sym_db.RegisterMessage(ExternalPartitionNamesRequest)
 
 ExternalPartitionNamesReply = _reflection.GeneratedProtocolMessageType(
-    'ExternalPartitionNamesReply',
+    "ExternalPartitionNamesReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPARTITIONNAMESREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPARTITIONNAMESREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPartitionNamesReply)
     },
 )
 _sym_db.RegisterMessage(ExternalPartitionNamesReply)
 
 ExternalPartitionConfigRequest = _reflection.GeneratedProtocolMessageType(
-    'ExternalPartitionConfigRequest',
+    "ExternalPartitionConfigRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPARTITIONCONFIGREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPARTITIONCONFIGREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPartitionConfigRequest)
     },
 )
 _sym_db.RegisterMessage(ExternalPartitionConfigRequest)
 
 ExternalPartitionConfigReply = _reflection.GeneratedProtocolMessageType(
-    'ExternalPartitionConfigReply',
+    "ExternalPartitionConfigReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPARTITIONCONFIGREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPARTITIONCONFIGREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPartitionConfigReply)
     },
 )
 _sym_db.RegisterMessage(ExternalPartitionConfigReply)
 
 ExternalPartitionTagsRequest = _reflection.GeneratedProtocolMessageType(
-    'ExternalPartitionTagsRequest',
+    "ExternalPartitionTagsRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPARTITIONTAGSREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPARTITIONTAGSREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPartitionTagsRequest)
     },
 )
 _sym_db.RegisterMessage(ExternalPartitionTagsRequest)
 
 ExternalPartitionTagsReply = _reflection.GeneratedProtocolMessageType(
-    'ExternalPartitionTagsReply',
+    "ExternalPartitionTagsReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPARTITIONTAGSREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPARTITIONTAGSREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPartitionTagsReply)
     },
 )
 _sym_db.RegisterMessage(ExternalPartitionTagsReply)
 
 ExternalPartitionSetExecutionParamsRequest = _reflection.GeneratedProtocolMessageType(
-    'ExternalPartitionSetExecutionParamsRequest',
+    "ExternalPartitionSetExecutionParamsRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPARTITIONSETEXECUTIONPARAMSREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPARTITIONSETEXECUTIONPARAMSREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPartitionSetExecutionParamsRequest)
     },
 )
 _sym_db.RegisterMessage(ExternalPartitionSetExecutionParamsRequest)
 
 ExternalPartitionSetExecutionParamsReply = _reflection.GeneratedProtocolMessageType(
-    'ExternalPartitionSetExecutionParamsReply',
+    "ExternalPartitionSetExecutionParamsReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPARTITIONSETEXECUTIONPARAMSREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPARTITIONSETEXECUTIONPARAMSREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPartitionSetExecutionParamsReply)
     },
 )
 _sym_db.RegisterMessage(ExternalPartitionSetExecutionParamsReply)
 
 ListRepositoriesRequest = _reflection.GeneratedProtocolMessageType(
-    'ListRepositoriesRequest',
+    "ListRepositoriesRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _LISTREPOSITORIESREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _LISTREPOSITORIESREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ListRepositoriesRequest)
     },
 )
 _sym_db.RegisterMessage(ListRepositoriesRequest)
 
 ListRepositoriesReply = _reflection.GeneratedProtocolMessageType(
-    'ListRepositoriesReply',
+    "ListRepositoriesReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _LISTREPOSITORIESREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _LISTREPOSITORIESREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ListRepositoriesReply)
     },
 )
 _sym_db.RegisterMessage(ListRepositoriesReply)
 
 ExternalPipelineSubsetSnapshotRequest = _reflection.GeneratedProtocolMessageType(
-    'ExternalPipelineSubsetSnapshotRequest',
+    "ExternalPipelineSubsetSnapshotRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPIPELINESUBSETSNAPSHOTREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPIPELINESUBSETSNAPSHOTREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPipelineSubsetSnapshotRequest)
     },
 )
 _sym_db.RegisterMessage(ExternalPipelineSubsetSnapshotRequest)
 
 ExternalPipelineSubsetSnapshotReply = _reflection.GeneratedProtocolMessageType(
-    'ExternalPipelineSubsetSnapshotReply',
+    "ExternalPipelineSubsetSnapshotReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALPIPELINESUBSETSNAPSHOTREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALPIPELINESUBSETSNAPSHOTREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalPipelineSubsetSnapshotReply)
     },
 )
 _sym_db.RegisterMessage(ExternalPipelineSubsetSnapshotReply)
 
 ExternalRepositoryRequest = _reflection.GeneratedProtocolMessageType(
-    'ExternalRepositoryRequest',
+    "ExternalRepositoryRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALREPOSITORYREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALREPOSITORYREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalRepositoryRequest)
     },
 )
 _sym_db.RegisterMessage(ExternalRepositoryRequest)
 
 ExternalRepositoryReply = _reflection.GeneratedProtocolMessageType(
-    'ExternalRepositoryReply',
+    "ExternalRepositoryReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALREPOSITORYREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALREPOSITORYREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalRepositoryReply)
     },
 )
 _sym_db.RegisterMessage(ExternalRepositoryReply)
 
 ExternalScheduleExecutionRequest = _reflection.GeneratedProtocolMessageType(
-    'ExternalScheduleExecutionRequest',
+    "ExternalScheduleExecutionRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALSCHEDULEEXECUTIONREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALSCHEDULEEXECUTIONREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalScheduleExecutionRequest)
     },
 )
 _sym_db.RegisterMessage(ExternalScheduleExecutionRequest)
 
 ExternalScheduleExecutionReply = _reflection.GeneratedProtocolMessageType(
-    'ExternalScheduleExecutionReply',
+    "ExternalScheduleExecutionReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXTERNALSCHEDULEEXECUTIONREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXTERNALSCHEDULEEXECUTIONREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExternalScheduleExecutionReply)
     },
 )
 _sym_db.RegisterMessage(ExternalScheduleExecutionReply)
 
 ExecuteRunRequest = _reflection.GeneratedProtocolMessageType(
-    'ExecuteRunRequest',
+    "ExecuteRunRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXECUTERUNREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXECUTERUNREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExecuteRunRequest)
     },
 )
 _sym_db.RegisterMessage(ExecuteRunRequest)
 
 ExecuteRunEvent = _reflection.GeneratedProtocolMessageType(
-    'ExecuteRunEvent',
+    "ExecuteRunEvent",
     (_message.Message,),
     {
-        'DESCRIPTOR': _EXECUTERUNEVENT,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _EXECUTERUNEVENT,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ExecuteRunEvent)
     },
 )
 _sym_db.RegisterMessage(ExecuteRunEvent)
 
 ShutdownServerReply = _reflection.GeneratedProtocolMessageType(
-    'ShutdownServerReply',
+    "ShutdownServerReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _SHUTDOWNSERVERREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _SHUTDOWNSERVERREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.ShutdownServerReply)
     },
 )
 _sym_db.RegisterMessage(ShutdownServerReply)
 
 CancelExecutionRequest = _reflection.GeneratedProtocolMessageType(
-    'CancelExecutionRequest',
+    "CancelExecutionRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _CANCELEXECUTIONREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _CANCELEXECUTIONREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.CancelExecutionRequest)
     },
 )
 _sym_db.RegisterMessage(CancelExecutionRequest)
 
 CancelExecutionReply = _reflection.GeneratedProtocolMessageType(
-    'CancelExecutionReply',
+    "CancelExecutionReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _CANCELEXECUTIONREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _CANCELEXECUTIONREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.CancelExecutionReply)
     },
 )
 _sym_db.RegisterMessage(CancelExecutionReply)
 
 CanCancelExecutionRequest = _reflection.GeneratedProtocolMessageType(
-    'CanCancelExecutionRequest',
+    "CanCancelExecutionRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _CANCANCELEXECUTIONREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _CANCANCELEXECUTIONREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.CanCancelExecutionRequest)
     },
 )
 _sym_db.RegisterMessage(CanCancelExecutionRequest)
 
 CanCancelExecutionReply = _reflection.GeneratedProtocolMessageType(
-    'CanCancelExecutionReply',
+    "CanCancelExecutionReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _CANCANCELEXECUTIONREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _CANCANCELEXECUTIONREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.CanCancelExecutionReply)
     },
 )
 _sym_db.RegisterMessage(CanCancelExecutionReply)
 
 StartRunRequest = _reflection.GeneratedProtocolMessageType(
-    'StartRunRequest',
+    "StartRunRequest",
     (_message.Message,),
     {
-        'DESCRIPTOR': _STARTRUNREQUEST,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _STARTRUNREQUEST,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.StartRunRequest)
     },
 )
 _sym_db.RegisterMessage(StartRunRequest)
 
 StartRunReply = _reflection.GeneratedProtocolMessageType(
-    'StartRunReply',
+    "StartRunReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _STARTRUNREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _STARTRUNREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.StartRunReply)
     },
 )
 _sym_db.RegisterMessage(StartRunReply)
 
 GetCurrentImageReply = _reflection.GeneratedProtocolMessageType(
-    'GetCurrentImageReply',
+    "GetCurrentImageReply",
     (_message.Message,),
     {
-        'DESCRIPTOR': _GETCURRENTIMAGEREPLY,
-        '__module__': 'api_pb2'
+        "DESCRIPTOR": _GETCURRENTIMAGEREPLY,
+        "__module__": "api_pb2"
         # @@protoc_insertion_point(class_scope:api.GetCurrentImageReply)
     },
 )
@@ -1790,8 +1790,8 @@ _sym_db.RegisterMessage(GetCurrentImageReply)
 
 
 _DAGSTERAPI = _descriptor.ServiceDescriptor(
-    name='DagsterApi',
-    full_name='api.DagsterApi',
+    name="DagsterApi",
+    full_name="api.DagsterApi",
     file=DESCRIPTOR,
     index=0,
     serialized_options=None,
@@ -1800,8 +1800,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
     serialized_end=3971,
     methods=[
         _descriptor.MethodDescriptor(
-            name='Ping',
-            full_name='api.DagsterApi.Ping',
+            name="Ping",
+            full_name="api.DagsterApi.Ping",
             index=0,
             containing_service=None,
             input_type=_PINGREQUEST,
@@ -1810,8 +1810,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='Heartbeat',
-            full_name='api.DagsterApi.Heartbeat',
+            name="Heartbeat",
+            full_name="api.DagsterApi.Heartbeat",
             index=1,
             containing_service=None,
             input_type=_PINGREQUEST,
@@ -1820,8 +1820,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='StreamingPing',
-            full_name='api.DagsterApi.StreamingPing',
+            name="StreamingPing",
+            full_name="api.DagsterApi.StreamingPing",
             index=2,
             containing_service=None,
             input_type=_STREAMINGPINGREQUEST,
@@ -1830,8 +1830,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ExecutionPlanSnapshot',
-            full_name='api.DagsterApi.ExecutionPlanSnapshot',
+            name="ExecutionPlanSnapshot",
+            full_name="api.DagsterApi.ExecutionPlanSnapshot",
             index=3,
             containing_service=None,
             input_type=_EXECUTIONPLANSNAPSHOTREQUEST,
@@ -1840,8 +1840,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ListRepositories',
-            full_name='api.DagsterApi.ListRepositories',
+            name="ListRepositories",
+            full_name="api.DagsterApi.ListRepositories",
             index=4,
             containing_service=None,
             input_type=_LISTREPOSITORIESREQUEST,
@@ -1850,8 +1850,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ExternalPartitionNames',
-            full_name='api.DagsterApi.ExternalPartitionNames',
+            name="ExternalPartitionNames",
+            full_name="api.DagsterApi.ExternalPartitionNames",
             index=5,
             containing_service=None,
             input_type=_EXTERNALPARTITIONNAMESREQUEST,
@@ -1860,8 +1860,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ExternalPartitionConfig',
-            full_name='api.DagsterApi.ExternalPartitionConfig',
+            name="ExternalPartitionConfig",
+            full_name="api.DagsterApi.ExternalPartitionConfig",
             index=6,
             containing_service=None,
             input_type=_EXTERNALPARTITIONCONFIGREQUEST,
@@ -1870,8 +1870,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ExternalPartitionTags',
-            full_name='api.DagsterApi.ExternalPartitionTags',
+            name="ExternalPartitionTags",
+            full_name="api.DagsterApi.ExternalPartitionTags",
             index=7,
             containing_service=None,
             input_type=_EXTERNALPARTITIONTAGSREQUEST,
@@ -1880,8 +1880,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ExternalPartitionSetExecutionParams',
-            full_name='api.DagsterApi.ExternalPartitionSetExecutionParams',
+            name="ExternalPartitionSetExecutionParams",
+            full_name="api.DagsterApi.ExternalPartitionSetExecutionParams",
             index=8,
             containing_service=None,
             input_type=_EXTERNALPARTITIONSETEXECUTIONPARAMSREQUEST,
@@ -1890,8 +1890,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ExternalPipelineSubsetSnapshot',
-            full_name='api.DagsterApi.ExternalPipelineSubsetSnapshot',
+            name="ExternalPipelineSubsetSnapshot",
+            full_name="api.DagsterApi.ExternalPipelineSubsetSnapshot",
             index=9,
             containing_service=None,
             input_type=_EXTERNALPIPELINESUBSETSNAPSHOTREQUEST,
@@ -1900,8 +1900,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ExternalRepository',
-            full_name='api.DagsterApi.ExternalRepository',
+            name="ExternalRepository",
+            full_name="api.DagsterApi.ExternalRepository",
             index=10,
             containing_service=None,
             input_type=_EXTERNALREPOSITORYREQUEST,
@@ -1910,8 +1910,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ExternalScheduleExecution',
-            full_name='api.DagsterApi.ExternalScheduleExecution',
+            name="ExternalScheduleExecution",
+            full_name="api.DagsterApi.ExternalScheduleExecution",
             index=11,
             containing_service=None,
             input_type=_EXTERNALSCHEDULEEXECUTIONREQUEST,
@@ -1920,8 +1920,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ShutdownServer',
-            full_name='api.DagsterApi.ShutdownServer',
+            name="ShutdownServer",
+            full_name="api.DagsterApi.ShutdownServer",
             index=12,
             containing_service=None,
             input_type=_EMPTY,
@@ -1930,8 +1930,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='ExecuteRun',
-            full_name='api.DagsterApi.ExecuteRun',
+            name="ExecuteRun",
+            full_name="api.DagsterApi.ExecuteRun",
             index=13,
             containing_service=None,
             input_type=_EXECUTERUNREQUEST,
@@ -1940,8 +1940,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='CancelExecution',
-            full_name='api.DagsterApi.CancelExecution',
+            name="CancelExecution",
+            full_name="api.DagsterApi.CancelExecution",
             index=14,
             containing_service=None,
             input_type=_CANCELEXECUTIONREQUEST,
@@ -1950,8 +1950,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='CanCancelExecution',
-            full_name='api.DagsterApi.CanCancelExecution',
+            name="CanCancelExecution",
+            full_name="api.DagsterApi.CanCancelExecution",
             index=15,
             containing_service=None,
             input_type=_CANCANCELEXECUTIONREQUEST,
@@ -1960,8 +1960,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='StartRun',
-            full_name='api.DagsterApi.StartRun',
+            name="StartRun",
+            full_name="api.DagsterApi.StartRun",
             index=16,
             containing_service=None,
             input_type=_STARTRUNREQUEST,
@@ -1970,8 +1970,8 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
             create_key=_descriptor._internal_create_key,
         ),
         _descriptor.MethodDescriptor(
-            name='GetCurrentImage',
-            full_name='api.DagsterApi.GetCurrentImage',
+            name="GetCurrentImage",
+            full_name="api.DagsterApi.GetCurrentImage",
             index=17,
             containing_service=None,
             input_type=_EMPTY,
@@ -1983,6 +1983,6 @@ _DAGSTERAPI = _descriptor.ServiceDescriptor(
 )
 _sym_db.RegisterServiceDescriptor(_DAGSTERAPI)
 
-DESCRIPTOR.services_by_name['DagsterApi'] = _DAGSTERAPI
+DESCRIPTOR.services_by_name["DagsterApi"] = _DAGSTERAPI
 
 # @@protoc_insertion_point(module_scope)

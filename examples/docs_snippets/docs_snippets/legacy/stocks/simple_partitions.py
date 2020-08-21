@@ -13,7 +13,7 @@ def get_stock_ticker_partitions():
 def run_config_for_ticker_partition(partition):
     ticker_symbol = partition.value
 
-    return {'solids': {'query_historical_stock_data': {'config': {'symbol': ticker_symbol}}}}
+    return {"solids": {"query_historical_stock_data": {"config": {"symbol": ticker_symbol}}}}
 
 
 stock_ticker_partition_sets = PartitionSetDefinition(

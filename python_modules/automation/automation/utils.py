@@ -8,7 +8,7 @@ import click
 def check_output(cmd, dry_run=True, cwd=None):
     if dry_run:
         click.echo(
-            click.style('Dry run; not running.', fg='red') + ' Would run: %s' % ' '.join(cmd)
+            click.style("Dry run; not running.", fg="red") + " Would run: %s" % " ".join(cmd)
         )
         return None
     else:
@@ -16,7 +16,7 @@ def check_output(cmd, dry_run=True, cwd=None):
 
 
 def which_(exe):
-    '''Uses distutils to look for an executable, mimicking unix which'''
+    """Uses distutils to look for an executable, mimicking unix which"""
     # https://github.com/PyCQA/pylint/issues/73
     return spawn.find_executable(exe)
 

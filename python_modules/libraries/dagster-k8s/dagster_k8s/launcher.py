@@ -31,7 +31,7 @@ from .utils import delete_job
 
 
 class K8sRunLauncher(RunLauncher, ConfigurableClass):
-    '''RunLauncher that starts a Kubernetes Job for each pipeline run.
+    """RunLauncher that starts a Kubernetes Job for each pipeline run.
 
     Encapsulates each pipeline run in a separate, isolated invocation of ``dagster-graphql``.
 
@@ -95,7 +95,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         env_secrets (Optional[List[str]]): A list of custom Secret names from which to
             draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
         https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
-    '''
+    """
 
     def __init__(
         self,
@@ -104,60 +104,60 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         postgres_password_secret,
         dagster_home,
         job_image=None,
-        image_pull_policy='Always',
+        image_pull_policy="Always",
         image_pull_secrets=None,
         load_incluster_config=True,
         kubeconfig_file=None,
         inst_data=None,
-        job_namespace='default',
+        job_namespace="default",
         env_config_maps=None,
         env_secrets=None,
     ):
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
-        self.job_namespace = check.str_param(job_namespace, 'job_namespace')
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self.job_namespace = check.str_param(job_namespace, "job_namespace")
 
         if load_incluster_config:
             check.invariant(
                 kubeconfig_file is None,
-                '`kubeconfig_file` is set but `load_incluster_config` is True.',
+                "`kubeconfig_file` is set but `load_incluster_config` is True.",
             )
             kubernetes.config.load_incluster_config()
         else:
-            check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
+            check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
         self._batch_api = kubernetes.client.BatchV1Api()
         self._core_api = kubernetes.client.CoreV1Api()
 
         self.job_config = None
-        self._job_image = check.opt_str_param(job_image, 'job_image')
-        self._dagster_home = check.str_param(dagster_home, 'dagster_home')
-        self._image_pull_policy = check.str_param(image_pull_policy, 'image_pull_policy')
+        self._job_image = check.opt_str_param(job_image, "job_image")
+        self._dagster_home = check.str_param(dagster_home, "dagster_home")
+        self._image_pull_policy = check.str_param(image_pull_policy, "image_pull_policy")
         self._image_pull_secrets = check.opt_list_param(
-            image_pull_secrets, 'image_pull_secrets', of_type=dict
+            image_pull_secrets, "image_pull_secrets", of_type=dict
         )
-        self._service_account_name = check.str_param(service_account_name, 'service_account_name')
-        self._instance_config_map = check.str_param(instance_config_map, 'instance_config_map')
+        self._service_account_name = check.str_param(service_account_name, "service_account_name")
+        self._instance_config_map = check.str_param(instance_config_map, "instance_config_map")
         self._postgres_password_secret = check.str_param(
-            postgres_password_secret, 'postgres_password_secret'
+            postgres_password_secret, "postgres_password_secret"
         )
         self._env_config_maps = check.opt_list_param(
-            env_config_maps, 'env_config_maps', of_type=str
+            env_config_maps, "env_config_maps", of_type=str
         )
-        self._env_secrets = check.opt_list_param(env_secrets, 'env_secrets', of_type=str)
+        self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
         self._instance_ref = None
 
     @classmethod
     def config_type(cls):
-        '''Include all arguments required for DagsterK8sJobConfig along with additional arguments
+        """Include all arguments required for DagsterK8sJobConfig along with additional arguments
         needed for the RunLauncher itself.
-        '''
+        """
         job_cfg = DagsterK8sJobConfig.config_type()
 
         run_launcher_extra_cfg = {
-            'job_namespace': StringSource,
-            'load_incluster_config': Field(bool, is_required=False, default_value=True),
-            'kubeconfig_file': Field(Noneable(str), is_required=False, default_value=None),
+            "job_namespace": StringSource,
+            "load_incluster_config": Field(bool, is_required=False, default_value=True),
+            "kubeconfig_file": Field(Noneable(str), is_required=False, default_value=None),
         }
         return merge_dicts(job_cfg, run_launcher_extra_cfg)
 
@@ -178,59 +178,59 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return self.job_config
         else:
             self.job_config = DagsterK8sJobConfig(
-                job_image=check.str_param(self._job_image, 'job_image'),
-                dagster_home=check.str_param(self._dagster_home, 'dagster_home'),
-                image_pull_policy=check.str_param(self._image_pull_policy, 'image_pull_policy'),
+                job_image=check.str_param(self._job_image, "job_image"),
+                dagster_home=check.str_param(self._dagster_home, "dagster_home"),
+                image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
                 image_pull_secrets=check.opt_list_param(
-                    self._image_pull_secrets, 'image_pull_secrets', of_type=dict
+                    self._image_pull_secrets, "image_pull_secrets", of_type=dict
                 ),
                 service_account_name=check.str_param(
-                    self._service_account_name, 'service_account_name'
+                    self._service_account_name, "service_account_name"
                 ),
                 instance_config_map=check.str_param(
-                    self._instance_config_map, 'instance_config_map'
+                    self._instance_config_map, "instance_config_map"
                 ),
                 postgres_password_secret=check.str_param(
-                    self._postgres_password_secret, 'postgres_password_secret'
+                    self._postgres_password_secret, "postgres_password_secret"
                 ),
                 env_config_maps=check.opt_list_param(
-                    self._env_config_maps, 'env_config_maps', of_type=str
+                    self._env_config_maps, "env_config_maps", of_type=str
                 ),
-                env_secrets=check.opt_list_param(self._env_secrets, 'env_secrets', of_type=str),
+                env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
             )
             return self.job_config
 
     def _get_grpc_job_config(self, job_image):
         return DagsterK8sJobConfig(
-            job_image=check.str_param(job_image, 'job_image'),
-            dagster_home=check.str_param(self._dagster_home, 'dagster_home'),
-            image_pull_policy=check.str_param(self._image_pull_policy, 'image_pull_policy'),
+            job_image=check.str_param(job_image, "job_image"),
+            dagster_home=check.str_param(self._dagster_home, "dagster_home"),
+            image_pull_policy=check.str_param(self._image_pull_policy, "image_pull_policy"),
             image_pull_secrets=check.opt_list_param(
-                self._image_pull_secrets, 'image_pull_secrets', of_type=dict
+                self._image_pull_secrets, "image_pull_secrets", of_type=dict
             ),
             service_account_name=check.str_param(
-                self._service_account_name, 'service_account_name'
+                self._service_account_name, "service_account_name"
             ),
-            instance_config_map=check.str_param(self._instance_config_map, 'instance_config_map'),
+            instance_config_map=check.str_param(self._instance_config_map, "instance_config_map"),
             postgres_password_secret=check.str_param(
-                self._postgres_password_secret, 'postgres_password_secret'
+                self._postgres_password_secret, "postgres_password_secret"
             ),
             env_config_maps=check.opt_list_param(
-                self._env_config_maps, 'env_config_maps', of_type=str
+                self._env_config_maps, "env_config_maps", of_type=str
             ),
-            env_secrets=check.opt_list_param(self._env_secrets, 'env_secrets', of_type=str),
+            env_secrets=check.opt_list_param(self._env_secrets, "env_secrets", of_type=str),
         )
 
     def initialize(self, instance):
-        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(instance, "instance", DagsterInstance)
         # Store a weakref to avoid a circular reference / enable GC
         self._instance_ref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
-        check.inst_param(run, 'run', PipelineRun)
-        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        check.inst_param(run, "run", PipelineRun)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
-        job_name = 'dagster-run-{}'.format(run.run_id)
+        job_name = "dagster-run-{}".format(run.run_id)
         pod_name = job_name
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(external_pipeline.tags))
@@ -240,8 +240,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         if isinstance(external_pipeline.get_origin(), PipelineGrpcServerOrigin):
             if self._job_image:
                 raise DagsterInvariantViolationError(
-                    'Cannot specify job_image in run launcher config when loading pipeline '
-                    'from GRPC server.'
+                    "Cannot specify job_image in run launcher config when loading pipeline "
+                    "from GRPC server."
                 )
 
             repository_location_handle = (
@@ -250,8 +250,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
             if not isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle):
                 raise DagsterInvariantViolationError(
-                    'Expected RepositoryLocationHandle to be of type '
-                    'GrpcServerRepositoryLocationHandle but found type {}'.format(
+                    "Expected RepositoryLocationHandle to be of type "
+                    "GrpcServerRepositoryLocationHandle but found type {}".format(
                         type(repository_location_handle)
                     )
                 )
@@ -279,24 +279,24 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job = construct_dagster_k8s_job(
             job_config=job_config,
-            command=['dagster'],
-            args=['api', 'execute_run_with_structured_logs', input_json],
+            command=["dagster"],
+            args=["api", "execute_run_with_structured_logs", input_json],
             job_name=job_name,
             pod_name=pod_name,
-            component='run_coordinator',
+            component="run_coordinator",
             user_defined_k8s_config=user_defined_k8s_config,
         )
 
         self._batch_api.create_namespaced_job(body=job, namespace=self.job_namespace)
         self._instance.report_engine_event(
-            'Kubernetes run_coordinator job launched',
+            "Kubernetes run_coordinator job launched",
             run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(job_name, 'Kubernetes Job name'),
-                    EventMetadataEntry.text(pod_name, 'Kubernetes Pod name'),
-                    EventMetadataEntry.text(self.job_namespace, 'Kubernetes Namespace'),
-                    EventMetadataEntry.text(run.run_id, 'Run ID'),
+                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
+                    EventMetadataEntry.text(pod_name, "Kubernetes Pod name"),
+                    EventMetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
+                    EventMetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
             cls=K8sRunLauncher,
@@ -305,7 +305,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
     # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         pipeline_run = self._instance.get_run_by_id(run_id)
         if not pipeline_run:
@@ -315,7 +315,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         if not self.can_terminate(run_id):
             return False

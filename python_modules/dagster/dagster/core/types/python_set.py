@@ -6,14 +6,14 @@ from .config_schema import DagsterTypeLoader
 from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
 PythonSet = PythonObjectDagsterType(
-    set, 'PythonSet', description='''Represents a python dictionary to pass between solids'''
+    set, "PythonSet", description="""Represents a python dictionary to pass between solids"""
 )
 
 
 class TypedSetLoader(DagsterTypeLoader):
     def __init__(self, item_dagster_type):
         self._item_dagster_type = check.inst_param(
-            item_dagster_type, 'item_dagster_type', DagsterType
+            item_dagster_type, "item_dagster_type", DagsterType
         )
 
     @property
@@ -33,7 +33,7 @@ class _TypedPythonSet(DagsterType):
     def __init__(self, item_dagster_type):
         self.item_type = item_dagster_type
         super(_TypedPythonSet, self).__init__(
-            key='TypedPythonSet.{}'.format(item_dagster_type.key),
+            key="TypedPythonSet.{}".format(item_dagster_type.key),
             name=None,
             loader=(TypedSetLoader(item_dagster_type) if item_dagster_type.loader else None),
             type_check_fn=self.type_check_method,
@@ -45,7 +45,7 @@ class _TypedPythonSet(DagsterType):
         if not isinstance(value, set):
             return TypeCheck(
                 success=False,
-                description='Value should be a set, got a{value_type}'.format(
+                description="Value should be a set, got a{value_type}".format(
                     value_type=type(value)
                 ),
             )
@@ -59,7 +59,7 @@ class _TypedPythonSet(DagsterType):
 
     @property
     def display_name(self):
-        return 'Set[{}]'.format(self.item_type.display_name)
+        return "Set[{}]".format(self.item_type.display_name)
 
     @property
     def inner_types(self):
@@ -75,7 +75,7 @@ def create_typed_runtime_set(item_dagster_type):
 
     check.invariant(
         not item_dagster_type.kind == DagsterTypeKind.NOTHING,
-        'Cannot create the runtime type Set[Nothing]. Use List type for fan-in.',
+        "Cannot create the runtime type Set[Nothing]. Use List type for fan-in.",
     )
 
     return _TypedPythonSet(item_dagster_type)

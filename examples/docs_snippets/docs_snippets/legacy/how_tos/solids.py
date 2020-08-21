@@ -80,7 +80,7 @@ def multiple_output_solid(context):
 def x_solid(
     arg, name="default_name", input_defs=None, **kwargs,
 ):
-    '''
+    """
     Args:
         args (any): One or more arguments used to generate the nwe solid
         name (str): The name of the new solid.
@@ -88,9 +88,9 @@ def x_solid(
 
     Returns:
         function: The new solid.
-    '''
+    """
 
-    @solid(name=name, input_defs=input_defs or [InputDefinition('start', Nothing)], **kwargs)
+    @solid(name=name, input_defs=input_defs or [InputDefinition("start", Nothing)], **kwargs)
     def _x_solid(context):
         # Solid logic here
         pass

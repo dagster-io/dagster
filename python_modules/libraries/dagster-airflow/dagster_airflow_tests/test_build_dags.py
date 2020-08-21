@@ -8,7 +8,7 @@ from dagster_airflow_tests.marks import requires_airflow_db
 
 @requires_airflow_db
 def test_build_dags(clean_airflow_home):
-    '''This test generates Airflow DAGs for several pipelines in examples/toys and writes those DAGs
+    """This test generates Airflow DAGs for several pipelines in examples/toys and writes those DAGs
     to $AIRFLOW_HOME/dags.
 
     By invoking DagBag() below, an Airflow DAG refresh is triggered. If there are any failures in
@@ -16,21 +16,21 @@ def test_build_dags(clean_airflow_home):
 
     By exercising this path, we ensure that our codegen continues to generate valid Airflow DAGs,
     and that Airflow is able to successfully parse our DAGs.
-    '''
+    """
     runner = CliRunner()
     cli_args_to_test = [
-        ['--module-name', 'dagster_test.toys.log_spew', '--pipeline-name', 'log_spew'],
-        ['--module-name', 'dagster_test.toys.many_events', '--pipeline-name', 'many_events'],
+        ["--module-name", "dagster_test.toys.log_spew", "--pipeline-name", "log_spew"],
+        ["--module-name", "dagster_test.toys.many_events", "--pipeline-name", "many_events"],
         [
-            '--module-name',
-            'dagster_test.toys.error_monster',
-            '--pipeline-name',
-            'error_monster',
-            '--preset',
-            'passing',
+            "--module-name",
+            "dagster_test.toys.error_monster",
+            "--pipeline-name",
+            "error_monster",
+            "--preset",
+            "passing",
         ],
-        ['--module-name', 'dagster_test.toys.resources', '--pipeline-name', 'resource_pipeline',],
-        ['--module-name', 'dagster_test.toys.sleepy', '--pipeline-name', 'sleepy_pipeline'],
+        ["--module-name", "dagster_test.toys.resources", "--pipeline-name", "resource_pipeline",],
+        ["--module-name", "dagster_test.toys.sleepy", "--pipeline-name", "sleepy_pipeline"],
     ]
 
     for args in cli_args_to_test:

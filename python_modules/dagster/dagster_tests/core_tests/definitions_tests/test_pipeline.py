@@ -36,19 +36,19 @@ def return_three():
     return 3
 
 
-@lambda_solid(input_defs=[InputDefinition('num')])
+@lambda_solid(input_defs=[InputDefinition("num")])
 def add_one(num):
     return num + 1
 
 
 def test_basic_use_case():
     pipeline_def = PipelineDefinition(
-        name='basic',
+        name="basic",
         solid_defs=[return_one, add_one],
-        dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
 
-    assert execute_pipeline(pipeline_def).result_for_solid('add_one').output_value() == 2
+    assert execute_pipeline(pipeline_def).result_for_solid("add_one").output_value() == 2
 
 
 def test_basic_use_case_with_dsl():
@@ -56,29 +56,29 @@ def test_basic_use_case_with_dsl():
     def test():
         return add_one(num=return_one())
 
-    assert execute_pipeline(test).result_for_solid('add_one').output_value() == 2
+    assert execute_pipeline(test).result_for_solid("add_one").output_value() == 2
 
 
 def test_two_inputs_without_dsl():
-    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
     pipeline_def = PipelineDefinition(
         solid_defs=[subtract, return_two, return_three],
         dependencies={
-            'subtract': {
-                'num_one': DependencyDefinition('return_two'),
-                'num_two': DependencyDefinition('return_three'),
+            "subtract": {
+                "num_one": DependencyDefinition("return_two"),
+                "num_two": DependencyDefinition("return_three"),
             }
         },
     )
 
-    assert execute_pipeline(pipeline_def).result_for_solid('subtract').output_value() == -1
+    assert execute_pipeline(pipeline_def).result_for_solid("subtract").output_value() == -1
 
 
 def test_two_inputs_with_dsl():
-    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -86,24 +86,24 @@ def test_two_inputs_with_dsl():
     def test():
         return subtract(num_one=return_two(), num_two=return_three())
 
-    assert execute_pipeline(test).result_for_solid('subtract').output_value() == -1
+    assert execute_pipeline(test).result_for_solid("subtract").output_value() == -1
 
 
 def test_basic_aliasing_with_dsl():
     @pipeline
     def test():
-        return add_one.alias('renamed')(num=return_one())
+        return add_one.alias("renamed")(num=return_one())
 
-    assert execute_pipeline(test).result_for_solid('renamed').output_value() == 2
+    assert execute_pipeline(test).result_for_solid("renamed").output_value() == 2
 
 
 def test_diamond_graph():
-    @solid(output_defs=[OutputDefinition(name='value_one'), OutputDefinition(name='value_two')])
+    @solid(output_defs=[OutputDefinition(name="value_one"), OutputDefinition(name="value_two")])
     def emit_values(_context):
-        yield Output(1, 'value_one')
-        yield Output(2, 'value_two')
+        yield Output(1, "value_one")
+        yield Output(2, "value_two")
 
-    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -111,12 +111,12 @@ def test_diamond_graph():
     def diamond_pipeline():
         value_one, value_two = emit_values()
         return subtract(
-            num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two)
+            num_one=add_one(num=value_one), num_two=add_one.alias("renamed")(num=value_two)
         )
 
     result = execute_pipeline(diamond_pipeline)
 
-    assert result.result_for_solid('subtract').output_value() == -1
+    assert result.result_for_solid("subtract").output_value() == -1
 
 
 def test_two_cliques():
@@ -126,8 +126,8 @@ def test_two_cliques():
 
     result = execute_pipeline(diamond_pipeline)
 
-    assert result.result_for_solid('return_one').output_value() == 1
-    assert result.result_for_solid('return_two').output_value() == 2
+    assert result.result_for_solid("return_one").output_value() == 1
+    assert result.result_for_solid("return_two").output_value() == 2
 
 
 def test_deep_graph():
@@ -135,23 +135,23 @@ def test_deep_graph():
     def download_num(context):
         return context.solid_config
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def unzip_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def ingest_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def subsample_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def load_num(num):
         return num + 3
 
@@ -163,9 +163,9 @@ def test_deep_graph():
             )
         )
 
-    result = execute_pipeline(test, {'solids': {'download_num': {'config': 123}}})
-    assert result.result_for_solid('canonicalize_num').output_value() == 123
-    assert result.result_for_solid('load_num').output_value() == 126
+    result = execute_pipeline(test, {"solids": {"download_num": {"config": 123}}})
+    assert result.result_for_solid("canonicalize_num").output_value() == 123
+    assert result.result_for_solid("load_num").output_value() == 126
 
 
 def test_unconfigurable_inputs_pipeline():
@@ -173,7 +173,7 @@ def test_unconfigurable_inputs_pipeline():
     class NewType(object):
         pass
 
-    @lambda_solid(input_defs=[InputDefinition('_', NewType)])
+    @lambda_solid(input_defs=[InputDefinition("_", NewType)])
     def noop(_):
         pass
 
@@ -185,11 +185,11 @@ def test_unconfigurable_inputs_pipeline():
 
 
 def test_dupe_defs_fail():
-    @lambda_solid(name='same')
+    @lambda_solid(name="same")
     def noop():
         pass
 
-    @lambda_solid(name='same')
+    @lambda_solid(name="same")
     def noop2():
         pass
 
@@ -201,7 +201,7 @@ def test_dupe_defs_fail():
             noop2()
 
     with pytest.raises(DagsterInvalidDefinitionError):
-        PipelineDefinition(name='dupes', solid_defs=[noop, noop2])
+        PipelineDefinition(name="dupes", solid_defs=[noop, noop2])
 
 
 def test_composite_dupe_defs_fail():
@@ -209,13 +209,13 @@ def test_composite_dupe_defs_fail():
     def noop():
         pass
 
-    @composite_solid(name='same')
+    @composite_solid(name="same")
     def composite_noop():
         noop()
         noop()
         noop()
 
-    @composite_solid(name='same')
+    @composite_solid(name="same")
     def composite_noop2():
         noop()
 
@@ -236,15 +236,15 @@ def test_composite_dupe_defs_fail():
             composite_noop2()
 
     with pytest.raises(DagsterInvalidDefinitionError):
-        PipelineDefinition(name='dupes', solid_defs=[top])
+        PipelineDefinition(name="dupes", solid_defs=[top])
 
 
 def test_two_inputs_with_reversed_input_defs_and_dsl():
-    @solid(input_defs=[InputDefinition('num_two'), InputDefinition('num_one')])
+    @solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
     def subtract_ctx(_context, num_one, num_two):
         return num_one - num_two
 
-    @lambda_solid(input_defs=[InputDefinition('num_two'), InputDefinition('num_one')])
+    @lambda_solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -255,14 +255,14 @@ def test_two_inputs_with_reversed_input_defs_and_dsl():
         subtract(two, three)
         subtract_ctx(two, three)
 
-    assert execute_pipeline(test).result_for_solid('subtract').output_value() == -1
-    assert execute_pipeline(test).result_for_solid('subtract_ctx').output_value() == -1
+    assert execute_pipeline(test).result_for_solid("subtract").output_value() == -1
+    assert execute_pipeline(test).result_for_solid("subtract_ctx").output_value() == -1
 
 
 def test_single_non_positional_input_use():
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def add_one_kw(**kwargs):
-        return kwargs['num'] + 1
+        return kwargs["num"] + 1
 
     @pipeline
     def test():
@@ -270,13 +270,13 @@ def test_single_non_positional_input_use():
         # but since there is only one it is unambiguous
         add_one_kw(return_two())
 
-    assert execute_pipeline(test).result_for_solid('add_one_kw').output_value() == 3
+    assert execute_pipeline(test).result_for_solid("add_one_kw").output_value() == 3
 
 
 def test_single_positional_single_kwarg_input_use():
-    @lambda_solid(input_defs=[InputDefinition('num_two'), InputDefinition('num_one')])
+    @lambda_solid(input_defs=[InputDefinition("num_two"), InputDefinition("num_one")])
     def subtract_kw(num_one, **kwargs):
-        return num_one - kwargs['num_two']
+        return num_one - kwargs["num_two"]
 
     @pipeline
     def test():
@@ -285,21 +285,21 @@ def test_single_positional_single_kwarg_input_use():
         # since the second argument must be the one kwarg
         subtract_kw(return_two(), return_three())
 
-    assert execute_pipeline(test).result_for_solid('subtract_kw').output_value() == -1
+    assert execute_pipeline(test).result_for_solid("subtract_kw").output_value() == -1
 
 
 def test_bad_positional_input_use():
     @lambda_solid(
         input_defs=[
-            InputDefinition('num_two'),
-            InputDefinition('num_one'),
-            InputDefinition('num_three'),
+            InputDefinition("num_two"),
+            InputDefinition("num_one"),
+            InputDefinition("num_three"),
         ]
     )
     def add_kw(num_one, **kwargs):
-        return num_one + kwargs['num_two'] + kwargs['num_three']
+        return num_one + kwargs["num_two"] + kwargs["num_three"]
 
-    with pytest.raises(DagsterInvalidDefinitionError, match='Use keyword args instead'):
+    with pytest.raises(DagsterInvalidDefinitionError, match="Use keyword args instead"):
 
         @pipeline
         def _fail():
@@ -312,5 +312,5 @@ def test_bad_positional_input_use():
 def test_nameless():
     noname = PipelineDefinition([return_one])
 
-    assert noname.name == '<<unnamed>>'
-    assert noname.display_name == '<<unnamed>>'
+    assert noname.name == "<<unnamed>>"
+    assert noname.display_name == "<<unnamed>>"

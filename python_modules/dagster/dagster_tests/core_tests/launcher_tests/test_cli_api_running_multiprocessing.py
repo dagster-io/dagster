@@ -31,13 +31,13 @@ from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipel
 
 @dagster_type_loader(String)
 def df_input_schema(_context, path):
-    with open(path, 'r') as fd:
+    with open(path, "r") as fd:
         return [OrderedDict(sorted(x.items(), key=lambda x: x[0])) for x in csv.DictReader(fd)]
 
 
 @dagster_type_materializer(String)
 def df_output_schema(_context, path, value):
-    with open(path, 'w') as fd:
+    with open(path, "w") as fd:
         writer = csv.DictWriter(fd, fieldnames=value[0].keys())
         writer.writeheader()
         writer.writerows(rowdicts=value)
@@ -47,33 +47,33 @@ def df_output_schema(_context, path, value):
 
 PoorMansDataFrame = PythonObjectDagsterType(
     python_type=list,
-    name='PoorMansDataFrame',
+    name="PoorMansDataFrame",
     loader=df_input_schema,
     materializer=df_output_schema,
 )
 
 
 @lambda_solid(
-    input_defs=[InputDefinition('num', PoorMansDataFrame)],
+    input_defs=[InputDefinition("num", PoorMansDataFrame)],
     output_def=OutputDefinition(PoorMansDataFrame),
 )
 def sum_solid(num):
     sum_df = deepcopy(num)
     for x in sum_df:
-        x['sum'] = x['num1'] + x['num2']
+        x["sum"] = x["num1"] + x["num2"]
     return sum_df
 
 
 @lambda_solid(
-    input_defs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
     output_def=OutputDefinition(PoorMansDataFrame),
 )
 def error_solid(sum_df):  # pylint: disable=W0613
-    raise Exception('foo')
+    raise Exception("foo")
 
 
 @lambda_solid(
-    input_defs=[InputDefinition('sum_df', PoorMansDataFrame)],
+    input_defs=[InputDefinition("sum_df", PoorMansDataFrame)],
     output_def=OutputDefinition(PoorMansDataFrame),
 )
 def crashy_solid(sum_df):  # pylint: disable=W0613
@@ -95,14 +95,14 @@ def crashy_pipeline():
     crashy_solid(sum_solid())
 
 
-@solid(config_schema={'foo': Field(String)})
+@solid(config_schema={"foo": Field(String)})
 def node_a(context):
-    return context.solid_config['foo']
+    return context.solid_config["foo"]
 
 
-@solid(config_schema={'bar': Int})
+@solid(config_schema={"bar": Int})
 def node_b(context, input_):
-    return input_ * context.solid_config['bar']
+    return input_ * context.solid_config["bar"]
 
 
 @composite_solid
@@ -117,10 +117,10 @@ def composite_pipeline():
 
 @composite_solid(
     config_fn=lambda cfg: {
-        'node_a': {'config': {'foo': cfg['foo']}},
-        'node_b': {'config': {'bar': cfg['bar']}},
+        "node_a": {"config": {"foo": cfg["foo"]}},
+        "node_b": {"config": {"bar": cfg["bar"]}},
     },
-    config_schema={'foo': Field(String), 'bar': Int},
+    config_schema={"foo": Field(String), "bar": Int},
 )
 def composite_with_nested_config_solid_and_config_mapping():
     return node_b(node_a())
@@ -142,7 +142,7 @@ def get_events_of_type(events, event_type):
 def test_works_in_memory():
 
     run_config = {
-        'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
+        "solids": {"sum_solid": {"inputs": {"num": file_relative_path(__file__, "data/num.csv")}}}
     }
     assert execute_pipeline(passing_pipeline, run_config).success
 
@@ -179,7 +179,7 @@ def _execute_in_launcher(instance, pipeline_def, run_config, solid_selection=Non
 
 def test_running():
     run_config = {
-        'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
+        "solids": {"sum_solid": {"inputs": {"num": file_relative_path(__file__, "data/num.csv")}}}
     }
 
     with instance_for_test() as instance:
@@ -203,8 +203,8 @@ def test_running():
 def test_failing():
     with instance_for_test() as instance:
         run_config = {
-            'solids': {
-                'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}
+            "solids": {
+                "sum_solid": {"inputs": {"num": file_relative_path(__file__, "data/num.csv")}}
             }
         }
 
@@ -216,7 +216,7 @@ def test_failing():
 
 def test_execution_crash():
     run_config = {
-        'solids': {'sum_solid': {'inputs': {'num': file_relative_path(__file__, 'data/num.csv')}}}
+        "solids": {"sum_solid": {"inputs": {"num": file_relative_path(__file__, "data/num.csv")}}}
     }
 
     with instance_for_test() as instance:
@@ -229,7 +229,7 @@ def test_execution_crash():
         ]  # last message is pipeline failure, second to last is...
 
         assert crash_log.message.startswith(
-            '[CliApiRunLauncher] Pipeline execution process for {run_id} unexpectedly exited'.format(
+            "[CliApiRunLauncher] Pipeline execution process for {run_id} unexpectedly exited".format(
                 run_id=pipeline_run.run_id
             )
         )
@@ -237,9 +237,9 @@ def test_execution_crash():
 
 def test_multiprocessing_execution_for_composite_solid():
     run_config = {
-        'solids': {
-            'composite_with_nested_config_solid': {
-                'solids': {'node_a': {'config': {'foo': 'baz'}}, 'node_b': {'config': {'bar': 3}}}
+        "solids": {
+            "composite_with_nested_config_solid": {
+                "solids": {"node_a": {"config": {"foo": "baz"}}, "node_b": {"config": {"bar": 3}}}
             }
         }
     }
@@ -251,13 +251,13 @@ def test_multiprocessing_execution_for_composite_solid():
 
 def test_multiprocessing_execution_for_composite_solid_multiprocess_executor():
     run_config = {
-        'solids': {
-            'composite_with_nested_config_solid': {
-                'solids': {'node_a': {'config': {'foo': 'baz'}}, 'node_b': {'config': {'bar': 3}}}
+        "solids": {
+            "composite_with_nested_config_solid": {
+                "solids": {"node_a": {"config": {"foo": "baz"}}, "node_b": {"config": {"bar": 3}}}
             }
         },
-        'execution': {'multiprocess': {}},
-        'storage': {'filesystem': {}},
+        "execution": {"multiprocess": {}},
+        "storage": {"filesystem": {}},
     }
 
     with instance_for_test() as instance:
@@ -267,9 +267,9 @@ def test_multiprocessing_execution_for_composite_solid_multiprocess_executor():
 
 def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
     run_config = {
-        'solids': {
-            'composite_with_nested_config_solid_and_config_mapping': {
-                'config': {'foo': 'baz', 'bar': 3}
+        "solids": {
+            "composite_with_nested_config_solid_and_config_mapping": {
+                "config": {"foo": "baz", "bar": 3}
             }
         }
     }
@@ -282,13 +282,13 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping():
 
 def test_multiprocessing_execution_for_composite_solid_with_config_mapping_with_multiprocess():
     run_config = {
-        'solids': {
-            'composite_with_nested_config_solid_and_config_mapping': {
-                'config': {'foo': 'baz', 'bar': 3}
+        "solids": {
+            "composite_with_nested_config_solid_and_config_mapping": {
+                "config": {"foo": "baz", "bar": 3}
             },
         },
-        'execution': {'multiprocess': {}},
-        'storage': {'filesystem': {}},
+        "execution": {"multiprocess": {}},
+        "storage": {"filesystem": {}},
     }
     with instance_for_test() as instance:
         pipeline_run = _execute_in_launcher(
@@ -297,10 +297,10 @@ def test_multiprocessing_execution_for_composite_solid_with_config_mapping_with_
         assert instance.get_run_by_id(pipeline_run.run_id).status == PipelineRunStatus.SUCCESS
 
 
-@solid(config_schema={'file': Field(String)})
+@solid(config_schema={"file": Field(String)})
 def loop(context):
-    with open(context.solid_config['file'], 'w') as ff:
-        ff.write('yup')
+    with open(context.solid_config["file"], "w") as ff:
+        ff.write("yup")
 
     while True:
         time.sleep(0.1)
@@ -314,7 +314,7 @@ def infinite_loop_pipeline():
 def test_has_run_query_and_terminate():
     with instance_for_test() as instance:
         with safe_tempfile_path() as path:
-            run_config = {'solids': {'loop': {'config': {'file': path}}}}
+            run_config = {"solids": {"loop": {"config": {"file": path}}}}
 
             created_pipeline_run = instance.create_run_for_pipeline(
                 pipeline_def=infinite_loop_pipeline, run_config=run_config,
@@ -344,7 +344,7 @@ def test_two_runs_running():
     with safe_tempfile_path() as file_one, safe_tempfile_path() as file_two, instance_for_test() as instance:
         pipeline_run_one = instance.create_run_for_pipeline(
             pipeline_def=infinite_loop_pipeline,
-            run_config={'solids': {'loop': {'config': {'file': file_one}}}},
+            run_config={"solids": {"loop": {"config": {"file": file_one}}}},
         )
         instance.launch_run(
             pipeline_run_one.run_id, _external_pipeline_from_def(infinite_loop_pipeline)
@@ -352,7 +352,7 @@ def test_two_runs_running():
 
         pipeline_run_two = instance.create_run_for_pipeline(
             pipeline_def=infinite_loop_pipeline,
-            run_config={'solids': {'loop': {'config': {'file': file_two}}}},
+            run_config={"solids": {"loop": {"config": {"file": file_two}}}},
         )
 
         instance.launch_run(

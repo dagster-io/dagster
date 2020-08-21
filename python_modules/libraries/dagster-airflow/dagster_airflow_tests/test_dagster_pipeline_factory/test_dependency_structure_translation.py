@@ -10,14 +10,14 @@ from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import serialize_pp
 
 default_args = {
-    'owner': 'dagster',
-    'start_date': days_ago(1),
+    "owner": "dagster",
+    "start_date": days_ago(1),
 }
 
 
 def test_one_task_dag(snapshot):
-    dag = DAG(dag_id='one_task_dag', default_args=default_args, schedule_interval=None,)
-    dummy_operator = DummyOperator(task_id='dummy_operator', dag=dag,)
+    dag = DAG(dag_id="one_task_dag", default_args=default_args, schedule_interval=None,)
+    dummy_operator = DummyOperator(task_id="dummy_operator", dag=dag,)
 
     snapshot.assert_match(
         serialize_pp(
@@ -29,9 +29,9 @@ def test_one_task_dag(snapshot):
 
 
 def test_two_task_dag_no_dep(snapshot):
-    dag = DAG(dag_id='two_task_dag_no_dep', default_args=default_args, schedule_interval=None,)
-    dummy_operator_1 = DummyOperator(task_id='dummy_operator_1', dag=dag,)
-    dummy_operator_2 = DummyOperator(task_id='dummy_operator_2', dag=dag,)
+    dag = DAG(dag_id="two_task_dag_no_dep", default_args=default_args, schedule_interval=None,)
+    dummy_operator_1 = DummyOperator(task_id="dummy_operator_1", dag=dag,)
+    dummy_operator_2 = DummyOperator(task_id="dummy_operator_2", dag=dag,)
 
     snapshot.assert_match(
         serialize_pp(
@@ -43,9 +43,9 @@ def test_two_task_dag_no_dep(snapshot):
 
 
 def test_two_task_dag_with_dep(snapshot):
-    dag = DAG(dag_id='two_task_dag_with_dep', default_args=default_args, schedule_interval=None,)
-    dummy_operator_1 = DummyOperator(task_id='dummy_operator_1', dag=dag,)
-    dummy_operator_2 = DummyOperator(task_id='dummy_operator_2', dag=dag,)
+    dag = DAG(dag_id="two_task_dag_with_dep", default_args=default_args, schedule_interval=None,)
+    dummy_operator_1 = DummyOperator(task_id="dummy_operator_1", dag=dag,)
+    dummy_operator_2 = DummyOperator(task_id="dummy_operator_2", dag=dag,)
     dummy_operator_1 >> dummy_operator_2
 
     snapshot.assert_match(
@@ -58,11 +58,11 @@ def test_two_task_dag_with_dep(snapshot):
 
 
 def test_diamond_task_dag(snapshot):
-    dag = DAG(dag_id='diamond_task_dag', default_args=default_args, schedule_interval=None,)
-    dummy_operator_1 = DummyOperator(task_id='dummy_operator_1', dag=dag,)
-    dummy_operator_2 = DummyOperator(task_id='dummy_operator_2', dag=dag,)
-    dummy_operator_3 = DummyOperator(task_id='dummy_operator_3', dag=dag,)
-    dummy_operator_4 = DummyOperator(task_id='dummy_operator_4', dag=dag,)
+    dag = DAG(dag_id="diamond_task_dag", default_args=default_args, schedule_interval=None,)
+    dummy_operator_1 = DummyOperator(task_id="dummy_operator_1", dag=dag,)
+    dummy_operator_2 = DummyOperator(task_id="dummy_operator_2", dag=dag,)
+    dummy_operator_3 = DummyOperator(task_id="dummy_operator_3", dag=dag,)
+    dummy_operator_4 = DummyOperator(task_id="dummy_operator_4", dag=dag,)
     dummy_operator_1 >> dummy_operator_2
     dummy_operator_1 >> dummy_operator_3
     dummy_operator_2 >> dummy_operator_4
@@ -78,11 +78,11 @@ def test_diamond_task_dag(snapshot):
 
 
 def test_multi_root_dag(snapshot):
-    dag = DAG(dag_id='multi_root_dag', default_args=default_args, schedule_interval=None,)
-    dummy_operator_1 = DummyOperator(task_id='dummy_operator_1', dag=dag,)
-    dummy_operator_2 = DummyOperator(task_id='dummy_operator_2', dag=dag,)
-    dummy_operator_3 = DummyOperator(task_id='dummy_operator_3', dag=dag,)
-    dummy_operator_4 = DummyOperator(task_id='dummy_operator_4', dag=dag,)
+    dag = DAG(dag_id="multi_root_dag", default_args=default_args, schedule_interval=None,)
+    dummy_operator_1 = DummyOperator(task_id="dummy_operator_1", dag=dag,)
+    dummy_operator_2 = DummyOperator(task_id="dummy_operator_2", dag=dag,)
+    dummy_operator_3 = DummyOperator(task_id="dummy_operator_3", dag=dag,)
+    dummy_operator_4 = DummyOperator(task_id="dummy_operator_4", dag=dag,)
     dummy_operator_1 >> dummy_operator_4
     dummy_operator_2 >> dummy_operator_4
     dummy_operator_3 >> dummy_operator_4
@@ -98,11 +98,11 @@ def test_multi_root_dag(snapshot):
 
 
 def test_multi_leaf_dag(snapshot):
-    dag = DAG(dag_id='multi_leaf_dag', default_args=default_args, schedule_interval=None,)
-    dummy_operator_1 = DummyOperator(task_id='dummy_operator_1', dag=dag,)
-    dummy_operator_2 = DummyOperator(task_id='dummy_operator_2', dag=dag,)
-    dummy_operator_3 = DummyOperator(task_id='dummy_operator_3', dag=dag,)
-    dummy_operator_4 = DummyOperator(task_id='dummy_operator_4', dag=dag,)
+    dag = DAG(dag_id="multi_leaf_dag", default_args=default_args, schedule_interval=None,)
+    dummy_operator_1 = DummyOperator(task_id="dummy_operator_1", dag=dag,)
+    dummy_operator_2 = DummyOperator(task_id="dummy_operator_2", dag=dag,)
+    dummy_operator_3 = DummyOperator(task_id="dummy_operator_3", dag=dag,)
+    dummy_operator_4 = DummyOperator(task_id="dummy_operator_4", dag=dag,)
     dummy_operator_1 >> dummy_operator_2
     dummy_operator_1 >> dummy_operator_3
     dummy_operator_1 >> dummy_operator_4

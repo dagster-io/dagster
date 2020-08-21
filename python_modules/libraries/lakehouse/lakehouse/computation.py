@@ -3,19 +3,19 @@ from collections import namedtuple
 from dagster import check
 
 
-class AssetDependency(namedtuple('_AssetDependency', 'asset in_memory_type')):
-    '''An asset dependency describes how the contents of another asset are provided to a
+class AssetDependency(namedtuple("_AssetDependency", "asset in_memory_type")):
+    """An asset dependency describes how the contents of another asset are provided to a
     Computation's compute_fn.
 
     Attributes:
         asset (Asset): The asset that we depend on.
         in_memory_type (Type): The type, e.g. pandas.DataFrame, that the asset's contents should be
             hydrated into to be passed as the compute_fn.
-    '''
+    """
 
 
-class Computation(namedtuple('_Computation', 'compute_fn deps output_in_memory_type')):
-    '''A description of the computation responsible for producing an asset.
+class Computation(namedtuple("_Computation", "compute_fn deps output_in_memory_type")):
+    """A description of the computation responsible for producing an asset.
 
     E.g. a SQL select statement or python code that trains an ML model.
 
@@ -31,14 +31,14 @@ class Computation(namedtuple('_Computation', 'compute_fn deps output_in_memory_t
             to produce the asset's contents, keyed by their arg names in the compute_fn
             definition.
         output_in_memory_type (Type): The python type that the compute_fn will return.
-    '''
+    """
 
     def __new__(cls, compute_fn, deps, output_in_memory_type):
         return super(Computation, cls).__new__(
             cls,
-            compute_fn=check.callable_param(compute_fn, 'compute_fn'),
-            deps=check.dict_param(deps, 'deps', key_type=str, value_type=AssetDependency),
+            compute_fn=check.callable_param(compute_fn, "compute_fn"),
+            deps=check.dict_param(deps, "deps", key_type=str, value_type=AssetDependency),
             output_in_memory_type=check.inst_param(
-                output_in_memory_type, 'output_in_memory_type', type
+                output_in_memory_type, "output_in_memory_type", type
             ),
         )

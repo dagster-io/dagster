@@ -20,13 +20,13 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
         return ExplodingRunLauncher(inst_data=inst_data)
 
     def launch_run(self, instance, run, external_pipeline):
-        raise NotImplementedError('The entire purpose of this is to throw on launch')
+        raise NotImplementedError("The entire purpose of this is to throw on launch")
 
     def join(self):
-        '''Nothing to join on since all executions are synchronous.'''
+        """Nothing to join on since all executions are synchronous."""
 
     def can_terminate(self, run_id):
         return False
 
     def terminate(self, run_id):
-        check.not_implemented('Termination not supported')
+        check.not_implemented("Termination not supported")

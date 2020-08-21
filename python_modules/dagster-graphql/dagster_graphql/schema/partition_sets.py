@@ -20,29 +20,29 @@ from dagster.utils import merge_dicts
 
 class DauphinPartition(dauphin.ObjectType):
     class Meta(object):
-        name = 'Partition'
+        name = "Partition"
 
     name = dauphin.NonNull(dauphin.String)
     partition_set_name = dauphin.NonNull(dauphin.String)
     solid_selection = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
-    runConfigOrError = dauphin.NonNull('PartitionRunConfigOrError')
-    tagsOrError = dauphin.NonNull('PartitionTagsOrError')
+    runConfigOrError = dauphin.NonNull("PartitionRunConfigOrError")
+    tagsOrError = dauphin.NonNull("PartitionTagsOrError")
     runs = dauphin.Field(
-        dauphin.non_null_list('PipelineRun'),
-        filter=dauphin.Argument('PipelineRunsFilter'),
+        dauphin.non_null_list("PipelineRun"),
+        filter=dauphin.Argument("PipelineRunsFilter"),
         cursor=dauphin.String(),
         limit=dauphin.Int(),
     )
 
     def __init__(self, external_repository_handle, external_partition_set, partition_name):
         self._external_repository_handle = check.inst_param(
-            external_repository_handle, 'external_respository_handle', RepositoryHandle
+            external_repository_handle, "external_respository_handle", RepositoryHandle
         )
         self._external_partition_set = check.inst_param(
-            external_partition_set, 'external_partition_set', ExternalPartitionSet
+            external_partition_set, "external_partition_set", ExternalPartitionSet
         )
-        self._partition_name = check.str_param(partition_name, 'partition_name')
+        self._partition_name = check.str_param(partition_name, "partition_name")
 
         super(DauphinPartition, self).__init__(
             name=partition_name,
@@ -68,10 +68,10 @@ class DauphinPartition(dauphin.ObjectType):
         )
 
     def resolve_runs(self, graphene_info, **kwargs):
-        filters = kwargs.get('filter')
+        filters = kwargs.get("filter")
         partition_tags = {
-            'dagster/partition_set': self._external_partition_set.name,
-            'dagster/partition': self._partition_name,
+            "dagster/partition_set": self._external_partition_set.name,
+            "dagster/partition": self._partition_name,
         }
         if filters is not None:
             filters = filters.to_selector()
@@ -85,39 +85,39 @@ class DauphinPartition(dauphin.ObjectType):
             runs_filter = PipelineRunsFilter(tags=partition_tags)
 
         return get_runs(
-            graphene_info, runs_filter, cursor=kwargs.get('cursor'), limit=kwargs.get('limit')
+            graphene_info, runs_filter, cursor=kwargs.get("cursor"), limit=kwargs.get("limit")
         )
 
 
 class DauphinPartitions(dauphin.ObjectType):
     class Meta(object):
-        name = 'Partitions'
+        name = "Partitions"
 
-    results = dauphin.non_null_list('Partition')
+    results = dauphin.non_null_list("Partition")
 
 
 class DauphinPartitionSet(dauphin.ObjectType):
     class Meta(object):
-        name = 'PartitionSet'
+        name = "PartitionSet"
 
     name = dauphin.NonNull(dauphin.String)
     pipeline_name = dauphin.NonNull(dauphin.String)
     solid_selection = dauphin.List(dauphin.NonNull(dauphin.String))
     mode = dauphin.NonNull(dauphin.String)
     partitionsOrError = dauphin.Field(
-        dauphin.NonNull('PartitionsOrError'),
+        dauphin.NonNull("PartitionsOrError"),
         cursor=dauphin.String(),
         limit=dauphin.Int(),
         reverse=dauphin.Boolean(),
     )
-    partition = dauphin.Field('Partition', partition_name=dauphin.NonNull(dauphin.String))
+    partition = dauphin.Field("Partition", partition_name=dauphin.NonNull(dauphin.String))
 
     def __init__(self, external_repository_handle, external_partition_set):
         self._external_repository_handle = check.inst_param(
-            external_repository_handle, 'external_respository_handle', RepositoryHandle
+            external_repository_handle, "external_respository_handle", RepositoryHandle
         )
         self._external_partition_set = check.inst_param(
-            external_partition_set, 'external_partition_set', ExternalPartitionSet
+            external_partition_set, "external_partition_set", ExternalPartitionSet
         )
 
         super(DauphinPartitionSet, self).__init__(
@@ -134,7 +134,7 @@ class DauphinPartitionSet(dauphin.ObjectType):
             self._external_partition_set,
             cursor=kwargs.get("cursor"),
             limit=kwargs.get("limit"),
-            reverse=kwargs.get('reverse'),
+            reverse=kwargs.get("reverse"),
         )
 
     def resolve_partition(self, graphene_info, partition_name):
@@ -148,50 +148,50 @@ class DauphinPartitionSet(dauphin.ObjectType):
 
 class DapuphinPartitionSetOrError(dauphin.Union):
     class Meta(object):
-        name = 'PartitionSetOrError'
-        types = ('PartitionSet', DauphinPartitionSetNotFoundError, DauphinPythonError)
+        name = "PartitionSetOrError"
+        types = ("PartitionSet", DauphinPartitionSetNotFoundError, DauphinPythonError)
 
 
 class DauphinPartitionSets(dauphin.ObjectType):
     class Meta(object):
-        name = 'PartitionSets'
+        name = "PartitionSets"
 
-    results = dauphin.non_null_list('PartitionSet')
+    results = dauphin.non_null_list("PartitionSet")
 
 
 class DauphinPartitionTags(dauphin.ObjectType):
     class Meta(object):
-        name = 'PartitionTags'
+        name = "PartitionTags"
 
-    results = dauphin.non_null_list('PipelineTag')
+    results = dauphin.non_null_list("PipelineTag")
 
 
 class DauphinPartitionRunConfig(dauphin.ObjectType):
     class Meta(object):
-        name = 'PartitionRunConfig'
+        name = "PartitionRunConfig"
 
     yaml = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPartitionSetsOrError(dauphin.Union):
     class Meta(object):
-        name = 'PartitionSetsOrError'
+        name = "PartitionSetsOrError"
         types = (DauphinPartitionSets, DauphinPipelineNotFoundError, DauphinPythonError)
 
 
 class DauphinPartitionsOrError(dauphin.Union):
     class Meta(object):
-        name = 'PartitionsOrError'
+        name = "PartitionsOrError"
         types = (DauphinPartitions, DauphinPythonError)
 
 
 class DauphinPartitionTagsOrError(dauphin.Union):
     class Meta(object):
-        name = 'PartitionTagsOrError'
+        name = "PartitionTagsOrError"
         types = (DauphinPartitionTags, DauphinPythonError)
 
 
 class DauphinPartitionRunConfigOrError(dauphin.Union):
     class Meta(object):
-        name = 'PartitionRunConfigOrError'
+        name = "PartitionRunConfigOrError"
         types = (DauphinPartitionRunConfig, DauphinPythonError)

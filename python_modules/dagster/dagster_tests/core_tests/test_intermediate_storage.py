@@ -18,10 +18,10 @@ from dagster.utils.test import yield_empty_pipeline_context
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize(self, value, write_file_obj):
-        return write_file_obj.write(bytes(value.upper().encode('utf-8')))
+        return write_file_obj.write(bytes(value.upper().encode("utf-8")))
 
     def deserialize(self, read_file_obj):
-        return read_file_obj.read().decode('utf-8').lower()
+        return read_file_obj.read().decode("utf-8").lower()
 
 
 class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-init
@@ -34,7 +34,7 @@ class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disab
     def set_intermediate_object(
         cls, intermediate_storage, context, dagster_type, step_output_handle, value
     ):
-        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
         paths.append(value)
         mkdir_p(os.path.join(intermediate_storage.root, *paths))
 
@@ -42,12 +42,12 @@ class FancyStringFilesystemTypeStoragePlugin(TypeStoragePlugin):  # pylint:disab
     def get_intermediate_object(
         cls, intermediate_storage, context, dagster_type, step_output_handle
     ):
-        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
         return os.listdir(os.path.join(intermediate_storage.root, *paths))[0]
 
 
 LowercaseString = create_any_type(
-    'LowercaseString', serialization_strategy=UppercaseSerializationStrategy('uppercase')
+    "LowercaseString", serialization_strategy=UppercaseSerializationStrategy("uppercase")
 )
 
 
@@ -67,25 +67,25 @@ def test_file_system_intermediate_storage():
 
     assert (
         intermediate_storage.set_intermediate(
-            None, Int, StepOutputHandle('return_one.compute'), 21
+            None, Int, StepOutputHandle("return_one.compute"), 21
         ).op
         == ObjectStoreOperationType.SET_OBJECT
     )
 
     assert (
-        intermediate_storage.rm_intermediate(None, StepOutputHandle('return_one.compute')).op
+        intermediate_storage.rm_intermediate(None, StepOutputHandle("return_one.compute")).op
         == ObjectStoreOperationType.RM_OBJECT
     )
 
     assert (
         intermediate_storage.set_intermediate(
-            None, Int, StepOutputHandle('return_one.compute'), 42
+            None, Int, StepOutputHandle("return_one.compute"), 42
         ).op
         == ObjectStoreOperationType.SET_OBJECT
     )
 
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('return_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one.compute")).obj
         == 42
     )
 
@@ -94,13 +94,13 @@ def test_file_system_intermediate_storage_composite_types():
     _, _, intermediate_storage = define_intermediate_storage()
 
     assert intermediate_storage.set_intermediate(
-        None, List[Bool], StepOutputHandle('return_true_lst.compute'), [True]
+        None, List[Bool], StepOutputHandle("return_true_lst.compute"), [True]
     )
 
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle('return_true_lst.compute'))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_true_lst.compute"))
 
     assert intermediate_storage.get_intermediate(
-        None, List[Bool], StepOutputHandle('return_true_lst.compute')
+        None, List[Bool], StepOutputHandle("return_true_lst.compute")
     ).obj == [True]
 
 
@@ -108,20 +108,20 @@ def test_file_system_intermediate_storage_with_custom_serializer():
     run_id, instance, intermediate_storage = define_intermediate_storage()
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
         intermediate_storage.set_intermediate(
-            context, LowercaseString, StepOutputHandle('a.b'), 'bar'
+            context, LowercaseString, StepOutputHandle("a.b"), "bar"
         )
 
         with open(
-            os.path.join(intermediate_storage.root, 'intermediates', 'a.b', 'result'), 'rb'
+            os.path.join(intermediate_storage.root, "intermediates", "a.b", "result"), "rb"
         ) as fd:
-            assert fd.read().decode('utf-8') == 'BAR'
+            assert fd.read().decode("utf-8") == "BAR"
 
-        assert intermediate_storage.has_intermediate(context, StepOutputHandle('a.b'))
+        assert intermediate_storage.has_intermediate(context, StepOutputHandle("a.b"))
         assert (
             intermediate_storage.get_intermediate(
-                context, LowercaseString, StepOutputHandle('a.b')
+                context, LowercaseString, StepOutputHandle("a.b")
             ).obj
-            == 'bar'
+            == "bar"
         )
 
 
@@ -131,12 +131,12 @@ def test_file_system_intermediate_storage_composite_types_with_custom_serializer
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
 
         intermediate_storage.set_intermediate(
-            context, resolve_dagster_type(List[LowercaseString]), StepOutputHandle('baz'), ['list']
+            context, resolve_dagster_type(List[LowercaseString]), StepOutputHandle("baz"), ["list"]
         )
-        assert intermediate_storage.has_intermediate(context, StepOutputHandle('baz'))
+        assert intermediate_storage.has_intermediate(context, StepOutputHandle("baz"))
         assert intermediate_storage.get_intermediate(
-            context, resolve_dagster_type(List[Bool]), StepOutputHandle('baz')
-        ).obj == ['list']
+            context, resolve_dagster_type(List[Bool]), StepOutputHandle("baz")
+        ).obj == ["list"]
 
 
 def test_file_system_intermediate_storage_with_type_storage_plugin():
@@ -149,19 +149,19 @@ def test_file_system_intermediate_storage_with_type_storage_plugin():
     with yield_empty_pipeline_context(run_id=run_id, instance=instance) as context:
         try:
             intermediate_storage.set_intermediate(
-                context, RuntimeString, StepOutputHandle('obj_name'), 'hello'
+                context, RuntimeString, StepOutputHandle("obj_name"), "hello"
             )
 
-            assert intermediate_storage.has_intermediate(context, StepOutputHandle('obj_name'))
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle("obj_name"))
             assert (
                 intermediate_storage.get_intermediate(
-                    context, RuntimeString, StepOutputHandle('obj_name')
+                    context, RuntimeString, StepOutputHandle("obj_name")
                 )
-                == 'hello'
+                == "hello"
             )
 
         finally:
-            intermediate_storage.rm_intermediate(context, StepOutputHandle('obj_name'))
+            intermediate_storage.rm_intermediate(context, StepOutputHandle("obj_name"))
 
 
 def test_file_system_intermediate_storage_with_composite_type_storage_plugin():
@@ -174,7 +174,7 @@ def test_file_system_intermediate_storage_with_composite_type_storage_plugin():
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_storage.set_intermediate(
-                context, resolve_dagster_type(List[String]), StepOutputHandle('obj_name'), ['hello']
+                context, resolve_dagster_type(List[String]), StepOutputHandle("obj_name"), ["hello"]
             )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -182,8 +182,8 @@ def test_file_system_intermediate_storage_with_composite_type_storage_plugin():
             intermediate_storage.set_intermediate(
                 context,
                 resolve_dagster_type(Optional[String]),
-                StepOutputHandle('obj_name'),
-                ['hello'],
+                StepOutputHandle("obj_name"),
+                ["hello"],
             )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -191,8 +191,8 @@ def test_file_system_intermediate_storage_with_composite_type_storage_plugin():
             intermediate_storage.set_intermediate(
                 context,
                 resolve_dagster_type(List[Optional[String]]),
-                StepOutputHandle('obj_name'),
-                ['hello'],
+                StepOutputHandle("obj_name"),
+                ["hello"],
             )
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -200,6 +200,6 @@ def test_file_system_intermediate_storage_with_composite_type_storage_plugin():
             intermediate_storage.set_intermediate(
                 context,
                 resolve_dagster_type(Optional[List[String]]),
-                StepOutputHandle('obj_name'),
-                ['hello'],
+                StepOutputHandle("obj_name"),
+                ["hello"],
             )

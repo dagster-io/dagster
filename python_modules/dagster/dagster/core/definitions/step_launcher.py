@@ -11,14 +11,14 @@ from dagster.core.storage.pipeline_run import PipelineRun
 
 class StepRunRef(
     namedtuple(
-        '_StepRunRef',
-        'run_config pipeline_run run_id retries step_key recon_pipeline prior_attempts_count',
+        "_StepRunRef",
+        "run_config pipeline_run run_id retries step_key recon_pipeline prior_attempts_count",
     )
 ):
-    '''
+    """
     A serializable object that specifies what's needed to hydrate a step so that it can
     be executed in a process outside the plan process.
-    '''
+    """
 
     def __new__(
         cls,
@@ -32,28 +32,28 @@ class StepRunRef(
     ):
         return super(StepRunRef, cls).__new__(
             cls,
-            check.dict_param(run_config, 'run_config', key_type=str),
-            check.inst_param(pipeline_run, 'pipeline_run', PipelineRun),
-            check.str_param(run_id, 'run_id'),
-            check.inst_param(retries, 'retries', Retries),
-            check.str_param(step_key, 'step_key'),
-            check.inst_param(recon_pipeline, 'recon_pipeline', ReconstructablePipeline),
-            check.int_param(prior_attempts_count, 'prior_attempts_count'),
+            check.dict_param(run_config, "run_config", key_type=str),
+            check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            check.str_param(run_id, "run_id"),
+            check.inst_param(retries, "retries", Retries),
+            check.str_param(step_key, "step_key"),
+            check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline),
+            check.int_param(prior_attempts_count, "prior_attempts_count"),
         )
 
 
 class StepLauncher(six.with_metaclass(ABCMeta)):
-    '''
+    """
     A StepLauncher is responsible for executing steps, either in-process or in an external process.
-    '''
+    """
 
     @abstractmethod
     def launch_step(self, step_context, prior_attempts_count):
-        '''
+        """
         Args:
             step_context (SystemStepExecutionContext): The context that we're executing the step in.
             int: The number of times this step has been attempted in the same run.
 
         Returns:
             Iterator[DagsterEvent]: The events for the step.
-        '''
+        """

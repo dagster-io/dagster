@@ -4,6 +4,6 @@ from dagster.utils import frozendict
 
 
 def test_frozendict():
-    d = frozendict({'foo': 'bar'})
+    d = frozendict({"foo": "bar"})
     with pytest.raises(RuntimeError):
-        d['zip'] = 'zowie'
+        d["zip"] = "zowie"

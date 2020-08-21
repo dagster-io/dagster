@@ -12,46 +12,46 @@ from dagster.core.execution.retries import Retries
 from dagster.utils import frozentags
 from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
-DASK_RESOURCE_REQUIREMENTS_KEY = 'dagster-dask/resource_requirements'
+DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
 
 
 @executor(
-    name='dask',
+    name="dask",
     config_schema={
-        'cluster': Field(
+        "cluster": Field(
             Selector(
                 {
-                    'local': Field(
-                        Permissive(), is_required=False, description='Local cluster configuration.'
+                    "local": Field(
+                        Permissive(), is_required=False, description="Local cluster configuration."
                     ),
-                    'yarn': Field(
-                        Permissive(), is_required=False, description='YARN cluster configuration.'
+                    "yarn": Field(
+                        Permissive(), is_required=False, description="YARN cluster configuration."
                     ),
-                    'ssh': Field(
-                        Permissive(), is_required=False, description='SSH cluster configuration.'
+                    "ssh": Field(
+                        Permissive(), is_required=False, description="SSH cluster configuration."
                     ),
-                    'pbs': Field(
-                        Permissive(), is_required=False, description='PBS cluster configuration.'
+                    "pbs": Field(
+                        Permissive(), is_required=False, description="PBS cluster configuration."
                     ),
-                    'moab': Field(
-                        Permissive(), is_required=False, description='Moab cluster configuration.'
+                    "moab": Field(
+                        Permissive(), is_required=False, description="Moab cluster configuration."
                     ),
-                    'sge': Field(
-                        Permissive(), is_required=False, description='SGE cluster configuration.'
+                    "sge": Field(
+                        Permissive(), is_required=False, description="SGE cluster configuration."
                     ),
-                    'lsf': Field(
-                        Permissive(), is_required=False, description='LSF cluster configuration.'
+                    "lsf": Field(
+                        Permissive(), is_required=False, description="LSF cluster configuration."
                     ),
-                    'slurm': Field(
-                        Permissive(), is_required=False, description='SLURM cluster configuration.'
+                    "slurm": Field(
+                        Permissive(), is_required=False, description="SLURM cluster configuration."
                     ),
-                    'oar': Field(
-                        Permissive(), is_required=False, description='OAR cluster configuration.'
+                    "oar": Field(
+                        Permissive(), is_required=False, description="OAR cluster configuration."
                     ),
-                    'kube': Field(
+                    "kube": Field(
                         Permissive(),
                         is_required=False,
-                        description='Kubernetes cluster configuration.',
+                        description="Kubernetes cluster configuration.",
                     ),
                 }
             )
@@ -59,7 +59,7 @@ DASK_RESOURCE_REQUIREMENTS_KEY = 'dagster-dask/resource_requirements'
     },
 )
 def dask_executor(init_context):
-    '''Dask-based executor.
+    """Dask-based executor.
 
     The 'cluster' can be one of the following:
     ('local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube').
@@ -95,23 +95,23 @@ def dask_executor(init_context):
         def dask_enabled_pipeline():
             pass
 
-    '''
+    """
     check_cross_process_constraints(init_context)
-    ((cluster_type, cluster_configuration),) = init_context.executor_config['cluster'].items()
+    ((cluster_type, cluster_configuration),) = init_context.executor_config["cluster"].items()
     return DaskExecutor(cluster_type, cluster_configuration)
 
 
 def query_on_dask_worker(
     workspace, variables, dependencies, instance_ref=None
 ):  # pylint: disable=unused-argument
-    '''Note that we need to pass "dependencies" to ensure Dask sequences futures during task
+    """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
-    '''
+    """
     return execute_execute_plan_mutation(workspace, variables, instance_ref=instance_ref)
 
 
 def get_dask_resource_requirements(tags):
-    check.inst_param(tags, 'tags', frozentags)
+    check.inst_param(tags, "tags", frozentags)
     req_str = tags.get(DASK_RESOURCE_REQUIREMENTS_KEY)
     if req_str is not None:
         return seven.json.loads(req_str)
@@ -121,9 +121,9 @@ def get_dask_resource_requirements(tags):
 
 class DaskExecutor(Executor):
     def __init__(self, cluster_type, cluster_configuration):
-        self.cluster_type = check.opt_str_param(cluster_type, 'cluster_type', default='local')
+        self.cluster_type = check.opt_str_param(cluster_type, "cluster_type", default="local")
         self.cluster_configuration = check.opt_dict_param(
-            cluster_configuration, 'cluster_configuration'
+            cluster_configuration, "cluster_configuration"
         )
 
     @property
@@ -131,27 +131,27 @@ class DaskExecutor(Executor):
         return Retries.disabled_mode()
 
     def execute(self, pipeline_context, execution_plan):
-        check.inst_param(pipeline_context, 'pipeline_context', SystemPipelineExecutionContext)
-        check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+        check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)
+        check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
         check.param_invariant(
             isinstance(pipeline_context.executor, DaskExecutor),
-            'pipeline_context',
-            'Expected executor to be DaskExecutor got {}'.format(pipeline_context.executor),
+            "pipeline_context",
+            "Expected executor to be DaskExecutor got {}".format(pipeline_context.executor),
         )
 
         # Checks to ensure storage is compatible with Dask configuration
-        storage = pipeline_context.run_config.get('storage')
-        check.invariant(storage.keys(), 'Must specify storage to use Dask execution')
+        storage = pipeline_context.run_config.get("storage")
+        check.invariant(storage.keys(), "Must specify storage to use Dask execution")
 
         check.invariant(
             pipeline_context.instance.is_persistent,
-            'Dask execution requires a persistent DagsterInstance',
+            "Dask execution requires a persistent DagsterInstance",
         )
 
         # https://github.com/dagster-io/dagster/issues/2440
         check.invariant(
             pipeline_context.system_storage_def.is_persistent,
-            'Cannot use in-memory storage with Dask, use filesystem, S3, or GCS',
+            "Cannot use in-memory storage with Dask, use filesystem, S3, or GCS",
         )
 
         step_levels = execution_plan.execution_step_levels()
@@ -161,43 +161,43 @@ class DaskExecutor(Executor):
         instance = pipeline_context.instance
 
         cluster_type = self.cluster_type
-        if cluster_type == 'local':
+        if cluster_type == "local":
             from dask.distributed import LocalCluster
 
             cluster = LocalCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == 'yarn':
+        elif cluster_type == "yarn":
             from dask_yarn import YarnCluster
 
             cluster = YarnCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == 'ssh':
+        elif cluster_type == "ssh":
             from dask.distributed import SSHCluster
 
             cluster = SSHCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == 'pbs':
+        elif cluster_type == "pbs":
             from dask_jobqueue import PBSCluster
 
             cluster = PBSCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == 'moab':
+        elif cluster_type == "moab":
             from dask_jobqueue import MoabCluster
 
             cluster = MoabCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == 'sge':
+        elif cluster_type == "sge":
             from dask_jobqueue import SGECluster
 
             cluster = SGECluster(**self.build_dict(pipeline_name))
-        elif cluster_type == 'lsf':
+        elif cluster_type == "lsf":
             from dask_jobqueue import LSFCluster
 
             cluster = LSFCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == 'slurm':
+        elif cluster_type == "slurm":
             from dask_jobqueue import SLURMCluster
 
             cluster = SLURMCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == 'oar':
+        elif cluster_type == "oar":
             from dask_jobqueue import OARCluster
 
             cluster = OARCluster(**self.build_dict(pipeline_name))
-        elif cluster_type == 'kube':
+        elif cluster_type == "kube":
             from dask_kubernetes import KubeCluster
 
             cluster = KubeCluster(**self.build_dict(pipeline_name))
@@ -219,23 +219,23 @@ class DaskExecutor(Executor):
                         for key in step_input.dependency_keys:
                             dependencies.append(execution_futures_dict[key])
 
-                    run_config = dict(pipeline_context.run_config, execution={'in_process': {}})
+                    run_config = dict(pipeline_context.run_config, execution={"in_process": {}})
                     recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
                     variables = {
-                        'executionParams': {
-                            'selector': {
-                                'pipelineName': pipeline_name,
-                                'repositoryName': recon_repo.get_definition().name,
-                                'repositoryLocationName': '<<in_process>>',
+                        "executionParams": {
+                            "selector": {
+                                "pipelineName": pipeline_name,
+                                "repositoryName": recon_repo.get_definition().name,
+                                "repositoryLocationName": "<<in_process>>",
                             },
-                            'runConfigData': run_config,
-                            'mode': pipeline_context.mode_def.name,
-                            'executionMetadata': {'runId': pipeline_context.pipeline_run.run_id},
-                            'stepKeys': [step.key],
+                            "runConfigData": run_config,
+                            "mode": pipeline_context.mode_def.name,
+                            "executionMetadata": {"runId": pipeline_context.pipeline_run.run_id},
+                            "stepKeys": [step.key],
                         }
                     }
 
-                    dask_task_name = '%s.%s' % (pipeline_name, step.key)
+                    dask_task_name = "%s.%s" % (pipeline_name, step.key)
 
                     workspace = create_in_process_ephemeral_workspace(
                         pointer=pipeline_context.pipeline.get_reconstructable_repository().pointer
@@ -263,16 +263,16 @@ class DaskExecutor(Executor):
                     yield step_event
 
     def build_dict(self, pipeline_name):
-        '''Returns a dict we can use for kwargs passed to dask client instantiation.
+        """Returns a dict we can use for kwargs passed to dask client instantiation.
 
         Intended to be used like:
 
         with dask.distributed.Client(**cfg.build_dict()) as client:
             << use client here >>
 
-        '''
-        if self.cluster_type in ['yarn', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube']:
-            dask_cfg = {'name': pipeline_name}
+        """
+        if self.cluster_type in ["yarn", "pbs", "moab", "sge", "lsf", "slurm", "oar", "kube"]:
+            dask_cfg = {"name": pipeline_name}
         else:
             dask_cfg = {}
 
@@ -282,7 +282,7 @@ class DaskExecutor(Executor):
 
         # if address is set, don't add LocalCluster args
         # context: https://github.com/dask/distributed/issues/3313
-        if (self.cluster_type == 'local') and ('address' not in dask_cfg):
+        if (self.cluster_type == "local") and ("address" not in dask_cfg):
             # We set threads_per_worker because Dagster is not thread-safe. Even though
             # environments=True by default, there is a clever piece of machinery
             # (dask.distributed.deploy.local.nprocesses_nthreads) that automagically makes execution
@@ -290,6 +290,6 @@ class DaskExecutor(Executor):
             # See: https://github.com/dagster-io/dagster/issues/2181
             # We may want to try to figure out a way to enforce this on remote Dask clusters against
             # which users run Dagster workloads.
-            dask_cfg['threads_per_worker'] = 1
+            dask_cfg["threads_per_worker"] = 1
 
         return dask_cfg

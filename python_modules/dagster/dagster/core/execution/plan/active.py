@@ -8,17 +8,17 @@ from .plan import ExecutionPlan
 
 
 def _default_sort_key(step):
-    return int(step.tags.get('dagster/priority', 0)) * -1
+    return int(step.tags.get("dagster/priority", 0)) * -1
 
 
 class ActiveExecution(object):
-    '''State machine used to track progress through execution of an ExecutionPlan
-    '''
+    """State machine used to track progress through execution of an ExecutionPlan
+    """
 
     def __init__(self, execution_plan, retries, sort_key_fn=None):
-        self._plan = check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-        self._retries = check.inst_param(retries, 'retries', Retries)
-        self._sort_key_fn = check.opt_callable_param(sort_key_fn, 'sort_key_fn', _default_sort_key)
+        self._plan = check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+        self._retries = check.inst_param(retries, "retries", Retries)
+        self._sort_key_fn = check.opt_callable_param(sort_key_fn, "sort_key_fn", _default_sort_key)
 
         # All steps to be executed start out here in _pending
         self._pending = self._plan.execution_deps()
@@ -42,9 +42,9 @@ class ActiveExecution(object):
         self._update()
 
     def _update(self):
-        '''Moves steps from _pending to _executable / _pending_skip / _pending_retry
+        """Moves steps from _pending to _executable / _pending_skip / _pending_retry
            as a function of what has been _completed
-        '''
+        """
         new_steps_to_execute = []
         new_steps_to_skip = []
         for step_key, requirements in self._pending.items():
@@ -99,7 +99,7 @@ class ActiveExecution(object):
             time.sleep(sleep_amt)
 
     def get_next_step(self):
-        check.invariant(not self.is_complete, 'Can not call get_next_step when is_complete is True')
+        check.invariant(not self.is_complete, "Can not call get_next_step when is_complete is True")
 
         steps = self.get_steps_to_execute(limit=1)
         step = None
@@ -110,14 +110,14 @@ class ActiveExecution(object):
             self.sleep_til_ready()
             step = self.get_next_step()
 
-        check.invariant(step is not None, 'Unexpected ActiveExecution state')
+        check.invariant(step is not None, "Unexpected ActiveExecution state")
         return step
 
     def get_step_by_key(self, step_key):
         return self._plan.get_step_by_key(step_key)
 
     def get_steps_to_execute(self, limit=None):
-        check.opt_int_param(limit, 'limit')
+        check.opt_int_param(limit, "limit")
         self._update()
 
         steps = sorted(
@@ -145,8 +145,8 @@ class ActiveExecution(object):
         return sorted(steps, key=self._sort_key_fn)
 
     def skipped_step_events_iterator(self, pipeline_context):
-        '''Process all steps that can be skipped by repeated calls to get_steps_to_skip
-        '''
+        """Process all steps that can be skipped by repeated calls to get_steps_to_skip
+        """
         failed_or_skipped_steps = self._skipped.union(self._failed)
 
         steps_to_skip = self.get_steps_to_skip()
@@ -160,7 +160,7 @@ class ActiveExecution(object):
                     )
 
                 step_context.log.info(
-                    'Dependencies for step {step} failed: {failed_inputs}. Not executing.'.format(
+                    "Dependencies for step {step} failed: {failed_inputs}. Not executing.".format(
                         step=step.key, failed_inputs=failed_inputs
                     )
                 )
@@ -185,9 +185,9 @@ class ActiveExecution(object):
     def mark_up_for_retry(self, step_key, at_time=None):
         check.invariant(
             not self._retries.disabled,
-            'Attempted to mark {} as up for retry but retries are disabled'.format(step_key),
+            "Attempted to mark {} as up for retry but retries are disabled".format(step_key),
         )
-        check.opt_float_param(at_time, 'at_time')
+        check.opt_float_param(at_time, "at_time")
 
         # if retries are enabled - queue this back up
         if self._retries.enabled:
@@ -205,11 +205,11 @@ class ActiveExecution(object):
     def _mark_complete(self, step_key):
         check.invariant(
             step_key not in self._completed,
-            'Attempted to mark step {} as complete that was already completed'.format(step_key),
+            "Attempted to mark step {} as complete that was already completed".format(step_key),
         )
         check.invariant(
             step_key in self._in_flight,
-            'Attempted to mark step {} as complete that was not known to be in flight'.format(
+            "Attempted to mark step {} as complete that was not known to be in flight".format(
                 step_key
             ),
         )
@@ -217,7 +217,7 @@ class ActiveExecution(object):
         self._completed.add(step_key)
 
     def handle_event(self, dagster_event):
-        check.inst_param(dagster_event, 'dagster_event', DagsterEvent)
+        check.inst_param(dagster_event, "dagster_event", DagsterEvent)
 
         if dagster_event.is_step_failure:
             self.mark_failed(dagster_event.step_key)
@@ -234,11 +234,11 @@ class ActiveExecution(object):
             )
 
     def verify_complete(self, pipeline_context, step_key):
-        '''Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure
-        '''
+        """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure
+        """
         if step_key in self._in_flight:
             pipeline_context.log.error(
-                'Step {key} finished without success or failure event, assuming failure.'.format(
+                "Step {key} finished without success or failure event, assuming failure.".format(
                     key=step_key
                 )
             )

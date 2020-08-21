@@ -23,7 +23,7 @@ def poll_for_run(instance, run_id, timeout=5):
             total_time += backoff
             backoff = backoff * 2
             if total_time > timeout:
-                raise Exception('Timed out')
+                raise Exception("Timed out")
 
 
 def poll_for_step_start(instance, run_id, timeout=15):
@@ -32,19 +32,19 @@ def poll_for_step_start(instance, run_id, timeout=15):
 
     while True:
         logs = instance.all_logs(run_id)
-        if 'STEP_START' in (log_record.dagster_event.event_type_value for log_record in logs):
+        if "STEP_START" in (log_record.dagster_event.event_type_value for log_record in logs):
             return
         else:
             time.sleep(backoff)
             total_time += backoff
             backoff = backoff * 2
             if total_time > timeout:
-                raise Exception('Timed out')
+                raise Exception("Timed out")
 
 
-@solid(config_schema={'length': Field(Int)}, output_defs=[])
+@solid(config_schema={"length": Field(Int)}, output_defs=[])
 def streamer(context):
-    for i in range(context.solid_config['length']):
+    for i in range(context.solid_config["length"]):
         yield Materialization(label=str(i))
         time.sleep(0.1)
 
@@ -77,16 +77,16 @@ def test_cancel_run():
             streaming_results = []
 
             pipeline_run = instance.create_run_for_pipeline(
-                streaming_pipeline, run_config={'solids': {'streamer': {'config': {'length': 20}}}},
+                streaming_pipeline, run_config={"solids": {"streamer": {"config": {"length": 20}}}},
             )
             execute_run_args = ExecuteRunArgs(
                 pipeline_origin=PipelineGrpcServerOrigin(
-                    pipeline_name='streaming_pipeline',
+                    pipeline_name="streaming_pipeline",
                     repository_origin=RepositoryGrpcServerOrigin(
-                        host='localhost',
+                        host="localhost",
                         socket=api_client.socket,
                         port=api_client.port,
-                        repository_name='test_repository',
+                        repository_name="test_repository",
                     ),
                 ),
                 pipeline_run_id=pipeline_run.run_id,
@@ -112,13 +112,13 @@ def test_cancel_run():
                     [
                         ev
                         for ev in logs
-                        if ev.dagster_event.event_type_value == 'STEP_MATERIALIZATION'
+                        if ev.dagster_event.event_type_value == "STEP_MATERIALIZATION"
                     ]
                 )
                 < 20
             )
 
             # soft termination
-            assert [ev for ev in logs if ev.dagster_event.event_type_value == 'STEP_FAILURE']
+            assert [ev for ev in logs if ev.dagster_event.event_type_value == "STEP_FAILURE"]
 
         server_process.wait()

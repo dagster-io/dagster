@@ -15,39 +15,39 @@ MAX_BYTES_CHUNK_READ = 4194304  # 4 MB
 
 
 class ComputeIOType(Enum):
-    STDOUT = 'stdout'
-    STDERR = 'stderr'
+    STDOUT = "stdout"
+    STDERR = "stderr"
 
 
-class ComputeLogFileData(namedtuple('ComputeLogFileData', 'path data cursor size download_url')):
-    '''Representation of a chunk of compute execution log data'''
+class ComputeLogFileData(namedtuple("ComputeLogFileData", "path data cursor size download_url")):
+    """Representation of a chunk of compute execution log data"""
 
     def __new__(cls, path, data, cursor, size, download_url):
         return super(ComputeLogFileData, cls).__new__(
             cls,
-            path=check.str_param(path, 'path'),
-            data=check.opt_str_param(data, 'data'),
-            cursor=check.int_param(cursor, 'cursor'),
-            size=check.int_param(size, 'size'),
-            download_url=check.opt_str_param(download_url, 'download_url'),
+            path=check.str_param(path, "path"),
+            data=check.opt_str_param(data, "data"),
+            cursor=check.int_param(cursor, "cursor"),
+            size=check.int_param(size, "size"),
+            download_url=check.opt_str_param(download_url, "download_url"),
         )
 
 
 class ComputeLogManager(six.with_metaclass(ABCMeta)):
-    '''Abstract base class for storing unstructured compute logs (stdout/stderr) from the compute
-    steps of pipeline solids.'''
+    """Abstract base class for storing unstructured compute logs (stdout/stderr) from the compute
+    steps of pipeline solids."""
 
     @contextmanager
     def watch(self, pipeline_run, step_key=None):
-        '''
+        """
         Watch the stdout/stderr for a given execution for a given run_id / step_key and persist it.
 
         Args:
             pipeline_run (PipelineRun): The pipeline run config
             step_key (Optional[String]): The step_key for a compute step
-        '''
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        check.opt_str_param(step_key, 'step_key')
+        """
+        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.opt_str_param(step_key, "step_key")
 
         if not self.enabled(pipeline_run, step_key):
             yield
@@ -61,7 +61,7 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
     @contextmanager
     @abstractmethod
     def _watch_logs(self, pipeline_run, step_key=None):
-        '''
+        """
         Method to watch the stdout/stderr logs for a given run_id / step_key.  Kept separate from
         blessed `watch` method, which triggers all the start/finish hooks that are necessary to
         implement the different remote implementations.
@@ -69,10 +69,10 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
         Args:
             pipeline_run (PipelineRun): The pipeline run config
             step_key (Optional[String]): The step_key for a compute step
-        '''
+        """
 
     def get_local_path(self, run_id, key, io_type):
-        '''Get the local path of the logfile for a given execution step.  This determines the
+        """Get the local path of the logfile for a given execution step.  This determines the
         location on the local filesystem to which stdout/stderr will be rerouted.
 
         Args:
@@ -83,11 +83,11 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
 
         Returns:
             Path
-        '''
+        """
 
     @abstractmethod
     def is_watch_completed(self, run_id, key):
-        '''Flag indicating when computation for a given execution step has completed.
+        """Flag indicating when computation for a given execution step has completed.
 
         Args:
             run_id (str): The id of the pipeline run.
@@ -95,29 +95,29 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
 
         Returns:
             Boolean
-        '''
+        """
 
     @abstractmethod
     def on_watch_start(self, pipeline_run, step_key):
-        '''Hook called when starting to watch compute logs.
+        """Hook called when starting to watch compute logs.
 
         Args:
             pipeline_run (PipelineRun): The pipeline run config
             step_key (Optional[String]): The step_key for a compute step
-        '''
+        """
 
     @abstractmethod
     def on_watch_finish(self, pipeline_run, step_key):
-        '''Hook called when computation for a given execution step is finished.
+        """Hook called when computation for a given execution step is finished.
 
         Args:
             pipeline_run (PipelineRun): The pipeline run config
             step_key (Optional[String]): The step_key for a compute step
-        '''
+        """
 
     @abstractmethod
     def download_url(self, run_id, key, io_type):
-        '''Get a URL where the logs can be downloaded.
+        """Get a URL where the logs can be downloaded.
 
         Args:
             run_id (str): The id of the pipeline run.
@@ -126,11 +126,11 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
 
         Returns:
             String
-        '''
+        """
 
     @abstractmethod
     def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
-        '''Get compute log data for a given compute step.
+        """Get compute log data for a given compute step.
 
         Args:
             run_id (str): The id of the pipeline run.
@@ -141,30 +141,30 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
 
         Returns:
             ComputeLogFileData
-        '''
+        """
 
     def enabled(self, _pipeline_run, _step_key):
-        '''Hook for disabling compute log capture.
+        """Hook for disabling compute log capture.
 
         Args:
             _step_key (Optional[String]): The step_key for a compute step
 
         Returns:
             Boolean
-        '''
+        """
         return True
 
     @abstractmethod
     def on_subscribe(self, subscription):
-        '''Hook for managing streaming subscriptions for log data from `dagit`
+        """Hook for managing streaming subscriptions for log data from `dagit`
 
         Args:
             subscription (ComputeLogSubscription): subscription object which manages when to send
                 back data to the subscriber
-        '''
+        """
 
     def observable(self, run_id, key, io_type, cursor=None):
-        '''Return an Observable which streams back log data from the execution logs for a given
+        """Return an Observable which streams back log data from the execution logs for a given
         compute step.
 
         Args:
@@ -175,11 +175,11 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
 
         Returns:
             Observable
-        '''
-        check.str_param(run_id, 'run_id')
-        check.str_param(key, 'key')
-        check.inst_param(io_type, 'io_type', ComputeIOType)
-        check.opt_str_param(cursor, 'cursor')
+        """
+        check.str_param(run_id, "run_id")
+        check.str_param(key, "key")
+        check.inst_param(io_type, "io_type", ComputeIOType)
+        check.opt_str_param(cursor, "cursor")
 
         if cursor:
             cursor = int(cursor)
@@ -192,9 +192,9 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
 
 
 class ComputeLogSubscription(object):
-    '''Observable object that generates ComputeLogFileData objects as compute step execution logs
+    """Observable object that generates ComputeLogFileData objects as compute step execution logs
     are written
-    '''
+    """
 
     def __init__(self, manager, run_id, key, io_type, cursor):
         self.manager = manager
@@ -223,7 +223,7 @@ class ComputeLogSubscription(object):
             if not self.cursor or update.cursor != self.cursor:
                 self.observer.on_next(update)
                 self.cursor = update.cursor
-            should_fetch = update.data and len(update.data.encode('utf-8')) >= MAX_BYTES_CHUNK_READ
+            should_fetch = update.data and len(update.data.encode("utf-8")) >= MAX_BYTES_CHUNK_READ
 
     def complete(self):
         if not self.observer:

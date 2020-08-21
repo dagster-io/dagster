@@ -26,27 +26,27 @@ celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_exe
 @pytest.mark.skip
 @skip_ci
 def test_priority_pipeline():
-    with execute_pipeline_on_celery('priority_pipeline') as result:
+    with execute_pipeline_on_celery("priority_pipeline") as result:
         assert result.success
 
 
 @pytest.mark.skip
 @skip_ci
 def test_eager_priority_pipeline():
-    with execute_eagerly_on_celery('simple_priority_pipeline') as result:
+    with execute_eagerly_on_celery("simple_priority_pipeline") as result:
         assert result.success
         assert list(OrderedDict.fromkeys([evt.step_key for evt in result.step_event_list])) == [
-            'ten.compute',
-            'nine.compute',
-            'eight.compute',
-            'seven_.compute',
-            'six.compute',
-            'five.compute',
-            'four.compute',
-            'three.compute',
-            'two.compute',
-            'one.compute',
-            'zero.compute',
+            "ten.compute",
+            "nine.compute",
+            "eight.compute",
+            "seven_.compute",
+            "six.compute",
+            "five.compute",
+            "four.compute",
+            "three.compute",
+            "two.compute",
+            "one.compute",
+            "zero.compute",
         ]
 
 
@@ -61,8 +61,8 @@ def test_run_priority_pipeline():
         # enqueue low-priority tasks
         low_thread = threading.Thread(
             target=execute_on_thread,
-            args=('low_pipeline', low_done),
-            kwargs={'tempdir': tempdir, 'tags': {'dagster-celery/run_priority': -3}},
+            args=("low_pipeline", low_done),
+            kwargs={"tempdir": tempdir, "tags": {"dagster-celery/run_priority": -3}},
         )
         low_thread.daemon = True
         low_thread.start()
@@ -72,8 +72,8 @@ def test_run_priority_pipeline():
         # enqueue hi-priority tasks
         hi_thread = threading.Thread(
             target=execute_on_thread,
-            args=('hi_pipeline', hi_done),
-            kwargs={'tempdir': tempdir, 'tags': {'dagster-celery/run_priority': 3}},
+            args=("hi_pipeline", hi_done),
+            kwargs={"tempdir": tempdir, "tags": {"dagster-celery/run_priority": 3}},
         )
         hi_thread.daemon = True
         hi_thread.start()
@@ -84,11 +84,11 @@ def test_run_priority_pipeline():
             while not low_done.is_set() or not hi_done.is_set():
                 time.sleep(1)
 
-            low_runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name='low_pipeline'))
+            low_runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name="low_pipeline"))
             assert len(low_runs) == 1
             low_run = low_runs[0]
             lowstats = instance.get_run_stats(low_run.run_id)
-            hi_runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name='hi_pipeline'))
+            hi_runs = instance.get_runs(filters=PipelineRunsFilter(pipeline_name="hi_pipeline"))
             assert len(hi_runs) == 1
             hi_run = hi_runs[0]
             histats = instance.get_run_stats(hi_run.run_id)

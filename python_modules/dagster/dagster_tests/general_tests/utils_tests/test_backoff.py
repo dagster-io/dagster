@@ -47,30 +47,30 @@ def test_backoff_delay_generator():
 def test_backoff():
     fn = Failer(fails=100)
     with pytest.raises(RetryableException):
-        backoff(fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={'foo': 'bar'})
+        backoff(fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={"foo": "bar"})
 
     assert fn.call_count == 5
     assert all([args == (3, 2, 1) for args in fn.args])
-    assert all([kwargs == {'foo': 'bar'} for kwargs in fn.kwargs])
+    assert all([kwargs == {"foo": "bar"} for kwargs in fn.kwargs])
 
     fn = Failer()
-    assert backoff(fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={'foo': 'bar'})
+    assert backoff(fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={"foo": "bar"})
     assert fn.call_count == 1
 
     fn = Failer(fails=1)
-    assert backoff(fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={'foo': 'bar'})
+    assert backoff(fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={"foo": "bar"})
     assert fn.call_count == 2
 
     fn = Failer(fails=1)
     with pytest.raises(RetryableException):
         backoff(
-            fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={'foo': 'bar'}, max_retries=0
+            fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={"foo": "bar"}, max_retries=0
         )
     assert fn.call_count == 1
 
     fn = Failer(fails=2)
     with pytest.raises(RetryableException):
         backoff(
-            fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={'foo': 'bar'}, max_retries=1
+            fn, retry_on=(RetryableException,), args=[3, 2, 1], kwargs={"foo": "bar"}, max_retries=1
         )
     assert fn.call_count == 2

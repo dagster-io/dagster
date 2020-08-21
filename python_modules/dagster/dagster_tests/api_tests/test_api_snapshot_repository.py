@@ -19,7 +19,7 @@ def test_external_repositories_api():
     external_repository = external_repos[0]
 
     assert isinstance(external_repository, ExternalRepository)
-    assert external_repository.name == 'bar_repo'
+    assert external_repository.name == "bar_repo"
 
 
 def test_external_repositories_api_grpc():
@@ -33,4 +33,4 @@ def test_external_repositories_api_grpc():
         external_repository = external_repos[0]
 
         assert isinstance(external_repository, ExternalRepository)
-        assert external_repository.name == 'bar_repo'
+        assert external_repository.name == "bar_repo"

@@ -6,17 +6,17 @@ from dagster import DagsterEventType, check
 
 
 def get_all_logs_for_finished_run_via_subscription(context, run_id):
-    '''
+    """
     You should almost certainly ensure that this run has complete or terminated in order
     to get reliable results that you can test against.
-    '''
-    check.inst_param(context, 'context', DagsterGraphQLContext)
+    """
+    check.inst_param(context, "context", DagsterGraphQLContext)
 
     run = context.instance.get_run_by_id(run_id)
 
     assert run.is_finished
 
-    subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})
+    subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={"runId": run_id})
     subscribe_results = []
 
     subscription.subscribe(subscribe_results.append)
@@ -28,17 +28,17 @@ def get_all_logs_for_finished_run_via_subscription(context, run_id):
     assert subscribe_result.data
 
     # remove information that changes run-to-run
-    assert 'pipelineRunLogs' in subscribe_result.data
-    assert 'messages' in subscribe_result.data['pipelineRunLogs']
-    for msg in subscribe_result.data['pipelineRunLogs']['messages']:
-        msg['runId'] = '<runId dummy value>'
-        msg['timestamp'] = '<timestamp dummy value>'
+    assert "pipelineRunLogs" in subscribe_result.data
+    assert "messages" in subscribe_result.data["pipelineRunLogs"]
+    for msg in subscribe_result.data["pipelineRunLogs"]["messages"]:
+        msg["runId"] = "<runId dummy value>"
+        msg["timestamp"] = "<timestamp dummy value>"
 
     return subscribe_result.data
 
 
 def sync_execute_get_payload(variables, context):
-    check.inst_param(context, 'context', DagsterGraphQLContext)
+    check.inst_param(context, "context", DagsterGraphQLContext)
 
     result = execute_dagster_graphql(
         context, LAUNCH_PIPELINE_EXECUTION_MUTATION, variables=variables
@@ -46,60 +46,60 @@ def sync_execute_get_payload(variables, context):
 
     assert result.data
 
-    if result.data['launchPipelineExecution']['__typename'] != 'LaunchPipelineRunSuccess':
+    if result.data["launchPipelineExecution"]["__typename"] != "LaunchPipelineRunSuccess":
         raise Exception(result.data)
 
     context.drain_outstanding_executions()
 
-    run_id = result.data['launchPipelineExecution']['run']['runId']
+    run_id = result.data["launchPipelineExecution"]["run"]["runId"]
     return get_all_logs_for_finished_run_via_subscription(context, run_id)
 
 
 def sync_execute_get_run_log_data(variables, context):
-    check.inst_param(context, 'context', DagsterGraphQLContext)
+    check.inst_param(context, "context", DagsterGraphQLContext)
     payload_data = sync_execute_get_payload(variables, context)
-    return payload_data['pipelineRunLogs']
+    return payload_data["pipelineRunLogs"]
 
 
 def sync_execute_get_events(variables, context):
-    check.inst_param(context, 'context', DagsterGraphQLContext)
-    return sync_execute_get_run_log_data(variables, context)['messages']
+    check.inst_param(context, "context", DagsterGraphQLContext)
+    return sync_execute_get_run_log_data(variables, context)["messages"]
 
 
 def step_started(logs, step_key):
     return any(
-        log['stepKey'] == step_key
+        log["stepKey"] == step_key
         for log in logs
-        if log['__typename'] in ('ExecutionStepStartEvent',)
+        if log["__typename"] in ("ExecutionStepStartEvent",)
     )
 
 
 def step_did_not_run(logs, step_key):
     return not any(
-        log['stepKey'] == step_key
+        log["stepKey"] == step_key
         for log in logs
-        if log['__typename']
-        in ('ExecutionStepSuccessEvent', 'ExecutionStepSkippedEvent', 'ExecutionStepFailureEvent')
+        if log["__typename"]
+        in ("ExecutionStepSuccessEvent", "ExecutionStepSkippedEvent", "ExecutionStepFailureEvent")
     )
 
 
 def step_did_succeed(logs, step_key):
     return any(
-        log['__typename'] == 'ExecutionStepSuccessEvent' and step_key == log['stepKey']
+        log["__typename"] == "ExecutionStepSuccessEvent" and step_key == log["stepKey"]
         for log in logs
     )
 
 
 def step_did_skip(logs, step_key):
     return any(
-        log['__typename'] == 'ExecutionStepSkippedEvent' and step_key == log['stepKey']
+        log["__typename"] == "ExecutionStepSkippedEvent" and step_key == log["stepKey"]
         for log in logs
     )
 
 
 def step_did_fail(logs, step_key):
     return any(
-        log['__typename'] == 'ExecutionStepFailureEvent' and step_key == log['stepKey']
+        log["__typename"] == "ExecutionStepFailureEvent" and step_key == log["stepKey"]
         for log in logs
     )
 

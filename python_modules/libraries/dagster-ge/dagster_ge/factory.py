@@ -20,12 +20,12 @@ from dagster import (
 )
 
 
-@resource(config_schema={'ge_root_dir': Noneable(StringSource)})
+@resource(config_schema={"ge_root_dir": Noneable(StringSource)})
 def ge_data_context(context):
-    if context.resource_config['ge_root_dir'] is None:
+    if context.resource_config["ge_root_dir"] is None:
         yield ge.data_context.DataContext()
     else:
-        yield ge.data_context.DataContext(context_root_dir=context.resource_config['ge_root_dir'])
+        yield ge.data_context.DataContext(context_root_dir=context.resource_config["ge_root_dir"])
 
 
 def ge_validation_solid_factory(datasource_name, suite_name, validation_operator_name=None):
@@ -46,7 +46,7 @@ def ge_validation_solid_factory(datasource_name, suite_name, validation_operator
     """
 
     @solid(
-        input_defs=[InputDefinition('pandas_df', dagster_type=DataFrame)],
+        input_defs=[InputDefinition("pandas_df", dagster_type=DataFrame)],
         output_defs=[
             OutputDefinition(
                 dagster_type=dict,
@@ -58,8 +58,8 @@ def ge_validation_solid_factory(datasource_name, suite_name, validation_operator
         """,
             )
         ],
-        required_resource_keys={'ge_data_context'},
-        tags={'kind': 'ge'},
+        required_resource_keys={"ge_data_context"},
+        tags={"kind": "ge"},
     )
     def ge_validation_solid(context, pandas_df):
         data_context = context.resources.ge_data_context
@@ -67,10 +67,10 @@ def ge_validation_solid_factory(datasource_name, suite_name, validation_operator
             validation_operator = validation_operator_name
         else:
             data_context.add_validation_operator(
-                'ephemeral_validation',
-                {'class_name': 'ActionListValidationOperator', 'action_list': []},
+                "ephemeral_validation",
+                {"class_name": "ActionListValidationOperator", "action_list": []},
             )
-            validation_operator = 'ephemeral_validation'
+            validation_operator = "ephemeral_validation"
         suite = data_context.get_expectation_suite(suite_name)
         batch_kwargs = {
             "dataset": pandas_df,

@@ -37,10 +37,10 @@ from .serialize import PICKLE_PROTOCOL, read_value, write_value
 
 
 class DagstermillResourceEventGenerationManager(EventGenerationManager):
-    ''' Utility class to explicitly manage setup/teardown of resource events. Overrides the default
+    """ Utility class to explicitly manage setup/teardown of resource events. Overrides the default
     `generate_teardown_events` method so that teardown is deferred until explicitly called by the
     dagstermill Manager
-    '''
+    """
 
     def generate_teardown_events(self):
         return iter(())
@@ -66,11 +66,11 @@ class Manager(object):
     def _setup_resources(
         self, execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init
     ):
-        '''
+        """
         Drop-in replacement for
         `dagster.core.execution.resources_init.resource_initialization_manager`.  It uses a
         `DagstermillResourceEventGenerationManager` and explicitly calls `teardown` on it
-        '''
+        """
         generator = resource_initialization_event_generator(
             execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init
         )
@@ -89,7 +89,7 @@ class Manager(object):
         solid_handle_kwargs=None,
         instance_ref_dict=None,
     ):
-        '''Reconstitutes a context for dagstermill-managed execution.
+        """Reconstitutes a context for dagstermill-managed execution.
 
         You'll see this function called to reconstruct a pipeline context within the ``injected
         parameters`` cell of a dagstermill output notebook. Users should not call this function
@@ -99,14 +99,14 @@ class Manager(object):
         context for interactive exploration and development. This call will be replaced by one to
         :func:`dagstermill.reconstitute_pipeline_context` when the notebook is executed by
         dagstermill.
-        '''
-        check.opt_str_param(output_log_path, 'output_log_path')
-        check.opt_str_param(marshal_dir, 'marshal_dir')
-        run_config = check.opt_dict_param(run_config, 'run_config', key_type=str)
-        check.dict_param(pipeline_run_dict, 'pipeline_run_dict')
-        check.dict_param(executable_dict, 'executable_dict')
-        check.dict_param(solid_handle_kwargs, 'solid_handle_kwargs')
-        check.dict_param(instance_ref_dict, 'instance_ref_dict')
+        """
+        check.opt_str_param(output_log_path, "output_log_path")
+        check.opt_str_param(marshal_dir, "marshal_dir")
+        run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
+        check.dict_param(pipeline_run_dict, "pipeline_run_dict")
+        check.dict_param(executable_dict, "executable_dict")
+        check.dict_param(solid_handle_kwargs, "solid_handle_kwargs")
+        check.dict_param(instance_ref_dict, "instance_ref_dict")
 
         pipeline = ReconstructablePipeline.from_dict(executable_dict)
         pipeline_def = pipeline.get_definition()
@@ -117,7 +117,7 @@ class Manager(object):
         except Exception as err:  # pylint: disable=broad-except
             six.raise_from(
                 DagstermillError(
-                    'Error when attempting to resolve DagsterInstance from serialized InstanceRef'
+                    "Error when attempting to resolve DagsterInstance from serialized InstanceRef"
                 ),
                 err,
             )
@@ -161,7 +161,7 @@ class Manager(object):
         return self.context
 
     def get_context(self, solid_config=None, mode_def=None, run_config=None):
-        '''Get a dagstermill execution context for interactive exploration and development.
+        """Get a dagstermill execution context for interactive exploration and development.
 
         Args:
             solid_config (Optional[Any]): If specified, this value will be made available on the
@@ -175,9 +175,9 @@ class Manager(object):
 
         Returns:
             :py:class:`~dagstermill.DagstermillExecutionContext`
-        '''
-        check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
-        run_config = check.opt_dict_param(run_config, 'run_config', key_type=str)
+        """
+        check.opt_inst_param(mode_def, "mode_def", ModeDefinition)
+        run_config = check.opt_dict_param(run_config, "run_config", key_type=str)
 
         # If we are running non-interactively, and there is already a context reconstituted, return
         # that context rather than overwriting it.
@@ -187,20 +187,20 @@ class Manager(object):
             return self.context
 
         if not mode_def:
-            mode_def = ModeDefinition(logger_defs={'dagstermill': colored_console_logger})
-            run_config['loggers'] = {'dagstermill': {}}
+            mode_def = ModeDefinition(logger_defs={"dagstermill": colored_console_logger})
+            run_config["loggers"] = {"dagstermill": {}}
 
         solid_def = SolidDefinition(
-            name='this_solid',
+            name="this_solid",
             input_defs=[],
             compute_fn=lambda *args, **kwargs: None,
             output_defs=[],
-            description='Ephemeral solid constructed by dagstermill.get_context()',
+            description="Ephemeral solid constructed by dagstermill.get_context()",
             required_resource_keys=mode_def.resource_key_set,
         )
 
         pipeline_def = PipelineDefinition(
-            [solid_def], mode_defs=[mode_def], name='ephemeral_dagstermill_pipeline'
+            [solid_def], mode_defs=[mode_def], name="ephemeral_dagstermill_pipeline"
         )
 
         run_id = make_new_run_id()
@@ -243,15 +243,15 @@ class Manager(object):
 
         return self.context
 
-    def yield_result(self, value, output_name='result'):
-        '''Yield a result directly from notebook code.
+    def yield_result(self, value, output_name="result"):
+        """Yield a result directly from notebook code.
 
         When called interactively or in development, returns its input.
 
         Args:
             value (Any): The value to yield.
             output_name (Optional[str]): The name of the result to yield (default: ``'result'``).
-        '''
+        """
         if not self.in_pipeline:
             return value
 
@@ -260,28 +260,28 @@ class Manager(object):
 
         if not self.solid_def.has_output(output_name):
             raise DagstermillError(
-                'Solid {solid_name} does not have output named {output_name}'.format(
+                "Solid {solid_name} does not have output named {output_name}".format(
                     solid_name=self.solid_def.name, output_name=output_name
                 )
             )
 
         dagster_type = self.solid_def.output_def_named(output_name).dagster_type
 
-        out_file = os.path.join(self.marshal_dir, 'output-{}'.format(output_name))
+        out_file = os.path.join(self.marshal_dir, "output-{}".format(output_name))
         scrapbook.glue(output_name, write_value(dagster_type, value, out_file))
 
     def yield_event(self, dagster_event):
-        '''Yield a dagster event directly from notebook code.
+        """Yield a dagster event directly from notebook code.
 
         When called interactively or in development, returns its input.
 
         Args:
             dagster_event (Union[:class:`dagster.Materialization`, :class:`dagster.ExpectationResult`, :class:`dagster.TypeCheck`, :class:`dagster.Failure`]):
                 An event to yield back to Dagster.
-        '''
+        """
         check.inst_param(
             dagster_event,
-            'dagster_event',
+            "dagster_event",
             (AssetMaterialization, Materialization, ExpectationResult, TypeCheck, Failure),
         )
 
@@ -291,9 +291,9 @@ class Manager(object):
         # deferred import for perf
         import scrapbook
 
-        event_id = 'event-{event_uuid}'.format(event_uuid=str(uuid.uuid4()))
+        event_id = "event-{event_uuid}".format(event_uuid=str(uuid.uuid4()))
         out_file_path = os.path.join(self.marshal_dir, event_id)
-        with open(out_file_path, 'wb') as fd:
+        with open(out_file_path, "wb") as fd:
             fd.write(pickle.dumps(dagster_event, PICKLE_PROTOCOL))
 
         scrapbook.glue(event_id, out_file_path)

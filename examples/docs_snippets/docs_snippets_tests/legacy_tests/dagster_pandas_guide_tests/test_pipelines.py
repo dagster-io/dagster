@@ -12,7 +12,7 @@ from dagster import execute_pipeline
 
 
 @pytest.mark.parametrize(
-    'pipeline',
+    "pipeline",
     [
         custom_column_constraint_pipeline,
         shape_constrained_pipeline,

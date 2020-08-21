@@ -35,17 +35,17 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
         access_key,
         command,
         entrypoint=None,
-        family='dagstertask',
-        containername='dagstercontainer',
+        family="dagstertask",
+        containername="dagstercontainer",
         imagename="httpd:2.4",
-        memory='512',
-        cpu='256',
+        memory="512",
+        cpu="256",
         inst_data=None,
-        region_name='us-east-2',
-        launch_type='FARGATE',
+        region_name="us-east-2",
+        launch_type="FARGATE",
         grab_logs=True,
     ):
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.run_id_to_task_offset = dict()
         if entrypoint is None:
             entrypoint = ["/bin/bash", "-c"]
@@ -69,75 +69,75 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return {
-            'key_id': Field(
+            "key_id": Field(
                 Noneable(StringSource),
                 is_required=False,
                 default_value=None,
                 description="the AWS access key ID to use, overriding environment vars",
             ),
-            'access_key': Field(
+            "access_key": Field(
                 Noneable(StringSource),
                 is_required=False,
                 default_value=None,
                 description="the AWS access key to use, overriding environment vars",
             ),
-            'command': Field(
+            "command": Field(
                 Array(StringSource),
                 is_required=True,
                 description="what commands to run on the container",
             ),
-            'entrypoint': Field(
+            "entrypoint": Field(
                 Array(StringSource),
                 is_required=False,
                 default_value=["/bin/bash", "-c"],
                 description="what entrypoint the commands run from",
             ),
-            'family': Field(
+            "family": Field(
                 StringSource,
                 is_required=False,
-                default_value='dagstertask',
+                default_value="dagstertask",
                 description="what family of tasks you want to be revising",
             ),
-            'containername': Field(
+            "containername": Field(
                 StringSource,
                 is_required=False,
-                default_value='dagstercontainer',
+                default_value="dagstercontainer",
                 description="what you want the docker container running the tasks to be called",
             ),
-            'imagename': Field(
+            "imagename": Field(
                 StringSource,
                 is_required=False,
-                default_value='httpd:2.4',
+                default_value="httpd:2.4",
                 description="the URI for the docker image of the container",
             ),
-            'memory': Field(
+            "memory": Field(
                 StringSource,
                 is_required=False,
-                default_value='512',
+                default_value="512",
                 description="the memory in MB that the task will need",
             ),
-            'cpu': Field(
+            "cpu": Field(
                 StringSource,
                 is_required=False,
-                default_value='256',
+                default_value="256",
                 description="the CPU in VCPU that the task will need",
             ),
-            'region_name': Field(
+            "region_name": Field(
                 StringSource,
                 is_required=False,
-                default_value='us-east-2',
+                default_value="us-east-2",
                 description="which region the AWS cluster is on",
             ),
-            'launch_type': Field(
+            "launch_type": Field(
                 StringSource,
                 is_required=False,
-                default_value='FARGATE',
+                default_value="FARGATE",
                 description="whether to use EC2 or FARGATE for running the task -- currently only Fargate is supported",
             ),
-            'grab_logs': Field(
+            "grab_logs": Field(
                 Bool,
                 is_required=False,
-                default_value='FARGATE',
+                default_value="FARGATE",
                 description="whether to pull down ECS logs for completed tasks",
             ),
         }
@@ -154,7 +154,7 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
         # currently ignoring external pipeline
         if external_pipeline is None:
             pass
-        check.inst_param(run, 'run', PipelineRun)
+        check.inst_param(run, "run", PipelineRun)
 
         # this maps run configuration to task overrides
         # this way we can pass in parameters from the dagit configuration that user has entered in the UI
@@ -176,9 +176,9 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
         }
 
     def can_terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
         return self.client.check_if_done(offset=self.run_id_to_task_offset[run_id])
 
     def terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
-        check.not_implemented('Termination not yet implemented')
+        check.str_param(run_id, "run_id")
+        check.not_implemented("Termination not yet implemented")

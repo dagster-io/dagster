@@ -5,7 +5,7 @@ from dagster.grpc.client import ephemeral_grpc_api_client
 
 
 def _stream_events_target(results, api_client):
-    for result in api_client.streaming_ping(sequence_length=100000, echo='foo'):
+    for result in api_client.streaming_ping(sequence_length=100000, echo="foo"):
         results.append(result)
 
 

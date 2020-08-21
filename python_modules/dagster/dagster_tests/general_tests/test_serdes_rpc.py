@@ -8,7 +8,7 @@ from dagster.utils import safe_tempfile_path
 
 def test_write_read_stream():
     @whitelist_for_serdes
-    class TestMessage(namedtuple('_TestMessage', 'message')):
+    class TestMessage(namedtuple("_TestMessage", "message")):
         def __new__(cls, message):
             return super(TestMessage, cls).__new__(cls, message)
 
@@ -44,7 +44,7 @@ def test_write_empty_stream():
 def test_write_error_stream():
     with safe_tempfile_path() as filename:
         with ipc_write_stream(filename) as _:
-            raise Exception('uh oh')
+            raise Exception("uh oh")
 
         messages = []
         for message in ipc_read_event_stream(filename):
@@ -54,16 +54,16 @@ def test_write_error_stream():
         message = messages[0]
 
         assert isinstance(message, IPCErrorMessage)
-        assert 'uh oh' in message.serializable_error_info.message
+        assert "uh oh" in message.serializable_error_info.message
 
 
 def test_write_error_with_custom_message():
     with safe_tempfile_path() as filename:
         with ipc_write_stream(filename) as stream:
             try:
-                raise Exception('uh oh')
+                raise Exception("uh oh")
             except:  # pylint: disable=bare-except
-                stream.send_error(sys.exc_info(), message='custom')
+                stream.send_error(sys.exc_info(), message="custom")
 
         messages = []
         for message in ipc_read_event_stream(filename):
@@ -73,5 +73,5 @@ def test_write_error_with_custom_message():
         ipc_message = messages[0]
 
         assert isinstance(ipc_message, IPCErrorMessage)
-        assert 'uh oh' in ipc_message.serializable_error_info.message
-        assert ipc_message.message == 'custom'
+        assert "uh oh" in ipc_message.serializable_error_info.message
+        assert ipc_message.message == "custom"

@@ -9,7 +9,7 @@ from dagster.utils.backcompat import rename_warning
 
 
 class SystemStorageDefinition(IConfigMappable):
-    '''Defines run metadata and intermediate data storage behaviors.
+    """Defines run metadata and intermediate data storage behaviors.
 
     Example storage definitions are the default :py:func:`mem_system_storage`, which stores all
     intermediates and run data in memory, and :py:func:`fs_system_storage`, which stores all that
@@ -40,7 +40,7 @@ class SystemStorageDefinition(IConfigMappable):
             a :py:class:`SystemStorageData`.
         _configured_config_mapping_fn: This argument is for internal use only. Users should not
             specify this field. To preconfigure a resource, use the :py:func:`configured` API.
-    '''
+    """
 
     def __init__(
         self,
@@ -51,22 +51,22 @@ class SystemStorageDefinition(IConfigMappable):
         system_storage_creation_fn=None,
         _configured_config_mapping_fn=None,
     ):
-        self._name = check.str_param(name, 'name')
-        self._is_persistent = check.bool_param(is_persistent, 'is_persistent')
-        self._config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
+        self._name = check.str_param(name, "name")
+        self._is_persistent = check.bool_param(is_persistent, "is_persistent")
+        self._config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
         self._system_storage_creation_fn = check.opt_callable_param(
-            system_storage_creation_fn, 'system_storage_creation_fn'
+            system_storage_creation_fn, "system_storage_creation_fn"
         )
         self._required_resource_keys = frozenset(
-            check.set_param(required_resource_keys, 'required_resource_keys', of_type=str)
+            check.set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
         self.__configured_config_mapping_fn = check.opt_callable_param(
-            _configured_config_mapping_fn, 'config_mapping_fn'
+            _configured_config_mapping_fn, "config_mapping_fn"
         )
 
     @property
     def config_field(self):
-        rename_warning('config_schema', 'config_field', '0.9.0')
+        rename_warning("config_schema", "config_field", "0.9.0")
         return self.config_schema
 
     @property
@@ -94,7 +94,7 @@ class SystemStorageDefinition(IConfigMappable):
         return self.__configured_config_mapping_fn
 
     def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        '''
+        """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
 
@@ -110,8 +110,8 @@ class SystemStorageDefinition(IConfigMappable):
                 of the storage mode being configured.
 
         Returns (SystemStorageDefinition): A configured version of this object.
-        '''
-        name = check.opt_str_param(kwargs.get('name'), 'name', self.name)
+        """
+        name = check.opt_str_param(kwargs.get("name"), "name", self.name)
         wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
             config_or_config_fn, config_schema
         )
@@ -127,22 +127,22 @@ class SystemStorageDefinition(IConfigMappable):
 
 
 class SystemStorageData(object):
-    '''Represents an instance of system storage.
+    """Represents an instance of system storage.
 
     Attributes:
         intermediate_storage (IntermediateStorage): An intermediates manager.
         file_manager (FileManager): A file manager.
-    '''
+    """
 
     def __init__(self, intermediate_storage, file_manager):
         self.intermediate_storage = check.inst_param(
-            intermediate_storage, 'intermediate_storage', IntermediateStorage
+            intermediate_storage, "intermediate_storage", IntermediateStorage
         )
-        self.file_manager = check.inst_param(file_manager, 'file_manager', FileManager)
+        self.file_manager = check.inst_param(file_manager, "file_manager", FileManager)
 
 
 def system_storage(required_resource_keys, name=None, is_persistent=True, config_schema=None):
-    '''Creates a system storage definition.
+    """Creates a system storage definition.
 
     The decorated function will be passed as the ``system_storage_creation_fn`` to a
     :py:class:`SystemStorageDefinition`.
@@ -156,7 +156,7 @@ def system_storage(required_resource_keys, name=None, is_persistent=True, config
             The resources that this storage needs at runtime to function.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.system_storage_config`.
-    '''
+    """
 
     if callable(name):
         check.invariant(is_persistent is True)
@@ -176,13 +176,13 @@ class _SystemStorageDecoratorCallable(object):
     def __init__(
         self, name=None, is_persistent=True, config_schema=None, required_resource_keys=None
     ):
-        self.name = check.opt_str_param(name, 'name')
-        self.is_persistent = check.bool_param(is_persistent, 'is_persistent')
+        self.name = check.opt_str_param(name, "name")
+        self.is_persistent = check.bool_param(is_persistent, "is_persistent")
         self.config_schema = config_schema  # type check in definition
         self.required_resource_keys = required_resource_keys  # type check in definition
 
     def __call__(self, fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__

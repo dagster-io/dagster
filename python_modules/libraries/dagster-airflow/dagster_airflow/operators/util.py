@@ -14,35 +14,35 @@ from dagster.utils.hosted_user_process import create_in_process_ephemeral_worksp
 
 
 def check_events_for_failures(events):
-    check.list_param(events, 'events', of_type=DagsterEvent)
+    check.list_param(events, "events", of_type=DagsterEvent)
     for event in events:
-        if event.event_type_value == 'STEP_FAILURE':
+        if event.event_type_value == "STEP_FAILURE":
             raise AirflowException(
-                'step failed with error: %s' % event.event_specific_data.error.to_string()
+                "step failed with error: %s" % event.event_specific_data.error.to_string()
             )
 
 
 # Using AirflowSkipException is a canonical way for tasks to skip themselves; see example
 # here: http://bit.ly/2YtigEm
 def check_events_for_skips(events):
-    check.list_param(events, 'events', of_type=DagsterEvent)
+    check.list_param(events, "events", of_type=DagsterEvent)
     skipped = any([e.event_type_value == DagsterEventType.STEP_SKIPPED.value for e in events])
     if skipped:
-        raise AirflowSkipException('Dagster emitted skip event, skipping execution in Airflow')
+        raise AirflowSkipException("Dagster emitted skip event, skipping execution in Airflow")
 
 
 def convert_airflow_datestr_to_epoch_ts(airflow_ts):
-    '''convert_airflow_datestr_to_epoch_ts
+    """convert_airflow_datestr_to_epoch_ts
     Converts Airflow time strings (e.g. 2019-06-26T17:19:09+00:00) to epoch timestamps.
-    '''
+    """
     dt = dateutil.parser.parse(airflow_ts)
-    return (dt - dateutil.parser.parse('1970-01-01T00:00:00+00:00')).total_seconds()
+    return (dt - dateutil.parser.parse("1970-01-01T00:00:00+00:00")).total_seconds()
 
 
 def get_aws_environment():
-    '''
+    """
     Return AWS environment variables for Docker and Kubernetes execution.
-    '''
+    """
     default_env = {}
 
     # Note that if these env vars are set in Kubernetes, anyone with access to pods in that
@@ -52,48 +52,48 @@ def get_aws_environment():
     # https://github.com/boto/botocore/pull/1687
     # It's safer to check-and-set since if interpreted as blank strings they'll break the
     # cred retrieval chain (such as on-disk or metadata-API creds).
-    aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
-    aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+    aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
+    aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 
     # The creds _also_ break if you only set one of them.
     if aws_access_key_id and aws_secret_access_key:
         # TODO: also get region env var this way, since boto commands may fail without it
         default_env.update(
-            {'AWS_ACCESS_KEY_ID': aws_access_key_id, 'AWS_SECRET_ACCESS_KEY': aws_secret_access_key}
+            {"AWS_ACCESS_KEY_ID": aws_access_key_id, "AWS_SECRET_ACCESS_KEY": aws_secret_access_key}
         )
     elif aws_access_key_id or aws_secret_access_key:
         raise ValueError(
-            'If `propagate_aws_vars=True`, must provide either both of AWS_ACCESS_KEY_ID '
-            'and AWS_SECRET_ACCESS_KEY env vars, or neither.'
+            "If `propagate_aws_vars=True`, must provide either both of AWS_ACCESS_KEY_ID "
+            "and AWS_SECRET_ACCESS_KEY env vars, or neither."
         )
 
     return default_env
 
 
-def check_storage_specified(run_config, error_message_base_dir_ex='\'/tmp/special_place\''):
-    if 'storage' not in run_config:
+def check_storage_specified(run_config, error_message_base_dir_ex="'/tmp/special_place'"):
+    if "storage" not in run_config:
         raise AirflowException(
-            'No storage config found -- must configure storage accessible from all nodes (e.g. s3) '
-            'Ex.: \n'
-            'storage:\n'
-            '  filesystem:\n'
-            '    base_dir: {error_message_base_dir_ex}'
-            '\n\n --or--\n\n'
-            'storage:\n'
-            '  s3:\n'
-            '    s3_bucket: \'my-s3-bucket\'\n'
-            '\n\n --or--\n\n'
-            'storage:\n'
-            '  gcs:\n'
-            '    gcs_bucket: \'my-gcs-bucket\'\n'.format(
+            "No storage config found -- must configure storage accessible from all nodes (e.g. s3) "
+            "Ex.: \n"
+            "storage:\n"
+            "  filesystem:\n"
+            "    base_dir: {error_message_base_dir_ex}"
+            "\n\n --or--\n\n"
+            "storage:\n"
+            "  s3:\n"
+            "    s3_bucket: 'my-s3-bucket'\n"
+            "\n\n --or--\n\n"
+            "storage:\n"
+            "  gcs:\n"
+            "    gcs_bucket: 'my-gcs-bucket'\n".format(
                 error_message_base_dir_ex=error_message_base_dir_ex
             )
         )
 
     check.invariant(
-        'in_memory' not in run_config.get('storage', {}),
-        'Cannot use in-memory storage with Airflow. Must use storage '
-        'available from all nodes (e.g. s3)',
+        "in_memory" not in run_config.get("storage", {}),
+        "Cannot use in-memory storage with Airflow. Must use storage "
+        "available from all nodes (e.g. s3)",
     )
     return
 
@@ -118,8 +118,8 @@ def invoke_steps_within_python_operator(
     )
 
     logging.info(
-        'Executing GraphQL query: {query}\n'.format(query=EXECUTE_PLAN_MUTATION)
-        + 'with variables:\n'
+        "Executing GraphQL query: {query}\n".format(query=EXECUTE_PLAN_MUTATION)
+        + "with variables:\n"
         + seven.json.dumps(variables, indent=2)
     )
     instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
@@ -148,10 +148,10 @@ def invoke_steps_within_python_operator(
 
 
 def airflow_tags_for_ts(ts):
-    ''' Converts an Airflow timestamp string to a list of tags.
-    '''
-    check.opt_str_param(ts, 'ts')
+    """ Converts an Airflow timestamp string to a list of tags.
+    """
+    check.opt_str_param(ts, "ts")
 
     return [
-        {'key': AIRFLOW_EXECUTION_DATE_STR, 'value': ts},
+        {"key": AIRFLOW_EXECUTION_DATE_STR, "value": ts},
     ]

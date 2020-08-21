@@ -25,31 +25,31 @@ class ADLS2ObjectStore(ObjectStore):
 
         self.lease_duration = lease_duration
         self.file_system_client.get_file_system_properties()
-        super(ADLS2ObjectStore, self).__init__('adls2', sep='/')
+        super(ADLS2ObjectStore, self).__init__("adls2", sep="/")
 
     def set_object(self, key, obj, serialization_strategy=None):
-        check.str_param(key, 'key')
+        check.str_param(key, "key")
 
-        logging.info('Writing ADLS2 object at: ' + self.uri_for_key(key))
+        logging.info("Writing ADLS2 object at: " + self.uri_for_key(key))
 
         # cannot check obj since could be arbitrary Python object
         check.inst_param(
-            serialization_strategy, 'serialization_strategy', SerializationStrategy
+            serialization_strategy, "serialization_strategy", SerializationStrategy
         )  # cannot be none here
 
         if self.has_object(key):
-            logging.warning('Removing existing ADLS2 key: {key}'.format(key=key))
+            logging.warning("Removing existing ADLS2 key: {key}".format(key=key))
             self.rm_object(key)
 
         file = self.file_system_client.create_file(key)
         with file.acquire_lease(self.lease_duration) as lease:
             with BytesIO() as bytes_io:
-                if serialization_strategy.write_mode == 'w' and sys.version_info >= (3, 0):
+                if serialization_strategy.write_mode == "w" and sys.version_info >= (3, 0):
                     with StringIO() as string_io:
                         string_io = StringIO()
                         serialization_strategy.serialize(obj, string_io)
                         string_io.seek(0)
-                        bytes_io.write(string_io.read().encode('utf-8'))
+                        bytes_io.write(string_io.read().encode("utf-8"))
                 else:
                     serialization_strategy.serialize(obj, bytes_io)
                 bytes_io.seek(0)
@@ -65,10 +65,10 @@ class ADLS2ObjectStore(ObjectStore):
         )
 
     def get_object(self, key, serialization_strategy=None):
-        check.str_param(key, 'key')
-        check.param_invariant(len(key) > 0, 'key')
+        check.str_param(key, "key")
+        check.param_invariant(len(key) > 0, "key")
         check.inst_param(
-            serialization_strategy, 'serialization_strategy', SerializationStrategy
+            serialization_strategy, "serialization_strategy", SerializationStrategy
         )  # cannot be none here
 
         # FIXME we need better error handling for object store
@@ -76,7 +76,7 @@ class ADLS2ObjectStore(ObjectStore):
         stream = file.download_file()
         obj = serialization_strategy.deserialize(
             BytesIO(stream.readall())
-            if serialization_strategy.read_mode == 'rb'
+            if serialization_strategy.read_mode == "rb"
             else StringIO(stream.readall().decode(serialization_strategy.encoding))
         )
         return ObjectStoreOperation(
@@ -89,8 +89,8 @@ class ADLS2ObjectStore(ObjectStore):
         )
 
     def has_object(self, key):
-        check.str_param(key, 'key')
-        check.param_invariant(len(key) > 0, 'key')
+        check.str_param(key, "key")
+        check.param_invariant(len(key) > 0, "key")
 
         try:
             file = self.file_system_client.get_file_client(key)
@@ -100,8 +100,8 @@ class ADLS2ObjectStore(ObjectStore):
             return False
 
     def rm_object(self, key):
-        check.str_param(key, 'key')
-        check.param_invariant(len(key) > 0, 'key')
+        check.str_param(key, "key")
+        check.param_invariant(len(key) > 0, "key")
 
         # This operates recursively already so is nice and simple.
         self.file_system_client.delete_file(key)
@@ -116,8 +116,8 @@ class ADLS2ObjectStore(ObjectStore):
         )
 
     def cp_object(self, src, dst):
-        check.str_param(src, 'src')
-        check.str_param(dst, 'dst')
+        check.str_param(src, "src")
+        check.str_param(dst, "dst")
 
         # Manually recurse and copy anything that looks like a file.
         for src_blob_properties in self.blob_container_client.list_blobs(src):
@@ -126,7 +126,7 @@ class ADLS2ObjectStore(ObjectStore):
                 # Ignore this blob
                 continue
             src_blob = self.blob_container_client.get_blob_client(src_blob_properties["name"])
-            new_blob_path = re.sub(r'^{}'.format(src), dst, src_blob_properties["name"])
+            new_blob_path = re.sub(r"^{}".format(src), dst, src_blob_properties["name"])
             new_blob = self.blob_container_client.get_blob_client(new_blob_path)
             new_blob.start_copy_from_url(src_blob.url)
 
@@ -138,9 +138,9 @@ class ADLS2ObjectStore(ObjectStore):
         )
 
     def uri_for_key(self, key, protocol=None):
-        check.str_param(key, 'key')
-        protocol = check.opt_str_param(protocol, 'protocol', default='abfss://')
-        return '{protocol}{filesystem}@{account}.dfs.core.windows.net/{key}'.format(
+        check.str_param(key, "key")
+        protocol = check.opt_str_param(protocol, "protocol", default="abfss://")
+        return "{protocol}{filesystem}@{account}.dfs.core.windows.net/{key}".format(
             protocol=protocol,
             filesystem=self.file_system_client.file_system_name,
             account=self.file_system_client.account_name,

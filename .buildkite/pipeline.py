@@ -22,9 +22,9 @@ GCP_CREDS_LOCAL_FILE = "/tmp/gcp-key-elementl-dev.json"
 
 
 def publish_test_images():
-    '''This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
+    """This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
     the dagster-k8s tests
-    '''
+    """
     tests = []
     for version in SupportedPythons:
         key = "dagster-test-images-{version}".format(version=TOX_MAP[version])
@@ -35,7 +35,7 @@ def publish_test_images():
             .run(
                 # credentials
                 "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-1 | sh",
-                "export GOOGLE_APPLICATION_CREDENTIALS=\"/tmp/gcp-key-elementl-dev.json\"",
+                'export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"',
                 "/scriptdir/aws.pex s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
                 #
                 # build and tag test image
@@ -46,17 +46,17 @@ def publish_test_images():
                 + " $${TEST_IMAGE}",
                 #
                 # push the built image
-                "echo -e \"--- \033[32m:docker: Pushing Docker image\033[0m\"",
+                'echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"',
                 "docker push $${TEST_IMAGE}",
             )
             .on_python_image(
-                'test-image-builder:v2',
+                "test-image-builder:v2",
                 [
-                    'AIRFLOW_HOME',
-                    'AWS_ACCOUNT_ID',
-                    'AWS_ACCESS_KEY_ID',
-                    'AWS_SECRET_ACCESS_KEY',
-                    'BUILDKITE_SECRETS_BUCKET',
+                    "AIRFLOW_HOME",
+                    "AWS_ACCOUNT_ID",
+                    "AWS_ACCESS_KEY_ID",
+                    "AWS_SECRET_ACCESS_KEY",
+                    "BUILDKITE_SECRETS_BUCKET",
                 ],
             )
             .build()
@@ -81,16 +81,16 @@ def publish_test_images():
                 "./python_modules/dagster-test/build_core.sh " + version + " $${TEST_IMAGE}",
                 #
                 # push the built image
-                "echo -e \"--- \033[32m:docker: Pushing Docker image\033[0m\"",
+                'echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"',
                 "docker push $${TEST_IMAGE}",
             )
             .on_python_image(
-                'test-image-builder:v2',
+                "test-image-builder:v2",
                 [
-                    'AWS_ACCOUNT_ID',
-                    'AWS_ACCESS_KEY_ID',
-                    'AWS_SECRET_ACCESS_KEY',
-                    'BUILDKITE_SECRETS_BUCKET',
+                    "AWS_ACCOUNT_ID",
+                    "AWS_ACCESS_KEY_ID",
+                    "AWS_SECRET_ACCESS_KEY",
+                    "BUILDKITE_SECRETS_BUCKET",
                 ],
             )
             .build()
@@ -104,10 +104,10 @@ def test_image_depends_fn(version):
 
 def airflow_extra_cmds_fn(version):
     return [
-        "export AIRFLOW_HOME=\"/airflow\"",
+        'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-        "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
+        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-1 | sh",
         r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
         + GCP_CREDS_LOCAL_FILE,
@@ -117,42 +117,42 @@ def airflow_extra_cmds_fn(version):
 
 def airline_demo_extra_cmds_fn(_):
     return [
-        'pushd examples/airline_demo',
+        "pushd examples/airline_demo",
         # Run the postgres db. We are in docker running docker
         # so this will be a sibling container.
-        'docker-compose up -d --remove-orphans',  # clean up in hooks/pre-exit
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
-        network_buildkite_container('postgres'),
+        network_buildkite_container("postgres"),
         connect_sibling_docker_container(
-            'postgres', 'test-postgres-db-airline', 'POSTGRES_TEST_DB_HOST'
+            "postgres", "test-postgres-db-airline", "POSTGRES_TEST_DB_HOST"
         ),
-        'popd',
+        "popd",
     ]
 
 
 def celery_extra_cmds_fn(version):
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-        "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
+        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com"',
         "pushd python_modules/libraries/dagster-celery",
         # Run the rabbitmq db. We are in docker running docker
         # so this will be a sibling container.
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
-        network_buildkite_container('rabbitmq'),
-        connect_sibling_docker_container('rabbitmq', 'test-rabbitmq', 'DAGSTER_CELERY_BROKER_HOST'),
+        network_buildkite_container("rabbitmq"),
+        connect_sibling_docker_container("rabbitmq", "test-rabbitmq", "DAGSTER_CELERY_BROKER_HOST"),
         "popd",
     ]
 
 
 def integration_suite_extra_cmds_fn(version):
     return [
-        "export AIRFLOW_HOME=\"/airflow\"",
+        'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-        "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
+        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-1 | sh",
         r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
         + GCP_CREDS_LOCAL_FILE,
@@ -163,8 +163,8 @@ def integration_suite_extra_cmds_fn(version):
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
-        network_buildkite_container('rabbitmq'),
-        connect_sibling_docker_container('rabbitmq', 'test-rabbitmq', 'DAGSTER_CELERY_BROKER_HOST'),
+        network_buildkite_container("rabbitmq"),
+        connect_sibling_docker_container("rabbitmq", "test-rabbitmq", "DAGSTER_CELERY_BROKER_HOST"),
         "popd",
     ]
 
@@ -172,14 +172,14 @@ def integration_suite_extra_cmds_fn(version):
 def dagster_extra_cmds_fn(version):
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-        "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
+        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com"',
         "aws ecr get-login --no-include-email --region us-west-1 | sh",
         "export IMAGE_NAME=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-core-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
         + version,
         "pushd python_modules/dagster/dagster_tests",
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
-        network_buildkite_container('dagster'),
-        connect_sibling_docker_container('dagster', 'dagster-grpc-server', 'GRPC_SERVER_HOST'),
+        network_buildkite_container("dagster"),
+        connect_sibling_docker_container("dagster", "dagster-grpc-server", "GRPC_SERVER_HOST"),
         "popd",
     ]
 
@@ -194,8 +194,8 @@ def legacy_examples_extra_cmds_fn(_):
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
-        network_buildkite_container('postgres'),
-        connect_sibling_docker_container('postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'),
+        network_buildkite_container("postgres"),
+        connect_sibling_docker_container("postgres", "test-postgres-db", "POSTGRES_TEST_DB_HOST"),
         "popd",
     ]
 
@@ -203,7 +203,7 @@ def legacy_examples_extra_cmds_fn(_):
 def k8s_extra_cmds_fn(version):
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-        "export DAGSTER_DOCKER_REPOSITORY=\"$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com\"",
+        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com"',
     ]
 
 
@@ -220,16 +220,16 @@ def postgres_extra_cmds_fn(_):
         "pushd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         "docker-compose -f docker-compose-multi.yml up -d",  # clean up in hooks/pre-exit,
-        network_buildkite_container('postgres'),
-        connect_sibling_docker_container('postgres', 'test-postgres-db', 'POSTGRES_TEST_DB_HOST'),
-        network_buildkite_container('postgres_multi'),
+        network_buildkite_container("postgres"),
+        connect_sibling_docker_container("postgres", "test-postgres-db", "POSTGRES_TEST_DB_HOST"),
+        network_buildkite_container("postgres_multi"),
         connect_sibling_docker_container(
-            'postgres_multi', 'test-run-storage-db', 'POSTGRES_TEST_RUN_STORAGE_DB_HOST',
+            "postgres_multi", "test-run-storage-db", "POSTGRES_TEST_RUN_STORAGE_DB_HOST",
         ),
         connect_sibling_docker_container(
-            'postgres_multi',
-            'test-event-log-storage-db',
-            'POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST',
+            "postgres_multi",
+            "test-event-log-storage-db",
+            "POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST",
         ),
         "popd",
     ]
@@ -241,9 +241,9 @@ def graphql_pg_extra_cmds_fn(_):
         "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
         # Can't use host networking on buildkite and communicate via localhost
         # between these sibling containers, so pass along the ip.
-        network_buildkite_container('postgres'),
+        network_buildkite_container("postgres"),
         connect_sibling_docker_container(
-            'postgres', 'test-postgres-db-graphql', 'POSTGRES_TEST_DB_HOST'
+            "postgres", "test-postgres-db-graphql", "POSTGRES_TEST_DB_HOST"
         ),
         "popd",
     ]
@@ -254,10 +254,10 @@ def graphql_pg_extra_cmds_fn(_):
 DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     # Examples: Airline Demo
     ModuleBuildSpec(
-        'examples/airline_demo',
+        "examples/airline_demo",
         supported_pythons=SupportedPython3s,
         extra_cmds_fn=airline_demo_extra_cmds_fn,
-        buildkite_label='airline-demo',
+        buildkite_label="airline-demo",
     ),
     # Examples: Events Demo
     # TODO: https://github.com/dagster-io/dagster/issues/2617
@@ -270,141 +270,141 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     # ),
     # Examples
     ModuleBuildSpec(
-        'examples/legacy_examples',
+        "examples/legacy_examples",
         supported_pythons=SupportedPython3s,
         extra_cmds_fn=legacy_examples_extra_cmds_fn,
     ),
     ModuleBuildSpec(
-        'examples/docs_snippets',
+        "examples/docs_snippets",
         extra_cmds_fn=legacy_examples_extra_cmds_fn,
         upload_coverage=False,
         supported_pythons=SupportedPython3s,
     ),
-    ModuleBuildSpec('python_modules/dagit', extra_cmds_fn=dagit_extra_cmds_fn),
-    ModuleBuildSpec('python_modules/automation', supported_pythons=SupportedPython3s),
+    ModuleBuildSpec("python_modules/dagit", extra_cmds_fn=dagit_extra_cmds_fn),
+    ModuleBuildSpec("python_modules/automation", supported_pythons=SupportedPython3s),
     ModuleBuildSpec(
-        'python_modules/dagster',
+        "python_modules/dagster",
         extra_cmds_fn=dagster_extra_cmds_fn,
-        env_vars=['AWS_ACCOUNT_ID'],
+        env_vars=["AWS_ACCOUNT_ID"],
         depends_on_fn=test_image_depends_fn,
         tox_env_suffixes=[
-            '-api_tests',
-            '-cli_tests',
-            '-cli_command_cli_api_tests',
-            '-cli_command_grpc_tests',
-            '-core_tests',
-            '-general_tests',
+            "-api_tests",
+            "-cli_tests",
+            "-cli_command_cli_api_tests",
+            "-cli_command_grpc_tests",
+            "-core_tests",
+            "-general_tests",
         ],
     ),
     ModuleBuildSpec(
-        'python_modules/dagster-graphql',
+        "python_modules/dagster-graphql",
         tox_env_suffixes=[
-            '-in_memory_instance_hosted_user_process_env',
-            '-in_memory_instance_out_of_process_env',
-            '-in_memory_instance_multi_location',
-            '-in_memory_instance_managed_grpc_env',
-            '-sqlite_instance_hosted_user_process_env',
-            '-readonly_sqlite_instance_out_of_process_env',
-            '-sqlite_with_default_run_launcher_out_of_process_env',
-            '-sqlite_instance_multi_location',
-            '-sqlite_instance_managed_grpc_env',
-            '-sqlite_instance_deployed_grpc_env',
+            "-in_memory_instance_hosted_user_process_env",
+            "-in_memory_instance_out_of_process_env",
+            "-in_memory_instance_multi_location",
+            "-in_memory_instance_managed_grpc_env",
+            "-sqlite_instance_hosted_user_process_env",
+            "-readonly_sqlite_instance_out_of_process_env",
+            "-sqlite_with_default_run_launcher_out_of_process_env",
+            "-sqlite_instance_multi_location",
+            "-sqlite_instance_managed_grpc_env",
+            "-sqlite_instance_deployed_grpc_env",
         ],
     ),
     ModuleBuildSpec(
-        'python_modules/dagster-graphql',
+        "python_modules/dagster-graphql",
         extra_cmds_fn=graphql_pg_extra_cmds_fn,
-        tox_file='tox_postgres.ini',
-        buildkite_label='dagster-graphql-postgres',
+        tox_file="tox_postgres.ini",
+        buildkite_label="dagster-graphql-postgres",
         tox_env_suffixes=[
-            '-not_graphql_context_test_suite',
-            '-postgres_instance_hosted_user_process_env',
-            '-postgres_instance_out_of_process_env',
-            '-postgres_instance_multi_location',
-            '-postgres_instance_managed_grpc_env',
+            "-not_graphql_context_test_suite",
+            "-postgres_instance_hosted_user_process_env",
+            "-postgres_instance_out_of_process_env",
+            "-postgres_instance_multi_location",
+            "-postgres_instance_managed_grpc_env",
         ],
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-airflow',
+        "python_modules/libraries/dagster-airflow",
         env_vars=[
-            'AIRFLOW_HOME',
-            'AWS_ACCOUNT_ID',
-            'AWS_ACCESS_KEY_ID',
-            'AWS_SECRET_ACCESS_KEY',
-            'BUILDKITE_SECRETS_BUCKET',
-            'GOOGLE_APPLICATION_CREDENTIALS',
+            "AIRFLOW_HOME",
+            "AWS_ACCOUNT_ID",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "BUILDKITE_SECRETS_BUCKET",
+            "GOOGLE_APPLICATION_CREDENTIALS",
         ],
         extra_cmds_fn=airflow_extra_cmds_fn,
         depends_on_fn=test_image_depends_fn,
-        tox_env_suffixes=['-default', '-requiresairflowdb'],
+        tox_env_suffixes=["-default", "-requiresairflowdb"],
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-aws',
-        env_vars=['AWS_DEFAULT_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
+        "python_modules/libraries/dagster-aws",
+        env_vars=["AWS_DEFAULT_REGION", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-azure', env_vars=['AZURE_STORAGE_ACCOUNT_KEY'],
+        "python_modules/libraries/dagster-azure", env_vars=["AZURE_STORAGE_ACCOUNT_KEY"],
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-celery',
-        env_vars=['AWS_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
+        "python_modules/libraries/dagster-celery",
+        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         extra_cmds_fn=celery_extra_cmds_fn,
         depends_on_fn=test_image_depends_fn,
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-celery-docker',
-        env_vars=['AWS_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'],
+        "python_modules/libraries/dagster-celery-docker",
+        env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
         extra_cmds_fn=celery_extra_cmds_fn,
         depends_on_fn=test_image_depends_fn,
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-dask',
-        env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
+        "python_modules/libraries/dagster-dask",
+        env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
         supported_pythons=SupportedPython3s,
     ),
-    ModuleBuildSpec('python_modules/libraries/dagster-flyte', supported_pythons=SupportedPython3s),
+    ModuleBuildSpec("python_modules/libraries/dagster-flyte", supported_pythons=SupportedPython3s),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-gcp',
+        "python_modules/libraries/dagster-gcp",
         env_vars=[
-            'AWS_ACCESS_KEY_ID',
-            'AWS_SECRET_ACCESS_KEY',
-            'BUILDKITE_SECRETS_BUCKET',
-            'GCP_PROJECT_ID',
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "BUILDKITE_SECRETS_BUCKET",
+            "GCP_PROJECT_ID",
         ],
         extra_cmds_fn=gcp_extra_cmds_fn,
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
-    ModuleBuildSpec('python_modules/libraries/dagster-ge', supported_pythons=SupportedPython3s),
+    ModuleBuildSpec("python_modules/libraries/dagster-ge", supported_pythons=SupportedPython3s),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-k8s',
+        "python_modules/libraries/dagster-k8s",
         env_vars=[
-            'AWS_ACCOUNT_ID',
-            'AWS_ACCESS_KEY_ID',
-            'AWS_SECRET_ACCESS_KEY',
-            'BUILDKITE_SECRETS_BUCKET',
+            "AWS_ACCOUNT_ID",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "BUILDKITE_SECRETS_BUCKET",
         ],
         extra_cmds_fn=k8s_extra_cmds_fn,
         depends_on_fn=test_image_depends_fn,
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-postgres', extra_cmds_fn=postgres_extra_cmds_fn
+        "python_modules/libraries/dagster-postgres", extra_cmds_fn=postgres_extra_cmds_fn
     ),
     ModuleBuildSpec(
-        'python_modules/libraries/dagster-twilio',
-        env_vars=['TWILIO_TEST_ACCOUNT_SID', 'TWILIO_TEST_AUTH_TOKEN'],
+        "python_modules/libraries/dagster-twilio",
+        env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
-    ModuleBuildSpec('python_modules/libraries/lakehouse', supported_pythons=SupportedPython3s),
+    ModuleBuildSpec("python_modules/libraries/lakehouse", supported_pythons=SupportedPython3s),
 ]
 
 
 def extra_library_tests():
-    '''Ensure we test any remaining libraries not explicitly listed above'''
-    library_path = os.path.join(SCRIPT_PATH, '..', 'python_modules', 'libraries')
+    """Ensure we test any remaining libraries not explicitly listed above"""
+    library_path = os.path.join(SCRIPT_PATH, "..", "python_modules", "libraries")
     library_packages = [
-        os.path.join('python_modules', 'libraries', library) for library in os.listdir(library_path)
+        os.path.join("python_modules", "libraries", library) for library in os.listdir(library_path)
     ]
 
     dirs = set([pkg.directory for pkg in DAGSTER_PACKAGES_WITH_CUSTOM_TESTS])
@@ -419,33 +419,33 @@ def extra_library_tests():
 def integration_tests():
     tests = []
     tests += ModuleBuildSpec(
-        os.path.join('integration_tests', 'python_modules', 'dagster-k8s-test-infra'),
+        os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra"),
         supported_pythons=SupportedPython3s,
         upload_coverage=True,
     ).get_tox_build_steps()
 
-    integration_suites_root = os.path.join(SCRIPT_PATH, '..', 'integration_tests', 'test_suites')
+    integration_suites_root = os.path.join(SCRIPT_PATH, "..", "integration_tests", "test_suites")
     integration_suites = [
-        os.path.join('integration_tests', 'test_suites', suite)
+        os.path.join("integration_tests", "test_suites", suite)
         for suite in os.listdir(integration_suites_root)
     ]
 
     for integration_suite in integration_suites:
         tox_env_suffixes = (
-            ['-default', '-markscheduler']
+            ["-default", "-markscheduler"]
             if integration_suite
-            == os.path.join('integration_tests', 'test_suites', 'k8s-integration-test-suite')
+            == os.path.join("integration_tests", "test_suites", "k8s-integration-test-suite")
             else None
         )
         tests += ModuleBuildSpec(
             integration_suite,
             env_vars=[
-                'AIRFLOW_HOME',
-                'AWS_ACCOUNT_ID',
-                'AWS_ACCESS_KEY_ID',
-                'AWS_SECRET_ACCESS_KEY',
-                'BUILDKITE_SECRETS_BUCKET',
-                'GOOGLE_APPLICATION_CREDENTIALS',
+                "AIRFLOW_HOME",
+                "AWS_ACCOUNT_ID",
+                "AWS_ACCESS_KEY_ID",
+                "AWS_SECRET_ACCESS_KEY",
+                "BUILDKITE_SECRETS_BUCKET",
+                "GOOGLE_APPLICATION_CREDENTIALS",
             ],
             supported_pythons=SupportedPython3s,
             upload_coverage=True,
@@ -458,19 +458,19 @@ def integration_tests():
 
 
 def examples_tests():
-    '''Auto-discover and test all new examples'''
+    """Auto-discover and test all new examples"""
 
     skip_examples = [
         # Skip these folders because they need custom build config
-        'docs_snippets',
-        'legacy_examples',
-        'airline_demo',
+        "docs_snippets",
+        "legacy_examples",
+        "airline_demo",
     ]
 
-    examples_root = os.path.join(SCRIPT_PATH, '..', 'examples')
+    examples_root = os.path.join(SCRIPT_PATH, "..", "examples")
 
     examples_packages = [
-        os.path.join('examples', example)
+        os.path.join("examples", example)
         for example in os.listdir(examples_root)
         if example not in skip_examples and os.path.isdir(os.path.join(examples_root, example))
     ]
@@ -519,14 +519,14 @@ def coverage_step():
             "coveralls",  # add '--merge=coverage.js.json' to report JS coverage
         )
         .on_python_image(
-            'coverage-image:v1',
+            "coverage-image:v1",
             [
-                'COVERALLS_REPO_TOKEN',  # exported by /env in ManagedSecretsBucket
-                'CI_NAME',
-                'CI_BUILD_NUMBER',
-                'CI_BUILD_URL',
-                'CI_BRANCH',
-                'CI_PULL_REQUEST',
+                "COVERALLS_REPO_TOKEN",  # exported by /env in ManagedSecretsBucket
+                "CI_NAME",
+                "CI_BUILD_NUMBER",
+                "CI_BUILD_URL",
+                "CI_BRANCH",
+                "CI_PULL_REQUEST",
             ],
         )
         .build()
@@ -534,7 +534,7 @@ def coverage_step():
 
 
 def pylint_steps():
-    base_paths = ['.buildkite', 'bin', 'docs/next/src']
+    base_paths = [".buildkite", "bin", "docs/next/src"]
     base_paths_ext = ['"%s/**.py"' % p for p in base_paths]
 
     return [
@@ -550,7 +550,7 @@ def pylint_steps():
                 -e python_modules/libraries/dagster-dask \
                 -e examples/legacy_examples
             """,
-            "pylint -j 0 `git ls-files %s` --rcfile=.pylintrc" % ' '.join(base_paths_ext),
+            "pylint -j 0 `git ls-files %s` --rcfile=.pylintrc" % " ".join(base_paths_ext),
         )
         .on_integration_image(SupportedPython.V3_7)
         .build()
@@ -658,7 +658,7 @@ if __name__ == "__main__":
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder("Validate Library Docs")
-        .run('pip install -e python_modules/automation', 'dagster-docs validate-libraries')
+        .run("pip install -e python_modules/automation", "dagster-docs validate-libraries")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
     ]

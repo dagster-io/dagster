@@ -14,18 +14,18 @@ def pipe():
 
 
 run_config: dict = {
-    'storage': {'filesystem': {}},
-    'solids': {'mult_x': {'inputs': {'x': {'value': 2}}}},
+    "storage": {"filesystem": {}},
+    "solids": {"mult_x": {"inputs": {"x": {"value": 2}}}},
 }
 
 compute_dict = {
-    'mult_x': {
-        'storage_request': '300Mi',
-        'memory_request': '300Mi',
-        'cpu_request': '200m',
-        'storage_limit': '300Mi',
-        'memory_limit': '300Mi',
-        'cpu_limit': '200m',
+    "mult_x": {
+        "storage_request": "300Mi",
+        "memory_request": "300Mi",
+        "cpu_request": "200m",
+        "storage_limit": "300Mi",
+        "memory_limit": "300Mi",
+        "cpu_limit": "200m",
     }
 }
 

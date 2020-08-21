@@ -4,4 +4,4 @@ from .dauphin_registry import DauphinRegistry
 from .version import __version__
 
 dauphin = DauphinRegistry()
-check_dagster_package_version('dagster-graphql', __version__)
+check_dagster_package_version("dagster-graphql", __version__)

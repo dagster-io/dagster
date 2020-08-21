@@ -25,14 +25,14 @@ from dagster.core.execution.api import create_execution_plan
 
 
 def _define_nothing_dep_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Nothing, 'complete'))
+    @lambda_solid(output_def=OutputDefinition(Nothing, "complete"))
     def start_nothing():
         pass
 
     @lambda_solid(
         input_defs=[
-            InputDefinition('add_complete', Nothing),
-            InputDefinition('yield_complete', Nothing),
+            InputDefinition("add_complete", Nothing),
+            InputDefinition("yield_complete", Nothing),
         ]
     )
     def end_nothing():
@@ -43,38 +43,38 @@ def _define_nothing_dep_pipeline():
         return 1
 
     @lambda_solid(
-        input_defs=[InputDefinition('on_complete', Nothing), InputDefinition('num', Int)],
+        input_defs=[InputDefinition("on_complete", Nothing), InputDefinition("num", Int)],
         output_def=OutputDefinition(Int),
     )
     def add_value(num):
         return 1 + num
 
     @solid(
-        name='yield_values',
-        input_defs=[InputDefinition('on_complete', Nothing)],
+        name="yield_values",
+        input_defs=[InputDefinition("on_complete", Nothing)],
         output_defs=[
-            OutputDefinition(Int, 'num_1'),
-            OutputDefinition(Int, 'num_2'),
-            OutputDefinition(Nothing, 'complete'),
+            OutputDefinition(Int, "num_1"),
+            OutputDefinition(Int, "num_2"),
+            OutputDefinition(Nothing, "complete"),
         ],
     )
     def yield_values(_context):
-        yield Output(1, 'num_1')
-        yield Output(2, 'num_2')
-        yield Output(None, 'complete')
+        yield Output(1, "num_1")
+        yield Output(2, "num_2")
+        yield Output(None, "complete")
 
     return PipelineDefinition(
-        name='simple_exc',
+        name="simple_exc",
         solid_defs=[emit_value, add_value, start_nothing, end_nothing, yield_values],
         dependencies={
-            'add_value': {
-                'on_complete': DependencyDefinition('start_nothing', 'complete'),
-                'num': DependencyDefinition('emit_value'),
+            "add_value": {
+                "on_complete": DependencyDefinition("start_nothing", "complete"),
+                "num": DependencyDefinition("emit_value"),
             },
-            'yield_values': {'on_complete': DependencyDefinition('start_nothing', 'complete')},
-            'end_nothing': {
-                'add_complete': DependencyDefinition('add_value'),
-                'yield_complete': DependencyDefinition('yield_values', 'complete'),
+            "yield_values": {"on_complete": DependencyDefinition("start_nothing", "complete")},
+            "end_nothing": {
+                "add_complete": DependencyDefinition("add_value"),
+                "yield_complete": DependencyDefinition("yield_values", "complete"),
             },
         },
     )
@@ -92,30 +92,30 @@ def test_invalid_input_dependency():
     def do_nothing():
         pass
 
-    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
     with pytest.raises(DagsterInvalidDefinitionError):
         PipelineDefinition(
-            name='bad_dep',
+            name="bad_dep",
             solid_defs=[do_nothing, add_one],
-            dependencies={'add_one': {'num': DependencyDefinition('do_nothing')}},
+            dependencies={"add_one": {"num": DependencyDefinition("do_nothing")}},
         )
 
 
 def test_result_type_check():
     @solid(output_defs=[OutputDefinition(Nothing)])
     def bad(_context):
-        yield Output('oops')
+        yield Output("oops")
 
-    pipeline = PipelineDefinition(name='fail', solid_defs=[bad])
+    pipeline = PipelineDefinition(name="fail", solid_defs=[bad])
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_pipeline(pipeline)
 
 
 def test_nothing_inputs():
-    @lambda_solid(input_defs=[InputDefinition('never_defined', Nothing)])
+    @lambda_solid(input_defs=[InputDefinition("never_defined", Nothing)])
     def emit_one():
         return 1
 
@@ -133,12 +133,12 @@ def test_nothing_inputs():
 
     @solid(
         input_defs=[
-            InputDefinition('_one', Nothing),
-            InputDefinition('one', Int),
-            InputDefinition('_two', Nothing),
-            InputDefinition('two', Int),
-            InputDefinition('_three', Nothing),
-            InputDefinition('three', Int),
+            InputDefinition("_one", Nothing),
+            InputDefinition("one", Int),
+            InputDefinition("_two", Nothing),
+            InputDefinition("two", Int),
+            InputDefinition("_three", Nothing),
+            InputDefinition("three", Int),
         ]
     )
     def adder(_context, one, two, three):
@@ -148,19 +148,19 @@ def test_nothing_inputs():
         return one + two + three
 
     pipeline = PipelineDefinition(
-        name='input_test',
+        name="input_test",
         solid_defs=[emit_one, emit_two, emit_three, emit_nothing, adder],
         dependencies={
-            SolidInvocation('emit_nothing', '_one'): {},
-            SolidInvocation('emit_nothing', '_two'): {},
-            SolidInvocation('emit_nothing', '_three'): {},
-            'adder': {
-                '_one': DependencyDefinition('_one'),
-                '_two': DependencyDefinition('_two'),
-                '_three': DependencyDefinition('_three'),
-                'one': DependencyDefinition('emit_one'),
-                'two': DependencyDefinition('emit_two'),
-                'three': DependencyDefinition('emit_three'),
+            SolidInvocation("emit_nothing", "_one"): {},
+            SolidInvocation("emit_nothing", "_two"): {},
+            SolidInvocation("emit_nothing", "_three"): {},
+            "adder": {
+                "_one": DependencyDefinition("_one"),
+                "_two": DependencyDefinition("_two"),
+                "_three": DependencyDefinition("_three"),
+                "one": DependencyDefinition("emit_one"),
+                "two": DependencyDefinition("emit_two"),
+                "three": DependencyDefinition("emit_three"),
             },
         },
     )
@@ -177,46 +177,46 @@ def test_fanin_deps():
 
     @lambda_solid(output_def=OutputDefinition(Nothing))
     def emit_nothing():
-        called['emit_nothing'] += 1
+        called["emit_nothing"] += 1
 
     @solid(
         input_defs=[
-            InputDefinition('ready', Nothing),
-            InputDefinition('num_1', Int),
-            InputDefinition('num_2', Int),
+            InputDefinition("ready", Nothing),
+            InputDefinition("num_1", Int),
+            InputDefinition("num_2", Int),
         ]
     )
     def adder(_context, num_1, num_2):
-        assert called['emit_nothing'] == 3
-        called['adder'] += 1
+        assert called["emit_nothing"] == 3
+        called["adder"] += 1
         return num_1 + num_2
 
     pipeline = PipelineDefinition(
-        name='input_test',
+        name="input_test",
         solid_defs=[emit_two, emit_nothing, adder],
         dependencies={
-            SolidInvocation('emit_two', 'emit_1'): {},
-            SolidInvocation('emit_two', 'emit_2'): {},
-            SolidInvocation('emit_nothing', '_one'): {},
-            SolidInvocation('emit_nothing', '_two'): {},
-            SolidInvocation('emit_nothing', '_three'): {},
-            'adder': {
-                'ready': MultiDependencyDefinition(
+            SolidInvocation("emit_two", "emit_1"): {},
+            SolidInvocation("emit_two", "emit_2"): {},
+            SolidInvocation("emit_nothing", "_one"): {},
+            SolidInvocation("emit_nothing", "_two"): {},
+            SolidInvocation("emit_nothing", "_three"): {},
+            "adder": {
+                "ready": MultiDependencyDefinition(
                     [
-                        DependencyDefinition('_one'),
-                        DependencyDefinition('_two'),
-                        DependencyDefinition('_three'),
+                        DependencyDefinition("_one"),
+                        DependencyDefinition("_two"),
+                        DependencyDefinition("_three"),
                     ]
                 ),
-                'num_1': DependencyDefinition('emit_1'),
-                'num_2': DependencyDefinition('emit_2'),
+                "num_1": DependencyDefinition("emit_1"),
+                "num_2": DependencyDefinition("emit_2"),
             },
         },
     )
     result = execute_pipeline(pipeline)
     assert result.success
-    assert called['adder'] == 1
-    assert called['emit_nothing'] == 3
+    assert called["adder"] == 1
+    assert called["emit_nothing"] == 3
 
 
 def test_valid_nothing_fns():
@@ -238,10 +238,10 @@ def test_valid_nothing_fns():
 
     @solid(output_defs=[OutputDefinition(Nothing)])
     def yield_stuff(_context):
-        yield AssetMaterialization.file('/path/to/nowhere')
+        yield AssetMaterialization.file("/path/to/nowhere")
 
     pipeline = PipelineDefinition(
-        name='fn_test', solid_defs=[just_pass, just_pass2, ret_none, yield_none, yield_stuff]
+        name="fn_test", solid_defs=[just_pass, just_pass2, ret_none, yield_none, yield_stuff]
     )
     result = execute_pipeline(pipeline)
     assert result.success
@@ -250,17 +250,17 @@ def test_valid_nothing_fns():
 def test_invalid_nothing_fns():
     @lambda_solid(output_def=OutputDefinition(Nothing))
     def ret_val():
-        return 'val'
+        return "val"
 
     @solid(output_defs=[OutputDefinition(Nothing)])
     def yield_val(_context):
-        yield Output('val')
+        yield Output("val")
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(PipelineDefinition(name='fn_test', solid_defs=[ret_val]))
+        execute_pipeline(PipelineDefinition(name="fn_test", solid_defs=[ret_val]))
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_pipeline(PipelineDefinition(name='fn_test', solid_defs=[yield_val]))
+        execute_pipeline(PipelineDefinition(name="fn_test", solid_defs=[yield_val]))
 
 
 def test_wrapping_nothing():
@@ -272,7 +272,7 @@ def test_wrapping_nothing():
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(input_defs=[InputDefinition('in', List[Nothing])])
+        @lambda_solid(input_defs=[InputDefinition("in", List[Nothing])])
         def _(_in):
             pass
 
@@ -284,7 +284,7 @@ def test_wrapping_nothing():
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @lambda_solid(input_defs=[InputDefinition('in', Optional[Nothing])])
+        @lambda_solid(input_defs=[InputDefinition("in", Optional[Nothing])])
         def _(_in):
             pass
 
@@ -292,22 +292,22 @@ def test_wrapping_nothing():
 def test_execution_plan():
     @solid(output_defs=[OutputDefinition(Nothing)])
     def emit_nothing(_context):
-        yield AssetMaterialization.file(path='/path/')
+        yield AssetMaterialization.file(path="/path/")
 
-    @lambda_solid(input_defs=[InputDefinition('ready', Nothing)])
+    @lambda_solid(input_defs=[InputDefinition("ready", Nothing)])
     def consume_nothing():
         pass
 
     pipe = PipelineDefinition(
-        name='execution_plan_test',
+        name="execution_plan_test",
         solid_defs=[emit_nothing, consume_nothing],
-        dependencies={'consume_nothing': {'ready': DependencyDefinition('emit_nothing')}},
+        dependencies={"consume_nothing": {"ready": DependencyDefinition("emit_nothing")}},
     )
     plan = create_execution_plan(pipe)
 
     levels = plan.topological_step_levels()
 
-    assert 'emit_nothing' in levels[0][0].key
-    assert 'consume_nothing' in levels[1][0].key
+    assert "emit_nothing" in levels[0][0].key
+    assert "consume_nothing" in levels[1][0].key
 
     assert execute_pipeline(pipe).success

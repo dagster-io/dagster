@@ -3,7 +3,7 @@ dataproc:
 
 	# Clean up formatting
 	black ../libraries/dagster-gcp/dagster_gcp/dataproc/ \
-		--line-length 100 -S --fast \
+		--line-length 100 --fast \
 		--exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/" -N
 
 	# Clean up imports
@@ -15,7 +15,7 @@ spark_docs:
 
 	# Clean up formatting
 	black ../libraries/dagster-spark/dagster_spark/configs_spark.py \
-		--line-length 100 -S --fast \
+		--line-length 100 --fast \
 		--exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/" -N
 
 	# Clean up imports

@@ -70,8 +70,8 @@ def assert_logger_calls(mock_logger, log_messages):
 def test_wait_for_job_success():
     mock_client = create_mocked_client()
 
-    job_name = 'a_job'
-    namespace = 'a_namespace'
+    job_name = "a_job"
+    namespace = "a_namespace"
 
     a_job_metadata = V1ObjectMeta(name=job_name)
 
@@ -92,8 +92,8 @@ def test_wait_for_job_success():
 def test_wait_for_job_not_launched():
     mock_client = create_mocked_client()
 
-    job_name = 'a_job'
-    namespace = 'a_namespace'
+    job_name = "a_job"
+    namespace = "a_namespace"
 
     a_job_metadata = V1ObjectMeta(name=job_name)
 
@@ -118,16 +118,16 @@ def test_timed_out_while_waiting_for_launch():
     mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=0))
 
     with pytest.raises(DagsterK8sError) as exc_info:
-        mock_client.wait_for_job_success('a_job', 'a_namespace')
+        mock_client.wait_for_job_success("a_job", "a_namespace")
 
-    assert str(exc_info.value) == 'Timed out while waiting for job to launch'
+    assert str(exc_info.value) == "Timed out while waiting for job to launch"
 
 
 def test_timed_out_while_waiting_for_job_to_complete():
     mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=1))
 
-    job_name = 'a_job'
-    namespace = 'a_namespace'
+    job_name = "a_job"
+    namespace = "a_namespace"
 
     a_job_metadata = V1ObjectMeta(name=job_name)
 
@@ -137,14 +137,14 @@ def test_timed_out_while_waiting_for_job_to_complete():
     with pytest.raises(DagsterK8sError) as exc_info:
         mock_client.wait_for_job_success(job_name, namespace)
 
-    assert str(exc_info.value) == 'Timed out while waiting for job to complete'
+    assert str(exc_info.value) == "Timed out while waiting for job to complete"
 
 
 def test_job_failed():
     mock_client = create_mocked_client()
 
-    job_name = 'a_job'
-    namespace = 'a_namespace'
+    job_name = "a_job"
+    namespace = "a_namespace"
 
     a_job_metadata = V1ObjectMeta(name=job_name)
 
@@ -158,14 +158,14 @@ def test_job_failed():
     with pytest.raises(DagsterK8sError) as exc_info:
         mock_client.wait_for_job_success(job_name, namespace)
 
-    assert 'Encountered failed job pods with status' in str(exc_info.value)
+    assert "Encountered failed job pods with status" in str(exc_info.value)
 
 
 def test_long_running_job():
     mock_client = create_mocked_client()
 
-    job_name = 'a_job'
-    namespace = 'a_namespace'
+    job_name = "a_job"
+    namespace = "a_namespace"
 
     a_job_metadata = V1ObjectMeta(name=job_name)
 
@@ -192,11 +192,11 @@ def test_long_running_job():
 def test_retrieve_pod_logs():
     mock_client = create_mocked_client()
 
-    MockResponse = namedtuple('MockResponse', 'data')
+    MockResponse = namedtuple("MockResponse", "data")
 
-    mock_client.core_api.read_namespaced_pod_log.side_effect = [MockResponse('a_string')]
+    mock_client.core_api.read_namespaced_pod_log.side_effect = [MockResponse("a_string")]
 
-    assert mock_client.retrieve_pod_logs('pod', 'namespace') == 'a_string'
+    assert mock_client.retrieve_pod_logs("pod", "namespace") == "a_string"
 
 
 def _pod_list_for_container_status(container_status):
@@ -209,9 +209,9 @@ def _ready_running_status():
 
 def _create_status(state, ready):
     return V1ContainerStatus(
-        image='an_image',
-        image_id='an_image_id',
-        name='a_name',
+        image="an_image",
+        image_id="an_image_id",
+        name="a_name",
         restart_count=0,
         state=state,
         ready=ready,
@@ -222,18 +222,18 @@ def _create_status(state, ready):
 # wait_for_pod_success
 ###
 def test_wait_for_pod_success():
-    '''
+    """
     Ready pod right away
-    '''
+    """
     mock_client = create_mocked_client()
 
     single_ready_running_pod = _pod_list_for_container_status(_ready_running_status())
 
     mock_client.core_api.list_namespaced_pod.side_effect = [single_ready_running_pod]
 
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
 
-    mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert_logger_calls(
         mock_client.logger,
@@ -250,9 +250,9 @@ def test_wait_for_launch_then_success():
 
     mock_client.core_api.list_namespaced_pod.side_effect = [no_pods, single_ready_running_pod]
 
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
 
-    mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert_logger_calls(
         mock_client.logger,
@@ -277,15 +277,15 @@ def test_wait_for_statuses_then_success():
         single_ready_running_pod,
     ]
 
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
 
-    mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert_logger_calls(
         mock_client.logger,
         [
             'Waiting for pod "%s"' % pod_name,
-            'Waiting for pod container status to be set by kubernetes...',
+            "Waiting for pod container status to be set by kubernetes...",
             'Pod "%s" is ready, done waiting' % pod_name,
         ],
     )
@@ -302,14 +302,14 @@ def test_initial_timeout():
 
     mock_client.core_api.list_namespaced_pod.side_effect = [not_ready_list]
 
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
 
     with pytest.raises(DagsterK8sError) as exc_info:
-        mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+        mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     # value of pod info is big blob of serialized dict info
     assert str(exc_info.value).startswith(
-        'Timed out while waiting for pod to become ready with pod info:'
+        "Timed out while waiting for pod to become ready with pod info:"
     )
 
 
@@ -319,14 +319,14 @@ def test_initial_timeout_with_no_pod():
 
     mock_client.core_api.list_namespaced_pod.side_effect = [no_pods]
 
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
 
     with pytest.raises(DagsterK8sError) as exc_info:
-        mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+        mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     # a bit of a dubious state here but it works
     assert (
-        str(exc_info.value) == 'Timed out while waiting for pod to become ready with pod info: None'
+        str(exc_info.value) == "Timed out while waiting for pod to become ready with pod info: None"
     )
 
 
@@ -344,9 +344,9 @@ def test_running_but_not_ready():
         single_ready_running_pod,
     ]
 
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
 
-    mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert_logger_calls(
         mock_client.logger,
@@ -373,15 +373,15 @@ def test_wait_for_ready_but_terminated():
         single_pod_terminated_successful,
     ]
 
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
 
-    mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert_logger_calls(
         mock_client.logger,
         [
             'Waiting for pod "%s"' % pod_name,
-            'Pod {pod_name} exitted successfully'.format(pod_name=pod_name),
+            "Pod {pod_name} exitted successfully".format(pod_name=pod_name),
         ],
     )
 
@@ -396,7 +396,7 @@ def test_wait_for_ready_but_terminated_unsuccessfully():
     single_pod_terminated_unsuccessful = _pod_list_for_container_status(
         _create_status(
             state=V1ContainerState(
-                terminated=V1ContainerStateTerminated(exit_code=1, message='error_message')
+                terminated=V1ContainerStateTerminated(exit_code=1, message="error_message")
             ),
             ready=False,
         )
@@ -408,13 +408,13 @@ def test_wait_for_ready_but_terminated_unsuccessfully():
     ]
 
     retrieve_pod_logs_mock = mock.MagicMock()
-    retrieve_pod_logs_mock.side_effect = ['raw_logs_ret_val']
+    retrieve_pod_logs_mock.side_effect = ["raw_logs_ret_val"]
     mock_client.retrieve_pod_logs = retrieve_pod_logs_mock
 
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
 
     with pytest.raises(DagsterK8sError) as exc_info:
-        mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+        mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert str(exc_info.value) == (
         'Pod did not exit successfully. Failed with message: "error_message" '
@@ -438,17 +438,17 @@ def test_wait_for_termination_ready_then_terminate():
         single_pod_terminated_successful,
     ]
 
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
 
     mock_client.wait_for_pod(
-        pod_name=pod_name, namespace='namespace', wait_for_state=WaitForPodState.Terminated
+        pod_name=pod_name, namespace="namespace", wait_for_state=WaitForPodState.Terminated
     )
 
     assert_logger_calls(
         mock_client.logger,
         [
             'Waiting for pod "%s"' % pod_name,
-            'Pod {pod_name} exitted successfully'.format(pod_name=pod_name),
+            "Pod {pod_name} exitted successfully".format(pod_name=pod_name),
         ],
     )
 
@@ -473,8 +473,8 @@ def test_waiting_for_pod_initialize():
         single_ready_running_pod,
     ]
 
-    pod_name = 'a_pod'
-    mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+    pod_name = "a_pod"
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert_logger_calls(
         mock_client.logger,
@@ -505,14 +505,14 @@ def test_waiting_for_pod_container_creation():
         single_ready_running_pod,
     ]
 
-    pod_name = 'a_pod'
-    mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+    pod_name = "a_pod"
+    mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert_logger_calls(
         mock_client.logger,
         [
             'Waiting for pod "%s"' % pod_name,
-            'Waiting for container creation...',
+            "Waiting for container creation...",
             'Pod "%s" is ready, done waiting' % pod_name,
         ],
     )
@@ -531,7 +531,7 @@ def test_valid_failure_waiting_reasons():
         single_waiting_pod_failure = _pod_list_for_container_status(
             _create_status(
                 state=V1ContainerState(
-                    waiting=V1ContainerStateWaiting(reason=reason, message='bad things')
+                    waiting=V1ContainerStateWaiting(reason=reason, message="bad things")
                 ),
                 ready=False,
             )
@@ -539,9 +539,9 @@ def test_valid_failure_waiting_reasons():
         mock_client.core_api.list_namespaced_pod.side_effect = [
             single_waiting_pod_failure,
         ]
-        pod_name = 'a_pod'
+        pod_name = "a_pod"
         with pytest.raises(DagsterK8sError) as exc_info:
-            mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+            mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
         assert str(exc_info.value) == 'Failed: Reason="{reason}" Message="bad things"'.format(
             reason=reason
         )
@@ -551,14 +551,14 @@ def test_bad_waiting_state():
     mock_client = create_mocked_client(timer=create_timing_out_timer(num_good_ticks=2))
     single_waiting_pod = _pod_list_for_container_status(
         _create_status(
-            state=V1ContainerState(waiting=V1ContainerStateWaiting(reason='InvalidReason')),
+            state=V1ContainerState(waiting=V1ContainerStateWaiting(reason="InvalidReason")),
             ready=False,
         )
     )
     mock_client.core_api.list_namespaced_pod.side_effect = [single_waiting_pod]
-    pod_name = 'a_pod'
+    pod_name = "a_pod"
     with pytest.raises(DagsterK8sError) as exc_info:
-        mock_client.wait_for_pod(pod_name=pod_name, namespace='namespace')
+        mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert str(exc_info.value) == "Unknown issue: {'message': None, 'reason': 'InvalidReason'}"
 
@@ -566,10 +566,10 @@ def test_bad_waiting_state():
 def test_get_names_in_job():
 
     pod_list = V1PodList(
-        items=[V1Pod(metadata=V1ObjectMeta(name='foo')), V1Pod(metadata=V1ObjectMeta(name='bar'))]
+        items=[V1Pod(metadata=V1ObjectMeta(name="foo")), V1Pod(metadata=V1ObjectMeta(name="bar"))]
     )
     mock_client = create_mocked_client()
 
     mock_client.core_api.list_namespaced_pod.side_effect = [pod_list]
 
-    assert mock_client.get_pod_names_in_job('job', 'namespace') == ['foo', 'bar']
+    assert mock_client.get_pod_names_in_job("job", "namespace") == ["foo", "bar"]

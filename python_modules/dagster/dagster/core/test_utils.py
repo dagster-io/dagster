@@ -25,7 +25,7 @@ def step_output_event_filter(pipe_iterator):
 
 
 def single_output_solid(name, input_defs, compute_fn, output_def, description=None):
-    '''It is commmon to want a Solid that has only inputs, a single output (with the default
+    """It is commmon to want a Solid that has only inputs, a single output (with the default
     name), and no config. So this is a helper function to do that. This compute function
     must return the naked return value (as opposed to a Output object).
 
@@ -52,14 +52,14 @@ def single_output_solid(name, input_defs, compute_fn, output_def, description=No
                 compute_fn=lambda context, inputs: inputs['num'] + 1
             )
 
-    '''
+    """
 
     def _new_compute_fn(context, input_defs):
         value = compute_fn(context, input_defs)
         if isinstance(value, Output):
             raise DagsterInvariantViolationError(
-                '''Single output compute Solid {name} returned a Output. Just return
-                value directly without wrapping it in Output'''
+                """Single output compute Solid {name} returned a Output. Just return
+                value directly without wrapping it in Output"""
             )
         yield Output(value=value)
 
@@ -73,11 +73,11 @@ def single_output_solid(name, input_defs, compute_fn, output_def, description=No
 
 
 def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
-    '''Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
+    """Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
     num_children at each layer.
 
     Total number of solids will be num_children ^ depth
-    '''
+    """
 
     @solid
     def leaf_node(_):
@@ -87,19 +87,19 @@ def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
         @composite_solid(name=name)
         def wrap():
             for i in range(num_children):
-                solid_alias = '%s_node_%d' % (name, i)
+                solid_alias = "%s_node_%d" % (name, i)
                 inner.alias(solid_alias)()
 
         return wrap
 
     @pipeline(*args, **kwargs)
     def nested_pipeline():
-        comp_solid = create_wrap(leaf_node, 'layer_%d' % depth)
+        comp_solid = create_wrap(leaf_node, "layer_%d" % depth)
 
         for i in range(depth):
-            comp_solid = create_wrap(comp_solid, 'layer_%d' % (depth - (i + 1)))
+            comp_solid = create_wrap(comp_solid, "layer_%d" % (depth - (i + 1)))
 
-        comp_solid.alias('outer')()
+        comp_solid.alias("outer")()
 
     return nested_pipeline
 
@@ -132,13 +132,13 @@ def instance_for_test(overrides=None, enable_telemetry=False):
 def instance_for_test_tempdir(temp_dir, overrides=None, enable_telemetry=False):
     # Disable telemetry by default to avoid writing to the tempdir while cleaning it up
     overrides = merge_dicts(
-        overrides if overrides else {}, {'telemetry': {'enabled': enable_telemetry}}
+        overrides if overrides else {}, {"telemetry": {"enabled": enable_telemetry}}
     )
     with seven.TemporaryDirectory() as temp_dir:
         # Write any overrides to disk and set DAGSTER_HOME so that they will still apply when
         # DagsterInstance.get() is called from a different process
-        with environ({'DAGSTER_HOME': temp_dir}):
-            with open(os.path.join(temp_dir, 'dagster.yaml'), 'w') as fd:
+        with environ({"DAGSTER_HOME": temp_dir}):
+            with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
                 yaml.dump(overrides, fd, default_flow_style=False)
             try:
                 instance = DagsterInstance.get()

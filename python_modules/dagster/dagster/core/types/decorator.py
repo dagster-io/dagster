@@ -15,7 +15,7 @@ def usable_as_dagster_type(
     input_hydration_config=None,
     output_materialization_config=None,
 ):
-    '''Decorate a Python class to make it usable as a Dagster Type.
+    """Decorate a Python class to make it usable as a Dagster Type.
 
     This is intended to make it straightforward to annotate existing business logic classes to
     make them dagster types whose typecheck is an isinstance check against that python class.
@@ -73,10 +73,10 @@ def usable_as_dagster_type(
             @property
             def s3_path(self):
                 return 's3://{bucket}/{key}'.format(bucket=self.s3_bucket, key=self.s3_key)
-        '''
+        """
 
     def _with_args(bare_cls):
-        check.type_param(bare_cls, 'bare_cls')
+        check.type_param(bare_cls, "bare_cls")
         new_name = name if name else bare_cls.__name__
 
         make_python_type_usable_as_dagster_type(
@@ -86,14 +86,14 @@ def usable_as_dagster_type(
                 description=description,
                 python_type=bare_cls,
                 loader=canonicalize_backcompat_args(
-                    loader, 'loader', input_hydration_config, 'input_hydration_config', '0.10.0',
+                    loader, "loader", input_hydration_config, "input_hydration_config", "0.10.0",
                 ),
                 materializer=canonicalize_backcompat_args(
                     materializer,
-                    'materializer',
+                    "materializer",
                     output_materialization_config,
-                    'output_materialization_config',
-                    '0.10.0',
+                    "output_materialization_config",
+                    "0.10.0",
                 ),
                 serialization_strategy=serialization_strategy,
                 auto_plugins=auto_plugins,

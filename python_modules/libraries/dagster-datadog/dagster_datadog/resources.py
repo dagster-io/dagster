@@ -17,29 +17,29 @@ class DataDogResource:
 
         # Pull in methods from the dogstatsd library
         for method in [
-            'event',
-            'gauge',
-            'increment',
-            'decrement',
-            'histogram',
-            'distribution',
-            'set',
-            'service_check',
-            'timed',
-            'timing',
+            "event",
+            "gauge",
+            "increment",
+            "decrement",
+            "histogram",
+            "distribution",
+            "set",
+            "service_check",
+            "timed",
+            "timing",
         ]:
             setattr(self, method, getattr(statsd, method))
 
 
 @resource(
     {
-        'api_key': Field(StringSource, description='Datadog API key'),
-        'app_key': Field(StringSource, description='Datadog application key'),
+        "api_key": Field(StringSource, description="Datadog API key"),
+        "app_key": Field(StringSource, description="Datadog application key"),
     },
-    description='This resource is for publishing to DataDog',
+    description="This resource is for publishing to DataDog",
 )
 def datadog_resource(context):
-    '''This resource is a thin wrapper over the
+    """This resource is a thin wrapper over the
     `dogstatsd library <https://datadogpy.readthedocs.io/en/latest/>`_.
 
     As such, we directly mirror the public API methods of DogStatsd here; you can refer to the
@@ -80,7 +80,7 @@ def datadog_resource(context):
                 {'resources': {'datadog': {'config': {'api_key': 'YOUR_KEY', 'app_key': 'YOUR_KEY'}}}},
             )
 
-    '''
+    """
     return DataDogResource(
-        context.resource_config.get('api_key'), context.resource_config.get('app_key')
+        context.resource_config.get("api_key"), context.resource_config.get("app_key")
     )

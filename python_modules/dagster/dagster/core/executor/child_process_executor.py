@@ -1,4 +1,4 @@
-'''Facilities for running arbitrary commands in child processes.'''
+"""Facilities for running arbitrary commands in child processes."""
 
 import os
 import queue
@@ -17,45 +17,45 @@ class ChildProcessEvent(object):
     pass
 
 
-class ChildProcessStartEvent(namedtuple('ChildProcessStartEvent', 'pid'), ChildProcessEvent):
+class ChildProcessStartEvent(namedtuple("ChildProcessStartEvent", "pid"), ChildProcessEvent):
     pass
 
 
-class ChildProcessDoneEvent(namedtuple('ChildProcessDoneEvent', 'pid'), ChildProcessEvent):
+class ChildProcessDoneEvent(namedtuple("ChildProcessDoneEvent", "pid"), ChildProcessEvent):
     pass
 
 
 class ChildProcessSystemErrorEvent(
-    namedtuple('ChildProcessSystemErrorEvent', 'pid error_info'), ChildProcessEvent
+    namedtuple("ChildProcessSystemErrorEvent", "pid error_info"), ChildProcessEvent
 ):
     pass
 
 
 class ChildProcessCommand(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    '''Inherit from this class in order to use this library.
+    """Inherit from this class in order to use this library.
 
-    The object must be picklable; instantiate it and pass it to _execute_command_in_child_process.'''
+    The object must be picklable; instantiate it and pass it to _execute_command_in_child_process."""
 
     @abstractmethod
     def execute(self):
-        ''' This method is invoked in the child process.
+        """ This method is invoked in the child process.
 
-        Yields a sequence of events to be handled by _execute_command_in_child_process.'''
+        Yields a sequence of events to be handled by _execute_command_in_child_process."""
 
 
 class ChildProcessCrashException(Exception):
-    '''Thrown when the child process crashes.'''
+    """Thrown when the child process crashes."""
 
     def __init__(self, exit_code=None):
         self.exit_code = exit_code
 
 
 def _execute_command_in_child_process(event_queue, command):
-    '''Wraps the execution of a ChildProcessCommand.
+    """Wraps the execution of a ChildProcessCommand.
 
-    Handles errors and communicates across a queue with the parent process.'''
+    Handles errors and communicates across a queue with the parent process."""
 
-    check.inst_param(command, 'command', ChildProcessCommand)
+    check.inst_param(command, "command", ChildProcessCommand)
 
     pid = os.getpid()
     event_queue.put(ChildProcessStartEvent(pid=pid))
@@ -74,10 +74,10 @@ def _execute_command_in_child_process(event_queue, command):
 
 
 TICK = 20.0 * 1.0 / 1000.0
-'''The minimum interval at which to check for child process liveness -- default 20ms.'''
+"""The minimum interval at which to check for child process liveness -- default 20ms."""
 
-PROCESS_DEAD_AND_QUEUE_EMPTY = 'PROCESS_DEAD_AND_QUEUE_EMPTY'
-'''Sentinel value.'''
+PROCESS_DEAD_AND_QUEUE_EMPTY = "PROCESS_DEAD_AND_QUEUE_EMPTY"
+"""Sentinel value."""
 
 
 def _poll_for_event(process, event_queue):
@@ -101,7 +101,7 @@ def _poll_for_event(process, event_queue):
 
 
 def execute_child_process_command(command):
-    '''Execute a ChildProcessCommand in a new process.
+    """Execute a ChildProcessCommand in a new process.
 
     This function starts a new process whose execution target is a ChildProcessCommand wrapped by
     _execute_command_in_child_process; polls the queue for events yielded by the child process
@@ -125,9 +125,9 @@ def execute_child_process_command(command):
 
     Warning: if the child process is in an infinite loop, this will
     also infinitely loop.
-    '''
+    """
 
-    check.inst_param(command, 'command', ChildProcessCommand)
+    check.inst_param(command, "command", ChildProcessCommand)
 
     event_queue = multiprocessing.Queue()
 

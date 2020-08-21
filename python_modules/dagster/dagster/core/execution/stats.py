@@ -18,12 +18,12 @@ def build_run_stats_from_events(run_id, records):
     except TypeError as exc:
         six.raise_from(
             check.ParameterCheckError(
-                'Invariant violation for parameter \'records\'. Description: Expected iterable.'
+                "Invariant violation for parameter 'records'. Description: Expected iterable."
             ),
             from_value=exc,
         )
     for i, record in enumerate(records):
-        check.inst_param(record, 'records[{i}]'.format(i=i), EventRecord)
+        check.inst_param(record, "records[{i}]".format(i=i), EventRecord)
 
     steps_succeeded = 0
     steps_failed = 0
@@ -65,9 +65,9 @@ def build_run_stats_from_events(run_id, records):
 
 
 class StepEventStatus(Enum):
-    SKIPPED = 'SKIPPED'
-    SUCCESS = 'SUCCESS'
-    FAILURE = 'FAILURE'
+    SKIPPED = "SKIPPED"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
 
 
 def build_run_step_stats_from_events(run_id, records):
@@ -81,28 +81,28 @@ def build_run_step_stats_from_events(run_id, records):
             continue
 
         if event.dagster_event.event_type == DagsterEventType.STEP_START:
-            by_step_key[step_key]['start_time'] = event.timestamp
+            by_step_key[step_key]["start_time"] = event.timestamp
         if event.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
-            by_step_key[step_key]['end_time'] = event.timestamp
-            by_step_key[step_key]['status'] = StepEventStatus.FAILURE
+            by_step_key[step_key]["end_time"] = event.timestamp
+            by_step_key[step_key]["status"] = StepEventStatus.FAILURE
         if event.dagster_event.event_type == DagsterEventType.STEP_SUCCESS:
-            by_step_key[step_key]['end_time'] = event.timestamp
-            by_step_key[step_key]['status'] = StepEventStatus.SUCCESS
+            by_step_key[step_key]["end_time"] = event.timestamp
+            by_step_key[step_key]["status"] = StepEventStatus.SUCCESS
         if event.dagster_event.event_type == DagsterEventType.STEP_SKIPPED:
-            by_step_key[step_key]['end_time'] = event.timestamp
-            by_step_key[step_key]['status'] = StepEventStatus.SKIPPED
+            by_step_key[step_key]["end_time"] = event.timestamp
+            by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
         if event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
             check.inst(event.dagster_event.event_specific_data, StepMaterializationData)
             materialization = event.dagster_event.event_specific_data.materialization
-            step_materializations = by_step_key[step_key].get('materializations', [])
+            step_materializations = by_step_key[step_key].get("materializations", [])
             step_materializations.append(materialization)
-            by_step_key[step_key]['materializations'] = step_materializations
+            by_step_key[step_key]["materializations"] = step_materializations
         if event.dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
             check.inst(event.dagster_event.event_specific_data, StepExpectationResultData)
             expectation_result = event.dagster_event.event_specific_data.expectation_result
-            step_expectation_results = by_step_key[step_key].get('expectation_results', [])
+            step_expectation_results = by_step_key[step_key].get("expectation_results", [])
             step_expectation_results.append(expectation_result)
-            by_step_key[step_key]['expectation_results'] = step_expectation_results
+            by_step_key[step_key]["expectation_results"] = step_expectation_results
 
     return [
         RunStepKeyStatsSnapshot(run_id=run_id, step_key=step_key, **value)
@@ -113,8 +113,8 @@ def build_run_step_stats_from_events(run_id, records):
 @whitelist_for_serdes
 class RunStepKeyStatsSnapshot(
     namedtuple(
-        '_RunStepKeyStatsSnapshot',
-        ('run_id step_key status start_time end_time materializations expectation_results'),
+        "_RunStepKeyStatsSnapshot",
+        ("run_id step_key status start_time end_time materializations expectation_results"),
     )
 ):
     def __new__(
@@ -130,15 +130,15 @@ class RunStepKeyStatsSnapshot(
 
         return super(RunStepKeyStatsSnapshot, cls).__new__(
             cls,
-            run_id=check.str_param(run_id, 'run_id'),
-            step_key=check.str_param(step_key, 'step_key'),
-            status=check.opt_inst_param(status, 'status', StepEventStatus),
-            start_time=check.opt_float_param(start_time, 'start_time'),
-            end_time=check.opt_float_param(end_time, 'end_time'),
+            run_id=check.str_param(run_id, "run_id"),
+            step_key=check.str_param(step_key, "step_key"),
+            status=check.opt_inst_param(status, "status", StepEventStatus),
+            start_time=check.opt_float_param(start_time, "start_time"),
+            end_time=check.opt_float_param(end_time, "end_time"),
             materializations=check.opt_list_param(
-                materializations, 'materializations', (AssetMaterialization, Materialization)
+                materializations, "materializations", (AssetMaterialization, Materialization)
             ),
             expectation_results=check.opt_list_param(
-                expectation_results, 'expectation_results', ExpectationResult
+                expectation_results, "expectation_results", ExpectationResult
             ),
         )

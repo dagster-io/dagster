@@ -28,56 +28,56 @@ from .utils import (  # isort:skip
 
 @skip_ci
 def test_execute_on_celery(dagster_celery_worker):
-    with execute_pipeline_on_celery('test_pipeline') as result:
-        assert result.result_for_solid('simple').output_value() == 1
+    with execute_pipeline_on_celery("test_pipeline") as result:
+        assert result.result_for_solid("simple").output_value() == 1
         assert len(result.step_event_list) == 4
-        assert len(events_of_type(result, 'STEP_START')) == 1
-        assert len(events_of_type(result, 'STEP_OUTPUT')) == 1
-        assert len(events_of_type(result, 'OBJECT_STORE_OPERATION')) == 1
-        assert len(events_of_type(result, 'STEP_SUCCESS')) == 1
+        assert len(events_of_type(result, "STEP_START")) == 1
+        assert len(events_of_type(result, "STEP_OUTPUT")) == 1
+        assert len(events_of_type(result, "OBJECT_STORE_OPERATION")) == 1
+        assert len(events_of_type(result, "STEP_SUCCESS")) == 1
 
 
 @skip_ci
 def test_execute_serial_on_celery(dagster_celery_worker):
-    with execute_pipeline_on_celery('test_serial_pipeline') as result:
-        assert result.result_for_solid('simple').output_value() == 1
-        assert result.result_for_solid('add_one').output_value() == 2
+    with execute_pipeline_on_celery("test_serial_pipeline") as result:
+        assert result.result_for_solid("simple").output_value() == 1
+        assert result.result_for_solid("add_one").output_value() == 2
         assert len(result.step_event_list) == 10
-        assert len(events_of_type(result, 'STEP_START')) == 2
-        assert len(events_of_type(result, 'STEP_INPUT')) == 1
-        assert len(events_of_type(result, 'STEP_OUTPUT')) == 2
-        assert len(events_of_type(result, 'OBJECT_STORE_OPERATION')) == 3
-        assert len(events_of_type(result, 'STEP_SUCCESS')) == 2
+        assert len(events_of_type(result, "STEP_START")) == 2
+        assert len(events_of_type(result, "STEP_INPUT")) == 1
+        assert len(events_of_type(result, "STEP_OUTPUT")) == 2
+        assert len(events_of_type(result, "OBJECT_STORE_OPERATION")) == 3
+        assert len(events_of_type(result, "STEP_SUCCESS")) == 2
 
 
 @skip_ci
 def test_execute_diamond_pipeline_on_celery(dagster_celery_worker):
-    with execute_pipeline_on_celery('test_diamond_pipeline') as result:
-        assert result.result_for_solid('emit_values').output_values == {
-            'value_one': 1,
-            'value_two': 2,
+    with execute_pipeline_on_celery("test_diamond_pipeline") as result:
+        assert result.result_for_solid("emit_values").output_values == {
+            "value_one": 1,
+            "value_two": 2,
         }
-        assert result.result_for_solid('add_one').output_value() == 2
-        assert result.result_for_solid('renamed').output_value() == 3
-        assert result.result_for_solid('subtract').output_value() == -1
+        assert result.result_for_solid("add_one").output_value() == 2
+        assert result.result_for_solid("renamed").output_value() == 3
+        assert result.result_for_solid("subtract").output_value() == -1
 
 
 @skip_ci
 def test_execute_parallel_pipeline_on_celery(dagster_celery_worker):
-    with execute_pipeline_on_celery('test_parallel_pipeline') as result:
+    with execute_pipeline_on_celery("test_parallel_pipeline") as result:
         assert len(result.solid_result_list) == 11
 
 
 @skip_ci
 @pytest.mark.skip
 def test_execute_more_parallel_pipeline_on_celery():
-    with execute_pipeline_on_celery('test_more_parallel_pipeline') as result:
+    with execute_pipeline_on_celery("test_more_parallel_pipeline") as result:
         assert len(result.solid_result_list) == 501
 
 
 @skip_ci
 def test_execute_composite_pipeline_on_celery(dagster_celery_worker):
-    with execute_pipeline_on_celery('composite_pipeline') as result:
+    with execute_pipeline_on_celery("composite_pipeline") as result:
         assert result.success
         assert isinstance(result, PipelineExecutionResult)
         assert len(result.solid_result_list) == 1
@@ -102,7 +102,7 @@ def test_execute_composite_pipeline_on_celery(dagster_celery_worker):
 
 @skip_ci
 def test_execute_optional_outputs_pipeline_on_celery(dagster_celery_worker):
-    with execute_pipeline_on_celery('test_optional_outputs') as result:
+    with execute_pipeline_on_celery("test_optional_outputs") as result:
         assert len(result.solid_result_list) == 4
         assert sum([int(x.skipped) for x in result.solid_result_list]) == 2
         assert sum([int(x.success) for x in result.solid_result_list]) == 2
@@ -110,25 +110,25 @@ def test_execute_optional_outputs_pipeline_on_celery(dagster_celery_worker):
 
 @skip_ci
 def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
-    with execute_pipeline_on_celery('test_fails') as result:
+    with execute_pipeline_on_celery("test_fails") as result:
         assert len(result.solid_result_list) == 2  # fail & skip
-        assert not result.result_for_solid('fails').success
+        assert not result.result_for_solid("fails").success
         assert (
-            result.result_for_solid('fails').failure_data.error.message == 'Exception: argjhgjh\n'
+            result.result_for_solid("fails").failure_data.error.message == "Exception: argjhgjh\n"
         )
-        assert result.result_for_solid('should_never_execute').skipped
+        assert result.result_for_solid("should_never_execute").skipped
 
 
 def test_execute_eagerly_on_celery():
     with seven.TemporaryDirectory() as tempdir:
         instance = DagsterInstance.local_temp(tempdir=tempdir)
-        with execute_eagerly_on_celery('test_pipeline', instance=instance) as result:
-            assert result.result_for_solid('simple').output_value() == 1
+        with execute_eagerly_on_celery("test_pipeline", instance=instance) as result:
+            assert result.result_for_solid("simple").output_value() == 1
             assert len(result.step_event_list) == 4
-            assert len(events_of_type(result, 'STEP_START')) == 1
-            assert len(events_of_type(result, 'STEP_OUTPUT')) == 1
-            assert len(events_of_type(result, 'OBJECT_STORE_OPERATION')) == 1
-            assert len(events_of_type(result, 'STEP_SUCCESS')) == 1
+            assert len(events_of_type(result, "STEP_START")) == 1
+            assert len(events_of_type(result, "STEP_OUTPUT")) == 1
+            assert len(events_of_type(result, "OBJECT_STORE_OPERATION")) == 1
+            assert len(events_of_type(result, "STEP_SUCCESS")) == 1
 
             events = instance.all_logs(result.run_id)
             start_markers = {}
@@ -137,12 +137,12 @@ def test_execute_eagerly_on_celery():
                 dagster_event = event.dagster_event
                 if dagster_event.is_engine_event:
                     if dagster_event.engine_event_data.marker_start:
-                        key = '{step}.{marker}'.format(
+                        key = "{step}.{marker}".format(
                             step=event.step_key, marker=dagster_event.engine_event_data.marker_start
                         )
                         start_markers[key] = event.timestamp
                     if dagster_event.engine_event_data.marker_end:
-                        key = '{step}.{marker}'.format(
+                        key = "{step}.{marker}".format(
                             step=event.step_key, marker=dagster_event.engine_event_data.marker_end
                         )
                         end_markers[key] = event.timestamp
@@ -155,50 +155,50 @@ def test_execute_eagerly_on_celery():
 
 
 def test_execute_eagerly_serial_on_celery():
-    with execute_eagerly_on_celery('test_serial_pipeline') as result:
-        assert result.result_for_solid('simple').output_value() == 1
-        assert result.result_for_solid('add_one').output_value() == 2
+    with execute_eagerly_on_celery("test_serial_pipeline") as result:
+        assert result.result_for_solid("simple").output_value() == 1
+        assert result.result_for_solid("add_one").output_value() == 2
         assert len(result.step_event_list) == 10
-        assert len(events_of_type(result, 'STEP_START')) == 2
-        assert len(events_of_type(result, 'STEP_INPUT')) == 1
-        assert len(events_of_type(result, 'STEP_OUTPUT')) == 2
-        assert len(events_of_type(result, 'OBJECT_STORE_OPERATION')) == 3
-        assert len(events_of_type(result, 'STEP_SUCCESS')) == 2
+        assert len(events_of_type(result, "STEP_START")) == 2
+        assert len(events_of_type(result, "STEP_INPUT")) == 1
+        assert len(events_of_type(result, "STEP_OUTPUT")) == 2
+        assert len(events_of_type(result, "OBJECT_STORE_OPERATION")) == 3
+        assert len(events_of_type(result, "STEP_SUCCESS")) == 2
 
 
 def test_execute_eagerly_diamond_pipeline_on_celery():
-    with execute_eagerly_on_celery('test_diamond_pipeline') as result:
-        assert result.result_for_solid('emit_values').output_values == {
-            'value_one': 1,
-            'value_two': 2,
+    with execute_eagerly_on_celery("test_diamond_pipeline") as result:
+        assert result.result_for_solid("emit_values").output_values == {
+            "value_one": 1,
+            "value_two": 2,
         }
-        assert result.result_for_solid('add_one').output_value() == 2
-        assert result.result_for_solid('renamed').output_value() == 3
-        assert result.result_for_solid('subtract').output_value() == -1
+        assert result.result_for_solid("add_one").output_value() == 2
+        assert result.result_for_solid("renamed").output_value() == 3
+        assert result.result_for_solid("subtract").output_value() == -1
 
 
 def test_execute_eagerly_diamond_pipeline_subset_on_celery():
-    with execute_eagerly_on_celery('test_diamond_pipeline', subset=['emit_values']) as result:
-        assert result.result_for_solid('emit_values').output_values == {
-            'value_one': 1,
-            'value_two': 2,
+    with execute_eagerly_on_celery("test_diamond_pipeline", subset=["emit_values"]) as result:
+        assert result.result_for_solid("emit_values").output_values == {
+            "value_one": 1,
+            "value_two": 2,
         }
         assert len(result.solid_result_list) == 1
 
 
 def test_execute_eagerly_parallel_pipeline_on_celery():
-    with execute_eagerly_on_celery('test_parallel_pipeline') as result:
+    with execute_eagerly_on_celery("test_parallel_pipeline") as result:
         assert len(result.solid_result_list) == 11
 
 
 @pytest.mark.skip
 def test_execute_eagerly_more_parallel_pipeline_on_celery():
-    with execute_eagerly_on_celery('test_more_parallel_pipeline') as result:
+    with execute_eagerly_on_celery("test_more_parallel_pipeline") as result:
         assert len(result.solid_result_list) == 501
 
 
 def test_execute_eagerly_composite_pipeline_on_celery():
-    with execute_eagerly_on_celery('composite_pipeline') as result:
+    with execute_eagerly_on_celery("composite_pipeline") as result:
         assert result.success
         assert isinstance(result, PipelineExecutionResult)
         assert len(result.solid_result_list) == 1
@@ -222,37 +222,37 @@ def test_execute_eagerly_composite_pipeline_on_celery():
 
 
 def test_execute_eagerly_optional_outputs_pipeline_on_celery():
-    with execute_eagerly_on_celery('test_optional_outputs') as result:
+    with execute_eagerly_on_celery("test_optional_outputs") as result:
         assert len(result.solid_result_list) == 4
         assert sum([int(x.skipped) for x in result.solid_result_list]) == 2
         assert sum([int(x.success) for x in result.solid_result_list]) == 2
 
 
 def test_execute_eagerly_resources_limit_pipeline_on_celery():
-    with execute_eagerly_on_celery('test_resources_limit') as result:
-        assert result.result_for_solid('resource_req_solid').success
+    with execute_eagerly_on_celery("test_resources_limit") as result:
+        assert result.result_for_solid("resource_req_solid").success
         assert result.success
 
 
 def test_execute_eagerly_fails_pipeline_on_celery():
-    with execute_eagerly_on_celery('test_fails') as result:
+    with execute_eagerly_on_celery("test_fails") as result:
         assert len(result.solid_result_list) == 2
-        assert not result.result_for_solid('fails').success
+        assert not result.result_for_solid("fails").success
         assert (
-            result.result_for_solid('fails').failure_data.error.message == 'Exception: argjhgjh\n'
+            result.result_for_solid("fails").failure_data.error.message == "Exception: argjhgjh\n"
         )
-        assert result.result_for_solid('should_never_execute').skipped
+        assert result.result_for_solid("should_never_execute").skipped
 
 
 def test_execute_eagerly_retries_pipeline_on_celery():
-    with execute_eagerly_on_celery('test_retries') as result:
-        assert len(events_of_type(result, 'STEP_START')) == 1
-        assert len(events_of_type(result, 'STEP_UP_FOR_RETRY')) == 1
-        assert len(events_of_type(result, 'STEP_RESTARTED')) == 1
-        assert len(events_of_type(result, 'STEP_FAILURE')) == 1
+    with execute_eagerly_on_celery("test_retries") as result:
+        assert len(events_of_type(result, "STEP_START")) == 1
+        assert len(events_of_type(result, "STEP_UP_FOR_RETRY")) == 1
+        assert len(events_of_type(result, "STEP_RESTARTED")) == 1
+        assert len(events_of_type(result, "STEP_FAILURE")) == 1
 
 
-@pytest.mark.skip('https://github.com/dagster-io/dagster/issues/2439')
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/2439")
 def test_bad_broker():
     pass
     # with pytest.raises(check.CheckError) as exc_info:
@@ -273,15 +273,15 @@ def test_bad_broker():
 def test_engine_error():
     with pytest.raises(DagsterSubprocessError):
         with seven.TemporaryDirectory() as tempdir:
-            storage = os.path.join(tempdir, 'flakey_storage')
+            storage = os.path.join(tempdir, "flakey_storage")
             execute_pipeline(
-                ReconstructablePipeline.for_file(REPO_FILE, 'engine_error'),
+                ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
                 run_config={
-                    'storage': {'filesystem': {'config': {'base_dir': storage}}},
-                    'execution': {
-                        'celery': {'config': {'config_source': {'task_always_eager': True}}}
+                    "storage": {"filesystem": {"config": {"base_dir": storage}}},
+                    "execution": {
+                        "celery": {"config": {"config_source": {"task_always_eager": True}}}
                     },
-                    'solids': {'destroy': {'config': storage}},
+                    "solids": {"destroy": {"config": storage}},
                 },
                 instance=DagsterInstance.local_temp(tempdir=tempdir),
             )

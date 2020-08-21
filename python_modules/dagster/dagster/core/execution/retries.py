@@ -6,24 +6,24 @@ from dagster import Field, Selector, check
 
 def get_retries_config():
     return Field(
-        Selector({'enabled': {}, 'disabled': {}}), is_required=False, default_value={'enabled': {}},
+        Selector({"enabled": {}, "disabled": {}}), is_required=False, default_value={"enabled": {}},
     )
 
 
 class RetryMode(Enum):
-    ENABLED = 'enabled'
-    DISABLED = 'disabled'
+    ENABLED = "enabled"
+    DISABLED = "disabled"
     # Designed for use of inner plan execution within "orchestrator" engine such as multiprocess,
     # up_for_retry steps are not directly re-enqueued, deferring that to the engine.
-    DEFERRED = 'deferred'
+    DEFERRED = "deferred"
 
 
 class Retries:
     def __init__(self, mode, previous_attempts=None):
-        self._mode = check.inst_param(mode, 'mode', RetryMode)
+        self._mode = check.inst_param(mode, "mode", RetryMode)
         self._attempts = defaultdict(int)
         for key, val in check.opt_dict_param(
-            previous_attempts, 'previous_attempts', key_type=str, value_type=int
+            previous_attempts, "previous_attempts", key_type=str, value_type=int
         ).items():
             self._attempts[key] = val
 
@@ -51,17 +51,17 @@ class Retries:
         elif self.enabled:
             return Retries(mode=RetryMode.DEFERRED, previous_attempts=dict(self._attempts))
         else:
-            check.failed('Can not create Retries for inner plan when already in deferred mode')
+            check.failed("Can not create Retries for inner plan when already in deferred mode")
 
     @staticmethod
     def from_config(config_value):
         for selector, value in config_value.items():
-            return Retries(RetryMode(selector), value.get('previous_attempts'))
+            return Retries(RetryMode(selector), value.get("previous_attempts"))
 
     def to_config(self):
         value = {self._mode.value: {}}
         if self.deferred:
-            value[self._mode.value] = {'previous_attempts': dict(self._attempts)}
+            value[self._mode.value] = {"previous_attempts": dict(self._attempts)}
         return value
 
     @staticmethod
@@ -71,11 +71,11 @@ class Retries:
     def to_graphql_input(self):
         previous_attempts_list = []
         for k, v in self._attempts.items():
-            previous_attempts_list.append({'key': k, 'count': v})
+            previous_attempts_list.append({"key": k, "count": v})
 
         return {
-            'mode': self._mode.value,
-            'retriesPreviousAttempts': previous_attempts_list,
+            "mode": self._mode.value,
+            "retriesPreviousAttempts": previous_attempts_list,
         }
 
     @staticmethod
@@ -84,5 +84,5 @@ class Retries:
             return graphql_data
         previous_attempts = {}
         for item in graphql_data.retries_previous_attempts:
-            previous_attempts[item.get('key')] = item.get('count')
+            previous_attempts[item.get("key")] = item.get("count")
         return Retries(mode=RetryMode(graphql_data.mode), previous_attempts=previous_attempts)

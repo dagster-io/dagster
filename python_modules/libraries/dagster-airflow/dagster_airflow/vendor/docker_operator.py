@@ -117,8 +117,8 @@ class DockerOperator(BaseOperator):
     :type shm_size: int
     """
 
-    template_fields = ('command', 'environment')
-    template_ext = ('.sh', '.bash')
+    template_fields = ("command", "environment")
+    template_ext = (".sh", ".bash")
 
     @apply_defaults
     def __init__(  # pylint: disable=keyword-arg-before-vararg
@@ -127,7 +127,7 @@ class DockerOperator(BaseOperator):
         api_version=None,
         command=None,
         cpus=1.0,
-        docker_url='unix://var/run/docker.sock',
+        docker_url="unix://var/run/docker.sock",
         environment=None,
         force_pull=False,
         mem_limit=None,
@@ -137,7 +137,7 @@ class DockerOperator(BaseOperator):
         tls_client_key=None,
         tls_hostname=None,
         tls_ssl_version=None,
-        tmp_dir='/tmp/airflow',
+        tmp_dir="/tmp/airflow",
         user=None,
         volumes=None,
         working_dir=None,
@@ -191,7 +191,7 @@ class DockerOperator(BaseOperator):
         )
 
     def execute(self, context):
-        self.log.info('Starting docker container from image %s', self.image)
+        self.log.info("Starting docker container from image %s", self.image)
 
         tls_config = self.__get_tls_config()
 
@@ -201,15 +201,15 @@ class DockerOperator(BaseOperator):
             self.cli = APIClient(base_url=self.docker_url, version=self.api_version, tls=tls_config)
 
         if self.force_pull or len(self.cli.images(name=self.image)) == 0:
-            self.log.info('Pulling docker image %s', self.image)
+            self.log.info("Pulling docker image %s", self.image)
             for l in self.cli.pull(self.image, stream=True):
-                output = json.loads(l.decode('utf-8').strip())
-                if 'status' in output:
-                    self.log.info("%s", output['status'])
+                output = json.loads(l.decode("utf-8").strip())
+                if "status" in output:
+                    self.log.info("%s", output["status"])
 
-        with TemporaryDirectory(prefix='airflowtmp') as host_tmp_dir:
-            self.environment['AIRFLOW_TMP_DIR'] = self.tmp_dir
-            self.volumes.append('{0}:{1}'.format(host_tmp_dir, self.tmp_dir))
+        with TemporaryDirectory(prefix="airflowtmp") as host_tmp_dir:
+            self.environment["AIRFLOW_TMP_DIR"] = self.tmp_dir
+            self.volumes.append("{0}:{1}".format(host_tmp_dir, self.tmp_dir))
 
             self.container = self.cli.create_container(
                 command=self.get_command(),
@@ -228,30 +228,30 @@ class DockerOperator(BaseOperator):
                 user=self.user,
                 working_dir=self.working_dir,
             )
-            self.cli.start(self.container['Id'])
+            self.cli.start(self.container["Id"])
 
             res = []
-            line = ''
-            for line in self.cli.logs(container=self.container['Id'], stream=True):
+            line = ""
+            for line in self.cli.logs(container=self.container["Id"], stream=True):
                 line = line.strip()
-                if hasattr(line, 'decode'):
-                    line = line.decode('utf-8')
+                if hasattr(line, "decode"):
+                    line = line.decode("utf-8")
                     res.append(line)
                 self.log.info(line)
 
-            result = self.cli.wait(self.container['Id'])
-            if result['StatusCode'] != 0:
+            result = self.cli.wait(self.container["Id"])
+            if result["StatusCode"] != 0:
                 raise AirflowException(
-                    'docker container failed with result: {result} and logs: {logs}'.format(
-                        result=repr(result), logs='\n'.join(res)
+                    "docker container failed with result: {result} and logs: {logs}".format(
+                        result=repr(result), logs="\n".join(res)
                     )
                 )
 
             if self.xcom_push_flag:
-                return self.cli.logs(container=self.container['Id']) if self.xcom_all else str(line)
+                return self.cli.logs(container=self.container["Id"]) if self.xcom_all else str(line)
 
     def get_command(self):
-        if self.command is not None and self.command.strip().find('[') == 0:
+        if self.command is not None and self.command.strip().find("[") == 0:
             commands = ast.literal_eval(self.command)
         else:
             commands = self.command
@@ -259,8 +259,8 @@ class DockerOperator(BaseOperator):
 
     def on_kill(self):
         if self.cli is not None:
-            self.log.info('Stopping docker container')
-            self.cli.stop(self.container['Id'])
+            self.log.info("Stopping docker container")
+            self.cli.stop(self.container["Id"])
 
     def __get_tls_config(self):
         tls_config = None
@@ -272,5 +272,5 @@ class DockerOperator(BaseOperator):
                 ssl_version=self.tls_ssl_version,
                 assert_hostname=self.tls_hostname,
             )
-            self.docker_url = self.docker_url.replace('tcp://', 'https://')
+            self.docker_url = self.docker_url.replace("tcp://", "https://")
         return tls_config

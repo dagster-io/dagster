@@ -4,13 +4,13 @@ from dagster import InputDefinition, List, Optional, execute_pipeline, lambda_so
 def test_from_intermediates_from_multiple_outputs():
     @lambda_solid
     def x():
-        return 'x'
+        return "x"
 
     @lambda_solid
     def y():
-        return 'y'
+        return "y"
 
-    @lambda_solid(input_defs=[InputDefinition('stuff', Optional[List[str]])])
+    @lambda_solid(input_defs=[InputDefinition("stuff", Optional[List[str]])])
     def gather(stuff):
         return "{} and {}".format(*stuff)
 
@@ -23,17 +23,17 @@ def test_from_intermediates_from_multiple_outputs():
     assert result
     assert result.success
     assert (
-        result.result_for_solid('gather')
-        .compute_input_event_dict['stuff']
+        result.result_for_solid("gather")
+        .compute_input_event_dict["stuff"]
         .event_specific_data[1]
         .label
-        == 'stuff'
+        == "stuff"
     )
-    assert result.result_for_solid('gather').output_value() == 'x and y'
+    assert result.result_for_solid("gather").output_value() == "x and y"
 
 
 def test_from_intermediates_from_config():
-    run_config = {'solids': {'x': {'inputs': {'string_input': {'value': 'Dagster is great!'}}}}}
+    run_config = {"solids": {"x": {"inputs": {"string_input": {"value": "Dagster is great!"}}}}}
 
     @lambda_solid
     def x(string_input):
@@ -48,10 +48,10 @@ def test_from_intermediates_from_config():
     assert result
     assert result.success
     assert (
-        result.result_for_solid('x')
-        .compute_input_event_dict['string_input']
+        result.result_for_solid("x")
+        .compute_input_event_dict["string_input"]
         .event_specific_data[1]
         .label
-        == 'string_input'
+        == "string_input"
     )
-    assert result.result_for_solid('x').output_value() == 'Dagster is great!'
+    assert result.result_for_solid("x").output_value() == "Dagster is great!"

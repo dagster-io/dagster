@@ -24,7 +24,7 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        '''
+        """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
 
@@ -40,11 +40,11 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
                 returned object.
 
         Returns (IConfigMappable): A configured version of this object.
-        '''
+        """
         raise NotImplementedError()
 
     def apply_config_mapping(self, config):
-        '''
+        """
         Applies user-provided config mapping functions to the given configuration and validates the
         results against the respective config schema.
 
@@ -59,7 +59,7 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
         Returns (EvaluateValueResult):
             If successful, the value is a validated and resolved configuration dictionary for the
             innermost wrapped object after applying the config mapping transformation function.
-        '''
+        """
         # If there is no __configured_config_mapping_fn, this is the innermost resource (base case),
         # so we aren't responsible for validating against anything farther down. Returns an EVR for
         # type consistency with wrapped_config_mapping_fn.
@@ -71,44 +71,44 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
 
     def _get_user_code_error_str_lambda(self):
         return lambda: (
-            'The config mapping function on a `configured` {} has thrown an unexpected '
-            'error during its execution.'
+            "The config mapping function on a `configured` {} has thrown an unexpected "
+            "error during its execution."
         ).format(self.__class__.__name__)
 
     def _get_wrapped_config_mapping_fn(self, config_or_config_fn, config_schema):
-        '''
+        """
         Returns a config mapping helper function that will be stored on the child `IConfigMappable`
         under `_configured_config_mapping_fn`. Encapsulates the recursiveness of the `configurable`
         pattern by returning a closure that invokes `self.apply_config_mapping` (belonging to this
         parent object) on the mapping function or static config passed into this method.
-        '''
+        """
         # Provide either a config mapping function with noneable schema...
         if callable(config_or_config_fn):
             config_fn = config_or_config_fn
         else:  # or a static config object (and no schema).
             check.invariant(
                 config_schema is None,
-                'When non-callable config is given, config_schema must be None',
+                "When non-callable config is given, config_schema must be None",
             )
 
             def config_fn(_):  # Stub a config mapping function from the static config object.
                 return config_or_config_fn
 
         def wrapped_config_mapping_fn(validated_and_resolved_config):
-            '''
+            """
             Given validated and resolved configuration for this IConfigMappable, applies the
             provided config mapping function, validates its output against the inner resource's
             config_schema, and recursively invoked the `apply_config_mapping` method on the resource
-            '''
-            check.dict_param(validated_and_resolved_config, 'validated_and_resolved_config')
+            """
+            check.dict_param(validated_and_resolved_config, "validated_and_resolved_config")
             with user_code_error_boundary(
                 DagsterConfigMappingFunctionError, self._get_user_code_error_str_lambda()
             ):
                 mapped_config = {
-                    'config': config_fn(validated_and_resolved_config.get('config', {}))
+                    "config": config_fn(validated_and_resolved_config.get("config", {}))
                 }
             # Validate mapped_config against the inner resource's config_schema (on self).
-            config_evr = process_config({'config': self.config_schema or {}}, mapped_config)
+            config_evr = process_config({"config": self.config_schema or {}}, mapped_config)
             if config_evr.success:
                 return self.apply_config_mapping(config_evr.value)  # Recursive step
             else:
@@ -122,31 +122,31 @@ def _check_configurable_param(configurable):
 
     check.param_invariant(
         not isinstance(configurable, CallableSolidNode),
-        'configurable',
+        "configurable",
         (
-            'You have invoked `configured` on a CallableSolidNode (an intermediate type), which is '
-            'produced by aliasing or tagging a solid definition. To configure a solid, you must '
-            'call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix '
-            'this error, make sure to call `configured` on the definition object *before* using '
-            'the `tag` or `alias` methods. For usage examples, see '
-            'https://docs.dagster.io/overview/configuration#configured'
+            "You have invoked `configured` on a CallableSolidNode (an intermediate type), which is "
+            "produced by aliasing or tagging a solid definition. To configure a solid, you must "
+            "call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix "
+            "this error, make sure to call `configured` on the definition object *before* using "
+            "the `tag` or `alias` methods. For usage examples, see "
+            "https://docs.dagster.io/overview/configuration#configured"
         ),
     )
     check.inst_param(
         configurable,
-        'configurable',
+        "configurable",
         IConfigMappable,
         (
-            'Only the following types can be used with the `configured` method: ResourceDefinition, '
-            'ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, LoggerDefinition, '
-            'IntermediateStorageDefinition, and SystemStorageDefinition. For usage examples of '
-            '`configured`, see https://docs.dagster.io/overview/configuration#configured'
+            "Only the following types can be used with the `configured` method: ResourceDefinition, "
+            "ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, LoggerDefinition, "
+            "IntermediateStorageDefinition, and SystemStorageDefinition. For usage examples of "
+            "`configured`, see https://docs.dagster.io/overview/configuration#configured"
         ),
     )
 
 
 def configured(configurable, config_schema=None, **kwargs):
-    '''
+    """
     A decorator that makes it easy to create a function-configured version of an object.
     The following definition types can be configured using this function:
     :py:class:`ResourceDefinition`, :py:class:`ExecutorDefinition`,
@@ -180,9 +180,9 @@ def configured(configurable, config_schema=None, **kwargs):
             @configured(s3_resource, {'bucket_prefix', str}):
             def dev_s3(config):
                 return {'bucket': config['bucket_prefix'] + 'dev'}
-    '''
+    """
     _check_configurable_param(configurable)
-    config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
+    config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
 
     def _configured(config_or_config_fn):
         return configurable.configured(

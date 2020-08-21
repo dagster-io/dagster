@@ -8,7 +8,7 @@ from .config_type import ConfigType, ConfigTypeKind
 
 
 def all_optional_type(config_type):
-    check.inst_param(config_type, 'config_type', ConfigType)
+    check.inst_param(config_type, "config_type", ConfigType)
 
     if ConfigTypeKind.is_shape(config_type.kind):
         for field in config_type.fields.values():
@@ -33,7 +33,7 @@ INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 
 
 def check_user_facing_opt_config_param(potential_field, param_name):
-    check.str_param(param_name, 'param_name')
+    check.str_param(param_name, "param_name")
 
     return None if potential_field is None else convert_potential_field(potential_field)
 
@@ -65,32 +65,32 @@ def _compute_fields_hash(fields, description):
 
     m = hashlib.sha1()  # so that hexdigest is 40, not 64 bytes
     if description:
-        _add_hash(m, ':description: ' + description)
+        _add_hash(m, ":description: " + description)
 
     for field_name in sorted(list(fields.keys())):
         field = fields[field_name]
-        _add_hash(m, ':fieldname:' + field_name)
+        _add_hash(m, ":fieldname:" + field_name)
         if field.default_provided:
-            _add_hash(m, ':default_value: ' + field.default_value_as_json_str)
-        _add_hash(m, ':is_required: ' + str(field.is_required))
-        _add_hash(m, ':type_key: ' + field.config_type.key)
+            _add_hash(m, ":default_value: " + field.default_value_as_json_str)
+        _add_hash(m, ":is_required: " + str(field.is_required))
+        _add_hash(m, ":type_key: " + field.config_type.key)
         if field.description:
-            _add_hash(m, ':description: ' + field.description)
+            _add_hash(m, ":description: " + field.description)
 
     return m.hexdigest()
 
 
 def _define_shape_key_hash(fields, description):
-    return 'Shape.' + _compute_fields_hash(fields, description)
+    return "Shape." + _compute_fields_hash(fields, description)
 
 
 class Shape(_ConfigHasFields):
-    '''
+    """
     Schema for configuration data with string keys and typed values via :py:class:`Field` .
 
     Args:
         fields (Dict[str, Field])
-    '''
+    """
 
     def __new__(
         cls, fields, description=None,
@@ -111,14 +111,14 @@ class Shape(_ConfigHasFields):
 
 def _define_permissive_dict_key(fields, description):
     return (
-        'Permissive.' + _compute_fields_hash(fields, description=description)
+        "Permissive." + _compute_fields_hash(fields, description=description)
         if fields
-        else 'Permissive'
+        else "Permissive"
     )
 
 
 class Permissive(_ConfigHasFields):
-    '''Defines a config dict with a partially specified schema.
+    """Defines a config dict with a partially specified schema.
 
     A permissive dict allows partial specification of the config schema. Any fields with a
     specified schema will be type checked. Other fields will be allowed, but will be ignored by
@@ -134,7 +134,7 @@ class Permissive(_ConfigHasFields):
         @solid(config_schema=Field(Permissive({'required': Field(String)})))
         def partially_specified_config(context) -> List:
             return sorted(list(context.solid_config.items()))
-    '''
+    """
 
     def __new__(cls, fields=None, description=None):
         return _memoize_inst_in_field_cache(
@@ -156,11 +156,11 @@ class Permissive(_ConfigHasFields):
 
 
 def _define_selector_key(fields, description):
-    return 'Selector.' + _compute_fields_hash(fields, description=description)
+    return "Selector." + _compute_fields_hash(fields, description=description)
 
 
 class Selector(_ConfigHasFields):
-    '''Define a config field requiring the user to select one option.
+    """Define a config field requiring the user to select one option.
 
     Selectors are used when you want to be able to present several different options in config but
     allow only one to be selected. For example, a single input might be read in from either a csv
@@ -198,7 +198,7 @@ class Selector(_ConfigHasFields):
                 return '你好，{whom}!'.format(whom=context.solid_config['cn']['whom'])
             if 'en' in context.solid_config:
                 return 'Hello, {whom}!'.format(whom=context.solid_config['en']['whom'])
-    '''
+    """
 
     def __new__(cls, fields, description=None):
         return _memoize_inst_in_field_cache(
@@ -239,7 +239,7 @@ def expand_fields_dict(fields):
 
 
 def _expand_fields_dict(original_root, fields, stack):
-    check.dict_param(fields, 'fields')
+    check.dict_param(fields, "fields")
     return {
         name: _convert_potential_field(original_root, value, stack + [name])
         for name, value in fields.items()
@@ -251,7 +251,7 @@ def expand_list(original_root, the_list, stack):
 
     if len(the_list) != 1:
         raise DagsterInvalidConfigDefinitionError(
-            original_root, the_list, stack, 'List must be of length 1'
+            original_root, the_list, stack, "List must be of length 1"
         )
 
     inner_type = _convert_potential_type(original_root, the_list[0], stack)
@@ -260,7 +260,7 @@ def expand_list(original_root, the_list, stack):
             original_root,
             the_list,
             stack,
-            'List have a single item and contain a valid type i.e. [int]. Got item {}'.format(
+            "List have a single item and contain a valid type i.e. [int]. Got item {}".format(
                 repr(the_list[0])
             ),
         )
@@ -289,7 +289,7 @@ def _convert_potential_field(original_root, potential_field, stack):
 
     if potential_field is None:
         raise DagsterInvalidConfigDefinitionError(
-            original_root, potential_field, stack, reason='Fields cannot be None'
+            original_root, potential_field, stack, reason="Fields cannot be None"
         )
 
     if not is_potential_field(potential_field):

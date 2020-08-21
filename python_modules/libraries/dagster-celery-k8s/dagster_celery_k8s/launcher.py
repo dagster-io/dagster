@@ -26,7 +26,7 @@ from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
 
 
 class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
-    '''In contrast to the :py:class:`K8sRunLauncher`, which launches pipeline runs as single K8s
+    """In contrast to the :py:class:`K8sRunLauncher`, which launches pipeline runs as single K8s
     Jobs, this run launcher is intended for use in concert with
     :py:func:`dagster_celery_k8s.celery_k8s_job_executor`.
 
@@ -79,7 +79,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         include (List[str]): List of includes for the Celery workers
         config_source: (Optional[dict]): Additional settings for the Celery app.
         retries: (Optional[dict]): Default retry configuration for Celery tasks.
-    '''
+    """
 
     def __init__(
         self,
@@ -95,44 +95,44 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         retries=None,
         inst_data=None,
     ):
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
         if load_incluster_config:
             check.invariant(
                 kubeconfig_file is None,
-                '`kubeconfig_file` is set but `load_incluster_config` is True.',
+                "`kubeconfig_file` is set but `load_incluster_config` is True.",
             )
             kubernetes.config.load_incluster_config()
         else:
-            check.opt_str_param(kubeconfig_file, 'kubeconfig_file')
+            check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
-        self.instance_config_map = check.str_param(instance_config_map, 'instance_config_map')
-        self.dagster_home = check.str_param(dagster_home, 'dagster_home')
+        self.instance_config_map = check.str_param(instance_config_map, "instance_config_map")
+        self.dagster_home = check.str_param(dagster_home, "dagster_home")
         self.postgres_password_secret = check.str_param(
-            postgres_password_secret, 'postgres_password_secret'
+            postgres_password_secret, "postgres_password_secret"
         )
-        self.broker = check.opt_str_param(broker, 'broker')
-        self.backend = check.opt_str_param(backend, 'backend')
-        self.include = check.opt_list_param(include, 'include')
-        self.config_source = check.opt_dict_param(config_source, 'config_source')
+        self.broker = check.opt_str_param(broker, "broker")
+        self.backend = check.opt_str_param(backend, "backend")
+        self.include = check.opt_list_param(include, "include")
+        self.config_source = check.opt_dict_param(config_source, "config_source")
 
-        retries = check.opt_dict_param(retries, 'retries') or {'enabled': {}}
+        retries = check.opt_dict_param(retries, "retries") or {"enabled": {}}
         self.retries = Retries.from_config(retries)
         self._instance_ref = None
 
     @classmethod
     def config_type(cls):
-        '''Include all arguments required for DagsterK8sJobConfig along with additional arguments
+        """Include all arguments required for DagsterK8sJobConfig along with additional arguments
         needed for the RunLauncher itself.
-        '''
+        """
         from dagster_celery.executor import CELERY_CONFIG
 
         job_cfg = DagsterK8sJobConfig.config_type_run_launcher()
 
         run_launcher_extra_cfg = {
-            'load_incluster_config': Field(bool, is_required=False, default_value=True),
-            'kubeconfig_file': Field(Noneable(str), is_required=False, default_value=None),
+            "load_incluster_config": Field(bool, is_required=False, default_value=True),
+            "kubeconfig_file": Field(Noneable(str), is_required=False, default_value=None),
         }
 
         res = merge_dicts(job_cfg, run_launcher_extra_cfg)
@@ -151,12 +151,12 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._instance_ref() if self._instance_ref else None
 
     def initialize(self, instance):
-        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(instance, "instance", DagsterInstance)
         # Store a weakref to avoid a circular reference / enable GC
         self._instance_ref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
-        check.inst_param(run, 'run', PipelineRun)
+        check.inst_param(run, "run", PipelineRun)
 
         job_name = get_job_name_from_run_id(run.run_id)
         pod_name = job_name
@@ -166,10 +166,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         pipeline_origin = None
         env_vars = None
         if isinstance(external_pipeline.get_origin(), PipelineGrpcServerOrigin):
-            if exc_config.get('job_image'):
+            if exc_config.get("job_image"):
                 raise DagsterInvariantViolationError(
-                    'Cannot specify job_image in executor config when loading pipeline '
-                    'from GRPC server.'
+                    "Cannot specify job_image in executor config when loading pipeline "
+                    "from GRPC server."
                 )
 
             repository_location_handle = (
@@ -178,14 +178,14 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
             if not isinstance(repository_location_handle, GrpcServerRepositoryLocationHandle):
                 raise DagsterInvariantViolationError(
-                    'Expected RepositoryLocationHandle to be of type '
-                    'GrpcServerRepositoryLocationHandle but found type {}'.format(
+                    "Expected RepositoryLocationHandle to be of type "
+                    "GrpcServerRepositoryLocationHandle but found type {}".format(
                         type(repository_location_handle)
                     )
                 )
 
             job_image = repository_location_handle.get_current_image()
-            env_vars = {'DAGSTER_CURRENT_IMAGE': job_image}
+            env_vars = {"DAGSTER_CURRENT_IMAGE": job_image}
 
             repository_name = external_pipeline.repository_handle.repository_name
             pipeline_origin = PipelinePythonOrigin(
@@ -196,10 +196,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         else:
-            job_image = exc_config.get('job_image')
+            job_image = exc_config.get("job_image")
             if not job_image:
                 raise DagsterInvariantViolationError(
-                    'Cannot find job_image in celery-k8s executor config.'
+                    "Cannot find job_image in celery-k8s executor config."
                 )
             pipeline_origin = external_pipeline.get_origin()
 
@@ -207,12 +207,12 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             dagster_home=self.dagster_home,
             instance_config_map=self.instance_config_map,
             postgres_password_secret=self.postgres_password_secret,
-            job_image=check.str_param(job_image, 'job_image'),
-            image_pull_policy=exc_config.get('image_pull_policy'),
-            image_pull_secrets=exc_config.get('image_pull_secrets'),
-            service_account_name=exc_config.get('service_account_name'),
-            env_config_maps=exc_config.get('env_config_maps'),
-            env_secrets=exc_config.get('env_secrets'),
+            job_image=check.str_param(job_image, "job_image"),
+            image_pull_policy=exc_config.get("image_pull_policy"),
+            image_pull_secrets=exc_config.get("image_pull_secrets"),
+            service_account_name=exc_config.get("service_account_name"),
+            env_config_maps=exc_config.get("env_config_maps"),
+            env_secrets=exc_config.get("env_secrets"),
         )
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(external_pipeline.tags))
@@ -229,29 +229,29 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job = construct_dagster_k8s_job(
             job_config,
-            command=['dagster'],
-            args=['api', 'execute_run_with_structured_logs', input_json],
+            command=["dagster"],
+            args=["api", "execute_run_with_structured_logs", input_json],
             job_name=job_name,
             pod_name=pod_name,
-            component='run_coordinator',
+            component="run_coordinator",
             user_defined_k8s_config=user_defined_k8s_config,
             env_vars=env_vars,
         )
 
-        job_namespace = exc_config.get('job_namespace')
+        job_namespace = exc_config.get("job_namespace")
 
         api = kubernetes.client.BatchV1Api()
         api.create_namespaced_job(body=job, namespace=job_namespace)
 
         self._instance.report_engine_event(
-            'Kubernetes run_coordinator job launched',
+            "Kubernetes run_coordinator job launched",
             run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(job_name, 'Kubernetes Job name'),
-                    EventMetadataEntry.text(pod_name, 'Kubernetes Pod name'),
-                    EventMetadataEntry.text(job_namespace, 'Kubernetes Namespace'),
-                    EventMetadataEntry.text(run.run_id, 'Run ID'),
+                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
+                    EventMetadataEntry.text(pod_name, "Kubernetes Pod name"),
+                    EventMetadataEntry.text(job_namespace, "Kubernetes Namespace"),
+                    EventMetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
             cls=CeleryK8sRunLauncher,
@@ -260,7 +260,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
     # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         pipeline_run = self._instance.get_run_by_id(run_id)
         if not pipeline_run:
@@ -272,7 +272,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         if not self.can_terminate(run_id):
             return False
@@ -284,29 +284,29 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         return delete_job(job_name=job_name, namespace=job_namespace)
 
     def get_namespace_from_run_config(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         pipeline_run = self._instance.get_run_by_id(run_id)
         run_config = pipeline_run.run_config
         executor_config = _get_validated_celery_k8s_executor_config(run_config)
-        return executor_config.get('job_namespace')
+        return executor_config.get("job_namespace")
 
 
 def _get_validated_celery_k8s_executor_config(run_config):
-    check.dict_param(run_config, 'run_config')
+    check.dict_param(run_config, "run_config")
 
     check.invariant(
-        CELERY_K8S_CONFIG_KEY in run_config.get('execution', {}),
-        '{} execution must be configured in pipeline execution config to launch runs with '
-        'CeleryK8sRunLauncher'.format(CELERY_K8S_CONFIG_KEY),
+        CELERY_K8S_CONFIG_KEY in run_config.get("execution", {}),
+        "{} execution must be configured in pipeline execution config to launch runs with "
+        "CeleryK8sRunLauncher".format(CELERY_K8S_CONFIG_KEY),
     )
 
     execution_config_schema = resolve_to_config_type(celery_k8s_config())
-    execution_run_config = run_config['execution'][CELERY_K8S_CONFIG_KEY].get('config', {})
+    execution_run_config = run_config["execution"][CELERY_K8S_CONFIG_KEY].get("config", {})
     res = process_config(execution_config_schema, execution_run_config)
 
     check.invariant(
-        res.success, 'Incorrect {} execution schema provided'.format(CELERY_K8S_CONFIG_KEY)
+        res.success, "Incorrect {} execution schema provided".format(CELERY_K8S_CONFIG_KEY)
     )
 
     return res.value

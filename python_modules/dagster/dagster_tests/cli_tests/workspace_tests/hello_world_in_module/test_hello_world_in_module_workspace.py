@@ -11,7 +11,7 @@ from dagster.utils import file_relative_path
 )
 def test_load_in_process_location_handle_hello_world_terse(python_user_process_api):
     workspace = load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, 'terse_python_module_workspace.yaml')],
+        [file_relative_path(__file__, "terse_python_module_workspace.yaml")],
         python_user_process_api,
     )
     assert isinstance(workspace, Workspace)
@@ -23,7 +23,7 @@ def test_load_in_process_location_handle_hello_world_terse(python_user_process_a
 )
 def test_load_in_process_location_handle_hello_world_nested(python_user_process_api):
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, 'nested_python_module_workspace.yaml')],
+        [file_relative_path(__file__, "nested_python_module_workspace.yaml")],
         python_user_process_api,
     ) as workspace:
         assert isinstance(workspace, Workspace)
@@ -35,7 +35,7 @@ def test_load_in_process_location_handle_hello_world_nested(python_user_process_
 )
 def test_load_in_process_location_handle_hello_world_nested_with_def(python_user_process_api):
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, 'nested_with_def_python_module_workspace.yaml')],
+        [file_relative_path(__file__, "nested_with_def_python_module_workspace.yaml")],
         python_user_process_api,
     ) as workspace:
         assert isinstance(workspace, Workspace)

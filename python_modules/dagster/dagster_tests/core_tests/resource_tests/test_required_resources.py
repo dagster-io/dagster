@@ -29,23 +29,23 @@ from dagster.core.types.dagster_type import create_any_type
 def get_resource_init_pipeline(resources_initted):
     @resource
     def resource_a(_):
-        resources_initted['a'] = True
-        yield 'A'
+        resources_initted["a"] = True
+        yield "A"
 
     @resource
     def resource_b(_):
-        resources_initted['b'] = True
-        yield 'B'
+        resources_initted["b"] = True
+        yield "B"
 
-    @solid(required_resource_keys={'a'})
+    @solid(required_resource_keys={"a"})
     def consumes_resource_a(context):
-        assert context.resources.a == 'A'
+        assert context.resources.a == "A"
 
-    @solid(required_resource_keys={'b'})
+    @solid(required_resource_keys={"b"})
     def consumes_resource_b(context):
-        assert context.resources.b == 'B'
+        assert context.resources.b == "B"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b,})],)
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b,})],)
     def selective_init_test_pipeline():
         consumes_resource_a()
         consumes_resource_b()
@@ -54,27 +54,27 @@ def get_resource_init_pipeline(resources_initted):
 
 
 def test_filter_out_resources():
-    @solid(required_resource_keys={'a'})
+    @solid(required_resource_keys={"a"})
     def requires_resource_a(context):
         assert context.resources.a
-        assert not hasattr(context.resources, 'b')
+        assert not hasattr(context.resources, "b")
 
-    @solid(required_resource_keys={'b'})
+    @solid(required_resource_keys={"b"})
     def requires_resource_b(context):
-        assert not hasattr(context.resources, 'a')
+        assert not hasattr(context.resources, "a")
         assert context.resources.b
 
     @solid
     def not_resources(context):
-        assert not hasattr(context.resources, 'a')
-        assert not hasattr(context.resources, 'b')
+        assert not hasattr(context.resources, "a")
+        assert not hasattr(context.resources, "b")
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 resource_defs={
-                    'a': ResourceDefinition.hardcoded_resource('foo'),
-                    'b': ResourceDefinition.hardcoded_resource('bar'),
+                    "a": ResourceDefinition.hardcoded_resource("foo"),
+                    "b": ResourceDefinition.hardcoded_resource("bar"),
                 }
             )
         ],
@@ -92,7 +92,7 @@ def test_selective_init_resources():
 
     assert execute_pipeline(get_resource_init_pipeline(resources_initted)).success
 
-    assert set(resources_initted.keys()) == {'a', 'b'}
+    assert set(resources_initted.keys()) == {"a", "b"}
 
 
 def test_selective_init_resources_only_a():
@@ -100,25 +100,25 @@ def test_selective_init_resources_only_a():
 
     @resource
     def resource_a(_):
-        resources_initted['a'] = True
-        yield 'A'
+        resources_initted["a"] = True
+        yield "A"
 
     @resource
     def resource_b(_):
-        resources_initted['b'] = True
-        yield 'B'
+        resources_initted["b"] = True
+        yield "B"
 
-    @solid(required_resource_keys={'a'})
+    @solid(required_resource_keys={"a"})
     def consumes_resource_a(context):
-        assert context.resources.a == 'A'
+        assert context.resources.a == "A"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b})])
     def selective_init_test_pipeline():
         consumes_resource_a()
 
     assert execute_pipeline(selective_init_test_pipeline).success
 
-    assert set(resources_initted.keys()) == {'a'}
+    assert set(resources_initted.keys()) == {"a"}
 
 
 def test_execution_plan_subset_strict_resources():
@@ -129,14 +129,14 @@ def test_execution_plan_subset_strict_resources():
     pipeline_def = get_resource_init_pipeline(resources_initted)
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def, step_keys_to_execute=['consumes_resource_b.compute'],
+        pipeline_def, step_keys_to_execute=["consumes_resource_b.compute"],
     )
 
     result = execute_run(InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance)
 
     assert result.success
 
-    assert set(resources_initted.keys()) == {'b'}
+    assert set(resources_initted.keys()) == {"b"}
 
 
 def test_solid_selection_strict_resources():
@@ -145,11 +145,11 @@ def test_solid_selection_strict_resources():
     selective_init_test_pipeline = get_resource_init_pipeline(resources_initted)
 
     result = execute_pipeline(
-        selective_init_test_pipeline.get_pipeline_subset_def({'consumes_resource_b'})
+        selective_init_test_pipeline.get_pipeline_subset_def({"consumes_resource_b"})
     )
     assert result.success
 
-    assert set(resources_initted.keys()) == {'b'}
+    assert set(resources_initted.keys()) == {"b"}
 
 
 def test_solid_selection_with_aliases_strict_resources():
@@ -157,55 +157,55 @@ def test_solid_selection_with_aliases_strict_resources():
 
     @resource
     def resource_a(_):
-        resources_initted['a'] = True
-        yield 'A'
+        resources_initted["a"] = True
+        yield "A"
 
     @resource
     def resource_b(_):
-        resources_initted['b'] = True
-        yield 'B'
+        resources_initted["b"] = True
+        yield "B"
 
-    @solid(required_resource_keys={'a'})
+    @solid(required_resource_keys={"a"})
     def consumes_resource_a(context):
-        assert context.resources.a == 'A'
+        assert context.resources.a == "A"
 
-    @solid(required_resource_keys={'b'})
+    @solid(required_resource_keys={"b"})
     def consumes_resource_b(context):
-        assert context.resources.b == 'B'
+        assert context.resources.b == "B"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b,})],)
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b,})],)
     def selective_init_test_pipeline():
-        consumes_resource_a.alias('alias_for_a')()
+        consumes_resource_a.alias("alias_for_a")()
         consumes_resource_b()
 
-    result = execute_pipeline(selective_init_test_pipeline.get_pipeline_subset_def({'alias_for_a'}))
+    result = execute_pipeline(selective_init_test_pipeline.get_pipeline_subset_def({"alias_for_a"}))
     assert result.success
 
-    assert set(resources_initted.keys()) == {'a'}
+    assert set(resources_initted.keys()) == {"a"}
 
 
 def create_composite_solid_pipeline(resources_initted):
     @resource
     def resource_a(_):
-        resources_initted['a'] = True
-        yield 'a'
+        resources_initted["a"] = True
+        yield "a"
 
     @resource
     def resource_b(_):
-        resources_initted['b'] = True
-        yield 'B'
+        resources_initted["b"] = True
+        yield "B"
 
-    @solid(required_resource_keys={'a'})
+    @solid(required_resource_keys={"a"})
     def consumes_resource_a(context):
-        assert context.resources.a == 'A'
+        assert context.resources.a == "A"
 
-    @solid(required_resource_keys={'b'})
+    @solid(required_resource_keys={"b"})
     def consumes_resource_b(context):
-        assert context.resources.b == 'B'
+        assert context.resources.b == "B"
 
     @solid
     def consumes_resource_b_error(context):
-        assert context.resources.b == 'B'
+        assert context.resources.b == "B"
 
     @composite_solid
     def wraps_a():
@@ -220,7 +220,7 @@ def create_composite_solid_pipeline(resources_initted):
         consumes_resource_b()
         consumes_resource_b_error()
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b,})],)
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b,})],)
     def selective_init_composite_test_pipeline():
         wraps_a()
         wraps_b()
@@ -233,11 +233,11 @@ def test_solid_selection_strict_resources_within_composite():
     resources_initted = {}
 
     result = execute_pipeline(
-        create_composite_solid_pipeline(resources_initted).get_pipeline_subset_def({'wraps_b'})
+        create_composite_solid_pipeline(resources_initted).get_pipeline_subset_def({"wraps_b"})
     )
     assert result.success
 
-    assert set(resources_initted.keys()) == {'b'}
+    assert set(resources_initted.keys()) == {"b"}
 
 
 def test_execution_plan_subset_strict_resources_within_composite():
@@ -248,14 +248,14 @@ def test_execution_plan_subset_strict_resources_within_composite():
     instance = DagsterInstance.ephemeral()
 
     pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def, step_keys_to_execute=['wraps_b.consumes_resource_b.compute'],
+        pipeline_def, step_keys_to_execute=["wraps_b.consumes_resource_b.compute"],
     )
 
     result = execute_run(InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance)
 
     assert result.success
 
-    assert set(resources_initted.keys()) == {'b'}
+    assert set(resources_initted.keys()) == {"b"}
 
 
 def test_unknown_resource_composite_error():
@@ -264,7 +264,7 @@ def test_unknown_resource_composite_error():
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(
             create_composite_solid_pipeline(resources_initted).get_pipeline_subset_def(
-                {'wraps_b_error'}
+                {"wraps_b_error"}
             )
         )
 
@@ -274,31 +274,31 @@ def test_execution_plan_subset_with_aliases():
 
     @resource
     def resource_a(_):
-        resources_initted['a'] = True
-        yield 'A'
+        resources_initted["a"] = True
+        yield "A"
 
     @resource
     def resource_b(_):
-        resources_initted['b'] = True
-        yield 'B'
+        resources_initted["b"] = True
+        yield "B"
 
-    @solid(required_resource_keys={'a'})
+    @solid(required_resource_keys={"a"})
     def consumes_resource_a(context):
-        assert context.resources.a == 'A'
+        assert context.resources.a == "A"
 
-    @solid(required_resource_keys={'b'})
+    @solid(required_resource_keys={"b"})
     def consumes_resource_b(context):
-        assert context.resources.b == 'B'
+        assert context.resources.b == "B"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a, 'b': resource_b,})],)
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a, "b": resource_b,})],)
     def selective_init_test_pipeline_with_alias():
         consumes_resource_a()
-        consumes_resource_b.alias('b_alias')()
+        consumes_resource_b.alias("b_alias")()
 
     instance = DagsterInstance.ephemeral()
 
     pipeline_run = instance.create_run_for_pipeline(
-        selective_init_test_pipeline_with_alias, step_keys_to_execute=['b_alias.compute'],
+        selective_init_test_pipeline_with_alias, step_keys_to_execute=["b_alias.compute"],
     )
 
     result = execute_run(
@@ -307,31 +307,31 @@ def test_execution_plan_subset_with_aliases():
 
     assert result.success
 
-    assert set(resources_initted.keys()) == {'b'}
+    assert set(resources_initted.keys()) == {"b"}
 
 
 def test_custom_type_with_resource_dependent_hydration():
     def define_input_hydration_pipeline(should_require_resources):
         @resource
         def resource_a(_):
-            yield 'A'
+            yield "A"
 
         @dagster_type_loader(
-            String, required_resource_keys={'a'} if should_require_resources else set()
+            String, required_resource_keys={"a"} if should_require_resources else set()
         )
         def InputHydration(context, hello):
-            assert context.resources.a == 'A'
+            assert context.resources.a == "A"
             return CustomType(hello)
 
         @usable_as_dagster_type(loader=InputHydration)
         class CustomType(str):
             pass
 
-        @solid(input_defs=[InputDefinition('custom_type', CustomType)])
+        @solid(input_defs=[InputDefinition("custom_type", CustomType)])
         def input_hydration_solid(context, custom_type):
             context.log.info(custom_type)
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
         def input_hydration_pipeline():
             input_hydration_solid()
 
@@ -341,13 +341,13 @@ def test_custom_type_with_resource_dependent_hydration():
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(
             under_required_pipeline,
-            {'solids': {'input_hydration_solid': {'inputs': {'custom_type': 'hello'}}}},
+            {"solids": {"input_hydration_solid": {"inputs": {"custom_type": "hello"}}}},
         )
 
     sufficiently_required_pipeline = define_input_hydration_pipeline(should_require_resources=True)
     assert execute_pipeline(
         sufficiently_required_pipeline,
-        {'solids': {'input_hydration_solid': {'inputs': {'custom_type': 'hello'}}}},
+        {"solids": {"input_hydration_solid": {"inputs": {"custom_type": "hello"}}}},
     ).success
 
 
@@ -355,27 +355,27 @@ def test_resource_dependent_hydration_with_selective_init():
     def get_resource_init_input_hydration_pipeline(resources_initted):
         @resource
         def resource_a(_):
-            resources_initted['a'] = True
-            yield 'A'
+            resources_initted["a"] = True
+            yield "A"
 
-        @dagster_type_loader(String, required_resource_keys={'a'})
+        @dagster_type_loader(String, required_resource_keys={"a"})
         def InputHydration(context, hello):
-            assert context.resources.a == 'A'
+            assert context.resources.a == "A"
             return CustomType(hello)
 
         @usable_as_dagster_type(loader=InputHydration)
         class CustomType(str):
             pass
 
-        @solid(input_defs=[InputDefinition('custom_type', CustomType)])
+        @solid(input_defs=[InputDefinition("custom_type", CustomType)])
         def input_hydration_solid(context, custom_type):
             context.log.info(custom_type)
 
         @solid(output_defs=[OutputDefinition(CustomType)])
         def source_custom_type(_):
-            return CustomType('from solid')
+            return CustomType("from solid")
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
         def selective_pipeline():
             input_hydration_solid(source_custom_type())
 
@@ -401,7 +401,7 @@ def define_plugin_pipeline(
         def set_intermediate_object(
             cls, intermediate_storage, context, dagster_type, step_output_handle, value
         ):
-            assert context.resources.a == 'A'
+            assert context.resources.a == "A"
             return intermediate_storage.set_intermediate_object(
                 dagster_type, step_output_handle, value
             )
@@ -410,25 +410,25 @@ def define_plugin_pipeline(
         def get_intermediate_object(
             cls, intermediate_storage, context, dagster_type, step_output_handle
         ):
-            assert context.resources.a == 'A'
+            assert context.resources.a == "A"
             return intermediate_storage.get_intermediate_object(dagster_type, step_output_handle)
 
         @classmethod
         def required_resource_keys(cls):
-            return {'a'} if should_require_resources else set()
+            return {"a"} if should_require_resources else set()
 
     @resource
     def resource_a(_):
-        resources_initted['a'] = True
-        yield 'A'
+        resources_initted["a"] = True
+        yield "A"
 
-    CustomDagsterType = create_any_type(name='CustomType', auto_plugins=[CustomStoragePlugin])
+    CustomDagsterType = create_any_type(name="CustomType", auto_plugins=[CustomStoragePlugin])
 
     @solid(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):
-        return 'hello'
+        return "hello"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
     def plugin_pipeline():
         output_solid()
 
@@ -438,14 +438,14 @@ def define_plugin_pipeline(
 def test_custom_type_with_resource_dependent_storage_plugin():
     under_required_pipeline = define_plugin_pipeline(should_require_resources=False)
     with pytest.raises(DagsterUnknownResourceError):
-        execute_pipeline(under_required_pipeline, {'storage': {'filesystem': {}}})
+        execute_pipeline(under_required_pipeline, {"storage": {"filesystem": {}}})
 
     resources_initted = {}
     sufficiently_required_pipeline = define_plugin_pipeline(
         should_require_resources=True, resources_initted=resources_initted
     )
-    assert execute_pipeline(sufficiently_required_pipeline, {'storage': {'filesystem': {}}}).success
-    assert set(resources_initted.keys()) == set('a')
+    assert execute_pipeline(sufficiently_required_pipeline, {"storage": {"filesystem": {}}}).success
+    assert set(resources_initted.keys()) == set("a")
 
     resources_initted = {}
     assert execute_pipeline(
@@ -460,23 +460,23 @@ def define_materialization_pipeline(should_require_resources=True, resources_ini
 
     @resource
     def resource_a(_):
-        resources_initted['a'] = True
-        yield 'A'
+        resources_initted["a"] = True
+        yield "A"
 
     @dagster_type_materializer(
-        String, required_resource_keys={'a'} if should_require_resources else set()
+        String, required_resource_keys={"a"} if should_require_resources else set()
     )
     def materialize(context, *_args, **_kwargs):
-        assert context.resources.a == 'A'
-        return AssetMaterialization('hello')
+        assert context.resources.a == "A"
+        return AssetMaterialization("hello")
 
-    CustomDagsterType = create_any_type(name='CustomType', materializer=materialize)
+    CustomDagsterType = create_any_type(name="CustomType", materializer=materialize)
 
     @solid(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):
-        return 'hello'
+        return "hello"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
     def output_pipeline():
         output_solid()
 
@@ -488,7 +488,7 @@ def test_custom_type_with_resource_dependent_materialization():
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(
             under_required_pipeline,
-            {'solids': {'output_solid': {'outputs': [{'result': 'hello'}]}}},
+            {"solids": {"output_solid": {"outputs": [{"result": "hello"}]}}},
         )
 
     resources_initted = {}
@@ -497,11 +497,11 @@ def test_custom_type_with_resource_dependent_materialization():
     )
     res = execute_pipeline(
         sufficiently_required_pipeline,
-        {'solids': {'output_solid': {'outputs': [{'result': 'hello'}]}}},
+        {"solids": {"output_solid": {"outputs": [{"result": "hello"}]}}},
     )
     assert res.success
-    assert res.result_for_solid('output_solid').output_value() == 'hello'
-    assert set(resources_initted.keys()) == set('a')
+    assert res.result_for_solid("output_solid").output_value() == "hello"
+    assert set(resources_initted.keys()) == set("a")
 
     resources_initted = {}
     assert execute_pipeline(
@@ -518,29 +518,29 @@ def define_composite_materialization_pipeline(
 
     @resource
     def resource_a(_):
-        resources_initted['a'] = True
-        yield 'A'
+        resources_initted["a"] = True
+        yield "A"
 
     @dagster_type_materializer(
-        String, required_resource_keys={'a'} if should_require_resources else set()
+        String, required_resource_keys={"a"} if should_require_resources else set()
     )
     def materialize(context, *_args, **_kwargs):
-        assert context.resources.a == 'A'
-        return AssetMaterialization('hello')
+        assert context.resources.a == "A"
+        return AssetMaterialization("hello")
 
-    CustomDagsterType = create_any_type(name='CustomType', materializer=materialize)
+    CustomDagsterType = create_any_type(name="CustomType", materializer=materialize)
 
     @solid(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):
-        return 'hello'
+        return "hello"
 
     wrap_solid = CompositeSolidDefinition(
         name="wrap_solid",
         solid_defs=[output_solid],
-        output_mappings=[OutputDefinition(CustomDagsterType).mapping_from('output_solid')],
+        output_mappings=[OutputDefinition(CustomDagsterType).mapping_from("output_solid")],
     )
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
     def output_pipeline():
         wrap_solid()
 
@@ -553,7 +553,7 @@ def test_custom_type_with_resource_dependent_composite_materialization():
     )
     with pytest.raises(DagsterUnknownResourceError):
         execute_pipeline(
-            under_required_pipeline, {'solids': {'wrap_solid': {'outputs': [{'result': 'hello'}]}}},
+            under_required_pipeline, {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
         )
 
     sufficiently_required_pipeline = define_composite_materialization_pipeline(
@@ -561,28 +561,28 @@ def test_custom_type_with_resource_dependent_composite_materialization():
     )
     assert execute_pipeline(
         sufficiently_required_pipeline,
-        {'solids': {'wrap_solid': {'outputs': [{'result': 'hello'}]}}},
+        {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
     ).success
 
     # test that configured output materialization of the wrapping composite initializes resource
     resources_initted = {}
     assert execute_pipeline(
         define_composite_materialization_pipeline(resources_initted=resources_initted),
-        {'solids': {'wrap_solid': {'outputs': [{'result': 'hello'}]}}},
+        {"solids": {"wrap_solid": {"outputs": [{"result": "hello"}]}}},
     ).success
-    assert set(resources_initted.keys()) == set('a')
+    assert set(resources_initted.keys()) == set("a")
 
     # test that configured output materialization of the inner solid initializes resource
     resources_initted = {}
     assert execute_pipeline(
         define_composite_materialization_pipeline(resources_initted=resources_initted),
         {
-            'solids': {
-                'wrap_solid': {'solids': {'output_solid': {'outputs': [{'result': 'hello'}]}}}
+            "solids": {
+                "wrap_solid": {"solids": {"output_solid": {"outputs": [{"result": "hello"}]}}}
             }
         },
     ).success
-    assert set(resources_initted.keys()) == set('a')
+    assert set(resources_initted.keys()) == set("a")
 
     # test that no output config will not initialize anything
     resources_initted = {}
@@ -596,22 +596,22 @@ def test_custom_type_with_resource_dependent_type_check():
     def define_type_check_pipeline(should_require_resources):
         @resource
         def resource_a(_):
-            yield 'A'
+            yield "A"
 
         def resource_based_type_check(context, value):
             return context.resources.a == value
 
         CustomType = DagsterType(
-            name='NeedsA',
+            name="NeedsA",
             type_check_fn=resource_based_type_check,
-            required_resource_keys={'a'} if should_require_resources else None,
+            required_resource_keys={"a"} if should_require_resources else None,
         )
 
-        @solid(output_defs=[OutputDefinition(CustomType, 'custom_type')])
+        @solid(output_defs=[OutputDefinition(CustomType, "custom_type")])
         def custom_type_solid(_):
-            return 'A'
+            return "A"
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
         def type_check_pipeline():
             custom_type_solid()
 

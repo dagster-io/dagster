@@ -27,15 +27,15 @@ class InMemoryRunStorage(RunStorage):
         self._ep_snapshots = OrderedDict()
 
     def add_run(self, pipeline_run):
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
+        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
         if self._runs.get(pipeline_run.run_id):
             raise DagsterRunAlreadyExists(
-                'Can not add same run twice for run_id {run_id}'.format(run_id=pipeline_run.run_id),
+                "Can not add same run twice for run_id {run_id}".format(run_id=pipeline_run.run_id),
             )
         if pipeline_run.pipeline_snapshot_id:
             if not self.has_pipeline_snapshot(pipeline_run.pipeline_snapshot_id):
                 raise DagsterSnapshotDoesNotExist(
-                    'pipeline_snapshot_id {ss_id} does not exist in run storage.'.format(
+                    "pipeline_snapshot_id {ss_id} does not exist in run storage.".format(
                         ss_id=pipeline_run.pipeline_snapshot_id
                     )
                 )
@@ -47,8 +47,8 @@ class InMemoryRunStorage(RunStorage):
         return pipeline_run
 
     def handle_run_event(self, run_id, event):
-        check.str_param(run_id, 'run_id')
-        check.inst_param(event, 'event', DagsterEvent)
+        check.str_param(run_id, "run_id")
+        check.inst_param(event, "event", DagsterEvent)
         run = self._runs[run_id]
 
         if event.event_type == DagsterEventType.PIPELINE_START:
@@ -59,9 +59,9 @@ class InMemoryRunStorage(RunStorage):
             self._runs[run_id] = self._runs[run_id].with_status(PipelineRunStatus.FAILURE)
 
     def get_runs(self, filters=None, cursor=None, limit=None):
-        check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
-        check.opt_str_param(cursor, 'cursor')
-        check.opt_int_param(limit, 'limit')
+        check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+        check.opt_str_param(cursor, "cursor")
+        check.opt_int_param(limit, "limit")
 
         if not filters:
             return self._slice(list(self._runs.values())[::-1], cursor, limit)
@@ -87,7 +87,7 @@ class InMemoryRunStorage(RunStorage):
         return self._slice(matching_runs, cursor=cursor, limit=limit)
 
     def get_runs_count(self, filters=None):
-        check.opt_inst_param(filters, 'filters', PipelineRunsFilter)
+        check.opt_inst_param(filters, "filters", PipelineRunsFilter)
 
         return len(self.get_runs(filters))
 
@@ -109,7 +109,7 @@ class InMemoryRunStorage(RunStorage):
         return list(runs)[start:end]
 
     def get_run_by_id(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
         return self._runs.get(run_id)
 
     def get_run_tags(self):
@@ -121,56 +121,56 @@ class InMemoryRunStorage(RunStorage):
         return sorted([(k, v) for k, v in all_tags.items()], key=lambda x: x[0])
 
     def add_run_tags(self, run_id, new_tags):
-        check.str_param(run_id, 'run_id')
-        check.dict_param(new_tags, 'new_tags', key_type=str, value_type=str)
+        check.str_param(run_id, "run_id")
+        check.dict_param(new_tags, "new_tags", key_type=str, value_type=str)
         run = self._runs[run_id]
         run_tags = merge_dicts(run.tags if run.tags else {}, new_tags)
         self._runs[run_id] = run.with_tags(run_tags)
         self._run_tags[run_id] = frozendict(run_tags)
 
     def has_run(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
         return run_id in self._runs
 
     def delete_run(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
         del self._runs[run_id]
         if run_id in self._run_tags:
             del self._run_tags[run_id]
 
     def has_pipeline_snapshot(self, pipeline_snapshot_id):
-        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+        check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
         return pipeline_snapshot_id in self._pipeline_snapshots
 
     def add_pipeline_snapshot(self, pipeline_snapshot):
-        check.inst_param(pipeline_snapshot, 'pipeline_snapshot', PipelineSnapshot)
+        check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
         pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
         self._pipeline_snapshots[pipeline_snapshot_id] = pipeline_snapshot
         return pipeline_snapshot_id
 
     def get_pipeline_snapshot(self, pipeline_snapshot_id):
-        check.str_param(pipeline_snapshot_id, 'pipeline_snapshot_id')
+        check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id")
         return self._pipeline_snapshots[pipeline_snapshot_id]
 
     def has_execution_plan_snapshot(self, execution_plan_snapshot_id):
-        check.str_param(execution_plan_snapshot_id, 'execution_plan_snapshot_id')
+        check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")
         return execution_plan_snapshot_id in self._ep_snapshots
 
     def add_execution_plan_snapshot(self, execution_plan_snapshot):
-        check.inst_param(execution_plan_snapshot, 'execution_plan_snapshot', ExecutionPlanSnapshot)
+        check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
         execution_plan_snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
         self._ep_snapshots[execution_plan_snapshot_id] = execution_plan_snapshot
         return execution_plan_snapshot_id
 
     def get_execution_plan_snapshot(self, execution_plan_snapshot_id):
-        check.str_param(execution_plan_snapshot_id, 'execution_plan_snapshot_id')
+        check.str_param(execution_plan_snapshot_id, "execution_plan_snapshot_id")
         return self._ep_snapshots[execution_plan_snapshot_id]
 
     def wipe(self):
         self._init_storage()
 
     def get_run_group(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
         pipeline_run = self._runs.get(run_id)
         if not pipeline_run:
             return None
@@ -188,23 +188,23 @@ class InMemoryRunStorage(RunStorage):
 
     def get_run_groups(self, filters=None, cursor=None, limit=None):
         runs = self.get_runs(filters=filters, cursor=cursor, limit=limit)
-        run_groups = defaultdict(lambda: {'runs': {}, 'count': 0})
+        run_groups = defaultdict(lambda: {"runs": {}, "count": 0})
 
         for run in runs:
             root_run_id = run.get_root_run_id()
             if root_run_id is not None:
-                run_groups[root_run_id]['runs'][run.run_id] = run
+                run_groups[root_run_id]["runs"][run.run_id] = run
             else:
-                run_groups[run.run_id]['runs'][run.run_id] = run
+                run_groups[run.run_id]["runs"][run.run_id] = run
 
         for root_run_id in run_groups:
-            if root_run_id not in run_groups[root_run_id]['runs']:
-                run_groups[root_run_id]['runs'][root_run_id] = self.get_run_by_id(root_run_id)
-            run_groups[root_run_id]['runs'] = list(run_groups[root_run_id]['runs'].values())
+            if root_run_id not in run_groups[root_run_id]["runs"]:
+                run_groups[root_run_id]["runs"][root_run_id] = self.get_run_by_id(root_run_id)
+            run_groups[root_run_id]["runs"] = list(run_groups[root_run_id]["runs"].values())
 
         for run in self.get_runs():
             root_run_id = run.get_root_run_id() or run.run_id
             if root_run_id in run_groups:
-                run_groups[root_run_id]['count'] += 1
+                run_groups[root_run_id]["count"] += 1
 
         return run_groups

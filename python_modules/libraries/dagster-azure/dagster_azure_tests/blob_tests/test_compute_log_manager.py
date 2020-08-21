@@ -13,8 +13,8 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.seven import mock
 
-HELLO_WORLD = 'Hello World'
-SEPARATOR = os.linesep if (os.name == 'nt' and sys.version_info < (3,)) else '\n'
+HELLO_WORLD = "Hello World"
+SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
 EXPECTED_LOGS = [
     'STEP_START - Started execution of step "easy.compute".',
     'STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).',
@@ -22,12 +22,12 @@ EXPECTED_LOGS = [
 ]
 
 
-@mock.patch('dagster_azure.blob.compute_log_manager.generate_blob_sas')
-@mock.patch('dagster_azure.blob.compute_log_manager.create_blob_client')
+@mock.patch("dagster_azure.blob.compute_log_manager.generate_blob_sas")
+@mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
 def test_compute_log_manager(
     mock_create_blob_client, mock_generate_blob_sas, storage_account, container, credential
 ):
-    mock_generate_blob_sas.return_value = 'fake-url'
+    mock_generate_blob_sas.return_value = "fake-url"
     fake_client = FakeBlobServiceClient(storage_account)
     mock_create_blob_client.return_value = fake_client
 
@@ -35,9 +35,9 @@ def test_compute_log_manager(
     def simple():
         @solid
         def easy(context):
-            context.log.info('easy')
+            context.log.info("easy")
             print(HELLO_WORLD)
-            return 'easy'
+            return "easy"
 
         easy()
 
@@ -47,7 +47,7 @@ def test_compute_log_manager(
         manager = AzureBlobComputeLogManager(
             storage_account=storage_account,
             container=container,
-            prefix='my_prefix',
+            prefix="my_prefix",
             local_dir=temp_dir,
             secret_key=credential,
         )
@@ -78,8 +78,8 @@ def test_compute_log_manager(
         # Check ADLS2 directly
         adls2_object = fake_client.get_blob_client(
             container=container,
-            blob='{prefix}/storage/{run_id}/compute_logs/easy.compute.err'.format(
-                prefix='my_prefix', run_id=result.run_id
+            blob="{prefix}/storage/{run_id}/compute_logs/easy.compute.err".format(
+                prefix="my_prefix", run_id=result.run_id
             ),
         )
         adls2_stderr = six.ensure_str(adls2_object.download_blob().readall())
@@ -87,7 +87,7 @@ def test_compute_log_manager(
             assert expected in adls2_stderr
 
         # Check download behavior by deleting locally cached logs
-        compute_logs_dir = os.path.join(temp_dir, result.run_id, 'compute_logs')
+        compute_logs_dir = os.path.join(temp_dir, result.run_id, "compute_logs")
         for filename in os.listdir(compute_logs_dir):
             os.unlink(os.path.join(compute_logs_dir, filename))
 
@@ -100,9 +100,9 @@ def test_compute_log_manager(
 
 
 def test_compute_log_manager_from_config(storage_account, container, credential):
-    prefix = 'foobar'
+    prefix = "foobar"
 
-    dagster_yaml = '''
+    dagster_yaml = """
 compute_logs:
   module: dagster_azure.blob.compute_log_manager
   class: AzureBlobComputeLogManager
@@ -112,12 +112,12 @@ compute_logs:
     secret_key: {credential}
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
-'''.format(
+""".format(
         storage_account=storage_account, container=container, credential=credential, prefix=prefix
     )
 
     with seven.TemporaryDirectory() as tempdir:
-        with open(os.path.join(tempdir, 'dagster.yaml'), 'wb') as f:
+        with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
             f.write(six.ensure_binary(dagster_yaml))
 
         instance = DagsterInstance.from_config(tempdir)

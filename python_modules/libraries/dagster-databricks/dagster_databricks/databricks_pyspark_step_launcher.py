@@ -17,50 +17,50 @@ from dagster.serdes import deserialize_value
 
 from .configs import define_databricks_storage_config, define_databricks_submit_run_config
 
-CODE_ZIP_NAME = 'code.zip'
+CODE_ZIP_NAME = "code.zip"
 
 
 @resource(
     {
-        'run_config': define_databricks_submit_run_config(),
-        'databricks_host': Field(
+        "run_config": define_databricks_submit_run_config(),
+        "databricks_host": Field(
             StringSource,
             is_required=True,
-            description='Databricks host, e.g. uksouth.azuredatabricks.com',
+            description="Databricks host, e.g. uksouth.azuredatabricks.com",
         ),
-        'databricks_token': Field(
-            StringSource, is_required=True, description='Databricks access token',
+        "databricks_token": Field(
+            StringSource, is_required=True, description="Databricks access token",
         ),
-        'storage': define_databricks_storage_config(),
-        'local_pipeline_package_path': Field(
+        "storage": define_databricks_storage_config(),
+        "local_pipeline_package_path": Field(
             StringSource,
             is_required=True,
-            description='Absolute path to the package that contains the pipeline definition(s) '
-            'whose steps will execute remotely on Databricks. This is a path on the local '
-            'fileystem of the process executing the pipeline. Before every step run, the '
-            'launcher will zip up the code in this path, upload it to DBFS, and unzip it '
-            'into the Python path of the remote Spark process. This gives the remote process '
-            'access to up-to-date user code.',
+            description="Absolute path to the package that contains the pipeline definition(s) "
+            "whose steps will execute remotely on Databricks. This is a path on the local "
+            "fileystem of the process executing the pipeline. Before every step run, the "
+            "launcher will zip up the code in this path, upload it to DBFS, and unzip it "
+            "into the Python path of the remote Spark process. This gives the remote process "
+            "access to up-to-date user code.",
         ),
-        'staging_prefix': Field(
+        "staging_prefix": Field(
             StringSource,
             is_required=False,
-            default_value='/dagster_staging',
-            description='Directory in DBFS to use for uploaded job code. Must be absolute.',
+            default_value="/dagster_staging",
+            description="Directory in DBFS to use for uploaded job code. Must be absolute.",
         ),
-        'wait_for_logs': Field(
+        "wait_for_logs": Field(
             Bool,
             is_required=False,
             default_value=False,
-            description='If set, and if the specified cluster is configured to export logs, '
-            'the system will wait after job completion for the logs to appear in the configured '
-            'location. Note that logs are copied every 5 minutes, so enabling this will add '
-            'several minutes to the job runtime.',
+            description="If set, and if the specified cluster is configured to export logs, "
+            "the system will wait after job completion for the logs to appear in the configured "
+            "location. Note that logs are copied every 5 minutes, so enabling this will add "
+            "several minutes to the job runtime.",
         ),
     }
 )
 def databricks_pyspark_step_launcher(context):
-    '''Resource for running solids as a Databricks Job.
+    """Resource for running solids as a Databricks Job.
 
     When this resource is used, the solid will be executed in Databricks using the 'Run Submit'
     API. Pipeline code will be zipped up and copied to a directory in DBFS along with the solid's
@@ -72,7 +72,7 @@ def databricks_pyspark_step_launcher(context):
 
     .. _`here for S3`: https://docs.databricks.com/data/data-sources/aws/amazon-s3.html#alternative-1-set-aws-keys-in-the-spark-context
     .. _`here for ADLS`: https://docs.microsoft.com/en-gb/azure/databricks/data/data-sources/azure/azure-datalake-gen2#--access-directly-using-the-storage-account-access-key
-    '''
+    """
     return DatabricksPySparkStepLauncher(**context.resource_config)
 
 
@@ -87,16 +87,16 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         staging_prefix,
         wait_for_logs,
     ):
-        self.run_config = check.dict_param(run_config, 'run_config')
-        self.databricks_host = check.str_param(databricks_host, 'databricks_host')
-        self.databricks_token = check.str_param(databricks_token, 'databricks_token')
-        self.storage = check.dict_param(storage, 'storage')
+        self.run_config = check.dict_param(run_config, "run_config")
+        self.databricks_host = check.str_param(databricks_host, "databricks_host")
+        self.databricks_token = check.str_param(databricks_token, "databricks_token")
+        self.storage = check.dict_param(storage, "storage")
         self.local_pipeline_package_path = check.str_param(
-            local_pipeline_package_path, 'local_pipeline_package_path'
+            local_pipeline_package_path, "local_pipeline_package_path"
         )
-        self.staging_prefix = check.str_param(staging_prefix, 'staging_prefix')
-        check.invariant(staging_prefix.startswith('/'), 'staging_prefix must be an absolute path')
-        self.wait_for_logs = check.bool_param(wait_for_logs, 'wait_for_logs')
+        self.staging_prefix = check.str_param(staging_prefix, "staging_prefix")
+        check.invariant(staging_prefix.startswith("/"), "staging_prefix must be an absolute path")
+        self.wait_for_logs = check.bool_param(wait_for_logs, "wait_for_logs")
 
         self.databricks_runner = DatabricksJobRunner(host=databricks_host, token=databricks_token)
 
@@ -129,42 +129,42 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         return deserialize_value(pickle.loads(events_data))
 
     def _get_databricks_task(self, run_id, step_key):
-        '''Construct the 'task' parameter to  be submitted to the Databricks API.
+        """Construct the 'task' parameter to  be submitted to the Databricks API.
 
         This will create a 'spark_python_task' dict where `python_file` is a path on DBFS
         pointing to the 'databricks_step_main.py' file, and `parameters` is an array with a single
         element, a path on DBFS pointing to the picked `step_run_ref` data.
 
         See https://docs.databricks.com/dev-tools/api/latest/jobs.html#jobssparkpythontask.
-        '''
+        """
         python_file = self._dbfs_path(run_id, step_key, self._main_file_name())
         parameters = [
             self._internal_dbfs_path(run_id, step_key, PICKLED_STEP_RUN_REF_FILE_NAME),
             self._internal_dbfs_path(run_id, step_key, CODE_ZIP_NAME),
         ]
-        return {'spark_python_task': {'python_file': python_file, 'parameters': parameters}}
+        return {"spark_python_task": {"python_file": python_file, "parameters": parameters}}
 
     def _upload_artifacts(self, log, step_run_ref, run_id, step_key):
-        '''Upload the step run ref and pyspark code to DBFS to run as a job.'''
+        """Upload the step run ref and pyspark code to DBFS to run as a job."""
 
-        log.info('Uploading main file to DBFS')
+        log.info("Uploading main file to DBFS")
         main_local_path = self._main_file_local_path()
-        with open(main_local_path, 'rb') as infile:
+        with open(main_local_path, "rb") as infile:
             self.databricks_runner.client.put_file(
                 infile, self._dbfs_path(run_id, step_key, self._main_file_name())
             )
 
-        log.info('Uploading pipeline to DBFS')
+        log.info("Uploading pipeline to DBFS")
         with seven.TemporaryDirectory() as temp_dir:
             # Zip and upload package containing pipeline
             zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
             build_pyspark_zip(zip_local_path, self.local_pipeline_package_path)
-            with open(zip_local_path, 'rb') as infile:
+            with open(zip_local_path, "rb") as infile:
                 self.databricks_runner.client.put_file(
                     infile, self._dbfs_path(run_id, step_key, CODE_ZIP_NAME)
                 )
 
-        log.info('Uploading step run ref file to DBFS')
+        log.info("Uploading step run ref file to DBFS")
         step_pickle_file = io.BytesIO()
 
         pickle.dump(step_run_ref, step_pickle_file)
@@ -190,10 +190,10 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         return databricks_step_main.__file__
 
     def _dbfs_path(self, run_id, step_key, filename):
-        path = '/'.join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
-        return 'dbfs://{}'.format(path)
+        path = "/".join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
+        return "dbfs://{}".format(path)
 
     def _internal_dbfs_path(self, run_id, step_key, filename):
-        '''Scripts running on Databricks should access DBFS at /dbfs/.'''
-        path = '/'.join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
-        return '/dbfs/{}'.format(path)
+        """Scripts running on Databricks should access DBFS at /dbfs/."""
+        path = "/".join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
+        return "/dbfs/{}".format(path)

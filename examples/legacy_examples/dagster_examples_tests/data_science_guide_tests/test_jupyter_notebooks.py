@@ -11,94 +11,94 @@ from dagster.utils import script_relative_path
 
 valid_notebook_paths = [
     (
-        '../../../python_modules/libraries/dagster-pandas/dagster_pandas/examples/notebooks/papermill_pandas_hello_world.ipynb'
+        "../../../python_modules/libraries/dagster-pandas/dagster_pandas/examples/notebooks/papermill_pandas_hello_world.ipynb"
     ),
-    ('../../../python_modules/dagit/dagit_tests/render_uuid_notebook.ipynb'),
+    ("../../../python_modules/dagit/dagit_tests/render_uuid_notebook.ipynb"),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_output.ipynb'
-    ),
-    (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_output.ipynb"
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/tutorial_LR.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world.ipynb"
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/tutorial_RF.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/tutorial_LR.ipynb"
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/clean_data.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/tutorial_RF.ipynb"
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/add_two_numbers.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/clean_data.ipynb"
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/mult_two_numbers.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/add_two_numbers.ipynb"
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_logging.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/mult_two_numbers.ipynb"
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_explicit_yield.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_logging.ipynb"
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/bad_kernel.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_explicit_yield.ipynb"
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_resource.ipynb'
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/bad_kernel.ipynb"
     ),
-    ('../../../python_modules/libraries/dagstermill/dagstermill_tests/notebooks/retroactive.ipynb'),
-    ('../../../docs/sections/learn/guides/data_science/iris-kmeans.ipynb'),
-    ('../../../docs/sections/learn/guides/data_science/iris-kmeans_2.ipynb'),
-    ('../../../docs/sections/learn/guides/data_science/iris-kmeans_3.ipynb'),
+    (
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_resource.ipynb"
+    ),
+    ("../../../python_modules/libraries/dagstermill/dagstermill_tests/notebooks/retroactive.ipynb"),
+    ("../../../docs/sections/learn/guides/data_science/iris-kmeans.ipynb"),
+    ("../../../docs/sections/learn/guides/data_science/iris-kmeans_2.ipynb"),
+    ("../../../docs/sections/learn/guides/data_science/iris-kmeans_3.ipynb"),
 ]
 
 invalid_notebook_paths = [
     (
-        '../../../python_modules/libraries/dagster-pandas/dagster_pandas/examples/pandas_hello_world/scratch.ipynb',
-        ['cells', 0, 'outputs', 0],
+        "../../../python_modules/libraries/dagster-pandas/dagster_pandas/examples/pandas_hello_world/scratch.ipynb",
+        ["cells", 0, "outputs", 0],
         seven.ModuleNotFoundError.__name__,
         "No module named 'dagster_contrib'",
         "error",
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/error_notebook.ipynb',
-        ['cells', 1, 'outputs', 0],
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/error_notebook.ipynb",
+        ["cells", 1, "outputs", 0],
         Exception.__name__,
         "Someone set up us the bomb",
         "error",
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_config.ipynb',
-        ['cells', 1, 'outputs', 0],
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_config.ipynb",
+        ["cells", 1, "outputs", 0],
         TypeError.__name__,
         "got an unexpected keyword argument 'solid_name'",
         "error",
     ),
     (
-        '../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_resource_with_exception.ipynb',
-        ['cells', 4, 'outputs', 0],
+        "../../../python_modules/libraries/dagstermill/dagstermill/examples/notebooks/hello_world_resource_with_exception.ipynb",
+        ["cells", 4, "outputs", 0],
         Exception.__name__,
         "",
         "error",
     ),
     (
-        '../../../airline_demo/airline_demo/notebooks/Delays_by_Geography.ipynb',
-        ['cells', 6, 'outputs', 0],
+        "../../../airline_demo/airline_demo/notebooks/Delays_by_Geography.ipynb",
+        ["cells", 6, "outputs", 0],
         psycopg2.OperationalError.__name__,
         "could not connect to server:",
         "error",
     ),
     (
-        '../../../airline_demo/airline_demo/notebooks/SFO_Delays_by_Destination.ipynb',
-        ['cells', 6, 'outputs', 0],
+        "../../../airline_demo/airline_demo/notebooks/SFO_Delays_by_Destination.ipynb",
+        ["cells", 6, "outputs", 0],
         psycopg2.OperationalError.__name__,
         "could not connect to server:",
         "error",
     ),
     (
-        '../../../airline_demo/airline_demo/notebooks/Fares_vs_Delays.ipynb',
-        ['cells', 6, 'outputs', 0],
+        "../../../airline_demo/airline_demo/notebooks/Fares_vs_Delays.ipynb",
+        ["cells", 6, "outputs", 0],
         psycopg2.OperationalError.__name__,
         "could not connect to server:",
         "error",
@@ -113,17 +113,17 @@ def get_dict_value(cell_dict, keys):
 
 
 @pytest.mark.skip
-@pytest.mark.parametrize('valid_notebook_path', valid_notebook_paths)
+@pytest.mark.parametrize("valid_notebook_path", valid_notebook_paths)
 def test_valid_notebooks(valid_notebook_path):
     notebook_filename = script_relative_path(valid_notebook_path)
     with open(notebook_filename) as f:
         nb = nbformat.read(f, as_version=4)
-        ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+        ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
         ep.preprocess(
             nb,
             {
-                'metadata': {
-                    'path': script_relative_path(notebook_filename[: notebook_filename.rfind('/')])
+                "metadata": {
+                    "path": script_relative_path(notebook_filename[: notebook_filename.rfind("/")])
                 }
             },
         )
@@ -140,15 +140,15 @@ def test_invalid_notebooks(
     notebook_filename = script_relative_path(invalid_notebook_path)
     with open(notebook_filename) as f:
         nb = nbformat.read(f, as_version=4)
-        ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+        ep = ExecutePreprocessor(timeout=600, kernel_name="python3")
 
         try:
             ep.preprocess(
                 nb,
                 {
-                    'metadata': {
-                        'path': script_relative_path(
-                            notebook_filename[: notebook_filename.rfind('/')]
+                    "metadata": {
+                        "path": script_relative_path(
+                            notebook_filename[: notebook_filename.rfind("/")]
                         )
                     }
                 },

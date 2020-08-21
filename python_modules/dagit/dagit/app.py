@@ -28,15 +28,15 @@ from .templates.playground import TEMPLATE as PLAYGROUND_TEMPLATE
 from .version import __version__
 
 MISSING_SCHEDULER_WARNING = (
-    'You have defined ScheduleDefinitions for this repository, but have '
-    'not defined a scheduler on the instance'
+    "You have defined ScheduleDefinitions for this repository, but have "
+    "not defined a scheduler on the instance"
 )
 
 
 class DagsterGraphQLView(GraphQLView):
     def __init__(self, context, **kwargs):
         super(DagsterGraphQLView, self).__init__(**kwargs)
-        self.context = check.inst_param(context, 'context', DagsterGraphQLContext)
+        self.context = check.inst_param(context, "context", DagsterGraphQLContext)
 
     def get_context(self):
         return self.context
@@ -45,7 +45,7 @@ class DagsterGraphQLView(GraphQLView):
 
 
 def dagster_graphql_subscription_view(subscription_server, context):
-    context = check.inst_param(context, 'context', DagsterGraphQLContext)
+    context = check.inst_param(context, "context", DagsterGraphQLContext)
 
     def view(ws):
         subscription_server.handle(ws, request_context=context)
@@ -66,30 +66,30 @@ def info_view():
 
 
 def notebook_view(request_args):
-    check.dict_param(request_args, 'request_args')
+    check.dict_param(request_args, "request_args")
 
     # This currently provides open access to your file system - the very least we can
     # do is limit it to notebook files until we create a more permanent solution.
-    path = request_args['path']
-    if not path.endswith('.ipynb'):
-        return 'Invalid Path', 400
+    path = request_args["path"]
+    if not path.endswith(".ipynb"):
+        return "Invalid Path", 400
 
     with open(os.path.abspath(path)) as f:
         read_data = f.read()
         notebook = nbformat.reads(read_data, as_version=4)
         html_exporter = HTMLExporter()
-        html_exporter.template_file = 'basic'
+        html_exporter.template_file = "basic"
         (body, resources) = html_exporter.from_notebook_node(notebook)
-        return '<style>' + resources['inlining']['css'][0] + '</style>' + body, 200
+        return "<style>" + resources["inlining"]["css"][0] + "</style>" + body, 200
 
 
 def download_view(context):
-    context = check.inst_param(context, 'context', DagsterGraphQLContext)
+    context = check.inst_param(context, "context", DagsterGraphQLContext)
 
     def view(run_id, step_key, file_type):
         run_id = str(uuid.UUID(run_id))  # raises if not valid run_id
-        step_key = step_key.split('/')[-1]  # make sure we're not diving deep into
-        out_name = '{}_{}.{}'.format(run_id, step_key, file_type)
+        step_key = step_key.split("/")[-1]  # make sure we're not diving deep into
+        out_name = "{}_{}.{}".format(run_id, step_key, file_type)
 
         manager = context.instance.compute_log_manager
         try:
@@ -114,9 +114,9 @@ def download_view(context):
 
 def instantiate_app_with_views(context, app_path_prefix):
     app = Flask(
-        'dagster-ui',
+        "dagster-ui",
         static_url_path=app_path_prefix,
-        static_folder=os.path.join(os.path.dirname(__file__), './webapp/build'),
+        static_folder=os.path.join(os.path.dirname(__file__), "./webapp/build"),
     )
     schema = create_schema()
     subscription_server = DagsterSubscriptionServer(schema=schema)
@@ -124,24 +124,24 @@ def instantiate_app_with_views(context, app_path_prefix):
     # Websocket routes
     sockets = Sockets(app)
     sockets.add_url_rule(
-        '{}/graphql'.format(app_path_prefix),
-        'graphql',
+        "{}/graphql".format(app_path_prefix),
+        "graphql",
         dagster_graphql_subscription_view(subscription_server, context),
     )
 
     # HTTP routes
-    bp = Blueprint('routes', __name__, url_prefix=app_path_prefix)
+    bp = Blueprint("routes", __name__, url_prefix=app_path_prefix)
     bp.add_url_rule(
-        '/graphiql', 'graphiql', lambda: redirect('{}/graphql'.format(app_path_prefix), 301)
+        "/graphiql", "graphiql", lambda: redirect("{}/graphql".format(app_path_prefix), 301)
     )
     bp.add_url_rule(
-        '/graphql',
-        'graphql',
+        "/graphql",
+        "graphql",
         DagsterGraphQLView.as_view(
-            'graphql',
+            "graphql",
             schema=schema,
             graphiql=True,
-            graphiql_template=PLAYGROUND_TEMPLATE.replace('APP_PATH_PREFIX', app_path_prefix),
+            graphiql_template=PLAYGROUND_TEMPLATE.replace("APP_PATH_PREFIX", app_path_prefix),
             executor=Executor(),
             context=context,
         ),
@@ -149,18 +149,18 @@ def instantiate_app_with_views(context, app_path_prefix):
 
     bp.add_url_rule(
         # should match the `build_local_download_url`
-        '/download/<string:run_id>/<string:step_key>/<string:file_type>',
-        'download_view',
+        "/download/<string:run_id>/<string:step_key>/<string:file_type>",
+        "download_view",
         download_view(context),
     )
 
     # these routes are specifically for the Dagit UI and are not part of the graphql
     # API that we want other people to consume, so they're separate for now.
     # Also grabbing the magic global request args dict so that notebook_view is testable
-    bp.add_url_rule('/dagit/notebook', 'notebook', lambda: notebook_view(request.args))
-    bp.add_url_rule('/dagit_info', 'sanity_view', info_view)
+    bp.add_url_rule("/dagit/notebook", "notebook", lambda: notebook_view(request.args))
+    bp.add_url_rule("/dagit_info", "sanity_view", info_view)
 
-    index_path = os.path.join(os.path.dirname(__file__), './webapp/build/index.html')
+    index_path = os.path.join(os.path.dirname(__file__), "./webapp/build/index.html")
 
     def index_view(_path):
         try:
@@ -176,41 +176,41 @@ def instantiate_app_with_views(context, app_path_prefix):
                 )
         except seven.FileNotFoundError:
             raise Exception(
-                '''Can't find webapp files. Probably webapp isn't built. If you are using
+                """Can't find webapp files. Probably webapp isn't built. If you are using
                 dagit, then probably it's a corrupted installation or a bug. However, if you are
                 developing dagit locally, your problem can be fixed as follows:
 
                 cd ./python_modules/
-                make rebuild_dagit'''
+                make rebuild_dagit"""
             )
 
-    app.app_protocol = lambda environ_path_info: 'graphql-ws'
+    app.app_protocol = lambda environ_path_info: "graphql-ws"
     app.register_blueprint(bp)
     app.register_error_handler(404, index_view)
 
     # if the user asked for a path prefix, handle the naked domain just in case they are not
     # filtering inbound traffic elsewhere and redirect to the path prefix.
     if app_path_prefix:
-        app.add_url_rule('/', 'force-path-prefix', lambda: redirect(app_path_prefix, 301))
+        app.add_url_rule("/", "force-path-prefix", lambda: redirect(app_path_prefix, 301))
 
     CORS(app)
     return app
 
 
-def create_app_from_workspace(workspace, instance, path_prefix=''):
-    check.inst_param(workspace, 'workspace', Workspace)
-    check.inst_param(instance, 'instance', DagsterInstance)
-    check.str_param(path_prefix, 'path_prefix')
+def create_app_from_workspace(workspace, instance, path_prefix=""):
+    check.inst_param(workspace, "workspace", Workspace)
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.str_param(path_prefix, "path_prefix")
 
     if path_prefix:
-        if not path_prefix.startswith('/'):
+        if not path_prefix.startswith("/"):
             raise Exception('The path prefix should begin with a leading "/".')
-        if path_prefix.endswith('/'):
+        if path_prefix.endswith("/"):
             raise Exception('The path prefix should not include a trailing "/".')
 
     warn_if_compute_logs_disabled()
 
-    print('Loading repository...')  # pylint: disable=print-call
+    print("Loading repository...")  # pylint: disable=print-call
 
     context = DagsterGraphQLContext(instance=instance, workspace=workspace, version=__version__)
 

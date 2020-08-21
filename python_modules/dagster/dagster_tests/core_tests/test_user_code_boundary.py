@@ -19,7 +19,7 @@ from dagster.core.types.dagster_type import create_any_type
 
 class UserError(Exception):
     def __init__(self):
-        super(UserError, self).__init__('The user has errored')
+        super(UserError, self).__init__("The user has errored")
 
 
 def test_user_error_boundary_solid_compute():
@@ -44,7 +44,7 @@ def test_user_error_boundary_input_hydration():
     class CustomType(str):
         pass
 
-    @solid(input_defs=[InputDefinition('custom_type', CustomType)])
+    @solid(input_defs=[InputDefinition("custom_type", CustomType)])
     def input_hydration_solid(context, custom_type):
         context.log.info(custom_type)
 
@@ -54,7 +54,7 @@ def test_user_error_boundary_input_hydration():
 
     pipeline_result = execute_pipeline(
         input_hydration_pipeline,
-        {'solids': {'input_hydration_solid': {'inputs': {'custom_type': 'hello'}}}},
+        {"solids": {"input_hydration_solid": {"inputs": {"custom_type": "hello"}}}},
         raise_on_error=False,
     )
     assert not pipeline_result.success
@@ -65,11 +65,11 @@ def test_user_error_boundary_output_materialization():
     def materialize(context, *_args, **_kwargs):
         raise UserError()
 
-    CustomDagsterType = create_any_type(name='CustomType', materializer=materialize)
+    CustomDagsterType = create_any_type(name="CustomType", materializer=materialize)
 
     @solid(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):
-        return 'hello'
+        return "hello"
 
     @pipeline
     def output_materialization_pipeline():
@@ -77,7 +77,7 @@ def test_user_error_boundary_output_materialization():
 
     pipeline_result = execute_pipeline(
         output_materialization_pipeline,
-        {'solids': {'output_solid': {'outputs': [{'result': 'hello'}]}}},
+        {"solids": {"output_solid": {"outputs": [{"result": "hello"}]}}},
         raise_on_error=False,
     )
     assert not pipeline_result.success
@@ -88,11 +88,11 @@ def test_user_error_boundary_resource_init():
     def resource_a(_):
         raise UserError()
 
-    @solid(required_resource_keys={'a'})
+    @solid(required_resource_keys={"a"})
     def resource_solid(_context):
-        return 'hello'
+        return "hello"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
     def resource_pipeline():
         resource_solid()
 
@@ -100,7 +100,7 @@ def test_user_error_boundary_resource_init():
     assert not pipeline_result.success
 
 
-@pytest.mark.skip('not implemented')
+@pytest.mark.skip("not implemented")
 def test_user_error_boundary_storage_plugin():
     class CustomStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
         @classmethod
@@ -119,17 +119,17 @@ def test_user_error_boundary_storage_plugin():
         ):
             raise UserError()
 
-    CustomDagsterType = create_any_type(name='CustomType', auto_plugins=[CustomStoragePlugin])
+    CustomDagsterType = create_any_type(name="CustomType", auto_plugins=[CustomStoragePlugin])
 
     @solid(output_defs=[OutputDefinition(CustomDagsterType)])
     def output_solid(_context):
-        return 'hello'
+        return "hello"
 
     @pipeline
     def plugin_pipeline():
         output_solid()
 
     pipeline_result = execute_pipeline(
-        plugin_pipeline, {'storage': {'filesystem': {}}}, raise_on_error=False
+        plugin_pipeline, {"storage": {"filesystem": {}}}, raise_on_error=False
     )
     assert not pipeline_result.success

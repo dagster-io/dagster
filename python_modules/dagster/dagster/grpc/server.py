@@ -75,8 +75,8 @@ class CouldNotBindGrpcServerToAddress(Exception):
 
 
 class LazyRepositorySymbolsAndCodePointers:
-    '''Enables lazily loading user code at RPC-time so that it doesn't interrupt startup and
-    we can gracefully handle user code errors.'''
+    """Enables lazily loading user code at RPC-time so that it doesn't interrupt startup and
+    we can gracefully handle user code errors."""
 
     def __init__(self, loadable_target_origin):
         self._loadable_target_origin = loadable_target_origin
@@ -161,19 +161,19 @@ class DagsterApiServer(DagsterApiServicer):
     ):
         super(DagsterApiServer, self).__init__()
 
-        check.bool_param(heartbeat, 'heartbeat')
-        check.int_param(heartbeat_timeout, 'heartbeat_timeout')
-        check.invariant(heartbeat_timeout > 0, 'heartbeat_timeout must be greater than 0')
+        check.bool_param(heartbeat, "heartbeat")
+        check.int_param(heartbeat_timeout, "heartbeat_timeout")
+        check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
 
         self._shutdown_server_event = check.inst_param(
-            shutdown_server_event, 'shutdown_server_event', seven.ThreadingEventType
+            shutdown_server_event, "shutdown_server_event", seven.ThreadingEventType
         )
         self._loadable_target_origin = check.opt_inst_param(
-            loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin
+            loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
         )
 
         self._shutdown_server_event = check.inst_param(
-            shutdown_server_event, 'shutdown_server_event', seven.ThreadingEventType
+            shutdown_server_event, "shutdown_server_event", seven.ThreadingEventType
         )
         # Dict[str, (multiprocessing.Process, DagsterInstance)]
         self._executions = {}
@@ -201,7 +201,7 @@ class DagsterApiServer(DagsterApiServicer):
         self.__cleanup_thread.start()
 
     def _generate_synthetic_error_from_crash(self, run, instance):
-        message = 'Pipeline execution process for {run_id} unexpectedly exited.'.format(
+        message = "Pipeline execution process for {run_id} unexpectedly exited.".format(
             run_id=run.run_id
         )
         instance.report_engine_event(message, run, cls=self.__class__)
@@ -238,7 +238,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(
-            repository_origin, 'repository_origin', RepositoryOrigin,
+            repository_origin, "repository_origin", RepositoryOrigin,
         )
 
         if isinstance(repository_origin, RepositoryGrpcServerOrigin):
@@ -250,7 +250,7 @@ class DagsterApiServer(DagsterApiServicer):
         return recon_repository_from_origin(repository_origin)
 
     def _recon_pipeline_from_origin(self, pipeline_origin):
-        check.inst_param(pipeline_origin, 'pipeline_origin', PipelineOrigin)
+        check.inst_param(pipeline_origin, "pipeline_origin", PipelineOrigin)
         recon_repo = self._recon_repository_from_origin(pipeline_origin.repository_origin)
         return recon_repo.get_reconstructable_pipeline(pipeline_origin.pipeline_name)
 
@@ -274,7 +274,7 @@ class DagsterApiServer(DagsterApiServicer):
             request.serialized_execution_plan_snapshot_args
         )
 
-        check.inst_param(execution_plan_args, 'execution_plan_args', ExecutionPlanSnapshotArgs)
+        check.inst_param(execution_plan_args, "execution_plan_args", ExecutionPlanSnapshotArgs)
         recon_pipeline = self._recon_pipeline_from_origin(execution_plan_args.pipeline_origin)
         execution_plan_snapshot_or_error = get_external_execution_plan_snapshot(
             recon_pipeline, execution_plan_args
@@ -308,7 +308,7 @@ class DagsterApiServer(DagsterApiServicer):
             request.serialized_partition_names_args
         )
 
-        check.inst_param(partition_names_args, 'partition_names_args', PartitionNamesArgs)
+        check.inst_param(partition_names_args, "partition_names_args", PartitionNamesArgs)
 
         recon_repo = self._recon_repository_from_origin(partition_names_args.repository_origin)
         definition = recon_repo.get_definition()
@@ -318,8 +318,8 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             with user_code_error_boundary(
                 PartitionExecutionError,
-                lambda: 'Error occurred during the execution of the partition generation function for '
-                'partition set {partition_set_name}'.format(
+                lambda: "Error occurred during the execution of the partition generation function for "
+                "partition set {partition_set_name}".format(
                     partition_set_name=partition_set_def.name
                 ),
             ):
@@ -346,7 +346,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         check.inst_param(
             partition_set_execution_param_args,
-            'partition_set_execution_param_args',
+            "partition_set_execution_param_args",
             PartitionSetExecutionParamArgs,
         )
 
@@ -361,8 +361,8 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             with user_code_error_boundary(
                 PartitionExecutionError,
-                lambda: 'Error occurred during the partition generation for partition set '
-                '{partition_set_name}'.format(partition_set_name=partition_set_def.name),
+                lambda: "Error occurred during the partition generation for partition set "
+                "{partition_set_name}".format(partition_set_name=partition_set_def.name),
             ):
                 all_partitions = partition_set_def.get_partitions()
             partitions = [
@@ -376,8 +376,8 @@ class DagsterApiServer(DagsterApiServicer):
 
                 def _error_message_fn(partition_set_name, partition_name):
                     return lambda: (
-                        'Error occurred during the partition config and tag generation for '
-                        'partition set {partition_set_name}::{partition_name}'.format(
+                        "Error occurred during the partition config and tag generation for "
+                        "partition set {partition_set_name}::{partition_name}".format(
                             partition_set_name=partition_set_name, partition_name=partition_name
                         )
                     )
@@ -411,7 +411,7 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalPartitionConfig(self, request, _context):
         partition_args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
 
-        check.inst_param(partition_args, 'partition_args', PartitionArgs)
+        check.inst_param(partition_args, "partition_args", PartitionArgs)
 
         recon_repo = self._recon_repository_from_origin(partition_args.repository_origin)
         definition = recon_repo.get_definition()
@@ -420,8 +420,8 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             with user_code_error_boundary(
                 PartitionExecutionError,
-                lambda: 'Error occurred during the evaluation of the `run_config_for_partition` '
-                'function for partition set {partition_set_name}'.format(
+                lambda: "Error occurred during the evaluation of the `run_config_for_partition` "
+                "function for partition set {partition_set_name}".format(
                     partition_set_name=partition_set_def.name
                 ),
             ):
@@ -443,7 +443,7 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalPartitionTags(self, request, _context):
         partition_args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
 
-        check.inst_param(partition_args, 'partition_args', PartitionArgs)
+        check.inst_param(partition_args, "partition_args", PartitionArgs)
 
         recon_repo = self._recon_repository_from_origin(partition_args.repository_origin)
         definition = recon_repo.get_definition()
@@ -452,8 +452,8 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             with user_code_error_boundary(
                 PartitionExecutionError,
-                lambda: 'Error occurred during the evaluation of the `tags_for_partition` function for '
-                'partition set {partition_set_name}'.format(
+                lambda: "Error occurred during the evaluation of the `tags_for_partition` function for "
+                "partition set {partition_set_name}".format(
                     partition_set_name=partition_set_def.name
                 ),
             ):
@@ -479,7 +479,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         check.inst_param(
             pipeline_subset_snapshot_args,
-            'pipeline_subset_snapshot_args',
+            "pipeline_subset_snapshot_args",
             PipelineSubsetSnapshotArgs,
         )
 
@@ -497,7 +497,7 @@ class DagsterApiServer(DagsterApiServicer):
             request.serialized_repository_python_origin
         )
 
-        check.inst_param(repository_origin, 'repository_origin', RepositoryOrigin)
+        check.inst_param(repository_origin, "repository_origin", RepositoryOrigin)
 
         recon_repo = self._recon_repository_from_origin(repository_origin)
         return api_pb2.ExternalRepositoryReply(
@@ -513,7 +513,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         check.inst_param(
             external_schedule_execution_args,
-            'external_schedule_execution_args',
+            "external_schedule_execution_args",
             ExternalScheduleExecutionArgs,
         )
 
@@ -532,7 +532,7 @@ class DagsterApiServer(DagsterApiServicer):
             execute_run_args = deserialize_json_to_dagster_namedtuple(
                 request.serialized_execute_run_args
             )
-            check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
+            check.inst_param(execute_run_args, "execute_run_args", ExecuteRunArgs)
 
             run_id = execute_run_args.pipeline_run_id
 
@@ -545,7 +545,7 @@ class DagsterApiServer(DagsterApiServicer):
                         serializable_error_info=serializable_error_info_from_exc_info(
                             sys.exc_info()
                         ),
-                        message='Error during RPC setup for ExecuteRun',
+                        message="Error during RPC setup for ExecuteRun",
                     )
                 )
             )
@@ -586,7 +586,7 @@ class DagsterApiServer(DagsterApiServicer):
                                     sys.exc_info()
                                 ),
                                 message=(
-                                    'GRPC server: Subprocess for {run_id} terminated unexpectedly'
+                                    "GRPC server: Subprocess for {run_id} terminated unexpectedly"
                                 ).format(run_id=run_id),
                             )
                         )
@@ -737,8 +737,8 @@ class DagsterApiServer(DagsterApiServicer):
                     # subprocess died unexpectedly
                     success = False
                     message = (
-                        'GRPC server: Subprocess for {run_id} terminated unexpectedly with '
-                        'exit code {exit_code}'.format(
+                        "GRPC server: Subprocess for {run_id} terminated unexpectedly with "
+                        "exit code {exit_code}".format(
                             run_id=run_id, exit_code=execution_process.exitcode,
                         )
                     )
@@ -770,11 +770,11 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def GetCurrentImage(self, request, _context):
-        current_image = os.getenv('DAGSTER_CURRENT_IMAGE')
+        current_image = os.getenv("DAGSTER_CURRENT_IMAGE")
         serializable_error_info = None
 
         if not current_image:
-            serializable_error_info = 'DAGSTER_CURRENT_IMAGE is not set.'
+            serializable_error_info = "DAGSTER_CURRENT_IMAGE is not set."
         return api_pb2.GetCurrentImageReply(
             serialized_current_image=serialize_dagster_namedtuple(
                 GetCurrentImageResult(
@@ -787,13 +787,13 @@ class DagsterApiServer(DagsterApiServicer):
 # This is not a splendid scheme. We could possibly use a sentinel file for this, or send a custom
 # signal back to the client process (Unix only, i think, and questionable); or maybe the client
 # could poll the ping rpc instead/in addition to this
-SERVER_STARTED_TOKEN = 'dagster_grpc_server_started'
+SERVER_STARTED_TOKEN = "dagster_grpc_server_started"
 
-SERVER_STARTED_TOKEN_BYTES = b'dagster_grpc_server_started'
+SERVER_STARTED_TOKEN_BYTES = b"dagster_grpc_server_started"
 
-SERVER_FAILED_TO_BIND_TOKEN = 'dagster_grpc_server_failed_to_bind'
+SERVER_FAILED_TO_BIND_TOKEN = "dagster_grpc_server_failed_to_bind"
 
-SERVER_FAILED_TO_BIND_TOKEN_BYTES = b'dagster_grpc_server_failed_to_bind'
+SERVER_FAILED_TO_BIND_TOKEN_BYTES = b"dagster_grpc_server_failed_to_bind"
 
 
 def server_termination_target(termination_event, server):
@@ -806,7 +806,7 @@ def server_termination_target(termination_event, server):
 class DagsterGrpcServer(object):
     def __init__(
         self,
-        host='localhost',
+        host="localhost",
         port=None,
         socket=None,
         max_workers=1,
@@ -814,25 +814,25 @@ class DagsterGrpcServer(object):
         heartbeat=False,
         heartbeat_timeout=30,
     ):
-        check.opt_str_param(host, 'host')
-        check.opt_int_param(port, 'port')
-        check.opt_str_param(socket, 'socket')
-        check.int_param(max_workers, 'max_workers')
-        check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
+        check.opt_str_param(host, "host")
+        check.opt_int_param(port, "port")
+        check.opt_str_param(socket, "socket")
+        check.int_param(max_workers, "max_workers")
+        check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
-            'You must pass a valid `port` on Windows: `socket` not supported.',
+            "You must pass a valid `port` on Windows: `socket` not supported.",
         )
         check.invariant(
             (port or socket) and not (port and socket),
-            'You must pass one and only one of `port` or `socket`.',
+            "You must pass one and only one of `port` or `socket`.",
         )
         check.invariant(
-            host is not None if port else True, 'Must provide a host when serving on a port',
+            host is not None if port else True, "Must provide a host when serving on a port",
         )
-        check.bool_param(heartbeat, 'heartbeat')
-        check.int_param(heartbeat_timeout, 'heartbeat_timeout')
-        check.invariant(heartbeat_timeout > 0, 'heartbeat_timeout must be greater than 0')
+        check.bool_param(heartbeat, "heartbeat")
+        check.int_param(heartbeat_timeout, "heartbeat_timeout")
+        check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.invariant(
             max_workers > 1 if heartbeat else True,
             "max_workers must be greater than 1 if heartbeat is True",
@@ -851,9 +851,9 @@ class DagsterGrpcServer(object):
         )
 
         if port:
-            server_address = host + ':' + str(port)
+            server_address = host + ":" + str(port)
         else:
-            server_address = 'unix:' + os.path.abspath(socket)
+            server_address = "unix:" + os.path.abspath(socket)
 
         # grpc.Server.add_insecure_port returns:
         # - 0 on failure
@@ -896,7 +896,7 @@ class DagsterGrpcServer(object):
         server_termination_thread = threading.Thread(
             target=server_termination_target,
             args=[self._shutdown_server_event, self.server],
-            name='grpc-server-termination',
+            name="grpc-server-termination",
         )
 
         server_termination_thread.daemon = True
@@ -909,11 +909,11 @@ class DagsterGrpcServer(object):
 class CouldNotStartServerProcess(Exception):
     def __init__(self, port=None, socket=None):
         super(CouldNotStartServerProcess, self).__init__(
-            'Could not start server with '
+            "Could not start server with "
             + (
-                'port {port}'.format(port=port)
+                "port {port}".format(port=port)
                 if port is not None
-                else 'socket {socket}'.format(socket=socket)
+                else "socket {socket}".format(socket=socket)
             )
         )
 
@@ -921,7 +921,7 @@ class CouldNotStartServerProcess(Exception):
 def wait_for_grpc_server(server_process, timeout=3):
     total_time = 0
     backoff = 0.01
-    for line in iter(server_process.stdout.readline, ''):
+    for line in iter(server_process.stdout.readline, ""):
         if line.rstrip() == SERVER_FAILED_TO_BIND_TOKEN_BYTES:
             raise CouldNotBindGrpcServerToAddress()
         elif line.rstrip() != SERVER_STARTED_TOKEN_BYTES:
@@ -937,43 +937,43 @@ def wait_for_grpc_server(server_process, timeout=3):
 def open_server_process(
     port, socket, loadable_target_origin=None, max_workers=1, heartbeat=False, heartbeat_timeout=30
 ):
-    check.invariant((port or socket) and not (port and socket), 'Set only port or socket')
-    check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
-    check.int_param(max_workers, 'max_workers')
+    check.invariant((port or socket) and not (port and socket), "Set only port or socket")
+    check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
+    check.int_param(max_workers, "max_workers")
 
     subprocess_args = (
         [
             loadable_target_origin.executable_path
             if loadable_target_origin and loadable_target_origin.executable_path
             else sys.executable,
-            '-m',
-            'dagster.grpc',
+            "-m",
+            "dagster.grpc",
         ]
-        + (['--port', str(port)] if port else [])
-        + (['--socket', socket] if socket else [])
-        + ['-n', str(max_workers)]
-        + (['--heartbeat'] if heartbeat else [])
-        + (['--heartbeat-timeout', str(heartbeat_timeout)] if heartbeat_timeout else [])
+        + (["--port", str(port)] if port else [])
+        + (["--socket", socket] if socket else [])
+        + ["-n", str(max_workers)]
+        + (["--heartbeat"] if heartbeat else [])
+        + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
     )
 
     if loadable_target_origin:
         subprocess_args += (
             (
-                ['-f', loadable_target_origin.python_file]
+                ["-f", loadable_target_origin.python_file]
                 if loadable_target_origin.python_file
                 else []
             )
             + (
-                ['-m', loadable_target_origin.module_name]
+                ["-m", loadable_target_origin.module_name]
                 if loadable_target_origin.module_name
                 else []
             )
             + (
-                ['-d', loadable_target_origin.working_directory]
+                ["-d", loadable_target_origin.working_directory]
                 if loadable_target_origin.working_directory
                 else []
             )
-            + (['-a', loadable_target_origin.attribute] if loadable_target_origin.attribute else [])
+            + (["-a", loadable_target_origin.attribute] if loadable_target_origin.attribute else [])
         )
 
     server_process = open_ipc_subprocess(subprocess_args, stdout=subprocess.PIPE)
@@ -1032,13 +1032,13 @@ class GrpcServerProcess(object):
         self.socket = None
         self.server_process = None
 
-        check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
-        check.bool_param(force_port, 'force_port')
-        check.int_param(max_retries, 'max_retries')
-        check.int_param(max_workers, 'max_workers')
-        check.bool_param(heartbeat, 'heartbeat')
-        check.int_param(heartbeat_timeout, 'heartbeat_timeout')
-        check.invariant(heartbeat_timeout > 0, 'heartbeat_timeout must be greater than 0')
+        check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
+        check.bool_param(force_port, "force_port")
+        check.int_param(max_retries, "max_retries")
+        check.int_param(max_workers, "max_workers")
+        check.bool_param(heartbeat, "heartbeat")
+        check.int_param(heartbeat_timeout, "heartbeat_timeout")
+        check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.invariant(
             max_workers > 1 if heartbeat else True,
             "max_workers must be greater than 1 if heartbeat is True",

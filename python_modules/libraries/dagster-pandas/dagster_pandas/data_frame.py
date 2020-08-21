@@ -31,57 +31,57 @@ def dict_without_keys(ddict, *keys):
 @dagster_type_materializer(
     Selector(
         {
-            'csv': {
-                'path': StringSource,
-                'sep': Field(StringSource, is_required=False, default_value=','),
+            "csv": {
+                "path": StringSource,
+                "sep": Field(StringSource, is_required=False, default_value=","),
             },
-            'parquet': {'path': StringSource},
-            'table': {'path': StringSource},
+            "parquet": {"path": StringSource},
+            "table": {"path": StringSource},
         },
     )
 )
 def dataframe_materializer(_context, config, pandas_df):
-    check.inst_param(pandas_df, 'pandas_df', pd.DataFrame)
+    check.inst_param(pandas_df, "pandas_df", pd.DataFrame)
     file_type, file_options = list(config.items())[0]
 
-    if file_type == 'csv':
-        path = file_options['path']
-        pandas_df.to_csv(path, index=False, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'parquet':
-        pandas_df.to_parquet(file_options['path'])
-    elif file_type == 'table':
-        pandas_df.to_csv(file_options['path'], sep='\t', index=False)
+    if file_type == "csv":
+        path = file_options["path"]
+        pandas_df.to_csv(path, index=False, **dict_without_keys(file_options, "path"))
+    elif file_type == "parquet":
+        pandas_df.to_parquet(file_options["path"])
+    elif file_type == "table":
+        pandas_df.to_csv(file_options["path"], sep="\t", index=False)
     else:
-        check.failed('Unsupported file_type {file_type}'.format(file_type=file_type))
+        check.failed("Unsupported file_type {file_type}".format(file_type=file_type))
 
-    return AssetMaterialization.file(file_options['path'])
+    return AssetMaterialization.file(file_options["path"])
 
 
 @dagster_type_loader(
     Selector(
         {
-            'csv': {
-                'path': StringSource,
-                'sep': Field(StringSource, is_required=False, default_value=','),
+            "csv": {
+                "path": StringSource,
+                "sep": Field(StringSource, is_required=False, default_value=","),
             },
-            'parquet': {'path': StringSource},
-            'table': {'path': StringSource},
+            "parquet": {"path": StringSource},
+            "table": {"path": StringSource},
         },
     )
 )
 def dataframe_loader(_context, config):
     file_type, file_options = list(config.items())[0]
 
-    if file_type == 'csv':
-        path = file_options['path']
-        return pd.read_csv(path, **dict_without_keys(file_options, 'path'))
-    elif file_type == 'parquet':
-        return pd.read_parquet(file_options['path'])
-    elif file_type == 'table':
-        return pd.read_csv(file_options['path'], sep='\t')
+    if file_type == "csv":
+        path = file_options["path"]
+        return pd.read_csv(path, **dict_without_keys(file_options, "path"))
+    elif file_type == "parquet":
+        return pd.read_parquet(file_options["path"])
+    elif file_type == "table":
+        return pd.read_csv(file_options["path"], sep="\t")
     else:
         raise DagsterInvariantViolationError(
-            'Unsupported file_type {file_type}'.format(file_type=file_type)
+            "Unsupported file_type {file_type}".format(file_type=file_type)
         )
 
 
@@ -91,18 +91,18 @@ def df_type_check(_, value):
     return TypeCheck(
         success=True,
         metadata_entries=[
-            EventMetadataEntry.text(str(len(value)), 'row_count', 'Number of rows in DataFrame'),
+            EventMetadataEntry.text(str(len(value)), "row_count", "Number of rows in DataFrame"),
             # string cast columns since they may be things like datetime
-            EventMetadataEntry.json({'columns': list(map(str, value.columns))}, 'metadata'),
+            EventMetadataEntry.json({"columns": list(map(str, value.columns))}, "metadata"),
         ],
     )
 
 
 DataFrame = DagsterType(
-    name='PandasDataFrame',
-    description='''Two-dimensional size-mutable, potentially heterogeneous
+    name="PandasDataFrame",
+    description="""Two-dimensional size-mutable, potentially heterogeneous
     tabular data structure with labeled axes (rows and columns).
-    See http://pandas.pydata.org/''',
+    See http://pandas.pydata.org/""",
     loader=dataframe_loader,
     materializer=dataframe_materializer,
     type_check_fn=df_type_check,
@@ -123,7 +123,7 @@ def _construct_constraint_list(constraints):
 
 
 def _build_column_header(column_name, constraints):
-    header = '**{column_name}**'.format(column_name=column_name)
+    header = "**{column_name}**".format(column_name=column_name)
     for constraint in constraints:
         if isinstance(constraint, ColumnDTypeInSetConstraint):
             dtypes_tuple = tuple(constraint.expected_dtype_set)
@@ -138,7 +138,7 @@ def _build_column_header(column_name, constraints):
 
 
 def create_dagster_pandas_dataframe_description(description, columns):
-    title = "\n".join([description, '### Columns', ''])
+    title = "\n".join([description, "### Columns", ""])
     buildme = title
     for column in columns:
         buildme += "{}\n{}\n".format(
@@ -181,18 +181,18 @@ def create_dagster_pandas_dataframe_type(
     # We allow for the plugging in of dagster_type_loaders/materializers so that
     # Users can load and matrerialize their custom dataframes via configuration their own way if the default
     # configs don't suffice. This is purely optional.
-    check.str_param(name, 'name')
-    event_metadata_fn = check.opt_callable_param(event_metadata_fn, 'event_metadata_fn')
+    check.str_param(name, "name")
+    event_metadata_fn = check.opt_callable_param(event_metadata_fn, "event_metadata_fn")
     description = create_dagster_pandas_dataframe_description(
-        check.opt_str_param(description, 'description', default=''),
-        check.opt_list_param(columns, 'columns', of_type=PandasColumn),
+        check.opt_str_param(description, "description", default=""),
+        check.opt_list_param(columns, "columns", of_type=PandasColumn),
     )
 
     def _dagster_type_check(_, value):
         if not isinstance(value, pd.DataFrame):
             return TypeCheck(
                 success=False,
-                description='Must be a pandas.DataFrame. Got value of type. {type_name}'.format(
+                description="Must be a pandas.DataFrame. Got value of type. {type_name}".format(
                     type_name=type(value).__name__
                 ),
             )
@@ -212,14 +212,14 @@ def create_dagster_pandas_dataframe_type(
         )
 
     loader_ = canonicalize_backcompat_args(
-        loader, 'loader', input_hydration_config, 'input_hydration_config', '0.10.0',
+        loader, "loader", input_hydration_config, "input_hydration_config", "0.10.0",
     )
     materializer_ = canonicalize_backcompat_args(
         materializer,
-        'materializer',
+        "materializer",
         output_materialization_config,
-        'output_materialization_config',
-        '0.10.0',
+        "output_materialization_config",
+        "0.10.0",
     )
 
     return DagsterType(
@@ -273,7 +273,7 @@ def create_structured_dataframe_type(
         if not isinstance(value, pd.DataFrame):
             return TypeCheck(
                 success=False,
-                description='Must be a pandas.DataFrame. Got value of type. {type_name}'.format(
+                description="Must be a pandas.DataFrame. Got value of type. {type_name}".format(
                     type_name=type(value).__name__
                 ),
             )
@@ -300,7 +300,7 @@ def create_structured_dataframe_type(
             typechecks_succeeded = typechecks_succeeded and result_val
             result_dict = result.metadata_entries[0].entry_data.data
             metadata.append(
-                EventMetadataEntry.json(result_dict, '{}-constraint-metadata'.format(key),)
+                EventMetadataEntry.json(result_dict, "{}-constraint-metadata".format(key),)
             )
             constraint_clauses.append("{} failing constraints, {}".format(key, result.description))
         # returns aggregates, then column, then dataframe
@@ -310,16 +310,16 @@ def create_structured_dataframe_type(
             metadata_entries=sorted(metadata, key=lambda x: x.label),
         )
 
-    description = check.opt_str_param(description, 'description', default='')
+    description = check.opt_str_param(description, "description", default="")
     loader_ = canonicalize_backcompat_args(
-        loader, 'loader', input_hydration_config, 'input_hydration_config', '0.10.0',
+        loader, "loader", input_hydration_config, "input_hydration_config", "0.10.0",
     )
     materializer_ = canonicalize_backcompat_args(
         materializer,
-        'materializer',
+        "materializer",
         output_materialization_config,
-        'output_materialization_config',
-        '0.10.0',
+        "output_materialization_config",
+        "0.10.0",
     )
     return DagsterType(
         name=name,
@@ -342,9 +342,9 @@ def _execute_summary_stats(type_name, value, event_metadata_fn):
     ):
         raise DagsterInvariantViolationError(
             (
-                'The return value of the user-defined summary_statistics function '
-                'for pandas data frame type {type_name} returned {value}. '
-                'This function must return List[EventMetadataEntry]'
+                "The return value of the user-defined summary_statistics function "
+                "for pandas data frame type {type_name} returned {value}. "
+                "This function must return List[EventMetadataEntry]"
             ).format(type_name=type_name, value=repr(metadata_entries))
         )
 

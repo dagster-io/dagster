@@ -21,11 +21,11 @@ def test_config_example():
 
 
 def execute_pipeline_with_resource_def(resource_def, run_config=None):
-    @solid(required_resource_keys={'key'})
+    @solid(required_resource_keys={"key"})
     def a_solid(_):
         pass
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'key': resource_def})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"key": resource_def})])
     def a_pipeline():
         a_solid()
 
@@ -39,5 +39,5 @@ def test_configured_example():
 
 def test_config_map_example():
     execute_pipeline_with_resource_def(
-        unsigned_s3_session, run_config={'resources': {'key': {'config': {'region': 'us-west-1'}}}}
+        unsigned_s3_session, run_config={"resources": {"key": {"config": {"region": "us-west-1"}}}}
     )

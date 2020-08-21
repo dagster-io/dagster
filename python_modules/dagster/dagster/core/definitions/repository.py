@@ -6,7 +6,7 @@ from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
 
-VALID_REPOSITORY_DATA_DICT_KEYS = {'pipelines', 'partition_sets', 'schedules'}
+VALID_REPOSITORY_DATA_DICT_KEYS = {"pipelines", "partition_sets", "schedules"}
 
 
 class _CacheingDefinitionIndex(object):
@@ -15,8 +15,8 @@ class _CacheingDefinitionIndex(object):
         for key, definition in definitions.items():
             check.invariant(
                 isinstance(definition, definition_class) or callable(definition),
-                'Bad definition for {definition_kind} {key}: must be {definition_class_name} or '
-                'callable, got {type_}'.format(
+                "Bad definition for {definition_kind} {key}: must be {definition_class_name} or "
+                "callable, got {type_}".format(
                     definition_kind=definition_kind,
                     key=key,
                     definition_class_name=definition_class_name,
@@ -41,7 +41,7 @@ class _CacheingDefinitionIndex(object):
         return self._definition_names
 
     def has_definition(self, definition_name):
-        check.str_param(definition_name, 'definition_name')
+        check.str_param(definition_name, "definition_name")
 
         return definition_name in self.get_definition_names()
 
@@ -58,20 +58,20 @@ class _CacheingDefinitionIndex(object):
         return self._all_definitions
 
     def get_definition(self, definition_name):
-        check.str_param(definition_name, 'definition_name')
+        check.str_param(definition_name, "definition_name")
 
         if definition_name in self._definition_cache:
             return self._definition_cache[definition_name]
 
         if definition_name not in self._definitions:
             raise DagsterInvariantViolationError(
-                'Could not find {definition_kind} \'{definition_name}\'. Found: '
-                '{found_names}.'.format(
+                "Could not find {definition_kind} '{definition_name}'. Found: "
+                "{found_names}.".format(
                     definition_kind=self._definition_kind,
                     definition_name=definition_name,
-                    found_names=', '.join(
+                    found_names=", ".join(
                         [
-                            '\'{found_name}\''.format(found_name=found_name)
+                            "'{found_name}'".format(found_name=found_name)
                             for found_name in self.get_definition_names()
                         ]
                     ),
@@ -87,8 +87,8 @@ class _CacheingDefinitionIndex(object):
             definition = definition_source()
             check.invariant(
                 isinstance(definition, self._definition_class),
-                'Bad constructor for {definition_kind} {definition_name}: must return '
-                '{definition_class_name}, got value of type {type_}'.format(
+                "Bad constructor for {definition_kind} {definition_name}: must return "
+                "{definition_class_name}, got value of type {type_}".format(
                     definition_kind=self._definition_kind,
                     definition_name=definition_name,
                     definition_class_name=self._definition_class_name,
@@ -97,8 +97,8 @@ class _CacheingDefinitionIndex(object):
             )
             check.invariant(
                 definition.name == definition_name,
-                'Bad constructor for {definition_kind} \'{definition_name}\': name in '
-                '{definition_class_name} does not match: got \'{definition_def_name}\''.format(
+                "Bad constructor for {definition_kind} '{definition_name}': name in "
+                "{definition_class_name} does not match: got '{definition_def_name}'".format(
                     definition_kind=self._definition_kind,
                     definition_name=definition_name,
                     definition_class_name=self._definition_class_name,
@@ -110,16 +110,16 @@ class _CacheingDefinitionIndex(object):
 
 
 class RepositoryData(object):
-    '''Contains definitions belonging to a repository.
+    """Contains definitions belonging to a repository.
 
     Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
     repositories, which will in turn call the static constructors on this class. However, users may
     subclass RepositoryData for fine-grained control over access to and lazy creation
     of repository members.
-    '''
+    """
 
     def __init__(self, pipelines, partition_sets, schedules):
-        '''Constructs a new RepositoryData object.
+        """Constructs a new RepositoryData object.
 
         You may pass pipeline, partition_set, and schedule definitions directly, or you may pass
         callables with no arguments that will be invoked to lazily construct definitions when
@@ -139,16 +139,16 @@ class RepositoryData(object):
                 The schedules belonging to the repository.
 
 
-        '''
-        check.dict_param(pipelines, 'pipelines', key_type=str)
-        check.dict_param(partition_sets, 'partition_sets', key_type=str)
-        check.dict_param(schedules, 'schedules', key_type=str)
+        """
+        check.dict_param(pipelines, "pipelines", key_type=str)
+        check.dict_param(partition_sets, "partition_sets", key_type=str)
+        check.dict_param(schedules, "schedules", key_type=str)
 
         self._pipelines = _CacheingDefinitionIndex(
-            PipelineDefinition, 'PipelineDefinition', 'pipeline', pipelines
+            PipelineDefinition, "PipelineDefinition", "pipeline", pipelines
         )
         self._schedules = _CacheingDefinitionIndex(
-            ScheduleDefinition, 'ScheduleDefinition', 'schedule', schedules
+            ScheduleDefinition, "ScheduleDefinition", "schedule", schedules
         )
         schedule_partition_sets = [
             schedule.get_partition_set()
@@ -157,8 +157,8 @@ class RepositoryData(object):
         ]
         self._partition_sets = _CacheingDefinitionIndex(
             PartitionSetDefinition,
-            'PartitionSetDefinition',
-            'partition set',
+            "PartitionSetDefinition",
+            "partition set",
             merge_dicts(
                 {partition_set.name: partition_set for partition_set in schedule_partition_sets},
                 partition_sets,
@@ -171,7 +171,7 @@ class RepositoryData(object):
 
     @staticmethod
     def from_dict(repository_definitions):
-        '''Static constructor.
+        """Static constructor.
 
         Args:
             repository_definition (Dict[str, Dict[str, ...]]): A dict of the form:
@@ -185,17 +185,17 @@ class RepositoryData(object):
             This form is intended to allow definitions to be created lazily when accessed by name,
             which can be helpful for performance when there are many definitions in a repository, or
             when constructing the definitions is costly.
-        '''
-        check.dict_param(repository_definitions, 'repository_definitions', key_type=str)
+        """
+        check.dict_param(repository_definitions, "repository_definitions", key_type=str)
         check.invariant(
             set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS),
-            'Bad dict: must not contain keys other than {{{valid_keys}}}: found {bad_keys}.'.format(
-                valid_keys=', '.join(
-                    ['\'{key}\''.format(key=key) for key in VALID_REPOSITORY_DATA_DICT_KEYS]
+            "Bad dict: must not contain keys other than {{{valid_keys}}}: found {bad_keys}.".format(
+                valid_keys=", ".join(
+                    ["'{key}'".format(key=key) for key in VALID_REPOSITORY_DATA_DICT_KEYS]
                 ),
-                bad_keys=', '.join(
+                bad_keys=", ".join(
                     [
-                        '\'{key}\''
+                        "'{key}'"
                         for key in repository_definitions.keys()
                         if key not in VALID_REPOSITORY_DATA_DICT_KEYS
                     ]
@@ -211,13 +211,13 @@ class RepositoryData(object):
 
     @classmethod
     def from_list(cls, repository_definitions):
-        '''Static constructor.
+        """Static constructor.
 
         Args:
             repository_definition (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition]]):
                 Use this constructor when you have no need to lazy load pipelines or other
                 definitions.
-        '''
+        """
         pipelines = {}
         partition_sets = {}
         schedules = {}
@@ -225,7 +225,7 @@ class RepositoryData(object):
             if isinstance(definition, PipelineDefinition):
                 if definition.name in pipelines:
                     raise DagsterInvalidDefinitionError(
-                        'Duplicate pipeline definition found for pipeline {pipeline_name}'.format(
+                        "Duplicate pipeline definition found for pipeline {pipeline_name}".format(
                             pipeline_name=definition.name
                         )
                     )
@@ -233,14 +233,14 @@ class RepositoryData(object):
             elif isinstance(definition, PartitionSetDefinition):
                 if definition.name in partition_sets:
                     raise DagsterInvalidDefinitionError(
-                        'Duplicate partition set definition found for partition set '
-                        '{partition_set_name}'.format(partition_set_name=definition.name)
+                        "Duplicate partition set definition found for partition set "
+                        "{partition_set_name}".format(partition_set_name=definition.name)
                     )
                 partition_sets[definition.name] = definition
             elif isinstance(definition, ScheduleDefinition):
                 if definition.name in schedules:
                     raise DagsterInvalidDefinitionError(
-                        'Duplicate schedule definition found for schedule {schedule_name}'.format(
+                        "Duplicate schedule definition found for schedule {schedule_name}".format(
                             schedule_name=definition.name
                         )
                     )
@@ -252,8 +252,8 @@ class RepositoryData(object):
                         and partition_set_def != partition_sets[partition_set_def.name]
                     ):
                         raise DagsterInvalidDefinitionError(
-                            'Duplicate partition set definition found for partition set '
-                            '{partition_set_name}'.format(partition_set_name=partition_set_def.name)
+                            "Duplicate partition set definition found for partition set "
+                            "{partition_set_name}".format(partition_set_name=partition_set_def.name)
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
 
@@ -262,33 +262,33 @@ class RepositoryData(object):
         )
 
     def get_pipeline_names(self):
-        '''Get the names of all pipelines in the repository.
+        """Get the names of all pipelines in the repository.
 
         Returns:
             List[str]
-        '''
+        """
         return self._pipelines.get_definition_names()
 
     def has_pipeline(self, pipeline_name):
-        '''Check if a pipeline with a given name is present in the repository.
+        """Check if a pipeline with a given name is present in the repository.
 
         Args:
             pipeline_name (str): The name of the pipeline.
 
         Returns:
             bool
-        '''
-        check.str_param(pipeline_name, 'pipeline_name')
+        """
+        check.str_param(pipeline_name, "pipeline_name")
         return self._pipelines.has_definition(pipeline_name)
 
     def get_all_pipelines(self):
-        '''Return all pipelines in the repository as a list.
+        """Return all pipelines in the repository as a list.
 
         Note that this will construct any pipeline that has not yet been constructed.
 
         Returns:
             List[PipelineDefinition]: All pipelines in the repository.
-        '''
+        """
         if self._all_pipelines is not None:
             return self._all_pipelines
 
@@ -297,7 +297,7 @@ class RepositoryData(object):
         return self._all_pipelines
 
     def get_pipeline(self, pipeline_name):
-        '''Get a pipeline by name.
+        """Get a pipeline by name.
 
         If this pipeline has not yet been constructed, only this pipeline is constructed, and will
         be cached for future calls.
@@ -307,44 +307,44 @@ class RepositoryData(object):
 
         Returns:
             PipelineDefinition: The pipeline definition corresponding to the given name.
-        '''
+        """
 
-        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(pipeline_name, "pipeline_name")
 
         return self._pipelines.get_definition(pipeline_name)
 
     def get_partition_set_names(self):
-        '''Get the names of all partition sets in the repository.
+        """Get the names of all partition sets in the repository.
 
         Returns:
             List[str]
-        '''
+        """
         return self._partition_sets.get_definition_names()
 
     def has_partition_set(self, partition_set_name):
-        '''Check if a partition set with a given name is present in the repository.
+        """Check if a partition set with a given name is present in the repository.
 
         Args:
             partition_set_name (str): The name of the partition set.
 
         Returns:
             bool
-        '''
-        check.str_param(partition_set_name, 'partition_set_name')
+        """
+        check.str_param(partition_set_name, "partition_set_name")
         return self._partition_sets.has_definition(partition_set_name)
 
     def get_all_partition_sets(self):
-        '''Return all partition sets in the repository as a list.
+        """Return all partition sets in the repository as a list.
 
         Note that this will construct any partition set that has not yet been constructed.
 
         Returns:
             List[PartitionSetDefinition]: All partition sets in the repository.
-        '''
+        """
         return self._partition_sets.get_all_definitions()
 
     def get_partition_set(self, partition_set_name):
-        '''Get a partition set by name.
+        """Get a partition set by name.
 
         If this partition set has not yet been constructed, only this partition set is constructed,
         and will be cached for future calls.
@@ -354,32 +354,32 @@ class RepositoryData(object):
 
         Returns:
             PartitionSetDefinition: The partition set definition corresponding to the given name.
-        '''
+        """
 
-        check.str_param(partition_set_name, 'partition_set_name')
+        check.str_param(partition_set_name, "partition_set_name")
 
         return self._partition_sets.get_definition(partition_set_name)
 
     def get_schedule_names(self):
-        '''Get the names of all schedules in the repository.
+        """Get the names of all schedules in the repository.
 
         Returns:
             List[str]
-        '''
+        """
         return self._schedules.get_definition_names()
 
     def get_all_schedules(self):
-        '''Return all schedules in the repository as a list.
+        """Return all schedules in the repository as a list.
 
         Note that this will construct any schedule that has not yet been constructed.
 
         Returns:
             List[ScheduleDefinition]: All pipelines in the repository.
-        '''
+        """
         return self._schedules.get_all_definitions()
 
     def get_schedule(self, schedule_name):
-        '''Get a schedule by name.
+        """Get a schedule by name.
 
         If this schedule has not yet been constructed, only this schedule is constructed, and will
         be cached for future calls.
@@ -389,14 +389,14 @@ class RepositoryData(object):
 
         Returns:
             ScheduleDefinition: The schedule definition corresponding to the given name.
-        '''
+        """
 
-        check.str_param(schedule_name, 'schedule_name')
+        check.str_param(schedule_name, "schedule_name")
 
         return self._schedules.get_definition(schedule_name)
 
     def has_schedule(self, schedule_name):
-        check.str_param(schedule_name, 'schedule_name')
+        check.str_param(schedule_name, "schedule_name")
 
         return self._schedules.has_definition(schedule_name)
 
@@ -432,10 +432,10 @@ class RepositoryData(object):
                     )
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Duplicate solids found in repository with name \'{solid_def_name}\'. '
-                            'Solid definition names must be unique within a repository. Solid is '
-                            'defined in pipeline \'{first_pipeline_name}\' and in pipeline '
-                            '\'{second_pipeline_name}\'.'
+                            "Duplicate solids found in repository with name '{solid_def_name}'. "
+                            "Solid definition names must be unique within a repository. Solid is "
+                            "defined in pipeline '{first_pipeline_name}' and in pipeline "
+                            "'{second_pipeline_name}'."
                         ).format(
                             solid_def_name=solid_def.name,
                             first_pipeline_name=first_name,
@@ -446,24 +446,24 @@ class RepositoryData(object):
         return solid_defs
 
     def solid_def_named(self, name):
-        '''Get the solid with the given name in the repository.
+        """Get the solid with the given name in the repository.
 
         Args:
             name (str): The name of the solid for which to retrieve the solid definition.
 
         Returns:
             SolidDefinition: The solid with the given name.
-        '''
-        check.str_param(name, 'name')
+        """
+        check.str_param(name, "name")
 
         if not self.has_solid(name):
-            check.failed('could not find solid_def for solid {name}'.format(name=name))
+            check.failed("could not find solid_def for solid {name}".format(name=name))
 
         return self._all_solids[name]
 
 
 class RepositoryDefinition(object):
-    '''Define a repository that contains a collection of definitions.
+    """Define a repository that contains a collection of definitions.
 
     Users should typically not create objects of this class directly. Instead, use the
     :py:func:`@repository` decorator.
@@ -472,14 +472,14 @@ class RepositoryDefinition(object):
         name (str): The name of the repository.
         repository_data (RepositoryData): Contains the definitions making up the repository.
         description (Optional[str]): A string description of the repository.
-    '''
+    """
 
     def __init__(
         self, name, repository_data, description=None,
     ):
-        self._name = check.str_param(name, 'name')
-        self._description = check.opt_str_param(description, 'description')
-        self._repository_data = check.inst_param(repository_data, 'repository_data', RepositoryData)
+        self._name = check.str_param(name, "name")
+        self._description = check.opt_str_param(description, "description")
+        self._repository_data = check.inst_param(repository_data, "repository_data", RepositoryData)
 
     @property
     def name(self):
@@ -491,22 +491,22 @@ class RepositoryDefinition(object):
 
     @property
     def pipeline_names(self):
-        '''List[str]: Names of all pipelines in the repository'''
+        """List[str]: Names of all pipelines in the repository"""
         return self._repository_data.get_pipeline_names()
 
     def has_pipeline(self, name):
-        '''Check if a pipeline with a given name is present in the repository.
+        """Check if a pipeline with a given name is present in the repository.
 
         Args:
             name (str): The name of the pipeline.
 
         Returns:
             bool
-        '''
+        """
         return self._repository_data.has_pipeline(name)
 
     def get_pipeline(self, name):
-        '''Get a pipeline by name.
+        """Get a pipeline by name.
 
         If this pipeline is present in the lazily evaluated ``pipeline_dict`` passed to the
         constructor, but has not yet been constructed, only this pipeline is constructed, and will
@@ -517,38 +517,38 @@ class RepositoryDefinition(object):
 
         Returns:
             PipelineDefinition: The pipeline definition corresponding to the given name.
-        '''
+        """
         return self._repository_data.get_pipeline(name)
 
     def get_all_pipelines(self):
-        '''Return all pipelines in the repository as a list.
+        """Return all pipelines in the repository as a list.
 
         Note that this will construct any pipeline in the lazily evaluated ``pipeline_dict`` that
         has not yet been constructed.
 
         Returns:
             List[PipelineDefinition]: All pipelines in the repository.
-        '''
+        """
         return self._repository_data.get_all_pipelines()
 
     def get_all_solid_defs(self):
-        '''Get all the solid definitions in a repository.
+        """Get all the solid definitions in a repository.
 
         Returns:
             List[SolidDefinition]: All solid definitions in the repository.
-        '''
+        """
         return self._repository_data.get_all_solid_defs()
 
     def solid_def_named(self, name):
-        '''Get the solid with the given name in the repository.
+        """Get the solid with the given name in the repository.
 
         Args:
             name (str): The name of the solid for which to retrieve the solid definition.
 
         Returns:
             SolidDefinition: The solid with the given name.
-        '''
-        check.str_param(name, 'name')
+        """
+        check.str_param(name, "name")
         return self._repository_data.solid_def_named(name)
 
     @property

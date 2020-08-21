@@ -21,8 +21,8 @@ def test_execution_plan_snapshot_api():
 
     assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
     assert execution_plan_snapshot.step_keys_to_execute == [
-        'do_something.compute',
-        'do_input.compute',
+        "do_something.compute",
+        "do_input.compute",
     ]
     assert len(execution_plan_snapshot.steps) == 2
 
@@ -31,13 +31,13 @@ def test_execution_plan_error_api():
     pipeline_handle = get_foo_pipeline_handle()
 
     with pytest.raises(
-        DagsterSubprocessError, match=re.escape('Could not find mode made_up_mode in pipeline foo')
+        DagsterSubprocessError, match=re.escape("Could not find mode made_up_mode in pipeline foo")
     ):
         sync_get_external_execution_plan(
             pipeline_handle.get_origin(),
             run_config={},
-            mode='made_up_mode',
-            pipeline_snapshot_id='12345',
+            mode="made_up_mode",
+            pipeline_snapshot_id="12345",
         )
 
 
@@ -47,14 +47,14 @@ def test_execution_plan_error_grpc():
 
         with pytest.raises(
             DagsterSubprocessError,
-            match=re.escape('Could not find mode made_up_mode in pipeline foo'),
+            match=re.escape("Could not find mode made_up_mode in pipeline foo"),
         ):
             sync_get_external_execution_plan_grpc(
                 api_client,
                 pipeline_handle.get_origin(),
                 run_config={},
-                mode='made_up_mode',
-                pipeline_snapshot_id='12345',
+                mode="made_up_mode",
+                pipeline_snapshot_id="12345",
             )
 
 
@@ -64,14 +64,14 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api():
     execution_plan_snapshot = sync_get_external_execution_plan(
         pipeline_handle.get_origin(),
         run_config={},
-        mode='default',
-        pipeline_snapshot_id='12345',
-        step_keys_to_execute=['do_something.compute'],
+        mode="default",
+        pipeline_snapshot_id="12345",
+        step_keys_to_execute=["do_something.compute"],
     )
 
     assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
     assert execution_plan_snapshot.step_keys_to_execute == [
-        'do_something.compute',
+        "do_something.compute",
     ]
     assert len(execution_plan_snapshot.steps) == 2
 
@@ -81,7 +81,7 @@ def test_execution_plan_with_subset_snapshot_api():
 
     execution_plan_snapshot = sync_get_external_execution_plan(
         pipeline_handle.get_origin(),
-        run_config={'solids': {'do_input': {'inputs': {'x': {'value': "test"}}}}},
+        run_config={"solids": {"do_input": {"inputs": {"x": {"value": "test"}}}}},
         mode="default",
         pipeline_snapshot_id="12345",
         solid_selection=["do_input"],
@@ -89,7 +89,7 @@ def test_execution_plan_with_subset_snapshot_api():
 
     assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
     assert execution_plan_snapshot.step_keys_to_execute == [
-        'do_input.compute',
+        "do_input.compute",
     ]
     assert len(execution_plan_snapshot.steps) == 1
 
@@ -108,8 +108,8 @@ def test_execution_plan_snapshot_api_grpc():
 
         assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
         assert execution_plan_snapshot.step_keys_to_execute == [
-            'do_something.compute',
-            'do_input.compute',
+            "do_something.compute",
+            "do_input.compute",
         ]
         assert len(execution_plan_snapshot.steps) == 2
 
@@ -124,12 +124,12 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc():
             run_config={},
             mode="default",
             pipeline_snapshot_id="12345",
-            step_keys_to_execute=['do_something.compute'],
+            step_keys_to_execute=["do_something.compute"],
         )
 
         assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
         assert execution_plan_snapshot.step_keys_to_execute == [
-            'do_something.compute',
+            "do_something.compute",
         ]
         assert len(execution_plan_snapshot.steps) == 2
 
@@ -141,7 +141,7 @@ def test_execution_plan_with_subset_snapshot_api_grpc():
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
             pipeline_handle.get_origin(),
-            run_config={'solids': {'do_input': {'inputs': {'x': {'value': "test"}}}}},
+            run_config={"solids": {"do_input": {"inputs": {"x": {"value": "test"}}}}},
             mode="default",
             pipeline_snapshot_id="12345",
             solid_selection=["do_input"],
@@ -149,6 +149,6 @@ def test_execution_plan_with_subset_snapshot_api_grpc():
 
         assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
         assert execution_plan_snapshot.step_keys_to_execute == [
-            'do_input.compute',
+            "do_input.compute",
         ]
         assert len(execution_plan_snapshot.steps) == 1

@@ -10,46 +10,46 @@ from dagster.utils import script_relative_path
 def compute_trip_dataframe_summary_statistics(dataframe):
     return [
         EventMetadataEntry.text(
-            min(dataframe['start_time']).strftime('%Y-%m-%d'),
-            'min_start_time',
-            'Date data collection started',
+            min(dataframe["start_time"]).strftime("%Y-%m-%d"),
+            "min_start_time",
+            "Date data collection started",
         ),
         EventMetadataEntry.text(
-            max(dataframe['end_time']).strftime('%Y-%m-%d'),
-            'max_end_time',
-            'Date data collection ended',
+            max(dataframe["end_time"]).strftime("%Y-%m-%d"),
+            "max_end_time",
+            "Date data collection ended",
         ),
         EventMetadataEntry.text(
-            str(dataframe['bike_id'].nunique()),
-            'num_unique_bikes',
-            'Number of unique bikes that took trips',
+            str(dataframe["bike_id"].nunique()),
+            "num_unique_bikes",
+            "Number of unique bikes that took trips",
         ),
         EventMetadataEntry.text(
-            str(len(dataframe)), 'n_rows', 'Number of rows seen in the dataframe'
+            str(len(dataframe)), "n_rows", "Number of rows seen in the dataframe"
         ),
         EventMetadataEntry.text(
-            str(dataframe.columns), 'columns', 'Keys of columns seen in the dataframe'
+            str(dataframe.columns), "columns", "Keys of columns seen in the dataframe"
         ),
     ]
 
 
 SummaryStatsTripDataFrame = create_dagster_pandas_dataframe_type(
-    name='SummaryStatsTripDataFrame', event_metadata_fn=compute_trip_dataframe_summary_statistics
+    name="SummaryStatsTripDataFrame", event_metadata_fn=compute_trip_dataframe_summary_statistics
 )
 
 
 @solid(
     output_defs=[
         OutputDefinition(
-            name='summary_stats_trip_dataframe', dagster_type=SummaryStatsTripDataFrame
+            name="summary_stats_trip_dataframe", dagster_type=SummaryStatsTripDataFrame
         )
     ]
 )
 def load_summary_stats_trip_dataframe(_) -> DataFrame:
     return read_csv(
-        script_relative_path('./ebike_trips.csv'),
-        parse_dates=['start_time', 'end_time'],
-        date_parser=lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'),
+        script_relative_path("./ebike_trips.csv"),
+        parse_dates=["start_time", "end_time"],
+        date_parser=lambda x: datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f"),
     )
 
 

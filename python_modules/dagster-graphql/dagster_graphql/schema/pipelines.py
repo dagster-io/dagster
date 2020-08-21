@@ -23,13 +23,13 @@ from .solids import DauphinSolidContainer, build_dauphin_solid_handles, build_da
 
 
 class DauphinPipelineReference(dauphin.Interface):
-    '''This interface supports the case where we can look up a pipeline successfully in the
+    """This interface supports the case where we can look up a pipeline successfully in the
     repository available to the DagsterInstance/graphql context, as well as the case where we know
     that a pipeline exists/existed thanks to materialized data such as logs and run metadata, but
-    where we can't look the concrete pipeline up.'''
+    where we can't look the concrete pipeline up."""
 
     class Meta(object):
-        name = 'PipelineReference'
+        name = "PipelineReference"
 
     name = dauphin.NonNull(dauphin.String)
     solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
@@ -37,7 +37,7 @@ class DauphinPipelineReference(dauphin.Interface):
 
 class DauphinUnknownPipeline(dauphin.ObjectType):
     class Meta(object):
-        name = 'UnknownPipeline'
+        name = "UnknownPipeline"
         interfaces = (DauphinPipelineReference,)
 
     name = dauphin.NonNull(dauphin.String)
@@ -59,24 +59,24 @@ class DauphinIPipelineSnapshotMixin(object):
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
-    dagster_types = dauphin.non_null_list('DagsterType')
+    dagster_types = dauphin.non_null_list("DagsterType")
     dagster_type_or_error = dauphin.Field(
-        dauphin.NonNull('DagsterTypeOrError'),
+        dauphin.NonNull("DagsterTypeOrError"),
         dagsterTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
-    solids = dauphin.non_null_list('Solid')
-    modes = dauphin.non_null_list('Mode')
+    solids = dauphin.non_null_list("Solid")
+    modes = dauphin.non_null_list("Mode")
     solid_handles = dauphin.Field(
-        dauphin.non_null_list('SolidHandle'), parentHandleID=dauphin.String()
+        dauphin.non_null_list("SolidHandle"), parentHandleID=dauphin.String()
     )
     solid_handle = dauphin.Field(
-        'SolidHandle', handleID=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        "SolidHandle", handleID=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
-    tags = dauphin.non_null_list('PipelineTag')
+    tags = dauphin.non_null_list("PipelineTag")
     runs = dauphin.Field(
-        dauphin.non_null_list('PipelineRun'), cursor=dauphin.String(), limit=dauphin.Int(),
+        dauphin.non_null_list("PipelineRun"), cursor=dauphin.String(), limit=dauphin.Int(),
     )
-    schedules = dauphin.non_null_list('ScheduleDefinition')
+    schedules = dauphin.non_null_list("ScheduleDefinition")
 
     def resolve_pipeline_snapshot_id(self, _):
         return self.get_represented_pipeline().identifying_pipeline_snapshot_id
@@ -103,7 +103,7 @@ class DauphinIPipelineSnapshotMixin(object):
 
     @capture_dauphin_error
     def resolve_dagster_type_or_error(self, _, **kwargs):
-        type_name = kwargs['dagsterTypeName']
+        type_name = kwargs["dagsterTypeName"]
 
         represented_pipeline = self.get_represented_pipeline()
 
@@ -137,7 +137,7 @@ class DauphinIPipelineSnapshotMixin(object):
 
     def resolve_solid_handles(self, _graphene_info, **kwargs):
         handles = _get_solid_handles(self.get_represented_pipeline())
-        parentHandleID = kwargs.get('parentHandleID')
+        parentHandleID = kwargs.get("parentHandleID")
 
         if parentHandleID == "":
             handles = {key: handle for key, handle in handles.items() if not handle.parent}
@@ -153,7 +153,7 @@ class DauphinIPipelineSnapshotMixin(object):
     def resolve_tags(self, graphene_info):
         represented_pipeline = self.get_represented_pipeline()
         return [
-            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
+            graphene_info.schema.type_named("PipelineTag")(key=key, value=value)
             for key, value in represented_pipeline.pipeline_snapshot.tags.items()
         ]
 
@@ -162,7 +162,7 @@ class DauphinIPipelineSnapshotMixin(object):
 
     def resolve_runs(self, graphene_info, **kwargs):
         runs_filter = PipelineRunsFilter(pipeline_name=self.get_represented_pipeline().name)
-        return get_runs(graphene_info, runs_filter, kwargs.get('cursor'), kwargs.get('limit'))
+        return get_runs(graphene_info, runs_filter, kwargs.get("cursor"), kwargs.get("limit"))
 
     def resolve_schedules(self, graphene_info):
         represented_pipeline = self.get_represented_pipeline()
@@ -178,39 +178,39 @@ class DauphinIPipelineSnapshotMixin(object):
 
 class DauphinIPipelineSnapshot(dauphin.Interface):
     class Meta(object):
-        name = 'IPipelineSnapshot'
+        name = "IPipelineSnapshot"
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
     pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
-    dagster_types = dauphin.non_null_list('DagsterType')
+    dagster_types = dauphin.non_null_list("DagsterType")
     dagster_type_or_error = dauphin.Field(
-        dauphin.NonNull('DagsterTypeOrError'),
+        dauphin.NonNull("DagsterTypeOrError"),
         dagsterTypeName=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
-    solids = dauphin.non_null_list('Solid')
-    modes = dauphin.non_null_list('Mode')
+    solids = dauphin.non_null_list("Solid")
+    modes = dauphin.non_null_list("Mode")
     solid_handles = dauphin.Field(
-        dauphin.non_null_list('SolidHandle'), parentHandleID=dauphin.String()
+        dauphin.non_null_list("SolidHandle"), parentHandleID=dauphin.String()
     )
     solid_handle = dauphin.Field(
-        'SolidHandle', handleID=dauphin.Argument(dauphin.NonNull(dauphin.String)),
+        "SolidHandle", handleID=dauphin.Argument(dauphin.NonNull(dauphin.String)),
     )
-    tags = dauphin.non_null_list('PipelineTag')
+    tags = dauphin.non_null_list("PipelineTag")
 
 
 class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
     class Meta(object):
-        name = 'Pipeline'
+        name = "Pipeline"
         interfaces = (DauphinSolidContainer, DauphinIPipelineSnapshot)
 
     id = dauphin.NonNull(dauphin.ID)
-    presets = dauphin.non_null_list('PipelinePreset')
-    runs = dauphin.non_null_list('PipelineRun')
+    presets = dauphin.non_null_list("PipelinePreset")
+    runs = dauphin.non_null_list("PipelineRun")
 
     def __init__(self, external_pipeline):
         self._external_pipeline = check.inst_param(
-            external_pipeline, 'external_pipeline', ExternalPipeline
+            external_pipeline, "external_pipeline", ExternalPipeline
         )
 
     def resolve_id(self, _graphene_info):
@@ -228,7 +228,7 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
 
 @lru_cache(maxsize=32)
 def _get_solid_handles(represented_pipeline):
-    check.inst_param(represented_pipeline, 'represented_pipeline', RepresentedPipeline)
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
     return {
         str(item.handleID): item
         for item in build_dauphin_solid_handles(
@@ -239,21 +239,21 @@ def _get_solid_handles(represented_pipeline):
 
 class DauphinResource(dauphin.ObjectType):
     class Meta(object):
-        name = 'Resource'
+        name = "Resource"
 
     def __init__(self, config_schema_snapshot, resource_def_snap):
         self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
+            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
         self._resource_dep_snap = check.inst_param(
-            resource_def_snap, 'resource_def_snap', ResourceDefSnap
+            resource_def_snap, "resource_def_snap", ResourceDefSnap
         )
         self.name = resource_def_snap.name
         self.description = resource_def_snap.description
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    configField = dauphin.Field('ConfigTypeField')
+    configField = dauphin.Field("ConfigTypeField")
 
     def resolve_configField(self, _):
         return (
@@ -268,19 +268,19 @@ class DauphinResource(dauphin.ObjectType):
 
 class DauphinLogger(dauphin.ObjectType):
     class Meta(object):
-        name = 'Logger'
+        name = "Logger"
 
     def __init__(self, config_schema_snapshot, logger_def_snap):
         self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
+            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
-        self._logger_def_snap = check.inst_param(logger_def_snap, 'logger_def_snap', LoggerDefSnap)
+        self._logger_def_snap = check.inst_param(logger_def_snap, "logger_def_snap", LoggerDefSnap)
         self.name = logger_def_snap.name
         self.description = logger_def_snap.description
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    configField = dauphin.Field('ConfigTypeField')
+    configField = dauphin.Field("ConfigTypeField")
 
     def resolve_configField(self, _):
         return (
@@ -295,18 +295,18 @@ class DauphinLogger(dauphin.ObjectType):
 
 class DauphinMode(dauphin.ObjectType):
     def __init__(self, config_schema_snapshot, mode_def_snap):
-        self._mode_def_snap = check.inst_param(mode_def_snap, 'mode_def_snap', ModeDefSnap)
+        self._mode_def_snap = check.inst_param(mode_def_snap, "mode_def_snap", ModeDefSnap)
         self._config_schema_snapshot = check.inst_param(
-            config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
+            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
 
     class Meta(object):
-        name = 'Mode'
+        name = "Mode"
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    resources = dauphin.non_null_list('Resource')
-    loggers = dauphin.non_null_list('Logger')
+    resources = dauphin.non_null_list("Resource")
+    loggers = dauphin.non_null_list("Logger")
 
     def resolve_name(self, _graphene_info):
         return self._mode_def_snap.name
@@ -329,7 +329,7 @@ class DauphinMode(dauphin.ObjectType):
 
 class DauphinMetadataItemDefinition(dauphin.ObjectType):
     class Meta(object):
-        name = 'MetadataItemDefinition'
+        name = "MetadataItemDefinition"
 
     key = dauphin.NonNull(dauphin.String)
     value = dauphin.NonNull(dauphin.String)
@@ -337,19 +337,19 @@ class DauphinMetadataItemDefinition(dauphin.ObjectType):
 
 class DauphinPipelinePreset(dauphin.ObjectType):
     class Meta(object):
-        name = 'PipelinePreset'
+        name = "PipelinePreset"
 
     name = dauphin.NonNull(dauphin.String)
     solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
     runConfigYaml = dauphin.NonNull(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
-    tags = dauphin.non_null_list('PipelineTag')
+    tags = dauphin.non_null_list("PipelineTag")
 
     def __init__(self, active_preset_data, pipeline_name):
         self._active_preset_data = check.inst_param(
-            active_preset_data, 'active_preset_data', ExternalPresetData
+            active_preset_data, "active_preset_data", ExternalPresetData
         )
-        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
+        self._pipeline_name = check.str_param(pipeline_name, "pipeline_name")
 
     def resolve_name(self, _graphene_info):
         return self._active_preset_data.name
@@ -359,14 +359,14 @@ class DauphinPipelinePreset(dauphin.ObjectType):
 
     def resolve_runConfigYaml(self, _graphene_info):
         yaml_str = yaml.safe_dump(self._active_preset_data.run_config, default_flow_style=False)
-        return yaml_str if yaml_str else ''
+        return yaml_str if yaml_str else ""
 
     def resolve_mode(self, _graphene_info):
         return self._active_preset_data.mode
 
     def resolve_tags(self, graphene_info):
         return [
-            graphene_info.schema.type_named('PipelineTag')(key=key, value=value)
+            graphene_info.schema.type_named("PipelineTag")(key=key, value=value)
             for key, value in self._active_preset_data.tags.items()
             if get_tag_type(key) != TagType.HIDDEN
         ]
@@ -375,11 +375,11 @@ class DauphinPipelinePreset(dauphin.ObjectType):
 class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
     def __init__(self, represented_pipeline):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
 
     class Meta(object):
-        name = 'PipelineSnapshot'
+        name = "PipelineSnapshot"
         interfaces = (DauphinIPipelineSnapshot, DauphinPipelineReference)
 
     def get_represented_pipeline(self):
@@ -388,10 +388,10 @@ class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType)
 
 class DauphinPipelineSnapshotOrError(dauphin.Union):
     class Meta(object):
-        name = 'PipelineSnapshotOrError'
+        name = "PipelineSnapshotOrError"
         types = (
-            'PipelineSnapshot',
-            'PipelineSnapshotNotFoundError',
-            'PipelineNotFoundError',
-            'PythonError',
+            "PipelineSnapshot",
+            "PipelineSnapshotNotFoundError",
+            "PipelineNotFoundError",
+            "PythonError",
         )

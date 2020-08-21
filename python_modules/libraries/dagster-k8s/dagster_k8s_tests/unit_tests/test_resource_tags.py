@@ -16,8 +16,8 @@ def test_backcompat_resource_tags():
     @solid(
         tags={
             K8S_RESOURCE_REQUIREMENTS_KEY: {
-                'requests': {'cpu': '250m', 'memory': '64Mi'},
-                'limits': {'cpu': '500m', 'memory': '2560Mi'},
+                "requests": {"cpu": "250m", "memory": "64Mi"},
+                "limits": {"cpu": "500m", "memory": "2560Mi"},
             }
         }
     )
@@ -27,16 +27,16 @@ def test_backcompat_resource_tags():
     user_defined_k8s_config = get_user_defined_k8s_config(resource_tags_solid.tags)
 
     assert user_defined_k8s_config.container_config
-    assert user_defined_k8s_config.container_config['resources']
-    resources = user_defined_k8s_config.container_config['resources']
-    assert resources['requests']['cpu'] == '250m'
-    assert resources['requests']['memory'] == '64Mi'
-    assert resources['limits']['cpu'] == '500m'
-    assert resources['limits']['memory'] == '2560Mi'
+    assert user_defined_k8s_config.container_config["resources"]
+    resources = user_defined_k8s_config.container_config["resources"]
+    assert resources["requests"]["cpu"] == "250m"
+    assert resources["requests"]["memory"] == "64Mi"
+    assert resources["limits"]["cpu"] == "500m"
+    assert resources["limits"]["memory"] == "2560Mi"
 
 
 def test_bad_deprecated_resource_tags():
-    @pipeline(tags={K8S_RESOURCE_REQUIREMENTS_KEY: {'other': {'cpu': '250m', 'memory': '64Mi'},}})
+    @pipeline(tags={K8S_RESOURCE_REQUIREMENTS_KEY: {"other": {"cpu": "250m", "memory": "64Mi"},}})
     def resource_tags_pipeline():
         pass
 
@@ -48,10 +48,10 @@ def test_user_defined_k8s_config_tags():
     @solid(
         tags={
             USER_DEFINED_K8S_CONFIG_KEY: {
-                'container_config': {
-                    'resources': {
-                        'requests': {'cpu': '250m', 'memory': '64Mi'},
-                        'limits': {'cpu': '500m', 'memory': '2560Mi'},
+                "container_config": {
+                    "resources": {
+                        "requests": {"cpu": "250m", "memory": "64Mi"},
+                        "limits": {"cpu": "500m", "memory": "2560Mi"},
                     }
                 }
             }
@@ -63,12 +63,12 @@ def test_user_defined_k8s_config_tags():
     user_defined_k8s_config = get_user_defined_k8s_config(my_solid.tags)
 
     assert user_defined_k8s_config.container_config
-    assert user_defined_k8s_config.container_config['resources']
-    resources = user_defined_k8s_config.container_config['resources']
-    assert resources['requests']['cpu'] == '250m'
-    assert resources['requests']['memory'] == '64Mi'
-    assert resources['limits']['cpu'] == '500m'
-    assert resources['limits']['memory'] == '2560Mi'
+    assert user_defined_k8s_config.container_config["resources"]
+    resources = user_defined_k8s_config.container_config["resources"]
+    assert resources["requests"]["cpu"] == "250m"
+    assert resources["requests"]["memory"] == "64Mi"
+    assert resources["limits"]["cpu"] == "500m"
+    assert resources["limits"]["memory"] == "2560Mi"
 
     @solid
     def no_resource_tags_solid(_):
@@ -79,7 +79,7 @@ def test_user_defined_k8s_config_tags():
 
 
 def test_bad_user_defined_k8s_config_tags():
-    @pipeline(tags={USER_DEFINED_K8S_CONFIG_KEY: {'other': {}}})
+    @pipeline(tags={USER_DEFINED_K8S_CONFIG_KEY: {"other": {}}})
     def my_solid():
         pass
 

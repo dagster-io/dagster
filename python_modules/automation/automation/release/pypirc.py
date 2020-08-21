@@ -39,7 +39,7 @@ class RCParser(object):
 
     """
 
-    CONFIG_PATH = os.path.join(os.path.expanduser('~'), '.pypirc')
+    CONFIG_PATH = os.path.join(os.path.expanduser("~"), ".pypirc")
 
     def __init__(self, config_parser):
         #: :class:`configparser.ConfigParser` instance to parse.
@@ -63,7 +63,7 @@ class RCParser(object):
         """
         path = path or cls.CONFIG_PATH
         if not os.path.exists(path):
-            error = 'Config file not found: {0!r}'.format(path)
+            error = "Config file not found: {0!r}".format(path)
             raise ConfigFileError(error)
         config = read_config(path)
         return cls(config)
@@ -92,26 +92,26 @@ class RCParser(object):
 
     def _read_index_servers(self):
         try:
-            servers_string = self.config.get('distutils', 'index-servers')
+            servers_string = self.config.get("distutils", "index-servers")
         except configparser.NoSectionError:
             return
-        for server in servers_string.split('\n'):
+        for server in servers_string.split("\n"):
             server = server.strip()
-            if server and server != 'pypi':
+            if server and server != "pypi":
                 yield server
 
     def _find_repo_config(self, servers, repository):
         for server in servers:
-            server_repository = self.config.get(server, 'repository')
+            server_repository = self.config.get(server, "repository")
             if repository in (server, server_repository):
                 username, password = self._read_server_auth(server)
-                return {'repository': server_repository, 'username': username, 'password': password}
+                return {"repository": server_repository, "username": username, "password": password}
         return None
 
     def _read_server_auth(self, server_name):
-        username = self.config.get(server_name, 'username')
+        username = self.config.get(server_name, "username")
         try:
-            password = self.config.get(server_name, 'password')
+            password = self.config.get(server_name, "password")
         except configparser.NoOptionError:
             password = None
         return username, password

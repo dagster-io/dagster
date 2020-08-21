@@ -72,7 +72,7 @@ def nope():
 
 
 def test_repo_construction():
-    repo_yaml = file_relative_path(__file__, 'repo.yaml')
+    repo_yaml = file_relative_path(__file__, "repo.yaml")
     assert ReconstructableRepository.from_legacy_repository_yaml(repo_yaml).get_definition()
 
 
@@ -80,7 +80,7 @@ def get_full_external_pipeline(repo_yaml, pipeline_name):
     recon_repo = ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
     return (
         InProcessRepositoryLocation(recon_repo)
-        .get_repository('nope')
+        .get_repository("nope")
         .get_full_external_pipeline(pipeline_name)
     )
 
@@ -98,7 +98,7 @@ def poll_for_run(instance, run_id, timeout=5):
             total_time += backoff
             backoff = backoff * 2
             if total_time > timeout:
-                raise Exception('Timed out')
+                raise Exception("Timed out")
 
 
 def poll_for_step_start(instance, run_id, timeout=5):
@@ -107,19 +107,19 @@ def poll_for_step_start(instance, run_id, timeout=5):
 
     while True:
         logs = instance.all_logs(run_id)
-        if 'STEP_START' in (log_record.dagster_event.event_type_value for log_record in logs):
+        if "STEP_START" in (log_record.dagster_event.event_type_value for log_record in logs):
             return
         else:
             time.sleep(backoff)
             total_time += backoff
             backoff = backoff * 2
             if total_time > timeout:
-                raise Exception('Timed out')
+                raise Exception("Timed out")
 
 
 def test_successful_run():
     with instance_for_test() as instance:
-        repo_yaml = file_relative_path(__file__, 'repo.yaml')
+        repo_yaml = file_relative_path(__file__, "repo.yaml")
         pipeline_run = instance.create_run_for_pipeline(pipeline_def=noop_pipeline, run_config=None)
 
         external_pipeline = get_full_external_pipeline(repo_yaml, pipeline_run.pipeline_name)
@@ -143,7 +143,7 @@ def test_successful_run():
 
 def test_crashy_run():
     with instance_for_test() as instance:
-        repo_yaml = file_relative_path(__file__, 'repo.yaml')
+        repo_yaml = file_relative_path(__file__, "repo.yaml")
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=crashy_pipeline, run_config=None
         )
@@ -166,7 +166,7 @@ def test_crashy_run():
 
         event_records = instance.all_logs(run_id)
 
-        message = 'Pipeline execution process for {run_id} unexpectedly exited.'.format(
+        message = "Pipeline execution process for {run_id} unexpectedly exited.".format(
             run_id=run_id
         )
 
@@ -175,7 +175,7 @@ def test_crashy_run():
 
 def test_terminated_run():
     with instance_for_test() as instance:
-        repo_yaml = file_relative_path(__file__, 'repo.yaml')
+        repo_yaml = file_relative_path(__file__, "repo.yaml")
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=sleepy_pipeline, run_config=None
         )
@@ -202,14 +202,14 @@ def test_terminated_run():
         events = [event.dagster_event.event_type_value for event in instance.all_logs(run_id)]
 
         assert events == [
-            'ENGINE_EVENT',
-            'ENGINE_EVENT',
-            'PIPELINE_START',
-            'ENGINE_EVENT',
-            'STEP_START',
-            'STEP_FAILURE',
-            'PIPELINE_FAILURE',
-            'ENGINE_EVENT',
+            "ENGINE_EVENT",
+            "ENGINE_EVENT",
+            "PIPELINE_START",
+            "ENGINE_EVENT",
+            "STEP_START",
+            "STEP_FAILURE",
+            "PIPELINE_FAILURE",
+            "ENGINE_EVENT",
         ]
 
 
@@ -240,10 +240,10 @@ def _message_exists(event_records, message_text):
 
 def test_single_solid_selection_execution():
     with instance_for_test() as instance:
-        repo_yaml = file_relative_path(__file__, 'repo.yaml')
+        repo_yaml = file_relative_path(__file__, "repo.yaml")
 
         pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, run_config=None, solids_to_execute={'return_one'}
+            pipeline_def=math_diamond, run_config=None, solids_to_execute={"return_one"}
         )
         run_id = pipeline_run.run_id
 
@@ -262,17 +262,17 @@ def test_single_solid_selection_execution():
         assert finished_pipeline_run.run_id == run_id
         assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
-        assert _get_successful_step_keys(event_records) == {'return_one.compute'}
+        assert _get_successful_step_keys(event_records) == {"return_one.compute"}
 
 
 def test_multi_solid_selection_execution():
     with instance_for_test() as instance:
-        repo_yaml = file_relative_path(__file__, 'repo.yaml')
+        repo_yaml = file_relative_path(__file__, "repo.yaml")
 
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=math_diamond,
             run_config=None,
-            solids_to_execute={'return_one', 'multiply_by_2'},
+            solids_to_execute={"return_one", "multiply_by_2"},
         )
         run_id = pipeline_run.run_id
 
@@ -293,15 +293,15 @@ def test_multi_solid_selection_execution():
         assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
         assert _get_successful_step_keys(event_records) == {
-            'return_one.compute',
-            'multiply_by_2.compute',
+            "return_one.compute",
+            "multiply_by_2.compute",
         }
 
 
 def test_engine_events():
 
     with instance_for_test() as instance:
-        repo_yaml = file_relative_path(__file__, 'repo.yaml')
+        repo_yaml = file_relative_path(__file__, "repo.yaml")
 
         pipeline_run = instance.create_run_for_pipeline(pipeline_def=math_diamond, run_config=None)
         run_id = pipeline_run.run_id
@@ -324,16 +324,16 @@ def test_engine_events():
             _get_engine_events(event_records)
         )
 
-        assert 'About to start process' in about_to_start.message
-        assert 'Started process for pipeline' in started_process.message
-        assert 'Executing steps in process' in executing_steps.message
-        assert 'Finished steps in process' in finished_steps.message
-        assert 'Process for pipeline exited' in process_exited.message
+        assert "About to start process" in about_to_start.message
+        assert "Started process for pipeline" in started_process.message
+        assert "Executing steps in process" in executing_steps.message
+        assert "Finished steps in process" in finished_steps.message
+        assert "Process for pipeline exited" in process_exited.message
 
 
 def test_not_initialized():
     run_launcher = CliApiRunLauncher()
-    run_id = 'dummy'
+    run_id = "dummy"
 
     assert run_launcher.join() is None
     assert run_launcher.is_process_running(run_id) is False

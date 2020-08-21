@@ -5,17 +5,17 @@ def check_for_release():
     try:
         git_tag = str(
             subprocess.check_output(
-                ['git', 'describe', '--exact-match', '--abbrev=0'], stderr=subprocess.STDOUT
+                ["git", "describe", "--exact-match", "--abbrev=0"], stderr=subprocess.STDOUT
             )
-        ).strip('\'b\\n')
+        ).strip("'b\\n")
     except subprocess.CalledProcessError:
         return False
 
     version = {}
-    with open('python_modules/dagster/dagster/version.py') as fp:
+    with open("python_modules/dagster/dagster/version.py") as fp:
         exec(fp.read(), version)  # pylint: disable=W0122
 
-    if git_tag == version['__version__']:
+    if git_tag == version["__version__"]:
         return True
 
     return False

@@ -12,12 +12,12 @@ from dagster.core.execution import poll_compute_logs, watch_orphans
 from dagster.seven import IS_WINDOWS
 from dagster.utils import ensure_file
 
-WIN_PY36_COMPUTE_LOG_DISABLED_MSG = '''\u001b[33mWARNING: Compute log capture is disabled for the current environment. Set the environment variable `PYTHONLEGACYWINDOWSSTDIO` to enable.\n\u001b[0m'''
+WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is disabled for the current environment. Set the environment variable `PYTHONLEGACYWINDOWSSTDIO` to enable.\n\u001b[0m"""
 
 
 @contextmanager
 def redirect_to_file(stream, filepath):
-    with open(filepath, 'a+', buffering=1) as file_stream:
+    with open(filepath, "a+", buffering=1) as file_stream:
         with redirect_stream(file_stream, stream):
             yield
 
@@ -34,10 +34,10 @@ def should_disable_io_stream_redirect():
     # See https://stackoverflow.com/a/52377087
     # https://www.python.org/dev/peps/pep-0528/
     return (
-        os.name == 'nt'
+        os.name == "nt"
         and sys.version_info.major == 3
         and sys.version_info.minor >= 6
-        and not os.environ.get('PYTHONLEGACYWINDOWSSTDIO')
+        and not os.environ.get("PYTHONLEGACYWINDOWSSTDIO")
     )
 
 
@@ -57,12 +57,12 @@ def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
         yield
         return
 
-    with os.fdopen(os.dup(from_fd), 'wb') as copied:
+    with os.fdopen(os.dup(from_fd), "wb") as copied:
         from_stream.flush()
         try:
             os.dup2(_fileno(to_stream), from_fd)
         except ValueError:
-            with open(to_stream, 'wb') as to_file:
+            with open(to_stream, "wb") as to_file:
                 os.dup2(to_file.fileno(), from_fd)
         try:
             yield from_stream
@@ -104,7 +104,7 @@ def execute_windows_tail(path, stream):
 @contextmanager
 def execute_posix_tail(path, stream):
     # open a subprocess to tail the file and print to stdout
-    tail_cmd = 'tail -F -c +0 {}'.format(path).split(' ')
+    tail_cmd = "tail -F -c +0 {}".format(path).split(" ")
     stream = stream if _fileno(stream) else None
     tail_process = subprocess.Popen(tail_cmd, stdout=stream)
 
@@ -132,7 +132,7 @@ def _clean_up_subprocess(subprocess_obj):
 
 def _fileno(stream):
     try:
-        fd = getattr(stream, 'fileno', lambda: stream)()
+        fd = getattr(stream, "fileno", lambda: stream)()
     except io.UnsupportedOperation:
         # Test CLI runners will stub out stdout to a non-file stream, which will raise an
         # UnsupportedOperation if `fileno` is accessed.  We need to make sure we do not error out,

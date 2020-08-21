@@ -23,7 +23,7 @@ def has_table(table_name):
 def has_column(table_name, column_name):
     if not has_table(table_name):
         return False
-    columns = [x.get('name') for x in get_inspector().get_columns(table_name)]
+    columns = [x.get("name") for x in get_inspector().get_columns(table_name)]
     return column_name in columns
 
 
@@ -33,7 +33,7 @@ _UPGRADING_INSTANCE = None
 @contextmanager
 def upgrading_instance(instance):
     global _UPGRADING_INSTANCE  # pylint: disable=global-statement
-    check.invariant(_UPGRADING_INSTANCE is None, 'update already in progress')
+    check.invariant(_UPGRADING_INSTANCE is None, "update already in progress")
     try:
         _UPGRADING_INSTANCE = instance
         yield
@@ -43,5 +43,5 @@ def upgrading_instance(instance):
 
 def get_currently_upgrading_instance():
     global _UPGRADING_INSTANCE  # pylint: disable=global-statement
-    check.invariant(_UPGRADING_INSTANCE is not None, 'currently upgrading instance not set')
+    check.invariant(_UPGRADING_INSTANCE is not None, "currently upgrading instance not set")
     return _UPGRADING_INSTANCE

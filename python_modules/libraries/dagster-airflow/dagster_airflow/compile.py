@@ -15,7 +15,7 @@ def _coalesce_solid_order(execution_plan):
 
 
 def coalesce_execution_steps(execution_plan):
-    '''Groups execution steps by solid, in topological order of the solids.'''
+    """Groups execution steps by solid, in topological order of the solids."""
 
     solid_order = _coalesce_solid_order(execution_plan)
 
@@ -28,7 +28,7 @@ def coalesce_execution_steps(execution_plan):
         steps[solid_handle] += solid_steps
         check.invariant(
             len(solid_steps) == 1,
-            'Saw {num_steps} execution steps for solid {solid_handle}, expected only one.'.format(
+            "Saw {num_steps} execution steps for solid {solid_handle}, expected only one.".format(
                 num_steps=len(solid_steps), solid_handle=solid_handle
             ),
         )

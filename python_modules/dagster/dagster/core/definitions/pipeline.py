@@ -35,23 +35,23 @@ def _check_solids_arg(pipeline_name, solid_defs):
             continue
         elif callable(solid_def):
             raise DagsterInvalidDefinitionError(
-                '''You have passed a lambda or function {func} into pipeline {name} that is
+                """You have passed a lambda or function {func} into pipeline {name} that is
                 not a solid. You have likely forgetten to annotate this function with
                 an @solid or @lambda_solid decorator.'
-                '''.format(
+                """.format(
                     name=pipeline_name, func=solid_def.__name__
                 )
             )
         else:
             raise DagsterInvalidDefinitionError(
-                'Invalid item in solid list: {item}'.format(item=repr(solid_def))
+                "Invalid item in solid list: {item}".format(item=repr(solid_def))
             )
 
     return solid_defs
 
 
 class PipelineDefinition(IContainSolids):
-    '''Defines a Dagster pipeline.
+    """Defines a Dagster pipeline.
 
     A pipeline is made up of
 
@@ -131,7 +131,7 @@ class PipelineDefinition(IContainSolids):
                 mode_defs=[add_mode],
                 preset_defs=[add_three_preset],
             )
-    '''
+    """
 
     def __init__(
         self,
@@ -145,10 +145,10 @@ class PipelineDefinition(IContainSolids):
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
         _hook_defs=None,
     ):
-        self._name = check.opt_str_param(name, 'name', '<<unnamed>>')
-        self._description = check.opt_str_param(description, 'description')
+        self._name = check.opt_str_param(name, "name", "<<unnamed>>")
+        self._description = check.opt_str_param(description, "description")
 
-        mode_definitions = check.opt_list_param(mode_defs, 'mode_defs', of_type=ModeDefinition)
+        mode_definitions = check.opt_list_param(mode_defs, "mode_defs", of_type=ModeDefinition)
 
         if not mode_definitions:
             mode_definitions = [ModeDefinition()]
@@ -156,7 +156,7 @@ class PipelineDefinition(IContainSolids):
         self._mode_definitions = mode_definitions
 
         self._current_level_solid_defs = check.list_param(
-            _check_solids_arg(self._name, solid_defs), 'solid_defs', of_type=ISolidDefinition
+            _check_solids_arg(self._name, solid_defs), "solid_defs", of_type=ISolidDefinition
         )
         self._tags = validate_tags(tags)
 
@@ -166,7 +166,7 @@ class PipelineDefinition(IContainSolids):
                 raise DagsterInvalidDefinitionError(
                     (
                         'Two modes seen with the name "{mode_name}" in "{pipeline_name}". '
-                        'Modes must have unique names.'
+                        "Modes must have unique names."
                     ).format(mode_name=mode_def.name, pipeline_name=self._name)
                 )
             seen_modes.add(mode_def.name)
@@ -185,14 +185,14 @@ class PipelineDefinition(IContainSolids):
 
         self._dagster_type_dict = construct_dagster_type_dictionary(self._current_level_solid_defs)
 
-        self._preset_defs = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
+        self._preset_defs = check.opt_list_param(preset_defs, "preset_defs", PresetDefinition)
         self._preset_dict = {}
         for preset in self._preset_defs:
             if preset.name in self._preset_dict:
                 raise DagsterInvalidDefinitionError(
                     (
                         'Two PresetDefinitions seen with the name "{name}" in "{pipeline_name}". '
-                        'PresetDefinitions must have unique names.'
+                        "PresetDefinitions must have unique names."
                     ).format(name=preset.name, pipeline_name=self._name)
                 )
             if preset.mode not in seen_modes:
@@ -214,15 +214,15 @@ class PipelineDefinition(IContainSolids):
 
         self._all_solid_defs = _build_all_solid_defs(self._current_level_solid_defs)
         self._parent_pipeline_def = check.opt_inst_param(
-            _parent_pipeline_def, '_parent_pipeline_def', PipelineDefinition
+            _parent_pipeline_def, "_parent_pipeline_def", PipelineDefinition
         )
         self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
 
-        self._hook_defs = check.opt_set_param(_hook_defs, '_hook_defs', of_type=HookDefinition)
+        self._hook_defs = check.opt_set_param(_hook_defs, "_hook_defs", of_type=HookDefinition)
 
     def get_run_config_schema(self, mode=None):
-        check.str_param(mode, 'mode')
+        check.str_param(mode, "mode")
 
         mode_def = self.get_mode_definition(mode)
 
@@ -253,7 +253,7 @@ class PipelineDefinition(IContainSolids):
         return self._preset_defs
 
     def _get_mode_definition(self, mode):
-        check.str_param(mode, 'mode')
+        check.str_param(mode, "mode")
         for mode_definition in self._mode_definitions:
             if mode_definition.name == mode:
                 return mode_definition
@@ -272,14 +272,14 @@ class PipelineDefinition(IContainSolids):
         return len(self._mode_definitions) > 1
 
     def has_mode_definition(self, mode):
-        check.str_param(mode, 'mode')
+        check.str_param(mode, "mode")
         return bool(self._get_mode_definition(mode))
 
     def get_default_mode_name(self):
         return self._mode_definitions[0].name
 
     def get_mode_definition(self, mode=None):
-        check.opt_str_param(mode, 'mode')
+        check.opt_str_param(mode, "mode")
         if mode is None:
             check.invariant(self.is_single_mode)
             return self.get_default_mode()
@@ -288,7 +288,7 @@ class PipelineDefinition(IContainSolids):
 
         check.invariant(
             mode_def is not None,
-            'Could not find mode {mode} in pipeline {name}'.format(mode=mode, name=self._name),
+            "Could not find mode {mode} in pipeline {name}".format(mode=mode, name=self._name),
         )
 
         return mode_def
@@ -299,12 +299,12 @@ class PipelineDefinition(IContainSolids):
 
     @property
     def display_name(self):
-        '''str: Display name of pipeline.
+        """str: Display name of pipeline.
 
         Name suitable for exception messages, logging etc. If pipeline
         is unnamed the method will return "<<unnamed>>".
-        '''
-        return self._name if self._name else '<<unnamed>>'
+        """
+        return self._name if self._name else "<<unnamed>>"
 
     @property
     def tags(self):
@@ -312,35 +312,35 @@ class PipelineDefinition(IContainSolids):
 
     @property
     def solids(self):
-        '''List[Solid]: Top-level solids in the pipeline.
-        '''
+        """List[Solid]: Top-level solids in the pipeline.
+        """
         return list(set(self._solid_dict.values()))
 
     def has_solid_named(self, name):
-        '''Return whether or not there is a top level solid with this name in the pipeline
+        """Return whether or not there is a top level solid with this name in the pipeline
 
         Args:
             name (str): Name of solid
 
         Returns:
             bool: True if the solid is in the pipeline
-        '''
-        check.str_param(name, 'name')
+        """
+        check.str_param(name, "name")
         return name in self._solid_dict
 
     def solid_named(self, name):
-        '''Return the top level solid named "name". Throws if it does not exist.
+        """Return the top level solid named "name". Throws if it does not exist.
 
         Args:
             name (str): Name of solid
 
         Returns:
             Solid:
-        '''
-        check.str_param(name, 'name')
+        """
+        check.str_param(name, "name")
         check.invariant(
             name in self._solid_dict,
-            'Pipeline {pipeline_name} has no solid named {name}.'.format(
+            "Pipeline {pipeline_name} has no solid named {name}.".format(
                 pipeline_name=self._name, name=name
             ),
         )
@@ -348,7 +348,7 @@ class PipelineDefinition(IContainSolids):
         return self._solid_dict[name]
 
     def get_solid(self, handle):
-        '''Return the solid contained anywhere within the pipeline via its handle.
+        """Return the solid contained anywhere within the pipeline via its handle.
 
         Args:
             handle (SolidHandle): The solid's handle
@@ -356,8 +356,8 @@ class PipelineDefinition(IContainSolids):
         Returns:
             Solid:
 
-        '''
-        check.inst_param(handle, 'handle', SolidHandle)
+        """
+        check.inst_param(handle, "handle", SolidHandle)
         current = handle
         lineage = []
         while current:
@@ -377,11 +377,11 @@ class PipelineDefinition(IContainSolids):
         return self._dependency_structure
 
     def has_dagster_type(self, name):
-        check.str_param(name, 'name')
+        check.str_param(name, "name")
         return name in self._dagster_type_dict
 
     def dagster_type_named(self, name):
-        check.str_param(name, 'name')
+        check.str_param(name, "name")
         return self._dagster_type_dict[name]
 
     def all_dagster_types(self):
@@ -396,13 +396,13 @@ class PipelineDefinition(IContainSolids):
         return self._current_level_solid_defs
 
     def solid_def_named(self, name):
-        check.str_param(name, 'name')
+        check.str_param(name, "name")
 
-        check.invariant(name in self._all_solid_defs, '{} not found'.format(name))
+        check.invariant(name in self._all_solid_defs, "{} not found".format(name))
         return self._all_solid_defs[name]
 
     def has_solid_def(self, name):
-        check.str_param(name, 'name')
+        check.str_param(name, "name")
         return name in self._all_solid_defs
 
     def get_pipeline_subset_def(self, solids_to_execute):
@@ -414,11 +414,11 @@ class PipelineDefinition(IContainSolids):
         return list(self._preset_dict.values())
 
     def has_preset(self, name):
-        check.str_param(name, 'name')
+        check.str_param(name, "name")
         return name in self._preset_dict
 
     def get_preset(self, name):
-        check.str_param(name, 'name')
+        check.str_param(name, "name")
         if name not in self._preset_dict:
             raise DagsterInvariantViolationError(
                 (
@@ -468,7 +468,7 @@ class PipelineDefinition(IContainSolids):
         return self._hook_defs
 
     def get_all_hooks_for_handle(self, handle):
-        '''Gather all the hooks for the given solid from all places possibly attached with a hook.
+        """Gather all the hooks for the given solid from all places possibly attached with a hook.
 
         A hook can be attached to any of the following objects
         * Solid (solid invocation)
@@ -479,8 +479,8 @@ class PipelineDefinition(IContainSolids):
 
         Returns:
             FrozeSet[HookDefinition]
-        '''
-        check.inst_param(handle, 'handle', SolidHandle)
+        """
+        check.inst_param(handle, "handle", SolidHandle)
         hook_defs = set()
 
         current = handle
@@ -506,9 +506,9 @@ class PipelineDefinition(IContainSolids):
         return frozenset(hook_defs)
 
     def with_hooks(self, hook_defs):
-        '''Apply a set of hooks to all solid instances within the pipeline.'''
+        """Apply a set of hooks to all solid instances within the pipeline."""
 
-        hook_defs = check.set_param(hook_defs, 'hook_defs', of_type=HookDefinition)
+        hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
         return PipelineDefinition(
             solid_defs=self.top_level_solid_defs,
@@ -547,7 +547,7 @@ class PipelineSubsetDefinition(PipelineDefinition):
         return True
 
     def get_pipeline_subset_def(self, solids_to_execute):
-        raise DagsterInvariantViolationError('Pipeline subsets may not be subset again.')
+        raise DagsterInvariantViolationError("Pipeline subsets may not be subset again.")
 
 
 def _dep_key_of(solid):
@@ -555,18 +555,18 @@ def _dep_key_of(solid):
 
 
 def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
-    '''
+    """
     Build a pipeline which is a subset of another pipeline.
     Only includes the solids which are in solids_to_execute.
-    '''
+    """
 
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
 
     for solid_name in solids_to_execute:
         if not pipeline_def.has_solid_named(solid_name):
             raise DagsterInvalidSubsetError(
-                'Pipeline {pipeline_name} has no solid named {name}.'.format(
+                "Pipeline {pipeline_name} has no solid named {name}.".format(
                     pipeline_name=pipeline_def.name, name=solid_name
                 ),
             )
@@ -621,11 +621,11 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
 
 
 def _validate_resource_dependencies(mode_definitions, solid_defs, solid_dict):
-    '''This validation ensures that each pipeline context provides the resources that are required
+    """This validation ensures that each pipeline context provides the resources that are required
     by each solid.
-    '''
-    check.list_param(mode_definitions, 'mode_definitions', of_type=ModeDefinition)
-    check.list_param(solid_defs, 'solid_defs', of_type=ISolidDefinition)
+    """
+    check.list_param(mode_definitions, "mode_definitions", of_type=ModeDefinition)
+    check.list_param(solid_defs, "solid_defs", of_type=ISolidDefinition)
 
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
@@ -647,8 +647,8 @@ def _validate_resource_dependencies(mode_definitions, solid_defs, solid_dict):
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Resource \'{resource}\' is required by system storage '
-                            '\'{storage_name}\', but is not provided by mode \'{mode_name}\'.'
+                            "Resource '{resource}' is required by system storage "
+                            "'{storage_name}', but is not provided by mode '{mode_name}'."
                         ).format(
                             resource=required_resource,
                             storage_name=system_storage_def.name,
@@ -681,9 +681,9 @@ def _validate_inputs(dependency_structure, solid_dict):
                 ):
                     raise DagsterInvalidDefinitionError(
                         'Input "{input_name}" in solid "{solid_name}" is not connected to '
-                        'the output of a previous solid and can not be loaded from configuration, '
-                        'creating an impossible to execute pipeline. '
-                        'Possible solutions are:\n'
+                        "the output of a previous solid and can not be loaded from configuration, "
+                        "creating an impossible to execute pipeline. "
+                        "Possible solutions are:\n"
                         '  * add a dagster_type_loader for the type "{dagster_type}"\n'
                         '  * connect "{input_name}" to the output of another solid\n'.format(
                             solid_name=solid.name,

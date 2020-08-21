@@ -9,7 +9,7 @@ from dagster import check
 from .graphql_context_test_suite import GraphQLContextVariant, manage_graphql_context
 
 
-@pytest.mark.parametrize('variant', GraphQLContextVariant.all_readonly_variants())
+@pytest.mark.parametrize("variant", GraphQLContextVariant.all_readonly_variants())
 def test_readonly_variants(variant):
     assert isinstance(variant, GraphQLContextVariant)
     with manage_graphql_context(variant) as context:
@@ -32,7 +32,7 @@ def get_all_static_functions(klass):
 @pytest.mark.skipif(sys.version_info < (3,), reason="This behavior isn't available on 2.7")
 def test_get_all_static_members():
     class Bar:
-        class_var = 'foo'
+        class_var = "foo"
 
         @staticmethod
         def static_one():
@@ -51,12 +51,12 @@ def test_get_all_static_members():
 
 @pytest.mark.skipif(sys.version_info < (3,), reason="This behavior isn't available on 2.7")
 def test_all_variants_in_variants_function():
-    '''
+    """
     This grabs all pre-defined variants on GraphQLContextVariant (defined as static methods that
     return a single ContextVariant) and tests two things:
     1) They all contain a unique test_id
     2) That the all_variants() static method returns *all* of them
-    '''
+    """
 
     variant_test_ids_declared_on_class = set()
     for static_function in get_all_static_functions(GraphQLContextVariant):

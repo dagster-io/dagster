@@ -42,28 +42,28 @@ def return_tuple():
     return (1, 2)
 
 
-@lambda_solid(input_defs=[InputDefinition('num')])
+@lambda_solid(input_defs=[InputDefinition("num")])
 def add_one(num):
     return num + 1
 
 
-@lambda_solid(input_defs=[InputDefinition('num')])
+@lambda_solid(input_defs=[InputDefinition("num")])
 def pipe(num):
     return num
 
 
 @solid(
-    input_defs=[InputDefinition('int_1', Int), InputDefinition('int_2', Int)],
+    input_defs=[InputDefinition("int_1", Int), InputDefinition("int_2", Int)],
     output_defs=[OutputDefinition(Int)],
 )
 def adder(_context, int_1, int_2):
     return int_1 + int_2
 
 
-@solid(output_defs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+@solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
 def return_mult(_context):
-    yield Output(1, 'one')
-    yield Output(2, 'two')
+    yield Output(1, "one")
+    yield Output(2, "two")
 
 
 def test_basic():
@@ -74,7 +74,7 @@ def test_basic():
 
     assert (
         execute_pipeline(PipelineDefinition(solid_defs=[test]))
-        .result_for_handle('test.add_one')
+        .result_for_handle("test.add_one")
         .output_value()
         == 2
     )
@@ -124,7 +124,7 @@ def test_arg_fails():
         @composite_solid
         def _fail_3():
             # pylint: disable=too-many-function-args
-            adder(return_one(), return_two(), return_one.alias('three')())
+            adder(return_one(), return_two(), return_one.alias("three")())
 
 
 def test_mult_out_fail():
@@ -144,7 +144,7 @@ def test_dupes_fail():
         def _test():
             one, two = return_mult()
             add_one(num=one)
-            add_one.alias('add_one')(num=two)  # explicit alias disables autoalias
+            add_one.alias("add_one")(num=two)  # explicit alias disables autoalias
 
 
 def test_multiple():
@@ -152,15 +152,15 @@ def test_multiple():
     def test():
         one, two = return_mult()
         add_one(num=one)
-        add_one.alias('add_one_2')(num=two)
+        add_one.alias("add_one_2")(num=two)
 
     results = execute_pipeline(PipelineDefinition(solid_defs=[test]))
-    assert results.result_for_handle('test.add_one').output_value() == 2
-    assert results.result_for_handle('test.add_one_2').output_value() == 3
+    assert results.result_for_handle("test.add_one").output_value() == 2
+    assert results.result_for_handle("test.add_one_2").output_value() == 3
 
 
 def test_two_inputs_with_dsl():
-    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
@@ -174,7 +174,7 @@ def test_two_inputs_with_dsl():
 
     assert (
         execute_pipeline(PipelineDefinition(solid_defs=[test]))
-        .result_for_handle('test.subtract')
+        .result_for_handle("test.subtract")
         .output_value()
         == -1
     )
@@ -183,45 +183,45 @@ def test_two_inputs_with_dsl():
 def test_basic_aliasing_with_dsl():
     @composite_solid
     def test():
-        add_one.alias('renamed')(num=return_one())
+        add_one.alias("renamed")(num=return_one())
 
     assert (
         execute_pipeline(PipelineDefinition(solid_defs=[test]))
-        .result_for_handle('test.renamed')
+        .result_for_handle("test.renamed")
         .output_value()
         == 2
     )
 
 
 def test_diamond_graph():
-    @solid(output_defs=[OutputDefinition(name='value_one'), OutputDefinition(name='value_two')])
+    @solid(output_defs=[OutputDefinition(name="value_one"), OutputDefinition(name="value_two")])
     def emit_values(_context):
-        yield Output(1, 'value_one')
-        yield Output(2, 'value_two')
+        yield Output(1, "value_one")
+        yield Output(2, "value_two")
 
-    @lambda_solid(input_defs=[InputDefinition('num_one'), InputDefinition('num_two')])
+    @lambda_solid(input_defs=[InputDefinition("num_one"), InputDefinition("num_two")])
     def subtract(num_one, num_two):
         return num_one - num_two
 
     @composite_solid
     def diamond():
         value_one, value_two = emit_values()
-        subtract(num_one=add_one(num=value_one), num_two=add_one.alias('renamed')(num=value_two))
+        subtract(num_one=add_one(num=value_one), num_two=add_one.alias("renamed")(num=value_two))
 
     result = execute_pipeline(PipelineDefinition(solid_defs=[diamond]))
 
-    assert result.result_for_handle('diamond.subtract').output_value() == -1
+    assert result.result_for_handle("diamond.subtract").output_value() == -1
 
 
 def test_mapping():
     @lambda_solid(
-        input_defs=[InputDefinition('num_in', Int)], output_def=OutputDefinition(Int, 'num_out')
+        input_defs=[InputDefinition("num_in", Int)], output_def=OutputDefinition(Int, "num_out")
     )
     def double(num_in):
         return num_in * 2
 
     @composite_solid(
-        input_defs=[InputDefinition('num_in', Int)], output_defs=[OutputDefinition(Int, 'num_out')]
+        input_defs=[InputDefinition("num_in", Int)], output_defs=[OutputDefinition(Int, "num_out")]
     )
     def composed_inout(num_in):
         return double(num_in=num_in)
@@ -232,12 +232,12 @@ def test_mapping():
             PipelineDefinition(
                 solid_defs=[return_one, composed_inout, pipe],
                 dependencies={
-                    'composed_inout': {'num_in': DependencyDefinition('return_one')},
-                    'pipe': {'num': DependencyDefinition('composed_inout', 'num_out')},
+                    "composed_inout": {"num_in": DependencyDefinition("return_one")},
+                    "pipe": {"num": DependencyDefinition("composed_inout", "num_out")},
                 },
             )
         )
-        .result_for_solid('pipe')
+        .result_for_solid("pipe")
         .output_value()
         == 2
     )
@@ -252,66 +252,66 @@ def test_mapping_args_kwargs():
     def maps(m_c, m_b, m_a):
         take(m_a, b=m_b, c=m_c)
 
-    assert maps.input_mappings[2].definition.name == 'm_a'
-    assert maps.input_mappings[2].input_name == 'a'
+    assert maps.input_mappings[2].definition.name == "m_a"
+    assert maps.input_mappings[2].input_name == "a"
 
-    assert maps.input_mappings[1].definition.name == 'm_b'
-    assert maps.input_mappings[1].input_name == 'b'
+    assert maps.input_mappings[1].definition.name == "m_b"
+    assert maps.input_mappings[1].input_name == "b"
 
-    assert maps.input_mappings[0].definition.name == 'm_c'
-    assert maps.input_mappings[0].input_name == 'c'
+    assert maps.input_mappings[0].definition.name == "m_c"
+    assert maps.input_mappings[0].input_name == "c"
 
 
 def test_output_map_mult():
-    @composite_solid(output_defs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+    @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
     def wrap_mult():
         return return_mult()
 
     @pipeline
     def mult_pipe():
         one, two = wrap_mult()
-        echo.alias('echo_one')(one)
-        echo.alias('echo_two')(two)
+        echo.alias("echo_one")(one)
+        echo.alias("echo_two")(two)
 
     result = execute_pipeline(mult_pipe)
-    assert result.result_for_solid('echo_one').output_value() == 1
-    assert result.result_for_solid('echo_two').output_value() == 2
+    assert result.result_for_solid("echo_one").output_value() == 1
+    assert result.result_for_solid("echo_two").output_value() == 2
 
 
 def test_output_map_mult_swizzle():
-    @composite_solid(output_defs=[OutputDefinition(Int, 'x'), OutputDefinition(Int, 'y')])
+    @composite_solid(output_defs=[OutputDefinition(Int, "x"), OutputDefinition(Int, "y")])
     def wrap_mult():
         one, two = return_mult()
-        return {'x': one, 'y': two}
+        return {"x": one, "y": two}
 
     @pipeline
     def mult_pipe():
         x, y = wrap_mult()
-        echo.alias('echo_x')(x)
-        echo.alias('echo_y')(y)
+        echo.alias("echo_x")(x)
+        echo.alias("echo_y")(y)
 
     result = execute_pipeline(mult_pipe)
-    assert result.result_for_solid('echo_x').output_value() == 1
-    assert result.result_for_solid('echo_y').output_value() == 2
+    assert result.result_for_solid("echo_x").output_value() == 1
+    assert result.result_for_solid("echo_y").output_value() == 2
 
 
 def test_output_map_fail():
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @composite_solid(output_defs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+        @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
         def _bad(_context):
             return return_one()
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
-        @composite_solid(output_defs=[OutputDefinition(Int, 'one'), OutputDefinition(Int, 'two')])
+        @composite_solid(output_defs=[OutputDefinition(Int, "one"), OutputDefinition(Int, "two")])
         def _bad(_context):
-            return {'one': 1}
+            return {"one": 1}
 
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @composite_solid(
-            output_defs=[OutputDefinition(Int, 'three'), OutputDefinition(Int, 'four')]
+            output_defs=[OutputDefinition(Int, "three"), OutputDefinition(Int, "four")]
         )
         def _bad():
             return return_mult()
@@ -322,23 +322,23 @@ def test_deep_graph():
     def download_num(context):
         return context.solid_config
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def unzip_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def ingest_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def subsample_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition('num')])
+    @lambda_solid(input_defs=[InputDefinition("num")])
     def canonicalize_num(num):
         return num
 
-    @lambda_solid(input_defs=[InputDefinition('num')], output_def=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition("num")], output_def=OutputDefinition(Int))
     def load_num(num):
         return num + 3
 
@@ -352,10 +352,10 @@ def test_deep_graph():
 
     result = execute_pipeline(
         PipelineDefinition(solid_defs=[test]),
-        {'solids': {'test': {'solids': {'download_num': {'config': 123}}}}},
+        {"solids": {"test": {"solids": {"download_num": {"config": 123}}}}},
     )
-    assert result.result_for_handle('test.canonicalize_num').output_value() == 123
-    assert result.result_for_handle('test.load_num').output_value() == 126
+    assert result.result_for_handle("test.canonicalize_num").output_value() == 123
+    assert result.result_for_handle("test.load_num").output_value() == 126
 
 
 def test_recursion():
@@ -385,7 +385,7 @@ def test_recursion_with_exceptions():
 
                 @composite_solid
                 def throws():
-                    called['throws'] = True
+                    called["throws"] = True
                     raise Garbage()
 
                 throws()
@@ -395,7 +395,7 @@ def test_recursion_with_exceptions():
         outer()
 
     assert execute_pipeline(recurse).success
-    assert called['throws'] is True
+    assert called["throws"] is True
 
 
 def test_pipeline_has_solid_def():
@@ -411,9 +411,9 @@ def test_pipeline_has_solid_def():
     def a_pipeline():
         outer()
 
-    assert a_pipeline.has_solid_def('add_one')
-    assert a_pipeline.has_solid_def('outer')
-    assert a_pipeline.has_solid_def('inner')
+    assert a_pipeline.has_solid_def("add_one")
+    assert a_pipeline.has_solid_def("outer")
+    assert a_pipeline.has_solid_def("inner")
 
 
 def test_repository_has_solid_def():
@@ -433,15 +433,15 @@ def test_repository_has_solid_def():
     def has_solid_def_test():
         return [a_pipeline]
 
-    assert has_solid_def_test.solid_def_named('inner')
+    assert has_solid_def_test.solid_def_named("inner")
 
 
 def test_mapping_args_ordering():
     @lambda_solid
     def take(a, b, c):
-        assert a == 'a'
-        assert b == 'b'
-        assert c == 'c'
+        assert a == "a"
+        assert b == "b"
+        assert c == "c"
 
     @composite_solid
     def swizzle(b, a, c):
@@ -464,9 +464,9 @@ def test_mapping_args_ordering():
     execute_pipeline(
         ordered,
         {
-            'solids': {
-                'swizzle_2': {
-                    'inputs': {'a': {'value': 'a'}, 'b': {'value': 'b'}, 'c': {'value': 'c'}}
+            "solids": {
+                "swizzle_2": {
+                    "inputs": {"a": {"value": "a"}, "b": {"value": "b"}, "c": {"value": "c"}}
                 }
             }
         },
@@ -474,7 +474,7 @@ def test_mapping_args_ordering():
 
 
 def test_unused_mapping():
-    with pytest.raises(DagsterInvalidDefinitionError, match='unmapped input'):
+    with pytest.raises(DagsterInvalidDefinitionError, match="unmapped input"):
 
         @composite_solid
         def unused_mapping(_):
@@ -482,27 +482,27 @@ def test_unused_mapping():
 
 
 def test_calling_soild_outside_fn():
-    with pytest.raises(DagsterInvariantViolationError, match='outside of a composition function'):
+    with pytest.raises(DagsterInvariantViolationError, match="outside of a composition function"):
 
         return_one()
 
 
 def test_compose_nothing():
-    @lambda_solid(input_defs=[InputDefinition('start', Nothing)])
+    @lambda_solid(input_defs=[InputDefinition("start", Nothing)])
     def go():
         pass
 
-    @composite_solid(input_defs=[InputDefinition('start', Nothing)])
+    @composite_solid(input_defs=[InputDefinition("start", Nothing)])
     def _compose(start):
         go(start)  # pylint: disable=too-many-function-args
 
 
 def test_multimap():
-    @composite_solid(output_defs=[OutputDefinition(int, 'x'), OutputDefinition(int, 'y')])
+    @composite_solid(output_defs=[OutputDefinition(int, "x"), OutputDefinition(int, "y")])
     def multimap(foo):
-        x = echo.alias('echo_1')(foo)
-        y = echo.alias('echo_2')(foo)
-        return {'x': x, 'y': y}
+        x = echo.alias("echo_1")(foo)
+        y = echo.alias("echo_2")(foo)
+        return {"x": x, "y": y}
 
     @pipeline
     def multimap_pipe():
@@ -510,15 +510,15 @@ def test_multimap():
         multimap(one)
 
     result = execute_pipeline(multimap_pipe)
-    assert result.result_for_handle('multimap.echo_1').output_value() == 1
-    assert result.result_for_handle('multimap.echo_2').output_value() == 1
+    assert result.result_for_handle("multimap.echo_1").output_value() == 1
+    assert result.result_for_handle("multimap.echo_2").output_value() == 1
 
 
 def test_reuse_inputs():
-    @composite_solid(input_defs=[InputDefinition('one', Int), InputDefinition('two', Int)])
+    @composite_solid(input_defs=[InputDefinition("one", Int), InputDefinition("two", Int)])
     def calculate(one, two):
         adder(one, two)
-        adder.alias('adder_2')(one, two)
+        adder.alias("adder_2")(one, two)
 
     @pipeline
     def calculate_pipeline():
@@ -527,8 +527,8 @@ def test_reuse_inputs():
         calculate(one, two)
 
     result = execute_pipeline(calculate_pipeline)
-    assert result.result_for_handle('calculate.adder').output_value() == 3
-    assert result.result_for_handle('calculate.adder_2').output_value() == 3
+    assert result.result_for_handle("calculate.adder").output_value() == 3
+    assert result.result_for_handle("calculate.adder_2").output_value() == 3
 
 
 def test_output_node_error():
@@ -549,34 +549,34 @@ def test_output_node_error():
 def test_pipeline_composition_metadata():
     @solid
     def metadata_solid(context):
-        return context.solid.tags['key']
+        return context.solid.tags["key"]
 
     @pipeline
     def metadata_test_pipeline():
-        metadata_solid.tag({'key': 'foo'}).alias('aliased_one')()
-        metadata_solid.alias('aliased_two').tag({'key': 'foo'}).tag({'key': 'bar'})()
-        metadata_solid.alias('aliased_three').tag({'key': 'baz'})()
-        metadata_solid.tag({'key': 'quux'})()
+        metadata_solid.tag({"key": "foo"}).alias("aliased_one")()
+        metadata_solid.alias("aliased_two").tag({"key": "foo"}).tag({"key": "bar"})()
+        metadata_solid.alias("aliased_three").tag({"key": "baz"})()
+        metadata_solid.tag({"key": "quux"})()
 
     res = execute_pipeline(metadata_test_pipeline)
 
-    assert res.result_for_solid('aliased_one').output_value() == 'foo'
-    assert res.result_for_solid('aliased_two').output_value() == 'bar'
-    assert res.result_for_solid('aliased_three').output_value() == 'baz'
-    assert res.result_for_solid('metadata_solid').output_value() == 'quux'
+    assert res.result_for_solid("aliased_one").output_value() == "foo"
+    assert res.result_for_solid("aliased_two").output_value() == "bar"
+    assert res.result_for_solid("aliased_three").output_value() == "baz"
+    assert res.result_for_solid("metadata_solid").output_value() == "quux"
 
 
 def test_composite_solid_composition_metadata():
     @solid
     def metadata_solid(context):
-        return context.solid.tags['key']
+        return context.solid.tags["key"]
 
     @composite_solid
     def metadata_composite():
-        metadata_solid.tag({'key': 'foo'}).alias('aliased_one')()
-        metadata_solid.alias('aliased_two').tag({'key': 'foo'}).tag({'key': 'bar'})()
-        metadata_solid.alias('aliased_three').tag({'key': 'baz'})()
-        metadata_solid.tag({'key': 'quux'})()
+        metadata_solid.tag({"key": "foo"}).alias("aliased_one")()
+        metadata_solid.alias("aliased_two").tag({"key": "foo"}).tag({"key": "bar"})()
+        metadata_solid.alias("aliased_three").tag({"key": "baz"})()
+        metadata_solid.tag({"key": "quux"})()
 
     @pipeline
     def metadata_test_pipeline():
@@ -585,25 +585,25 @@ def test_composite_solid_composition_metadata():
     res = execute_pipeline(metadata_test_pipeline)
 
     assert (
-        res.result_for_solid('metadata_composite').result_for_solid('aliased_one').output_value()
-        == 'foo'
+        res.result_for_solid("metadata_composite").result_for_solid("aliased_one").output_value()
+        == "foo"
     )
     assert (
-        res.result_for_solid('metadata_composite').result_for_solid('aliased_two').output_value()
-        == 'bar'
+        res.result_for_solid("metadata_composite").result_for_solid("aliased_two").output_value()
+        == "bar"
     )
     assert (
-        res.result_for_solid('metadata_composite').result_for_solid('aliased_three').output_value()
-        == 'baz'
+        res.result_for_solid("metadata_composite").result_for_solid("aliased_three").output_value()
+        == "baz"
     )
     assert (
-        res.result_for_solid('metadata_composite').result_for_solid('metadata_solid').output_value()
-        == 'quux'
+        res.result_for_solid("metadata_composite").result_for_solid("metadata_solid").output_value()
+        == "quux"
     )
 
 
 def test_uninvoked_solid_fails():
-    with pytest.raises(DagsterInvalidDefinitionError, match=r'.*Did you forget parentheses?'):
+    with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
 
         @pipeline
         def uninvoked_solid_pipeline():
@@ -613,22 +613,22 @@ def test_uninvoked_solid_fails():
 
 
 def test_uninvoked_aliased_solid_fails():
-    with pytest.raises(DagsterInvalidDefinitionError, match=r'.*Did you forget parentheses?'):
+    with pytest.raises(DagsterInvalidDefinitionError, match=r".*Did you forget parentheses?"):
 
         @pipeline
         def uninvoked_aliased_solid_pipeline():
-            add_one(return_one.alias('something'))
+            add_one(return_one.alias("something"))
 
         execute_pipeline(uninvoked_aliased_solid_pipeline)
 
 
 def test_alias_on_invoked_solid_fails():
     with pytest.raises(
-        DagsterInvariantViolationError, match=r'.*Consider checking the location of parentheses.'
+        DagsterInvariantViolationError, match=r".*Consider checking the location of parentheses."
     ):
 
         @pipeline
         def alias_on_invoked_solid_pipeline():
-            return_one().alias('something')
+            return_one().alias("something")
 
         execute_pipeline(alias_on_invoked_solid_pipeline)

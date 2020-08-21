@@ -11,11 +11,11 @@ from ..schedule import ScheduleDefinition
 
 class _Repository(object):
     def __init__(self, name=None, description=None):
-        self.name = check.opt_str_param(name, 'name')
-        self.description = check.opt_str_param(description, 'description')
+        self.name = check.opt_str_param(name, "name")
+        self.description = check.opt_str_param(description, "description")
 
     def __call__(self, fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
@@ -28,9 +28,9 @@ class _Repository(object):
             or isinstance(repository_definitions, RepositoryData)
         ):
             raise DagsterInvalidDefinitionError(
-                'Bad return value of type {type_} from repository construction function: must '
-                'return list, dict, or RepositoryData. See the @repository decorator docstring for '
-                'details and examples'.format(type_=type(repository_definitions)),
+                "Bad return value of type {type_} from repository construction function: must "
+                "return list, dict, or RepositoryData. See the @repository decorator docstring for "
+                "details and examples".format(type_=type(repository_definitions)),
             )
 
         if isinstance(repository_definitions, list):
@@ -44,12 +44,12 @@ class _Repository(object):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
                 raise DagsterInvalidDefinitionError(
-                    'Bad return value from repository construction function: all elements of list '
-                    'must be of type PipelineDefinition, PartitionSetDefinition, or '
-                    'ScheduleDefinition. Got {bad_definitions_formatted}.'.format(
-                        bad_definitions_formatted=', '.join(
+                    "Bad return value from repository construction function: all elements of list "
+                    "must be of type PipelineDefinition, PartitionSetDefinition, or "
+                    "ScheduleDefinition. Got {bad_definitions_formatted}.".format(
+                        bad_definitions_formatted=", ".join(
                             [
-                                'value of type {type_} at index {i}'.format(type_=type_, i=i)
+                                "value of type {type_} at index {i}".format(type_=type_, i=i)
                                 for i, type_ in bad_definitions
                             ]
                         )
@@ -59,17 +59,17 @@ class _Repository(object):
 
         elif isinstance(repository_definitions, dict):
             if not set(repository_definitions.keys()).issubset(
-                {'pipelines', 'partition_sets', 'schedules'}
+                {"pipelines", "partition_sets", "schedules"}
             ):
                 raise DagsterInvalidDefinitionError(
-                    'Bad return value from repository construction function: dict must not contain '
-                    'keys other than {{\'pipelines\', \'partition_sets\', \'schedules\'}}: found '
-                    '{bad_keys}'.format(
-                        bad_keys=', '.join(
+                    "Bad return value from repository construction function: dict must not contain "
+                    "keys other than {{'pipelines', 'partition_sets', 'schedules'}}: found "
+                    "{bad_keys}".format(
+                        bad_keys=", ".join(
                             [
-                                '\'{key}\''
+                                "'{key}'"
                                 for key in repository_definitions.keys()
-                                if key not in {'pipelines', 'parition_sets', 'schedules'}
+                                if key not in {"pipelines", "parition_sets", "schedules"}
                             ]
                         )
                     )
@@ -87,7 +87,7 @@ class _Repository(object):
 
 
 def repository(name=None, description=None):
-    '''Create a repository from the decorated function.
+    """Create a repository from the decorated function.
 
     The decorated function should take no arguments and its return value should one of:
 
@@ -218,7 +218,7 @@ def repository(name=None, description=None):
         def complex_repository():
             return ComplexRepositoryData('some_directory')
 
-    '''
+    """
     if callable(name):
         check.invariant(description is None)
 

@@ -23,24 +23,24 @@ from .compute_log_manager import (
 
 WATCHDOG_POLLING_TIMEOUT = 2.5
 
-IO_TYPE_EXTENSION = {ComputeIOType.STDOUT: 'out', ComputeIOType.STDERR: 'err'}
+IO_TYPE_EXTENSION = {ComputeIOType.STDOUT: "out", ComputeIOType.STDERR: "err"}
 
 MAX_FILENAME_LENGTH = 255
 
 
 class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
-    '''Stores copies of stdout & stderr for each compute step locally on disk.
-    '''
+    """Stores copies of stdout & stderr for each compute step locally on disk.
+    """
 
     def __init__(self, base_dir, inst_data=None):
         self._base_dir = base_dir
         self._subscription_manager = LocalComputeLogSubscriptionManager(self)
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @contextmanager
     def _watch_logs(self, pipeline_run, step_key=None):
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        check.opt_str_param(step_key, 'step_key')
+        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.opt_str_param(step_key, "step_key")
 
         key = self.get_key(pipeline_run, step_key)
         outpath = self.get_local_path(pipeline_run.run_id, key, ComputeIOType.STDOUT)
@@ -55,26 +55,26 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {'base_dir': str}
+        return {"base_dir": str}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
         return LocalComputeLogManager(inst_data=inst_data, **config_value)
 
     def _run_directory(self, run_id):
-        return os.path.join(self._base_dir, run_id, 'compute_logs')
+        return os.path.join(self._base_dir, run_id, "compute_logs")
 
     def get_local_path(self, run_id, key, io_type):
-        check.inst_param(io_type, 'io_type', ComputeIOType)
+        check.inst_param(io_type, "io_type", ComputeIOType)
         return self._get_local_path(run_id, key, IO_TYPE_EXTENSION[io_type])
 
     def complete_artifact_path(self, run_id, key):
-        return self._get_local_path(run_id, key, 'complete')
+        return self._get_local_path(run_id, key, "complete")
 
     def _get_local_path(self, run_id, key, extension):
         filename = "{}.{}".format(key, extension)
         if len(filename) > MAX_FILENAME_LENGTH:
-            filename = "{}.{}".format(hashlib.md5(key.encode('utf-8')).hexdigest(), extension)
+            filename = "{}.{}".format(hashlib.md5(key.encode("utf-8")).hexdigest(), extension)
         return os.path.join(self._run_directory(run_id), filename)
 
     def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
@@ -84,7 +84,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
             return ComputeLogFileData(path=path, data=None, cursor=0, size=0, download_url=None)
 
         # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             f.seek(cursor, os.SEEK_SET)
             data = f.read(max_bytes)
             cursor = f.tell()
@@ -94,7 +94,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         download_url = self.download_url(run_id, key, io_type)
         return ComputeLogFileData(
             path=path,
-            data=data.decode('utf-8'),
+            data=data.decode("utf-8"),
             cursor=cursor,
             size=stats.st_size,
             download_url=download_url,
@@ -107,19 +107,19 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         pass
 
     def get_key(self, pipeline_run, step_key):
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        check.opt_str_param(step_key, 'step_key')
+        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.opt_str_param(step_key, "step_key")
         return step_key or pipeline_run.pipeline_name
 
     def on_watch_finish(self, pipeline_run, step_key=None):
-        check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-        check.opt_str_param(step_key, 'step_key')
+        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.opt_str_param(step_key, "step_key")
         key = self.get_key(pipeline_run, step_key)
         touchpath = self.complete_artifact_path(pipeline_run.run_id, key)
         touch_file(touchpath)
 
     def download_url(self, run_id, key, io_type):
-        check.inst_param(io_type, 'io_type', ComputeIOType)
+        check.inst_param(io_type, "io_type", ComputeIOType)
         return "/download/{}/{}/{}".format(run_id, key, io_type.value)
 
     def on_subscribe(self, subscription):
@@ -135,10 +135,10 @@ class LocalComputeLogSubscriptionManager(object):
         self._observer.start()
 
     def _key(self, run_id, key):
-        return '{}:{}'.format(run_id, key)
+        return "{}:{}".format(run_id, key)
 
     def add_subscription(self, subscription):
-        check.inst_param(subscription, 'subscription', ComputeLogSubscription)
+        check.inst_param(subscription, "subscription", ComputeLogSubscription)
         key = self._key(subscription.run_id, subscription.key)
         self._subscriptions[key].append(subscription)
         self.watch(subscription.run_id, subscription.key)

@@ -29,16 +29,16 @@ def check_parquet_support():
 
         return
     except ImportError:
-        pytest.skip('Skipping parquet test as neither pyarrow nor fastparquet is present.')
+        pytest.skip("Skipping parquet test as neither pyarrow nor fastparquet is present.")
 
 
 def test_dataframe_csv_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition("df", DataFrame)])
     def df_as_config(_context, df):
-        assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
-        called['yup'] = True
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
+        called["yup"] = True
 
     @pipeline
     def test_pipeline():
@@ -47,26 +47,26 @@ def test_dataframe_csv_from_inputs():
     result = execute_pipeline(
         test_pipeline,
         {
-            'solids': {
-                'df_as_config': {
-                    'inputs': {'df': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
+            "solids": {
+                "df_as_config": {
+                    "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
                 }
             }
         },
     )
 
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_dataframe_wrong_sep_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition("df", DataFrame)])
     def df_as_config(_context, df):
         # this is the pandas behavior
-        assert df.to_dict('list') == {'num1,num2': ['1,2', '3,4']}
-        called['yup'] = True
+        assert df.to_dict("list") == {"num1,num2": ["1,2", "3,4"]}
+        called["yup"] = True
 
     @pipeline
     def test_pipeline():
@@ -75,10 +75,10 @@ def test_dataframe_wrong_sep_from_inputs():
     result = execute_pipeline(
         test_pipeline,
         {
-            'solids': {
-                'df_as_config': {
-                    'inputs': {
-                        'df': {'csv': {'path': file_relative_path(__file__, 'num.csv'), 'sep': '|'}}
+            "solids": {
+                "df_as_config": {
+                    "inputs": {
+                        "df": {"csv": {"path": file_relative_path(__file__, "num.csv"), "sep": "|"}}
                     }
                 }
             }
@@ -86,16 +86,16 @@ def test_dataframe_wrong_sep_from_inputs():
     )
 
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_dataframe_pipe_sep_csv_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition("df", DataFrame)])
     def df_as_config(_context, df):
-        assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
-        called['yup'] = True
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
+        called["yup"] = True
 
     @pipeline
     def test_pipeline():
@@ -104,13 +104,13 @@ def test_dataframe_pipe_sep_csv_from_inputs():
     result = execute_pipeline(
         test_pipeline,
         {
-            'solids': {
-                'df_as_config': {
-                    'inputs': {
-                        'df': {
-                            'csv': {
-                                'path': file_relative_path(__file__, 'num_pipes.csv'),
-                                'sep': '|',
+            "solids": {
+                "df_as_config": {
+                    "inputs": {
+                        "df": {
+                            "csv": {
+                                "path": file_relative_path(__file__, "num_pipes.csv"),
+                                "sep": "|",
                             }
                         }
                     }
@@ -120,15 +120,15 @@ def test_dataframe_pipe_sep_csv_from_inputs():
     )
 
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_dataframe_csv_missing_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition("df", DataFrame)])
     def df_as_input(_context, df):  # pylint: disable=W0613
-        called['yup'] = True
+        called["yup"] = True
 
     @pipeline
     def missing_inputs():
@@ -140,12 +140,12 @@ def test_dataframe_csv_missing_inputs():
     assert len(exc_info.value.errors) == 1
 
     assert exc_info.value.errors[0].message == (
-        '''Missing required field "solids" at the root. '''
-        '''Available Fields: "['execution', 'intermediate_storage', 'loggers', '''
-        ''''resources', 'solids', 'storage']".'''
+        """Missing required field "solids" at the root. """
+        """Available Fields: "['execution', 'intermediate_storage', 'loggers', """
+        """'resources', 'solids', 'storage']"."""
     )
 
-    assert 'yup' not in called
+    assert "yup" not in called
 
 
 def test_dataframe_csv_missing_input_collision():
@@ -155,9 +155,9 @@ def test_dataframe_csv_missing_input_collision():
     def df_as_output(_context):
         return pd.DataFrame()
 
-    @solid(input_defs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition("df", DataFrame)])
     def df_as_input(_context, df):  # pylint: disable=W0613
-        called['yup'] = True
+        called["yup"] = True
 
     @pipeline
     def overlapping():
@@ -167,9 +167,9 @@ def test_dataframe_csv_missing_input_collision():
         execute_pipeline(
             overlapping,
             {
-                'solids': {
-                    'df_as_input': {
-                        'inputs': {'df': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
+                "solids": {
+                    "df_as_input": {
+                        "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
                     }
                 }
             },
@@ -179,7 +179,7 @@ def test_dataframe_csv_missing_input_collision():
         exc_info.value
     )
 
-    assert 'yup' not in called
+    assert "yup" not in called
 
 
 def test_dataframe_parquet_from_inputs():
@@ -187,10 +187,10 @@ def test_dataframe_parquet_from_inputs():
 
     called = {}
 
-    @solid(input_defs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition("df", DataFrame)])
     def df_as_config(_context, df):
-        assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
-        called['yup'] = True
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
+        called["yup"] = True
 
     @pipeline
     def test_pipeline():
@@ -199,10 +199,10 @@ def test_dataframe_parquet_from_inputs():
     result = execute_pipeline(
         test_pipeline,
         {
-            'solids': {
-                'df_as_config': {
-                    'inputs': {
-                        'df': {'parquet': {'path': file_relative_path(__file__, 'num.parquet')}}
+            "solids": {
+                "df_as_config": {
+                    "inputs": {
+                        "df": {"parquet": {"path": file_relative_path(__file__, "num.parquet")}}
                     }
                 }
             }
@@ -210,16 +210,16 @@ def test_dataframe_parquet_from_inputs():
     )
 
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_dataframe_table_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition("df", DataFrame)])
     def df_as_config(_context, df):
-        assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
-        called['yup'] = True
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
+        called["yup"] = True
 
     @pipeline
     def test_pipeline():
@@ -228,10 +228,10 @@ def test_dataframe_table_from_inputs():
     result = execute_pipeline(
         test_pipeline,
         {
-            'solids': {
-                'df_as_config': {
-                    'inputs': {
-                        'df': {'table': {'path': file_relative_path(__file__, 'num_table.txt')}}
+            "solids": {
+                "df_as_config": {
+                    "inputs": {
+                        "df": {"table": {"path": file_relative_path(__file__, "num_table.txt")}}
                     }
                 }
             }
@@ -239,13 +239,13 @@ def test_dataframe_table_from_inputs():
     )
 
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_dataframe_csv_materialization():
     @solid(output_defs=[OutputDefinition(DataFrame)])
     def return_df(_context):
-        return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
+        return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
     @pipeline
     def return_df_pipeline():
@@ -254,13 +254,13 @@ def test_dataframe_csv_materialization():
     with get_temp_file_name() as filename:
         result = execute_pipeline(
             return_df_pipeline,
-            {'solids': {'return_df': {'outputs': [{'result': {'csv': {'path': filename}}}]}}},
+            {"solids": {"return_df": {"outputs": [{"result": {"csv": {"path": filename}}}]}}},
         )
 
         assert result.success
 
         df = pd.read_csv(filename)
-        assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
 
 
 def test_dataframe_parquet_materialization():
@@ -268,7 +268,7 @@ def test_dataframe_parquet_materialization():
 
     @solid(output_defs=[OutputDefinition(DataFrame)])
     def return_df(_context):
-        return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
+        return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
     @pipeline
     def return_df_pipeline():
@@ -277,32 +277,32 @@ def test_dataframe_parquet_materialization():
     with get_temp_file_name() as filename:
         result = execute_pipeline(
             return_df_pipeline,
-            {'solids': {'return_df': {'outputs': [{'result': {'parquet': {'path': filename}}}]}}},
+            {"solids": {"return_df": {"outputs": [{"result": {"parquet": {"path": filename}}}]}}},
         )
 
         assert result.success
 
         df = pd.read_parquet(filename)
-        assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
 
 
 def test_dataframe_table_materialization():
     @solid(output_defs=[OutputDefinition(DataFrame)])
     def return_df(_context):
-        return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
+        return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
     @pipeline
     def return_df_pipeline():
         return_df()
 
     with get_temp_file_name() as filename:
-        filename = '/tmp/table_test.txt'
+        filename = "/tmp/table_test.txt"
         result = execute_pipeline(
             return_df_pipeline,
-            {'solids': {'return_df': {'outputs': [{'result': {'table': {'path': filename}}}]}}},
+            {"solids": {"return_df": {"outputs": [{"result": {"table": {"path": filename}}}]}}},
         )
 
         assert result.success
 
-        df = pd.read_csv(filename, sep='\t')
-        assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
+        df = pd.read_csv(filename, sep="\t")
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}

@@ -24,15 +24,15 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.test_utils import create_run_for_test
 from dagster.seven import multiprocessing
 
-HELLO_SOLID = 'HELLO SOLID'
-HELLO_RESOURCE = 'HELLO RESOURCE'
-SEPARATOR = os.linesep if (os.name == 'nt' and sys.version_info < (3,)) else '\n'
+HELLO_SOLID = "HELLO SOLID"
+HELLO_RESOURCE = "HELLO RESOURCE"
+SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
 
 
 @resource
 def resource_a(_):
     print(HELLO_RESOURCE)
-    return 'A'
+    return "A"
 
 
 @solid
@@ -40,14 +40,14 @@ def spawn(_):
     return 1
 
 
-@solid(input_defs=[InputDefinition('num', int)], required_resource_keys={'a'})
+@solid(input_defs=[InputDefinition("num", int)], required_resource_keys={"a"})
 def spew(_, num):
     print(HELLO_SOLID)
     return num
 
 
 def define_pipeline():
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
     def spew_pipeline():
         spew(spew(spawn()))
 
@@ -55,7 +55,7 @@ def define_pipeline():
 
 
 def normalize_file_content(s):
-    return '\n'.join([line for line in s.replace(os.linesep, '\n').split('\n') if line])
+    return "\n".join([line for line in s.replace(os.linesep, "\n").split("\n") if line])
 
 
 @pytest.mark.skipif(
@@ -74,11 +74,11 @@ def test_compute_log_to_disk():
         if event.event_type == DagsterEventType.STEP_START
     ]
     for step_key in compute_steps:
-        if step_key.startswith('spawn'):
+        if step_key.startswith("spawn"):
             continue
         compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
         assert os.path.exists(compute_io_path)
-        with open(compute_io_path, 'r') as stdout_file:
+        with open(compute_io_path, "r") as stdout_file:
             assert normalize_file_content(stdout_file.read()) == HELLO_SOLID
 
 
@@ -91,7 +91,7 @@ def test_compute_log_to_disk_multiprocess():
     manager = instance.compute_log_manager
     result = execute_pipeline(
         spew_pipeline,
-        run_config={'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
         instance=instance,
     )
     assert result.success
@@ -102,11 +102,11 @@ def test_compute_log_to_disk_multiprocess():
         if event.event_type == DagsterEventType.STEP_START
     ]
     for step_key in compute_steps:
-        if step_key.startswith('spawn'):
+        if step_key.startswith("spawn"):
             continue
         compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
         assert os.path.exists(compute_io_path)
-        with open(compute_io_path, 'r') as stdout_file:
+        with open(compute_io_path, "r") as stdout_file:
             assert normalize_file_content(stdout_file.read()) == HELLO_SOLID
 
 
@@ -125,19 +125,19 @@ def test_compute_log_manager():
         if event.event_type == DagsterEventType.STEP_START
     ]
     assert len(compute_steps) == 3
-    step_key = 'spew.compute'
+    step_key = "spew.compute"
     assert manager.is_watch_completed(result.run_id, step_key)
 
     stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
     assert normalize_file_content(stdout.data) == HELLO_SOLID
 
     stderr = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDERR)
-    cleaned_logs = stderr.data.replace('\x1b[34m', '').replace('\x1b[0m', '')
-    assert 'dagster - DEBUG - spew_pipeline - ' in cleaned_logs
+    cleaned_logs = stderr.data.replace("\x1b[34m", "").replace("\x1b[0m", "")
+    assert "dagster - DEBUG - spew_pipeline - " in cleaned_logs
 
-    bad_logs = manager.read_logs_file('not_a_run_id', step_key, ComputeIOType.STDOUT)
+    bad_logs = manager.read_logs_file("not_a_run_id", step_key, ComputeIOType.STDOUT)
     assert bad_logs.data is None
-    assert not manager.is_watch_completed('not_a_run_id', step_key)
+    assert not manager.is_watch_completed("not_a_run_id", step_key)
 
 
 @pytest.mark.skipif(
@@ -146,7 +146,7 @@ def test_compute_log_manager():
 def test_compute_log_manager_subscriptions():
     instance = DagsterInstance.local_temp()
     spew_pipeline = define_pipeline()
-    step_key = 'spew.compute'
+    step_key = "spew.compute"
     result = execute_pipeline(spew_pipeline, instance=instance)
     stdout_observable = instance.compute_log_manager.observable(
         result.run_id, step_key, ComputeIOType.STDOUT
@@ -167,7 +167,7 @@ def test_compute_log_manager_subscriptions():
 
 
 def gen_solid_name(length):
-    return ''.join(random.choice(string.ascii_lowercase) for x in range(length))
+    return "".join(random.choice(string.ascii_lowercase) for x in range(length))
 
 
 @pytest.mark.skipif(
@@ -176,7 +176,7 @@ def gen_solid_name(length):
 def test_long_solid_names():
     solid_name = gen_solid_name(300)
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={'a': resource_a})])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
     def long_pipeline():
         spew.alias(name=solid_name)()
 
@@ -186,7 +186,7 @@ def test_long_solid_names():
     result = execute_pipeline(
         long_pipeline,
         instance=instance,
-        run_config={'solids': {solid_name: {'inputs': {'num': 1}}}},
+        run_config={"solids": {solid_name: {"inputs": {"num": 1}}}},
     )
     assert result.success
 
@@ -212,20 +212,20 @@ def execute_inner(step_key, pipeline_run, instance_ref):
 def inner_step(instance, pipeline_run, step_key):
     with instance.compute_log_manager.watch(pipeline_run, step_key=step_key):
         time.sleep(0.1)
-        print(step_key, 'inner 1')
-        print(step_key, 'inner 2')
-        print(step_key, 'inner 3')
+        print(step_key, "inner 1")
+        print(step_key, "inner 2")
+        print(step_key, "inner 3")
         time.sleep(0.1)
 
 
 def expected_inner_output(step_key):
-    return '\n'.join(
+    return "\n".join(
         ["{step_key} inner {num}".format(step_key=step_key, num=i + 1) for i in range(3)]
     )
 
 
 def expected_outer_prefix():
-    return '\n'.join(["outer {num}".format(num=i + 1) for i in range(3)])
+    return "\n".join(["outer {num}".format(num=i + 1) for i in range(3)])
 
 
 @pytest.mark.skipif(
@@ -233,15 +233,15 @@ def expected_outer_prefix():
 )
 def test_single():
     instance = DagsterInstance.local_temp()
-    pipeline_name = 'foo_pipeline'
+    pipeline_name = "foo_pipeline"
     pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
 
-    step_keys = ['A', 'B', 'C']
+    step_keys = ["A", "B", "C"]
 
     with instance.compute_log_manager.watch(pipeline_run):
-        print('outer 1')
-        print('outer 2')
-        print('outer 3')
+        print("outer 1")
+        print("outer 2")
+        print("outer 3")
 
         for step_key in step_keys:
             inner_step(instance, pipeline_run, step_key)
@@ -264,15 +264,15 @@ def test_single():
 )
 def test_multi():
     instance = DagsterInstance.local_temp()
-    pipeline_name = 'foo_pipeline'
+    pipeline_name = "foo_pipeline"
     pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
 
-    step_keys = ['A', 'B', 'C']
+    step_keys = ["A", "B", "C"]
 
     with instance.compute_log_manager.watch(pipeline_run):
-        print('outer 1')  # pylint: disable=print-call
-        print('outer 2')  # pylint: disable=print-call
-        print('outer 3')  # pylint: disable=print-call
+        print("outer 1")  # pylint: disable=print-call
+        print("outer 2")  # pylint: disable=print-call
+        print("outer 3")  # pylint: disable=print-call
 
         for step_key in step_keys:
             process = multiprocessing.Process(

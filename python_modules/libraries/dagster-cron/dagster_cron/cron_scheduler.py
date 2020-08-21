@@ -13,11 +13,11 @@ from dagster.serdes import ConfigurableClass
 
 
 class SystemCronScheduler(Scheduler, ConfigurableClass):
-    '''Scheduler implementation that uses the local systems cron. Only works on unix systems that
+    """Scheduler implementation that uses the local systems cron. Only works on unix systems that
     have cron.
 
     Enable this scheduler by adding it to your ``dagster.yaml`` in ``$DAGSTER_HOME``.
-    '''
+    """
 
     def __init__(
         self, inst_data=None,
@@ -42,13 +42,13 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
     def debug_info(self):
         return "Running Cron Jobs:\n{jobs}\n".format(
             jobs="\n".join(
-                [str(job) for job in self.get_cron_tab() if 'dagster-schedule:' in job.comment]
+                [str(job) for job in self.get_cron_tab() if "dagster-schedule:" in job.comment]
             )
         )
 
     def start_schedule(self, instance, external_schedule):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
         schedule_origin_id = external_schedule.get_origin_id()
 
         # If the cron job already exists, remove it. This prevents duplicate entries.
@@ -81,8 +81,8 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
             )
 
     def stop_schedule(self, instance, schedule_origin_id):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         schedule = self._get_schedule_state(instance, schedule_origin_id)
 
@@ -101,7 +101,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
     def wipe(self, instance):
         # Note: This method deletes schedules from ALL repositories
-        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(instance, "instance", DagsterInstance)
 
         # Delete all script files
         script_directory = os.path.join(instance.schedules_directory(), "scripts")
@@ -116,12 +116,12 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         # Remove all cron jobs
         with self.get_cron_tab() as cron_tab:
             for job in cron_tab:
-                if 'dagster-schedule:' in job.comment:
+                if "dagster-schedule:" in job.comment:
                     cron_tab.remove_all(comment=job.comment)
 
     def _get_bash_script_file_path(self, instance, schedule_origin_id):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         script_directory = os.path.join(instance.schedules_directory(), "scripts")
         utils.mkdir_p(script_directory)
@@ -130,7 +130,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         return os.path.join(script_directory, script_file_name)
 
     def _cron_tag_for_schedule(self, schedule_origin_id):
-        return 'dagster-schedule: {schedule_origin_id}'.format(
+        return "dagster-schedule: {schedule_origin_id}".format(
             schedule_origin_id=schedule_origin_id
         )
 
@@ -150,7 +150,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         with self.get_cron_tab() as cron_tab:
             job = cron_tab.new(
                 command=command,
-                comment='dagster-schedule: {schedule_origin_id}'.format(
+                comment="dagster-schedule: {schedule_origin_id}".format(
                     schedule_origin_id=schedule_origin_id
                 ),
             )
@@ -172,8 +172,8 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         return len(list(matching_jobs))
 
     def _get_or_create_logs_directory(self, instance, schedule_origin_id):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         logs_directory = os.path.join(instance.schedules_directory(), "logs", schedule_origin_id)
         if not os.path.isdir(logs_directory):
@@ -182,11 +182,11 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         return logs_directory
 
     def get_logs_path(self, instance, schedule_origin_id):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         logs_directory = self._get_or_create_logs_directory(instance, schedule_origin_id)
-        return os.path.join(logs_directory, 'scheduler.log')
+        return os.path.join(logs_directory, "scheduler.log")
 
     def _write_bash_script_to_file(self, instance, external_schedule):
         # Get path to store bash script
@@ -201,9 +201,9 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         local_target = external_schedule.get_origin()
 
         # Environment information needed for execution
-        dagster_home = os.getenv('DAGSTER_HOME')
+        dagster_home = os.getenv("DAGSTER_HOME")
 
-        script_contents = '''
+        script_contents = """
             #!/bin/bash
             export DAGSTER_HOME={dagster_home}
             export LANG=en_US.UTF-8
@@ -212,7 +212,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
             export RUN_DATE=$(date "+%Y%m%dT%H%M%S")
 
             {python_exe} -m dagster api launch_scheduled_execution --schedule_name {schedule_name} {repo_cli_args} "{result_file}"
-        '''.format(
+        """.format(
             python_exe=local_target.executable_path,
             schedule_name=external_schedule.name,
             repo_cli_args=local_target.get_repo_cli_args(),
@@ -226,7 +226,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
             ),
         )
 
-        with io.open(script_file, 'w', encoding='utf-8') as f:
+        with io.open(script_file, "w", encoding="utf-8") as f:
             f.write(six.text_type(script_contents))
 
         st = os.stat(script_file)

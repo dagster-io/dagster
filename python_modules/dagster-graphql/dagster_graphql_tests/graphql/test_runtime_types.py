@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
-RUNTIME_TYPE_QUERY = '''
+RUNTIME_TYPE_QUERY = """
 query DagsterTypeQuery($selector: PipelineSelector! $dagsterTypeName: String!)
 {
     pipelineOrError(params: $selector) {
@@ -23,9 +23,9 @@ query DagsterTypeQuery($selector: PipelineSelector! $dagsterTypeName: String!)
         }
     }
 }
-'''
+"""
 
-ALL_RUNTIME_TYPES_QUERY = '''
+ALL_RUNTIME_TYPES_QUERY = """
 fragment schemaTypeFragment on ConfigType {
   key
   ... on CompositeConfigType {
@@ -78,65 +78,65 @@ fragment dagsterTypeFragment on DagsterType {
     }
   }
 }
-'''
+"""
 
 
 def test_dagster_type_query_works(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
     result = execute_dagster_graphql(
         graphql_context,
         RUNTIME_TYPE_QUERY,
-        {'selector': selector, 'dagsterTypeName': 'PoorMansDataFrame',},
+        {"selector": selector, "dagsterTypeName": "PoorMansDataFrame",},
     )
 
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularDagsterType'
+        result.data["pipelineOrError"]["dagsterTypeOrError"]["__typename"] == "RegularDagsterType"
     )
-    assert result.data['pipelineOrError']['dagsterTypeOrError']['name'] == 'PoorMansDataFrame'
+    assert result.data["pipelineOrError"]["dagsterTypeOrError"]["name"] == "PoorMansDataFrame"
 
 
 def test_dagster_type_builtin_query(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
     result = execute_dagster_graphql(
-        graphql_context, RUNTIME_TYPE_QUERY, {'selector': selector, 'dagsterTypeName': 'Int',},
+        graphql_context, RUNTIME_TYPE_QUERY, {"selector": selector, "dagsterTypeName": "Int",},
     )
 
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['dagsterTypeOrError']['__typename'] == 'RegularDagsterType'
+        result.data["pipelineOrError"]["dagsterTypeOrError"]["__typename"] == "RegularDagsterType"
     )
-    assert result.data['pipelineOrError']['dagsterTypeOrError']['name'] == 'Int'
-    assert result.data['pipelineOrError']['dagsterTypeOrError']['isBuiltin']
+    assert result.data["pipelineOrError"]["dagsterTypeOrError"]["name"] == "Int"
+    assert result.data["pipelineOrError"]["dagsterTypeOrError"]["isBuiltin"]
 
 
 def test_dagster_type_or_error_pipeline_not_found(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, 'nope')
+    selector = infer_pipeline_selector(graphql_context, "nope")
     result = execute_dagster_graphql(
-        graphql_context, RUNTIME_TYPE_QUERY, {'selector': selector, 'dagsterTypeName': 'nope',},
+        graphql_context, RUNTIME_TYPE_QUERY, {"selector": selector, "dagsterTypeName": "nope",},
     )
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineOrError']['__typename'] == 'PipelineNotFoundError'
-    assert result.data['pipelineOrError']['pipelineName'] == 'nope'
+    assert result.data["pipelineOrError"]["__typename"] == "PipelineNotFoundError"
+    assert result.data["pipelineOrError"]["pipelineName"] == "nope"
 
 
 def test_dagster_type_or_error_type_not_found(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
+    selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
     result = execute_dagster_graphql(
-        graphql_context, RUNTIME_TYPE_QUERY, {'selector': selector, 'dagsterTypeName': 'nope',},
+        graphql_context, RUNTIME_TYPE_QUERY, {"selector": selector, "dagsterTypeName": "nope",},
     )
 
     assert not result.errors
     assert result.data
     assert (
-        result.data['pipelineOrError']['dagsterTypeOrError']['__typename']
-        == 'DagsterTypeNotFoundError'
+        result.data["pipelineOrError"]["dagsterTypeOrError"]["__typename"]
+        == "DagsterTypeNotFoundError"
     )
-    assert result.data['pipelineOrError']['dagsterTypeOrError']['dagsterTypeName'] == 'nope'
+    assert result.data["pipelineOrError"]["dagsterTypeOrError"]["dagsterTypeName"] == "nope"
 
 
 def test_smoke_test_dagster_type_system(graphql_context):

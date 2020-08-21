@@ -10,19 +10,19 @@ from ..preset import PresetDefinition
 
 class _Pipeline(object):
     def __init__(self, name=None, mode_defs=None, preset_defs=None, description=None, tags=None):
-        self.name = check.opt_str_param(name, 'name')
-        self.mode_definitions = check.opt_list_param(mode_defs, 'mode_defs', ModeDefinition)
-        self.preset_definitions = check.opt_list_param(preset_defs, 'preset_defs', PresetDefinition)
-        self.description = check.opt_str_param(description, 'description')
-        self.tags = check.opt_dict_param(tags, 'tags')
+        self.name = check.opt_str_param(name, "name")
+        self.mode_definitions = check.opt_list_param(mode_defs, "mode_defs", ModeDefinition)
+        self.preset_definitions = check.opt_list_param(preset_defs, "preset_defs", PresetDefinition)
+        self.description = check.opt_str_param(description, "description")
+        self.tags = check.opt_dict_param(tags, "tags")
 
     def __call__(self, fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
 
-        enter_composition(self.name, '@pipeline')
+        enter_composition(self.name, "@pipeline")
         try:
             fn()
         finally:
@@ -42,7 +42,7 @@ class _Pipeline(object):
 
 
 def pipeline(name=None, description=None, mode_defs=None, preset_defs=None, tags=None):
-    '''Create a pipeline with the specified parameters from the decorated composition function.
+    """Create a pipeline with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up the dependency graph of the pipeline by writing a
     function that invokes solids and passes the output to other solids.
@@ -85,7 +85,7 @@ def pipeline(name=None, description=None, mode_defs=None, preset_defs=None, tags
             def add_pipeline():
                 add_one(mult_two(emit_one()))
 
-    '''
+    """
     if callable(name):
         check.invariant(description is None)
         return _Pipeline()(name)

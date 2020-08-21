@@ -20,7 +20,7 @@ def get_solids(repo):
 
 
 def get_used_solid_map(repo):
-    check.inst_param(repo, 'repo', ExternalRepository)
+    check.inst_param(repo, "repo", ExternalRepository)
 
     inv_by_def_name = defaultdict(list)
     definitions = []

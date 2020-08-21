@@ -29,11 +29,11 @@ class InMemoryExecutablePipeline(ExecutablePipeline, object):
     def _resolve_solid_selection(self, solid_selection):
         # resolve a list of solid selection queries to a frozenset of qualified solid names
         # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-        check.list_param(solid_selection, 'solid_selection', of_type=str)
+        check.list_param(solid_selection, "solid_selection", of_type=str)
         solids_to_execute = parse_solid_selection(self.get_definition(), solid_selection)
         if len(solids_to_execute) == 0:
             raise DagsterInvalidSubsetError(
-                'No qualified solids to execute found for solid_selection={requested}'.format(
+                "No qualified solids to execute found for solid_selection={requested}".format(
                     requested=solid_selection
                 )
             )
@@ -55,7 +55,7 @@ class InMemoryExecutablePipeline(ExecutablePipeline, object):
 
     def subset_for_execution(self, solid_selection):
         # take a list of solid queries and resolve the queries to names of solids to execute
-        check.list_param(solid_selection, 'solid_selection', of_type=str)
+        check.list_param(solid_selection, "solid_selection", of_type=str)
 
         solids_to_execute = self._resolve_solid_selection(solid_selection)
         return self._subset_for_execution(solids_to_execute, solid_selection)
@@ -63,7 +63,7 @@ class InMemoryExecutablePipeline(ExecutablePipeline, object):
     def subset_for_execution_from_existing_pipeline(self, solids_to_execute):
         # take a frozenset of resolved solid names from an existing pipeline run
         # so there's no need to parse the selection
-        check.set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+        check.set_param(solids_to_execute, "solids_to_execute", of_type=str)
 
         return self._subset_for_execution(solids_to_execute)
 

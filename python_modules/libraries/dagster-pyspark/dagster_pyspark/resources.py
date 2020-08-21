@@ -6,7 +6,7 @@ from dagster import check, resource
 
 
 def spark_session_from_config(spark_conf=None):
-    spark_conf = check.opt_dict_param(spark_conf, 'spark_conf')
+    spark_conf = check.opt_dict_param(spark_conf, "spark_conf")
     builder = SparkSession.builder
     flat = flatten_dict(spark_conf)
     for key, value in flat:
@@ -28,9 +28,9 @@ class PySparkResource(object):
         return self.spark_session.sparkContext
 
 
-@resource({'spark_conf': spark_config()})
+@resource({"spark_conf": spark_config()})
 def pyspark_resource(init_context):
-    '''This resource provides access to a PySpark SparkSession for executing PySpark code within
+    """This resource provides access to a PySpark SparkSession for executing PySpark code within
     Dagster.
 
     Example:
@@ -38,5 +38,5 @@ def pyspark_resource(init_context):
     .. literalinclude:: ../../../../../examples/basic_pyspark/repo.py
        :language: python
 
-    '''
-    return PySparkResource(init_context.resource_config['spark_conf'])
+    """
+    return PySparkResource(init_context.resource_config["spark_conf"])

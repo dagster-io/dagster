@@ -32,8 +32,8 @@ TEST_TIMEOUT = 5
 def mode_def(event_callback):
     return ModeDefinition(
         logger_defs={
-            'callback': construct_event_logger(event_callback),
-            'console': colored_console_logger,
+            "callback": construct_event_logger(event_callback),
+            "console": colored_console_logger,
         }
     )
 
@@ -52,7 +52,7 @@ def synthesize_events(solids_fn, run_id=None):
     instance = DagsterInstance.local_temp()
 
     pipeline_run = instance.create_run_for_pipeline(
-        a_pipe, run_id=run_id, run_config={'loggers': {'callback': {}, 'console': {}}}
+        a_pipe, run_id=run_id, run_config={"loggers": {"callback": {}, "console": {}}}
     )
 
     result = execute_run(InMemoryExecutablePipeline(a_pipe), pipeline_run, instance)
@@ -65,7 +65,7 @@ def synthesize_events(solids_fn, run_id=None):
 def fetch_all_events(conn_string):
     conn = get_conn(conn_string)
     with conn.cursor() as curs:
-        curs.execute('SELECT event from event_logs')
+        curs.execute("SELECT event from event_logs")
         return curs.fetchall()
 
 
@@ -470,17 +470,17 @@ def test_listen_notify_filter_run_event(conn_string):
 
 
 def test_load_from_config(hostname):
-    url_cfg = '''
+    url_cfg = """
       event_log_storage:
         module: dagster_postgres.event_log
         class: PostgresEventLogStorage
         config:
             postgres_url: postgresql://test:test@{hostname}:5432/test
-    '''.format(
+    """.format(
         hostname=hostname
     )
 
-    explicit_cfg = '''
+    explicit_cfg = """
       event_log_storage:
         module: dagster_postgres.event_log
         class: PostgresEventLogStorage
@@ -490,7 +490,7 @@ def test_load_from_config(hostname):
               password: test
               hostname: {hostname}
               db_name: test
-    '''.format(
+    """.format(
         hostname=hostname
     )
 
@@ -506,16 +506,16 @@ def test_load_from_config(hostname):
 def test_asset_materialization(conn_string):
     event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
 
-    asset_key = AssetKey(['path', 'to', 'asset_one'])
+    asset_key = AssetKey(["path", "to", "asset_one"])
 
     @solid
     def materialize_one(_):
         yield AssetMaterialization(
             asset_key=asset_key,
             metadata_entries=[
-                EventMetadataEntry.text('hello', 'text'),
-                EventMetadataEntry.json({'hello': 'world'}, 'json'),
-                EventMetadataEntry.float(1.0, 'one'),
+                EventMetadataEntry.text("hello", "text"),
+                EventMetadataEntry.json({"hello": "world"}, "json"),
+                EventMetadataEntry.float(1.0, "one"),
             ],
         )
         yield Output(1)
@@ -542,7 +542,7 @@ def test_asset_events_error_parsing(conn_string):
     def mock_log(msg):
         _logs.append(msg)
 
-    asset_key = AssetKey('asset_one')
+    asset_key = AssetKey("asset_one")
 
     @solid
     def materialize_one(_):
@@ -557,27 +557,27 @@ def test_asset_events_error_parsing(conn_string):
         event_log_storage.store_event(event)
 
     with mock.patch(
-        'dagster.core.storage.event_log.sql_event_log.logging.warning', side_effect=mock_log,
+        "dagster.core.storage.event_log.sql_event_log.logging.warning", side_effect=mock_log,
     ):
         with mock.patch(
-            'dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple',
-            return_value='not_an_event_record',
+            "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+            return_value="not_an_event_record",
         ):
 
             assert asset_key in set(event_log_storage.get_all_asset_keys())
             events = event_log_storage.get_asset_events(asset_key)
             assert len(events) == 0
             assert len(_logs) == 1
-            assert re.match('Could not resolve asset event record as EventRecord', _logs[0])
+            assert re.match("Could not resolve asset event record as EventRecord", _logs[0])
 
         _logs = []  # reset logs
 
         with mock.patch(
-            'dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple',
-            side_effect=seven.JSONDecodeError('error', '', 0),
+            "dagster.core.storage.event_log.sql_event_log.deserialize_json_to_dagster_namedtuple",
+            side_effect=seven.JSONDecodeError("error", "", 0),
         ):
             assert asset_key in set(event_log_storage.get_all_asset_keys())
             events = event_log_storage.get_asset_events(asset_key)
             assert len(events) == 0
             assert len(_logs) == 1
-            assert re.match('Could not parse asset event record id', _logs[0])
+            assert re.match("Could not parse asset event record id", _logs[0])

@@ -1,4 +1,4 @@
-'''
+"""
 Dauphin is wrapper module around graphene meant to provide a couple additional
 features. Most importantly is a type registry. Instead of referring to
 the class that corresponds to the GraphQL type everywhere, you are instead
@@ -23,7 +23,7 @@ as opposed to
 
 graphene.NonNull(graphene.List(graphene.NonNull(graphene.String)))
 
-'''
+"""
 from functools import partial
 
 import graphene
@@ -95,9 +95,9 @@ class DauphinRegistry(object):
 
     def create_schema(self):
         return DauphinSchema(
-            query=self.getType('Query'),
-            mutation=self.getTypeOrNull('Mutation'),
-            subscription=self.getTypeOrNull('Subscription'),
+            query=self.getType("Query"),
+            mutation=self.getTypeOrNull("Mutation"),
+            subscription=self.getTypeOrNull("Subscription"),
             types=self.getAllImplementationTypes(),
             registry=self,
         )
@@ -108,7 +108,7 @@ class DauphinRegistry(object):
     def getType(self, typeName):
         graphene_type = self.getTypeOrNull(typeName)
         if not graphene_type:
-            raise Exception('No such type {typeName}.'.format(typeName=typeName))
+            raise Exception("No such type {typeName}.".format(typeName=typeName))
         return graphene_type
 
     def getAllTypes(self):
@@ -124,10 +124,10 @@ class DauphinRegistry(object):
                 self._typeMap[meta.name] = graphene_type
             else:
                 raise Exception(
-                    'Type {typeName} already exists in the registry.'.format(typeName=meta.name)
+                    "Type {typeName} already exists in the registry.".format(typeName=meta.name)
                 )
         else:
-            raise Exception('Cannot add unnamed type or a non-type to registry.')
+            raise Exception("Cannot add unnamed type or a non-type to registry.")
 
     def non_null_list(self, of_type):
         return self.NonNull(self.List(self.NonNull(of_type)))
@@ -184,7 +184,7 @@ class DauphinTypeMap(GrapheneTypeMap):
         if type_meta.possible_types:
             # FIXME: is_type_of_from_possible_types does not exist
             # is_type_of = partial(is_type_of_from_possible_types, type_meta.possible_types)
-            raise Exception('Not sure what is going on here. Untested codepath')
+            raise Exception("Not sure what is going on here. Untested codepath")
         else:
             is_type_of = type.is_type_of
 
@@ -231,7 +231,7 @@ def create_registering_metaclass(registry):
             super(RegisteringMetaclass, cls).__init__(  # pylint: disable=no-value-for-parameter
                 name, bases, namespaces
             )
-            if any(base for base in bases if getattr(base, '__dauphinCoreType', False)):
+            if any(base for base in bases if getattr(base, "__dauphinCoreType", False)):
                 registry.addType(cls)
 
     return RegisteringMetaclass
@@ -239,14 +239,14 @@ def create_registering_metaclass(registry):
 
 def create_registering_class(cls, metaclass):
     new_cls = metaclass(cls.__name__, (cls,), {})
-    setattr(new_cls, '__dauphinCoreType', True)
+    setattr(new_cls, "__dauphinCoreType", True)
     return new_cls
 
 
 def create_union(metaclass, _registry):
-    meta_class = type('Meta', (object,), {'types': ('__', '__')})
-    Union = metaclass('Union', (graphene.Union,), {'Meta': meta_class})
-    setattr(Union, '__dauphinCoreType', True)
+    meta_class = type("Meta", (object,), {"types": ("__", "__")})
+    Union = metaclass("Union", (graphene.Union,), {"Meta": meta_class})
+    setattr(Union, "__dauphinCoreType", True)
     return Union
 
 
@@ -264,8 +264,8 @@ def create_enum(metaclass):
         meta_class = type("Meta", (object,), meta_dict)
         return type(meta_class.enum.__name__, (cls,), {"Meta": meta_class})
 
-    Enum = EnumRegisteringMetaclass('Enum', (graphene.Enum,), {'from_enum': classmethod(from_enum)})
-    setattr(Enum, '__dauphinCoreType', True)
+    Enum = EnumRegisteringMetaclass("Enum", (graphene.Enum,), {"from_enum": classmethod(from_enum)})
+    setattr(Enum, "__dauphinCoreType", True)
     return Enum
 
 

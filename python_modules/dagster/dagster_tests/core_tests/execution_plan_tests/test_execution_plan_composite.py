@@ -3,14 +3,14 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import DagsterInstance
 
 
-@solid(config_schema={'foo': Field(String)})
+@solid(config_schema={"foo": Field(String)})
 def node_a(context):
-    return context.solid_config['foo']
+    return context.solid_config["foo"]
 
 
-@solid(config_schema={'bar': Int})
+@solid(config_schema={"bar": Int})
 def node_b(context, input_):
-    return input_ * context.solid_config['bar']
+    return input_ * context.solid_config["bar"]
 
 
 @composite_solid
@@ -25,10 +25,10 @@ def composite_pipeline():
 
 @composite_solid(
     config_fn=lambda cfg: {
-        'node_a': {'config': {'foo': cfg['foo']}},
-        'node_b': {'config': {'bar': cfg['bar']}},
+        "node_a": {"config": {"foo": cfg["foo"]}},
+        "node_b": {"config": {"bar": cfg["bar"]}},
     },
-    config_schema={'foo': Field(String), 'bar': Int},
+    config_schema={"foo": Field(String), "bar": Int},
 )
 def composite_with_nested_config_solid_and_config_mapping():
     return node_b(node_a())
@@ -41,9 +41,9 @@ def composite_pipeline_with_config_mapping():
 
 def test_execution_plan_for_composite_solid():
     run_config = {
-        'solids': {
-            'composite_with_nested_config_solid': {
-                'solids': {'node_a': {'config': {'foo': 'baz'}}, 'node_b': {'config': {'bar': 3}}}
+        "solids": {
+            "composite_with_nested_config_solid": {
+                "solids": {"node_a": {"config": {"foo": "baz"}}, "node_b": {"config": {"bar": 3}}}
             }
         }
     }
@@ -57,21 +57,21 @@ def test_execution_plan_for_composite_solid():
     )
 
     assert [e.event_type_value for e in events] == [
-        'STEP_START',
-        'STEP_OUTPUT',
-        'STEP_SUCCESS',
-        'STEP_START',
-        'STEP_INPUT',
-        'STEP_OUTPUT',
-        'STEP_SUCCESS',
+        "STEP_START",
+        "STEP_OUTPUT",
+        "STEP_SUCCESS",
+        "STEP_START",
+        "STEP_INPUT",
+        "STEP_OUTPUT",
+        "STEP_SUCCESS",
     ]
 
 
 def test_execution_plan_for_composite_solid_with_config_mapping():
     run_config = {
-        'solids': {
-            'composite_with_nested_config_solid_and_config_mapping': {
-                'config': {'foo': 'baz', 'bar': 3}
+        "solids": {
+            "composite_with_nested_config_solid_and_config_mapping": {
+                "config": {"foo": "baz", "bar": 3}
             }
         }
     }
@@ -88,11 +88,11 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     )
 
     assert [e.event_type_value for e in events] == [
-        'STEP_START',
-        'STEP_OUTPUT',
-        'STEP_SUCCESS',
-        'STEP_START',
-        'STEP_INPUT',
-        'STEP_OUTPUT',
-        'STEP_SUCCESS',
+        "STEP_START",
+        "STEP_OUTPUT",
+        "STEP_SUCCESS",
+        "STEP_START",
+        "STEP_INPUT",
+        "STEP_OUTPUT",
+        "STEP_SUCCESS",
     ]

@@ -4,8 +4,8 @@ from dagster.serdes import deserialize_value
 
 
 def test_dead_events():
-    snapshot = path.join(path.dirname(path.realpath(__file__)), 'dead_events.txt')
-    with open(snapshot, 'r') as fd:
+    snapshot = path.join(path.dirname(path.realpath(__file__)), "dead_events.txt")
+    with open(snapshot, "r") as fd:
         objs = []
         for line in fd.readlines():
             obj = deserialize_value(line)

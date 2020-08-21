@@ -38,32 +38,32 @@ def client_heartbeat_thread(client, shutdown_event):
             break
 
         try:
-            client.heartbeat('ping')
+            client.heartbeat("ping")
         except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
             continue
 
 
 class DagsterGrpcClient(object):
-    def __init__(self, port=None, socket=None, host='localhost'):
-        self.port = check.opt_int_param(port, 'port')
-        self.socket = check.opt_str_param(socket, 'socket')
-        self.host = check.opt_str_param(host, 'host')
+    def __init__(self, port=None, socket=None, host="localhost"):
+        self.port = check.opt_int_param(port, "port")
+        self.socket = check.opt_str_param(socket, "socket")
+        self.host = check.opt_str_param(host, "host")
         check.invariant(
             port is not None if seven.IS_WINDOWS else True,
-            'You must pass a valid `port` on Windows: `socket` not supported.',
+            "You must pass a valid `port` on Windows: `socket` not supported.",
         )
         check.invariant(
             (port or socket) and not (port and socket),
-            'You must pass one and only one of `port` or `socket`.',
+            "You must pass one and only one of `port` or `socket`.",
         )
         check.invariant(
-            host is not None if port else True, 'Must provide a hostname',
+            host is not None if port else True, "Must provide a hostname",
         )
 
         if port:
-            self._server_address = host + ':' + str(port)
+            self._server_address = host + ":" + str(port)
         else:
-            self._server_address = 'unix:' + os.path.abspath(socket)
+            self._server_address = "unix:" + os.path.abspath(socket)
 
     def _query(self, method, request_type, **kwargs):
         with grpc.insecure_channel(self._server_address) as channel:
@@ -80,36 +80,36 @@ class DagsterGrpcClient(object):
                 yield response
 
     def ping(self, echo):
-        check.str_param(echo, 'echo')
-        res = self._query('Ping', api_pb2.PingRequest, echo=echo)
+        check.str_param(echo, "echo")
+        res = self._query("Ping", api_pb2.PingRequest, echo=echo)
         return res.echo
 
-    def heartbeat(self, echo=''):
-        check.str_param(echo, 'echo')
-        res = self._query('Heartbeat', api_pb2.PingRequest, echo=echo)
+    def heartbeat(self, echo=""):
+        check.str_param(echo, "echo")
+        res = self._query("Heartbeat", api_pb2.PingRequest, echo=echo)
         return res.echo
 
     def streaming_ping(self, sequence_length, echo):
-        check.int_param(sequence_length, 'sequence_length')
-        check.str_param(echo, 'echo')
+        check.int_param(sequence_length, "sequence_length")
+        check.str_param(echo, "echo")
 
         for res in self._streaming_query(
-            'StreamingPing',
+            "StreamingPing",
             api_pb2.StreamingPingRequest,
             sequence_length=sequence_length,
             echo=echo,
         ):
             yield {
-                'sequence_number': res.sequence_number,
-                'echo': res.echo,
+                "sequence_number": res.sequence_number,
+                "echo": res.echo,
             }
 
     def execution_plan_snapshot(self, execution_plan_snapshot_args):
         check.inst_param(
-            execution_plan_snapshot_args, 'execution_plan_snapshot_args', ExecutionPlanSnapshotArgs
+            execution_plan_snapshot_args, "execution_plan_snapshot_args", ExecutionPlanSnapshotArgs
         )
         res = self._query(
-            'ExecutionPlanSnapshot',
+            "ExecutionPlanSnapshot",
             api_pb2.ExecutionPlanSnapshotRequest,
             serialized_execution_plan_snapshot_args=serialize_dagster_namedtuple(
                 execution_plan_snapshot_args
@@ -119,17 +119,17 @@ class DagsterGrpcClient(object):
 
     def list_repositories(self):
 
-        res = self._query('ListRepositories', api_pb2.ListRepositoriesRequest)
+        res = self._query("ListRepositories", api_pb2.ListRepositoriesRequest)
 
         return deserialize_json_to_dagster_namedtuple(
             res.serialized_list_repositories_response_or_error
         )
 
     def external_partition_names(self, partition_names_args):
-        check.inst_param(partition_names_args, 'partition_names_args', PartitionNamesArgs)
+        check.inst_param(partition_names_args, "partition_names_args", PartitionNamesArgs)
 
         res = self._query(
-            'ExternalPartitionNames',
+            "ExternalPartitionNames",
             api_pb2.ExternalPartitionNamesRequest,
             serialized_partition_names_args=serialize_dagster_namedtuple(partition_names_args),
         )
@@ -139,10 +139,10 @@ class DagsterGrpcClient(object):
         )
 
     def external_partition_config(self, partition_args):
-        check.inst_param(partition_args, 'partition_args', PartitionArgs)
+        check.inst_param(partition_args, "partition_args", PartitionArgs)
 
         res = self._query(
-            'ExternalPartitionConfig',
+            "ExternalPartitionConfig",
             api_pb2.ExternalPartitionConfigRequest,
             serialized_partition_args=serialize_dagster_namedtuple(partition_args),
         )
@@ -152,10 +152,10 @@ class DagsterGrpcClient(object):
         )
 
     def external_partition_tags(self, partition_args):
-        check.inst_param(partition_args, 'partition_args', PartitionArgs)
+        check.inst_param(partition_args, "partition_args", PartitionArgs)
 
         res = self._query(
-            'ExternalPartitionTags',
+            "ExternalPartitionTags",
             api_pb2.ExternalPartitionTagsRequest,
             serialized_partition_args=serialize_dagster_namedtuple(partition_args),
         )
@@ -167,12 +167,12 @@ class DagsterGrpcClient(object):
     def external_partition_set_execution_params(self, partition_set_execution_param_args):
         check.inst_param(
             partition_set_execution_param_args,
-            'partition_set_execution_param_args',
+            "partition_set_execution_param_args",
             PartitionSetExecutionParamArgs,
         )
 
         res = self._query(
-            'ExternalPartitionSetExecutionParams',
+            "ExternalPartitionSetExecutionParams",
             api_pb2.ExternalPartitionSetExecutionParamsRequest,
             serialized_partition_set_execution_param_args=serialize_dagster_namedtuple(
                 partition_set_execution_param_args
@@ -186,12 +186,12 @@ class DagsterGrpcClient(object):
     def external_pipeline_subset(self, pipeline_subset_snapshot_args):
         check.inst_param(
             pipeline_subset_snapshot_args,
-            'pipeline_subset_snapshot_args',
+            "pipeline_subset_snapshot_args",
             PipelineSubsetSnapshotArgs,
         )
 
         res = self._query(
-            'ExternalPipelineSubsetSnapshot',
+            "ExternalPipelineSubsetSnapshot",
             api_pb2.ExternalPipelineSubsetSnapshotRequest,
             serialized_pipeline_subset_snapshot_args=serialize_dagster_namedtuple(
                 pipeline_subset_snapshot_args
@@ -205,12 +205,12 @@ class DagsterGrpcClient(object):
     def external_repository(self, repository_grpc_server_origin):
         check.inst_param(
             repository_grpc_server_origin,
-            'repository_grpc_server_origin',
+            "repository_grpc_server_origin",
             RepositoryGrpcServerOrigin,
         )
 
         res = self._query(
-            'ExternalRepository',
+            "ExternalRepository",
             api_pb2.ExternalRepositoryRequest,
             serialized_repository_python_origin=serialize_dagster_namedtuple(
                 repository_grpc_server_origin
@@ -222,12 +222,12 @@ class DagsterGrpcClient(object):
     def external_schedule_execution(self, external_schedule_execution_args):
         check.inst_param(
             external_schedule_execution_args,
-            'external_schedule_execution_args',
+            "external_schedule_execution_args",
             ExternalScheduleExecutionArgs,
         )
 
         res = self._query(
-            'ExternalScheduleExecution',
+            "ExternalScheduleExecution",
             api_pb2.ExternalScheduleExecutionRequest,
             serialized_external_schedule_execution_args=serialize_dagster_namedtuple(
                 external_schedule_execution_args
@@ -239,19 +239,19 @@ class DagsterGrpcClient(object):
         )
 
     def execute_run(self, execute_run_args):
-        check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
+        check.inst_param(execute_run_args, "execute_run_args", ExecuteRunArgs)
 
         try:
             instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
             pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
             event_iterator = self._streaming_query(
-                'ExecuteRun',
+                "ExecuteRun",
                 api_pb2.ExecuteRunRequest,
                 serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
             )
         except Exception as exc:  # pylint: disable=bare-except
             yield instance.report_engine_event(
-                message='Unexpected error in IPC client',
+                message="Unexpected error in IPC client",
                 pipeline_run=pipeline_run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
@@ -270,12 +270,12 @@ class DagsterGrpcClient(object):
         except grpc.RpcError as rpc_error:
             if (
                 # posix
-                'Socket closed' in rpc_error.debug_error_string()  # pylint: disable=no-member
+                "Socket closed" in rpc_error.debug_error_string()  # pylint: disable=no-member
                 # windows
-                or 'Stream removed' in rpc_error.debug_error_string()  # pylint: disable=no-member
+                or "Stream removed" in rpc_error.debug_error_string()  # pylint: disable=no-member
             ):
                 yield instance.report_engine_event(
-                    message='User process: GRPC server for {run_id} terminated unexpectedly'.format(
+                    message="User process: GRPC server for {run_id} terminated unexpectedly".format(
                         run_id=pipeline_run.run_id
                     ),
                     pipeline_run=pipeline_run,
@@ -286,7 +286,7 @@ class DagsterGrpcClient(object):
                 yield instance.report_run_failed(pipeline_run)
             else:
                 yield instance.report_engine_event(
-                    message='Unexpected error in IPC client',
+                    message="Unexpected error in IPC client",
                     pipeline_run=pipeline_run,
                     engine_event_data=EngineEventData.engine_error(
                         serializable_error_info_from_exc_info(sys.exc_info())
@@ -295,7 +295,7 @@ class DagsterGrpcClient(object):
             raise rpc_error
         except Exception as exc:  # pylint: disable=bare-except
             yield instance.report_engine_event(
-                message='Unexpected error in IPC client',
+                message="Unexpected error in IPC client",
                 pipeline_run=pipeline_run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
@@ -304,16 +304,16 @@ class DagsterGrpcClient(object):
             raise exc
 
     def shutdown_server(self):
-        res = self._query('ShutdownServer', api_pb2.Empty)
+        res = self._query("ShutdownServer", api_pb2.Empty)
         return deserialize_json_to_dagster_namedtuple(res.serialized_shutdown_server_result)
 
     def cancel_execution(self, cancel_execution_request):
         check.inst_param(
-            cancel_execution_request, 'cancel_execution_request', CancelExecutionRequest,
+            cancel_execution_request, "cancel_execution_request", CancelExecutionRequest,
         )
 
         res = self._query(
-            'CancelExecution',
+            "CancelExecution",
             api_pb2.CancelExecutionRequest,
             serialized_cancel_execution_request=serialize_dagster_namedtuple(
                 cancel_execution_request
@@ -324,11 +324,11 @@ class DagsterGrpcClient(object):
 
     def can_cancel_execution(self, can_cancel_execution_request):
         check.inst_param(
-            can_cancel_execution_request, 'can_cancel_execution_request', CanCancelExecutionRequest,
+            can_cancel_execution_request, "can_cancel_execution_request", CanCancelExecutionRequest,
         )
 
         res = self._query(
-            'CanCancelExecution',
+            "CanCancelExecution",
             api_pb2.CanCancelExecutionRequest,
             serialized_can_cancel_execution_request=serialize_dagster_namedtuple(
                 can_cancel_execution_request
@@ -338,13 +338,13 @@ class DagsterGrpcClient(object):
         return deserialize_json_to_dagster_namedtuple(res.serialized_can_cancel_execution_result)
 
     def start_run(self, execute_run_args):
-        check.inst_param(execute_run_args, 'execute_run_args', ExecuteRunArgs)
+        check.inst_param(execute_run_args, "execute_run_args", ExecuteRunArgs)
 
         try:
             instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
             pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
             res = self._query(
-                'StartRun',
+                "StartRun",
                 api_pb2.StartRunRequest,
                 serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
             )
@@ -352,7 +352,7 @@ class DagsterGrpcClient(object):
 
         except Exception:  # pylint: disable=bare-except
             instance.report_engine_event(
-                message='Unexpected error in IPC client',
+                message="Unexpected error in IPC client",
                 pipeline_run=pipeline_run,
                 engine_event_data=EngineEventData.engine_error(
                     serializable_error_info_from_exc_info(sys.exc_info())
@@ -361,18 +361,18 @@ class DagsterGrpcClient(object):
             raise
 
     def get_current_image(self):
-        res = self._query('GetCurrentImage', api_pb2.Empty)
+        res = self._query("GetCurrentImage", api_pb2.Empty)
         return deserialize_json_to_dagster_namedtuple(res.serialized_current_image)
 
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):
-    '''A client that tells the server process that created it to shut down once it leaves a
-    context manager.'''
+    """A client that tells the server process that created it to shut down once it leaves a
+    context manager."""
 
     def __init__(
         self, server_process=None, *args, **kwargs
     ):  # pylint: disable=keyword-arg-before-vararg
-        self._server_process = check.inst_param(server_process, 'server_process', subprocess.Popen)
+        self._server_process = check.inst_param(server_process, "server_process", subprocess.Popen)
         super(EphemeralDagsterGrpcClient, self).__init__(*args, **kwargs)
 
     def cleanup_server(self):
@@ -390,9 +390,9 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
     def __del__(self):
         if self._server_process:
             warnings.warn(
-                'Managed gRPC client is being destroyed without signalling to server that '
-                'it should shutdown. This may result in server processes living longer than '
-                'they need to. To fix this, wrap the client in a contextmanager.'
+                "Managed gRPC client is being destroyed without signalling to server that "
+                "it should shutdown. This may result in server processes living longer than "
+                "they need to. To fix this, wrap the client in a contextmanager."
             )
 
 
@@ -400,9 +400,9 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
 def ephemeral_grpc_api_client(
     loadable_target_origin=None, force_port=False, max_retries=10, max_workers=1
 ):
-    check.opt_inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
-    check.bool_param(force_port, 'force_port')
-    check.int_param(max_retries, 'max_retries')
+    check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
+    check.bool_param(force_port, "force_port")
+    check.int_param(max_retries, "max_retries")
 
     with GrpcServerProcess(
         loadable_target_origin=loadable_target_origin,

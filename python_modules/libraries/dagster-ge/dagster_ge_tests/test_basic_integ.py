@@ -19,28 +19,28 @@ def yielder(_):
     return read_csv("./basic.csv")
 
 
-@solid(input_defs=[InputDefinition(name='res')])
+@solid(input_defs=[InputDefinition(name="res")])
 def reyielder(_context, res):
-    yield Output((res['statistics'], res['results']))
+    yield Output((res["statistics"], res["results"]))
 
 
-@pipeline(mode_defs=[ModeDefinition('basic', resource_defs={'ge_data_context': ge_data_context})],)
+@pipeline(mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],)
 def hello_world_pipeline():
     return reyielder(ge_validation_solid_factory("getest", "basic.warning")(yielder()))
 
 
 def test_yielded_results_config(snapshot):
     run_config = {
-        'resources': {
-            'ge_data_context': {
-                'config': {'ge_root_dir': file_relative_path(__file__, "./great_expectations")}
+        "resources": {
+            "ge_data_context": {
+                "config": {"ge_root_dir": file_relative_path(__file__, "./great_expectations")}
             }
         }
     }
     result = execute_pipeline(
         reconstructable(hello_world_pipeline),
         run_config=run_config,
-        mode='basic',
+        mode="basic",
         instance=DagsterInstance.local_temp(),
     )
     assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100

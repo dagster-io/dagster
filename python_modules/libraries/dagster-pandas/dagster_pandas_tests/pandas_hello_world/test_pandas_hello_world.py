@@ -9,33 +9,33 @@ from dagster.utils import file_relative_path
 
 def test_execute_pipeline():
     environment = {
-        'solids': {
-            'sum_solid': {
-                'inputs': {'num': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
+        "solids": {
+            "sum_solid": {
+                "inputs": {"num": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
             }
         }
     }
 
     result = execute_pipeline(
         ReconstructablePipeline.for_module(
-            'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world'
+            "dagster_pandas.examples.pandas_hello_world.pipeline", "pandas_hello_world"
         ),
         run_config=environment,
     )
 
     assert result.success
 
-    assert result.result_for_solid('sum_solid').output_value().to_dict('list') == {
-        'num1': [1, 3],
-        'num2': [2, 4],
-        'sum': [3, 7],
+    assert result.result_for_solid("sum_solid").output_value().to_dict("list") == {
+        "num1": [1, 3],
+        "num2": [2, 4],
+        "sum": [3, 7],
     }
 
-    assert result.result_for_solid('sum_sq_solid').output_value().to_dict('list') == {
-        'num1': [1, 3],
-        'num2': [2, 4],
-        'sum': [3, 7],
-        'sum_sq': [9, 49],
+    assert result.result_for_solid("sum_sq_solid").output_value().to_dict("list") == {
+        "num1": [1, 3],
+        "num2": [2, 4],
+        "sum": [3, 7],
+        "sum_sq": [9, 49],
     }
 
 
@@ -46,16 +46,16 @@ def test_cli_execute():
     cwd = os.getcwd()
     try:
 
-        os.chdir(file_relative_path(__file__, '../..'))
+        os.chdir(file_relative_path(__file__, "../.."))
 
         do_execute_command(
             pipeline=ReconstructablePipeline.for_module(
-                'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world'
+                "dagster_pandas.examples.pandas_hello_world.pipeline", "pandas_hello_world"
             ),
             instance=DagsterInstance.get(),
             config=[
                 file_relative_path(
-                    __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'
+                    __file__, "../../dagster_pandas/examples/pandas_hello_world/*.yaml"
                 )
             ],
         )
@@ -72,16 +72,16 @@ def test_cli_execute_failure():
     cwd = os.getcwd()
     try:
 
-        os.chdir(file_relative_path(__file__, '../..'))
+        os.chdir(file_relative_path(__file__, "../.."))
 
         result = do_execute_command(
             pipeline=ReconstructablePipeline.for_module(
-                'dagster_pandas.examples.pandas_hello_world.pipeline', 'pandas_hello_world_fails'
+                "dagster_pandas.examples.pandas_hello_world.pipeline", "pandas_hello_world_fails"
             ),
             instance=DagsterInstance.get(),
             config=[
                 file_relative_path(
-                    __file__, '../../dagster_pandas/examples/pandas_hello_world/*.yaml'
+                    __file__, "../../dagster_pandas/examples/pandas_hello_world/*.yaml"
                 )
             ],
         )
@@ -91,4 +91,4 @@ def test_cli_execute_failure():
         os.chdir(cwd)
 
     assert len(failures) == 1
-    assert 'I am a programmer and I make error' in failures[0].step_failure_data.error.message
+    assert "I am a programmer and I make error" in failures[0].step_failure_data.error.message

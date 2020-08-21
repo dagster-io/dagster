@@ -16,22 +16,22 @@ class TestReloadRepositoriesOutOfProcess(
 ):
     def test_out_of_process_reload_location(self, graphql_context):
         result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {'repositoryLocationName': 'test'}
+            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
         )
 
         assert result
         assert result.data
-        assert result.data['reloadRepositoryLocation']
-        assert result.data['reloadRepositoryLocation']['__typename'] == 'RepositoryLocation'
-        assert result.data['reloadRepositoryLocation']['name'] == 'test'
-        assert result.data['reloadRepositoryLocation']['repositories'] == [{'name': 'test_repo'}]
-        assert result.data['reloadRepositoryLocation']['isReloadSupported'] is True
+        assert result.data["reloadRepositoryLocation"]
+        assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
+        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "test_repo"}]
+        assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True
 
         with mock.patch(
             # note it where the function is *used* that needs to mocked, not
             # where it is defined.
             # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-            'dagster.api.snapshot_repository.execute_unary_api_cli_command'
+            "dagster.api.snapshot_repository.execute_unary_api_cli_command"
         ) as cli_command_mock:
 
             @repository
@@ -45,12 +45,12 @@ class TestReloadRepositoriesOutOfProcess(
             result = execute_dagster_graphql(
                 graphql_context,
                 RELOAD_REPOSITORY_LOCATION_QUERY,
-                {'repositoryLocationName': 'test'},
+                {"repositoryLocationName": "test"},
             )
 
             assert cli_command_mock.call_count == 1
 
-            assert result.data['reloadRepositoryLocation']['repositories'] == [{'name': 'new_repo'}]
+            assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "new_repo"}]
 
 
 class TestReloadRepositoriesInProcess(
@@ -62,18 +62,18 @@ class TestReloadRepositoriesInProcess(
         result = execute_dagster_graphql(
             graphql_context,
             RELOAD_REPOSITORY_LOCATION_QUERY,
-            {'repositoryLocationName': '<<in_process>>'},
+            {"repositoryLocationName": "<<in_process>>"},
         )
-        assert result.data['reloadRepositoryLocation']['__typename'] == 'ReloadNotSupported'
+        assert result.data["reloadRepositoryLocation"]["__typename"] == "ReloadNotSupported"
 
     def test_location_not_found(self, graphql_context):
         result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {'repositoryLocationName': 'nope'},
+            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "nope"},
         )
-        assert result.data['reloadRepositoryLocation']['__typename'] == 'RepositoryLocationNotFound'
+        assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocationNotFound"
 
 
-RELOAD_REPOSITORY_LOCATION_QUERY = '''
+RELOAD_REPOSITORY_LOCATION_QUERY = """
 mutation ($repositoryLocationName: String!) {
    reloadRepositoryLocation(repositoryLocationName: $repositoryLocationName) {
       __typename
@@ -86,7 +86,7 @@ mutation ($repositoryLocationName: String!) {
       }
    }
 }
-'''
+"""
 
 
 class TestReloadRepositoriesManagedGrpc(
@@ -96,13 +96,13 @@ class TestReloadRepositoriesManagedGrpc(
 ):
     def test_managed_grpc_reload_location(self, graphql_context):
         result = execute_dagster_graphql(
-            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {'repositoryLocationName': 'test'}
+            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
         )
 
         assert result
         assert result.data
-        assert result.data['reloadRepositoryLocation']
-        assert result.data['reloadRepositoryLocation']['__typename'] == 'RepositoryLocation'
-        assert result.data['reloadRepositoryLocation']['name'] == 'test'
-        assert result.data['reloadRepositoryLocation']['repositories'] == [{'name': 'test_repo'}]
-        assert result.data['reloadRepositoryLocation']['isReloadSupported'] is True
+        assert result.data["reloadRepositoryLocation"]
+        assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
+        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "test_repo"}]
+        assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True

@@ -28,22 +28,22 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils.merger import deep_merge_dicts
 
-RUN_CONFIG_BASE = {'solids': {'return_two': {'config': {'a': 'b'}}}}
+RUN_CONFIG_BASE = {"solids": {"return_two": {"config": {"a": "b"}}}}
 
 
 def make_run_config(scratch_dir, mode):
-    if mode in ['external', 'request_retry']:
-        step_launcher_resource_keys = ['first_step_launcher', 'second_step_launcher']
+    if mode in ["external", "request_retry"]:
+        step_launcher_resource_keys = ["first_step_launcher", "second_step_launcher"]
     else:
-        step_launcher_resource_keys = ['second_step_launcher']
+        step_launcher_resource_keys = ["second_step_launcher"]
     return deep_merge_dicts(
         RUN_CONFIG_BASE,
         {
-            'resources': {
-                step_launcher_resource_key: {'config': {'scratch_dir': scratch_dir}}
+            "resources": {
+                step_launcher_resource_key: {"config": {"scratch_dir": scratch_dir}}
                 for step_launcher_resource_key in step_launcher_resource_keys
             },
-            'storage': {'filesystem': {'config': {'base_dir': scratch_dir}}},
+            "storage": {"filesystem": {"config": {"base_dir": scratch_dir}}},
         },
     )
 
@@ -64,35 +64,35 @@ def request_retry_local_external_step_launcher(context):
 
 
 def define_basic_pipeline():
-    @solid(required_resource_keys=set(['first_step_launcher']), config_schema={'a': Field(str)})
+    @solid(required_resource_keys=set(["first_step_launcher"]), config_schema={"a": Field(str)})
     def return_two(_):
         return 2
 
-    @solid(required_resource_keys=set(['second_step_launcher']))
+    @solid(required_resource_keys=set(["second_step_launcher"]))
     def add_one(_, num):
         return num + 1
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                'external',
+                "external",
                 resource_defs={
-                    'first_step_launcher': local_external_step_launcher,
-                    'second_step_launcher': local_external_step_launcher,
+                    "first_step_launcher": local_external_step_launcher,
+                    "second_step_launcher": local_external_step_launcher,
                 },
             ),
             ModeDefinition(
-                'internal_and_external',
+                "internal_and_external",
                 resource_defs={
-                    'first_step_launcher': no_step_launcher,
-                    'second_step_launcher': local_external_step_launcher,
+                    "first_step_launcher": no_step_launcher,
+                    "second_step_launcher": local_external_step_launcher,
                 },
             ),
             ModeDefinition(
-                'request_retry',
+                "request_retry",
                 resource_defs={
-                    'first_step_launcher': request_retry_local_external_step_launcher,
-                    'second_step_launcher': request_retry_local_external_step_launcher,
+                    "first_step_launcher": request_retry_local_external_step_launcher,
+                    "second_step_launcher": request_retry_local_external_step_launcher,
                 },
             ),
         ]
@@ -105,14 +105,14 @@ def define_basic_pipeline():
 
 def initialize_step_context(scratch_dir):
     pipeline_run = PipelineRun(
-        pipeline_name='foo_pipeline',
+        pipeline_name="foo_pipeline",
         run_id=str(uuid.uuid4()),
-        run_config=make_run_config(scratch_dir, 'external'),
-        mode='external',
+        run_config=make_run_config(scratch_dir, "external"),
+        mode="external",
     )
 
     plan = create_execution_plan(
-        reconstructable(define_basic_pipeline), pipeline_run.run_config, mode='external'
+        reconstructable(define_basic_pipeline), pipeline_run.run_config, mode="external"
     )
 
     initialization_manager = PipelineExecutionContextManager(
@@ -129,7 +129,7 @@ def initialize_step_context(scratch_dir):
 
 
 def test_step_context_to_step_run_ref():
-    step_context = initialize_step_context('')
+    step_context = initialize_step_context("")
     step = step_context.step
     step_run_ref = step_context_to_step_run_ref(step_context, 0)
     assert step_run_ref.run_config == step_context.pipeline_run.run_config
@@ -160,7 +160,7 @@ def test_local_external_step_launcher():
         assert DagsterEventType.STEP_FAILURE not in event_types
 
 
-@pytest.mark.parametrize('mode', ['external', 'internal_and_external'])
+@pytest.mark.parametrize("mode", ["external", "internal_and_external"])
 def test_pipeline(mode):
     with seven.TemporaryDirectory() as tmpdir:
         result = execute_pipeline(
@@ -168,12 +168,12 @@ def test_pipeline(mode):
             mode=mode,
             run_config=make_run_config(tmpdir, mode),
         )
-        assert result.result_for_solid('return_two').output_value() == 2
-        assert result.result_for_solid('add_one').output_value() == 3
+        assert result.result_for_solid("return_two").output_value() == 2
+        assert result.result_for_solid("add_one").output_value() == 3
 
 
 def test_launcher_requests_retry():
-    mode = 'request_retry'
+    mode = "request_retry"
     with seven.TemporaryDirectory() as tmpdir:
         result = execute_pipeline(
             pipeline=reconstructable(define_basic_pipeline),
@@ -181,8 +181,8 @@ def test_launcher_requests_retry():
             run_config=make_run_config(tmpdir, mode),
         )
         assert not result.success
-        assert result.result_for_solid('return_two').output_value() == 2
-        assert result.result_for_solid('add_one').output_value() == 3
+        assert result.result_for_solid("return_two").output_value() == 2
+        assert result.result_for_solid("add_one").output_value() == 3
         for step_key, events in result.events_by_step_key.items():
             if step_key:
                 event_types = [event.event_type for event in events]

@@ -6,10 +6,10 @@ from dagster import check
 
 
 class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    '''Base class for storage plugins.
+    """Base class for storage plugins.
 
     Extend this class for (system_storage_name, dagster_type) pairs that need special handling.
-    '''
+    """
 
     @classmethod
     @abstractmethod
@@ -39,7 +39,7 @@ class TypeStoragePluginRegistry(object):
     def __init__(self, types_to_register):
         from dagster.core.types.dagster_type import DagsterType
 
-        types_to_register = check.opt_list_param(types_to_register, 'types_to_register', tuple)
+        types_to_register = check.opt_list_param(types_to_register, "types_to_register", tuple)
 
         self._registry = {}
         for type_to_register, type_storage_plugin in types_to_register:
@@ -50,11 +50,11 @@ class TypeStoragePluginRegistry(object):
     def register_type(self, type_to_register, type_storage_plugin):
         from dagster.core.types.dagster_type import DagsterType
 
-        check.inst_param(type_to_register, 'type_to_register', DagsterType)
-        check.subclass_param(type_storage_plugin, 'type_storage_plugin', TypeStoragePlugin)
+        check.inst_param(type_to_register, "type_to_register", DagsterType)
+        check.subclass_param(type_storage_plugin, "type_storage_plugin", TypeStoragePlugin)
         check.invariant(
             type_to_register.name is not None,
-            'Cannot register a type storage plugin for an anonymous type',
+            "Cannot register a type storage plugin for an anonymous type",
         )
         self._registry[type_to_register.name] = type_storage_plugin
 
@@ -71,36 +71,36 @@ class TypeStoragePluginRegistry(object):
 
         composite_overrides = {t.name for t in dagster_type.inner_types if t.name in self._registry}
         if composite_overrides:
-            outer_type = 'composite type'
+            outer_type = "composite type"
             if dagster_type.kind == DagsterTypeKind.LIST:
                 if dagster_type.kind == DagsterTypeKind.NULLABLE:
-                    outer_type = 'Optional List'
+                    outer_type = "Optional List"
                 else:
-                    outer_type = 'List'
+                    outer_type = "List"
             elif dagster_type.kind == DagsterTypeKind.NULLABLE:
-                outer_type = 'Optional'
+                outer_type = "Optional"
 
             if len(composite_overrides) > 1:
-                plural = 's'
-                this = 'These'
-                has = 'have'
+                plural = "s"
+                this = "These"
+                has = "have"
             else:
-                plural = ''
-                this = 'This'
-                has = 'has'
+                plural = ""
+                this = "This"
+                has = "has"
 
             check.not_implemented(
-                'You are attempting to store a {outer_type} containing type{plural} '
-                '{type_names} in a object store. {this} type{plural} {has} specialized storage '
-                'behavior (configured in the TYPE_STORAGE_PLUGIN_REGISTRY). We do not '
-                'currently support storing Nullables or Lists of types with customized '
-                'storage. See https://github.com/dagster-io/dagster/issues/1190 for '
-                'details.'.format(
+                "You are attempting to store a {outer_type} containing type{plural} "
+                "{type_names} in a object store. {this} type{plural} {has} specialized storage "
+                "behavior (configured in the TYPE_STORAGE_PLUGIN_REGISTRY). We do not "
+                "currently support storing Nullables or Lists of types with customized "
+                "storage. See https://github.com/dagster-io/dagster/issues/1190 for "
+                "details.".format(
                     outer_type=outer_type,
                     plural=plural,
                     this=this,
                     has=has,
-                    type_names=', '.join([str(x) for x in composite_overrides]),
+                    type_names=", ".join([str(x) for x in composite_overrides]),
                 )
             )
 
@@ -113,10 +113,10 @@ def construct_type_storage_plugin_registry(pipeline_def, system_storage_def):
         IntermediateStorageDefinition,
     )
 
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.inst_param(
         system_storage_def,
-        'system_storage_def',
+        "system_storage_def",
         (SystemStorageDefinition, IntermediateStorageDefinition),
     )
 

@@ -12,7 +12,7 @@ from .utils import execute_unary_api_cli_command
 
 def sync_get_external_repositories(repository_location_handle):
     check.inst_param(
-        repository_location_handle, 'repository_location_handle', RepositoryLocationHandle,
+        repository_location_handle, "repository_location_handle", RepositoryLocationHandle,
     )
 
     repos = []
@@ -21,7 +21,7 @@ def sync_get_external_repositories(repository_location_handle):
         external_repository_data = check.inst(
             execute_unary_api_cli_command(
                 repository_location_handle.executable_path,
-                'repository',
+                "repository",
                 RepositoryPythonOrigin(repository_location_handle.executable_path, pointer),
             ),
             ExternalRepositoryData,
@@ -41,7 +41,7 @@ def sync_get_external_repositories(repository_location_handle):
 
 def sync_get_external_repositories_grpc(api_client, repository_location_handle):
     check.inst_param(
-        repository_location_handle, 'repository_location_handle', RepositoryLocationHandle
+        repository_location_handle, "repository_location_handle", RepositoryLocationHandle
     )
 
     repos = []

@@ -3,19 +3,19 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.definitions.utils import has_valid_name_chars
 
-PLUS_CHAR = '+'
+PLUS_CHAR = "+"
 
-PlusToken = namedtuple('PlusToken', 'pos')
-WhitespaceToken = namedtuple('WhitespaceToken', 'pos')
-NameToken = namedtuple('NameToken', 'pos name')
+PlusToken = namedtuple("PlusToken", "pos")
+WhitespaceToken = namedtuple("WhitespaceToken", "pos")
+NameToken = namedtuple("NameToken", "pos name")
 
-WHITESPACE_CHARS = {' ', '\t', '\r', '\n'}
+WHITESPACE_CHARS = {" ", "\t", "\r", "\n"}
 
 
 class SelectionParserException(Exception):
     def __init__(self, message, pos, text):
-        self.pos = check.int_param(pos, 'pos')
-        self.text = check.str_param(text, 'text')
+        self.pos = check.int_param(pos, "pos")
+        self.text = check.str_param(text, "text")
         super(SelectionParserException, self).__init__(message)
 
 
@@ -25,7 +25,7 @@ def parse_selector_text(text):
 
 def tokenize_selector_text(text):
 
-    check.str_param(text, 'text')
+    check.str_param(text, "text")
 
     pos = 0
 
@@ -43,7 +43,7 @@ def tokenize_selector_text(text):
 
             tokens.append(WhitespaceToken(pos=initial_pos))
         elif has_valid_name_chars(ch):  # valid name
-            new_name = ''
+            new_name = ""
             initial_pos = pos
             while pos < len(text) and has_valid_name_chars(text[pos]):
                 new_name += text[pos]
@@ -52,7 +52,7 @@ def tokenize_selector_text(text):
             tokens.append(NameToken(pos=initial_pos, name=new_name))
         else:
             raise SelectionParserException(
-                'Invalid character {ch} at char pos {pos}'.format(ch=repr(ch), pos=pos),
+                "Invalid character {ch} at char pos {pos}".format(ch=repr(ch), pos=pos),
                 pos=pos,
                 text=text,
             )
@@ -60,7 +60,7 @@ def tokenize_selector_text(text):
     return tokens
 
 
-Selection = namedtuple('Selection', 'name include_upstream include_downstream')
+Selection = namedtuple("Selection", "name include_upstream include_downstream")
 
 
 def parse_tokens(tokens, original_text):
@@ -76,13 +76,13 @@ def parse_tokens(tokens, original_text):
         if index >= len(tokens):
             pos = tokens[index - 1].pos
             raise SelectionParserException(
-                'Dangling plus character at pos {pos}'.format(pos=pos), pos=pos, text=original_text
+                "Dangling plus character at pos {pos}".format(pos=pos), pos=pos, text=original_text
             )
 
         if not isinstance(tokens[index], NameToken):
             pos = tokens[index].pos
             raise SelectionParserException(
-                'Unexpected character {ch} at pos {pos}. Expected solid name.'.format(
+                "Unexpected character {ch} at pos {pos}. Expected solid name.".format(
                     ch=repr(original_text[pos]), pos=pos
                 ),
                 pos=pos,
@@ -113,7 +113,7 @@ def parse_tokens(tokens, original_text):
         if not isinstance(tokens[index], WhitespaceToken):
             pos = tokens[index].pos
             raise SelectionParserException(
-                'Unexpected character {ch} at pos {pos}. Expected whitespace.'.format(
+                "Unexpected character {ch} at pos {pos}. Expected whitespace.".format(
                     ch=repr(original_text[pos]), pos=pos
                 ),
                 pos=pos,

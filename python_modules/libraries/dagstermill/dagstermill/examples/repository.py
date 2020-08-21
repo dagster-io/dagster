@@ -52,49 +52,49 @@ except ImportError:
 
 def nb_test_path(name):
     return os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), 'notebooks/{name}.ipynb'.format(name=name)
+        os.path.dirname(os.path.realpath(__file__)), "notebooks/{name}.ipynb".format(name=name)
     )
 
 
 def define_hello_world_pipeline():
-    return PipelineDefinition(name='hello_world_pipeline', solid_defs=[define_hello_world_solid()])
+    return PipelineDefinition(name="hello_world_pipeline", solid_defs=[define_hello_world_solid()])
 
 
 def define_hello_world_solid():
-    return dagstermill.define_dagstermill_solid('hello_world', nb_test_path('hello_world'))
+    return dagstermill.define_dagstermill_solid("hello_world", nb_test_path("hello_world"))
 
 
 def define_hello_world_config_solid():
     return dagstermill.define_dagstermill_solid(
-        'hello_world_config',
-        nb_test_path('hello_world_config'),
-        config_schema={'greeting': Field(String, is_required=False, default_value='hello')},
+        "hello_world_config",
+        nb_test_path("hello_world_config"),
+        config_schema={"greeting": Field(String, is_required=False, default_value="hello")},
     )
 
 
 def define_hello_world_config_pipeline():
     return PipelineDefinition(
-        name='hello_world_config_pipeline', solid_defs=[define_hello_world_config_solid()]
+        name="hello_world_config_pipeline", solid_defs=[define_hello_world_config_solid()]
     )
 
 
 def define_hello_world_with_output_notebook_solid():
     return dagstermill.define_dagstermill_solid(
-        'hello_world_with_output_notebook', nb_test_path('hello_world'), output_notebook='notebook',
+        "hello_world_with_output_notebook", nb_test_path("hello_world"), output_notebook="notebook",
     )
 
 
 def define_hello_world_with_output_notebook_pipeline():
-    @solid(input_defs=[InputDefinition('notebook', dagster_type=FileHandle)])
+    @solid(input_defs=[InputDefinition("notebook", dagster_type=FileHandle)])
     def load_notebook_solid(_, notebook):
         return os.path.exists(notebook.path_desc)
 
     return PipelineDefinition(
-        name='hello_world_with_output_notebook_pipeline',
+        name="hello_world_with_output_notebook_pipeline",
         solid_defs=[define_hello_world_with_output_notebook_solid(), load_notebook_solid],
         dependencies={
-            'load_notebook_solid': {
-                'notebook': DependencyDefinition('hello_world_with_output_notebook', 'notebook')
+            "load_notebook_solid": {
+                "notebook": DependencyDefinition("hello_world_with_output_notebook", "notebook")
             }
         },
     )
@@ -102,20 +102,20 @@ def define_hello_world_with_output_notebook_pipeline():
 
 def define_hello_world_with_output():
     return dagstermill.define_dagstermill_solid(
-        'hello_world_output', nb_test_path('hello_world_output'), [], [OutputDefinition()]
+        "hello_world_output", nb_test_path("hello_world_output"), [], [OutputDefinition()]
     )
 
 
 def define_hello_world_with_output_pipeline():
     return PipelineDefinition(
-        name='hello_world_with_output_pipeline', solid_defs=[define_hello_world_with_output()]
+        name="hello_world_with_output_pipeline", solid_defs=[define_hello_world_with_output()]
     )
 
 
 def define_hello_world_explicit_yield():
     return dagstermill.define_dagstermill_solid(
-        'hello_world_explicit_yield_pipeline',
-        nb_test_path('hello_world_explicit_yield'),
+        "hello_world_explicit_yield_pipeline",
+        nb_test_path("hello_world_explicit_yield"),
         [],
         [OutputDefinition()],
     )
@@ -123,17 +123,17 @@ def define_hello_world_explicit_yield():
 
 def define_hello_world_explicit_yield_pipeline():
     return PipelineDefinition(
-        name='hello_world_explicit_yield_pipeline', solid_defs=[define_hello_world_explicit_yield()]
+        name="hello_world_explicit_yield_pipeline", solid_defs=[define_hello_world_explicit_yield()]
     )
 
 
 def define_hello_logging_solid():
-    return dagstermill.define_dagstermill_solid('hello_logging', nb_test_path('hello_logging'))
+    return dagstermill.define_dagstermill_solid("hello_logging", nb_test_path("hello_logging"))
 
 
 def define_hello_logging_pipeline():
     return PipelineDefinition(
-        name='hello_logging_pipeline', solid_defs=[define_hello_logging_solid()]
+        name="hello_logging_pipeline", solid_defs=[define_hello_logging_solid()]
     )
 
 
@@ -145,9 +145,9 @@ def solid_definition(fn):
 @solid_definition
 def add_two_numbers_pm_solid():
     return dagstermill.define_dagstermill_solid(
-        'add_two_numbers',
-        nb_test_path('add_two_numbers'),
-        [InputDefinition(name='a', dagster_type=Int), InputDefinition(name='b', dagster_type=Int)],
+        "add_two_numbers",
+        nb_test_path("add_two_numbers"),
+        [InputDefinition(name="a", dagster_type=Int), InputDefinition(name="b", dagster_type=Int)],
         [OutputDefinition(Int)],
     )
 
@@ -155,9 +155,9 @@ def add_two_numbers_pm_solid():
 @solid_definition
 def mult_two_numbers_pm_solid():
     return dagstermill.define_dagstermill_solid(
-        'mult_two_numbers',
-        nb_test_path('mult_two_numbers'),
-        [InputDefinition(name='a', dagster_type=Int), InputDefinition(name='b', dagster_type=Int)],
+        "mult_two_numbers",
+        nb_test_path("mult_two_numbers"),
+        [InputDefinition(name="a", dagster_type=Int), InputDefinition(name="b", dagster_type=Int)],
         [OutputDefinition(Int)],
     )
 
@@ -175,12 +175,12 @@ def return_two():
 def define_add_pipeline():
     add_two_numbers = add_two_numbers_pm_solid
     return PipelineDefinition(
-        name='test_add_pipeline',
+        name="test_add_pipeline",
         solid_defs=[return_one, return_two, add_two_numbers],
         dependencies={
             add_two_numbers.name: {
-                'a': DependencyDefinition('return_one'),
-                'b': DependencyDefinition('return_two'),
+                "a": DependencyDefinition("return_one"),
+                "b": DependencyDefinition("return_two"),
             }
         },
     )
@@ -193,18 +193,18 @@ def load_constant(context):
 
 def define_test_notebook_dag_pipeline():
     return PipelineDefinition(
-        name='test_notebook_dag',
+        name="test_notebook_dag",
         solid_defs=[load_constant, add_two_numbers_pm_solid, mult_two_numbers_pm_solid],
         dependencies={
-            SolidInvocation('load_constant', alias='load_a'): {},
-            SolidInvocation('load_constant', alias='load_b'): {},
-            SolidInvocation(name='add_two_numbers', alias='add_two'): {
-                'a': DependencyDefinition('load_a'),
-                'b': DependencyDefinition('load_b'),
+            SolidInvocation("load_constant", alias="load_a"): {},
+            SolidInvocation("load_constant", alias="load_b"): {},
+            SolidInvocation(name="add_two_numbers", alias="add_two"): {
+                "a": DependencyDefinition("load_a"),
+                "b": DependencyDefinition("load_b"),
             },
-            SolidInvocation(name='mult_two_numbers', alias='mult_two'): {
-                'a': DependencyDefinition('add_two'),
-                'b': DependencyDefinition('load_b'),
+            SolidInvocation(name="mult_two_numbers", alias="mult_two"): {
+                "a": DependencyDefinition("add_two"),
+                "b": DependencyDefinition("load_b"),
             },
         },
     )
@@ -212,9 +212,9 @@ def define_test_notebook_dag_pipeline():
 
 def define_error_pipeline():
     return PipelineDefinition(
-        name='error_pipeline',
+        name="error_pipeline",
         solid_defs=[
-            dagstermill.define_dagstermill_solid('error_solid', nb_test_path('error_notebook'))
+            dagstermill.define_dagstermill_solid("error_solid", nb_test_path("error_notebook"))
         ],
     )
 
@@ -224,62 +224,62 @@ if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
     @solid_definition
     def clean_data_solid():
         return dagstermill.define_dagstermill_solid(
-            'clean_data', nb_test_path('clean_data'), output_defs=[OutputDefinition(DataFrame)]
+            "clean_data", nb_test_path("clean_data"), output_defs=[OutputDefinition(DataFrame)]
         )
 
     @solid_definition
     def LR_solid():
         return dagstermill.define_dagstermill_solid(
-            'linear_regression',
-            nb_test_path('tutorial_LR'),
-            input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
+            "linear_regression",
+            nb_test_path("tutorial_LR"),
+            input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
         )
 
     @solid_definition
     def RF_solid():
         return dagstermill.define_dagstermill_solid(
-            'random_forest_regression',
-            nb_test_path('tutorial_RF'),
-            input_defs=[InputDefinition(name='df', dagster_type=DataFrame)],
+            "random_forest_regression",
+            nb_test_path("tutorial_RF"),
+            input_defs=[InputDefinition(name="df", dagster_type=DataFrame)],
         )
 
     def define_tutorial_pipeline():
         return PipelineDefinition(
-            name='tutorial_pipeline',
+            name="tutorial_pipeline",
             solid_defs=[clean_data_solid, LR_solid, RF_solid],
             dependencies={
-                SolidInvocation('clean_data'): {},
-                SolidInvocation('linear_regression'): {'df': DependencyDefinition('clean_data')},
-                SolidInvocation('random_forest_regression'): {
-                    'df': DependencyDefinition('clean_data')
+                SolidInvocation("clean_data"): {},
+                SolidInvocation("linear_regression"): {"df": DependencyDefinition("clean_data")},
+                SolidInvocation("random_forest_regression"): {
+                    "df": DependencyDefinition("clean_data")
                 },
             },
         )
 
 
-@solid('resource_solid', required_resource_keys={'list'})
+@solid("resource_solid", required_resource_keys={"list"})
 def resource_solid(context):
-    context.resources.list.append('Hello, solid!')
+    context.resources.list.append("Hello, solid!")
     return True
 
 
 @solid_definition
 def hello_world_resource_solid():
     return dagstermill.define_dagstermill_solid(
-        'hello_world_resource',
-        nb_test_path('hello_world_resource'),
-        input_defs=[InputDefinition('nonce')],
-        required_resource_keys={'list'},
+        "hello_world_resource",
+        nb_test_path("hello_world_resource"),
+        input_defs=[InputDefinition("nonce")],
+        required_resource_keys={"list"},
     )
 
 
 @solid_definition
 def hello_world_resource_with_exception_solid():
     return dagstermill.define_dagstermill_solid(
-        'hello_world_resource_with_exception',
-        nb_test_path('hello_world_resource_with_exception'),
-        input_defs=[InputDefinition('nonce')],
-        required_resource_keys={'list'},
+        "hello_world_resource_with_exception",
+        nb_test_path("hello_world_resource_with_exception"),
+        input_defs=[InputDefinition("nonce")],
+        required_resource_keys={"list"},
     )
 
 
@@ -297,24 +297,24 @@ class FilePickleList(object):
 
     def open(self):
         self.read()
-        self.append('Opened')
+        self.append("Opened")
 
     def append(self, obj):
         self.read()
-        self.list.append(self.id + ': ' + obj)
+        self.list.append(self.id + ": " + obj)
         self.write()
 
     def read(self):
-        with open(self.path, 'rb') as fd:
+        with open(self.path, "rb") as fd:
             self.list = pickle.load(fd)
             return self.list
 
     def write(self):
-        with open(self.path, 'wb') as fd:
+        with open(self.path, "wb") as fd:
             pickle.dump(self.list, fd, protocol=PICKLE_PROTOCOL)
 
     def close(self):
-        self.append('Closed')
+        self.append("Closed")
         self.closed = True
 
 
@@ -329,40 +329,40 @@ def filepicklelist_resource(init_context):
 
 def define_resource_pipeline():
     return PipelineDefinition(
-        name='resource_pipeline',
+        name="resource_pipeline",
         solid_defs=[resource_solid, hello_world_resource_solid],
-        dependencies={'hello_world_resource': {'nonce': DependencyDefinition('resource_solid')}},
+        dependencies={"hello_world_resource": {"nonce": DependencyDefinition("resource_solid")}},
         mode_defs=[
-            ModeDefinition(name='test', resource_defs={'list': ResourceDefinition(lambda _: [])}),
-            ModeDefinition(name='prod', resource_defs={'list': filepicklelist_resource}),
+            ModeDefinition(name="test", resource_defs={"list": ResourceDefinition(lambda _: [])}),
+            ModeDefinition(name="prod", resource_defs={"list": filepicklelist_resource}),
         ],
     )
 
 
 def define_resource_with_exception_pipeline():
     return PipelineDefinition(
-        name='resource_with_exception_pipeline',
+        name="resource_with_exception_pipeline",
         solid_defs=[resource_solid, hello_world_resource_with_exception_solid],
         dependencies={
-            'hello_world_resource_with_exception': {'nonce': DependencyDefinition('resource_solid')}
+            "hello_world_resource_with_exception": {"nonce": DependencyDefinition("resource_solid")}
         },
-        mode_defs=[ModeDefinition(resource_defs={'list': filepicklelist_resource})],
+        mode_defs=[ModeDefinition(resource_defs={"list": filepicklelist_resource})],
     )
 
 
 @solid_definition
 def bad_kernel_solid():
-    return dagstermill.define_dagstermill_solid('bad_kernel_solid', nb_test_path('bad_kernel'))
+    return dagstermill.define_dagstermill_solid("bad_kernel_solid", nb_test_path("bad_kernel"))
 
 
 def define_bad_kernel_pipeline():
-    return PipelineDefinition(name='bad_kernel_pipeline', solid_defs=[bad_kernel_solid])
+    return PipelineDefinition(name="bad_kernel_pipeline", solid_defs=[bad_kernel_solid])
 
 
 reimport_solid = dagstermill.define_dagstermill_solid(
-    'reimport',
-    nb_test_path('reimport'),
-    input_defs=[InputDefinition('l', List[int])],
+    "reimport",
+    nb_test_path("reimport"),
+    input_defs=[InputDefinition("l", List[int])],
     output_defs=[OutputDefinition()],
 )
 
@@ -380,7 +380,7 @@ def reimport_pipeline():
 @solid_definition
 def yield_3_solid():
     return dagstermill.define_dagstermill_solid(
-        'yield_3', nb_test_path('yield_3'), [], [OutputDefinition(Int)],
+        "yield_3", nb_test_path("yield_3"), [], [OutputDefinition(Int)],
     )
 
 
@@ -400,7 +400,7 @@ class BasicTest(object):
 @solid_definition
 def yield_obj_solid():
     return dagstermill.define_dagstermill_solid(
-        'yield_obj', nb_test_path('yield_obj'), [], [OutputDefinition(Any)],
+        "yield_obj", nb_test_path("yield_obj"), [], [OutputDefinition(Any)],
     )
 
 
@@ -412,22 +412,22 @@ def yield_obj_pipeline():
 @repository
 def notebook_repo():
     pipeline_dict = {
-        'bad_kernel_pipeline': define_bad_kernel_pipeline,
-        'error_pipeline': define_error_pipeline,
-        'hello_world_pipeline': define_hello_world_pipeline,
-        'hello_world_config_pipeline': define_hello_world_config_pipeline,
-        'hello_world_explicit_yield_pipeline': define_hello_world_explicit_yield_pipeline,
-        'hello_world_with_output_pipeline': define_hello_world_with_output_pipeline,
-        'hello_logging_pipeline': define_hello_logging_pipeline,
-        'resource_pipeline': define_resource_pipeline,
-        'resource_with_exception_pipeline': define_resource_with_exception_pipeline,
-        'test_add_pipeline': define_add_pipeline,
-        'test_notebook_dag': define_test_notebook_dag_pipeline,
-        'reimport_pipeline': lambda: reimport_pipeline,
-        'yield_3_pipeline': lambda: yield_3_pipeline,
-        'yield_obj_pipeline': lambda: yield_obj_pipeline,
+        "bad_kernel_pipeline": define_bad_kernel_pipeline,
+        "error_pipeline": define_error_pipeline,
+        "hello_world_pipeline": define_hello_world_pipeline,
+        "hello_world_config_pipeline": define_hello_world_config_pipeline,
+        "hello_world_explicit_yield_pipeline": define_hello_world_explicit_yield_pipeline,
+        "hello_world_with_output_pipeline": define_hello_world_with_output_pipeline,
+        "hello_logging_pipeline": define_hello_logging_pipeline,
+        "resource_pipeline": define_resource_pipeline,
+        "resource_with_exception_pipeline": define_resource_with_exception_pipeline,
+        "test_add_pipeline": define_add_pipeline,
+        "test_notebook_dag": define_test_notebook_dag_pipeline,
+        "reimport_pipeline": lambda: reimport_pipeline,
+        "yield_3_pipeline": lambda: yield_3_pipeline,
+        "yield_obj_pipeline": lambda: yield_obj_pipeline,
     }
     if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
-        pipeline_dict['tutorial_pipeline'] = define_tutorial_pipeline
+        pipeline_dict["tutorial_pipeline"] = define_tutorial_pipeline
 
-    return {'pipelines': pipeline_dict}
+    return {"pipelines": pipeline_dict}

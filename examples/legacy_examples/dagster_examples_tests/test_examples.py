@@ -11,5 +11,5 @@ def no_print(_):
 def test_list_command():
     runner = CliRunner()
 
-    result = runner.invoke(pipeline_list_command, ['-w', script_relative_path('../workspace.yaml')])
+    result = runner.invoke(pipeline_list_command, ["-w", script_relative_path("../workspace.yaml")])
     assert result.exit_code == 0

@@ -20,16 +20,16 @@ from ..utils import PipelineSelector, capture_dauphin_error
 def execute_run_in_graphql_process(
     graphene_info, repository_location_name, repository_name, run_id
 ):
-    '''This indirection is done on purpose to make the logic in the function
+    """This indirection is done on purpose to make the logic in the function
     below re-usable. The parent function is wrapped in @capture_dauphin_error, which makes it
     difficult to do exception handling.
-    '''
+    """
     return _synchronously_execute_run_within_hosted_user_process(
         graphene_info, repository_location_name, repository_name, run_id
     )
 
 
-RunExecutionInfo = namedtuple('_RunExecutionInfo', 'external_pipeline pipeline_run')
+RunExecutionInfo = namedtuple("_RunExecutionInfo", "external_pipeline pipeline_run")
 
 
 # Welcome, to Greasy Hack Park
@@ -78,21 +78,21 @@ def _get_selector_with_workaround(
 def get_run_execution_info_for_created_run_or_error(
     graphene_info, repository_location_name, repository_name, run_id
 ):
-    '''
+    """
     Previously created run could either be created in a different process *or*
     during the launchScheduledRun call where we want to have a record of
     a run the was created but have invalid configuration
-    '''
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.str_param(repository_location_name, 'repository_location_name')
-    check.str_param(repository_name, 'repository_name')
-    check.str_param(run_id, 'run_id')
+    """
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.str_param(repository_location_name, "repository_location_name")
+    check.str_param(repository_name, "repository_name")
+    check.str_param(run_id, "run_id")
 
     instance = graphene_info.context.instance
 
     pipeline_run = instance.get_run_by_id(run_id)
     if not pipeline_run:
-        return graphene_info.schema.type_named('PipelineRunNotFoundError')(run_id)
+        return graphene_info.schema.type_named("PipelineRunNotFoundError")(run_id)
 
     external_pipeline = get_external_pipeline_or_raise(
         graphene_info,
@@ -115,7 +115,7 @@ def get_run_execution_info_for_created_run_or_error(
         # We currently re-use the engine events machinery to add the error to the event log, but
         # may need to create a new event type and instance method to handle these errors.
         invalid_config_exception = DagsterInvalidConfigError(
-            'Error in config for pipeline {}'.format(external_pipeline.name),
+            "Error in config for pipeline {}".format(external_pipeline.name),
             validated_config.errors,
             pipeline_run.run_config,
         )
@@ -156,6 +156,6 @@ def _synchronously_execute_run_within_hosted_user_process(
     external_pipeline, pipeline_run = run_info_or_error
     recon_pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
     execute_run(recon_pipeline, pipeline_run, graphene_info.context.instance)
-    return graphene_info.schema.type_named('ExecuteRunInProcessSuccess')(
-        run=graphene_info.schema.type_named('PipelineRun')(pipeline_run)
+    return graphene_info.schema.type_named("ExecuteRunInProcessSuccess")(
+        run=graphene_info.schema.type_named("PipelineRun")(pipeline_run)
     )

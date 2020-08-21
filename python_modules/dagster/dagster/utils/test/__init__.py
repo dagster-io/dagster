@@ -60,14 +60,14 @@ def create_test_pipeline_execution_context(logger_defs=None):
     from dagster.core.storage.intermediate_storage import build_in_mem_intermediates_storage
 
     loggers = check.opt_dict_param(
-        logger_defs, 'logger_defs', key_type=str, value_type=LoggerDefinition
+        logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition
     )
     mode_def = ModeDefinition(logger_defs=loggers)
     pipeline_def = PipelineDefinition(
-        name='test_legacy_context', solid_defs=[], mode_defs=[mode_def]
+        name="test_legacy_context", solid_defs=[], mode_defs=[mode_def]
     )
-    run_config = {'loggers': {key: {} for key in loggers}}
-    pipeline_run = PipelineRun(pipeline_name='test_legacy_context', run_config=run_config)
+    run_config = {"loggers": {key: {} for key in loggers}}
+    pipeline_run = PipelineRun(pipeline_name="test_legacy_context", run_config=run_config)
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline=pipeline_def, run_config=run_config)
     creation_data = create_context_creation_data(execution_plan, run_config, pipeline_run, instance)
@@ -98,8 +98,8 @@ def _dep_key_of(solid):
 
 
 def build_pipeline_with_input_stubs(pipeline_def, inputs):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.dict_param(inputs, 'inputs', key_type=str, value_type=dict)
+    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.dict_param(inputs, "inputs", key_type=str, value_type=dict)
 
     deps = defaultdict(dict)
     for solid_name, dep_dict in pipeline_def.dependencies.items():
@@ -112,15 +112,15 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
         if not pipeline_def.has_solid_named(solid_name):
             raise DagsterInvariantViolationError(
                 (
-                    'You are injecting an input value for solid {solid_name} '
-                    'into pipeline {pipeline_name} but that solid was not found'
+                    "You are injecting an input value for solid {solid_name} "
+                    "into pipeline {pipeline_name} but that solid was not found"
                 ).format(solid_name=solid_name, pipeline_name=pipeline_def.name)
             )
 
         solid = pipeline_def.solid_named(solid_name)
         for input_name, input_value in input_dict.items():
             stub_solid_def = define_stub_solid(
-                '__stub_{solid_name}_{input_name}'.format(
+                "__stub_{solid_name}_{input_name}".format(
                     solid_name=solid_name, input_name=input_name
                 ),
                 input_value,
@@ -129,7 +129,7 @@ def build_pipeline_with_input_stubs(pipeline_def, inputs):
             deps[_dep_key_of(solid)][input_name] = DependencyDefinition(stub_solid_def.name)
 
     return PipelineDefinition(
-        name=pipeline_def.name + '_stubbed',
+        name=pipeline_def.name + "_stubbed",
         solid_defs=pipeline_def.top_level_solid_defs + stub_solid_defs,
         mode_defs=pipeline_def.mode_definitions,
         dependencies=deps,
@@ -146,7 +146,7 @@ def execute_solids_within_pipeline(
     tags=None,
     instance=None,
 ):
-    '''Execute a set of solids within an existing pipeline.
+    """Execute a set of solids within an existing pipeline.
 
     Intended to support tests. Input values may be passed directly.
 
@@ -170,10 +170,10 @@ def execute_solids_within_pipeline(
     Returns:
         Dict[str, Union[CompositeSolidExecutionResult, SolidExecutionResult]]: The results of
         executing the solids, keyed by solid name.
-    '''
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
-    check.set_param(solid_names, 'solid_names', of_type=str)
-    inputs = check.opt_dict_param(inputs, 'inputs', key_type=str, value_type=dict)
+    """
+    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
+    check.set_param(solid_names, "solid_names", of_type=str)
+    inputs = check.opt_dict_param(inputs, "inputs", key_type=str, value_type=dict)
 
     sub_pipeline = pipeline_def.get_pipeline_subset_def(solid_names)
     stubbed_pipeline = build_pipeline_with_input_stubs(sub_pipeline, inputs)
@@ -199,7 +199,7 @@ def execute_solid_within_pipeline(
     tags=None,
     instance=None,
 ):
-    '''Execute a single solid within an existing pipeline.
+    """Execute a single solid within an existing pipeline.
 
     Intended to support tests. Input values may be passed directly.
 
@@ -223,7 +223,7 @@ def execute_solid_within_pipeline(
     Returns:
         Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
         solid.
-    '''
+    """
 
     return execute_solids_within_pipeline(
         pipeline_def,
@@ -242,13 +242,13 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
     pipeline = InMemoryExecutablePipeline(PipelineDefinition([]))
     pipeline_def = pipeline.get_definition()
     instance = check.opt_inst_param(
-        instance, 'instance', DagsterInstance, default=DagsterInstance.ephemeral()
+        instance, "instance", DagsterInstance, default=DagsterInstance.ephemeral()
     )
 
     execution_plan = create_execution_plan(pipeline)
 
     pipeline_run = instance.create_run(
-        pipeline_name='<empty>',
+        pipeline_name="<empty>",
         run_id=run_id,
         run_config=None,
         mode=None,
@@ -271,7 +271,7 @@ def yield_empty_pipeline_context(run_id=None, instance=None):
 def execute_solid(
     solid_def, mode_def=None, input_values=None, tags=None, run_config=None, raise_on_error=True,
 ):
-    '''Execute a single solid in an ephemeral pipeline.
+    """Execute a single solid in an ephemeral pipeline.
 
     Intended to support unit tests. Input values may be passed directly, and no pipeline need be
     specified -- an ephemeral pipeline will be constructed.
@@ -293,10 +293,10 @@ def execute_solid(
     Returns:
         Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
         solid.
-    '''
-    check.inst_param(solid_def, 'solid_def', ISolidDefinition)
-    check.opt_inst_param(mode_def, 'mode_def', ModeDefinition)
-    input_values = check.opt_dict_param(input_values, 'input_values', key_type=str)
+    """
+    check.inst_param(solid_def, "solid_def", ISolidDefinition)
+    check.opt_inst_param(mode_def, "mode_def", ModeDefinition)
+    input_values = check.opt_dict_param(input_values, "input_values", key_type=str)
     solid_defs = [solid_def]
 
     def create_value_solid(input_name, input_value):
@@ -314,7 +314,7 @@ def execute_solid(
 
     result = execute_pipeline(
         PipelineDefinition(
-            name='ephemeral_{}_solid_pipeline'.format(solid_def.name),
+            name="ephemeral_{}_solid_pipeline".format(solid_def.name),
             solid_defs=solid_defs,
             dependencies=dependencies,
             mode_defs=[mode_def] if mode_def else None,
@@ -328,7 +328,7 @@ def execute_solid(
 
 
 def check_dagster_type(dagster_type, value):
-    '''Test a custom Dagster type.
+    """Test a custom Dagster type.
 
     Args:
         dagster_type (Any): The Dagster type to test. Should be one of the
@@ -346,13 +346,13 @@ def check_dagster_type(dagster_type, value):
         .. code-block:: python
 
             assert check_dagster_type(Dict[Any, Any], {'foo': 'bar'}).success
-    '''
+    """
 
     if is_typing_type(dagster_type):
         raise DagsterInvariantViolationError(
             (
-                'Must pass in a type from dagster module. You passed {dagster_type} '
-                'which is part of python\'s typing module.'
+                "Must pass in a type from dagster module. You passed {dagster_type} "
+                "which is part of python's typing module."
             ).format(dagster_type=dagster_type)
         )
 
@@ -366,7 +366,7 @@ def check_dagster_type(dagster_type, value):
 
         if not isinstance(type_check, TypeCheck):
             raise DagsterInvariantViolationError(
-                'Type checks can only return TypeCheck. Type {type_name} returned {value}.'.format(
+                "Type checks can only return TypeCheck. Type {type_name} returned {value}.".format(
                     type_name=dagster_type.name, value=repr(type_check)
                 )
             )
@@ -386,14 +386,14 @@ def restore_directory(src):
 
 
 class FilesystemTestScheduler(Scheduler, ConfigurableClass):
-    '''This class is used in dagster core and dagster_graphql to test the scheduler's interactions
+    """This class is used in dagster core and dagster_graphql to test the scheduler's interactions
     with schedule storage, which are implemented in the methods defined on the base Scheduler class.
     Therefore, the following methods used to actually schedule jobs (e.g. create and remove cron jobs
     on a cron tab) are left unimplemented.
-    '''
+    """
 
     def __init__(self, artifacts_dir, inst_data=None):
-        check.str_param(artifacts_dir, 'artifacts_dir')
+        check.str_param(artifacts_dir, "artifacts_dir")
         self._artifacts_dir = artifacts_dir
         self._inst_data = inst_data
 
@@ -403,11 +403,11 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {'base_dir': str}
+        return {"base_dir": str}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return FilesystemTestScheduler(artifacts_dir=config_value['base_dir'], inst_data=inst_data)
+        return FilesystemTestScheduler(artifacts_dir=config_value["base_dir"], inst_data=inst_data)
 
     def debug_info(self):
         return ""
@@ -422,8 +422,8 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
         return 0
 
     def get_logs_path(self, _instance, schedule_origin_id):
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
-        return os.path.join(self._artifacts_dir, 'logs', schedule_origin_id, 'scheduler.log')
+        check.str_param(schedule_origin_id, "schedule_origin_id")
+        return os.path.join(self._artifacts_dir, "logs", schedule_origin_id, "scheduler.log")
 
     def wipe(self, instance):
         pass

@@ -28,9 +28,9 @@ def basic_lakehouse_and_storages():
         return storage2
 
     dev_mode = ModeDefinition(
-        name='dev', resource_defs={'storage1': some_storage, 'storage2': some_other_storage},
+        name="dev", resource_defs={"storage1": some_storage, "storage2": some_other_storage},
     )
-    dev_preset = PresetDefinition(name='dev', mode='dev', run_config={}, solid_selection=None)
+    dev_preset = PresetDefinition(name="dev", mode="dev", run_config={}, solid_selection=None)
 
     return (
         Lakehouse(mode_defs=[dev_mode], preset_defs=[dev_preset]),

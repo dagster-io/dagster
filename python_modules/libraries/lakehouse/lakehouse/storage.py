@@ -8,7 +8,7 @@ from dagster.core.definitions.config import is_callable_valid_config_arg
 
 
 class AssetStorage(six.with_metaclass(ABCMeta)):
-    '''An AssetStorage describes how to save and load assets.'''
+    """An AssetStorage describes how to save and load assets."""
 
     @abstractmethod
     def save(self, obj, path, resources):
@@ -47,7 +47,7 @@ def asset_storage(config_schema=None, description=None, type_policies=None):
     actual_config_schema = None if first_arg_is_fn else config_schema
 
     def inner(fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         resource_def = AssetStorageDefinition(
             resource_fn=fn,

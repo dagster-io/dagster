@@ -17,7 +17,7 @@ from .utils import create_blob_client, generate_blob_sas
 
 
 class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
-    '''Logs solid compute function stdout and stderr to Azure Blob Storage.
+    """Logs solid compute function stdout and stderr to Azure Blob Storage.
 
     This is also compatible with Azure Data Lake Storage.
 
@@ -46,7 +46,7 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
         prefix (Optional[str]): Prefix for the log file keys.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
-    '''
+    """
 
     def __init__(
         self,
@@ -55,12 +55,12 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
         secret_key,
         local_dir=None,
         inst_data=None,
-        prefix='dagster',
+        prefix="dagster",
     ):
-        self._storage_account = check.str_param(storage_account, 'storage_account')
-        self._container = check.str_param(container, 'container')
-        self._blob_prefix = check.str_param(prefix, 'prefix')
-        check.str_param(secret_key, 'secret_key')
+        self._storage_account = check.str_param(storage_account, "storage_account")
+        self._container = check.str_param(container, "container")
+        self._blob_prefix = check.str_param(prefix, "prefix")
+        check.str_param(secret_key, "secret_key")
 
         self._blob_client = create_blob_client(storage_account, secret_key)
         self._container_client = self._blob_client.get_container_client(container)
@@ -71,7 +71,7 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
             local_dir = seven.get_system_temp_directory()
 
         self.local_manager = LocalComputeLogManager(local_dir)
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @contextmanager
     def _watch_logs(self, pipeline_run, step_key=None):
@@ -88,11 +88,11 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return {
-            'storage_account': str,
-            'container': str,
-            'secret_key': str,
-            'local_dir': Field(str, is_required=False),
-            'prefix': Field(str, is_required=False, default_value='dagster'),
+            "storage_account": str,
+            "container": str,
+            "secret_key": str,
+            "local_dir": Field(str, is_required=False),
+            "prefix": Field(str, is_required=False, default_value="dagster"),
         }
 
     @staticmethod
@@ -153,7 +153,7 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
     def _from_local_file_data(self, run_id, key, io_type, local_file_data):
         is_complete = self.is_watch_completed(run_id, key)
         path = (
-            'https://{account}.blob.core.windows.net/{container}/{key}'.format(
+            "https://{account}.blob.core.windows.net/{container}/{key}".format(
                 account=self._storage_account,
                 container=self._container,
                 key=self._blob_key(run_id, key, io_type),
@@ -174,7 +174,7 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
         path = self.get_local_path(run_id, key, io_type)
         ensure_file(path)
         key = self._blob_key(run_id, key, io_type)
-        with open(path, 'rb') as data:
+        with open(path, "rb") as data:
             blob = self._container_client.get_blob_client(key)
             blob.upload_blob(data)
 
@@ -182,18 +182,18 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
         path = self.get_local_path(run_id, key, io_type)
         ensure_dir(os.path.dirname(path))
         key = self._blob_key(run_id, key, io_type)
-        with open(path, 'wb') as fileobj:
+        with open(path, "wb") as fileobj:
             blob = self._container_client.get_blob_client(key)
             blob.download_blob().readinto(fileobj)
 
     def _blob_key(self, run_id, key, io_type):
-        check.inst_param(io_type, 'io_type', ComputeIOType)
+        check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
         paths = [
             self._blob_prefix,
-            'storage',
+            "storage",
             run_id,
-            'compute_logs',
-            '{}.{}'.format(key, extension),
+            "compute_logs",
+            "{}.{}".format(key, extension),
         ]
-        return '/'.join(paths)  # blob path delimiter
+        return "/".join(paths)  # blob path delimiter

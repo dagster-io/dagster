@@ -15,10 +15,10 @@ from .objects import ExecutionStep, StepInput, StepKind, StepOutput
 
 
 def create_compute_step(pipeline_name, environment_config, solid, step_inputs, handle):
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.inst_param(solid, 'solid', Solid)
-    check.list_param(step_inputs, 'step_inputs', of_type=StepInput)
-    check.opt_inst_param(handle, 'handle', SolidHandle)
+    check.str_param(pipeline_name, "pipeline_name")
+    check.inst_param(solid, "solid", Solid)
+    check.list_param(step_inputs, "step_inputs", of_type=StepInput)
+    check.opt_inst_param(handle, "handle", SolidHandle)
 
     # the environment config has the solid output name configured
     config_output_names = set()
@@ -31,7 +31,7 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
 
     return ExecutionStep(
         pipeline_name=pipeline_name,
-        key_suffix='compute',
+        key_suffix="compute",
         step_inputs=step_inputs,
         step_outputs=[
             StepOutput(
@@ -54,16 +54,16 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
 
 
 def _yield_compute_results(compute_context, inputs, compute_fn):
-    check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
+    check.inst_param(compute_context, "compute_context", SystemComputeExecutionContext)
     step = compute_context.step
     user_event_sequence = compute_fn(SolidExecutionContext(compute_context), inputs)
 
     if isinstance(user_event_sequence, Output):
         raise DagsterInvariantViolationError(
             (
-                'Compute function for solid {solid_name} returned a Output rather than '
-                'yielding it. The compute_fn of the core SolidDefinition must yield '
-                'its results'
+                "Compute function for solid {solid_name} returned a Output rather than "
+                "yielding it. The compute_fn of the core SolidDefinition must yield "
+                "its results"
             ).format(solid_name=str(step.solid_handle))
         )
 
@@ -76,25 +76,25 @@ def _yield_compute_results(compute_context, inputs, compute_fn):
         else:
             raise DagsterInvariantViolationError(
                 (
-                    'Compute function for solid {solid_name} yielded a value of type {type_} '
-                    'rather than an instance of Output, AssetMaterialization, or ExpectationResult.'
-                    ' Values yielded by solids must be wrapped in one of these types. If your '
-                    'solid has a single output and yields no other events, you may want to use '
-                    '`return` instead of `yield` in the body of your solid compute function. If '
-                    'you are already using `return`, and you expected to return a value of type '
-                    '{type_}, you may be inadvertently returning a generator rather than the value '
-                    'you expected.'
+                    "Compute function for solid {solid_name} yielded a value of type {type_} "
+                    "rather than an instance of Output, AssetMaterialization, or ExpectationResult."
+                    " Values yielded by solids must be wrapped in one of these types. If your "
+                    "solid has a single output and yields no other events, you may want to use "
+                    "`return` instead of `yield` in the body of your solid compute function. If "
+                    "you are already using `return`, and you expected to return a value of type "
+                    "{type_}, you may be inadvertently returning a generator rather than the value "
+                    "you expected."
                 ).format(solid_name=str(step.solid_handle), type_=type(event))
             )
 
 
 def _execute_core_compute(compute_context, inputs, compute_fn):
-    '''
+    """
     Execute the user-specified compute for the solid. Wrap in an error boundary and do
     all relevant logging and metrics tracking
-    '''
-    check.inst_param(compute_context, 'compute_context', SystemComputeExecutionContext)
-    check.dict_param(inputs, 'inputs', key_type=str)
+    """
+    check.inst_param(compute_context, "compute_context", SystemComputeExecutionContext)
+    check.dict_param(inputs, "inputs", key_type=str)
 
     step = compute_context.step
 
@@ -109,7 +109,7 @@ def _execute_core_compute(compute_context, inputs, compute_fn):
         solid_output_names = {output.name for output in step.step_outputs}
         omitted_outputs = solid_output_names.difference(emitted_result_names)
         compute_context.log.info(
-            'Solid {solid} did not fire outputs {outputs}'.format(
+            "Solid {solid} did not fire outputs {outputs}".format(
                 solid=str(step.solid_handle), outputs=repr(omitted_outputs)
             )
         )

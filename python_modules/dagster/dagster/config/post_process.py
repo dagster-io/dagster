@@ -13,7 +13,7 @@ from .traversal_context import TraversalContext, TraversalType
 
 def post_process_config(config_type, config_value):
     ctx = TraversalContext.from_config_type(
-        config_type=check.inst_param(config_type, 'config_type', ConfigType),
+        config_type=check.inst_param(config_type, "config_type", ConfigType),
         stack=EvaluationStack(entries=[]),
         traversal_type=TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS,
     )
@@ -22,7 +22,7 @@ def post_process_config(config_type, config_value):
 
 def resolve_defaults(config_type, config_value):
     ctx = TraversalContext.from_config_type(
-        config_type=check.inst_param(config_type, 'config_type', ConfigType),
+        config_type=check.inst_param(config_type, "config_type", ConfigType),
         stack=EvaluationStack(entries=[]),
         traversal_type=TraversalType.RESOLVE_DEFAULTS,
     )
@@ -64,7 +64,7 @@ def _recursively_resolve_defaults(context, config_value):
     elif context.config_type.kind == ConfigTypeKind.SCALAR_UNION:
         return _recurse_in_to_scalar_union(context, config_value)
     else:
-        check.failed('Unsupported type {name}'.format(name=context.config_type.name))
+        check.failed("Unsupported type {name}".format(name=context.config_type.name))
 
 
 def _post_process(context, config_value):
@@ -92,7 +92,7 @@ def _recurse_in_to_scalar_union(context, config_value):
 def _recurse_in_to_selector(context, config_value):
     check.invariant(
         context.config_type.kind == ConfigTypeKind.SELECTOR,
-        'Non-selector not caught in validation',
+        "Non-selector not caught in validation",
     )
 
     if config_value:
@@ -117,8 +117,8 @@ def _recurse_in_to_selector(context, config_value):
 
 
 def _recurse_in_to_shape(context, config_value):
-    check.invariant(ConfigTypeKind.is_shape(context.config_type.kind), 'Unexpected non shape type')
-    config_value = check.opt_dict_param(config_value, 'config_value', key_type=str)
+    check.invariant(ConfigTypeKind.is_shape(context.config_type.kind), "Unexpected non shape type")
+    config_value = check.opt_dict_param(config_value, "config_value", key_type=str)
 
     fields = context.config_type.fields
     incoming_fields = set(config_value.keys())
@@ -137,7 +137,7 @@ def _recurse_in_to_shape(context, config_value):
             )
 
         elif field_def.is_required:
-            check.failed('Missing required composite member not caught in validation')
+            check.failed("Missing required composite member not caught in validation")
 
     # For permissive composite fields, we skip applying defaults because these fields are unknown
     # to us
@@ -163,14 +163,14 @@ def _recurse_in_to_shape(context, config_value):
 
 
 def _recurse_in_to_array(context, config_value):
-    check.invariant(context.config_type.kind == ConfigTypeKind.ARRAY, 'Unexpected non array type')
+    check.invariant(context.config_type.kind == ConfigTypeKind.ARRAY, "Unexpected non array type")
 
     if not config_value:
         return EvaluateValueResult.for_value([])
 
     if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:
         if any((cv is None for cv in config_value)):
-            check.failed('Null array member not caught in validation')
+            check.failed("Null array member not caught in validation")
 
     results = [
         _recursively_process_config(context.for_array(idx), item)

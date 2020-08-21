@@ -41,14 +41,14 @@ from dagster.utils.test import yield_empty_pipeline_context
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize(self, value, write_file_obj):
-        return write_file_obj.write(bytes(value.upper().encode('utf-8')))
+        return write_file_obj.write(bytes(value.upper().encode("utf-8")))
 
     def deserialize(self, read_file_obj):
-        return read_file_obj.read().decode('utf-8').lower()
+        return read_file_obj.read().decode("utf-8").lower()
 
 
 LowercaseString = create_any_type(
-    'LowercaseString', serialization_strategy=UppercaseSerializationStrategy('uppercase'),
+    "LowercaseString", serialization_strategy=UppercaseSerializationStrategy("uppercase"),
 )
 
 
@@ -60,19 +60,19 @@ def define_inty_pipeline(should_throw=True):
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
     @lambda_solid
     def user_throw_exception():
-        raise Exception('whoops')
+        raise Exception("whoops")
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 system_storage_defs=adls2_plus_default_storage_defs,
-                resource_defs={'adls2': adls2_resource},
+                resource_defs={"adls2": adls2_resource},
             )
         ]
     )
@@ -84,7 +84,7 @@ def define_inty_pipeline(should_throw=True):
     return basic_external_plan_execution
 
 
-def get_step_output(step_events, step_key, output_name='result'):
+def get_step_output(step_events, step_key, output_name="result"):
     for step_event in step_events:
         if (
             step_event.event_type == DagsterEventType.STEP_OUTPUT
@@ -97,7 +97,7 @@ def get_step_output(step_events, step_key, output_name='result'):
 
 def get_azure_credential():
     try:
-        return {'key': os.environ["AZURE_STORAGE_ACCOUNT_KEY"]}
+        return {"key": os.environ["AZURE_STORAGE_ACCOUNT_KEY"]}
     except KeyError:
         raise Exception("AZURE_STORAGE_ACCOUNT_KEY must be set for intermediate store tests")
 
@@ -117,21 +117,21 @@ def test_using_adls2_for_subplan(storage_account, file_system):
     pipeline_def = define_inty_pipeline()
 
     run_config = {
-        'resources': {
-            'adls2': {
-                'config': {'storage_account': storage_account, 'credential': get_azure_credential()}
+        "resources": {
+            "adls2": {
+                "config": {"storage_account": storage_account, "credential": get_azure_credential()}
             }
         },
-        'storage': {'adls2': {'config': {'adls2_file_system': file_system}}},
+        "storage": {"adls2": {"config": {"adls2_file_system": file_system}}},
     }
 
     run_id = make_new_run_id()
 
     execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
-    assert execution_plan.get_step_by_key('return_one.compute')
+    assert execution_plan.get_step_by_key("return_one.compute")
 
-    step_keys = ['return_one.compute']
+    step_keys = ["return_one.compute"]
     instance = DagsterInstance.ephemeral()
     pipeline_run = PipelineRun(
         pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
@@ -146,39 +146,39 @@ def test_using_adls2_for_subplan(storage_account, file_system):
         )
     )
 
-    assert get_step_output(return_one_step_events, 'return_one.compute')
+    assert get_step_output(return_one_step_events, "return_one.compute")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(['return_one.compute']),
+        execution_plan.build_subset_plan(["return_one.compute"]),
         run_config,
         pipeline_run,
         instance,
     ) as context:
 
-        resource = context.scoped_resources_builder.build(required_resource_keys={'adls2'}).adls2
+        resource = context.scoped_resources_builder.build(required_resource_keys={"adls2"}).adls2
         intermediate_storage = ADLS2IntermediateStorage(
             file_system=file_system,
             run_id=run_id,
             adls2_client=resource.adls2_client,
             blob_client=resource.blob_client,
         )
-        step_output_handle = StepOutputHandle('return_one.compute')
+        step_output_handle = StepOutputHandle("return_one.compute")
         assert intermediate_storage.has_intermediate(context, step_output_handle)
         assert intermediate_storage.get_intermediate(context, Int, step_output_handle).obj == 1
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['add_one.compute']),
+            execution_plan.build_subset_plan(["add_one.compute"]),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
         )
     )
 
-    assert get_step_output(add_one_step_events, 'add_one.compute')
+    assert get_step_output(add_one_step_events, "add_one.compute")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(['add_one.compute']), run_config, pipeline_run, instance,
+        execution_plan.build_subset_plan(["add_one.compute"]), run_config, pipeline_run, instance,
     ) as context:
-        step_output_handle = StepOutputHandle('add_one.compute')
+        step_output_handle = StepOutputHandle("add_one.compute")
         assert intermediate_storage.has_intermediate(context, step_output_handle)
         assert intermediate_storage.get_intermediate(context, Int, step_output_handle).obj == 2
 
@@ -194,24 +194,24 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
         cls, intermediate_storage, context, dagster_type, step_output_handle, value
     ):
         dagster_type = resolve_dagster_type(dagster_type)
-        check.inst_param(intermediate_storage, 'intermediate_storage', ADLS2IntermediateStorage)
-        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        check.inst_param(intermediate_storage, "intermediate_storage", ADLS2IntermediateStorage)
+        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
         paths.append(value)
         key = intermediate_storage.object_store.key_for_paths([intermediate_storage.root] + paths)
         return intermediate_storage.object_store.set_object(
-            key, '', dagster_type.serialization_strategy
+            key, "", dagster_type.serialization_strategy
         )
 
     @classmethod
     def get_intermediate_object(
         cls, intermediate_storage, context, dagster_type, step_output_handle
     ):
-        check.inst_param(intermediate_storage, 'intermediate_storage', ADLS2IntermediateStorage)
-        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        check.inst_param(intermediate_storage, "intermediate_storage", ADLS2IntermediateStorage)
+        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
         res = intermediate_storage.object_store.file_system_client.get_paths(
             intermediate_storage.key_for_paths(paths)
         )
-        return next(res).name.split('/')[-1]
+        return next(res).name.split("/")[-1]
 
 
 @nettest
@@ -231,19 +231,19 @@ def test_adls2_intermediate_storage_with_type_storage_plugin(storage_account, fi
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_storage.set_intermediate(
-                context, RuntimeString, StepOutputHandle('obj_name'), 'hello'
+                context, RuntimeString, StepOutputHandle("obj_name"), "hello"
             )
 
-            assert intermediate_storage.has_intermediate(context, StepOutputHandle('obj_name'))
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle("obj_name"))
             assert (
                 intermediate_storage.get_intermediate(
-                    context, RuntimeString, StepOutputHandle('obj_name')
+                    context, RuntimeString, StepOutputHandle("obj_name")
                 )
-                == 'hello'
+                == "hello"
             )
 
         finally:
-            intermediate_storage.rm_intermediate(context, StepOutputHandle('obj_name'))
+            intermediate_storage.rm_intermediate(context, StepOutputHandle("obj_name"))
 
 
 @nettest
@@ -264,7 +264,7 @@ def test_adls2_intermediate_storage_with_composite_type_storage_plugin(
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_storage.set_intermediate(
-                context, resolve_dagster_type(List[String]), StepOutputHandle('obj_name'), ['hello']
+                context, resolve_dagster_type(List[String]), StepOutputHandle("obj_name"), ["hello"]
             )
 
 
@@ -281,7 +281,7 @@ def test_adls2_intermediate_storage_composite_types_with_custom_serializer_for_i
         file_system=file_system,
     )
 
-    obj_name = 'list'
+    obj_name = "list"
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
@@ -289,12 +289,12 @@ def test_adls2_intermediate_storage_composite_types_with_custom_serializer_for_i
                 context,
                 resolve_dagster_type(List[LowercaseString]),
                 StepOutputHandle(obj_name),
-                ['foo', 'bar'],
+                ["foo", "bar"],
             )
             assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
             assert intermediate_storage.get_intermediate(
                 context, resolve_dagster_type(List[Bool]), StepOutputHandle(obj_name)
-            ).obj == ['foo', 'bar']
+            ).obj == ["foo", "bar"]
 
         finally:
             intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))
@@ -314,43 +314,43 @@ def test_adls2_intermediate_storage_with_custom_serializer(storage_account, file
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_storage.set_intermediate(
-                context, LowercaseString, StepOutputHandle('foo'), 'foo'
+                context, LowercaseString, StepOutputHandle("foo"), "foo"
             )
 
             assert (
                 intermediate_storage.object_store.file_system_client.get_file_client(
-                    os.path.join(*[intermediate_storage.root, 'intermediates', 'foo', 'result']),
+                    os.path.join(*[intermediate_storage.root, "intermediates", "foo", "result"]),
                 )
                 .download_file()
                 .readall()
-                .decode('utf-8')
-                == 'FOO'
+                .decode("utf-8")
+                == "FOO"
             )
 
-            assert intermediate_storage.has_intermediate(context, StepOutputHandle('foo'))
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle("foo"))
             assert (
                 intermediate_storage.get_intermediate(
-                    context, LowercaseString, StepOutputHandle('foo')
+                    context, LowercaseString, StepOutputHandle("foo")
                 ).obj
-                == 'foo'
+                == "foo"
             )
         finally:
-            intermediate_storage.rm_intermediate(context, StepOutputHandle('foo'))
+            intermediate_storage.rm_intermediate(context, StepOutputHandle("foo"))
 
 
 @nettest
 def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
-    adls2_prefix = 'custom_prefix'
+    adls2_prefix = "custom_prefix"
 
     pipe = define_inty_pipeline(should_throw=False)
     run_config = {
-        'resources': {
-            'adls2': {
-                'config': {'storage_account': storage_account, 'credential': get_azure_credential()}
+        "resources": {
+            "adls2": {
+                "config": {"storage_account": storage_account, "credential": get_azure_credential()}
             }
         },
-        'storage': {
-            'adls2': {'config': {'adls2_file_system': file_system, 'adls2_prefix': adls2_prefix}}
+        "storage": {
+            "adls2": {"config": {"adls2_file_system": file_system, "adls2_prefix": adls2_prefix}}
         },
     }
 
@@ -362,7 +362,7 @@ def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
 
     execution_plan = create_execution_plan(pipe, run_config)
     with scoped_pipeline_context(execution_plan, run_config, pipeline_run, instance,) as context:
-        resource = context.scoped_resources_builder.build(required_resource_keys={'adls2'}).adls2
+        resource = context.scoped_resources_builder.build(required_resource_keys={"adls2"}).adls2
         intermediate_storage = ADLS2IntermediateStorage(
             run_id=result.run_id,
             file_system=file_system,
@@ -370,16 +370,16 @@ def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
             adls2_client=resource.adls2_client,
             blob_client=resource.blob_client,
         )
-        assert intermediate_storage.root == '/'.join(['custom_prefix', 'storage', result.run_id])
+        assert intermediate_storage.root == "/".join(["custom_prefix", "storage", result.run_id])
         assert (
             intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle('return_one.compute')
+                context, Int, StepOutputHandle("return_one.compute")
             ).obj
             == 1
         )
         assert (
             intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle('add_one.compute')
+                context, Int, StepOutputHandle("add_one.compute")
             ).obj
             == 2
         )
@@ -394,26 +394,26 @@ def test_adls2_intermediate_storage_with_custom_prefix(storage_account, file_sys
         blob_client=get_blob_client(storage_account),
         run_id=run_id,
         file_system=file_system,
-        prefix='custom_prefix',
+        prefix="custom_prefix",
     )
-    assert intermediate_storage.root == '/'.join(['custom_prefix', 'storage', run_id])
+    assert intermediate_storage.root == "/".join(["custom_prefix", "storage", run_id])
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
             intermediate_storage.set_intermediate(
-                context, RuntimeBool, StepOutputHandle('true'), True
+                context, RuntimeBool, StepOutputHandle("true"), True
             )
 
-            assert intermediate_storage.has_intermediate(context, StepOutputHandle('true'))
-            assert intermediate_storage.uri_for_paths(['true']).startswith(
-                'abfss://{fs}@{account}.dfs.core.windows.net/custom_prefix'.format(
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle("true"))
+            assert intermediate_storage.uri_for_paths(["true"]).startswith(
+                "abfss://{fs}@{account}.dfs.core.windows.net/custom_prefix".format(
                     account=storage_account, fs=file_system
                 )
             )
 
     finally:
-        intermediate_storage.rm_intermediate(context, StepOutputHandle('true'))
+        intermediate_storage.rm_intermediate(context, StepOutputHandle("true"))
 
 
 @nettest
@@ -427,7 +427,7 @@ def test_adls2_intermediate_storage(storage_account, file_system):
         run_id=run_id,
         file_system=file_system,
     )
-    assert intermediate_storage.root == '/'.join(['dagster', 'storage', run_id])
+    assert intermediate_storage.root == "/".join(["dagster", "storage", run_id])
 
     intermediate_storage_2 = ADLS2IntermediateStorage(
         adls2_client=get_adls2_client(storage_account),
@@ -435,37 +435,37 @@ def test_adls2_intermediate_storage(storage_account, file_system):
         run_id=run_id_2,
         file_system=file_system,
     )
-    assert intermediate_storage_2.root == '/'.join(['dagster', 'storage', run_id_2])
+    assert intermediate_storage_2.root == "/".join(["dagster", "storage", run_id_2])
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
 
             intermediate_storage.set_intermediate(
-                context, RuntimeBool, StepOutputHandle('true'), True
+                context, RuntimeBool, StepOutputHandle("true"), True
             )
 
-            assert intermediate_storage.has_intermediate(context, StepOutputHandle('true'))
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle("true"))
             assert (
                 intermediate_storage.get_intermediate(
-                    context, RuntimeBool, StepOutputHandle('true')
+                    context, RuntimeBool, StepOutputHandle("true")
                 ).obj
                 is True
             )
-            assert intermediate_storage.uri_for_paths(['true']).startswith('abfss://')
+            assert intermediate_storage.uri_for_paths(["true"]).startswith("abfss://")
 
             intermediate_storage_2.copy_intermediate_from_run(
-                context, run_id, StepOutputHandle('true')
+                context, run_id, StepOutputHandle("true")
             )
-            assert intermediate_storage_2.has_intermediate(context, StepOutputHandle('true'))
+            assert intermediate_storage_2.has_intermediate(context, StepOutputHandle("true"))
             assert (
                 intermediate_storage_2.get_intermediate(
-                    context, RuntimeBool, StepOutputHandle('true')
+                    context, RuntimeBool, StepOutputHandle("true")
                 ).obj
                 is True
             )
     finally:
-        intermediate_storage.rm_intermediate(context, StepOutputHandle('true'))
-        intermediate_storage_2.rm_intermediate(context, StepOutputHandle('true'))
+        intermediate_storage.rm_intermediate(context, StepOutputHandle("true"))
+        intermediate_storage_2.rm_intermediate(context, StepOutputHandle("true"))
 
 
 class CsvSerializationStrategy(SerializationStrategy):
@@ -496,7 +496,7 @@ class LessSimpleDataFrame(list):
 
 def test_custom_read_write_mode(storage_account, file_system):
     run_id = make_new_run_id()
-    data_frame = [OrderedDict({'foo': '1', 'bar': '1'}), OrderedDict({'foo': '2', 'bar': '2'})]
+    data_frame = [OrderedDict({"foo": "1", "bar": "1"}), OrderedDict({"foo": "2", "bar": "2"})]
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
             intermediate_storage = ADLS2IntermediateStorage(
@@ -508,20 +508,20 @@ def test_custom_read_write_mode(storage_account, file_system):
             intermediate_storage.set_intermediate(
                 context,
                 resolve_dagster_type(LessSimpleDataFrame),
-                StepOutputHandle('data_frame'),
+                StepOutputHandle("data_frame"),
                 data_frame,
             )
 
-            assert intermediate_storage.has_intermediate(context, StepOutputHandle('data_frame'))
+            assert intermediate_storage.has_intermediate(context, StepOutputHandle("data_frame"))
             assert (
                 intermediate_storage.get_intermediate(
                     context,
                     resolve_dagster_type(LessSimpleDataFrame),
-                    StepOutputHandle('data_frame'),
+                    StepOutputHandle("data_frame"),
                 ).obj
                 == data_frame
             )
-            assert intermediate_storage.uri_for_paths(['data_frame']).startswith('abfss://')
+            assert intermediate_storage.uri_for_paths(["data_frame"]).startswith("abfss://")
 
     finally:
-        intermediate_storage.rm_intermediate(context, StepOutputHandle('data_frame'))
+        intermediate_storage.rm_intermediate(context, StepOutputHandle("data_frame"))

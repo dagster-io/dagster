@@ -43,15 +43,15 @@ _AWS_MAX_TRIES = 20  # this takes about a day before we run out of tries
 
 def _client_error_code(ex):
     """Get the error code for the given ClientError"""
-    return ex.response.get('Error', {}).get('Code', '')
+    return ex.response.get("Error", {}).get("Code", "")
 
 
 def _client_error_status(ex):
     """Get the HTTP status for the given ClientError"""
     resp = ex.response
     # sometimes status code is in ResponseMetadata, not Error
-    return resp.get('Error', {}).get('HTTPStatusCode') or resp.get('ResponseMetadata', {}).get(
-        'HTTPStatusCode'
+    return resp.get("Error", {}).get("HTTPStatusCode") or resp.get("ResponseMetadata", {}).get(
+        "HTTPStatusCode"
     )
 
 
@@ -61,7 +61,7 @@ def _is_retriable_client_error(ex):
         # these rarely get through in boto3
         code = _client_error_code(ex)
         # "Throttl" catches "Throttled" and "Throttling"
-        if any(c in code for c in ('Throttl', 'RequestExpired', 'Timeout')):
+        if any(c in code for c in ("Throttl", "RequestExpired", "Timeout")):
             return True
         # spurious 505s thought to be part of an AWS load balancer issue
         return _client_error_status(ex) == 505
@@ -70,9 +70,9 @@ def _is_retriable_client_error(ex):
     elif isinstance(ex, ssl.SSLError):
         # catch ssl.SSLError: ('The read operation timed out',). See #1827.
         # also catches 'The write operation timed out'
-        return any(isinstance(arg, str) and 'timed out' in arg for arg in ex.args)
+        return any(isinstance(arg, str) and "timed out" in arg for arg in ex.args)
     elif isinstance(ex, socket.error):
-        return ex.args in ((104, 'Connection reset by peer'), (110, 'Connection timed out'))
+        return ex.args in ((104, "Connection reset by peer"), (110, "Connection timed out"))
     else:
         return False
 
@@ -86,7 +86,7 @@ def _wrap_aws_client(raw_client, min_backoff=None):
         backoff=max(_AWS_BACKOFF, min_backoff or 0),
         multiplier=_AWS_BACKOFF_MULTIPLIER,
         max_tries=_AWS_MAX_TRIES,
-        unwrap_methods={'get_paginator'},
+        unwrap_methods={"get_paginator"},
     )
 
 

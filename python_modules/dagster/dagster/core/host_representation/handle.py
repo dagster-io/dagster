@@ -21,15 +21,15 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 # as possible since that it how this system will be used in prod.
 # We used a hard-coded name so that we don't have to create
 # made up names for this case.
-IN_PROCESS_NAME = '<<in_process>>'
+IN_PROCESS_NAME = "<<in_process>>"
 
 
 def _assign_grpc_location_name(port, socket, host):
-    check.opt_int_param(port, 'port')
-    check.opt_str_param(socket, 'socket')
-    check.str_param(host, 'host')
+    check.opt_int_param(port, "port")
+    check.opt_str_param(socket, "socket")
+    check.str_param(host, "host")
     check.invariant(port or socket)
-    return 'grpc:{host}:{socket_or_port}'.format(
+    return "grpc:{host}:{socket_or_port}".format(
         host=host, socket_or_port=(socket if socket else port)
     )
 
@@ -37,13 +37,13 @@ def _assign_grpc_location_name(port, socket, host):
 def _assign_python_env_location_name(repository_code_pointer_dict):
     check.dict_param(
         repository_code_pointer_dict,
-        'repository_code_pointer_dict',
+        "repository_code_pointer_dict",
         key_type=str,
         value_type=CodePointer,
     )
     if len(repository_code_pointer_dict) > 1:
         raise DagsterInvariantViolationError(
-            'If there is one than more repository you must provide a location name'
+            "If there is one than more repository you must provide a location name"
         )
 
     return next(iter(repository_code_pointer_dict.keys()))
@@ -53,9 +53,9 @@ def _assign_python_env_location_name(repository_code_pointer_dict):
 # containing user code
 class UserProcessApi(Enum):
     # Execute via the command-line API
-    CLI = 'CLI'
+    CLI = "CLI"
     # Connect via gRPC
-    GRPC = 'GRPC'
+    GRPC = "GRPC"
 
 
 class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
@@ -68,7 +68,7 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
 
     @staticmethod
     def create_in_process_location(pointer):
-        check.inst_param(pointer, 'pointer', CodePointer)
+        check.inst_param(pointer, "pointer", CodePointer)
 
         # If we are here we know we are in a hosted_user_process so we can do this
         from dagster.core.definitions.reconstructable import repository_def_from_pointer
@@ -83,9 +83,9 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         user_process_api=UserProcessApi.CLI,
         use_python_package=False,
     ):
-        check.inst_param(loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin)
-        check.opt_str_param(location_name, 'location_name')
-        check.bool_param(use_python_package, 'use_python_package')
+        check.inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
+        check.opt_str_param(location_name, "location_name")
+        check.bool_param(use_python_package, "use_python_package")
 
         if user_process_api == UserProcessApi.GRPC:
             return RepositoryLocationHandle.create_process_bound_grpc_server_location(
@@ -169,10 +169,10 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
     def create_grpc_server_location(port, socket, host, location_name=None):
         from dagster.grpc.client import DagsterGrpcClient
 
-        check.opt_int_param(port, 'port')
-        check.opt_str_param(socket, 'socket')
-        check.str_param(host, 'host')
-        check.opt_str_param(location_name, 'location_name')
+        check.opt_int_param(port, "port")
+        check.opt_str_param(socket, "socket")
+        check.str_param(host, "host")
+        check.opt_str_param(location_name, "location_name")
 
         client = DagsterGrpcClient(port=port, socket=socket, host=host)
 
@@ -196,26 +196,26 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
 
 class GrpcServerRepositoryLocationHandle(
     namedtuple(
-        '_GrpcServerRepositoryLocationHandle',
-        'port socket host location_name client repository_names',
+        "_GrpcServerRepositoryLocationHandle",
+        "port socket host location_name client repository_names",
     ),
     RepositoryLocationHandle,
 ):
-    '''
+    """
     Represents a gRPC server that Dagster is not responsible for managing.
-    '''
+    """
 
     def __new__(cls, port, socket, host, location_name, client, repository_names):
         from dagster.grpc.client import DagsterGrpcClient
 
         return super(GrpcServerRepositoryLocationHandle, cls).__new__(
             cls,
-            check.opt_int_param(port, 'port'),
-            check.opt_str_param(socket, 'socket'),
-            check.str_param(host, 'host'),
-            check.str_param(location_name, 'location_name'),
-            check.inst_param(client, 'client', DagsterGrpcClient),
-            check.set_param(repository_names, 'repository_names', of_type=str),
+            check.opt_int_param(port, "port"),
+            check.opt_str_param(socket, "socket"),
+            check.str_param(host, "host"),
+            check.str_param(location_name, "location_name"),
+            check.inst_param(client, "client", DagsterGrpcClient),
+            check.set_param(repository_names, "repository_names", of_type=str),
         )
 
     def create_reloaded_handle(self):
@@ -227,21 +227,21 @@ class GrpcServerRepositoryLocationHandle(
         job_image = self.client.get_current_image().current_image
         if not job_image:
             raise DagsterInvariantViolationError(
-                'Unable to get current image that GRPC server is running. Please make sure that '
-                'env var DAGSTER_CURRENT_IMAGE is set in the GRPC server and contains the most '
-                'up-to-date user code image and tag. Exiting.'
+                "Unable to get current image that GRPC server is running. Please make sure that "
+                "env var DAGSTER_CURRENT_IMAGE is set in the GRPC server and contains the most "
+                "up-to-date user code image and tag. Exiting."
             )
         return job_image
 
     def get_repository_python_origin(self, repository_name):
-        check.str_param(repository_name, 'repository_name')
+        check.str_param(repository_name, "repository_name")
 
         list_repositories_reply = self.client.list_repositories()
         repository_code_pointer_dict = list_repositories_reply.repository_code_pointer_dict
 
         if repository_name not in repository_code_pointer_dict:
             raise DagsterInvariantViolationError(
-                'Unable to find repository name {} on GRPC server.'.format(repository_name)
+                "Unable to find repository name {} on GRPC server.".format(repository_name)
             )
 
         code_pointer = repository_code_pointer_dict[repository_name]
@@ -253,8 +253,8 @@ class GrpcServerRepositoryLocationHandle(
 
 class PythonEnvRepositoryLocationHandle(
     namedtuple(
-        '_PythonEnvRepositoryLocationHandle',
-        'loadable_target_origin location_name repository_code_pointer_dict',
+        "_PythonEnvRepositoryLocationHandle",
+        "loadable_target_origin location_name repository_code_pointer_dict",
     ),
     RepositoryLocationHandle,
 ):
@@ -262,12 +262,12 @@ class PythonEnvRepositoryLocationHandle(
         return super(PythonEnvRepositoryLocationHandle, cls).__new__(
             cls,
             check.inst_param(
-                loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin
+                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
             ),
-            check.str_param(location_name, 'location_name'),
+            check.str_param(location_name, "location_name"),
             check.dict_param(
                 repository_code_pointer_dict,
-                'repository_code_pointer_dict',
+                "repository_code_pointer_dict",
                 key_type=str,
                 value_type=CodePointer,
             ),
@@ -285,15 +285,15 @@ class PythonEnvRepositoryLocationHandle(
 
 class ManagedGrpcPythonEnvRepositoryLocationHandle(
     namedtuple(
-        '_ManagedGrpcPythonEnvRepositoryLocationHandle',
-        'loadable_target_origin executable_path location_name repository_code_pointer_dict '
-        'grpc_server_process client heartbeat_thread heartbeat_shutdown_event',
+        "_ManagedGrpcPythonEnvRepositoryLocationHandle",
+        "loadable_target_origin executable_path location_name repository_code_pointer_dict "
+        "grpc_server_process client heartbeat_thread heartbeat_shutdown_event",
     ),
     RepositoryLocationHandle,
 ):
-    '''
+    """
     A Python environment for which Dagster is managing a gRPC server.
-    '''
+    """
 
     def __new__(
         cls,
@@ -312,19 +312,19 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
         return super(ManagedGrpcPythonEnvRepositoryLocationHandle, cls).__new__(
             cls,
             check.inst_param(
-                loadable_target_origin, 'loadable_target_origin', LoadableTargetOrigin
+                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
             ),
-            check.str_param(executable_path, 'executable_path'),
-            check.str_param(location_name, 'location_name'),
+            check.str_param(executable_path, "executable_path"),
+            check.str_param(location_name, "location_name"),
             check.dict_param(
                 repository_code_pointer_dict,
-                'repository_code_pointer_dict',
+                "repository_code_pointer_dict",
                 key_type=str,
                 value_type=CodePointer,
             ),
-            check.inst_param(grpc_server_process, 'grpc_server_process', GrpcServerProcess),
-            check.inst_param(client, 'client', DagsterGrpcClient),
-            check.inst_param(heartbeat_thread, 'heartbeat_thread', threading.Thread),
+            check.inst_param(grpc_server_process, "grpc_server_process", GrpcServerProcess),
+            check.inst_param(client, "client", DagsterGrpcClient),
+            check.inst_param(heartbeat_thread, "heartbeat_thread", threading.Thread),
             heartbeat_shutdown_event,
         )
 
@@ -334,7 +334,7 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
 
     @property
     def host(self):
-        return 'localhost'
+        return "localhost"
 
     @property
     def port(self):
@@ -356,34 +356,34 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
 
 
 class InProcessRepositoryLocationHandle(
-    namedtuple('_InProcessRepositoryLocationHandle', 'location_name repository_code_pointer_dict'),
+    namedtuple("_InProcessRepositoryLocationHandle", "location_name repository_code_pointer_dict"),
     RepositoryLocationHandle,
 ):
     def __new__(cls, location_name, repository_code_pointer_dict):
         return super(InProcessRepositoryLocationHandle, cls).__new__(
             cls,
-            check.str_param(location_name, 'location_name'),
+            check.str_param(location_name, "location_name"),
             check.dict_param(
                 repository_code_pointer_dict,
-                'repository_code_pointer_dict',
+                "repository_code_pointer_dict",
                 key_type=str,
                 value_type=CodePointer,
             ),
         )
 
     def create_reloaded_handle(self):
-        raise NotImplementedError('Not implemented for in-process')
+        raise NotImplementedError("Not implemented for in-process")
 
 
 class RepositoryHandle(
-    namedtuple('_RepositoryHandle', 'repository_name repository_location_handle')
+    namedtuple("_RepositoryHandle", "repository_name repository_location_handle")
 ):
     def __new__(cls, repository_name, repository_location_handle):
         return super(RepositoryHandle, cls).__new__(
             cls,
-            check.str_param(repository_name, 'repository_name'),
+            check.str_param(repository_name, "repository_name"),
             check.inst_param(
-                repository_location_handle, 'repository_location_handle', RepositoryLocationHandle
+                repository_location_handle, "repository_location_handle", RepositoryLocationHandle
             ),
         )
 
@@ -415,22 +415,22 @@ class RepositoryHandle(
             )
         else:
             check.failed(
-                'Can not target represented RepositoryDefinition locally for repository from a {}.'.format(
+                "Can not target represented RepositoryDefinition locally for repository from a {}.".format(
                     self.repository_location_handle.__class__.__name__
                 )
             )
 
 
-class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_handle')):
+class PipelineHandle(namedtuple("_PipelineHandle", "pipeline_name repository_handle")):
     def __new__(cls, pipeline_name, repository_handle):
         return super(PipelineHandle, cls).__new__(
             cls,
-            check.str_param(pipeline_name, 'pipeline_name'),
-            check.inst_param(repository_handle, 'repository_handle', RepositoryHandle),
+            check.str_param(pipeline_name, "pipeline_name"),
+            check.inst_param(repository_handle, "repository_handle", RepositoryHandle),
         )
 
     def to_string(self):
-        return '{self.location_name}.{self.repository_name}.{self.pipeline_name}'.format(self=self)
+        return "{self.location_name}.{self.repository_name}.{self.pipeline_name}".format(self=self)
 
     @property
     def repository_name(self):
@@ -447,12 +447,12 @@ class PipelineHandle(namedtuple('_PipelineHandle', 'pipeline_name repository_han
         return PipelineSelector(self.location_name, self.repository_name, self.pipeline_name, None)
 
 
-class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_handle')):
+class ScheduleHandle(namedtuple("_ScheduleHandle", "schedule_name repository_handle")):
     def __new__(cls, schedule_name, repository_handle):
         return super(ScheduleHandle, cls).__new__(
             cls,
-            check.str_param(schedule_name, 'schedule_name'),
-            check.inst_param(repository_handle, 'repository_handle', RepositoryHandle),
+            check.str_param(schedule_name, "schedule_name"),
+            check.inst_param(repository_handle, "repository_handle", RepositoryHandle),
         )
 
     @property
@@ -467,12 +467,12 @@ class ScheduleHandle(namedtuple('_ScheduleHandle', 'schedule_name repository_han
         return self.repository_handle.get_origin().get_schedule_origin(self.schedule_name)
 
 
-class PartitionSetHandle(namedtuple('_PartitionSetHandle', 'partition_set_name repository_handle')):
+class PartitionSetHandle(namedtuple("_PartitionSetHandle", "partition_set_name repository_handle")):
     def __new__(cls, partition_set_name, repository_handle):
         return super(PartitionSetHandle, cls).__new__(
             cls,
-            check.str_param(partition_set_name, 'partition_set_name'),
-            check.inst_param(repository_handle, 'repository_handle', RepositoryHandle),
+            check.str_param(partition_set_name, "partition_set_name"),
+            check.inst_param(repository_handle, "repository_handle", RepositoryHandle),
         )
 
     @property

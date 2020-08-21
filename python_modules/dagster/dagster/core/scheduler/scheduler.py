@@ -14,13 +14,13 @@ from dagster.utils.error import SerializableErrorInfo
 
 
 class DagsterSchedulerError(DagsterError):
-    '''Base class for all Dagster Scheduler errors'''
+    """Base class for all Dagster Scheduler errors"""
 
 
 class DagsterScheduleReconciliationError(DagsterError):
-    '''Error raised during schedule state reconcilation. During reconcilation, exceptions that are
+    """Error raised during schedule state reconcilation. During reconcilation, exceptions that are
     raised when trying to start or stop a schedule are collected and passed to this wrapper exception.
-    The individual exceptions can be accessed by the `errors` property. '''
+    The individual exceptions can be accessed by the `errors` property. """
 
     def __init__(self, preamble, errors, *args, **kwargs):
         self.errors = errors
@@ -29,7 +29,7 @@ class DagsterScheduleReconciliationError(DagsterError):
         error_messages = []
         for i_error, error in enumerate(self.errors):
             error_messages.append(str(error))
-            error_msg += '\n    Error {i_error}: {error_message}'.format(
+            error_msg += "\n    Error {i_error}: {error_message}".format(
                 i_error=i_error + 1, error_message=str(error)
             )
 
@@ -40,19 +40,19 @@ class DagsterScheduleReconciliationError(DagsterError):
 
 
 class DagsterScheduleDoesNotExist(DagsterSchedulerError):
-    '''Errors raised when ending a job for a schedule.'''
+    """Errors raised when ending a job for a schedule."""
 
 
 @whitelist_for_serdes
 class ScheduleStatus(Enum):
-    RUNNING = 'RUNNING'
-    STOPPED = 'STOPPED'
-    ENDED = 'ENDED'
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
+    ENDED = "ENDED"
 
 
 def get_schedule_change_set(schedule_states, external_schedules):
-    check.list_param(schedule_states, 'schedule_states', ScheduleState)
-    check.list_param(external_schedules, 'external_schedules', ExternalSchedule)
+    check.list_param(schedule_states, "schedule_states", ScheduleState)
+    check.list_param(external_schedules, "external_schedules", ExternalSchedule)
 
     external_schedules_dict = {s.get_origin_id(): s for s in external_schedules}
     schedule_states_dict = {s.schedule_origin_id: s for s in schedule_states}
@@ -101,28 +101,28 @@ def get_schedule_change_set(schedule_states, external_schedules):
 
 
 class SchedulerDebugInfo(
-    namedtuple('SchedulerDebugInfo', 'errors scheduler_config_info scheduler_info schedule_storage')
+    namedtuple("SchedulerDebugInfo", "errors scheduler_config_info scheduler_info schedule_storage")
 ):
     def __new__(cls, errors, scheduler_config_info, scheduler_info, schedule_storage):
         return super(SchedulerDebugInfo, cls).__new__(
             cls,
-            errors=check.list_param(errors, 'errors', of_type=str),
-            scheduler_config_info=check.str_param(scheduler_config_info, 'scheduler_config_info'),
-            scheduler_info=check.str_param(scheduler_info, 'scheduler_info'),
-            schedule_storage=check.list_param(schedule_storage, 'schedule_storage', of_type=str),
+            errors=check.list_param(errors, "errors", of_type=str),
+            scheduler_config_info=check.str_param(scheduler_config_info, "scheduler_config_info"),
+            scheduler_info=check.str_param(scheduler_info, "scheduler_info"),
+            schedule_storage=check.list_param(schedule_storage, "schedule_storage", of_type=str),
         )
 
 
 @whitelist_for_serdes
-class ScheduleState(namedtuple('_StoredScheduleState', 'origin status cron_schedule')):
+class ScheduleState(namedtuple("_StoredScheduleState", "origin status cron_schedule")):
     def __new__(cls, origin, status, cron_schedule):
 
         return super(ScheduleState, cls).__new__(
             cls,
             # Using the term "origin" to leave flexibility in handling future types
-            check.inst_param(origin, 'origin', ScheduleOrigin),
-            check.inst_param(status, 'status', ScheduleStatus),
-            check.str_param(cron_schedule, 'cron_schedule'),
+            check.inst_param(origin, "origin", ScheduleOrigin),
+            check.inst_param(status, "status", ScheduleStatus),
+            check.str_param(cron_schedule, "cron_schedule"),
         )
 
     @property
@@ -144,21 +144,21 @@ class ScheduleState(namedtuple('_StoredScheduleState', 'origin status cron_sched
         return self.origin.repository_origin.get_id()
 
     def with_status(self, status):
-        check.inst_param(status, 'status', ScheduleStatus)
+        check.inst_param(status, "status", ScheduleStatus)
 
         return ScheduleState(self.origin, status=status, cron_schedule=self.cron_schedule)
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
-    '''Abstract base class for a scheduler. This component is responsible for interfacing with
+    """Abstract base class for a scheduler. This component is responsible for interfacing with
     an external system such as cron to ensure scheduled repeated execution according.
-    '''
+    """
 
     def _get_schedule_state(self, instance, schedule_origin_id):
         schedule_state = instance.get_schedule_state(schedule_origin_id)
         if not schedule_state:
             raise DagsterScheduleDoesNotExist(
-                'You have attempted to start the job for schedule id {id}, but its state is not in storage.'.format(
+                "You have attempted to start the job for schedule id {id}, but its state is not in storage.".format(
                     id=schedule_origin_id
                 )
             )
@@ -166,7 +166,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         return schedule_state
 
     def reconcile_scheduler_state(self, instance, external_repository):
-        '''Reconcile the ExternalSchedule list from the repository and ScheduleStorage
+        """Reconcile the ExternalSchedule list from the repository and ScheduleStorage
         on the instance to ensure there is a 1-1 correlation between ExternalSchedule and
         ScheduleStates, where the ExternalSchedule list is the source of truth.
 
@@ -180,7 +180,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
 
         For every ScheduleDefinitions that is removed, the corresponding ScheduleState is removed from
         the storage and the corresponding ScheduleState is ended.
-        '''
+        """
 
         schedules_to_restart = []
         for external_schedule in external_repository.get_external_schedules():
@@ -247,7 +247,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
             )
 
     def start_schedule_and_update_storage_state(self, instance, external_schedule):
-        '''
+        """
         Updates the status of the given schedule to `ScheduleStatus.RUNNING` in schedule storage,
         then calls `start_schedule`.
 
@@ -257,16 +257,16 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
             instance (DagsterInstance): The current instance.
             external_schedule (ExternalSchedule): The schedule to start
 
-        '''
+        """
 
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
         schedule_state = self._get_schedule_state(instance, external_schedule.get_origin_id())
 
         if schedule_state.status == ScheduleStatus.RUNNING:
             raise DagsterSchedulerError(
-                'You have attempted to start schedule {name}, but it is already running'.format(
+                "You have attempted to start schedule {name}, but it is already running".format(
                     name=external_schedule.name
                 )
             )
@@ -277,7 +277,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         return started_schedule
 
     def stop_schedule_and_update_storage_state(self, instance, schedule_origin_id):
-        '''
+        """
         Updates the status of the given schedule to `ScheduleStatus.STOPPED` in schedule storage,
         then calls `stop_schedule`.
 
@@ -285,9 +285,9 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
 
         Args:
             schedule_origin_id (string): The id of the schedule target to stop running.
-        '''
+        """
 
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         schedule_state = self._get_schedule_state(instance, schedule_origin_id)
 
@@ -297,7 +297,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         return stopped_schedule
 
     def stop_schedule_and_delete_from_storage(self, instance, schedule_origin_id):
-        '''
+        """
         Deletes a schedule from schedule storage, then calls `stop_schedule`.
 
         This should not be overridden by subclasses.
@@ -305,10 +305,10 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         Args:
             instance (DagsterInstance): The current instance.
             schedule_origin_id (string): The id of the schedule target to start running.
-        '''
+        """
 
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.str_param(schedule_origin_id, 'schedule_origin_id')
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.str_param(schedule_origin_id, "schedule_origin_id")
 
         schedule = self._get_schedule_state(instance, schedule_origin_id)
         self.stop_schedule(instance, schedule_origin_id)
@@ -316,7 +316,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         return schedule
 
     def refresh_schedule(self, instance, external_schedule):
-        '''Refresh a running schedule. This is called when user reconciles the schedule state.
+        """Refresh a running schedule. This is called when user reconciles the schedule state.
 
         By default, this method will call stop_schedule and then start_schedule but can be
         overriden. For example, in the K8s Scheduler we patch the existing cronjob
@@ -325,21 +325,21 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         Args:
             instance (DagsterInstance): The current instance.
             external_schedule (ExternalSchedule): The schedule to start running.
-        '''
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.inst_param(external_schedule, 'external_schedule', ExternalSchedule)
+        """
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
         self.stop_schedule(instance, external_schedule.get_origin_id())
         self.start_schedule(instance, external_schedule)
 
     @abc.abstractmethod
     def debug_info(self):
-        '''Returns debug information about the scheduler
-        '''
+        """Returns debug information about the scheduler
+        """
 
     @abc.abstractmethod
     def start_schedule(self, instance, external_schedule):
-        '''Start running a schedule. This method is called by `start_schedule_and_update_storage_state`,
+        """Start running a schedule. This method is called by `start_schedule_and_update_storage_state`,
         which first updates the status of the schedule in schedule storage to `ScheduleStatus.RUNNING`,
         then calls this method.
 
@@ -349,11 +349,11 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         Args:
             instance (DagsterInstance): The current instance.
             external_schedule (ExternalSchedule): The schedule to start running.
-        '''
+        """
 
     @abc.abstractmethod
     def stop_schedule(self, instance, schedule_origin_id):
-        '''Stop running a schedule.
+        """Stop running a schedule.
 
         This method is called by
         1) `stop_schedule_and_update_storage_state`,
@@ -368,11 +368,11 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         Args:
             instance (DagsterInstance): The current instance.
             schedule_origin_id (string): The id of the schedule target to stop running.
-        '''
+        """
 
     @abc.abstractmethod
     def running_schedule_count(self, schedule_origin_id):
-        '''Returns the number of jobs currently running for the given schedule. This method is used
+        """Returns the number of jobs currently running for the given schedule. This method is used
         for detecting when the scheduler is out of sync with schedule storage.
 
         For example, when:
@@ -386,20 +386,20 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
 
         Args:
             schedule_origin_id (string): The id of the schedule target to return the number of jobs for
-        '''
+        """
 
     @abc.abstractmethod
     def get_logs_path(self, instance, schedule_origin_id):
-        '''Get path to store logs for schedule
+        """Get path to store logs for schedule
 
         Args:
             schedule_origin_id (string): The id of the schedule target to retrieve the log path for
-        '''
+        """
 
 
 class ScheduleTickStatsSnapshot(
     namedtuple(
-        'ScheduleTickStatsSnapshot', ('ticks_started ticks_succeeded ticks_skipped ticks_failed'),
+        "ScheduleTickStatsSnapshot", ("ticks_started ticks_succeeded ticks_skipped ticks_failed"),
     )
 ):
     def __new__(
@@ -407,31 +407,31 @@ class ScheduleTickStatsSnapshot(
     ):
         return super(ScheduleTickStatsSnapshot, cls).__new__(
             cls,
-            ticks_started=check.int_param(ticks_started, 'ticks_started'),
-            ticks_succeeded=check.int_param(ticks_succeeded, 'ticks_succeeded'),
-            ticks_skipped=check.int_param(ticks_skipped, 'ticks_skipped'),
-            ticks_failed=check.int_param(ticks_failed, 'ticks_failed'),
+            ticks_started=check.int_param(ticks_started, "ticks_started"),
+            ticks_succeeded=check.int_param(ticks_succeeded, "ticks_succeeded"),
+            ticks_skipped=check.int_param(ticks_skipped, "ticks_skipped"),
+            ticks_failed=check.int_param(ticks_failed, "ticks_failed"),
         )
 
 
 @whitelist_for_serdes
 class ScheduleTickStatus(Enum):
-    STARTED = 'STARTED'
-    SKIPPED = 'SKIPPED'
-    SUCCESS = 'SUCCESS'
-    FAILURE = 'FAILURE'
+    STARTED = "STARTED"
+    SKIPPED = "SKIPPED"
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
 
 
 def _validate_schedule_tick_args(status, run_id=None, error=None):
-    check.inst_param(status, 'status', ScheduleTickStatus)
+    check.inst_param(status, "status", ScheduleTickStatus)
 
     if status == ScheduleTickStatus.SUCCESS:
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
         check.invariant(
             error is None, desc="Schedule tick status is SUCCESS, but error was provided"
         )
     elif status == ScheduleTickStatus.FAILURE:
-        check.inst_param(error, 'error', SerializableErrorInfo)
+        check.inst_param(error, "error", SerializableErrorInfo)
     else:
         check.invariant(
             error is None, "Schedule tick status was not FAILURE but error was provided"
@@ -441,7 +441,7 @@ def _validate_schedule_tick_args(status, run_id=None, error=None):
 @whitelist_for_serdes
 class ScheduleTickData(
     namedtuple(
-        'Schedule', 'schedule_origin_id schedule_name cron_schedule timestamp status run_id error'
+        "Schedule", "schedule_origin_id schedule_name cron_schedule timestamp status run_id error"
     )
 ):
     def __new__(
@@ -454,7 +454,7 @@ class ScheduleTickData(
         run_id=None,
         error=None,
     ):
-        '''
+        """
         This class defines the data that is serialized and stored in ``ScheduleStorage``. We depend
         on the schedule storage implementation to provide schedule tick ids, and therefore
         separate all other data into this serializable class that can be stored independently of the
@@ -472,22 +472,22 @@ class ScheduleTickData(
             run_id (str): The run created by the tick.
             error (SerializableErrorInfo): The error caught during schedule execution. This is set
                 only when the status is ``ScheduleTickStatus.Failure``
-        '''
+        """
 
         _validate_schedule_tick_args(status, run_id, error)
         return super(ScheduleTickData, cls).__new__(
             cls,
-            check.str_param(schedule_origin_id, 'schedule_origin_id'),
-            check.str_param(schedule_name, 'schedule_name'),
-            check.opt_str_param(cron_schedule, 'cron_schedule'),
-            check.float_param(timestamp, 'timestamp'),
+            check.str_param(schedule_origin_id, "schedule_origin_id"),
+            check.str_param(schedule_name, "schedule_name"),
+            check.opt_str_param(cron_schedule, "cron_schedule"),
+            check.float_param(timestamp, "timestamp"),
             status,
             run_id,
             error,
         )
 
     def with_status(self, status, run_id=None, error=None, cron_schedule=None):
-        check.inst_param(status, 'status', ScheduleTickStatus)
+        check.inst_param(status, "status", ScheduleTickStatus)
         return ScheduleTickData(
             schedule_origin_id=self.schedule_origin_id,
             schedule_name=self.schedule_name,
@@ -499,8 +499,8 @@ class ScheduleTickData(
         )
 
 
-class ScheduleTick(namedtuple('Schedule', 'tick_id schedule_tick_data')):
-    '''
+class ScheduleTick(namedtuple("Schedule", "tick_id schedule_tick_data")):
+    """
     A scheduler is configured to run at an multiple intervals set by the `cron_schedule`
     properties on ``ScheduleDefinition``. We define a schedule tick as each time the scheduler
     runs for a specific schedule.
@@ -522,17 +522,17 @@ class ScheduleTick(namedtuple('Schedule', 'tick_id schedule_tick_data')):
     are run during schedule execution, which are each wrapped with a ``user_error_boundary``.
     There is also the possibility of a framework error. These errors are caught,
     serialized, and stored on the ``ScheduleTick``.
-    '''
+    """
 
     def __new__(cls, tick_id, schedule_tick_data):
         return super(ScheduleTick, cls).__new__(
             cls,
-            check.int_param(tick_id, 'tick_id'),
-            check.inst_param(schedule_tick_data, 'schedule_tick_data', ScheduleTickData),
+            check.int_param(tick_id, "tick_id"),
+            check.inst_param(schedule_tick_data, "schedule_tick_data", ScheduleTickData),
         )
 
     def with_status(self, status, run_id=None, error=None, cron_schedule=None):
-        check.inst_param(status, 'status', ScheduleTickStatus)
+        check.inst_param(status, "status", ScheduleTickStatus)
         return self._replace(
             schedule_tick_data=self.schedule_tick_data.with_status(
                 status, run_id=run_id, error=error, cron_schedule=cron_schedule

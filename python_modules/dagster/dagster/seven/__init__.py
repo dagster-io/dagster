@@ -1,4 +1,4 @@
-'''Internal py2/3 compatibility library. A little more than six.'''
+"""Internal py2/3 compatibility library. A little more than six."""
 
 import datetime
 import inspect
@@ -14,9 +14,9 @@ from types import MethodType
 from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory
 
-IS_WINDOWS = os.name == 'nt'
+IS_WINDOWS = os.name == "nt"
 
-if hasattr(inspect, 'signature'):
+if hasattr(inspect, "signature"):
     funcsigs = inspect
 else:
     import funcsigs
@@ -84,11 +84,11 @@ else:
 # Unix-like and spawn on windows)
 #
 # https://docs.python.org/3/library/multiprocessing.html#multiprocessing.get_context
-if hasattr(multiprocessing, 'get_context'):
-    multiprocessing = multiprocessing.get_context('spawn')
+if hasattr(multiprocessing, "get_context"):
+    multiprocessing = multiprocessing.get_context("spawn")
 
 
-IS_WINDOWS = os.name == 'nt'
+IS_WINDOWS = os.name == "nt"
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 
@@ -101,7 +101,7 @@ def import_module_from_path(module_name, path_to_file):
         spec = importlib.util.spec_from_file_location(module_name, path_to_file)
         if spec is None:
             raise Exception(
-                'Can not import module {module_name} from path {path_to_file}, unable to load spec.'.format(
+                "Can not import module {module_name} from path {path_to_file}, unable to load spec.".format(
                     module_name=module_name, path_to_file=path_to_file
                 )
             )
@@ -129,13 +129,13 @@ def import_module_from_path(module_name, path_to_file):
 def is_ascii(str_):
     if sys.version_info.major < 3:
         try:
-            str_.decode('ascii')
+            str_.decode("ascii")
             return True
         except UnicodeEncodeError:
             return False
     elif sys.version_info.major == 3 and sys.version_info.minor < 7:
         try:
-            str_.encode('ascii')
+            str_.encode("ascii")
             return True
         except UnicodeEncodeError:
             return False
@@ -205,10 +205,10 @@ def is_module_available(module_name):
 
 def builtin_print():
     if sys.version_info.major >= 3:
-        return 'builtins.print'
+        return "builtins.print"
 
     else:
-        return 'sys.stdout'
+        return "sys.stdout"
 
 
 def print_single_line_str(single_line_str):
@@ -219,7 +219,7 @@ def print_single_line_str(single_line_str):
     else:
         return [
             mock.call.write(single_line_str),
-            mock.call.write('\n'),
+            mock.call.write("\n"),
         ]
 
 
@@ -238,15 +238,15 @@ def get_current_datetime_in_utc():
 
 
 def is_lambda(target):
-    return callable(target) and (hasattr(target, '__name__') and target.__name__ == '<lambda>')
+    return callable(target) and (hasattr(target, "__name__") and target.__name__ == "<lambda>")
 
 
 def is_function_or_decorator_instance_of(target, kls):
-    return inspect.isfunction(target) or (isinstance(target, kls) and hasattr(target, '__name__'))
+    return inspect.isfunction(target) or (isinstance(target, kls) and hasattr(target, "__name__"))
 
 
 def qualname_differs(target):
-    return hasattr(target, '__qualname__') and (target.__qualname__ != target.__name__)
+    return hasattr(target, "__qualname__") and (target.__qualname__ != target.__name__)
 
 
 def xplat_shlex_split(s):

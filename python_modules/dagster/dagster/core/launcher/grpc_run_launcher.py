@@ -27,12 +27,12 @@ GRPC_REPOSITORY_LOCATION_HANDLE_TYPES = (
 
 
 class GrpcRunLauncher(RunLauncher, ConfigurableClass):
-    '''Launches runs against running GRPC servers.
+    """Launches runs against running GRPC servers.
 
     During the transition period from the previous CLI-based user process strategy to GRPC, you
     should use the :py:class`dagster.DefaultRunLauncher`, which is aware of instance- and
     repository-level settings allowing it to switch between the two strategies.
-    '''
+    """
 
     def __init__(self, inst_data=None):
         self._instance_weakref = None
@@ -58,23 +58,23 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
         return self._instance_weakref() if self._instance_weakref else None
 
     def initialize(self, instance):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.invariant(self._instance is None, 'Must only call initialize once')
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.invariant(self._instance is None, "Must only call initialize once")
         # Store a weakref to avoid a circular reference / enable GC
         self._instance_weakref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
-        '''Subclasses must implement this method.'''
+        """Subclasses must implement this method."""
 
-        check.inst_param(run, 'run', PipelineRun)
-        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        check.inst_param(run, "run", PipelineRun)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
         repository_location_handle = external_pipeline.repository_handle.repository_location_handle
 
         check.inst(
             repository_location_handle,
             GRPC_REPOSITORY_LOCATION_HANDLE_TYPES,
-            'GrpcRunLauncher: Can\'t launch runs for pipeline not loaded from a GRPC server',
+            "GrpcRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
         )
         res = repository_location_handle.client.start_run(
             ExecuteRunArgs(
@@ -98,10 +98,10 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
             {
                 GRPC_INFO_TAG: seven.json.dumps(
                     merge_dicts(
-                        {'host': repository_location_handle.host},
-                        {'port': repository_location_handle.port}
+                        {"host": repository_location_handle.host},
+                        {"port": repository_location_handle.port}
                         if repository_location_handle.port
-                        else {'socket': repository_location_handle.socket},
+                        else {"socket": repository_location_handle.socket},
                     )
                 )
             },
@@ -125,11 +125,11 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
         grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))
 
         return DagsterGrpcClient(
-            port=grpc_info.get('port'), socket=grpc_info.get('socket'), host=grpc_info.get('host')
+            port=grpc_info.get("port"), socket=grpc_info.get("socket"), host=grpc_info.get("host")
         )
 
     def can_terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         client = self._get_grpc_client_for_termination(run_id)
         if not client:
@@ -140,7 +140,7 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
         return res.can_cancel
 
     def terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         client = self._get_grpc_client_for_termination(run_id)
 
@@ -171,7 +171,7 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
 
             if total_time >= timeout:
                 raise Exception(
-                    'Timed out waiting for these runs to finish: {active_run_ids}'.format(
+                    "Timed out waiting for these runs to finish: {active_run_ids}".format(
                         active_run_ids=repr(active_run_ids)
                     )
                 )
@@ -181,9 +181,9 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
             interval = interval * 2
 
     def cleanup_managed_grpc_servers(self):
-        '''Shut down any managed grpc servers that used this run launcher to start a run.
+        """Shut down any managed grpc servers that used this run launcher to start a run.
         Should only be used for teardown purposes within tests.
-        '''
+        """
         for repository_location_handle in self._run_id_to_repository_location_handle_cache.values():
             if isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle):
                 repository_location_handle.client.cleanup_server()

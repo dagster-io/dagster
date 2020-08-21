@@ -20,13 +20,13 @@ from ..sql_schedule_storage import SqlScheduleStorage
 
 
 class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
-    '''Local SQLite backed schedule storage
-    '''
+    """Local SQLite backed schedule storage
+    """
 
     def __init__(self, conn_string, inst_data=None):
-        check.str_param(conn_string, 'conn_string')
+        check.str_param(conn_string, "conn_string")
         self._conn_string = conn_string
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
     def inst_data(self):
@@ -34,7 +34,7 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {'base_dir': str}
+        return {"base_dir": str}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -42,11 +42,11 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     @staticmethod
     def from_local(base_dir, inst_data=None):
-        check.str_param(base_dir, 'base_dir')
+        check.str_param(base_dir, "base_dir")
         mkdir_p(base_dir)
-        conn_string = create_db_conn_string(base_dir, 'schedules')
+        conn_string = create_db_conn_string(base_dir, "schedules")
         engine = create_engine(conn_string, poolclass=NullPool)
-        engine.execute('PRAGMA journal_mode=WAL;')
+        engine.execute("PRAGMA journal_mode=WAL;")
         ScheduleStorageSqlMetadata.create_all(engine)
         connection = engine.connect()
         alembic_config = get_alembic_config(__file__)
@@ -64,7 +64,7 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             with handle_schema_errors(
                 conn,
                 get_alembic_config(__file__),
-                msg='Sqlite schedule storage requires migration',
+                msg="Sqlite schedule storage requires migration",
             ):
                 yield conn
         finally:

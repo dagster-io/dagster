@@ -11,18 +11,18 @@ def spark_session():
     spark = (
         SparkSession.builder.appName("DownloadStuff")
         .config(
-            'spark.jars.packages',
-            'com.databricks:spark-avro_2.11:3.0.0,'
-            'com.databricks:spark-redshift_2.11:2.0.1,'
-            'com.databricks:spark-csv_2.11:1.5.0,'
-            'org.postgresql:postgresql:42.2.5,'
-            'org.apache.hadoop:hadoop-aws:2.6.5,'
-            'com.amazonaws:aws-java-sdk:1.7.4',
+            "spark.jars.packages",
+            "com.databricks:spark-avro_2.11:3.0.0,"
+            "com.databricks:spark-redshift_2.11:2.0.1,"
+            "com.databricks:spark-csv_2.11:1.5.0,"
+            "org.postgresql:postgresql:42.2.5,"
+            "org.apache.hadoop:hadoop-aws:2.6.5,"
+            "com.amazonaws:aws-java-sdk:1.7.4",
         )
         .getOrCreate()
     )
     return spark
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     spark_session()

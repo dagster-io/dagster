@@ -31,7 +31,7 @@ from dagster.utils import safe_tempfile_path
 
 
 def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=None):
-    '''Execute a shell script file specified by the argument ``shell_command``. The script will be
+    """Execute a shell script file specified by the argument ``shell_command``. The script will be
     invoked via ``subprocess.Popen(['bash', shell_script_path], ...)``.
 
     In the Popen invocation, ``stdout=PIPE, stderr=STDOUT`` is used, and the combined stdout/stderr
@@ -53,27 +53,27 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
 
     Returns:
         str: The combined stdout/stderr output of running the shell script.
-    '''
-    check.str_param(shell_script_path, 'shell_script_path')
-    check.str_param(output_logging, 'output_logging')
-    check.opt_str_param(cwd, 'cwd', default=os.path.dirname(shell_script_path))
-    env = check.opt_dict_param(env, 'env')
+    """
+    check.str_param(shell_script_path, "shell_script_path")
+    check.str_param(output_logging, "output_logging")
+    check.opt_str_param(cwd, "cwd", default=os.path.dirname(shell_script_path))
+    env = check.opt_dict_param(env, "env")
 
     def pre_exec():
         # Restore default signal disposition and invoke setsid
-        for sig in ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ'):
+        for sig in ("SIGPIPE", "SIGXFZ", "SIGXFSZ"):
             if hasattr(signal, sig):
                 signal.signal(getattr(signal, sig), signal.SIG_DFL)
         os.setsid()
 
-    with open(shell_script_path, 'rb') as f:
+    with open(shell_script_path, "rb") as f:
         shell_command = six.ensure_str(f.read())
 
-    log.info('Running command:\n{command}'.format(command=shell_command))
+    log.info("Running command:\n{command}".format(command=shell_command))
 
     # pylint: disable=subprocess-popen-preexec-fn
     sub_process = Popen(
-        ['bash', shell_script_path],
+        ["bash", shell_script_path],
         stdout=PIPE,
         stderr=STDOUT,
         cwd=cwd,
@@ -82,14 +82,14 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     )
 
     # Will return the string result of reading stdout of the shell command
-    output = ''
+    output = ""
 
-    if output_logging not in ['STREAM', 'BUFFER', 'NONE']:
-        raise Exception('Unrecognized output_logging %s' % output_logging)
+    if output_logging not in ["STREAM", "BUFFER", "NONE"]:
+        raise Exception("Unrecognized output_logging %s" % output_logging)
 
     # Stream back logs as they are emitted
-    if output_logging == 'STREAM':
-        for raw_line in iter(sub_process.stdout.readline, b''):
+    if output_logging == "STREAM":
+        for raw_line in iter(sub_process.stdout.readline, b""):
             line = six.ensure_str(raw_line)
             log.info(line.rstrip())
             output += line
@@ -97,23 +97,23 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     sub_process.wait()
 
     # Collect and buffer all logs, then emit
-    if output_logging == 'BUFFER':
-        output = ''.join(
-            [six.ensure_str(raw_line) for raw_line in iter(sub_process.stdout.readline, b'')]
+    if output_logging == "BUFFER":
+        output = "".join(
+            [six.ensure_str(raw_line) for raw_line in iter(sub_process.stdout.readline, b"")]
         )
         log.info(output)
 
     # no logging in this case
-    elif output_logging == 'NONE':
+    elif output_logging == "NONE":
         pass
 
-    log.info('Command exited with return code {retcode}'.format(retcode=sub_process.returncode))
+    log.info("Command exited with return code {retcode}".format(retcode=sub_process.returncode))
 
     return output, sub_process.returncode
 
 
 def execute(shell_command, output_logging, log, cwd=None, env=None):
-    '''Execute a shell script specified by the argument ``shell_command``. The script will be written
+    """Execute a shell script specified by the argument ``shell_command``. The script will be written
     to a temporary file first and invoked via ``subprocess.Popen(['bash', shell_script_path], ...)``.
 
     In the Popen invocation, ``stdout=PIPE, stderr=STDOUT`` is used, and the combined stdout/stderr
@@ -130,19 +130,19 @@ def execute(shell_command, output_logging, log, cwd=None, env=None):
 
     Returns:
         str: The combined stdout/stderr output of running the shell command.
-    '''
-    check.str_param(shell_command, 'shell_command')
+    """
+    check.str_param(shell_command, "shell_command")
     # other args checked in execute_file
 
     with safe_tempfile_path() as tmp_file_path:
         tmp_path = os.path.dirname(tmp_file_path)
-        log.info('Using temporary directory: %s' % tmp_path)
+        log.info("Using temporary directory: %s" % tmp_path)
 
-        with open(tmp_file_path, 'wb') as tmp_file:
+        with open(tmp_file_path, "wb") as tmp_file:
             tmp_file.write(six.ensure_binary(shell_command))
             tmp_file.flush()
             script_location = os.path.abspath(tmp_file.name)
-            log.info('Temporary script location: {location}'.format(location=script_location))
+            log.info("Temporary script location: {location}".format(location=script_location))
             return execute_script_file(
                 shell_script_path=tmp_file.name,
                 output_logging=output_logging,

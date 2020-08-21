@@ -34,37 +34,37 @@ def test_hammer_pipeline():
 
 def test_resource_pipeline_no_config():
     result = execute_pipeline(resource_pipeline)
-    assert result.result_for_solid('one').output_value() == 2
+    assert result.result_for_solid("one").output_value() == 2
 
 
 def test_resource_pipeline_with_config():
-    result = execute_pipeline(resource_pipeline, run_config={'resources': {'R1': {'config': 2}}})
-    assert result.result_for_solid('one').output_value() == 3
+    result = execute_pipeline(resource_pipeline, run_config={"resources": {"R1": {"config": 2}}})
+    assert result.result_for_solid("one").output_value() == 3
 
 
 def test_error_monster_success():
     assert execute_pipeline(
         error_monster,
         run_config={
-            'solids': {
-                'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+            "solids": {
+                "start": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                "middle": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                "end": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
             },
-            'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
+            "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
         },
     ).success
 
     assert execute_pipeline(
         pipeline=error_monster,
-        mode='errorable_mode',
+        mode="errorable_mode",
         run_config={
-            'solids': {
-                'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+            "solids": {
+                "start": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                "middle": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                "end": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
             },
-            'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
+            "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
         },
     ).success
 
@@ -73,14 +73,14 @@ def test_error_monster_wrong_mode():
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(
             pipeline=error_monster,
-            mode='nope',
+            mode="nope",
             run_config={
-                'solids': {
-                    'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                    'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                    'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                "solids": {
+                    "start": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                    "middle": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                    "end": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
                 },
-                'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
+                "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
             },
         )
 
@@ -90,12 +90,12 @@ def test_error_monster_success_error_on_resource():
         execute_pipeline(
             error_monster,
             run_config={
-                'solids': {
-                    'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                    'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                    'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                "solids": {
+                    "start": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                    "middle": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                    "end": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
                 },
-                'resources': {'errorable_resource': {'config': {'throw_on_resource_init': True}}},
+                "resources": {"errorable_resource": {"config": {"throw_on_resource_init": True}}},
             },
         )
 
@@ -105,24 +105,24 @@ def test_error_monster_type_error():
         execute_pipeline(
             error_monster,
             run_config={
-                'solids': {
-                    'start': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
-                    'middle': {'config': {'throw_in_solid': False, 'return_wrong_type': True}},
-                    'end': {'config': {'throw_in_solid': False, 'return_wrong_type': False}},
+                "solids": {
+                    "start": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
+                    "middle": {"config": {"throw_in_solid": False, "return_wrong_type": True}},
+                    "end": {"config": {"throw_in_solid": False, "return_wrong_type": False}},
                 },
-                'resources': {'errorable_resource': {'config': {'throw_on_resource_init': False}}},
+                "resources": {"errorable_resource": {"config": {"throw_on_resource_init": False}}},
             },
         )
 
 
 def test_composition_pipeline():
     result = execute_pipeline(
-        composition, run_config={'solids': {'add_four': {'inputs': {'num': 3}}}},
+        composition, run_config={"solids": {"add_four": {"inputs": {"num": 3}}}},
     )
 
     assert result.success
 
-    assert result.output_for_solid('div_four') == 7.0 / 4.0
+    assert result.output_for_solid("div_four") == 7.0 / 4.0
 
 
 def test_fan_in_fan_out_pipeline():

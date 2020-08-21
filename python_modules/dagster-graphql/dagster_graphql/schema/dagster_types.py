@@ -16,7 +16,7 @@ def config_type_for_schema(pipeline_snapshot, schema_key):
 
 
 def to_dauphin_dagster_type(pipeline_snapshot, dagster_type_key):
-    check.str_param(dagster_type_key, 'dagster_type_key')
+    check.str_param(dagster_type_key, "dagster_type_key")
     check.inst_param(pipeline_snapshot, pipeline_snapshot, PipelineSnapshot)
 
     dagster_type_meta = pipeline_snapshot.dagster_type_namespace_snapshot.get_dagster_type_snap(
@@ -47,12 +47,12 @@ def to_dauphin_dagster_type(pipeline_snapshot, dagster_type_key):
     )
 
     if dagster_type_meta.kind == DagsterTypeKind.LIST:
-        base_args['of_type'] = to_dauphin_dagster_type(
+        base_args["of_type"] = to_dauphin_dagster_type(
             pipeline_snapshot, dagster_type_meta.type_param_keys[0]
         )
         return DauphinListDagsterType(**base_args)
     elif dagster_type_meta.kind == DagsterTypeKind.NULLABLE:
-        base_args['of_type'] = to_dauphin_dagster_type(
+        base_args["of_type"] = to_dauphin_dagster_type(
             pipeline_snapshot, dagster_type_meta.type_param_keys[0]
         )
         return DauphinNullableDagsterType(**base_args)
@@ -62,7 +62,7 @@ def to_dauphin_dagster_type(pipeline_snapshot, dagster_type_key):
 
 class DauphinDagsterType(dauphin.Interface):
     class Meta(object):
-        name = 'DagsterType'
+        name = "DagsterType"
 
     key = dauphin.NonNull(dauphin.String)
     name = dauphin.String()
@@ -77,29 +77,29 @@ class DauphinDagsterType(dauphin.Interface):
     input_schema_type = dauphin.Field(DauphinConfigType)
     output_schema_type = dauphin.Field(DauphinConfigType)
 
-    inner_types = dauphin.non_null_list('DagsterType')
+    inner_types = dauphin.non_null_list("DagsterType")
 
 
 class DauphinRegularDagsterType(dauphin.ObjectType):
     class Meta(object):
-        name = 'RegularDagsterType'
+        name = "RegularDagsterType"
         interfaces = [DauphinDagsterType]
 
 
 class DauphinWrappingDagsterType(dauphin.Interface):
     class Meta(object):
-        name = 'WrappingDagsterType'
+        name = "WrappingDagsterType"
 
     of_type = dauphin.Field(dauphin.NonNull(DauphinDagsterType))
 
 
 class DauphinListDagsterType(dauphin.ObjectType):
     class Meta(object):
-        name = 'ListDagsterType'
+        name = "ListDagsterType"
         interfaces = [DauphinDagsterType, DauphinWrappingDagsterType]
 
 
 class DauphinNullableDagsterType(dauphin.ObjectType):
     class Meta(object):
-        name = 'NullableDagsterType'
+        name = "NullableDagsterType"
         interfaces = [DauphinDagsterType, DauphinWrappingDagsterType]

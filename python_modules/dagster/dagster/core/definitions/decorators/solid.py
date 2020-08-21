@@ -30,13 +30,13 @@ class _Solid(object):
         config_schema=None,
         tags=None,
     ):
-        self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_nullable_list_param(input_defs, 'input_defs', InputDefinition)
+        self.name = check.opt_str_param(name, "name")
+        self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
         self.output_defs = check.opt_nullable_list_param(
-            output_defs, 'output_defs', OutputDefinition
+            output_defs, "output_defs", OutputDefinition
         )
 
-        self.description = check.opt_str_param(description, 'description')
+        self.description = check.opt_str_param(description, "description")
 
         # resources will be checked within SolidDefinition
         self.required_resource_keys = required_resource_keys
@@ -48,7 +48,7 @@ class _Solid(object):
         self.tags = tags
 
     def __call__(self, fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
@@ -61,10 +61,10 @@ class _Solid(object):
         output_defs = (
             self.output_defs
             if self.output_defs is not None
-            else infer_output_definitions('@solid', self.name, fn)
+            else infer_output_definitions("@solid", self.name, fn)
         )
 
-        positional_inputs = validate_solid_fn('@solid', self.name, fn, input_defs, ['context'])
+        positional_inputs = validate_solid_fn("@solid", self.name, fn, input_defs, ["context"])
         compute_fn = _create_solid_compute_wrapper(fn, input_defs, output_defs)
 
         solid_def = SolidDefinition(
@@ -91,7 +91,7 @@ def solid(
     required_resource_keys=None,
     tags=None,
 ):
-    '''Create a solid with the specified parameters from the decorated function.
+    """Create a solid with the specified parameters from the decorated function.
 
     This shortcut simplifies the core :class:`SolidDefinition` API by exploding arguments into
     kwargs of the decorated compute function and omitting additional parameters when they are not
@@ -177,7 +177,7 @@ def solid(
                 # context.solid_config is a dictionary with 'str_value' key
                 return foo + context.solid_config['str_value']
 
-    '''
+    """
     # This case is for when decorator is used bare, without arguments. e.g. @solid versus @solid()
     if callable(name):
         check.invariant(input_defs is None)
@@ -201,9 +201,9 @@ def solid(
 
 
 def _create_solid_compute_wrapper(fn, input_defs, output_defs):
-    check.callable_param(fn, 'fn')
-    check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
-    check.list_param(output_defs, 'output_defs', of_type=OutputDefinition)
+    check.callable_param(fn, "fn")
+    check.list_param(input_defs, "input_defs", of_type=InputDefinition)
+    check.list_param(output_defs, "output_defs", of_type=OutputDefinition)
 
     input_names = [
         input_def.name
@@ -226,9 +226,9 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
             if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
                 raise DagsterInvariantViolationError(
                     (
-                        'Error in solid {solid_name}: If you are returning an AssetMaterialization '
-                        'or an ExpectationResult from solid you must yield them to avoid '
-                        'ambiguity with an implied result from returning a value.'.format(
+                        "Error in solid {solid_name}: If you are returning an AssetMaterialization "
+                        "or an ExpectationResult from solid you must yield them to avoid "
+                        "ambiguity with an implied result from returning a value.".format(
                             solid_name=context.solid.name
                         )
                     )
@@ -242,26 +242,26 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
                 if not output_defs:
                     raise DagsterInvariantViolationError(
                         (
-                            'Error in solid {solid_name}: Unexpectedly returned output {result} '
-                            'of type {type_}. Solid is explicitly defined to return no '
-                            'results.'
+                            "Error in solid {solid_name}: Unexpectedly returned output {result} "
+                            "of type {type_}. Solid is explicitly defined to return no "
+                            "results."
                         ).format(solid_name=context.solid.name, result=result, type_=type(result))
                     )
 
                 raise DagsterInvariantViolationError(
                     (
-                        'Error in solid {solid_name}: Solid unexpectedly returned '
-                        'output {result} of type {type_}. Should '
-                        'be a generator, containing or yielding '
-                        '{n_results} results: {{{expected_results}}}.'
+                        "Error in solid {solid_name}: Solid unexpectedly returned "
+                        "output {result} of type {type_}. Should "
+                        "be a generator, containing or yielding "
+                        "{n_results} results: {{{expected_results}}}."
                     ).format(
                         solid_name=context.solid.name,
                         result=result,
                         type_=type(result),
                         n_results=len(output_defs),
-                        expected_results=', '.join(
+                        expected_results=", ".join(
                             [
-                                '\'{result_name}\': {dagster_type}'.format(
+                                "'{result_name}': {dagster_type}".format(
                                     result_name=output_def.name,
                                     dagster_type=output_def.dagster_type,
                                 )
@@ -277,12 +277,12 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
 def validate_solid_fn(
     decorator_name, fn_name, compute_fn, input_defs, expected_positionals=None, exclude_nothing=True
 ):
-    check.str_param(decorator_name, 'decorator_name')
-    check.str_param(fn_name, 'fn_name')
-    check.callable_param(compute_fn, 'compute_fn')
-    check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
+    check.str_param(decorator_name, "decorator_name")
+    check.str_param(fn_name, "fn_name")
+    check.callable_param(compute_fn, "compute_fn")
+    check.list_param(input_defs, "input_defs", of_type=InputDefinition)
     expected_positionals = check.opt_list_param(
-        expected_positionals, 'expected_positionals', of_type=str
+        expected_positionals, "expected_positionals", of_type=str
     )
     if exclude_nothing:
         names = set(
@@ -312,7 +312,7 @@ def validate_solid_fn(
     # Validate non positional parameters
     invalid_function_info = validate_decorated_fn_input_args(names, input_args)
     if invalid_function_info:
-        if invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES['vararg']:
+        if invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["vararg"]:
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{solid_name}' decorated function has positional vararg parameter "
                 "'{param}'. Solid functions should only have keyword arguments that match "
@@ -322,7 +322,7 @@ def validate_solid_fn(
                     param=invalid_function_info.param,
                 )
             )
-        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES['missing_name']:
+        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["missing_name"]:
             if invalid_function_info.param in nothing_names:
                 raise DagsterInvalidDefinitionError(
                     "{decorator_name} '{solid_name}' decorated function has parameter '{param}' that is "
@@ -343,7 +343,7 @@ def validate_solid_fn(
                         param=invalid_function_info.param,
                     )
                 )
-        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES['extra']:
+        elif invalid_function_info.error_type == InvalidDecoratedFunctionInfo.TYPES["extra"]:
             undeclared_inputs_printed = ", '".join(invalid_function_info.missing_names)
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{solid_name}' decorated function does not have parameter(s) "

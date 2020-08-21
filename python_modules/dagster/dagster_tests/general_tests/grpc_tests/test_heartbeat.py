@@ -7,7 +7,7 @@ from dagster.utils import file_relative_path
 
 def test_heartbeat():
     loadable_target_origin = LoadableTargetOrigin(
-        attribute='bar_repo', python_file=file_relative_path(__file__, 'grpc_repo.py'),
+        attribute="bar_repo", python_file=file_relative_path(__file__, "grpc_repo.py"),
     )
     server = GrpcServerProcess(
         loadable_target_origin=loadable_target_origin,

@@ -20,25 +20,25 @@ def test_log_level_filtering():
     critical_records = []
 
     debug_logger_def = construct_single_handler_logger(
-        'debug_handler', 'debug', LogTestHandler(records)
+        "debug_handler", "debug", LogTestHandler(records)
     )
     critical_logger_def = construct_single_handler_logger(
-        'critical_handler', 'critical', LogTestHandler(critical_records)
+        "critical_handler", "critical", LogTestHandler(critical_records)
     )
 
     loggers = [
-        logger_def.logger_fn(InitLoggerContext({}, PipelineDefinition([]), logger_def, ''))
+        logger_def.logger_fn(InitLoggerContext({}, PipelineDefinition([]), logger_def, ""))
         for logger_def in [debug_logger_def, critical_logger_def]
     ]
 
-    log_manager = DagsterLogManager('', {}, loggers)
+    log_manager = DagsterLogManager("", {}, loggers)
 
-    log_manager.debug('Hello, there!')
+    log_manager.debug("Hello, there!")
 
-    messages = [x.dagster_meta['orig_message'] for x in records]
+    messages = [x.dagster_meta["orig_message"] for x in records]
 
-    assert 'Hello, there!' in messages
+    assert "Hello, there!" in messages
 
-    critical_messages = [x.dagster_meta['orig_message'] for x in critical_records]
+    critical_messages = [x.dagster_meta["orig_message"] for x in critical_records]
 
-    assert 'Hello, there!' not in critical_messages
+    assert "Hello, there!" not in critical_messages

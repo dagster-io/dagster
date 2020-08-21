@@ -14,10 +14,10 @@ def _is_config_type_class(obj):
 
 
 def helpful_list_error_string():
-    return 'Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead.'
+    return "Please use a python list (e.g. [int]) or dagster.Array (e.g. Array(int)) instead."
 
 
-VALID_CONFIG_DESC = '''
+VALID_CONFIG_DESC = """
 1. A Python primitive type that resolve to dagster config
    types: int, float, bool, str.
 
@@ -29,7 +29,7 @@ VALID_CONFIG_DESC = '''
 
 4. A bare python list of length one which itself is config type.
    Becomes Array with list element as an argument.
-'''
+"""
 
 
 def resolve_to_config_type(dagster_type):
@@ -44,13 +44,13 @@ def resolve_to_config_type(dagster_type):
 
     if isinstance(dagster_type, list):
         if len(dagster_type) != 1:
-            raise DagsterInvalidDefinitionError('Array specifications must only be of length 1')
+            raise DagsterInvalidDefinitionError("Array specifications must only be of length 1")
 
         inner_type = resolve_to_config_type(dagster_type[0])
 
         if not inner_type:
             raise DagsterInvalidDefinitionError(
-                'Invalid member of array specification: {value} in list {the_list}'.format(
+                "Invalid member of array specification: {value} in list {the_list}".format(
                     value=repr(dagster_type[0]), the_list=dagster_type
                 )
             )
@@ -63,17 +63,17 @@ def resolve_to_config_type(dagster_type):
     if _is_config_type_class(dagster_type):
         check.param_invariant(
             False,
-            'dagster_type',
-            'Cannot pass a config type class to resolve_to_config_type. Got {dagster_type}'.format(
+            "dagster_type",
+            "Cannot pass a config type class to resolve_to_config_type. Got {dagster_type}".format(
                 dagster_type=dagster_type
             ),
         )
 
     if isinstance(dagster_type, type) and issubclass(dagster_type, DagsterType):
         raise DagsterInvalidDefinitionError(
-            'You have passed a DagsterType class {dagster_type} to the config system. '
-            'The DagsterType and config schema systems are separate. '
-            'Valid config values are:\n{desc}'.format(
+            "You have passed a DagsterType class {dagster_type} to the config system. "
+            "The DagsterType and config schema systems are separate. "
+            "Valid config values are:\n{desc}".format(
                 dagster_type=repr(dagster_type), desc=VALID_CONFIG_DESC,
             )
         )
@@ -81,35 +81,35 @@ def resolve_to_config_type(dagster_type):
     if is_typing_type(dagster_type):
         raise DagsterInvalidDefinitionError(
             (
-                'You have passed in {dagster_type} to the config system. Types from '
-                'the typing module in python are not allowed in the config system. '
-                'You must use types that are imported from dagster or primitive types '
-                'such as bool, int, etc.'
+                "You have passed in {dagster_type} to the config system. Types from "
+                "the typing module in python are not allowed in the config system. "
+                "You must use types that are imported from dagster or primitive types "
+                "such as bool, int, etc."
             ).format(dagster_type=dagster_type)
         )
 
     if dagster_type is List or isinstance(dagster_type, ListType):
         raise DagsterInvalidDefinitionError(
-            'Cannot use List in the context of config. ' + helpful_list_error_string()
+            "Cannot use List in the context of config. " + helpful_list_error_string()
         )
 
     if dagster_type is Set or isinstance(dagster_type, _TypedPythonSet):
         raise DagsterInvalidDefinitionError(
-            'Cannot use Set in the context of a config field. ' + helpful_list_error_string()
+            "Cannot use Set in the context of a config field. " + helpful_list_error_string()
         )
 
     if dagster_type is Tuple or isinstance(dagster_type, _TypedPythonTuple):
         raise DagsterInvalidDefinitionError(
-            'Cannot use Tuple in the context of a config field. ' + helpful_list_error_string()
+            "Cannot use Tuple in the context of a config field. " + helpful_list_error_string()
         )
 
     if isinstance(dagster_type, DagsterType):
         raise DagsterInvalidDefinitionError(
             (
-                'You have passed an instance of DagsterType {type_name} to the config '
-                'system (Repr of type: {dagster_type}). '
-                'The DagsterType and config schema systems are separate. '
-                'Valid config values are:\n{desc}'
+                "You have passed an instance of DagsterType {type_name} to the config "
+                "system (Repr of type: {dagster_type}). "
+                "The DagsterType and config schema systems are separate. "
+                "Valid config values are:\n{desc}"
             ).format(
                 type_name=dagster_type.name if dagster_type.name else dagster_type.key,
                 dagster_type=repr(dagster_type),
@@ -143,7 +143,7 @@ def resolve_to_config_type(dagster_type):
 
 
 class Field(object):
-    '''Defines the schema for a configuration field.
+    """Defines the schema for a configuration field.
 
     Fields are used in config schema instead of bare types when one wants to add a description,
     a default value, or to mark it as not required.
@@ -200,7 +200,7 @@ class Field(object):
             def repeat_word(context):
                 return context.solid_config['word'] * context.solid_config['repeats']
 
-    '''
+    """
 
     def _resolve_config_arg(self, config):
         if isinstance(config, ConfigType):
@@ -210,8 +210,8 @@ class Field(object):
         if not config_type:
             raise DagsterInvalidDefinitionError(
                 (
-                    'Attempted to pass {value_repr} to a Field that expects a valid '
-                    'dagster type usable in config (e.g. Dict, Int, String et al).'
+                    "Attempted to pass {value_repr} to a Field that expects a valid "
+                    "dagster type usable in config (e.g. Dict, Int, String et al)."
                 ).format(value_repr=repr(config))
             )
         return config_type
@@ -224,20 +224,20 @@ class Field(object):
 
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 
-        self.description = check.opt_str_param(description, 'description')
+        self.description = check.opt_str_param(description, "description")
 
-        check.opt_bool_param(is_required, 'is_required')
+        check.opt_bool_param(is_required, "is_required")
 
         if default_value != FIELD_NO_DEFAULT_PROVIDED:
             check.param_invariant(
-                not (callable(default_value)), 'default_value', 'default_value cannot be a callable'
+                not (callable(default_value)), "default_value", "default_value cannot be a callable"
             )
 
         if is_required is True:
             check.param_invariant(
                 default_value == FIELD_NO_DEFAULT_PROVIDED,
-                'default_value',
-                'required arguments should not specify default values',
+                "default_value",
+                "required arguments should not specify default values",
             )
 
         self._default_value = default_value
@@ -247,9 +247,9 @@ class Field(object):
             if self.config_type.kind == ConfigTypeKind.ENUM and is_enum_value(default_value):
                 raise DagsterInvalidDefinitionError(
                     (
-                        'You have passed into a python enum value as the default value '
-                        'into of a config enum type {name}. You must pass in the underlying '
-                        'string represention as the default value. One of {value_set}.'
+                        "You have passed into a python enum value as the default value "
+                        "into of a config enum type {name}. You must pass in the underlying "
+                        "string represention as the default value. One of {value_set}."
                     ).format(
                         value_set=[ev.config_value for ev in self.config_type.enum_values],
                         name=self.config_type.given_name,
@@ -259,7 +259,7 @@ class Field(object):
             evr = validate_config(self.config_type, default_value)
             if not evr.success:
                 raise DagsterInvalidConfigError(
-                    'Invalid default_value for Field.', evr.errors, default_value,
+                    "Invalid default_value for Field.", evr.errors, default_value,
                 )
 
         if is_required is None:
@@ -272,7 +272,7 @@ class Field(object):
                 evr = resolve_defaults(self.config_type, None)
                 if not evr.success:
                     raise DagsterInvalidConfigError(
-                        'Unable to resolve implicit default_value for Field.', evr.errors, None,
+                        "Unable to resolve implicit default_value for Field.", evr.errors, None,
                     )
                 self._default_value = evr.value
         self._is_required = is_required
@@ -283,27 +283,27 @@ class Field(object):
 
     @property
     def default_provided(self):
-        '''Was a default value provided
+        """Was a default value provided
 
         Returns:
             bool: Yes or no
-        '''
+        """
         return self._default_value != FIELD_NO_DEFAULT_PROVIDED
 
     @property
     def default_value(self):
-        check.invariant(self.default_provided, 'Asking for default value when none was provided')
+        check.invariant(self.default_provided, "Asking for default value when none was provided")
         return self._default_value
 
     @property
     def default_value_as_json_str(self):
-        check.invariant(self.default_provided, 'Asking for default value when none was provided')
+        check.invariant(self.default_provided, "Asking for default value when none was provided")
         return serialize_value(self.default_value)
 
     def __repr__(self):
-        return ('Field({config_type}, default={default}, is_required={is_required})').format(
+        return ("Field({config_type}, default={default}, is_required={is_required})").format(
             config_type=self.config_type,
-            default='@'
+            default="@"
             if self._default_value == FIELD_NO_DEFAULT_PROVIDED
             else self._default_value,
             is_required=self.is_required,

@@ -11,14 +11,14 @@ from dagster.utils.log import default_format_string
 
 @logger(
     {
-        'log_level': Field(str, is_required=False, default_value='INFO'),
-        'name': Field(str, is_required=False, default_value='dagster'),
+        "log_level": Field(str, is_required=False, default_value="INFO"),
+        "name": Field(str, is_required=False, default_value="dagster"),
     },
-    description='The default colored console logger.',
+    description="The default colored console logger.",
 )
 def colored_console_logger(init_context):
-    level = coerce_valid_log_level(init_context.logger_config['log_level'])
-    name = init_context.logger_config['name']
+    level = coerce_valid_log_level(init_context.logger_config["log_level"])
+    name = init_context.logger_config["name"]
 
     klass = logging.getLoggerClass()
     logger_ = klass(name, level=level)
@@ -26,22 +26,22 @@ def colored_console_logger(init_context):
         logger=logger_,
         level=level,
         fmt=default_format_string(),
-        field_styles={'levelname': {'color': 'blue'}, 'asctime': {'color': 'green'}},
-        level_styles={'debug': {}, 'error': {'color': 'red'}},
+        field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
+        level_styles={"debug": {}, "error": {"color": "red"}},
     )
     return logger_
 
 
 @logger(
     {
-        'log_level': Field(str, is_required=False, default_value='INFO'),
-        'name': Field(str, is_required=False, default_value='dagster'),
+        "log_level": Field(str, is_required=False, default_value="INFO"),
+        "name": Field(str, is_required=False, default_value="dagster"),
     },
-    description='A JSON-formatted console logger',
+    description="A JSON-formatted console logger",
 )
 def json_console_logger(init_context):
-    level = coerce_valid_log_level(init_context.logger_config['log_level'])
-    name = init_context.logger_config['name']
+    level = coerce_valid_log_level(init_context.logger_config["log_level"])
+    name = init_context.logger_config["name"]
 
     klass = logging.getLoggerClass()
     logger_ = klass(name, level=level)
@@ -59,13 +59,13 @@ def json_console_logger(init_context):
 
 
 def default_system_loggers():
-    '''If users don't provide configuration for any loggers, we instantiate these loggers with the
+    """If users don't provide configuration for any loggers, we instantiate these loggers with the
     default config.
 
     Returns:
-        List[Tuple[LoggerDefinition, dict]]: Default loggers and their associated configs.'''
-    return [(colored_console_logger, {'name': 'dagster', 'log_level': 'DEBUG'})]
+        List[Tuple[LoggerDefinition, dict]]: Default loggers and their associated configs."""
+    return [(colored_console_logger, {"name": "dagster", "log_level": "DEBUG"})]
 
 
 def default_loggers():
-    return {'console': colored_console_logger}
+    return {"console": colored_console_logger}

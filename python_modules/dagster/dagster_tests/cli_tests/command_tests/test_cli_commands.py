@@ -47,7 +47,7 @@ def do_input(x):
 
 
 @pipeline(
-    name='foo', preset_defs=[PresetDefinition(name="test", tags={'foo': 'bar'}),],
+    name="foo", preset_defs=[PresetDefinition(name="test", tags={"foo": "bar"}),],
 )
 def foo_pipeline():
     do_input(do_something())
@@ -57,13 +57,13 @@ def define_foo_pipeline():
     return foo_pipeline
 
 
-@pipeline(name='baz', description='Not much tbh')
+@pipeline(name="baz", description="Not much tbh")
 def baz_pipeline():
     do_input()
 
 
 def not_a_repo_or_pipeline_fn():
-    return 'kdjfkjdf'
+    return "kdjfkjdf"
 
 
 not_a_repo_or_pipeline = 123
@@ -71,7 +71,7 @@ not_a_repo_or_pipeline = 123
 
 def define_bar_schedules():
     return {
-        'foo_schedule': ScheduleDefinition(
+        "foo_schedule": ScheduleDefinition(
             "foo_schedule", cron_schedule="* * * * *", pipeline_name="test_pipeline", run_config={},
         ),
     }
@@ -79,12 +79,12 @@ def define_bar_schedules():
 
 def define_baz_partitions():
     return {
-        'baz_partitions': PartitionSetDefinition(
-            name='baz_partitions',
-            pipeline_name='baz',
+        "baz_partitions": PartitionSetDefinition(
+            name="baz_partitions",
+            pipeline_name="baz",
             partition_fn=lambda: string.digits,
             run_config_fn_for_partition=lambda partition: {
-                'solids': {'do_input': {'inputs': {'x': {'value': partition.value}}}}
+                "solids": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
             },
         )
     }
@@ -93,20 +93,20 @@ def define_baz_partitions():
 @repository
 def bar():
     return {
-        'pipelines': {'foo': foo_pipeline, 'baz': baz_pipeline},
-        'schedules': define_bar_schedules(),
-        'partition_sets': define_baz_partitions(),
+        "pipelines": {"foo": foo_pipeline, "baz": baz_pipeline},
+        "schedules": define_bar_schedules(),
+        "partition_sets": define_baz_partitions(),
     }
 
 
 @solid
 def spew(context):
-    context.log.info('HELLO WORLD')
+    context.log.info("HELLO WORLD")
 
 
 @solid
 def fail(context):
-    raise Exception('I AM SUPPOSED TO FAIL')
+    raise Exception("I AM SUPPOSED TO FAIL")
 
 
 @pipeline
@@ -125,9 +125,9 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
         self._queue = []
 
     def launch_run(self, instance, run, external_pipeline):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.inst_param(run, 'run', PipelineRun)
-        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.inst_param(run, "run", PipelineRun)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         self._queue.append(run)
         return run
 
@@ -150,21 +150,21 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
         return False
 
     def terminate(self, run_id):
-        check.not_implemented('Termintation not supported')
+        check.not_implemented("Termintation not supported")
 
 
 @contextmanager
 def default_instance_tempdir(temp_dir, overrides=None):
     default_overrides = {
-        'run_launcher': {
-            'module': 'dagster_tests.cli_tests.command_tests.test_cli_commands',
-            'class': 'InMemoryRunLauncher',
+        "run_launcher": {
+            "module": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "class": "InMemoryRunLauncher",
         }
     }
     with instance_for_test_tempdir(
         temp_dir, overrides=merge_dicts(default_overrides, (overrides if overrides else {}))
     ) as instance:
-        with mock.patch('dagster.core.instance.DagsterInstance.get') as _instance:
+        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
             _instance.return_value = instance
             yield instance
 
@@ -198,17 +198,17 @@ def args_with_managed_grpc_instance(*args):
 def grpc_server_bar_kwargs(pipeline_name=None):
     server_process = GrpcServerProcess(
         loadable_target_origin=LoadableTargetOrigin(
-            python_file=file_relative_path(__file__, 'test_cli_commands.py'), attribute='bar'
+            python_file=file_relative_path(__file__, "test_cli_commands.py"), attribute="bar"
         ),
     )
     with server_process.create_ephemeral_client() as client:
-        args = {'grpc_host': client.host}
+        args = {"grpc_host": client.host}
         if pipeline_name:
-            args['pipeline'] = 'foo'
+            args["pipeline"] = "foo"
         if client.port:
-            args['grpc_port'] = client.port
+            args["grpc_port"] = client.port
         if client.socket:
-            args['grpc_socket'] = client.socket
+            args["grpc_socket"] = client.socket
         yield args
     server_process.wait()
 
@@ -216,13 +216,13 @@ def grpc_server_bar_kwargs(pipeline_name=None):
 @contextmanager
 def python_bar_cli_args(pipeline_name=None):
     args = [
-        '-m',
-        'dagster_tests.cli_tests.command_tests.test_cli_commands',
-        '-a',
-        'bar',
+        "-m",
+        "dagster_tests.cli_tests.command_tests.test_cli_commands",
+        "-a",
+        "bar",
     ]
     if pipeline_name:
-        args.append('-p')
+        args.append("-p")
         args.append(pipeline_name)
     yield args
 
@@ -231,19 +231,19 @@ def python_bar_cli_args(pipeline_name=None):
 def grpc_server_bar_cli_args(pipeline_name=None):
     server_process = GrpcServerProcess(
         loadable_target_origin=LoadableTargetOrigin(
-            python_file=file_relative_path(__file__, 'test_cli_commands.py'), attribute='bar'
+            python_file=file_relative_path(__file__, "test_cli_commands.py"), attribute="bar"
         ),
     )
     with server_process.create_ephemeral_client() as client:
-        args = ['--grpc-host', client.host]
+        args = ["--grpc-host", client.host]
         if client.port:
-            args.append('--grpc-port')
+            args.append("--grpc-port")
             args.append(client.port)
         if client.socket:
-            args.append('--grpc-socket')
+            args.append("--grpc-socket")
             args.append(client.socket)
         if pipeline_name:
-            args.append('--pipeline')
+            args.append("--pipeline")
             args.append(pipeline_name)
 
         yield args
@@ -253,7 +253,7 @@ def grpc_server_bar_cli_args(pipeline_name=None):
 @contextmanager
 def grpc_server_bar_pipeline_args():
     with default_instance() as instance:
-        with grpc_server_bar_kwargs(pipeline_name='foo') as kwargs:
+        with grpc_server_bar_kwargs(pipeline_name="foo") as kwargs:
             yield kwargs, False, instance
 
 
@@ -282,10 +282,10 @@ def scheduler_instance(overrides=None):
             temp_dir,
             overrides=merge_dicts(
                 {
-                    'scheduler': {
-                        'module': 'dagster.utils.test',
-                        'class': 'FilesystemTestScheduler',
-                        'config': {'base_dir': temp_dir},
+                    "scheduler": {
+                        "module": "dagster.utils.test",
+                        "class": "FilesystemTestScheduler",
+                        "config": {"base_dir": temp_dir},
                     }
                 },
                 overrides if overrides else {},
@@ -310,12 +310,12 @@ def grpc_server_scheduler_cli_args():
 def schedule_command_contexts():
     return [
         args_with_instance(
-            scheduler_instance(), ['-w', file_relative_path(__file__, 'workspace.yaml')]
+            scheduler_instance(), ["-w", file_relative_path(__file__, "workspace.yaml")]
         ),
         pytest.param(
             args_with_instance(
                 managed_grpc_scheduler_instance(),
-                ['-w', file_relative_path(__file__, 'workspace.yaml')],
+                ["-w", file_relative_path(__file__, "workspace.yaml")],
             ),
             marks=pytest.mark.managed_grpc,
         ),
@@ -327,8 +327,8 @@ def schedule_command_contexts():
 # (cli_args, uses_legacy_repository_yaml_format, instance) tuples for backfill calls
 def backfill_command_contexts():
     repo_args = {
-        'noprompt': True,
-        'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
+        "noprompt": True,
+        "workspace": (file_relative_path(__file__, "repository_file.yaml"),),
     }
     return [
         args_with_instance(default_instance(), repo_args, True),
@@ -344,61 +344,61 @@ def backfill_command_contexts():
 def grpc_server_backfill_args():
     with default_instance() as instance:
         with grpc_server_bar_kwargs() as args:
-            yield merge_dicts(args, {'noprompt': True}), False, instance
+            yield merge_dicts(args, {"noprompt": True}), False, instance
 
 
 def valid_pipeline_python_origin_target_args():
     return [
         {
-            'workspace': None,
-            'pipeline': 'foo',
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'attribute': 'bar',
+            "workspace": None,
+            "pipeline": "foo",
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "module_name": None,
+            "attribute": "bar",
         },
         {
-            'workspace': None,
-            'pipeline': 'foo',
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'attribute': 'bar',
-            'working_directory': os.path.dirname(__file__),
+            "workspace": None,
+            "pipeline": "foo",
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "module_name": None,
+            "attribute": "bar",
+            "working_directory": os.path.dirname(__file__),
         },
         {
-            'workspace': None,
-            'pipeline': 'foo',
-            'python_file': None,
-            'module_name': 'dagster_tests.cli_tests.command_tests.test_cli_commands',
-            'attribute': 'bar',
+            "workspace": None,
+            "pipeline": "foo",
+            "python_file": None,
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "attribute": "bar",
         },
         {
-            'workspace': None,
-            'pipeline': None,
-            'python_file': None,
-            'module_name': 'dagster_tests.cli_tests.command_tests.test_cli_commands',
-            'attribute': 'foo_pipeline',
+            "workspace": None,
+            "pipeline": None,
+            "python_file": None,
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "attribute": "foo_pipeline",
         },
         {
-            'workspace': None,
-            'pipeline': None,
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'attribute': 'define_foo_pipeline',
+            "workspace": None,
+            "pipeline": None,
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "module_name": None,
+            "attribute": "define_foo_pipeline",
         },
         {
-            'workspace': None,
-            'pipeline': None,
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'attribute': 'define_foo_pipeline',
-            'working_directory': os.path.dirname(__file__),
+            "workspace": None,
+            "pipeline": None,
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "module_name": None,
+            "attribute": "define_foo_pipeline",
+            "working_directory": os.path.dirname(__file__),
         },
         {
-            'workspace': None,
-            'pipeline': None,
-            'python_file': file_relative_path(__file__, 'test_cli_commands.py'),
-            'module_name': None,
-            'attribute': 'foo_pipeline',
+            "workspace": None,
+            "pipeline": None,
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "module_name": None,
+            "attribute": "foo_pipeline",
         },
     ]
 
@@ -408,21 +408,21 @@ def valid_external_pipeline_target_args():
     return [
         (
             {
-                'workspace': (file_relative_path(__file__, 'repository_file.yaml'),),
-                'pipeline': 'foo',
-                'python_file': None,
-                'module_name': None,
-                'attribute': None,
+                "workspace": (file_relative_path(__file__, "repository_file.yaml"),),
+                "pipeline": "foo",
+                "python_file": None,
+                "module_name": None,
+                "attribute": None,
             },
             True,
         ),
         (
             {
-                'workspace': (file_relative_path(__file__, 'repository_module.yaml'),),
-                'pipeline': 'foo',
-                'python_file': None,
-                'module_name': None,
-                'attribute': None,
+                "workspace": (file_relative_path(__file__, "repository_module.yaml"),),
+                "pipeline": "foo",
+                "python_file": None,
+                "module_name": None,
+                "attribute": None,
             },
             True,
         ),
@@ -431,34 +431,34 @@ def valid_external_pipeline_target_args():
 
 def valid_pipeline_python_origin_target_cli_args():
     return [
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'bar', '-p', 'foo'],
+        ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "bar", "-p", "foo"],
         [
-            '-f',
-            file_relative_path(__file__, 'test_cli_commands.py'),
-            '-d',
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-d",
             os.path.dirname(__file__),
-            '-a',
-            'bar',
-            '-p',
-            'foo',
+            "-a",
+            "bar",
+            "-p",
+            "foo",
         ],
         [
-            '-m',
-            'dagster_tests.cli_tests.command_tests.test_cli_commands',
-            '-a',
-            'bar',
-            '-p',
-            'foo',
+            "-m",
+            "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "-a",
+            "bar",
+            "-p",
+            "foo",
         ],
-        ['-m', 'dagster_tests.cli_tests.command_tests.test_cli_commands', '-a', 'foo_pipeline'],
-        ['-f', file_relative_path(__file__, 'test_cli_commands.py'), '-a', 'define_foo_pipeline',],
+        ["-m", "dagster_tests.cli_tests.command_tests.test_cli_commands", "-a", "foo_pipeline"],
+        ["-f", file_relative_path(__file__, "test_cli_commands.py"), "-a", "define_foo_pipeline",],
         [
-            '-f',
-            file_relative_path(__file__, 'test_cli_commands.py'),
-            '-d',
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-d",
             os.path.dirname(__file__),
-            '-a',
-            'define_foo_pipeline',
+            "-a",
+            "define_foo_pipeline",
         ],
     ]
 
@@ -466,17 +466,17 @@ def valid_pipeline_python_origin_target_cli_args():
 # [(cli_args, uses_legacy_repository_yaml_format)]
 def valid_external_pipeline_target_cli_args_no_preset():
     return [
-        (['-w', file_relative_path(__file__, 'repository_file.yaml'), '-p', 'foo'], True),
-        (['-w', file_relative_path(__file__, 'repository_module.yaml'), '-p', 'foo'], True),
-        (['-w', file_relative_path(__file__, 'workspace.yaml'), '-p', 'foo'], False),
+        (["-w", file_relative_path(__file__, "repository_file.yaml"), "-p", "foo"], True),
+        (["-w", file_relative_path(__file__, "repository_module.yaml"), "-p", "foo"], True),
+        (["-w", file_relative_path(__file__, "workspace.yaml"), "-p", "foo"], False),
         (
             [
-                '-w',
-                file_relative_path(__file__, 'override.yaml'),
-                '-w',
-                file_relative_path(__file__, 'workspace.yaml'),
-                '-p',
-                'foo',
+                "-w",
+                file_relative_path(__file__, "override.yaml"),
+                "-w",
+                file_relative_path(__file__, "workspace.yaml"),
+                "-p",
+                "foo",
             ],
             False,
         ),
@@ -487,14 +487,14 @@ def valid_external_pipeline_target_cli_args_with_preset():
     return valid_external_pipeline_target_cli_args_no_preset() + [
         (
             [
-                '-f',
-                file_relative_path(__file__, 'test_cli_commands.py'),
-                '-d',
+                "-f",
+                file_relative_path(__file__, "test_cli_commands.py"),
+                "-d",
                 os.path.dirname(__file__),
-                '-a',
-                'define_foo_pipeline',
-                '--preset',
-                'test',
+                "-a",
+                "define_foo_pipeline",
+                "--preset",
+                "test",
             ],
             False,
         )
@@ -510,12 +510,12 @@ def test_run_list():
 def test_run_wipe_correct_delete_message():
     runner = CliRunner()
     result = runner.invoke(run_wipe_command, input="DELETE\n")
-    assert 'Deleted all run history and event logs' in result.output
+    assert "Deleted all run history and event logs" in result.output
     assert result.exit_code == 0
 
 
 def test_run_wipe_incorrect_delete_message():
     runner = CliRunner()
     result = runner.invoke(run_wipe_command, input="WRONG\n")
-    assert 'Exiting without deleting all run history and event logs' in result.output
+    assert "Exiting without deleting all run history and event logs" in result.output
     assert result.exit_code == 0

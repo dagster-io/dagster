@@ -11,13 +11,13 @@ from .executor import CeleryExecutor
 
 
 def create_task(celery_app, **task_kwargs):
-    @celery_app.task(bind=True, name='execute_plan', **task_kwargs)
+    @celery_app.task(bind=True, name="execute_plan", **task_kwargs)
     def _execute_plan(_self, instance_ref_dict, executable_dict, run_id, step_keys, retries_dict):
-        check.dict_param(instance_ref_dict, 'instance_ref_dict')
-        check.dict_param(executable_dict, 'executable_dict')
-        check.str_param(run_id, 'run_id')
-        check.list_param(step_keys, 'step_keys', of_type=str)
-        check.dict_param(retries_dict, 'retries_dict')
+        check.dict_param(instance_ref_dict, "instance_ref_dict")
+        check.dict_param(executable_dict, "executable_dict")
+        check.str_param(run_id, "run_id")
+        check.list_param(step_keys, "step_keys", of_type=str)
+        check.dict_param(retries_dict, "retries_dict")
 
         instance_ref = InstanceRef.from_dict(instance_ref_dict)
         instance = DagsterInstance.from_ref(instance_ref)
@@ -25,7 +25,7 @@ def create_task(celery_app, **task_kwargs):
         retries = Retries.from_config(retries_dict)
 
         pipeline_run = instance.get_run_by_id(run_id)
-        check.invariant(pipeline_run, 'Could not load run {}'.format(run_id))
+        check.invariant(pipeline_run, "Could not load run {}".format(run_id))
 
         step_keys_str = ", ".join(step_keys)
 
@@ -37,10 +37,10 @@ def create_task(celery_app, **task_kwargs):
         ).build_subset_plan(step_keys)
 
         engine_event = instance.report_engine_event(
-            'Executing steps {} in celery worker'.format(step_keys_str),
+            "Executing steps {} in celery worker".format(step_keys_str),
             pipeline_run,
             EngineEventData(
-                [EventMetadataEntry.text(step_keys_str, 'step_keys'),], marker_end=DELEGATE_MARKER,
+                [EventMetadataEntry.text(step_keys_str, "step_keys"),], marker_end=DELEGATE_MARKER,
             ),
             CeleryExecutor,
             step_key=execution_plan.step_key_for_single_step_plans(),

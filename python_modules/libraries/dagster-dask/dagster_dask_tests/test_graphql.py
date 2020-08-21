@@ -14,8 +14,8 @@ from dagster.utils import file_relative_path
 
 def test_execute_hammer_through_dagit():
     recon_repo = ReconstructableRepository.for_file(
-        file_relative_path(__file__, '../../../dagster-test/dagster_test/toys/hammer.py'),
-        'hammer_pipeline',
+        file_relative_path(__file__, "../../../dagster-test/dagster_test/toys/hammer.py"),
+        "hammer_pipeline",
     )
     instance = DagsterInstance.local_temp()
 
@@ -26,18 +26,18 @@ def test_execute_hammer_through_dagit():
         instance=instance,
     )
 
-    selector = infer_pipeline_selector(context, 'hammer_pipeline')
+    selector = infer_pipeline_selector(context, "hammer_pipeline")
 
     executor = SyncExecutor()
 
     variables = {
-        'executionParams': {
-            'runConfigData': {
-                'storage': {'filesystem': {}},
-                'execution': {'dask': {'config': {'cluster': {'local': {}}}}},
+        "executionParams": {
+            "runConfigData": {
+                "storage": {"filesystem": {}},
+                "execution": {"dask": {"config": {"cluster": {"local": {}}}}},
             },
-            'selector': selector,
-            'mode': 'default',
+            "selector": selector,
+            "mode": "default",
         }
     }
 
@@ -50,18 +50,18 @@ def test_execute_hammer_through_dagit():
     )
 
     if start_pipeline_result.errors:
-        raise Exception('{}'.format(start_pipeline_result.errors))
+        raise Exception("{}".format(start_pipeline_result.errors))
 
-    run_id = start_pipeline_result.data['launchPipelineExecution']['run']['runId']
+    run_id = start_pipeline_result.data["launchPipelineExecution"]["run"]["runId"]
 
     context.drain_outstanding_executions()
 
-    subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={'runId': run_id})
+    subscription = execute_dagster_graphql(context, SUBSCRIPTION_QUERY, variables={"runId": run_id})
 
     subscribe_results = []
     subscription.subscribe(subscribe_results.append)
 
-    messages = [x['__typename'] for x in subscribe_results[0].data['pipelineRunLogs']['messages']]
+    messages = [x["__typename"] for x in subscribe_results[0].data["pipelineRunLogs"]["messages"]]
 
-    assert 'PipelineStartEvent' in messages
-    assert 'PipelineSuccessEvent' in messages
+    assert "PipelineStartEvent" in messages
+    assert "PipelineSuccessEvent" in messages

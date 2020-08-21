@@ -23,20 +23,20 @@ def get_executor_defs():
 
 
 @solid(
-    input_defs=[InputDefinition('chase_duration', int)],
-    output_defs=[OutputDefinition(int, 'total')],
+    input_defs=[InputDefinition("chase_duration", int)],
+    output_defs=[OutputDefinition(int, "total")],
     config_schema={
-        'chase_size': Field(
+        "chase_size": Field(
             int,
             default_value=100000,
             is_required=False,
-            description='How big should the pointer chase array be?',
+            description="How big should the pointer chase array be?",
         )
     },
 )
 def hammer(context, chase_duration):
-    '''what better way to do a lot of gnarly work than to pointer chase?'''
-    ptr_length = context.solid_config['chase_size']
+    """what better way to do a lot of gnarly work than to pointer chase?"""
+    ptr_length = context.solid_config["chase_size"]
 
     data = list(range(0, ptr_length))
     random.shuffle(data)
@@ -47,34 +47,34 @@ def hammer(context, chase_duration):
     while (time.time() - start_time) < chase_duration:
         curr = data[curr]
 
-    context.log.info('Hammered - start %d end %d' % (start_time, time.time()))
+    context.log.info("Hammered - start %d end %d" % (start_time, time.time()))
     return chase_duration
 
 
 @solid(
     config_schema=Field(int, is_required=False, default_value=1),
     output_defs=[
-        OutputDefinition(int, 'out_1'),
-        OutputDefinition(int, 'out_2'),
-        OutputDefinition(int, 'out_3'),
-        OutputDefinition(int, 'out_4'),
+        OutputDefinition(int, "out_1"),
+        OutputDefinition(int, "out_2"),
+        OutputDefinition(int, "out_3"),
+        OutputDefinition(int, "out_4"),
     ],
 )
 def chase_giver(context):
     chase_duration = context.solid_config
 
-    yield Output(chase_duration, 'out_1')
-    yield Output(chase_duration, 'out_2')
-    yield Output(chase_duration, 'out_3')
-    yield Output(chase_duration, 'out_4')
+    yield Output(chase_duration, "out_1")
+    yield Output(chase_duration, "out_2")
+    yield Output(chase_duration, "out_3")
+    yield Output(chase_duration, "out_4")
 
 
 @solid(
     input_defs=[
-        InputDefinition('in_1', int),
-        InputDefinition('in_2', int),
-        InputDefinition('in_3', int),
-        InputDefinition('in_4', int),
+        InputDefinition("in_1", int),
+        InputDefinition("in_2", int),
+        InputDefinition("in_3", int),
+        InputDefinition("in_4", int),
     ],
     output_defs=[OutputDefinition(int)],
 )

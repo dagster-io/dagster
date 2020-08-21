@@ -8,11 +8,11 @@ from .grpc_run_launcher import GRPC_REPOSITORY_LOCATION_HANDLE_TYPES, GrpcRunLau
 
 
 class DefaultRunLauncher(RunLauncher, ConfigurableClass):
-    '''Default run launcher.
+    """Default run launcher.
 
     This run launcher is aware of instance- and repository-level settings governing whether
     repositories should be loaded and runs launched over the legacy CLI API or over GRPC.
-    '''
+    """
 
     def __init__(self, inst_data=None):
         self._inst_data = inst_data
@@ -32,7 +32,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         return DefaultRunLauncher(inst_data=inst_data,)
 
     def initialize(self, instance):
-        check.inst_param(instance, 'instance', DagsterInstance)
+        check.inst_param(instance, "instance", DagsterInstance)
 
         self._cli_api_run_launcher.initialize(instance)
         self._grpc_run_launcher.initialize(instance)

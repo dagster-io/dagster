@@ -26,4 +26,4 @@ def get_loadable_targets(python_file, module_name, working_directory, attribute)
             else loadable_targets_from_python_module(module_name)
         )
     else:
-        check.failed('invalid')
+        check.failed("invalid")

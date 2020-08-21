@@ -14,34 +14,34 @@ from .dagster_types import to_dauphin_dagster_type
 
 class DauphinSolidContainer(dauphin.Interface):
     class Meta(object):
-        name = 'SolidContainer'
+        name = "SolidContainer"
 
-    solids = dauphin.non_null_list('Solid')
+    solids = dauphin.non_null_list("Solid")
 
 
 class DauphinISolidDefinition(dauphin.Interface):
     class Meta(object):
-        name = 'ISolidDefinition'
+        name = "ISolidDefinition"
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    metadata = dauphin.non_null_list('MetadataItemDefinition')
-    input_definitions = dauphin.non_null_list('InputDefinition')
-    output_definitions = dauphin.non_null_list('OutputDefinition')
-    required_resources = dauphin.non_null_list('ResourceRequirement')
+    metadata = dauphin.non_null_list("MetadataItemDefinition")
+    input_definitions = dauphin.non_null_list("InputDefinition")
+    output_definitions = dauphin.non_null_list("OutputDefinition")
+    required_resources = dauphin.non_null_list("ResourceRequirement")
 
 
 class IDauphinSolidDefinitionMixin(object):
     def __init__(self, represented_pipeline, solid_def_name):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
-        check.str_param(solid_def_name, 'solid_def_name')
+        check.str_param(solid_def_name, "solid_def_name")
         self._solid_def_snap = represented_pipeline.get_solid_def_snap(solid_def_name)
 
     def resolve_metadata(self, graphene_info):
         return [
-            graphene_info.schema.type_named('MetadataItemDefinition')(key=item[0], value=item[1])
+            graphene_info.schema.type_named("MetadataItemDefinition")(key=item[0], value=item[1])
             for item in self._solid_def_snap.tags.items()
         ]
 
@@ -67,14 +67,14 @@ class IDauphinSolidDefinitionMixin(object):
 
     def resolve_required_resources(self, graphene_info):
         return [
-            graphene_info.schema.type_named('ResourceRequirement')(key)
+            graphene_info.schema.type_named("ResourceRequirement")(key)
             for key in self._solid_def_snap.required_resource_keys
         ]
 
 
 def build_dauphin_solid_definition(represented_pipeline, solid_def_name):
-    check.inst_param(represented_pipeline, 'represented_pipeline', RepresentedPipeline)
-    check.str_param(solid_def_name, 'solid_def_name')
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    check.str_param(solid_def_name, "solid_def_name")
 
     solid_def_snap = represented_pipeline.get_solid_def_snap(solid_def_name)
 
@@ -84,7 +84,7 @@ def build_dauphin_solid_definition(represented_pipeline, solid_def_name):
     if isinstance(solid_def_snap, CompositeSolidDefSnap):
         return DauphinCompositeSolidDefinition(represented_pipeline, solid_def_snap.name)
 
-    check.failed('Unknown solid definition type {type}'.format(type=type(solid_def_snap)))
+    check.failed("Unknown solid definition type {type}".format(type=type(solid_def_snap)))
 
 
 class _ArgNotPresentSentinel:
@@ -93,21 +93,21 @@ class _ArgNotPresentSentinel:
 
 class DauphinSolid(dauphin.ObjectType):
     class Meta(object):
-        name = 'Solid'
+        name = "Solid"
 
     name = dauphin.NonNull(dauphin.String)
-    definition = dauphin.NonNull('ISolidDefinition')
-    inputs = dauphin.non_null_list('Input')
-    outputs = dauphin.non_null_list('Output')
+    definition = dauphin.NonNull("ISolidDefinition")
+    inputs = dauphin.non_null_list("Input")
+    outputs = dauphin.non_null_list("Output")
 
     def __init__(self, represented_pipeline, solid_name, current_dep_structure):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
 
-        check.str_param(solid_name, 'solid_name')
+        check.str_param(solid_name, "solid_name")
         self._current_dep_structure = check.inst_param(
-            current_dep_structure, 'current_dep_structure', DependencyStructureIndex
+            current_dep_structure, "current_dep_structure", DependencyStructureIndex
         )
         self._solid_invocation_snap = current_dep_structure.get_invocation(solid_name)
         self._solid_def_snap = represented_pipeline.get_solid_def_snap(
@@ -149,13 +149,13 @@ class DauphinSolid(dauphin.ObjectType):
 
 class DauphinSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitionMixin):
     class Meta(object):
-        name = 'SolidDefinition'
+        name = "SolidDefinition"
         interfaces = [DauphinISolidDefinition]
 
-    config_field = dauphin.Field('ConfigTypeField')
+    config_field = dauphin.Field("ConfigTypeField")
 
     def __init__(self, represented_pipeline, solid_def_name):
-        check.inst_param(represented_pipeline, 'represented_pipeline', RepresentedPipeline)
+        check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
         self._solid_def_snap = represented_pipeline.get_solid_def_snap(solid_def_name)
         super(DauphinSolidDefinition, self).__init__(
             name=solid_def_name, description=self._solid_def_snap.description
@@ -175,16 +175,16 @@ class DauphinSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitionMixin):
 
 class DauphinCompositeSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitionMixin):
     class Meta(object):
-        name = 'CompositeSolidDefinition'
+        name = "CompositeSolidDefinition"
         interfaces = [DauphinISolidDefinition, DauphinSolidContainer]
 
-    solids = dauphin.non_null_list('Solid')
-    input_mappings = dauphin.non_null_list('InputMapping')
-    output_mappings = dauphin.non_null_list('OutputMapping')
+    solids = dauphin.non_null_list("Solid")
+    input_mappings = dauphin.non_null_list("InputMapping")
+    output_mappings = dauphin.non_null_list("OutputMapping")
 
     def __init__(self, represented_pipeline, solid_def_name):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
         self._solid_def_snap = represented_pipeline.get_solid_def_snap(solid_def_name)
         self._comp_solid_dep_index = represented_pipeline.get_dep_structure_index(solid_def_name)
@@ -221,33 +221,33 @@ class DauphinCompositeSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitio
 
 class DauphinSolidHandle(dauphin.ObjectType):
     class Meta(object):
-        name = 'SolidHandle'
+        name = "SolidHandle"
 
     handleID = dauphin.NonNull(dauphin.String)
-    solid = dauphin.NonNull('Solid')
-    parent = dauphin.Field('SolidHandle')
+    solid = dauphin.NonNull("Solid")
+    parent = dauphin.Field("SolidHandle")
 
     def __init__(self, handle, solid, parent):
-        self.handleID = check.inst_param(handle, 'handle', SolidHandle)
-        self.solid = check.inst_param(solid, 'solid', DauphinSolid)
-        self.parent = check.opt_inst_param(parent, 'parent', DauphinSolidHandle)
+        self.handleID = check.inst_param(handle, "handle", SolidHandle)
+        self.solid = check.inst_param(solid, "solid", DauphinSolid)
+        self.parent = check.opt_inst_param(parent, "parent", DauphinSolidHandle)
 
 
 class DauphinInputDefinition(dauphin.ObjectType):
     class Meta(object):
-        name = 'InputDefinition'
+        name = "InputDefinition"
 
-    solid_definition = dauphin.NonNull('SolidDefinition')
+    solid_definition = dauphin.NonNull("SolidDefinition")
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    type = dauphin.NonNull('DagsterType')
+    type = dauphin.NonNull("DagsterType")
 
     def __init__(self, represented_pipeline, solid_def_name, input_def_name):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
-        check.str_param(solid_def_name, 'solid_def_name')
-        check.str_param(input_def_name, 'input_def_name')
+        check.str_param(solid_def_name, "solid_def_name")
+        check.str_param(input_def_name, "input_def_name")
         solid_def_snap = self._represented_pipeline.get_solid_def_snap(solid_def_name)
         self._input_def_snap = solid_def_snap.get_input_snap(input_def_name)
         super(DauphinInputDefinition, self).__init__(
@@ -267,19 +267,19 @@ class DauphinInputDefinition(dauphin.ObjectType):
 
 class DauphinOutputDefinition(dauphin.ObjectType):
     class Meta(object):
-        name = 'OutputDefinition'
+        name = "OutputDefinition"
 
-    solid_definition = dauphin.NonNull('SolidDefinition')
+    solid_definition = dauphin.NonNull("SolidDefinition")
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
-    type = dauphin.NonNull('DagsterType')
+    type = dauphin.NonNull("DagsterType")
 
     def __init__(self, represented_pipeline, solid_def_name, output_def_name):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
-        check.str_param(solid_def_name, 'solid_def_name')
-        check.str_param(output_def_name, 'output_def_name')
+        check.str_param(solid_def_name, "solid_def_name")
+        check.str_param(output_def_name, "output_def_name")
 
         self._solid_def_snap = represented_pipeline.get_solid_def_snap(solid_def_name)
         self._output_def_snap = self._solid_def_snap.get_output_snap(output_def_name)
@@ -299,21 +299,21 @@ class DauphinOutputDefinition(dauphin.ObjectType):
 
 class DauphinInput(dauphin.ObjectType):
     class Meta(object):
-        name = 'Input'
+        name = "Input"
 
-    solid = dauphin.NonNull('Solid')
-    definition = dauphin.NonNull('InputDefinition')
-    depends_on = dauphin.non_null_list('Output')
+    solid = dauphin.NonNull("Solid")
+    definition = dauphin.NonNull("InputDefinition")
+    depends_on = dauphin.non_null_list("Output")
 
     def __init__(self, represented_pipeline, current_dep_structure, solid_name, input_name):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
         self._current_dep_structure = check.inst_param(
-            current_dep_structure, 'current_dep_structure', DependencyStructureIndex
+            current_dep_structure, "current_dep_structure", DependencyStructureIndex
         )
-        self._solid_name = check.str_param(solid_name, 'solid_name')
-        self._input_name = check.str_param(input_name, 'input_name')
+        self._solid_name = check.str_param(solid_name, "solid_name")
+        self._input_name = check.str_param(input_name, "input_name")
         self._solid_invocation_snap = current_dep_structure.get_invocation(solid_name)
         self._solid_def_snap = represented_pipeline.get_solid_def_snap(
             self._solid_invocation_snap.solid_def_name
@@ -348,21 +348,21 @@ class DauphinInput(dauphin.ObjectType):
 
 class DauphinOutput(dauphin.ObjectType):
     class Meta(object):
-        name = 'Output'
+        name = "Output"
 
-    solid = dauphin.NonNull('Solid')
-    definition = dauphin.NonNull('OutputDefinition')
-    depended_by = dauphin.non_null_list('Input')
+    solid = dauphin.NonNull("Solid")
+    definition = dauphin.NonNull("OutputDefinition")
+    depended_by = dauphin.non_null_list("Input")
 
     def __init__(self, represented_pipeline, current_dep_structure, solid_name, output_name):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
         self._current_dep_structure = check.inst_param(
-            current_dep_structure, 'current_dep_structure', DependencyStructureIndex
+            current_dep_structure, "current_dep_structure", DependencyStructureIndex
         )
-        self._solid_name = check.str_param(solid_name, 'solid_name')
-        self._output_name = check.str_param(output_name, 'output_name')
+        self._solid_name = check.str_param(solid_name, "solid_name")
+        self._output_name = check.str_param(output_name, "output_name")
         self._solid_invocation_snap = current_dep_structure.get_invocation(solid_name)
         self._solid_def_snap = represented_pipeline.get_solid_def_snap(
             self._solid_invocation_snap.solid_def_name
@@ -396,19 +396,19 @@ class DauphinOutput(dauphin.ObjectType):
 
 class DauphinInputMapping(dauphin.ObjectType):
     class Meta(object):
-        name = 'InputMapping'
+        name = "InputMapping"
 
-    mapped_input = dauphin.NonNull('Input')
-    definition = dauphin.NonNull('InputDefinition')
+    mapped_input = dauphin.NonNull("Input")
+    definition = dauphin.NonNull("InputDefinition")
 
     def __init__(
         self, represented_pipeline, current_dep_index, solid_def_name, input_name,
     ):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
         self._current_dep_index = check.inst_param(
-            current_dep_index, 'current_dep_index', DependencyStructureIndex
+            current_dep_index, "current_dep_index", DependencyStructureIndex
         )
         self._solid_def_snap = represented_pipeline.get_solid_def_snap(solid_def_name)
         self._input_mapping_snap = self._solid_def_snap.get_input_mapping_snap(input_name)
@@ -432,19 +432,19 @@ class DauphinInputMapping(dauphin.ObjectType):
 
 class DauphinOutputMapping(dauphin.ObjectType):
     class Meta(object):
-        name = 'OutputMapping'
+        name = "OutputMapping"
 
-    mapped_output = dauphin.NonNull('Output')
-    definition = dauphin.NonNull('OutputDefinition')
+    mapped_output = dauphin.NonNull("Output")
+    definition = dauphin.NonNull("OutputDefinition")
 
     def __init__(
         self, represented_pipeline, current_dep_index, solid_def_name, output_name,
     ):
         self._represented_pipeline = check.inst_param(
-            represented_pipeline, 'represented_pipeline', RepresentedPipeline
+            represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
         self._current_dep_index = check.inst_param(
-            current_dep_index, 'current_dep_index', DependencyStructureIndex
+            current_dep_index, "current_dep_index", DependencyStructureIndex
         )
         self._solid_def_snap = represented_pipeline.get_solid_def_snap(solid_def_name)
         self._output_mapping_snap = self._solid_def_snap.get_output_mapping_snap(output_name)
@@ -468,7 +468,7 @@ class DauphinOutputMapping(dauphin.ObjectType):
 
 class DauphinResourceRequirement(dauphin.ObjectType):
     class Meta(object):
-        name = 'ResourceRequirement'
+        name = "ResourceRequirement"
 
     resource_key = dauphin.NonNull(dauphin.String)
 
@@ -478,24 +478,24 @@ class DauphinResourceRequirement(dauphin.ObjectType):
 
 class DauphinUsedSolid(dauphin.ObjectType):
     class Meta(object):
-        name = 'UsedSolid'
-        description = '''A solid definition and it's invocations within the repo.'''
+        name = "UsedSolid"
+        description = """A solid definition and it's invocations within the repo."""
 
-    definition = dauphin.NonNull('ISolidDefinition')
-    invocations = dauphin.non_null_list('SolidInvocationSite')
+    definition = dauphin.NonNull("ISolidDefinition")
+    invocations = dauphin.non_null_list("SolidInvocationSite")
 
 
 class DauphinSolidInvocationSite(dauphin.ObjectType):
     class Meta(object):
-        name = 'SolidInvocationSite'
-        description = '''An invocation of a solid within a repo.'''
+        name = "SolidInvocationSite"
+        description = """An invocation of a solid within a repo."""
 
-    pipeline = dauphin.NonNull('Pipeline')
-    solidHandle = dauphin.NonNull('SolidHandle')
+    pipeline = dauphin.NonNull("Pipeline")
+    solidHandle = dauphin.NonNull("SolidHandle")
 
 
 def build_dauphin_solids(represented_pipeline, current_dep_index):
-    check.inst_param(represented_pipeline, 'represented_pipeline', RepresentedPipeline)
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
     return sorted(
         [
             DauphinSolid(represented_pipeline, solid_name, current_dep_index)
@@ -506,8 +506,8 @@ def build_dauphin_solids(represented_pipeline, current_dep_index):
 
 
 def build_dauphin_solid_handles(represented_pipeline, current_dep_index, parent=None):
-    check.inst_param(represented_pipeline, 'represented_pipeline', RepresentedPipeline)
-    check.opt_inst_param(parent, 'parent', DauphinSolidHandle)
+    check.inst_param(represented_pipeline, "represented_pipeline", RepresentedPipeline)
+    check.opt_inst_param(parent, "parent", DauphinSolidHandle)
     all_handle = []
     for solid_invocation in current_dep_index.solid_invocations:
         solid_name, solid_def_name = solid_invocation.solid_name, solid_invocation.solid_def_name

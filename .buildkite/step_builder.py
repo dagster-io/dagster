@@ -15,8 +15,8 @@ DOCKER_PLUGIN = "docker#v3.2.0"
 ECR_PLUGIN = "ecr#v2.0.0"
 
 
-AWS_ACCOUNT_ID = os.environ.get('AWS_ACCOUNT_ID')
-AWS_ECR_REGION = 'us-west-1'
+AWS_ACCOUNT_ID = os.environ.get("AWS_ACCOUNT_ID")
+AWS_ECR_REGION = "us-west-1"
 
 
 def wait_step():
@@ -24,9 +24,9 @@ def wait_step():
 
 
 class BuildkiteQueue(Enum):
-    '''These are the Buildkite CloudFormation queues that we use. All queues with "-p" suffix are
+    """These are the Buildkite CloudFormation queues that we use. All queues with "-p" suffix are
     provisioned by Pulumi.
-    '''
+    """
 
     DOCKER = "docker-p"
     MEDIUM = "medium-v4-3-2"
@@ -81,20 +81,20 @@ class StepBuilder(object):
         settings["network"] = "kind"
         settings["environment"] = ["BUILDKITE"] + (env or [])
         ecr_settings = {
-            'login': True,
-            'no-include-email': True,
-            'account-ids': AWS_ACCOUNT_ID,
-            'region': AWS_ECR_REGION,
+            "login": True,
+            "no-include-email": True,
+            "account-ids": AWS_ACCOUNT_ID,
+            "region": AWS_ECR_REGION,
         }
         self._step["plugins"] = [{ECR_PLUGIN: ecr_settings}, {DOCKER_PLUGIN: settings}]
         return self
 
     def on_unit_image(self, ver, env=None):
         if ver not in SupportedPythons:
-            raise Exception('Unsupported python version for unit image {ver}'.format(ver=ver))
+            raise Exception("Unsupported python version for unit image {ver}".format(ver=ver))
 
         return self.on_python_image(
-            image='buildkite-unit:py{python_version}-{image_version}'.format(
+            image="buildkite-unit:py{python_version}-{image_version}".format(
                 python_version=ver, image_version=UNIT_IMAGE_VERSION
             ),
             env=env,
@@ -103,11 +103,11 @@ class StepBuilder(object):
     def on_integration_image(self, ver, env=None):
         if ver not in SupportedPythons:
             raise Exception(
-                'Unsupported python version for integration image {ver}'.format(ver=ver)
+                "Unsupported python version for integration image {ver}".format(ver=ver)
             )
 
         return self.on_python_image(
-            image='buildkite-integration:py{python_version}-{image_version}'.format(
+            image="buildkite-integration:py{python_version}-{image_version}".format(
                 python_version=ver, image_version=INTEGRATION_IMAGE_VERSION
             ),
             env=env,
@@ -118,7 +118,7 @@ class StepBuilder(object):
         return self
 
     def with_retry(self, num_retries):
-        self._step["retry"] = {'automatic': {'limit': num_retries}}
+        self._step["retry"] = {"automatic": {"limit": num_retries}}
         return self
 
     def on_queue(self, queue):

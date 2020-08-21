@@ -17,16 +17,16 @@ from dagster.seven import mock
 slack_resource_mock = mock.MagicMock()
 
 
-@success_hook(required_resource_keys={'slack'})
+@success_hook(required_resource_keys={"slack"})
 def slack_on_success(context):
-    message = 'Solid {} finished successfully'.format(context.solid.name)
-    context.resources.slack.chat.post_message(channel='#foo', text=message)
+    message = "Solid {} finished successfully".format(context.solid.name)
+    context.resources.slack.chat.post_message(channel="#foo", text=message)
 
 
-@failure_hook(required_resource_keys={'slack'})
+@failure_hook(required_resource_keys={"slack"})
 def slack_on_failure(context):
-    message = 'Solid {} failed'.format(context.solid.name)
-    context.resources.slack.chat.post_message(channel='#foo', text=message)
+    message = "Solid {} failed".format(context.solid.name)
+    context.resources.slack.chat.post_message(channel="#foo", text=message)
 
 
 @solid
@@ -41,14 +41,14 @@ def b(_):
 
 mode_defs = [
     ModeDefinition(
-        'dev',
+        "dev",
         resource_defs={
-            'slack': ResourceDefinition.hardcoded_resource(
-                slack_resource_mock, 'do not send messages in dev'
+            "slack": ResourceDefinition.hardcoded_resource(
+                slack_resource_mock, "do not send messages in dev"
             )
         },
     ),
-    ModeDefinition('prod', resource_defs={'slack': slack_resource}),
+    ModeDefinition("prod", resource_defs={"slack": slack_resource}),
 ]
 
 
@@ -74,6 +74,6 @@ def repo():
 
 
 if __name__ == "__main__":
-    with open(file_relative_path(__file__, 'prod.yaml'), 'r',) as fd:
+    with open(file_relative_path(__file__, "prod.yaml"), "r",) as fd:
         run_config = yaml.safe_load(fd.read())
-    result = execute_pipeline(notif_all, run_config=run_config, mode='prod')
+    result = execute_pipeline(notif_all, run_config=run_config, mode="prod")

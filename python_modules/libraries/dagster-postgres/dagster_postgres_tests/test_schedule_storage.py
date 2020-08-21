@@ -8,6 +8,6 @@ TestScheduleStorage.__test__ = False
 class TestPostgresScheduleStorage(TestScheduleStorage):
     __test__ = True
 
-    @pytest.fixture(scope='function', name='storage')
+    @pytest.fixture(scope="function", name="storage")
     def schedule_storage(self, clean_schedule_storage):  # pylint: disable=arguments-differ
         return clean_schedule_storage

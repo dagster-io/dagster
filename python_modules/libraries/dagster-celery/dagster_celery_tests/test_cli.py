@@ -14,7 +14,7 @@ from .utils import skip_ci
 
 
 def assert_called(mck):
-    if hasattr(mck, 'assert_called'):
+    if hasattr(mck, "assert_called"):
         mck.assert_called()
     else:
         # py35
@@ -23,28 +23,28 @@ def assert_called(mck):
 
 @contextmanager
 def pythonpath(path):
-    '''Inserts a path into the PYTHONPATH, then restores the previous PYTHONPATH when it
-    cleans up'''
-    unset = 'PYTHONPATH' not in os.environ
-    old_path = os.environ.get('PYTHONPATH', '')
+    """Inserts a path into the PYTHONPATH, then restores the previous PYTHONPATH when it
+    cleans up"""
+    unset = "PYTHONPATH" not in os.environ
+    old_path = os.environ.get("PYTHONPATH", "")
     old_sys_path = sys.path
     try:
-        os.environ['PYTHONPATH'] = '{old_path}{path}:'.format(old_path=old_path, path=path)
+        os.environ["PYTHONPATH"] = "{old_path}{path}:".format(old_path=old_path, path=path)
         sys.path.insert(0, path)
         yield
     finally:
         if unset:
-            del os.environ['PYTHONPATH']
+            del os.environ["PYTHONPATH"]
         else:
-            os.environ['PYTHONPATH'] = old_path
+            os.environ["PYTHONPATH"] = old_path
         sys.path = old_sys_path
 
 
-def start_worker(name, args=None, exit_code=0, exception_str=''):
-    args = check.opt_list_param(args, 'args')
+def start_worker(name, args=None, exit_code=0, exception_str=""):
+    args = check.opt_list_param(args, "args")
     runner = CliRunner()
     result = runner.invoke(
-        main, ['worker', 'start', '-A', 'dagster_celery.app', '-d'] + args + ['--name', name]
+        main, ["worker", "start", "-A", "dagster_celery.app", "-d"] + args + ["--name", name]
     )
     assert result.exit_code == exit_code, str(result.exception)
     if exception_str:
@@ -53,34 +53,34 @@ def start_worker(name, args=None, exit_code=0, exception_str=''):
 
 @contextmanager
 def cleanup_worker(name, args=None):
-    args = check.opt_list_param(args, 'args')
+    args = check.opt_list_param(args, "args")
     try:
         yield
     finally:
         runner = CliRunner()
-        result = runner.invoke(main, ['worker', 'terminate'] + args + [name])
+        result = runner.invoke(main, ["worker", "terminate"] + args + [name])
         assert result.exit_code == 0, str(result.exception)
 
 
 def check_for_worker(name, args=None, present=True):
     runner = CliRunner()
-    args = check.opt_list_param(args, 'args')
-    result = runner.invoke(main, ['worker', 'list'] + args)
+    args = check.opt_list_param(args, "args")
+    result = runner.invoke(main, ["worker", "list"] + args)
     assert result.exit_code == 0, str(result.exception)
     retry_count = 0
     while retry_count < 10 and (
-        not '{name}@'.format(name=name) in result.output
+        not "{name}@".format(name=name) in result.output
         if present
-        else '{name}@'.format(name=name) in result.output
+        else "{name}@".format(name=name) in result.output
     ):
         time.sleep(1)
-        result = runner.invoke(main, ['worker', 'list'] + args)
+        result = runner.invoke(main, ["worker", "list"] + args)
         assert result.exit_code == 0, str(result.exception)
         retry_count += 1
     return (
-        '{name}@'.format(name=name) in result.output
+        "{name}@".format(name=name) in result.output
         if present
-        else '{name}@'.format(name=name) not in result.output
+        else "{name}@".format(name=name) not in result.output
     )
 
 
@@ -88,44 +88,44 @@ def test_invoke_entrypoint():
     runner = CliRunner()
     result = runner.invoke(main)
     assert result.exit_code == 0
-    assert 'worker' in result.output
+    assert "worker" in result.output
 
     runner = CliRunner()
-    result = runner.invoke(main, ['worker'])
+    result = runner.invoke(main, ["worker"])
     assert result.exit_code == 0
-    assert 'Start a dagster celery worker' in result.output
+    assert "Start a dagster celery worker" in result.output
 
 
 @skip_ci
 def test_start_worker():
-    with cleanup_worker('dagster_test_worker'):
-        start_worker('dagster_test_worker')
-        assert check_for_worker('dagster_test_worker')
+    with cleanup_worker("dagster_test_worker"):
+        start_worker("dagster_test_worker")
+        assert check_for_worker("dagster_test_worker")
 
 
 @skip_ci
 def test_start_worker_too_many_queues():
-    args = ['-q', '1', '-q', '2', '-q', '3', '-q', '4', '-q', '5']
+    args = ["-q", "1", "-q", "2", "-q", "3", "-q", "4", "-q", "5"]
 
-    with cleanup_worker('dagster_test_worker'):
+    with cleanup_worker("dagster_test_worker"):
         start_worker(
-            'dagster_test_worker',
+            "dagster_test_worker",
             args=args,
             exit_code=1,
             exception_str=(
-                'Can\'t start a dagster_celery worker that listens on more than four queues, due to a '
-                'bug in Celery 4.'
+                "Can't start a dagster_celery worker that listens on more than four queues, due to a "
+                "bug in Celery 4."
             ),
         )
 
 
 @skip_ci
 def test_start_worker_addargs():
-    args = ['--', '-uid', '42']
+    args = ["--", "-uid", "42"]
 
-    with cleanup_worker('dagster_test_worker'):
+    with cleanup_worker("dagster_test_worker"):
         start_worker(
-            'dagster_test_worker', args=args,
+            "dagster_test_worker", args=args,
         )
 
         # Omitting to incur a heavy test dependency on psutil
@@ -133,59 +133,59 @@ def test_start_worker_addargs():
 
 @skip_ci
 def test_start_worker_config_from_empty_yaml():
-    args = ['-y', file_relative_path(__file__, 'empty.yaml')]
-    with cleanup_worker('dagster_test_worker', args=args):
-        start_worker('dagster_test_worker', args=args)
-        assert check_for_worker('dagster_test_worker')
+    args = ["-y", file_relative_path(__file__, "empty.yaml")]
+    with cleanup_worker("dagster_test_worker", args=args):
+        start_worker("dagster_test_worker", args=args)
+        assert check_for_worker("dagster_test_worker")
 
 
 @skip_ci
 def test_start_worker_config_from_partial_yaml():
-    args = ['-y', file_relative_path(__file__, 'partial.yaml')]
-    with cleanup_worker('dagster_test_worker', args=args):
-        start_worker('dagster_test_worker', args=args)
-        assert check_for_worker('dagster_test_worker')
+    args = ["-y", file_relative_path(__file__, "partial.yaml")]
+    with cleanup_worker("dagster_test_worker", args=args):
+        start_worker("dagster_test_worker", args=args)
+        assert check_for_worker("dagster_test_worker")
 
 
 @skip_ci
 def test_start_worker_config_from_yaml():
-    args = ['-y', file_relative_path(__file__, 'engine_config.yaml')]
+    args = ["-y", file_relative_path(__file__, "engine_config.yaml")]
 
-    with cleanup_worker('dagster_test_worker', args=args):
-        start_worker('dagster_test_worker', args=args)
-        assert check_for_worker('dagster_test_worker')
+    with cleanup_worker("dagster_test_worker", args=args):
+        start_worker("dagster_test_worker", args=args)
+        assert check_for_worker("dagster_test_worker")
 
 
-@mock.patch('dagster_celery.cli.launch_background_worker')
+@mock.patch("dagster_celery.cli.launch_background_worker")
 def test_mock_start_worker(worker_patch):
-    start_worker('dagster_test_worker')
+    start_worker("dagster_test_worker")
     assert_called(worker_patch)
 
 
-@mock.patch('dagster_celery.cli.launch_background_worker')
+@mock.patch("dagster_celery.cli.launch_background_worker")
 def test_mock_start_worker_config_from_empty_yaml(worker_patch):
-    args = ['-y', file_relative_path(__file__, 'empty.yaml')]
-    start_worker('dagster_test_worker', args=args)
+    args = ["-y", file_relative_path(__file__, "empty.yaml")]
+    start_worker("dagster_test_worker", args=args)
     assert_called(worker_patch)
 
 
-@mock.patch('dagster_celery.cli.launch_background_worker')
+@mock.patch("dagster_celery.cli.launch_background_worker")
 def test_start_mock_worker_config_from_yaml(worker_patch):
-    args = ['-y', file_relative_path(__file__, 'engine_config.yaml')]
-    start_worker('dagster_test_worker', args=args)
+    args = ["-y", file_relative_path(__file__, "engine_config.yaml")]
+    start_worker("dagster_test_worker", args=args)
     assert_called(worker_patch)
 
 
-@mock.patch('dagster_celery.cli.launch_background_worker')
+@mock.patch("dagster_celery.cli.launch_background_worker")
 def test_mock_start_worker_too_many_queues(_worker_patch):
-    args = ['-q', '1', '-q', '2', '-q', '3', '-q', '4', '-q', '5']
+    args = ["-q", "1", "-q", "2", "-q", "3", "-q", "4", "-q", "5"]
 
     start_worker(
-        'dagster_test_worker',
+        "dagster_test_worker",
         args=args,
         exit_code=1,
         exception_str=(
-            'Can\'t start a dagster_celery worker that listens on more than four queues, due to a '
-            'bug in Celery 4.'
+            "Can't start a dagster_celery worker that listens on more than four queues, due to a "
+            "bug in Celery 4."
         ),
     )

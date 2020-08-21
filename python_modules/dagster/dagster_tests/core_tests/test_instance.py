@@ -16,7 +16,7 @@ def test_get_run_by_id():
     instance = DagsterInstance.ephemeral()
 
     assert instance.get_runs() == []
-    pipeline_run = create_run_for_test(instance, pipeline_name='foo_pipeline', run_id='new_run')
+    pipeline_run = create_run_for_test(instance, pipeline_name="foo_pipeline", run_id="new_run")
 
     assert instance.get_runs() == [pipeline_run]
 
@@ -24,12 +24,12 @@ def test_get_run_by_id():
 
 
 def do_test_single_write_read(instance):
-    run_id = 'some_run_id'
-    pipeline_def = PipelineDefinition(name='some_pipeline', solid_defs=[])
+    run_id = "some_run_id"
+    pipeline_def = PipelineDefinition(name="some_pipeline", solid_defs=[])
     instance.create_run_for_pipeline(pipeline_def=pipeline_def, run_id=run_id)
     run = instance.get_run_by_id(run_id)
     assert run.run_id == run_id
-    assert run.pipeline_name == 'some_pipeline'
+    assert run.pipeline_name == "some_pipeline"
     assert list(instance.get_runs()) == [run]
     instance.wipe()
     assert list(instance.get_runs()) == []
@@ -93,18 +93,18 @@ def test_create_execution_plan_snapshot():
 
 @pytest.mark.parametrize("dirname", (".", ".."))
 def test_dagster_home_raises(dirname):
-    with environ({'DAGSTER_HOME': dirname}):
+    with environ({"DAGSTER_HOME": dirname}):
         with pytest.raises(
             DagsterInvariantViolationError,
-            match='DAGSTER_HOME must be absolute path: {}'.format(dirname),
+            match="DAGSTER_HOME must be absolute path: {}".format(dirname),
         ):
             _dagster_home()
 
 
 def test_dagster_home_not_dir():
-    dirname = '/this/path/does/not/exist'
+    dirname = "/this/path/does/not/exist"
 
-    with environ({'DAGSTER_HOME': dirname}):
+    with environ({"DAGSTER_HOME": dirname}):
         with pytest.raises(
             DagsterInvariantViolationError,
             match='DAGSTER_HOME "{}" is not a folder or does not exist!'.format(dirname),

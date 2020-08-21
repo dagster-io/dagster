@@ -5,9 +5,9 @@ from dagster import InputDefinition, pipeline, solid
 API_URL = "https://financialmodelingprep.com/api/v3/historical-price-full"
 
 
-@solid(config_schema={'symbol': str})
+@solid(config_schema={"symbol": str})
 def query_historical_stock_data(context):
-    symbol = context.solid_config['symbol']
+    symbol = context.solid_config["symbol"]
     ds_start = "2019-01-01"
     ds_end = "2019-01-31"
 
@@ -20,14 +20,14 @@ def query_historical_stock_data(context):
     return response.json()
 
 
-@solid(input_defs=[InputDefinition('json_response', dict)])
+@solid(input_defs=[InputDefinition("json_response", dict)])
 def sum_volume(context, json_response):
-    historical_data = json_response['historical']
+    historical_data = json_response["historical"]
     total_volume = 0
     for date in historical_data:
-        total_volume += date['volume']
+        total_volume += date["volume"]
 
-    context.log.info('Total volume: {total_volume}'.format(total_volume=str(total_volume)))
+    context.log.info("Total volume: {total_volume}".format(total_volume=str(total_volume)))
 
     return total_volume
 

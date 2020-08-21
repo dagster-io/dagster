@@ -38,14 +38,14 @@ from dagster.utils.test import yield_empty_pipeline_context
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
     def serialize(self, value, write_file_obj):
-        return write_file_obj.write(bytes(value.upper().encode('utf-8')))
+        return write_file_obj.write(bytes(value.upper().encode("utf-8")))
 
     def deserialize(self, read_file_obj):
-        return read_file_obj.read().decode('utf-8').lower()
+        return read_file_obj.read().decode("utf-8").lower()
 
 
 LowercaseString = create_any_type(
-    'LowercaseString', serialization_strategy=UppercaseSerializationStrategy('uppercase'),
+    "LowercaseString", serialization_strategy=UppercaseSerializationStrategy("uppercase"),
 )
 
 
@@ -57,19 +57,19 @@ def define_inty_pipeline(should_throw=True):
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
     @lambda_solid
     def user_throw_exception():
-        raise Exception('whoops')
+        raise Exception("whoops")
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 system_storage_defs=gcs_plus_default_storage_defs,
-                resource_defs={'gcs': gcs_resource},
+                resource_defs={"gcs": gcs_resource},
             )
         ]
     )
@@ -81,7 +81,7 @@ def define_inty_pipeline(should_throw=True):
     return basic_external_plan_execution
 
 
-def get_step_output(step_events, step_key, output_name='result'):
+def get_step_output(step_events, step_key, output_name="result"):
     for step_event in step_events:
         if (
             step_event.event_type == DagsterEventType.STEP_OUTPUT
@@ -96,15 +96,15 @@ def get_step_output(step_events, step_key, output_name='result'):
 def test_using_gcs_for_subplan(gcs_bucket):
     pipeline_def = define_inty_pipeline()
 
-    run_config = {'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket}}}}
+    run_config = {"storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket}}}}
 
     run_id = make_new_run_id()
 
     execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
-    assert execution_plan.get_step_by_key('return_one.compute')
+    assert execution_plan.get_step_by_key("return_one.compute")
 
-    step_keys = ['return_one.compute']
+    step_keys = ["return_one.compute"]
     instance = DagsterInstance.ephemeral()
     pipeline_run = PipelineRun(
         pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
@@ -119,9 +119,9 @@ def test_using_gcs_for_subplan(gcs_bucket):
         )
     )
 
-    assert get_step_output(return_one_step_events, 'return_one.compute')
+    assert get_step_output(return_one_step_events, "return_one.compute")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(['return_one.compute']),
+        execution_plan.build_subset_plan(["return_one.compute"]),
         run_config,
         pipeline_run,
         instance,
@@ -129,38 +129,38 @@ def test_using_gcs_for_subplan(gcs_bucket):
         intermediate_storage = GCSIntermediateStorage(
             gcs_bucket,
             run_id,
-            client=context.scoped_resources_builder.build(required_resource_keys={'gcs'},).gcs,
+            client=context.scoped_resources_builder.build(required_resource_keys={"gcs"},).gcs,
         )
         assert intermediate_storage.has_intermediate(
-            context, StepOutputHandle('return_one.compute')
+            context, StepOutputHandle("return_one.compute")
         )
         assert (
             intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle('return_one.compute')
+                context, Int, StepOutputHandle("return_one.compute")
             ).obj
             == 1
         )
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['add_one.compute']),
+            execution_plan.build_subset_plan(["add_one.compute"]),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
         )
     )
 
-    assert get_step_output(add_one_step_events, 'add_one.compute')
+    assert get_step_output(add_one_step_events, "add_one.compute")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(['return_one.compute']),
+        execution_plan.build_subset_plan(["return_one.compute"]),
         run_config,
         pipeline_run,
         instance,
     ) as context:
-        assert intermediate_storage.has_intermediate(context, StepOutputHandle('add_one.compute'))
+        assert intermediate_storage.has_intermediate(context, StepOutputHandle("add_one.compute"))
         assert (
             intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle('add_one.compute')
+                context, Int, StepOutputHandle("add_one.compute")
             ).obj
             == 2
         )
@@ -176,27 +176,27 @@ class FancyStringGCSTypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-i
     def set_intermediate_object(
         cls, intermediate_storage, context, dagster_type, step_output_handle, value
     ):
-        check.inst_param(intermediate_storage, 'intermediate_storage', GCSIntermediateStorage)
-        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        check.inst_param(intermediate_storage, "intermediate_storage", GCSIntermediateStorage)
+        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
         paths.append(value)
         key = intermediate_storage.object_store.key_for_paths([intermediate_storage.root] + paths)
         return intermediate_storage.object_store.set_object(
-            key, '', dagster_type.serialization_strategy
+            key, "", dagster_type.serialization_strategy
         )
 
     @classmethod
     def get_intermediate_object(
         cls, intermediate_storage, context, dagster_type, step_output_handle
     ):
-        check.inst_param(intermediate_storage, 'intermediate_storage', GCSIntermediateStorage)
-        paths = ['intermediates', step_output_handle.step_key, step_output_handle.output_name]
+        check.inst_param(intermediate_storage, "intermediate_storage", GCSIntermediateStorage)
+        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
         res = list(
             intermediate_storage.object_store.client.list_blobs(
                 intermediate_storage.object_store.bucket,
                 prefix=intermediate_storage.key_for_paths(paths),
             )
         )
-        return res[0].name.split('/')[-1]
+        return res[0].name.split("/")[-1]
 
 
 @nettest
@@ -211,12 +211,12 @@ def test_gcs_intermediate_storage_with_type_storage_plugin(gcs_bucket):
         ),
     )
 
-    obj_name = 'obj_name'
+    obj_name = "obj_name"
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_storage.set_intermediate(
-                context, RuntimeString, StepOutputHandle(obj_name), 'hello'
+                context, RuntimeString, StepOutputHandle(obj_name), "hello"
             )
 
             assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
@@ -224,7 +224,7 @@ def test_gcs_intermediate_storage_with_type_storage_plugin(gcs_bucket):
                 intermediate_storage.get_intermediate(
                     context, RuntimeString, StepOutputHandle(obj_name)
                 )
-                == 'hello'
+                == "hello"
             )
 
         finally:
@@ -243,12 +243,12 @@ def test_gcs_intermediate_storage_with_composite_type_storage_plugin(gcs_bucket)
         ),
     )
 
-    obj_name = 'obj_name'
+    obj_name = "obj_name"
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         with pytest.raises(check.NotImplementedCheckError):
             intermediate_storage.set_intermediate(
-                context, resolve_dagster_type(List[String]), StepOutputHandle(obj_name), ['hello']
+                context, resolve_dagster_type(List[String]), StepOutputHandle(obj_name), ["hello"]
             )
 
 
@@ -258,7 +258,7 @@ def test_gcs_intermediate_storage_composite_types_with_custom_serializer_for_inn
 
     intermediate_storage = GCSIntermediateStorage(run_id=run_id, gcs_bucket=gcs_bucket)
 
-    obj_name = 'list'
+    obj_name = "list"
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
@@ -266,12 +266,12 @@ def test_gcs_intermediate_storage_composite_types_with_custom_serializer_for_inn
                 context,
                 resolve_dagster_type(List[LowercaseString]),
                 StepOutputHandle(obj_name),
-                ['foo', 'bar'],
+                ["foo", "bar"],
             )
             assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
             assert intermediate_storage.get_intermediate(
                 context, resolve_dagster_type(List[Bool]), StepOutputHandle(obj_name)
-            ).obj == ['foo', 'bar']
+            ).obj == ["foo", "bar"]
 
         finally:
             intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))
@@ -283,12 +283,12 @@ def test_gcs_intermediate_storage_with_custom_serializer(gcs_bucket):
 
     intermediate_storage = GCSIntermediateStorage(run_id=run_id, gcs_bucket=gcs_bucket)
 
-    obj_name = 'foo'
+    obj_name = "foo"
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_storage.set_intermediate(
-                context, LowercaseString, StepOutputHandle(obj_name), 'foo'
+                context, LowercaseString, StepOutputHandle(obj_name), "foo"
             )
 
             bucket_obj = intermediate_storage.object_store.client.get_bucket(
@@ -298,7 +298,7 @@ def test_gcs_intermediate_storage_with_custom_serializer(gcs_bucket):
                 os.path.join(
                     *[
                         intermediate_storage.root,
-                        'intermediates',
+                        "intermediates",
                         StepOutputHandle(obj_name).step_key,
                         StepOutputHandle(obj_name).output_name,
                     ]
@@ -308,14 +308,14 @@ def test_gcs_intermediate_storage_with_custom_serializer(gcs_bucket):
             blob.download_to_file(file_obj)
             file_obj.seek(0)
 
-            assert file_obj.read().decode('utf-8') == 'FOO'
+            assert file_obj.read().decode("utf-8") == "FOO"
 
             assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
             assert (
                 intermediate_storage.get_intermediate(
                     context, LowercaseString, StepOutputHandle(obj_name)
                 ).obj
-                == 'foo'
+                == "foo"
             )
         finally:
             intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))
@@ -323,11 +323,11 @@ def test_gcs_intermediate_storage_with_custom_serializer(gcs_bucket):
 
 @nettest
 def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
-    gcs_prefix = 'custom_prefix'
+    gcs_prefix = "custom_prefix"
 
     pipe = define_inty_pipeline(should_throw=False)
     run_config = {
-        'storage': {'gcs': {'config': {'gcs_bucket': gcs_bucket, 'gcs_prefix': gcs_prefix}}}
+        "storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket, "gcs_prefix": gcs_prefix}}}
     }
 
     pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
@@ -342,18 +342,18 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
             run_id=result.run_id,
             gcs_bucket=gcs_bucket,
             gcs_prefix=gcs_prefix,
-            client=context.scoped_resources_builder.build(required_resource_keys={'gcs'},).gcs,
+            client=context.scoped_resources_builder.build(required_resource_keys={"gcs"},).gcs,
         )
-        assert intermediate_storage.root == '/'.join(['custom_prefix', 'storage', result.run_id])
+        assert intermediate_storage.root == "/".join(["custom_prefix", "storage", result.run_id])
         assert (
             intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle('return_one.compute')
+                context, Int, StepOutputHandle("return_one.compute")
             ).obj
             == 1
         )
         assert (
             intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle('add_one.compute')
+                context, Int, StepOutputHandle("add_one.compute")
             ).obj
             == 2
         )
@@ -364,11 +364,11 @@ def test_gcs_intermediate_storage_with_custom_prefix(gcs_bucket):
     run_id = make_new_run_id()
 
     intermediate_storage = GCSIntermediateStorage(
-        run_id=run_id, gcs_bucket=gcs_bucket, gcs_prefix='custom_prefix'
+        run_id=run_id, gcs_bucket=gcs_bucket, gcs_prefix="custom_prefix"
     )
-    assert intermediate_storage.root == '/'.join(['custom_prefix', 'storage', run_id])
+    assert intermediate_storage.root == "/".join(["custom_prefix", "storage", run_id])
 
-    obj_name = 'true'
+    obj_name = "true"
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -379,7 +379,7 @@ def test_gcs_intermediate_storage_with_custom_prefix(gcs_bucket):
 
             assert intermediate_storage.has_intermediate(context, StepOutputHandle(obj_name))
             assert intermediate_storage.uri_for_paths([obj_name]).startswith(
-                'gs://%s/custom_prefix' % gcs_bucket
+                "gs://%s/custom_prefix" % gcs_bucket
             )
 
     finally:
@@ -392,12 +392,12 @@ def test_gcs_intermediate_storage(gcs_bucket):
     run_id_2 = make_new_run_id()
 
     intermediate_storage = GCSIntermediateStorage(run_id=run_id, gcs_bucket=gcs_bucket)
-    assert intermediate_storage.root == '/'.join(['dagster', 'storage', run_id])
+    assert intermediate_storage.root == "/".join(["dagster", "storage", run_id])
 
     intermediate_storage_2 = GCSIntermediateStorage(run_id=run_id_2, gcs_bucket=gcs_bucket)
-    assert intermediate_storage_2.root == '/'.join(['dagster', 'storage', run_id_2])
+    assert intermediate_storage_2.root == "/".join(["dagster", "storage", run_id_2])
 
-    obj_name = 'true'
+    obj_name = "true"
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -413,7 +413,7 @@ def test_gcs_intermediate_storage(gcs_bucket):
                 ).obj
                 is True
             )
-            assert intermediate_storage.uri_for_paths([obj_name]).startswith('gs://')
+            assert intermediate_storage.uri_for_paths([obj_name]).startswith("gs://")
 
             intermediate_storage_2.copy_intermediate_from_run(
                 context, run_id, StepOutputHandle(obj_name)
@@ -459,9 +459,9 @@ class LessSimpleDataFrame(list):
 def test_custom_read_write_mode(gcs_bucket):
     run_id = make_new_run_id()
     intermediate_storage = GCSIntermediateStorage(run_id=run_id, gcs_bucket=gcs_bucket)
-    data_frame = [OrderedDict({'foo': '1', 'bar': '1'}), OrderedDict({'foo': '2', 'bar': '2'})]
+    data_frame = [OrderedDict({"foo": "1", "bar": "1"}), OrderedDict({"foo": "2", "bar": "2"})]
 
-    obj_name = 'data_frame'
+    obj_name = "data_frame"
 
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
@@ -479,7 +479,7 @@ def test_custom_read_write_mode(gcs_bucket):
                 ).obj
                 == data_frame
             )
-            assert intermediate_storage.uri_for_paths([obj_name]).startswith('gs://')
+            assert intermediate_storage.uri_for_paths([obj_name]).startswith("gs://")
 
     finally:
         intermediate_storage.rm_intermediate(context, StepOutputHandle(obj_name))

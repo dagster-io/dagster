@@ -7,7 +7,7 @@ from dagster_spark import create_spark_solid, spark_resource
 from dagster import ModeDefinition, execute_solid
 from dagster.utils import file_relative_path
 
-CONFIG_FILE = '''
+CONFIG_FILE = """
 solids:
   spark_solid:
     config:
@@ -20,13 +20,13 @@ solids:
         spark:
           app:
             name: "test_app"
-'''
+"""
 
-MODE_DEF = ModeDefinition(resource_defs={'spark': spark_resource})
+MODE_DEF = ModeDefinition(resource_defs={"spark": spark_resource})
 
 
 def test_jar_not_found():
-    spark_solid = create_spark_solid('spark_solid', main_class='something')
+    spark_solid = create_spark_solid("spark_solid", main_class="something")
     # guid guaranteed to not exist
     run_config = yaml.safe_load(CONFIG_FILE.format(path=str(uuid.uuid4())))
 
@@ -35,12 +35,12 @@ def test_jar_not_found():
     )
     assert result.failure_data
     assert (
-        'does not exist. A valid jar must be built before running this solid.'
+        "does not exist. A valid jar must be built before running this solid."
         in result.failure_data.error.message
     )
 
 
-NO_SPARK_HOME_CONFIG_FILE = '''
+NO_SPARK_HOME_CONFIG_FILE = """
 solids:
   spark_solid:
     config:
@@ -52,16 +52,16 @@ solids:
         spark:
           app:
             name: "test_app"
-'''
+"""
 
 
 def test_no_spark_home():
-    if 'SPARK_HOME' in os.environ:
-        del os.environ['SPARK_HOME']
+    if "SPARK_HOME" in os.environ:
+        del os.environ["SPARK_HOME"]
 
-    spark_solid = create_spark_solid('spark_solid', main_class='something')
+    spark_solid = create_spark_solid("spark_solid", main_class="something")
     run_config = yaml.safe_load(
-        NO_SPARK_HOME_CONFIG_FILE.format(path=file_relative_path(__file__, '.'))
+        NO_SPARK_HOME_CONFIG_FILE.format(path=file_relative_path(__file__, "."))
     )
 
     result = execute_solid(
@@ -69,6 +69,6 @@ def test_no_spark_home():
     )
     assert result.failure_data
     assert (
-        'No spark home set. You must either pass spark_home in config or set '
-        '$SPARK_HOME in your environment (got None).' in result.failure_data.error.message
+        "No spark home set. You must either pass spark_home in config or set "
+        "$SPARK_HOME in your environment (got None)." in result.failure_data.error.message
     )
