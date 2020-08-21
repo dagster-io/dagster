@@ -8,13 +8,9 @@ from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.test.exploding_run_launcher import ExplodingRunLauncher
 
 from dagster import DefaultRunLauncher, check, file_relative_path, seven
+from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import (
-    GrpcServerRepositoryLocation,
-    InProcessRepositoryLocation,
-    PythonEnvRepositoryLocation,
-    RepositoryLocationHandle,
-)
+from dagster.core.host_representation import RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
@@ -261,7 +257,10 @@ class EnvironmentManagers:
         @contextmanager
         def _mgr_fn(recon_repo):
             check.inst_param(recon_repo, 'recon_repo', ReconstructableRepository)
-            yield [InProcessRepositoryLocation(recon_repo=recon_repo)]
+            with Workspace(
+                [RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)]
+            ) as workspace:
+                yield workspace
 
         return MarkedManager(_mgr_fn, [Marks.hosted_user_process_env])
 
@@ -276,14 +275,14 @@ class EnvironmentManagers:
             loadable_target_origin = LoadableTargetOrigin.from_python_origin(
                 recon_repo.get_origin()
             )
-
-            yield [
-                PythonEnvRepositoryLocation(
+            with Workspace(
+                [
                     RepositoryLocationHandle.create_python_env_location(
                         loadable_target_origin=loadable_target_origin, location_name='test',
                     )
-                )
-            ]
+                ]
+            ) as workspace:
+                yield workspace
 
         return MarkedManager(_mgr_fn, [Marks.out_of_process_env])
 
@@ -297,14 +296,14 @@ class EnvironmentManagers:
             loadable_target_origin = LoadableTargetOrigin.from_python_origin(
                 recon_repo.get_origin()
             )
-
-            repo_location_handle = RepositoryLocationHandle.create_process_bound_grpc_server_location(
-                loadable_target_origin=loadable_target_origin, location_name='test',
-            )
-            try:
-                yield [GrpcServerRepositoryLocation(repo_location_handle)]
-            finally:
-                repo_location_handle.cleanup()
+            with Workspace(
+                [
+                    RepositoryLocationHandle.create_process_bound_grpc_server_location(
+                        loadable_target_origin=loadable_target_origin, location_name='test',
+                    )
+                ]
+            ) as workspace:
+                yield workspace
 
         return MarkedManager(_mgr_fn, [Marks.managed_grpc_env])
 
@@ -319,19 +318,21 @@ class EnvironmentManagers:
             )
 
             server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
-
-            with server_process.create_ephemeral_client() as api_client:
-                yield [
-                    GrpcServerRepositoryLocation(
-                        RepositoryLocationHandle.create_grpc_server_location(
-                            port=api_client.port,
-                            socket=api_client.socket,
-                            host=api_client.host,
-                            location_name='test',
-                        )
-                    )
-                ]
-            server_process.wait()
+            try:
+                with server_process.create_ephemeral_client() as api_client:
+                    with Workspace(
+                        [
+                            RepositoryLocationHandle.create_grpc_server_location(
+                                port=api_client.port,
+                                socket=api_client.socket,
+                                host=api_client.host,
+                                location_name='test',
+                            )
+                        ]
+                    ) as workspace:
+                        yield workspace
+            finally:
+                server_process.wait()
 
         return MarkedManager(_mgr_fn, [Marks.deployed_grpc_env])
 
@@ -346,8 +347,8 @@ class EnvironmentManagers:
                 file_relative_path(__file__, 'empty_repo.yaml')
             )
 
-            yield [
-                PythonEnvRepositoryLocation(
+            with Workspace(
+                [
                     RepositoryLocationHandle.create_python_env_location(
                         loadable_target_origin=LoadableTargetOrigin(
                             executable_path=sys.executable,
@@ -355,10 +356,8 @@ class EnvironmentManagers:
                             attribute='test_repo',
                         ),
                         location_name='test',
-                    )
-                ),
-                InProcessRepositoryLocation(empty_repo),
-                PythonEnvRepositoryLocation(
+                    ),
+                    RepositoryLocationHandle.create_in_process_location(empty_repo.pointer),
                     RepositoryLocationHandle.create_python_env_location(
                         loadable_target_origin=LoadableTargetOrigin(
                             executable_path=sys.executable,
@@ -366,9 +365,10 @@ class EnvironmentManagers:
                             attribute='empty_repo',
                         ),
                         location_name='empty_repo',
-                    )
-                ),
-            ]
+                    ),
+                ]
+            ) as workspace:
+                yield workspace
 
         return MarkedManager(_mgr_fn, [Marks.multi_location])
 
@@ -738,8 +738,8 @@ def _variants_without_marks(variants, marks):
 def manage_graphql_context(context_variant, recon_repo=None):
     recon_repo = recon_repo if recon_repo else get_main_recon_repo()
     with context_variant.instance_mgr() as instance:
-        with context_variant.environment_mgr(recon_repo) as environments:
-            yield DagsterGraphQLContext(instance=instance, locations=environments)
+        with context_variant.environment_mgr(recon_repo) as workspace:
+            yield DagsterGraphQLContext(instance=instance, workspace=workspace)
 
 
 class _GraphQLContextTestSuite(six.with_metaclass(ABCMeta)):

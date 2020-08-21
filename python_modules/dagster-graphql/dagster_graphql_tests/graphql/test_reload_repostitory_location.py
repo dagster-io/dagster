@@ -87,3 +87,22 @@ mutation ($repositoryLocationName: String!) {
    }
 }
 '''
+
+
+class TestReloadRepositoriesManagedGrpc(
+    make_graphql_context_test_suite(
+        context_variants=[GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env(),]
+    )
+):
+    def test_managed_grpc_reload_location(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {'repositoryLocationName': 'test'}
+        )
+
+        assert result
+        assert result.data
+        assert result.data['reloadRepositoryLocation']
+        assert result.data['reloadRepositoryLocation']['__typename'] == 'RepositoryLocation'
+        assert result.data['reloadRepositoryLocation']['name'] == 'test'
+        assert result.data['reloadRepositoryLocation']['repositories'] == [{'name': 'test_repo'}]
+        assert result.data['reloadRepositoryLocation']['isReloadSupported'] is True

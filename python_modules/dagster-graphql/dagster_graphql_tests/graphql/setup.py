@@ -52,9 +52,10 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
+from dagster.cli.workspace import Workspace
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import InProcessRepositoryLocation
+from dagster.core.host_representation import InProcessRepositoryLocation, RepositoryLocationHandle
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.utils import file_relative_path, segfault
@@ -109,7 +110,9 @@ def get_main_external_repo():
 def define_test_snapshot_context():
     return DagsterGraphQLContext(
         instance=DagsterInstance.ephemeral(),
-        locations=[InProcessRepositoryLocation(create_main_recon_repo())],
+        workspace=Workspace(
+            [RepositoryLocationHandle.create_in_process_location(create_main_recon_repo().pointer)]
+        ),
     )
 
 

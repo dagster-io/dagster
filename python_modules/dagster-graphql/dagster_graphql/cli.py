@@ -14,7 +14,6 @@ from dagster import check, seven
 from dagster.cli.workspace import workspace_target_argument
 from dagster.cli.workspace.cli_target import get_workspace_from_kwargs
 from dagster.cli.workspace.workspace import Workspace
-from dagster.core.host_representation.repository_location import RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.seven import urljoin, urlparse
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
@@ -52,9 +51,7 @@ def execute_query(workspace, query, variables=None, use_sync_executor=False, ins
 
     query = query.strip('\'" \n\t')
 
-    locations = [RepositoryLocation.from_handle(x) for x in workspace.repository_location_handles]
-
-    context = DagsterGraphQLContext(locations=locations, instance=instance, version=__version__,)
+    context = DagsterGraphQLContext(workspace=workspace, instance=instance, version=__version__,)
 
     executor = SyncExecutor() if use_sync_executor else GeventExecutor()
 

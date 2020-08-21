@@ -5,8 +5,9 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from graphql import graphql
 from graphql.execution.executors.sync import SyncExecutor
 
+from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import InProcessRepositoryLocation
+from dagster.core.host_representation import RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
 
@@ -19,7 +20,10 @@ def test_execute_hammer_through_dagit():
     instance = DagsterInstance.local_temp()
 
     context = DagsterGraphQLContext(
-        locations=[InProcessRepositoryLocation(recon_repo)], instance=instance,
+        workspace=Workspace(
+            [RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)]
+        ),
+        instance=instance,
     )
 
     selector = infer_pipeline_selector(context, 'hammer_pipeline')

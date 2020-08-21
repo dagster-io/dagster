@@ -10,17 +10,20 @@ from dagster.grpc.types import ScheduleExecutionDataMode
 
 
 class DagsterGraphQLContext:
-    def __init__(self, instance, locations, version=None):
+    def __init__(self, instance, workspace, version=None):
         self._instance = check.inst_param(instance, 'instance', DagsterInstance)
+        self._workspace = workspace
         self._repository_locations = {}
-        for loc in check.list_param(locations, 'locations', RepositoryLocation):
+        for handle in self._workspace.repository_location_handles:
             check.invariant(
-                self._repository_locations.get(loc.name) is None,
+                self._repository_locations.get(handle.location_name) is None,
                 'Can not have multiple locations with the same name, got multiple "{name}"'.format(
-                    name=loc.name
+                    name=handle.location_name,
                 ),
             )
-            self._repository_locations[loc.name] = loc
+            self._repository_locations[handle.location_name] = RepositoryLocation.from_handle(
+                handle
+            )
         self.version = version
 
     @property
@@ -38,7 +41,8 @@ class DagsterGraphQLContext:
         return name in self._repository_locations
 
     def reload_repository_location(self, name):
-        new_location = self._repository_locations[name].create_reloaded_repository_location()
+        new_handle = self._workspace.reload_repository_location(name)
+        new_location = RepositoryLocation.from_handle(new_handle)
         check.invariant(new_location.name == name)
         self._repository_locations[name] = new_location
         return new_location

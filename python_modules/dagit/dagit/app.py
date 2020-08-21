@@ -19,7 +19,6 @@ from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.cli.workspace import Workspace
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
-from dagster.core.host_representation import RepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 
@@ -213,10 +212,6 @@ def create_app_from_workspace(workspace, instance, path_prefix=''):
 
     print('Loading repository...')  # pylint: disable=print-call
 
-    locations = []
-    for repository_location_handle in workspace.repository_location_handles:
-        locations.append(RepositoryLocation.from_handle(repository_location_handle))
-
-    context = DagsterGraphQLContext(instance=instance, locations=locations, version=__version__)
+    context = DagsterGraphQLContext(instance=instance, workspace=workspace, version=__version__)
 
     return instantiate_app_with_views(context, path_prefix)
