@@ -588,22 +588,20 @@ def execute_launch_command(instance, kwargs):
 @click.command(
     name="scaffold_config",
     help="Scaffold the config for a pipeline.\n\n{instructions}".format(
-        instructions=get_pipeline_instructions("scaffold_config")
+        instructions=get_pipeline_in_same_python_env_instructions("scaffold_config")
     ),
 )
-@pipeline_target_argument
+@python_pipeline_target_argument
 @click.option("--print-only-required", default=False, is_flag=True)
 def pipeline_scaffold_command(**kwargs):
     execute_scaffold_command(kwargs, click.echo)
 
 
 def execute_scaffold_command(cli_args, print_fn):
-    with get_external_pipeline_from_kwargs(cli_args, DagsterInstance.get()) as external_pipeline:
-        # We should move this to use external pipeline
-        # https://github.com/dagster-io/dagster/issues/2556
-        pipeline = recon_pipeline_from_origin(external_pipeline.get_origin())
-        skip_non_required = cli_args["print_only_required"]
-        do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
+    pipeline_origih = get_pipeline_python_origin_from_kwargs(cli_args)
+    pipeline = recon_pipeline_from_origin(pipeline_origih)
+    skip_non_required = cli_args["print_only_required"]
+    do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
 
 
 def do_scaffold_command(pipeline_def, printer, skip_non_required):
