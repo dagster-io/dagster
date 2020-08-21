@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.9.3
+
+**Breaking Changes**
+
+* Removed deprecated `--env` flag from CLI
+* The `--host` CLI param has been renamed to `--grpc_host` to avoid conflict with the dagit `--host` param.
+
+**New**
+
+* Descriptions for solid inputs and outputs will now be inferred from doc blocks if available (thanks [@AndersonReyes](https://github.com/dagster-io/dagster/commits?author=AndersonReyes) !)
+* Various documentation improvements (thanks [@jeriscc](https://github.com/dagster-io/dagster/commits?author=jeriscc) !)
+* Load inputs from pyspark dataframes (thanks [@davidkatz-il](https://github.com/dagster-io/dagster/commits?author=davidkatz-il) !)
+* Added step-level run history for partitioned schedules on the schedule view
+* Added great_expectations integration, through the `dagster_ge` library.  Example usage is under a new example, called `ge_example`, and documentation for the library can be found under the libraries section of the api docs.
+* `PythonObjectDagsterType` can now take a tuple of types as well as a single type, more closely mirroring `isinstance` and allowing Union types to be represented in Dagster.
+* The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://docs.dagster.io/overview/configuration).
+* Updated Helm chart to include auto-generated user code configmap in user code deployment by default
+
+**Bugfixes**
+
+* Databricks now checks intermediate storage instead of system storage
+* Fixes a bug where applying hooks on a pipeline with composite solids would flatten the top-level solids. Now applying hooks on pipelines or composite solids means attaching hooks to every single solid instance within the pipeline or the composite solid. 
+* Fixes the GraphQL playground hosted by dagit 
+* Fixes a bug where K8s CronJobs were stopped unnecessarily during schedule reconciliation
+
+**Experimental**
+
+* New `dagster-k8s/config` tag that lets users pass in custom configuration to the Kubernetes `Job`, `Job` metadata, `JobSpec`, `PodSpec`, and `PodTemplateSpec` metadata. 
+  * This allows users to specify settings like eviction policy annotations and node affinities. 
+  * Example:
+  <code><pre>
+    @solid(
+      tags = {
+        'dagster-k8s/config': {
+          'container_config': {
+            'resources': {
+              'requests': { 'cpu': '250m', 'memory': '64Mi' },
+              'limits': { 'cpu': '500m', 'memory': '2560Mi' },
+            }
+          },
+          'pod_template_spec_metadata': {
+            'annotations': { "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
+          },
+          'pod_spec_config': {
+            'affinity': {
+              'nodeAffinity': {
+                'requiredDuringSchedulingIgnoredDuringExecution': {
+                  'nodeSelectorTerms': [{
+                    'matchExpressions': [{
+                      'key': 'beta.kubernetes.io/os', 'operator': 'In', 'values': ['windows', 'linux'],
+                    }]
+                  }]
+                }
+              }
+            }
+          },
+        },
+      },
+    )
+    def my_solid(context):
+      context.log.info('running')
+  </pre></code>
+
 ## 0.9.2
 
 **Breaking Changes**
