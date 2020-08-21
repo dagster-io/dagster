@@ -15,6 +15,30 @@ def create_dask_df():
 
 
 @pytest.mark.parametrize(
+    "file_type",
+    [
+        pytest.param("csv", id="csv"),
+        pytest.param("parquet", id="parquet"),
+        pytest.param("json", id="json"),
+    ],
+)
+def test_dataframe_inputs(file_type):
+    @solid(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])
+    def return_df(_, input_df):
+        return input_df
+
+    file_name = file_relative_path(__file__, f"num.{file_type}")
+    result = execute_solid(
+        return_df,
+        run_config={
+            "solids": {"return_df": {"inputs": {"input_df": {file_type: {"path": file_name}}}}}
+        },
+    )
+    assert result.success
+    assert assert_eq(result.output_value(), create_dask_df())
+
+
+@pytest.mark.parametrize(
     "file_type,read,kwargs",
     [
         pytest.param("csv", dd.read_csv, {"index": False}, id="csv"),
@@ -44,27 +68,3 @@ def test_dataframe_outputs(file_type, read, kwargs):
         assert result.success
         actual = read(f"{temp_path}/*")
         assert assert_eq(actual, df)
-
-
-@pytest.mark.parametrize(
-    "file_type",
-    [
-        pytest.param("csv", id="csv"),
-        pytest.param("parquet", id="parquet"),
-        pytest.param("json", id="json"),
-    ],
-)
-def test_dataframe_inputs(file_type):
-    @solid(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])
-    def return_df(_, input_df):
-        return input_df
-
-    file_name = file_relative_path(__file__, f"num.{file_type}")
-    result = execute_solid(
-        return_df,
-        run_config={
-            "solids": {"return_df": {"inputs": {"input_df": {file_type: {"path": file_name}}}}}
-        },
-    )
-    assert result.success
-    assert assert_eq(result.output_value(), create_dask_df())
