@@ -1,10 +1,15 @@
 {
     "currentVersion": {
-        "version": "0.9.2",
+        "version": "0.9.3",
         "documentation": "/install",
-        "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.9.2"
+        "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.9.3"
     },
     "allVersions": [
+        {
+            "version": "0.9.3",
+            "documentation": "/0.9.3/install",
+            "releaseNotes": "https://github.com/dagster-io/dagster/releases/tag/0.9.3"
+        },
         {
             "version": "0.9.2",
             "documentation": "/0.9.2/install",
