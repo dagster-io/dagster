@@ -81,6 +81,7 @@ export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps
               onSelect={setSelected}
             />
             <PartitionsBackfill
+              pipelineName={pipelineName}
               partitionSetName={partitionSet.name}
               showLoader={showLoader}
               onLaunch={(backfillId: string) => setRunTags({ "dagster/backfill": backfillId })}
