@@ -47,7 +47,7 @@ MOCKS.push(
     variables: {
       pipelineSelector: {
         pipelineName: name,
-        repositoryLocationName: "<<in_process>>",
+        repositoryLocationName: "toys_repository",
         repositoryName: "toys_repository"
       },
       rootHandleID: "",
