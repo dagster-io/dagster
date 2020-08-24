@@ -159,7 +159,7 @@ DataFrameToTypes = {
         "options": {
             "path": (Any, True, "Destination directory for data."),
             "engine": (EngineParquetOptions, False, "Parquet library to use."),
-            "compression": (Any, False, "Either a string like ``"snappy"`` or a dictionary mapping column names to compressors like ``{"name": "gzip", "values": "snappy"}``."),
+            "compression": (Any, False, "Either a string like ``\"snappy\"`` or a dictionary mapping column names to compressors like ``{\"name\": \"gzip\", \"values\": \"snappy\"}``."),
             "write_index": (Bool, False, "Whether or not to write the index."),
             "append": (Bool, False, "Whether to add new row-group(s) to an existing data-set."),
             "ignore_divisions": (Bool, False, "If False (default) raises error when previous divisions overlap with the new appended divisions."),
@@ -177,7 +177,7 @@ DataFrameToTypes = {
             "path": (Any, True, "Path to a target filename."),
             "key": (String, True, "Datapath within the files."),
             "compute": (Bool, False, "Whether or not to execute immediately."),
-            "scheduler": (String, False, "The scheduler to use, like "threads" or "processes"."),
+            "scheduler": (String, False, "The scheduler to use, like \"threads\" or \"processes\"."),
         },
     },
     "json": {
@@ -190,7 +190,7 @@ DataFrameToTypes = {
             "storage_options": (Permissive(), False, "Passed to backend file-system implementation."),
             "compute": (Bool, False, "If true, immediate executes."),
             "compute_kwargs": (Permissive(), False, "Options to be passed in to the compute method."),
-            "compression": (String, False, "String like "gzip" or "xz"."),
+            "compression": (String, False, "String like \"gzip\" or \"xz\"."),
         },
     },
     "sql": {
