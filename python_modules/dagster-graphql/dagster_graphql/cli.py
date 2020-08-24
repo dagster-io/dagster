@@ -65,8 +65,6 @@ def execute_query(workspace, query, variables=None, use_sync_executor=False, ins
 
     result_dict = result.to_dict()
 
-    context.drain_outstanding_executions()
-
     # Here we detect if this is in fact an error response
     # If so, we iterate over the result_dict and the original result
     # which contains a GraphQLError. If that GraphQL error contains

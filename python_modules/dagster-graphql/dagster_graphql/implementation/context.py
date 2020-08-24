@@ -159,12 +159,3 @@ class DagsterGraphQLContext:
         return self._repository_locations[external_pipeline.handle.location_name].execute_pipeline(
             instance=self.instance, external_pipeline=external_pipeline, pipeline_run=pipeline_run
         )
-
-    def drain_outstanding_executions(self):
-        """
-        This ensures that any outstanding executions of runs are waited on.
-        Useful for tests contexts when you want to ensure a started run
-        has ended in order to verify its results.
-        """
-        if self.instance.run_launcher:
-            self.instance.run_launcher.join()

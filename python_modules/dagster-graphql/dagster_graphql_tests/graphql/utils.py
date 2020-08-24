@@ -49,7 +49,7 @@ def sync_execute_get_payload(variables, context):
     if result.data["launchPipelineExecution"]["__typename"] != "LaunchPipelineRunSuccess":
         raise Exception(result.data)
 
-    context.drain_outstanding_executions()
+    context.instance.run_launcher.join()
 
     run_id = result.data["launchPipelineExecution"]["run"]["runId"]
     return get_all_logs_for_finished_run_via_subscription(context, run_id)

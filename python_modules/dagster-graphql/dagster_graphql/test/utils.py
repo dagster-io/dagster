@@ -36,7 +36,7 @@ def execute_dagster_graphql(context, query, variables=None):
 
 def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
     result = execute_dagster_graphql(context, query, variables)
-    context.drain_outstanding_executions()
+    context.instance.run_launcher.join()
     return result
 
 
