@@ -53,9 +53,24 @@ const OVERSCROLL = 150;
 function getStartTime(a: Partition["runs"][0]) {
   return ("startTime" in a.stats && a.stats.startTime) || 0;
 }
-function byStartTime(a: Partition["runs"][0], b: Partition["runs"][0]) {
+function byStartTimeAsc(a: Partition["runs"][0], b: Partition["runs"][0]) {
   return getStartTime(a) - getStartTime(b);
 }
+
+type StatusSquareColor =
+  | "SUCCESS"
+  | "FAILURE"
+  | "FAILURE-SUCCESS"
+  | "SKIPPED"
+  | "SKIPPED-SUCCESS"
+  | "MISSING"
+  | "MISSING-SUCCESS";
+
+const StatusSquareFinalColor: { [key: string]: StatusSquareColor } = {
+  "FAILURE-SUCCESS": "SUCCESS",
+  "SKIPPED-SUCCESS": "SUCCESS",
+  "MISSING-SUCCESS": "SUCCESS"
+};
 
 interface DisplayOptions {
   showSucessful: boolean;
@@ -70,18 +85,14 @@ function buildMatrixData(
 ) {
   // Note this is sorting partition runs in place, I don't think it matters and
   // seems better than cloning all the arrays.
-  partitions.forEach(p => p.runs.sort(byStartTime));
+  partitions.forEach(p => p.runs.sort(byStartTimeAsc));
 
   const partitionColumns = partitions.map(p => ({
     name: p.name,
     runs: p.runs,
     steps: layout.boxes.map(({ node }) => {
-      const statuses = uniq(
-        p.runs.map(
-          r =>
-            r.stepStats.find(stats => formatStepKey(stats.stepKey) === node.name)?.status ||
-            "missing"
-        )
+      const statuses = p.runs.map(
+        r => r.stepStats.find(stats => formatStepKey(stats.stepKey) === node.name)?.status
       );
 
       // If there was a successful run, calculate age relative to that run since it's the age of materializations.
@@ -94,24 +105,41 @@ function buildMatrixData(
           ? getStartTime(p.runs[p.runs.length - 1])
           : 0;
 
+      // Calculate the box color for this step. CSS classes are in the "previous-final" format, and we'll
+      // strip the "previous" half later if the user has that display option disabled.
+      //
+      // Note that the color selection is nuanced because we boil the whole series of statuses into just
+      // two colors to display on the box:
+      // - For [success, failure], we show success - failures after successful completion are ignored.
+      // - For [skipped, failure, success], FAILURE-SUCCESS is more relevant to display than SKIPPED-SUCCESS
+      // - For [skipped, failure, skipped], FAILURE is more relevant than SKIPPED.
+
+      let color: StatusSquareColor = statuses[0] || "MISSING";
+
+      if (statuses.length > 1 && lastSuccessIdx !== -1) {
+        const prev = statuses.slice(0, lastSuccessIdx);
+        color = prev.includes(StepEventStatus.FAILURE)
+          ? "FAILURE-SUCCESS"
+          : prev.includes(StepEventStatus.SKIPPED)
+          ? "SKIPPED-SUCCESS"
+          : prev.includes(undefined)
+          ? "MISSING-SUCCESS"
+          : "SUCCESS";
+      } else if (statuses.length > 1) {
+        color = statuses.includes(StepEventStatus.FAILURE) ? "FAILURE" : color;
+      }
+
       return {
         name: node.name,
-        statuses: statuses,
+        color: color,
         unix: unix
       };
     })
   }));
 
   const stepRows = layout.boxes.map((box, idx) => {
-    const totalFailures = partitionColumns.filter(p =>
-      p.steps[idx].statuses.includes(StepEventStatus.FAILURE)
-    );
-    const finalFailures = partitionColumns.filter(
-      p =>
-        p.steps[idx].statuses[p.steps[idx].statuses.length - 1] !== StepEventStatus.SUCCESS &&
-        !(p.steps[idx].statuses.length === 0) &&
-        !(p.steps[idx].statuses.length === 1 && p.steps[idx].statuses[0] === "missing")
-    );
+    const totalFailures = partitionColumns.filter(p => p.steps[idx].color.includes("FAILURE"));
+    const finalFailures = partitionColumns.filter(p => p.steps[idx].color.endsWith("FAILURE"));
     return {
       x: box.x,
       name: box.node.name,
@@ -119,12 +147,6 @@ function buildMatrixData(
       finalFailurePercent: Math.round((finalFailures.length / partitionColumns.length) * 100)
     };
   });
-
-  if (!options.showPrevious) {
-    partitionColumns.forEach(p =>
-      p.steps.forEach(s => (s.statuses = s.statuses.slice(s.statuses.length - 1)))
-    );
-  }
 
   if (!options.showSucessful) {
     for (let ii = stepRows.length - 1; ii >= 0; ii--) {
@@ -392,10 +414,13 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
                 <TopLabelTilted>
                   <div className="tilted">{p.name}</div>
                 </TopLabelTilted>
-                {p.steps.map(({ name, statuses, unix }) => (
+                {p.steps.map(({ name, color, unix }) => (
                   <div
                     key={name}
-                    className={`square ${statuses.join("-").toLowerCase()}`}
+                    className={`square ${(options.showPrevious
+                      ? color
+                      : StatusSquareFinalColor[color] || color
+                    ).toLowerCase()}`}
                     onMouseEnter={() => setHoveredStepName(name)}
                     onMouseLeave={() => setHoveredStepName("")}
                     style={

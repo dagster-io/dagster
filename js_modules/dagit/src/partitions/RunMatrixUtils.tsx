@@ -68,8 +68,6 @@ export const GridColumn = styled.div<{
       height: 15px;
       margin: 4px;
     }
-    &.success-skipped,
-    &.success-failure,
     &.success {
       &:before {
         background: ${SUCCESS_COLOR};
@@ -106,12 +104,12 @@ export const GridColumn = styled.div<{
     }
     &.missing {
       &:before {
-        background: ${Colors.LIGHT_GRAY3};
+        background: ${Colors.WHITE};
       }
     }
     &.missing-success {
       &:before {
-        background: linear-gradient(135deg, ${Colors.LIGHT_GRAY3} 40%, ${SUCCESS_COLOR} 41%);
+        background: linear-gradient(135deg, ${Colors.WHITE} 40%, ${SUCCESS_COLOR} 41%);
       }
     }
   }
