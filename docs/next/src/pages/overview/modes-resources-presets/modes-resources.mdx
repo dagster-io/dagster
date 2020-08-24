@@ -12,7 +12,7 @@ Modes and resources provide a way to control the behavior of multiple solids at 
 
 A typical usage for modes is to vary pipeline behavior between different deployment environments. For example, you might define a “local_dev” mode for running pipelines on a laptop against synthetic data and a “prod” mode for running pipelines against production data in the cloud.
 
-Modes affect solid behavior by providing resources to the solids. For example, the “local_dev” mode might reference a “SQLiteDatabase” resource that solids can execute queries against. The “prod” mode might both instead reference an “PostgresDatabase” resource.
+Modes affect solid behavior by providing resources to the solids. For example, the “local_dev” mode might reference a “SQLiteDatabase” resource that solids can execute queries against. The “prod” mode might instead reference an “PostgresDatabase” resource.
 
 ## Defining Pipelines with Modes
 
