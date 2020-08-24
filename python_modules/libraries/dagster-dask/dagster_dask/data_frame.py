@@ -1,3 +1,5 @@
+import warnings
+
 import dask.dataframe as dd
 
 from dagster import (
@@ -246,6 +248,7 @@ def dataframe_loader(_context, config):
         for key in DataFrameReadTypes:
             if key in config:
                 read_type, read_options = key, config[key]
+                warnings.warn("Specifying {key}: is deprecated. Use read:{key}: instead.".format(key=key))
     if not read_type:
         raise DagsterInvariantViolationError(
             "No read_type found. Expected read key in config."
@@ -307,6 +310,9 @@ def dataframe_materializer(_context, config, dask_df):
             for to_type, to_options in config.items()
             if to_type in DataFrameToTypes
         }
+        for key in to_specs.keys():
+            warnings.warn("Specifying {key}: is deprecated. Use to:{key}: instead.".format(key=key))
+
 
     for to_type, to_options in to_specs.items():
         if not to_type in DataFrameToTypes:
