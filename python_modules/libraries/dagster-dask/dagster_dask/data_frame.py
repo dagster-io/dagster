@@ -215,10 +215,10 @@ DataFrameToTypes = {
 
 def _dataframe_loader_config():
     read_fields = {
-        read_from: {
+        read_from: Permissive({
             option_name: Field(option_args[0], is_required=option_args[1], description=option_args[2])
             for option_name, option_args in read_opts["options"].items()
-        }
+        })
         for read_from, read_opts in DataFrameReadTypes.items()
     }
 
@@ -273,10 +273,10 @@ def dataframe_loader(_context, config):
 
 def _dataframe_materializer_config():
     to_fields = {
-        write_to: {
+        write_to: Permissive({
             option_name: Field(option_args[0], is_required=option_args[1], description=option_args[2])
             for option_name, option_args in to_opts["options"].items()
-        }
+        })
         for write_to, to_opts in DataFrameToTypes.items()
     }
 
