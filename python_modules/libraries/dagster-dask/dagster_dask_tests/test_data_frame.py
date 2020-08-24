@@ -37,6 +37,15 @@ def test_dataframe_inputs(file_type):
     assert result.success
     assert assert_eq(result.output_value(), create_dask_df())
 
+    read_result = execute_solid(
+        return_df,
+        run_config={
+            'solids': {'return_df': {'inputs': {'input_df': {'read': {file_type: {'path': file_name}}}}}}
+        },
+    )
+    assert read_result.success
+    assert assert_eq(result.output_value(), read_result.output_value())
+
 
 @pytest.mark.parametrize(
     "file_type,read,kwargs",
