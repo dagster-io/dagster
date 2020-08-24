@@ -5,8 +5,9 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 
 from ..partition import PartitionSetDefinition
 from ..pipeline import PipelineDefinition
-from ..repository import RepositoryData, RepositoryDefinition
+from ..repository import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryData, RepositoryDefinition
 from ..schedule import ScheduleDefinition
+from ..trigger import TriggeredExecutionDefinition
 
 
 class _Repository(object):
@@ -40,13 +41,14 @@ class _Repository(object):
                     isinstance(definition, PipelineDefinition)
                     or isinstance(definition, PartitionSetDefinition)
                     or isinstance(definition, ScheduleDefinition)
+                    or isinstance(definition, TriggeredExecutionDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
-                    "must be of type PipelineDefinition, PartitionSetDefinition, or "
-                    "ScheduleDefinition. Got {bad_definitions_formatted}.".format(
+                    "must be of type PipelineDefinition, PartitionSetDefinition, "
+                    "ScheduleDefinition, or TriggeredExecutionDefinition. Got {bad_definitions_formatted}.".format(
                         bad_definitions_formatted=", ".join(
                             [
                                 "value of type {type_} at index {i}".format(type_=type_, i=i)
@@ -58,18 +60,16 @@ class _Repository(object):
             repository_data = RepositoryData.from_list(repository_definitions)
 
         elif isinstance(repository_definitions, dict):
-            if not set(repository_definitions.keys()).issubset(
-                {"pipelines", "partition_sets", "schedules"}
-            ):
+            if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: dict must not contain "
-                    "keys other than {{'pipelines', 'partition_sets', 'schedules'}}: found "
+                    "keys other than {{'pipelines', 'partition_sets', 'schedules', 'triggered_executions'}}: found "
                     "{bad_keys}".format(
                         bad_keys=", ".join(
                             [
                                 "'{key}'"
                                 for key in repository_definitions.keys()
-                                if key not in {"pipelines", "parition_sets", "schedules"}
+                                if key not in VALID_REPOSITORY_DATA_DICT_KEYS
                             ]
                         )
                     )

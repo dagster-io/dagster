@@ -5,8 +5,14 @@ from dagster.utils import merge_dicts
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
+from .trigger import TriggeredExecutionDefinition
 
-VALID_REPOSITORY_DATA_DICT_KEYS = {"pipelines", "partition_sets", "schedules"}
+VALID_REPOSITORY_DATA_DICT_KEYS = {
+    "pipelines",
+    "partition_sets",
+    "schedules",
+    "triggered_executions",
+}
 
 
 class _CacheingDefinitionIndex(object):
@@ -118,7 +124,7 @@ class RepositoryData(object):
     of repository members.
     """
 
-    def __init__(self, pipelines, partition_sets, schedules):
+    def __init__(self, pipelines, partition_sets, schedules, triggered_executions):
         """Constructs a new RepositoryData object.
 
         You may pass pipeline, partition_set, and schedule definitions directly, or you may pass
@@ -137,12 +143,14 @@ class RepositoryData(object):
                 The partition sets belonging to the repository.
             schedules (Dict[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
                 The schedules belonging to the repository.
-
+            triggered_executions (Dict[str, Union[TriggeredExecutionDefinition, Callable[[], TriggeredExecutionDefinition]]]):
+                The triggered executions for a repository.
 
         """
         check.dict_param(pipelines, "pipelines", key_type=str)
         check.dict_param(partition_sets, "partition_sets", key_type=str)
         check.dict_param(schedules, "schedules", key_type=str)
+        check.dict_param(triggered_executions, "triggered_executions", key_type=str)
 
         self._pipelines = _CacheingDefinitionIndex(
             PipelineDefinition, "PipelineDefinition", "pipeline", pipelines
@@ -164,7 +172,12 @@ class RepositoryData(object):
                 partition_sets,
             ),
         )
-
+        self._triggered_executions = _CacheingDefinitionIndex(
+            TriggeredExecutionDefinition,
+            "TriggeredExecutionDefinition",
+            "triggered_execution",
+            triggered_executions,
+        )
         self._all_pipelines = None
         self._solids = None
         self._all_solids = None
@@ -221,6 +234,7 @@ class RepositoryData(object):
         pipelines = {}
         partition_sets = {}
         schedules = {}
+        triggered_executions = {}
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if definition.name in pipelines:
@@ -256,9 +270,19 @@ class RepositoryData(object):
                             "{partition_set_name}".format(partition_set_name=partition_set_def.name)
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
+            elif isinstance(definition, TriggeredExecutionDefinition):
+                if definition.name in triggered_executions:
+                    raise DagsterInvalidDefinitionError(
+                        "Duplicate triggered execution definition found for triggered execution "
+                        "{name}".format(name=definition.name)
+                    )
+                triggered_executions[definition.name] = definition
 
         return RepositoryData(
-            pipelines=pipelines, partition_sets=partition_sets, schedules=schedules
+            pipelines=pipelines,
+            partition_sets=partition_sets,
+            schedules=schedules,
+            triggered_executions=triggered_executions,
         )
 
     def get_pipeline_names(self):
@@ -381,11 +405,11 @@ class RepositoryData(object):
     def get_schedule(self, schedule_name):
         """Get a schedule by name.
 
-        If this schedule has not yet been constructed, only this schedule is constructed, and will
+        if this schedule has not yet been constructed, only this schedule is constructed, and will
         be cached for future calls.
 
-        Args:
-            schedule_name (str): Name of the schedule to retrieve.
+        args:
+            schedule_name (str): name of the schedule to retrieve.
 
         Returns:
             ScheduleDefinition: The schedule definition corresponding to the given name.
@@ -399,6 +423,17 @@ class RepositoryData(object):
         check.str_param(schedule_name, "schedule_name")
 
         return self._schedules.has_definition(schedule_name)
+
+    def get_all_triggered_executions(self):
+        return self._triggered_executions.get_all_definitions()
+
+    def get_triggered_execution(self, trigger_name):
+        check.str_param(trigger_name, "trigger_name")
+        return self._triggered_executions.get_definition(trigger_name)
+
+    def has_triggered_execution(self, trigger_name):
+        check.str_param(trigger_name, "trigger_name")
+        return self._triggered_executions.has_definition(trigger_name)
 
     def get_all_solid_defs(self):
         if self._all_solids is not None:
@@ -567,3 +602,13 @@ class RepositoryDefinition(object):
 
     def has_schedule_def(self, name):
         return self._repository_data.has_schedule(name)
+
+    @property
+    def triggered_execution_defs(self):
+        return self._repository_data.get_all_triggered_executions()
+
+    def get_triggered_execution_def(self, name):
+        return self._repository_data.get_triggered_execution(name)
+
+    def has_triggered_execution_def(self, name):
+        return self._repository_data.has_triggered_execution(name)
