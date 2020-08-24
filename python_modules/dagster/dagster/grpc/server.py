@@ -216,25 +216,28 @@ class DagsterApiServer(DagsterApiServicer):
     def _cleanup_thread(self):
         while True:
             time.sleep(CLEANUP_TICK)
-            with self._execution_lock:
-                runs_to_clear = []
-                for run_id, (process, instance) in self._executions.items():
-                    if process.is_alive():
-                        continue
+            self._check_for_orphaned_runs()
 
-                    run = instance.get_run_by_id(run_id)
+    def _check_for_orphaned_runs(self):
+        with self._execution_lock:
+            runs_to_clear = []
+            for run_id, (process, instance) in self._executions.items():
+                if process.is_alive():
+                    continue
 
-                    runs_to_clear.append(run_id)
+                run = instance.get_run_by_id(run_id)
 
-                    if run.is_finished:
-                        continue
+                runs_to_clear.append(run_id)
 
-                    # the process died in an unexpected manner. inform the system
-                    self._generate_synthetic_error_from_crash(run, instance)
+                if run.is_finished:
+                    continue
 
-                for run_id in runs_to_clear:
-                    del self._executions[run_id]
-                    del self._termination_events[run_id]
+                # the process died in an unexpected manner. inform the system
+                self._generate_synthetic_error_from_crash(run, instance)
+
+            for run_id in runs_to_clear:
+                del self._executions[run_id]
+                del self._termination_events[run_id]
 
     def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(
@@ -714,6 +717,7 @@ class DagsterApiServer(DagsterApiServicer):
                 termination_event,
             ],
         )
+
         with self._execution_lock:
             execution_process.start()
             self._executions[run_id] = (
@@ -758,6 +762,11 @@ class DagsterApiServer(DagsterApiServicer):
                     serializable_error_info = (
                         dagster_event_or_ipc_error_message_or_done.serializable_error_info
                     )
+
+        # Ensure that if the run failed, we remove it from the executions map before
+        # returning so that CanCancel will never return True
+        if not success:
+            self._check_for_orphaned_runs()
 
         return api_pb2.StartRunReply(
             serialized_start_run_result=serialize_dagster_namedtuple(

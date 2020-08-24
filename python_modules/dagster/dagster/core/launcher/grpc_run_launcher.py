@@ -76,6 +76,21 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
             GRPC_REPOSITORY_LOCATION_HANDLE_TYPES,
             "GrpcRunLauncher: Can't launch runs for pipeline not loaded from a GRPC server",
         )
+
+        self._instance.add_run_tags(
+            run.run_id,
+            {
+                GRPC_INFO_TAG: seven.json.dumps(
+                    merge_dicts(
+                        {"host": repository_location_handle.host},
+                        {"port": repository_location_handle.port}
+                        if repository_location_handle.port
+                        else {"socket": repository_location_handle.socket},
+                    )
+                )
+            },
+        )
+
         res = repository_location_handle.client.start_run(
             ExecuteRunArgs(
                 pipeline_origin=external_pipeline.get_origin(),
@@ -92,20 +107,6 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         self._run_id_to_repository_location_handle_cache[run.run_id] = repository_location_handle
-
-        self._instance.add_run_tags(
-            run.run_id,
-            {
-                GRPC_INFO_TAG: seven.json.dumps(
-                    merge_dicts(
-                        {"host": repository_location_handle.host},
-                        {"port": repository_location_handle.port}
-                        if repository_location_handle.port
-                        else {"socket": repository_location_handle.socket},
-                    )
-                )
-            },
-        )
 
         return run
 
