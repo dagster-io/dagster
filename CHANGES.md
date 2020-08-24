@@ -30,7 +30,7 @@
 * New `dagster-k8s/config` tag that lets users pass in custom configuration to the Kubernetes `Job`, `Job` metadata, `JobSpec`, `PodSpec`, and `PodTemplateSpec` metadata. 
   * This allows users to specify settings like eviction policy annotations and node affinities. 
   * Example:
-  <code><pre>
+  ```python
     @solid(
       tags = {
         'dagster-k8s/config': {
@@ -61,7 +61,7 @@
     )
     def my_solid(context):
       context.log.info('running')
-  </pre></code>
+  ```
 
 ## 0.9.2
 
