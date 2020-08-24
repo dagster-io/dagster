@@ -3,7 +3,7 @@ import threading
 import time
 import weakref
 
-from dagster import check
+from dagster import check, seven
 from dagster.api.execute_run import cli_api_launch_run
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
@@ -167,7 +167,7 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         with self._processes_lock:
             for run_id, process in self._living_process_by_run_id.items():
                 if _is_alive(process):
-                    _stdout, _std_error = process.communicate()
+                    seven.wait_for_process(process, timeout=60)
 
                 run = self._instance.get_run_by_id(run_id)
 

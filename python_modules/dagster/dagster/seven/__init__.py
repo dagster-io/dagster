@@ -8,6 +8,7 @@ import shlex
 import signal
 import sys
 import tempfile
+import threading
 import time
 from types import MethodType
 
@@ -185,6 +186,31 @@ def get_args(callable_):
         else:
             arg_spec = inspect.getargspec(callable_)  # pylint: disable=deprecated-method
         return arg_spec.args
+
+
+def wait_for_process(process, timeout=None):
+    # Using Popen.communicate instead of Popen.wait since the latter
+    # can deadlock, see https://docs.python.org/3/library/subprocess.html#subprocess.Popen.wait
+    if not timeout:
+        process.communicate()
+    elif sys.version_info.major >= 3:
+        process.communicate(timeout=timeout)
+    else:
+        timed_out_event = threading.Event()
+
+        def _wait_timeout():
+            timed_out_event.set()
+            process.kill()
+
+        timer = threading.Timer(timeout, _wait_timeout)
+        try:
+            timer.start()
+            process.wait()
+        finally:
+            timer.cancel()
+
+        if timed_out_event.is_set():
+            raise Exception("Timed out waiting for process to finish")
 
 
 # https://stackoverflow.com/a/58437485/324449
