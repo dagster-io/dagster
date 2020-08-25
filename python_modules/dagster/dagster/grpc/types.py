@@ -228,6 +228,21 @@ class ExternalScheduleExecutionArgs(
 
 
 @whitelist_for_serdes
+class ExternalTriggeredExecutionArgs(
+    namedtuple("_ExternalTriggeredExecutionArgs", "repository_origin instance_ref trigger_name",)
+):
+    def __new__(cls, repository_origin, instance_ref, trigger_name):
+        return super(ExternalTriggeredExecutionArgs, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, "repository_origin", RepositoryOrigin
+            ),
+            instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
+            trigger_name=check.str_param(trigger_name, "trigger_name"),
+        )
+
+
+@whitelist_for_serdes
 class ShutdownServerResult(namedtuple("_ShutdownServerResult", "success serializable_error_info")):
     def __new__(cls, success, serializable_error_info):
         return super(ShutdownServerResult, cls).__new__(

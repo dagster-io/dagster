@@ -4,7 +4,7 @@ import os
 import sys
 
 from dagster import check
-from dagster.core.definitions import ScheduleExecutionContext
+from dagster.core.definitions import ScheduleExecutionContext, TriggeredExecutionContext
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
@@ -14,12 +14,15 @@ from dagster.core.errors import (
     DagsterSubprocessError,
     PartitionExecutionError,
     ScheduleExecutionError,
+    TriggeredExecutionError,
     user_code_error_boundary,
 )
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import external_pipeline_data_from_def
 from dagster.core.host_representation.external_data import (
+    ExternalExecutionParamsData,
+    ExternalExecutionParamsErrorData,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionExecutionParamData,
@@ -39,6 +42,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import (
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
+    ExternalTriggeredExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
     ScheduleExecutionDataMode,
@@ -243,6 +247,53 @@ def get_external_schedule_execution(recon_repo, external_schedule_execution_args
         )
     except ScheduleExecutionError:
         return ExternalScheduleExecutionErrorData(
+            serializable_error_info_from_exc_info(sys.exc_info())
+        )
+
+
+def get_external_triggered_execution_params(recon_repo, external_triggered_execution_args):
+    check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
+    check.inst_param(
+        external_triggered_execution_args,
+        "external_triggered_execution_args",
+        ExternalTriggeredExecutionArgs,
+    )
+    definition = recon_repo.get_definition()
+    triggered_execution_def = definition.get_triggered_execution_def(
+        external_triggered_execution_args.trigger_name
+    )
+    instance = DagsterInstance.from_ref(external_triggered_execution_args.instance_ref)
+    context = TriggeredExecutionContext(instance)
+
+    try:
+        with user_code_error_boundary(
+            TriggeredExecutionError,
+            lambda: "Error occured during the execution of should_execute_fn for triggered "
+            "execution {name}".format(name=triggered_execution_def.name),
+        ):
+            should_execute = triggered_execution_def.should_execute(context)
+            if not should_execute:
+                return ExternalExecutionParamsData(run_config=None, tags=None, should_execute=False)
+
+        with user_code_error_boundary(
+            TriggeredExecutionError,
+            lambda: "Error occured during the execution of run_config_fn for triggered "
+            "execution {name}".format(name=triggered_execution_def.name),
+        ):
+            run_config = triggered_execution_def.get_run_config(context)
+
+        with user_code_error_boundary(
+            TriggeredExecutionError,
+            lambda: "Error occured during the execution of tags_fn for triggered "
+            "execution {name}".format(name=triggered_execution_def.name),
+        ):
+            tags = triggered_execution_def.get_tags(context)
+
+        return ExternalExecutionParamsData(
+            run_config=run_config, tags=tags, should_execute=should_execute
+        )
+    except TriggeredExecutionError:
+        return ExternalExecutionParamsErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )
 

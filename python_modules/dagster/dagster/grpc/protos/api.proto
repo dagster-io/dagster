@@ -17,6 +17,7 @@ service DagsterApi {
   rpc ExternalPipelineSubsetSnapshot (ExternalPipelineSubsetSnapshotRequest) returns (ExternalPipelineSubsetSnapshotReply) {}
   rpc ExternalRepository (ExternalRepositoryRequest) returns (ExternalRepositoryReply) {}
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
+  rpc ExternalTriggerExecutionParams (ExternalTriggerExecutionParamsRequest) returns (ExternalTriggerExecutionParamsReply) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc ExecuteRun (ExecuteRunRequest) returns (stream ExecuteRunEvent) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
@@ -114,6 +115,14 @@ message ExternalScheduleExecutionRequest {
 
 message ExternalScheduleExecutionReply {
   string serialized_external_schedule_execution_data_or_external_schedule_execution_error = 1;
+}
+
+message ExternalTriggerExecutionParamsRequest {
+  string serialized_external_triggered_execution_args = 1;
+}
+
+message ExternalTriggerExecutionParamsReply {
+  string serialized_external_execution_params_or_external_execution_params_error_data = 1;
 }
 
 message ExecuteRunRequest {

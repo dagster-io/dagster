@@ -12,6 +12,7 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
+from dagster.core.definitions.decorators import triggered_execution
 
 
 @lambda_solid
@@ -121,6 +122,16 @@ def define_baz_partitions():
     }
 
 
+@triggered_execution(pipeline_name="foo_pipeline")
+def triggered_foo(_):
+    return {"foo": "FOO"}
+
+
+@triggered_execution(pipeline_name="baz_pipeline")
+def triggered_error(_):
+    raise Exception("womp womp")
+
+
 @repository
 def bar_repo():
     return {
@@ -131,4 +142,8 @@ def bar_repo():
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),
+        "triggered_executions": {
+            "triggered_foo": triggered_foo,
+            "triggered_error": lambda: triggered_error,
+        },
     }

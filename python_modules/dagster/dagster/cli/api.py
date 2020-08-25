@@ -28,6 +28,8 @@ from dagster.core.execution.retries import Retries
 from dagster.core.host_representation import external_repository_data_from_def
 from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.host_representation.external_data import (
+    ExternalExecutionParamsData,
+    ExternalExecutionParamsErrorData,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
@@ -59,6 +61,7 @@ from dagster.grpc.impl import (
     get_external_execution_plan_snapshot,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
+    get_external_triggered_execution_params,
     get_partition_config,
     get_partition_names,
     get_partition_set_execution_param_data,
@@ -69,6 +72,7 @@ from dagster.grpc.types import (
     ExecuteStepArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
+    ExternalTriggeredExecutionArgs,
     ListRepositoriesInput,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
@@ -270,6 +274,20 @@ def partition_set_execution_param_command(args):
 def schedule_execution_data_command(args):
     recon_repo = recon_repository_from_origin(args.repository_origin)
     return get_external_schedule_execution(recon_repo, args)
+
+
+@unary_api_cli_command(
+    name="trigger_execution_params",
+    help_str=(
+        "[INTERNAL] Return the execution params for a triggered execution. This is an internal "
+        "utility. Users should generally not invoke this command interactively."
+    ),
+    input_cls=ExternalTriggeredExecutionArgs,
+    output_cls=(ExternalExecutionParamsData, ExternalExecutionParamsErrorData),
+)
+def trigger_execution_params_command(args):
+    recon_repo = recon_repository_from_origin(args.repository_origin)
+    return get_external_triggered_execution_params(recon_repo, args)
 
 
 @whitelist_for_serdes
@@ -708,6 +726,7 @@ def create_api_cli_group():
     group.add_command(partition_names_command)
     group.add_command(partition_set_execution_param_command)
     group.add_command(schedule_execution_data_command)
+    group.add_command(trigger_execution_params_command)
     group.add_command(launch_scheduled_execution)
     group.add_command(grpc_command)
     return group

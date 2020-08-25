@@ -43,6 +43,7 @@ from .impl import (
     get_external_execution_plan_snapshot,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
+    get_external_triggered_execution_params,
     start_run_in_subprocess,
 )
 from .types import (
@@ -53,6 +54,7 @@ from .types import (
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
+    ExternalTriggeredExecutionArgs,
     GetCurrentImageResult,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
@@ -552,6 +554,27 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.ExternalScheduleExecutionReply(
             serialized_external_schedule_execution_data_or_external_schedule_execution_error=serialize_dagster_namedtuple(
                 get_external_schedule_execution(recon_repo, external_schedule_execution_args)
+            )
+        )
+
+    def ExternalTriggerExecutionParams(self, request, _context):
+        external_triggered_execution_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_external_triggered_execution_args
+        )
+        check.inst_param(
+            external_triggered_execution_args,
+            "external_triggered_execution_args",
+            ExternalTriggeredExecutionArgs,
+        )
+
+        recon_repo = self._recon_repository_from_origin(
+            external_triggered_execution_args.repository_origin
+        )
+        return api_pb2.ExternalTriggerExecutionParamsReply(
+            serialized_external_execution_params_or_external_execution_params_error_data=serialize_dagster_namedtuple(
+                get_external_triggered_execution_params(
+                    recon_repo, external_triggered_execution_args
+                )
             )
         )
 

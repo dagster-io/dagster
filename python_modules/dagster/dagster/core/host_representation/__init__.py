@@ -15,6 +15,8 @@ from .external import (
     ExternalSchedule,
 )
 from .external_data import (
+    ExternalExecutionParamsData,
+    ExternalExecutionParamsErrorData,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
@@ -50,4 +52,4 @@ from .repository_location import (
     RepositoryLocation,
 )
 from .represented import RepresentedPipeline
-from .selector import PipelineSelector, RepositorySelector, ScheduleSelector
+from .selector import PipelineSelector, RepositorySelector, ScheduleSelector, TriggerSelector

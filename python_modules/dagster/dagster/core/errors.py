@@ -458,3 +458,7 @@ class HookExecutionError(DagsterUserCodeExecutionError):
 
 class DagsterImportError(DagsterError):
     """ Import error raised while importing user-code. """
+
+
+class TriggeredExecutionError(DagsterUserCodeExecutionError):
+    """Errors raised during the execution of user-provided functions for a triggered execution."""
