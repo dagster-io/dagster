@@ -22,14 +22,12 @@ data:
           {{- toYaml . | nindent 10 }}
         {{- end }}
         service_account_name: {{ include "dagster.serviceAccountName" . }}
-        job_image:
-          env: DAGSTER_K8S_PIPELINE_RUN_IMAGE
+        job_image: "{{- .Values.scheduler.image.repository -}}:{{- .Values.scheduler.image.tag -}}"
         dagster_home:
           env: DAGSTER_HOME
         postgres_password_secret:
           env: DAGSTER_K8S_PG_PASSWORD_SECRET
-        image_pull_policy:
-          env: DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY
+        image_pull_policy: {{ .Values.scheduler.image.pullPolicy }}
         instance_config_map:
           env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
         env_config_maps:

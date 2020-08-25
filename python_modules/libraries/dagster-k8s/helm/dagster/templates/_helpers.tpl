@@ -38,13 +38,6 @@ If release name contains chart name it will be used as a full name.
 {{- required "Celery worker image tag .Values.celery.image.tag is required" .Values.celery.image.tag }}
 {{- end -}}
 
-# Dagster job image e.g. repo/foo:bar
-{{- define "dagster.pipeline_run_image" -}}
-{{ required "Pipeline run image repository .Values.pipeline_run.image.repository is required" .Values.pipeline_run.image.repository -}}
-:
-{{- required "Pipeline run image tag .Values.pipeline_run.image.tag is required" .Values.pipeline_run.image.tag }}
-{{- end -}}
-
 {{- define "dagster.dagit.scheduleUpCommand" -}}
 {{- if .Values.userDeployments.enabled }}
 {{- range $deployment := .Values.userDeployments.deployments }}
@@ -167,8 +160,8 @@ DAGSTER_K8S_CELERY_BROKER: "{{ template "dagster.celery.broker_url" . }}"
 DAGSTER_K8S_CELERY_BACKEND: "{{ template "dagster.celery.backend_url" . }}"
 DAGSTER_K8S_PG_PASSWORD_SECRET: "{{ template "dagster.fullname" .}}-postgresql-secret"
 DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
-DAGSTER_K8S_PIPELINE_RUN_IMAGE: "{{ template "dagster.pipeline_run_image" . }}"
-DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipeline_run.image.pullPolicy }}"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"
 DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pipeline-env"
+DAGSTER_K8S_PIPELINE_RUN_IMAGE: "{{- .Values.pipeline_run.image.repository -}}:{{- .Values.pipeline_run.image.tag -}}"
+DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipeline_run.image.pullPolicy }}"
 {{- end -}}

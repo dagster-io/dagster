@@ -4,6 +4,12 @@ rbacEnabled: true
 # The DAGSTER_HOME env var is set by default on all nodes from this value
 dagster_home: "/opt/dagster/dagster_home"
 
+# README:
+# - If using a fixed tag for images, changing the image pull policy to anything other than "Always"
+#   will use a cached/stale image.
+# - We recommend using unique tags for user code images, as this will guarantee that the docker
+#   image will be consistent for the pipeline's entire execution.
+
 ####################################################################################################
 # Dagit: Configuration for the Dagit webserver
 ####################################################################################################
@@ -89,6 +95,9 @@ userDeployments:
       image:
         repository: "dagster/k8s-example"
         tag: latest
+        # Change with caution! If you're using a fixed tag for pipeline run images, changing the image
+        # pull policy to anything other than "Always" will use a cached/stale image, which is almost
+        # certainly not what you want.
         pullPolicy: Always
       # Arguments to `dagster api grpc`.
       # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
@@ -116,31 +125,24 @@ userDeployments:
       replicaCount: 1
 
 ####################################################################################################
-# (Deprecated) Pipeline Run: Configuration for user code containers
+# Pipeline Run: Configuration for user code containers.
 #
-# All user code will be invoked within the image specified here.
+# Note: This should only be configured when userDeployments are not enabled.
+#
+# `DAGSTER_K8S_PIPELINE_RUN_IMAGE` environment variable will point to the image specified below.
+# The run config for the celery executor can set `job_image` to fetch from environment variable
+# `DAGSTER_K8S_PIPELINE_RUN_IMAGE`, so that celery workers will launch k8s jobs with said image.
+#
 ####################################################################################################
 pipeline_run:
-  # REQUIRED: The Dagster K8s run launchers will invoke job executions in containers from this image
   image:
     repository: "dagster/k8s-example"
     tag: "latest"
-    # Change with caution! If you're using a fixed tag for pipeline run images, changing the image
-    # pull policy to anything other than "Always" will use a cached/stale image, which is almost
-    # certainly not what you want.
     pullPolicy: Always
   # Additional environment variables to set on the celery/job containers
   # A Kubernetes ConfigMap will be created with these environment variables.
   env:
     YOUR_ENV_VAR: ""
-  # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
-  # list here
-  env_config_maps:
-    - ""
-  # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
-  # as a list here
-  env_secrets:
-    - ""
 
 ####################################################################################################
 # Scheduler: Configuration for scheduler
@@ -148,6 +150,13 @@ pipeline_run:
 scheduler:
   # If k8sEnabled is true, then use K8sScheduler; else, use CronScheduler
   k8sEnabled: false
+  # (K8sScheduler only) Image for K8s CronJob(s) to launch K8s Job(s). This image does
+  # need access to dagster code (to call `dagster api launch_scheduled_execution`) and instance yaml
+  # but does not need access to user code.
+  image:
+    repository: "dagster/k8s-dagster"
+    tag: "latest"
+    pullPolicy: Always
   # (K8sScheduler only) K8s Namespace for K8s CronJob(s) and launched K8s Job(s)
   schedulerNamespace: ""
   # (K8sScheduler only) Set to true to load kubeconfig from within cluster

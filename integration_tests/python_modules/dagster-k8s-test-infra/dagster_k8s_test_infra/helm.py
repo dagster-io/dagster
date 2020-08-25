@@ -184,13 +184,11 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                     'failureThreshold': 3,
                 },
             },
-            'pipeline_run': {
+            'scheduler': {
+                'k8sEnabled': 'true',
                 'image': {'repository': repository, 'tag': tag, 'pullPolicy': pull_policy},
-                'env': {'TEST_SET_ENV_VAR': 'test_pipeline_run_env_var'},
-                'env_config_maps': [TEST_CONFIGMAP_NAME],
-                'env_secrets': [TEST_SECRET_NAME],
+                'schedulerNamespace': namespace,
             },
-            'scheduler': {'k8sEnabled': 'true', 'schedulerNamespace': namespace},
             'serviceAccount': {'name': 'dagit-admin'},
             'postgresqlPassword': 'test',
             'postgresqlDatabase': 'test',
