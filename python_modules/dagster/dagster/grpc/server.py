@@ -69,6 +69,10 @@ EVENT_QUEUE_POLL_INTERVAL = 0.1
 
 CLEANUP_TICK = 0.5
 
+# How long an execution process has to clean itself after termination before we hard-kill
+# the process
+GRACE_PERIOD_AFTER_PROCESS_TERMINATION = 15
+
 
 class CouldNotBindGrpcServerToAddress(Exception):
     pass
@@ -179,6 +183,7 @@ class DagsterApiServer(DagsterApiServicer):
         self._executions = {}
         # Dict[str, multiprocessing.Event]
         self._termination_events = {}
+        self._termination_times = {}
         self._execution_lock = threading.Lock()
 
         self._repository_symbols_and_code_pointers = LazyRepositorySymbolsAndCodePointers(
@@ -200,13 +205,6 @@ class DagsterApiServer(DagsterApiServicer):
 
         self.__cleanup_thread.start()
 
-    def _generate_synthetic_error_from_crash(self, run, instance):
-        message = "Pipeline execution process for {run_id} unexpectedly exited.".format(
-            run_id=run.run_id
-        )
-        instance.report_engine_event(message, run, cls=self.__class__)
-        instance.report_run_failed(run)
-
     def _heartbeat_thread(self, heartbeat_timeout):
         while True:
             time.sleep(heartbeat_timeout)
@@ -223,21 +221,48 @@ class DagsterApiServer(DagsterApiServicer):
             runs_to_clear = []
             for run_id, (process, instance) in self._executions.items():
                 if process.is_alive():
-                    continue
+                    if not self._termination_events[run_id].is_set() or (
+                        time.time() - self._termination_times[run_id]
+                        < GRACE_PERIOD_AFTER_PROCESS_TERMINATION
+                    ):
+                        continue
 
-                run = instance.get_run_by_id(run_id)
+                    # the process failed to handle the KeyboardInterrupt cleanly after termination.
+                    # Inform the system and mark the run as failed.
+                    process.kill()
 
-                runs_to_clear.append(run_id)
+                    run = instance.get_run_by_id(run_id)
+                    runs_to_clear.append(run_id)
 
-                if run.is_finished:
-                    continue
+                    message = (
+                        "Pipeline execution process for {run_id} killed "
+                        + "after failing to terminate"
+                    ).format(run_id=run.run_id)
+                    instance.report_engine_event(message, run, cls=self.__class__)
 
-                # the process died in an unexpected manner. inform the system
-                self._generate_synthetic_error_from_crash(run, instance)
+                    if run.is_finished:
+                        continue
+
+                    instance.report_run_failed(run)
+
+                else:
+                    run = instance.get_run_by_id(run_id)
+                    runs_to_clear.append(run_id)
+
+                    if run.is_finished:
+                        continue
+
+                    # the process died in an unexpected manner. inform the system
+                    message = "Pipeline execution process for {run_id} unexpectedly exited.".format(
+                        run_id=run.run_id
+                    )
+                    instance.report_engine_event(message, run, cls=self.__class__)
+                    instance.report_run_failed(run)
 
             for run_id in runs_to_clear:
                 del self._executions[run_id]
                 del self._termination_events[run_id]
+                del self._termination_times[run_id]
 
     def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(
@@ -648,6 +673,7 @@ class DagsterApiServer(DagsterApiServicer):
             with self._execution_lock:
                 if cancel_execution_request.run_id in self._executions:
                     self._termination_events[cancel_execution_request.run_id].set()
+                    self._termination_times[cancel_execution_request.run_id] = time.time()
                     success = True
 
         except:  # pylint: disable=bare-except
