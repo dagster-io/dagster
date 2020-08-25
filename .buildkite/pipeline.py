@@ -435,12 +435,16 @@ def integration_tests():
     ]
 
     for integration_suite in integration_suites:
-        tox_env_suffixes = (
-            ["-default", "-markscheduler"]
-            if integration_suite
-            == os.path.join("integration_tests", "test_suites", "k8s-integration-test-suite")
-            else None
-        )
+        tox_env_suffixes = None
+        if integration_suite == os.path.join(
+            "integration_tests", "test_suites", "k8s-integration-test-suite"
+        ):
+            tox_env_suffixes = ["-default", "-markscheduler"]
+        elif integration_suite == os.path.join(
+            "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
+        ):
+            tox_env_suffixes = ["-default", "-markusercodedeployment"]
+
         tests += ModuleBuildSpec(
             integration_suite,
             env_vars=[

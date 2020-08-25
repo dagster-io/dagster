@@ -6,10 +6,12 @@ import kubernetes
 import pytest
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from kubernetes.stream import stream
+from marks import mark_user_code_deployment
 
 
 # This test spins up a user code deployment, and then executes a launch pipeline command in the
 # dagit pod to trigger a pipeline run
+@mark_user_code_deployment
 @pytest.mark.integration
 @pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
 def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name,unused-argument
