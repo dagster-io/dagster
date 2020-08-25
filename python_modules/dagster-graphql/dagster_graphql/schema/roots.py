@@ -11,6 +11,7 @@ from dagster_graphql.implementation.execution import (
     launch_pipeline_execution,
     launch_pipeline_reexecution,
     terminate_pipeline_execution,
+    trigger_execution,
 )
 from dagster_graphql.implementation.execution.execute_run_in_process import (
     execute_run_in_graphql_process,
@@ -63,6 +64,7 @@ from dagster.core.host_representation import (
     RepositorySelector,
     RepresentedPipeline,
     ScheduleSelector,
+    TriggerSelector,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -685,6 +687,21 @@ class DauphinExecutePlan(dauphin.Mutation):
         )
 
 
+class DauphinTriggerExecution(dauphin.Mutation):
+    class Meta(object):
+        name = "TriggerExecution"
+
+    class Arguments(object):
+        trigger_selector = dauphin.NonNull("TriggerSelector")
+
+    Output = dauphin.NonNull("TriggerMutationResult")
+
+    def mutate(self, graphene_info, trigger_selector):
+        return trigger_execution(
+            graphene_info, TriggerSelector.from_graphql_input(trigger_selector)
+        )
+
+
 class DauphinMutation(dauphin.ObjectType):
     class Meta(object):
         name = "Mutation"
@@ -708,6 +725,7 @@ class DauphinMutation(dauphin.ObjectType):
 
     execute_plan = DauphinExecutePlan.Field()
     execute_run_in_process = DauphinExecuteRunInProcessMutation.Field()
+    trigger_execution = DauphinTriggerExecution.Field()
 
 
 DauphinComputeIOType = dauphin.Enum.from_enum(ComputeIOType)
@@ -800,6 +818,18 @@ class DauphinPartitionSetSelector(dauphin.InputObjectType):
 
     partitionSetName = dauphin.NonNull(dauphin.String)
     repositorySelector = dauphin.NonNull("RepositorySelector")
+
+
+class DauphinTriggerSelector(dauphin.InputObjectType):
+    class Meta(object):
+        name = "TriggerSelector"
+        description = """
+            This type represents the fields necessary to identify a triggered execution target.
+        """
+
+    repositoryName = dauphin.NonNull(dauphin.String)
+    repositoryLocationName = dauphin.NonNull(dauphin.String)
+    triggerName = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPartitionBackfillParams(dauphin.InputObjectType):

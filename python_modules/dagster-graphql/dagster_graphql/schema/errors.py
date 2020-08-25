@@ -700,6 +700,19 @@ class DauphinPartitionBackfillResult(dauphin.Union):
         ) + pipeline_execution_error_types
 
 
+class DauphinTriggerExecutionSuccess(dauphin.ObjectType):
+    class Meta(object):
+        name = "TriggerExecutionSuccess"
+
+    launched_run_ids = dauphin.non_null_list(dauphin.String)
+
+
+class DauphinTriggerMutationResult(dauphin.Union):
+    class Meta(object):
+        name = "TriggerMutationResult"
+        types = (DauphinTriggerExecutionSuccess,) + pipeline_execution_error_types
+
+
 class DauphinRepositoriesOrError(dauphin.Union):
     class Meta(object):
         name = "RepositoriesOrError"

@@ -132,6 +132,11 @@ class DagsterGraphQLContext:
             self.instance, repository_handle, schedule_name, ScheduleExecutionDataMode.PREVIEW,
         )
 
+    def get_external_triggered_execution_param_data(self, repository_handle, trigger_name):
+        return self._repository_locations[
+            repository_handle.repository_location_handle.location_name
+        ].get_external_triggered_execution_params(self.instance, repository_handle, trigger_name)
+
     def get_external_partition_set_execution_param_data(
         self, repository_handle, partition_set_name, partition_names
     ):

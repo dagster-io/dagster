@@ -89,7 +89,7 @@ class ExternalRepository:
     def get_all_external_pipelines(self):
         return [self.get_full_external_pipeline(pn) for pn in self._pipeline_index_map]
 
-    def get_triggered_executions(self):
+    def get_external_triggered_executions(self):
         return [
             ExternalTriggeredExecution(external_triggered_execution_data, self._handle)
             for external_triggered_execution_data in self.external_repository_data.external_triggered_execution_datas

@@ -43,6 +43,7 @@ from ..resume_retry import get_retry_steps_from_execution_plan
 from ..utils import ExecutionParams, UserFacingGraphQLError, capture_dauphin_error
 from .backfill import create_and_launch_partition_backfill
 from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
+from .trigger import trigger_execution
 
 
 @capture_dauphin_error
