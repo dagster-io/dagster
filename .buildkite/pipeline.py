@@ -322,6 +322,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-postgres_instance_out_of_process_env",
             "-postgres_instance_multi_location",
             "-postgres_instance_managed_grpc_env",
+            "-postgres_instance_deployed_grpc_env",
         ],
     ),
     ModuleBuildSpec(
