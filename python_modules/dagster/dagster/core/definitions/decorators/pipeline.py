@@ -3,18 +3,28 @@ from functools import update_wrapper
 from dagster import check
 
 from ..composition import enter_composition, exit_composition
+from ..hook import HookDefinition
 from ..mode import ModeDefinition
 from ..pipeline import PipelineDefinition
 from ..preset import PresetDefinition
 
 
 class _Pipeline(object):
-    def __init__(self, name=None, mode_defs=None, preset_defs=None, description=None, tags=None):
+    def __init__(
+        self,
+        name=None,
+        mode_defs=None,
+        preset_defs=None,
+        description=None,
+        tags=None,
+        hook_defs=None,
+    ):
         self.name = check.opt_str_param(name, "name")
         self.mode_definitions = check.opt_list_param(mode_defs, "mode_defs", ModeDefinition)
         self.preset_definitions = check.opt_list_param(preset_defs, "preset_defs", PresetDefinition)
         self.description = check.opt_str_param(description, "description")
         self.tags = check.opt_dict_param(tags, "tags")
+        self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
     def __call__(self, fn):
         check.callable_param(fn, "fn")
@@ -36,12 +46,15 @@ class _Pipeline(object):
             preset_defs=self.preset_definitions,
             description=self.description,
             tags=self.tags,
+            hook_defs=self.hook_defs,
         )
         update_wrapper(pipeline_def, fn)
         return pipeline_def
 
 
-def pipeline(name=None, description=None, mode_defs=None, preset_defs=None, tags=None):
+def pipeline(
+    name=None, description=None, mode_defs=None, preset_defs=None, tags=None, hook_defs=None
+):
     """Create a pipeline with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up the dependency graph of the pipeline by writing a
@@ -64,6 +77,9 @@ def pipeline(name=None, description=None, mode_defs=None, preset_defs=None, tags
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
+        hook_defs (Optional[Set[HookDefinition]]): A set of hook definitions applied to the
+            pipeline. When a hook is applied to a pipeline, it will be attached to all solid
+            instances within the pipeline.
 
     Examples:
 
@@ -91,5 +107,10 @@ def pipeline(name=None, description=None, mode_defs=None, preset_defs=None, tags
         return _Pipeline()(name)
 
     return _Pipeline(
-        name=name, mode_defs=mode_defs, preset_defs=preset_defs, description=description, tags=tags
+        name=name,
+        mode_defs=mode_defs,
+        preset_defs=preset_defs,
+        description=description,
+        tags=tags,
+        hook_defs=hook_defs,
     )

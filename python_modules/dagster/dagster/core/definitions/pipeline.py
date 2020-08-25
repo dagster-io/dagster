@@ -89,6 +89,9 @@ class PipelineDefinition(IContainSolids):
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
+        hook_defs (Optional[Set[HookDefinition]]): A set of hook definitions applied to the
+            pipeline. When a hook is applied to a pipeline, it will be attached to all solid
+            instances within the pipeline.
 
         _parent_pipeline_def (INTERNAL ONLY): Used for tracking pipelines created using solid subsets.
 
@@ -142,8 +145,8 @@ class PipelineDefinition(IContainSolids):
         mode_defs=None,
         preset_defs=None,
         tags=None,
+        hook_defs=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
-        _hook_defs=None,
     ):
         self._name = check.opt_str_param(name, "name", "<<unnamed>>")
         self._description = check.opt_str_param(description, "description")
@@ -219,7 +222,7 @@ class PipelineDefinition(IContainSolids):
         self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
 
-        self._hook_defs = check.opt_set_param(_hook_defs, "_hook_defs", of_type=HookDefinition)
+        self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
     def get_run_config_schema(self, mode=None):
         check.str_param(mode, "mode")
@@ -518,8 +521,8 @@ class PipelineDefinition(IContainSolids):
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_defs,
             tags=self.tags,
+            hook_defs=hook_defs.union(self.hook_defs),
             _parent_pipeline_def=self._parent_pipeline_def,
-            _hook_defs=hook_defs.union(self.hook_defs),
         )
 
 

@@ -209,6 +209,11 @@ def test_hook_on_pipeline_def():
         called_hook_to_solids[context.hook_def.name].add(context.solid.name)
         return HookExecutionResult("hook_a_generic")
 
+    @event_list_hook
+    def hook_b_generic(context, _):
+        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        return HookExecutionResult("hook_b_generic")
+
     @solid
     def solid_a(_):
         pass
@@ -221,7 +226,7 @@ def test_hook_on_pipeline_def():
     def solid_c(_):
         pass
 
-    @pipeline
+    @pipeline(hook_defs={hook_b_generic})
     def a_pipeline():
         solid_a()
         solid_b()
@@ -230,7 +235,10 @@ def test_hook_on_pipeline_def():
     result = execute_pipeline(a_pipeline.with_hooks({hook_a_generic}))
     assert result.success
     # the hook should run on all solids
-    assert called_hook_to_solids["hook_a_generic"] == {"solid_a", "solid_b", "solid_c"}
+    assert called_hook_to_solids == {
+        "hook_b_generic": {"solid_b", "solid_a", "solid_c"},
+        "hook_a_generic": {"solid_b", "solid_a", "solid_c"},
+    }
 
 
 def test_hook_on_pipeline_def_with_composite_solids():
