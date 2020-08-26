@@ -11,7 +11,6 @@
 
 Dagster is a data orchestrator for machine learning, analytics, and ETL
 
-
 **Elegant programming model:** Dagster provides a set of abstractions for building self-describing,
 testable, and reliable data applications. It embraces the principles of functional data programming;
 gradual, optional typing; and testability as a first-class value.
@@ -22,7 +21,7 @@ gradual, optional typing; and testability as a first-class value.
 
 **Flexible & incremental:** Dagster integrates with your existing tools and systems, and can invoke
 any computation–whether it be Spark, Python, a Jupyter notebook, or SQL. It is also designed to work
-with your existing systems like [Kubernetes](https://docs.dagster.io/deploying/k8s).
+with your existing systems like [Kubernetes](https://docs.dagster.io/deploying/k8s_part1).
 
 <p align="center">
 <img src="https://user-images.githubusercontent.com/4531914/79161365-3d929280-7d90-11ea-9216-c88cce41d3f1.gif" />

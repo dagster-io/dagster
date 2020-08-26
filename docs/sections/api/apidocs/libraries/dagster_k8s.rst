@@ -1,7 +1,7 @@
 
 Kubernetes (dagster_k8s)
 ------------------------
-See also the `Kubernetes deployment guide <https://docs.dagster.io/deploying/k8s/>`_.
+See also the `Kubernetes deployment guide <https://docs.dagster.io/deploying/k8s_part1/>`_.
 
 This library contains utilities for running Dagster with Kubernetes. This includes a Python API
 allowing Dagit to launch runs as Kubernetes Jobs, as well as a Helm chart you can use as the basis
