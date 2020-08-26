@@ -55,7 +55,7 @@ the Run Launcher, which in turn creates the Run Coordinator Job. Kubernetes Cron
 hashing the schedule properties, so different repositories can create schedules that have the same
 schedule name without causing conflicts in Kubernetes.
 
-## K8s User Code Deployments (over GRPC)
+## K8s User Code Deployments (over gRPC)
 
 In the previous section, we presented a deployment option where Dagit, Run Coordinator, and
 Step Job all use the same image. This section introduces the option to use a different Docker
@@ -70,7 +70,7 @@ Dagit/Dagster and the dependencies for every user code repository, were inter-mi
 With the new system, changes to user code only requires updating the corresponding user code Deployments
 (ie foo and fiz in the diagram above). This means that if a pipeline within `foo` changes, only the
 `foo` Deployment needs to updated. This enables Dagit to be a long-standing process that
-communicates with the user code Deployments (ie `foo`/ `fiz`) via the GRPC layer to fetch the latest
+communicates with the user code Deployments (ie `foo`/ `fiz`) via the gRPC layer to fetch the latest
 repository information. This also separates user code from Dagit/Dagster system code, which
 increases robustness.
 
@@ -85,9 +85,9 @@ values.yaml and specify a list of deployments under `userDeployments.deployments
 
 ### How it works:
 
-This feature operates over GRPC. First, Dagit will communicate with the user code Deployments over
-GRPC to populate its UI. Second, the Run Launcher will communicate with the user code Deployments
-over GRPC to fetch the most recently deployed Docker image, which will be used to execute the pipeline run.
+This feature operates over gRPC. First, Dagit will communicate with the user code Deployments over
+gRPC to populate its UI. Second, the Run Launcher will communicate with the user code Deployments
+over gRPC to fetch the most recently deployed Docker image, which will be used to execute the pipeline run.
 
 We store the most recently deployed Docker image in the `DAGSTER_CURRENT_IMAGE` environment variable in
 the user code Deployment and is updated at every deploy. It consists of a simple string of the form

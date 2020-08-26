@@ -73,7 +73,7 @@ schedule_storage:
 # Component that determines where runs are executed.
 run_launcher:
   module: dagster.core.launcher
-  class: CliApiRunLauncher
+  class: DefaultRunLauncher
 
 # ==================================================================================================
 # Compute Log Storage
@@ -81,7 +81,7 @@ run_launcher:
 # Controls the capture and persistence of raw stdout & stderr text logs.
 #
 # Currently supported:
-# - ComputeLogManager (default)
+# - LocalComputeLogManager (default)
 # - AzureBlobComputeLogManager
 # - S3ComputeLogManager
 compute_logs:
@@ -94,10 +94,9 @@ compute_logs:
 # ==================================================================================================
 # Local Artifact Storage
 # ==================================================================================================
-# Controls where to put things on the local disk. Primarily used for storing schedule metadata, and
-# is where intermediates are stored when using the default filesystem intermediates storage
-# (intermediates storage is not configured on the instance, but instead is configured in pipeline
-# run YAML).
+# Controls where to store data on the local disk. Primarily used for storing schedule metadata, and
+# storing intermediates when using the default filesystem intermediates storage (intermediates
+# storage is not configured on the instance, but instead is configured in pipeline run config).
 #
 # Currently only supports LocalArtifactStorage.
 local_artifact_storage:

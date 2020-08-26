@@ -115,14 +115,14 @@ file:/docs_snippets/docs_snippets/overview/repositories_workspaces/python_enviro
 Note that not only could these be distinct sets of installed dependencies, but they
 could also be completely different python versions.
 
-### GRPC Server
+### gRPC Server
 
-Using the built in Dagster GRPC Server, it is possible to interact with repositories that are
+Using the built in Dagster gRPC Server, it is possible to interact with repositories that are
 completely remote. This allows for complete separation between tools like the Dagster CLI and Dagit
 and your repository code.
 
-The Dagster GRPC server needs to have access to your code. This server is responsible for serving
-information about your repositories over GRPC. To initialize the server, you need to run
+The Dagster gRPC server needs to have access to your code. This server is responsible for serving
+information about your repositories over gRPC. To initialize the server, you need to run
 the `dagster api grpc` command and pass it a target.
 
 The target can be either either a python file or python module. The server will automatically find
@@ -132,11 +132,11 @@ a single repository within a target, you can use the `attribute` flag.
 You also need to specify a host and either a post or socket to run the server on.
 
 ```
-# Load GRPC Server using python file:
+# Load gRPC Server using python file:
 dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --port 4266
 dagster api grpc --python-file /path/to/file.py --host 0.0.0.0 --port /path/to/socket
 
-# Load GRPC Server using python module:
+# Load gRPC Server using python module:
 dagster api grpc --module-name my_module_name --host 0.0.0.0 --port 4266
 dagster api grpc --module-name my_module_name --host 0.0.0.0 --socket /path/to/socket
 
@@ -145,7 +145,7 @@ dagster api grpc --python-file /path/to/file.py --attribute my_repository --host
 dagster api grpc --module-name my_module_name --attribute my_repository --host 0.0.0.0 --port 4266
 ```
 
-Then, in your `workspace.yaml`, you can configure a new GRPC server repository location to load from:
+Then, in your `workspace.yaml`, you can configure a new gRPC server repository location to load from:
 
 ```yaml caption=workspace.yaml
 load_from:
@@ -155,11 +155,11 @@ load_from:
       location_name: 'my_grpc_server'
 ```
 
-#### Executing runs against a GRPC Server:
+#### Executing runs against a gRPC Server:
 
 If you are using the <PyObject module="dagster.core.launcher" object="DefaultRunLauncher"/>, which is configured by
 default on your <PyObject module="dagster.core.instance" object="DagsterInstance"/>, the run launcher will launch
-runs against your hosted GRPC server.
+runs against your hosted gRPC server.
 
 If you have implemented a custom run launcher and would like to host your code using the Dagster
-GRPC server, please reach out to us.
+gRPC server, please reach out to us.

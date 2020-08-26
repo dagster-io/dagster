@@ -123,11 +123,11 @@ The API docs for available options are linked below:
 
 **Run Launcher**
 
-- _(default)_ <PyObject module="dagster.core.launcher" object="CliApiRunLauncher" />
+- _(default)_ <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" />
 
 ## Pipeline Run Configuration YAML
 
-Along with instance-level configuration, Dagster supports configuring several things on a
+Along with instance-level configuration, Dagster supports configuring several properties on a
 per-pipeline-run basis. An example is shown below:
 
 ```yaml literalinclude caption=pipeline_run.yaml

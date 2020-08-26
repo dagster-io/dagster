@@ -2,42 +2,34 @@ import PyObject from 'components/PyObject';
 
 # Run Launcher
 
-Runs instigated from the Dagit UI, the scheduler, or `dagster pipeline launch` are
-"launched" in dagster. This is a distinct operation from "executing" a pipeline
-using the `execute_pipeline` python API or the CLI `execute` command. Execution is
-used mostly in testing and in Dagster internals. In production runs are launched.
+Runs instigated from the Dagit UI, the scheduler, or `dagster pipeline launch` are "launched" in
+Dagster. This is a distinct operation from "executing" a pipeline using the `execute_pipeline`
+python API or the CLI `execute` command. A 'launch' operation allocates computational resources
+(e.g. a process, a container, a kubernetes pod, etc) to carry out a run execution and then
+instigates the execution.
 
-The core abstraction in the launch process is the run launcher. It is configured
-as part of the Dagster Instance.
+The core abstraction in the launch process is the run launcher, which is configured as part of the
+Dagster Instance. The run launcher is the interface to the computational resources that will be
+used to actually execute Dagster runs. It receives the ID of a created run and a representation of
+the pipeline that is about to undergo execution.
 
-The role of the run launcher is to be the interface to the computational
-resources that will be used to actually execute Dagster runs. It receives
-the ID of a created run and a representation of the pipeline about to undergo
-execution. It is responsible for allocating the computational resource for that
-run (e.g. a process, a container, a kubernetes pod, etc) and then instigating
-the computation within that resource.
+The simplest run launcher is the built-in run launcher, <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" />. This run launcher spawns a
+new process on the current node for each run that is launched. It also provides the ability to
+terminate launched runs, and monitors launched processes to detect unexpected process crashes. For
+pipelines hosted on gRPC servers, the DefaultRunLauncher delegates the launch to the gRPC server.
 
-The simplest version of the this is the built-in, default run launcher, <PyObject module="dagster.core.launcher" object="CliApiRunLauncher" />.
-That run launcher spawns a new process on the current node for each run that is launched. It also
-provides the ability to terminate that run, and it monitors launched processes to
-detect unexpected process crashes.
-
-Another example is  the <PyObject module="dagster_k8s" object="K8sRunLauncher"/>,
-which allocates a Kubernetes Job per run.
-
-Anyone with any customizable infrastructure needs will almost need 
-to write their own run launcher.
+Another example is the <PyObject module="dagster_k8s" object="K8sRunLauncher"/>, which allocates a
+Kubernetes Job per run.
 
 A few examples of when a custom run launcher is needed:
 
-- You want to allocate different computational resources
-for different pipelines or pipeline runs (e.g. GPUs for some, more cores or memory for other)
-this decision and logic will be done in the run launcher.
+- You want to allocate different computational resources for different pipelines or pipeline runs
+(e.g. GPUs for some, more cores or memory for others). These decisions should be made in the run
+launcher.
 
-- You have custom infrastructure or custom APIs for allocating nodes within your infrastructure.
+- You have custom infrastructure or custom APIs for allocating nodes for execution.
 
-Colloquially we refer to this launched process/computational resource as the run coordinator.
-At this point, it is the *executor* -- an in-memory abstraction in the coordinator process -- that
-takes over management of computational resources. The launcher only determines the behavior of
-the run coordinator. The executors can range from single, in-process serial executors
-all the way to managing per-step computational resources with a sophisticated control plane.
+Colloquially we refer to the process or computational resource created by the run launcher as the
+run coordinator. The run launcher only determines the behavior of the run coordinator. Once
+execution starts within the run coordinator, it is the *executor* -- an in-memory abstraction in the
+coordinator process -- that takes over management of computational resources.

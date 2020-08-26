@@ -35,7 +35,7 @@ file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
 lines:57-65
 ```
 
-Note that you cannot `yield` a single value without wrapping it <PyObject module="dagster" object="Output" />.
+Note that you cannot `yield` a single value without wrapping it in <PyObject module="dagster" object="Output" />.
 This is because a solid can yield arbitrarily many values, and there's no way
 for the system to tell which one the author of the solid meant to use as
 its output. For example:

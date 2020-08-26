@@ -1,8 +1,8 @@
 # ==================================================================================================
 # Execution
 # ==================================================================================================
-# Configure single-, multi-process execution, or use custom executors like Celery. Custom executors
-# can be defined with the @executor decorator.
+# Configure whether to use single-process or multi-process execution, or use custom executors like
+# Celery. Custom executors can be defined with the @executor decorator.
 #
 # **NOTE**: setting executors globally on the Dagster instance is not currently supported!
 #
@@ -23,7 +23,7 @@ execution:
 # Storage
 # ==================================================================================================
 # The storage key in pipeline run config is used to set where inputs/outputs are stored during
-# pipeline execution. Custom storage backend can be defined with the @system_storage decorator.
+# pipeline execution. Custom storage backends can be defined with the @system_storage decorator.
 #
 # **NOTE**: setting pipeline run storage globally on the Dagster instance is not currently
 # supported!
