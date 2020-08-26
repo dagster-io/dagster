@@ -48,5 +48,5 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
         the process was alive and was successfully terminated
         """
 
-    def join(self, timeout=15):
+    def join(self, timeout=30):
         pass

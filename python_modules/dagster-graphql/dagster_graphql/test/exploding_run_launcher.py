@@ -22,7 +22,7 @@ class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, instance, run, external_pipeline):
         raise NotImplementedError("The entire purpose of this is to throw on launch")
 
-    def join(self, timeout=15):
+    def join(self, timeout=30):
         """Nothing to join on since all executions are synchronous."""
 
     def can_terminate(self, run_id):

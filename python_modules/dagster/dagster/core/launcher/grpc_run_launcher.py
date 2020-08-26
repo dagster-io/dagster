@@ -152,7 +152,7 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
 
         return res.success
 
-    def join(self, timeout=15):
+    def join(self, timeout=30):
         # If this hasn't been initialized at all, we can just do a noop
         if not self._instance:
             return

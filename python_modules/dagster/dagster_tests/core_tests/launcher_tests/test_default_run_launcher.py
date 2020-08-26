@@ -12,7 +12,12 @@ from dagster.core.host_representation.repository_location import (
     InProcessRepositoryLocation,
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import (
+    instance_for_test,
+    poll_for_event,
+    poll_for_finished_run,
+    poll_for_step_start,
+)
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 
@@ -82,50 +87,6 @@ def nope():
 def test_repo_construction():
     repo_yaml = file_relative_path(__file__, "repo.yaml")
     assert ReconstructableRepository.from_legacy_repository_yaml(repo_yaml).get_definition()
-
-
-def poll_for_run(instance, run_id, timeout=20):
-    total_time = 0
-    interval = 0.01
-
-    while True:
-        run = instance.get_run_by_id(run_id)
-        if run.is_finished:
-            return run
-        else:
-            time.sleep(interval)
-            total_time += interval
-            if total_time > timeout:
-                raise Exception("Timed out")
-
-
-def poll_for_step_start(instance, run_id, timeout=10):
-    poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
-
-
-def poll_for_event(instance, run_id, event_type, message, timeout=10):
-    total_time = 0
-    backoff = 0.01
-
-    while True:
-        time.sleep(backoff)
-        logs = instance.all_logs(run_id)
-        matching_events = [
-            log_record.dagster_event
-            for log_record in logs
-            if log_record.dagster_event.event_type_value == event_type
-        ]
-        if matching_events:
-            if message is None:
-                return
-            for matching_message in (event.message for event in matching_events):
-                if message in matching_message:
-                    return
-
-        total_time += backoff
-        backoff = backoff * 2
-        if total_time > timeout:
-            raise Exception("Timed out")
 
 
 @contextmanager
@@ -206,7 +167,7 @@ def test_successful_run(get_external_pipeline):  # pylint: disable=redefined-out
             assert pipeline_run
             assert pipeline_run.run_id == run_id
 
-            pipeline_run = poll_for_run(instance, run_id)
+            pipeline_run = poll_for_finished_run(instance, run_id)
             assert pipeline_run.status == PipelineRunStatus.SUCCESS
 
 
@@ -238,7 +199,7 @@ def test_crashy_run(get_external_pipeline):  # pylint: disable=redefined-outer-n
             assert failed_pipeline_run
             assert failed_pipeline_run.run_id == run_id
 
-            failed_pipeline_run = poll_for_run(instance, run_id, timeout=5)
+            failed_pipeline_run = poll_for_finished_run(instance, run_id, timeout=5)
             assert failed_pipeline_run.status == PipelineRunStatus.FAILURE
 
             event_records = instance.all_logs(run_id)
@@ -277,11 +238,9 @@ def test_terminated_run(get_external_pipeline, in_process):  # pylint: disable=r
             assert launcher.can_terminate(run_id)
             assert launcher.terminate(run_id)
 
-            terminated_pipeline_run = poll_for_run(instance, run_id)
+            terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
             terminated_pipeline_run = instance.get_run_by_id(run_id)
             assert terminated_pipeline_run.status == PipelineRunStatus.FAILURE
-
-            poll_for_run(instance, run_id)
 
             poll_for_event(
                 instance, run_id, event_type="ENGINE_EVENT", message="Process for pipeline exited"
@@ -360,7 +319,7 @@ def test_single_solid_selection_execution(
         with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
             launcher = instance.run_launcher
             launcher.launch_run(instance, pipeline_run, external_pipeline)
-            finished_pipeline_run = poll_for_run(instance, run_id)
+            finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
             event_records = instance.all_logs(run_id)
 
@@ -395,7 +354,7 @@ def test_multi_solid_selection_execution(
         with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
             launcher = instance.run_launcher
             launcher.launch_run(instance, pipeline_run, external_pipeline)
-            finished_pipeline_run = poll_for_run(instance, run_id)
+            finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
             event_records = instance.all_logs(run_id)
 
@@ -427,7 +386,7 @@ def test_engine_events(get_external_pipeline, in_process):  # pylint: disable=re
         with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
             launcher = instance.run_launcher
             launcher.launch_run(instance, pipeline_run, external_pipeline)
-            finished_pipeline_run = poll_for_run(instance, run_id)
+            finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
             assert finished_pipeline_run
             assert finished_pipeline_run.run_id == run_id

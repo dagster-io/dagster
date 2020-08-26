@@ -1,4 +1,5 @@
 import os
+import time
 from contextlib import contextmanager
 
 import yaml
@@ -214,3 +215,47 @@ def register_managed_run_for_test(
         execution_plan_snapshot,
         parent_pipeline_snapshot,
     )
+
+
+def poll_for_finished_run(instance, run_id, timeout=20):
+    total_time = 0
+    interval = 0.01
+
+    while True:
+        run = instance.get_run_by_id(run_id)
+        if run.is_finished:
+            return run
+        else:
+            time.sleep(interval)
+            total_time += interval
+            if total_time > timeout:
+                raise Exception("Timed out")
+
+
+def poll_for_step_start(instance, run_id, timeout=10):
+    poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
+
+
+def poll_for_event(instance, run_id, event_type, message, timeout=10):
+    total_time = 0
+    backoff = 0.01
+
+    while True:
+        time.sleep(backoff)
+        logs = instance.all_logs(run_id)
+        matching_events = [
+            log_record.dagster_event
+            for log_record in logs
+            if log_record.dagster_event.event_type_value == event_type
+        ]
+        if matching_events:
+            if message is None:
+                return
+            for matching_message in (event.message for event in matching_events):
+                if message in matching_message:
+                    return
+
+        total_time += backoff
+        backoff = backoff * 2
+        if total_time > timeout:
+            raise Exception("Timed out")

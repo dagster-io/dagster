@@ -54,7 +54,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             run_id
         )
 
-    def join(self, timeout=15):
+    def join(self, timeout=30):
         self._cli_api_run_launcher.join(timeout=timeout)
         self._grpc_run_launcher.join(timeout=timeout)
 
