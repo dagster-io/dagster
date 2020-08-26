@@ -3,14 +3,25 @@ import PyObject from 'components/PyObject';
 
 <DynamicMetaTags
   title="Schedules - Partition Sets | Dagster"
-  description="Dagster provides an easy way to partition config for a pipeline."
+  description="Dagster provides the _partition set_ abstraction for pipelines where each run deals with
+    a subset of data."
 />
 
 # Partition Sets
 
-Dagster provides the _partition set_ abstraction to make it easy to partition config for a pipeline.
-The most common dimension pipelines are partitioned by is time. Other examples of partitions could be
-countries, users, IDs, etc.
+Dagster provides the _partition set_ abstraction for pipelines where each run deals with
+a subset of data.
+
+Users define a set of logical "partitions", usually time windows, along with a scheme for building
+pipeline config from a partition name.  With this, they can kick off a pipeline run or set of
+pipeline runs by simply selecting a partition or set of partitions.
+
+Partitions have two main uses:
+- Scheduling - e.g. a pipeline runs each day and processes the data that arrived during the
+  previous day as a single partition.
+- Backfills - all at once, kick off a pipeline run per partition, e.g. to reprocess the data that
+  arrived for each day in the history.
+
 
 ## Defining a Partition Set
 
