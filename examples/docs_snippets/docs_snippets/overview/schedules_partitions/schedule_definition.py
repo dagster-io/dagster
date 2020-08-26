@@ -6,7 +6,7 @@ from dagster import daily_schedule, hourly_schedule, monthly_schedule, schedule,
 @schedule(
     cron_schedule="0 0 * * *", pipeline_name="my_data_pipeline"
 )  # Executes at 1:00 AM every day
-def my_schedule():
+def my_schedule(_context):
     date = datetime.today().strftime("%Y-%m-%d")
     return {"solids": {"process_data_for_date": {"config": {"date": date}}}}
 
