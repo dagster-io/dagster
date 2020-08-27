@@ -352,3 +352,35 @@ def get_python_file_from_previous_stack_frame():
 
     python_file = previous_stack_frame[1]
     return os.path.abspath(python_file)
+
+
+@whitelist_for_serdes
+class CustomPointer(
+    namedtuple(
+        "_CustomPointer", "reconstructor_pointer reconstructable_args reconstructable_kwargs"
+    ),
+    CodePointer,
+):
+    def __new__(cls, reconstructor_pointer, reconstructable_args, reconstructable_kwargs):
+        check.inst_param(reconstructor_pointer, "reconstructor_pointer", ModuleCodePointer)
+        check.tuple_param(reconstructable_args, "reconstructable_args")
+        check.tuple_param(reconstructable_kwargs, "reconstructable_kwargs")
+        for reconstructable_kwarg in reconstructable_kwargs:
+            check.tuple_param(reconstructable_kwarg, "reconstructable_kwarg")
+            check.invariant(check.is_str(reconstructable_kwarg[0]), "Bad kwarg key")
+
+        return super(CustomPointer, cls).__new__(
+            cls, reconstructor_pointer, reconstructable_args, reconstructable_kwargs
+        )
+
+    def load_target(self):
+        reconstructor = self.reconstructor_pointer.load_target()
+
+        return reconstructor(
+            *self.reconstructable_args, **{key: value for key, value in self.reconstructable_kwargs}
+        )
+
+    def describe(self):
+        return "reconstructable using {module}.{fn_name}".format(
+            module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
+        )

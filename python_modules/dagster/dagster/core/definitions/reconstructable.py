@@ -5,6 +5,7 @@ from collections import namedtuple
 from dagster import check, seven
 from dagster.core.code_pointer import (
     CodePointer,
+    CustomPointer,
     FileCodePointer,
     ModuleCodePointer,
     get_python_file_from_previous_stack_frame,
@@ -14,6 +15,7 @@ from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, Sc
 from dagster.core.selector import parse_solid_selection
 from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.seven import lru_cache
+from dagster.utils.backcompat import experimental
 
 from .executable import ExecutablePipeline
 
@@ -210,8 +212,40 @@ class ReconstructableSchedule(namedtuple("_ReconstructableSchedule", "repository
 
 def reconstructable(target):
     """
-    Create a ReconstructablePipeline from a function that returns a PipelineDefinition
-    or a @pipeline decorated function.
+    Create a ReconstructablePipeline from a function that returns a PipelineDefinition, or a
+    function decorated with :py:func:`@pipeline <dagster.pipeline>`
+
+    When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
+    in different systems (like dagstermill), Dagster must know how to reconstruct the pipeline
+    on the other side of the process boundary.
+    
+    This function implements a very conservative strategy for reconstructing pipelines, so that
+    its behavior is easy to predict, but as a consequence it is not able to reconstruct certain
+    kinds of pipelines, such as those defined by lambdas, in nested scopes (e.g., dynamically
+    within a method call), or in interactive environments such as the Python REPL or Jupyter
+    notebooks.
+
+    If you need to reconstruct pipelines constructed in these ways, you should use
+    :py:func:`build_reconstructable_pipeline` instead, which allows you to specify your own
+    strategy for reconstructing a pipeline.
+
+    Examples:
+
+    .. code-block:: python
+
+        from dagster import PipelineDefinition, pipeline, recontructable
+
+        @pipeline
+        def foo_pipeline():
+            ...
+
+        reconstructable_foo_pipeline = reconstructable(foo_pipeline)
+
+
+        def make_bar_pipeline():
+            return PipelineDefinition(...)
+            
+        reconstructable_bar_pipeline = reconstructable(bar_pipeline)
     """
     from dagster.core.definitions import PipelineDefinition
 
@@ -224,7 +258,8 @@ def reconstructable(target):
     if seven.is_lambda(target):
         raise DagsterInvariantViolationError(
             "Reconstructable target can not be a lambda. Use a function or "
-            "decorated function defined at module scope instead."
+            "decorated function defined at module scope instead, or use "
+            "build_reconstructable_pipeline."
         )
 
     if seven.qualname_differs(target):
@@ -232,21 +267,122 @@ def reconstructable(target):
             'Reconstructable target "{target.__name__}" has a different '
             '__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead.".format(target=target)
+            "defined at module scope instead, or use build_reconstructable_pipeline.".format(
+                target=target
+            )
         )
 
     python_file = get_python_file_from_previous_stack_frame()
     if python_file.endswith("<stdin>"):
         raise DagsterInvariantViolationError(
-            "reconstructable() can not reconstruct pipelines from <stdin>, unable to target file {}. ".format(
-                python_file
-            )
+            "reconstructable() can not reconstruct pipelines from <stdin>, unable to "
+            "target file {}. Use a pipeline defined in a module or file instead, or "
+            "use build_reconstructable_pipeline.".format(python_file)
         )
     pointer = FileCodePointer(
         python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
     )
 
+    # ipython:
+    # Exception: Can not import module <ipython-input-3-70f55f9e97d2> from path /Users/max/Desktop/richard_brady_repro/<ipython-input-3-70f55f9e97d2>, unable to load spec.
+    # Exception: Can not import module  from path /private/var/folders/zc/zyv5jx615157j4mypwcx_kxr0000gn/T/b3edec1e-b4c5-4ea4-a4ae-24a01e566aba/, unable to load spec.
     return bootstrap_standalone_recon_pipeline(pointer)
+
+
+@experimental
+def build_reconstructable_pipeline(
+    reconstructor_module_name,
+    reconstructor_function_name,
+    reconstructable_args=None,
+    reconstructable_kwargs=None,
+):
+    """
+    Create a ReconstructablePipeline.
+
+    When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
+    in different systems (like dagstermill), Dagster must know how to reconstruct the pipeline
+    on the other side of the process boundary.
+    
+    This function allows you to use the strategy of your choice for reconstructing pipelines, so
+    that you can reconstruct certain kinds of pipelines that are not supported by
+    :py:func:`reconstructable`, such as those defined by lambdas, in nested scopes (e.g.,
+    dynamically within a method call), or in interactive environments such as the Python REPL or
+    Jupyter notebooks.
+
+    If you need to reconstruct pipelines constructed in these ways, use this function instead of
+    :py:func:`reconstructable`. 
+
+    Args:
+        reconstructor_module_name (str): The name of the module containing the function to use to
+            reconstruct the pipeline.
+        reconstructor_function_name (str): The name of the function to use to reconstruct the
+            pipeline.
+        reconstructable_args (Tuple): Args to the function to use to reconstruct the pipeline.
+            Values of the tuple must be JSON serializable.
+        reconstructable_kwargs (Dict[str, Any]): Kwargs to the function to use to reconstruct the
+            pipeline. Values of the dict must be JSON serializable.
+
+    Examples:
+
+    .. code-block:: python
+
+        # module: mymodule
+
+        from dagster import PipelineDefinition, pipeline, build_reconstructable_pipeline
+
+        class PipelineFactory(object):
+            def make_pipeline(*args, **kwargs):
+
+                @pipeline
+                def _pipeline(...):
+                    ...
+
+                return _pipeline
+       
+        def reconstruct_pipeline(*args):
+            factory = PipelineFactory()
+            return factory.make_pipeline(*args)
+
+        factory = PipelineFactory()
+
+        foo_pipeline_args = (...,...)
+
+        foo_pipeline_kwargs = {...:...}
+
+        foo_pipeline = factory.make_pipeline(*foo_pipeline_args, **foo_pipeline_kwargs)
+
+        reconstructable_foo_pipeline = build_reconstructable_pipeline(
+            'mymodule',
+            'reconstruct_pipeline',
+            foo_pipeline_args,
+            foo_pipeline_kwargs,
+        )
+    """
+    check.str_param(reconstructor_module_name, "reconstructor_module_name")
+    check.str_param(reconstructor_function_name, "reconstructor_function_name")
+
+    reconstructable_args = check.opt_tuple_param(reconstructable_args, "reconstructable_args")
+    reconstructable_kwargs = tuple(
+        (
+            (key, value)
+            for key, value in check.opt_dict_param(
+                reconstructable_kwargs, "reconstructable_kwargs", key_type=str
+            ).items()
+        )
+    )
+
+    reconstructor_pointer = ModuleCodePointer(
+        reconstructor_module_name, reconstructor_function_name
+    )
+
+    pointer = CustomPointer(reconstructor_pointer, reconstructable_args, reconstructable_kwargs)
+
+    pipeline_def = pipeline_def_from_pointer(pointer)
+
+    return ReconstructablePipeline(
+        repository=ReconstructableRepository(pointer),  # creates ephemeral repo
+        pipeline_name=pipeline_def.name,
+    )
 
 
 def bootstrap_standalone_recon_pipeline(pointer):
