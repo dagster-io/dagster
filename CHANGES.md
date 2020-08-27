@@ -21,7 +21,7 @@ opt_in:
 * Intermediate Storage and System Storage now default to the first provided storage definition when no configuration is provided. Previously, it would be necessary to provide a run config for storage whenever providing custom storage definitions, even if that storage required no run configuration. Now, if the first provided storage definition requires no run configuration, the system will default to using it.
 * Added a timezone picker to Dagit, and made all timestamps timezone-aware
 * Added solid_config to hook context which provides the access to the config schema variable of the corresponding solid.
-* Hooks can be directly set on PipelineDefinition or @pipeline, e.g.  @pipeline(hook_defs={hook_a}). It will apply the hooks on every single solid instance within the pipeline.
+* Hooks can be directly set on `PipelineDefinition` or `@pipeline`, e.g.  `@pipeline(hook_defs={hook_a})`. It will apply the hooks on every single solid instance within the pipeline.
 * Added Partitions tab for partitioned pipelines, with new backfill selector.
 
 ## 0.9.3
