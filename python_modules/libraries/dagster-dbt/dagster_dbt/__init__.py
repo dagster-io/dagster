@@ -1,6 +1,6 @@
 from dagster.core.utils import check_dagster_package_version
 
-from .resources import dbt_rpc_resource
+from .resources import dbt_rpc_resource, local_dbt_rpc_resource
 from .solids import (
     create_dbt_rpc_run_sql_solid,
     dbt_rpc_compile_sql,
@@ -38,4 +38,5 @@ __all__ = [
     "dbt_rpc_snapshot_freshness_and_wait",
     "dbt_rpc_test",
     "dbt_rpc_test_and_wait",
+    "local_dbt_rpc_resource",
 ]

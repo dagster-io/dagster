@@ -230,13 +230,14 @@ class DbtRpcClient(object):
 
 
 @resource(
-    description="A resource representing a dbt rpc client.",
+    description="A resource representing a dbt RPC client.",
     config_schema={
-        "hostname": Field(StringSource, is_required=False, default_value="0.0.0.0"),
+        "host": Field(StringSource),
         "port": Field(IntSource, is_required=False, default_value=8580),
     },
 )
 def dbt_rpc_resource(context) -> DbtRpcClient:
-    return DbtRpcClient(
-        host=context.resource_config["hostname"], port=context.resource_config["port"]
-    )
+    return DbtRpcClient(host=context.resource_config["host"], port=context.resource_config["port"])
+
+
+local_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580})

@@ -32,7 +32,7 @@ def test_dbt_rpc_snapshot(rsps):
         dbt_rpc_snapshot,
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
-        run_config={"resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}},},
+        run_config={"resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},},
     )
 
     assert result.success
@@ -54,7 +54,7 @@ def test_dbt_rpc_run(rsps):
         dbt_rpc_run,
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
-        run_config={"resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}},},
+        run_config={"resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},},
     )
 
     assert result.success
@@ -76,7 +76,7 @@ def test_dbt_rpc_test(rsps):
         dbt_rpc_test,
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
-        run_config={"resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}},},
+        run_config={"resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},},
     )
 
     assert result.success
@@ -99,7 +99,7 @@ def test_dbt_rpc_run_operation(rsps):
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
         run_config={
-            "resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}},
+            "resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},
             "solids": {"dbt_rpc_run_operation": {"config": {"macro": "my_test_macro"}}},
         },
     )
@@ -123,7 +123,7 @@ def test_dbt_rpc_snapshot_freshness(rsps):
         dbt_rpc_snapshot_freshness,
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
-        run_config={"resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}}},
+        run_config={"resources": {"dbt_rpc": {"config": {"host": host, "port": port}}}},
     )
 
     assert result.success
@@ -160,7 +160,7 @@ def test_dbt_rpc_run_and_wait(rsps, non_terminal_poll_result, terminal_poll_resu
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
         run_config={
-            "resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}},
+            "resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},
             "solids": {"dbt_rpc_run_and_wait": {"config": {"interval": 1}}},
         },
     )
@@ -199,7 +199,7 @@ def test_dbt_rpc_snapshot_and_wait(rsps, non_terminal_poll_result, terminal_poll
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
         run_config={
-            "resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}},
+            "resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},
             "solids": {"dbt_rpc_snapshot_and_wait": {"config": {"interval": 1}}},
         },
     )
@@ -238,7 +238,7 @@ def test_dbt_rpc_snapshot_freshness_and_wait(rsps, non_terminal_poll_result, ter
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
         run_config={
-            "resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}},
+            "resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},
             "solids": {"dbt_rpc_snapshot_freshness_and_wait": {"config": {"interval": 1}}},
         },
     )
@@ -277,7 +277,7 @@ def test_dbt_rpc_run_operation_and_wait(rsps, non_terminal_poll_result, terminal
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
         run_config={
-            "resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}},
+            "resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},
             "solids": {
                 "dbt_rpc_run_operation_and_wait": {"config": {"macro": "test_macro", "interval": 1}}
             },
@@ -318,7 +318,7 @@ def test_dbt_rpc_test_and_wait(rsps, non_terminal_poll_result, terminal_poll_res
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
         run_config={
-            "resources": {"dbt_rpc": {"config": {"hostname": host, "port": port}}},
+            "resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},
             "solids": {"dbt_rpc_test_and_wait": {"config": {"interval": 1}}},
         },
     )

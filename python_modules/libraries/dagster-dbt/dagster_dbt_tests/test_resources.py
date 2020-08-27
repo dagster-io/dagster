@@ -1,5 +1,8 @@
 import pytest
 import responses
+from dagster_dbt.resources import DbtRpcClient, dbt_rpc_resource, local_dbt_rpc_resource
+
+from dagster import ModeDefinition, execute_solid, solid
 
 
 def test_url(client):
@@ -69,3 +72,37 @@ def test_poll(client):
 
         resp = client.poll(request_token="f86926fa-6535-4891-8d24-2cfc65d2a347")
         assert resp.json() == expected
+
+
+def test_dbt_rpc_resource():
+    it = {}
+
+    @solid(required_resource_keys={"dbt_rpc"})
+    def a_solid(context):
+        assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
+        assert context.resources.dbt_rpc.host == "<default host>"
+        assert context.resources.dbt_rpc.port == 8580
+        it["ran"] = True
+
+    execute_solid(
+        a_solid,
+        ModeDefinition(resource_defs={"dbt_rpc": dbt_rpc_resource}),
+        None,
+        None,
+        {"resources": {"dbt_rpc": {"config": {"host": "<default host>"}}}},
+    )
+    assert it["ran"]
+
+
+def test_local_dbt_rpc_resource():
+    it = {}
+
+    @solid(required_resource_keys={"dbt_rpc"})
+    def a_solid(context):
+        assert isinstance(context.resources.dbt_rpc, DbtRpcClient)
+        assert context.resources.dbt_rpc.host == "0.0.0.0"
+        assert context.resources.dbt_rpc.port == 8580
+        it["ran"] = True
+
+    execute_solid(a_solid, ModeDefinition(resource_defs={"dbt_rpc": local_dbt_rpc_resource}))
+    assert it["ran"]

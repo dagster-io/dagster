@@ -2,7 +2,7 @@ import uuid
 from typing import Any, Dict, Tuple
 
 import pytest
-from dagster_dbt import DbtRpcPollResult, dbt_rpc_resource, dbt_rpc_run_and_wait, dbt_rpc_test
+from dagster_dbt import DbtRpcPollResult, dbt_rpc_run_and_wait, dbt_rpc_test, local_dbt_rpc_resource
 from dagster_dbt.resources import DbtRpcClient
 from dagster_dbt.solids import dbt_rpc_run
 from mock import MagicMock
@@ -21,7 +21,7 @@ from dagster import (
 
 
 def output_for_solid_executed_with_rpc_resource(
-    a_solid, rpc_resource=dbt_rpc_resource
+    a_solid, rpc_resource=local_dbt_rpc_resource
 ) -> Tuple[SolidExecutionResult, DbtRpcPollResult]:
     mode_def = ModeDefinition(resource_defs={"dbt_rpc": rpc_resource})  # use config defaults
     solid_result = execute_solid(a_solid, mode_def)
