@@ -280,3 +280,13 @@ def xplat_shlex_split(s):
         return shlex.split(s, posix=False)
 
     return shlex.split(s)
+
+
+def is_main_thread():
+    if sys.version_info.major >= 3:
+        return threading.current_thread() is threading.main_thread()
+    else:
+        # allow protected member access
+        return isinstance(
+            threading.current_thread(), threading._MainThread  # pylint: disable=W0212
+        )

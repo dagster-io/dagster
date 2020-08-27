@@ -29,6 +29,7 @@ from dagster.core.execution.plan.objects import (
 )
 from dagster.core.storage.object_store import ObjectStoreOperation
 from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.utils import delay_interrupts
 from dagster.utils.timing import time_execution_scope
 
 
@@ -283,9 +284,13 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
                     )
                 )
 
-    yield DagsterEvent.step_success_event(
-        step_context, StepSuccessData(duration_ms=timer_result.millis)
-    )
+    # We only want to log exactly one step success event or failure event if possible,
+    # so wait to handle any interrupts (that normally log a failure event) until the success
+    # event has finished
+    with delay_interrupts():
+        yield DagsterEvent.step_success_event(
+            step_context, StepSuccessData(duration_ms=timer_result.millis)
+        )
 
 
 def _create_step_events_for_output(step_context, output):

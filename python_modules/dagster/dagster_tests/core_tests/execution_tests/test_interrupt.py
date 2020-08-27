@@ -1,4 +1,5 @@
 import os
+import signal
 import time
 from threading import Thread
 
@@ -18,7 +19,7 @@ from dagster import (
     solid,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.utils import safe_tempfile_path
+from dagster.utils import delay_interrupts, safe_tempfile_path
 
 
 def _send_kbd_int(temp_files):
@@ -170,3 +171,48 @@ def test_interrupt_resource_teardown():
         assert DagsterEventType.STEP_FAILURE in results
         assert DagsterEventType.PIPELINE_FAILURE in results
         assert "A" in cleaned
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+def test_delay_interrupt():
+    outer_interrupt = False
+    inner_interrupt = False
+
+    try:
+        with delay_interrupts():
+            try:
+                os.kill(os.getpid(), signal.SIGINT)
+                time.sleep(1)
+            except KeyboardInterrupt:
+                inner_interrupt = True
+    except KeyboardInterrupt:
+        outer_interrupt = True
+
+    assert outer_interrupt
+    assert not inner_interrupt
+
+    # Verify standard interrupt handler is restored
+    standard_interrupt = False
+
+    try:
+        os.kill(os.getpid(), signal.SIGINT)
+        time.sleep(1)
+    except KeyboardInterrupt:
+        standard_interrupt = True
+
+    assert standard_interrupt
+
+    outer_interrupt = False
+    inner_interrupt = False
+    # No exception if no signal thrown
+    try:
+        with delay_interrupts():
+            try:
+                time.sleep(1)
+            except KeyboardInterrupt:
+                inner_interrupt = True
+    except KeyboardInterrupt:
+        outer_interrupt = True
+
+    assert not outer_interrupt
+    assert not inner_interrupt

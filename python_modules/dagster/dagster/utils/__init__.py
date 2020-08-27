@@ -19,7 +19,7 @@ import six
 import yaml
 from six.moves import configparser
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS, TemporaryDirectory, multiprocessing, thread
 from dagster.seven.abc import Mapping
@@ -325,6 +325,31 @@ def start_termination_thread(termination_event):
     )
     int_thread.daemon = True
     int_thread.start()
+
+
+# Wraps code that we don't want a SIGINT to interrupt (but throw a KeyboardInterrupt if a
+# SIGINT was received while it ran)
+@contextlib.contextmanager
+def delay_interrupts():
+    if not seven.is_main_thread():
+        yield
+    else:
+        original_signal_handler = signal.getsignal(signal.SIGINT)
+
+        received_interrupt = {"received": False}
+
+        def _new_signal_handler(signo, _):
+            check.invariant(signo == signal.SIGINT)
+            received_interrupt["received"] = True
+
+        signal.signal(signal.SIGINT, _new_signal_handler)
+
+        try:
+            yield
+        finally:
+            signal.signal(signal.SIGINT, original_signal_handler)
+            if received_interrupt["received"]:
+                raise KeyboardInterrupt
 
 
 def datetime_as_float(dt):

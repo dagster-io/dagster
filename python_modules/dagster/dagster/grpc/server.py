@@ -264,7 +264,8 @@ class DagsterApiServer(DagsterApiServicer):
             for run_id in runs_to_clear:
                 del self._executions[run_id]
                 del self._termination_events[run_id]
-                del self._termination_times[run_id]
+                if run_id in self._termination_times:
+                    del self._termination_times[run_id]
 
     def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(

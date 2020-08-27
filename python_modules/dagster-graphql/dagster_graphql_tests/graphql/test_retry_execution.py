@@ -1,6 +1,5 @@
 from time import sleep
 
-import pytest
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -598,7 +597,6 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
         assert reexecution_run.is_failure
 
-    @pytest.mark.skip
     def test_retry_early_terminate(self, graphql_context):
         instance = graphql_context.instance
         selector = infer_pipeline_selector(
@@ -634,6 +632,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
         # The first step should succeed, the second should fail or not start,
         # and the following steps should not appear in records
         assert step_did_succeed_in_records(records, "return_one.compute")
+        assert not step_did_fail_in_records(records, "return_one.compute")
         assert any(
             [
                 step_did_fail_in_records(records, "get_input_one.compute"),

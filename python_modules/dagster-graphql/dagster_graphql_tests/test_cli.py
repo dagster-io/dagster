@@ -17,15 +17,16 @@ from dagster import (
     seven,
     solid,
 )
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.utils import file_relative_path
 
 
 @contextmanager
 def dagster_cli_runner():
     with seven.TemporaryDirectory() as dagster_home_temp:
-        yield CliRunner(env={"DAGSTER_HOME": dagster_home_temp})
+        with instance_for_test_tempdir(dagster_home_temp):
+            yield CliRunner(env={"DAGSTER_HOME": dagster_home_temp})
 
 
 @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
@@ -317,30 +318,29 @@ def test_logs_in_start_execution_predefined():
 
     workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+        with instance_for_test_tempdir(temp_dir) as instance:
+            runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
+            result = runner.invoke(
+                ui, ["-w", workspace_path, "-v", variables, "-p", "launchPipelineExecution"]
+            )
+            assert result.exit_code == 0
+            result_data = json.loads(result.output.strip("\n").split("\n")[-1])
+            assert (
+                result_data["data"]["launchPipelineExecution"]["__typename"]
+                == "LaunchPipelineRunSuccess"
+            )
+            run_id = result_data["data"]["launchPipelineExecution"]["run"]["runId"]
 
-        runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
-        result = runner.invoke(
-            ui, ["-w", workspace_path, "-v", variables, "-p", "launchPipelineExecution"]
-        )
-        assert result.exit_code == 0
-        result_data = json.loads(result.output.strip("\n").split("\n")[-1])
-        assert (
-            result_data["data"]["launchPipelineExecution"]["__typename"]
-            == "LaunchPipelineRunSuccess"
-        )
-        run_id = result_data["data"]["launchPipelineExecution"]["run"]["runId"]
+            # allow FS events to flush
+            retries = 5
+            while retries != 0 and not _is_done(instance, run_id):
+                time.sleep(0.333)
+                retries -= 1
 
-        # allow FS events to flush
-        retries = 5
-        while retries != 0 and not _is_done(instance, run_id):
-            time.sleep(0.333)
-            retries -= 1
+            # assert that the watching run storage captured the run correctly from the other process
+            run = instance.get_run_by_id(run_id)
 
-        # assert that the watching run storage captured the run correctly from the other process
-        run = instance.get_run_by_id(run_id)
-
-        assert run.status == PipelineRunStatus.SUCCESS
+            assert run.status == PipelineRunStatus.SUCCESS
 
 
 def _is_done(instance, run_id):
