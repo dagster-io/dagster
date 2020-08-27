@@ -9,7 +9,7 @@ import { RunTableRunFragment } from "./types/RunTableRunFragment";
 import { RunFragment } from "./types/RunFragment";
 import { RunActionMenuFragment } from "./types/RunActionMenuFragment";
 import { RunTimeFragment } from "./types/RunTimeFragment";
-import { unixTimestampToString } from "../Util";
+import { Timestamp, timestampToString, TimezoneContext } from "../TimeComponents";
 import PythonErrorInfo from "../PythonErrorInfo";
 
 import { Popover, Icon } from "@blueprintjs/core";
@@ -294,6 +294,8 @@ interface RunTimeProps {
   size?: "standard" | "minimal";
 }
 export const RunTime: React.FunctionComponent<RunTimeProps> = ({ run, size }) => {
+  const [timezone] = React.useContext(TimezoneContext);
+
   if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
@@ -304,19 +306,17 @@ export const RunTime: React.FunctionComponent<RunTimeProps> = ({ run, size }) =>
     );
   }
 
-  let format = "MMM DD, H:mm A";
-  if (
+  const useSameDayFormat =
     size === "minimal" &&
-    unixTimestampToString(run.stats.startTime, "MMM DD") ===
-      unixTimestampToString(Date.now() / 1000, "MMM DD")
-  ) {
-    format = "H:mm A";
-  }
+    timezone !== "UTC" &&
+    run.stats.startTime &&
+    timestampToString({ unix: run.stats.startTime, format: "MMM DD" }, timezone) ===
+      timestampToString({ ms: Date.now(), format: "MMM DD" }, timezone);
 
   return (
     <div>
       {run.stats.startTime ? (
-        unixTimestampToString(run.stats.startTime, format)
+        <Timestamp unix={run.stats.startTime} format={useSameDayFormat ? "h:mm A" : undefined} />
       ) : run.status === "FAILURE" ? (
         <>Failed to start</>
       ) : (

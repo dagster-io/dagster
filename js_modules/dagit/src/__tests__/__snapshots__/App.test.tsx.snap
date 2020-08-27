@@ -165,6 +165,7 @@ exports[`renders execution 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -238,6 +239,7 @@ exports[`renders execution 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -253,6 +255,7 @@ exports[`renders execution 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -345,7 +348,7 @@ exports[`renders execution 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -457,6 +460,61 @@ exports[`renders execution 1`] = `
           />
         </div>
       </div>
+    </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
     </div>
   </div>
   <div
@@ -894,6 +952,7 @@ exports[`renders pipeline page 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -967,6 +1026,7 @@ exports[`renders pipeline page 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -982,6 +1042,7 @@ exports[`renders pipeline page 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -1074,7 +1135,7 @@ exports[`renders pipeline page 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -1186,6 +1247,61 @@ exports[`renders pipeline page 1`] = `
           />
         </div>
       </div>
+    </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
     </div>
   </div>
   <div
@@ -5573,6 +5689,7 @@ exports[`renders pipeline solid page 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -5646,6 +5763,7 @@ exports[`renders pipeline solid page 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -5661,6 +5779,7 @@ exports[`renders pipeline solid page 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -5753,7 +5872,7 @@ exports[`renders pipeline solid page 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -5865,6 +5984,61 @@ exports[`renders pipeline solid page 1`] = `
           />
         </div>
       </div>
+    </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
     </div>
   </div>
   <div
@@ -10252,6 +10426,7 @@ exports[`renders solids explorer 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -10325,6 +10500,7 @@ exports[`renders solids explorer 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -10340,6 +10516,7 @@ exports[`renders solids explorer 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -10432,7 +10609,7 @@ exports[`renders solids explorer 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
@@ -10544,6 +10721,61 @@ exports[`renders solids explorer 1`] = `
           />
         </div>
       </div>
+    </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
     </div>
   </div>
   <div
@@ -12057,6 +12289,7 @@ exports[`renders type page 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -12130,6 +12363,7 @@ exports[`renders type page 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -12145,6 +12379,7 @@ exports[`renders type page 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -12237,7 +12472,7 @@ exports[`renders type page 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -12349,6 +12584,61 @@ exports[`renders type page 1`] = `
           />
         </div>
       </div>
+    </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
     </div>
   </div>
   <div
@@ -16736,6 +17026,7 @@ exports[`renders type page 2`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -16809,6 +17100,7 @@ exports[`renders type page 2`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -16824,6 +17116,7 @@ exports[`renders type page 2`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -16916,7 +17209,7 @@ exports[`renders type page 2`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -17028,6 +17321,61 @@ exports[`renders type page 2`] = `
           />
         </div>
       </div>
+    </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
     </div>
   </div>
   <div
@@ -21415,6 +21763,7 @@ exports[`renders without error 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -21488,6 +21837,7 @@ exports[`renders without error 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -21503,6 +21853,7 @@ exports[`renders without error 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -21595,7 +21946,7 @@ exports[`renders without error 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -21707,6 +22058,61 @@ exports[`renders without error 1`] = `
           />
         </div>
       </div>
+    </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
     </div>
   </div>
   <div

@@ -12,7 +12,7 @@ import { __RouterContext as RouterContext } from "react-router";
 import * as querystring from "query-string";
 import { PartitionView } from "../partitions/PartitionView";
 import { useScheduleSelector } from "../DagsterRepositoryContext";
-import { SCHEDULE_DEFINITION_FRAGMENT } from "./ScheduleUtils";
+import { SCHEDULE_DEFINITION_FRAGMENT, SchedulerTimezoneNote } from "./ScheduleUtils";
 
 export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
   scheduleName: string;
@@ -43,7 +43,11 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
           const partitionSetName = scheduleDefinitionOrError.partitionSet?.name;
           return (
             <ScrollContainer>
-              <Header>Schedules</Header>
+              <div style={{ display: "flex" }}>
+                <Header>Schedules</Header>
+                <div style={{ flex: 1 }} />
+                <SchedulerTimezoneNote />
+              </div>
               <ScheduleRowHeader schedule={scheduleDefinitionOrError} />
               <ScheduleRow schedule={scheduleDefinitionOrError} />
               {partitionSetName ? (

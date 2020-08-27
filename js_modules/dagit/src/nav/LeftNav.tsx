@@ -4,6 +4,7 @@ import { useRouteMatch, useHistory } from "react-router";
 import styled from "styled-components/macro";
 import { Colors, Icon } from "@blueprintjs/core";
 
+import { TimezonePicker } from "../TimeComponents";
 import { InstanceDetailsLink } from "./InstanceDetailsLink";
 import { WebsocketStatus } from "../WebsocketStatus";
 import { ShortcutHandler } from "../ShortcutHandler";
@@ -89,12 +90,13 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, 
           display: "flex",
           flex: 1,
           overflow: "none",
-          flexDirection: "column"
+          flexDirection: "column",
+          minHeight: 0
         }}
       >
         <RepositoryPicker options={options} repo={repo} setRepo={setRepo} />
         {repo && (
-          <div style={{ display: "flex", flex: 1, flexDirection: "column" }}>
+          <div style={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
             <ItemHeader>Pipelines & Solids:</ItemHeader>
             <RepositoryContentList {...match?.params} repo={repo} />
             <ItemHeader>Schedules:</ItemHeader>
@@ -102,6 +104,7 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, 
           </div>
         )}
       </div>
+      <TimezonePicker />
     </LeftNavContainer>
   );
 };

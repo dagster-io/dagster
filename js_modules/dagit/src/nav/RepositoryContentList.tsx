@@ -101,6 +101,7 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
     <div
       style={{
         flex: 1,
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
         borderTop: `1px solid ${Colors.DARK_GRAY4}`
@@ -184,7 +185,6 @@ const Header = styled.div`
 const Items = styled.div`
   flex: 1;
   overflow: auto;
-  max-height: calc((100vh - 405px) / 2);
   &::-webkit-scrollbar {
     width: 11px;
   }

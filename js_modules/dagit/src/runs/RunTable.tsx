@@ -103,7 +103,7 @@ export class RunTable extends React.Component<RunTableProps, RunTableState> {
           </LegendColumn>
           <LegendColumn style={{ flex: 5 }}></LegendColumn>
           <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
-          <LegendColumn style={{ maxWidth: 140 }}>Timing</LegendColumn>
+          <LegendColumn style={{ maxWidth: 150 }}>Timing</LegendColumn>
           <LegendColumn style={{ maxWidth: 50 }}></LegendColumn>
         </Legend>
         {runs.map(run => (
@@ -167,7 +167,7 @@ const RunRow: React.FunctionComponent<{
           <div>{`Mode: ${run.mode}`}</div>
         </div>
       </RowColumn>
-      <RowColumn style={{ maxWidth: 140, borderRight: 0 }}>
+      <RowColumn style={{ maxWidth: 150, borderRight: 0 }}>
         <RunTime run={run} />
         <RunElapsed run={run} />
       </RowColumn>

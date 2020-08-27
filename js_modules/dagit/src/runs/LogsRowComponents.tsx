@@ -4,6 +4,7 @@ import { Colors } from "@blueprintjs/core";
 import { LogLevel } from "./LogsProvider";
 import { ColumnWidthsContext } from "./LogsScrollingTableHeader";
 import { formatStepKey } from "../Util";
+import { Timestamp } from "../TimeComponents";
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
@@ -116,12 +117,7 @@ export const TimestampColumn = (props: { time: string | false }) => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
     <TimestampColumnContainer style={{ width: widths.timestamp }}>
-      {props.time &&
-        new Date(Number(props.time))
-          .toISOString()
-          .replace("Z", "")
-          .split("T")
-          .pop()}
+      {props.time && <Timestamp ms={Number(props.time)} format="HH:mm:ss.SSS" />}
     </TimestampColumnContainer>
   );
 };

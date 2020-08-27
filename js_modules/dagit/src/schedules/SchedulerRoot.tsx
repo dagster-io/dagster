@@ -10,7 +10,7 @@ import {
 } from "./types/SchedulerRootQuery";
 import { ScheduleStateRow } from "./ScheduleRow";
 import PythonErrorInfo from "../PythonErrorInfo";
-import { SCHEDULE_STATE_FRAGMENT } from "./ScheduleUtils";
+import { SCHEDULE_STATE_FRAGMENT, SchedulerTimezoneNote } from "./ScheduleUtils";
 import { useRepositoryOptions } from "../DagsterRepositoryContext";
 import { Callout, Intent, Code, Button } from "@blueprintjs/core";
 
@@ -104,8 +104,11 @@ const ScheduleStates: React.FunctionComponent<{
 
   return (
     <div>
-      <h2>All Schedules:</h2>
-
+      <div style={{ display: "flex" }}>
+        <h2>All Schedules:</h2>
+        <div style={{ flex: 1 }} />
+        <SchedulerTimezoneNote />
+      </div>
       {loadableSchedules.map(scheduleState => (
         <ScheduleStateRow
           scheduleState={scheduleState}

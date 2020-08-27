@@ -4,6 +4,7 @@ import gql from "graphql-tag";
 import { Colors } from "@blueprintjs/core";
 import { useQuery } from "react-apollo";
 import Loading from "../Loading";
+import { Timestamp } from "../TimeComponents";
 import { AssetsRootQuery_assetsOrError_AssetConnection_nodes_key } from "./types/AssetsRootQuery";
 import {
   AssetQuery_assetOrError_Asset_graphMaterializations,
@@ -107,7 +108,7 @@ const AssetLastMaterialization = ({
             ) : null}
           </RowColumn>
           <RowColumn style={{ maxWidth: 300 }}>
-            {new Date(parseInt(timestamp)).toLocaleString()}
+            <Timestamp ms={parseInt(timestamp)} />
           </RowColumn>
         </RowContainer>
       </div>

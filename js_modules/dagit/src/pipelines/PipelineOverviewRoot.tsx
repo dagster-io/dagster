@@ -17,7 +17,7 @@ import {
 import { RowColumn, RowContainer } from "../ListComponents";
 import { titleForRun, RunTime, RunsQueryRefetchContext } from "../runs/RunUtils";
 import { RunStatus, RunStatusWithStats } from "../runs/RunStatusDots";
-import { unixTimestampToString } from "../Util";
+import { Timestamp } from "../TimeComponents";
 import { RunElapsed, RunComponentFragments } from "../runs/RunUtils";
 import { RunActionsMenu } from "../runs/RunActionsMenu";
 import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
@@ -172,7 +172,7 @@ const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
         <Link to={`/schedules/${schedule.name}`}>{schedule.name}</Link>
         {lastRun && lastRun.stats.__typename === "PipelineRunStatsSnapshot" ? (
           <div style={{ color: Colors.GRAY3, fontSize: 12, marginTop: 2 }}>
-            Last Run: {unixTimestampToString(lastRun.stats.endTime)}
+            Last Run: <Timestamp unix={lastRun.stats.endTime || 0} />
           </div>
         ) : null}
         <div style={{ marginTop: 5 }}>

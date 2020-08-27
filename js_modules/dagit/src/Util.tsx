@@ -1,17 +1,7 @@
 import LRU from "lru-cache";
-import moment from "moment";
 import { getJSONForKey } from "./LocalStorage";
 
 export const DEFAULT_RESULT_NAME = "result";
-
-// This helper is here so that we can swap out Moment in the future as needed and
-// encourage use of the same default format string across the app.
-export function unixTimestampToString(unix: number | null, format = "MMM DD, H:mm A") {
-  if (!unix) {
-    return null;
-  }
-  return moment(unix * 1000).format(format);
-}
 
 export function debounce<T extends (...args: any[]) => any>(func: T, wait = 100): T {
   let timeout: any | null = null;

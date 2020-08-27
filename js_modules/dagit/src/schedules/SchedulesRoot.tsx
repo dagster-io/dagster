@@ -28,7 +28,7 @@ import { RepositoryInformation } from "../RepositoryInformation";
 import { useRepositorySelector } from "../DagsterRepositoryContext";
 import { ReconcileButton } from "./ReconcileButton";
 import { SchedulerInfo } from "./SchedulerInfo";
-import { SCHEDULES_ROOT_QUERY } from "./ScheduleUtils";
+import { SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote } from "./ScheduleUtils";
 import { IconNames } from "@blueprintjs/icons";
 
 const GetStaleReconcileSection: React.FunctionComponent<{
@@ -165,8 +165,12 @@ const ScheduleTable: React.FunctionComponent<{
   }
 
   return (
-    <div style={{ marginTop: 30 }}>
-      <Header>{`Schedules`}</Header>
+    <div>
+      <div style={{ display: "flex" }}>
+        <Header>Schedules</Header>
+        <div style={{ flex: 1 }} />
+        <SchedulerTimezoneNote />
+      </div>
       <div>
         {`${props.schedules.length} loaded from `}
         <Tooltip

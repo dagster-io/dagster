@@ -29,6 +29,7 @@ import {
   useCurrentRepositoryState
 } from "./DagsterRepositoryContext";
 import { CustomTooltipProvider } from "./CustomTooltipProvider";
+import { TimezoneProvider } from "./TimeComponents";
 import { APP_PATH_PREFIX } from "./DomUtils";
 import { CustomConfirmationProvider } from "./CustomConfirmationProvider";
 
@@ -95,24 +96,26 @@ export const App: React.FunctionComponent = () => {
   return (
     <div style={{ display: "flex", height: "100%" }}>
       <BrowserRouter basename={APP_PATH_PREFIX}>
-        <LeftNav options={options} repo={repo} setRepo={setRepo} />
-        {error ? (
-          <PythonErrorInfo
-            contextMsg={`${error.__typename} encountered when loading pipelines:`}
-            error={error}
-            centered={true}
-          />
-        ) : repo ? (
-          <CustomConfirmationProvider>
-            <DagsterRepositoryContext.Provider value={repo}>
-              <AppRoutes />
-              <CustomTooltipProvider />
-              <CustomAlertProvider />
-            </DagsterRepositoryContext.Provider>
-          </CustomConfirmationProvider>
-        ) : (
-          <NonIdealState icon={<Spinner size={24} />} />
-        )}
+        <TimezoneProvider>
+          <LeftNav options={options} repo={repo} setRepo={setRepo} />
+          {error ? (
+            <PythonErrorInfo
+              contextMsg={`${error.__typename} encountered when loading pipelines:`}
+              error={error}
+              centered={true}
+            />
+          ) : repo ? (
+            <CustomConfirmationProvider>
+              <DagsterRepositoryContext.Provider value={repo}>
+                <AppRoutes />
+                <CustomTooltipProvider />
+                <CustomAlertProvider />
+              </DagsterRepositoryContext.Provider>
+            </CustomConfirmationProvider>
+          ) : (
+            <NonIdealState icon={<Spinner size={24} />} />
+          )}
+        </TimezoneProvider>
       </BrowserRouter>
     </div>
   );

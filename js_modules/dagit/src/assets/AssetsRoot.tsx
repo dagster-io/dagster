@@ -10,6 +10,7 @@ import { AssetRoot } from "./AssetRoot";
 import { Header, Legend, LegendColumn, RowContainer, RowColumn } from "../ListComponents";
 import { useHistory } from "react-router";
 import { Icon, InputGroup, NonIdealState, Popover, Menu, MenuItem } from "@blueprintjs/core";
+import { Timestamp } from "../TimeComponents";
 
 type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
 
@@ -225,9 +226,7 @@ const AssetSearch = ({ assets }: { assets: Asset[] }) => {
 
 const timestampForAsset = (asset: Asset) => {
   return asset.assetMaterializations.length
-    ? new Date(
-        parseInt(asset.assetMaterializations[0].materializationEvent.timestamp, 10)
-      ).toLocaleString()
+    ? parseInt(asset.assetMaterializations[0].materializationEvent.timestamp)
     : null;
 };
 
@@ -268,7 +267,7 @@ const AssetsTable = ({ assets, currentPath }: { assets: Asset[]; currentPath: st
         </Legend>
         {pathKeys.map((pathKey: string, idx: number) => {
           const asset = pathMap[pathKey];
-          const timestamp = timestampForAsset(asset) || "-";
+          const timestamp = timestampForAsset(asset);
           const linkUrl = `/assets/${
             currentPath.length ? currentPath.join("/") + `/${pathKey}` : pathKey
           }`;
@@ -277,7 +276,7 @@ const AssetsTable = ({ assets, currentPath }: { assets: Asset[]; currentPath: st
               <RowColumn>
                 <Link to={linkUrl}>{pathKey}</Link>
               </RowColumn>
-              <RowColumn>{timestamp}</RowColumn>
+              <RowColumn>{timestamp ? <Timestamp ms={timestamp} /> : "-"}</RowColumn>
             </RowContainer>
           );
         })}

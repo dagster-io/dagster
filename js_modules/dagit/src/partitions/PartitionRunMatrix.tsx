@@ -1,5 +1,4 @@
 import * as React from "react";
-import moment from "moment";
 import { uniq } from "lodash";
 import { Colors, Checkbox, MultiSlider, Intent } from "@blueprintjs/core";
 import styled from "styled-components/macro";
@@ -16,6 +15,7 @@ import { useRepositorySelector } from "../DagsterRepositoryContext";
 import { buildLayout } from "../gaant/GaantChartLayout";
 import { GaantChartMode } from "../gaant/GaantChart";
 import { formatStepKey } from "../Util";
+import { Timestamp } from "../TimeComponents";
 import { StepEventStatus } from "../types/globalTypes";
 import { GaantChartLayout } from "../gaant/Constants";
 import { GraphQueryInput } from "../GraphQueryInput";
@@ -576,7 +576,7 @@ const SliceSlider: React.FunctionComponent<{
         stepSize={0.01}
         labelRenderer={(value: number) => (
           <span style={{ whiteSpace: "nowrap" }}>
-            {`Run Start > ${moment.unix(delta * value + minUnix).format("YYYY-MM-DD HH:mm")}`}
+            Run Start &gt; <Timestamp unix={delta * value + minUnix} format="YYYY-MM-DD HH:mm" />
           </span>
         )}
         onChange={(values: number[]) => {
