@@ -388,10 +388,6 @@ Making New Types
 
 .. autofunction:: output_materialization_config
 
-.. autofunction:: input_selector_schema
-
-.. autofunction:: output_selector_schema
-
 .. autofunction:: usable_as_dagster_type
 
 .. autofunction:: make_python_type_usable_as_dagster_type
