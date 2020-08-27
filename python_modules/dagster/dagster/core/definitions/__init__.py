@@ -58,7 +58,7 @@ from .output import OutputDefinition, OutputMapping
 from .partition import Partition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .preset import PresetDefinition
-from .reconstructable import ReconstructablePipeline, reconstructable
+from .reconstructable import ReconstructablePipeline, custom_reconstructable, reconstructable
 from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, resource
 from .run_config_schema import RunConfigSchema, create_environment_type, create_run_config_schema
