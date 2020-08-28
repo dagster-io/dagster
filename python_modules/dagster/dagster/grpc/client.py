@@ -398,7 +398,10 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
     def cleanup_server(self):
         if self._server_process:
             if self._server_process.poll() is None:
-                self.shutdown_server()
+                try:
+                    self.shutdown_server()
+                except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+                    pass
             self._server_process = None
 
     def __enter__(self):
