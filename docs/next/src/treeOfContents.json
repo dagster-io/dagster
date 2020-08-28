@@ -97,7 +97,18 @@
       },
       {
         "name": "Configuration",
-        "path": "/overview/configuration/"
+        "path": "/overview/configuration/run-config",
+        "childPath": true,
+        "children": [
+          {
+            "name": "Configuration",
+            "path": "/overview/configuration/run-config"
+          },
+          {
+            "name": "Configured API",
+            "path": "/overview/configuration/configured"
+          }
+        ]
       },
       {
         "name": "Modes & Resources",

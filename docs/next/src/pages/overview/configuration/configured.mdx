@@ -2,47 +2,12 @@ import PyObject from 'components/PyObject';
 import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags
-  title="Configuration | Dagster"
+  title="Configured API | Dagster"
   description="Several dimensions of pipeline execution can be determined at execution time through configuration.
   Dagster call this set of chosen values run config."
 />
 
-# Configuration
-
-## Run Config
-
-Several dimensions of pipeline execution can be determined at execution time through configuration.
-We call this set of chosen values **run config**. The run config is passed as a dictionary in the python api
-or as a yaml document when using `dagit` or the CLI. The following top level keys in the run config allow you to
-configure different aspects:
-
-- **execution**: Determine and configure the <PyObject module="dagster" object="Executor" /> to be used to control
-  execution of the pipeline.
-
-- **storage**: Determine and configure the <PyObject module="dagster" object="SystemStorageDefinition" /> to be
-  used to control how data is persisted as it is handed off from solid to solid.
-
-- **loggers** : Determine and configure the <PyObject module="dagster" object="LoggerDefinition" /> to be
-  used when logging.
-
-- **solids** : Configure solids that belong to the pipeline. In addition to providing values for solid specific configuration,
-  inputs may also be configured here, when dependencies on upstream solids outputs have not been set in the pipeline.
-
-- **resources** : Configure resources that belong to the pipeline that have defined configuration schema.
-
-## Configuration Schema
-
-The Dagster library includes a system for defining the schema that configuration values must abide by.
-The most common objects to specify <PyObject module="dagster" object="ConfigSchema" /> for
-are <PyObject module="dagster" object="SolidDefinition" /> and <PyObject module="dagster" object="ResourceDefinition" />.
-
-The following example shows how **config_schema** can be used on a solid to control its behavior:
-
-```python literalinclude
-file:/docs_snippets/docs_snippets/overview/configuration/example.py
-```
-
-## Configured
+# Configured API
 
 In many cases, the option to configure an entity at runtime is more distracting than helpful, and
 it's preferable to supply the entity's configuration at definition time.
