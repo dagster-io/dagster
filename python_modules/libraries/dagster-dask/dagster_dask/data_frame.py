@@ -12,11 +12,9 @@ from dagster import (
     EnumValue,
     EventMetadataEntry,
     Field,
-    Float,
     Int,
     Permissive,
     Selector,
-    Shape,
     String,
     TypeCheck,
     check,
@@ -224,7 +222,7 @@ def _dataframe_loader_config():
         for read_from, read_opts in DataFrameReadTypes.items()
     }
 
-    return Shape({
+    return Selector({
         "read": Field(
             Selector(read_fields),
             is_required=False,
@@ -283,7 +281,7 @@ def _dataframe_materializer_config():
         for write_to, to_opts in DataFrameToTypes.items()
     }
 
-    return Shape({
+    return Selector({
         "to": Field(
             Selector(to_fields),
             is_required=False,
