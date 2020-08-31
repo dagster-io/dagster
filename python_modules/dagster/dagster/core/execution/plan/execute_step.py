@@ -27,6 +27,7 @@ from dagster.core.execution.plan.objects import (
     StepSuccessData,
     TypeCheckData,
 )
+from dagster.core.execution.plan.step_version import compute_version_for_step_output
 from dagster.core.storage.object_store import ObjectStoreOperation
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.utils import delay_interrupts
@@ -167,7 +168,7 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
             )
 
 
-def _create_step_output_event(step_context, output, type_check, success):
+def _create_step_output_event(step_context, output, type_check, success, version):
     return DagsterEvent.step_output_event(
         step_context=step_context,
         step_output_data=StepOutputData(
@@ -180,6 +181,8 @@ def _create_step_output_event(step_context, output, type_check, success):
                 description=type_check.description if type_check else None,
                 metadata_entries=type_check.metadata_entries if type_check else [],
             ),
+            address=output.address,
+            version=version,
         ),
     )
 
@@ -189,6 +192,7 @@ def _type_checked_step_output_event_sequence(step_context, output):
     check.inst_param(output, "output", Output)
 
     step_output = step_context.step.step_output_named(output.output_name)
+    version = compute_version_for_step_output(step_context, output)
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
@@ -210,7 +214,11 @@ def _type_checked_step_output_event_sequence(step_context, output):
         )
 
         yield _create_step_output_event(
-            step_context, output, type_check=type_check, success=type_check.success
+            step_context,
+            output,
+            type_check=type_check,
+            success=type_check.success,
+            version=version,
         )
 
         if not type_check.success:

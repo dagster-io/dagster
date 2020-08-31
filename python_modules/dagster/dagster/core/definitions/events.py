@@ -7,6 +7,7 @@ from enum import Enum
 from dagster import check
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import Persistable, whitelist_for_persistence
+from dagster.utils.backcompat import experimental_arg_warning
 
 from .utils import DEFAULT_OUTPUT
 
@@ -323,7 +324,7 @@ EntryDataUnion = (
 )
 
 
-class Output(namedtuple("_Output", "value output_name")):
+class Output(namedtuple("_Output", "value output_name address")):
     """Event corresponding to one of a solid's outputs.
 
     Solid compute functions must explicitly yield events of this type when they have more than
@@ -338,15 +339,25 @@ class Output(namedtuple("_Output", "value output_name")):
         value (Any): The value returned by the compute function.
         output_name (Optional[str]): Name of the corresponding output definition. (default:
             "result")
+        address (str): (Experimental) A string that can be provided to a storage system to
+            store/retrieve the outputted value.
     """
 
-    def __new__(cls, value, output_name=DEFAULT_OUTPUT):
-        return super(Output, cls).__new__(cls, value, check.str_param(output_name, "output_name"))
+    def __new__(cls, value, output_name=DEFAULT_OUTPUT, address=None):
+        if address:
+            experimental_arg_warning("address", "Output.__new__")
+
+        return super(Output, cls).__new__(
+            cls,
+            value,
+            check.str_param(output_name, "output_name"),
+            check.opt_str_param(address, "address"),
+        )
 
 
 @whitelist_for_persistence
 class AssetMaterialization(
-    namedtuple("_AssetMaterialization", "asset_key description metadata_entries"), Persistable
+    namedtuple("_AssetMaterialization", "asset_key description metadata_entries"), Persistable,
 ):
     """Event indicating that a solid has materialized an asset.
 
