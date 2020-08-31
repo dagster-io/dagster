@@ -78,6 +78,12 @@ interface DisplayOptions {
   colorizeByAge: boolean;
 }
 
+interface MatrixStep {
+  name: string;
+  color: string;
+  unix: number;
+}
+
 function buildMatrixData(
   layout: GaantChartLayout,
   partitions: Partition[],
@@ -131,8 +137,8 @@ function buildMatrixData(
 
       return {
         name: node.name,
-        color: color,
-        unix: unix
+        color,
+        unix
       };
     })
   }));
@@ -223,6 +229,11 @@ const tagsToTokenFieldValues = (runTags?: { [key: string]: string }) => {
   return Object.keys(runTags).map(key => ({ token: "tag", value: `${key}=${runTags[key]}` }));
 };
 
+const SORT_FINAL_ASC = "FINAL_ASC";
+const SORT_FINAL_DESC = "FINAL_DESC";
+const SORT_TOTAL_ASC = "TOTAL_ASC";
+const SORT_TOTAL_DESC = "TOTAL_DESC";
+
 export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps> = props => {
   const { viewport, containerProps } = useViewport();
   const [runsFilter, setRunsFilter] = React.useState<TokenizingFieldValue[]>(
@@ -232,6 +243,7 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
   const [hoveredStepName, setHoveredStepName] = React.useState<string>("");
   const [stepQuery, setStepQuery] = React.useState<string>("");
   const [colorizeSliceUnix, setColorizeSliceUnix] = React.useState(0);
+  const [stepSortOrder, setSortBy] = React.useState<string>("");
   const [options, setOptions] = React.useState<DisplayOptions>({
     showPrevious: false,
     showSucessful: true,
@@ -267,6 +279,22 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
   }
 
   const { stepRows, partitionColumns, partitions } = data;
+  if (stepSortOrder === SORT_FINAL_ASC) {
+    stepRows.sort((a, b) => a.finalFailurePercent - b.finalFailurePercent);
+  } else if (stepSortOrder === SORT_FINAL_DESC) {
+    stepRows.sort((a, b) => b.finalFailurePercent - a.finalFailurePercent);
+  } else if (stepSortOrder === SORT_TOTAL_ASC) {
+    stepRows.sort((a, b) => a.totalFailurePercent - b.totalFailurePercent);
+  } else if (stepSortOrder === SORT_TOTAL_DESC) {
+    stepRows.sort((a, b) => b.totalFailurePercent - a.totalFailurePercent);
+  }
+
+  const sortPartitionSteps = (steps: MatrixStep[]) => {
+    const stepsByName = {};
+    steps.forEach(step => (stepsByName[step.name] = step));
+    return stepRows.map(stepRow => stepsByName[stepRow.name]);
+  };
+
   const focusedPartition = partitions.find(p => p.name === focusedPartitionName);
 
   const visibleRangeStart = Math.max(0, Math.floor((viewport.left - OVERSCROLL) / BOX_COL_WIDTH));
@@ -359,7 +387,14 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
           </GridColumn>
           <GridColumn disabled>
             <TopLabel>
-              <div className="square failure-blank" title={TITLE_TOTAL_FAILURES} />
+              <div
+                style={{ cursor: "pointer" }}
+                className="square failure-blank"
+                title={TITLE_TOTAL_FAILURES}
+                onClick={() =>
+                  setSortBy(stepSortOrder === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
+                }
+              />
             </TopLabel>
             {stepRows.map(({ totalFailurePercent, name }, idx) => (
               <LeftLabel
@@ -375,7 +410,14 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
           </GridColumn>
           <GridColumn disabled>
             <TopLabel>
-              <div className="square failure" title={TITLE_FINAL_FAILURES} />
+              <div
+                style={{ cursor: "pointer" }}
+                className="square failure"
+                title={TITLE_FINAL_FAILURES}
+                onClick={() =>
+                  setSortBy(stepSortOrder === SORT_FINAL_DESC ? SORT_FINAL_ASC : SORT_FINAL_DESC)
+                }
+              />
             </TopLabel>
             {stepRows.map(({ finalFailurePercent, name }, idx) => (
               <LeftLabel
@@ -414,7 +456,7 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
                 <TopLabelTilted>
                   <div className="tilted">{p.name}</div>
                 </TopLabelTilted>
-                {p.steps.map(({ name, color, unix }) => (
+                {sortPartitionSteps(p.steps).map(({ name, color, unix }) => (
                   <div
                     key={name}
                     className={`square ${(options.showPrevious
