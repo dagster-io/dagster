@@ -11,26 +11,38 @@
 
 Dagster is a data orchestrator for machine learning, analytics, and ETL
 
-**Elegant programming model:** Dagster provides a set of abstractions for building self-describing,
-testable, and reliable data applications. It embraces the principles of functional data programming;
-gradual, optional typing; and testability as a first-class value.
+Dagster lets you define pipelines in terms of the data flow between reusable, logical components, then test locally and run anywhere. With a unified view of pipelines and the assets they produce, Dagster can schedule and orchestrate Pandas, Spark, SQL, or anything else that Python can invoke.
 
-<p align="center">
-<img src="https://user-images.githubusercontent.com/4531914/79161353-366b8480-7d90-11ea-83ce-c8a9522359d5.gif" />
-</p>
+Dagster is designed for data platform engineers, data engineers, and full-stack data scientists. Building a data platform with Dagster makes your stakeholders more independent and your systems more robust. Developing data pipelines with Dagster makes testing easier and deploying faster.
 
-**Flexible & incremental:** Dagster integrates with your existing tools and systems, and can invoke
-any computation–whether it be Spark, Python, a Jupyter notebook, or SQL. It is also designed to work
-with your existing systems like [Kubernetes](https://docs.dagster.io/deploying/k8s_part1).
+### Develop and test on your laptop, deploy anywhere
 
-<p align="center">
-<img src="https://user-images.githubusercontent.com/4531914/79161365-3d929280-7d90-11ea-9216-c88cce41d3f1.gif" />
-</p>
+With Dagster’s pluggable execution, the same pipeline can run in-process against your local file system, or on a distributed work queue against your production data lake. You can set up Dagster’s web interface in a minute on your laptop, or deploy it on-premise or in any cloud.
 
-**Beautiful tools:** Dagster's development environment, dagit, is designed to facilitate local
-development for data engineers, machine learning engineers, and data scientists. It also can be run
-as a production service, to support operating, debugging, and maintaining large-scale production
-data pipelines.
+
+### Model and type the data produced and consumed by each step
+
+Dagster models data dependencies between steps in your orchestration graph and handles passing data between them. Optional typing on inputs and outputs helps catch bugs early.
+
+
+### Link data to computations
+
+Dagster’s Asset Manager tracks the data sets and ML models produced by your pipelines, so you can understand how your they were generated and trace issues when they don’t look how you expect.
+
+
+### Build a self-service data platform
+
+Dagster helps platform teams build systems for data practitioners. Pipelines are built from shared, reusable, configurable data processing and infrastructure components. Dagster’s web interface lets anyone inspect these objects and discover how to use them.
+
+
+### Avoid dependency nightmares
+
+Dagster’s repository model lets you isolate codebases, so that problems in one pipeline don’t bring down the rest. Each pipeline can have its own package dependencies and Python version. Pipelines run in isolated processes so user code issues can't bring the system down.
+
+
+### Debug pipelines from a rich UI
+
+Dagit, Dagster’s web interface, includes expansive facilities for understanding the pipelines it orchestrates.  When inspecting a pipeline run, you can query over logs, discover the most time consuming tasks via a Gantt chart, re-execute subsets of steps, and more.
 
 <p align="center">
 <img src="https://user-images.githubusercontent.com/4531914/79161362-3bc8cf00-7d90-11ea-8974-17edbde3dc0d.gif" />
