@@ -9,3 +9,12 @@ from dagster_dask import DataFrame, dask_resource
 )
 def passthrough(_, df):
     return df
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(resource_defs={"dask": ResourceDefinition.hardcoded_resource(dask_resource)})
+    ]
+)
+def dask_pipeline():
+    return passthrough()
