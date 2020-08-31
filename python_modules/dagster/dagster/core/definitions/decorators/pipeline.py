@@ -81,26 +81,31 @@ def pipeline(
             pipeline. When a hook is applied to a pipeline, it will be attached to all solid
             instances within the pipeline.
 
-    Examples:
+    Example:
 
         .. code-block:: python
 
-            @lambda_solid
-            def emit_one() -> int:
-                return 1
+            @solid(output_defs=[OutputDefinition(int, "two"), OutputDefinition(int, "four")])
+            def emit_two_four(_) -> int:
+                yield Output(2, "two")
+                yield Output(4, "four")
+
 
             @lambda_solid
             def add_one(num: int) -> int:
                 return num + 1
 
+
             @lambda_solid
             def mult_two(num: int) -> int:
                 return num * 2
 
-            @pipeline
-            def add_pipeline():
-                add_one(mult_two(emit_one()))
 
+            @pipeline
+            def math_pipeline():
+                two, four = emit_two_four()
+                add_one(two)
+                mult_two(four)
     """
     if callable(name):
         check.invariant(description is None)
