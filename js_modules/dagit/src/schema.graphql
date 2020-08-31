@@ -726,6 +726,7 @@ input PartitionBackfillParams {
   partitionNames: [String!]!
   reexecutionSteps: [String!]
   fromFailure: Boolean
+  tags: [ExecutionTag!]
 }
 
 union PartitionBackfillResult = PartitionBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError

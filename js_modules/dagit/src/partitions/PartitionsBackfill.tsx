@@ -32,6 +32,8 @@ import {
   TopLabelTilted
 } from "./RunMatrixUtils";
 import { ButtonLink } from "../ButtonLink";
+import { TagContainer, TagEditor } from "../execute/TagEditor";
+import { PipelineRunTag } from "../LocalStorage";
 
 const DEFAULT_RUN_LAUNCHER_NAME = "DefaultRunLauncher";
 
@@ -85,6 +87,8 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
 }> = ({ partitionSetName, pipelineName, showLoader, onLaunch }) => {
   const repositorySelector = useRepositorySelector();
   const [selected, setSelected] = React.useState<string[]>([]);
+  const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
+  const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
   const [query, setQuery] = React.useState<string>("");
   const [options, setOptions] = React.useState<BackfillOptions>({
     reexecute: false,
@@ -210,7 +214,7 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
           </Callout>
         </div>
       ) : null}
-      <div style={{ display: "flex", marginBottom: 15 }}>
+      <div style={{ display: "flex", marginBottom: 10 }}>
         <strong>Partition Backfill Selector</strong>
         <div style={{ width: 20 }} />
         <Checkbox
@@ -257,6 +261,21 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
         ) : null}
       </div>
 
+      <TagEditor
+        tags={tags}
+        onChange={setTags}
+        open={tagEditorOpen}
+        onRequestClose={() => setTagEditorOpen(false)}
+      />
+      {tags.length ? (
+        <div style={{ border: "1px solid #ececec", borderBottom: "none" }}>
+          <TagContainer tags={tags} onRequestEdit={() => setTagEditorOpen(true)} />
+        </div>
+      ) : (
+        <ButtonLink onClick={() => setTagEditorOpen(true)} style={{ margin: "0 10px 10px" }}>
+          + Add tags to backfill runs
+        </ButtonLink>
+      )}
       <div style={{ display: "flex" }}>
         <GridFloatingContainer floating={true}>
           <GridColumn disabled>
@@ -341,6 +360,7 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
             : undefined
         }
         fromFailure={options.reexecute && options.fromFailure}
+        tags={tags}
         onSuccess={onSuccess}
       />
     </div>
@@ -352,9 +372,18 @@ const LaunchBackfillButton: React.FunctionComponent<{
   partitionNames: string[];
   reexecutionSteps?: string[];
   fromFailure?: boolean;
+  tags?: PipelineRunTag[];
   onSuccess?: (backfillId: string) => void;
   onError?: () => void;
-}> = ({ partitionSetName, partitionNames, reexecutionSteps, fromFailure, onSuccess, onError }) => {
+}> = ({
+  partitionSetName,
+  partitionNames,
+  reexecutionSteps,
+  fromFailure,
+  tags,
+  onSuccess,
+  onError
+}) => {
   const repositorySelector = useRepositorySelector();
   const mounted = React.useRef(true);
   const [launchBackfill] = useMutation(LAUNCH_PARTITION_BACKFILL_MUTATION);
@@ -374,7 +403,8 @@ const LaunchBackfillButton: React.FunctionComponent<{
           },
           partitionNames,
           reexecutionSteps,
-          fromFailure
+          fromFailure,
+          tags
         }
       }
     });

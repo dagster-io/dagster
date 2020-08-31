@@ -810,6 +810,7 @@ class DauphinPartitionBackfillParams(dauphin.InputObjectType):
     partitionNames = dauphin.non_null_list(dauphin.String)
     reexecutionSteps = dauphin.List(dauphin.NonNull(dauphin.String))
     fromFailure = dauphin.Boolean()
+    tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):

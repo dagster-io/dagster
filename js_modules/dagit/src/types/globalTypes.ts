@@ -97,6 +97,7 @@ export interface PartitionBackfillParams {
   partitionNames: string[];
   reexecutionSteps?: string[] | null;
   fromFailure?: boolean | null;
+  tags?: ExecutionTag[] | null;
 }
 
 export interface PartitionSetSelector {

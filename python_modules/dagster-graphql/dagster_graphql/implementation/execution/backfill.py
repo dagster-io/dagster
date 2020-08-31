@@ -102,10 +102,10 @@ def _build_execution_param_list_for_backfill(
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
     backfill_tags = PipelineRun.tags_for_backfill_id(backfill_id)
-
+    execution_tags = {t["key"]: t["value"] for t in backfill_params.get("tags", [])}
     execution_param_list = []
     for partition_data in partition_data_list:
-        tags = merge_dicts(partition_data.tags, backfill_tags)
+        tags = merge_dicts(merge_dicts(partition_data.tags, backfill_tags), execution_tags)
         if not backfill_params.get("fromFailure") and not backfill_params.get("reexecutionSteps"):
             # full pipeline execution
             execution_param_list.append(
