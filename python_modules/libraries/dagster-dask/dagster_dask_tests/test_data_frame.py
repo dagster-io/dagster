@@ -28,6 +28,7 @@ def test_dataframe_inputs(file_type):
     def return_df(_, input_df):
         return input_df
 
+    # https://github.com/dagster-io/dagster/issues/2872
     with pytest.warns(
         UserWarning,
         match=re.escape("Specifying {key}: is deprecated. Use read:{key}: instead.".format(key=file_type)),
@@ -67,6 +68,7 @@ def test_dataframe_outputs(file_type, read, kwargs):
     def return_df(_):
         return df
 
+    # https://github.com/dagster-io/dagster/issues/2872
     with pytest.warns(
         UserWarning,
         match=re.escape("Specifying {key}: is deprecated. Use to:{key}: instead.".format(key=file_type)),

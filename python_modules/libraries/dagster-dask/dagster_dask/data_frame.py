@@ -227,6 +227,8 @@ def _dataframe_loader_config():
             Selector(read_fields),
             is_required=False,
         ),
+
+        # https://github.com/dagster-io/dagster/issues/2872
         **{
             field_name: Field(
                 field_config,
@@ -242,11 +244,14 @@ def dataframe_loader(_context, config):
     read_type, read_options = None, None
     if "read" in config:
         read_type, read_options = next(iter(config["read"].items()))
+    
+    # https://github.com/dagster-io/dagster/issues/2872
     else:
         for key in DataFrameReadTypes:
             if key in config:
                 read_type, read_options = key, config[key]
                 warnings.warn("Specifying {key}: is deprecated. Use read:{key}: instead.".format(key=key))
+    
     if not read_type:
         raise DagsterInvariantViolationError(
             "No read_type found. Expected read key in config."
@@ -286,6 +291,8 @@ def _dataframe_materializer_config():
             Selector(to_fields),
             is_required=False,
         ),
+
+        # https://github.com/dagster-io/dagster/issues/2872
         **{
             field_name: Field(
                 field_config,
@@ -302,6 +309,8 @@ def dataframe_materializer(_context, config, dask_df):
 
     if "to" in config:
         to_specs = config["to"]
+
+    # https://github.com/dagster-io/dagster/issues/2872
     else:
         to_specs = {
             to_type: to_options
@@ -310,7 +319,6 @@ def dataframe_materializer(_context, config, dask_df):
         }
         for key in to_specs.keys():
             warnings.warn("Specifying {key}: is deprecated. Use to:{key}: instead.".format(key=key))
-
 
     for to_type, to_options in to_specs.items():
         if not to_type in DataFrameToTypes:
