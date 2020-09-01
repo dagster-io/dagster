@@ -39,7 +39,7 @@ TOX_MAP = {
 # Per README.md, run the integration build image pipeline
 # and then find the tag of the created images. A string
 # like the following will be in that tag.
-INTEGRATION_IMAGE_VERSION = "2020-07-14T232230"
+INTEGRATION_IMAGE_VERSION = "2020-09-01T134240"
 
 # Keep this fixed. Do not update when updating snapshots Only update when updating the base
 # integration image which should be less frequent
@@ -49,4 +49,4 @@ INTEGRATION_BASE_VERSION = "2020-07-03T094007"
 # Per README.md, run the unit build image pipeline
 # and then find the tag of the created images. A string
 # like the following will be in that tag.
-UNIT_IMAGE_VERSION = "2020-07-12T162825"
+UNIT_IMAGE_VERSION = "2020-09-01T153819"
