@@ -62,6 +62,27 @@ def test_backfill_no_partition_sets(backfill_args_context):
 
 
 @pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
+def test_backfill_multiple_partition_set_matches(backfill_args_context):
+    with backfill_args_context as (cli_args, uses_legacy_repository_yaml_format, instance):
+        args = merge_dicts(cli_args, {"pipeline": "baz"})
+        run_test_backfill(
+            args,
+            uses_legacy_repository_yaml_format,
+            instance,
+            error_message="No partition set specified",
+        )
+
+
+@pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
+def test_backfill_single_partition_set_unspecified(backfill_args_context):
+    with backfill_args_context as (cli_args, uses_legacy_repository_yaml_format, instance):
+        args = merge_dicts(cli_args, {"pipeline": "partitioned_scheduled_pipeline"})
+        run_test_backfill(
+            args, uses_legacy_repository_yaml_format, instance, expected_count=len(string.digits)
+        )
+
+
+@pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
 def test_backfill_no_named_partition_set(backfill_args_context):
     with backfill_args_context as (cli_args, uses_legacy_repository_yaml_format, instance):
         args = merge_dicts(cli_args, {"pipeline": "baz", "partition_set": "nonexistent"})
@@ -70,6 +91,29 @@ def test_backfill_no_named_partition_set(backfill_args_context):
             uses_legacy_repository_yaml_format,
             instance,
             error_message="No partition set found",
+        )
+
+
+@pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
+def test_backfill_error_partition_names(backfill_args_context):
+    with backfill_args_context as (cli_args, uses_legacy_repository_yaml_format, instance):
+        args = merge_dicts(cli_args, {"pipeline": "baz", "partition_set": "error_name_partitions"})
+        run_test_backfill(
+            args,
+            uses_legacy_repository_yaml_format,
+            instance,
+            error_message="Failure fetching partition names",
+        )
+
+
+@pytest.mark.parametrize("backfill_args_context", backfill_command_contexts())
+def test_backfill_error_partition_config(backfill_args_context):
+    with backfill_args_context as (cli_args, uses_legacy_repository_yaml_format, instance):
+        args = merge_dicts(
+            cli_args, {"pipeline": "baz", "partition_set": "error_config_partitions"}
+        )
+        run_test_backfill(
+            args, uses_legacy_repository_yaml_format, instance, error_message="Backfill failed",
         )
 
 

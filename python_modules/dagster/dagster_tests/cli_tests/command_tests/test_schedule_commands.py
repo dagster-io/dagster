@@ -40,7 +40,9 @@ def test_schedules_up(gen_schedule_args):
             _instance.return_value = instance
             result = runner.invoke(schedule_up_command, cli_args,)
             assert result.exit_code == 0
-            assert "Changes:\n  + foo_schedule (add)" in result.output
+            assert "Changes:\n" in result.output
+            assert "  + foo_schedule (add)" in result.output
+            assert "  + partitioned_schedule (add)" in result.output
 
 
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())
@@ -59,6 +61,9 @@ def test_schedules_up_and_list(gen_schedule_args):
                 result.output == "Repository bar\n"
                 "**************\n"
                 "Schedule: foo_schedule [STOPPED]\n"
+                "Cron Schedule: * * * * *\n"
+                "****************************************\n"
+                "Schedule: partitioned_schedule [STOPPED]\n"
                 "Cron Schedule: * * * * *\n"
             )
 
@@ -129,7 +134,9 @@ def test_schedules_wipe_correct_delete_message(gen_schedule_args):
 
             # Verify schedules were wiped
             assert result.exit_code == 0
-            assert "Planned Schedule Changes:\n  + foo_schedule (add)" in result.output
+            assert "Planned Schedule Changes:\n" in result.output
+            assert "  + partitioned_schedule (add)" in result.output
+            assert "  + foo_schedule (add)" in result.output
 
 
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())
@@ -151,7 +158,7 @@ def test_schedules_wipe_incorrect_delete_message(gen_schedule_args):
             assert result.exit_code == 0
             assert (
                 result.output
-                == "No planned changes to schedules.\n1 schedules will remain unchanged\n"
+                == "No planned changes to schedules.\n2 schedules will remain unchanged\n"
             )
 
 

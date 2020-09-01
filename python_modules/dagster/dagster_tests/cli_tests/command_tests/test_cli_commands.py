@@ -70,15 +70,34 @@ def not_a_repo_or_pipeline_fn():
 not_a_repo_or_pipeline = 123
 
 
+@pipeline
+def partitioned_scheduled_pipeline():
+    do_something()
+
+
 def define_bar_schedules():
+    partition_set = PartitionSetDefinition(
+        name="scheduled_partitions",
+        pipeline_name="partitioned_scheduled_pipeline",
+        partition_fn=lambda: string.digits,
+    )
     return {
         "foo_schedule": ScheduleDefinition(
             "foo_schedule", cron_schedule="* * * * *", pipeline_name="test_pipeline", run_config={},
         ),
+        "partitioned_schedule": partition_set.create_schedule_definition(
+            schedule_name="partitioned_schedule", cron_schedule="* * * * *"
+        ),
     }
 
 
-def define_baz_partitions():
+def define_bar_partitions():
+    def error_name():
+        raise Exception("womp womp")
+
+    def error_config(_):
+        raise Exception("womp womp")
+
     return {
         "baz_partitions": PartitionSetDefinition(
             name="baz_partitions",
@@ -87,16 +106,26 @@ def define_baz_partitions():
             run_config_fn_for_partition=lambda partition: {
                 "solids": {"do_input": {"inputs": {"x": {"value": partition.value}}}}
             },
-        )
+        ),
+        "error_name_partitions": PartitionSetDefinition(
+            name="error_name_partitions", pipeline_name="baz", partition_fn=error_name,
+        ),
+        "error_config_partitions": PartitionSetDefinition(
+            name="error_config_partitions", pipeline_name="baz", partition_fn=error_config,
+        ),
     }
 
 
 @repository
 def bar():
     return {
-        "pipelines": {"foo": foo_pipeline, "baz": baz_pipeline},
+        "pipelines": {
+            "foo": foo_pipeline,
+            "baz": baz_pipeline,
+            "partitioned_scheduled_pipeline": partitioned_scheduled_pipeline,
+        },
         "schedules": define_bar_schedules(),
-        "partition_sets": define_baz_partitions(),
+        "partition_sets": define_bar_partitions(),
     }
 
 

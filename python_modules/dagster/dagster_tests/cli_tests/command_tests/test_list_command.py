@@ -37,6 +37,10 @@ def assert_correct_bar_repository_output(result):
         "Solids: (Execution Order)\n"
         "    do_something\n"
         "    do_input\n"
+        "****************************************\n"
+        "Pipeline: partitioned_scheduled_pipeline\n"
+        "Solids: (Execution Order)\n"
+        "    do_something\n"
     )
 
 

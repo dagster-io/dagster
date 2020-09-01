@@ -199,10 +199,7 @@ def test_more_than_one_pipeline():
     with instance_for_test() as instance:
         with pytest.raises(
             UsageError,
-            match=re.escape(
-                "Must provide --pipeline as there is more than one pipeline in bar. "
-                "Options are: ['baz', 'foo']."
-            ),
+            match=re.escape("Must provide --pipeline as there is more than one pipeline in bar. "),
         ):
             execute_execute_command(
                 kwargs={
