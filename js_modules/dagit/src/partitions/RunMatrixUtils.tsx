@@ -13,15 +13,17 @@ const flatGradientStack = (colors: string[]) => colors.map(flatGradient).join(",
 export const GridColumn = styled.div<{
   disabled?: boolean;
   focused?: boolean;
+  multiselectFocused?: boolean;
   dimSuccesses?: boolean;
 }>`
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
 
-  ${({ disabled, focused }) =>
+  ${({ disabled, focused, multiselectFocused }) =>
     !disabled &&
     !focused &&
+    !multiselectFocused &&
     `&:hover {
     cursor: default;
     background: ${Colors.LIGHT_GRAY3};
@@ -52,6 +54,21 @@ export const GridColumn = styled.div<{
       color: white;
       .tilted {
         background: ${Colors.BLUE4};
+      }
+    }
+  }`}
+
+  ${({ multiselectFocused }) =>
+    multiselectFocused &&
+    `background: ${Colors.BLUE5};
+    ${LeftLabel} {
+      color: white;
+    }
+    ${TopLabelTilted} {
+      background: ${Colors.LIGHT_GRAY5};
+      color: white;
+      .tilted {
+        background: ${Colors.BLUE5};
       }
     }
   }`}

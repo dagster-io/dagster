@@ -79,6 +79,11 @@ export const PartitionsBackfill: React.FunctionComponent<{
   );
 };
 
+type SelectionRange = {
+  start: string;
+  end: string;
+};
+
 export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
   partitionSetName: string;
   pipelineName: string;
@@ -86,6 +91,9 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
   onLaunch?: (backfillId: string) => void;
 }> = ({ partitionSetName, pipelineName, showLoader, onLaunch }) => {
   const repositorySelector = useRepositorySelector();
+  const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
+    SelectionRange | undefined
+  >();
   const [selected, setSelected] = React.useState<string[]>([]);
   const [tagEditorOpen, setTagEditorOpen] = React.useState<boolean>(false);
   const [tags, setTags] = React.useState<PipelineRunTag[]>([]);
@@ -93,6 +101,11 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
   const [options, setOptions] = React.useState<BackfillOptions>({
     reexecute: false,
     fromFailure: false
+  });
+  React.useEffect(() => {
+    const resetSelectionRange = () => setCurrentSelectionRange(undefined);
+    window.addEventListener("mouseup", resetSelectionRange);
+    return () => window.removeEventListener("mouseup", resetSelectionRange);
   });
   const mounted = React.useRef(true);
   React.useEffect(() => {
@@ -192,14 +205,42 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
   }));
   const usingDefaultRunLauncher = instance.runLauncher?.name === DEFAULT_RUN_LAUNCHER_NAME;
 
-  const setFocusedPartition = (name: string) => {
-    if (!selectablePartitions.includes(name)) {
+  const getRangeSelection = (start: string, end: string) => {
+    const startIdx = selectablePartitions.indexOf(start);
+    const endIdx = selectablePartitions.indexOf(end);
+    return selectablePartitions.slice(Math.min(startIdx, endIdx), Math.max(startIdx, endIdx) + 1);
+  };
+
+  const currentRangeSelection = currentSelectionRange
+    ? getRangeSelection(currentSelectionRange.start, currentSelectionRange.end)
+    : [];
+
+  const onPartitionMouseDown = (name: string) => {
+    setCurrentSelectionRange({ start: name, end: name });
+  };
+
+  const onPartitionMouseUp = (_: string) => {
+    if (!currentRangeSelection.length) {
       return;
     }
-    const newSelected: string[] = selected.includes(name)
-      ? selected.filter(x => x !== name)
-      : [...selected, name];
-    setSelected(newSelected);
+
+    const allSelected = currentRangeSelection.every(name => selected.includes(name));
+    if (allSelected) {
+      setSelected(selected.filter(x => !currentRangeSelection.includes(x)));
+    } else {
+      const newSelected = new Set(selected);
+      currentRangeSelection.forEach(name => newSelected.add(name));
+      setSelected(Array.from(newSelected));
+    }
+    setCurrentSelectionRange(undefined);
+  };
+
+  const onPartitionMouseOver = (name: string) => {
+    if (!currentSelectionRange) {
+      return;
+    }
+    const { start } = currentSelectionRange;
+    setCurrentSelectionRange({ start, end: name });
   };
 
   return (
@@ -311,10 +352,13 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
             {partitionNames.map((partitionName, idx) => (
               <GridColumn
                 key={partitionName}
-                style={{ zIndex: partitionNames.length - idx }}
+                style={{ zIndex: partitionNames.length - idx, userSelect: "none" }}
                 disabled={!selectablePartitions.includes(partitionName)}
                 focused={selected.includes(partitionName)}
-                onClick={() => setFocusedPartition(partitionName)}
+                multiselectFocused={currentRangeSelection.includes(partitionName)}
+                onMouseDown={() => onPartitionMouseDown(partitionName)}
+                onMouseUp={() => onPartitionMouseUp(partitionName)}
+                onMouseOver={() => onPartitionMouseOver(partitionName)}
               >
                 <TopLabelTilted>
                   <div className="tilted">{partitionName}</div>
