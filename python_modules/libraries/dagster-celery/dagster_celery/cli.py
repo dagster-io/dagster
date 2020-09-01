@@ -179,7 +179,7 @@ def worker_start_command(
 
     env = os.environ.copy()
     if pythonpath is not None:
-        env["PYTHONPATH"] = "{existing_pythonpath}{pythonpath}:".format(
+        env["PYTHONPATH"] = "{existing_pythonpath}:{pythonpath}:".format(
             existing_pythonpath=env.get("PYTHONPATH", ""), pythonpath=pythonpath
         )
 
