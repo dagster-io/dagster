@@ -38,7 +38,7 @@ metadata:
     app.kubernetes.io/version: {dagster_version}
   name: dagster-run-{run_id}
 spec:
-  backoff_limit: 4
+  backoff_limit: 0
   template:
     metadata:
       labels:
@@ -102,7 +102,7 @@ metadata:
     app.kubernetes.io/version: {dagster_version}
   name: dagster-run-{run_id}
 spec:
-  backoff_limit: 4
+  backoff_limit: 0
   template:
     metadata:
       {annotations}

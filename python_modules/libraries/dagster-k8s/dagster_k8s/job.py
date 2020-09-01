@@ -16,7 +16,10 @@ from dagster.core.errors import DagsterInvalidConfigError
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags, merge_dicts
 
-K8S_JOB_BACKOFF_LIMIT = 4
+# To retry step job, users should raise RetryRequested() so that the dagster system is aware of the
+# retry. As an example, see retry_pipeline in dagster_test.test_project.test_pipelines.repo
+# To override this config, user can specify UserDefinedDagsterK8sConfig.
+K8S_JOB_BACKOFF_LIMIT = 0
 
 K8S_JOB_TTL_SECONDS_AFTER_FINISHED = 24 * 60 * 60  # 1 day
 
