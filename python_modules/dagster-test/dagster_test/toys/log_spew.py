@@ -44,7 +44,7 @@ def log_spew():
     solid_c = nonce_solid("one_in_two_out", 1, 2).alias("solid_c")
     solid_d = two_in_one_out.alias("solid_d")
     solid_e = one_in_one_out.alias("solid_e")
-    solid_f = two_in_one_out.alias("soild_f")
+    solid_f = two_in_one_out.alias("solid_f")
     solid_g = nonce_solid("one_in_none_out", 1, 0).alias("solid_g")
 
     a_0, a_1 = solid_a()

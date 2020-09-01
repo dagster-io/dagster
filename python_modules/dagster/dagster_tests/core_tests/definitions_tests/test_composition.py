@@ -521,7 +521,7 @@ def test_unused_mapping():
             return_one()
 
 
-def test_calling_soild_outside_fn():
+def test_calling_solid_outside_fn():
     with pytest.raises(DagsterInvariantViolationError, match="outside of a composition function"):
 
         return_one()
