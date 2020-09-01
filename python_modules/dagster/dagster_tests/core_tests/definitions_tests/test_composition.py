@@ -10,13 +10,14 @@ from dagster import (
     PipelineDefinition,
     SolidDefinition,
     composite_solid,
-    configured,
     execute_pipeline,
     lambda_solid,
     pipeline,
     repository,
     solid,
 )
+from dagster.core.definitions.decorators.hook import event_list_hook
+from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 
@@ -525,6 +526,163 @@ def test_calling_solid_outside_fn():
     with pytest.raises(DagsterInvariantViolationError, match="outside of a composition function"):
 
         return_one()
+
+
+@lambda_solid
+def single_input_solid():
+    return
+
+
+def test_alias_invoked(recwarn):
+    @pipeline
+    def _():
+        return [single_input_solid.alias("foo")(), single_input_solid.alias("bar")()]
+
+    assert len(recwarn) == 0
+
+
+def test_alias_not_invoked():
+
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"'single_input_solid'\.\n'single_input_solid' was aliased as '(foo|bar)'."
+        ),
+    ) as record:
+
+        @pipeline
+        def _my_pipeline():
+            return [single_input_solid.alias("foo"), single_input_solid.alias("bar")]
+
+    assert len(record) == 2  # This pipeline should raise a warning for each aliasing of the solid.
+
+
+def test_tag_invoked():
+
+    with pytest.warns(None) as record:
+
+        @pipeline
+        def _my_pipeline():
+            return single_input_solid.tag({})()
+
+        execute_pipeline(_my_pipeline)
+
+    assert len(record) == 0
+
+
+def test_tag_not_invoked():
+
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"'single_input_solid'\."
+        ),
+    ) as record:
+
+        @pipeline
+        def _my_pipeline():
+            return [single_input_solid.tag({}), single_input_solid.tag({})]
+
+        execute_pipeline(_my_pipeline)
+
+    assert len(record) == 1  # We should only raise one warning because solids have same name.
+
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"'single_input_solid'\.\nProvided tags: {'a': 'b'}\."
+        ),
+    ):
+
+        @pipeline
+        def _my_pipeline():
+            return single_input_solid.tag({"a": "b"})
+
+        execute_pipeline(_my_pipeline)
+
+
+def test_with_hooks_invoked():
+
+    with pytest.warns(None) as record:
+
+        @pipeline
+        def _my_pipeline():
+            return single_input_solid.with_hooks(set())()
+
+        execute_pipeline(_my_pipeline)
+
+    assert len(record) == 0
+
+
+@event_list_hook(required_resource_keys=set())
+def a_hook(_context, _):
+    return HookExecutionResult("a_hook")
+
+
+def test_with_hooks_not_invoked():
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"'single_input_solid'\."
+        ),
+    ) as record:
+
+        @pipeline
+        def _my_pipeline():
+            return [single_input_solid.with_hooks(set()), single_input_solid.with_hooks(set())]
+
+        execute_pipeline(_my_pipeline)
+
+    assert len(record) == 1  # We should only raise one warning because solids have same name.
+
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"'single_input_solid'\.\nProvided hook definitions: \['a_hook'\]\."
+        ),
+    ):
+
+        @pipeline
+        def _my_pipeline():
+            return single_input_solid.with_hooks({a_hook})
+
+        execute_pipeline(_my_pipeline)
+
+
+def test_with_hooks_not_empty():
+    @pipeline
+    def _():
+        return [single_input_solid.with_hooks({a_hook})]
+
+    assert 1 == 1
+
+
+def test_multiple_pending_invocations():
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r"While in @pipeline context '_my_pipeline', received an uninvoked solid "
+            r"'single_input_solid'\.\n'single_input_solid' was aliased as 'bar'\.\n"
+            r"Provided hook definitions: \['a_hook'\]\."
+        ),
+    ) as record:
+
+        @pipeline
+        def _my_pipeline():
+            foo = single_input_solid.alias("foo")
+            bar = single_input_solid.alias("bar")
+            foo_tag = foo.tag({})
+            _bar_hook = bar.with_hooks({a_hook})
+            return foo_tag()
+
+    assert (
+        len(record) == 1
+    )  # ensure that one warning is thrown per solid_name / alias instead of per every CallableSolidNode.
 
 
 def test_compose_nothing():

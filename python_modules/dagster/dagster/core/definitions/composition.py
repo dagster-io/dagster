@@ -1,3 +1,4 @@
+import warnings
 from collections import namedtuple
 
 from dagster import check
@@ -11,6 +12,31 @@ from .solid import ISolidDefinition
 from .utils import validate_tags
 
 _composition_stack = []
+
+
+def _not_invoked_warning(solid, context_source, context_name):
+    check.inst_param(solid, "solid", CallableSolidNode)
+
+    warning_message = (
+        "While in {context} context '{name}', received an uninvoked solid '{solid_name}'.\n"
+    )
+    if solid.given_alias:
+        warning_message += "'{solid_name}' was aliased as '{given_alias}'.\n"
+    if solid.tags:
+        warning_message += "Provided tags: {tags}.\n"
+    if solid.hook_defs:
+        warning_message += "Provided hook definitions: {hooks}.\n"
+
+    warning_message = warning_message.format(
+        context=context_source,
+        name=context_name,
+        solid_name=solid.solid_def.name,
+        given_alias=solid.given_alias,
+        tags=solid.tags,
+        hooks=[hook.name for hook in solid.hook_defs],
+    )
+
+    warnings.warn(warning_message.strip())
 
 
 def enter_composition(name, source):
@@ -34,6 +60,10 @@ def assert_in_composition(solid_name):
         )
 
 
+def _is_in_composition():
+    return _composition_stack
+
+
 class InProgressCompositionContext(object):
     """This context captures invocations of solids within a
     composition function such as @composite_solid or @pipeline
@@ -44,6 +74,7 @@ class InProgressCompositionContext(object):
         self.source = check.str_param(source, "source")
         self._invocations = {}
         self._collisions = {}
+        self._pending_invocations = {}
 
     def observe_invocation(
         self, given_alias, solid_def, input_bindings, input_mappings, tags=None, hook_defs=None
@@ -67,14 +98,25 @@ class InProgressCompositionContext(object):
                 )
             )
 
+        self._pending_invocations.pop(solid_name, None)
+
         self._invocations[solid_name] = InvokedSolidNode(
             solid_name, solid_def, input_bindings, input_mappings, tags, hook_defs
         )
         return solid_name
 
+    def add_pending_invocation(self, solid):
+        solid = check.opt_inst_param(solid, "solid", CallableSolidNode)
+        solid_name = solid.given_alias if solid.given_alias else solid.solid_def.name
+        self._pending_invocations[solid_name] = solid
+
     def complete(self, output):
         return CompleteCompositionContext(
-            self.name, self._invocations, check.opt_dict_param(output, "output")
+            self.name,
+            self.source,
+            self._invocations,
+            check.opt_dict_param(output, "output"),
+            self._pending_invocations,
         )
 
 
@@ -86,11 +128,14 @@ class CompleteCompositionContext(
     """The processed information from capturing solid invocations during a composition function.
     """
 
-    def __new__(cls, name, invocations, output_mapping_dict):
+    def __new__(cls, name, source, invocations, output_mapping_dict, pending_invocations):
 
         dep_dict = {}
         solid_def_dict = {}
         input_mappings = []
+
+        for solid in pending_invocations.values():
+            _not_invoked_warning(solid, source, name)
 
         for invocation in invocations.values():
             def_name = invocation.solid_def.name
@@ -142,6 +187,9 @@ class CallableSolidNode(object):
         self.given_alias = check.opt_str_param(given_alias, "given_alias")
         self.tags = check.opt_inst_param(tags, "tags", frozentags)
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
+
+        if _is_in_composition():
+            current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
         solid_name = self.given_alias if self.given_alias else self.solid_def.name
