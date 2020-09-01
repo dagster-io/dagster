@@ -90,14 +90,20 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm")):
         tag = python_version_image_tag(python_version, last_updated)
         return "{}/{}:{}".format(DEFAULT_LOCAL_PREFIX, self.image, tag)
 
-    def aws_image(self, python_version):
+    def aws_image(self, python_version=None, custom_tag=None):
         """Generates the AWS ECR image name, like:
         "1234567890.dkr.ecr.us-west-1.amazonaws.com/foo:some-tag"
         """
-        check.str_param(python_version, "python_version")
+        check.invariant(not (python_version and custom_tag))
+        check.opt_str_param(python_version, "python_version")
+        check.opt_str_param(custom_tag, "custom_tag")
 
-        last_updated = self._get_last_updated_for_python_version(python_version)
-        tag = python_version_image_tag(python_version, last_updated)
+        if python_version:
+            last_updated = self._get_last_updated_for_python_version(python_version)
+            tag = python_version_image_tag(python_version, last_updated)
+        else:
+            tag = custom_tag
+
         return ecr_image(
             self.image, tag, aws_account_id=get_aws_account_id(), aws_region=get_aws_region(),
         )
@@ -148,8 +154,16 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm")):
                 cwd=self.path,
             )
 
-    def push(self, python_version):
+    def push(self, python_version, custom_tag=None):
         """Push this image to ECR.
         """
-        execute_docker_tag(self.local_image(python_version), self.aws_image(python_version))
-        execute_docker_push(self.aws_image(python_version))
+
+        if custom_tag:
+            execute_docker_tag(
+                self.local_image(python_version),
+                self.aws_image(python_version=None, custom_tag=custom_tag),
+            )
+            execute_docker_push(self.aws_image(python_version=None, custom_tag=custom_tag))
+        else:
+            execute_docker_tag(self.local_image(python_version), self.aws_image(python_version))
+            execute_docker_push(self.aws_image(python_version))
