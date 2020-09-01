@@ -29,6 +29,7 @@ class _Solid(object):
         required_resource_keys=None,
         config_schema=None,
         tags=None,
+        version=None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
@@ -38,14 +39,13 @@ class _Solid(object):
 
         self.description = check.opt_str_param(description, "description")
 
-        # resources will be checked within SolidDefinition
+        # these will be checked within SolidDefinition
         self.required_resource_keys = required_resource_keys
+        self.tags = tags
+        self.version = version
 
         # config will be checked within SolidDefinition
         self.config_schema = config_schema
-
-        # tags will be checked within ISolidDefinition
-        self.tags = tags
 
     def __call__(self, fn):
         check.callable_param(fn, "fn")
@@ -77,6 +77,7 @@ class _Solid(object):
             required_resource_keys=self.required_resource_keys,
             tags=self.tags,
             positional_inputs=positional_inputs,
+            version=self.version,
         )
         update_wrapper(solid_def, fn)
         return solid_def
@@ -90,6 +91,7 @@ def solid(
     config_schema=None,
     required_resource_keys=None,
     tags=None,
+    version=None,
 ):
     """Create a solid with the specified parameters from the decorated function.
 
@@ -126,6 +128,9 @@ def solid(
             expect and require certain metadata to be attached to a solid. Users should generally
             not set metadata directly. Values that are not strings will be json encoded and must meet
             the criteria that `json.loads(json.dumps(value)) == value`.
+        version (str): (Experimental) The version of the solid's compute_fn. Two solids should have
+            the same version if and only if they deterministically produce the same outputs when
+            provided the same inputs.
 
 
     Examples:
@@ -186,6 +191,7 @@ def solid(
         check.invariant(config_schema is None)
         check.invariant(required_resource_keys is None)
         check.invariant(tags is None)
+        check.invariant(version is None)
 
         return _Solid()(name)
 
@@ -197,6 +203,7 @@ def solid(
         description=description,
         required_resource_keys=required_resource_keys,
         tags=tags,
+        version=version,
     )
 
 

@@ -7,7 +7,7 @@ from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.config_mappable import IConfigMappable
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import frozendict, frozenlist
-from dagster.utils.backcompat import rename_warning
+from dagster.utils.backcompat import experimental_arg_warning, rename_warning
 
 from .dependency import SolidHandle
 from .hook import HookDefinition
@@ -202,6 +202,9 @@ class SolidDefinition(ISolidDefinition):
             solid.
         positional_inputs (Optional[List[str]]): The positional order of the input names if it
             differs from the order of the input definitions.
+        version (str): (Experimental) The version of the solid's compute_fn. Two solids should have
+            the same version if and only if they deterministically produce the same outputs when
+            provided the same inputs.
         _configured_config_mapping_fn: This argument is for internal use only. Users should not
             specify this field. To preconfigure a resource, use the :py:func:`configured` API.
 
@@ -231,6 +234,7 @@ class SolidDefinition(ISolidDefinition):
         tags=None,
         required_resource_keys=None,
         positional_inputs=None,
+        version=None,
         _configured_config_mapping_fn=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, "compute_fn")
@@ -241,6 +245,9 @@ class SolidDefinition(ISolidDefinition):
         self.__configured_config_mapping_fn = check.opt_callable_param(
             _configured_config_mapping_fn, "config_mapping_fn"
         )
+        self._version = check.opt_str_param(version, "version")
+        if version:
+            experimental_arg_warning("version", "SolidDefinition.__init__")
 
         super(SolidDefinition, self).__init__(
             name=name,
@@ -271,6 +278,10 @@ class SolidDefinition(ISolidDefinition):
     @property
     def has_config_entry(self):
         return self._config_schema or self.has_configurable_inputs or self.has_configurable_outputs
+
+    @property
+    def version(self):
+        return self._version
 
     def all_dagster_types(self):
         for tt in self.all_input_output_types():
@@ -337,6 +348,7 @@ class SolidDefinition(ISolidDefinition):
             tags=self.tags,
             required_resource_keys=self.required_resource_keys,
             positional_inputs=self.positional_inputs,
+            version=self.version,
             _configured_config_mapping_fn=wrapped_config_mapping_fn,
         )
 
