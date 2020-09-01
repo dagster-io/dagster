@@ -1,22 +1,15 @@
 import csv
 import os
-import typing
 
 from dagster import (
     Bool,
     Field,
     Output,
     OutputDefinition,
-    PythonObjectDagsterType,
     execute_pipeline,
     pipeline,
     solid,
 )
-
-if typing.TYPE_CHECKING:
-    DataFrame = list
-else:
-    DataFrame = PythonObjectDagsterType(list, name="DataFrame")  # type: Any
 
 
 @solid
@@ -38,12 +31,8 @@ def read_csv(context, csv_path):
         "process_cold": Field(Bool, is_required=False, default_value=True),
     },
     output_defs=[
-        OutputDefinition(
-            name="hot_cereals", dagster_type=DataFrame, is_required=False
-        ),
-        OutputDefinition(
-            name="cold_cereals", dagster_type=DataFrame, is_required=False
-        ),
+        OutputDefinition(name="hot_cereals", is_required=False),
+        OutputDefinition(name="cold_cereals", is_required=False),
     ],
 )
 def split_cereals(context, cereals):
