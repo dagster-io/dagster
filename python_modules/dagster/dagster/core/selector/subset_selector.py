@@ -89,7 +89,6 @@ class Traverser:
 
 
 def parse_clause(clause):
-    # TODO use query_parser
     def _get_depth(part):
         if part == "":
             return 0
