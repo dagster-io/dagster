@@ -265,6 +265,7 @@ def test_hello_world_reexecution():
                 reexecution_notebook_file.name, "define_reexecution_pipeline"
             )
 
+            reexecution_result = None
             try:
                 reexecution_result = execute_pipeline(
                     reexecution_pipeline, instance=DagsterInstance.local_temp()

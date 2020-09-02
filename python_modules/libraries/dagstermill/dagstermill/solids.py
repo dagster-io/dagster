@@ -193,9 +193,9 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
 
                     except Exception as exc:  # pylint: disable=broad-except
                         try:
-                            with open(executed_notebook_path, "r") as fd:
+                            with open(executed_notebook_path, "rb") as fd:
                                 executed_notebook_file_handle = compute_context.file_manager.write(
-                                    fd, mode="w", ext="ipynb"
+                                    fd, mode="wb", ext="ipynb"
                                 )
                                 executed_notebook_materialization_path = (
                                     executed_notebook_file_handle.path_desc
@@ -223,10 +223,13 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
                 )
             )
 
+            executed_notebook_file_handle = None
             try:
-                with open(executed_notebook_path, "r") as fd:
+                # use binary mode when when moving the file since certain file_managers such as S3
+                # may try to hash the contents
+                with open(executed_notebook_path, "rb") as fd:
                     executed_notebook_file_handle = compute_context.file_manager.write(
-                        fd, mode="w", ext="ipynb"
+                        fd, mode="wb", ext="ipynb"
                     )
                     executed_notebook_materialization_path = executed_notebook_file_handle.path_desc
             except Exception as exc:  # pylint: disable=broad-except
