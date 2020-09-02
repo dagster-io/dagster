@@ -14,6 +14,7 @@ from dagster import (
     Int,
     Permissive,
     Selector,
+    Shape,
     String,
     TypeCheck,
     check,
@@ -381,16 +382,25 @@ def _dataframe_loader_config():
         for read_from, read_opts in DataFrameReadTypes.items()
     }
 
-    return Selector(
-        {
-            "read": Field(Selector(read_fields), is_required=False,),
-            # https://github.com/dagster-io/dagster/issues/2872
-            **{
-                field_name: Field(field_config, is_required=False,)
-                for field_name, field_config in read_fields.items()
-            },
-        }
-    )
+    return Shape({
+        "read": Field(
+            Selector(read_fields),
+            is_required=False,
+        ),
+        ** {
+            util_name: util_spec["options"]
+            for util_name, util_spec in DataFrameUtilities.items()
+        },
+
+        # https://github.com/dagster-io/dagster/issues/2872
+        **{
+            field_name: Field(
+                field_config,
+                is_required=False,
+            )
+            for field_name, field_config in read_fields.items()
+        },
+    })
 
 
 @dagster_type_loader(_dataframe_loader_config())
@@ -444,16 +454,25 @@ def _dataframe_materializer_config():
         for write_to, to_opts in DataFrameToTypes.items()
     }
 
-    return Selector(
-        {
-            "to": Field(Selector(to_fields), is_required=False,),
-            # https://github.com/dagster-io/dagster/issues/2872
-            **{
-                field_name: Field(field_config, is_required=False,)
-                for field_name, field_config in to_fields.items()
-            },
-        }
-    )
+    return Shape({
+        "to": Field(
+            Selector(to_fields),
+            is_required=False,
+        ),
+        ** {
+            util_name: util_spec["options"]
+            for util_name, util_spec in DataFrameUtilities.items()
+        },
+
+        # https://github.com/dagster-io/dagster/issues/2872
+        **{
+            field_name: Field(
+                field_config,
+                is_required=False,
+            )
+            for field_name, field_config in to_fields.items()
+        },
+    })
 
 
 @dagster_type_materializer(_dataframe_materializer_config())
