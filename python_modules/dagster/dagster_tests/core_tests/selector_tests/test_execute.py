@@ -58,10 +58,11 @@ def test_execute_pipeline_with_solid_selection_multi_clauses():
     assert result_multi_overlap.result_for_solid("multiply_two").output_value() == 6
     assert len(result_multi_overlap.solid_result_list) == 4
 
-    result_multi_with_invalid = execute_pipeline(foo_pipeline, solid_selection=["a", "*add_nums"])
-    assert result_multi_with_invalid.success
-    assert result_multi_with_invalid.result_for_solid("add_nums").output_value() == 3
-    assert len(result_multi_with_invalid.solid_result_list) == 3
+    with pytest.raises(
+        DagsterInvalidSubsetError,
+        match=re.escape("No qualified solids to execute found for solid_selection"),
+    ):
+        execute_pipeline(foo_pipeline, solid_selection=["a", "*add_nums"])
 
 
 def test_execute_pipeline_with_solid_selection_invalid():

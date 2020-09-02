@@ -1,10 +1,14 @@
+import pytest
+
 from dagster import InputDefinition, lambda_solid, pipeline
+from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector.subset_selector import (
     MAX_NUM,
     Traverser,
     generate_dep_graph,
     parse_clause,
     parse_solid_selection,
+    parse_step_selection,
 )
 
 
@@ -123,14 +127,82 @@ def test_parse_solid_selection_multi():
     assert len(solid_selection_multi_overlap) == 3
     assert set(solid_selection_multi_overlap) == {"return_one", "return_two", "add_nums"}
 
-    solid_selection_multi_with_invalid = parse_solid_selection(foo_pipeline, ["*add_nums", "a"])
-    assert len(solid_selection_multi_with_invalid) == 3
-    assert set(solid_selection_multi_with_invalid) == {"return_one", "return_two", "add_nums"}
+    with pytest.raises(
+        DagsterInvalidSubsetError, match="No qualified solids to execute found for solid_selection",
+    ):
+        parse_solid_selection(foo_pipeline, ["*add_nums", "a"])
 
 
 def test_parse_solid_selection_invalid():
-    result = parse_solid_selection(foo_pipeline, ["1+some_solid"])
-    assert result == set()
 
-    result_comma = parse_solid_selection(foo_pipeline, ["some,solid"])
-    assert result_comma == set()
+    with pytest.raises(
+        DagsterInvalidSubsetError, match="No qualified solids to execute found for solid_selection",
+    ):
+        parse_solid_selection(foo_pipeline, ["some,solid"])
+
+
+step_deps = {
+    "return_one.compute": set(),
+    "return_two.compute": set(),
+    "add_nums.compute": {"return_one.compute", "return_two.compute"},
+    "multiply_two.compute": {"add_nums.compute"},
+    "add_one.compute": {"multiply_two.compute"},
+}
+
+
+def test_parse_step_selection_single():
+    step_selection_single = parse_step_selection(step_deps, ["add_nums.compute"])
+    assert len(step_selection_single) == 1
+    assert step_selection_single == {"add_nums.compute"}
+
+    step_selection_star = parse_step_selection(step_deps, ["add_nums.compute*"])
+    assert len(step_selection_star) == 3
+    assert set(step_selection_star) == {
+        "add_nums.compute",
+        "multiply_two.compute",
+        "add_one.compute",
+    }
+
+    step_selection_both = parse_step_selection(step_deps, ["*add_nums.compute+"])
+    assert len(step_selection_both) == 4
+    assert set(step_selection_both) == {
+        "return_one.compute",
+        "return_two.compute",
+        "add_nums.compute",
+        "multiply_two.compute",
+    }
+
+
+def test_parse_step_selection_multi():
+    step_selection_multi_disjoint = parse_step_selection(
+        step_deps, ["return_one.compute", "add_nums.compute+"]
+    )
+    assert len(step_selection_multi_disjoint) == 3
+    assert set(step_selection_multi_disjoint) == {
+        "return_one.compute",
+        "add_nums.compute",
+        "multiply_two.compute",
+    }
+
+    step_selection_multi_overlap = parse_step_selection(
+        step_deps, ["*add_nums.compute", "return_one.compute+"]
+    )
+    assert len(step_selection_multi_overlap) == 3
+    assert set(step_selection_multi_overlap) == {
+        "return_one.compute",
+        "return_two.compute",
+        "add_nums.compute",
+    }
+
+    with pytest.raises(
+        DagsterInvalidSubsetError, match="No qualified steps to execute found for step_selection",
+    ):
+        parse_step_selection(step_deps, ["*add_nums.compute", "a"])
+
+
+def test_parse_step_selection_invalid():
+
+    with pytest.raises(
+        DagsterInvalidSubsetError, match="No qualified steps to execute found for step_selection",
+    ):
+        parse_step_selection(step_deps, ["1+some_solid.compute"])
