@@ -4,8 +4,6 @@ import uuid
 import pytest
 
 from dagster import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
     DependencyDefinition,
     InputDefinition,
     Int,
@@ -31,6 +29,7 @@ from dagster.cli.workspace.load import location_handle_from_python_file
 from dagster.core.definitions import Solid
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.solid_container import _create_adjacency_lists
+from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.host_representation import RepositoryLocation, UserProcessApi
 from dagster.core.instance import DagsterInstance
@@ -758,7 +757,7 @@ def test_reexecution_fs_storage_with_solid_selection():
         pipeline_def,
         parent_run_id=pipeline_result.run_id,
         run_config=run_config,
-        step_keys_to_execute=["return_one.compute"],
+        step_selection=["return_one.compute"],
         instance=instance,
     )
     assert reexecution_result_no_solid_selection.success
@@ -792,14 +791,14 @@ def test_reexecution_fs_storage_with_solid_selection():
     # Case 3: re-execute a pipeline partially when the original pipeline has solid selection and
     #   re-exeucte a step which hasn't been included in the original pipeline
     with pytest.raises(
-        DagsterExecutionStepNotFoundError,
-        match=re.escape("Execution plan does not contain step: add_one.compute"),
+        DagsterInvalidSubsetError,
+        match=re.escape("No qualified steps to execute found for step_selection"),
     ):
         reexecute_pipeline(
             pipeline_def,
             parent_run_id=pipeline_result_solid_selection.run_id,
             run_config=run_config,
-            step_keys_to_execute=["add_one.compute"],
+            step_selection=["add_one.compute"],
             instance=instance,
         )
 
@@ -810,7 +809,7 @@ def test_reexecution_fs_storage_with_solid_selection():
         parent_run_id=reexecution_result_solid_selection.run_id,
         run_config=run_config,
         instance=instance,
-        step_keys_to_execute=["return_one.compute"],
+        step_selection=["return_one.compute"],
     )
 
     assert re_reexecution_result.success
@@ -843,7 +842,7 @@ def test_single_step_reexecution():
         parent_run_id=pipeline_result.run_id,
         run_config=run_config,
         instance=instance,
-        step_keys_to_execute=["add_one.compute"],
+        step_selection=["add_one.compute"],
     )
 
     assert reexecution_result.success
@@ -875,7 +874,7 @@ def test_two_step_reexecution():
         parent_run_id=pipeline_result.run_id,
         run_config=run_config,
         instance=instance,
-        step_keys_to_execute=["add_one.compute", "add_one_2.compute"],
+        step_selection=["add_one.compute", "add_one_2.compute"],
     )
     assert reexecution_result.success
     assert reexecution_result.result_for_solid("return_one").output_value() == None

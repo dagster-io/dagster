@@ -32,6 +32,18 @@ class ExecutionPlanSnapshot(
             ),
         )
 
+    @property
+    def step_deps(self):
+        # Construct dependency dictionary (downstream to upstreams)
+        deps = {step.key: set() for step in self.steps}
+
+        for step in self.steps:
+            for step_input in step.inputs:
+                deps[step.key].update(
+                    [output_handle.step_key for output_handle in step_input.upstream_output_handles]
+                )
+        return deps
+
 
 @whitelist_for_serdes
 class ExecutionPlanSnapshotErrorData(namedtuple("_ExecutionPlanSnapshotErrorData", "error")):
