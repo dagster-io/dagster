@@ -1,8 +1,6 @@
 import contextlib
 import warnings
 
-import dask.dataframe as dd
-
 from dagster import (
     Any,
     AssetMaterialization,
@@ -22,6 +20,10 @@ from dagster import (
     dagster_type_loader,
     dagster_type_materializer,
 )
+import dask.dataframe as dd
+
+from .utils import sanitize_column_names
+
 
 WriteCompressionTextOptions = Enum(
     "WriteCompressionText", [EnumValue("gzip"), EnumValue("bz2"), EnumValue("xz"),],
@@ -334,6 +336,35 @@ DataFrameToTypes = {
             ),
         },
     },
+}
+
+
+DataFrameUtilities = {
+    "sample": {
+        "function": dd.DataFrame.sample,
+        "options": Field(Float, is_required=False, description="Sample a random fraction of items.")
+    },
+    "repartition": {
+        "function": dd.DataFrame.repartition,
+        "options": Field(
+            Selector(
+                {
+                    "npartitions": Field(Int, description="Number of partitions of output."),
+                    "partition_size": Field(Any, description="Max number of bytes of memory for each partition."),
+                }
+            ),
+            is_required=False,
+            description="Repartition dataframe along new divisions.",
+        )  
+    },
+    "reset_index": {
+        "function": dd.DataFrame.reset_index,
+        "options": Field(Bool, is_required=False, description="Reset the index to the default index."),
+    },
+    "sanitize_column_names": {
+        "function": sanitize_column_names,
+        "options": Field(Bool, is_required=False, description="Modify column names for greater compatibility."),   
+    }
 }
 
 
