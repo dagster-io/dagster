@@ -65,6 +65,10 @@ intermediate_storage:
       s3_bucket: your-s3-bucket-name
 ```
 
+The resource uses `boto` under the hood, so if you are accessing your private buckets you will
+need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables
+or follow one of the other boto authentication methods.
+
 With this in place, your pipeline runs will store intermediates on S3 in
 the location
 `s3://<bucket>/dagster/storage/<pipeline run id>/intermediates/<solid name>.compute`
