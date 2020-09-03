@@ -43,6 +43,7 @@ git push
 Once you have _confirmed_ that the new version of the site is up at `docs.dagster.io` (may take up to 5 min), clone the following repo and run:
 
 ```
+# This updates the search index against the live site
 git clone https://github.com/dagster-io/docsearch-scraper.git
 cd docsearch-scraper
 pipenv install
