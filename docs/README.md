@@ -39,3 +39,13 @@ You should also have a new commit in your dagster repository. Run `git push` her
 cd $DAGSTER_REPO
 git push
 ```
+
+Once you have _confirmed_ that the new version of the site is up at `docs.dagster.io`, clone the following repo and run:
+
+```
+git clone https://github.com/dagster-io/docsearch-scraper.git
+cd docsearch-scraper
+pipenv install
+pipenv shell
+./docsearch docker:run config.json
+```
