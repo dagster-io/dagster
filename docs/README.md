@@ -25,3 +25,17 @@ To build and push docs for a new version (e.g. 0.8.5), in `docs` directory, run:
 pip install -e python_modules/automation
 dagster-docs build -v 0.8.5
 ```
+
+Then, go to the following directory and run `git push`:
+
+```
+cd /tmp/dagster-docs
+git push
+```
+
+You should also have a new commit in your dagster repository. Run `git push` here as well. 
+
+```
+cd $DAGSTER_REPO
+git push
+```
