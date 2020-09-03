@@ -1,59 +1,75 @@
 # Changelog
 
-## 0.9.5 (Upcoming)
+## 0.9.5
+
+**New**
+
+- UI improvements to the backfill partition selector
+- Enabled sorting of steps by failure in the partition run matrix in Dagit
+
+**Bugfixes**
+
+- [dagstermill] fixes an issue with output notebooks and s3 storage
+- [dagster_celery] bug fixed in pythonpath calculation (thanks @enima2648!)
+- [dagster_pandas] marked create_structured_dataframe_type and ConstraintWithMetadata as experimental APIs
+- [dagster_k8s] reduced default job backoff limit to 0
+
+**Docs**
+
+- Various docs site improvements
 
 ## 0.9.4
 
 **Breaking Changes**
 
-* When using the `configured` API on a solid or composite solid, a new solid name must be provided.
-* The image used by the K8sScheduler to launch scheduled executions is now specified under the “scheduler” section of the Helm chart (previously under “pipeline_run” section).
+- When using the `configured` API on a solid or composite solid, a new solid name must be provided.
+- The image used by the K8sScheduler to launch scheduled executions is now specified under the “scheduler” section of the Helm chart (previously under “pipeline_run” section).
 
 **New**
 
-* Added an experimental mode that speeds up interactions in dagit by launching a gRPC server on startup for each repository location in your workspace. To enable it, add the following to your `dagster.yaml`:
+- Added an experimental mode that speeds up interactions in dagit by launching a gRPC server on startup for each repository location in your workspace. To enable it, add the following to your `dagster.yaml`:
 
 ```yaml
 opt_in:
   local_servers: true
 ```
 
-* Intermediate Storage and System Storage now default to the first provided storage definition when no configuration is provided. Previously, it would be necessary to provide a run config for storage whenever providing custom storage definitions, even if that storage required no run configuration. Now, if the first provided storage definition requires no run configuration, the system will default to using it.
-* Added a timezone picker to Dagit, and made all timestamps timezone-aware
-* Added solid_config to hook context which provides the access to the config schema variable of the corresponding solid.
-* Hooks can be directly set on `PipelineDefinition` or `@pipeline`, e.g.  `@pipeline(hook_defs={hook_a})`. It will apply the hooks on every single solid instance within the pipeline.
-* Added Partitions tab for partitioned pipelines, with new backfill selector.
+- Intermediate Storage and System Storage now default to the first provided storage definition when no configuration is provided. Previously, it would be necessary to provide a run config for storage whenever providing custom storage definitions, even if that storage required no run configuration. Now, if the first provided storage definition requires no run configuration, the system will default to using it.
+- Added a timezone picker to Dagit, and made all timestamps timezone-aware
+- Added solid_config to hook context which provides the access to the config schema variable of the corresponding solid.
+- Hooks can be directly set on `PipelineDefinition` or `@pipeline`, e.g. `@pipeline(hook_defs={hook_a})`. It will apply the hooks on every single solid instance within the pipeline.
+- Added Partitions tab for partitioned pipelines, with new backfill selector.
 
 ## 0.9.3
 
 **Breaking Changes**
 
-* Removed deprecated `--env` flag from CLI
-* The `--host` CLI param has been renamed to `--grpc_host` to avoid conflict with the dagit `--host` param.
+- Removed deprecated `--env` flag from CLI
+- The `--host` CLI param has been renamed to `--grpc_host` to avoid conflict with the dagit `--host` param.
 
 **New**
 
-* Descriptions for solid inputs and outputs will now be inferred from doc blocks if available (thanks [@AndersonReyes](https://github.com/dagster-io/dagster/commits?author=AndersonReyes) !)
-* Various documentation improvements (thanks [@jeriscc](https://github.com/dagster-io/dagster/commits?author=jeriscc) !)
-* Load inputs from pyspark dataframes (thanks [@davidkatz-il](https://github.com/dagster-io/dagster/commits?author=davidkatz-il) !)
-* Added step-level run history for partitioned schedules on the schedule view
-* Added great_expectations integration, through the `dagster_ge` library.  Example usage is under a new example, called `ge_example`, and documentation for the library can be found under the libraries section of the api docs.
-* `PythonObjectDagsterType` can now take a tuple of types as well as a single type, more closely mirroring `isinstance` and allowing Union types to be represented in Dagster.
-* The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://docs.dagster.io/overview/configuration).
-* Updated Helm chart to include auto-generated user code configmap in user code deployment by default
+- Descriptions for solid inputs and outputs will now be inferred from doc blocks if available (thanks [@AndersonReyes](https://github.com/dagster-io/dagster/commits?author=AndersonReyes) !)
+- Various documentation improvements (thanks [@jeriscc](https://github.com/dagster-io/dagster/commits?author=jeriscc) !)
+- Load inputs from pyspark dataframes (thanks [@davidkatz-il](https://github.com/dagster-io/dagster/commits?author=davidkatz-il) !)
+- Added step-level run history for partitioned schedules on the schedule view
+- Added great_expectations integration, through the `dagster_ge` library. Example usage is under a new example, called `ge_example`, and documentation for the library can be found under the libraries section of the api docs.
+- `PythonObjectDagsterType` can now take a tuple of types as well as a single type, more closely mirroring `isinstance` and allowing Union types to be represented in Dagster.
+- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://docs.dagster.io/overview/configuration).
+- Updated Helm chart to include auto-generated user code configmap in user code deployment by default
 
 **Bugfixes**
 
-* Databricks now checks intermediate storage instead of system storage
-* Fixes a bug where applying hooks on a pipeline with composite solids would flatten the top-level solids. Now applying hooks on pipelines or composite solids means attaching hooks to every single solid instance within the pipeline or the composite solid.
-* Fixes the GraphQL playground hosted by dagit
-* Fixes a bug where K8s CronJobs were stopped unnecessarily during schedule reconciliation
+- Databricks now checks intermediate storage instead of system storage
+- Fixes a bug where applying hooks on a pipeline with composite solids would flatten the top-level solids. Now applying hooks on pipelines or composite solids means attaching hooks to every single solid instance within the pipeline or the composite solid.
+- Fixes the GraphQL playground hosted by dagit
+- Fixes a bug where K8s CronJobs were stopped unnecessarily during schedule reconciliation
 
 **Experimental**
 
-* New `dagster-k8s/config` tag that lets users pass in custom configuration to the Kubernetes `Job`, `Job` metadata, `JobSpec`, `PodSpec`, and `PodTemplateSpec` metadata.
-  * This allows users to specify settings like eviction policy annotations and node affinities.
-  * Example:
+- New `dagster-k8s/config` tag that lets users pass in custom configuration to the Kubernetes `Job`, `Job` metadata, `JobSpec`, `PodSpec`, and `PodTemplateSpec` metadata.
+  - This allows users to specify settings like eviction policy annotations and node affinities.
+  - Example:
   ```python
     @solid(
       tags = {
@@ -91,22 +107,22 @@ opt_in:
 
 **Breaking Changes**
 
-* The `--env` flag no longer works for the `pipeline launch` or `pipeline execute` commands. Use `--config` instead.
-* The `pipeline execute` command no longer accepts the `--workspace` argument.
-To execute pipelines in a workspace, use `pipeline launch` instead.
+- The `--env` flag no longer works for the `pipeline launch` or `pipeline execute` commands. Use `--config` instead.
+- The `pipeline execute` command no longer accepts the `--workspace` argument.
+  To execute pipelines in a workspace, use `pipeline launch` instead.
 
 **New**
 
-* Added `ResourceDefinition.mock_resource` helper for magic mocking resources. Example usage can be found [here](https://git.io/JJ7tz)
-* Remove the `row_count` metadata entry from the Dask DataFrame type check (thanks [@kinghuang](https://github.com/kinghuang)!)
-* Add [`orient`](https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.to_json) to the config options when materializing a Dask DataFrame to `json` (thanks [@kinghuang](https://github.com/kinghuang)!)
+- Added `ResourceDefinition.mock_resource` helper for magic mocking resources. Example usage can be found [here](https://git.io/JJ7tz)
+- Remove the `row_count` metadata entry from the Dask DataFrame type check (thanks [@kinghuang](https://github.com/kinghuang)!)
+- Add [`orient`](https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.to_json) to the config options when materializing a Dask DataFrame to `json` (thanks [@kinghuang](https://github.com/kinghuang)!)
 
 **Bugfixes**
 
-* Fixed a bug where applying `configured` to a solid definition would overwrite inputs from run config.
-* Fixed a bug where pipeline tags would not apply to solid subsets.
-* Improved error messages for repository-loading errors in CLI commands.
-* Fixed a bug where pipeline execution error messages were not being surfaced in Dagit.
+- Fixed a bug where applying `configured` to a solid definition would overwrite inputs from run config.
+- Fixed a bug where pipeline tags would not apply to solid subsets.
+- Improved error messages for repository-loading errors in CLI commands.
+- Fixed a bug where pipeline execution error messages were not being surfaced in Dagit.
 
 ## 0.9.1
 
@@ -128,9 +144,10 @@ To execute pipelines in a workspace, use `pipeline launch` instead.
 - We have removed the `config` argument to the `ConfigMapping`, `@composite_solid`, `@solid`, `SolidDefinition`, `@executor`, `ExecutorDefinition`, `@logger`, `LoggerDefinition`, `@resource`, and `ResourceDefinition` APIs, which we deprecated in 0.8.0. Use `config_schema` instead.
 
 **New**
+
 - Python 3.8 is now fully supported.
 - `-d` or `--working-directory` can be used to specify a working directory in any command that
-takes in a `-f` or `--python_file` argument.
+  takes in a `-f` or `--python_file` argument.
 - Removed the deprecation of `create_dagster_pandas_dataframe_type`. This is the currently
   supported API for custom pandas data frame type creation.
 - Removed gevent dependency from dagster
@@ -146,7 +163,6 @@ takes in a `-f` or `--python_file` argument.
 - `AssetMaterializations` no longer accepts a `dagster_type` argument. This reverts the change
   billed as "`AssetMaterializations` can now have type information attached as metadata." in the
   previous release.
-
 
 ## 0.8.10
 
@@ -207,11 +223,11 @@ takes in a `-f` or `--python_file` argument.
     As before, the default includes an in-memory intermediate and a local filesystem intermediate
     storage.
   - We have deprecated `system_storage_defs` argument to `ModeDefinition` in favor of
-    `intermediate_storage_defs`.  `system_storage_defs` will be removed in 0.10.0 at the earliest.
+    `intermediate_storage_defs`. `system_storage_defs` will be removed in 0.10.0 at the earliest.
   - We have added an `@intermediate_storage` decorator, which makes it easy to define intermediate
     storages.
   - We have added `s3_file_manager` and `local_file_manager` resources to replace the file managers
-    that previously lived inside system storages.  The airline demo has been updated to include
+    that previously lived inside system storages. The airline demo has been updated to include
     an example of how to do this:
     https://github.com/dagster-io/dagster/blob/0.8.8/examples/airline_demo/airline_demo/solids.py#L171.
 - The help panel in the dagit config editor can now be resized and toggled open or closed, to
