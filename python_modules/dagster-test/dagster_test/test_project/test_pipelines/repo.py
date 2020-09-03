@@ -14,7 +14,9 @@ from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 
 from dagster import (
     AssetMaterialization,
+    Bool,
     EventMetadataEntry,
+    Field,
     InputDefinition,
     Int,
     List,
@@ -32,6 +34,7 @@ from dagster import (
 )
 from dagster.core.definitions.decorators import daily_schedule, schedule
 from dagster.core.test_utils import nesting_composite_pipeline
+from dagster.utils import segfault
 
 
 def celery_mode_defs(resources=None):
@@ -412,6 +415,27 @@ def demo_airflow_execution_date_pipeline():
     emit_airflow_execution_date()
 
 
+def define_hard_failer():
+    @pipeline(mode_defs=celery_mode_defs())
+    def hard_failer():
+        @solid(
+            config_schema={"fail": Field(Bool, is_required=False, default_value=False)},
+            output_defs=[OutputDefinition(Int)],
+        )
+        def hard_fail_or_0(context):
+            if context.solid_config["fail"]:
+                segfault()
+            return 0
+
+        @solid(input_defs=[InputDefinition("n", Int)],)
+        def increment(_, n):
+            return n + 1
+
+        increment(hard_fail_or_0())
+
+    return hard_failer
+
+
 def define_demo_execution_repo():
     @repository
     def demo_execution_repo():
@@ -431,6 +455,7 @@ def define_demo_execution_repo():
                 "resource_pipeline": define_resource_pipeline,
                 "docker_celery_pipeline": define_docker_celery_pipeline,
                 "demo_airflow_execution_date_pipeline": demo_airflow_execution_date_pipeline,
+                "hard_failer": define_hard_failer,
             },
             "schedules": define_schedules(),
         }
