@@ -31,7 +31,9 @@ def test_dataframe_inputs(file_type):
     # https://github.com/dagster-io/dagster/issues/2872
     with pytest.warns(
         UserWarning,
-        match=re.escape("Specifying {key}: is deprecated. Use read:{key}: instead.".format(key=file_type)),
+        match=re.escape(
+            "Specifying {key}: is deprecated. Use read:{key}: instead.".format(key=file_type)
+        ),
     ):
         file_name = file_relative_path(__file__, f"num.{file_type}")
         result = execute_solid(
@@ -46,7 +48,9 @@ def test_dataframe_inputs(file_type):
     read_result = execute_solid(
         return_df,
         run_config={
-            'solids': {'return_df': {'inputs': {'input_df': {'read': {file_type: {'path': file_name}}}}}}
+            "solids": {
+                "return_df": {"inputs": {"input_df": {"read": {file_type: {"path": file_name}}}}}
+            }
         },
     )
     assert read_result.success
@@ -71,7 +75,9 @@ def test_dataframe_outputs(file_type, read, kwargs):
     # https://github.com/dagster-io/dagster/issues/2872
     with pytest.warns(
         UserWarning,
-        match=re.escape("Specifying {key}: is deprecated. Use to:{key}: instead.".format(key=file_type)),
+        match=re.escape(
+            "Specifying {key}: is deprecated. Use to:{key}: instead.".format(key=file_type)
+        ),
     ):
         with get_temp_dir() as temp_path:
             shutil.rmtree(temp_path)
