@@ -1,4 +1,5 @@
 import abc
+import os
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
@@ -10,8 +11,9 @@ from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import ScheduleOrigin
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster.utils import mkdir_p
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -401,7 +403,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         """
 
     @abc.abstractmethod
-    def running_schedule_count(self, schedule_origin_id):
+    def running_schedule_count(self, instance, schedule_origin_id):
         """Returns the number of jobs currently running for the given schedule. This method is used
         for detecting when the scheduler is out of sync with schedule storage.
 
@@ -415,6 +417,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         - 0 when a schedule is set to be stopped
 
         Args:
+            instance (DagsterInstance): The current instance.
             schedule_origin_id (string): The id of the schedule target to return the number of jobs for
         """
 
@@ -425,6 +428,66 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         Args:
             schedule_origin_id (string): The id of the schedule target to retrieve the log path for
         """
+
+
+class DagsterCommandLineScheduler(Scheduler, ConfigurableClass):
+    """Scheduler implementation that launches runs from the `dagster scheduler run`
+    long-lived process.
+    """
+
+    def __init__(
+        self, inst_data=None,
+    ):
+        self._inst_data = inst_data
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {}
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return DagsterCommandLineScheduler(inst_data=inst_data)
+
+    def debug_info(self):
+        return ""
+
+    def start_schedule(self, instance, external_schedule):
+        # Automatically picked up by the `dagster scheduler run` command
+        pass
+
+    def stop_schedule(self, instance, schedule_origin_id):
+        # Automatically picked up by the `dagster scheduler run` command
+        pass
+
+    def running_schedule_count(self, instance, schedule_origin_id):
+        state = instance.get_schedule_state(schedule_origin_id)
+        if not state:
+            return 0
+        return 1 if state.status == ScheduleStatus.RUNNING else 0
+
+    def wipe(self, instance):
+        pass
+
+    def _get_or_create_logs_directory(self, instance, schedule_origin_id):
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.str_param(schedule_origin_id, "schedule_origin_id")
+
+        logs_directory = os.path.join(instance.schedules_directory(), "logs", schedule_origin_id)
+        if not os.path.isdir(logs_directory):
+            mkdir_p(logs_directory)
+
+        return logs_directory
+
+    def get_logs_path(self, instance, schedule_origin_id):
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.str_param(schedule_origin_id, "schedule_origin_id")
+
+        logs_directory = self._get_or_create_logs_directory(instance, schedule_origin_id)
+        return os.path.join(logs_directory, "scheduler.log")
 
 
 class ScheduleTickStatsSnapshot(

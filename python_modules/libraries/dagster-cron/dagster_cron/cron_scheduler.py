@@ -53,13 +53,13 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
 
         # If the cron job already exists, remove it. This prevents duplicate entries.
         # Then, add a new cron job to the cron tab.
-        if self.running_schedule_count(external_schedule.get_origin_id()) > 0:
+        if self.running_schedule_count(instance, external_schedule.get_origin_id()) > 0:
             self._end_cron_job(instance, schedule_origin_id)
 
         self._start_cron_job(instance, external_schedule)
 
         # Verify that the cron job is running
-        running_schedule_count = self.running_schedule_count(schedule_origin_id)
+        running_schedule_count = self.running_schedule_count(instance, schedule_origin_id)
         if running_schedule_count == 0:
             raise DagsterSchedulerError(
                 "Attempted to write cron job for schedule "
@@ -89,7 +89,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         self._end_cron_job(instance, schedule_origin_id)
 
         # Verify that the cron job has been removed
-        running_schedule_count = self.running_schedule_count(schedule_origin_id)
+        running_schedule_count = self.running_schedule_count(instance, schedule_origin_id)
         if running_schedule_count > 0:
             raise DagsterSchedulerError(
                 "Attempted to remove existing cron job for schedule "
@@ -164,7 +164,7 @@ class SystemCronScheduler(Scheduler, ConfigurableClass):
         if os.path.isfile(script_file):
             os.remove(script_file)
 
-    def running_schedule_count(self, schedule_origin_id):
+    def running_schedule_count(self, instance, schedule_origin_id):
         matching_jobs = self.get_cron_tab().find_comment(
             self._cron_tag_for_schedule(schedule_origin_id)
         )

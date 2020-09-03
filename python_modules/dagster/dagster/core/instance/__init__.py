@@ -1058,7 +1058,7 @@ class DagsterInstance:
 
     def running_schedule_count(self, schedule_origin_id):
         if self._scheduler:
-            return self._scheduler.running_schedule_count(schedule_origin_id)
+            return self._scheduler.running_schedule_count(self, schedule_origin_id)
         return 0
 
     def scheduler_debug_info(self):
@@ -1120,6 +1120,9 @@ class DagsterInstance:
 
     def get_schedule_ticks(self, schedule_origin_id):
         return self._schedule_storage.get_schedule_ticks(schedule_origin_id)
+
+    def get_latest_tick(self, schedule_origin_id):
+        return self._schedule_storage.get_latest_tick(schedule_origin_id)
 
     def get_schedule_tick_stats(self, schedule_origin_id):
         return self._schedule_storage.get_schedule_tick_stats(schedule_origin_id)

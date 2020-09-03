@@ -313,6 +313,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-cli_command_grpc_tests",
             "-core_tests",
             "-general_tests",
+            "-scheduler_tests",
         ],
     ),
     ModuleBuildSpec(

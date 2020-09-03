@@ -23,8 +23,8 @@ from dagster import check, seven
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS, TemporaryDirectory, multiprocessing, thread
 from dagster.seven.abc import Mapping
-from dagster.utils.merger import merge_dicts
 
+from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):

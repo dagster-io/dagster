@@ -50,7 +50,15 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
 
     @abc.abstractmethod
     def get_schedule_ticks(self, schedule_origin_id):
-        """Get all schedule ticks for a given schedule
+        """Get all schedule ticks for a given schedule.
+
+        Args:
+            schedule_origin_id (str): The id of the ExternalSchedule target
+        """
+
+    @abc.abstractmethod
+    def get_latest_tick(self, schedule_origin_id):
+        """Get the most recent tick that ran for a given schedule.
 
         Args:
             schedule_origin_id (str): The id of the ExternalSchedule target

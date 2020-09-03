@@ -11,7 +11,8 @@ from dagster.api.list_repositories import sync_list_repositories, sync_list_repo
 from dagster.core.code_pointer import CodePointer
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation.selector import PipelineSelector
-from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
+from dagster.core.instance import DagsterInstance
+from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryOrigin, RepositoryPythonOrigin
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 # This is a hard-coded name for the special "in-process" location.
@@ -58,6 +59,17 @@ class UserProcessApi(Enum):
     GRPC = "GRPC"
 
 
+def python_user_process_api_from_instance(instance):
+    check.inst_param(instance, "instance", DagsterInstance)
+
+    opt_in_settings = instance.get_settings("opt_in")
+    return (
+        UserProcessApi.GRPC
+        if (opt_in_settings and opt_in_settings["local_servers"])
+        else UserProcessApi.CLI
+    )
+
+
 class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def create_reloaded_handle(self):
@@ -65,6 +77,25 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
 
     def cleanup(self):
         pass
+
+    @staticmethod
+    def create_from_repository_origin(repository_origin, instance):
+        check.inst_param(repository_origin, "repository_origin", RepositoryOrigin)
+        check.inst_param(instance, "instance", DagsterInstance)
+
+        if isinstance(repository_origin, RepositoryGrpcServerOrigin):
+            return RepositoryLocationHandle.create_grpc_server_location(
+                port=repository_origin.port,
+                socket=repository_origin.socket,
+                host=repository_origin.host,
+            )
+        elif isinstance(repository_origin, RepositoryPythonOrigin):
+            return RepositoryLocationHandle.create_python_env_location(
+                loadable_target_origin=repository_origin.loadable_target_origin,
+                user_process_api=python_user_process_api_from_instance(instance),
+            )
+        else:
+            raise DagsterInvariantViolationError("Unexpected repository origin type")
 
     @staticmethod
     def create_in_process_location(pointer):
@@ -79,7 +110,7 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
     @staticmethod
     def create_python_env_location(
         loadable_target_origin,
-        location_name,
+        location_name=None,
         user_process_api=UserProcessApi.CLI,
         use_python_package=False,
     ):

@@ -142,7 +142,8 @@ class InstanceRef(
             ),
         )
 
-        scheduler_data = configurable_class_data_or_default(config_value, "scheduler", None)
+        scheduler_data = configurable_class_data_or_default(config_value, "scheduler", None,)
+
         run_launcher_data = configurable_class_data_or_default(
             config_value,
             "run_launcher",

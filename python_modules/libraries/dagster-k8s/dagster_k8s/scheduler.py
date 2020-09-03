@@ -182,7 +182,7 @@ class K8sScheduler(Scheduler, ConfigurableClass):
 
         self.start_schedule(instance, external_schedule)
 
-    def running_schedule_count(self, schedule_origin_id):
+    def running_schedule_count(self, instance, schedule_origin_id):
         check.str_param(schedule_origin_id, "schedule_origin_id")
 
         if self.get_cron_job(schedule_origin_id):

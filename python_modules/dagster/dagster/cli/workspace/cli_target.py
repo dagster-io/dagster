@@ -10,8 +10,11 @@ from click import UsageError
 from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
-from dagster.core.host_representation import ExternalRepository, RepositoryLocation, UserProcessApi
-from dagster.core.host_representation.handle import RepositoryLocationHandle
+from dagster.core.host_representation import ExternalRepository, RepositoryLocation
+from dagster.core.host_representation.handle import (
+    RepositoryLocationHandle,
+    python_user_process_api_from_instance,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import (
     PipelinePythonOrigin,
@@ -166,15 +169,10 @@ def workspace_from_load_target(load_target, instance):
     check.inst_param(load_target, "load_target", WorkspaceLoadTarget)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    opt_in_settings = instance.get_settings("opt_in")
-    python_user_process_api = (
-        UserProcessApi.GRPC
-        if (opt_in_settings and opt_in_settings["local_servers"])
-        else UserProcessApi.CLI
-    )
-
     if isinstance(load_target, WorkspaceFileTarget):
-        return load_workspace_from_yaml_paths(load_target.paths, python_user_process_api)
+        return load_workspace_from_yaml_paths(
+            load_target.paths, python_user_process_api_from_instance(instance)
+        )
     elif isinstance(load_target, PythonFileTarget):
         return Workspace(
             [
@@ -182,7 +180,7 @@ def workspace_from_load_target(load_target, instance):
                     python_file=load_target.python_file,
                     attribute=load_target.attribute,
                     working_directory=load_target.working_directory,
-                    user_process_api=python_user_process_api,
+                    user_process_api=python_user_process_api_from_instance(instance),
                 )
             ]
         )
@@ -192,7 +190,7 @@ def workspace_from_load_target(load_target, instance):
                 location_handle_from_module_name(
                     load_target.module_name,
                     load_target.attribute,
-                    user_process_api=python_user_process_api,
+                    user_process_api=python_user_process_api_from_instance(instance),
                 )
             ]
         )

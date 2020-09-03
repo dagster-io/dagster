@@ -3,6 +3,8 @@ import sys
 
 import click
 
+from dagster.scheduler.scheduler import scheduler_cli
+
 from ..core.instance import DagsterInstance
 from ..version import __version__
 from .api import api_cli
@@ -21,6 +23,7 @@ def create_dagster_cli():
         "run": run_cli,
         "instance": instance_cli,
         "schedule": schedule_cli,
+        "scheduler": scheduler_cli,
         "asset": asset_cli,
         "debug": debug_cli,
     }

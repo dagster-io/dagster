@@ -62,6 +62,24 @@ class SqlScheduleStorage(ScheduleStorage):
         rows = self.execute(query)
         return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
 
+    def get_latest_tick(self, schedule_origin_id):
+        check.str_param(schedule_origin_id, "schedule_origin_id")
+
+        query = (
+            db.select([ScheduleTickTable.c.id, ScheduleTickTable.c.tick_body])
+            .select_from(ScheduleTickTable)
+            .where(ScheduleTickTable.c.schedule_origin_id == schedule_origin_id)
+            .order_by(ScheduleTickTable.c.timestamp.desc())
+            .limit(1)
+        )
+
+        rows = self.execute(query)
+
+        if len(rows) == 0:
+            return None
+
+        return ScheduleTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
+
     def get_schedule_ticks(self, schedule_origin_id):
         check.str_param(schedule_origin_id, "schedule_origin_id")
 
