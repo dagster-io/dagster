@@ -40,7 +40,7 @@ cd $DAGSTER_REPO
 git push
 ```
 
-Once you have _confirmed_ that the new version of the site is up at `docs.dagster.io`, clone the following repo and run:
+Once you have _confirmed_ that the new version of the site is up at `docs.dagster.io` (may take up to 5 min), clone the following repo and run:
 
 ```
 git clone https://github.com/dagster-io/docsearch-scraper.git
