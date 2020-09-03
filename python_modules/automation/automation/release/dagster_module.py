@@ -106,7 +106,7 @@ class DagsterModule(namedtuple("_DagsterModule", "name is_library additional_ste
         """
         assert isinstance(new_version, six.string_types)
 
-        output = 'version = "{}"\n'.format(new_version)
+        output = '__version__ = "{}"\n'.format(new_version)
 
         version_file = self.version_file_path
 
