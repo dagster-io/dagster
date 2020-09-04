@@ -36,7 +36,9 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
             "new": {
                 "size": {"num_workers": 1},
                 "spark_version": "6.5.x-scala2.11",
-                "nodes": {"node_types": {"node_type_id": "Standard_DS3_v2"},},
+                "nodes": {
+                    "node_types": {"node_type_id": "Standard_DS3_v2"},
+                },
             },
         },
         "libraries": [
@@ -47,7 +49,7 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
             {"pypi": {"package": "pytest"}},
         ],
     },
-    "secrets": [],
+    "secrets_to_env_variables": [],
     "storage": {
         "s3": {
             "secret_scope": "dagster-databricks-tests",
@@ -163,7 +165,7 @@ def test_pyspark_databricks(mock_wait, mock_get_step_events, mock_put_file, mock
     assert result.success
     assert mock_wait.call_count == 1
     assert mock_get_step_events.call_count == 1
-    assert mock_put_file.call_count == 3
+    assert mock_put_file.call_count == 4
     assert mock_submit_run.call_count == 1
 
 

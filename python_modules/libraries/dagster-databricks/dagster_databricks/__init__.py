@@ -12,6 +12,7 @@ from dagster.core.utils import check_dagster_package_version
 
 from .databricks import DatabricksError, DatabricksJobRunner
 from .databricks_pyspark_step_launcher import (
+    DatabricksConfig,
     DatabricksPySparkStepLauncher,
     databricks_pyspark_step_launcher,
 )
@@ -26,6 +27,7 @@ from .version import __version__
 check_dagster_package_version("dagster-databricks", __version__)
 
 __all__ = [
+    "DatabricksConfig",
     "DatabricksError",
     "DatabricksJobRunner",
     "DatabricksPySparkStepLauncher",
