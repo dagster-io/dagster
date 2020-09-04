@@ -1,3 +1,4 @@
+import re
 import shutil
 
 import dask.dataframe as dd
@@ -15,6 +16,48 @@ def create_dask_df():
 
 
 @pytest.mark.parametrize(
+    "file_type",
+    [
+        pytest.param("csv", id="csv"),
+        pytest.param("parquet", id="parquet"),
+        pytest.param("json", id="json"),
+    ],
+)
+def test_dataframe_inputs(file_type):
+    @solid(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])
+    def return_df(_, input_df):
+        return input_df
+
+    # https://github.com/dagster-io/dagster/issues/2872
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Specifying {key}: is deprecated. Use read:{key}: instead.".format(key=file_type)
+        ),
+    ):
+        file_name = file_relative_path(__file__, f"num.{file_type}")
+        result = execute_solid(
+            return_df,
+            run_config={
+                "solids": {"return_df": {"inputs": {"input_df": {file_type: {"path": file_name}}}}}
+            },
+        )
+        assert result.success
+        assert assert_eq(result.output_value(), create_dask_df())
+
+    read_result = execute_solid(
+        return_df,
+        run_config={
+            "solids": {
+                "return_df": {"inputs": {"input_df": {"read": {file_type: {"path": file_name}}}}}
+            }
+        },
+    )
+    assert read_result.success
+    assert assert_eq(result.output_value(), read_result.output_value())
+
+
+@pytest.mark.parametrize(
     "file_type,read,kwargs",
     [
         pytest.param("csv", dd.read_csv, {"index": False}, id="csv"),
@@ -29,42 +72,25 @@ def test_dataframe_outputs(file_type, read, kwargs):
     def return_df(_):
         return df
 
-    with get_temp_dir() as temp_path:
-        shutil.rmtree(temp_path)
-        result = execute_solid(
-            return_df,
-            run_config={
-                "solids": {
-                    "return_df": {
-                        "outputs": [{"output_df": {file_type: {"path": temp_path, **kwargs}}}]
+    # https://github.com/dagster-io/dagster/issues/2872
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Specifying {key}: is deprecated. Use to:{key}: instead.".format(key=file_type)
+        ),
+    ):
+        with get_temp_dir() as temp_path:
+            shutil.rmtree(temp_path)
+            result = execute_solid(
+                return_df,
+                run_config={
+                    "solids": {
+                        "return_df": {
+                            "outputs": [{"output_df": {file_type: {"path": temp_path, **kwargs}}}]
+                        }
                     }
-                }
-            },
-        )
-        assert result.success
-        actual = read(f"{temp_path}/*")
-        assert assert_eq(actual, df)
-
-
-@pytest.mark.parametrize(
-    "file_type",
-    [
-        pytest.param("csv", id="csv"),
-        pytest.param("parquet", id="parquet"),
-        pytest.param("json", id="json"),
-    ],
-)
-def test_dataframe_inputs(file_type):
-    @solid(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])
-    def return_df(_, input_df):
-        return input_df
-
-    file_name = file_relative_path(__file__, f"num.{file_type}")
-    result = execute_solid(
-        return_df,
-        run_config={
-            "solids": {"return_df": {"inputs": {"input_df": {file_type: {"path": file_name}}}}}
-        },
-    )
-    assert result.success
-    assert assert_eq(result.output_value(), create_dask_df())
+                },
+            )
+            assert result.success
+            actual = read(f"{temp_path}/*")
+            assert assert_eq(actual, df)
