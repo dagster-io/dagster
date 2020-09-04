@@ -8,6 +8,7 @@ from dagster.core.code_pointer import ModuleCodePointer
 from dagster.core.origin import RepositoryPythonOrigin, SchedulePythonOrigin
 from dagster.core.scheduler import ScheduleState, ScheduleStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData, ScheduleTickStatus
+from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -46,7 +47,7 @@ class TestScheduleStorage:
     ):
         fake_target = SchedulePythonOrigin(schedule_name, cls.fake_repo_target())
 
-        return ScheduleState(fake_target, status, cron_schedule)
+        return ScheduleState(fake_target, status, cron_schedule, start_timestamp=None)
 
     def test_basic_schedule_storage(self, storage):
         assert storage
@@ -59,6 +60,7 @@ class TestScheduleStorage:
         schedule = schedules[0]
         assert schedule.name == "my_schedule"
         assert schedule.cron_schedule == "* * * * *"
+        assert schedule.start_timestamp == None
 
     def test_add_multiple_schedules(self, storage):
         assert storage
@@ -86,6 +88,7 @@ class TestScheduleStorage:
         schedule = storage.get_schedule_state(state.schedule_origin_id)
 
         assert schedule.name == "my_schedule"
+        assert schedule.start_timestamp == None
 
     def test_get_schedule_state_not_found(self, storage):
         assert storage
@@ -101,7 +104,9 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_schedule_state(schedule)
 
-        new_schedule = schedule.with_status(ScheduleStatus.RUNNING)
+        now_time = get_current_datetime_in_utc()
+
+        new_schedule = schedule.with_status(ScheduleStatus.RUNNING, start_time_utc=now_time)
         storage.update_schedule_state(new_schedule)
 
         schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
@@ -110,6 +115,18 @@ class TestScheduleStorage:
         schedule = schedules[0]
         assert schedule.name == "my_schedule"
         assert schedule.status == ScheduleStatus.RUNNING
+        assert schedule.start_timestamp == get_timestamp_from_utc_datetime(now_time)
+
+        stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
+        storage.update_schedule_state(stopped_schedule)
+
+        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
+        assert len(schedules) == 1
+
+        schedule = schedules[0]
+        assert schedule.name == "my_schedule"
+        assert schedule.status == ScheduleStatus.STOPPED
+        assert schedule.start_timestamp == None
 
     def test_update_schedule_not_found(self, storage):
         assert storage

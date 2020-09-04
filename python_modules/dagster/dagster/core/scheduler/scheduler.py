@@ -1,5 +1,6 @@
 import abc
 from collections import namedtuple
+from datetime import datetime
 from enum import Enum
 
 import six
@@ -10,6 +11,7 @@ from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import ScheduleOrigin
 from dagster.serdes import whitelist_for_serdes
+from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -114,8 +116,10 @@ class SchedulerDebugInfo(
 
 
 @whitelist_for_serdes
-class ScheduleState(namedtuple("_StoredScheduleState", "origin status cron_schedule")):
-    def __new__(cls, origin, status, cron_schedule):
+class ScheduleState(
+    namedtuple("_StoredScheduleState", "origin status cron_schedule start_timestamp")
+):
+    def __new__(cls, origin, status, cron_schedule, start_timestamp=None):
 
         return super(ScheduleState, cls).__new__(
             cls,
@@ -123,6 +127,10 @@ class ScheduleState(namedtuple("_StoredScheduleState", "origin status cron_sched
             check.inst_param(origin, "origin", ScheduleOrigin),
             check.inst_param(status, "status", ScheduleStatus),
             check.str_param(cron_schedule, "cron_schedule"),
+            # Time in UTC at which the user started running the schedule (distinct from
+            # `start_date` on partition-based schedules, which is used to define
+            # the range of partitions)
+            check.opt_float_param(start_timestamp, "start_timestamp"),
         )
 
     @property
@@ -143,10 +151,23 @@ class ScheduleState(namedtuple("_StoredScheduleState", "origin status cron_sched
     def repository_origin_id(self):
         return self.origin.repository_origin.get_id()
 
-    def with_status(self, status):
+    def with_status(self, status, start_time_utc=None):
         check.inst_param(status, "status", ScheduleStatus)
+        check.opt_inst_param(start_time_utc, "start_time_utc", datetime)
 
-        return ScheduleState(self.origin, status=status, cron_schedule=self.cron_schedule)
+        check.invariant(
+            (status == ScheduleStatus.RUNNING) == (start_time_utc != None),
+            "start_time_utc must be set if and only if the schedule is being started",
+        )
+
+        return ScheduleState(
+            self.origin,
+            status=status,
+            cron_schedule=self.cron_schedule,
+            start_timestamp=get_timestamp_from_utc_datetime(start_time_utc)
+            if start_time_utc
+            else None,
+        )
 
 
 class Scheduler(six.with_metaclass(abc.ABCMeta)):
@@ -188,11 +209,17 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
             # metadata file
             existing_schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
             if existing_schedule_state:
+
+                new_timestamp = existing_schedule_state.start_timestamp
+                if not new_timestamp and existing_schedule_state.status == ScheduleStatus.RUNNING:
+                    new_timestamp = get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+
                 # Keep the status, update target and cron schedule
                 schedule_state = ScheduleState(
                     external_schedule.get_origin(),
                     existing_schedule_state.status,
                     external_schedule.cron_schedule,
+                    new_timestamp,
                 )
 
                 instance.update_schedule_state(schedule_state)
@@ -202,6 +229,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
                     external_schedule.get_origin(),
                     ScheduleStatus.STOPPED,
                     external_schedule.cron_schedule,
+                    start_timestamp=None,
                 )
 
                 instance.add_schedule_state(schedule_state)
@@ -272,7 +300,9 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
             )
 
         self.start_schedule(instance, external_schedule)
-        started_schedule = schedule_state.with_status(ScheduleStatus.RUNNING)
+        started_schedule = schedule_state.with_status(
+            ScheduleStatus.RUNNING, start_time_utc=get_current_datetime_in_utc()
+        )
         instance.update_schedule_state(started_schedule)
         return started_schedule
 

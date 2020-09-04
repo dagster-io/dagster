@@ -6,13 +6,14 @@ import sys
 import pytest
 import yaml
 from dagster_cron import SystemCronScheduler
+from freezegun import freeze_time
 
 from dagster import ScheduleDefinition
 from dagster.core.definitions import lambda_solid, pipeline, repository
 from dagster.core.host_representation import PythonEnvRepositoryLocation, RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.scheduler import ScheduleStatus
+from dagster.core.scheduler import ScheduleState, ScheduleStatus
 from dagster.core.scheduler.scheduler import (
     DagsterScheduleDoesNotExist,
     DagsterScheduleReconciliationError,
@@ -26,7 +27,11 @@ from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.core.test_utils import environ
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.seven import TemporaryDirectory
+from dagster.seven import (
+    TemporaryDirectory,
+    get_current_datetime_in_utc,
+    get_timestamp_from_utc_datetime,
+)
 
 
 @pytest.fixture(scope="function")
@@ -158,10 +163,13 @@ def test_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-out
         assert instance.all_stored_schedule_state()
 
 
+@freeze_time("2019-02-27")
 def test_re_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-outer-name
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         external_repo = get_test_external_repo()
+
+        now = get_current_datetime_in_utc()
 
         # Initialize scheduler
         instance.reconcile_scheduler_state(external_repo)
@@ -170,6 +178,8 @@ def test_re_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-
         schedule_state = instance.start_schedule_and_update_storage_state(
             external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
         )
+
+        assert schedule_state.start_timestamp == get_timestamp_from_utc_datetime(now)
 
         # Re-initialize scheduler
         instance.reconcile_scheduler_state(external_repo)
@@ -748,6 +758,32 @@ def test_reconcile_failure(restore_cron_tab):  # pylint:disable=unused-argument,
             match="Error 1: Failed to stop\n    Error 2: Failed to stop\n    Error 3: Failed to stop",
         ):
             instance.reconcile_scheduler_state(external_repo)
+
+
+@freeze_time("2019-02-27")
+def test_reconcile_schedule_without_start_time():
+    with TemporaryDirectory() as tempdir:
+        instance = define_scheduler_instance(tempdir)
+        external_repo = get_test_external_repo()
+        external_schedule = external_repo.get_external_schedule("no_config_pipeline_daily_schedule")
+
+        legacy_schedule_state = ScheduleState(
+            external_schedule.get_origin(),
+            ScheduleStatus.RUNNING,
+            external_schedule.cron_schedule,
+            None,
+        )
+
+        instance.add_schedule_state(legacy_schedule_state)
+
+        instance.reconcile_scheduler_state(external_repository=external_repo)
+
+        reconciled_schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
+
+        assert reconciled_schedule_state.status == ScheduleStatus.RUNNING
+        assert reconciled_schedule_state.start_timestamp == get_timestamp_from_utc_datetime(
+            get_current_datetime_in_utc()
+        )
 
 
 def test_reconcile_failure_when_deleting_schedule_def(
