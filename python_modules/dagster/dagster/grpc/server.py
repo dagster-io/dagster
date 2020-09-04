@@ -1,5 +1,6 @@
 import os
 import queue
+import signal
 import subprocess
 import sys
 import threading
@@ -231,7 +232,7 @@ class DagsterApiServer(DagsterApiServicer):
 
                     # the process failed to handle the KeyboardInterrupt cleanly after termination.
                     # Inform the system and mark the run as failed.
-                    process.kill()
+                    os.kill(process.pid, signal.SIGKILL)
 
                     run = instance.get_run_by_id(run_id)
                     runs_to_clear.append(run_id)
