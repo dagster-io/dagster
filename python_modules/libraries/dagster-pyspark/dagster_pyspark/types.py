@@ -1005,6 +1005,48 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
             return "s3a://"
 
 
+class SparkDataFrameADLS2StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
+    @classmethod
+    def compatible_with_storage_def(cls, system_storage_def):
+        try:
+            from dagster_azure.adls2 import adls2_system_storage, adls2_intermediate_storage
+
+            return (
+                system_storage_def is adls2_system_storage
+                or system_storage_def is adls2_intermediate_storage
+            )
+        except ImportError:
+            return False
+
+    @classmethod
+    def set_intermediate_object(
+        cls, intermediate_storage, context, _dagster_type, step_output_handle, value
+    ):
+        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
+        target_path = intermediate_storage.object_store.key_for_paths(paths)
+        value.write.parquet(
+            intermediate_storage.uri_for_paths(paths, protocol=cls.protocol(context))
+        )
+        return target_path
+
+    @classmethod
+    def get_intermediate_object(
+        cls, intermediate_storage, context, _dagster_type, step_output_handle
+    ):
+        paths = ["intermediates", step_output_handle.step_key, step_output_handle.output_name]
+        return context.resources.pyspark.spark_session.read.parquet(
+            intermediate_storage.uri_for_paths(paths, protocol=cls.protocol(context))
+        )
+
+    @classmethod
+    def required_resource_keys(cls):
+        return frozenset({"pyspark"})
+
+    @staticmethod
+    def protocol(_context):
+        return "abfss://"
+
+
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
     def compatible_with_storage_def(cls, system_storage_def):
@@ -1039,7 +1081,11 @@ DataFrame = PythonObjectDagsterType(
     python_type=NativeSparkDataFrame,
     name="PySparkDataFrame",
     description="A PySpark data frame.",
-    auto_plugins=[SparkDataFrameS3StoragePlugin, SparkDataFrameFilesystemStoragePlugin],
+    auto_plugins=[
+        SparkDataFrameS3StoragePlugin,
+        SparkDataFrameADLS2StoragePlugin,
+        SparkDataFrameFilesystemStoragePlugin,
+    ],
     loader=dataframe_loader,
     materializer=dataframe_materializer,
 )
