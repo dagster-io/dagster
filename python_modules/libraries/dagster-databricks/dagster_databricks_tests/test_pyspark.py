@@ -2,6 +2,7 @@ import os
 
 import pytest
 from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
+from dagster_azure.adls2 import adls2_plus_default_storage_defs, adls2_resource
 from dagster_databricks import databricks_pyspark_step_launcher
 from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row
@@ -19,9 +20,6 @@ from dagster import (
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.seven import mock
 from dagster.utils.merger import deep_merge_dicts
-
-# TODO: uncomment when dagster-azure is merged.
-# from dagster_azure.adls2 import adls2_plus_default_storage_defs, adls2_resource
 
 S3_BUCKET = "dagster-databricks-tests"
 ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"
@@ -42,9 +40,9 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
             },
         },
         "libraries": [
-            # TODO: uncomment when dagster-azure is merged.
-            # {'pypi': {'package': 'azure-storage-file-datalake~=12.0.1'}},
-            {"pypi": {"package": "dagster-aws==0.7.13"}},
+            {"pypi": {"package": "azure-storage-file-datalake~=12.0.1"}},
+            {"pypi": {"package": "dagster-aws"}},
+            {"pypi": {"package": "dagster-azure"}},
             {"pypi": {"package": "databricks-api"}},
             {"pypi": {"package": "pytest"}},
         ],
@@ -82,16 +80,15 @@ def filter_df_solid(_, people):
 
 
 MODE_DEFS = [
-    # TODO: uncomment when dagster-azure is merged
-    # ModeDefinition(
-    #     'prod_adls2',
-    #     resource_defs={
-    #         'pyspark_step_launcher': databricks_pyspark_step_launcher,
-    #         'pyspark': pyspark_resource,
-    #         'adls2': adls2_resource,
-    #     },
-    #     system_storage_defs=adls2_plus_default_storage_defs,
-    # ),
+    ModeDefinition(
+        "prod_adls2",
+        resource_defs={
+            "pyspark_step_launcher": databricks_pyspark_step_launcher,
+            "pyspark": pyspark_resource,
+            "adls2": adls2_resource,
+        },
+        system_storage_defs=adls2_plus_default_storage_defs,
+    ),
     ModeDefinition(
         "prod_s3",
         resource_defs={
@@ -165,13 +162,12 @@ def test_pyspark_databricks(mock_wait, mock_get_step_events, mock_put_file, mock
     assert result.success
     assert mock_wait.call_count == 1
     assert mock_get_step_events.call_count == 1
-    # TODO: uncomment this with correct value when uploaded packages are more stable
     assert mock_put_file.call_count == 3
     assert mock_submit_run.call_count == 1
 
 
 @pytest.mark.skipif(
-    "DATABRICKS_TEST_DO_IT_LIVE" not in os.environ,
+    "DATABRICKS_TEST_DO_IT_LIVE_S3" not in os.environ,
     reason="This test is slow and requires a Databricks cluster; run only upon explicit request",
 )
 def test_do_it_live_databricks_s3():
@@ -196,9 +192,8 @@ def test_do_it_live_databricks_s3():
     assert result.success
 
 
-@pytest.mark.skip(reason="Need dagster-azure to be merged")
 @pytest.mark.skipif(
-    "DATABRICKS_TEST_DO_IT_LIVE" not in os.environ,
+    "DATABRICKS_TEST_DO_IT_LIVE_ADLS2" not in os.environ,
     reason="This test is slow and requires a Databricks cluster; run only upon explicit request",
 )
 def test_do_it_live_databricks_adls2():
@@ -228,7 +223,7 @@ def test_do_it_live_databricks_adls2():
             "storage": {
                 "adls2": {
                     "config": {
-                        "adls2_container": ADLS2_CONTAINER,
+                        "adls2_file_system": ADLS2_CONTAINER,
                         "adls2_prefix": "dagster-databricks-tests",
                     }
                 }
