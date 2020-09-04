@@ -52,8 +52,8 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.definitions.decorators import triggered_execution
 from dagster.cli.workspace import Workspace
+from dagster.core.definitions.decorators import triggered_execution
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import InProcessRepositoryLocation, RepositoryLocationHandle
