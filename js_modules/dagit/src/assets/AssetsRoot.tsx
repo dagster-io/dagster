@@ -32,7 +32,7 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({ match
                     An asset-aware event storage (e.g. <code>PostgresEventLogStorage</code>) must be
                     configured in order to use any Asset-based features. You can configure this on
                     your instance through <code>dagster.yaml</code>. See the{" "}
-                    <a href="https://docs.dagster.io/deploying/instance#event-log-storage">
+                    <a href="https://docs.dagster.io/overview/instances/dagster-instance">
                       instance documentation
                     </a>{" "}
                     for more information.
@@ -65,7 +65,7 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({ match
                     materialized assets with {urlPathString ? "the " : "a "}
                     specified asset key. Any asset keys that have been specified with a{" "}
                     <code>Materialization</code> during a pipeline run will appear here. See the{" "}
-                    <a href="https://docs.dagster.io/_apidocs/solids#dagster.Materialization">
+                    <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
                       Materialization documentation
                     </a>{" "}
                     for more information.
