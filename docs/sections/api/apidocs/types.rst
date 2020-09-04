@@ -160,34 +160,6 @@ Built-in primitive types
             return 'Hello, {friend}!'.format(friend=context.solid_config)
 
 
-.. attribute:: Path
-
-    Use this type to indicate that a string input, output, or config value represents a path. At
-    runtime, this will perform an ``isinstance(value, six.string_types)`` -- that is on Python 2,
-    both ``unicode`` and ``str`` will pass this check.
-
-    **Examples:**
-
-    .. code-block:: python
-
-        @solid
-        def exists(_, path: Path) -> Bool:
-            return os.path.exists(path)
-
-
-        @solid(
-            input_defs=[InputDefinition('path', dagster_type=Path)],
-            output_defs=[OutputDefinition(dagster_type=Bool)]
-        )
-        def exists_py2(_, path):
-            return os.path.exists(path)
-
-        @solid(config_schema=Field(str))
-        def unpickle(context) -> Any:
-            with open(context.solid_config, 'rb') as fd:
-                return pickle.load(fd)
-
-
 .. attribute:: Nothing
 
     Use this type only for inputs and outputs, in order to establish an execution dependency without

@@ -201,7 +201,7 @@ def dagster_type_materializer(config_schema, required_resource_keys=None):
 
         # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config
         value, and writes
-        @dagster_type_materializer(Path)
+        @dagster_type_materializer(str)
         def materialize_df(_context, path, value):
             with open(path, 'w') as fd:
                 writer = csv.DictWriter(fd, fieldnames=value[0].keys())

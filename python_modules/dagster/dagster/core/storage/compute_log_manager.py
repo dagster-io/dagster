@@ -82,7 +82,7 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
                 ComputeIOType.STDERR
 
         Returns:
-            Path
+            str
         """
 
     @abstractmethod

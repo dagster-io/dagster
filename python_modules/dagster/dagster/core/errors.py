@@ -68,7 +68,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
 
         2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
             :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-            :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
+            :py:data:`~dagster.StringSource`, :py:data:`~dagster.Any`,
             :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
             :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
             :py:class:`~dagster.Permissive`.
