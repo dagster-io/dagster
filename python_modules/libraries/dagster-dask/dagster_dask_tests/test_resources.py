@@ -1,18 +1,13 @@
 from dagster import (
     DagsterInstance,
     Dict,
-    InputDefinition,
     ModeDefinition,
     Output,
     OutputDefinition,
-    ResourceDefinition,
     execute_pipeline,
-    file_relative_path,
     pipeline,
     solid,
 )
-import dask.dataframe as dd
-from dask.dataframe.utils import assert_eq
 from dask.distributed import Client
 
 from dagster_dask import DataFrame, dask_resource
