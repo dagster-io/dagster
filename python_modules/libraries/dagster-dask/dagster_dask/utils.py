@@ -19,7 +19,18 @@ def sanitize_column_names(df: dd.DataFrame) -> dd.DataFrame:
 DataFrameUtilities = {
     "sample": {
         "function": dd.DataFrame.sample,
-        "options": Field(Float, is_required=False, description="Sample a random fraction of items.")
+        "options": Field(Float, is_required=False, description="Sample a random fraction of items."),
+    },
+    "set_index": {
+        "function": dd.DataFrame.set_index,
+        "options": Permissive(
+            {
+                "other": Field(String, is_required=True, description="Set index to specified column."),
+                "drop": Field(Bool, is_required=False, description="Delete columns to be used as the new index."),
+                "sorted": Field(Bool, is_required=False, description="If the index column is already sorted in increasing order."),
+                "divisions": Field(Any, is_required=False, description="Known values on which to separate index values of the partitions."),
+            }
+        ),
     },
     "repartition": {
         "function": dd.DataFrame.repartition,
