@@ -13,6 +13,7 @@ from dagster import (
 )
 import dask.dataframe as dd
 from dask.dataframe.utils import assert_eq
+from dask.distributed import Client
 
 from dagster_dask import DataFrame, dask_resource
 
@@ -25,10 +26,11 @@ from dagster_dask import DataFrame, dask_resource
     required_resource_keys={"dask"},
 )
 def scheduler_info_solid(context):
-    client = context.resources.dask.client
+    with context.resources.dask.client.as_current():
+        client = Client.current()
 
-    yield Output(client.scheduler_info(), "scheduler_info")
-    yield Output(client.nthreads(), "nthreads")
+        yield Output(client.scheduler_info(), "scheduler_info")
+        yield Output(client.nthreads(), "nthreads")
 
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"dask": dask_resource})])
