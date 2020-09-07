@@ -8,7 +8,7 @@ from dagster import (
     String,
     resource,
 )
-from distributed import Client
+from dask.distributed import Client
 
 
 DaskClusterTypes = {
