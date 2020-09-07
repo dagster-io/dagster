@@ -121,14 +121,16 @@ class DaskResource(object):
                 is_required=False,
             ),
             "cluster": Field(
-                {
-                    key: Field(
-                        Permissive(),
-                        is_required=False,
-                        description=f"{meta['name']} cluster configuration.",
-                    )
-                    for key, meta in DaskClusterTypes.items()
-                },
+                Selector(
+                    {
+                        key: Field(
+                            Permissive(),
+                            is_required=False,
+                            description=f"{meta['name']} cluster configuration.",
+                        )
+                        for key, meta in DaskClusterTypes.items()
+                    }
+                ),
                 description="Create a Dask cluster. Will be passed as the client address.",
                 is_required=False,
             ),
