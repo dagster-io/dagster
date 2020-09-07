@@ -23,7 +23,7 @@ from dagster import (
 )
 import dask.dataframe as dd
 
-from .utils import DataFrameUtilities
+from .utils import DataFrameUtilities, apply_utilities_to_df
 
 
 WriteCompressionTextOptions = Enum(
@@ -407,7 +407,10 @@ def dataframe_loader(_context, config):
     read_args = [read_options.pop("path")] if read_meta.get("is_path_based", False) else []
     read_kwargs = read_options
 
+    # Read the dataframe and apply any utility functions
     df = read_function(*read_args, **read_kwargs)
+    df = apply_utilities_to_df(df, config)
+    df = df.persist()
 
     return df
 
@@ -463,6 +466,11 @@ def dataframe_materializer(_context, config, dask_df):
         for key in to_specs.keys():
             warnings.warn("Specifying {key}: is deprecated. Use to:{key}: instead.".format(key=key))
 
+    # Apply any utility functions in preparation for materialization
+    dask_df = apply_utilities_to_df(dask_df, config)
+    dask_df = dask_df.persist()
+
+    # Materialize to specified types
     for to_type, to_options in to_specs.items():
         if not to_type in DataFrameToTypes:
             check.failed("Unsupported to_type {to_type}".format(to_type=to_type))

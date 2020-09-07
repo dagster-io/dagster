@@ -73,3 +73,19 @@ DataFrameUtilities = {
         "options": Field(Bool, is_required=False, description="Modify column names for greater compatibility."),
     },
 }
+
+
+def apply_utilities_to_df(df, config):
+    for util_name, util_spec in DataFrameUtilities.items():
+        if util_name in config:
+            util_func = util_spec["function"]
+            util_opts = config[util_name]
+
+            if isinstance(util_opts, dict):
+                df = util_func(df, **util_opts)
+            elif isinstance(util_opts, list):
+                df = util_func(df, *util_opts)
+            else:
+                df = util_func(df, util_opts)
+
+    return df
