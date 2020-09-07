@@ -78,10 +78,10 @@ def test_multiple_local_cluster():
 
 
 def _assert_scheduler_info_result(result, config):
-    scheduler_info = result.result_for_solid("scheduler_info_solid").output_value(
-        "scheduler_info"
-    )
+    scheduler_info_solid_result = result.result_for_solid("scheduler_info_solid")
+    
+    scheduler_info = scheduler_info_solid_result.output_value("scheduler_info")
     assert len(scheduler_info["workers"]) == config["n_workers"]
 
-    nthreads = result.result_for_solid("scheduler_info_solid").output_value("nthreads")
+    nthreads = scheduler_info_solid_result.output_value("nthreads")
     assert all(v == config["threads_per_worker"] for v in nthreads.values())
