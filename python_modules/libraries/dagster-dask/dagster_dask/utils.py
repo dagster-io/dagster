@@ -21,39 +21,55 @@ def sanitize_column_names(df: dd.DataFrame) -> dd.DataFrame:
 DataFrameUtilities = {
     "sample": {
         "function": dd.DataFrame.sample,
-        "options": Shape({
+        "options": Field(
+            Shape({
             "frac": Field(Float, is_required=False, description="Fraction of axis items to return."),
             "replace": Field(Bool, is_required=False, description="Sample with or without replacement."),
             "random_state": Field(Int, is_required=False, description="Create RandomState with this as the seed."),
-        }),
+            }),
+            is_required=False,
+            description="Random sample of items.",
+        ),
     },
     "set_index": {
         "function": dd.DataFrame.set_index,
-        "options": Permissive({
-            "other": Field(String, is_required=True, description="Set index to specified column."),
-            "drop": Field(Bool, is_required=False, description="Delete columns to be used as the new index."),
-            "sorted": Field(Bool, is_required=False, description="If the index column is already sorted in increasing order."),
-            "divisions": Field(Any, is_required=False, description="Known values on which to separate index values of the partitions."),   
-        }),
+        "options": Field(
+            Permissive({
+                "other": Field(String, is_required=True, description="Set index to specified column."),
+                "drop": Field(Bool, is_required=False, description="Delete columns to be used as the new index."),
+                "sorted": Field(Bool, is_required=False, description="If the index column is already sorted in increasing order."),
+                "divisions": Field(Any, is_required=False, description="Known values on which to separate index values of the partitions."),   
+            }),
+            is_required=False,
+            description="Set the DataFrame index using an existing column.",
+        ),
     },
     "repartition": {
         "function": dd.DataFrame.repartition,
-        "options": Shape({
-            "divisions": Field(Any, is_required=False, description="List of partitions to be used."),
-            "npartitions": Field(Int, is_required=False, description="Number of partitions of output."),
-            "partition_size": Field(Any, is_required=False, description="Max number of bytes of memory for each partition."),
-            "freq": Field(String, is_required=False, description="A period on which to partition timeseries data."),
-            "force": Field(Bool, is_required=False, description="Allows the expansion of the existing divisions."),
-        })
+        "options": Field(
+            Shape({
+                "divisions": Field(Any, is_required=False, description="List of partitions to be used."),
+                "npartitions": Field(Int, is_required=False, description="Number of partitions of output."),
+                "partition_size": Field(Any, is_required=False, description="Max number of bytes of memory for each partition."),
+                "freq": Field(String, is_required=False, description="A period on which to partition timeseries data."),
+                "force": Field(Bool, is_required=False, description="Allows the expansion of the existing divisions."),
+            }),
+            is_required=False,
+            description="Repartition dataframe along new divisions.",
+        ),
     },
     "reset_index": {
         "function": dd.DataFrame.reset_index,
-        "options": Shape({
-            "drop": Field(Bool, is_required=False, description="Do not try to insert index into dataframe columns."),
-        })
+        "options": Field(
+            Shape({
+                "drop": Field(Bool, is_required=False, description="Do not try to insert index into dataframe columns."),
+            }),
+            is_required=False,
+            description="Reset the index to the default index.",
+        ),
     },
     "sanitize_column_names": {
         "function": sanitize_column_names,
-        "options": Field(Bool, is_required=False, description="Modify column names for greater compatibility."),   
+        "options": Field(Bool, is_required=False, description="Modify column names for greater compatibility."),
     },
 }
