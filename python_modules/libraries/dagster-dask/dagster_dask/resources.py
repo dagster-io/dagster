@@ -1,11 +1,6 @@
 from dagster import (
-    # Definition
     Field,
-
-    # Decorators
     resource,
-
-    # Config
     Permissive,
     Selector,
     Shape,
@@ -58,7 +53,7 @@ class DaskResource(object):
     @property
     def cluster(self):
         return self._cluster
-    
+
     @property
     def client(self):
         return self._client
@@ -66,23 +61,75 @@ class DaskResource(object):
 
 @resource(
     description="Dask Client resource.",
-    config_schema=Shape({
-        "client": Field(Permissive({
-            "address": Field(str, description="Address of a Scheduler server.", is_required=False),
-            "timeout": Field(int, description="Timeout duration for initial connection to the scheduler.", is_required=False),
-            "set_as_default": Field(bool, description="Claim this scheduler as the global dask scheduler.", is_required=False),
-            "scheduler_file": Field(str, description="Path to a file with scheduler information, if available.", is_required=False),
-            "security": Field(bool, description="Optional security information.", is_required=False),
-            "asynchronous": Field(bool, description="Set to True if using this client within async/await functions.", is_required=False),
-            "name": Field(str, description="Name of client that will be included in logs generated on the scheduler.", is_required=False),
-            "direct_to_workers": Field(bool, description="Whether to connect directly to the workers.", is_required=False),
-            "heartbeat_interval": Field(int, description="Time in milliseconds between heartbeats to scheduler.", is_required=False),
-        }), description="Dask distributed client options.", is_required=False),
-        "cluster": Field({
-            key: Field(Permissive(), is_required=False, description=f"{meta['name']} cluster configuration.")
-            for key, meta in DaskClusterTypes.items()
-        }, description="Create a Dask cluster. Will be passed as the client address.", is_required=False),
-    })
+    config_schema=Shape(
+        {
+            "client": Field(
+                Permissive(
+                    {
+                        "address": Field(
+                            str,
+                            description="Address of a Scheduler server.",
+                            is_required=False,
+                        ),
+                        "timeout": Field(
+                            int,
+                            description="Timeout duration for initial connection to the scheduler.",
+                            is_required=False,
+                        ),
+                        "set_as_default": Field(
+                            bool,
+                            description="Claim this scheduler as the global dask scheduler.",
+                            is_required=False,
+                        ),
+                        "scheduler_file": Field(
+                            str,
+                            description="Path to a file with scheduler information, if available.",
+                            is_required=False,
+                        ),
+                        "security": Field(
+                            bool,
+                            description="Optional security information.",
+                            is_required=False,
+                        ),
+                        "asynchronous": Field(
+                            bool,
+                            description="Set to True if using this client within async/await functions.",
+                            is_required=False,
+                        ),
+                        "name": Field(
+                            str,
+                            description="Name of client that will be included in logs generated on the scheduler.",
+                            is_required=False,
+                        ),
+                        "direct_to_workers": Field(
+                            bool,
+                            description="Whether to connect directly to the workers.",
+                            is_required=False,
+                        ),
+                        "heartbeat_interval": Field(
+                            int,
+                            description="Time in milliseconds between heartbeats to scheduler.",
+                            is_required=False,
+                        ),
+                    }
+                ),
+                description="Dask distributed client options.",
+                is_required=False,
+            ),
+            "cluster": Field(
+                {
+                    key: Field(
+                        Permissive(),
+                        is_required=False,
+                        description=f"{meta['name']} cluster configuration.",
+                    )
+                    for key, meta in DaskClusterTypes.items()
+                },
+                description="Create a Dask cluster. Will be passed as the client address.",
+                is_required=False,
+            ),
+        }
+    ),
 )
 def dask_resource(context):
     return DaskResource(context)

@@ -31,11 +31,7 @@ def scheduler_info_solid(context):
     yield Output(client.nthreads(), "nthreads")
 
 
-@pipeline(
-    mode_defs=[
-        ModeDefinition(resource_defs={"dask": dask_resource})
-    ]
-)
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"dask": dask_resource})])
 def scheduler_info_pipeline():
     return scheduler_info_solid()
 
@@ -47,8 +43,14 @@ def test_single_local_cluster():
         "dashboard_address": None,
     }
 
-    run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
-    result = execute_pipeline(scheduler_info_pipeline, run_config=run_config, instance=DagsterInstance.local_temp())
+    run_config = {
+        "resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}
+    }
+    result = execute_pipeline(
+        scheduler_info_pipeline,
+        run_config=run_config,
+        instance=DagsterInstance.local_temp(),
+    )
     _assert_scheduler_info_result(result, cluster_config)
 
 
@@ -67,13 +69,21 @@ def test_multiple_local_cluster():
     ]
 
     for cluster_config in cluster_configs:
-        run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
-        result = execute_pipeline(scheduler_info_pipeline, run_config=run_config, instance=DagsterInstance.local_temp())
+        run_config = {
+            "resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}
+        }
+        result = execute_pipeline(
+            scheduler_info_pipeline,
+            run_config=run_config,
+            instance=DagsterInstance.local_temp(),
+        )
         _assert_scheduler_info_result(result, cluster_config)
 
 
 def _assert_scheduler_info_result(result, config):
-    scheduler_info = result.result_for_solid("scheduler_info_solid").output_value("scheduler_info")
+    scheduler_info = result.result_for_solid("scheduler_info_solid").output_value(
+        "scheduler_info"
+    )
     assert len(scheduler_info["workers"]) == config["n_workers"]
 
     nthreads = result.result_for_solid("scheduler_info_solid").output_value("nthreads")
