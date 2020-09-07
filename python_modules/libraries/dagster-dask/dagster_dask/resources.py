@@ -1,9 +1,12 @@
 from dagster import (
+    Bool,
     Field,
-    resource,
+    Int,
     Permissive,
     Selector,
     Shape,
+    String,
+    resource,
 )
 from distributed import Client
 
@@ -67,47 +70,47 @@ class DaskResource(object):
                 Permissive(
                     {
                         "address": Field(
-                            str,
+                            String,
                             description="Address of a Scheduler server.",
                             is_required=False,
                         ),
                         "timeout": Field(
-                            int,
+                            Int,
                             description="Timeout duration for initial connection to the scheduler.",
                             is_required=False,
                         ),
                         "set_as_default": Field(
-                            bool,
+                            Bool,
                             description="Claim this scheduler as the global dask scheduler.",
                             is_required=False,
                         ),
                         "scheduler_file": Field(
-                            str,
+                            String,
                             description="Path to a file with scheduler information, if available.",
                             is_required=False,
                         ),
                         "security": Field(
-                            bool,
+                            Bool,
                             description="Optional security information.",
                             is_required=False,
                         ),
                         "asynchronous": Field(
-                            bool,
+                            Bool,
                             description="Set to True if using this client within async/await functions.",
                             is_required=False,
                         ),
                         "name": Field(
-                            str,
+                            String,
                             description="Name of client that will be included in logs generated on the scheduler.",
                             is_required=False,
                         ),
                         "direct_to_workers": Field(
-                            bool,
+                            Bool,
                             description="Whether to connect directly to the workers.",
                             is_required=False,
                         ),
                         "heartbeat_interval": Field(
-                            int,
+                            Int,
                             description="Time in milliseconds between heartbeats to scheduler.",
                             is_required=False,
                         ),
