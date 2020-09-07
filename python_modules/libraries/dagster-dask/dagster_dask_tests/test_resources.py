@@ -43,7 +43,7 @@ def scheduler_info_pipeline():
 def test_single_local_cluster():
     cluster_config = {
         "n_workers": 2,
-        "threads_per_worker": 3,
+        "threads_per_worker": 1,
         "dashboard_address": None,
     }
 
@@ -61,7 +61,7 @@ def test_multiple_local_cluster():
         },
         {
             "n_workers": 2,
-            "threads_per_worker": 3,
+            "threads_per_worker": 1,
             "dashboard_address": None,
         },
     ]
