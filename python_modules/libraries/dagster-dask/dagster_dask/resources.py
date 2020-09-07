@@ -41,13 +41,14 @@ class DaskResource(object):
             if not cluster_meta:
                 raise ValueError(f"Unknown cluster type “{cluster_type}”.")
 
+            # Import the cluster module by name, and get the cluster Class.
             cluster_module = import_module(cluster_meta["module"])
             cluster_class = getattr(cluster_module, cluster_meta["class"])
 
             self._cluster = cluster_class(**cluster_opts)
 
-        # Get the client config, and set `address` to a cluster if one
-        # was created above.
+        # Get the client config, and set `address` to a cluster obejct
+        # if one was created above. Then, instantiate a Client object.
         client_config = dict(context.resource_config.get("client", {}))
         if self._cluster:
             client_config["address"] = self._cluster
