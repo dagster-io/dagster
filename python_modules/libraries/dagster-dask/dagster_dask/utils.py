@@ -31,6 +31,16 @@ DataFrameUtilities = {
             description="Random sample of items.",
         ),
     },
+    "reset_index": {
+        "function": dd.DataFrame.reset_index,
+        "options": Field(
+            Shape({
+                "drop": Field(Bool, is_required=False, description="Do not try to insert index into dataframe columns."),
+            }),
+            is_required=False,
+            description="Reset the index to the default index.",
+        ),
+    },
     "set_index": {
         "function": dd.DataFrame.set_index,
         "options": Field(
@@ -56,16 +66,6 @@ DataFrameUtilities = {
             }),
             is_required=False,
             description="Repartition dataframe along new divisions.",
-        ),
-    },
-    "reset_index": {
-        "function": dd.DataFrame.reset_index,
-        "options": Field(
-            Shape({
-                "drop": Field(Bool, is_required=False, description="Do not try to insert index into dataframe columns."),
-            }),
-            is_required=False,
-            description="Reset the index to the default index.",
         ),
     },
     "sanitize_column_names": {
