@@ -8,6 +8,7 @@ from dagster import (
     # Config
     Permissive,
     Selector,
+    Shape,
 )
 from distributed import Client
 
@@ -31,15 +32,13 @@ DaskClusterTypes = {
 
 class DaskResource(object):
     def __init__(self, context):
-        config_type, config_opts = next(iter(context.resource_config.items()))
-
-        if "scheduler" == config_type:
-            self._cluster = None
-            self._client = Client(**config_opts, set_as_default=False)
-        elif "cluster" == config_type:
+        # Create a Dask cluster if a cluster config is specified.
+        # This will be passed as the address value to the Client.
+        cluster_config = context.resource_config.get("cluster", None)
+        if cluster_config:
             from importlib import import_module
 
-            cluster_type, cluster_opts = next(iter(config_opts.items()))
+            cluster_type, cluster_opts = next(iter(cluster_config.items()))
             cluster_meta = DaskClusterTypes.get(cluster_type, None)
             if not cluster_meta:
                 raise ValueError(f"Unknown cluster type “{cluster_type}”.")
@@ -48,7 +47,13 @@ class DaskResource(object):
             cluster_class = getattr(cluster_module, cluster_meta["class"])
 
             self._cluster = cluster_class(**cluster_opts)
-            self._client = Client(self._cluster, set_as_default=False)
+
+        # Get the client config, and set `address` to a cluster if one
+        # was created above.
+        client_config = dict(context.resource_config.get("client", {}))
+        if self._cluster:
+            client_config["address"] = self._cluster
+        self._client = Client(**client_config)
 
     @property
     def cluster(self):
@@ -61,18 +66,22 @@ class DaskResource(object):
 
 @resource(
     description="Dask Client resource.",
-    config_schema=Selector({
-        "scheduler": Field({
-            "address": Field(str, description="Address of a Scheduler server."),
+    config_schema=Shape({
+        "client": Field(Permissive({
+            "address": Field(str, description="Address of a Scheduler server.", is_required=False),
             "timeout": Field(int, description="Timeout duration for initial connection to the scheduler.", is_required=False),
+            "set_as_default": Field(bool, description="Claim this scheduler as the global dask scheduler.", is_required=False),
+            "scheduler_file": Field(str, description="Path to a file with scheduler information, if available.", is_required=False),
+            "security": Field(bool, description="Optional security information.", is_required=False),
+            "asynchronous": Field(bool, description="Set to True if using this client within async/await functions.", is_required=False),
             "name": Field(str, description="Name of client that will be included in logs generated on the scheduler.", is_required=False),
             "direct_to_workers": Field(bool, description="Whether to connect directly to the workers.", is_required=False),
             "heartbeat_interval": Field(int, description="Time in milliseconds between heartbeats to scheduler.", is_required=False),
-        }, description="Connect to a Dask scheduler."),
+        }), description="Dask distributed client options.", is_required=False),
         "cluster": Field({
             key: Field(Permissive(), is_required=False, description=f"{meta['name']} cluster configuration.")
             for key, meta in DaskClusterTypes.items()
-        }, description="Create a Dask cluster."),
+        }, description="Create a Dask cluster. Will be passed as the client address.", is_required=False),
     })
 )
 def dask_resource(context):
