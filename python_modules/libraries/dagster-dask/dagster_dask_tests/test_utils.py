@@ -111,3 +111,44 @@ def test_sanitize_column_names():
     result = execute_solid(passthrough, run_config=run_config)
     output_df = result.output_value()
     assert all(col in output_df.columns for col in ("id", "provinceorterritory", "country"))
+
+
+def test_utilities_combo():
+    path = file_relative_path(__file__, "canada.csv")
+
+    input_df = dd.read_csv(path)
+    assert input_df.npartitions == 1
+
+    # Apply multiple utilities at once. The utilities are expected to
+    # apply in the following order, regardless of config order:
+    #   sample, reset_index, set_index, repartition, sanitize_column_names
+    run_config = generate_config(
+        path,
+        sanitize_column_names=True,
+        set_index={"other": "ID", "drop": True},
+        repartition={"npartitions": 3},
+        sample={"frac": 0.5},
+        reset_index={"drop": True},
+    )
+    result = execute_solid(passthrough, run_config=run_config)
+    output_df = result.output_value()
+
+    # sample(frac=0.5)
+    assert len(input_df) * 0.5 == len(output_df)
+
+    # reset_index(drop=True)
+    assert "index" not in input_df.columns
+    assert "index" not in output_df.columns
+
+    # set_index(other="ID", drop=True)
+    assert "ID" in input_df.columns
+    assert "ID" not in output_df.columns
+
+    # repartition(npartitions=3)
+    assert input_df.npartitions == 1
+    assert output_df.npartitions == 3
+    
+    # sanitize_column_names(true)
+    # No id due to it being set to the index and dropped.
+    assert all(col in input_df.columns for col in ("ID", "provinceOrTerritory", "country"))
+    assert all(col in output_df.columns for col in ("provinceorterritory", "country"))
