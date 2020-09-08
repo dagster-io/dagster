@@ -52,7 +52,8 @@ class DaskResource(object):
         # Get the client config, and set `address` to a cluster obejct
         # if one was created above. Then, instantiate a Client object.
         client_config = dict(context.resource_config.get("client", {}))
-            client_config["address"] = self._cluster
+        if self.cluster:
+            client_config["address"] = self.cluster
         self._client = Client(**client_config)
 
     @property
