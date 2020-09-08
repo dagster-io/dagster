@@ -12,7 +12,7 @@ from dagster import (
 import dask.dataframe as dd
 
 
-def sanitize_column_names(df: dd.DataFrame, enabled) -> dd.DataFrame:
+def normalize_column_names(df: dd.DataFrame, enabled) -> dd.DataFrame:
     if enabled:
         df.columns = map(str.lower, df.columns)
     
@@ -69,9 +69,9 @@ DataFrameUtilities = {
             description="Repartition dataframe along new divisions.",
         ),
     },
-    "sanitize_column_names": {
-        "function": sanitize_column_names,
-        "options": Field(Bool, is_required=False, description="Modify column names for greater compatibility."),
+    "normalize_column_names": {
+        "function": normalize_column_names,
+        "options": Field(Bool, is_required=False, description="Lowercase column names and convert CamelCase to snake_case for interoperability."),
     },
 }
 

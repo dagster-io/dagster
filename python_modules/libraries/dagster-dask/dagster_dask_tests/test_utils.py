@@ -94,20 +94,20 @@ def test_repartition():
     assert output_df.npartitions == npartitions
 
 
-def test_sanitize_column_names():
+def test_normalize_column_names():
     path = file_relative_path(__file__, "canada.csv")
 
     input_df = dd.read_csv(path)
     assert all(col in input_df.columns for col in ("ID", "provinceOrTerritory", "country"))
 
-    # Set sanitize_column_names=False to not modify the column names
-    run_config = generate_config(path, sanitize_column_names=False)
+    # Set normalize_column_names=False to not modify the column names
+    run_config = generate_config(path, normalize_column_names=False)
     result = execute_solid(passthrough, run_config=run_config)
     output_df = result.output_value()
     assert all(col in output_df.columns for col in ("ID", "provinceOrTerritory", "country"))
 
-    # Set sanitize_column_names=True to modify the column names
-    run_config = generate_config(path, sanitize_column_names=True)
+    # Set normalize_column_names=True to modify the column names
+    run_config = generate_config(path, normalize_column_names=True)
     result = execute_solid(passthrough, run_config=run_config)
     output_df = result.output_value()
     assert all(col in output_df.columns for col in ("id", "provinceorterritory", "country"))
@@ -121,10 +121,10 @@ def test_utilities_combo():
 
     # Apply multiple utilities at once. The utilities are expected to
     # apply in the following order, regardless of config order:
-    #   sample, reset_index, set_index, repartition, sanitize_column_names
+    #   sample, reset_index, set_index, repartition, normalize_column_names
     run_config = generate_config(
         path,
-        sanitize_column_names=True,
+        normalize_column_names=True,
         set_index={"other": "ID", "drop": True},
         repartition={"npartitions": 3},
         sample={"frac": 0.5},
@@ -148,7 +148,7 @@ def test_utilities_combo():
     assert input_df.npartitions == 1
     assert output_df.npartitions == 3
     
-    # sanitize_column_names(true)
+    # normalize_column_names(true)
     # No id due to it being set to the index and dropped.
     assert all(col in input_df.columns for col in ("ID", "provinceOrTerritory", "country"))
     assert all(col in output_df.columns for col in ("provinceorterritory", "country"))
