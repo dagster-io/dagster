@@ -33,9 +33,9 @@ DataFrameUtilities = {
         "function": dd.DataFrame.sample,
         "options": Field(
             Shape({
-            "frac": Field(Float, is_required=False, description="Fraction of axis items to return."),
-            "replace": Field(Bool, is_required=False, description="Sample with or without replacement."),
-            "random_state": Field(Int, is_required=False, description="Create RandomState with this as the seed."),
+                "frac": Field(Float, is_required=False, description="Fraction of axis items to return."),
+                "replace": Field(Bool, is_required=False, description="Sample with or without replacement."),
+                "random_state": Field(Int, is_required=False, description="Create RandomState with this as the seed."),
             }),
             is_required=False,
             description="Random sample of items.",
