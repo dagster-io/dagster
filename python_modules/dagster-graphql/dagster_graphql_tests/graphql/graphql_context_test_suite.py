@@ -279,9 +279,7 @@ class EnvironmentManagers:
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
             # this is "ok" because we know the test host process containers the user code
-            loadable_target_origin = LoadableTargetOrigin.from_python_origin(
-                recon_repo.get_origin()
-            )
+            loadable_target_origin = recon_repo.get_origin().loadable_target_origin
             with Workspace(
                 [
                     RepositoryLocationHandle.create_python_env_location(
@@ -300,9 +298,7 @@ class EnvironmentManagers:
             """Goes out of process via grpc"""
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
-            loadable_target_origin = LoadableTargetOrigin.from_python_origin(
-                recon_repo.get_origin()
-            )
+            loadable_target_origin = recon_repo.get_origin().loadable_target_origin
             with Workspace(
                 [
                     RepositoryLocationHandle.create_process_bound_grpc_server_location(
@@ -320,9 +316,7 @@ class EnvironmentManagers:
         def _mgr_fn(recon_repo):
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
-            loadable_target_origin = LoadableTargetOrigin.from_python_origin(
-                recon_repo.get_origin()
-            )
+            loadable_target_origin = recon_repo.get_origin().loadable_target_origin
 
             server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
             try:

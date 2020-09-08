@@ -93,7 +93,7 @@ def test_repo_construction():
 def get_external_pipeline_from_grpc_server_repository(pipeline_name):
     repo_yaml = file_relative_path(__file__, "repo.yaml")
     recon_repo = ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
-    loadable_target_origin = LoadableTargetOrigin.from_python_origin(recon_repo.get_origin())
+    loadable_target_origin = recon_repo.get_origin().loadable_target_origin
     server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
 
     try:

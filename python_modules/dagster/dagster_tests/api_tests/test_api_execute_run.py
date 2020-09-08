@@ -3,7 +3,6 @@ import pytest
 from dagster import seven
 from dagster.api.execute_run import cli_api_execute_run, sync_execute_run_grpc
 from dagster.core.instance import DagsterInstance
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 
 from .utils import (
@@ -126,8 +125,8 @@ def test_execute_run_api_grpc_python_handle(pipeline_handle):
             parent_pipeline_snapshot=None,
         )
 
-        loadable_target_origin = LoadableTargetOrigin.from_python_origin(
-            pipeline_handle.get_origin().repository_origin
+        loadable_target_origin = (
+            pipeline_handle.get_origin().repository_origin.loadable_target_origin
         )
 
         with GrpcServerProcess(

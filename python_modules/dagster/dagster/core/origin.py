@@ -89,6 +89,10 @@ class RepositoryPythonOrigin(
         check.str_param(schedule_name, "schedule_name")
         return SchedulePythonOrigin(schedule_name, self)
 
+    @property
+    def loadable_target_origin(self):
+        return self.code_pointer.get_loadable_target_origin(self.executable_path)
+
 
 class PipelineOrigin(six.with_metaclass(ABCMeta)):
     def get_id(self):

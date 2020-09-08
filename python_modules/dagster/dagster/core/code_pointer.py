@@ -10,6 +10,7 @@ import six
 
 from dagster import check
 from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.seven import import_module_from_path
 from dagster.utils import alter_sys_path, load_yaml_from_path
@@ -22,6 +23,10 @@ class CodePointer(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def describe(self):
+        pass
+
+    @abstractmethod
+    def get_loadable_target_origin(self, executable_path):
         pass
 
     @staticmethod
@@ -278,6 +283,14 @@ class FileCodePointer(
                 fn_name=self.fn_name,
             )
 
+    def get_loadable_target_origin(self, executable_path):
+        return LoadableTargetOrigin(
+            executable_path=executable_path,
+            python_file=self.python_file,
+            attribute=self.fn_name,
+            working_directory=self.working_directory,
+        )
+
 
 @whitelist_for_serdes
 class ModuleCodePointer(namedtuple("_ModuleCodePointer", "module fn_name"), CodePointer):
@@ -303,6 +316,11 @@ class ModuleCodePointer(namedtuple("_ModuleCodePointer", "module fn_name"), Code
     def get_cli_args(self):
         return "-m {module} -a {fn_name}".format(module=self.module, fn_name=self.fn_name)
 
+    def get_loadable_target_origin(self, executable_path):
+        return LoadableTargetOrigin(
+            executable_path=executable_path, module_name=self.module, attribute=self.fn_name,
+        )
+
 
 @whitelist_for_serdes
 class PackageCodePointer(namedtuple("_PackageCodePointer", "module attribute"), CodePointer):
@@ -327,6 +345,11 @@ class PackageCodePointer(namedtuple("_PackageCodePointer", "module attribute"), 
 
     def get_cli_args(self):
         return "-m {module} -a {attribute}".format(module=self.module, attribute=self.attribute)
+
+    def get_loadable_target_origin(self, executable_path):
+        return LoadableTargetOrigin(
+            executable_path=executable_path, module_name=self.module, attribute=self.attribute,
+        )
 
 
 def get_python_file_from_previous_stack_frame():
@@ -384,3 +407,6 @@ class CustomPointer(
         return "reconstructable using {module}.{fn_name}".format(
             module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
         )
+
+    def get_loadable_target_origin(self, executable_path):
+        raise NotImplementedError()
