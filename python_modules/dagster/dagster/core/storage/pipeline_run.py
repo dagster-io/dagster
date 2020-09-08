@@ -116,7 +116,7 @@ class PipelineRun(
             status=check.opt_inst_param(
                 status, "status", PipelineRunStatus, PipelineRunStatus.NOT_STARTED
             ),
-            tags=check.opt_dict_param(tags, "tags", key_type=str),
+            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             root_run_id=check.opt_str_param(root_run_id, "root_run_id"),
             parent_run_id=check.opt_str_param(parent_run_id, "parent_run_id"),
             pipeline_snapshot_id=check.opt_str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
