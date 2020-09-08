@@ -179,9 +179,6 @@ class DagsterApiServer(DagsterApiServicer):
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
         )
 
-        self._shutdown_server_event = check.inst_param(
-            shutdown_server_event, "shutdown_server_event", seven.ThreadingEventType
-        )
         # Dict[str, (multiprocessing.Process, DagsterInstance)]
         self._executions = {}
         # Dict[str, multiprocessing.Event]
@@ -208,15 +205,26 @@ class DagsterApiServer(DagsterApiServicer):
 
         self.__cleanup_thread.start()
 
+    def cleanup(self):
+        if self.__heartbeat_thread:
+            self.__heartbeat_thread.join()
+        self.__cleanup_thread.join()
+
     def _heartbeat_thread(self, heartbeat_timeout):
         while True:
-            time.sleep(heartbeat_timeout)
+            self._shutdown_server_event.wait(heartbeat_timeout)
+            if self._shutdown_server_event.is_set():
+                break
+
             if self.__last_heartbeat_time < time.time() - heartbeat_timeout:
                 self._shutdown_server_event.set()
 
     def _cleanup_thread(self):
         while True:
-            time.sleep(CLEANUP_TICK)
+            self._shutdown_server_event.wait(CLEANUP_TICK)
+            if self._shutdown_server_event.is_set():
+                break
+
             self._check_for_orphaned_runs()
 
     def _check_for_orphaned_runs(self):
@@ -902,15 +910,15 @@ class DagsterGrpcServer(object):
 
         self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
         self._shutdown_server_event = threading.Event()
-        add_DagsterApiServicer_to_server(
-            DagsterApiServer(
-                shutdown_server_event=self._shutdown_server_event,
-                loadable_target_origin=loadable_target_origin,
-                heartbeat=heartbeat,
-                heartbeat_timeout=heartbeat_timeout,
-            ),
-            self.server,
+
+        self._servicer = DagsterApiServer(
+            shutdown_server_event=self._shutdown_server_event,
+            loadable_target_origin=loadable_target_origin,
+            heartbeat=heartbeat,
+            heartbeat_timeout=heartbeat_timeout,
         )
+
+        add_DagsterApiServicer_to_server(self._servicer, self.server)
 
         if port:
             server_address = host + ":" + str(port)
@@ -966,6 +974,10 @@ class DagsterGrpcServer(object):
         server_termination_thread.start()
 
         self.server.wait_for_termination()
+
+        server_termination_thread.join()
+
+        self._servicer.cleanup()
 
 
 class CouldNotStartServerProcess(Exception):
