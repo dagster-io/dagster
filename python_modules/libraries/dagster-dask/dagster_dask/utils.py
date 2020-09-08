@@ -80,7 +80,7 @@ DataFrameUtilities = {
     },
     "normalize_column_names": {
         "function": normalize_column_names,
-        "options": Field(Bool, is_required=False, description="Lowercase column names and convert CamelCase to snake_case for interoperability."),
+        "options": Field(Bool, is_required=False, description="Lowercase and convert CamelCase to snake_case on column names."),
     },
 }
 
