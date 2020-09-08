@@ -110,7 +110,7 @@ def test_normalize_column_names():
     run_config = generate_config(path, normalize_column_names=True)
     result = execute_solid(passthrough, run_config=run_config)
     output_df = result.output_value()
-    assert all(col in output_df.columns for col in ("id", "provinceorterritory", "country"))
+    assert all(col in output_df.columns for col in ("id", "province_or_territory", "country"))
 
 
 def test_utilities_combo():
@@ -151,4 +151,4 @@ def test_utilities_combo():
     # normalize_column_names(true)
     # No id due to it being set to the index and dropped.
     assert all(col in input_df.columns for col in ("ID", "provinceOrTerritory", "country"))
-    assert all(col in output_df.columns for col in ("provinceorterritory", "country"))
+    assert all(col in output_df.columns for col in ("province_or_territory", "country"))

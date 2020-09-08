@@ -1,3 +1,5 @@
+import re
+
 from dagster import (
     Any, 
     Bool,
@@ -14,7 +16,14 @@ import dask.dataframe as dd
 
 def normalize_column_names(df: dd.DataFrame, enabled) -> dd.DataFrame:
     if enabled:
-        df.columns = map(str.lower, df.columns)
+        # Based on https://stackoverflow.com/a/1176023
+        camel_to_snake1 = re.compile('(.)([A-Z][a-z]+)')
+        camel_to_snake2 = re.compile('([a-z0-9])([A-Z])')
+        def normalize(name):
+            name = camel_to_snake1.sub(r'\1_\2', name)
+            return camel_to_snake2.sub(r'\1_\2', name).lower()
+            
+        df.columns = map(normalize, df.columns)
     
     return df
 
