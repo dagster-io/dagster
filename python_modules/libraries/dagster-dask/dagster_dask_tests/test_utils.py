@@ -77,10 +77,10 @@ def test_reset_index():
 def test_set_index():
     path = file_relative_path(__file__, "canada.csv")
     col = "ID"
-    
+
     input_df = dd.read_csv(path)
     assert col in input_df.columns
-    
+
     # Set index to ID. We expect the column to be dropped by default.
     run_config = generate_config(path, set_index={"other": col})
     result = execute_solid(passthrough, run_config=run_config)
@@ -161,7 +161,7 @@ def test_utilities_combo():
     # repartition(npartitions=3)
     assert input_df.npartitions == 1
     assert output_df.npartitions == 3
-    
+
     # normalize_column_names(true)
     # No id due to it being set to the index and dropped.
     assert all(col in input_df.columns for col in ("ID", "provinceOrTerritory", "country"))
