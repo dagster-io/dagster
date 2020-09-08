@@ -1,3 +1,5 @@
+import hashlib
+
 from dagster import check
 from dagster.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.decorator_utils import (
@@ -15,6 +17,9 @@ class DagsterTypeLoader(object):
         check.not_implemented(
             "Must override schema_type in {klass}".format(klass=type(self).__name__)
         )
+
+    def compute_loaded_input_version(self, _config_value):
+        return None
 
     def construct_from_config_value(self, _context, config_value):
         """
@@ -56,16 +61,34 @@ class OutputMaterializationConfig(DagsterTypeMaterializer):
 
 
 class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
-    def __init__(self, config_type, func, required_resource_keys):
+    def __init__(
+        self,
+        config_type,
+        func,
+        required_resource_keys,
+        loader_version=None,
+        external_version_fn=lambda: None,
+    ):
         self._config_type = check.inst_param(config_type, "config_type", ConfigType)
         self._func = check.callable_param(func, "func")
         self._required_resource_keys = check.opt_set_param(
             required_resource_keys, "required_resource_keys", of_type=str
         )
+        self._loader_version = loader_version
+        self._external_version_fn = external_version_fn
 
     @property
     def schema_type(self):
         return self._config_type
+
+    def compute_loaded_input_version(self, config_value):
+        version = ""
+        if self._loader_version:
+            version += str(self._loader_version)
+        ext_version = self._external_version_fn(config_value)
+        if ext_version:
+            version += str(ext_version)
+        return hashlib.sha1(version).hexdigest()
 
     def construct_from_config_value(self, context, config_value):
         return self._func(context, config_value)
@@ -74,8 +97,12 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         return frozenset(self._required_resource_keys)
 
 
-def _create_type_loader_for_decorator(config_type, func, required_resource_keys):
-    return DagsterTypeLoaderFromDecorator(config_type, func, required_resource_keys)
+def _create_type_loader_for_decorator(
+    config_type, func, required_resource_keys, loader_version=None, external_version_fn=lambda: None
+):
+    return DagsterTypeLoaderFromDecorator(
+        config_type, func, required_resource_keys, loader_version, external_version_fn
+    )
 
 
 def input_hydration_config(config_schema=None, required_resource_keys=None, config_cls=None):
@@ -87,7 +114,12 @@ def input_hydration_config(config_schema=None, required_resource_keys=None, conf
     return dagster_type_loader(config_schema, required_resource_keys)
 
 
-def dagster_type_loader(config_schema, required_resource_keys=None):
+def dagster_type_loader(
+    config_schema,
+    required_resource_keys=None,
+    loader_version=None,
+    external_version_fn=lambda: None,
+):
     """Create an dagster type loader that maps config data to a runtime value.
 
     The decorated function should take the execution context and parsed config value and return the
@@ -96,6 +128,13 @@ def dagster_type_loader(config_schema, required_resource_keys=None):
     Args:
         config_schema (ConfigSchema): The schema for the config that's passed to the decorated
             function.
+        loader_version (str): (Experimental) The version of the decorated compute function. Two
+            loading functions should have the same version if and only if they deterministically
+            produce the same outputs when provided the same inputs.
+        external_version_fn (Callable): A function that takes in the same parameters as the loader
+            function (config_value) and returns a representation of the version of the external
+            asset (str). Two external assets with identical versions are treated as identical to one
+            another.
 
     Examples:
 
@@ -121,7 +160,9 @@ def dagster_type_loader(config_schema, required_resource_keys=None):
                     solid_name=func.__name__, missing_param=missing_positional
                 )
             )
-        return _create_type_loader_for_decorator(config_type, func, required_resource_keys)
+        return _create_type_loader_for_decorator(
+            config_type, func, required_resource_keys, loader_version, external_version_fn
+        )
 
     return wrapper
 
