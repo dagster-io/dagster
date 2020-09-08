@@ -35,6 +35,19 @@ def normalize_names(names):
 
 
 DataFrameUtilities = {
+    "drop": {
+        "function": dd.DataFrame.drop,
+        "options": Field(
+            Shape({
+                "labels": Field(Any, is_required=False, description="Index or column labels to drop."),
+                "axis": Field(Any, is_required=False, description="Drop labesl from index or columns."),
+                "columns": Field(Any, is_required=False, description="Equivalent to labels with axis=1."),
+                "errors": Field(String, is_required=False, description="If \"ignore\", supress errors."),
+            }),
+            is_required=False,
+            description="Drop specified labels from rows or columns.",
+        ),
+    },
     "sample": {
         "function": dd.DataFrame.sample,
         "options": Field(

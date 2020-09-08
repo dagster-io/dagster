@@ -33,6 +33,20 @@ def generate_config(path, **df_opts):
     }
 
 
+def test_drop():
+    path = file_relative_path(__file__, "canada.csv")
+    col = "current"
+
+    input_df = dd.read_csv(path)
+    assert col in input_df.columns
+
+    # Drop the "current" column.
+    run_config = generate_config(path, drop={"columns": col})
+    result = execute_solid(passthrough, run_config=run_config)
+    output_df = result.output_value()
+    assert col not in output_df.columns
+
+
 def test_sample():
     path = file_relative_path(__file__, "canada.csv")
     frac = 0.25
