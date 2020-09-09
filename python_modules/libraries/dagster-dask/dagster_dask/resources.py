@@ -47,7 +47,7 @@ class DaskResource(object):
 
             self._cluster = cluster_class(**cluster_opts)
         else:
-            self._cluster = None            
+            self._cluster = None
 
         # Get the client config, and set `address` to a cluster obejct
         # if one was created above. Then, instantiate a Client object.
