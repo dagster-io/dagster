@@ -1,7 +1,7 @@
 import * as React from "react";
 import gql from "graphql-tag";
 import styled from "styled-components/macro";
-import { Colors, Icon, Checkbox, Tooltip, Intent, Position } from "@blueprintjs/core";
+import { Colors, Icon, Checkbox, Tooltip, Intent, Position, Button, Code } from "@blueprintjs/core";
 
 import PythonErrorInfo from "../PythonErrorInfo";
 import { showCustomAlert } from "../CustomAlertProvider";
@@ -17,6 +17,7 @@ import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors
 } from "./types/RunPreviewValidationFragment";
+import { useConfirmation } from "../CustomConfirmationProvider";
 
 type ValidationError = RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;
@@ -41,6 +42,89 @@ const stateToHint = {
   none: { title: `This section is empty and valid.`, intent: Intent.PRIMARY }
 };
 
+const RemoveExtraConfigButton = ({
+  onRemoveExtraPaths,
+  extraNodes
+}: {
+  extraNodes: string[];
+  onRemoveExtraPaths: (paths: string[]) => void;
+}) => {
+  const confirm = useConfirmation();
+
+  const knownKeyExtraPaths: { [key: string]: string[] } = {};
+  const otherPaths: string[] = [];
+
+  for (const path of extraNodes) {
+    const parts = path.split(".");
+
+    // If the length is 2, the first part of the path is a known key, such as "solids", "resouces",
+    // or "loggers", and the user has provided extra config for one of those. We will keep track of
+    // these in `knownKeyExtraPaths` just so we can display them with an extra description.
+    if (parts.length === 2) {
+      const [type, name] = parts;
+      if (!knownKeyExtraPaths[type]) {
+        knownKeyExtraPaths[type] = [];
+      }
+      knownKeyExtraPaths[type].push(name);
+    } else {
+      otherPaths.push(path);
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 5 }}>
+      <Button
+        small={true}
+        onClick={async () => {
+          await confirm({
+            title: "Remove extra config",
+            description: (
+              <div>
+                <p>
+                  You have provided extra configuration in your run config which does not conform to
+                  your pipeline{`'`}s config schema.
+                </p>
+                {Object.entries(knownKeyExtraPaths).length > 0 &&
+                  Object.entries(knownKeyExtraPaths).map(([key, value]) => (
+                    <>
+                      <p>Extra {key}:</p>
+                      <ul>
+                        {value.map(v => (
+                          <li key={v}>
+                            <Code>{v}</Code>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ))}
+                {otherPaths.length > 0 && (
+                  <>
+                    <p>Other extra paths:</p>
+                    <ul>
+                      {otherPaths.map(v => (
+                        <li key={v}>
+                          <Code>{v}</Code>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <p>
+                  Clicking confirm will automatically remove this extra configuration from your run
+                  config.
+                </p>{" "}
+              </div>
+            )
+          });
+          onRemoveExtraPaths(extraNodes);
+        }}
+      >
+        Remove Extra Config
+      </Button>
+    </div>
+  );
+};
+
 interface RunPreviewProps {
   validation: RunPreviewValidationFragment | null;
   document: object | null;
@@ -48,6 +132,7 @@ interface RunPreviewProps {
   actions?: React.ReactChild;
   runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
+  onRemoveExtraPaths: (paths: string[]) => void;
 }
 
 interface RunPreviewState {
@@ -84,6 +169,12 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
               fields {
                 name
               }
+            }
+            ... on FieldNotDefinedConfigError {
+              fieldName
+            }
+            ... on FieldsNotDefinedConfigError {
+              fieldNames
             }
           }
         }
@@ -135,9 +226,10 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
   };
 
   render() {
-    const { actions, document, validation, onHighlightPath } = this.props;
+    const { actions, document, validation, onHighlightPath, onRemoveExtraPaths } = this.props;
     const { errorsOnly } = this.state;
 
+    const extraNodes: string[] = [];
     const missingNodes: string[] = [];
     const errorsAndPaths: {
       pathKey: string;
@@ -155,6 +247,14 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
             missingNodes.push([...path, field.name].join("."));
           }
         } else {
+          if (e.__typename === "FieldNotDefinedConfigError") {
+            extraNodes.push([...path, e.fieldName].join("."));
+          } else if (e.__typename === "FieldsNotDefinedConfigError") {
+            for (const fieldName of e.fieldNames) {
+              extraNodes.push([...path, fieldName].join("."));
+            }
+          }
+
           errorsAndPaths.push({ pathKey: path.join("."), error: e });
         }
       });
@@ -245,6 +345,16 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
                 <ErrorRow key={idx} error={item.error} onHighlight={onHighlightPath} />
               ))}
             </Section>
+
+            {extraNodes.length > 0 && (
+              <Section>
+                <SectionTitle>Bulk Actions:</SectionTitle>
+                <RemoveExtraConfigButton
+                  onRemoveExtraPaths={onRemoveExtraPaths}
+                  extraNodes={extraNodes}
+                />
+              </Section>
+            )}
           </ErrorListContainer>
         }
         firstInitialPercent={50}

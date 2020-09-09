@@ -4,7 +4,7 @@ import { Dialog, Classes, Button, Intent } from "@blueprintjs/core";
 export interface ConfirmationOptions {
   catchOnCancel?: boolean;
   title?: string;
-  description?: string;
+  description?: JSX.Element | string;
 }
 
 interface ConfirmationDialogProps extends ConfirmationOptions {
