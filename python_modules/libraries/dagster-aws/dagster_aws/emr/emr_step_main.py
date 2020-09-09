@@ -10,6 +10,7 @@ import boto3
 from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
 
 from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
+from dagster.core.instance import DagsterInstance
 
 DONE = object()
 
@@ -37,12 +38,13 @@ def main(step_run_ref_bucket, s3_dir_key):
     )
     event_writing_thread.start()
 
-    try:
-        for event in run_step_from_ref(step_run_ref):
-            events_queue.put(event)
-    finally:
-        events_queue.put(DONE)
-        event_writing_thread.join()
+    with DagsterInstance.ephemeral() as instance:
+        try:
+            for event in run_step_from_ref(step_run_ref, instance):
+                events_queue.put(event)
+        finally:
+            events_queue.put(DONE)
+            event_writing_thread.join()
 
 
 def event_writing_loop(events_queue, put_events_fn):

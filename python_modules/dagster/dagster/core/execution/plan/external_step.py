@@ -133,7 +133,8 @@ def step_context_to_step_run_ref(step_context, prior_attempts_count, package_dir
     )
 
 
-def step_run_ref_to_step_context(step_run_ref):
+def step_run_ref_to_step_context(step_run_ref, instance):
+    check.inst_param(instance, "instance", DagsterInstance)
     pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
         step_run_ref.pipeline_run.solids_to_execute
     )
@@ -143,13 +144,8 @@ def step_run_ref_to_step_context(step_run_ref):
     ).build_subset_plan([step_run_ref.step_key])
     retries = step_run_ref.retries.for_inner_plan()
 
-    # TODO This should take in a DagsterInstance rather than creatinga an ephemeral one
     initialization_manager = PlanExecutionContextManager(
-        retries,
-        execution_plan,
-        step_run_ref.run_config,
-        step_run_ref.pipeline_run,
-        DagsterInstance.ephemeral(),
+        retries, execution_plan, step_run_ref.run_config, step_run_ref.pipeline_run, instance,
     )
     for _ in initialization_manager.prepare_context():
         pass
@@ -161,6 +157,7 @@ def step_run_ref_to_step_context(step_run_ref):
     return execution_context.for_step(step)
 
 
-def run_step_from_ref(step_run_ref):
-    step_context = step_run_ref_to_step_context(step_run_ref)
+def run_step_from_ref(step_run_ref, instance):
+    check.inst_param(instance, "instance", DagsterInstance)
+    step_context = step_run_ref_to_step_context(step_run_ref, instance)
     return core_dagster_event_sequence_for_step(step_context, step_run_ref.prior_attempts_count)

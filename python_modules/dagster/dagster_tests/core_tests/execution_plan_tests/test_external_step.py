@@ -103,7 +103,7 @@ def define_basic_pipeline():
     return basic_pipeline
 
 
-def initialize_step_context(scratch_dir):
+def initialize_step_context(scratch_dir, instance):
     pipeline_run = PipelineRun(
         pipeline_name="foo_pipeline",
         run_id=str(uuid.uuid4()),
@@ -116,7 +116,7 @@ def initialize_step_context(scratch_dir):
     )
 
     initialization_manager = PipelineExecutionContextManager(
-        plan, pipeline_run.run_config, pipeline_run, DagsterInstance.ephemeral(),
+        plan, pipeline_run.run_config, pipeline_run, instance,
     )
     for _ in initialization_manager.prepare_context():
         pass
@@ -129,35 +129,37 @@ def initialize_step_context(scratch_dir):
 
 
 def test_step_context_to_step_run_ref():
-    step_context = initialize_step_context("")
-    step = step_context.step
-    step_run_ref = step_context_to_step_run_ref(step_context, 0)
-    assert step_run_ref.run_config == step_context.pipeline_run.run_config
-    assert step_run_ref.run_id == step_context.pipeline_run.run_id
+    with DagsterInstance.ephemeral() as instance:
+        step_context = initialize_step_context("", instance)
+        step = step_context.step
+        step_run_ref = step_context_to_step_run_ref(step_context, 0)
+        assert step_run_ref.run_config == step_context.pipeline_run.run_config
+        assert step_run_ref.run_id == step_context.pipeline_run.run_id
 
-    rehydrated_step_context = step_run_ref_to_step_context(step_run_ref)
-    assert rehydrated_step_context.required_resource_keys == step_context.required_resource_keys
-    rehydrated_step = rehydrated_step_context.step
-    assert rehydrated_step.pipeline_name == step.pipeline_name
-    assert rehydrated_step.key_suffix == step.key_suffix
-    assert rehydrated_step.step_inputs == step.step_inputs
-    assert rehydrated_step.step_outputs == step.step_outputs
-    assert rehydrated_step.kind == step.kind
-    assert rehydrated_step.solid_handle.name == step.solid_handle.name
-    assert rehydrated_step.logging_tags == step.logging_tags
-    assert rehydrated_step.tags == step.tags
+        rehydrated_step_context = step_run_ref_to_step_context(step_run_ref, instance)
+        assert rehydrated_step_context.required_resource_keys == step_context.required_resource_keys
+        rehydrated_step = rehydrated_step_context.step
+        assert rehydrated_step.pipeline_name == step.pipeline_name
+        assert rehydrated_step.key_suffix == step.key_suffix
+        assert rehydrated_step.step_inputs == step.step_inputs
+        assert rehydrated_step.step_outputs == step.step_outputs
+        assert rehydrated_step.kind == step.kind
+        assert rehydrated_step.solid_handle.name == step.solid_handle.name
+        assert rehydrated_step.logging_tags == step.logging_tags
+        assert rehydrated_step.tags == step.tags
 
 
 def test_local_external_step_launcher():
     with seven.TemporaryDirectory() as tmpdir:
-        step_context = initialize_step_context(tmpdir)
+        with DagsterInstance.ephemeral() as instance:
+            step_context = initialize_step_context(tmpdir, instance)
 
-        step_launcher = LocalExternalStepLauncher(tmpdir)
-        events = list(step_launcher.launch_step(step_context, 0))
-        event_types = [event.event_type for event in events]
-        assert DagsterEventType.STEP_START in event_types
-        assert DagsterEventType.STEP_SUCCESS in event_types
-        assert DagsterEventType.STEP_FAILURE not in event_types
+            step_launcher = LocalExternalStepLauncher(tmpdir)
+            events = list(step_launcher.launch_step(step_context, 0))
+            event_types = [event.event_type for event in events]
+            assert DagsterEventType.STEP_START in event_types
+            assert DagsterEventType.STEP_SUCCESS in event_types
+            assert DagsterEventType.STEP_FAILURE not in event_types
 
 
 @pytest.mark.parametrize("mode", ["external", "internal_and_external"])

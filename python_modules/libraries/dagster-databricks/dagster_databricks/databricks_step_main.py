@@ -17,6 +17,7 @@ import zipfile
 
 from dagster import check
 from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
+from dagster.core.instance import DagsterInstance
 from dagster.serdes import serialize_value
 
 # This won't be set in Databricks but is needed to be non-None for the
@@ -122,7 +123,8 @@ def main(step_run_ref_filepath, pipeline_zip):
 
         setup_storage(step_run_ref)
 
-        events = list(run_step_from_ref(step_run_ref))
+        with DagsterInstance.ephemeral() as instance:
+            events = list(run_step_from_ref(step_run_ref, instance))
 
     events_filepath = os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
     with open(events_filepath, "wb") as handle:
