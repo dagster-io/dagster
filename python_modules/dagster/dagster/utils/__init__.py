@@ -166,6 +166,18 @@ class frozenlist(list):
     def __readonly__(self, *args, **kwargs):
         raise RuntimeError("Cannot modify ReadOnlyList")
 
+    # https://docs.python.org/3/library/pickle.html#object.__reduce__
+    #
+    # Like frozendict, implement __reduce__ and __setstate__ to handle pickling.
+    # Otherwise, __setstate__ will be called to restore the frozenlist, causing
+    # a RuntimeError because frozenlist is not mutable.
+
+    def __reduce__(self):
+        return (frozenlist, (), list(self))
+
+    def __setstate__(self, state):
+        self.__init__(state)
+
     __setitem__ = __readonly__
     __delitem__ = __readonly__
     append = __readonly__
