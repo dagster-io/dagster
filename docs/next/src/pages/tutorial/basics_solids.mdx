@@ -260,7 +260,7 @@ write pipelines where some solids conditionally execute based on the presence of
 Suppose we're interested in splitting hot and cold cereals into separate datasets and processing
 them separately, based on config.
 
-```python literalinclude showLines startLine=35 emphasize-lines=7-12,21,26 caption=multiple_outputs.py
+```python literalinclude showLines caption=multiple_outputs.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/multiple_outputs.py
 lines:28-44
 ```
@@ -272,9 +272,10 @@ function must have a name that corresponds to one of these declared outputs.
 
 We'll define two downstream solids and hook them up to the multiple outputs from `split_cereals`.
 
-```python literalinclude showLines startLine=58 emphasize-lines=23-25 caption=multiple_outputs.py
+```python literalinclude showLines caption=multiple_outputs.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/multiple_outputs.py
-lines:47-67
+startAfter:# start-sort-and-pipeline
+endBefore:# end-sort-and-pipeline
 ```
 
 As usual, we can visualize this in Dagit:

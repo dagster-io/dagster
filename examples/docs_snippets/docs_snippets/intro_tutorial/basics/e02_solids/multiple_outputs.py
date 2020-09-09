@@ -44,6 +44,7 @@ def split_cereals(context, cereals):
         yield Output(cold_cereals, "cold_cereals")
 
 
+# start-sort-and-pipeline
 @solid
 def sort_hot_cereals_by_calories(context, cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
@@ -69,6 +70,9 @@ def multiple_outputs_pipeline():
     hot_cereals, cold_cereals = split_cereals(read_csv())
     sort_hot_cereals_by_calories(hot_cereals)
     sort_cold_cereals_by_calories(cold_cereals)
+
+
+# end-sort-and-pipeline
 
 
 if __name__ == "__main__":
