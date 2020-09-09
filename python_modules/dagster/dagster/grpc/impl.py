@@ -118,6 +118,8 @@ def _run_in_subprocess(
         )
         subprocess_status_handler(event)
         subprocess_status_handler(RunInSubprocessComplete())
+        if instance:
+            instance.dispose()
         return
 
     subprocess_status_handler(StartRunInSubprocessSuccessful())
@@ -154,6 +156,7 @@ def _run_in_subprocess(
                 )
             )
         subprocess_status_handler(RunInSubprocessComplete())
+        instance.dispose()
 
 
 def execute_run_in_subprocess(
@@ -210,45 +213,48 @@ def get_external_schedule_execution(recon_repo, external_schedule_execution_args
 
     definition = recon_repo.get_definition()
     schedule_def = definition.get_schedule_def(external_schedule_execution_args.schedule_name)
-    instance = DagsterInstance.from_ref(external_schedule_execution_args.instance_ref)
-    schedule_context = ScheduleExecutionContext(instance)
-    schedule_execution_data_mode = external_schedule_execution_args.schedule_execution_data_mode
+    with DagsterInstance.from_ref(external_schedule_execution_args.instance_ref) as instance:
+        schedule_context = ScheduleExecutionContext(instance)
+        schedule_execution_data_mode = external_schedule_execution_args.schedule_execution_data_mode
 
-    try:
-        with user_code_error_boundary(
-            ScheduleExecutionError,
-            lambda: "Error occurred during the execution of should_execute for schedule "
-            "{schedule_name}".format(schedule_name=schedule_def.name),
-        ):
-            should_execute = None
-            if schedule_execution_data_mode == ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION:
-                should_execute = schedule_def.should_execute(schedule_context)
-                if not should_execute:
-                    return ExternalScheduleExecutionData(
-                        should_execute=False, run_config=None, tags=None
-                    )
+        try:
+            with user_code_error_boundary(
+                ScheduleExecutionError,
+                lambda: "Error occurred during the execution of should_execute for schedule "
+                "{schedule_name}".format(schedule_name=schedule_def.name),
+            ):
+                should_execute = None
+                if (
+                    schedule_execution_data_mode
+                    == ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION
+                ):
+                    should_execute = schedule_def.should_execute(schedule_context)
+                    if not should_execute:
+                        return ExternalScheduleExecutionData(
+                            should_execute=False, run_config=None, tags=None
+                        )
 
-        with user_code_error_boundary(
-            ScheduleExecutionError,
-            lambda: "Error occurred during the execution of run_config_fn for schedule "
-            "{schedule_name}".format(schedule_name=schedule_def.name),
-        ):
-            run_config = schedule_def.get_run_config(schedule_context)
+            with user_code_error_boundary(
+                ScheduleExecutionError,
+                lambda: "Error occurred during the execution of run_config_fn for schedule "
+                "{schedule_name}".format(schedule_name=schedule_def.name),
+            ):
+                run_config = schedule_def.get_run_config(schedule_context)
 
-        with user_code_error_boundary(
-            ScheduleExecutionError,
-            lambda: "Error occurred during the execution of tags_fn for schedule "
-            "{schedule_name}".format(schedule_name=schedule_def.name),
-        ):
-            tags = schedule_def.get_tags(schedule_context)
+            with user_code_error_boundary(
+                ScheduleExecutionError,
+                lambda: "Error occurred during the execution of tags_fn for schedule "
+                "{schedule_name}".format(schedule_name=schedule_def.name),
+            ):
+                tags = schedule_def.get_tags(schedule_context)
 
-        return ExternalScheduleExecutionData(
-            run_config=run_config, tags=tags, should_execute=should_execute
-        )
-    except ScheduleExecutionError:
-        return ExternalScheduleExecutionErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+            return ExternalScheduleExecutionData(
+                run_config=run_config, tags=tags, should_execute=should_execute
+            )
+        except ScheduleExecutionError:
+            return ExternalScheduleExecutionErrorData(
+                serializable_error_info_from_exc_info(sys.exc_info())
+            )
 
 
 def get_external_triggered_execution_params(recon_repo, external_triggered_execution_args):
@@ -262,40 +268,42 @@ def get_external_triggered_execution_params(recon_repo, external_triggered_execu
     triggered_execution_def = definition.get_triggered_execution_def(
         external_triggered_execution_args.trigger_name
     )
-    instance = DagsterInstance.from_ref(external_triggered_execution_args.instance_ref)
-    context = TriggeredExecutionContext(instance)
+    with DagsterInstance.from_ref(external_triggered_execution_args.instance_ref) as instance:
+        context = TriggeredExecutionContext(instance)
 
-    try:
-        with user_code_error_boundary(
-            TriggeredExecutionError,
-            lambda: "Error occured during the execution of should_execute_fn for triggered "
-            "execution {name}".format(name=triggered_execution_def.name),
-        ):
-            should_execute = triggered_execution_def.should_execute(context)
-            if not should_execute:
-                return ExternalExecutionParamsData(run_config=None, tags=None, should_execute=False)
+        try:
+            with user_code_error_boundary(
+                TriggeredExecutionError,
+                lambda: "Error occured during the execution of should_execute_fn for triggered "
+                "execution {name}".format(name=triggered_execution_def.name),
+            ):
+                should_execute = triggered_execution_def.should_execute(context)
+                if not should_execute:
+                    return ExternalExecutionParamsData(
+                        run_config=None, tags=None, should_execute=False
+                    )
 
-        with user_code_error_boundary(
-            TriggeredExecutionError,
-            lambda: "Error occured during the execution of run_config_fn for triggered "
-            "execution {name}".format(name=triggered_execution_def.name),
-        ):
-            run_config = triggered_execution_def.get_run_config(context)
+            with user_code_error_boundary(
+                TriggeredExecutionError,
+                lambda: "Error occured during the execution of run_config_fn for triggered "
+                "execution {name}".format(name=triggered_execution_def.name),
+            ):
+                run_config = triggered_execution_def.get_run_config(context)
 
-        with user_code_error_boundary(
-            TriggeredExecutionError,
-            lambda: "Error occured during the execution of tags_fn for triggered "
-            "execution {name}".format(name=triggered_execution_def.name),
-        ):
-            tags = triggered_execution_def.get_tags(context)
+            with user_code_error_boundary(
+                TriggeredExecutionError,
+                lambda: "Error occured during the execution of tags_fn for triggered "
+                "execution {name}".format(name=triggered_execution_def.name),
+            ):
+                tags = triggered_execution_def.get_tags(context)
 
-        return ExternalExecutionParamsData(
-            run_config=run_config, tags=tags, should_execute=should_execute
-        )
-    except TriggeredExecutionError:
-        return ExternalExecutionParamsErrorData(
-            serializable_error_info_from_exc_info(sys.exc_info())
-        )
+            return ExternalExecutionParamsData(
+                run_config=run_config, tags=tags, should_execute=should_execute
+            )
+        except TriggeredExecutionError:
+            return ExternalExecutionParamsErrorData(
+                serializable_error_info_from_exc_info(sys.exc_info())
+            )
 
 
 def get_partition_config(args):

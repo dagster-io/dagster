@@ -143,6 +143,7 @@ def step_run_ref_to_step_context(step_run_ref):
     ).build_subset_plan([step_run_ref.step_key])
     retries = step_run_ref.retries.for_inner_plan()
 
+    # TODO This should take in a DagsterInstance rather than creatinga an ephemeral one
     initialization_manager = PlanExecutionContextManager(
         retries,
         execution_plan,

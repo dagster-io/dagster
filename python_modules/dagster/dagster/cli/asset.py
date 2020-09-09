@@ -24,31 +24,29 @@ def asset_wipe_command(key, **cli_args):
     if cli_args.get("all") and len(key) > 0:
         raise click.UsageError("Error, cannot use more than one of: asset key, `--all`.")
 
-    instance = DagsterInstance.get()
-    if not instance.is_asset_aware:
-        raise click.UsageError(
-            "Error, configured Dagster instance does not have asset aware event storage."
-        )
+    with DagsterInstance.get() as instance:
+        if not instance.is_asset_aware:
+            raise click.UsageError(
+                "Error, configured Dagster instance does not have asset aware event storage."
+            )
 
-    if len(key) > 0:
-        asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
-        prompt = (
-            "Are you sure you want to remove the asset key indexes for these keys from the event "
-            "logs? Type DELETE"
-        )
-    else:
-        asset_keys = instance.all_asset_keys()
-        prompt = (
-            "Are you sure you want to remove all asset key indexes from the event logs? Type DELETE"
-        )
+        if len(key) > 0:
+            asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
+            prompt = (
+                "Are you sure you want to remove the asset key indexes for these keys from the event "
+                "logs? Type DELETE"
+            )
+        else:
+            asset_keys = instance.all_asset_keys()
+            prompt = "Are you sure you want to remove all asset key indexes from the event logs? Type DELETE"
 
-    confirmation = click.prompt(prompt)
-    if confirmation == "DELETE":
-        instance = DagsterInstance.get()
-        instance.wipe_assets(asset_keys)
-        click.echo("Removed asset indexes from event logs")
-    else:
-        click.echo("Exiting without removing asset indexes")
+        confirmation = click.prompt(prompt)
+        if confirmation == "DELETE":
+            with DagsterInstance.get() as instance:
+                instance.wipe_assets(asset_keys)
+                click.echo("Removed asset indexes from event logs")
+        else:
+            click.echo("Exiting without removing asset indexes")
 
 
 asset_cli = create_asset_cli_group()

@@ -43,12 +43,12 @@ def execute_execute_plan_mutation_raw(recon_repo, variables, instance_ref=None):
     than dict representations of the DagsterEvents, thus "raw". This method in turn returns a
     stream of DagsterEventRecords, not DagsterEvents."""
 
-    instance = (
+    with (
         DagsterInstance.from_ref(instance_ref) if instance_ref else DagsterInstance.ephemeral()
-    )
-    res = execute_query(recon_repo, RAW_EXECUTE_PLAN_MUTATION, variables, instance=instance)
-    handle_execution_errors(res, "executePlan")
-    return handle_execute_plan_result_raw(res)
+    ) as instance:
+        res = execute_query(recon_repo, RAW_EXECUTE_PLAN_MUTATION, variables, instance=instance)
+        handle_execution_errors(res, "executePlan")
+        return handle_execute_plan_result_raw(res)
 
 
 def handle_error_states(res_type, res_data):

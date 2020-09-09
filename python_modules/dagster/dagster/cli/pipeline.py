@@ -79,7 +79,8 @@ def apply_click_params(command, *click_params):
 )
 @repository_target_argument
 def pipeline_list_command(**kwargs):
-    return execute_list_command(kwargs, click.echo, DagsterInstance.get())
+    with DagsterInstance.get() as instance:
+        return execute_list_command(kwargs, click.echo, instance)
 
 
 def execute_list_command(cli_args, print_fn, instance):
@@ -157,7 +158,8 @@ def get_partitioned_pipeline_instructions(command_name):
 @click.option("--verbose", is_flag=True)
 @pipeline_target_argument
 def pipeline_print_command(verbose, **cli_args):
-    return execute_print_command(verbose, cli_args, click.echo, instance=DagsterInstance.get())
+    with DagsterInstance.get() as instance:
+        return execute_print_command(verbose, cli_args, click.echo, instance)
 
 
 def execute_print_command(verbose, cli_args, print_fn, instance):
@@ -274,7 +276,8 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
     ),
 )
 def pipeline_execute_command(**kwargs):
-    execute_execute_command(DagsterInstance.get(), kwargs)
+    with DagsterInstance.get() as instance:
+        execute_execute_command(instance, kwargs)
 
 
 @telemetry_wrapper
@@ -543,7 +546,8 @@ def do_execute_command(
     ),
 )
 def pipeline_launch_command(**kwargs):
-    return execute_launch_command(DagsterInstance.get(), kwargs)
+    with DagsterInstance.get() as instance:
+        return execute_launch_command(instance, kwargs)
 
 
 @telemetry_wrapper
@@ -774,7 +778,8 @@ def validate_partition_slice(partition_names, name, value):
 @click.option("--tags", type=click.STRING, help="JSON string of tags to use for this pipeline run")
 @click.option("--noprompt", is_flag=True)
 def pipeline_backfill_command(**kwargs):
-    execute_backfill_command(kwargs, click.echo, DagsterInstance.get())
+    with DagsterInstance.get() as instance:
+        execute_backfill_command(kwargs, click.echo, instance)
 
 
 def execute_backfill_command(cli_args, print_fn, instance):

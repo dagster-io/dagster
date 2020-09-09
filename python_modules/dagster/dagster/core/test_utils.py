@@ -141,8 +141,8 @@ def instance_for_test_tempdir(temp_dir, overrides=None, enable_telemetry=False):
         with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
             yaml.dump(overrides, fd, default_flow_style=False)
         try:
-            instance = DagsterInstance.get()
-            yield instance
+            with DagsterInstance.get() as instance:
+                yield instance
         finally:
             # To avoid filesystem contention when we close the temporary directory, wait for
             # all runs to reach a terminal state, and close any subprocesses or threads

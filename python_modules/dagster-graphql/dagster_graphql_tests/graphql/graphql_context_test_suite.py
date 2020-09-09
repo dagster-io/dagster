@@ -126,7 +126,7 @@ class InstanceManagers:
         @contextmanager
         def _readonly_sqlite_instance():
             with seven.TemporaryDirectory() as temp_dir:
-                instance = DagsterInstance.local_temp(
+                with DagsterInstance.local_temp(
                     temp_dir,
                     overrides={
                         "scheduler": {
@@ -139,8 +139,8 @@ class InstanceManagers:
                             "class": "ExplodingRunLauncher",
                         },
                     },
-                )
-                yield instance
+                ) as instance:
+                    yield instance
 
         return MarkedManager(_readonly_sqlite_instance, [Marks.sqlite_instance, Marks.readonly])
 
@@ -167,7 +167,7 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance():
             with seven.TemporaryDirectory() as temp_dir:
-                instance = DagsterInstance.local_temp(
+                with DagsterInstance.local_temp(
                     temp_dir,
                     overrides={
                         "scheduler": {
@@ -180,8 +180,8 @@ class InstanceManagers:
                             "class": "SyncInMemoryRunLauncher",
                         },
                     },
-                )
-                yield instance
+                ) as instance:
+                    yield instance
 
         return MarkedManager(_sqlite_instance, [Marks.sqlite_instance, Marks.sync_run_launcher])
 

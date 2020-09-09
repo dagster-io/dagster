@@ -132,11 +132,11 @@ def schedule_preview_command(**kwargs):
 
 
 def execute_preview_command(cli_args, print_fn):
-    instance = DagsterInstance.get()
-    with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
-        check_repo_and_scheduler(external_repo, instance)
+    with DagsterInstance.get() as instance:
+        with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
+            check_repo_and_scheduler(external_repo, instance)
 
-        print_changes(external_repo, instance, print_fn, preview=True)
+            print_changes(external_repo, instance, print_fn, preview=True)
 
 
 @click.command(
@@ -155,18 +155,18 @@ def schedule_up_command(preview, **kwargs):
 
 
 def execute_up_command(preview, cli_args, print_fn):
-    instance = DagsterInstance.get()
-    with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
-        check_repo_and_scheduler(external_repo, instance)
+    with DagsterInstance.get() as instance:
+        with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
+            check_repo_and_scheduler(external_repo, instance)
 
-        print_changes(external_repo, instance, print_fn, preview=preview)
-        if preview:
-            return
+            print_changes(external_repo, instance, print_fn, preview=preview)
+            if preview:
+                return
 
-        try:
-            instance.reconcile_scheduler_state(external_repo)
-        except DagsterInvariantViolationError as ex:
-            raise click.UsageError(ex)
+            try:
+                instance.reconcile_scheduler_state(external_repo)
+            except DagsterInvariantViolationError as ex:
+                raise click.UsageError(ex)
 
 
 @click.command(
@@ -181,51 +181,59 @@ def schedule_list_command(running, stopped, name, **kwargs):
 
 
 def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, print_fn):
-    instance = DagsterInstance.get()
-    with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
-        check_repo_and_scheduler(external_repo, instance)
+    with DagsterInstance.get() as instance:
+        with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
+            check_repo_and_scheduler(external_repo, instance)
 
-        repository_name = external_repo.name
+            repository_name = external_repo.name
 
-        if not name_filter:
-            title = "Repository {name}".format(name=repository_name)
-            print_fn(title)
-            print_fn("*" * len(title))
+            if not name_filter:
+                title = "Repository {name}".format(name=repository_name)
+                print_fn(title)
+                print_fn("*" * len(title))
 
-        first = True
+            first = True
 
-        if running_filter:
-            schedules = [
-                s
-                for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
-                if s.status == ScheduleStatus.RUNNING
-            ]
-        elif stopped_filter:
-            schedules = [
-                s
-                for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
-                if s.status == ScheduleStatus.STOPPED
-            ]
-        else:
-            schedules = instance.all_stored_schedule_state(external_repo.get_origin_id())
+            if running_filter:
+                schedules = [
+                    s
+                    for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
+                    if s.status == ScheduleStatus.RUNNING
+                ]
+            elif stopped_filter:
+                schedules = [
+                    s
+                    for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
+                    if s.status == ScheduleStatus.STOPPED
+                ]
+            else:
+                schedules = instance.all_stored_schedule_state(external_repo.get_origin_id())
 
-        for schedule_state in schedules:
-            # If --name filter is present, only print the schedule name
-            if name_filter:
-                print_fn(schedule_state.name)
-                continue
+            for schedule_state in schedules:
+                # If --name filter is present, only print the schedule name
+                if name_filter:
+                    print_fn(schedule_state.name)
+                    continue
 
-            flag = "[{status}]".format(status=schedule_state.status.value) if schedule_state else ""
-            schedule_title = "Schedule: {name} {flag}".format(name=schedule_state.name, flag=flag)
+                flag = (
+                    "[{status}]".format(status=schedule_state.status.value)
+                    if schedule_state
+                    else ""
+                )
+                schedule_title = "Schedule: {name} {flag}".format(
+                    name=schedule_state.name, flag=flag
+                )
 
-            if not first:
-                print_fn("*" * len(schedule_title))
-            first = False
+                if not first:
+                    print_fn("*" * len(schedule_title))
+                first = False
 
-            print_fn(schedule_title)
-            print_fn(
-                "Cron Schedule: {cron_schedule}".format(cron_schedule=schedule_state.cron_schedule)
-            )
+                print_fn(schedule_title)
+                print_fn(
+                    "Cron Schedule: {cron_schedule}".format(
+                        cron_schedule=schedule_state.cron_schedule
+                    )
+                )
 
 
 def extract_schedule_name(schedule_name):
@@ -256,34 +264,34 @@ def schedule_start_command(schedule_name, start_all, **kwargs):
 
 
 def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
-    instance = DagsterInstance.get()
-    with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
-        check_repo_and_scheduler(external_repo, instance)
+    with DagsterInstance.get() as instance:
+        with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
+            check_repo_and_scheduler(external_repo, instance)
 
-        repository_name = external_repo.name
+            repository_name = external_repo.name
 
-        if all_flag:
-            for external_schedule in external_repo.get_external_schedules():
+            if all_flag:
+                for external_schedule in external_repo.get_external_schedules():
+                    try:
+                        instance.start_schedule_and_update_storage_state(external_schedule)
+                    except DagsterInvariantViolationError as ex:
+                        raise click.UsageError(ex)
+
+                print_fn(
+                    "Started all schedules for repository {repository_name}".format(
+                        repository_name=repository_name
+                    )
+                )
+            else:
                 try:
-                    instance.start_schedule_and_update_storage_state(external_schedule)
+
+                    instance.start_schedule_and_update_storage_state(
+                        external_repo.get_external_schedule(schedule_name)
+                    )
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
-            print_fn(
-                "Started all schedules for repository {repository_name}".format(
-                    repository_name=repository_name
-                )
-            )
-        else:
-            try:
-
-                instance.start_schedule_and_update_storage_state(
-                    external_repo.get_external_schedule(schedule_name)
-                )
-            except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)
-
-            print_fn("Started schedule {schedule_name}".format(schedule_name=schedule_name))
+                print_fn("Started schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
 @click.command(name="stop", help="Stop an existing schedule")
@@ -295,18 +303,18 @@ def schedule_stop_command(schedule_name, **kwargs):
 
 
 def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
-    instance = DagsterInstance.get()
-    with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
-        check_repo_and_scheduler(external_repo, instance)
+    with DagsterInstance.get() as instance:
+        with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
+            check_repo_and_scheduler(external_repo, instance)
 
-        try:
-            instance.stop_schedule_and_update_storage_state(
-                external_repo.get_external_schedule(schedule_name).get_origin_id()
-            )
-        except DagsterInvariantViolationError as ex:
-            raise click.UsageError(ex)
+            try:
+                instance.stop_schedule_and_update_storage_state(
+                    external_repo.get_external_schedule(schedule_name).get_origin_id()
+                )
+            except DagsterInvariantViolationError as ex:
+                raise click.UsageError(ex)
 
-        print_fn("Stopped schedule {schedule_name}".format(schedule_name=schedule_name))
+            print_fn("Stopped schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
 @click.command(name="logs", help="Get logs for a schedule")
@@ -324,15 +332,15 @@ def schedule_logs_command(schedule_name, **kwargs):
 
 
 def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
-    instance = DagsterInstance.get()
-    with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
-        check_repo_and_scheduler(external_repo, instance)
-        logs_path = os.path.join(
-            instance.logs_path_for_schedule(
-                external_repo.get_external_schedule(schedule_name).get_origin_id()
+    with DagsterInstance.get() as instance:
+        with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
+            check_repo_and_scheduler(external_repo, instance)
+            logs_path = os.path.join(
+                instance.logs_path_for_schedule(
+                    external_repo.get_external_schedule(schedule_name).get_origin_id()
+                )
             )
-        )
-        print_fn(logs_path)
+            print_fn(logs_path)
 
 
 @click.command(name="restart", help="Restart a running schedule")
@@ -350,44 +358,52 @@ def schedule_restart_command(schedule_name, restart_all_running, **kwargs):
 
 
 def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn):
-    instance = DagsterInstance.get()
-    with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
-        check_repo_and_scheduler(external_repo, instance)
+    with DagsterInstance.get() as instance:
+        with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
+            check_repo_and_scheduler(external_repo, instance)
 
-        repository_name = external_repo.name
+            repository_name = external_repo.name
 
-        if all_running_flag:
-            for schedule_state in instance.all_stored_schedule_state(external_repo.get_origin_id()):
-                if schedule_state.status == ScheduleStatus.RUNNING:
-                    try:
-                        external_schedule = external_repo.get_external_schedule(schedule_state.name)
-                        instance.stop_schedule_and_update_storage_state(
-                            schedule_state.schedule_origin_id
-                        )
-                        instance.start_schedule_and_update_storage_state(external_schedule)
-                    except DagsterInvariantViolationError as ex:
-                        raise click.UsageError(ex)
+            if all_running_flag:
+                for schedule_state in instance.all_stored_schedule_state(
+                    external_repo.get_origin_id()
+                ):
+                    if schedule_state.status == ScheduleStatus.RUNNING:
+                        try:
+                            external_schedule = external_repo.get_external_schedule(
+                                schedule_state.name
+                            )
+                            instance.stop_schedule_and_update_storage_state(
+                                schedule_state.schedule_origin_id
+                            )
+                            instance.start_schedule_and_update_storage_state(external_schedule)
+                        except DagsterInvariantViolationError as ex:
+                            raise click.UsageError(ex)
 
-            print_fn(
-                "Restarted all running schedules for repository {name}".format(name=repository_name)
-            )
-        else:
-            external_schedule = external_repo.get_external_schedule(schedule_name)
-            schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
-            if schedule_state.status != ScheduleStatus.RUNNING:
-                click.UsageError(
-                    "Cannot restart a schedule {name} because is not currently running".format(
-                        name=schedule_state.name
+                print_fn(
+                    "Restarted all running schedules for repository {name}".format(
+                        name=repository_name
                     )
                 )
+            else:
+                external_schedule = external_repo.get_external_schedule(schedule_name)
+                schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
+                if schedule_state.status != ScheduleStatus.RUNNING:
+                    click.UsageError(
+                        "Cannot restart a schedule {name} because is not currently running".format(
+                            name=schedule_state.name
+                        )
+                    )
 
-            try:
-                instance.stop_schedule_and_update_storage_state(schedule_state.schedule_origin_id)
-                instance.start_schedule_and_update_storage_state(external_schedule)
-            except DagsterInvariantViolationError as ex:
-                raise click.UsageError(ex)
+                try:
+                    instance.stop_schedule_and_update_storage_state(
+                        schedule_state.schedule_origin_id
+                    )
+                    instance.start_schedule_and_update_storage_state(external_schedule)
+                except DagsterInvariantViolationError as ex:
+                    raise click.UsageError(ex)
 
-            print_fn("Restarted schedule {schedule_name}".format(schedule_name=schedule_name))
+                print_fn("Restarted schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
 @click.command(name="wipe", help="Deletes all schedules and schedule cron jobs.")
@@ -397,18 +413,18 @@ def schedule_wipe_command(**kwargs):
 
 
 def execute_wipe_command(cli_args, print_fn):
-    instance = DagsterInstance.get()
-    with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
-        check_repo_and_scheduler(external_repo, instance)
+    with DagsterInstance.get() as instance:
+        with get_external_repository_from_kwargs(cli_args, instance) as external_repo:
+            check_repo_and_scheduler(external_repo, instance)
 
-        confirmation = click.prompt(
-            "Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE"
-        )
-        if confirmation == "DELETE":
-            instance.wipe_all_schedules()
-            print_fn("Wiped all schedules and schedule cron jobs")
-        else:
-            click.echo("Exiting without deleting all schedules and schedule cron jobs")
+            confirmation = click.prompt(
+                "Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE"
+            )
+            if confirmation == "DELETE":
+                instance.wipe_all_schedules()
+                print_fn("Wiped all schedules and schedule cron jobs")
+            else:
+                click.echo("Exiting without deleting all schedules and schedule cron jobs")
 
 
 @click.command(name="debug", help="Debug information about the scheduler")
@@ -417,35 +433,34 @@ def schedule_debug_command():
 
 
 def execute_debug_command(print_fn):
-    instance = DagsterInstance.get()
+    with DagsterInstance.get() as instance:
+        debug_info = instance.scheduler_debug_info()
 
-    debug_info = instance.scheduler_debug_info()
+        output = ""
 
-    output = ""
+        errors = debug_info.errors
+        if len(errors):
+            title = "Errors (Run `dagster schedule up` to resolve)"
+            output += "\n{title}\n{sep}\n{info}\n\n".format(
+                title=title, sep="=" * len(title), info="\n".join(debug_info.errors),
+            )
 
-    errors = debug_info.errors
-    if len(errors):
-        title = "Errors (Run `dagster schedule up` to resolve)"
-        output += "\n{title}\n{sep}\n{info}\n\n".format(
-            title=title, sep="=" * len(title), info="\n".join(debug_info.errors),
+        title = "Scheduler Configuration"
+        output += "{title}\n{sep}\n{info}\n".format(
+            title=title, sep="=" * len(title), info=debug_info.scheduler_config_info,
         )
 
-    title = "Scheduler Configuration"
-    output += "{title}\n{sep}\n{info}\n".format(
-        title=title, sep="=" * len(title), info=debug_info.scheduler_config_info,
-    )
+        title = "Scheduler Info"
+        output += "{title}\n{sep}\n{info}\n".format(
+            title=title, sep="=" * len(title), info=debug_info.scheduler_info
+        )
 
-    title = "Scheduler Info"
-    output += "{title}\n{sep}\n{info}\n".format(
-        title=title, sep="=" * len(title), info=debug_info.scheduler_info
-    )
+        title = "Scheduler Storage Info"
+        output += "\n{title}\n{sep}\n{info}\n".format(
+            title=title, sep="=" * len(title), info="\n".join(debug_info.schedule_storage),
+        )
 
-    title = "Scheduler Storage Info"
-    output += "\n{title}\n{sep}\n{info}\n".format(
-        title=title, sep="=" * len(title), info="\n".join(debug_info.schedule_storage),
-    )
-
-    print_fn(output)
+        print_fn(output)
 
 
 schedule_cli = create_schedule_cli_group()

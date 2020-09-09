@@ -261,50 +261,15 @@ class DagsterGrpcClient(object):
     def execute_run(self, execute_run_args):
         check.inst_param(execute_run_args, "execute_run_args", ExecuteRunArgs)
 
-        try:
-            instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
-            pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
-            event_iterator = self._streaming_query(
-                "ExecuteRun",
-                api_pb2.ExecuteRunRequest,
-                serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
-            )
-        except Exception as exc:  # pylint: disable=bare-except
-            yield instance.report_engine_event(
-                message="Unexpected error in IPC client",
-                pipeline_run=pipeline_run,
-                engine_event_data=EngineEventData.engine_error(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                ),
-            )
-            raise exc
-
-        try:
-            for event in event_iterator:
-                yield deserialize_json_to_dagster_namedtuple(
-                    event.serialized_dagster_event_or_ipc_error_message
+        with DagsterInstance.from_ref(execute_run_args.instance_ref) as instance:
+            try:
+                pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+                event_iterator = self._streaming_query(
+                    "ExecuteRun",
+                    api_pb2.ExecuteRunRequest,
+                    serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
                 )
-        except KeyboardInterrupt:
-            self.cancel_execution(CancelExecutionRequest(run_id=execute_run_args.pipeline_run_id))
-            raise
-        except grpc.RpcError as rpc_error:
-            if (
-                # posix
-                "Socket closed" in rpc_error.debug_error_string()  # pylint: disable=no-member
-                # windows
-                or "Stream removed" in rpc_error.debug_error_string()  # pylint: disable=no-member
-            ):
-                yield instance.report_engine_event(
-                    message="User process: GRPC server for {run_id} terminated unexpectedly".format(
-                        run_id=pipeline_run.run_id
-                    ),
-                    pipeline_run=pipeline_run,
-                    engine_event_data=EngineEventData.engine_error(
-                        serializable_error_info_from_exc_info(sys.exc_info())
-                    ),
-                )
-                yield instance.report_run_failed(pipeline_run)
-            else:
+            except Exception as exc:  # pylint: disable=bare-except
                 yield instance.report_engine_event(
                     message="Unexpected error in IPC client",
                     pipeline_run=pipeline_run,
@@ -312,16 +277,54 @@ class DagsterGrpcClient(object):
                         serializable_error_info_from_exc_info(sys.exc_info())
                     ),
                 )
-            raise rpc_error
-        except Exception as exc:  # pylint: disable=bare-except
-            yield instance.report_engine_event(
-                message="Unexpected error in IPC client",
-                pipeline_run=pipeline_run,
-                engine_event_data=EngineEventData.engine_error(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                ),
-            )
-            raise exc
+                raise exc
+
+            try:
+                for event in event_iterator:
+                    yield deserialize_json_to_dagster_namedtuple(
+                        event.serialized_dagster_event_or_ipc_error_message
+                    )
+            except KeyboardInterrupt:
+                self.cancel_execution(
+                    CancelExecutionRequest(run_id=execute_run_args.pipeline_run_id)
+                )
+                raise
+            except grpc.RpcError as rpc_error:
+                if (
+                    # posix
+                    "Socket closed" in rpc_error.debug_error_string()  # pylint: disable=no-member
+                    # windows
+                    or "Stream removed"
+                    in rpc_error.debug_error_string()  # pylint: disable=no-member
+                ):
+                    yield instance.report_engine_event(
+                        message="User process: GRPC server for {run_id} terminated unexpectedly".format(
+                            run_id=pipeline_run.run_id
+                        ),
+                        pipeline_run=pipeline_run,
+                        engine_event_data=EngineEventData.engine_error(
+                            serializable_error_info_from_exc_info(sys.exc_info())
+                        ),
+                    )
+                    yield instance.report_run_failed(pipeline_run)
+                else:
+                    yield instance.report_engine_event(
+                        message="Unexpected error in IPC client",
+                        pipeline_run=pipeline_run,
+                        engine_event_data=EngineEventData.engine_error(
+                            serializable_error_info_from_exc_info(sys.exc_info())
+                        ),
+                    )
+                raise rpc_error
+            except Exception as exc:  # pylint: disable=bare-except
+                yield instance.report_engine_event(
+                    message="Unexpected error in IPC client",
+                    pipeline_run=pipeline_run,
+                    engine_event_data=EngineEventData.engine_error(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    ),
+                )
+                raise exc
 
     def shutdown_server(self):
         res = self._query("ShutdownServer", api_pb2.Empty)
@@ -360,25 +363,25 @@ class DagsterGrpcClient(object):
     def start_run(self, execute_run_args):
         check.inst_param(execute_run_args, "execute_run_args", ExecuteRunArgs)
 
-        try:
-            instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
-            pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
-            res = self._query(
-                "StartRun",
-                api_pb2.StartRunRequest,
-                serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
-            )
-            return deserialize_json_to_dagster_namedtuple(res.serialized_start_run_result)
+        with DagsterInstance.from_ref(execute_run_args.instance_ref) as instance:
+            try:
+                pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
+                res = self._query(
+                    "StartRun",
+                    api_pb2.StartRunRequest,
+                    serialized_execute_run_args=serialize_dagster_namedtuple(execute_run_args),
+                )
+                return deserialize_json_to_dagster_namedtuple(res.serialized_start_run_result)
 
-        except Exception:  # pylint: disable=bare-except
-            instance.report_engine_event(
-                message="Unexpected error in IPC client",
-                pipeline_run=pipeline_run,
-                engine_event_data=EngineEventData.engine_error(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                ),
-            )
-            raise
+            except Exception:  # pylint: disable=bare-except
+                instance.report_engine_event(
+                    message="Unexpected error in IPC client",
+                    pipeline_run=pipeline_run,
+                    engine_event_data=EngineEventData.engine_error(
+                        serializable_error_info_from_exc_info(sys.exc_info())
+                    ),
+                )
+                raise
 
     def get_current_image(self):
         res = self._query("GetCurrentImage", api_pb2.Empty)

@@ -1,4 +1,3 @@
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 
 
@@ -9,9 +8,6 @@ def migrate_event_log_data(instance=None):
     reserializing the event from storage allows for things like SQL column extraction, filling
     explicit default values, etc.
     """
-    if not instance:
-        instance = DagsterInstance.get()
-
     event_log_storage = instance._event_storage  # pylint: disable=protected-access
     if not isinstance(event_log_storage, SqlEventLogStorage):
         return

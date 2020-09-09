@@ -42,39 +42,38 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
 
     def execute(self):
         pipeline = self.recon_pipeline
-        instance = DagsterInstance.from_ref(self.instance_ref)
+        with DagsterInstance.from_ref(self.instance_ref) as instance:
+            start_termination_thread(self.term_event)
 
-        start_termination_thread(self.term_event)
+            execution_plan = create_execution_plan(
+                pipeline=pipeline,
+                run_config=self.run_config,
+                mode=self.pipeline_run.mode,
+                step_keys_to_execute=self.pipeline_run.step_keys_to_execute,
+            ).build_subset_plan([self.step_key])
 
-        execution_plan = create_execution_plan(
-            pipeline=pipeline,
-            run_config=self.run_config,
-            mode=self.pipeline_run.mode,
-            step_keys_to_execute=self.pipeline_run.step_keys_to_execute,
-        ).build_subset_plan([self.step_key])
+            yield instance.report_engine_event(
+                "Executing step {} in subprocess".format(self.step_key),
+                self.pipeline_run,
+                EngineEventData(
+                    [
+                        EventMetadataEntry.text(str(os.getpid()), "pid"),
+                        EventMetadataEntry.text(self.step_key, "step_key"),
+                    ],
+                    marker_end=DELEGATE_MARKER,
+                ),
+                MultiprocessExecutor,
+                self.step_key,
+            )
 
-        yield instance.report_engine_event(
-            "Executing step {} in subprocess".format(self.step_key),
-            self.pipeline_run,
-            EngineEventData(
-                [
-                    EventMetadataEntry.text(str(os.getpid()), "pid"),
-                    EventMetadataEntry.text(self.step_key, "step_key"),
-                ],
-                marker_end=DELEGATE_MARKER,
-            ),
-            MultiprocessExecutor,
-            self.step_key,
-        )
-
-        for step_event in execute_plan_iterator(
-            execution_plan,
-            self.pipeline_run,
-            run_config=self.run_config,
-            retries=self.retries.for_inner_plan(),
-            instance=instance,
-        ):
-            yield step_event
+            for step_event in execute_plan_iterator(
+                execution_plan,
+                self.pipeline_run,
+                run_config=self.run_config,
+                retries=self.retries.for_inner_plan(),
+                instance=instance,
+            ):
+                yield step_event
 
 
 class MultiprocessExecutor(Executor):

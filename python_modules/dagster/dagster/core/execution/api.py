@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 from dagster import check
 from dagster.core.definitions import ExecutablePipeline, PipelineDefinition, SystemStorageData
 from dagster.core.definitions.executable import InMemoryExecutablePipeline
@@ -218,34 +220,42 @@ def execute_pipeline_iterator(
       Iterator[DagsterEvent]: The stream of events resulting from pipeline execution.
     """
 
-    (
-        pipeline,
-        run_config,
-        instance,
-        mode,
-        tags,
-        solids_to_execute,
-        solid_selection,
-    ) = _check_execute_pipeline_args(
-        pipeline=pipeline,
-        run_config=run_config,
-        mode=mode,
-        preset=preset,
-        tags=tags,
-        solid_selection=solid_selection,
-        instance=instance,
-    )
+    with _ephemeral_instance_if_missing(instance) as execute_instance:
+        (
+            pipeline,
+            run_config,
+            mode,
+            tags,
+            solids_to_execute,
+            solid_selection,
+        ) = _check_execute_pipeline_args(
+            pipeline=pipeline,
+            run_config=run_config,
+            mode=mode,
+            preset=preset,
+            tags=tags,
+            solid_selection=solid_selection,
+        )
 
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline.get_definition(),
-        run_config=run_config,
-        mode=mode,
-        solid_selection=solid_selection,
-        solids_to_execute=solids_to_execute,
-        tags=tags,
-    )
+        pipeline_run = execute_instance.create_run_for_pipeline(
+            pipeline_def=pipeline.get_definition(),
+            run_config=run_config,
+            mode=mode,
+            solid_selection=solid_selection,
+            solids_to_execute=solids_to_execute,
+            tags=tags,
+        )
 
-    return execute_run_iterator(pipeline, pipeline_run, instance)
+        return execute_run_iterator(pipeline, pipeline_run, execute_instance)
+
+
+@contextmanager
+def _ephemeral_instance_if_missing(instance):
+    if instance:
+        yield instance
+    else:
+        with DagsterInstance.ephemeral() as ephemeral_instance:
+            yield ephemeral_instance
 
 
 def execute_pipeline(
@@ -294,35 +304,35 @@ def execute_pipeline(
     This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
     ``dagster.core.execution.api.execute_plan()``.
     """
-    instance = instance or DagsterInstance.ephemeral()
-    return _logged_execute_pipeline(
-        pipeline,
-        run_config=run_config,
-        mode=mode,
-        preset=preset,
-        tags=tags,
-        solid_selection=solid_selection,
-        instance=instance,
-        raise_on_error=raise_on_error,
-    )
+
+    with _ephemeral_instance_if_missing(instance) as execute_instance:
+        return _logged_execute_pipeline(
+            pipeline,
+            instance=execute_instance,
+            run_config=run_config,
+            mode=mode,
+            preset=preset,
+            tags=tags,
+            solid_selection=solid_selection,
+            raise_on_error=raise_on_error,
+        )
 
 
 @telemetry_wrapper
 def _logged_execute_pipeline(
     pipeline,
+    instance,
     run_config=None,
     mode=None,
     preset=None,
     tags=None,
     solid_selection=None,
-    instance=None,
     raise_on_error=True,
 ):
-
+    check.inst_param(instance, "instance", DagsterInstance)
     (
         pipeline,
         run_config,
-        instance,
         mode,
         tags,
         solids_to_execute,
@@ -334,7 +344,6 @@ def _logged_execute_pipeline(
         preset=preset,
         tags=tags,
         solid_selection=solid_selection,
-        instance=instance,
     )
 
     log_repo_stats(instance=instance, pipeline=pipeline, source="execute_pipeline")
@@ -392,36 +401,32 @@ def reexecute_pipeline(
     """
     check.str_param(parent_run_id, "parent_run_id")
 
-    (pipeline, run_config, instance, mode, tags, _, _) = _check_execute_pipeline_args(
-        pipeline=pipeline,
-        run_config=run_config,
-        mode=mode,
-        preset=preset,
-        tags=tags,
-        instance=instance,
-    )
+    with _ephemeral_instance_if_missing(instance) as execute_instance:
+        (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
+            pipeline=pipeline, run_config=run_config, mode=mode, preset=preset, tags=tags,
+        )
 
-    parent_pipeline_run = instance.get_run_by_id(parent_run_id)
-    check.invariant(
-        parent_pipeline_run,
-        "No parent run with id {parent_run_id} found in instance.".format(
-            parent_run_id=parent_run_id
-        ),
-    )
+        parent_pipeline_run = execute_instance.get_run_by_id(parent_run_id)
+        check.invariant(
+            parent_pipeline_run,
+            "No parent run with id {parent_run_id} found in instance.".format(
+                parent_run_id=parent_run_id
+            ),
+        )
 
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline.get_definition(),
-        run_config=run_config,
-        mode=mode,
-        tags=tags,
-        solid_selection=parent_pipeline_run.solid_selection,
-        solids_to_execute=parent_pipeline_run.solids_to_execute,
-        step_keys_to_execute=step_keys_to_execute,
-        root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
-        parent_run_id=parent_pipeline_run.run_id,
-    )
+        pipeline_run = execute_instance.create_run_for_pipeline(
+            pipeline_def=pipeline.get_definition(),
+            run_config=run_config,
+            mode=mode,
+            tags=tags,
+            solid_selection=parent_pipeline_run.solid_selection,
+            solids_to_execute=parent_pipeline_run.solids_to_execute,
+            step_keys_to_execute=step_keys_to_execute,
+            root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
+            parent_run_id=parent_pipeline_run.run_id,
+        )
 
-    return execute_run(pipeline, pipeline_run, instance, raise_on_error=raise_on_error)
+        return execute_run(pipeline, pipeline_run, execute_instance, raise_on_error=raise_on_error)
 
 
 def reexecute_pipeline_iterator(
@@ -464,36 +469,36 @@ def reexecute_pipeline_iterator(
     """
     check.str_param(parent_run_id, "parent_run_id")
 
-    (pipeline, run_config, instance, mode, tags, _, _) = _check_execute_pipeline_args(
-        pipeline=pipeline,
-        run_config=run_config,
-        mode=mode,
-        preset=preset,
-        tags=tags,
-        instance=instance,
-        solid_selection=None,
-    )
-    parent_pipeline_run = instance.get_run_by_id(parent_run_id)
-    check.invariant(
-        parent_pipeline_run,
-        "No parent run with id {parent_run_id} found in instance.".format(
-            parent_run_id=parent_run_id
-        ),
-    )
+    with _ephemeral_instance_if_missing(instance) as execute_instance:
+        (pipeline, run_config, mode, tags, _, _) = _check_execute_pipeline_args(
+            pipeline=pipeline,
+            run_config=run_config,
+            mode=mode,
+            preset=preset,
+            tags=tags,
+            solid_selection=None,
+        )
+        parent_pipeline_run = execute_instance.get_run_by_id(parent_run_id)
+        check.invariant(
+            parent_pipeline_run,
+            "No parent run with id {parent_run_id} found in instance.".format(
+                parent_run_id=parent_run_id
+            ),
+        )
 
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline.get_definition(),
-        run_config=run_config,
-        mode=mode,
-        tags=tags,
-        solid_selection=parent_pipeline_run.solid_selection,
-        solids_to_execute=parent_pipeline_run.solids_to_execute,
-        step_keys_to_execute=step_keys_to_execute,
-        root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
-        parent_run_id=parent_pipeline_run.run_id,
-    )
+        pipeline_run = execute_instance.create_run_for_pipeline(
+            pipeline_def=pipeline.get_definition(),
+            run_config=run_config,
+            mode=mode,
+            tags=tags,
+            solid_selection=parent_pipeline_run.solid_selection,
+            solids_to_execute=parent_pipeline_run.solids_to_execute,
+            step_keys_to_execute=step_keys_to_execute,
+            root_run_id=parent_pipeline_run.root_run_id or parent_pipeline_run.run_id,
+            parent_run_id=parent_pipeline_run.run_id,
+        )
 
-    return execute_run_iterator(pipeline, pipeline_run, instance)
+        return execute_run_iterator(pipeline, pipeline_run, execute_instance)
 
 
 def execute_plan_iterator(
@@ -671,9 +676,7 @@ class _ExecuteRunWithPlanIterable(object):
                     yield event
 
 
-def _check_execute_pipeline_args(
-    pipeline, run_config, mode, preset, tags, instance, solid_selection=None
-):
+def _check_execute_pipeline_args(pipeline, run_config, mode, preset, tags, solid_selection=None):
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -749,9 +752,6 @@ def _check_execute_pipeline_args(
 
     tags = merge_dicts(pipeline_def.tags, tags)
 
-    check.opt_inst_param(instance, "instance", DagsterInstance)
-    instance = instance or DagsterInstance.ephemeral()
-
     # generate pipeline subset from the given solid_selection
     if solid_selection:
         pipeline = pipeline.subset_for_execution(solid_selection)
@@ -759,7 +759,6 @@ def _check_execute_pipeline_args(
     return (
         pipeline,
         run_config,
-        instance,
         mode,
         tags,
         pipeline.solids_to_execute,

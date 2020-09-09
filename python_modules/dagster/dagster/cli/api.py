@@ -307,16 +307,15 @@ class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
 def execute_run_command(input_file, output_file):
     args = check.inst(read_unary_input(input_file), ExecuteRunArgs)
     recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
-    instance = DagsterInstance.from_ref(args.instance_ref)
+    with DagsterInstance.from_ref(args.instance_ref) as instance:
+        with ipc_write_stream(output_file) as ipc_stream:
 
-    with ipc_write_stream(output_file) as ipc_stream:
+            def send_to_stream(event):
+                ipc_stream.send(event)
 
-        def send_to_stream(event):
-            ipc_stream.send(event)
-
-        return _execute_run_command_body(
-            recon_pipeline, args.pipeline_run_id, instance, send_to_stream
-        )
+            return _execute_run_command_body(
+                recon_pipeline, args.pipeline_run_id, instance, send_to_stream
+            )
 
 
 @click.command(
@@ -333,19 +332,18 @@ def execute_run_with_structured_logs_command(input_json):
     args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteRunArgs)
     recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
-    instance = (
+    with (
         DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else DagsterInstance.get()
-    )
+    ) as instance:
+        buffer = []
 
-    buffer = []
+        def send_to_buffer(event):
+            buffer.append(serialize_dagster_namedtuple(event))
 
-    def send_to_buffer(event):
-        buffer.append(serialize_dagster_namedtuple(event))
+        _execute_run_command_body(recon_pipeline, args.pipeline_run_id, instance, send_to_buffer)
 
-    _execute_run_command_body(recon_pipeline, args.pipeline_run_id, instance, send_to_buffer)
-
-    for line in buffer:
-        click.echo(line)
+        for line in buffer:
+            click.echo(line)
 
 
 def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
@@ -406,29 +404,31 @@ def execute_step_with_structured_logs_command(input_json):
 
     args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteStepArgs)
 
-    instance = (
+    with (
         DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else DagsterInstance.get()
-    )
-    pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
-    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+    ) as instance:
+        pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
+        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
-    execution_plan = create_execution_plan(
-        recon_pipeline.subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute),
-        run_config=args.run_config,
-        step_keys_to_execute=args.step_keys_to_execute,
-        mode=args.mode,
-    )
+        execution_plan = create_execution_plan(
+            recon_pipeline.subset_for_execution_from_existing_pipeline(
+                pipeline_run.solids_to_execute
+            ),
+            run_config=args.run_config,
+            step_keys_to_execute=args.step_keys_to_execute,
+            mode=args.mode,
+        )
 
-    retries = Retries.from_config(args.retries_dict)
+        retries = Retries.from_config(args.retries_dict)
 
-    buff = []
-    for event in execute_plan_iterator(
-        execution_plan, pipeline_run, instance, run_config=args.run_config, retries=retries,
-    ):
-        buff.append(serialize_dagster_namedtuple(event))
+        buff = []
+        for event in execute_plan_iterator(
+            execution_plan, pipeline_run, instance, run_config=args.run_config, retries=retries,
+        ):
+            buff.append(serialize_dagster_namedtuple(event))
 
-    for line in buff:
-        click.echo(line)
+        for line in buff:
+            click.echo(line)
 
 
 class _ScheduleTickHolder:
@@ -559,47 +559,47 @@ def grpc_command(
 @click.option("--schedule_name")
 def launch_scheduled_execution(output_file, schedule_name, **kwargs):
     with ipc_write_stream(output_file) as stream:
-        instance = DagsterInstance.get()
-        repository_origin = get_repository_origin_from_kwargs(kwargs)
-        schedule_origin = repository_origin.get_schedule_origin(schedule_name)
+        with DagsterInstance.get() as instance:
+            repository_origin = get_repository_origin_from_kwargs(kwargs)
+            schedule_origin = repository_origin.get_schedule_origin(schedule_name)
 
-        # open the tick scope before we load any external artifacts so that
-        # load errors are stored in DB
-        with _schedule_tick_state(
-            instance,
-            stream,
-            ScheduleTickData(
-                schedule_origin_id=schedule_origin.get_id(),
-                schedule_name=schedule_name,
-                timestamp=time.time(),
-                cron_schedule=None,  # not yet loaded
-                status=ScheduleTickStatus.STARTED,
-            ),
-        ) as tick:
-            with get_repository_location_from_kwargs(kwargs, instance) as repo_location:
-                repo_dict = repo_location.get_repositories()
-                check.invariant(
-                    repo_dict and len(repo_dict) == 1,
-                    "Passed in arguments should reference exactly one repository, instead there are {num_repos}".format(
-                        num_repos=len(repo_dict)
-                    ),
-                )
-                external_repo = next(iter(repo_dict.values()))
-                check.invariant(
-                    schedule_name
-                    in [schedule.name for schedule in external_repo.get_external_schedules()],
-                    "Could not find schedule named {schedule_name}".format(
-                        schedule_name=schedule_name
-                    ),
-                )
-                external_schedule = external_repo.get_external_schedule(schedule_name)
-                tick.update_with_status(
+            # open the tick scope before we load any external artifacts so that
+            # load errors are stored in DB
+            with _schedule_tick_state(
+                instance,
+                stream,
+                ScheduleTickData(
+                    schedule_origin_id=schedule_origin.get_id(),
+                    schedule_name=schedule_name,
+                    timestamp=time.time(),
+                    cron_schedule=None,  # not yet loaded
                     status=ScheduleTickStatus.STARTED,
-                    cron_schedule=external_schedule.cron_schedule,
-                )
-                _launch_scheduled_execution(
-                    instance, repo_location, external_repo, external_schedule, tick, stream
-                )
+                ),
+            ) as tick:
+                with get_repository_location_from_kwargs(kwargs, instance) as repo_location:
+                    repo_dict = repo_location.get_repositories()
+                    check.invariant(
+                        repo_dict and len(repo_dict) == 1,
+                        "Passed in arguments should reference exactly one repository, instead there are {num_repos}".format(
+                            num_repos=len(repo_dict)
+                        ),
+                    )
+                    external_repo = next(iter(repo_dict.values()))
+                    check.invariant(
+                        schedule_name
+                        in [schedule.name for schedule in external_repo.get_external_schedules()],
+                        "Could not find schedule named {schedule_name}".format(
+                            schedule_name=schedule_name
+                        ),
+                    )
+                    external_schedule = external_repo.get_external_schedule(schedule_name)
+                    tick.update_with_status(
+                        status=ScheduleTickStatus.STARTED,
+                        cron_schedule=external_schedule.cron_schedule,
+                    )
+                    _launch_scheduled_execution(
+                        instance, repo_location, external_repo, external_schedule, tick, stream
+                    )
 
 
 def _launch_scheduled_execution(
