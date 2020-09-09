@@ -180,9 +180,6 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
     const { resources, solids, ...rest } = this.getRootCompositeChildren();
 
     const itemsIn = (parents: string[], names: string[]) => {
-      const parentsKey = parents.join(".");
-      const parentErrors = errorsAndPaths.filter(e => e.pathKey === parentsKey);
-
       const boxes = names
         .map(name => {
           const path = [...parents, name];
@@ -192,7 +189,7 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
             .map(e => e.error);
 
           const isPresent = pathExistsInObject(path, document);
-          const isInvalid = pathErrors.length || parentErrors.length;
+          const isInvalid = pathErrors.length;
           const isMissing = path.some((_, idx) =>
             missingNodes.includes(path.slice(0, idx + 1).join("."))
           );
