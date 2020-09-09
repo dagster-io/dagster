@@ -5,6 +5,8 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config_mappable import IConfigMappable
 from dagster.utils.backcompat import rename_warning
 
+from .utils import check_valid_name
+
 
 class IntermediateStorageDefinition(IConfigMappable):
     """Defines intermediate data storage behaviors.
@@ -33,7 +35,7 @@ class IntermediateStorageDefinition(IConfigMappable):
         intermediate_storage_creation_fn=None,
         _configured_config_mapping_fn=None,
     ):
-        self._name = check.str_param(name, "name")
+        self._name = check_valid_name(name)
         self._is_persistent = check.bool_param(is_persistent, "is_persistent")
         self._config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
         self._intermediate_storage_creation_fn = check.opt_callable_param(

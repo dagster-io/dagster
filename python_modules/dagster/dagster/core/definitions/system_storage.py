@@ -7,6 +7,8 @@ from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.utils.backcompat import rename_warning
 
+from .utils import check_valid_name
+
 
 class SystemStorageDefinition(IConfigMappable):
     """Defines run metadata and intermediate data storage behaviors.
@@ -51,7 +53,7 @@ class SystemStorageDefinition(IConfigMappable):
         system_storage_creation_fn=None,
         _configured_config_mapping_fn=None,
     ):
-        self._name = check.str_param(name, "name")
+        self._name = check_valid_name(name)
         self._is_persistent = check.bool_param(is_persistent, "is_persistent")
         self._config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
         self._system_storage_creation_fn = check.opt_callable_param(

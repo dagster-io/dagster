@@ -176,7 +176,7 @@ final: "result"
 
 def test_from_pkg_resources():
     good = ("dagster_tests.core_tests.definitions_tests", "pass_env.yaml")
-    res = PresetDefinition.from_pkg_resources("pass", [good])
+    res = PresetDefinition.from_pkg_resources("this_should_pass", [good])
     assert res.run_config == {"solids": {"can_fail": {"config": {"error": False}}}}
 
     bad_defs = [

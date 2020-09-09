@@ -12,6 +12,7 @@ from dagster.utils import merge_dicts
 from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .mode import DEFAULT_MODE_NAME
+from .utils import check_for_invalid_name_and_warn
 
 
 class PresetDefinition(
@@ -50,7 +51,7 @@ class PresetDefinition(
 
         return super(PresetDefinition, cls).__new__(
             cls,
-            name=check.str_param(name, "name"),
+            name=check_for_invalid_name_and_warn(name),
             run_config=run_config,
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str

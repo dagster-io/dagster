@@ -28,13 +28,13 @@ from dagster.utils.test import execute_solids_within_pipeline
 
 
 def test_default_mode_definition():
-    pipeline_def = PipelineDefinition(name="takes a mode", solid_defs=[])
+    pipeline_def = PipelineDefinition(name="takesamode", solid_defs=[])
     assert pipeline_def
 
 
 def test_mode_takes_a_name():
     pipeline_def = PipelineDefinition(
-        name="takes a mode", solid_defs=[], mode_defs=[ModeDefinition(name="a_mode")]
+        name="takesamode", solid_defs=[], mode_defs=[ModeDefinition(name="a_mode")]
     )
     assert pipeline_def
 
@@ -45,7 +45,7 @@ def test_mode_from_resources():
         return context.resources.three
 
     @pipeline(
-        name="takes a mode", mode_defs=[ModeDefinition.from_resources({"three": 3}, name="three")]
+        name="takesamode", mode_defs=[ModeDefinition.from_resources({"three": 3}, name="three")]
     )
     def pipeline_def():
         return ret_three()

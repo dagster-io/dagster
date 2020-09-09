@@ -12,6 +12,7 @@ from dagster.utils import merge_dicts
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
 from .mode import DEFAULT_MODE_NAME
+from .utils import check_for_invalid_name_and_warn
 
 
 def by_name(partition):
@@ -142,7 +143,7 @@ class PartitionSetDefinition(
 
         return super(PartitionSetDefinition, cls).__new__(
             cls,
-            name=check.str_param(name, "name"),
+            name=check_for_invalid_name_and_warn(name),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             partition_fn=lambda: [
                 _wrap(x) for x in check.callable_param(partition_fn, "partition_fn")()
@@ -283,7 +284,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         run_config_fn=None,
     ):
         super(PartitionScheduleDefinition, self).__init__(
-            name=name,
+            name=check_for_invalid_name_and_warn(name),
             cron_schedule=cron_schedule,
             pipeline_name=pipeline_name,
             run_config_fn=run_config_fn,

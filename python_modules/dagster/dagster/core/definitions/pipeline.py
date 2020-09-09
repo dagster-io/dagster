@@ -1,3 +1,5 @@
+import warnings
+
 import six
 
 from dagster import check
@@ -20,7 +22,7 @@ from .mode import ModeDefinition
 from .preset import PresetDefinition
 from .solid import ISolidDefinition
 from .solid_container import IContainSolids, create_execution_structure, validate_dependency_dict
-from .utils import validate_tags
+from .utils import check_for_invalid_name_and_warn, is_valid_name, validate_tags
 
 
 def _check_solids_arg(pipeline_name, solid_defs):
@@ -148,7 +150,16 @@ class PipelineDefinition(IContainSolids):
         hook_defs=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
     ):
-        self._name = check.opt_str_param(name, "name", "<<unnamed>>")
+        if not name:
+            warnings.warn(
+                "Pipeline must have a name. Names will be required starting in 0.9.13 or later."
+            )
+        # name might be <<unnamed>> when constructing pipeline subsets
+        elif name != "<<unnamed>>" and not is_valid_name(name):
+            check_for_invalid_name_and_warn(name)
+
+        self._name = check.opt_str_param(name, "name") or "<<unnamed>>"
+
         self._description = check.opt_str_param(description, "description")
 
         mode_definitions = check.opt_list_param(mode_defs, "mode_defs", of_type=ModeDefinition)

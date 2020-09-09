@@ -3,6 +3,8 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
+from .utils import check_valid_name
+
 
 class HookDefinition(namedtuple("_HookDefinition", "name hook_fn required_resource_keys")):
     """Define a hook which can be triggered during a solid execution (e.g. a callback on the step
@@ -18,7 +20,7 @@ class HookDefinition(namedtuple("_HookDefinition", "name hook_fn required_resour
     def __new__(cls, name, hook_fn, required_resource_keys=None):
         return super(HookDefinition, cls).__new__(
             cls,
-            name=check.str_param(name, "name"),
+            name=check_valid_name(name),
             hook_fn=check.callable_param(hook_fn, "hook_fn"),
             required_resource_keys=frozenset(
                 check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)

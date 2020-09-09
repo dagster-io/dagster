@@ -1,6 +1,7 @@
 import keyword
 import os
 import re
+import warnings
 from glob import glob
 
 import pkg_resources
@@ -52,6 +53,29 @@ def check_valid_name(name):
     if not has_valid_name_chars(name):
         raise DagsterInvalidDefinitionError(
             "{name} must be in regex {regex}".format(name=name, regex=VALID_NAME_REGEX_STR)
+        )
+
+    check.invariant(is_valid_name(name))
+    return name
+
+
+def is_valid_name(name):
+    check.str_param(name, "name")
+
+    return name not in DISALLOWED_NAMES and has_valid_name_chars(name)
+
+
+def check_for_invalid_name_and_warn(name):
+    check.str_param(name, "name")
+    if not is_valid_name(name):
+        warnings.warn(
+            (
+                'You provided name "{name}" which is invalid. Name must pass regex "{regex}" '
+                "and cannot be a python keyword, primitive type, or some other common names. "
+                "This will be an error starting in 0.9.13. "
+                "Full list: {disallowed}."
+            ).format(name=name, regex=VALID_NAME_REGEX_STR, disallowed=DISALLOWED_NAMES),
+            stacklevel=2,
         )
     return name
 

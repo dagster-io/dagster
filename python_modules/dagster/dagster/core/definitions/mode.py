@@ -7,6 +7,7 @@ from dagster.loggers import default_loggers
 
 from .logger import LoggerDefinition
 from .resource import ResourceDefinition
+from .utils import check_for_invalid_name_and_warn
 
 DEFAULT_MODE_NAME = "default"
 
@@ -69,7 +70,7 @@ class ModeDefinition(
 
         return super(ModeDefinition, cls).__new__(
             cls,
-            name=check.opt_str_param(name, "name", DEFAULT_MODE_NAME),
+            name=check_for_invalid_name_and_warn(name) if name else DEFAULT_MODE_NAME,
             resource_defs=check.opt_dict_param(
                 resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
             ),
