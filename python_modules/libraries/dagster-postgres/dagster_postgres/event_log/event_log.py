@@ -192,19 +192,8 @@ class PostgresEventWatcher(object):
         self._handlers_dict = {}
         self._dict_lock = threading.Lock()
         self._conn_string = conn_string
-        self._watcher_thread_exit = threading.Event()
-        self._watcher_thread = threading.Thread(
-            target=watcher_thread,
-            args=(
-                self._conn_string,
-                self._run_id_dict,
-                self._handlers_dict,
-                self._dict_lock,
-                self._watcher_thread_exit,
-            ),
-        )
-        self._watcher_thread.daemon = True
-        self._watcher_thread.start()
+        self._watcher_thread_exit = None
+        self._watcher_thread = None
 
     def has_run_id(self, run_id):
         with self._dict_lock:
@@ -212,6 +201,21 @@ class PostgresEventWatcher(object):
         return _has_run_id
 
     def watch_run(self, run_id, start_cursor, callback):
+        if not self._watcher_thread:
+            self._watcher_thread_exit = threading.Event()
+            self._watcher_thread = threading.Thread(
+                target=watcher_thread,
+                args=(
+                    self._conn_string,
+                    self._run_id_dict,
+                    self._handlers_dict,
+                    self._dict_lock,
+                    self._watcher_thread_exit,
+                ),
+            )
+            self._watcher_thread.daemon = True
+            self._watcher_thread.start()
+
         with self._dict_lock:
             if run_id in self._run_id_dict:
                 self._handlers_dict[run_id].append((start_cursor, callback))
@@ -237,4 +241,8 @@ class PostgresEventWatcher(object):
                 self._run_id_dict = run_id_dict
 
     def close(self):
-        self._watcher_thread_exit.set()
+        if self._watcher_thread:
+            self._watcher_thread_exit.set()
+            self._watcher_thread.join()
+            self._watcher_thread_exit = None
+            self._watcher_thread = None
