@@ -214,7 +214,7 @@ def _submit_task_docker(app, pipeline_context, step, queue, priority):
 def create_docker_task(celery_app, **task_kwargs):
     @celery_app.task(bind=True, name="execute_step_docker", **task_kwargs)
     def _execute_step_docker(
-        _self,
+        self,
         instance_ref_dict,
         step_keys,
         run_config,
@@ -271,6 +271,7 @@ def create_docker_task(celery_app, **task_kwargs):
                 [
                     EventMetadataEntry.text(step_keys_str, "Step keys"),
                     EventMetadataEntry.text(docker_image, "Image"),
+                    EventMetadataEntry.text(self.request.hostname, "Celery worker"),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
