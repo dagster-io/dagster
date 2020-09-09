@@ -19,13 +19,10 @@ from dagster import (
     dagster_type_materializer,
 )
 from dagster.config.field_utils import Selector
+from dagster.utils import dict_without_keys
 from dagster.utils.backcompat import canonicalize_backcompat_args, experimental
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
-
-
-def dict_without_keys(ddict, *keys):
-    return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
 @dagster_type_materializer(

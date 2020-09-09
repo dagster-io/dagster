@@ -13,6 +13,7 @@ from dagster import (
     file_relative_path,
     solid,
 )
+from dagster.utils import dict_without_keys
 from dagster.utils.test import get_temp_dir
 
 spark = SparkSession.builder.getOrCreate()
@@ -26,10 +27,6 @@ dataframe_parametrize_argvalues = [
     pytest.param("parquet", spark.read.load, True, id="other_parquet"),
     pytest.param("json", spark.read.load, True, id="other_json"),
 ]
-
-
-def dict_without_keys(ddict, *keys):
-    return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
 def create_pyspark_df():

@@ -21,6 +21,7 @@ from dagster import (
 from dagster.config.field_utils import Selector
 from dagster.core.storage.system_storage import fs_intermediate_storage, fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
+from dagster.utils import dict_without_keys
 
 WriteModeOptions = Enum(
     "WriteMode",
@@ -73,10 +74,6 @@ WriteCompressionParquetOptions = Enum(
         EnumValue("zstd"),
     ],
 )
-
-
-def dict_without_keys(ddict, *keys):
-    return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
 @dagster_type_materializer(
