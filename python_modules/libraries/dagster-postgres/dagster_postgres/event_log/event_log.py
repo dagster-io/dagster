@@ -55,6 +55,7 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         self._engine = create_engine(
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
+        self._disposed = False
         SqlEventLogStorageMetadata.create_all(self._engine)
 
     def upgrade(self):
@@ -117,7 +118,9 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         self.dispose()
 
     def dispose(self):
-        self._event_watcher.close()
+        if not self._disposed:
+            self._disposed = True
+            self._event_watcher.close()
 
 
 EventWatcherProcessStartedEvent = namedtuple("EventWatcherProcessStartedEvent", "")

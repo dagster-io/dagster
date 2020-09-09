@@ -1082,3 +1082,9 @@ class DagsterInstance:
 
     def logs_path_for_schedule(self, schedule_origin_id):
         return self._scheduler.get_logs_path(self, schedule_origin_id)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.dispose()

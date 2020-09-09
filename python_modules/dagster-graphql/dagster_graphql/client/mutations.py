@@ -15,13 +15,12 @@ class DagsterGraphQLClientError(DagsterError):
 
 
 def execute_execute_plan_mutation(workspace, variables, instance_ref=None):
-    instance = (
+    with (
         DagsterInstance.from_ref(instance_ref) if instance_ref else DagsterInstance.ephemeral()
-    )
-    res = execute_query(
-        workspace, EXECUTE_PLAN_MUTATION, variables, use_sync_executor=True, instance=instance
-    )
-    instance.dispose()
+    ) as instance:
+        res = execute_query(
+            workspace, EXECUTE_PLAN_MUTATION, variables, use_sync_executor=True, instance=instance
+        )
     handle_execution_errors(res, "executePlan")
     return handle_execute_plan_result(res)
 
