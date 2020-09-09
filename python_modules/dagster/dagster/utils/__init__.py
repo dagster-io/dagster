@@ -517,3 +517,7 @@ def compose(*args):
     # reduce using functional composition over all the arguments, with the identity function as
     # initializer
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)
+
+
+def dict_without_keys(ddict, *keys):
+    return {key: value for key, value in ddict.items() if key not in set(keys)}
