@@ -48,8 +48,6 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
         kind=StepKind.COMPUTE,
         solid_handle=handle,
         solid=solid,
-        tags=solid.tags,
-        hook_defs=solid.hook_defs,
     )
 
 

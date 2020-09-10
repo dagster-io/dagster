@@ -2,16 +2,11 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.definitions import (
-    AssetMaterialization,
-    HookDefinition,
-    Materialization,
-    SolidHandle,
-)
+from dagster.core.definitions import AssetMaterialization, Materialization, Solid, SolidHandle
 from dagster.core.definitions.events import EventMetadataEntry
 from dagster.core.types.dagster_type import DagsterType
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils import frozentags, merge_dicts
+from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -196,7 +191,7 @@ class ExecutionStep(
         "_ExecutionStep",
         (
             "pipeline_name key_suffix step_inputs step_input_dict step_outputs step_output_dict "
-            "compute_fn kind solid_handle logging_tags tags hook_defs"
+            "compute_fn kind solid_handle solid_version logging_tags tags hook_defs"
         ),
     )
 ):
@@ -211,9 +206,9 @@ class ExecutionStep(
         solid_handle,
         solid,
         logging_tags=None,
-        tags=None,
-        hook_defs=None,
     ):
+        check.inst_param(solid, "solid", Solid)
+
         return super(ExecutionStep, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
@@ -222,9 +217,13 @@ class ExecutionStep(
             step_input_dict={si.name: si for si in step_inputs},
             step_outputs=check.list_param(step_outputs, "step_outputs", of_type=StepOutput),
             step_output_dict={so.name: so for so in step_outputs},
-            compute_fn=check.callable_param(compute_fn, "compute_fn"),
+            compute_fn=check.callable_param(
+                compute_fn, "compute_fn"
+            ),  # Compute_fn is the compute function for the step.
+            #     Not to be confused with the compute_fn of the passed in solid.
             kind=check.inst_param(kind, "kind", StepKind),
             solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
+            solid_version=solid.definition.version,
             logging_tags=merge_dicts(
                 {
                     "step_key": str(solid_handle) + "." + key_suffix,
@@ -234,8 +233,8 @@ class ExecutionStep(
                 },
                 check.opt_dict_param(logging_tags, "logging_tags"),
             ),
-            tags=check.opt_inst_param(tags, "tags", frozentags),
-            hook_defs=check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition),
+            tags=solid.tags,
+            hook_defs=solid.hook_defs,
         )
 
     @property
