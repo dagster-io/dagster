@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.9.6
+
+**New**
+
+- Added ADLS2 storage plugin for Spark DataFrame (Thanks @sd2k!)
+- Added feature in the Dagit Playground to automatically remove extra configuration that does not conform to a pipeline’s config schema.
+- [Dagster-Celery/Celery-K8s/Celery-Docker] Added Celery worker names and pods to the logs for each step execution
+
+**Community contributions**
+
+- Re-enabled dagster-azure integration tests in dagster-databricks tests (Thanks @sd2k!)
+- Moved dict_without_keys from dagster-pandas into dagster.utils (Thanks @DavidKatz-il)
+- Moved Dask DataFrame read/to options under read/to keys (Thanks @kinghuang)
+
+**Bugfixes**
+
+- Fixed helper for importing data from GCS paths into Bigquery (Thanks @grabangomb (https://github.com/grabangomb)!)
+- Postgres event storage now waits to open a thread to watch runs until it is needed
+
+**Experimental**
+
+- Added version computation function for DagsterTypeLoader. (Actual versioning will be supported in 0.10.0)
+- Added version attribute to solid and SolidDefinition. (Actual versioning will be supported in 0.10.0)
+
 ## 0.9.5
 
 **New**
