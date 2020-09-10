@@ -46,7 +46,7 @@ def create_databricks_job_solid(
             ),
         },
         input_defs=input_defs,
-        output_defs=OutputDefinition(Nothing),
+        output_defs=[OutputDefinition(Nothing)],
         required_resource_keys=required_resource_keys,
     )
     def databricks_solid(context):
