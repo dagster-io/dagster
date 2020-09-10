@@ -271,8 +271,12 @@ class DatabricksConfig:
 
         # Spark APIs will use this.
         # See https://docs.databricks.com/data/data-sources/aws/amazon-s3.html#alternative-1-set-aws-keys-in-the-spark-context.
-        sc._jsc.hadoopConfiguration().set("fs.s3n.awsAccessKeyId", access_key)
-        sc._jsc.hadoopConfiguration().set("fs.s3n.awsSecretAccessKey", secret_key)
+        sc._jsc.hadoopConfiguration().set(  # pylint: disable=protected-access
+            "fs.s3n.awsAccessKeyId", access_key
+        )
+        sc._jsc.hadoopConfiguration().set(  # pylint: disable=protected-access
+            "fs.s3n.awsSecretAccessKey", secret_key
+        )
 
         # Boto will use these.
         os.environ["AWS_ACCESS_KEY_ID"] = access_key
@@ -286,7 +290,7 @@ class DatabricksConfig:
         # Spark APIs will use this.
         # See https://docs.microsoft.com/en-gb/azure/databricks/data/data-sources/azure/azure-datalake-gen2#--access-directly-using-the-storage-account-access-key
         # sc is globally defined in the Databricks runtime and points to the Spark context
-        sc._jsc.hadoopConfiguration().set(
+        sc._jsc.hadoopConfiguration().set(  # pylint: disable=protected-access
             "fs.azure.account.key.{}.dfs.core.windows.net".format(
                 adls2_storage["storage_account_name"]
             ),
@@ -305,6 +309,8 @@ class DatabricksConfig:
             name = secret["name"]
             key = secret["key"]
             scope = secret["scope"]
-            print("Exporting {} from Databricks secret {}, scope {}".format(name, key, scope))
+            print(  # pylint: disable=print-call
+                "Exporting {} from Databricks secret {}, scope {}".format(name, key, scope)
+            )
             val = dbutils.secrets.get(scope=scope, key=key)
             os.environ[name] = val

@@ -48,7 +48,7 @@ def main(
 
         with open(step_run_ref_filepath, "rb") as handle:
             step_run_ref = pickle.load(handle)
-        print("Running pipeline")
+        print("Running pipeline")  # noqa pylint: disable=print-call
         with DagsterInstance.ephemeral() as instance:
             events = list(run_step_from_ref(step_run_ref, instance))
 
