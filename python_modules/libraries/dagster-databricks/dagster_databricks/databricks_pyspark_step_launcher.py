@@ -219,15 +219,41 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
 
 class DatabricksConfig:
+    """Represents configuration required by Databricks to run jobs.
+
+    Instances of this class will be created when a Databricks step is launched and will contain
+    all configuration and secrets required to set up storage and environment variables within
+    the Databricks environment. The instance will be serialized and uploaded to Databricks
+    by the step launcher, then deserialized as part of the 'main' script when the job is running
+    in Databricks.
+
+    The `setup` method handles the actual setup prior to solid execution on the Databricks side.
+
+    This config is separated out from the regular Dagster run config system because the setup
+    is done by the 'main' script before entering a Dagster context (i.e. using `run_step_from_ref`).
+    We use a separate class to avoid coupling the setup to the format of the `step_run_ref` object.
+    """
+
     def __init__(self, storage, secrets):
+        """Create a new DatabricksConfig object.
+
+        `storage` and `secrets` should be of the same shape as the `storage` and
+        `secrets_to_env_variables` config passed to `databricks_pyspark_step_launcher`.
+        """
         self.storage = storage
         self.secrets = secrets
 
     def setup(self, dbutils, sc):
+        """Set up storage and environment variables on Databricks.
+
+        The `dbutils` and `sc` arguments must be passed in by the 'main' script, as they
+        aren't accessible by any other modules.
+        """
         self.setup_storage(dbutils, sc)
         self.setup_environment(dbutils)
 
     def setup_storage(self, dbutils, sc):
+        """Set up storage using either S3 or ADLS2."""
         if "s3" in self.storage:
             self.setup_s3_storage(self.storage["s3"], dbutils, sc)
         elif "adls2" in self.storage:
