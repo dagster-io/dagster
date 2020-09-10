@@ -88,7 +88,7 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         ext_version = self._external_version_fn(config_value)
         if ext_version:
             version += str(ext_version)
-        return hashlib.sha1(version).hexdigest()
+        return hashlib.sha1(version.encode("utf-8")).hexdigest()
 
     def construct_from_config_value(self, context, config_value):
         return self._func(context, config_value)
