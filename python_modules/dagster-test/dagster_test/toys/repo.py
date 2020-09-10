@@ -1,3 +1,4 @@
+from dagster_test.toys.branches import branch_pipeline
 from dagster_test.toys.composition import composition
 from dagster_test.toys.error_monster import error_monster
 from dagster_test.toys.fan_in_fan_out import fan_in_fan_out_pipeline
@@ -25,4 +26,5 @@ def toys_repository():
         many_events,
         sleepy_pipeline,
         retry_pipeline,
+        branch_pipeline,
     ] + get_toys_schedules()

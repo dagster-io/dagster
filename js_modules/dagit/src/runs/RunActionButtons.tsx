@@ -108,6 +108,8 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
   const isFinalStatus =
     run?.status === PipelineRunStatus.FAILURE || run?.status === PipelineRunStatus.SUCCESS;
   const isFailedWithPlan = executionPlan && run && run.status === PipelineRunStatus.FAILURE;
+  // allow subset re-execution when there is a failure in the selection
+  const isFailureInSelection = selectedSteps && selectedStepStates.includes(IStepState.FAILED);
 
   const options: LaunchButtonConfiguration[] = [
     {
@@ -120,7 +122,10 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
     {
       title: isSelectionPresent ? REEXECUTE_SUBSET_TITLE : REEXECUTE_SUBSET_NO_SELECTION_TITLE,
       disabled:
-        isPipelineUnknown || !isSelectionPresent || !isSelectionFinished || !artifactsPersisted,
+        isPipelineUnknown ||
+        !isSelectionPresent ||
+        !(isSelectionFinished || isFailureInSelection) ||
+        !artifactsPersisted,
       tooltip: (
         <div>
           {!artifactsPersisted
