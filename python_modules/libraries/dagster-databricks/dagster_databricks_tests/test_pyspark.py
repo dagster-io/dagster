@@ -2,7 +2,7 @@ import os
 
 import pytest
 from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
-from dagster_azure.adls2 import adls2_plus_default_storage_defs, adls2_resource
+from dagster_azure.adls2 import adls2_plus_default_intermediate_storage_defs, adls2_resource
 from dagster_databricks import databricks_pyspark_step_launcher
 from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row
@@ -88,7 +88,7 @@ MODE_DEFS = [
             "pyspark": pyspark_resource,
             "adls2": adls2_resource,
         },
-        system_storage_defs=adls2_plus_default_storage_defs,
+        intermediate_storage_defs=adls2_plus_default_intermediate_storage_defs,
     ),
     ModeDefinition(
         "prod_s3",
