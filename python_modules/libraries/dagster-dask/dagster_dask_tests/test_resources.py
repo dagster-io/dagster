@@ -10,7 +10,7 @@ from dagster import (
 )
 from dask.distributed import Client
 
-from dagster_dask import DataFrame, dask_resource
+from dagster_dask import dask_resource
 
 
 @solid(
