@@ -133,7 +133,7 @@ def _execute_load_in_source(context, source, source_name):
 
     # Load from GCS. See: https://cloud.google.com/bigquery/docs/loading-data-cloud-storage
     elif source_name == BigQueryLoadSource.GCS:
-        context.resources.biquery.load_table_from_uri(source, destination, job_config=cfg).result()
+        context.resources.bigquery.load_table_from_uri(source, destination, job_config=cfg).result()
 
 
 @solid(
