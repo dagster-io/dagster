@@ -1,10 +1,12 @@
 import datetime
+import hashlib
 import logging
 import os
 import time
 from abc import ABCMeta
 from collections import defaultdict, namedtuple
 from enum import Enum
+from typing import Optional
 
 import six
 import yaml
@@ -22,6 +24,7 @@ from dagster.core.errors import (
 )
 from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.seven import get_current_datetime_in_utc
@@ -42,6 +45,44 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 def _is_dagster_home_set():
     return bool(os.getenv("DAGSTER_HOME"))
+
+
+def _is_memoized_run(tags):
+    return tags is not None and MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
+
+
+def _fake_output_address(_version_list):
+    # Placeholder function until actual version storage has been implemented
+    return {}
+
+
+def _resolve_step_input_versions(step, step_versions):
+    def _resolve_output_version(step_output_handle):
+        if (
+            step_output_handle.step_key not in step_versions
+            or not step_versions[step_output_handle.step_key]
+        ):
+            return None
+        else:
+            return join_and_hash(
+                [step_versions[step_output_handle.step_key], step_output_handle.output_name]
+            )
+
+    input_versions = {}
+    for input_name, step_input in step.step_input_dict.items():
+        if step_input.is_from_output:
+            output_handle_versions = [
+                _resolve_output_version(source_handle)
+                for source_handle in step_input.source_handles
+            ]
+            version = join_and_hash(output_handle_versions)
+        elif step_input.is_from_config:
+            version = step_input.dagster_type.loader.compute_loaded_input_version(
+                step_input.config_data
+            )
+        input_versions[input_name] = version
+
+    return input_versions
 
 
 def _dagster_home():
@@ -96,6 +137,16 @@ def _format_field_diff(field_diff):
             for field_name, (expected_value, candidate_value,) in field_diff.items()
         ]
     )
+
+
+def join_and_hash(lst):
+    lst = check.list_param(lst, "lst")
+    lst = [check.opt_str_param(elem, "elem") for elem in lst]
+    if None in lst:
+        return None
+    else:
+        unhashed = "".join(sorted(lst))
+        return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
 
 
 class _EventListenerLogHandler(logging.Handler):
@@ -467,6 +518,65 @@ class DagsterInstance:
     def get_run_group(self, run_id):
         return self._run_storage.get_run_group(run_id)
 
+    def resolve_step_versions(
+        self, pipeline_def, speculative_execution_plan=None, run_config=None, mode=None,
+    ):
+        """Resolves the version of each step in an execution plan.
+
+        If an execution plan is not provided, then it is constructed from pipeline_def, run_config, and
+        mode. It returns dict[str, str] where each key is a step key, and each value is the associated
+        version for that step.
+
+        Args:
+            pipeline_def (PipelineDefinition): Definition for the pipeline to construct execution plan
+                for.
+            speculative_execution_plan (Optional[ExecutionPlan]): Execution plan to resolve steps for,
+                if provided.
+            run_config (Optional[dict]): The environment configuration that parameterizes the run, as a
+                dict.
+            mode (Optional[str]): The pipeline mode in which to execute this run.
+        """
+        from dagster.core.execution.api import create_execution_plan
+
+        if not speculative_execution_plan:
+            speculative_execution_plan = create_execution_plan(
+                pipeline_def, run_config=run_config, mode=mode,
+            )
+
+        step_versions = {}  # step_key (str) -> version (str)
+
+        for step in speculative_execution_plan.topological_steps():
+            input_version_dict = _resolve_step_input_versions(step, step_versions)
+            input_versions = [version for version in input_version_dict.values()]
+
+            solid_version = step.solid_version
+
+            from_versions = input_versions + [solid_version]
+
+            step_version = join_and_hash(from_versions)
+
+            step_versions[step.key] = step_version
+
+        return step_versions
+
+    def resolve_unmemoized_steps(self, speculative_execution_plan, step_versions):
+        unmemoized_steps = []
+
+        for step in speculative_execution_plan.topological_steps():
+            step_version = step_versions[step.key]
+            output_versions = [
+                join_and_hash([name, step_version]) for name in step.step_output_dict.keys()
+            ]
+
+            addresses = _fake_output_address(
+                output_versions
+            )  # TODO: replace with real version storage once that has landed.
+
+            if any([not version in addresses for version in output_versions]):
+                unmemoized_steps.append(step.key)
+
+        return unmemoized_steps
+
     def create_run_for_pipeline(
         self,
         pipeline_def,
@@ -513,6 +623,28 @@ class DagsterInstance:
                 pipeline_def = pipeline_def.get_pipeline_subset_def(
                     solids_to_execute=solids_to_execute
                 )
+
+        if _is_memoized_run(tags):
+            if step_keys_to_execute:
+                raise DagsterInvariantViolationError(
+                    "step_keys_to_execute parameter cannot be used in conjunction with memoized "
+                    "pipeline runs."
+                )
+
+            speculative_execution_plan = create_execution_plan(
+                pipeline_def, run_config=run_config, mode=mode,
+            )
+
+            step_versions = self.resolve_step_versions(
+                pipeline_def,
+                run_config=run_config,
+                speculative_execution_plan=speculative_execution_plan,
+                mode=mode,
+            )
+
+            step_keys_to_execute = self.resolve_unmemoized_steps(
+                speculative_execution_plan, step_versions
+            )  # TODO: tighter integration with existing step_keys_to_execute functionality
 
         if execution_plan is None:
             execution_plan = create_execution_plan(
