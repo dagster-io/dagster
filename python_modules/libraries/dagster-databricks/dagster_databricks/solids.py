@@ -10,7 +10,10 @@ _DEFAULT_RUN_MAX_WAIT_TIME_SEC = 24 * 60 * 60
 
 
 def create_databricks_job_solid(
-    name, num_inputs=1, description=None, required_resource_keys=frozenset(["databricks_client"]),
+    name="databricks_job",
+    num_inputs=1,
+    description=None,
+    required_resource_keys=frozenset(["databricks_client"]),
 ):
     """
     Creates a solid that launches a databricks job.
