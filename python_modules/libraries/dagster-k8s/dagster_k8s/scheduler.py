@@ -148,7 +148,9 @@ class K8sScheduler(Scheduler, ConfigurableClass):
 
         existing_cron_job = self.get_cron_job(schedule_origin_id=schedule_origin_id)
         if existing_cron_job:
-            self._api.patch_namespaced_cron_job(
+            # patch_namespaced_cron_job will cause the containers array to be additive
+            # https://blog.atomist.com/kubernetes-apply-replace-patch/
+            self._api.replace_namespaced_cron_job(
                 name=schedule_origin_id, body=cron_job, namespace=self._namespace
             )
         else:
