@@ -128,7 +128,7 @@ class DaskResource(object):
                         key: Field(
                             Permissive(),
                             is_required=False,
-                            description=f"{meta['name']} cluster configuration.",
+                            description=f"{meta['name']} cluster config. Requires {meta['module']}.",
                         )
                         for key, meta in DaskClusterTypes.items()
                     }
