@@ -4,6 +4,7 @@
 
 **Bugfixes**
 
+- Fixed an issue in the dagstermill library that caused solid config fetch to be non-deterministic.
 - Fixed an issue in the K8sScheduler where multiple pipeline runs were kicked off for each scheduled
   execution.
 
