@@ -14,7 +14,7 @@ ExecStart=/bin/bash -c '\
     /opt/dagster/venv/bin/dagit \
         -h 0.0.0.0 \
         -p 3000 \
-        -y /opt/dagster/app/repository.yaml'
+        -y /opt/dagster/app/workspace.yaml'
 Restart=always
 WorkingDirectory=/opt/dagster/app/
 

@@ -204,11 +204,11 @@ RUN pip install dagster_graphql
 ADD /path/to/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Add your repository.yaml file so that dagster_graphql knows where to look to find your repository,
+# Add your workspace.yaml file so that dagster_graphql knows where to look to find your repository,
 # the Python file in which your repository is defined, and any local dependencies (e.g., unpackaged
 # Python files from which your repository definition imports, or local packages that cannot be
 # installed using the requirements.txt).
-ADD /path/to/repository.yaml .
+ADD /path/to/workspace.yaml .
 ADD /path/to/repository_definition.py .
 # ADD /path/to/additional_file.py .
 
