@@ -305,9 +305,9 @@ class EmrJobRunner:
                 # See: https://github.com/dagster-io/dagster/issues/1954
 
         if step_state == EmrStepState.Failed:
-            log.info("EMR step %s failed" % emr_step_id)
+            log.error("EMR step %s failed" % emr_step_id)
 
-        raise EmrError("EMR step failed")
+        raise EmrError("EMR step %s failed" % emr_step_id)
 
     def _check_for_missing_default_iam_roles(self, log, cluster):
         """If cluster couldn't start due to missing IAM roles, tell user what to do."""

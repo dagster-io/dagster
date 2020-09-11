@@ -3,8 +3,8 @@ import subprocess
 import sys
 
 import pytest
-from dagster_aws.emr import EmrJobRunner
-from dagster_aws.emr.pyspark_step_launcher import emr_pyspark_step_launcher
+from dagster_aws.emr import EmrError, EmrJobRunner
+from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher, emr_pyspark_step_launcher
 from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
 from dagster_pyspark import DataFrame, pyspark_resource
 from moto import mock_emr
@@ -220,3 +220,32 @@ def test_do_it_live_emr():
         },
     )
     assert result.success
+
+
+@mock.patch("boto3.resource")
+@mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.wait_for_completion")
+@mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher._log_logs_from_s3")
+@mock.patch("dagster.core.events.log_step_event")
+def test_fetch_logs_on_fail(
+    _mock_log_step_event, mock_log_logs, mock_wait_for_completion, _mock_boto3_resource
+):
+    mock_log = mock.MagicMock()
+    mock_wait_for_completion.side_effect = EmrError()
+
+    step_launcher = EmrPySparkStepLauncher(
+        region_name="",
+        staging_bucket="",
+        staging_prefix="",
+        spark_config=None,
+        action_on_failure="",
+        cluster_id="",
+        local_pipeline_package_path="",
+        deploy_local_pipeline_package=False,
+        wait_for_logs=True,
+    )
+
+    with pytest.raises(EmrError):
+        for _ in step_launcher.wait_for_completion_and_log(mock_log, None, None, None, None):
+            pass
+
+    assert mock_log_logs.call_count == 1

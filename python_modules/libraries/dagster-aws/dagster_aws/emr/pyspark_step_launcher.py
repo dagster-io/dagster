@@ -4,7 +4,7 @@ import time
 
 import boto3
 from botocore.exceptions import ClientError
-from dagster_aws.emr import EmrJobRunner, emr_step_main
+from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
 from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
 from dagster_pyspark.utils import build_pyspark_zip
 from dagster_spark.configs_spark import spark_config as get_spark_config
@@ -205,10 +205,18 @@ class EmrPySparkStepLauncher(StepLauncher):
             0
         ]
 
+        return self.wait_for_completion_and_log(log, run_id, step_key, emr_step_id, step_context)
+
+    def wait_for_completion_and_log(self, log, run_id, step_key, emr_step_id, step_context):
         s3 = boto3.resource("s3", region_name=self.region_name)
-        for event in self.wait_for_completion(log, s3, run_id, step_key, emr_step_id):
-            log_step_event(step_context, event)
-            yield event
+        try:
+            for event in self.wait_for_completion(log, s3, run_id, step_key, emr_step_id):
+                log_step_event(step_context, event)
+                yield event
+        except EmrError as emr_error:
+            if self.wait_for_logs:
+                self._log_logs_from_s3(log, emr_step_id)
+            raise emr_error
 
         if self.wait_for_logs:
             self._log_logs_from_s3(log, emr_step_id)
@@ -257,9 +265,11 @@ class EmrPySparkStepLauncher(StepLauncher):
         records = parse_hadoop_log4j_records(stderr_log)
         for record in records:
             log._log(  # pylint: disable=protected-access
-                record.level, record.logger + ": " + record.message, {}
+                record.level,
+                "".join(["Spark Driver stderr: ", record.logger, ": ", record.message]),
+                {},
             )
-        log.info(stdout_log)
+        log.info("Spark Driver stdout: " + stdout_log)
 
     def _get_emr_step_def(self, run_id, step_key, solid_name):
         """From the local Dagster instance, construct EMR steps that will kick off execution on a
