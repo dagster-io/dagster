@@ -9,8 +9,11 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     Do not initialize directly: use :func:`dagstermill.get_context`.
     """
 
-    def __init__(self, pipeline_context, resource_keys_to_init, solid_config=None):
+    def __init__(self, pipeline_context, resource_keys_to_init, solid_name, solid_config=None):
         check.inst_param(pipeline_context, "pipeline_context", SystemPipelineExecutionContext)
+        check.str_param(solid_name, "solid_name")
+        self.solid_name = solid_name
+
         self._pipeline_context = pipeline_context
         if solid_config:
             self._solid_config = solid_config
@@ -99,7 +102,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether a
         solid definition was passed to ``dagstermill.get_context``.
         """
-        return self.pipeline_def.all_solid_defs[0]
+        return self.pipeline_def.solid_def_named(self.solid_name)
 
     @property
     def solid(self):
@@ -108,7 +111,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether a
         solid definition was passed to ``dagstermill.get_context``.
         """
-        return self.pipeline_def.solids[0]
+        return self.pipeline_def.solid_named(self.solid_name)
 
     @property
     def solid_config(self):
