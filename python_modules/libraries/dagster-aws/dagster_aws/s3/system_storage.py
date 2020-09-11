@@ -22,13 +22,13 @@ from .object_store import S3ObjectStore
     required_resource_keys={"s3"},
 )
 def s3_intermediate_storage(init_context):
-    """Persistent intermediate_storage() storage using S3 for storage.
+    """Persistent intermediate storage using S3 for storage.
 
         Suitable for intermediates storage for distributed executors, so long as
         each execution node has network connectivity and credentials for S3 and
         the backing bucket.
 
-        Attach this intermediate_storage() storage definition, as well as the :py:data:`~dagster_aws.s3_resource` it
+        Attach this storage definition, as well as the :py:data:`~dagster_aws.s3_resource` it
         requires, to a :py:class:`~dagster.ModeDefinition` in order to make it available to your
         pipeline:
 
@@ -38,7 +38,7 @@ def s3_intermediate_storage(init_context):
                 mode_defs=[
                     ModeDefinition(
                         resource_defs={'s3': s3_resource, ...},
-                        intermediate_storage()_storage_defs=default_intermediate_storage()_storage_defs + [s3_intermediate_storage()_storage, ...],
+                        intermediate_storage_defs=[s3_intermediate_storage],
                         ...
                     ), ...
                 ], ...
@@ -93,7 +93,7 @@ def s3_system_storage(init_context):
             mode_defs=[
                 ModeDefinition(
                     resource_defs={'s3': s3_resource, ...},
-                    system_storage_defs=default_system_storage_defs + [s3_system_storage, ...],
+                    system_storage_defs=[s3_system_storage],
                     ...
                 ), ...
             ], ...
