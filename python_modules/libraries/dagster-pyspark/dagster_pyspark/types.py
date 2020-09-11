@@ -958,15 +958,7 @@ def dataframe_loader(_context, config):
 class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
     def compatible_with_storage_def(cls, system_storage_def):
-        try:
-            from dagster_aws.s3 import s3_system_storage, s3_intermediate_storage
-
-            return (
-                system_storage_def is s3_system_storage
-                or system_storage_def is s3_intermediate_storage
-            )
-        except ImportError:
-            return False
+        return system_storage_def.required_resource_keys == {"s3"}
 
     @classmethod
     def set_intermediate_object(
