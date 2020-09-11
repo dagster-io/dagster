@@ -4,7 +4,10 @@ import warnings
 from dateutil.relativedelta import relativedelta
 
 from dagster import check
-from dagster.core.definitions.partition import PartitionSetDefinition
+from dagster.core.definitions.partition import (
+    PartitionSetDefinition,
+    create_default_partition_selector_fn,
+)
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.partitions import date_partition_range
 
@@ -142,9 +145,14 @@ def monthly_schedule(
         minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_month
     )
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta=relativedelta(months=1), fmt="%Y-%m"
+    fmt = "%Y-%m"
+    delta = relativedelta(months=1)
+
+    execution_offset = relativedelta(
+        days=execution_day_of_month - 1, hours=execution_time.hour, minutes=execution_time.minute,
     )
+
+    partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
 
     def inner(fn):
         check.callable_param(fn, "fn")
@@ -170,6 +178,7 @@ def monthly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            partition_selector=create_default_partition_selector_fn(delta + execution_offset, fmt),
         )
 
     return inner
@@ -240,9 +249,16 @@ def weekly_schedule(
         minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_week
     )
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta=relativedelta(weeks=1), fmt="%Y-%m-%d"
+    fmt = "%Y-%m-%d"
+    delta = relativedelta(weeks=1)
+
+    day_difference = (execution_day_of_week - start_date.weekday()) % 7
+
+    execution_offset = relativedelta(
+        days=day_difference, hours=execution_time.hour, minutes=execution_time.minute
     )
+
+    partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
 
     def inner(fn):
         check.callable_param(fn, "fn")
@@ -268,6 +284,7 @@ def weekly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            partition_selector=create_default_partition_selector_fn(delta + execution_offset, fmt),
         )
 
     return inner
@@ -328,7 +345,11 @@ def daily_schedule(
         minute=execution_time.minute, hour=execution_time.hour
     )
 
-    partition_fn = date_partition_range(start_date, end=end_date)
+    delta = datetime.timedelta(days=1)
+
+    partition_fn = date_partition_range(start_date, end=end_date, delta=delta)
+
+    execution_offset = datetime.timedelta(hours=execution_time.hour, minutes=execution_time.minute)
 
     def inner(fn):
         check.callable_param(fn, "fn")
@@ -354,6 +375,7 @@ def daily_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            partition_selector=create_default_partition_selector_fn(delta + execution_offset),
         )
 
     return inner
@@ -424,9 +446,12 @@ def hourly_schedule(
 
     cron_schedule = "{minute} * * * *".format(minute=execution_time.minute)
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
-    )
+    fmt = "%Y-%m-%d-%H:%M"
+    delta = datetime.timedelta(hours=1)
+
+    execution_offset = datetime.timedelta(minutes=(execution_time.minute - start_date.minute) % 60)
+
+    partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
 
     def inner(fn):
         check.callable_param(fn, "fn")
@@ -452,6 +477,7 @@ def hourly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            partition_selector=create_default_partition_selector_fn(delta + execution_offset, fmt),
         )
 
     return inner

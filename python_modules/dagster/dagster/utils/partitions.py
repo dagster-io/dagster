@@ -48,11 +48,10 @@ def date_partition_range(
     def get_date_range_partitions():
         current = start
 
-        _end_specified = end is not None
         _end = end or datetime.datetime.now()
 
         date_names = []
-        while current < _end or (_end_specified and current == _end):
+        while current <= _end:
             date_names.append(Partition(value=current, name=current.strftime(fmt)))
             current = current + delta
 

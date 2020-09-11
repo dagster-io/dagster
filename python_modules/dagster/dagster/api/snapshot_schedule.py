@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from dagster import check
 from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionData,
@@ -6,16 +8,24 @@ from dagster.core.host_representation.external_data import (
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.types import ExternalScheduleExecutionArgs, ScheduleExecutionDataMode
+from dagster.seven import get_timestamp_from_utc_datetime
 
 from .utils import execute_unary_api_cli_command
 
 
 def sync_get_external_schedule_execution_data(
-    instance, repository_handle, schedule_name, schedule_execution_data_mode
+    instance,
+    repository_handle,
+    schedule_name,
+    schedule_execution_data_mode,
+    scheduled_execution_datetime_utc,
 ):
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(schedule_name, "schedule_name")
+    check.opt_inst_param(
+        scheduled_execution_datetime_utc, "scheduled_execution_datetime_utc", datetime
+    )
     check.inst_param(
         schedule_execution_data_mode, "schedule_execution_data_mode", ScheduleExecutionDataMode
     )
@@ -30,6 +40,11 @@ def sync_get_external_schedule_execution_data(
                 repository_origin=origin,
                 instance_ref=instance.get_ref(),
                 schedule_name=schedule_name,
+                scheduled_execution_timestamp_utc=(
+                    get_timestamp_from_utc_datetime(scheduled_execution_datetime_utc)
+                    if scheduled_execution_datetime_utc
+                    else None
+                ),
                 schedule_execution_data_mode=schedule_execution_data_mode,
             ),
         ),
@@ -38,7 +53,11 @@ def sync_get_external_schedule_execution_data(
 
 
 def sync_get_external_schedule_execution_data_ephemeral_grpc(
-    instance, repository_handle, schedule_name, schedule_execution_data_mode
+    instance,
+    repository_handle,
+    schedule_name,
+    schedule_execution_data_mode,
+    scheduled_execution_datetime_utc,
 ):
     from dagster.grpc.client import ephemeral_grpc_api_client
 
@@ -47,15 +66,28 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
         LoadableTargetOrigin(executable_path=origin.executable_path)
     ) as api_client:
         return sync_get_external_schedule_execution_data_grpc(
-            api_client, instance, repository_handle, schedule_name, schedule_execution_data_mode,
+            api_client,
+            instance,
+            repository_handle,
+            schedule_name,
+            schedule_execution_data_mode,
+            scheduled_execution_datetime_utc,
         )
 
 
 def sync_get_external_schedule_execution_data_grpc(
-    api_client, instance, repository_handle, schedule_name, schedule_execution_data_mode,
+    api_client,
+    instance,
+    repository_handle,
+    schedule_name,
+    schedule_execution_data_mode,
+    scheduled_execution_datetime_utc,
 ):
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(schedule_name, "schedule_name")
+    check.opt_inst_param(
+        scheduled_execution_datetime_utc, "scheduled_execution_datetime_utc", datetime
+    )
     check.inst_param(
         schedule_execution_data_mode, "schedule_execution_data_mode", ScheduleExecutionDataMode
     )
@@ -68,6 +100,11 @@ def sync_get_external_schedule_execution_data_grpc(
                 repository_origin=origin,
                 instance_ref=instance.get_ref(),
                 schedule_name=schedule_name,
+                scheduled_execution_timestamp_utc=(
+                    get_timestamp_from_utc_datetime(scheduled_execution_datetime_utc)
+                    if scheduled_execution_datetime_utc
+                    else None
+                ),
                 schedule_execution_data_mode=schedule_execution_data_mode,
             )
         ),

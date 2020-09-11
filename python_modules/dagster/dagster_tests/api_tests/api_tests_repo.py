@@ -74,6 +74,16 @@ def define_bar_schedules():
             run_config={"fizz": "buzz"},
             should_execute=lambda _context: False,
         ),
+        "foo_schedule_echo_time": ScheduleDefinition(
+            "foo_schedule_echo_time",
+            cron_schedule="* * * * *",
+            pipeline_name="test_pipeline",
+            run_config_fn=lambda context: {
+                "passed_in_time": context.scheduled_execution_time_utc.isoformat()
+                if context.scheduled_execution_time_utc
+                else ""
+            },
+        ),
     }
 
 

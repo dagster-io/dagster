@@ -1,4 +1,5 @@
 from collections import namedtuple
+from datetime import datetime
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -10,7 +11,9 @@ from dagster.utils import merge_dicts
 from .mode import DEFAULT_MODE_NAME
 
 
-class ScheduleExecutionContext(namedtuple("ScheduleExecutionContext", "instance")):
+class ScheduleExecutionContext(
+    namedtuple("ScheduleExecutionContext", "instance scheduled_execution_time_utc")
+):
     """Schedule-specific execution context.
 
     An instance of this class is made available as the first argument to various ScheduleDefinition
@@ -19,14 +22,21 @@ class ScheduleExecutionContext(namedtuple("ScheduleExecutionContext", "instance"
 
     Attributes:
         instance (DagsterInstance): The instance configured to run the schedule
+        scheduled_execution_time_utc (datetime):
+            The time in UTC in which the execution was scheduled to happen. May differ slightly
+            from both the actual execution time and the time at which the run config is computed.
     """
 
     def __new__(
-        cls, instance,
+        cls, instance, scheduled_execution_time_utc,
     ):
 
         return super(ScheduleExecutionContext, cls).__new__(
-            cls, check.inst_param(instance, "instance", DagsterInstance),
+            cls,
+            check.inst_param(instance, "instance", DagsterInstance),
+            check.opt_inst_param(
+                scheduled_execution_time_utc, "scheduled_execution_time_utc", datetime
+            ),
         )
 
 

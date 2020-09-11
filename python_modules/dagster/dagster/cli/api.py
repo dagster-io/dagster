@@ -622,6 +622,7 @@ def _launch_scheduled_execution(
         repository_handle=external_repo.handle,
         schedule_name=external_schedule.name,
         schedule_execution_data_mode=ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
+        scheduled_execution_datetime_utc=None,  # No way to know this in general for this scheduler
     )
 
     run_config = {}

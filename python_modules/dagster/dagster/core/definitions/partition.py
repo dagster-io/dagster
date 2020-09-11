@@ -1,4 +1,7 @@
 from collections import namedtuple
+from datetime import timedelta
+
+from dateutil.relativedelta import relativedelta
 
 from dagster import check
 from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleExecutionContext
@@ -6,6 +9,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
+from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
 from .mode import DEFAULT_MODE_NAME
 
@@ -29,11 +33,28 @@ class Partition(namedtuple("_Partition", ("value name"))):
         )
 
 
+def create_default_partition_selector_fn(delta=timedelta(days=1), fmt=DEFAULT_DATE_FORMAT):
+    check.inst_param(delta, "timedelta", (timedelta, relativedelta))
+    check.str_param(fmt, "fmt")
+
+    def inner(context, partition_set_def):
+        check.inst_param(context, "context", ScheduleExecutionContext)
+        check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
+
+        if not context.scheduled_execution_time_utc:
+            return last_partition(context, partition_set_def)
+
+        # The tick at a given datetime corresponds to the time for the previous partition
+        # e.g. midnight on 12/31 is actually the 12/30 partition
+        partition_time = context.scheduled_execution_time_utc - delta
+        return Partition(value=partition_time, name=partition_time.strftime(fmt))
+
+    return inner
+
+
 def last_partition(context, partition_set_def):
     check.inst_param(context, "context", ScheduleExecutionContext)
-    partition_set_def = check.inst_param(
-        partition_set_def, "partition_set_def", PartitionSetDefinition
-    )
+    check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
 
     partitions = partition_set_def.get_partitions()
     if not partitions:
@@ -178,8 +199,8 @@ class PartitionSetDefinition(
             should_execute (Optional[function]): Function that runs at schedule execution time that
             determines whether a schedule should execute. Defaults to a function that always returns
             ``True``.
-            partition_selector (Callable[PartitionSet], Partition): A partition selector for the
-                schedule.
+            partition_selector (Callable[ScheduleExecutionContext, PartitionSetDefinition],
+            Partition): A partition selector for the schedule.
             environment_vars (Optional[dict]): The environment variables to set for the schedule.
 
         Returns:
@@ -195,7 +216,8 @@ class PartitionSetDefinition(
         def _should_execute_wrapper(context):
             check.inst_param(context, "context", ScheduleExecutionContext)
             selected_partition = partition_selector(context, self)
-            if not selected_partition:
+
+            if not selected_partition or not selected_partition.name in self.get_partition_names():
                 return False
             elif not should_execute:
                 return True

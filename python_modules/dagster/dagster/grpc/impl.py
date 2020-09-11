@@ -2,6 +2,7 @@
 
 import os
 import sys
+from datetime import datetime
 
 from dagster import check
 from dagster.core.definitions import ScheduleExecutionContext, TriggeredExecutionContext
@@ -49,6 +50,7 @@ from dagster.grpc.types import (
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage
+from dagster.seven import get_utc_timezone
 from dagster.utils import start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_repository_from_origin
@@ -214,7 +216,17 @@ def get_external_schedule_execution(recon_repo, external_schedule_execution_args
     definition = recon_repo.get_definition()
     schedule_def = definition.get_schedule_def(external_schedule_execution_args.schedule_name)
     with DagsterInstance.from_ref(external_schedule_execution_args.instance_ref) as instance:
-        schedule_context = ScheduleExecutionContext(instance)
+
+        scheduled_execution_time_utc = (
+            datetime.fromtimestamp(
+                external_schedule_execution_args.scheduled_execution_timestamp_utc,
+                tz=get_utc_timezone(),
+            )
+            if external_schedule_execution_args.scheduled_execution_timestamp_utc
+            else None
+        )
+
+        schedule_context = ScheduleExecutionContext(instance, scheduled_execution_time_utc)
         schedule_execution_data_mode = external_schedule_execution_args.schedule_execution_data_mode
 
         try:

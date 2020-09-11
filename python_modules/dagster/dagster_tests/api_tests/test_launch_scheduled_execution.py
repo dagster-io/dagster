@@ -112,7 +112,7 @@ def grpc_schedule_origin(schedule_name):
 @pytest.mark.parametrize(
     "schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin,],
 )
-def test_launch_scheduled_execution(schedule_origin_context):
+def test_launch_successful_execution(schedule_origin_context):
     with instance_for_test() as instance:
         with schedule_origin_context("simple_schedule") as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)

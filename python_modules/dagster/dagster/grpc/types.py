@@ -208,10 +208,18 @@ class ScheduleExecutionDataMode(Enum):
 class ExternalScheduleExecutionArgs(
     namedtuple(
         "_ExternalScheduleExecutionArgs",
-        "repository_origin instance_ref schedule_name schedule_execution_data_mode",
+        "repository_origin instance_ref schedule_name schedule_execution_data_mode "
+        "scheduled_execution_timestamp_utc",
     )
 ):
-    def __new__(cls, repository_origin, instance_ref, schedule_name, schedule_execution_data_mode):
+    def __new__(
+        cls,
+        repository_origin,
+        instance_ref,
+        schedule_name,
+        schedule_execution_data_mode,
+        scheduled_execution_timestamp_utc,
+    ):
         return super(ExternalScheduleExecutionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
@@ -223,6 +231,9 @@ class ExternalScheduleExecutionArgs(
                 schedule_execution_data_mode,
                 "schedule_execution_data_mode",
                 ScheduleExecutionDataMode,
+            ),
+            scheduled_execution_timestamp_utc=check.opt_float_param(
+                scheduled_execution_timestamp_utc, "scheduled_execution_timestamp_utc"
             ),
         )
 

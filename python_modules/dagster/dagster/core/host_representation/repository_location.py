@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
+from datetime import datetime
 
 import six
 
@@ -63,6 +64,7 @@ from dagster.grpc.types import (
     PartitionSetExecutionParamArgs,
     ScheduleExecutionDataMode,
 )
+from dagster.seven import get_timestamp_from_utc_datetime
 from dagster.utils.hosted_user_process import (
     external_repo_from_def,
     is_repository_location_in_same_python_env,
@@ -163,7 +165,12 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def get_external_schedule_execution_data(
-        self, instance, repository_handle, schedule_name, schedule_execution_data_mode
+        self,
+        instance,
+        repository_handle,
+        schedule_name,
+        schedule_execution_data_mode,
+        scheduled_execution_datetime_utc,
     ):
         pass
 
@@ -359,7 +366,12 @@ class InProcessRepositoryLocation(RepositoryLocation):
         return get_partition_names(args)
 
     def get_external_schedule_execution_data(
-        self, instance, repository_handle, schedule_name, schedule_execution_data_mode
+        self,
+        instance,
+        repository_handle,
+        schedule_name,
+        schedule_execution_data_mode,
+        scheduled_execution_datetime_utc,
     ):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -367,12 +379,20 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.inst_param(
             schedule_execution_data_mode, "schedule_execution_data_mode", ScheduleExecutionDataMode
         )
+        check.opt_inst_param(
+            scheduled_execution_datetime_utc, "scheduled_execution_datetime_utc", datetime
+        )
 
         repo_origin = repository_handle.get_origin()
         args = ExternalScheduleExecutionArgs(
             instance_ref=instance.get_ref(),
             repository_origin=repo_origin,
             schedule_name=schedule_name,
+            scheduled_execution_timestamp_utc=(
+                get_timestamp_from_utc_datetime(scheduled_execution_datetime_utc)
+                if scheduled_execution_datetime_utc
+                else None
+            ),
             schedule_execution_data_mode=schedule_execution_data_mode,
         )
         recon_repo = recon_repository_from_origin(repo_origin)
@@ -537,13 +557,21 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_schedule_execution_data(
-        self, instance, repository_handle, schedule_name, schedule_execution_data_mode
+        self,
+        instance,
+        repository_handle,
+        schedule_name,
+        schedule_execution_data_mode,
+        scheduled_execution_datetime_utc,
     ):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
         check.inst_param(
             schedule_execution_data_mode, "schedule_execution_data_mode", ScheduleExecutionDataMode
+        )
+        check.opt_inst_param(
+            scheduled_execution_datetime_utc, "scheduled_execution_datetime_utc", datetime
         )
 
         return sync_get_external_schedule_execution_data_grpc(
@@ -552,6 +580,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             repository_handle,
             schedule_name,
             schedule_execution_data_mode,
+            scheduled_execution_datetime_utc,
         )
 
     def get_external_triggered_execution_params(self, instance, repository_handle, trigger_name):
@@ -738,7 +767,12 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         return sync_get_external_partition_names(repository_handle, partition_set_name)
 
     def get_external_schedule_execution_data(
-        self, instance, repository_handle, schedule_name, schedule_execution_data_mode
+        self,
+        instance,
+        repository_handle,
+        schedule_name,
+        schedule_execution_data_mode,
+        scheduled_execution_datetime_utc,
     ):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -746,9 +780,16 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         check.inst_param(
             schedule_execution_data_mode, "schedule_execution_data_mode", ScheduleExecutionDataMode
         )
+        check.opt_inst_param(
+            scheduled_execution_datetime_utc, "scheduled_execution_datetime_utc", datetime
+        )
 
         return sync_get_external_schedule_execution_data(
-            instance, repository_handle, schedule_name, schedule_execution_data_mode
+            instance,
+            repository_handle,
+            schedule_name,
+            schedule_execution_data_mode,
+            scheduled_execution_datetime_utc,
         )
 
     def get_external_triggered_execution_params(self, instance, repository_handle, trigger_name):
