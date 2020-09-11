@@ -83,6 +83,13 @@ def test_execute_mode_command():
         assert double_adder_result
 
 
+def test_empty_execute_command():
+    runner = CliRunner()
+    result = runner.invoke(pipeline_execute_command, [])
+    assert result.exit_code == 2
+    assert "Must specify a python file or module name" in result.output
+
+
 def test_execute_preset_command():
     with instance_for_test():
         runner = CliRunner()

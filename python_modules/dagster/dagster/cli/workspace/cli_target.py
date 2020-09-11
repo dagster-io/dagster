@@ -425,6 +425,9 @@ def _get_code_pointer_dict_from_kwargs(kwargs):
 def get_repository_python_origin_from_kwargs(kwargs):
     provided_repo_name = kwargs.get("repository")
 
+    if not (kwargs.get("python_file") or kwargs.get("module_name")):
+        raise click.UsageError("Must specify a python file or module name")
+
     # Short-circuit the case where an attribute and no repository name is passed in,
     # giving us enough information to return an origin without loading any target
     # definitions - we may need to return an origin for a non-existent repository
