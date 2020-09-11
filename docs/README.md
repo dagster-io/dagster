@@ -16,6 +16,7 @@ If you make a change to an .rst file, make sure you run the following:
 ### Before Deploying
 
 - Make sure you have set the following env variables: `NEXT_ALGOLIA_APP_ID`, `NEXT_ALGOLIA_API_KEY`, `NEXT_ALGOLIA_ADMIN_KEY`.
+- Make sure you do a full `make dev_install`
 
 ### Instructions
 

@@ -224,7 +224,7 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
 def create_k8s_job_task(celery_app, **task_kwargs):
     @celery_app.task(bind=True, name="execute_step_k8s_job", **task_kwargs)
     def _execute_step_k8s_job(
-        _self,
+        self,
         instance_ref_dict,
         step_keys,
         run_config,
@@ -288,8 +288,23 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         pipeline_run = instance.get_run_by_id(run_id)
 
         check.invariant(pipeline_run, "Could not load run {}".format(run_id))
-
         step_key = step_keys[0]
+
+        celery_worker_name = self.request.hostname
+        celery_pod_name = os.environ.get("HOSTNAME")
+        instance.report_engine_event(
+            "Task for step {step_key} picked up by Celery".format(step_key=step_key),
+            pipeline_run,
+            EngineEventData(
+                [
+                    EventMetadataEntry.text(celery_worker_name, "Celery worker name"),
+                    EventMetadataEntry.text(celery_pod_name, "Celery worker Kubernetes Pod name"),
+                ]
+            ),
+            CeleryK8sJobExecutor,
+            step_key=step_key,
+        )
+
         if pipeline_run.status != PipelineRunStatus.STARTED:
             instance.report_engine_event(
                 "Not scheduling step because pipeline run status is not STARTED",

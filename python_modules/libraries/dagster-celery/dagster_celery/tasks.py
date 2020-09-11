@@ -12,7 +12,7 @@ from .executor import CeleryExecutor
 
 def create_task(celery_app, **task_kwargs):
     @celery_app.task(bind=True, name="execute_plan", **task_kwargs)
-    def _execute_plan(_self, instance_ref_dict, executable_dict, run_id, step_keys, retries_dict):
+    def _execute_plan(self, instance_ref_dict, executable_dict, run_id, step_keys, retries_dict):
         check.dict_param(instance_ref_dict, "instance_ref_dict")
         check.dict_param(executable_dict, "executable_dict")
         check.str_param(run_id, "run_id")
@@ -40,7 +40,11 @@ def create_task(celery_app, **task_kwargs):
             "Executing steps {} in celery worker".format(step_keys_str),
             pipeline_run,
             EngineEventData(
-                [EventMetadataEntry.text(step_keys_str, "step_keys"),], marker_end=DELEGATE_MARKER,
+                [
+                    EventMetadataEntry.text(step_keys_str, "step_keys"),
+                    EventMetadataEntry.text(self.request.hostname, "Celery worker"),
+                ],
+                marker_end=DELEGATE_MARKER,
             ),
             CeleryExecutor,
             step_key=execution_plan.step_key_for_single_step_plans(),

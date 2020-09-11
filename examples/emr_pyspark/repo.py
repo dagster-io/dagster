@@ -1,3 +1,4 @@
+# start-snippet
 from dagster_aws.emr import emr_pyspark_step_launcher
 from dagster_aws.s3 import s3_intermediate_storage, s3_resource
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
@@ -66,6 +67,9 @@ local_mode = ModeDefinition(
 @pipeline(mode_defs=[emr_mode, local_mode])
 def my_pipeline():
     count_people(filter_over_50(make_people()))
+
+
+# end-snippet
 
 
 @repository

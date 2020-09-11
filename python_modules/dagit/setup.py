@@ -62,7 +62,7 @@ if __name__ == "__main__":
             # watchdog
             "watchdog>=0.8.3",
             # notebooks support
-            "nbconvert>=5.4.0",
+            "nbconvert>=5.4.0,<6.0.0",
         ],
         entry_points={"console_scripts": ["dagit = dagit.cli:main"]},
     )

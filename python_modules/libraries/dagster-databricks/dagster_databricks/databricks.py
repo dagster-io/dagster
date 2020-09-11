@@ -200,36 +200,6 @@ class DatabricksJobRunner:
         response = self.client.submit_run(**config)
         return response["run_id"]
 
-    def wait_for_run_to_complete(self, log, databricks_run_id):
-        """Wait for a Databricks run to complete."""
-        check.int_param(databricks_run_id, "databricks_run_id")
-        log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
-        start = time.time()
-        while True:
-            log.debug("Waiting %.1f seconds..." % self.poll_interval_sec)
-            time.sleep(self.poll_interval_sec)
-            run_state = self.client.get_run_state(databricks_run_id)
-            if run_state.has_terminated():
-                if run_state.is_successful():
-                    log.info("Run %s completed successfully" % databricks_run_id)
-                    return
-                else:
-                    error_message = "Run %s failed with result state: %s. Message: %s" % (
-                        databricks_run_id,
-                        run_state.result_state,
-                        run_state.state_message,
-                    )
-                    log.error(error_message)
-                    raise DatabricksError(error_message)
-            else:
-                log.info("Run %s in state %s" % (databricks_run_id, run_state))
-            if time.time() - start > self.max_wait_time_sec:
-                raise DatabricksError(
-                    "Job run {} took more than {}s to complete; failing".format(
-                        databricks_run_id, self.max_wait_time_sec
-                    )
-                )
-
     def retrieve_logs_for_run_id(self, log, databricks_run_id):
         """Retrieve the stdout and stderr logs for a run."""
         api_client = self.client.client
@@ -270,3 +240,39 @@ class DatabricksJobRunner:
                 num_attempts += 1
                 time.sleep(waiter_delay)
         log.warn("Could not retrieve cluster logs!")
+
+    def wait_for_run_to_complete(self, log, databricks_run_id):
+        return wait_for_run_to_complete(
+            self.client, log, databricks_run_id, self.poll_interval_sec, self.max_wait_time_sec
+        )
+
+
+def wait_for_run_to_complete(client, log, databricks_run_id, poll_interval_sec, max_wait_time_sec):
+    """Wait for a Databricks run to complete."""
+    check.int_param(databricks_run_id, "databricks_run_id")
+    log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
+    start = time.time()
+    while True:
+        log.debug("Waiting %.1f seconds..." % poll_interval_sec)
+        time.sleep(poll_interval_sec)
+        run_state = client.get_run_state(databricks_run_id)
+        if run_state.has_terminated():
+            if run_state.is_successful():
+                log.info("Run %s completed successfully" % databricks_run_id)
+                return
+            else:
+                error_message = "Run %s failed with result state: %s. Message: %s" % (
+                    databricks_run_id,
+                    run_state.result_state,
+                    run_state.state_message,
+                )
+                log.error(error_message)
+                raise DatabricksError(error_message)
+        else:
+            log.info("Run %s in state %s" % (databricks_run_id, run_state))
+        if time.time() - start > max_wait_time_sec:
+            raise DatabricksError(
+                "Job run {} took more than {}s to complete; failing".format(
+                    databricks_run_id, max_wait_time_sec
+                )
+            )

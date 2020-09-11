@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+import pytest
+
 from dagster import (
     Int,
     ModeDefinition,
@@ -12,6 +14,7 @@ from dagster import (
 from dagster.core.definitions import failure_hook, success_hook
 from dagster.core.definitions.decorators.hook import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
+from dagster.core.errors import DagsterInvalidDefinitionError
 
 
 class SomeUserException(Exception):
@@ -408,3 +411,31 @@ def test_hook_context_config_schema():
     )
     assert result.success
     assert called_hook_to_solids["a_hook"] == {"a_solid"}
+
+
+def test_hook_resource_mismatch():
+    @event_list_hook(required_resource_keys={"b"})
+    def a_hook(context, _):
+        assert context.resources.resource_a == 1
+        return HookExecutionResult("a_hook")
+
+    @solid
+    def a_solid(_):
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='Resource "b" is required by hook "a_hook"'
+    ):
+
+        @a_hook
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
+        def _():
+            a_solid()
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='Resource "b" is required by hook "a_hook"'
+    ):
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
+        def _():
+            a_solid.with_hooks({a_hook})()

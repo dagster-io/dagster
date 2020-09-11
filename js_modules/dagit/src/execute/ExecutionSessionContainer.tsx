@@ -42,6 +42,7 @@ import {
 } from "./types/ExecutionSessionContainerRunConfigSchemaFragment";
 import { ExecutionSessionContainerPartitionSetsFragment } from "./types/ExecutionSessionContainerPartitionSetsFragment";
 import { ConfigEditorRunConfigSchemaFragment } from "../configeditor/types/ConfigEditorRunConfigSchemaFragment";
+import { showCustomAlert } from "../CustomAlertProvider";
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_PIPELINE = `Loading pipeline and partition sets...`;
@@ -158,6 +159,46 @@ export default class ExecutionSessionContainer extends React.Component<
     this.props.onSaveSession({ mode });
   };
 
+  onRemoveExtraPaths = (paths: string[]) => {
+    const { currentSession } = this.props;
+
+    function deletePropertyPath(obj: any, path: string) {
+      const parts = path.split(".");
+
+      // Here we iterate through the parts of the path to get to
+      // the second to last nested object. This is so we can call `delete` using
+      // this object and the last part of the path.
+      for (let i = 0; i < parts.length - 1; i++) {
+        obj = obj[parts[i]];
+        if (typeof obj === "undefined") {
+          return;
+        }
+      }
+
+      const lastKey = parts.pop();
+      if (lastKey) {
+        delete obj[lastKey];
+      }
+    }
+
+    let runConfigData = {};
+    try {
+      // Note: parsing `` returns null rather than an empty object,
+      // which is preferable for representing empty config.
+      runConfigData = yaml.parse(currentSession.runConfigYaml || "") || {};
+
+      for (const path of paths) {
+        deletePropertyPath(runConfigData, path);
+      }
+
+      const runConfigYaml = yaml.stringify(runConfigData);
+      this.props.onSaveSession({ runConfigYaml });
+    } catch (err) {
+      showCustomAlert({ title: "Invalid YAML", body: YAML_SYNTAX_INVALID });
+      return;
+    }
+  };
+
   buildExecutionVariables = () => {
     const { currentSession, pipelineSelector } = this.props;
 
@@ -171,7 +212,7 @@ export default class ExecutionSessionContainer extends React.Component<
       // which is preferable for representing empty config.
       runConfigData = yaml.parse(currentSession.runConfigYaml || "") || {};
     } catch (err) {
-      alert(YAML_SYNTAX_INVALID);
+      showCustomAlert({ title: "Invalid YAML", body: YAML_SYNTAX_INVALID });
       return;
     }
 
@@ -404,6 +445,7 @@ export default class ExecutionSessionContainer extends React.Component<
               validation={preview ? preview.isPipelineConfigValid : null}
               runConfigSchema={runConfigSchema}
               onHighlightPath={path => this.editor.current?.moveCursorToPath(path)}
+              onRemoveExtraPaths={paths => this.onRemoveExtraPaths(paths)}
               actions={
                 <LaunchRootExecutionButton
                   pipelineName={pipeline.name}
