@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.7
+
+**Bugfixes**
+
+- Fixed an issue in the K8sScheduler where multiple pipeline runs were kicked off for each scheduled
+  execution.
+
 ## 0.9.6
 
 **New**
