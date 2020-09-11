@@ -5,7 +5,7 @@ import java.util.Date
 
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.{DeleteObjectRequest, ListObjectsRequest, S3ObjectSummary}
-import com.google.cloud.storage.{BlobId, StorageOptions}
+import com.google.cloud.storage.StorageOptions
 import com.google.cloud.storage.Storage.BlobListOption
 import io.dagster.events.EventPipeline.log
 
@@ -19,16 +19,11 @@ sealed trait StorageBackend {
 
   def outputURI: String
   def ensureOutputEmpty(): Unit
-
-  protected def createFullPath(inputOrOutput: String): (String, Date) => String =
-    (prefix, date) => {
-      s"$prefix/$inputOrOutput/${dateFormatter.format(date)}"
-    }
 }
 
 final case class LocalStorageBackend(path: String, date: Date) extends StorageBackend {
-  def inputPath: String = createFullPath(inputPrefix)(path, date)
-  def outputPath: String = createFullPath(outputPrefix)(path, date)
+  val inputPath: String = s"$path/$inputPrefix/${dateFormatter.format(date)}"
+  val outputPath: String = s"$path/$outputPrefix/${dateFormatter.format(date)}"
 
   override def outputURI: String = outputPath
 
@@ -42,14 +37,14 @@ final case class LocalStorageBackend(path: String, date: Date) extends StorageBa
 }
 
 final case class S3StorageBackend(bucket: String, prefix: String, date: Date) extends StorageBackend {
-  def inputKey: String = createFullPath(inputPrefix)(prefix, date)
-  def outputKey: String = createFullPath(outputPrefix)(prefix, date)
+  val inputPath: String = s"$prefix/$inputPrefix/${dateFormatter.format(date)}"
+  val outputPath: String = s"$prefix/$outputPrefix/${dateFormatter.format(date)}"
 
-  override def outputURI: String = s"s3a://$bucket/$outputKey"
+  override def outputURI: String = s"s3a://$bucket/$outputPath"
 
   override def ensureOutputEmpty(): Unit = {
     val s3Client = AmazonS3ClientBuilder.defaultClient
-    val objs = s3Client.listObjects(bucket, outputKey).getObjectSummaries
+    val objs = s3Client.listObjects(bucket, outputPath).getObjectSummaries
 
     if (!objs.isEmpty) {
       log.info(s"Removing contents of S3 output at path $outputURI")
@@ -67,7 +62,7 @@ final case class S3StorageBackend(bucket: String, prefix: String, date: Date) ex
     // See: https://tech.kinja.com/how-not-to-pull-from-s3-using-apache-spark-1704509219
     val request = new ListObjectsRequest()
     request.setBucketName(bucket)
-    request.setPrefix(inputKey)
+    request.setPrefix(inputPath)
 
     AmazonS3ClientBuilder.defaultClient
       .listObjects(request)
@@ -82,14 +77,12 @@ final case class GCSStorageBackend(inputBucket: String, outputBucket: String, da
   final val gcsInputDateFormatter = new java.text.SimpleDateFormat("yyyy-MM-dd")
 
   // Input files are expected to be in gs://<bucket>/2019-01-01-* format
-  def inputPath: String = s"gs://$inputBucket/${gcsInputDateFormatter.format(date)}*"
+  val inputPath: String = s"gs://$inputBucket/${gcsInputDateFormatter.format(date)}*"
 
   // Will write to gs://<outputBucket>/2019/01/01
   override def outputURI: String = s"gs://$outputBucket/${dateFormatter.format(date)}"
 
   override def ensureOutputEmpty(): Unit = {
-    import scala.collection.JavaConversions._
-
     val storage = StorageOptions.getDefaultInstance.getService
 
     storage
