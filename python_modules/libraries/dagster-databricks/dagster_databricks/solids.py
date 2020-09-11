@@ -52,7 +52,7 @@ def create_databricks_job_solid(
     def databricks_solid(context):
         job_config = context.solid_config["job"]
         databricks_client = context.resources.databricks_client
-        run_id = databricks_client.submit_run(job_config)
+        run_id = databricks_client.submit_run(**job_config)
         context.log.info(
             "Launched databricks job with id {run_id}. Waiting to run to completion...".format(
                 run_id=run_id

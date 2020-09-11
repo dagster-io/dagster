@@ -65,7 +65,7 @@ def test_databricks_submit_job_new_cluster(mock_submit_run, databricks_run_confi
 
 @mock.patch("dagster_databricks.databricks.DatabricksClient.submit_run")
 def test_databricks_wait_for_run(mock_submit_run, databricks_run_config):
-    mock_submit_run.return_value = {"run_id": 1}
+    mock_submit_run.return_value = 1
 
     context = create_test_pipeline_execution_context()
     runner = DatabricksJobRunner(HOST, TOKEN, poll_interval_sec=0.01)

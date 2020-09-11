@@ -29,7 +29,7 @@ class DatabricksClient:
 
     def submit_run(self, *args, **kwargs):
         """Submit a run directly to the 'Runs Submit' API."""
-        return self.client.jobs.submit_run(*args, **kwargs)  # pylint: disable=no-member
+        return self.client.jobs.submit_run(*args, **kwargs)["run_id"]  # pylint: disable=no-member
 
     def read_file(self, dbfs_path, block_size=1024 ** 2):
         """Read a file from DBFS to a **byte string**."""
@@ -197,8 +197,7 @@ class DatabricksJobRunner:
             libraries=libraries,
             **task
         )
-        response = self.client.submit_run(**config)
-        return response["run_id"]
+        return self.client.submit_run(**config)
 
     def retrieve_logs_for_run_id(self, log, databricks_run_id):
         """Retrieve the stdout and stderr logs for a run."""

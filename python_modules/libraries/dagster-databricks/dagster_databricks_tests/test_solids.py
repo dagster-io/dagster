@@ -37,6 +37,6 @@ def test_create_databricks_job_solid(mock_submit_run, mock_get_run_state, databr
     assert result.success
 
     assert mock_submit_run.call_count == 1
-    assert mock_submit_run.call_args[0][0] == databricks_run_config
+    assert mock_submit_run.call_args_list[0] == (databricks_run_config,)
     assert mock_get_run_state.call_count == 1
     assert mock_get_run_state.call_args[0][0] == RUN_ID
