@@ -2,7 +2,7 @@ import os
 
 import pytest
 from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
-from dagster_azure.adls2 import adls2_plus_default_storage_defs, adls2_resource
+from dagster_azure.adls2 import adls2_plus_default_intermediate_storage_defs, adls2_resource
 from dagster_databricks import databricks_pyspark_step_launcher
 from dagster_pyspark import DataFrame, pyspark_resource
 from pyspark.sql import Row
@@ -47,6 +47,7 @@ BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG = {
             {"pypi": {"package": "pytest"}},
         ],
     },
+    "secrets_to_env_variables": [],
     "storage": {
         "s3": {
             "secret_scope": "dagster-databricks-tests",
@@ -87,7 +88,7 @@ MODE_DEFS = [
             "pyspark": pyspark_resource,
             "adls2": adls2_resource,
         },
-        system_storage_defs=adls2_plus_default_storage_defs,
+        intermediate_storage_defs=adls2_plus_default_intermediate_storage_defs,
     ),
     ModeDefinition(
         "prod_s3",
@@ -162,7 +163,7 @@ def test_pyspark_databricks(mock_wait, mock_get_step_events, mock_put_file, mock
     assert result.success
     assert mock_wait.call_count == 1
     assert mock_get_step_events.call_count == 1
-    assert mock_put_file.call_count == 3
+    assert mock_put_file.call_count == 4
     assert mock_submit_run.call_count == 1
 
 

@@ -15,9 +15,14 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.serdes import deserialize_value
 
-from .configs import define_databricks_storage_config, define_databricks_submit_run_config
+from .configs import (
+    define_databricks_secrets_config,
+    define_databricks_storage_config,
+    define_databricks_submit_run_config,
+)
 
 CODE_ZIP_NAME = "code.zip"
+PICKLED_CONFIG_FILE_NAME = "config.pkl"
 
 
 @resource(
@@ -31,6 +36,7 @@ CODE_ZIP_NAME = "code.zip"
         "databricks_token": Field(
             StringSource, is_required=True, description="Databricks access token",
         ),
+        "secrets_to_env_variables": define_databricks_secrets_config(),
         "storage": define_databricks_storage_config(),
         "local_pipeline_package_path": Field(
             StringSource,
@@ -82,6 +88,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         run_config,
         databricks_host,
         databricks_token,
+        secrets_to_env_variables,
         storage,
         local_pipeline_package_path,
         staging_prefix,
@@ -90,6 +97,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         self.run_config = check.dict_param(run_config, "run_config")
         self.databricks_host = check.str_param(databricks_host, "databricks_host")
         self.databricks_token = check.str_param(databricks_token, "databricks_token")
+        self.secrets = check.list_param(secrets_to_env_variables, "secrets_to_env_variables", dict)
         self.storage = check.dict_param(storage, "storage")
         self.local_pipeline_package_path = check.str_param(
             local_pipeline_package_path, "local_pipeline_package_path"
@@ -140,6 +148,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         python_file = self._dbfs_path(run_id, step_key, self._main_file_name())
         parameters = [
             self._internal_dbfs_path(run_id, step_key, PICKLED_STEP_RUN_REF_FILE_NAME),
+            self._internal_dbfs_path(run_id, step_key, PICKLED_CONFIG_FILE_NAME),
             self._internal_dbfs_path(run_id, step_key, CODE_ZIP_NAME),
         ]
         return {"spark_python_task": {"python_file": python_file, "parameters": parameters}}
@@ -173,6 +182,16 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             step_pickle_file, self._dbfs_path(run_id, step_key, PICKLED_STEP_RUN_REF_FILE_NAME),
         )
 
+        databricks_config = DatabricksConfig(storage=self.storage, secrets=self.secrets,)
+        log.info("Uploading Databricks configuration to DBFS")
+        databricks_config_file = io.BytesIO()
+
+        pickle.dump(databricks_config, databricks_config_file)
+        databricks_config_file.seek(0)
+        self.databricks_runner.client.put_file(
+            databricks_config_file, self._dbfs_path(run_id, step_key, PICKLED_CONFIG_FILE_NAME),
+        )
+
     def _log_logs_from_cluster(self, log, run_id):
         logs = self.databricks_runner.retrieve_logs_for_run_id(log, run_id)
         if logs is None:
@@ -197,3 +216,101 @@ class DatabricksPySparkStepLauncher(StepLauncher):
         """Scripts running on Databricks should access DBFS at /dbfs/."""
         path = "/".join([self.staging_prefix, run_id, step_key, os.path.basename(filename)])
         return "/dbfs/{}".format(path)
+
+
+class DatabricksConfig:
+    """Represents configuration required by Databricks to run jobs.
+
+    Instances of this class will be created when a Databricks step is launched and will contain
+    all configuration and secrets required to set up storage and environment variables within
+    the Databricks environment. The instance will be serialized and uploaded to Databricks
+    by the step launcher, then deserialized as part of the 'main' script when the job is running
+    in Databricks.
+
+    The `setup` method handles the actual setup prior to solid execution on the Databricks side.
+
+    This config is separated out from the regular Dagster run config system because the setup
+    is done by the 'main' script before entering a Dagster context (i.e. using `run_step_from_ref`).
+    We use a separate class to avoid coupling the setup to the format of the `step_run_ref` object.
+    """
+
+    def __init__(self, storage, secrets):
+        """Create a new DatabricksConfig object.
+
+        `storage` and `secrets` should be of the same shape as the `storage` and
+        `secrets_to_env_variables` config passed to `databricks_pyspark_step_launcher`.
+        """
+        self.storage = storage
+        self.secrets = secrets
+
+    def setup(self, dbutils, sc):
+        """Set up storage and environment variables on Databricks.
+
+        The `dbutils` and `sc` arguments must be passed in by the 'main' script, as they
+        aren't accessible by any other modules.
+        """
+        self.setup_storage(dbutils, sc)
+        self.setup_environment(dbutils)
+
+    def setup_storage(self, dbutils, sc):
+        """Set up storage using either S3 or ADLS2."""
+        if "s3" in self.storage:
+            self.setup_s3_storage(self.storage["s3"], dbutils, sc)
+        elif "adls2" in self.storage:
+            self.setup_adls2_storage(self.storage["adls2"], dbutils, sc)
+        else:
+            raise Exception("No valid storage found in Databricks configuration!")
+
+    def setup_s3_storage(self, s3_storage, dbutils, sc):
+        """Obtain AWS credentials from Databricks secrets and export so both Spark and boto can use them."""
+
+        scope = s3_storage["secret_scope"]
+
+        access_key = dbutils.secrets.get(scope=scope, key=s3_storage["access_key_key"])
+        secret_key = dbutils.secrets.get(scope=scope, key=s3_storage["secret_key_key"])
+
+        # Spark APIs will use this.
+        # See https://docs.databricks.com/data/data-sources/aws/amazon-s3.html#alternative-1-set-aws-keys-in-the-spark-context.
+        sc._jsc.hadoopConfiguration().set(  # pylint: disable=protected-access
+            "fs.s3n.awsAccessKeyId", access_key
+        )
+        sc._jsc.hadoopConfiguration().set(  # pylint: disable=protected-access
+            "fs.s3n.awsSecretAccessKey", secret_key
+        )
+
+        # Boto will use these.
+        os.environ["AWS_ACCESS_KEY_ID"] = access_key
+        os.environ["AWS_SECRET_ACCESS_KEY"] = secret_key
+
+    def setup_adls2_storage(self, adls2_storage, dbutils, sc):
+        """Obtain an Azure Storage Account key from Databricks secrets and export so Spark can use it."""
+        storage_account_key = dbutils.secrets.get(
+            scope=adls2_storage["secret_scope"], key=adls2_storage["storage_account_key_key"]
+        )
+        # Spark APIs will use this.
+        # See https://docs.microsoft.com/en-gb/azure/databricks/data/data-sources/azure/azure-datalake-gen2#--access-directly-using-the-storage-account-access-key
+        # sc is globally defined in the Databricks runtime and points to the Spark context
+        sc._jsc.hadoopConfiguration().set(  # pylint: disable=protected-access
+            "fs.azure.account.key.{}.dfs.core.windows.net".format(
+                adls2_storage["storage_account_name"]
+            ),
+            storage_account_key,
+        )
+
+    def setup_environment(self, dbutils):
+        """Setup any environment variables required by the run.
+
+        Extract any secrets in the run config and export them as environment variables.
+
+        This is important for any `StringSource` config since the environment variables
+        won't ordinarily be available in the Databricks execution environment.
+        """
+        for secret in self.secrets:
+            name = secret["name"]
+            key = secret["key"]
+            scope = secret["scope"]
+            print(  # pylint: disable=print-call
+                "Exporting {} from Databricks secret {}, scope {}".format(name, key, scope)
+            )
+            val = dbutils.secrets.get(scope=scope, key=key)
+            os.environ[name] = val
