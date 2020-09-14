@@ -98,12 +98,11 @@ PYENV=py27 tox
 ## Developing Dagit
 
 For development, run the Dagit GraphQL server on a different port than
-the webapp, from any directory that contains a `workspace.yaml` file. For
-example:
+the webapp, with any pipeline. For example:
 
 ```bash
 cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial
-dagit -p 3333
+dagit -p 3333 -f airflow.py
 ```
 
 Keep this running. Then, in another terminal, run the local development
@@ -134,13 +133,19 @@ interactively when you are in `--watch` mode.
 
 ## Developing Docs
 
-Running a live html version of the docs can expedite documentation
-development:
+To run the Dagster documentation website locally, run the following commands:
 
 ```bash
 cd docs
-make livehtml
+yarn --cwd next dev  # Serves the docs website on http://localhost:3001
 ```
 
-Our documentation employs a combination of Markdown and
-reStructuredText.
+The API documentation is generated from ReStructured Text files (`.rst`), which extracts Python
+docstrings from the library files. The `.rst` files can be found in the `docs/sections/api/apidocs`
+directory.
+
+If you change any `.rst` files, be sure to run the following command in the `docs` directory:
+
+```bash
+make buildnext
+```
