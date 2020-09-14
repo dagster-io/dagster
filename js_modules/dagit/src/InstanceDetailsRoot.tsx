@@ -1,9 +1,10 @@
 import * as React from "react";
 import gql from "graphql-tag";
+import styled from "styled-components/macro";
 import { useQuery } from "react-apollo";
 import { Spinner } from "@blueprintjs/core";
 import { InstanceDetailsQuery } from "./types/InstanceDetailsQuery";
-import { ScrollContainer, Header } from "./ListComponents";
+import { Header } from "./ListComponents";
 import { UnControlled as CodeMirrorReact } from "react-codemirror2";
 import { createGlobalStyle } from "styled-components/macro";
 
@@ -29,7 +30,7 @@ export const InstanceDetailsRoot: React.FunctionComponent = () => {
   });
 
   return data ? (
-    <ScrollContainer>
+    <Container>
       <Header>{`Dagster ${data.version}`}</Header>
       <CodeMirrorShimStyle />
       <CodeMirrorReact
@@ -39,11 +40,16 @@ export const InstanceDetailsRoot: React.FunctionComponent = () => {
           readOnly: true
         }}
       />
-    </ScrollContainer>
+    </Container>
   ) : (
     <Spinner size={35} />
   );
 };
+
+const Container = styled.div`
+  padding: 20px;
+  width: 100%;
+`;
 
 export const INSTANCE_DETAILS_QUERY = gql`
   query InstanceDetailsQuery {
