@@ -29,10 +29,16 @@ CODE_ZIP_NAME = "code.zip"
     {
         "spark_config": get_spark_config(),
         "cluster_id": Field(
-            StringSource, description="Name of the job flow (cluster) on which to execute"
+            StringSource, description="Name of the job flow (cluster) on which to execute."
         ),
-        "region_name": Field(StringSource),
-        "action_on_failure": Field(str, is_required=False, default_value="CANCEL_AND_WAIT"),
+        "region_name": Field(StringSource, description="The AWS region that the cluster is in."),
+        "action_on_failure": Field(
+            str,
+            is_required=False,
+            default_value="CANCEL_AND_WAIT",
+            description="The EMR action to take when the cluster step fails: "
+            "https://docs.aws.amazon.com/emr/latest/APIReference/API_StepConfig.html",
+        ),
         "staging_bucket": Field(
             StringSource,
             is_required=True,
@@ -87,6 +93,12 @@ CODE_ZIP_NAME = "code.zip"
 )
 def emr_pyspark_step_launcher(context):
     return EmrPySparkStepLauncher(**context.resource_config)
+
+
+emr_pyspark_step_launcher.__doc__ = "\n".join(
+    "- **" + option + "**: " + (field.description or "")
+    for option, field in emr_pyspark_step_launcher.config_schema.config_type.fields.items()
+)
 
 
 class EmrPySparkStepLauncher(StepLauncher):
