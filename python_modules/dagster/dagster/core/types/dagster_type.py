@@ -446,13 +446,14 @@ class PythonObjectDagsterType(DagsterType):
 
     Examples:
         .. code-block:: python
+
             ntype = PythonObjectDagsterType(python_type=int)
             assert ntype.name == 'int'
             assert_success(ntype, 1)
             assert_failure(ntype, 'a')
-        ```
 
         .. code-block:: python
+
             ntype = PythonObjectDagsterType(python_type=(int, float))
             assert ntype.name == 'Union[int, float]'
             assert_success(ntype, 1)
