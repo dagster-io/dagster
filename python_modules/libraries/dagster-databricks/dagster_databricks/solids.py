@@ -57,9 +57,10 @@ def create_databricks_job_solid(
         job_config = context.solid_config["job"]
         databricks_client = context.resources.databricks_client
         run_id = databricks_client.submit_run(**job_config)
+
         context.log.info(
-            "Launched databricks job with id {run_id}. Waiting to run to completion...".format(
-                run_id=run_id
+            "Launched databricks job with run id {run_id}. UI: {url}. Waiting to run to completion...".format(
+                run_id=run_id, url=create_ui_url(databricks_client, context.solid_config)
             )
         )
         wait_for_run_to_complete(
@@ -71,3 +72,18 @@ def create_databricks_job_solid(
         )
 
     return databricks_solid
+
+
+def create_ui_url(databricks_client, solid_config):
+    host = databricks_client.host
+    workspace_id = databricks_client.workspace_id or "<workspace_id>"
+    if "existing_cluster_id" in solid_config["job"]:
+        return "https://{host}/?o={workspace_id}#/setting/clusters/{cluster_id}/sparkUi".format(
+            host=host,
+            workspace_id=workspace_id,
+            cluster_id=solid_config["job"]["existing_cluster_id"],
+        )
+    else:
+        return "https://{host}/?o={workspace_id}#joblist".format(
+            host=host, workspace_id=workspace_id
+        )

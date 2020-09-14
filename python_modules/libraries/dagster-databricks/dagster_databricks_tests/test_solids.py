@@ -1,5 +1,7 @@
+import pytest
 from dagster_databricks import create_databricks_job_solid, databricks_client
 from dagster_databricks.databricks import DatabricksRunState
+from dagster_databricks.solids import create_ui_url
 from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
 
 from dagster import ModeDefinition, execute_pipeline, pipeline
@@ -50,3 +52,37 @@ def test_create_databricks_job_solid_args():
     assert len(create_databricks_job_solid().input_defs) == 1
     assert len(create_databricks_job_solid(num_inputs=2).input_defs) == 2
     assert len(create_databricks_job_solid().output_defs) == 1
+
+
+@pytest.mark.parametrize(
+    "host, config, workspace_id, expected",
+    [
+        (
+            "abc123.cloud.databricks.com",
+            {"job": {"existing_cluster_id": "fdsa453fd"}},
+            None,
+            "https://abc123.cloud.databricks.com/?o=<workspace_id>#/setting/clusters/fdsa453fd/sparkUi",
+        ),
+        (
+            "abc123.cloud.databricks.com",
+            {"job": {"existing_cluster_id": "fdsa453fd"}},
+            "56789",
+            "https://abc123.cloud.databricks.com/?o=56789#/setting/clusters/fdsa453fd/sparkUi",
+        ),
+        (
+            "abc123.cloud.databricks.com",
+            {"job": {}},
+            None,
+            "https://abc123.cloud.databricks.com/?o=<workspace_id>#joblist",
+        ),
+        (
+            "abc123.cloud.databricks.com",
+            {"job": {}},
+            "56789",
+            "https://abc123.cloud.databricks.com/?o=56789#joblist",
+        ),
+    ],
+)
+def test_create_ui_url(host, config, workspace_id, expected):
+    client = mock.MagicMock(host=host, workspace_id=workspace_id)
+    assert create_ui_url(client, config) == expected

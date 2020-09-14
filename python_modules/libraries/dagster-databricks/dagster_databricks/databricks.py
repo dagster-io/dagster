@@ -24,7 +24,9 @@ class DatabricksError(Exception):
 class DatabricksClient:
     """A thin wrapper over the Databricks REST API."""
 
-    def __init__(self, host, token):
+    def __init__(self, host, token, workspace_id=None):
+        self.host = host
+        self.workspace_id = workspace_id
         self.client = DatabricksAPI(host=host, token=token)
 
     def submit_run(self, *args, **kwargs):
