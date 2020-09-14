@@ -249,6 +249,7 @@ const OverviewSection = ({ title, children }: { title: string; children: any }) 
 const RootContainer = styled.div`
   flex: 1;
   display: flex;
+  overflow: auto;
 `;
 
 const MainContainer = styled.div`
