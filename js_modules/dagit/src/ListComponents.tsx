@@ -50,6 +50,5 @@ export const RowColumn = styled.div`
 export const ScrollContainer = styled.div`
   padding: 20px;
   overflow: auto;
-  min-height: 100%;
   width: 100%;
 `;

@@ -529,7 +529,7 @@ exports[`renders execution 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 euTJgH"
     >
       <div
         className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
@@ -1316,7 +1316,7 @@ exports[`renders pipeline page 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 euTJgH"
     >
       <div
         className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
@@ -6053,7 +6053,7 @@ exports[`renders pipeline solid page 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 euTJgH"
     >
       <div
         className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
@@ -12653,7 +12653,7 @@ exports[`renders type page 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 euTJgH"
     >
       <div
         className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
@@ -17390,7 +17390,7 @@ exports[`renders type page 2`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 euTJgH"
     >
       <div
         className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
@@ -22127,7 +22127,7 @@ exports[`renders without error 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 euTJgH"
     >
       <div
         className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"

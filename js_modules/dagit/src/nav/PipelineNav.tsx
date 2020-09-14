@@ -82,6 +82,7 @@ const PipelineTabBarContainer = styled.div`
   height: 45px;
   display: flex;
   flex-direction: row;
+  flex: 0 0 auto;
   align-items: center;
   border-bottom: 1px solid ${Colors.GRAY5};
   background: ${Colors.LIGHT_GRAY3};
