@@ -1,2 +1,2 @@
 load_from:
-  - python_module: docs_snippets.intro_tutorial.advanced.repositories.repos
+  - python_package: docs_snippets.intro_tutorial.advanced.repositories.repos

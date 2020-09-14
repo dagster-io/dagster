@@ -74,15 +74,31 @@ We have a file format for building workspaces called `workspace.yaml`. It is a c
 prevents you from having to type the same `-f` or `-m` flag repeatedly. But as you'll see below it
 enables more capabilities.
 
-```YAML literalinclude caption=workspace.yaml
-file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/workspace.yaml
+The following config will load pipelines from a file, just like the `-f` CLI option.
+
+```YAML caption=workspace.yaml
+load_from:
+  - python_file: repos.py
 ```
 
-Dagit will look for workspace.yaml in the current directory by default, so now you can launch Dagit
-from that directory with no arguments.
+Dagit will look for `workspace.yaml` in the current directory by default, so now you can launch
+Dagit from that directory with no arguments.
 
 ```bash
 dagit
+```
+
+Use the `python_package` config option to load pipelines from explicitly installed Python packages.
+For example, you can `pip install` our tutorial code snippets as a Python package:
+
+```bash
+pip install -e docs_snippets  # Run this in the `examples/` directory.
+```
+
+Then, you can configure your `workspace.yaml` to load pipelines from this package.
+
+```YAML literalinclude caption=workspace.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/workspace.yaml
 ```
 
 ### Supporting multiple repositories
@@ -115,7 +131,7 @@ file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/multi_pyt
 ```
 
 For this example to work, you need to change the executable path to point a virtual environment
-available in your system, and point to a Python module or file that is available and loadable by
+available in your system, and point to a Python file or package that is available and loadable by
 that executable.
 
 <br />
