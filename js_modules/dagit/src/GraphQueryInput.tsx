@@ -79,12 +79,13 @@ export const GraphQueryInput = React.memo(
     let menu: JSX.Element | undefined = undefined;
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
-    const suggestions =
-      lastElementName && !suffix
+    const suggestions = React.useMemo(() => {
+      return lastElementName && !suffix
         ? props.items
             .map((s) => s.name)
             .filter((n) => n.startsWith(lastElementName) && n !== lastElementName)
         : [];
+    }, [lastElementName, props.items, suffix]);
 
     const onConfirmSuggestion = (suggestion: string) => {
       const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : '';

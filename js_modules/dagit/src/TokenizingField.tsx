@@ -89,7 +89,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
   const [typed, setTyped] = React.useState<string>('');
 
-  const values = [...externalValues];
+  const values = React.useMemo(() => [...externalValues], [externalValues]);
   const typedValue = tokenizedValueFromString(typed, suggestionProviders);
   if (isEqual(typedValue, values[values.length - 1])) {
     values.pop();
@@ -105,54 +105,60 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   // Note: "typed" is the text that has not yet been submitted, separate from values[].
   const parts = typed.split(':');
   const lastPart = parts[parts.length - 1].toLowerCase();
-  let suggestions: Suggestion[] = [];
+  const suggestions = React.useMemo(() => {
+    if (atMaxValues) {
+      return [];
+    }
 
-  const suggestionMatchesTypedText = (s: Suggestion) =>
-    !lastPart ||
-    s.text
-      .toLowerCase()
-      .split(':')
-      .some((c) => c.includes(lastPart));
+    let suggestionsArr: Suggestion[] = [];
 
-  const availableSuggestionsForProvider = (provider: SuggestionProvider) => {
-    const suggestionNotUsed = (v: string) =>
-      !values.some((e) => e.token === provider.token && e.value === v);
+    const suggestionMatchesTypedText = (s: Suggestion) =>
+      !lastPart ||
+      s.text
+        .toLowerCase()
+        .split(':')
+        .some((c) => c.includes(lastPart));
 
-    return provider
-      .values()
-      .filter(suggestionNotUsed)
-      .map((v) => ({text: `${provider.token}:${v}`, final: true}))
-      .filter(suggestionMatchesTypedText)
-      .slice(0, 6); // never show too many suggestions for one provider
-  };
+    const availableSuggestionsForProvider = (provider: SuggestionProvider) => {
+      const suggestionNotUsed = (v: string) =>
+        !values.some((e) => e.token === provider.token && e.value === v);
 
-  if (parts.length === 1) {
-    // Suggest providers (eg: `pipeline:`) so users can discover the search space
-    suggestions = filteredSuggestionProviders
-      .map((s) => ({text: `${s.token}:`, final: false}))
-      .filter(suggestionMatchesTypedText);
+      return provider
+        .values()
+        .filter(suggestionNotUsed)
+        .map((v) => ({text: `${provider.token}:${v}`, final: true}))
+        .filter(suggestionMatchesTypedText)
+        .slice(0, 6); // never show too many suggestions for one provider
+    };
 
-    // Suggest value completions so users can type "airline_" without the "pipeline"
-    // prefix and get the correct suggestion.
-    if (typed.length > 0) {
-      for (const p of filteredSuggestionProviders) {
-        suggestions.push(...availableSuggestionsForProvider(p));
+    if (parts.length === 1) {
+      // Suggest providers (eg: `pipeline:`) so users can discover the search space
+      suggestionsArr = filteredSuggestionProviders
+        .map((s) => ({text: `${s.token}:`, final: false}))
+        .filter(suggestionMatchesTypedText);
+
+      // Suggest value completions so users can type "airline_" without the "pipeline"
+      // prefix and get the correct suggestion.
+      if (typed.length > 0) {
+        for (const p of filteredSuggestionProviders) {
+          suggestionsArr.push(...availableSuggestionsForProvider(p));
+        }
       }
     }
-  }
 
-  if (parts.length === 2) {
-    // Suggest values from the chosen provider (eg: `pipeline:abc`)
-    const provider = findProviderByToken(parts[0], filteredSuggestionProviders);
-    suggestions = provider ? availableSuggestionsForProvider(provider) : [];
-  }
+    if (parts.length === 2) {
+      // Suggest values from the chosen provider (eg: `pipeline:abc`)
+      const provider = findProviderByToken(parts[0], filteredSuggestionProviders);
+      suggestionsArr = provider ? availableSuggestionsForProvider(provider) : [];
+    }
 
-  // Truncate suggestions to the ones currently matching the typed text,
-  // and always sort them in alphabetical order.
-  suggestions = suggestions.sort((a, b) => a.text.localeCompare(b.text));
-  if (atMaxValues) {
-    suggestions = [];
-  }
+    // Truncate suggestions to the ones currently matching the typed text,
+    // and always sort them in alphabetical order.
+    suggestionsArr.sort((a, b) => a.text.localeCompare(b.text));
+
+    return suggestionsArr;
+  }, [atMaxValues, filteredSuggestionProviders, lastPart, parts, typed.length, values]);
+
   // We need to manage selection in the dropdown by ourselves. To ensure the
   // best behavior we store the active item's index and text (the text allows
   // us to relocate it if it's moved and the index allows us to keep selection
