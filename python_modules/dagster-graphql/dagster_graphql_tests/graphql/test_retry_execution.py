@@ -1,5 +1,6 @@
 from time import sleep
 
+import pytest
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -597,6 +598,10 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
         assert reexecution_run.is_failure
 
+    @pytest.mark.skip(
+        reason="Skipping due to termination flakiness. "
+        "Re-enable once https://github.com/dagster-io/dagster/issues/2919 is resolved"
+    )
     def test_retry_early_terminate(self, graphql_context):
         instance = graphql_context.instance
         selector = infer_pipeline_selector(
