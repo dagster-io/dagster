@@ -22,6 +22,16 @@ datasources:
     data_asset_type:
       class_name: PandasDataset
       module_name: great_expectations.dataset
+  getestspark:
+    batch_kwargs_generators:
+      subdir_reader:
+        class_name: SubdirReaderBatchKwargsGenerator
+        base_directory: ..\.
+    class_name: SparkDFDatasource
+    module_name: great_expectations.datasource
+    data_asset_type:
+      class_name: SparkDFDataset
+      module_name: great_expectations.dataset
 
 # This config file supports variable substitution which enables: 1) keeping
 # secrets out of source control & 2) environment-based configuration changes
