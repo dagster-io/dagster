@@ -10,7 +10,12 @@ from defines import (
 )
 from module_build_spec import ModuleBuildSpec
 from step_builder import StepBuilder, wait_step
-from utils import check_for_release, connect_sibling_docker_container, network_buildkite_container
+from utils import (
+    check_for_release,
+    connect_sibling_docker_container,
+    is_phab_and_dagit_only,
+    network_buildkite_container,
+)
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -620,7 +625,35 @@ def version_equality_checks(version=SupportedPython.V3_7):
     ]
 
 
-if __name__ == "__main__":
+def dagit_steps():
+    return [
+        StepBuilder("dagit webapp tests")
+        .run(
+            "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
+            "pip install -e python_modules/dagster -qqq",
+            "pip install -e python_modules/dagster-graphql -qqq",
+            "pip install -e python_modules/libraries/dagster-cron -qqq",
+            "pip install -e python_modules/libraries/dagster-slack -qqq",
+            "pip install -e python_modules/dagit -qqq",
+            "pip install -e examples/legacy_examples -qqq",
+            "cd js_modules/dagit",
+            "yarn install",
+            "yarn run ts",
+            "yarn run jest",
+            "yarn run check-prettier",
+            "yarn run check-lint",
+            "yarn run download-schema",
+            "yarn run generate-types",
+            "git diff --exit-code",
+            "mv coverage/lcov.info lcov.dagit.$BUILDKITE_BUILD_ID.info",
+            "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
+        )
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
+    ]
+
+
+def python_steps():
     steps = []
     steps += publish_test_images()
 
@@ -647,29 +680,6 @@ if __name__ == "__main__":
             "pip install -e python_modules/dagster -qqq",
             "pip install -e python_modules/libraries/dagstermill -qqq",
             "pytest -vv docs/test_doc_build.py",
-        )
-        .on_integration_image(SupportedPython.V3_7)
-        .build(),
-        StepBuilder("dagit webapp tests")
-        .run(
-            "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
-            "pip install -e python_modules/dagster -qqq",
-            "pip install -e python_modules/dagster-graphql -qqq",
-            "pip install -e python_modules/libraries/dagster-cron -qqq",
-            "pip install -e python_modules/libraries/dagster-slack -qqq",
-            "pip install -e python_modules/dagit -qqq",
-            "pip install -e examples/legacy_examples -qqq",
-            "cd js_modules/dagit",
-            "yarn install",
-            "yarn run ts",
-            "yarn run jest",
-            "yarn run check-prettier",
-            "yarn run check-lint",
-            "yarn run download-schema",
-            "yarn run generate-types",
-            "git diff --exit-code",
-            "mv coverage/lcov.info lcov.dagit.$BUILDKITE_BUILD_ID.info",
-            "buildkite-agent artifact upload lcov.dagit.$BUILDKITE_BUILD_ID.info",
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
@@ -702,8 +712,20 @@ if __name__ == "__main__":
     steps += examples_tests()
     steps += integration_tests()
 
-    if DO_COVERAGE:
-        steps += [wait_step(), coverage_step()]
+    return steps
+
+
+if __name__ == "__main__":
+    all_steps = dagit_steps()
+    dagit_only = is_phab_and_dagit_only()
+
+    # If we're in a Phabricator diff and are only making dagit changes, skip the
+    # remaining steps since they're not relevant to the diff.
+    if not dagit_only:
+        all_steps += python_steps()
+
+        if DO_COVERAGE:
+            all_steps += [wait_step(), coverage_step()]
 
     print(  # pylint: disable=print-call
         yaml.dump(
@@ -715,7 +737,7 @@ if __name__ == "__main__":
                     "CI_BRANCH": "$BUILDKITE_BRANCH",
                     "CI_PULL_REQUEST": "$BUILDKITE_PULL_REQUEST",
                 },
-                "steps": steps,
+                "steps": all_steps,
             },
             default_flow_style=False,
         )
