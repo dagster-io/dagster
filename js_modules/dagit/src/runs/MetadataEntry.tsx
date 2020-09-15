@@ -1,32 +1,32 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { MetadataEntryFragment } from "./types/MetadataEntryFragment";
-import { assertUnreachable } from "../Util";
-import { copyValue } from "../DomUtils";
-import { showCustomAlert } from "../CustomAlertProvider";
-import { Button, Dialog, Classes, Colors, Icon, Position, Tooltip } from "@blueprintjs/core";
-import ReactMarkdown from "react-markdown";
-import CSS from "csstype";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {MetadataEntryFragment} from './types/MetadataEntryFragment';
+import {assertUnreachable} from '../Util';
+import {copyValue} from '../DomUtils';
+import {showCustomAlert} from '../CustomAlertProvider';
+import {Button, Dialog, Classes, Colors, Icon, Position, Tooltip} from '@blueprintjs/core';
+import ReactMarkdown from 'react-markdown';
+import CSS from 'csstype';
 
 export const LogRowStructuredContentTable: React.FunctionComponent<{
-  rows: { label: string; item: JSX.Element }[];
+  rows: {label: string; item: JSX.Element}[];
   styles?: CSS.Properties;
-}> = ({ rows, styles }) => (
-  <div style={{ overflow: "auto", paddingBottom: 10, ...(styles || {}) }}>
+}> = ({rows, styles}) => (
+  <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
     <StructuredContentTable cellPadding="0" cellSpacing="0">
       <tbody>
-        {rows.map(({ label, item }, idx) => (
-          <tr key={idx} style={{ display: "flex" }}>
+        {rows.map(({label, item}, idx) => (
+          <tr key={idx} style={{display: 'flex'}}>
             <td
               style={{
                 flex: 1,
-                maxWidth: "max-content"
+                maxWidth: 'max-content',
               }}
             >
               {label}
             </td>
-            <td style={{ flex: 1 }}>{item}</td>
+            <td style={{flex: 1}}>{item}</td>
           </tr>
         ))}
       </tbody>
@@ -36,15 +36,15 @@ export const LogRowStructuredContentTable: React.FunctionComponent<{
 
 export const MetadataEntries: React.FunctionComponent<{
   entries?: MetadataEntryFragment[];
-}> = ({ entries }) => {
+}> = ({entries}) => {
   if (!entries || !entries.length) {
     return null;
   }
   return (
     <LogRowStructuredContentTable
-      rows={entries.map(entry => ({
+      rows={entries.map((entry) => ({
         label: entry.label,
-        item: <MetadataEntry entry={entry} />
+        item: <MetadataEntry entry={entry} />,
       }))}
     />
   );
@@ -82,40 +82,43 @@ export class MetadataEntry extends React.Component<{
           value
         }
       }
-    `
+    `,
   };
 
   render() {
-    const { entry } = this.props;
+    const {entry} = this.props;
 
     switch (entry.__typename) {
-      case "EventPathMetadataEntry":
+      case 'EventPathMetadataEntry':
         return (
           <>
-            <MetadataEntryLink title={"Copy to clipboard"} onClick={e => copyValue(e, entry.path)}>
+            <MetadataEntryLink
+              title={'Copy to clipboard'}
+              onClick={(e) => copyValue(e, entry.path)}
+            >
               {entry.path}
-            </MetadataEntryLink>{" "}
+            </MetadataEntryLink>{' '}
             <Icon
               icon="clipboard"
               iconSize={10}
-              color={"#a88860"}
-              onClick={e => copyValue(e, entry.path)}
+              color={'#a88860'}
+              onClick={(e) => copyValue(e, entry.path)}
             />
           </>
         );
 
-      case "EventJsonMetadataEntry":
+      case 'EventJsonMetadataEntry':
         return (
           <MetadataEntryLink
             title="Show full value"
             onClick={() =>
               showCustomAlert({
                 body: (
-                  <div style={{ whiteSpace: "pre-wrap" }}>
+                  <div style={{whiteSpace: 'pre-wrap'}}>
                     {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
                   </div>
                 ),
-                title: "Value"
+                title: 'Value',
               })
             }
           >
@@ -123,30 +126,30 @@ export class MetadataEntry extends React.Component<{
           </MetadataEntryLink>
         );
 
-      case "EventUrlMetadataEntry":
+      case 'EventUrlMetadataEntry':
         return (
           <>
             <MetadataEntryLink href={entry.url} title={`Open in a new tab`} target="__blank">
               {entry.url}
-            </MetadataEntryLink>{" "}
+            </MetadataEntryLink>{' '}
             <a href={entry.url} target="__blank">
-              <Icon icon="link" iconSize={10} color={"#a88860"} />
+              <Icon icon="link" iconSize={10} color={'#a88860'} />
             </a>
           </>
         );
-      case "EventTextMetadataEntry":
+      case 'EventTextMetadataEntry':
         return entry.text;
-      case "EventMarkdownMetadataEntry":
+      case 'EventMarkdownMetadataEntry':
         return <MarkdownMetadataLink title={entry.label} mdStr={entry.mdStr} />;
-      case "EventPythonArtifactMetadataEntry":
+      case 'EventPythonArtifactMetadataEntry':
         return (
           <PythonArtifactLink
             name={entry.name}
             module={entry.module}
-            description={entry.description || ""}
+            description={entry.description || ''}
           />
         );
-      case "EventFloatMetadataEntry":
+      case 'EventFloatMetadataEntry':
         return entry.value;
       default:
         return assertUnreachable(entry);
@@ -157,7 +160,7 @@ export class MetadataEntry extends React.Component<{
 const PythonArtifactLink = ({
   name,
   module,
-  description
+  description,
 }: {
   name: string;
   module: string;
@@ -165,8 +168,8 @@ const PythonArtifactLink = ({
 }) => (
   <>
     <Tooltip hoverOpenDelay={100} position={Position.TOP} content={`${module}.${name}`}>
-      <span style={{ cursor: "pointer", textDecoration: "underline" }}>{name}</span>
-    </Tooltip>{" "}
+      <span style={{cursor: 'pointer', textDecoration: 'underline'}}>{name}</span>
+    </Tooltip>{' '}
     - {description}
   </>
 );
@@ -175,17 +178,17 @@ class MarkdownMetadataLink extends React.Component<{
   title: string;
   mdStr: string;
 }> {
-  state = { isExpanded: false };
+  state = {isExpanded: false};
   onView = () => {
-    this.setState({ isExpanded: true });
+    this.setState({isExpanded: true});
   };
   onClose = () => {
-    this.setState({ isExpanded: false });
+    this.setState({isExpanded: false});
   };
 
   render() {
-    const { mdStr, title } = this.props;
-    const { isExpanded } = this.state;
+    const {mdStr, title} = this.props;
+    const {isExpanded} = this.state;
     return (
       <>
         <MetadataEntryLink onClick={this.onView}>[Show Metadata]</MetadataEntryLink>
@@ -193,7 +196,7 @@ class MarkdownMetadataLink extends React.Component<{
           <Dialog
             icon="info-sign"
             usePortal={true}
-            style={{ width: "auto", maxWidth: "80vw" }}
+            style={{width: 'auto', maxWidth: '80vw'}}
             title={title}
             onClose={this.onClose}
             isOpen={true}

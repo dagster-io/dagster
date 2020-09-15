@@ -1,12 +1,12 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors, Button, ButtonGroup } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
-import { LogLevel, LogFilterValue, GetFilterProviders, LogFilter } from "./LogsProvider";
-import { ComputeLogLink } from "./ComputeLogModal";
-import { IStepState } from "../RunMetadataProvider";
-import { TokenizingField, TokenizingFieldValue, SuggestionProvider } from "../TokenizingField";
-import { IRunMetadataDict } from "../RunMetadataProvider";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Colors, Button, ButtonGroup} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import {LogLevel, LogFilterValue, GetFilterProviders, LogFilter} from './LogsProvider';
+import {ComputeLogLink} from './ComputeLogModal';
+import {IStepState} from '../RunMetadataProvider';
+import {TokenizingField, TokenizingFieldValue, SuggestionProvider} from '../TokenizingField';
+import {IRunMetadataDict} from '../RunMetadataProvider';
 
 interface ILogsToolbarProps {
   steps: string[];
@@ -18,23 +18,23 @@ interface ILogsToolbarProps {
 
 const suggestionProvidersFilter = (
   suggestionProviders: SuggestionProvider[],
-  values: TokenizingFieldValue[]
+  values: TokenizingFieldValue[],
 ) => {
   // This filters down autocompletion suggestion providers based on what you've already typed.
   // It allows us to remove all autocompletions for "step:" if values already contains a step.
-  const usedTokens = values.map(v => v.token).filter(Boolean);
-  const singleUseTokens = ["step", "type"];
+  const usedTokens = values.map((v) => v.token).filter(Boolean);
+  const singleUseTokens = ['step', 'type'];
 
   return suggestionProviders.filter(
-    ({ token }) => !singleUseTokens.includes(token) || !usedTokens.includes(token)
+    ({token}) => !singleUseTokens.includes(token) || !usedTokens.includes(token),
   );
 };
 
 export default class LogsToolbar extends React.PureComponent<ILogsToolbarProps> {
   render() {
-    const { steps, filter, metadata, onSetFilter } = this.props;
+    const {steps, filter, metadata, onSetFilter} = this.props;
 
-    const selectedStep = filter.values.find(v => v.token === "step")?.value || null;
+    const selectedStep = filter.values.find((v) => v.token === 'step')?.value || null;
     const selectedStepState =
       (selectedStep && metadata.steps[selectedStep]?.state) || IStepState.PREPARING;
 
@@ -44,7 +44,7 @@ export default class LogsToolbar extends React.PureComponent<ILogsToolbarProps> 
           small
           values={filter.values}
           onChangeBeforeCommit
-          onChange={(values: LogFilterValue[]) => onSetFilter({ ...filter, values })}
+          onChange={(values: LogFilterValue[]) => onSetFilter({...filter, values})}
           suggestionProviders={GetFilterProviders(steps)}
           suggestionProvidersFilter={suggestionProvidersFilter}
           loading={false}
@@ -52,20 +52,20 @@ export default class LogsToolbar extends React.PureComponent<ILogsToolbarProps> 
 
         <LogsToolbarDivider />
         <ButtonGroup>
-          {Object.keys(LogLevel).map(level => (
+          {Object.keys(LogLevel).map((level) => (
             <Button
               key={level}
               text={level.toLowerCase()}
               small={true}
-              style={{ textTransform: "capitalize" }}
+              style={{textTransform: 'capitalize'}}
               active={filter.levels[level]}
               onClick={() =>
                 onSetFilter({
                   ...filter,
                   levels: {
                     ...filter.levels,
-                    [level]: !filter.levels[level]
-                  }
+                    [level]: !filter.levels[level],
+                  },
                 })
               }
             />
@@ -77,12 +77,12 @@ export default class LogsToolbar extends React.PureComponent<ILogsToolbarProps> 
             View Raw Step Output
           </ComputeLogLink>
         )}
-        <div style={{ minWidth: 15, flex: 1 }} />
+        <div style={{minWidth: 15, flex: 1}} />
         <Button
-          text={"Clear"}
+          text={'Clear'}
           small={true}
           icon={IconNames.ERASER}
-          onClick={() => onSetFilter({ ...filter, since: Date.now() })}
+          onClick={() => onSetFilter({...filter, since: Date.now()})}
         />
         {this.props.children}
       </LogsToolbarContainer>

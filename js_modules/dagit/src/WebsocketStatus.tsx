@@ -1,17 +1,17 @@
-import * as React from "react";
-import { SubscriptionClient } from "subscriptions-transport-ws";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
+import * as React from 'react';
+import {SubscriptionClient} from 'subscriptions-transport-ws';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
 
 export const WebsocketStatusContext = React.createContext<number>(WebSocket.CONNECTING);
 
 const WS_EVENTS = [
-  "connecting",
-  "connected",
-  "reconnecting",
-  "reconnected",
-  "disconnected",
-  "error"
+  'connecting',
+  'connected',
+  'reconnecting',
+  'reconnected',
+  'disconnected',
+  'error',
 ];
 
 interface IWebsocketStatusProviderProps {
@@ -27,22 +27,22 @@ export class WebsocketStatusProvider extends React.Component<
   IWebsocketStatusProviderState
 > {
   state = {
-    status: WebSocket.CONNECTING
+    status: WebSocket.CONNECTING,
   };
 
   private unlisteners: Function[] = [];
 
   componentDidMount() {
-    this.unlisteners = WS_EVENTS.map(eventName =>
+    this.unlisteners = WS_EVENTS.map((eventName) =>
       this.props.websocket.on(eventName, () =>
-        this.setState({ status: this.props.websocket.status })
-      )
+        this.setState({status: this.props.websocket.status}),
+      ),
     );
-    this.setState({ status: this.props.websocket.status });
+    this.setState({status: this.props.websocket.status});
   }
 
   componentWillUnmount() {
-    this.unlisteners.forEach(u => u());
+    this.unlisteners.forEach((u) => u());
   }
 
   render() {
@@ -63,20 +63,20 @@ const Circle = styled.div`
   border: 1px solid rgba(255, 255, 255, 0.6);
 `;
 
-export const WebsocketStatus: React.FunctionComponent = props => (
+export const WebsocketStatus: React.FunctionComponent = (props) => (
   <WebsocketStatusContext.Consumer>
-    {status =>
+    {(status) =>
       ({
         [WebSocket.CONNECTING]: (
-          <Circle style={{ background: Colors.GREEN5 }} title="Connecting..." {...props} />
+          <Circle style={{background: Colors.GREEN5}} title="Connecting..." {...props} />
         ),
         [WebSocket.OPEN]: (
-          <Circle style={{ background: Colors.GREEN3 }} title="Connected" {...props} />
+          <Circle style={{background: Colors.GREEN3}} title="Connected" {...props} />
         ),
         [WebSocket.CLOSING]: (
-          <Circle style={{ background: Colors.GRAY3 }} title="Closing..." {...props} />
-        )
-      }[status] || <Circle style={{ background: Colors.GRAY3 }} title="Disconnected" {...props} />)
+          <Circle style={{background: Colors.GRAY3}} title="Closing..." {...props} />
+        ),
+      }[status] || <Circle style={{background: Colors.GRAY3}} title="Disconnected" {...props} />)
     }
   </WebsocketStatusContext.Consumer>
 );

@@ -1,7 +1,7 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Icon, Colors, Collapse } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Icon, Colors, Collapse} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 
 interface ISidebarSectionProps {
   title: string;
@@ -23,19 +23,19 @@ export class SidebarSection extends React.Component<ISidebarSectionProps, ISideb
       isOpen: {
         true: true,
         false: false,
-        null: this.props.collapsedByDefault === true ? false : true
-      }[`${window.localStorage.getItem(this.storageKey)}`]
+        null: this.props.collapsedByDefault === true ? false : true,
+      }[`${window.localStorage.getItem(this.storageKey)}`],
     };
   }
 
   onToggle = () => {
     const isOpen = !this.state.isOpen;
-    this.setState({ isOpen });
+    this.setState({isOpen});
     window.localStorage.setItem(this.storageKey, `${isOpen}`);
   };
 
   render() {
-    const { isOpen } = this.state;
+    const {isOpen} = this.state;
 
     return (
       <div>
@@ -57,7 +57,7 @@ export const DisclosureIcon = styled(Icon)`
 `;
 
 export const SidebarTitle = styled.h3`
-  font-family: "Source Code Pro", monospace;
+  font-family: 'Source Code Pro', monospace;
   margin: 0;
   margin-bottom: 14px;
   overflow: hidden;
@@ -65,13 +65,13 @@ export const SidebarTitle = styled.h3`
 `;
 
 export const SectionHeader = styled.h4`
-  font-family: "Source Code Pro", monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 15px;
   margin: 6px 0;
 `;
 
 export const SectionSmallHeader = styled.h4`
-  font-family: "Source Code Pro", monospace;
+  font-family: 'Source Code Pro', monospace;
   font-size: 14px;
   font-weight: 500;
   margin: 6px 0;

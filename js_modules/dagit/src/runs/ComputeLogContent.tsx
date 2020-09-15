@@ -1,14 +1,14 @@
-import * as React from "react";
-import { Colors, Icon } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
-import gql from "graphql-tag";
-import styled, { createGlobalStyle } from "styled-components/macro";
-import { Spinner, Intent } from "@blueprintjs/core";
-import Ansi from "ansi-to-react";
-import { IStepState } from "../RunMetadataProvider";
-import { ExecutionStateDot } from "./ExecutionStateDot";
-import { ROOT_SERVER_URI } from "../DomUtils";
-import { ComputeLogContentFileFragment } from "./types/ComputeLogContentFileFragment";
+import * as React from 'react';
+import {Colors, Icon} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import gql from 'graphql-tag';
+import styled, {createGlobalStyle} from 'styled-components/macro';
+import {Spinner, Intent} from '@blueprintjs/core';
+import Ansi from 'ansi-to-react';
+import {IStepState} from '../RunMetadataProvider';
+import {ExecutionStateDot} from './ExecutionStateDot';
+import {ROOT_SERVER_URI} from '../DomUtils';
+import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
 
 interface IComputeLogContentProps {
   runState: IStepState;
@@ -18,7 +18,7 @@ interface IComputeLogContentProps {
   maxBytes: number;
 }
 
-const TRUNCATE_PREFIX = "\u001b[33m...logs truncated...\u001b[39m\n";
+const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';
 const SCROLLER_LINK_TIMEOUT_MS = 3000;
 
 export class ComputeLogContent extends React.Component<IComputeLogContentProps> {
@@ -30,7 +30,7 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
         data
         downloadUrl
       }
-    `
+    `,
   };
 
   private timeout: number;
@@ -38,8 +38,8 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
   private stderr = React.createRef<ScrollContainer>();
 
   state = {
-    selected: "stderr",
-    showScrollToTop: false
+    selected: 'stderr',
+    showScrollToTop: false,
   };
 
   close = (e: React.SyntheticEvent) => {
@@ -53,7 +53,7 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
     if (!position) {
       this.hide();
     } else {
-      this.setState({ showScrollToTop: true });
+      this.setState({showScrollToTop: true});
       this.scheduleHide();
     }
   };
@@ -63,7 +63,7 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
   };
 
   hide = () => {
-    this.setState({ showScrollToTop: false });
+    this.setState({showScrollToTop: false});
     if (this.timeout) {
       clearTimeout(this.timeout);
       this.timeout = 0;
@@ -82,25 +82,25 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
   };
 
   scrollToTop = () => {
-    const { selected } = this.state;
-    const ref = selected === "stdout" ? this.stdout : this.stderr;
+    const {selected} = this.state;
+    const ref = selected === 'stdout' ? this.stdout : this.stderr;
     ref.current && ref.current.scrollToTop();
   };
 
   getDownloadUrl() {
-    const { stdout, stderr } = this.props;
-    const { selected } = this.state;
-    const logData = selected === "stdout" ? stdout : stderr;
+    const {stdout, stderr} = this.props;
+    const {selected} = this.state;
+    const logData = selected === 'stdout' ? stdout : stderr;
     const downloadUrl = logData?.downloadUrl;
     if (!downloadUrl) {
       return null;
     }
-    const isRelativeUrl = (x?: string) => x && x.startsWith("/");
+    const isRelativeUrl = (x?: string) => x && x.startsWith('/');
     return isRelativeUrl(downloadUrl) ? ROOT_SERVER_URI + downloadUrl : downloadUrl;
   }
 
   renderScrollToTop() {
-    const { showScrollToTop } = this.state;
+    const {showScrollToTop} = this.state;
 
     if (!showScrollToTop) {
       return null;
@@ -113,7 +113,7 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
           onMouseOver={this.cancelHide}
           onMouseOut={this.scheduleHide}
         >
-          <Icon icon={IconNames.ARROW_UP} style={{ marginRight: 10 }} />
+          <Icon icon={IconNames.ARROW_UP} style={{marginRight: 10}} />
           Scroll to top
         </ScrollToTop>
       </ScrollToast>
@@ -121,7 +121,7 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
   }
 
   renderStatus() {
-    const { runState } = this.props;
+    const {runState} = this.props;
     if (runState === IStepState.RUNNING) {
       return <Spinner intent={Intent.NONE} size={11} />;
     }
@@ -134,18 +134,18 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
   }
 
   renderContent(ioType: string, content: string | null | undefined) {
-    const isTruncated = content && Buffer.byteLength(content, "utf8") >= this.props.maxBytes;
+    const isTruncated = content && Buffer.byteLength(content, 'utf8') >= this.props.maxBytes;
 
     if (content && isTruncated) {
-      const nextLine = content.indexOf("\n") + 1;
+      const nextLine = content.indexOf('\n') + 1;
       const truncated = nextLine < content.length ? content.slice(nextLine) : content;
       content = TRUNCATE_PREFIX + truncated;
     }
     const downloadUrl = this.getDownloadUrl();
     const warning = isTruncated ? (
       <FileWarning>
-        <Icon icon={IconNames.WARNING_SIGN} style={{ marginRight: 10, color: Colors.ORANGE5 }} />
-        This log has exceeded the 5MB limit.{" "}
+        <Icon icon={IconNames.WARNING_SIGN} style={{marginRight: 10, color: Colors.ORANGE5}} />
+        This log has exceeded the 5MB limit.{' '}
         {downloadUrl ? (
           <a href={downloadUrl} download>
             Download the full log file
@@ -155,7 +155,7 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
       </FileWarning>
     ) : null;
 
-    const ref = ioType === "stdout" ? this.stdout : this.stderr;
+    const ref = ioType === 'stdout' ? this.stdout : this.stderr;
     const isSelected = this.state.selected === ioType;
     return (
       <FileContent isSelected={isSelected}>
@@ -174,15 +174,15 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
   }
 
   select = (selected: string) => {
-    this.setState({ selected });
+    this.setState({selected});
     this.hide();
   };
 
   render() {
-    const { stdout, stderr } = this.props;
-    const { selected } = this.state;
+    const {stdout, stderr} = this.props;
+    const {selected} = this.state;
 
-    const logData = selected === "stdout" ? stdout : stderr;
+    const logData = selected === 'stdout' ? stdout : stderr;
     const downloadUrl = this.getDownloadUrl();
 
     return (
@@ -190,10 +190,10 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
         <FileContainer>
           <FileHeader>
             <Row>
-              <Tab selected={selected === "stderr"} onClick={() => this.select("stderr")}>
+              <Tab selected={selected === 'stderr'} onClick={() => this.select('stderr')}>
                 stderr
               </Tab>
-              <Tab selected={selected === "stdout"} onClick={() => this.select("stdout")}>
+              <Tab selected={selected === 'stdout'} onClick={() => this.select('stdout')}>
                 stdout
               </Tab>
             </Row>
@@ -216,8 +216,8 @@ export class ComputeLogContent extends React.Component<IComputeLogContentProps> 
             </Row>
           </FileHeader>
           {this.renderScrollToTop()}
-          {this.renderContent("stdout", stdout?.data)}
-          {this.renderContent("stderr", stderr?.data)}
+          {this.renderContent('stdout', stdout?.data)}
+          {this.renderContent('stderr', stderr?.data)}
           <FileFooter>{logData?.path}</FileFooter>
         </FileContainer>
       </Container>
@@ -241,7 +241,7 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     this.scrollToBottom();
     if (this.container.current) {
       this.container.current.focus();
-      this.container.current.addEventListener("scroll", this.onScroll);
+      this.container.current.addEventListener('scroll', this.onScroll);
     }
   }
 
@@ -249,7 +249,7 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     if (!this.container.current) {
       return false;
     }
-    const { scrollHeight, scrollTop, offsetHeight } = this.container.current;
+    const {scrollHeight, scrollTop, offsetHeight} = this.container.current;
     const shouldScroll = offsetHeight + scrollTop >= scrollHeight;
     return shouldScroll;
   }
@@ -267,9 +267,9 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
     if (!this.container.current || !this.props.isSelected) {
       return;
     }
-    const { onScrollUp, onScrollDown } = this.props;
+    const {onScrollUp, onScrollDown} = this.props;
 
-    const { scrollHeight, scrollTop, offsetHeight } = this.container.current;
+    const {scrollHeight, scrollTop, offsetHeight} = this.container.current;
     const position = scrollTop / (scrollHeight - offsetHeight);
     if (this.container.current.scrollTop < this.lastScroll) {
       onScrollUp && onScrollUp(position);
@@ -308,19 +308,19 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
   }
 
   render() {
-    const { content, className } = this.props;
+    const {content, className} = this.props;
     if (!content) {
       return (
         <div className={className} ref={this.container}>
-          <ContentContainer style={{ justifyContent: "center", alignItems: "center" }}>
-            {content == null ? "No log file available" : "No output"}
+          <ContentContainer style={{justifyContent: 'center', alignItems: 'center'}}>
+            {content == null ? 'No log file available' : 'No output'}
           </ContentContainer>
         </div>
       );
     }
 
     return (
-      <div className={className} style={{ outline: "none" }} ref={this.container} tabIndex={0}>
+      <div className={className} style={{outline: 'none'}} ref={this.container} tabIndex={0}>
         <ContentContainer>
           <LineNumbers content={content} />
           <Content>
@@ -336,7 +336,7 @@ class ScrollContainer extends React.Component<IScrollContainerProps> {
 }
 
 const LineNumbers = (props: IScrollContainerProps) => {
-  const { content } = props;
+  const {content} = props;
   if (!content) {
     return null;
   }
@@ -393,7 +393,7 @@ const FileHeader = styled.div`
   height: 40px;
   background-color: #444444;
   border-bottom: 0.5px solid #5c7080;
-  color: ${({ color }) => color || "#ffffff"};
+  color: ${({color}) => color || '#ffffff'};
   font-weight: 600;
   padding: 0 10px;
   position: absolute;
@@ -462,7 +462,7 @@ const SolarizedColors = createGlobalStyle`
   }
 `;
 const Tab = styled.div`
-  background-color: ${({ selected }: { selected: boolean }) => (selected ? "#333333" : "#444444")};
+  background-color: ${({selected}: {selected: boolean}) => (selected ? '#333333' : '#444444')};
   cursor: pointer;
   height: 30px;
   display: flex;
@@ -470,20 +470,20 @@ const Tab = styled.div`
   align-items: center;
   padding: 0 150px;
   margin-right: 1px;
-  margin-bottom: ${({ selected }: { selected: boolean }) => (selected ? "-10px" : "-9px")};
+  margin-bottom: ${({selected}: {selected: boolean}) => (selected ? '-10px' : '-9px')};
   border-top-right-radius: 5px;
   border-top-left-radius: 5px;
   border-top: 0.5px solid
-    ${({ selected }: { selected: boolean }) => (selected ? "#5c7080" : "transparent")};
+    ${({selected}: {selected: boolean}) => (selected ? '#5c7080' : 'transparent')};
   border-left: 0.5px solid
-    ${({ selected }: { selected: boolean }) => (selected ? "#5c7080" : "transparent")};
+    ${({selected}: {selected: boolean}) => (selected ? '#5c7080' : 'transparent')};
   border-right: 0.5px solid
-    ${({ selected }: { selected: boolean }) => (selected ? "#5c7080" : "transparent")};
+    ${({selected}: {selected: boolean}) => (selected ? '#5c7080' : 'transparent')};
   &:hover {
     border-top: 0.5px solid #5c7080;
     border-left: 0.5px solid #5c7080;
     border-right: 0.5px solid #5c7080;
-    height: ${({ selected }: { selected: boolean }) => (selected ? "30px" : "28px")};
+    height: ${({selected}: {selected: boolean}) => (selected ? '30px' : '28px')};
   }
 `;
 
@@ -495,7 +495,7 @@ const FileContent = styled.div`
   right: 0;
   display: flex;
   flex-direction: column;
-  ${({ isSelected }: { isSelected: boolean }) => (isSelected ? null : "visibility: hidden;")}
+  ${({isSelected}: {isSelected: boolean}) => (isSelected ? null : 'visibility: hidden;')}
 `;
 const RelativeContainer = styled.div`
   flex: 1;

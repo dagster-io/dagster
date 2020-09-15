@@ -1,24 +1,24 @@
-import * as React from "react";
+import * as React from 'react';
 
-import Loading from "../Loading";
-import { RouteComponentProps } from "react-router";
-import gql from "graphql-tag";
-import { useQuery } from "react-apollo";
-import styled from "styled-components/macro";
-import { SolidCard } from "./SolidCard";
-import { UsedSolidDetailsQuery } from "./types/UsedSolidDetailsQuery";
-import { SidebarSolidDefinition } from "../SidebarSolidDefinition";
-import { SidebarSolidInvocationInfo } from "../SidebarSolidHelpers";
-import { DagsterRepositoryContext, useRepositorySelector } from "../DagsterRepositoryContext";
+import Loading from '../Loading';
+import {RouteComponentProps} from 'react-router';
+import gql from 'graphql-tag';
+import {useQuery} from 'react-apollo';
+import styled from 'styled-components/macro';
+import {SolidCard} from './SolidCard';
+import {UsedSolidDetailsQuery} from './types/UsedSolidDetailsQuery';
+import {SidebarSolidDefinition} from '../SidebarSolidDefinition';
+import {SidebarSolidInvocationInfo} from '../SidebarSolidHelpers';
+import {DagsterRepositoryContext, useRepositorySelector} from '../DagsterRepositoryContext';
 
 export const SolidDetailsRoot: React.FunctionComponent<RouteComponentProps<{
   name: string;
-}>> = props => (
+}>> = (props) => (
   <SolidDetailScrollContainer>
     <UsedSolidDetails
       name={props.match.params.name}
-      onClickInvocation={({ pipelineName, handleID }) =>
-        props.history.push(`/pipeline/${pipelineName}/${handleID.split(".").join("/")}`)
+      onClickInvocation={({pipelineName, handleID}) =>
+        props.history.push(`/pipeline/${pipelineName}/${handleID.split('.').join('/')}`)
       }
     />
   </SolidDetailScrollContainer>
@@ -27,21 +27,21 @@ export const SolidDetailsRoot: React.FunctionComponent<RouteComponentProps<{
 export const UsedSolidDetails: React.FunctionComponent<{
   name: string;
   onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
-}> = ({ name, onClickInvocation }) => {
-  const { repositoryLocation, repository } = React.useContext(DagsterRepositoryContext);
+}> = ({name, onClickInvocation}) => {
+  const {repositoryLocation, repository} = React.useContext(DagsterRepositoryContext);
   const repositorySelector = useRepositorySelector();
   const queryResult = useQuery<UsedSolidDetailsQuery>(USED_SOLID_DETAILS_QUERY, {
     skip: !repository || !repositoryLocation,
     variables: {
       name,
-      repositorySelector
-    }
+      repositorySelector,
+    },
   });
 
   return (
     <Loading queryResult={queryResult}>
-      {({ repositoryOrError }) => {
-        if (!(repositoryOrError?.__typename === "Repository" && repositoryOrError.usedSolid)) {
+      {({repositoryOrError}) => {
+        if (!(repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolid)) {
           return null;
         }
         const usedSolid = repositoryOrError.usedSolid;
@@ -53,9 +53,9 @@ export const UsedSolidDetails: React.FunctionComponent<{
               showingSubsolids={false}
               onClickInvocation={onClickInvocation}
               getInvocations={() => {
-                return usedSolid.invocations.map(i => ({
+                return usedSolid.invocations.map((i) => ({
                   handleID: i.solidHandle.handleID,
-                  pipelineName: i.pipeline.name
+                  pipelineName: i.pipeline.name,
                 }));
               }}
             />

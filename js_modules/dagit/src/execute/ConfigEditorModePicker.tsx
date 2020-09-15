@@ -1,8 +1,8 @@
-import * as React from "react";
-import { Button, Intent, Menu } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
-import { Select } from "@blueprintjs/select";
-import { ModeNotFoundError } from "./ExecutionSessionContainer";
+import * as React from 'react';
+import {Button, Intent, Menu} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import {Select} from '@blueprintjs/select';
+import {ModeNotFoundError} from './ExecutionSessionContainer';
 
 interface Mode {
   name: string;
@@ -19,9 +19,11 @@ const MODE_PICKER_HINT_TEXT = `To add a mode, add a ModeDefinition to the pipeli
 
 const ModeSelect = Select.ofType<Mode>();
 
-export const ConfigEditorModePicker: React.FunctionComponent<ConfigEditorModePickerProps> = props => {
+export const ConfigEditorModePicker: React.FunctionComponent<ConfigEditorModePickerProps> = (
+  props,
+) => {
   const resolvedMode = props.modeName
-    ? props.modes.find(m => m.name === props.modeName)
+    ? props.modes.find((m) => m.name === props.modeName)
     : props.modes[0];
 
   React.useEffect(() => {
@@ -59,13 +61,13 @@ export const ConfigEditorModePicker: React.FunctionComponent<ConfigEditorModePic
       <Button
         icon={valid ? undefined : IconNames.ERROR}
         intent={valid ? Intent.NONE : Intent.DANGER}
-        title={disabled ? MODE_PICKER_HINT_TEXT : "Current execution mode"}
+        title={disabled ? MODE_PICKER_HINT_TEXT : 'Current execution mode'}
         text={
           valid
             ? resolvedMode
               ? `Mode: ${resolvedMode.name}`
-              : "Select Mode"
-            : "Invalid Mode Selection"
+              : 'Select Mode'
+            : 'Invalid Mode Selection'
         }
         disabled={disabled}
         rightIcon="caret-down"

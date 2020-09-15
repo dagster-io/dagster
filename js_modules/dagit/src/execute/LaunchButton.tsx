@@ -1,7 +1,7 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { WebsocketStatusContext } from "../WebsocketStatus";
-import { ShortcutHandler } from "../ShortcutHandler";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {WebsocketStatusContext} from '../WebsocketStatus';
+import {ShortcutHandler} from '../ShortcutHandler';
 import {
   Button,
   Icon,
@@ -12,24 +12,24 @@ import {
   Position,
   Popover,
   Menu,
-  MenuItem
-} from "@blueprintjs/core";
+  MenuItem,
+} from '@blueprintjs/core';
 
 export interface LaunchButtonConfiguration {
   title: string;
   disabled: boolean;
   onClick: () => void;
-  icon?: IconName | JSX.Element | "dagster-spinner";
+  icon?: IconName | JSX.Element | 'dagster-spinner';
   tooltip?: string | JSX.Element;
 }
 
 export enum LaunchButtonStatus {
-  Ready = "ready",
-  Starting = "starting",
-  Disabled = "disabled"
+  Ready = 'ready',
+  Starting = 'starting',
+  Disabled = 'disabled',
 }
 
-function useLaunchButtonCommonState({ disabled }: { disabled: boolean }) {
+function useLaunchButtonCommonState({disabled}: {disabled: boolean}) {
   const websocketStatus = React.useContext(WebsocketStatusContext);
   const [starting, setStarting] = React.useState(false);
 
@@ -47,26 +47,26 @@ function useLaunchButtonCommonState({ disabled }: { disabled: boolean }) {
   if (websocketStatus !== WebSocket.OPEN) {
     status = LaunchButtonStatus.Disabled;
     forced = {
-      tooltip: "The Dagit server is offline",
+      tooltip: 'The Dagit server is offline',
       disabled: true,
-      icon: "offline"
+      icon: 'offline',
     };
   }
 
   if (starting) {
     status = LaunchButtonStatus.Starting;
     forced = {
-      title: "Launching…",
-      tooltip: "Pipeline execution is in progress…",
+      title: 'Launching…',
+      tooltip: 'Pipeline execution is in progress…',
       disabled: true,
-      icon: "dagster-spinner"
+      icon: 'dagster-spinner',
     };
   }
 
   return {
     forced,
     status,
-    onConfigSelected
+    onConfigSelected,
   };
 }
 
@@ -75,9 +75,9 @@ interface LaunchButtonProps {
   config: LaunchButtonConfiguration;
 }
 
-export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({ config, small }) => {
-  const { forced, status, onConfigSelected } = useLaunchButtonCommonState({
-    disabled: config.disabled
+export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({config, small}) => {
+  const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
+    disabled: config.disabled,
   });
   const onClick = () => {
     status === LaunchButtonStatus.Ready && onConfigSelected(config);
@@ -86,7 +86,7 @@ export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({ confi
     <ShortcutHandler
       onShortcut={onClick}
       shortcutLabel={`⌥L`}
-      shortcutFilter={e => e.keyCode === 76 && e.altKey}
+      shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
     >
       <ButtonWithConfiguration
         status={status}
@@ -114,24 +114,24 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
   options,
   disabled,
   tooltip,
-  icon
+  icon,
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const { forced, status, onConfigSelected } = useLaunchButtonCommonState({
-    disabled: disabled || options.every(d => d.disabled)
+  const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
+    disabled: disabled || options.every((d) => d.disabled),
   });
 
   return (
     <ShortcutHandler
       onShortcut={() => setIsOpen(true)}
       shortcutLabel={`⌥L`}
-      shortcutFilter={e => e.keyCode === 76 && e.altKey}
+      shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
     >
       <Popover
         isOpen={isOpen}
-        onInteraction={nextOpen => setIsOpen(nextOpen)}
+        onInteraction={(nextOpen) => setIsOpen(nextOpen)}
         disabled={status === LaunchButtonStatus.Disabled}
-        position={"bottom"}
+        position={'bottom'}
         content={
           <Menu>
             {options.map((option, idx) => (
@@ -147,7 +147,7 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
                   text={option.title}
                   disabled={option.disabled}
                   onClick={() => onConfigSelected(option)}
-                  icon={option.icon === "dagster-spinner" ? "blank" : option.icon}
+                  icon={option.icon === 'dagster-spinner' ? 'blank' : option.icon}
                 />
               </Tooltip>
             ))}
@@ -158,8 +158,8 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
           status={status}
           small={small}
           title={title}
-          rightIcon={"caret-down"}
-          {...{ tooltip, icon, ...forced }}
+          rightIcon={'caret-down'}
+          {...{tooltip, icon, ...forced}}
         />
       </Popover>
     </ShortcutHandler>
@@ -169,7 +169,7 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
 interface ButtonWithConfigurationProps {
   title: string;
   status: LaunchButtonStatus;
-  icon?: IconName | JSX.Element | "dagster-spinner";
+  icon?: IconName | JSX.Element | 'dagster-spinner';
   rightIcon?: IconName;
   tooltip?: string | JSX.Element;
   small?: boolean;
@@ -185,7 +185,7 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
   small,
   status,
   onClick,
-  rightIcon
+  rightIcon,
 }) => (
   <Tooltip
     hoverOpenDelay={300}
@@ -196,20 +196,20 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
   >
     <ButtonContainer
       role="button"
-      style={small ? { height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15 } : {}}
+      style={small ? {height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15} : {}}
       status={status}
       onClick={onClick}
       rightIcon={rightIcon}
     >
-      {icon === "dagster-spinner" ? (
-        <span style={{ paddingRight: 6 }}>
+      {icon === 'dagster-spinner' ? (
+        <span style={{paddingRight: 6}}>
           <Spinner intent={Intent.NONE} size={small ? 12 : 17} />
         </span>
       ) : (
         <Icon
           icon={icon}
           iconSize={small ? 12 : 17}
-          style={{ textAlign: "center", marginRight: 5 }}
+          style={{textAlign: 'center', marginRight: 5}}
         />
       )}
       <ButtonText>{title}</ButtonText>
@@ -222,14 +222,14 @@ const ButtonContainer = styled(Button)<{
   small?: boolean;
 }>`
   &&& {
-    height: ${({ small }) => (small ? "24" : "30")}px;
+    height: ${({small}) => (small ? '24' : '30')}px;
     border-radius: 3px;
     flex-shrink: 0;
-    background: ${({ status }) =>
+    background: ${({status}) =>
       ({
-        disabled: "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
-        ready: "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);",
-        starting: "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
+        disabled: 'linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);',
+        ready: 'linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);',
+        starting: 'linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);',
       }[status])};
     border-top: 1px solid rgba(255, 255, 255, 0.25);
     border-bottom: 1px solid rgba(0, 0, 0, 0.25);
@@ -237,8 +237,8 @@ const ButtonContainer = styled(Button)<{
     justify-content: center;
     align-items: center;
     display: inline-flex;
-    color: ${({ status }) => (status === "disabled" ? "rgba(255,255,255,0.5)" : "white")};
-    cursor: ${({ status }) => (status !== "ready" ? "normal" : "pointer")};
+    color: ${({status}) => (status === 'disabled' ? 'rgba(255,255,255,0.5)' : 'white')};
+    cursor: ${({status}) => (status !== 'ready' ? 'normal' : 'pointer')};
     z-index: 2;
     min-width: 150px;
     margin-left: 6px;
@@ -247,11 +247,11 @@ const ButtonContainer = styled(Button)<{
 
     &:hover,
     &.bp3-active {
-      background: ${({ status }) =>
+      background: ${({status}) =>
         ({
-          disabled: "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
-          ready: "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);",
-          starting: "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
+          disabled: 'linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);',
+          ready: 'linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);',
+          starting: 'linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);',
         }[status])};
     }
 
@@ -260,7 +260,7 @@ const ButtonContainer = styled(Button)<{
     }
 
     .bp3-icon {
-      color: ${({ status }) => (status === "disabled" ? "rgba(255,255,255,0.5)" : "white")};
+      color: ${({status}) => (status === 'disabled' ? 'rgba(255,255,255,0.5)' : 'white')};
     }
     .bp3-button-text {
       display: flex;

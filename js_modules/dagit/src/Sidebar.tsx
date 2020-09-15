@@ -1,6 +1,6 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
 
 interface ISidebarProps {
   onClose: () => void;
@@ -11,7 +11,7 @@ export default class Sidebar extends React.Component<ISidebarProps, {}> {
     return (
       <SidebarWrapper>
         <SidebarCloseButton role="button" onClick={this.props.onClose}>
-          {"<"} Close
+          {'<'} Close
         </SidebarCloseButton>
         <SidebarContent>{this.props.children}</SidebarContent>
       </SidebarWrapper>

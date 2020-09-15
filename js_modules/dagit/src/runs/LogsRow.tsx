@@ -1,25 +1,25 @@
-import * as React from "react";
-import gql from "graphql-tag";
+import * as React from 'react';
+import gql from 'graphql-tag';
 
-import { LogLevel } from "../types/globalTypes";
+import {LogLevel} from '../types/globalTypes';
 
-import { LogsRowStructuredFragment } from "./types/LogsRowStructuredFragment";
-import { LogsRowUnstructuredFragment } from "./types/LogsRowUnstructuredFragment";
+import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
+import {LogsRowUnstructuredFragment} from './types/LogsRowUnstructuredFragment';
 import {
   Row,
   StructuredContent,
   EventTypeColumn,
   SolidColumn,
-  TimestampColumn
-} from "./LogsRowComponents";
-import { MetadataEntry } from "./MetadataEntry";
-import { CellTruncationProvider } from "./CellTruncationProvider";
-import { showCustomAlert } from "../CustomAlertProvider";
-import { setHighlightedGaantChartTime } from "../gaant/GaantChart";
-import { LogsRowStructuredContent } from "./LogsRowStructuredContent";
-import PythonErrorInfo from "../PythonErrorInfo";
-import { isEqual } from "apollo-utilities";
-import { IRunMetadataDict } from "../RunMetadataProvider";
+  TimestampColumn,
+} from './LogsRowComponents';
+import {MetadataEntry} from './MetadataEntry';
+import {CellTruncationProvider} from './CellTruncationProvider';
+import {showCustomAlert} from '../CustomAlertProvider';
+import {setHighlightedGaantChartTime} from '../gaant/GaantChart';
+import {LogsRowStructuredContent} from './LogsRowStructuredContent';
+import PythonErrorInfo from '../PythonErrorInfo';
+import {isEqual} from 'apollo-utilities';
+import {IRunMetadataDict} from '../RunMetadataProvider';
 
 interface StructuredProps {
   node: LogsRowStructuredFragment;
@@ -125,40 +125,40 @@ export class Structured extends React.Component<StructuredProps, StructuredState
       }
       ${MetadataEntry.fragments.MetadataEntryFragment}
       ${PythonErrorInfo.fragments.PythonErrorFragment}
-    `
+    `,
   };
 
   onExpand = () => {
-    const { node, metadata } = this.props;
+    const {node, metadata} = this.props;
 
-    if (node.__typename === "ExecutionStepFailureEvent") {
+    if (node.__typename === 'ExecutionStepFailureEvent') {
       showCustomAlert({
-        title: "Error",
-        body: <PythonErrorInfo error={node.error} failureMetadata={node.failureMetadata} />
+        title: 'Error',
+        body: <PythonErrorInfo error={node.error} failureMetadata={node.failureMetadata} />,
       });
-    } else if (node.__typename === "HookErroredEvent") {
+    } else if (node.__typename === 'HookErroredEvent') {
       showCustomAlert({
-        title: "Error",
-        body: <PythonErrorInfo error={node.error} />
+        title: 'Error',
+        body: <PythonErrorInfo error={node.error} />,
       });
-    } else if (node.__typename === "PipelineInitFailureEvent") {
+    } else if (node.__typename === 'PipelineInitFailureEvent') {
       showCustomAlert({
-        title: "Error",
-        body: <PythonErrorInfo error={node.error} />
+        title: 'Error',
+        body: <PythonErrorInfo error={node.error} />,
       });
-    } else if (node.__typename === "EngineEvent" && node.engineError) {
+    } else if (node.__typename === 'EngineEvent' && node.engineError) {
       showCustomAlert({
-        title: "Error",
-        body: <PythonErrorInfo error={node.engineError} />
+        title: 'Error',
+        body: <PythonErrorInfo error={node.engineError} />,
       });
     } else {
       showCustomAlert({
-        title: (node.stepKey && node.stepKey) || "Info",
+        title: (node.stepKey && node.stepKey) || 'Info',
         body: (
           <StructuredContent>
             <LogsRowStructuredContent node={node} metadata={metadata} />
           </StructuredContent>
-        )
+        ),
       });
     }
   };
@@ -176,20 +176,20 @@ const StructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
 }> = React.memo(
-  ({ node, metadata }) => (
+  ({node, metadata}) => (
     <Row
       level={LogLevel.INFO}
       onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
       onMouseLeave={() => setHighlightedGaantChartTime(null)}
     >
-      <SolidColumn stepKey={"stepKey" in node && node.stepKey} />
+      <SolidColumn stepKey={'stepKey' in node && node.stepKey} />
       <StructuredContent>
         <LogsRowStructuredContent node={node} metadata={metadata} />
       </StructuredContent>
-      <TimestampColumn time={"timestamp" in node && node.timestamp} />
+      <TimestampColumn time={'timestamp' in node && node.timestamp} />
     </Row>
   ),
-  isEqual
+  isEqual,
 );
 
 interface UnstructuredProps {
@@ -209,12 +209,12 @@ export class Unstructured extends React.Component<UnstructuredProps> {
           stepKey
         }
       }
-    `
+    `,
   };
 
   onExpand = () => {
     showCustomAlert({
-      body: <div style={{ whiteSpace: "pre-wrap" }}>{this.props.node.message}</div>
+      body: <div style={{whiteSpace: 'pre-wrap'}}>{this.props.node.message}</div>,
     });
   };
 
@@ -230,7 +230,7 @@ export class Unstructured extends React.Component<UnstructuredProps> {
 const UnstructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowUnstructuredFragment;
 }> = React.memo(
-  ({ node }) => (
+  ({node}) => (
     <Row
       level={node.level}
       onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
@@ -238,9 +238,9 @@ const UnstructuredMemoizedContent: React.FunctionComponent<{
     >
       <SolidColumn stepKey={node.stepKey} />
       <EventTypeColumn>{node.level}</EventTypeColumn>
-      <span style={{ flex: 1 }}>{node.message}</span>
+      <span style={{flex: 1}}>{node.message}</span>
       <TimestampColumn time={node.timestamp} />
     </Row>
   ),
-  isEqual
+  isEqual,
 );

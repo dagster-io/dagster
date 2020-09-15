@@ -1,49 +1,49 @@
-import * as React from "react";
-import { Link } from "react-router-dom";
-import gql from "graphql-tag";
-import { useQuery } from "react-apollo";
-import { RouteComponentProps } from "react-router-dom";
-import styled from "styled-components/macro";
-import { Colors, NonIdealState, Tooltip } from "@blueprintjs/core";
-import PipelineGraph from "../graph/PipelineGraph";
-import { IconNames } from "@blueprintjs/icons";
-import Loading from "../Loading";
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import gql from 'graphql-tag';
+import {useQuery} from 'react-apollo';
+import {RouteComponentProps} from 'react-router-dom';
+import styled from 'styled-components/macro';
+import {Colors, NonIdealState, Tooltip} from '@blueprintjs/core';
+import PipelineGraph from '../graph/PipelineGraph';
+import {IconNames} from '@blueprintjs/icons';
+import Loading from '../Loading';
 import {
   PipelineOverviewQuery,
   PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs,
   PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules,
-  PipelineOverviewQueryVariables
-} from "./types/PipelineOverviewQuery";
-import { RowColumn, RowContainer } from "../ListComponents";
-import { titleForRun, RunTime, RunsQueryRefetchContext } from "../runs/RunUtils";
-import { RunStatus, RunStatusWithStats } from "../runs/RunStatusDots";
-import { Timestamp } from "../TimeComponents";
-import { RunElapsed, RunComponentFragments } from "../runs/RunUtils";
-import { RunActionsMenu } from "../runs/RunActionsMenu";
-import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
-import SVGViewport from "../graph/SVGViewport";
-import { usePipelineSelector } from "../DagsterRepositoryContext";
+  PipelineOverviewQueryVariables,
+} from './types/PipelineOverviewQuery';
+import {RowColumn, RowContainer} from '../ListComponents';
+import {titleForRun, RunTime, RunsQueryRefetchContext} from '../runs/RunUtils';
+import {RunStatus, RunStatusWithStats} from '../runs/RunStatusDots';
+import {Timestamp} from '../TimeComponents';
+import {RunElapsed, RunComponentFragments} from '../runs/RunUtils';
+import {RunActionsMenu} from '../runs/RunActionsMenu';
+import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
+import SVGViewport from '../graph/SVGViewport';
+import {usePipelineSelector} from '../DagsterRepositoryContext';
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules;
 
 export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
-}>> = ({ match }) => {
-  const pipelineName = match.params.pipelinePath.split(":")[0];
+}>> = ({match}) => {
+  const pipelineName = match.params.pipelinePath.split(':')[0];
   const pipelineSelector = usePipelineSelector(pipelineName);
   const queryResult = useQuery<PipelineOverviewQuery, PipelineOverviewQueryVariables>(
     PIPELINE_OVERVIEW_QUERY,
     {
-      fetchPolicy: "cache-and-network",
+      fetchPolicy: 'cache-and-network',
       partialRefetch: true,
-      variables: { pipelineSelector, limit: 5 }
-    }
+      variables: {pipelineSelector, limit: 5},
+    },
   );
   return (
     <Loading queryResult={queryResult}>
-      {({ pipelineSnapshotOrError }) => {
-        if (pipelineSnapshotOrError.__typename === "PipelineSnapshotNotFoundError") {
+      {({pipelineSnapshotOrError}) => {
+        if (pipelineSnapshotOrError.__typename === 'PipelineSnapshotNotFoundError') {
           return (
             <NonIdealState
               icon={IconNames.FLOW_BRANCH}
@@ -52,7 +52,7 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
             />
           );
         }
-        if (pipelineSnapshotOrError.__typename === "PipelineNotFoundError") {
+        if (pipelineSnapshotOrError.__typename === 'PipelineNotFoundError') {
           return (
             <NonIdealState
               icon={IconNames.FLOW_BRANCH}
@@ -61,7 +61,7 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
             />
           );
         }
-        if (pipelineSnapshotOrError.__typename === "PythonError") {
+        if (pipelineSnapshotOrError.__typename === 'PythonError') {
           return (
             <NonIdealState
               icon={IconNames.ERROR}
@@ -71,7 +71,7 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
           );
         }
 
-        const solids = pipelineSnapshotOrError.solidHandles.map(handle => handle.solid);
+        const solids = pipelineSnapshotOrError.solidHandles.map((handle) => handle.solid);
         const schedules = pipelineSnapshotOrError.schedules;
 
         return (
@@ -80,11 +80,11 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
               <OverviewSection title="Definition">
                 <div
                   style={{
-                    position: "relative",
+                    position: 'relative',
                     height: 550,
-                    maxWidth: "40vw",
+                    maxWidth: '40vw',
                     border: `1px solid ${Colors.LIGHT_GRAY1}`,
-                    boxShadow: `0 1px 1px rgba(0, 0, 0, 0.2)`
+                    boxShadow: `0 1px 1px rgba(0, 0, 0, 0.2)`,
                   }}
                 >
                   <PipelineGraph
@@ -98,9 +98,9 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
                   />
                   <div
                     style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      margin: "10px 0"
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      margin: '10px 0',
                     }}
                   >
                     <Link to={`/pipeline/${pipelineName}:`}>Explore Pipeline Definition &gt;</Link>
@@ -108,24 +108,24 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
                 </div>
               </OverviewSection>
               <OverviewSection title="Description">
-                {pipelineSnapshotOrError.description || "No description provided"}
+                {pipelineSnapshotOrError.description || 'No description provided'}
               </OverviewSection>
             </MainContainer>
             <SecondaryContainer>
               <OverviewSection title="Schedule">
                 {schedules.length
-                  ? schedules.map(schedule => (
+                  ? schedules.map((schedule) => (
                       <OverviewSchedule schedule={schedule} key={schedule.name} />
                     ))
-                  : "No pipeline schedules"}
+                  : 'No pipeline schedules'}
               </OverviewSection>
-              <RunsQueryRefetchContext.Provider value={{ refetch: queryResult.refetch }}>
+              <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
                 <OverviewSection title="Recent runs">
                   {pipelineSnapshotOrError.runs.length
-                    ? pipelineSnapshotOrError.runs.map(run => (
+                    ? pipelineSnapshotOrError.runs.map((run) => (
                         <OverviewRun run={run} key={run.runId} />
                       ))
-                    : "No recent runs"}
+                    : 'No recent runs'}
                 </OverviewSection>
               </RunsQueryRefetchContext.Provider>
             </SecondaryContainer>
@@ -139,11 +139,11 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
   );
 };
 
-const OverviewAssets = ({ runs }: { runs: Run[] }) => {
+const OverviewAssets = ({runs}: {runs: Run[]}) => {
   const assetMap = {};
-  runs.forEach(run => {
-    run.assets.forEach(asset => {
-      const assetKeyStr = asset.key.path.join("/");
+  runs.forEach((run) => {
+    run.assets.forEach((asset) => {
+      const assetKeyStr = asset.key.path.join('/');
       assetMap[assetKeyStr] = true;
     });
   });
@@ -151,45 +151,45 @@ const OverviewAssets = ({ runs }: { runs: Run[] }) => {
   return (
     <OverviewSection title="Related assets">
       {assetKeys.length
-        ? assetKeys.map(assetKey => (
-            <RowContainer key={assetKey} style={{ padding: 10, paddingBottom: 30 }}>
+        ? assetKeys.map((assetKey) => (
+            <RowContainer key={assetKey} style={{padding: 10, paddingBottom: 30}}>
               <Link to={`/assets/${assetKey}`}>{assetKey}</Link>
             </RowContainer>
           ))
-        : "No recent assets"}
+        : 'No recent assets'}
     </OverviewSection>
   );
 };
 
-const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
+const OverviewSchedule = ({schedule}: {schedule: Schedule}) => {
   const lastRun =
     schedule.scheduleState &&
     schedule.scheduleState.lastRuns.length &&
     schedule.scheduleState.lastRuns[0];
   return (
-    <RowContainer style={{ paddingRight: 3 }}>
+    <RowContainer style={{paddingRight: 3}}>
       <RowColumn>
         <Link to={`/schedules/${schedule.name}`}>{schedule.name}</Link>
-        {lastRun && lastRun.stats.__typename === "PipelineRunStatsSnapshot" ? (
-          <div style={{ color: Colors.GRAY3, fontSize: 12, marginTop: 2 }}>
+        {lastRun && lastRun.stats.__typename === 'PipelineRunStatsSnapshot' ? (
+          <div style={{color: Colors.GRAY3, fontSize: 12, marginTop: 2}}>
             Last Run: <Timestamp unix={lastRun.stats.endTime || 0} />
           </div>
         ) : null}
-        <div style={{ marginTop: 5 }}>
+        <div style={{marginTop: 5}}>
           {schedule.scheduleState &&
-            schedule.scheduleState.runs.map(run => {
+            schedule.scheduleState.runs.map((run) => {
               return (
                 <div
                   style={{
-                    display: "inline-block",
-                    cursor: "pointer",
-                    marginRight: 5
+                    display: 'inline-block',
+                    cursor: 'pointer',
+                    marginRight: 5,
                   }}
                   key={run.runId}
                 >
                   <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
                     <Tooltip
-                      position={"top"}
+                      position={'top'}
                       content={titleForRun(run)}
                       wrapperTagName="div"
                       targetTagName="div"
@@ -206,37 +206,37 @@ const OverviewSchedule = ({ schedule }: { schedule: Schedule }) => {
   );
 };
 
-const OverviewRun = ({ run }: { run: Run }) => {
-  const time = run.stats.__typename === "PipelineRunStatsSnapshot" ? <RunTime run={run} /> : null;
+const OverviewRun = ({run}: {run: Run}) => {
+  const time = run.stats.__typename === 'PipelineRunStatsSnapshot' ? <RunTime run={run} /> : null;
   const elapsed =
-    run.stats.__typename === "PipelineRunStatsSnapshot" ? <RunElapsed run={run} /> : null;
+    run.stats.__typename === 'PipelineRunStatsSnapshot' ? <RunElapsed run={run} /> : null;
 
   return (
-    <RowContainer style={{ paddingRight: 3 }}>
-      <RowColumn style={{ maxWidth: 30, paddingLeft: 0, textAlign: "center" }}>
+    <RowContainer style={{paddingRight: 3}}>
+      <RowColumn style={{maxWidth: 30, paddingLeft: 0, textAlign: 'center'}}>
         <RunStatusWithStats status={run.status} runId={run.runId} />
       </RowColumn>
-      <RowColumn style={{ flex: 2.4 }}>
+      <RowColumn style={{flex: 2.4}}>
         <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</Link>
-        <div style={{ marginTop: 5 }}>{`Mode: ${run.mode}`}</div>
+        <div style={{marginTop: 5}}>{`Mode: ${run.mode}`}</div>
         {time}
         {elapsed}
       </RowColumn>
-      <RowColumn style={{ maxWidth: 50 }}>
+      <RowColumn style={{maxWidth: 50}}>
         <RunActionsMenu run={run} />
       </RowColumn>
     </RowContainer>
   );
 };
 
-const OverviewSection = ({ title, children }: { title: string; children: any }) => {
+const OverviewSection = ({title, children}: {title: string; children: any}) => {
   return (
-    <div style={{ marginBottom: 50 }}>
+    <div style={{marginBottom: 50}}>
       <div
         style={{
-          textTransform: "uppercase",
+          textTransform: 'uppercase',
           color: Colors.GRAY2,
-          marginBottom: 10
+          marginBottom: 10,
         }}
       >
         {title}
@@ -258,9 +258,9 @@ const MainContainer = styled.div`
   padding: 20px;
 `;
 
-const SecondaryContainer = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ maxWidth: 600, padding: 20, flex: 1 }}>
-    <div style={{ maxWidth: "25vw" }}>{children}</div>
+const SecondaryContainer = ({children}: {children: React.ReactNode}) => (
+  <div style={{maxWidth: 600, padding: 20, flex: 1}}>
+    <div style={{maxWidth: '25vw'}}>{children}</div>
   </div>
 );
 

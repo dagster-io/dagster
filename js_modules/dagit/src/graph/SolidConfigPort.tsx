@@ -1,7 +1,7 @@
-import * as React from "react";
-import { Colors } from "@blueprintjs/core";
-import PipelineColorScale from "./PipelineColorScale";
-import { SVGEllipseInRect } from "./SVGComponents";
+import * as React from 'react';
+import {Colors} from '@blueprintjs/core';
+import PipelineColorScale from './PipelineColorScale';
+import {SVGEllipseInRect} from './SVGComponents';
 
 interface ISolidConfigPortProps {
   x: number;
@@ -9,7 +9,7 @@ interface ISolidConfigPortProps {
   minified: boolean;
 }
 
-export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({ x, y, minified }) => {
+export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({x, y, minified}) => {
   return (
     <>
       <SVGEllipseInRect
@@ -18,7 +18,7 @@ export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({ x, y, minifi
         width={26}
         height={26}
         stroke={Colors.GRAY3}
-        fill={PipelineColorScale("solid")}
+        fill={PipelineColorScale('solid')}
         pathLength={100}
         strokeWidth={1}
         strokeDasharray={`0 50 0`}
@@ -29,7 +29,7 @@ export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({ x, y, minifi
         width={20}
         height={20}
         stroke={Colors.WHITE}
-        fill={PipelineColorScale("solidDarker")}
+        fill={PipelineColorScale('solidDarker')}
         pathLength={100}
         strokeWidth={2}
       />
@@ -37,7 +37,7 @@ export const SolidConfigPort: React.SFC<ISolidConfigPortProps> = ({ x, y, minifi
         <text
           x={x + 8}
           y={y + 7.5}
-          style={{ font: `14px "Arial", san-serif` }}
+          style={{font: `14px "Arial", san-serif`}}
           fill={Colors.WHITE}
           dominantBaseline="hanging"
         >

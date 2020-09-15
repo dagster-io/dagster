@@ -1,8 +1,8 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { QueryResult } from "react-apollo";
-import { ProgressBar, NonIdealState } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {QueryResult} from 'react-apollo';
+import {ProgressBar, NonIdealState} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 
 interface ILoadingProps<TData> {
   queryResult: QueryResult<TData, any>;
@@ -12,8 +12,8 @@ interface ILoadingProps<TData> {
 
 export default class Loading<TData> extends React.Component<ILoadingProps<TData>> {
   public render() {
-    const { children, allowStaleData = false } = this.props;
-    const { error, data, loading } = this.props.queryResult;
+    const {children, allowStaleData = false} = this.props;
+    const {error, data, loading} = this.props.queryResult;
 
     if (error) {
       console.error(error);

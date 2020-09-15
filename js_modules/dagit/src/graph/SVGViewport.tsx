@@ -1,7 +1,7 @@
-import * as React from "react";
-import animate from "amator";
-import styled from "styled-components";
-import { Slider, Icon, Colors } from "@blueprintjs/core";
+import * as React from 'react';
+import animate from 'amator';
+import styled from 'styled-components';
+import {Slider, Icon, Colors} from '@blueprintjs/core';
 
 export interface SVGViewportInteractor {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
@@ -46,7 +46,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
       return;
     }
 
-    if (event.target instanceof HTMLElement && event.target.closest("#zoom-slider-container")) {
+    if (event.target instanceof HTMLElement && event.target.closest('#zoom-slider-container')) {
       return;
     }
 
@@ -56,21 +56,21 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
 
     const onMove = (e: MouseEvent) => {
       const offset = viewport.getOffsetXY(e);
-      const delta = { x: offset.x - lastX, y: offset.y - lastY };
+      const delta = {x: offset.x - lastX, y: offset.y - lastY};
       viewport.setState({
         x: viewport.state.x + delta.x,
-        y: viewport.state.y + delta.y
+        y: viewport.state.y + delta.y,
       });
       lastX = offset.x;
       lastY = offset.y;
     };
 
     const onUp = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
     };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
     event.stopPropagation();
   },
 
@@ -87,11 +87,11 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
         <Icon
           iconSize={17}
           icon="zoom-in"
-          style={{ color: Colors.LIGHT_GRAY1, marginBottom: 12 }}
+          style={{color: Colors.LIGHT_GRAY1, marginBottom: 12}}
           onClick={() => {
             const x = viewport.element.current!.clientWidth / 2;
             const y = viewport.element.current!.clientHeight / 2;
-            viewport.adjustZoomRelativeToScreenPoint(DETAIL_ZOOM, { x, y });
+            viewport.adjustZoomRelativeToScreenPoint(DETAIL_ZOOM, {x, y});
           }}
         />
         <Slider
@@ -104,22 +104,22 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
           onChange={(scale: number) => {
             const x = viewport.element.current!.clientWidth / 2;
             const y = viewport.element.current!.clientHeight / 2;
-            viewport.adjustZoomRelativeToScreenPoint(scale, { x, y });
+            viewport.adjustZoomRelativeToScreenPoint(scale, {x, y});
           }}
         />
         <Icon
           iconSize={17}
           icon="zoom-out"
-          style={{ color: Colors.LIGHT_GRAY1, marginTop: 12 }}
+          style={{color: Colors.LIGHT_GRAY1, marginTop: 12}}
           onClick={() => {
             const x = viewport.element.current!.clientWidth / 2;
             const y = viewport.element.current!.clientHeight / 2;
-            viewport.adjustZoomRelativeToScreenPoint(MIN_ZOOM, { x, y });
+            viewport.adjustZoomRelativeToScreenPoint(MIN_ZOOM, {x, y});
           }}
         />
       </ZoomSliderContainer>
     );
-  }
+  },
 };
 
 const NoneInteractor: SVGViewportInteractor = {
@@ -134,13 +134,13 @@ const NoneInteractor: SVGViewportInteractor = {
 
   render() {
     return <span />;
-  }
+  },
 };
 
 export default class SVGViewport extends React.Component<SVGViewportProps, SVGViewportState> {
   static Interactors = {
     PanAndZoom: PanAndZoomInteractor,
-    None: NoneInteractor
+    None: NoneInteractor,
   };
 
   element: React.RefObject<HTMLDivElement> = React.createRef();
@@ -154,7 +154,7 @@ export default class SVGViewport extends React.Component<SVGViewportProps, SVGVi
     x: 0,
     y: 0,
     scale: DETAIL_ZOOM,
-    minScale: 0
+    minScale: 0,
   };
 
   componentDidMount() {
@@ -169,7 +169,7 @@ export default class SVGViewport extends React.Component<SVGViewportProps, SVGVi
 
   autocenter(animate = false) {
     const el = this.element.current!;
-    const ownerRect = { width: el.clientWidth, height: el.clientHeight };
+    const ownerRect = {width: el.clientWidth, height: el.clientHeight};
 
     const dw = ownerRect.width / this.props.graphWidth;
     const dh = ownerRect.height / this.props.graphHeight;
@@ -189,38 +189,38 @@ export default class SVGViewport extends React.Component<SVGViewportProps, SVGVi
     const target = {
       x: -(this.props.graphWidth / 2) * boundedScale + ownerRect.width / 2,
       y: -(this.props.graphHeight / 2) * boundedScale + ownerRect.height / 2,
-      scale: boundedScale
+      scale: boundedScale,
     };
 
     if (animate) {
       this.smoothZoom(target);
     } else {
-      this.setState(Object.assign(target, { minScale: boundedScale }));
+      this.setState(Object.assign(target, {minScale: boundedScale}));
     }
   }
 
-  screenToSVGCoords({ x, y }: Point): Point {
+  screenToSVGCoords({x, y}: Point): Point {
     const el = this.element.current!;
-    const { width, height } = el.getBoundingClientRect();
+    const {width, height} = el.getBoundingClientRect();
     return {
       x: (-(this.state.x - width / 2) + x - width / 2) / this.state.scale,
-      y: (-(this.state.y - height / 2) + y - height / 2) / this.state.scale
+      y: (-(this.state.y - height / 2) + y - height / 2) / this.state.scale,
     };
   }
 
   getOffsetXY(e: MouseEvent | React.MouseEvent): Point {
     const el = this.element.current!;
     const ownerRect = el.getBoundingClientRect();
-    return { x: e.clientX - ownerRect.left, y: e.clientY - ownerRect.top };
+    return {x: e.clientX - ownerRect.left, y: e.clientY - ownerRect.top};
   }
 
   public adjustZoomRelativeToScreenPoint(nextScale: number, point: Point) {
     const centerSVGCoord = this.screenToSVGCoords(point);
-    const { scale } = this.state;
-    let { x, y } = this.state;
+    const {scale} = this.state;
+    let {x, y} = this.state;
     x = x + (centerSVGCoord.x * scale - centerSVGCoord.x * nextScale);
     y = y + (centerSVGCoord.y * scale - centerSVGCoord.y * nextScale);
-    this.setState({ x, y, scale: nextScale });
+    this.setState({x, y, scale: nextScale});
   }
 
   public smoothZoomToSVGCoords(x: number, y: number, scale: number) {
@@ -229,11 +229,11 @@ export default class SVGViewport extends React.Component<SVGViewportProps, SVGVi
     x = -x * scale + ownerRect.width / 2;
     y = -y * scale + ownerRect.height / 2;
 
-    this.smoothZoom({ x, y, scale });
+    this.smoothZoom({x, y, scale});
   }
 
-  public smoothZoom(to: { x: number; y: number; scale: number }) {
-    const from = { scale: this.state.scale, x: this.state.x, y: this.state.y };
+  public smoothZoom(to: {x: number; y: number; scale: number}) {
+    const from = {scale: this.state.scale, x: this.state.x, y: this.state.y};
 
     if (this._animation) {
       this._animation.cancel();
@@ -244,13 +244,13 @@ export default class SVGViewport extends React.Component<SVGViewportProps, SVGVi
         this.setState({
           x: v.x,
           y: v.y,
-          scale: v.scale
+          scale: v.scale,
         });
       },
       done: () => {
         this.setState(to);
         this._animation = null;
-      }
+      },
     });
   }
 
@@ -264,15 +264,15 @@ export default class SVGViewport extends React.Component<SVGViewportProps, SVGVi
   };
 
   render() {
-    const { children, onKeyDown, onDoubleClick, interactor, backgroundColor } = this.props;
-    const { x, y, scale } = this.state;
+    const {children, onKeyDown, onDoubleClick, interactor, backgroundColor} = this.props;
+    const {x, y, scale} = this.state;
 
     return (
       <div
         ref={this.element}
-        style={Object.assign({ backgroundColor }, SVGViewportStyles)}
-        onMouseDown={e => interactor.onMouseDown(this, e)}
-        onWheel={e => interactor.onWheel(this, e)}
+        style={Object.assign({backgroundColor}, SVGViewportStyles)}
+        onMouseDown={(e) => interactor.onMouseDown(this, e)}
+        onWheel={(e) => interactor.onWheel(this, e)}
         onDoubleClick={onDoubleClick}
         onKeyDown={onKeyDown}
         tabIndex={-1}
@@ -280,7 +280,7 @@ export default class SVGViewport extends React.Component<SVGViewportProps, SVGVi
         <div
           style={{
             transformOrigin: `top left`,
-            transform: `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`
+            transform: `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`,
           }}
         >
           {children(this.state)}
@@ -296,11 +296,11 @@ BG: Not using styled-components here because I need a `ref` to an actual DOM ele
 Styled-component with a ref returns a React component we need to findDOMNode to use.
 */
 const SVGViewportStyles: React.CSSProperties = {
-  width: "100%",
-  height: "100%",
-  position: "relative",
-  overflow: "hidden",
-  userSelect: "none"
+  width: '100%',
+  height: '100%',
+  position: 'relative',
+  overflow: 'hidden',
+  userSelect: 'none',
 };
 
 const ZoomSliderContainer = styled.div`

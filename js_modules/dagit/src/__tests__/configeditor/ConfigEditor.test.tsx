@@ -1,10 +1,10 @@
-import * as React from "react";
-import * as TestRenderer from "react-test-renderer";
-import { BrowserRouter } from "react-router-dom";
+import * as React from 'react';
+import * as TestRenderer from 'react-test-renderer';
+import {BrowserRouter} from 'react-router-dom';
 
-import { ConfigEditor } from "../../configeditor/ConfigEditor";
+import {ConfigEditor} from '../../configeditor/ConfigEditor';
 
-it("renders a codemirror", () => {
+it('renders a codemirror', () => {
   // This test does very little, unfortunately, because JSDOM doesn't really support the APIs that
   // CodeMirror relies on. Placeholder. We would like to be able to make assertions about formatting
   // with this snapshot, but we can't.
@@ -16,7 +16,7 @@ it("renders a codemirror", () => {
       setEnd: () => {},
       setStart: () => {},
       getBoundingClientRect: () => {},
-      getClientRects: () => []
+      getClientRects: () => [],
     };
   };
 
@@ -24,7 +24,7 @@ it("renders a codemirror", () => {
     <BrowserRouter>
       <ConfigEditor
         checkConfig={async () => ({
-          isValid: true
+          isValid: true,
         })}
         onConfigChange={() => null}
         onHelpContextChange={() => null}
@@ -32,7 +32,7 @@ it("renders a codemirror", () => {
         configCode={"solids:\n  foo:\n    config:\n      baz:\n        ['s3://foo', 'bar']\n"}
         showWhitespace={true}
       />
-    </BrowserRouter>
+    </BrowserRouter>,
   );
   expect(configEditorComponent.toJSON()).toMatchSnapshot();
 });

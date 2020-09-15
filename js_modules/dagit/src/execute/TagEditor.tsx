@@ -1,10 +1,10 @@
-import * as React from "react";
-import { Button, Classes, Dialog, Icon } from "@blueprintjs/core";
-import styled from "styled-components/macro";
-import { ShortcutHandler } from "../ShortcutHandler";
-import { RunTag } from "../runs/RunTag";
-import { IconNames } from "@blueprintjs/icons";
-import { PipelineRunTag } from "../LocalStorage";
+import * as React from 'react';
+import {Button, Classes, Dialog, Icon} from '@blueprintjs/core';
+import styled from 'styled-components/macro';
+import {ShortcutHandler} from '../ShortcutHandler';
+import {RunTag} from '../runs/RunTag';
+import {IconNames} from '@blueprintjs/icons';
+import {PipelineRunTag} from '../LocalStorage';
 
 interface ITagEditorProps {
   tags: PipelineRunTag[];
@@ -17,24 +17,24 @@ interface ITagContainerProps {
   onRequestEdit: () => void;
 }
 
-export const TagEditor = ({ tags: propTags, open, onChange, onRequestClose }: ITagEditorProps) => {
-  const [tags, setTags] = React.useState(propTags.length ? propTags : [{ key: "", value: "" }]);
+export const TagEditor = ({tags: propTags, open, onChange, onRequestClose}: ITagEditorProps) => {
+  const [tags, setTags] = React.useState(propTags.length ? propTags : [{key: '', value: ''}]);
   React.useEffect(() => {
-    setTags(propTags.length ? propTags : [{ key: "", value: "" }]);
+    setTags(propTags.length ? propTags : [{key: '', value: ''}]);
   }, [propTags]);
 
   const toSave: PipelineRunTag[] = tags
     .map((tag: PipelineRunTag) => ({
       key: tag.key.trim(),
-      value: tag.value.trim()
+      value: tag.value.trim(),
     }))
-    .filter(tag => tag.key && tag.value);
+    .filter((tag) => tag.key && tag.value);
   const toError = tags
     .map((tag: PipelineRunTag) => ({
       key: tag.key.trim(),
-      value: tag.value.trim()
+      value: tag.value.trim(),
     }))
-    .filter(tag => !tag.key !== !tag.value);
+    .filter((tag) => !tag.key !== !tag.value);
 
   const onSave = () => {
     if (!toError.length) {
@@ -46,21 +46,21 @@ export const TagEditor = ({ tags: propTags, open, onChange, onRequestClose }: IT
   const disabled = tags === propTags || !!toError.length;
 
   const onTagEdit = (key: string, value: string, idx: number) => {
-    const newTags = [...tags.slice(0, idx), { key, value }, ...tags.slice(idx + 1)];
+    const newTags = [...tags.slice(0, idx), {key, value}, ...tags.slice(idx + 1)];
     setTags(newTags);
   };
   const onRemove = (idx: number) => {
     setTags([...tags.slice(0, idx), ...tags.slice(idx + 1)]);
   };
   const addTagEntry = () => {
-    setTags([...tags, { key: "", value: "" }]);
+    setTags([...tags, {key: '', value: ''}]);
   };
   return (
     <Dialog
       icon="info-sign"
       onClose={onRequestClose}
-      style={{ minWidth: 500 }}
-      title={"Add tags to pipeline run"}
+      style={{minWidth: 500}}
+      title={'Add tags to pipeline run'}
       usePortal={true}
       isOpen={open}
     >
@@ -70,32 +70,32 @@ export const TagEditor = ({ tags: propTags, open, onChange, onRequestClose }: IT
           margin: 0,
           marginBottom: 17,
           height: `calc(100% - 85px)`,
-          position: "relative"
+          position: 'relative',
         }}
       >
         <Form>
           {tags.map((tag, idx) => {
-            const { key, value } = tag;
+            const {key, value} = tag;
             return (
               <div
                 key={idx}
                 style={{
-                  display: "flex",
-                  flexDirection: "row",
-                  marginBottom: 10
+                  display: 'flex',
+                  flexDirection: 'row',
+                  marginBottom: 10,
                 }}
               >
                 <Input
                   type="text"
                   placeholder="Tag Key"
                   value={key}
-                  onChange={e => onTagEdit(e.target.value, value, idx)}
+                  onChange={(e) => onTagEdit(e.target.value, value, idx)}
                 />
                 <Input
                   type="text"
                   placeholder="Tag Value"
                   value={value}
-                  onChange={e => onTagEdit(key, e.target.value, idx)}
+                  onChange={(e) => onTagEdit(key, e.target.value, idx)}
                 />
                 <Remove onClick={() => onRemove(idx)} />
               </div>
@@ -109,7 +109,7 @@ export const TagEditor = ({ tags: propTags, open, onChange, onRequestClose }: IT
           <Button onClick={onRequestClose}>Cancel</Button>
           <ShortcutHandler
             shortcutLabel="⌥Enter"
-            shortcutFilter={e => e.keyCode === 13 && e.altKey}
+            shortcutFilter={(e) => e.keyCode === 13 && e.altKey}
             onShortcut={onSave}
           >
             <Button intent="primary" onClick={onSave} disabled={disabled}>
@@ -122,14 +122,14 @@ export const TagEditor = ({ tags: propTags, open, onChange, onRequestClose }: IT
   );
 };
 
-export const TagContainer = ({ tags, onRequestEdit }: ITagContainerProps) => {
+export const TagContainer = ({tags, onRequestEdit}: ITagContainerProps) => {
   return (
     <Container>
       {tags.map((tag, idx) => {
         return <RunTag tag={tag} key={idx} />;
       })}
       <TagEditorLink onRequestOpen={onRequestEdit}>
-        <Icon icon={IconNames.EDIT} iconSize={12} style={{ marginBottom: 2 }} /> Edit Tags
+        <Icon icon={IconNames.EDIT} iconSize={12} style={{marginBottom: 2}} /> Edit Tags
       </TagEditorLink>
     </Container>
   );
@@ -140,17 +140,17 @@ interface ITagEditorLinkProps {
   children: React.ReactNode;
 }
 
-export const TagEditorLink = ({ onRequestOpen, children }: ITagEditorLinkProps) => (
+export const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
   <ShortcutHandler
-    shortcutLabel={"⌥T"}
-    shortcutFilter={e => e.keyCode === 84 && e.altKey}
+    shortcutLabel={'⌥T'}
+    shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
     onShortcut={onRequestOpen}
   >
     <Link onClick={onRequestOpen}>{children}</Link>
   </ShortcutHandler>
 );
 
-const Remove = styled(Icon).attrs({ icon: IconNames.CROSS })`
+const Remove = styled(Icon).attrs({icon: IconNames.CROSS})`
   align-self: center;
   color: #aaaaaa;
   cursor: pointer;

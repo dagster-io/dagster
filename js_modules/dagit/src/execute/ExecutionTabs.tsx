@@ -1,14 +1,14 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Icon, Colors } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Icon, Colors} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import {
   IStorageData,
   applySelectSession,
   applyChangesToSession,
   applyCreateSession,
-  applyRemoveSession
-} from "../LocalStorage";
+  applyRemoveSession,
+} from '../LocalStorage';
 
 interface ExecutationTabProps {
   title: string;
@@ -26,11 +26,11 @@ interface ExecutationTabState {
 class ExecutionTab extends React.Component<ExecutationTabProps, ExecutationTabState> {
   input = React.createRef<HTMLInputElement>();
 
-  state = { editing: false };
+  state = {editing: false};
 
   onDoubleClick = () => {
     if (!this.props.onChange) return;
-    this.setState({ editing: true }, () => {
+    this.setState({editing: true}, () => {
       const el = this.input.current;
       if (el) {
         el.focus();
@@ -40,8 +40,8 @@ class ExecutionTab extends React.Component<ExecutationTabProps, ExecutationTabSt
   };
 
   render() {
-    const { title, onChange, onClick, onRemove, active, unsaved } = this.props;
-    const { editing } = this.state;
+    const {title, onChange, onClick, onRemove, active, unsaved} = this.props;
+    const {editing} = this.state;
 
     return (
       <TabContainer active={active || false} onDoubleClick={this.onDoubleClick} onClick={onClick}>
@@ -50,9 +50,9 @@ class ExecutionTab extends React.Component<ExecutationTabProps, ExecutationTabSt
             ref={this.input}
             type="text"
             defaultValue={title}
-            onKeyDown={e => e.keyCode === 13 && e.currentTarget.blur()}
-            onChange={e => onChange && onChange(e.currentTarget.value)}
-            onBlur={() => this.setState({ editing: false })}
+            onKeyDown={(e) => e.keyCode === 13 && e.currentTarget.blur()}
+            onChange={(e) => onChange && onChange(e.currentTarget.value)}
+            onBlur={() => this.setState({editing: false})}
           />
         ) : unsaved ? (
           `${title}*`
@@ -61,7 +61,7 @@ class ExecutionTab extends React.Component<ExecutationTabProps, ExecutationTabSt
         )}
         {!editing && onRemove && (
           <RemoveButton
-            onClick={e => {
+            onClick={(e) => {
               e.stopPropagation();
               onRemove();
             }}
@@ -81,8 +81,8 @@ interface ExecutionTabsProps {
 
 function sessionNamesAndKeysHash(data: IStorageData) {
   return Object.values(data.sessions)
-    .map(s => s.name + s.key)
-    .join(",");
+    .map((s) => s.name + s.key)
+    .join(',');
 }
 
 export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
@@ -94,7 +94,7 @@ export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
   }
 
   render() {
-    const { data } = this.props;
+    const {data} = this.props;
 
     const onApply = (mutator: any, ...args: any[]) => {
       // note: this function /cannot/ use props bound to local vars above
@@ -105,13 +105,13 @@ export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
 
     return (
       <ExecutionTabsContainer>
-        {Object.keys(data.sessions).map(key => (
+        {Object.keys(data.sessions).map((key) => (
           <ExecutionTab
             key={key}
             active={key === data.current}
             title={data.sessions[key].name}
             onClick={() => onApply(applySelectSession, key)}
-            onChange={name => onApply(applyChangesToSession, key, { name })}
+            onChange={(name) => onApply(applyChangesToSession, key, {name})}
             onRemove={
               Object.keys(data.sessions).length > 1
                 ? () => onApply(applyRemoveSession, key)
@@ -134,25 +134,25 @@ export const ExecutionTabsContainer = styled.div`
   border-bottom: 1px solid ${Colors.GRAY5};
 `;
 
-const TabContainer = styled.div<{ active: boolean }>`
+const TabContainer = styled.div<{active: boolean}>`
   position: relative;
   padding: 0 9px 2px 9px;
   display: inline-block;
-  background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY3)};
-  color: ${({ active }) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
+  background: ${({active}) => (active ? Colors.WHITE : Colors.LIGHT_GRAY3)};
+  color: ${({active}) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
   user-select: none;
   line-height: 28px;
   height: 30px;
   top: 1px;
 
   border: 1px solid ${Colors.GRAY5};
-  border-bottom: 1px solid ${({ active }) => (active ? "transparent" : Colors.GRAY5)};
+  border-bottom: 1px solid ${({active}) => (active ? 'transparent' : Colors.GRAY5)};
   border-right: 0;
   &:last-child {
     border-right: 1px solid ${Colors.GRAY5};
   }
   &:hover {
-    background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY5)};
+    background: ${({active}) => (active ? Colors.WHITE : Colors.LIGHT_GRAY5)};
   }
   input {
     line-height: 1.28581;
@@ -160,7 +160,7 @@ const TabContainer = styled.div<{ active: boolean }>`
     border: 0;
     outline: none;
   }
-  cursor: ${({ active }) => (!active ? "pointer" : "inherit")};
+  cursor: ${({active}) => (!active ? 'pointer' : 'inherit')};
 `;
 
 const RemoveButton = styled.div`

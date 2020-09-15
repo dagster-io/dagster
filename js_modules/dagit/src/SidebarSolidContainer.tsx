@@ -1,20 +1,20 @@
-import * as React from "react";
-import { SidebarSolidInvocation } from "./SidebarSolidInvocation";
-import { SidebarSolidDefinition } from "./SidebarSolidDefinition";
-import { SidebarTabbedContainerSolidQuery } from "./types/SidebarTabbedContainerSolidQuery";
-import { SolidNameOrPath } from "./PipelineExplorer";
-import { useQuery } from "react-apollo";
-import Loading from "./Loading";
-import gql from "graphql-tag";
-import { PipelineExplorerPath } from "./PipelinePathUtils";
-import { usePipelineSelector } from "./DagsterRepositoryContext";
+import * as React from 'react';
+import {SidebarSolidInvocation} from './SidebarSolidInvocation';
+import {SidebarSolidDefinition} from './SidebarSolidDefinition';
+import {SidebarTabbedContainerSolidQuery} from './types/SidebarTabbedContainerSolidQuery';
+import {SolidNameOrPath} from './PipelineExplorer';
+import {useQuery} from 'react-apollo';
+import Loading from './Loading';
+import gql from 'graphql-tag';
+import {PipelineExplorerPath} from './PipelinePathUtils';
+import {usePipelineSelector} from './DagsterRepositoryContext';
 
 interface SidebarSolidContainerProps {
   handleID: string;
   explorerPath: PipelineExplorerPath;
   showingSubsolids: boolean;
   parentSolidHandleID?: string;
-  getInvocations?: (definitionName: string) => { handleID: string }[];
+  getInvocations?: (definitionName: string) => {handleID: string}[];
   onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
   onClickSolid: (arg: SolidNameOrPath) => void;
 }
@@ -25,24 +25,24 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
   getInvocations,
   showingSubsolids,
   onEnterCompositeSolid,
-  onClickSolid
+  onClickSolid,
 }) => {
   const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
   const queryResult = useQuery<SidebarTabbedContainerSolidQuery>(
     SIDEBAR_TABBED_CONTAINER_SOLID_QUERY,
     {
-      variables: { selector: pipelineSelector, handleID: handleID },
-      fetchPolicy: "cache-and-network"
-    }
+      variables: {selector: pipelineSelector, handleID: handleID},
+      fetchPolicy: 'cache-and-network',
+    },
   );
 
   return (
     <Loading queryResult={queryResult}>
-      {({ pipelineOrError }) => {
-        if (pipelineOrError?.__typename !== "Pipeline") {
+      {({pipelineOrError}) => {
+        if (pipelineOrError?.__typename !== 'Pipeline') {
           // should not reach here, unless the pipeline loads and then does not load in subsequent
           // requests
-          console.error("Could not load pipeline solids");
+          console.error('Could not load pipeline solids');
           return <span>Could not load pipeline solids.</span>;
         }
         return (
@@ -52,7 +52,7 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
               solid={pipelineOrError!.solidHandle!.solid}
               onEnterCompositeSolid={
                 pipelineOrError!.solidHandle!.solid.definition.__typename ===
-                "CompositeSolidDefinition"
+                'CompositeSolidDefinition'
                   ? onEnterCompositeSolid
                   : undefined
               }
@@ -62,7 +62,7 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
               showingSubsolids={showingSubsolids}
               definition={pipelineOrError!.solidHandle!.solid.definition}
               getInvocations={getInvocations}
-              onClickInvocation={({ handleID }) => onClickSolid({ path: handleID.split(".") })}
+              onClickInvocation={({handleID}) => onClickSolid({path: handleID.split('.')})}
             />
           </>
         );

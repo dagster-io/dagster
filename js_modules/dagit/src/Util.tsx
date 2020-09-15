@@ -1,7 +1,7 @@
-import LRU from "lru-cache";
-import { getJSONForKey } from "./LocalStorage";
+import LRU from 'lru-cache';
+import {getJSONForKey} from './LocalStorage';
 
-export const DEFAULT_RESULT_NAME = "result";
+export const DEFAULT_RESULT_NAME = 'result';
 
 export function debounce<T extends (...args: any[]) => any>(func: T, wait = 100): T {
   let timeout: any | null = null;
@@ -22,7 +22,7 @@ export function debounce<T extends (...args: any[]) => any>(func: T, wait = 100)
     }
   }
 
-  const debounced = function(...newArgs: any[]) {
+  const debounced = function (...newArgs: any[]) {
     timestamp = Date.now();
     args = newArgs;
     if (!timeout) {
@@ -36,15 +36,15 @@ export function debounce<T extends (...args: any[]) => any>(func: T, wait = 100)
 }
 
 function twoDigit(v: number) {
-  return `${v < 10 ? "0" : ""}${v}`;
+  return `${v < 10 ? '0' : ''}${v}`;
 }
 
 export function formatStepKey(stepKey: string | null | false) {
-  return (stepKey || "").replace(/\.compute$/, "");
+  return (stepKey || '').replace(/\.compute$/, '');
 }
 
 export function formatElapsedTime(msec: number) {
-  let text = "";
+  let text = '';
 
   if (msec < 0) {
     text = `0 msec`;
@@ -67,11 +67,11 @@ export function formatElapsedTime(msec: number) {
 }
 
 export function breakOnUnderscores(str: string) {
-  return str.replace(/_/g, "_\u200b");
+  return str.replace(/_/g, '_\u200b');
 }
 
 export function patchCopyToRemoveZeroWidthUnderscores() {
-  document.addEventListener("copy", event => {
+  document.addEventListener('copy', (event) => {
     if (!event.clipboardData) {
       // afaik this is always defined, but the TS field is optional
       return;
@@ -81,11 +81,11 @@ export function patchCopyToRemoveZeroWidthUnderscores() {
     // nodes are selected. If the selection on the page is text within
     // codemirror or an input or textarea, this returns "" and we fall
     // through to the default pasteboard content.
-    const text = (window.getSelection() || "").toString().replace(/_\u200b/g, "_");
+    const text = (window.getSelection() || '').toString().replace(/_\u200b/g, '_');
 
     if (text.length) {
       event.preventDefault();
-      event.clipboardData.setData("Text", text);
+      event.clipboardData.setData('Text', text);
     }
   });
 }
@@ -93,7 +93,7 @@ export function patchCopyToRemoveZeroWidthUnderscores() {
 export function memoize<T extends object, R>(
   fn: (arg: T, ...rest: any[]) => R,
   hashFn?: (arg: T, ...rest: any[]) => any,
-  hashSize?: number
+  hashSize?: number,
 ): (arg: T, ...rest: any[]) => R {
   const cache = new LRU(hashSize || 50);
   return (arg: T, ...rest: any[]) => {
@@ -110,7 +110,7 @@ export function memoize<T extends object, R>(
 export function asyncMemoize<T extends object, R>(
   fn: (arg: T, ...rest: any[]) => PromiseLike<R>,
   hashFn?: (arg: T, ...rest: any[]) => any,
-  hashSize?: number
+  hashSize?: number,
 ): (arg: T, ...rest: any[]) => Promise<R> {
   const cache = new LRU(hashSize || 50);
   return async (arg: T, ...rest: any[]) => {
@@ -132,7 +132,7 @@ export function asyncMemoize<T extends object, R>(
 // object argument.
 //
 export function weakmapMemoize<T extends object, R>(
-  fn: (arg: T, ...rest: any[]) => R
+  fn: (arg: T, ...rest: any[]) => R,
 ): (arg: T, ...rest: any[]) => R {
   const cache = new WeakMap();
   return (arg: T, ...rest: any[]) => {
@@ -145,7 +145,7 @@ export function weakmapMemoize<T extends object, R>(
   };
 }
 
-export function titleOfIO(i: { solid: { name: string }; definition: { name: string } }) {
+export function titleOfIO(i: {solid: {name: string}; definition: {name: string}}) {
   return i.solid.name !== DEFAULT_RESULT_NAME
     ? `${i.solid.name}:${i.definition.name}`
     : i.solid.name;
@@ -155,10 +155,10 @@ export function assertUnreachable(_: never): never {
   throw new Error("Didn't expect to get here");
 }
 
-const DAGIT_FLAGS_KEY = "DAGIT_FLAGS";
+const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 export enum FeatureFlag {
-  GaantExecutionPlan = "GAANT"
+  GaantExecutionPlan = 'GAANT',
 }
 
 export function getFeatureFlags(): FeatureFlag[] {
@@ -166,7 +166,7 @@ export function getFeatureFlags(): FeatureFlag[] {
 }
 
 export function setFeatureFlags(flags: FeatureFlag[]) {
-  if (!(flags instanceof Array)) throw new Error("flags must be an array");
+  if (!(flags instanceof Array)) throw new Error('flags must be an array');
   localStorage.setItem(DAGIT_FLAGS_KEY, JSON.stringify(flags));
 }
 

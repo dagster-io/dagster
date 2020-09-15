@@ -1,48 +1,48 @@
-import * as React from "react";
-import * as yaml from "yaml";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Colors, Button, Spinner, NonIdealState } from "@blueprintjs/core";
-import { ApolloConsumer } from "react-apollo";
-import ApolloClient from "apollo-client";
+import * as React from 'react';
+import * as yaml from 'yaml';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {Colors, Button, Spinner, NonIdealState} from '@blueprintjs/core';
+import {ApolloConsumer} from 'react-apollo';
+import ApolloClient from 'apollo-client';
 
-import { RunPreview } from "./RunPreview";
-import { SplitPanelContainer, SecondPanelToggle } from "../SplitPanelContainer";
-import SolidSelector from "./SolidSelector";
+import {RunPreview} from './RunPreview';
+import {SplitPanelContainer, SecondPanelToggle} from '../SplitPanelContainer';
+import SolidSelector from './SolidSelector';
 import {
   ConfigEditor,
   ConfigEditorHelpContext,
-  isHelpContextEqual
-} from "../configeditor/ConfigEditor";
+  isHelpContextEqual,
+} from '../configeditor/ConfigEditor';
 import {
   ConfigEditorConfigPicker,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
-  CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT
-} from "./ConfigEditorConfigPicker";
-import { ConfigEditorModePicker } from "./ConfigEditorModePicker";
-import { IStorageData, IExecutionSession } from "../LocalStorage";
+  CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
+} from './ConfigEditorConfigPicker';
+import {ConfigEditorModePicker} from './ConfigEditorModePicker';
+import {IStorageData, IExecutionSession} from '../LocalStorage';
 import {
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
-  responseToYamlValidationResult
-} from "../configeditor/ConfigEditorUtils";
+  responseToYamlValidationResult,
+} from '../configeditor/ConfigEditorUtils';
 
-import { ConfigEditorHelp } from "./ConfigEditorHelp";
-import { LaunchRootExecutionButton } from "./LaunchRootExecutionButton";
-import { TagContainer, TagEditor } from "./TagEditor";
-import { ShortcutHandler } from "../ShortcutHandler";
-import { PipelineSelector } from "../types/globalTypes";
-import { PipelineRunTag } from "../LocalStorage";
+import {ConfigEditorHelp} from './ConfigEditorHelp';
+import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
+import {TagContainer, TagEditor} from './TagEditor';
+import {ShortcutHandler} from '../ShortcutHandler';
+import {PipelineSelector} from '../types/globalTypes';
+import {PipelineRunTag} from '../LocalStorage';
 
-import { PreviewConfigQuery, PreviewConfigQueryVariables } from "./types/PreviewConfigQuery";
-import { ExecutionSessionContainerPipelineFragment } from "./types/ExecutionSessionContainerPipelineFragment";
+import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
+import {ExecutionSessionContainerPipelineFragment} from './types/ExecutionSessionContainerPipelineFragment';
 import {
   ExecutionSessionContainerRunConfigSchemaFragment,
-  ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError
-} from "./types/ExecutionSessionContainerRunConfigSchemaFragment";
-import { ExecutionSessionContainerPartitionSetsFragment } from "./types/ExecutionSessionContainerPartitionSetsFragment";
-import { ConfigEditorRunConfigSchemaFragment } from "../configeditor/types/ConfigEditorRunConfigSchemaFragment";
-import { showCustomAlert } from "../CustomAlertProvider";
+  ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError,
+} from './types/ExecutionSessionContainerRunConfigSchemaFragment';
+import {ExecutionSessionContainerPartitionSetsFragment} from './types/ExecutionSessionContainerPartitionSetsFragment';
+import {ConfigEditorRunConfigSchemaFragment} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {showCustomAlert} from '../CustomAlertProvider';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_PIPELINE = `Loading pipeline and partition sets...`;
@@ -109,7 +109,7 @@ export default class ExecutionSessionContainer extends React.Component<
         }
       }
       ${CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT}
-    `
+    `,
   };
 
   state: IExecutionSessionContainerState = {
@@ -120,7 +120,7 @@ export default class ExecutionSessionContainer extends React.Component<
     configLoading: false,
     showWhitespace: true,
     editorHelpContext: null,
-    tagEditorOpen: false
+    tagEditorOpen: false,
   };
 
   editor = React.createRef<ConfigEditor>();
@@ -141,36 +141,36 @@ export default class ExecutionSessionContainer extends React.Component<
 
   onConfigChange = (config: any) => {
     this.props.onSaveSession({
-      runConfigYaml: config
+      runConfigYaml: config,
     });
   };
 
   onSolidSelectionChange = (
     solidSelection: string[] | null,
-    solidSelectionQuery: string | null
+    solidSelectionQuery: string | null,
   ) => {
     this.props.onSaveSession({
       solidSelection,
-      solidSelectionQuery
+      solidSelectionQuery,
     });
   };
 
   onModeChange = (mode: string) => {
-    this.props.onSaveSession({ mode });
+    this.props.onSaveSession({mode});
   };
 
   onRemoveExtraPaths = (paths: string[]) => {
-    const { currentSession } = this.props;
+    const {currentSession} = this.props;
 
     function deletePropertyPath(obj: any, path: string) {
-      const parts = path.split(".");
+      const parts = path.split('.');
 
       // Here we iterate through the parts of the path to get to
       // the second to last nested object. This is so we can call `delete` using
       // this object and the last part of the path.
       for (let i = 0; i < parts.length - 1; i++) {
         obj = obj[parts[i]];
-        if (typeof obj === "undefined") {
+        if (typeof obj === 'undefined') {
           return;
         }
       }
@@ -185,22 +185,22 @@ export default class ExecutionSessionContainer extends React.Component<
     try {
       // Note: parsing `` returns null rather than an empty object,
       // which is preferable for representing empty config.
-      runConfigData = yaml.parse(currentSession.runConfigYaml || "") || {};
+      runConfigData = yaml.parse(currentSession.runConfigYaml || '') || {};
 
       for (const path of paths) {
         deletePropertyPath(runConfigData, path);
       }
 
       const runConfigYaml = yaml.stringify(runConfigData);
-      this.props.onSaveSession({ runConfigYaml });
+      this.props.onSaveSession({runConfigYaml});
     } catch (err) {
-      showCustomAlert({ title: "Invalid YAML", body: YAML_SYNTAX_INVALID });
+      showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
       return;
     }
   };
 
   buildExecutionVariables = () => {
-    const { currentSession, pipelineSelector } = this.props;
+    const {currentSession, pipelineSelector} = this.props;
 
     if (!currentSession || !currentSession.mode) {
       return;
@@ -210,9 +210,9 @@ export default class ExecutionSessionContainer extends React.Component<
     try {
       // Note: parsing `` returns null rather than an empty object,
       // which is preferable for representing empty config.
-      runConfigData = yaml.parse(currentSession.runConfigYaml || "") || {};
+      runConfigData = yaml.parse(currentSession.runConfigYaml || '') || {};
     } catch (err) {
-      showCustomAlert({ title: "Invalid YAML", body: YAML_SYNTAX_INVALID });
+      showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
       return;
     }
 
@@ -223,28 +223,28 @@ export default class ExecutionSessionContainer extends React.Component<
         mode: currentSession.mode,
         executionMetadata: {
           tags: [
-            ...tags.map(tag => ({ key: tag.key, value: tag.value })),
+            ...tags.map((tag) => ({key: tag.key, value: tag.value})),
             // pass solid selection query via tags
             // clean up https://github.com/dagster-io/dagster/issues/2495
             ...(currentSession.solidSelectionQuery
               ? [
                   {
-                    key: "dagster/solid_selection",
-                    value: currentSession.solidSelectionQuery
-                  }
+                    key: 'dagster/solid_selection',
+                    value: currentSession.solidSelectionQuery,
+                  },
                 ]
               : []),
-            ...(currentSession?.base?.["presetName"]
+            ...(currentSession?.base?.['presetName']
               ? [
                   {
-                    key: "dagster/preset_name",
-                    value: currentSession?.base?.["presetName"]
-                  }
+                    key: 'dagster/preset_name',
+                    value: currentSession?.base?.['presetName'],
+                  },
                 ]
-              : [])
-          ]
-        }
-      }
+              : []),
+          ],
+        },
+      },
     };
   };
 
@@ -252,7 +252,7 @@ export default class ExecutionSessionContainer extends React.Component<
   // https://github.com/dagster-io/dagster/issues/1966
   getRunConfigSchema = (): ConfigEditorRunConfigSchemaFragment | undefined => {
     const obj = this.props.runConfigSchemaOrError;
-    if (obj && obj.__typename === "RunConfigSchema") {
+    if (obj && obj.__typename === 'RunConfigSchema') {
       return obj;
     }
     return undefined;
@@ -260,7 +260,7 @@ export default class ExecutionSessionContainer extends React.Component<
 
   getModeError = (): ModeNotFoundError => {
     const obj = this.props.runConfigSchemaOrError;
-    if (obj && obj.__typename === "ModeNotFoundError") {
+    if (obj && obj.__typename === 'ModeNotFoundError') {
       return obj;
     }
     return undefined;
@@ -275,27 +275,27 @@ export default class ExecutionSessionContainer extends React.Component<
         toSave.push(tag);
       }
     });
-    this.props.onSaveSession({ tags: toSave });
+    this.props.onSaveSession({tags: toSave});
   };
 
   checkConfig = async (client: ApolloClient<any>, configJSON: object) => {
-    const { currentSession, pipelineSelector } = this.props;
+    const {currentSession, pipelineSelector} = this.props;
 
     // Another request to preview a newer document may be made while this request
     // is in flight, in which case completion of this async method should not set loading=false.
     this.previewCounter += 1;
     const currentPreviewCount = this.previewCounter;
 
-    this.setState({ previewLoading: true });
+    this.setState({previewLoading: true});
 
-    const { data } = await client.query<PreviewConfigQuery, PreviewConfigQueryVariables>({
-      fetchPolicy: "no-cache",
+    const {data} = await client.query<PreviewConfigQuery, PreviewConfigQueryVariables>({
+      fetchPolicy: 'no-cache',
       query: PREVIEW_CONFIG_QUERY,
       variables: {
         runConfigData: configJSON,
         pipeline: pipelineSelector,
-        mode: currentSession.mode || "default"
-      }
+        mode: currentSession.mode || 'default',
+      },
     });
 
     if (this.mounted) {
@@ -303,21 +303,21 @@ export default class ExecutionSessionContainer extends React.Component<
       this.setState({
         preview: data,
         previewedDocument: configJSON,
-        previewLoading: isLatestRequest ? false : this.state.previewLoading
+        previewLoading: isLatestRequest ? false : this.state.previewLoading,
       });
     }
 
     return responseToYamlValidationResult(configJSON, data.isPipelineConfigValid);
   };
 
-  openTagEditor = () => this.setState({ tagEditorOpen: true });
-  closeTagEditor = () => this.setState({ tagEditorOpen: false });
+  openTagEditor = () => this.setState({tagEditorOpen: true});
+  closeTagEditor = () => this.setState({tagEditorOpen: false});
 
-  onConfigLoading = () => this.setState({ configLoading: true });
-  onConfigLoaded = () => this.setState({ configLoading: false });
+  onConfigLoading = () => this.setState({configLoading: true});
+  onConfigLoaded = () => this.setState({configLoading: false});
 
   render() {
-    const { currentSession, onCreateSession, onSaveSession, partitionSets, pipeline } = this.props;
+    const {currentSession, onCreateSession, onSaveSession, partitionSets, pipeline} = this.props;
     const {
       preview,
       previewLoading,
@@ -325,7 +325,7 @@ export default class ExecutionSessionContainer extends React.Component<
       configLoading,
       editorHelpContext,
       showWhitespace,
-      tagEditorOpen
+      tagEditorOpen,
     } = this.state;
     const runConfigSchema = this.getRunConfigSchema();
     const modeError = this.getModeError();
@@ -333,8 +333,8 @@ export default class ExecutionSessionContainer extends React.Component<
     const tags = currentSession.tags || [];
     return (
       <SplitPanelContainer
-        axis={"vertical"}
-        identifier={"execution"}
+        axis={'vertical'}
+        identifier={'execution'}
         firstMinSize={100}
         firstInitialPercent={75}
         first={
@@ -354,7 +354,7 @@ export default class ExecutionSessionContainer extends React.Component<
               <SessionSettingsSpacer />
               <SolidSelector
                 serverProvidedSubsetError={
-                  preview?.isPipelineConfigValid.__typename === "InvalidSubsetError"
+                  preview?.isPipelineConfigValid.__typename === 'InvalidSubsetError'
                     ? preview.isPipelineConfigValid
                     : undefined
                 }
@@ -372,8 +372,8 @@ export default class ExecutionSessionContainer extends React.Component<
               />
               {tags.length || tagEditorOpen ? null : (
                 <ShortcutHandler
-                  shortcutLabel={"⌥T"}
-                  shortcutFilter={e => e.keyCode === 84 && e.altKey}
+                  shortcutLabel={'⌥T'}
+                  shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
                   onShortcut={this.openTagEditor}
                 >
                   <TagEditorLink onClick={this.openTagEditor}>+ Add tags</TagEditorLink>
@@ -385,13 +385,13 @@ export default class ExecutionSessionContainer extends React.Component<
                 open={tagEditorOpen}
                 onRequestClose={this.closeTagEditor}
               />
-              <div style={{ flex: 1 }} />
+              <div style={{flex: 1}} />
               <Button
                 icon="paragraph"
                 small={true}
                 active={showWhitespace}
-                style={{ marginLeft: "auto" }}
-                onClick={() => this.setState({ showWhitespace: !showWhitespace })}
+                style={{marginLeft: 'auto'}}
+                onClick={() => this.setState({showWhitespace: !showWhitespace})}
               />
               <SessionSettingsSpacer />
               <SecondPanelToggle axis="horizontal" container={this.editorSplitPanelContainer} />
@@ -405,20 +405,20 @@ export default class ExecutionSessionContainer extends React.Component<
               firstInitialPercent={70}
               first={
                 <ApolloConsumer>
-                  {client => (
+                  {(client) => (
                     <ConfigEditor
                       ref={this.editor}
                       readOnly={false}
                       runConfigSchema={runConfigSchema}
                       configCode={currentSession.runConfigYaml}
                       onConfigChange={this.onConfigChange}
-                      onHelpContextChange={next => {
+                      onHelpContextChange={(next) => {
                         if (!isHelpContextEqual(editorHelpContext, next)) {
-                          this.setState({ editorHelpContext: next });
+                          this.setState({editorHelpContext: next});
                         }
                       }}
                       showWhitespace={showWhitespace}
-                      checkConfig={async configJSON => {
+                      checkConfig={async (configJSON) => {
                         return await this.checkConfig(client, configJSON);
                       }}
                     />
@@ -444,14 +444,14 @@ export default class ExecutionSessionContainer extends React.Component<
               document={previewedDocument}
               validation={preview ? preview.isPipelineConfigValid : null}
               runConfigSchema={runConfigSchema}
-              onHighlightPath={path => this.editor.current?.moveCursorToPath(path)}
-              onRemoveExtraPaths={paths => this.onRemoveExtraPaths(paths)}
+              onHighlightPath={(path) => this.editor.current?.moveCursorToPath(path)}
+              onRemoveExtraPaths={(paths) => this.onRemoveExtraPaths(paths)}
               actions={
                 <LaunchRootExecutionButton
                   pipelineName={pipeline.name}
                   getVariables={this.buildExecutionVariables}
                   disabled={
-                    preview?.isPipelineConfigValid?.__typename !== "PipelineConfigValidationValid"
+                    preview?.isPipelineConfigValid?.__typename !== 'PipelineConfigValidationValid'
                   }
                 />
               }
@@ -466,10 +466,12 @@ export default class ExecutionSessionContainer extends React.Component<
 // Normally we'd try to make the execution session container props optional and render these empty / error
 // states in the same component, but it's a lot less complicated to render them separately here.
 
-export const ExecutionSessionContainerError: React.FunctionComponent<NonIdealState["props"]> = props => (
+export const ExecutionSessionContainerError: React.FunctionComponent<NonIdealState['props']> = (
+  props,
+) => (
   <SplitPanelContainer
-    axis={"vertical"}
-    identifier={"execution"}
+    axis={'vertical'}
+    identifier={'execution'}
     firstInitialPercent={75}
     firstMinSize={100}
     first={
@@ -486,8 +488,8 @@ export const ExecutionSessionContainerError: React.FunctionComponent<NonIdealSta
 
 export const ExecutionSessionContainerLoading: React.FunctionComponent = () => (
   <SplitPanelContainer
-    axis={"vertical"}
-    identifier={"execution"}
+    axis={'vertical'}
+    identifier={'execution'}
     firstInitialPercent={75}
     firstMinSize={100}
     first={
@@ -496,7 +498,7 @@ export const ExecutionSessionContainerLoading: React.FunctionComponent = () => (
         <SessionSettingsBar />
       </>
     }
-    second={<LoadingOverlay isLoading message={"Loading pipeline and partition sets..."} />}
+    second={<LoadingOverlay isLoading message={'Loading pipeline and partition sets...'} />}
   />
 );
 
@@ -526,7 +528,7 @@ const SessionSettingsBar = styled.div`
   padding: 8px 10px;
 `;
 
-const LoadingOverlayContainer = styled.div<{ isLoading: boolean }>`
+const LoadingOverlayContainer = styled.div<{isLoading: boolean}>`
   position: absolute;
   left: 0;
   right: 0;
@@ -537,7 +539,7 @@ const LoadingOverlayContainer = styled.div<{ isLoading: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: ${({ isLoading }) => (isLoading ? "0.7" : "0")};
+  opacity: ${({isLoading}) => (isLoading ? '0.7' : '0')};
   transition: opacity 150ms linear;
   transition-delay: 300ms;
   pointer-events: none;
@@ -546,7 +548,7 @@ const LoadingOverlayContainer = styled.div<{ isLoading: boolean }>`
 const LoadingOverlay: React.FunctionComponent<{
   isLoading: boolean;
   message: string;
-}> = ({ isLoading, message }) => (
+}> = ({isLoading, message}) => (
   <LoadingOverlayContainer isLoading={isLoading}>
     <Spinner size={24} />
     &nbsp;&nbsp;{message}

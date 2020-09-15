@@ -1,45 +1,45 @@
-import React from "react";
-import styled from "styled-components/macro";
-import { Colors, Icon, IconName } from "@blueprintjs/core";
-import { useRouteMatch, useHistory } from "react-router-dom";
-import { explorerPathFromString, explorerPathToString } from "../PipelinePathUtils";
-import { useRepository } from "../DagsterRepositoryContext";
+import React from 'react';
+import styled from 'styled-components/macro';
+import {Colors, Icon, IconName} from '@blueprintjs/core';
+import {useRouteMatch, useHistory} from 'react-router-dom';
+import {explorerPathFromString, explorerPathToString} from '../PipelinePathUtils';
+import {useRepository} from '../DagsterRepositoryContext';
 
 const PIPELINE_TABS: {
   title: string;
   pathComponent: string;
   icon: IconName;
 }[] = [
-  { title: "Overview", pathComponent: "overview", icon: "dashboard" },
-  { title: "Definition", pathComponent: "", icon: "diagram-tree" },
+  {title: 'Overview', pathComponent: 'overview', icon: 'dashboard'},
+  {title: 'Definition', pathComponent: '', icon: 'diagram-tree'},
   {
-    title: "Playground",
-    pathComponent: "playground",
-    icon: "manually-entered-data"
+    title: 'Playground',
+    pathComponent: 'playground',
+    icon: 'manually-entered-data',
   },
   {
-    title: "Runs",
-    pathComponent: "runs",
-    icon: "history"
+    title: 'Runs',
+    pathComponent: 'runs',
+    icon: 'history',
   },
   {
-    title: "Partitions",
-    pathComponent: "partitions",
-    icon: "multi-select"
-  }
+    title: 'Partitions',
+    pathComponent: 'partitions',
+    icon: 'multi-select',
+  },
 ];
 
 export function tabForPipelinePathComponent(component?: string) {
   return (
-    PIPELINE_TABS.find(t => t.pathComponent === component) ||
-    PIPELINE_TABS.find(t => t.pathComponent === "")!
+    PIPELINE_TABS.find((t) => t.pathComponent === component) ||
+    PIPELINE_TABS.find((t) => t.pathComponent === '')!
   );
 }
 
 export const PipelineNav: React.FunctionComponent = () => {
   const history = useHistory();
   const repository = useRepository();
-  const match = useRouteMatch<{ tab: string; selector: string }>(["/pipeline/:selector/:tab?"]);
+  const match = useRouteMatch<{tab: string; selector: string}>(['/pipeline/:selector/:tab?']);
   if (!match) {
     return <span />;
   }
@@ -47,7 +47,7 @@ export const PipelineNav: React.FunctionComponent = () => {
   const active = tabForPipelinePathComponent(match.params.tab);
   const explorerPath = explorerPathFromString(match.params.selector);
   const hasPartitionSet = repository.partitionSets
-    .map(x => x.pipelineName)
+    .map((x) => x.pipelineName)
     .includes(explorerPath.pipelineName);
 
   // When you click one of the top tabs, it resets the snapshot you may be looking at
@@ -55,14 +55,14 @@ export const PipelineNav: React.FunctionComponent = () => {
   const explorerPathWithoutSnapshot = explorerPathToString({
     ...explorerPath,
     snapshotId: undefined,
-    pathSolids: []
+    pathSolids: [],
   });
 
   return (
     <PipelineTabBarContainer>
       <PipelineName>{explorerPath.pipelineName}</PipelineName>
-      {PIPELINE_TABS.filter(tab => hasPartitionSet || tab.pathComponent !== "partitions").map(
-        tab => (
+      {PIPELINE_TABS.filter((tab) => hasPartitionSet || tab.pathComponent !== 'partitions').map(
+        (tab) => (
           <PipelineTab
             key={tab.title}
             tab={tab}
@@ -71,9 +71,9 @@ export const PipelineNav: React.FunctionComponent = () => {
               history.push(`/pipeline/${explorerPathWithoutSnapshot}${tab.pathComponent}`)
             }
           />
-        )
+        ),
       )}
-      <div style={{ flex: 1 }} />
+      <div style={{flex: 1}} />
     </PipelineTabBarContainer>
   );
 };
@@ -100,11 +100,11 @@ class PipelineTab extends React.Component<PipelineTabProps> {
   input = React.createRef<HTMLInputElement>();
 
   render() {
-    const { tab, onClick, active } = this.props;
+    const {tab, onClick, active} = this.props;
 
     return (
       <PipelineTabContainer active={active || false} onClick={onClick}>
-        <Icon icon={tab.icon} iconSize={16} style={{ paddingRight: 8 }} />
+        <Icon icon={tab.icon} iconSize={16} style={{paddingRight: 8}} />
         {tab.title}
       </PipelineTabContainer>
     );
@@ -122,16 +122,16 @@ const PipelineName = styled.div`
   text-overflow: ellipsis;
 `;
 
-const PipelineTabContainer = styled.div<{ active: boolean }>`
-  color: ${({ active }) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
+const PipelineTabContainer = styled.div<{active: boolean}>`
+  color: ${({active}) => (active ? Colors.BLACK : Colors.DARK_GRAY3)};
 
   padding: 0 12px 3px 12px;
   display: inline-block;
   border-left: 1px solid ${Colors.GRAY4};
   user-select: none;
-  cursor: ${({ active }) => (!active ? "pointer" : "inherit")};
-  background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY1)};
-  border-top: 2px solid ${({ active }) => (active ? "#2965CC" : Colors.GRAY5)};
+  cursor: ${({active}) => (!active ? 'pointer' : 'inherit')};
+  background: ${({active}) => (active ? Colors.WHITE : Colors.LIGHT_GRAY1)};
+  border-top: 2px solid ${({active}) => (active ? '#2965CC' : Colors.GRAY5)};
   line-height: 33px;
   height: 40px;
   position: relative;
@@ -139,10 +139,10 @@ const PipelineTabContainer = styled.div<{ active: boolean }>`
   top: 3px;
 
   & .bp3-icon {
-    opacity: ${({ active }) => (active ? 1 : 0.8)};
+    opacity: ${({active}) => (active ? 1 : 0.8)};
   }
   &:hover {
-    background: ${({ active }) => (active ? Colors.WHITE : Colors.LIGHT_GRAY5)};
+    background: ${({active}) => (active ? Colors.WHITE : Colors.LIGHT_GRAY5)};
   }
   input {
     line-height: 1.28581;

@@ -1,71 +1,68 @@
-import * as React from "react";
+import * as React from 'react';
 
-import Loading from "./Loading";
-import { RouteComponentProps } from "react-router";
-import { RunTable } from "./runs/RunTable";
-import {
-  PipelineRunsRootQuery,
-  PipelineRunsRootQueryVariables
-} from "./types/PipelineRunsRootQuery";
+import Loading from './Loading';
+import {RouteComponentProps} from 'react-router';
+import {RunTable} from './runs/RunTable';
+import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
 import {
   RunsFilter,
   RunFilterTokenType,
   useRunFiltering,
-  runsFilterForSearchTokens
-} from "./runs/RunsFilter";
+  runsFilterForSearchTokens,
+} from './runs/RunsFilter';
 
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { IconNames } from "@blueprintjs/icons";
-import { NonIdealState } from "@blueprintjs/core";
-import { ScrollContainer, Header } from "./ListComponents";
-import { RunsQueryRefetchContext } from "./runs/RunUtils";
-import { useCursorPaginatedQuery } from "./runs/useCursorPaginatedQuery";
-import { CursorPaginationControls } from "./CursorPaginationControls";
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {IconNames} from '@blueprintjs/icons';
+import {NonIdealState} from '@blueprintjs/core';
+import {ScrollContainer, Header} from './ListComponents';
+import {RunsQueryRefetchContext} from './runs/RunUtils';
+import {useCursorPaginatedQuery} from './runs/useCursorPaginatedQuery';
+import {CursorPaginationControls} from './CursorPaginationControls';
 
 const PAGE_SIZE = 25;
-const ENABLED_FILTERS: RunFilterTokenType[] = ["id", "status", "tag"];
+const ENABLED_FILTERS: RunFilterTokenType[] = ['id', 'status', 'tag'];
 
 export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
-}>> = ({ match }) => {
-  const pipelineName = match.params.pipelinePath.split(":")[0];
+}>> = ({match}) => {
+  const pipelineName = match.params.pipelinePath.split(':')[0];
   const [filterTokens, setFilterTokens] = useRunFiltering(ENABLED_FILTERS);
 
-  const { queryResult, paginationProps } = useCursorPaginatedQuery<
+  const {queryResult, paginationProps} = useCursorPaginatedQuery<
     PipelineRunsRootQuery,
     PipelineRunsRootQueryVariables
   >({
     query: PIPELINE_RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
     variables: {
-      filter: { ...runsFilterForSearchTokens(filterTokens), pipelineName }
+      filter: {...runsFilterForSearchTokens(filterTokens), pipelineName},
     },
-    nextCursorForResult: runs => {
-      if (runs.pipelineRunsOrError.__typename !== "PipelineRuns") return undefined;
+    nextCursorForResult: (runs) => {
+      if (runs.pipelineRunsOrError.__typename !== 'PipelineRuns') return undefined;
       return runs.pipelineRunsOrError.results[PAGE_SIZE]?.runId;
     },
-    getResultArray: data => {
-      if (!data || data.pipelineRunsOrError.__typename !== "PipelineRuns") return [];
+    getResultArray: (data) => {
+      if (!data || data.pipelineRunsOrError.__typename !== 'PipelineRuns') return [];
       return data.pipelineRunsOrError.results;
-    }
+    },
   });
 
   return (
-    <RunsQueryRefetchContext.Provider value={{ refetch: queryResult.refetch }}>
+    <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <ScrollContainer>
         <div
           style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between"
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
           }}
         >
           <Header>{`Runs`}</Header>
           <Filters>
             <RunsFilter
               enabledFilters={ENABLED_FILTERS}
-              tokens={[{ token: "pipeline", value: pipelineName }, ...filterTokens]}
+              tokens={[{token: 'pipeline', value: pipelineName}, ...filterTokens]}
               onChange={setFilterTokens}
               loading={queryResult.loading}
             />
@@ -73,8 +70,8 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
         </div>
 
         <Loading queryResult={queryResult} allowStaleData={true}>
-          {({ pipelineRunsOrError }) => {
-            if (pipelineRunsOrError.__typename !== "PipelineRuns") {
+          {({pipelineRunsOrError}) => {
+            if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
               return (
                 <NonIdealState
                   icon={IconNames.ERROR}

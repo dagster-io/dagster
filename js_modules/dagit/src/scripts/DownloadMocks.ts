@@ -1,8 +1,8 @@
-import { execSync } from "child_process";
-import { addTypenameToDocument } from "apollo-utilities";
-import { print } from "graphql/language/printer";
-import path from "path";
-import fs from "fs";
+import {execSync} from 'child_process';
+import {addTypenameToDocument} from 'apollo-utilities';
+import {print} from 'graphql/language/printer';
+import path from 'path';
+import fs from 'fs';
 
 /*
 Why is this script structured as a Jest test? Jest goes to great lengths to
@@ -13,19 +13,19 @@ leveraging Jest is easiest.
 */
 
 // collect mocks from various tests in the codebase
-import { MOCKS as SVGMocks } from "../__tests__/graph/SVGMocks";
-import { MOCKS as AppMocks } from "../__tests__/AppMocks";
+import {MOCKS as SVGMocks} from '../__tests__/graph/SVGMocks';
+import {MOCKS as AppMocks} from '../__tests__/AppMocks';
 
-const dagsterRoot = path.resolve(path.join(__dirname, "..", "..", "..", ".."));
+const dagsterRoot = path.resolve(path.join(__dirname, '..', '..', '..', '..'));
 
 it(`builds mocks`, () => {
   for (const mock of [...SVGMocks, ...AppMocks]) {
     const query = print(addTypenameToDocument(mock.query))
-      .replace(/[\n\r]/g, "")
-      .replace(/[ ][ ]+/g, " ");
-    const vars = mock.variables ? `-v '${JSON.stringify(mock.variables)}'` : "";
-    const repo = `${dagsterRoot}/${mock.repo || "examples/airline_demo"}/${
-      mock.workspace ? "workspace" : "repository"
+      .replace(/[\n\r]/g, '')
+      .replace(/[ ][ ]+/g, ' ');
+    const vars = mock.variables ? `-v '${JSON.stringify(mock.variables)}'` : '';
+    const repo = `${dagsterRoot}/${mock.repo || 'examples/airline_demo'}/${
+      mock.workspace ? 'workspace' : 'repository'
     }.yaml`;
 
     execSync(`dagster-graphql -y ${repo} -t '${query}' ${vars} > ${mock.filepath}`);

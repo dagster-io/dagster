@@ -1,27 +1,27 @@
-import * as React from "react";
-import * as TestRenderer from "react-test-renderer";
-import { BrowserRouter } from "react-router-dom";
+import * as React from 'react';
+import * as TestRenderer from 'react-test-renderer';
+import {BrowserRouter} from 'react-router-dom';
 
-import { ConfigEditorModePicker } from "../execute/ConfigEditorModePicker";
-import { ModeNotFoundError } from "../execute/ExecutionSessionContainer";
+import {ConfigEditorModePicker} from '../execute/ConfigEditorModePicker';
+import {ModeNotFoundError} from '../execute/ExecutionSessionContainer';
 
 const defaultMode = {
-  name: "default"
+  name: 'default',
 };
 
 const mode1 = {
-  name: "mode_1"
+  name: 'mode_1',
 };
 
 const mode2 = {
-  name: "mode_2"
+  name: 'mode_2',
 };
 
-it("renders single mode pipelines", () => {
+it('renders single mode pipelines', () => {
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
       <ConfigEditorModePicker modes={[defaultMode]} modeName={null} onModeChange={() => null} />
-    </BrowserRouter>
+    </BrowserRouter>,
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
 
@@ -29,34 +29,34 @@ it("renders single mode pipelines", () => {
     <BrowserRouter>
       <ConfigEditorModePicker
         modes={[defaultMode]}
-        modeName={"default"}
+        modeName={'default'}
         onModeChange={() => null}
       />
-    </BrowserRouter>
+    </BrowserRouter>,
   );
   expect(componentDefaultSelected.toJSON()).toMatchSnapshot();
 });
 
-it("renders multi mode pipelines", () => {
+it('renders multi mode pipelines', () => {
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
       <ConfigEditorModePicker modes={[mode1, mode2]} modeName={null} onModeChange={() => null} />
-    </BrowserRouter>
+    </BrowserRouter>,
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
 
   const componentMode1Selected = TestRenderer.create(
     <BrowserRouter>
       <ConfigEditorModePicker modes={[mode1, mode2]} modeName="mode_1" onModeChange={() => null} />
-    </BrowserRouter>
+    </BrowserRouter>,
   );
   expect(componentMode1Selected.toJSON()).toMatchSnapshot();
 });
 
-it("renders error mode", () => {
+it('renders error mode', () => {
   const error: ModeNotFoundError = {
-    __typename: "ModeNotFoundError",
-    message: "Mode Not Found"
+    __typename: 'ModeNotFoundError',
+    message: 'Mode Not Found',
   };
   const componentNullSelected = TestRenderer.create(
     <BrowserRouter>
@@ -66,7 +66,7 @@ it("renders error mode", () => {
         modeName="mode_1"
         onModeChange={() => null}
       />
-    </BrowserRouter>
+    </BrowserRouter>,
   );
   expect(componentNullSelected.toJSON()).toMatchSnapshot();
 });

@@ -1,6 +1,6 @@
-import gql from "graphql-tag";
-import { YamlModeValidationResult } from "./codemirror-yaml/mode";
-import { ConfigEditorValidationFragment } from "./types/ConfigEditorValidationFragment";
+import gql from 'graphql-tag';
+import {YamlModeValidationResult} from './codemirror-yaml/mode';
+import {ConfigEditorValidationFragment} from './types/ConfigEditorValidationFragment';
 
 export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
   fragment ConfigEditorRunConfigSchemaFragment on RunConfigSchema {
@@ -66,43 +66,43 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
 
 export type StackEntry =
   | {
-      __typename: "EvaluationStackPathEntry";
+      __typename: 'EvaluationStackPathEntry';
       fieldName: string;
     }
   | {
-      __typename: "EvaluationStackListItemEntry";
+      __typename: 'EvaluationStackListItemEntry';
       listIndex: number;
     };
 
 export function errorStackToYamlPath(entries: StackEntry[]) {
-  return entries.map(entry =>
-    entry.__typename === "EvaluationStackPathEntry" ? entry.fieldName : `${entry.listIndex}`
+  return entries.map((entry) =>
+    entry.__typename === 'EvaluationStackPathEntry' ? entry.fieldName : `${entry.listIndex}`,
   );
 }
 
 export function responseToYamlValidationResult(
   configJSON: object,
-  response: ConfigEditorValidationFragment
+  response: ConfigEditorValidationFragment,
 ): YamlModeValidationResult {
-  if (response.__typename !== "PipelineConfigValidationInvalid") {
-    return { isValid: true };
+  if (response.__typename !== 'PipelineConfigValidationInvalid') {
+    return {isValid: true};
   }
 
-  const errors = response.errors.map(err => ({
+  const errors = response.errors.map((err) => ({
     message: err.message,
     reason: err.reason,
-    path: errorStackToYamlPath(err.stack.entries)
+    path: errorStackToYamlPath(err.stack.entries),
   }));
 
   // Errors at the top level have no stack path because they are not within any
   // dicts. To avoid highlighting the entire editor, associate them with the first
   // element of the top dict.
   const topLevelKey = Object.keys(configJSON);
-  errors.forEach(error => {
+  errors.forEach((error) => {
     if (error.path.length === 0 && topLevelKey.length) {
       error.path = [topLevelKey[0]];
     }
   });
 
-  return { isValid: false, errors };
+  return {isValid: false, errors};
 }

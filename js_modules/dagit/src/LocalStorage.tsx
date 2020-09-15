@@ -1,16 +1,16 @@
-import * as React from "react";
+import * as React from 'react';
 
 // Internal LocalStorage data format and mutation helpers
 
 export interface IStorageData {
-  sessions: { [name: string]: IExecutionSession };
+  sessions: {[name: string]: IExecutionSession};
   selectedExecutionType?: ExecutionType;
   current: string;
 }
 
 export enum ExecutionType {
-  START = "start",
-  LAUNCH = "launch"
+  START = 'start',
+  LAUNCH = 'launch',
 }
 
 export interface IExecutionSessionPlan {
@@ -32,7 +32,7 @@ export interface IExecutionSession {
   key: string;
   name: string;
   runConfigYaml: string;
-  base: { presetName: string } | { partitionsSetName: string; partitionName: string | null } | null;
+  base: {presetName: string} | {partitionsSetName: string; partitionName: string | null} | null;
   mode: string | null;
   solidSelection: string[] | null;
   solidSelectionQuery: string | null;
@@ -46,11 +46,11 @@ export interface IExecutionSession {
 export type IExecutionSessionChanges = Partial<IExecutionSession>;
 
 export function applySelectSession(data: IStorageData, key: string) {
-  return { ...data, current: key };
+  return {...data, current: key};
 }
 
 export function applyRemoveSession(data: IStorageData, key: string) {
-  const next = { current: data.current, sessions: { ...data.sessions } };
+  const next = {current: data.current, sessions: {...data.sessions}};
   const idx = Object.keys(next.sessions).indexOf(key);
   delete next.sessions[key];
   if (next.current === key) {
@@ -63,7 +63,7 @@ export function applyRemoveSession(data: IStorageData, key: string) {
 export function applyChangesToSession(
   data: IStorageData,
   key: string,
-  changes: IExecutionSessionChanges
+  changes: IExecutionSessionChanges,
 ) {
   const saved = data.sessions[key];
   if (changes.runConfigYaml && changes.runConfigYaml !== saved.runConfigYaml && saved.runId) {
@@ -72,14 +72,14 @@ export function applyChangesToSession(
 
   return {
     current: data.current,
-    sessions: { ...data.sessions, [key]: { ...saved, ...changes } },
-    selectedExecutionType: data.selectedExecutionType
+    sessions: {...data.sessions, [key]: {...saved, ...changes}},
+    selectedExecutionType: data.selectedExecutionType,
   };
 }
 
 export function applyCreateSession(
   data: IStorageData,
-  initial: IExecutionSessionChanges = {}
+  initial: IExecutionSessionChanges = {},
 ): IStorageData {
   const key = `s${Date.now()}`;
 
@@ -88,20 +88,20 @@ export function applyCreateSession(
     sessions: {
       ...data.sessions,
       [key]: {
-        name: "New Run",
-        runConfigYaml: "",
+        name: 'New Run',
+        runConfigYaml: '',
         mode: null,
         base: null,
         solidSelection: null,
-        solidSelectionQuery: "*",
+        solidSelectionQuery: '*',
         tags: null,
         runId: undefined,
         ...initial,
         configChangedSinceRun: false,
-        key
-      }
+        key,
+      },
     },
-    selectedExecutionType: data.selectedExecutionType
+    selectedExecutionType: data.selectedExecutionType,
   };
 }
 
@@ -110,7 +110,7 @@ export function applyCreateSession(
 export type StorageHook = [IStorageData, React.Dispatch<React.SetStateAction<IStorageData>>];
 
 let _data: IStorageData | null = null;
-let _dataNamespace = "";
+let _dataNamespace = '';
 
 function getKey(namespace: string) {
   return `dagit.v2.${namespace}`;
@@ -134,8 +134,8 @@ function getStorageDataForNamespace(namespace: string) {
   }
 
   let data: IStorageData = Object.assign(
-    { sessions: {}, current: "" },
-    getJSONForKey(getKey(namespace))
+    {sessions: {}, current: ''},
+    getJSONForKey(getKey(namespace)),
   );
 
   if (Object.keys(data.sessions).length === 0) {

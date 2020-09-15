@@ -1,15 +1,15 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import { IFullPipelineLayout } from "./getFullSolidLayout";
-import { SVGLabeledRect } from "./SVGComponents";
-import { Edge } from "./highlighting";
-import { ExternalConnectionNode } from "./ExternalConnectionNode";
-import { MappingLine } from "./MappingLine";
-import { titleOfIO } from "../Util";
-import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
-import { SolidNameOrPath } from "../PipelineExplorer";
-import { SolidIOBox, metadataForCompositeParentIO, PARENT_OUT, PARENT_IN } from "./SolidIOBox";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import {IFullPipelineLayout} from './getFullSolidLayout';
+import {SVGLabeledRect} from './SVGComponents';
+import {Edge} from './highlighting';
+import {ExternalConnectionNode} from './ExternalConnectionNode';
+import {MappingLine} from './MappingLine';
+import {titleOfIO} from '../Util';
+import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
+import {SolidNameOrPath} from '../PipelineExplorer';
+import {SolidIOBox, metadataForCompositeParentIO, PARENT_OUT, PARENT_IN} from './SolidIOBox';
 
 interface ParentSolidNodeProps {
   layout: IFullPipelineLayout;
@@ -22,25 +22,25 @@ interface ParentSolidNodeProps {
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = props => {
-  const { layout, solid, minified } = props;
+export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = (props) => {
+  const {layout, solid, minified} = props;
 
   const def = props.solid.definition;
-  if (def.__typename !== "CompositeSolidDefinition") {
-    throw new Error("Parent solid is not a composite - how did this happen?");
+  if (def.__typename !== 'CompositeSolidDefinition') {
+    throw new Error('Parent solid is not a composite - how did this happen?');
   }
 
   const parentLayout = layout.parent;
   if (!parentLayout) {
-    throw new Error("Parent solid rendered when no parent layout is present.");
+    throw new Error('Parent solid rendered when no parent layout is present.');
   }
 
-  const { boundingBox, mappingLeftEdge, mappingLeftSpacing } = parentLayout;
+  const {boundingBox, mappingLeftEdge, mappingLeftSpacing} = parentLayout;
   const highlightingProps = {
     highlightedEdges: props.highlightedEdges,
     onHighlightEdges: props.onHighlightEdges,
     onDoubleClick: props.onDoubleClick,
-    onClickSolid: props.onClickSolid
+    onClickSolid: props.onClickSolid,
   };
 
   if (boundingBox.height < 0 || boundingBox.width < 0) {
@@ -54,7 +54,7 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
         fill={Colors.LIGHT_GRAY5}
         minified={minified}
       />
-      {def.inputMappings.map(({ definition, mappedInput }, idx) => {
+      {def.inputMappings.map(({definition, mappedInput}, idx) => {
         const destination = layout.solids[mappedInput.solid.name];
         if (!destination) return <g />;
         const sourcePort = parentLayout.inputs[definition.name].port;
@@ -68,11 +68,11 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
             source={sourcePort}
             minified={minified}
             leftEdgeX={mappingLeftEdge - idx * mappingLeftSpacing}
-            edge={{ a: titleOfIO(mappedInput), b: PARENT_IN }}
+            edge={{a: titleOfIO(mappedInput), b: PARENT_IN}}
           />
         );
       })}
-      {def.outputMappings.map(({ definition, mappedOutput }, idx) => {
+      {def.outputMappings.map(({definition, mappedOutput}, idx) => {
         const destination = layout.solids[mappedOutput.solid.name];
         if (!destination) return <g />;
         const sourcePort = parentLayout.outputs[definition.name].port;
@@ -86,13 +86,13 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
             source={sourcePort}
             minified={minified}
             leftEdgeX={mappingLeftEdge - idx * mappingLeftSpacing}
-            edge={{ a: titleOfIO(mappedOutput), b: PARENT_OUT }}
+            edge={{a: titleOfIO(mappedOutput), b: PARENT_OUT}}
           />
         );
       })}
       {solid.definition.inputDefinitions.map((input, idx) => {
         const metadata = metadataForCompositeParentIO(solid.definition, input);
-        const invocationInput = solid.inputs.find(i => i.definition.name === input.name)!;
+        const invocationInput = solid.inputs.find((i) => i.definition.name === input.name)!;
 
         return (
           <React.Fragment key={idx}>
@@ -106,9 +106,7 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
                 minified={minified}
                 layout={parentLayout.dependsOn[titleOfIO(dependsOn)]}
                 target={parentLayout.inputs[input.name].port}
-                onDoubleClickLabel={() =>
-                  props.onClickSolid({ path: ["..", dependsOn.solid.name] })
-                }
+                onDoubleClickLabel={() => props.onClickSolid({path: ['..', dependsOn.solid.name]})}
               />
             ))}
             <SolidIOBox
@@ -124,7 +122,7 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
       })}
       {solid.definition.outputDefinitions.map((output, idx) => {
         const metadata = metadataForCompositeParentIO(solid.definition, output);
-        const invocationOutput = solid.outputs.find(i => i.definition.name === output.name)!;
+        const invocationOutput = solid.outputs.find((i) => i.definition.name === output.name)!;
 
         return (
           <React.Fragment key={idx}>
@@ -138,9 +136,7 @@ export const ParentSolidNode: React.FunctionComponent<ParentSolidNodeProps> = pr
                 minified={minified}
                 layout={parentLayout.dependedBy[titleOfIO(dependedBy)]}
                 target={parentLayout.outputs[output.name].port}
-                onDoubleClickLabel={() =>
-                  props.onClickSolid({ path: ["..", dependedBy.solid.name] })
-                }
+                onDoubleClickLabel={() => props.onClickSolid({path: ['..', dependedBy.solid.name]})}
               />
             ))}
             <SolidIOBox

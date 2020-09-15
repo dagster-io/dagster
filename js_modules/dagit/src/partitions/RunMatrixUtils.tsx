@@ -1,14 +1,14 @@
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import { RUN_STATUS_COLORS } from "../runs/RunStatusDots";
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import {RUN_STATUS_COLORS} from '../runs/RunStatusDots';
 
-const SUCCESS_COLOR = ({ dimSuccesses }: { dimSuccesses?: boolean }) =>
-  dimSuccesses ? "#CFE6DC" : "#009857";
+const SUCCESS_COLOR = ({dimSuccesses}: {dimSuccesses?: boolean}) =>
+  dimSuccesses ? '#CFE6DC' : '#009857';
 // In CSS, you can layer multiple backgrounds on top of each other by comma-separating values in
 // `background`. However, this only works with gradients, not with primitive color values. To do
 // hovered + red without color math (?), just stack the colors as flat gradients.
 const flatGradient = (color: string) => `linear-gradient(to left, ${color} 0%, ${color} 100%)`;
-const flatGradientStack = (colors: string[]) => colors.map(flatGradient).join(",");
+const flatGradientStack = (colors: string[]) => colors.map(flatGradient).join(',');
 
 export const GridColumn = styled.div<{
   disabled?: boolean;
@@ -20,7 +20,7 @@ export const GridColumn = styled.div<{
   flex-direction: column;
   flex-shrink: 0;
 
-  ${({ disabled, focused, multiselectFocused }) =>
+  ${({disabled, focused, multiselectFocused}) =>
     !disabled &&
     !focused &&
     !multiselectFocused &&
@@ -35,7 +35,7 @@ export const GridColumn = styled.div<{
     }
   }`}
 
-  ${({ disabled }) =>
+  ${({disabled}) =>
     disabled &&
     `
       ${TopLabelTilted} {
@@ -43,7 +43,7 @@ export const GridColumn = styled.div<{
       }
     `}
 
-  ${({ focused }) =>
+  ${({focused}) =>
     focused &&
     `background: ${Colors.BLUE4};
     ${LeftLabel} {
@@ -58,7 +58,7 @@ export const GridColumn = styled.div<{
     }
   }`}
 
-  ${({ multiselectFocused }) =>
+  ${({multiselectFocused}) =>
     multiselectFocused &&
     `background: ${Colors.BLUE5};
     ${LeftLabel} {
@@ -79,7 +79,7 @@ export const GridColumn = styled.div<{
     display: inline-block;
 
     &:before {
-      content: " ";
+      content: ' ';
       display: inline-block;
       width: 15px;
       height: 15px;
@@ -132,16 +132,16 @@ export const GridColumn = styled.div<{
   }
 `;
 
-export const LeftLabel = styled.div<{ hovered?: boolean; redness?: number }>`
+export const LeftLabel = styled.div<{hovered?: boolean; redness?: number}>`
   height: 23px;
   line-height: 23px;
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
-  background: ${({ redness, hovered }) =>
+  background: ${({redness, hovered}) =>
     flatGradientStack([
-      redness ? `rgba(255, 0, 0, ${redness * 0.6})` : "transparent",
-      hovered ? Colors.LIGHT_GRAY3 : "transparent"
+      redness ? `rgba(255, 0, 0, ${redness * 0.6})` : 'transparent',
+      hovered ? Colors.LIGHT_GRAY3 : 'transparent',
     ])};
 `;
 
@@ -179,13 +179,13 @@ export const TopLabelTilted = styled.div`
   }
 `;
 
-export const GridFloatingContainer = styled.div<{ floating: boolean }>`
+export const GridFloatingContainer = styled.div<{floating: boolean}>`
   display: flex;
   border-right: 1px solid ${Colors.GRAY5};
   padding-bottom: 16px;
   width: 330px;
   z-index: 2;
-  ${({ floating }) => (floating ? "box-shadow: 1px 0 4px rgba(0, 0, 0, 0.15)" : "")};
+  ${({floating}) => (floating ? 'box-shadow: 1px 0 4px rgba(0, 0, 0, 0.15)' : '')};
 `;
 
 export const GridScrollContainer = styled.div`

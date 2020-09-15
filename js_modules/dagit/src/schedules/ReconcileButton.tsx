@@ -1,10 +1,10 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { useRepositorySelector } from "../DagsterRepositoryContext";
-import { useMutation } from "react-apollo";
-import { Spinner, Button, Intent } from "@blueprintjs/core";
-import gql from "graphql-tag";
-import { SCHEDULES_ROOT_QUERY } from "./ScheduleUtils";
+import {useRepositorySelector} from '../DagsterRepositoryContext';
+import {useMutation} from 'react-apollo';
+import {Spinner, Button, Intent} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
 
 export const ReconcileButton: React.FunctionComponent<{}> = () => {
   const repositorySelector = useRepositorySelector();
@@ -12,15 +12,15 @@ export const ReconcileButton: React.FunctionComponent<{}> = () => {
     {
       query: SCHEDULES_ROOT_QUERY,
       variables: {
-        repositorySelector: repositorySelector
-      }
-    }
+        repositorySelector: repositorySelector,
+      },
+    },
   ];
 
   const [
     reconcileScheduleState,
-    { loading: reconcileInFlight }
-  ] = useMutation(RECONCILE_SCHEDULE_STATE_MUTATION, { refetchQueries });
+    {loading: reconcileInFlight},
+  ] = useMutation(RECONCILE_SCHEDULE_STATE_MUTATION, {refetchQueries});
 
   if (reconcileInFlight) {
     return <Spinner />;
@@ -30,7 +30,7 @@ export const ReconcileButton: React.FunctionComponent<{}> = () => {
     <Button
       small={true}
       intent={Intent.SUCCESS}
-      onClick={() => reconcileScheduleState({ variables: { repositorySelector } })}
+      onClick={() => reconcileScheduleState({variables: {repositorySelector}})}
     >
       Reconcile
     </Button>

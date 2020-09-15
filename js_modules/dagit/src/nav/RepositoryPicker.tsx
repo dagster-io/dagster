@@ -1,14 +1,14 @@
-import React from "react";
-import { Colors, Icon, Popover, Menu, MenuItem, Spinner } from "@blueprintjs/core";
+import React from 'react';
+import {Colors, Icon, Popover, Menu, MenuItem, Spinner} from '@blueprintjs/core';
 import {
   DagsterRepoOption,
   isRepositoryOptionEqual,
-  useDagitExecutablePath
-} from "../DagsterRepositoryContext";
-import styled from "styled-components/macro";
-import { useHistory } from "react-router";
-import { ReloadRepositoryLocationButton } from "./ReloadRepositoryLocationButton";
-import { RepositoryInformation } from "../RepositoryInformation";
+  useDagitExecutablePath,
+} from '../DagsterRepositoryContext';
+import styled from 'styled-components/macro';
+import {useHistory} from 'react-router';
+import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
+import {RepositoryInformation} from '../RepositoryInformation';
 
 interface RepositoryPickerProps {
   options: DagsterRepoOption[];
@@ -19,7 +19,7 @@ interface RepositoryPickerProps {
 export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = ({
   repo,
   setRepo,
-  options
+  options,
 }) => {
   const history = useHistory();
   const [open, setOpen] = React.useState(false);
@@ -27,7 +27,7 @@ export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = 
 
   const selectOption = (repo: DagsterRepoOption) => {
     setRepo(repo);
-    history.push("/");
+    history.push('/');
   };
 
   return (
@@ -36,15 +36,15 @@ export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = 
       isOpen={open}
       onInteraction={setOpen}
       minimal
-      position={"bottom-left"}
+      position={'bottom-left'}
       content={
-        <Menu style={{ minWidth: 280 }}>
+        <Menu style={{minWidth: 280}}>
           {options.map((option, idx) => (
             <MenuItem
               key={idx}
               onClick={() => selectOption(option)}
               active={repo ? isRepositoryOptionEqual(repo, option) : false}
-              icon={"git-repo"}
+              icon={'git-repo'}
               text={
                 <RepositoryInformation
                   repository={option.repository}
@@ -57,13 +57,13 @@ export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = 
       }
     >
       <RepositoryPickerFlexContainer>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 10.5, color: Colors.GRAY1, userSelect: "none" }}>REPOSITORY</div>
+        <div style={{flex: 1, minWidth: 0}}>
+          <div style={{fontSize: 10.5, color: Colors.GRAY1, userSelect: 'none'}}>REPOSITORY</div>
           <RepoTitle>
             {repo ? (
               <>
                 {repo.repository.name}
-                <Icon icon="caret-down" style={{ opacity: 0.9, marginLeft: 3 }} />
+                <Icon icon="caret-down" style={{opacity: 0.9, marginLeft: 3}} />
               </>
             ) : (
               <Spinner size={16} />

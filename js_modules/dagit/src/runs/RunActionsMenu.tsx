@@ -1,10 +1,10 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import { showCustomAlert } from "../CustomAlertProvider";
-import { RunTableRunFragment } from "./types/RunTableRunFragment";
-import { RunActionMenuFragment } from "./types/RunActionMenuFragment";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import {showCustomAlert} from '../CustomAlertProvider';
+import {RunTableRunFragment} from './types/RunTableRunFragment';
+import {RunActionMenuFragment} from './types/RunActionMenuFragment';
 
-import { useMutation, useLazyQuery } from "react-apollo";
+import {useMutation, useLazyQuery} from 'react-apollo';
 import {
   Button,
   Menu,
@@ -13,33 +13,33 @@ import {
   MenuDivider,
   Intent,
   Tooltip,
-  Position
-} from "@blueprintjs/core";
-import { SharedToaster } from "../DomUtils";
-import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
-import * as qs from "query-string";
-import { REEXECUTE_PIPELINE_UNKNOWN } from "./RunActionButtons";
-import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
+  Position,
+} from '@blueprintjs/core';
+import {SharedToaster} from '../DomUtils';
+import {HighlightedCodeBlock} from '../HighlightedCodeBlock';
+import * as qs from 'query-string';
+import {REEXECUTE_PIPELINE_UNKNOWN} from './RunActionButtons';
+import {DagsterRepositoryContext} from '../DagsterRepositoryContext';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   CANCEL_MUTATION,
   DELETE_MUTATION,
   getReexecutionVariables,
   handleLaunchResult,
-  RunsQueryRefetchContext
-} from "./RunUtils";
+  RunsQueryRefetchContext,
+} from './RunUtils';
 
 export const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment | RunActionMenuFragment;
-}> = React.memo(({ run }) => {
-  const { refetch } = React.useContext(RunsQueryRefetchContext);
+}> = React.memo(({run}) => {
+  const {refetch} = React.useContext(RunsQueryRefetchContext);
 
   const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
-  const [cancel] = useMutation(CANCEL_MUTATION, { onCompleted: refetch });
-  const [destroy] = useMutation(DELETE_MUTATION, { onCompleted: refetch });
-  const { repositoryLocation, repository } = React.useContext(DagsterRepositoryContext);
-  const [loadEnv, { called, loading, data }] = useLazyQuery(PipelineEnvironmentYamlQuery, {
-    variables: { runId: run.runId }
+  const [cancel] = useMutation(CANCEL_MUTATION, {onCompleted: refetch});
+  const [destroy] = useMutation(DELETE_MUTATION, {onCompleted: refetch});
+  const {repositoryLocation, repository} = React.useContext(DagsterRepositoryContext);
+  const [loadEnv, {called, loading, data}] = useLazyQuery(PipelineEnvironmentYamlQuery, {
+    variables: {runId: run.runId},
   });
 
   const envYaml = data?.pipelineRunOrError?.runConfigYaml;
@@ -49,13 +49,13 @@ export const RunActionsMenu: React.FunctionComponent<{
       content={
         <Menu>
           <MenuItem
-            text={loading ? "Loading Configuration..." : "View Configuration..."}
+            text={loading ? 'Loading Configuration...' : 'View Configuration...'}
             disabled={envYaml == null}
             icon="share"
             onClick={() =>
               showCustomAlert({
-                title: "Config",
-                body: <HighlightedCodeBlock value={envYaml} languages={["yaml"]} />
+                title: 'Config',
+                body: <HighlightedCodeBlock value={envYaml} languages={['yaml']} />,
               })
             }
           />
@@ -75,7 +75,7 @@ export const RunActionsMenu: React.FunctionComponent<{
               href={`/pipeline/${run.pipelineName}/playground/setup?${qs.stringify({
                 mode: run.mode,
                 config: envYaml,
-                solidSelection: run.solidSelection
+                solidSelection: run.solidSelection,
               })}`}
             />
           </Tooltip>
@@ -95,10 +95,10 @@ export const RunActionsMenu: React.FunctionComponent<{
                     run,
                     envYaml,
                     repositoryLocationName: repositoryLocation?.name,
-                    repositoryName: repository?.name
-                  })
+                    repositoryName: repository?.name,
+                  }),
                 });
-                handleLaunchResult(run.pipelineName, result, { openInNewWindow: false });
+                handleLaunchResult(run.pipelineName, result, {openInNewWindow: false});
               }}
             />
           </Tooltip>
@@ -107,7 +107,7 @@ export const RunActionsMenu: React.FunctionComponent<{
             icon="stop"
             disabled={!run.canTerminate}
             onClick={async () => {
-              const result = await cancel({ variables: { runId: run.runId } });
+              const result = await cancel({variables: {runId: run.runId}});
               showToastFor(result.data.terminatePipelineExecution, `Run ${run.runId} cancelled.`);
             }}
           />
@@ -117,13 +117,13 @@ export const RunActionsMenu: React.FunctionComponent<{
             icon="trash"
             disabled={run.canTerminate}
             onClick={async () => {
-              const result = await destroy({ variables: { runId: run.runId } });
+              const result = await destroy({variables: {runId: run.runId}});
               showToastFor(result.data.deletePipelineRun, `Run ${run.runId} deleted.`);
             }}
           />
         </Menu>
       }
-      position={"bottom"}
+      position={'bottom'}
       onOpening={() => {
         if (!called) {
           loadEnv();
@@ -138,13 +138,13 @@ export const RunActionsMenu: React.FunctionComponent<{
 export const RunBulkActionsMenu: React.FunctionComponent<{
   selected: RunTableRunFragment[];
   onChangeSelection: (runs: RunTableRunFragment[]) => void;
-}> = React.memo(({ selected, onChangeSelection }) => {
-  const { refetch } = React.useContext(RunsQueryRefetchContext);
-  const [cancel] = useMutation(CANCEL_MUTATION, { onCompleted: refetch });
-  const [destroy] = useMutation(DELETE_MUTATION, { onCompleted: refetch });
+}> = React.memo(({selected, onChangeSelection}) => {
+  const {refetch} = React.useContext(RunsQueryRefetchContext);
+  const [cancel] = useMutation(CANCEL_MUTATION, {onCompleted: refetch});
+  const [destroy] = useMutation(DELETE_MUTATION, {onCompleted: refetch});
 
-  const cancelable = selected.filter(r => r.canTerminate);
-  const deletable = selected.filter(r => !r.canTerminate);
+  const cancelable = selected.filter((r) => r.canTerminate);
+  const deletable = selected.filter((r) => !r.canTerminate);
 
   return (
     <Popover
@@ -152,11 +152,11 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
         <Menu>
           <MenuItem
             icon="stop"
-            text={`Cancel ${cancelable.length} ${cancelable.length === 1 ? "run" : "runs"}`}
+            text={`Cancel ${cancelable.length} ${cancelable.length === 1 ? 'run' : 'runs'}`}
             disabled={cancelable.length === 0}
             onClick={async () => {
               for (const run of cancelable) {
-                const result = await cancel({ variables: { runId: run.runId } });
+                const result = await cancel({variables: {runId: run.runId}});
                 showToastFor(result.data.terminatePipelineExecution, `Run ${run.runId} cancelled.`);
               }
               onChangeSelection([]);
@@ -164,11 +164,11 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
           />
           <MenuItem
             icon="trash"
-            text={`Delete ${deletable.length} ${deletable.length === 1 ? "run" : "runs"}`}
+            text={`Delete ${deletable.length} ${deletable.length === 1 ? 'run' : 'runs'}`}
             disabled={deletable.length === 0}
             onClick={async () => {
               for (const run of deletable) {
-                const result = await destroy({ variables: { runId: run.runId } });
+                const result = await destroy({variables: {runId: run.runId}});
                 showToastFor(result.data.deletePipelineRun, `Run ${run.runId} deleted.`);
               }
               // we could remove just the runs that are deleted and leave the others, but we may
@@ -178,7 +178,7 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
           />
         </Menu>
       }
-      position={"bottom"}
+      position={'bottom'}
     >
       <Button disabled={selected.length === 0} text="Actions" rightIcon="caret-down" small />
     </Popover>
@@ -186,23 +186,23 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
 });
 
 const OPEN_PLAYGROUND_UNKNOWN =
-  "Playground is unavailable because the pipeline is not present in the current repository.";
+  'Playground is unavailable because the pipeline is not present in the current repository.';
 
 function showToastFor(
-  possibleError: { __typename: string; message?: string },
-  successMessage: string
+  possibleError: {__typename: string; message?: string},
+  successMessage: string,
 ) {
-  if ("message" in possibleError) {
+  if ('message' in possibleError) {
     SharedToaster.show({
       message: possibleError.message,
-      icon: "error",
-      intent: Intent.DANGER
+      icon: 'error',
+      intent: Intent.DANGER,
     });
   } else {
     SharedToaster.show({
       message: successMessage,
-      icon: "confirm",
-      intent: Intent.SUCCESS
+      icon: 'confirm',
+      intent: Intent.SUCCESS,
     });
   }
 }

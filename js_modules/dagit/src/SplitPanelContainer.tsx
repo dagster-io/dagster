@@ -1,11 +1,11 @@
-import * as React from "react";
-import styled, { CSSProperties } from "styled-components/macro";
-import { Colors, ButtonGroup, Button } from "@blueprintjs/core";
+import * as React from 'react';
+import styled, {CSSProperties} from 'styled-components/macro';
+import {Colors, ButtonGroup, Button} from '@blueprintjs/core';
 
 const DIVIDER_THICKNESS = 4;
 
 interface SplitPanelContainerProps {
-  axis?: "horizontal" | "vertical";
+  axis?: 'horizontal' | 'vertical';
   identifier: string;
   first: React.ReactNode;
   firstInitialPercent: number;
@@ -33,24 +33,24 @@ export class SplitPanelContainer extends React.Component<
       size = this.props.firstInitialPercent;
     }
 
-    this.state = { size, key, resizing: false };
+    this.state = {size, key, resizing: false};
   }
 
   onChangeSize = (size: number) => {
-    this.setState({ size });
+    this.setState({size});
     window.localStorage.setItem(this.state.key, `${size}`);
   };
 
   render() {
-    const { firstMinSize, first, second } = this.props;
-    const { size, resizing } = this.state;
-    const axis = this.props.axis || "horizontal";
+    const {firstMinSize, first, second} = this.props;
+    const {size, resizing} = this.state;
+    const axis = this.props.axis || 'horizontal';
 
-    const firstPaneStyles: CSSProperties = { flexShrink: 0 };
+    const firstPaneStyles: CSSProperties = {flexShrink: 0};
 
     // Note: The divider appears after the first panel, so making the first panel 100% wide
     // hides the divider offscreen. To prevent this, we subtract the divider depth.
-    if (axis === "horizontal") {
+    if (axis === 'horizontal') {
       firstPaneStyles.minWidth = firstMinSize;
       firstPaneStyles.width = `calc(${size}% - ${DIVIDER_THICKNESS}px)`;
     } else {
@@ -66,10 +66,10 @@ export class SplitPanelContainer extends React.Component<
         <PanelDivider
           axis={axis}
           resizing={resizing}
-          onSetResizing={resizing => this.setState({ resizing })}
+          onSetResizing={(resizing) => this.setState({resizing})}
           onMove={this.onChangeSize}
         />
-        <div className="split-panel" style={{ flex: 1 }}>
+        <div className="split-panel" style={{flex: 1}}>
           {second}
         </div>
       </Container>
@@ -78,7 +78,7 @@ export class SplitPanelContainer extends React.Component<
 }
 
 interface IDividerProps {
-  axis: "horizontal" | "vertical";
+  axis: 'horizontal' | 'vertical';
   resizing: boolean;
   onSetResizing: (resizing: boolean) => void;
   onMove: (vw: number) => void;
@@ -93,12 +93,12 @@ export class PanelDivider extends React.Component<IDividerProps> {
     this.props.onSetResizing(true);
 
     const onMouseMove = (event: MouseEvent) => {
-      const parent = this.ref.current?.closest("#split-panel-container");
+      const parent = this.ref.current?.closest('#split-panel-container');
       if (!parent) return;
       const parentRect = parent.getBoundingClientRect();
 
       const firstPanelPercent =
-        this.props.axis === "horizontal"
+        this.props.axis === 'horizontal'
           ? ((event.clientX - parentRect.left) * 100) / parentRect.width
           : ((event.clientY - parentRect.top) * 100) / parentRect.height;
 
@@ -107,11 +107,11 @@ export class PanelDivider extends React.Component<IDividerProps> {
 
     const onMouseUp = () => {
       this.props.onSetResizing(false);
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
     };
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   };
 
   render() {
@@ -126,23 +126,23 @@ export class PanelDivider extends React.Component<IDividerProps> {
 }
 
 interface PanelToggleProps {
-  axis: "horizontal" | "vertical";
+  axis: 'horizontal' | 'vertical';
   container: React.RefObject<SplitPanelContainer>;
 }
 
-export const FirstOrSecondPanelToggle = ({ container, axis }: PanelToggleProps) => {
+export const FirstOrSecondPanelToggle = ({container, axis}: PanelToggleProps) => {
   return (
-    <ButtonGroup style={{ flexShrink: 0 }}>
+    <ButtonGroup style={{flexShrink: 0}}>
       <Button
         small={true}
-        title={"Focus First Pane"}
-        icon={axis === "vertical" ? "add-row-top" : "add-column-left"}
+        title={'Focus First Pane'}
+        icon={axis === 'vertical' ? 'add-row-top' : 'add-column-left'}
         onClick={() => container.current?.onChangeSize(100)}
       />
       <Button
         small={true}
-        title={"Focus Second Pane"}
-        icon={axis === "vertical" ? "add-row-bottom" : "add-column-right"}
+        title={'Focus Second Pane'}
+        icon={axis === 'vertical' ? 'add-row-bottom' : 'add-column-right'}
         onClick={() => container.current?.onChangeSize(0)}
       />
     </ButtonGroup>
@@ -154,8 +154,8 @@ export const FirstOrSecondPanelToggle = ({ container, axis }: PanelToggleProps) 
 // If we keep making components that manipulate panel state we may want to move it
 // all to a context consumed by both.
 //
-export const SecondPanelToggle = ({ container, axis }: PanelToggleProps) => {
-  const [prevSize, setPrevSize] = React.useState<number | "unknown">("unknown");
+export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
+  const [prevSize, setPrevSize] = React.useState<number | 'unknown'>('unknown');
   const initialIsOpen = (container.current?.state.size || 0) < 100;
 
   const [open, setOpen] = React.useState<boolean>(initialIsOpen);
@@ -165,8 +165,8 @@ export const SecondPanelToggle = ({ container, axis }: PanelToggleProps) => {
     <Button
       small={true}
       active={open}
-      title={"Toggle Second Pane"}
-      icon={axis === "vertical" ? "add-row-bottom" : "add-column-right"}
+      title={'Toggle Second Pane'}
+      icon={axis === 'vertical' ? 'add-row-bottom' : 'add-column-right'}
       onClick={() => {
         if (!container.current) return;
         const current = container.current.state.size;
@@ -177,7 +177,7 @@ export const SecondPanelToggle = ({ container, axis }: PanelToggleProps) => {
         } else {
           setOpen(true);
           container.current.onChangeSize(
-            prevSize === "unknown" ? container.current.props.firstInitialPercent : prevSize
+            prevSize === 'unknown' ? container.current.props.firstInitialPercent : prevSize,
           );
         }
       }}
@@ -186,24 +186,24 @@ export const SecondPanelToggle = ({ container, axis }: PanelToggleProps) => {
 };
 
 const DividerWrapper = {
-  horizontal: styled.div<{ resizing: boolean }>`
+  horizontal: styled.div<{resizing: boolean}>`
     width: ${DIVIDER_THICKNESS}px;
     z-index: 2;
     background: ${Colors.WHITE};
-    border-left: 1px solid ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
-    border-right: 1px solid ${p => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
+    border-left: 1px solid ${(p) => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
+    border-right: 1px solid ${(p) => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
     overflow: visible;
     position: relative;
   `,
-  vertical: styled.div<{ resizing: boolean }>`
+  vertical: styled.div<{resizing: boolean}>`
     height: ${DIVIDER_THICKNESS}px;
     z-index: 2;
     background: ${Colors.WHITE};
-    border-top: 1px solid ${p => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
-    border-bottom: 1px solid ${p => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
+    border-top: 1px solid ${(p) => (p.resizing ? Colors.GRAY5 : Colors.LIGHT_GRAY2)};
+    border-bottom: 1px solid ${(p) => (p.resizing ? Colors.GRAY3 : Colors.GRAY5)};
     overflow: visible;
     position: relative;
-  `
+  `,
 };
 
 const DividerHitArea = {
@@ -222,15 +222,15 @@ const DividerHitArea = {
     cursor: ns-resize;
     position: relative;
     top: -8px;
-  `
+  `,
 };
 
 const Container = styled.div<{
-  axis?: "horizontal" | "vertical";
+  axis?: 'horizontal' | 'vertical';
   resizing: boolean;
 }>`
   display: flex;
-  flex-direction: ${({ axis }) => (axis === "vertical" ? "column" : "row")};
+  flex-direction: ${({axis}) => (axis === 'vertical' ? 'column' : 'row')};
   flex: 1 1;
   width: 100%;
   min-width: 0;
@@ -238,11 +238,11 @@ const Container = styled.div<{
 
   .split-panel {
     position: relative;
-    transition: ${({ axis, resizing }) =>
-      resizing ? "none" : axis === "horizontal" ? "width" : "height"}
+    transition: ${({axis, resizing}) =>
+      resizing ? 'none' : axis === 'horizontal' ? 'width' : 'height'}
       200ms ease-out;
     flex-direction: column;
     display: flex;
-    min-${({ axis }) => (axis === "vertical" ? "height" : "width")}: 0;
+    min-${({axis}) => (axis === 'vertical' ? 'height' : 'width')}: 0;
   }
 `;

@@ -1,15 +1,15 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Icon, IconName, Colors } from "@blueprintjs/core";
-import { Link } from "react-router-dom";
-import { TypeExplorerContainer } from "./typeexplorer/TypeExplorerContainer";
-import { TypeListContainer } from "./typeexplorer/TypeListContainer";
-import { SidebarTabbedContainerPipelineFragment } from "./types/SidebarTabbedContainerPipelineFragment";
-import { SidebarSolidContainer } from "./SidebarSolidContainer";
-import SidebarPipelineInfo from "./SidebarPipelineInfo";
-import { SolidNameOrPath } from "./PipelineExplorer";
-import { PipelineExplorerPath } from "./PipelinePathUtils";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {Icon, IconName, Colors} from '@blueprintjs/core';
+import {Link} from 'react-router-dom';
+import {TypeExplorerContainer} from './typeexplorer/TypeExplorerContainer';
+import {TypeListContainer} from './typeexplorer/TypeListContainer';
+import {SidebarTabbedContainerPipelineFragment} from './types/SidebarTabbedContainerPipelineFragment';
+import {SidebarSolidContainer} from './SidebarSolidContainer';
+import SidebarPipelineInfo from './SidebarPipelineInfo';
+import {SolidNameOrPath} from './PipelineExplorer';
+import {PipelineExplorerPath} from './PipelinePathUtils';
 
 interface ISidebarTabbedContainerProps {
   types?: string;
@@ -18,7 +18,7 @@ interface ISidebarTabbedContainerProps {
   explorerPath: PipelineExplorerPath;
   solidHandleID?: string;
   parentSolidHandleID?: string;
-  getInvocations?: (definitionName: string) => { handleID: string }[];
+  getInvocations?: (definitionName: string) => {handleID: string}[];
   onEnterCompositeSolid: (arg: SolidNameOrPath) => void;
   onClickSolid: (arg: SolidNameOrPath) => void;
 }
@@ -32,17 +32,17 @@ interface ITabInfo {
 
 const TabInfo: Array<ITabInfo> = [
   {
-    name: "Info",
-    icon: "diagram-tree",
-    key: "info",
-    link: "?"
+    name: 'Info',
+    icon: 'diagram-tree',
+    key: 'info',
+    link: '?',
   },
   {
-    name: "Types",
-    icon: "manual",
-    key: "types",
-    link: "?types=true"
-  }
+    name: 'Types',
+    icon: 'manual',
+    key: 'types',
+    link: '?types=true',
+  },
 ];
 
 export default class SidebarTabbedContainer extends React.Component<ISidebarTabbedContainerProps> {
@@ -54,7 +54,7 @@ export default class SidebarTabbedContainer extends React.Component<ISidebarTabb
       }
 
       ${SidebarPipelineInfo.fragments.SidebarPipelineInfoFragment}
-    `
+    `,
   };
 
   render() {
@@ -67,17 +67,17 @@ export default class SidebarTabbedContainer extends React.Component<ISidebarTabb
       getInvocations,
       parentSolidHandleID,
       onEnterCompositeSolid,
-      onClickSolid
+      onClickSolid,
     } = this.props;
 
     let content = <div />;
-    let activeTab = "info";
+    let activeTab = 'info';
 
     if (typeExplorer) {
-      activeTab = "types";
+      activeTab = 'types';
       content = <TypeExplorerContainer explorerPath={explorerPath} typeName={typeExplorer} />;
     } else if (types) {
-      activeTab = "types";
+      activeTab = 'types';
       content = <TypeListContainer explorerPath={explorerPath} />;
     } else if (solidHandleID) {
       content = (
@@ -110,10 +110,10 @@ export default class SidebarTabbedContainer extends React.Component<ISidebarTabb
     return (
       <>
         <Tabs>
-          {TabInfo.map(({ name, icon, key, link }) => (
+          {TabInfo.map(({name, icon, key, link}) => (
             <Link to={link} key={key}>
               <Tab key={key} active={key === activeTab}>
-                <Icon icon={icon} style={{ marginRight: 5 }} />
+                <Icon icon={icon} style={{marginRight: 5}} />
                 {name}
               </Tab>
             </Link>
@@ -134,10 +134,10 @@ const Tabs = styled.div`
   border-bottom: 1px solid #ccc;
 `;
 
-const Tab = styled.div<{ active: boolean }>`
-  color: ${p => (p.active ? Colors.COBALT3 : Colors.GRAY2)}
+const Tab = styled.div<{active: boolean}>`
+  color: ${(p) => (p.active ? Colors.COBALT3 : Colors.GRAY2)}
   border-top: 3px solid transparent;
-  border-bottom: 3px solid ${p => (p.active ? Colors.COBALT3 : "transparent")};
+  border-bottom: 3px solid ${(p) => (p.active ? Colors.COBALT3 : 'transparent')};
   text-decoration: none;
   white-space: nowrap;
   min-width: 40px;

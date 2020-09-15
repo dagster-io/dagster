@@ -1,10 +1,10 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import { LogLevel } from "./LogsProvider";
-import { ColumnWidthsContext } from "./LogsScrollingTableHeader";
-import { formatStepKey } from "../Util";
-import { Timestamp } from "../TimeComponents";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import {LogLevel} from './LogsProvider';
+import {ColumnWidthsContext} from './LogsScrollingTableHeader';
+import {formatStepKey} from '../Util';
+import {Timestamp} from '../TimeComponents';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
@@ -12,10 +12,10 @@ const bgcolorForLevel = (level: LogLevel) =>
     [LogLevel.INFO]: `transparent`,
     [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
     [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
-    [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`
+    [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`,
   }[level]);
 
-export const Row = styled.div<{ level: LogLevel }>`
+export const Row = styled.div<{level: LogLevel}>`
   font-size: 0.75em;
   width: 100%;
   height: 100%;
@@ -29,17 +29,17 @@ export const Row = styled.div<{ level: LogLevel }>`
   align-items: baseline;
   overflow: hidden;
   border-top: 1px solid ${Colors.LIGHT_GRAY3};
-  background: ${props => bgcolorForLevel(props.level)};
+  background: ${(props) => bgcolorForLevel(props.level)};
   &:hover {
     background: white;
   }
-  color: ${props =>
+  color: ${(props) =>
     ({
       [LogLevel.DEBUG]: Colors.GRAY3,
       [LogLevel.INFO]: Colors.DARK_GRAY2,
       [LogLevel.WARNING]: Colors.GOLD2,
       [LogLevel.ERROR]: Colors.RED3,
-      [LogLevel.CRITICAL]: Colors.RED3
+      [LogLevel.CRITICAL]: Colors.RED3,
     }[props.level])};
 `;
 
@@ -68,11 +68,11 @@ export const StructuredContent = styled.div`
 // Manually implements middle text truncation since we can count on monospace font
 // rendering being fairly consistent.
 //
-export const SolidColumn = (props: { stepKey: string | false | null }) => {
+export const SolidColumn = (props: {stepKey: string | false | null}) => {
   const widths = React.useContext(ColumnWidthsContext);
-  const parts = formatStepKey(props.stepKey).split(".");
+  const parts = formatStepKey(props.stepKey).split('.');
   return (
-    <SolidColumnContainer style={{ width: widths.solid }}>
+    <SolidColumnContainer style={{width: widths.solid}}>
       {props.stepKey
         ? parts.map((p, idx) => (
             <div
@@ -82,16 +82,16 @@ export const SolidColumn = (props: { stepKey: string | false | null }) => {
               style={{
                 marginLeft: Math.max(0, idx * 15 - 9),
                 fontWeight: idx === parts.length - 1 ? 600 : 300,
-                paddingRight: 15
+                paddingRight: 15,
               }}
             >
-              {idx > 0 ? "↳" : ""}
+              {idx > 0 ? '↳' : ''}
               {p.length > 30 - idx * 2
                 ? `${p.substr(0, 16 - idx * 2)}…${p.substr(p.length - 14)}`
                 : p}
             </div>
           ))
-        : "-"}
+        : '-'}
     </SolidColumnContainer>
   );
 };
@@ -102,21 +102,21 @@ const SolidColumnContainer = styled.div`
 `;
 
 const SolidColumnTooltipStyle = JSON.stringify({
-  fontSize: "0.75em",
-  fontFamily: "monospace",
+  fontSize: '0.75em',
+  fontFamily: 'monospace',
   color: Colors.BLACK,
   background: Colors.WHITE,
   border: `1px solid ${Colors.LIGHT_GRAY3}`,
   top: -8,
-  left: 1
+  left: 1,
 });
 
 // Timestamp Column
 
-export const TimestampColumn = (props: { time: string | false }) => {
+export const TimestampColumn = (props: {time: string | false}) => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
-    <TimestampColumnContainer style={{ width: widths.timestamp }}>
+    <TimestampColumnContainer style={{width: widths.timestamp}}>
       {props.time && <Timestamp ms={Number(props.time)} format="HH:mm:ss.SSS" />}
     </TimestampColumnContainer>
   );
@@ -128,10 +128,10 @@ const TimestampColumnContainer = styled.div`
   color: ${Colors.GRAY3};
 `;
 
-export const EventTypeColumn: React.FunctionComponent<{}> = props => {
+export const EventTypeColumn: React.FunctionComponent<{}> = (props) => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
-    <EventTypeColumnContainer style={{ width: widths.eventType }}>
+    <EventTypeColumnContainer style={{width: widths.eventType}}>
       {props.children}
     </EventTypeColumnContainer>
   );

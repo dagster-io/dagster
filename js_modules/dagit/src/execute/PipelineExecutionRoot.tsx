@@ -1,34 +1,34 @@
-import * as React from "react";
-import gql from "graphql-tag";
+import * as React from 'react';
+import gql from 'graphql-tag';
 import ExecutionSessionContainer, {
   ExecutionSessionContainerError,
-  ExecutionSessionContainerLoading
-} from "./ExecutionSessionContainer";
-import { Query } from "react-apollo";
-import { IconNames } from "@blueprintjs/icons";
+  ExecutionSessionContainerLoading,
+} from './ExecutionSessionContainer';
+import {Query} from 'react-apollo';
+import {IconNames} from '@blueprintjs/icons';
 import {
   useStorage,
   IExecutionSessionChanges,
   applyChangesToSession,
-  applyCreateSession
-} from "../LocalStorage";
+  applyCreateSession,
+} from '../LocalStorage';
 import {
   PipelineExecutionRootQuery,
-  PipelineExecutionRootQueryVariables
-} from "./types/PipelineExecutionRootQuery";
-import { ExecutionTabs } from "./ExecutionTabs";
-import { RouteComponentProps } from "react-router-dom";
-import { usePipelineSelector, useRepositorySelector } from "../DagsterRepositoryContext";
+  PipelineExecutionRootQueryVariables,
+} from './types/PipelineExecutionRootQuery';
+import {ExecutionTabs} from './ExecutionTabs';
+import {RouteComponentProps} from 'react-router-dom';
+import {usePipelineSelector, useRepositorySelector} from '../DagsterRepositoryContext';
 import {
   PipelineExecutionConfigSchemaQuery,
-  PipelineExecutionConfigSchemaQueryVariables
-} from "./types/PipelineExecutionConfigSchemaQuery";
+  PipelineExecutionConfigSchemaQueryVariables,
+} from './types/PipelineExecutionConfigSchemaQuery';
 
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
-}>> = ({ match }) => {
-  const pipelineName = match.params.pipelinePath.split(":")[0];
-  const { repositoryName, repositoryLocationName } = useRepositorySelector();
+}>> = ({match}) => {
+  const pipelineName = match.params.pipelinePath.split(':')[0];
+  const {repositoryName, repositoryLocationName} = useRepositorySelector();
   const [data, onSave] = useStorage(repositoryName, pipelineName);
 
   const session = data.sessions[data.current];
@@ -48,22 +48,22 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
         key={JSON.stringify({
           repositoryName,
           repositoryLocationName,
-          pipelineName
+          pipelineName,
         })}
-        variables={{ repositoryName, repositoryLocationName, pipelineName }}
+        variables={{repositoryName, repositoryLocationName, pipelineName}}
         query={PIPELINE_EXECUTION_ROOT_QUERY}
         fetchPolicy="cache-and-network"
         partialRefetch={true}
       >
-        {result => (
+        {(result) => (
           <Query<PipelineExecutionConfigSchemaQuery, PipelineExecutionConfigSchemaQueryVariables>
-            key={JSON.stringify({ pipelineSelector, mode: session?.mode })}
-            variables={{ selector: pipelineSelector, mode: session?.mode }}
+            key={JSON.stringify({pipelineSelector, mode: session?.mode})}
+            variables={{selector: pipelineSelector, mode: session?.mode}}
             query={PIPELINE_EXECUTION_CONFIG_SCHEMA_QUERY}
             fetchPolicy="cache-and-network"
             partialRefetch={true}
           >
-            {configResult => {
+            {(configResult) => {
               const pipelineOrError = result.data && result.data.pipelineOrError;
               const partitionSetsOrError = result.data && result.data.partitionSetsOrError;
               const configSchemaOrError =
@@ -74,16 +74,16 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
               }
 
               if (
-                configSchemaOrError?.__typename === "PipelineNotFoundError" ||
-                partitionSetsOrError.__typename === "PipelineNotFoundError" ||
-                pipelineOrError.__typename === "PipelineNotFoundError"
+                configSchemaOrError?.__typename === 'PipelineNotFoundError' ||
+                partitionSetsOrError.__typename === 'PipelineNotFoundError' ||
+                pipelineOrError.__typename === 'PipelineNotFoundError'
               ) {
                 const message =
-                  pipelineOrError.__typename === "PipelineNotFoundError"
+                  pipelineOrError.__typename === 'PipelineNotFoundError'
                     ? pipelineOrError.message
-                    : "No data returned from GraphQL";
+                    : 'No data returned from GraphQL';
 
-                return pipelineName !== "" ? (
+                return pipelineName !== '' ? (
                   <ExecutionSessionContainerError
                     icon={IconNames.FLOW_BRANCH}
                     title="Pipeline Not Found"
@@ -97,11 +97,11 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
                 );
               }
 
-              if (pipelineOrError && pipelineOrError.__typename === "InvalidSubsetError") {
+              if (pipelineOrError && pipelineOrError.__typename === 'InvalidSubsetError') {
                 throw new Error(`Should never happen because we do not request a subset`);
               }
 
-              if (pipelineOrError && pipelineOrError.__typename === "PythonError") {
+              if (pipelineOrError && pipelineOrError.__typename === 'PythonError') {
                 return (
                   <ExecutionSessionContainerError
                     icon={IconNames.ERROR}
@@ -110,7 +110,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
                   />
                 );
               }
-              if (partitionSetsOrError && partitionSetsOrError.__typename === "PythonError") {
+              if (partitionSetsOrError && partitionSetsOrError.__typename === 'PythonError') {
                 return (
                   <ExecutionSessionContainerError
                     icon={IconNames.ERROR}
@@ -123,8 +123,8 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
               return (
                 <ExecutionSessionContainer
                   data={data}
-                  onSaveSession={changes => onSaveSession(data.current, changes)}
-                  onCreateSession={initial => onSave(applyCreateSession(data, initial))}
+                  onSaveSession={(changes) => onSaveSession(data.current, changes)}
+                  onCreateSession={(initial) => onSave(applyCreateSession(data, initial))}
                   pipeline={pipelineOrError}
                   partitionSets={partitionSetsOrError}
                   runConfigSchemaOrError={configSchemaOrError}

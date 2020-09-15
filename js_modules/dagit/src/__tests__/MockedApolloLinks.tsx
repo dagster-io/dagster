@@ -1,8 +1,8 @@
-import { Operation, GraphQLRequest, ApolloLink, FetchResult, Observable } from "apollo-link";
+import {Operation, GraphQLRequest, ApolloLink, FetchResult, Observable} from 'apollo-link';
 
-import { print } from "graphql/language/printer";
-import { addTypenameToDocument } from "apollo-utilities";
-import { isEqual } from "lodash";
+import {print} from 'graphql/language/printer';
+import {addTypenameToDocument} from 'apollo-utilities';
+import {isEqual} from 'lodash';
 
 export interface CachedGraphQLRequest extends GraphQLRequest {
   name: string;
@@ -39,13 +39,13 @@ export interface MockedSubscription {
 
 export class MockLink extends ApolloLink {
   public addTypename = true;
-  private mockedResponsesByKey: { [key: string]: MockedResponse[] } = {};
+  private mockedResponsesByKey: {[key: string]: MockedResponse[]} = {};
 
   constructor(mockedResponses: ReadonlyArray<MockedResponse>, addTypename = true) {
     super();
     this.addTypename = addTypename;
     if (mockedResponses) {
-      mockedResponses.forEach(mockedResponse => {
+      mockedResponses.forEach((mockedResponse) => {
         this.addMockedResponse(mockedResponse);
       });
     }
@@ -74,34 +74,34 @@ export class MockLink extends ApolloLink {
       return true;
     });
 
-    if (!response || typeof responseIndex === "undefined") {
+    if (!response || typeof responseIndex === 'undefined') {
       throw new Error(
         `No more mocked responses for the query: ${print(
-          operation.query
-        )}, variables: ${JSON.stringify(operation.variables)}`
+          operation.query,
+        )}, variables: ${JSON.stringify(operation.variables)}`,
       );
     }
 
     // this.mockedResponsesByKey[key].splice(responseIndex, 1);
 
-    const { newData } = response;
+    const {newData} = response;
 
     if (newData) {
       response.result = newData();
       this.mockedResponsesByKey[key].push(response);
     }
 
-    const { result, error, delay } = response;
+    const {result, error, delay} = response;
 
     if (!result && !error) {
       throw new Error(
         `Mocked response should contain either result or error. Got ${Object.keys(
-          response
-        )}. ${key}`
+          response,
+        )}. ${key}`,
       );
     }
 
-    return new Observable<FetchResult>(observer => {
+    return new Observable<FetchResult>((observer) => {
       const timer = setTimeout(
         () => {
           if (error) {
@@ -111,7 +111,7 @@ export class MockLink extends ApolloLink {
             observer.complete();
           }
         },
-        delay ? delay : 0
+        delay ? delay : 0,
       );
 
       return () => {
@@ -133,19 +133,19 @@ export class MockSubscriptionLink extends ApolloLink {
   }
 
   public request() {
-    return new Observable<FetchResult>(observer => {
-      this.setups.forEach(x => x());
+    return new Observable<FetchResult>((observer) => {
+      this.setups.forEach((x) => x());
       this.observer = observer;
       return () => {
-        this.unsubscribers.forEach(x => x());
+        this.unsubscribers.forEach((x) => x());
       };
     });
   }
 
   public simulateResult(result: MockedSubscriptionResult) {
     setTimeout(() => {
-      const { observer } = this;
-      if (!observer) throw new Error("subscription torn down");
+      const {observer} = this;
+      if (!observer) throw new Error('subscription torn down');
       if (result.result && observer.next) observer.next(result.result);
       if (result.error && observer.error) observer.error(result.error);
     }, result.delay || 0);
@@ -164,7 +164,7 @@ function requestToKey(request: GraphQLRequest, addTypename: boolean): string {
   const queryString =
     request.query && print(addTypename ? addTypenameToDocument(request.query) : request.query);
 
-  const requestKey = { query: queryString };
+  const requestKey = {query: queryString};
 
   return JSON.stringify(requestKey);
 }
@@ -177,7 +177,7 @@ export function mockSingleLink(...mockedResponses: Array<any>): ApolloLink {
   let maybeTypename = mockedResponses[mockedResponses.length - 1];
   let mocks = mockedResponses.slice(0, mockedResponses.length - 1);
 
-  if (typeof maybeTypename !== "boolean") {
+  if (typeof maybeTypename !== 'boolean') {
     mocks = mockedResponses;
     maybeTypename = true;
   }

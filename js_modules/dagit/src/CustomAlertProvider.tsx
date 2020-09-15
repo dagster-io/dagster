@@ -1,9 +1,9 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Button, Dialog, Classes, Colors } from "@blueprintjs/core";
-import { copyValue } from "./DomUtils";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Button, Dialog, Classes, Colors} from '@blueprintjs/core';
+import {copyValue} from './DomUtils';
 
-const CURRENT_ALERT_CHANGED = "alert-changed";
+const CURRENT_ALERT_CHANGED = 'alert-changed';
 
 interface ICustomAlert {
   body: React.ReactNode | string;
@@ -19,19 +19,16 @@ export const setCustomAlert = (alert: ICustomAlert | null) => {
 };
 
 export const showCustomAlert = (opts: Partial<ICustomAlert>) => {
-  setCustomAlert(Object.assign({ body: "", title: "Error" }, opts));
+  setCustomAlert(Object.assign({body: '', title: 'Error'}, opts));
 };
 
-export default class CustomAlertProvider extends React.Component<
-  {},
-  { alert: ICustomAlert | null }
-> {
-  state = { alert: CurrentAlert };
+export default class CustomAlertProvider extends React.Component<{}, {alert: ICustomAlert | null}> {
+  state = {alert: CurrentAlert};
 
   bodyRef = React.createRef<HTMLDivElement>();
 
   componentDidMount() {
-    document.addEventListener(CURRENT_ALERT_CHANGED, () => this.setState({ alert: CurrentAlert }));
+    document.addEventListener(CURRENT_ALERT_CHANGED, () => this.setState({alert: CurrentAlert}));
   }
 
   render() {
@@ -39,11 +36,11 @@ export default class CustomAlertProvider extends React.Component<
 
     return (
       <Dialog
-        icon={alert ? "info-sign" : undefined}
+        icon={alert ? 'info-sign' : undefined}
         usePortal={true}
         onClose={() => setCustomAlert(null)}
-        style={{ width: "auto", maxWidth: "80vw" }}
-        title={alert ? alert.title : ""}
+        style={{width: 'auto', maxWidth: '80vw'}}
+        title={alert ? alert.title : ''}
         isOpen={!!alert}
       >
         <Body ref={this.bodyRef}>{alert ? alert.body : undefined}</Body>
@@ -55,7 +52,7 @@ export default class CustomAlertProvider extends React.Component<
                 const copyElement = alert?.copySelector
                   ? this.bodyRef.current!.querySelector(alert.copySelector)
                   : this.bodyRef.current;
-                copyValue(e, copyElement?.textContent || "");
+                copyValue(e, copyElement?.textContent || '');
               }}
             >
               Copy

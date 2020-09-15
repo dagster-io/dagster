@@ -1,27 +1,27 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { Query, QueryResult } from "react-apollo";
+import {Query, QueryResult} from 'react-apollo';
 import {
   PartitionLongitudinalQuery,
   PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
-  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs
-} from "./types/PartitionLongitudinalQuery";
-import { Header } from "../ListComponents";
-import gql from "graphql-tag";
+  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs,
+} from './types/PartitionLongitudinalQuery';
+import {Header} from '../ListComponents';
+import gql from 'graphql-tag';
 
-import styled from "styled-components/macro";
-import { Divider, Button, ButtonGroup, Spinner } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
-import Loading from "../Loading";
-import { PartitionGraph, PIPELINE_LABEL } from "./PartitionGraph";
-import { PartitionRunMatrix } from "./PartitionRunMatrix";
-import { colorHash } from "../Util";
-import { Colors } from "@blueprintjs/core";
-import { RunsFilter } from "../runs/RunsFilter";
-import { TokenizingFieldValue } from "../TokenizingField";
-import { useRepositorySelector } from "../DagsterRepositoryContext";
-import PythonErrorInfo from "../PythonErrorInfo";
-import { RunTable } from "../runs/RunTable";
+import styled from 'styled-components/macro';
+import {Divider, Button, ButtonGroup, Spinner} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import Loading from '../Loading';
+import {PartitionGraph, PIPELINE_LABEL} from './PartitionGraph';
+import {PartitionRunMatrix} from './PartitionRunMatrix';
+import {colorHash} from '../Util';
+import {Colors} from '@blueprintjs/core';
+import {RunsFilter} from '../runs/RunsFilter';
+import {TokenizingFieldValue} from '../TokenizingField';
+import {useRepositorySelector} from '../DagsterRepositoryContext';
+import PythonErrorInfo from '../PythonErrorInfo';
+import {RunTable} from '../runs/RunTable';
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
@@ -32,7 +32,7 @@ interface PartitionViewProps {
   cursor: string | undefined;
   setCursor: (cursor: string | undefined) => void;
   onLoaded?: () => void;
-  runTags?: { [key: string]: string };
+  runTags?: {[key: string]: string};
 }
 
 export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
@@ -41,7 +41,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   cursor,
   setCursor,
   onLoaded,
-  runTags
+  runTags,
 }) => {
   const [cursorStack, setCursorStack] = React.useState<string[]>([]);
   const [pageSize, setPageSize] = React.useState<number | undefined>(30);
@@ -64,7 +64,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
         repositorySelector,
         partitionsCursor: cursor,
         partitionsLimit: pageSize,
-        reverse: true
+        reverse: true,
       }}
       fetchPolicy="cache-and-network"
       pollInterval={15 * 1000}
@@ -72,30 +72,30 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
     >
       {(queryResult: QueryResult<PartitionLongitudinalQuery, any>) => (
         <Loading queryResult={queryResult} allowStaleData={true}>
-          {({ partitionSetOrError }) => {
+          {({partitionSetOrError}) => {
             onLoaded?.();
-            if (partitionSetOrError.__typename !== "PartitionSet") {
+            if (partitionSetOrError.__typename !== 'PartitionSet') {
               return null;
             }
             const partitionSet = partitionSetOrError;
             const partitions =
-              partitionSet.partitionsOrError.__typename === "Partitions"
+              partitionSet.partitionsOrError.__typename === 'Partitions'
                 ? partitionSet.partitionsOrError.results
                 : [];
             const allStepKeys = {};
-            partitions.forEach(partition => {
-              partition.runs?.forEach(run => {
+            partitions.forEach((partition) => {
+              partition.runs?.forEach((run) => {
                 if (!run) {
                   return;
                 }
-                run.stepStats.forEach(stat => {
+                run.stepStats.forEach((stat) => {
                   allStepKeys[stat.stepKey] = true;
                 });
               });
             });
             const showLoading = queryResult.loading && queryResult.networkStatus !== 6;
             return (
-              <div style={{ marginTop: 30 }}>
+              <div style={{marginTop: 30}}>
                 <Header>Longitudinal History</Header>
                 <Divider />
                 <PartitionPagerControls
@@ -108,7 +108,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
                   popCursor={popCursor}
                   setCursor={setCursor}
                 />
-                <div style={{ position: "relative" }}>
+                <div style={{position: 'relative'}}>
                   <PartitionRunMatrix
                     pipelineName={pipelineName}
                     partitions={partitions}
@@ -135,13 +135,13 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
 
 const PartitionContent = ({
   partitions,
-  allStepKeys
+  allStepKeys,
 }: {
   partitions: Partition[];
   allStepKeys: string[];
 }) => {
-  const initial: { [stepKey: string]: boolean } = { [PIPELINE_LABEL]: true };
-  allStepKeys.forEach(stepKey => (initial[stepKey] = true));
+  const initial: {[stepKey: string]: boolean} = {[PIPELINE_LABEL]: true};
+  allStepKeys.forEach((stepKey) => (initial[stepKey] = true));
   const [selectedStepKeys, setSelectedStepKeys] = React.useState(initial);
   const [tokens, setTokens] = React.useState<TokenizingFieldValue[]>([]);
   const durationGraph = React.useRef<any>(undefined);
@@ -151,9 +151,9 @@ const PartitionContent = ({
   const rateGraph = React.useRef<any>(undefined);
   const graphs = [durationGraph, materializationGraph, successGraph, failureGraph, rateGraph];
 
-  const onStepChange = (selectedKeys: { [stepKey: string]: boolean }) => {
+  const onStepChange = (selectedKeys: {[stepKey: string]: boolean}) => {
     setSelectedStepKeys(selectedKeys);
-    graphs.forEach(graph => {
+    graphs.forEach((graph) => {
       const chart = graph?.current?.chart?.current?.chartInstance;
       const datasets = chart?.data?.datasets || [];
       datasets.forEach((dataset: any, idx: number) => {
@@ -164,15 +164,15 @@ const PartitionContent = ({
   };
 
   const runsByPartitionName = {};
-  partitions.forEach(partition => {
+  partitions.forEach((partition) => {
     runsByPartitionName[partition.name] = partition.runs.filter(
-      run => !tokens.length || tokens.every(token => applyFilter(token, run))
+      (run) => !tokens.length || tokens.every((token) => applyFilter(token, run)),
     );
   });
 
   return (
     <PartitionContentContainer>
-      <div style={{ flex: 1 }}>
+      <div style={{flex: 1}}>
         <PartitionGraph
           title="Execution Time by Partition"
           yLabel="Execution time (secs)"
@@ -214,11 +214,11 @@ const PartitionContent = ({
           ref={rateGraph}
         />
       </div>
-      <div style={{ width: 450 }}>
+      <div style={{width: 450}}>
         <NavContainer>
           <NavSectionHeader>Run filters</NavSectionHeader>
           <NavSection>
-            <RunsFilter tokens={tokens} onChange={setTokens} enabledFilters={["status", "tag"]} />
+            <RunsFilter tokens={tokens} onChange={setTokens} enabledFilters={['status', 'tag']} />
           </NavSection>
           <StepSelector selected={selectedStepKeys} onChange={onStepChange} />
         </NavContainer>
@@ -229,25 +229,25 @@ const PartitionContent = ({
 
 const StepSelector = ({
   selected,
-  onChange
+  onChange,
 }: {
-  selected: { [stepKey: string]: boolean };
-  onChange: (selected: { [stepKey: string]: boolean }) => void;
+  selected: {[stepKey: string]: boolean};
+  onChange: (selected: {[stepKey: string]: boolean}) => void;
 }) => {
   const onStepClick = (stepKey: string) => {
     return (evt: React.MouseEvent) => {
       if (evt.shiftKey) {
         // toggle on shift+click
-        onChange({ ...selected, [stepKey]: !selected[stepKey] });
+        onChange({...selected, [stepKey]: !selected[stepKey]});
       } else {
         // regular click
         const newSelected = {};
 
-        const alreadySelected = Object.keys(selected).every(key => {
+        const alreadySelected = Object.keys(selected).every((key) => {
           return key === stepKey ? selected[key] : !selected[key];
         });
 
-        Object.keys(selected).forEach(key => {
+        Object.keys(selected).forEach((key) => {
           newSelected[key] = alreadySelected || key === stepKey;
         });
 
@@ -260,11 +260,11 @@ const StepSelector = ({
     <>
       <NavSectionHeader>
         Run steps
-        <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 13, opacity: 0.5 }}>Tip: Shift-click to multi-select</span>
+        <div style={{flex: 1}} />
+        <span style={{fontSize: 13, opacity: 0.5}}>Tip: Shift-click to multi-select</span>
       </NavSectionHeader>
       <NavSection>
-        {Object.keys(selected).map(stepKey => (
+        {Object.keys(selected).map((stepKey) => (
           <Item
             key={stepKey}
             shown={selected[stepKey]}
@@ -273,7 +273,7 @@ const StepSelector = ({
           >
             <div
               style={{
-                display: "inline-block",
+                display: 'inline-block',
                 marginRight: 5,
                 borderRadius: 5,
                 height: 10,
@@ -282,7 +282,7 @@ const StepSelector = ({
                   ? stepKey === PIPELINE_LABEL
                     ? Colors.GRAY2
                     : colorHash(stepKey)
-                  : "#aaaaaa"
+                  : '#aaaaaa',
               }}
             />
             {stepKey}
@@ -314,10 +314,10 @@ const Item = styled.div`
   list-style-type: none;
   padding: 5px 2px;
   cursor: pointer;
-  text-decoration: ${({ shown }: { shown: boolean }) => (shown ? "none" : "line-through")};
+  text-decoration: ${({shown}: {shown: boolean}) => (shown ? 'none' : 'line-through')};
   user-select: none;
   font-size: 12px;
-  color: ${props => (props.shown ? props.color : "#aaaaaa")};
+  color: ${(props) => (props.shown ? props.color : '#aaaaaa')};
   white-space: nowrap;
 `;
 const PartitionContentContainer = styled.div`
@@ -343,10 +343,10 @@ const Overlay = styled.div`
 `;
 
 const getPipelineDurationForRun = (run: Run) => {
-  const { stats } = run;
+  const {stats} = run;
   if (
     stats &&
-    stats.__typename === "PipelineRunStatsSnapshot" &&
+    stats.__typename === 'PipelineRunStatsSnapshot' &&
     stats.endTime &&
     stats.startTime
   ) {
@@ -357,10 +357,10 @@ const getPipelineDurationForRun = (run: Run) => {
 };
 
 const getStepDurationsForRun = (run: Run) => {
-  const { stepStats } = run;
+  const {stepStats} = run;
 
   const perStepDuration = {};
-  stepStats.forEach(stepStat => {
+  stepStats.forEach((stepStat) => {
     if (stepStat.endTime && stepStat.startTime) {
       perStepDuration[stepStat.stepKey] = stepStat.endTime - stepStat.startTime;
     }
@@ -370,55 +370,55 @@ const getStepDurationsForRun = (run: Run) => {
 };
 
 const getPipelineMaterializationCountForRun = (run: Run) => {
-  const { stats } = run;
-  if (stats && stats.__typename === "PipelineRunStatsSnapshot") {
+  const {stats} = run;
+  if (stats && stats.__typename === 'PipelineRunStatsSnapshot') {
     return stats.materializations;
   }
   return undefined;
 };
 
 const getStepMaterializationCountForRun = (run: Run) => {
-  const { stepStats } = run;
+  const {stepStats} = run;
   const perStepCounts = {};
-  stepStats.forEach(stepStat => {
+  stepStats.forEach((stepStat) => {
     perStepCounts[stepStat.stepKey] = stepStat.materializations?.length || 0;
   });
   return perStepCounts;
 };
 
 const getPipelineExpectationSuccessForRun = (run: Run) => {
-  const stepCounts: { [key: string]: number } = getStepExpectationSuccessForRun(run);
+  const stepCounts: {[key: string]: number} = getStepExpectationSuccessForRun(run);
   return _arraySum(Object.values(stepCounts));
 };
 
 const getStepExpectationSuccessForRun = (run: Run) => {
-  const { stepStats } = run;
+  const {stepStats} = run;
   const perStepCounts = {};
-  stepStats.forEach(stepStat => {
+  stepStats.forEach((stepStat) => {
     perStepCounts[stepStat.stepKey] =
-      stepStat.expectationResults?.filter(x => x.success).length || 0;
+      stepStat.expectationResults?.filter((x) => x.success).length || 0;
   });
   return perStepCounts;
 };
 
 const getPipelineExpectationFailureForRun = (run: Run) => {
-  const stepCounts: { [key: string]: number } = getStepExpectationFailureForRun(run);
+  const stepCounts: {[key: string]: number} = getStepExpectationFailureForRun(run);
   return _arraySum(Object.values(stepCounts));
 };
 
 const getStepExpectationFailureForRun = (run: Run) => {
-  const { stepStats } = run;
+  const {stepStats} = run;
   const perStepCounts = {};
-  stepStats.forEach(stepStat => {
+  stepStats.forEach((stepStat) => {
     perStepCounts[stepStat.stepKey] =
-      stepStat.expectationResults?.filter(x => !x.success).length || 0;
+      stepStat.expectationResults?.filter((x) => !x.success).length || 0;
   });
   return perStepCounts;
 };
 
 const _arraySum = (arr: number[]) => {
   let sum = 0;
-  arr.forEach(x => (sum += x));
+  arr.forEach((x) => (sum += x));
   return sum;
 };
 
@@ -438,26 +438,26 @@ const getPipelineExpectationiRateForRun = (run: Run) => {
 };
 
 const getStepExpectationRateForRun = (run: Run) => {
-  const { stepStats } = run;
+  const {stepStats} = run;
   const perStepCounts = {};
-  stepStats.forEach(stepStat => {
+  stepStats.forEach((stepStat) => {
     const results = stepStat.expectationResults || [];
     perStepCounts[stepStat.stepKey] = results.length
-      ? results.filter(x => x.success).length / results.length
+      ? results.filter((x) => x.success).length / results.length
       : 0;
   });
   return perStepCounts;
 };
 
 const applyFilter = (filter: TokenizingFieldValue, run: Run) => {
-  if (filter.token === "id") {
+  if (filter.token === 'id') {
     return run.runId === filter.value;
   }
-  if (filter.token === "status") {
+  if (filter.token === 'status') {
     return run.status === filter.value;
   }
-  if (filter.token === "tag") {
-    return run.tags.some(tag => filter.value === `${tag.key}=${tag.value}`);
+  if (filter.token === 'tag') {
+    return run.tags.some((tag) => filter.value === `${tag.key}=${tag.value}`);
   }
   return true;
 };
@@ -481,12 +481,12 @@ const PartitionPagerControls: React.FunctionComponent<PartitionPagerProps> = ({
   hasPrevPage,
   setCursor,
   pushCursor,
-  popCursor
+  popCursor,
 }) => {
   return (
     <PartitionPagerContainer>
       <ButtonGroup>
-        {[7, 30, 120].map(size => (
+        {[7, 30, 120].map((size) => (
           <Button
             key={size}
             active={!hasNextPage && pageSize === size}

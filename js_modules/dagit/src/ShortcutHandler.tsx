@@ -1,10 +1,10 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import ReactDOM from "react-dom";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import ReactDOM from 'react-dom';
 
 const MODIFIER_KEYCODES = [17, 18, 91, 224];
-const SHORTCUT_VISIBILITY_EVENT_TYPE = "shortcut-visibility";
+const SHORTCUT_VISIBILITY_EVENT_TYPE = 'shortcut-visibility';
 const SHORTCUT_VISIBLITY_DELAY = 800;
 
 // Global page state / handling of "shortcut mode". Press any modifier key
@@ -36,17 +36,17 @@ function hideShortcuts() {
   }
 }
 
-window.addEventListener("keydown", event => {
+window.addEventListener('keydown', (event) => {
   if (!shortcutsTimer && !shortcutsVisible && MODIFIER_KEYCODES.includes(event.keyCode)) {
     shortcutsTimer = setTimeout(() => setShortcutsVisible(true), SHORTCUT_VISIBLITY_DELAY);
   }
 });
-window.addEventListener("keyup", event => {
+window.addEventListener('keyup', (event) => {
   if (MODIFIER_KEYCODES.includes(event.keyCode)) {
     hideShortcuts();
   }
 });
-window.addEventListener("blur", () => {
+window.addEventListener('blur', () => {
   hideShortcuts();
 });
 
@@ -65,22 +65,22 @@ interface ShortcutHandlerProps {
 }
 
 interface ShortcutHandlerState {
-  previewPosition: null | { left: number; top: number };
+  previewPosition: null | {left: number; top: number};
 }
 
 export class ShortcutHandler extends React.Component<ShortcutHandlerProps, ShortcutHandlerState> {
   state: ShortcutHandlerState = {
-    previewPosition: null
+    previewPosition: null,
   };
 
   componentDidMount() {
-    window.addEventListener("keydown", this.onGlobalKeydown);
+    window.addEventListener('keydown', this.onGlobalKeydown);
     window.addEventListener(SHORTCUT_VISIBILITY_EVENT_TYPE, this.onShortcutVisiblityChange);
     this.onShortcutVisiblityChange();
   }
 
   componentWillUnmount() {
-    window.removeEventListener("keydown", this.onGlobalKeydown);
+    window.removeEventListener('keydown', this.onGlobalKeydown);
     window.removeEventListener(SHORTCUT_VISIBILITY_EVENT_TYPE, this.onShortcutVisiblityChange);
   }
 
@@ -97,21 +97,21 @@ export class ShortcutHandler extends React.Component<ShortcutHandlerProps, Short
       this.setState({
         previewPosition: {
           left: rect.left + rect.width,
-          top: rect.top + rect.height
-        }
+          top: rect.top + rect.height,
+        },
       });
     } else if (this.state.previewPosition !== null) {
-      this.setState({ previewPosition: null });
+      this.setState({previewPosition: null});
     }
   };
 
   onGlobalKeydown = (event: KeyboardEvent) => {
-    const { target } = event;
+    const {target} = event;
 
     const inTextInput =
       target &&
-      ((target as HTMLElement).nodeName === "INPUT" ||
-        (target as HTMLElement).nodeName === "TEXTAREA");
+      ((target as HTMLElement).nodeName === 'INPUT' ||
+        (target as HTMLElement).nodeName === 'TEXTAREA');
 
     if (inTextInput && !(event.altKey || event.ctrlKey || event.metaKey)) {
       return;
@@ -135,14 +135,14 @@ export class ShortcutHandler extends React.Component<ShortcutHandlerProps, Short
   };
 
   render() {
-    const { children, shortcutLabel } = this.props;
-    const { previewPosition } = this.state;
+    const {children, shortcutLabel} = this.props;
+    const {previewPosition} = this.state;
 
     if (shortcutLabel && previewPosition) {
       return (
         <>
           {children}
-          <ShortcutAnnotation style={{ top: previewPosition.top, left: previewPosition.left }}>
+          <ShortcutAnnotation style={{top: previewPosition.top, left: previewPosition.left}}>
             {shortcutLabel}
           </ShortcutAnnotation>
         </>

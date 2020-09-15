@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 
 import {
   Callout,
@@ -8,33 +8,33 @@ import {
   Colors,
   Tooltip,
   PopoverInteractionKind,
-  NonIdealState
-} from "@blueprintjs/core";
-import { Header, Legend, LegendColumn, ScrollContainer } from "../ListComponents";
-import { useQuery } from "react-apollo";
+  NonIdealState,
+} from '@blueprintjs/core';
+import {Header, Legend, LegendColumn, ScrollContainer} from '../ListComponents';
+import {useQuery} from 'react-apollo';
 import {
   SchedulesRootQuery,
   SchedulesRootQuery_repositoryOrError_Repository,
   SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results,
-  SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
-} from "./types/SchedulesRootQuery";
+  SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results,
+} from './types/SchedulesRootQuery';
 
-import Loading from "../Loading";
-import PythonErrorInfo from "../PythonErrorInfo";
+import Loading from '../Loading';
+import PythonErrorInfo from '../PythonErrorInfo';
 
-import { ScheduleRow, ScheduleStateRow } from "./ScheduleRow";
-import { RepositoryInformation } from "../RepositoryInformation";
+import {ScheduleRow, ScheduleStateRow} from './ScheduleRow';
+import {RepositoryInformation} from '../RepositoryInformation';
 
-import { useRepositorySelector } from "../DagsterRepositoryContext";
-import { ReconcileButton } from "./ReconcileButton";
-import { SchedulerInfo } from "./SchedulerInfo";
-import { SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote } from "./ScheduleUtils";
-import { IconNames } from "@blueprintjs/icons";
+import {useRepositorySelector} from '../DagsterRepositoryContext';
+import {ReconcileButton} from './ReconcileButton';
+import {SchedulerInfo} from './SchedulerInfo';
+import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from './ScheduleUtils';
+import {IconNames} from '@blueprintjs/icons';
 
 const GetStaleReconcileSection: React.FunctionComponent<{
   scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
   scheduleStatesWithoutDefinitions: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[];
-}> = ({ scheduleDefinitionsWithoutState, scheduleStatesWithoutDefinitions }) => {
+}> = ({scheduleDefinitionsWithoutState, scheduleStatesWithoutDefinitions}) => {
   if (
     scheduleDefinitionsWithoutState.length === 0 &&
     scheduleStatesWithoutDefinitions.length === 0
@@ -43,13 +43,13 @@ const GetStaleReconcileSection: React.FunctionComponent<{
   }
 
   return (
-    <Card style={{ backgroundColor: Colors.LIGHT_GRAY4 }}>
+    <Card style={{backgroundColor: Colors.LIGHT_GRAY4}}>
       <Callout intent={Intent.WARNING}>
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center"
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
           <div>
@@ -60,7 +60,7 @@ const GetStaleReconcileSection: React.FunctionComponent<{
               storage database.
             </p>
             <p>
-              To reconcile schedule state, run <Code>dagster schedule reconcile</Code> or click{" "}
+              To reconcile schedule state, run <Code>dagster schedule reconcile</Code> or click{' '}
               <ReconcileButton />
             </p>
           </div>
@@ -77,35 +77,37 @@ export const SchedulesRoot: React.FunctionComponent = () => {
 
   const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
     variables: {
-      repositorySelector: repositorySelector
+      repositorySelector: repositorySelector,
     },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: 'cache-and-network',
     pollInterval: 50 * 1000,
-    partialRefetch: true
+    partialRefetch: true,
   });
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
-      {result => {
+      {(result) => {
         const {
           scheduler,
           repositoryOrError,
           scheduleDefinitionsOrError,
-          scheduleStatesOrError: scheduleStatesWithoutDefinitionsOrError
+          scheduleStatesOrError: scheduleStatesWithoutDefinitionsOrError,
         } = result;
         let staleReconcileSection = null;
         let scheduleDefinitionsSection = null;
 
-        if (scheduleDefinitionsOrError.__typename === "PythonError") {
+        if (scheduleDefinitionsOrError.__typename === 'PythonError') {
           scheduleDefinitionsSection = <PythonErrorInfo error={scheduleDefinitionsOrError} />;
-        } else if (repositoryOrError.__typename === "PythonError") {
+        } else if (repositoryOrError.__typename === 'PythonError') {
           scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
-        } else if (repositoryOrError.__typename === "RepositoryNotFoundError") {
+        } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
           // Should not be possible, the schedule definitions call will error out
-        } else if (scheduleDefinitionsOrError.__typename === "ScheduleDefinitions") {
+        } else if (scheduleDefinitionsOrError.__typename === 'ScheduleDefinitions') {
           const scheduleDefinitions = scheduleDefinitionsOrError.results;
-          const scheduleDefinitionsWithState = scheduleDefinitions.filter(s => s.scheduleState);
-          const scheduleDefinitionsWithoutState = scheduleDefinitions.filter(s => !s.scheduleState);
+          const scheduleDefinitionsWithState = scheduleDefinitions.filter((s) => s.scheduleState);
+          const scheduleDefinitionsWithoutState = scheduleDefinitions.filter(
+            (s) => !s.scheduleState,
+          );
 
           if (!scheduleDefinitions.length) {
             scheduleDefinitionsSection = (
@@ -114,10 +116,10 @@ export const SchedulesRoot: React.FunctionComponent = () => {
                 title="No Schedules Found"
                 description={
                   <p>
-                    This repository does not have any schedules defined. Visit the{" "}
+                    This repository does not have any schedules defined. Visit the{' '}
                     <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
                       scheduler documentation
-                    </a>{" "}
+                    </a>{' '}
                     for more information about scheduling pipeline runs in Dagster. .
                   </p>
                 }
@@ -132,7 +134,7 @@ export const SchedulesRoot: React.FunctionComponent = () => {
             );
           }
 
-          if (scheduleStatesWithoutDefinitionsOrError.__typename === "ScheduleStates") {
+          if (scheduleStatesWithoutDefinitionsOrError.__typename === 'ScheduleStates') {
             const scheduleStatesWithoutDefinitions =
               scheduleStatesWithoutDefinitionsOrError.results;
             staleReconcileSection = (
@@ -159,16 +161,16 @@ export const SchedulesRoot: React.FunctionComponent = () => {
 const ScheduleTable: React.FunctionComponent<{
   schedules: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
   repository: SchedulesRootQuery_repositoryOrError_Repository;
-}> = props => {
+}> = (props) => {
   if (props.schedules.length === 0) {
     return null;
   }
 
   return (
     <div>
-      <div style={{ display: "flex" }}>
+      <div style={{display: 'flex'}}>
         <Header>Schedules</Header>
-        <div style={{ flex: 1 }} />
+        <div style={{flex: 1}} />
         <SchedulerTimezoneNote />
       </div>
       <div>
@@ -178,9 +180,9 @@ const ScheduleTable: React.FunctionComponent<{
           content={
             <pre>
               <RepositoryInformation repository={props.repository} />
-              <div style={{ fontSize: 11 }}>
-                <span style={{ marginRight: 5 }}>id:</span>
-                <span style={{ opacity: 0.5 }}>{props.repository.id}</span>
+              <div style={{fontSize: 11}}>
+                <span style={{marginRight: 5}}>id:</span>
+                <span style={{opacity: 0.5}}>{props.repository.id}</span>
               </div>
             </pre>
           }
@@ -191,16 +193,16 @@ const ScheduleTable: React.FunctionComponent<{
 
       {props.schedules.length > 0 && (
         <Legend>
-          <LegendColumn style={{ maxWidth: 60, paddingRight: 2 }}></LegendColumn>
-          <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+          <LegendColumn style={{maxWidth: 60, paddingRight: 2}}></LegendColumn>
+          <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
           <LegendColumn>Pipeline</LegendColumn>
-          <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
-          <LegendColumn style={{ maxWidth: 100 }}>Last Tick</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Latest Runs</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
+          <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
+          <LegendColumn style={{maxWidth: 100}}>Last Tick</LegendColumn>
+          <LegendColumn style={{flex: 1}}>Latest Runs</LegendColumn>
+          <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
         </Legend>
       )}
-      {props.schedules.map(schedule => (
+      {props.schedules.map((schedule) => (
         <ScheduleRow schedule={schedule} key={schedule.name} />
       ))}
     </div>
@@ -209,13 +211,13 @@ const ScheduleTable: React.FunctionComponent<{
 
 const ScheduleWithoutStateTable: React.FunctionComponent<{
   schedules: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
-}> = props => {
+}> = (props) => {
   if (props.schedules.length === 0) {
     return null;
   }
 
   return (
-    <div style={{ marginTop: 10, marginBottom: 10 }}>
+    <div style={{marginTop: 10, marginBottom: 10}}>
       <h4>New Schedule Definitions</h4>
       <p>
         The following are new schedule definitions for which there are no entries in schedule
@@ -223,13 +225,13 @@ const ScheduleWithoutStateTable: React.FunctionComponent<{
       </p>
       {props.schedules.length > 0 && (
         <Legend>
-          <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+          <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
           <LegendColumn>Pipeline</LegendColumn>
-          <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
+          <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
+          <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
         </Legend>
       )}
-      {props.schedules.map(schedule => (
+      {props.schedules.map((schedule) => (
         <ScheduleRow schedule={schedule} key={schedule.name} />
       ))}
     </div>
@@ -240,13 +242,15 @@ interface ScheduleStateTableProps {
   scheduleStates: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[];
 }
 
-const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleStateTableProps> = props => {
+const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleStateTableProps> = (
+  props,
+) => {
   if (props.scheduleStates.length === 0) {
     return null;
   }
 
   return (
-    <div style={{ marginTop: 20, marginBottom: 10 }}>
+    <div style={{marginTop: 20, marginBottom: 10}}>
       <h4>Deleted Schedule Definitions</h4>
       <p>
         The following are entries in schedule storage for which there is no matching schedule
@@ -255,13 +259,13 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
       </p>
       {props.scheduleStates.length > 0 && (
         <Legend>
-          <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
-          <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
-          <LegendColumn style={{ maxWidth: 100 }}>Last Tick</LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Latest Runs</LegendColumn>
+          <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
+          <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
+          <LegendColumn style={{maxWidth: 100}}>Last Tick</LegendColumn>
+          <LegendColumn style={{flex: 1}}>Latest Runs</LegendColumn>
         </Legend>
       )}
-      {props.scheduleStates.map(scheduleState => (
+      {props.scheduleStates.map((scheduleState) => (
         <ScheduleStateRow scheduleState={scheduleState} key={scheduleState.scheduleOriginId} />
       ))}
     </div>

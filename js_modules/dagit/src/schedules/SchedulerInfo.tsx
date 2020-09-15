@@ -1,8 +1,8 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import { SchedulerFragment } from "./types/SchedulerFragment";
-import PythonErrorInfo from "../PythonErrorInfo";
-import { Callout, Intent, Code } from "@blueprintjs/core";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import {SchedulerFragment} from './types/SchedulerFragment';
+import PythonErrorInfo from '../PythonErrorInfo';
+import {Callout, Intent, Code} from '@blueprintjs/core';
 
 export const SCHEDULER_FRAGMENT = gql`
   fragment SchedulerFragment on SchedulerOrError {
@@ -22,41 +22,41 @@ export const SCHEDULER_FRAGMENT = gql`
 export const SchedulerInfo: React.FunctionComponent<{
   errorsOnly?: boolean;
   schedulerOrError: SchedulerFragment;
-}> = ({ errorsOnly = false, schedulerOrError }) => {
-  if (schedulerOrError.__typename === "PythonError") {
+}> = ({errorsOnly = false, schedulerOrError}) => {
+  if (schedulerOrError.__typename === 'PythonError') {
     return <PythonErrorInfo error={schedulerOrError} />;
   }
 
-  if (schedulerOrError.__typename === "SchedulerNotDefinedError") {
+  if (schedulerOrError.__typename === 'SchedulerNotDefinedError') {
     return (
       <Callout
         icon="time"
         intent={Intent.WARNING}
         title="The current dagster instance does not have a scheduler configured."
-        style={{ marginBottom: 40 }}
+        style={{marginBottom: 40}}
       >
         <p>
           A scheduler must be configured on the instance to run schedules. Therefore, the schedules
-          below are not currently running. You can configure a scheduler on the instance through the{" "}
+          below are not currently running. You can configure a scheduler on the instance through the{' '}
           <Code>dagster.yaml</Code> file in <Code>$DAGSTER_HOME</Code>
         </p>
 
         <p>
-          See the{" "}
+          See the{' '}
           <a href="https://docs.dagster.io/overview/instances/dagster-instance#instance-configuration-yaml">
             instance configuration documentation
-          </a>{" "}
+          </a>{' '}
           for more information.
         </p>
       </Callout>
     );
   }
 
-  if (!errorsOnly && schedulerOrError.__typename === "Scheduler") {
+  if (!errorsOnly && schedulerOrError.__typename === 'Scheduler') {
     return (
-      <Callout icon="time" style={{ marginBottom: 40 }}>
-        <span style={{ fontWeight: "bold" }}>Scheduler Class:</span>{" "}
-        <pre style={{ display: "inline" }}>{schedulerOrError.schedulerClass}</pre>
+      <Callout icon="time" style={{marginBottom: 40}}>
+        <span style={{fontWeight: 'bold'}}>Scheduler Class:</span>{' '}
+        <pre style={{display: 'inline'}}>{schedulerOrError.schedulerClass}</pre>
       </Callout>
     );
   }

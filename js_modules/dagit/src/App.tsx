@@ -1,37 +1,37 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
+import {BrowserRouter, Redirect, Route, Switch} from 'react-router-dom';
 
-import CustomAlertProvider from "./CustomAlertProvider";
-import { NonIdealState, Spinner } from "@blueprintjs/core";
-import { PipelineExecutionRoot } from "./execute/PipelineExecutionRoot";
-import { PipelineExecutionSetupRoot } from "./execute/PipelineExecutionSetupRoot";
-import { PipelineExplorerRoot } from "./PipelineExplorerRoot";
-import { PipelineOverviewRoot } from "./pipelines/PipelineOverviewRoot";
-import { PipelinePartitionsRoot } from "./partitions/PipelinePartitionsRoot";
-import { PipelineRunsRoot } from "./PipelineRunsRoot";
-import PythonErrorInfo from "./PythonErrorInfo";
-import { RunRoot } from "./runs/RunRoot";
-import { RunsRoot } from "./runs/RunsRoot";
-import { SolidsRoot } from "./solids/SolidsRoot";
-import { SchedulerRoot } from "./schedules/SchedulerRoot";
-import { SchedulesRoot } from "./schedules/SchedulesRoot";
-import { ScheduleRoot } from "./schedules/ScheduleRoot";
-import { AssetsRoot } from "./assets/AssetsRoot";
-import { LeftNav } from "./nav/LeftNav";
-import { PipelineNav } from "./nav/PipelineNav";
-import { FeatureFlagsRoot } from "./FeatureFlagsRoot";
-import { InstanceDetailsRoot } from "./InstanceDetailsRoot";
-import { SolidDetailsRoot } from "./solids/SolidDetailsRoot";
+import CustomAlertProvider from './CustomAlertProvider';
+import {NonIdealState, Spinner} from '@blueprintjs/core';
+import {PipelineExecutionRoot} from './execute/PipelineExecutionRoot';
+import {PipelineExecutionSetupRoot} from './execute/PipelineExecutionSetupRoot';
+import {PipelineExplorerRoot} from './PipelineExplorerRoot';
+import {PipelineOverviewRoot} from './pipelines/PipelineOverviewRoot';
+import {PipelinePartitionsRoot} from './partitions/PipelinePartitionsRoot';
+import {PipelineRunsRoot} from './PipelineRunsRoot';
+import PythonErrorInfo from './PythonErrorInfo';
+import {RunRoot} from './runs/RunRoot';
+import {RunsRoot} from './runs/RunsRoot';
+import {SolidsRoot} from './solids/SolidsRoot';
+import {SchedulerRoot} from './schedules/SchedulerRoot';
+import {SchedulesRoot} from './schedules/SchedulesRoot';
+import {ScheduleRoot} from './schedules/ScheduleRoot';
+import {AssetsRoot} from './assets/AssetsRoot';
+import {LeftNav} from './nav/LeftNav';
+import {PipelineNav} from './nav/PipelineNav';
+import {FeatureFlagsRoot} from './FeatureFlagsRoot';
+import {InstanceDetailsRoot} from './InstanceDetailsRoot';
+import {SolidDetailsRoot} from './solids/SolidDetailsRoot';
 import {
   DagsterRepositoryContext,
   useRepositoryOptions,
-  useCurrentRepositoryState
-} from "./DagsterRepositoryContext";
-import { CustomTooltipProvider } from "./CustomTooltipProvider";
-import { TimezoneProvider } from "./TimeComponents";
-import { APP_PATH_PREFIX } from "./DomUtils";
-import { CustomConfirmationProvider } from "./CustomConfirmationProvider";
+  useCurrentRepositoryState,
+} from './DagsterRepositoryContext';
+import {CustomTooltipProvider} from './CustomTooltipProvider';
+import {TimezoneProvider} from './TimeComponents';
+import {APP_PATH_PREFIX} from './DomUtils';
+import {CustomConfirmationProvider} from './CustomConfirmationProvider';
 
 const AppRoutes = () => (
   <Switch>
@@ -51,11 +51,11 @@ const AppRoutes = () => (
       render={() => (
         <div
           style={{
-            display: "flex",
-            flexDirection: "column",
+            display: 'flex',
+            flexDirection: 'column',
             minWidth: 0,
-            width: "100%",
-            height: "100%"
+            width: '100%',
+            height: '100%',
           }}
         >
           <PipelineNav />
@@ -78,7 +78,7 @@ const AppRoutes = () => (
     />
 
     <DagsterRepositoryContext.Consumer>
-      {context =>
+      {(context) =>
         context.repository?.pipelines.length ? (
           <Redirect to={`/pipeline/${context.repository.pipelines[0].name}/`} />
         ) : (
@@ -90,11 +90,11 @@ const AppRoutes = () => (
 );
 
 export const App: React.FunctionComponent = () => {
-  const { options, error } = useRepositoryOptions();
+  const {options, error} = useRepositoryOptions();
   const [repo, setRepo] = useCurrentRepositoryState(options);
 
   return (
-    <div style={{ display: "flex", height: "100%" }}>
+    <div style={{display: 'flex', height: '100%'}}>
       <BrowserRouter basename={APP_PATH_PREFIX}>
         <TimezoneProvider>
           <LeftNav options={options} repo={repo} setRepo={setRepo} />

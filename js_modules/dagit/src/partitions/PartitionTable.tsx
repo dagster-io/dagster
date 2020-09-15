@@ -1,11 +1,11 @@
-import * as React from "react";
-import { createGlobalStyle } from "styled-components/macro";
-import { Line } from "react-chartjs-2";
+import * as React from 'react';
+import {createGlobalStyle} from 'styled-components/macro';
+import {Line} from 'react-chartjs-2';
 
-import { PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs } from "./types/PartitionLongitudinalQuery";
-import { RowContainer } from "../ListComponents";
-import { RUN_STATUS_COLORS, RUN_STATUS_HOVER_COLORS } from "../runs/RunStatusDots";
-import { openRunInBrowser } from "../runs/RunUtils";
+import {PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs} from './types/PartitionLongitudinalQuery';
+import {RowContainer} from '../ListComponents';
+import {RUN_STATUS_COLORS, RUN_STATUS_HOVER_COLORS} from '../runs/RunStatusDots';
+import {openRunInBrowser} from '../runs/RunUtils';
 
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 interface Point {
@@ -18,15 +18,15 @@ interface Point {
 
 export const PartitionTable: React.FunctionComponent<{
   title: string;
-  runsByPartitionName: { [name: string]: Run[] };
-}> = ({ title, runsByPartitionName }) => {
+  runsByPartitionName: {[name: string]: Run[]};
+}> = ({title, runsByPartitionName}) => {
   React.useEffect(() => {
     return destroyCustomTooltip;
   });
   const chart = React.useRef<any>(undefined);
   let max = 1;
-  const runs: { [status: string]: Point[] } = {};
-  Object.keys(runsByPartitionName).forEach(partitionName => {
+  const runs: {[status: string]: Point[]} = {};
+  Object.keys(runsByPartitionName).forEach((partitionName) => {
     const partitionRuns = runsByPartitionName[partitionName];
     max = Math.max(max, partitionRuns.length);
     partitionRuns
@@ -38,7 +38,7 @@ export const PartitionTable: React.FunctionComponent<{
           y: i,
           runId: run.runId,
           pipelineName: run.pipelineName,
-          status: run.status
+          status: run.status,
         };
         runs[run.status] = [...(runs[run.status] || []), point];
       });
@@ -49,16 +49,16 @@ export const PartitionTable: React.FunctionComponent<{
     label: status,
     data: runs[status],
     showLine: false,
-    pointStyle: "rect",
+    pointStyle: 'rect',
     borderWidth: 1,
     pointBackgroundColor: RUN_STATUS_COLORS[status],
     pointHoverBackgroundColor: RUN_STATUS_HOVER_COLORS[status],
     radius: 8,
-    pointHoverRadius: 8
+    pointHoverRadius: 8,
   }));
   const graphData = {
     labels: Object.keys(runsByPartitionName),
-    datasets
+    datasets,
   };
 
   const onPointClick = (events: any[]) => {
@@ -68,55 +68,55 @@ export const PartitionTable: React.FunctionComponent<{
     }
     const point = datasets[element._datasetIndex].data[element._index];
     if (point && point.runId) {
-      openRunInBrowser(point, { openInNewWindow: true });
+      openRunInBrowser(point, {openInNewWindow: true});
     }
   };
 
   const options = {
-    title: { display: true, text: title },
+    title: {display: true, text: title},
     scales: {
       yAxes: [
         {
-          scaleLabel: { display: true, labelString: "Runs" },
-          gridLines: { display: false },
+          scaleLabel: {display: true, labelString: 'Runs'},
+          gridLines: {display: false},
           ticks: {
             display: false,
             suggestedMin: 0,
-            suggestedMax: max
+            suggestedMax: max,
           },
-          position: "left",
+          position: 'left',
           afterFit: (scale: any) => {
             scale.width = 60;
-          }
+          },
         },
         {
-          scaleLabel: { display: true, labelString: "" },
-          gridLines: { display: false },
+          scaleLabel: {display: true, labelString: ''},
+          gridLines: {display: false},
           ticks: {
-            display: false
+            display: false,
           },
-          position: "right",
+          position: 'right',
           afterFit: (scale: any) => {
             scale.width = 60;
-          }
-        }
+          },
+        },
       ],
       xAxes: [
         {
-          scaleLabel: { display: true, labelString: "Partitions" },
-          gridLines: { display: false },
-          ticks: { padding: 10 }
-        }
-      ]
+          scaleLabel: {display: true, labelString: 'Partitions'},
+          gridLines: {display: false},
+          ticks: {padding: 10},
+        },
+      ],
     },
     legend: {
-      display: false
+      display: false,
     },
     tooltips: {
-      mode: "point",
-      position: "nearest",
+      mode: 'point',
+      position: 'nearest',
       enabled: false,
-      custom: buildCustomTooltip(chart, datasets)
+      custom: buildCustomTooltip(chart, datasets),
     },
     onHover: (e: any) => {
       const instance = chart?.current?.chartInstance;
@@ -126,15 +126,15 @@ export const PartitionTable: React.FunctionComponent<{
       const [element] = instance.getElementAtEvent(e);
 
       if (element) {
-        e.target.style.cursor = "pointer";
+        e.target.style.cursor = 'pointer';
       } else {
-        e.target.style.cursor = "auto";
+        e.target.style.cursor = 'auto';
       }
-    }
+    },
   };
 
   return (
-    <RowContainer style={{ margin: "20px 0" }}>
+    <RowContainer style={{margin: '20px 0'}}>
       <Line
         data={graphData}
         height={max * 8}
@@ -151,19 +151,19 @@ const buildCustomTooltip = (chart: any, datasets: any[]) => {
   // TODO: (prha) rewrite this to use a pre-constructed React component
 
   return (tooltipModel: any) => {
-    let tooltipEl: HTMLElement | null = document.getElementById("partition-table-tooltip");
+    let tooltipEl: HTMLElement | null = document.getElementById('partition-table-tooltip');
 
     // Create element
     if (!tooltipEl) {
-      tooltipEl = document.createElement("div");
-      tooltipEl.id = "partition-table-tooltip";
-      tooltipEl.innerHTML = "";
+      tooltipEl = document.createElement('div');
+      tooltipEl.id = 'partition-table-tooltip';
+      tooltipEl.innerHTML = '';
       document.body.appendChild(tooltipEl);
     }
 
     // Hide by default
     if (tooltipModel.opacity === 0) {
-      tooltipEl.style.opacity = "0";
+      tooltipEl.style.opacity = '0';
       return;
     }
 
@@ -183,19 +183,19 @@ const buildCustomTooltip = (chart: any, datasets: any[]) => {
       '<div class="contentContainer">',
       '<span class="label">Run id:</span> ',
       point.runId,
-      "</div>"
-    ].join("");
+      '</div>',
+    ].join('');
 
     // Position and show
     const position = chart?.current?.chartInstance?.canvas?.getBoundingClientRect();
-    tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 20 + "px";
-    tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - 18 + "px";
-    tooltipEl.style.opacity = "1";
+    tooltipEl.style.left = position.left + window.pageXOffset + tooltipModel.caretX + 20 + 'px';
+    tooltipEl.style.top = position.top + window.pageYOffset + tooltipModel.caretY - 18 + 'px';
+    tooltipEl.style.opacity = '1';
   };
 };
 
 const destroyCustomTooltip = () => {
-  const element: HTMLElement | null = document.getElementById("partition-table-tooltip");
+  const element: HTMLElement | null = document.getElementById('partition-table-tooltip');
   if (element) {
     element.parentNode?.removeChild(element);
   }

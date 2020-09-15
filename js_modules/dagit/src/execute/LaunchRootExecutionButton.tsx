@@ -1,9 +1,9 @@
-import * as React from "react";
-import { useMutation } from "react-apollo";
+import * as React from 'react';
+import {useMutation} from 'react-apollo';
 
-import { LaunchButton } from "./LaunchButton";
-import { LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult } from "../runs/RunUtils";
-import { LaunchPipelineExecutionVariables } from "../runs/types/LaunchPipelineExecution";
+import {LaunchButton} from './LaunchButton';
+import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
+import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
 
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
@@ -11,7 +11,9 @@ interface LaunchRootExecutionButtonProps {
   pipelineName: string;
 }
 
-export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = props => {
+export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = (
+  props,
+) => {
   const [launchPipelineExecution] = useMutation(LAUNCH_PIPELINE_EXECUTION_MUTATION);
 
   const onLaunch = async () => {
@@ -21,23 +23,23 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
     }
 
     try {
-      const result = await launchPipelineExecution({ variables });
+      const result = await launchPipelineExecution({variables});
       handleLaunchResult(props.pipelineName, result, {
-        openInNewWindow: true
+        openInNewWindow: true,
       });
     } catch (error) {
-      console.error("Error launching run:", error);
+      console.error('Error launching run:', error);
     }
   };
 
   return (
-    <div style={{ marginRight: 20 }}>
+    <div style={{marginRight: 20}}>
       <LaunchButton
         config={{
-          icon: "send-to",
+          icon: 'send-to',
           onClick: onLaunch,
-          title: "Launch Execution",
-          disabled: props.disabled
+          title: 'Launch Execution',
+          disabled: props.disabled,
         }}
       />
     </div>

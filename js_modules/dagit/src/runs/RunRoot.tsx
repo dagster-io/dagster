@@ -1,40 +1,40 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { RouteComponentProps } from "react-router";
-import { useApolloClient, useQuery } from "react-apollo";
+import {RouteComponentProps} from 'react-router';
+import {useApolloClient, useQuery} from 'react-apollo';
 
-import { IconNames } from "@blueprintjs/icons";
-import { NonIdealState } from "@blueprintjs/core";
-import { Run } from "./Run";
-import { RunRootQuery } from "./types/RunRootQuery";
-import gql from "graphql-tag";
-import { AssetsSupported } from "../AssetsSupported";
+import {IconNames} from '@blueprintjs/icons';
+import {NonIdealState} from '@blueprintjs/core';
+import {Run} from './Run';
+import {RunRootQuery} from './types/RunRootQuery';
+import gql from 'graphql-tag';
+import {AssetsSupported} from '../AssetsSupported';
 
 export const RunRoot: React.FunctionComponent<RouteComponentProps<{
   runId: string;
   pipelineName?: string;
-}>> = props => <RunById runId={props.match.params.runId} />;
+}>> = (props) => <RunById runId={props.match.params.runId} />;
 
 export const RunById: React.FunctionComponent<{
   runId: string;
-}> = ({ runId }) => {
+}> = ({runId}) => {
   const client = useApolloClient();
-  const { data } = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
-    fetchPolicy: "cache-and-network",
+  const {data} = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
+    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
-    variables: { runId }
+    variables: {runId},
   });
 
   if (!data || !data.pipelineRunOrError) {
     return <Run client={client} run={undefined} runId={runId} />;
   }
 
-  if (data.pipelineRunOrError.__typename !== "PipelineRun") {
+  if (data.pipelineRunOrError.__typename !== 'PipelineRun') {
     return (
       <NonIdealState
         icon={IconNames.SEND_TO_GRAPH}
         title="No Run"
-        description={"The run with this ID does not exist or has been cleaned up."}
+        description={'The run with this ID does not exist or has been cleaned up.'}
       />
     );
   }

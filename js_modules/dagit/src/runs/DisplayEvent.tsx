@@ -1,44 +1,44 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Tag } from "@blueprintjs/core";
-import { IStepDisplayEvent } from "../RunMetadataProvider";
-import { showCustomAlert } from "../CustomAlertProvider";
-import { copyValue } from "../DomUtils";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Tag} from '@blueprintjs/core';
+import {IStepDisplayEvent} from '../RunMetadataProvider';
+import {showCustomAlert} from '../CustomAlertProvider';
+import {copyValue} from '../DomUtils';
 
 interface DisplayEventProps {
   event: IStepDisplayEvent;
 }
 
-const DisplayEventItem: React.FunctionComponent<IStepDisplayEvent["items"][0]> = ({
+const DisplayEventItem: React.FunctionComponent<IStepDisplayEvent['items'][0]> = ({
   action,
   actionText,
   actionValue,
-  text
+  text,
 }) => {
   let actionEl: React.ReactNode = actionText;
 
-  if (action === "copy") {
+  if (action === 'copy') {
     actionEl = (
-      <DisplayEventLink title={"Copy to clipboard"} onClick={e => copyValue(e, actionValue)}>
+      <DisplayEventLink title={'Copy to clipboard'} onClick={(e) => copyValue(e, actionValue)}>
         {actionText}
       </DisplayEventLink>
     );
   }
-  if (action === "open-in-tab") {
+  if (action === 'open-in-tab') {
     actionEl = (
       <DisplayEventLink href={actionValue} title={`Open in a new tab`} target="__blank">
         {actionText}
       </DisplayEventLink>
     );
   }
-  if (action === "show-in-modal") {
+  if (action === 'show-in-modal') {
     actionEl = (
       <DisplayEventLink
         title="Show full value"
         onClick={() =>
           showCustomAlert({
-            body: <div style={{ whiteSpace: "pre-wrap" }}>{actionValue}</div>,
-            title: "Value"
+            body: <div style={{whiteSpace: 'pre-wrap'}}>{actionValue}</div>,
+            title: 'Value',
           })
         }
       >
@@ -53,12 +53,12 @@ const DisplayEventItem: React.FunctionComponent<IStepDisplayEvent["items"][0]> =
   );
 };
 
-export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({ event }) => (
+export const DisplayEvent: React.FunctionComponent<DisplayEventProps> = ({event}) => (
   <DisplayEventContainer>
     <LabelColumn>
-      {"status" in event
-        ? IconComponents[(event as any).icon]("Expectation")
-        : IconComponents[event.icon]("Materialization")}
+      {'status' in event
+        ? IconComponents[(event as any).icon]('Expectation')
+        : IconComponents[event.icon]('Materialization')}
       {event.text}
     </LabelColumn>
     {event.items.map((item, idx) => (
@@ -91,39 +91,39 @@ const DisplayEventLink = styled.a`
   }
 `;
 
-const IconComponents: { [key: string]: (word: string) => React.ReactNode } = {
-  "dot-success": (word: string) => (
-    <Tag minimal={true} intent={"success"} style={{ marginRight: 4 }}>
+const IconComponents: {[key: string]: (word: string) => React.ReactNode} = {
+  'dot-success': (word: string) => (
+    <Tag minimal={true} intent={'success'} style={{marginRight: 4}}>
       {word}
     </Tag>
   ),
-  "dot-failure": (word: string) => (
-    <Tag minimal={true} intent={"danger"} style={{ marginRight: 4 }}>
+  'dot-failure': (word: string) => (
+    <Tag minimal={true} intent={'danger'} style={{marginRight: 4}}>
       {word}
     </Tag>
   ),
-  "dot-pending": (word: string) => (
-    <Tag minimal={true} intent={"none"} style={{ marginRight: 4 }}>
+  'dot-pending': (word: string) => (
+    <Tag minimal={true} intent={'none'} style={{marginRight: 4}}>
       {word}
     </Tag>
   ),
   none: (word: string) => (
-    <Tag minimal={true} intent={"none"} style={{ marginRight: 4 }}>
+    <Tag minimal={true} intent={'none'} style={{marginRight: 4}}>
       {word}
     </Tag>
   ),
   file: () => (
     <img
-      style={{ flexShrink: 0, alignSelf: "center" }}
-      src={require("../images/icon-file.svg")}
+      style={{flexShrink: 0, alignSelf: 'center'}}
+      src={require('../images/icon-file.svg')}
       alt="file icon"
     />
   ),
   link: () => (
     <img
-      style={{ flexShrink: 0, alignSelf: "center" }}
-      src={require("../images/icon-link.svg")}
+      style={{flexShrink: 0, alignSelf: 'center'}}
+      src={require('../images/icon-link.svg')}
       alt="link icon"
     />
-  )
+  ),
 };

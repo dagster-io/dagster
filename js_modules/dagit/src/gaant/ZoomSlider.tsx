@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 
 /**
  * Renders a horizontal slider that lets you adjust the graph's relative zoom from 1-100.
@@ -8,15 +8,15 @@ import * as React from "react";
 export const ZoomSlider: React.FunctionComponent<{
   value: number;
   onChange: (v: number) => void;
-}> = React.memo(props => {
+}> = React.memo((props) => {
   return (
     <div
       className="bp3-slider bp3-slider-unlabeled"
       onMouseDown={(e: React.MouseEvent) => {
-        const rect = e.currentTarget.closest(".bp3-slider")!.getBoundingClientRect();
+        const rect = e.currentTarget.closest('.bp3-slider')!.getBoundingClientRect();
 
         let initialX: number;
-        if (e.target instanceof HTMLElement && e.target.classList.contains("bp3-slider-handle")) {
+        if (e.target instanceof HTMLElement && e.target.classList.contains('bp3-slider-handle')) {
           initialX = e.pageX;
         } else {
           initialX = rect.left + (props.value / 100) * rect.width;
@@ -28,24 +28,24 @@ export const ZoomSlider: React.FunctionComponent<{
         };
         const onRelease = (e: MouseEvent) => {
           onUpdate(e);
-          document.removeEventListener("mousemove", onUpdate);
-          document.removeEventListener("mouseup", onRelease);
+          document.removeEventListener('mousemove', onUpdate);
+          document.removeEventListener('mouseup', onRelease);
         };
-        document.addEventListener("mousemove", onUpdate);
-        document.addEventListener("mouseup", onRelease);
+        document.addEventListener('mousemove', onUpdate);
+        document.addEventListener('mouseup', onRelease);
       }}
     >
       <div className="bp3-slider-track">
-        <div className="bp3-slider-progress" style={{ left: 0, right: 0, top: 0 }} />
+        <div className="bp3-slider-progress" style={{left: 0, right: 0, top: 0}} />
         <div
           className="bp3-slider-progress bp3-intent-primary"
-          style={{ left: 0, right: `${100 - props.value}%`, top: 0 }}
+          style={{left: 0, right: `${100 - props.value}%`, top: 0}}
         />
       </div>
       <div className="bp3-slider-axis" />
       <span
         className="bp3-slider-handle"
-        style={{ left: `calc(${props.value}% - 8px)` }}
+        style={{left: `calc(${props.value}% - 8px)`}}
         tabIndex={0}
       />
     </div>

@@ -1,7 +1,7 @@
-import React from "react";
-import { TagInput, Popover, Menu, MenuItem, Spinner } from "@blueprintjs/core";
-import styled from "styled-components/macro";
-import { isEqual } from "lodash";
+import React from 'react';
+import {TagInput, Popover, Menu, MenuItem, Spinner} from '@blueprintjs/core';
+import styled from 'styled-components/macro';
+import {isEqual} from 'lodash';
 
 export interface SuggestionProvider {
   token: string;
@@ -37,36 +37,36 @@ interface TokenizingFieldProps {
   suggestionProviders: SuggestionProvider[];
   suggestionProvidersFilter?: (
     suggestionProvider: SuggestionProvider[],
-    values: TokenizingFieldValue[]
+    values: TokenizingFieldValue[],
   ) => SuggestionProvider[];
 }
 
 function findProviderByToken(token: string, providers: SuggestionProvider[]) {
-  return providers.find(p => p.token.toLowerCase() === token.toLowerCase());
+  return providers.find((p) => p.token.toLowerCase() === token.toLowerCase());
 }
 
 export function tokenizedValuesFromString(str: string, providers: SuggestionProvider[]) {
-  if (str === "") return [];
-  const tokens = str.split(",");
-  return tokens.map(token => tokenizedValueFromString(token, providers));
+  if (str === '') return [];
+  const tokens = str.split(',');
+  return tokens.map((token) => tokenizedValueFromString(token, providers));
 }
 
 export function tokenizedValueFromString(
   str: string,
-  providers: SuggestionProvider[]
+  providers: SuggestionProvider[],
 ): TokenizingFieldValue {
-  const parts = str.split(":");
+  const parts = str.split(':');
   if (parts.length === 2 && findProviderByToken(parts[0], providers)) {
-    return { token: parts[0], value: parts[1] };
+    return {token: parts[0], value: parts[1]};
   }
-  return { value: str };
+  return {value: str};
 }
 
 export function stringFromValue(value: TokenizingFieldValue[]) {
   return value
-    .filter(v => v.value !== "")
-    .map(v => (v.token ? `${v.token}:${v.value}` : v.value))
-    .join(",");
+    .filter((v) => v.value !== '')
+    .map((v) => (v.token ? `${v.token}:${v.value}` : v.value))
+    .join(',');
 }
 
 /** Provides a text field with typeahead autocompletion for key value pairs,
@@ -83,11 +83,11 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   placeholder,
   loading,
   small,
-  className
+  className,
 }) => {
   const [open, setOpen] = React.useState<boolean>(false);
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
-  const [typed, setTyped] = React.useState<string>("");
+  const [typed, setTyped] = React.useState<string>('');
 
   const values = [...externalValues];
   const typedValue = tokenizedValueFromString(typed, suggestionProviders);
@@ -103,7 +103,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 
   // Build the set of suggestions that should be displayed for the current input value.
   // Note: "typed" is the text that has not yet been submitted, separate from values[].
-  const parts = typed.split(":");
+  const parts = typed.split(':');
   const lastPart = parts[parts.length - 1].toLowerCase();
   let suggestions: Suggestion[] = [];
 
@@ -111,17 +111,17 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     !lastPart ||
     s.text
       .toLowerCase()
-      .split(":")
-      .some(c => c.includes(lastPart));
+      .split(':')
+      .some((c) => c.includes(lastPart));
 
   const availableSuggestionsForProvider = (provider: SuggestionProvider) => {
     const suggestionNotUsed = (v: string) =>
-      !values.some(e => e.token === provider.token && e.value === v);
+      !values.some((e) => e.token === provider.token && e.value === v);
 
     return provider
       .values()
       .filter(suggestionNotUsed)
-      .map(v => ({ text: `${provider.token}:${v}`, final: true }))
+      .map((v) => ({text: `${provider.token}:${v}`, final: true}))
       .filter(suggestionMatchesTypedText)
       .slice(0, 6); // never show too many suggestions for one provider
   };
@@ -129,7 +129,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   if (parts.length === 1) {
     // Suggest providers (eg: `pipeline:`) so users can discover the search space
     suggestions = filteredSuggestionProviders
-      .map(s => ({ text: `${s.token}:`, final: false }))
+      .map((s) => ({text: `${s.token}:`, final: false}))
       .filter(suggestionMatchesTypedText);
 
     // Suggest value completions so users can type "airline_" without the "pipeline"
@@ -165,7 +165,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     // If suggestions are present, autoselect the first one so the user can press
     // enter to complete their search. (Esc + enter is how you enter your raw text.)
     if (!active && suggestions.length) {
-      setActive({ text: suggestions[0].text, idx: 0 });
+      setActive({text: suggestions[0].text, idx: 0});
       return;
     }
     if (!active) {
@@ -177,7 +177,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     }
 
     // Relocate the currently active item in the latest suggestions list
-    const pos = suggestions.findIndex(a => a.text === active.text);
+    const pos = suggestions.findIndex((a) => a.text === active.text);
 
     // The new index is the index of the active item, or whatever item
     // is now at it's location if it's gone, bounded to the array.
@@ -186,7 +186,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     const nextText = suggestions[nextIdx] && suggestions[nextIdx].text;
 
     if (nextIdx !== active.idx || nextText !== active.text) {
-      setActive({ text: nextText, idx: nextIdx });
+      setActive({text: nextText, idx: nextIdx});
     }
   }, [active, suggestions]);
 
@@ -196,7 +196,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     if (suggestion.final) {
       // The user has finished a key-value pair
       onConfirmText(suggestion.text);
-      setTyped("");
+      setTyped('');
       setActive(null);
       setOpen(false);
     } else {
@@ -207,25 +207,25 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
 
   const onConfirmText = (str: string) => {
     if (atMaxValues) return;
-    if (str.endsWith(":")) return;
-    if (str === "") return;
+    if (str.endsWith(':')) return;
+    if (str === '') return;
 
-    setTyped("");
+    setTyped('');
     onChange([...values, tokenizedValueFromString(str, filteredSuggestionProviders)]);
   };
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
-    if (atMaxValues && e.key !== "Delete" && e.key !== "Backspace") {
+    if (atMaxValues && e.key !== 'Delete' && e.key !== 'Backspace') {
       e.preventDefault();
       e.stopPropagation();
       return;
     }
     // Enter and Return confirm the currently selected suggestion or
     // confirm the freeform text you've typed if no suggestions are shown.
-    if (e.key === "Enter" || e.key === "Return" || e.key === "Tab") {
+    if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Tab') {
       if (active) {
-        const picked = suggestions.find(s => s.text === active.text);
-        if (!picked) throw new Error("Selection out of sync with suggestions");
+        const picked = suggestions.find((s) => s.text === active.text);
+        if (!picked) throw new Error('Selection out of sync with suggestions');
         onConfirmSuggestion(picked);
         e.preventDefault();
         e.stopPropagation();
@@ -238,31 +238,31 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     }
 
     // Typing space confirms your freeform text
-    if (e.key === " ") {
+    if (e.key === ' ') {
       e.preventDefault();
       onConfirmText(typed);
       return;
     }
 
     // Escape closes the options. The options re-open if you type another char or click.
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       setActive(null);
       setOpen(false);
       return;
     }
 
-    if (!open && e.key !== "Delete" && e.key !== "Backspace") {
+    if (!open && e.key !== 'Delete' && e.key !== 'Backspace') {
       setOpen(true);
     }
 
     // The up/down arrow keys shift selection in the dropdown.
     // Note: The first down arrow press activates the first item.
-    const shift = { ArrowDown: 1, ArrowUp: -1 }[e.key];
+    const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
     if (shift && suggestions.length > 0) {
       e.preventDefault();
       let idx = (active ? active.idx : -1) + shift;
       idx = Math.max(0, Math.min(idx, suggestions.length - 1));
-      setActive({ text: suggestions[idx].text, idx });
+      setActive({text: suggestions[idx].text, idx});
     }
   };
 
@@ -270,7 +270,7 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     <Popover
       minimal={true}
       isOpen={open && suggestions.length > 0 && !atMaxValues}
-      position={"bottom-left"}
+      position={'bottom-left'}
       content={
         suggestions.length > 0 ? (
           <StyledMenu>
@@ -297,54 +297,52 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
       <StyledTagInput
         small={small}
         className={className}
-        values={values.map(v => (v.token ? `${v.token}:${v.value}` : v.value))}
+        values={values.map((v) => (v.token ? `${v.token}:${v.value}` : v.value))}
         inputValue={typed}
         onRemove={(_, idx) => {
           const next = [...values];
           next.splice(idx, 1);
           onChange(next);
         }}
-        onInputChange={e => {
+        onInputChange={(e) => {
           setTyped(e.currentTarget.value);
 
           if (onChangeBeforeCommit) {
             const tokenized = tokenizedValueFromString(
               e.currentTarget.value,
-              filteredSuggestionProviders
+              filteredSuggestionProviders,
             );
             onChange([...values, tokenized]);
           }
         }}
         inputProps={{
           onFocus: () => setOpen(true),
-          onBlur: () => setOpen(false)
+          onBlur: () => setOpen(false),
         }}
         onAdd={() => false}
         onKeyDown={onKeyDown}
-        tagProps={{ minimal: true }}
-        placeholder={placeholder || "Filter..."}
+        tagProps={{minimal: true}}
+        placeholder={placeholder || 'Filter...'}
         rightElement={
           loading ? (
-            <div style={{ padding: 3 }}>
+            <div style={{padding: 3}}>
               <Spinner size={17} />
             </div>
-          ) : (
-            undefined
-          )
+          ) : undefined
         }
       />
     </Popover>
   );
 };
 
-const StyledTagInput = styled(TagInput)<{ small?: boolean }>`
+const StyledTagInput = styled(TagInput)<{small?: boolean}>`
   min-width: 400px;
   max-width: 400px;
   input {
     font-size: 12px;
   }
 
-  ${({ small }) =>
+  ${({small}) =>
     small
       ? `height: 20px;
     min-width: 200px;

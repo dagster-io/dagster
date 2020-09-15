@@ -1,12 +1,12 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors, Tag, Intent, Divider } from "@blueprintjs/core";
-import { DisplayEvent } from "./DisplayEvent";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Colors, Tag, Intent, Divider} from '@blueprintjs/core';
+import {DisplayEvent} from './DisplayEvent';
 import {
   IExpectationResult,
   IExpectationResultStatus,
-  IMaterialization
-} from "../RunMetadataProvider";
+  IMaterialization,
+} from '../RunMetadataProvider';
 
 interface IDisplayEventsProps {
   expectationResults: IExpectationResult[];
@@ -21,16 +21,16 @@ interface IDisplayEventsState {
 export class DisplayEvents extends React.Component<IDisplayEventsProps, IDisplayEventsState> {
   state = {
     expectationsExpanded: false,
-    materializationsExpanded: true
+    materializationsExpanded: true,
   };
 
   render() {
-    const { expectationsExpanded, materializationsExpanded } = this.state;
-    const { expectationResults, materializations } = this.props;
+    const {expectationsExpanded, materializationsExpanded} = this.state;
+    const {expectationResults, materializations} = this.props;
 
-    const nPassed = expectationResults.filter(e => e.status === IExpectationResultStatus.PASSED)
+    const nPassed = expectationResults.filter((e) => e.status === IExpectationResultStatus.PASSED)
       .length;
-    const nFailed = expectationResults.filter(e => e.status === IExpectationResultStatus.FAILED)
+    const nFailed = expectationResults.filter((e) => e.status === IExpectationResultStatus.FAILED)
       .length;
 
     return (
@@ -39,16 +39,16 @@ export class DisplayEvents extends React.Component<IDisplayEventsProps, IDisplay
           <div>
             <div
               style={{
-                display: "inline-flex",
-                alignItems: "center"
+                display: 'inline-flex',
+                alignItems: 'center',
               }}
             >
               <DisclosureTriangle
                 expanded={expectationsExpanded}
-                onClick={() => this.setState({ expectationsExpanded: !expectationsExpanded })}
+                onClick={() => this.setState({expectationsExpanded: !expectationsExpanded})}
               />
-              <div style={{ width: 4 }} />
-              <span style={{ fontWeight: 500 }}> Expectations</span>&nbsp;
+              <div style={{width: 4}} />
+              <span style={{fontWeight: 500}}> Expectations</span>&nbsp;
               <ExpectationsTag intent={nPassed ? Intent.SUCCESS : Intent.NONE}>
                 {nPassed} passed
               </ExpectationsTag>
@@ -71,20 +71,20 @@ export class DisplayEvents extends React.Component<IDisplayEventsProps, IDisplay
           <div>
             <div
               style={{
-                display: "inline-flex",
-                alignItems: "center"
+                display: 'inline-flex',
+                alignItems: 'center',
               }}
             >
               <DisclosureTriangle
                 expanded={materializationsExpanded}
                 onClick={() =>
                   this.setState({
-                    materializationsExpanded: !materializationsExpanded
+                    materializationsExpanded: !materializationsExpanded,
                   })
                 }
               />
-              <div style={{ width: 4 }} />
-              <span style={{ fontWeight: 500 }}> Materializations</span>&nbsp;
+              <div style={{width: 4}} />
+              <span style={{fontWeight: 500}}> Materializations</span>&nbsp;
               <ExpectationsTag intent={Intent.NONE}>
                 {materializations.length} materialized values
               </ExpectationsTag>
@@ -116,12 +116,12 @@ const ExpectationsTag = styled(Tag)`
   padding-bottom: 0;
 `;
 
-const DisclosureTriangle = styled.div<{ expanded: boolean }>`
+const DisclosureTriangle = styled.div<{expanded: boolean}>`
   width: 0;
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
   border-top: 8px solid rgba(0, 0, 0, 0.5);
   transition: transform 150ms linear;
-  transform: ${({ expanded }) => (expanded ? "rotate(0deg)" : "rotate(-90deg)")};
+  transform: ${({expanded}) => (expanded ? 'rotate(0deg)' : 'rotate(-90deg)')};
 `;

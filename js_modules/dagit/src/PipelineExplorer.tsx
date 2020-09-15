@@ -1,29 +1,29 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import Color from "color";
-import styled from "styled-components/macro";
-import { History } from "history";
-import { Icon, Colors, InputGroup, Checkbox } from "@blueprintjs/core";
-import { Route } from "react-router";
-import { Link } from "react-router-dom";
-import * as querystring from "query-string";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import Color from 'color';
+import styled from 'styled-components/macro';
+import {History} from 'history';
+import {Icon, Colors, InputGroup, Checkbox} from '@blueprintjs/core';
+import {Route} from 'react-router';
+import {Link} from 'react-router-dom';
+import * as querystring from 'query-string';
 
-import { PipelineExplorerFragment } from "./types/PipelineExplorerFragment";
-import { PipelineGraphContainer } from "./graph/PipelineGraphContainer";
-import PipelineGraph from "./graph/PipelineGraph";
-import { SplitPanelContainer } from "./SplitPanelContainer";
-import SidebarTabbedContainer from "./SidebarTabbedContainer";
-import { PipelineExplorerSolidHandleFragment } from "./types/PipelineExplorerSolidHandleFragment";
-import { filterByQuery } from "./GraphQueryImpl";
-import { SolidJumpBar } from "./PipelineJumpComponents";
-import { GraphQueryInput } from "./GraphQueryInput";
-import { PipelineExplorerPath, explorerPathToString } from "./PipelinePathUtils";
+import {PipelineExplorerFragment} from './types/PipelineExplorerFragment';
+import {PipelineGraphContainer} from './graph/PipelineGraphContainer';
+import PipelineGraph from './graph/PipelineGraph';
+import {SplitPanelContainer} from './SplitPanelContainer';
+import SidebarTabbedContainer from './SidebarTabbedContainer';
+import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
+import {filterByQuery} from './GraphQueryImpl';
+import {SolidJumpBar} from './PipelineJumpComponents';
+import {GraphQueryInput} from './GraphQueryInput';
+import {PipelineExplorerPath, explorerPathToString} from './PipelinePathUtils';
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;
 }
 
-export type SolidNameOrPath = { name: string } | { path: string[] };
+export type SolidNameOrPath = {name: string} | {path: string[]};
 
 interface PipelineExplorerProps {
   history: History;
@@ -34,7 +34,7 @@ interface PipelineExplorerProps {
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
   parentHandle?: PipelineExplorerSolidHandleFragment;
-  getInvocations?: (definitionName: string) => { handleID: string }[];
+  getInvocations?: (definitionName: string) => {handleID: string}[];
 }
 
 interface PipelineExplorerState {
@@ -63,28 +63,28 @@ export default class PipelineExplorer extends React.Component<
         }
       }
       ${PipelineGraph.fragments.PipelineGraphSolidFragment}
-    `
+    `,
   };
 
   pathOverlayEl = React.createRef<HTMLDivElement>();
 
   state = {
-    highlighted: ""
+    highlighted: '',
   };
 
   handleQueryChange = (solidsQuery: string) => {
-    const { history, explorerPath } = this.props;
-    history.replace(`/pipeline/${explorerPathToString({ ...explorerPath, solidsQuery })}`);
+    const {history, explorerPath} = this.props;
+    history.replace(`/pipeline/${explorerPathToString({...explorerPath, solidsQuery})}`);
   };
 
   handleAdjustPath = (fn: (solidNames: string[]) => void) => {
-    const { history, explorerPath } = this.props;
+    const {history, explorerPath} = this.props;
     const pathSolids = [...explorerPath.pathSolids];
     const retValue = fn(pathSolids);
     if (retValue !== undefined) {
-      throw new Error("handleAdjustPath function is expected to mutate the array");
+      throw new Error('handleAdjustPath function is expected to mutate the array');
     }
-    history.push(`/pipeline/${explorerPathToString({ ...explorerPath, pathSolids })}`);
+    history.push(`/pipeline/${explorerPathToString({...explorerPath, pathSolids})}`);
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -92,17 +92,17 @@ export default class PipelineExplorer extends React.Component<
   // and we sometimes want to be able to jump to a solid in the parent layer.
   //
   handleClickSolid = (arg: SolidNameOrPath) => {
-    this.handleAdjustPath(solidNames => {
-      if ("name" in arg) {
+    this.handleAdjustPath((solidNames) => {
+      if ('name' in arg) {
         solidNames[solidNames.length - 1] = arg.name;
       } else {
-        if (arg.path[0] !== "..") {
+        if (arg.path[0] !== '..') {
           solidNames.length = 0;
         }
-        if (arg.path[0] === ".." && solidNames[solidNames.length - 1] !== "") {
+        if (arg.path[0] === '..' && solidNames[solidNames.length - 1] !== '') {
           solidNames.pop(); // remove the last path component indicating selection
         }
-        while (arg.path[0] === "..") {
+        while (arg.path[0] === '..') {
           arg.path.shift();
           solidNames.pop();
         }
@@ -118,45 +118,43 @@ export default class PipelineExplorer extends React.Component<
     this.handleClickSolid(arg);
 
     window.requestAnimationFrame(() => {
-      this.handleAdjustPath(solidNames => {
-        const last = "name" in arg ? arg.name : arg.path[arg.path.length - 1];
+      this.handleAdjustPath((solidNames) => {
+        const last = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
         solidNames[solidNames.length - 1] = last;
-        solidNames.push("");
+        solidNames.push('');
       });
     });
   };
 
   handleLeaveCompositeSolid = () => {
-    this.handleAdjustPath(solidNames => {
+    this.handleAdjustPath((solidNames) => {
       solidNames.pop();
     });
   };
 
   handleClickBackground = () => {
-    this.handleClickSolid({ name: "" });
+    this.handleClickSolid({name: ''});
   };
 
   public render() {
-    const { options, pipeline, explorerPath, parentHandle, selectedHandle } = this.props;
-    const { highlighted } = this.state;
+    const {options, pipeline, explorerPath, parentHandle, selectedHandle} = this.props;
+    const {highlighted} = this.state;
 
-    const solids = this.props.handles.map(h => h.solid);
+    const solids = this.props.handles.map((h) => h.solid);
     const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
     const explodeCompositesEnabled =
       !parentHandle &&
       (options.explodeComposites ||
-        solids.some(f => f.definition.__typename === "CompositeSolidDefinition"));
+        solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
     const queryResultSolids = solidsQueryEnabled
       ? filterByQuery(solids, explorerPath.solidsQuery)
-      : { all: solids, focus: [] };
+      : {all: solids, focus: []};
 
-    const highlightedSolids = queryResultSolids.all.filter(s => s.name.includes(highlighted));
+    const highlightedSolids = queryResultSolids.all.filter((s) => s.name.includes(highlighted));
 
     const backgroundColor = parentHandle ? Colors.WHITE : Colors.WHITE;
-    const backgroundTranslucent = Color(backgroundColor)
-      .fade(0.6)
-      .toString();
+    const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
 
     return (
       <SplitPanelContainer
@@ -164,16 +162,16 @@ export default class PipelineExplorer extends React.Component<
         firstInitialPercent={70}
         first={
           <>
-            <PathOverlay style={{ background: backgroundTranslucent }} ref={this.pathOverlayEl}>
+            <PathOverlay style={{background: backgroundTranslucent}} ref={this.pathOverlayEl}>
               {explorerPath.pathSolids
                 .slice(0, explorerPath.pathSolids.length - 1)
                 .map((name, idx) => (
                   <React.Fragment key={idx}>
                     <Link
-                      style={{ padding: 3 }}
+                      style={{padding: 3}}
                       to={`/pipeline/${explorerPathToString({
                         ...explorerPath,
-                        pathSolids: explorerPath.pathSolids.slice(0, idx + 1)
+                        pathSolids: explorerPath.pathSolids.slice(0, idx + 1),
                       })}`}
                     >
                       {name}
@@ -184,7 +182,7 @@ export default class PipelineExplorer extends React.Component<
               <SolidJumpBar
                 solids={queryResultSolids.all}
                 selectedSolid={selectedHandle && selectedHandle.solid}
-                onChange={solid => this.handleClickSolid({ name: solid.name })}
+                onChange={(solid) => this.handleClickSolid({name: solid.name})}
               />
             </PathOverlay>
             {solidsQueryEnabled && (
@@ -198,7 +196,7 @@ export default class PipelineExplorer extends React.Component<
               </PipelineGraphQueryInputContainer>
             )}
 
-            <SearchOverlay style={{ background: backgroundTranslucent }}>
+            <SearchOverlay style={{background: backgroundTranslucent}}>
               <SolidHighlightInput
                 type="text"
                 name="highlighted"
@@ -206,7 +204,7 @@ export default class PipelineExplorer extends React.Component<
                 value={highlighted}
                 placeholder="Highlight..."
                 onChange={(e: React.ChangeEvent<any>) =>
-                  this.setState({ highlighted: e.target.value })
+                  this.setState({highlighted: e.target.value})
                 }
               />
             </SearchOverlay>
@@ -216,10 +214,10 @@ export default class PipelineExplorer extends React.Component<
                   label="Explode composites"
                   checked={options.explodeComposites}
                   onChange={() => {
-                    this.handleQueryChange("");
+                    this.handleQueryChange('');
                     this.props.setOptions({
                       ...options,
-                      explodeComposites: !options.explodeComposites
+                      explodeComposites: !options.explodeComposites,
                     });
                   }}
                 />
@@ -247,7 +245,7 @@ export default class PipelineExplorer extends React.Component<
           <RightInfoPanel>
             <Route
               // eslint-disable-next-line react/no-children-prop
-              children={({ location }: { location: any }) => (
+              children={({location}: {location: any}) => (
                 <SidebarTabbedContainer
                   pipeline={pipeline}
                   explorerPath={explorerPath}
@@ -256,7 +254,7 @@ export default class PipelineExplorer extends React.Component<
                   getInvocations={this.props.getInvocations}
                   onEnterCompositeSolid={this.handleEnterCompositeSolid}
                   onClickSolid={this.handleClickSolid}
-                  {...querystring.parse(location.search || "")}
+                  {...querystring.parse(location.search || '')}
                 />
               )}
             />
@@ -322,7 +320,7 @@ const LargeDAGNotice = () => (
         This is a large DAG that may be difficult to visualize. Type <code>*</code> in the subset
         box below to render the entire thing, or type a solid name and use:
       </p>
-      <ul style={{ marginBottom: 0 }}>
+      <ul style={{marginBottom: 0}}>
         <li>
           <code>+</code> to expand a single layer before or after the solid.
         </li>

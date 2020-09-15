@@ -1,9 +1,9 @@
-import React from "react";
-import gql from "graphql-tag";
-import { Colors } from "@blueprintjs/core";
-import { SCHEDULER_FRAGMENT } from "./SchedulerInfo";
-import PythonErrorInfo from "../PythonErrorInfo";
-import { RepositoryInformationFragment } from "../RepositoryInformation";
+import React from 'react';
+import gql from 'graphql-tag';
+import {Colors} from '@blueprintjs/core';
+import {SCHEDULER_FRAGMENT} from './SchedulerInfo';
+import PythonErrorInfo from '../PythonErrorInfo';
+import {RepositoryInformationFragment} from '../RepositoryInformation';
 
 export const SCHEDULE_STATE_FRAGMENT = gql`
   fragment ScheduleStateFragment on ScheduleState {
@@ -112,9 +112,9 @@ export const SchedulerTimezoneNote = () => (
     style={{
       color: Colors.GRAY3,
       maxWidth: 340,
-      textAlign: "right",
+      textAlign: 'right',
       fontSize: 12.5,
-      marginBottom: 20
+      marginBottom: 20,
     }}
   >
     Schedule cron intervals displayed below are in the system time of the machine running the

@@ -5410,7 +5410,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -10147,7 +10147,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -11251,7 +11251,7 @@ exports[`renders solids explorer 1`] = `
                     Composite Solid
                   </div>
                   <h3
-                    className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                    className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
                   >
                     s3_​to_​df
                   </h3>
@@ -11462,7 +11462,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       file_cache
                     </h4>
@@ -11491,7 +11491,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       file_manager
                     </h4>
@@ -11520,7 +11520,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       pyspark
                     </h4>
@@ -11549,7 +11549,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       pyspark_step_launcher
                     </h4>
@@ -11578,7 +11578,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       s3
                     </h4>
@@ -11640,7 +11640,7 @@ more detail.
                     className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
                   >
                     <h4
-                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 kELHFM"
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 eJEHjb"
                     >
                       s3_​coordinate
                     </h4>
@@ -11663,7 +11663,7 @@ more detail.
                     className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
                   >
                     <h4
-                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 kELHFM"
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 eJEHjb"
                     >
                       archive_​member
                     </h4>
@@ -11739,7 +11739,7 @@ more detail.
                     className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
                   >
                     <h4
-                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 kELHFM"
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 eJEHjb"
                     >
                       result
                     </h4>
@@ -16747,7 +16747,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -21484,7 +21484,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -26221,7 +26221,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>

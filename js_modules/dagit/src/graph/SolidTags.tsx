@@ -1,5 +1,5 @@
-import * as React from "react";
-import { SVGFlowLayoutRect, SVGFlowLayoutFiller, SVGMonospaceText } from "./SVGComponents";
+import * as React from 'react';
+import {SVGFlowLayoutRect, SVGFlowLayoutFiller, SVGMonospaceText} from './SVGComponents';
 
 export interface ISolidTag {
   label: string;
@@ -14,19 +14,19 @@ interface ISolidTagsProps {
   tags: ISolidTag[];
 }
 
-function hueForTag(text = "") {
-  if (text === "ipynb") return 25;
-  if (text === "snowflake") return 197;
-  if (text === "pyspark" || text === "spark") return 30;
+function hueForTag(text = '') {
+  if (text === 'ipynb') return 25;
+  if (text === 'snowflake') return 197;
+  if (text === 'pyspark' || text === 'spark') return 30;
   return (
     text
-      .split("")
-      .map(c => c.charCodeAt(0))
+      .split('')
+      .map((c) => c.charCodeAt(0))
       .reduce((n, a) => n + a) % 360
   );
 }
 
-const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({ tags, x, y, width, minified }) => {
+const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({tags, x, y, width, minified}) => {
   const height = minified ? 32 : 20;
   const overhang = 10;
 
@@ -36,13 +36,13 @@ const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({ tags, x, y, width
       y={y - (height - overhang)}
       width={width}
       height={height}
-      fill={"transparent"}
-      stroke={"transparent"}
+      fill={'transparent'}
+      stroke={'transparent'}
       spacing={minified ? 8 : 4}
       padding={0}
     >
       <SVGFlowLayoutFiller />
-      {tags.map(tag => {
+      {tags.map((tag) => {
         const hue = hueForTag(tag.label);
         return (
           <SVGFlowLayoutRect

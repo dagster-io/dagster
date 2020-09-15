@@ -1,22 +1,22 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components";
-import { isEqual } from "lodash";
-import { Colors, Checkbox, NonIdealState, Spinner } from "@blueprintjs/core";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components';
+import {isEqual} from 'lodash';
+import {Colors, Checkbox, NonIdealState, Spinner} from '@blueprintjs/core';
 
-import { weakmapMemoize } from "../Util";
-import { GaantChartExecutionPlanFragment } from "./types/GaantChartExecutionPlanFragment";
-import { GaantChartTimescale } from "./GaantChartTimescale";
-import { GraphQueryInput } from "../GraphQueryInput";
-import { filterByQuery, GraphQueryItem } from "../GraphQueryImpl";
-import { IRunMetadataDict, EMPTY_RUN_METADATA, IStepMetadata } from "../RunMetadataProvider";
+import {weakmapMemoize} from '../Util';
+import {GaantChartExecutionPlanFragment} from './types/GaantChartExecutionPlanFragment';
+import {GaantChartTimescale} from './GaantChartTimescale';
+import {GraphQueryInput} from '../GraphQueryInput';
+import {filterByQuery, GraphQueryItem} from '../GraphQueryImpl';
+import {IRunMetadataDict, EMPTY_RUN_METADATA, IStepMetadata} from '../RunMetadataProvider';
 import {
   buildLayout,
   boxStyleFor,
   interestingQueriesFor,
   adjustLayoutWithRunMetadata,
-  BuildLayoutParams
-} from "./GaantChartLayout";
+  BuildLayoutParams,
+} from './GaantChartLayout';
 import {
   GaantChartLayoutOptions,
   GaantChartLayout,
@@ -36,18 +36,18 @@ import {
   MIN_SCALE,
   MAX_SCALE,
   GaantViewport,
-  GaantChartPlacement
-} from "./Constants";
-import { SplitPanelContainer } from "../SplitPanelContainer";
-import { GaantChartModeControl } from "./GaantChartModeControl";
-import { GaantStatusPanel } from "./GaantStatusPanel";
-import { ZoomSlider } from "./ZoomSlider";
-import { useViewport } from "./useViewport";
-import { OptionsContainer, OptionsDivider, OptionsSpacer } from "../VizComponents";
+  GaantChartPlacement,
+} from './Constants';
+import {SplitPanelContainer} from '../SplitPanelContainer';
+import {GaantChartModeControl} from './GaantChartModeControl';
+import {GaantStatusPanel} from './GaantStatusPanel';
+import {ZoomSlider} from './ZoomSlider';
+import {useViewport} from './useViewport';
+import {OptionsContainer, OptionsDivider, OptionsSpacer} from '../VizComponents';
 
-export { GaantChartMode } from "./Constants";
+export {GaantChartMode} from './Constants';
 
-const HIGHLIGHT_TIME_EVENT = "gaant-highlight-time";
+const HIGHLIGHT_TIME_EVENT = 'gaant-highlight-time';
 
 let highlightTimer: NodeJS.Timeout;
 
@@ -61,7 +61,7 @@ export function setHighlightedGaantChartTime(timestamp: null | string, debounced
   if (debounced) {
     highlightTimer = setTimeout(() => setHighlightedGaantChartTime(timestamp, false), 100);
   } else {
-    document.dispatchEvent(new CustomEvent(HIGHLIGHT_TIME_EVENT, { detail: timestamp }));
+    document.dispatchEvent(new CustomEvent(HIGHLIGHT_TIME_EVENT, {detail: timestamp}));
   }
 }
 
@@ -71,13 +71,13 @@ export function setHighlightedGaantChartTime(timestamp: null | string, debounced
  * is that this data structure is generic, but it's really a fake solid tree.
  */
 export const toGraphQueryItems = weakmapMemoize((plan: GaantChartExecutionPlanFragment) => {
-  const nodeTable: { [key: string]: IGaantNode } = {};
+  const nodeTable: {[key: string]: IGaantNode} = {};
 
   for (const step of plan.steps) {
     const node: IGaantNode = {
       name: step.key,
       inputs: [],
-      outputs: []
+      outputs: [],
     };
     nodeTable[step.key] = node;
   }
@@ -85,23 +85,23 @@ export const toGraphQueryItems = weakmapMemoize((plan: GaantChartExecutionPlanFr
   for (const step of plan.steps) {
     for (const input of step.inputs) {
       nodeTable[step.key].inputs.push({
-        dependsOn: input.dependsOn.map(d => ({
+        dependsOn: input.dependsOn.map((d) => ({
           solid: {
-            name: d.key
-          }
-        }))
+            name: d.key,
+          },
+        })),
       });
 
       for (const upstream of input.dependsOn) {
         let output = nodeTable[upstream.key].outputs[0];
         if (!output) {
           output = {
-            dependedBy: []
+            dependedBy: [],
           };
           nodeTable[upstream.key].outputs.push(output);
         }
         output.dependedBy.push({
-          solid: { name: step.key }
+          solid: {name: step.key},
         });
       }
     }
@@ -130,7 +130,7 @@ interface GaantChartState {
 }
 
 export class GaantChart extends React.Component<GaantChartProps, GaantChartState> {
-  static LoadingState: React.FunctionComponent<{ runId: string }>;
+  static LoadingState: React.FunctionComponent<{runId: string}>;
 
   static fragments = {
     GaantChartExecutionPlanFragment: gql`
@@ -155,7 +155,7 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
         }
         artifactsPersisted
       }
-    `
+    `,
   };
 
   _cachedLayout: GaantChartLayout | null = null;
@@ -167,8 +167,8 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
     this.state = {
       options: {
         ...DEFAULT_OPTIONS,
-        ...props.options
-      }
+        ...props.options,
+      },
     };
   }
 
@@ -187,39 +187,39 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
   updateOptions = (changes: Partial<GaantChartLayoutOptions>) => {
     this.setState({
       ...this.state,
-      options: { ...this.state.options, ...changes }
+      options: {...this.state.options, ...changes},
     });
   };
 
   onUpdateQuery = (query: string) => {
     // update query
-    this.props.onSetQuery(query || "*");
+    this.props.onSetQuery(query || '*');
 
     // update selectedSteps
     let currSelectedSteps: string[] = [];
-    if (query !== "*" && query) {
+    if (query !== '*' && query) {
       const graph = toGraphQueryItems(this.props.plan);
       const graphFiltered = filterByQuery(graph, query);
-      currSelectedSteps = graphFiltered.all.map(node => node.name);
+      currSelectedSteps = graphFiltered.all.map((node) => node.name);
     }
     this.props.onSetSelectedSteps(currSelectedSteps);
   };
 
   onDoubleClickStep = (stepKey: string) => {
     const query = `*${stepKey}*`;
-    this.onUpdateQuery(this.props.query !== query ? query : "*");
+    this.onUpdateQuery(this.props.query !== query ? query : '*');
   };
 
   render() {
-    const { plan, query } = this.props;
-    const { options } = this.state;
+    const {plan, query} = this.props;
+    const {options} = this.state;
 
     const graph = toGraphQueryItems(plan);
     const graphFiltered = filterByQuery(graph, query);
 
     const layout = this.getLayout({
       nodes: options.hideUnselectedSteps ? graphFiltered.all : graph,
-      mode: options.mode
+      mode: options.mode,
     });
 
     return (
@@ -229,25 +229,25 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
           {this.props.toolbarLeftActions && <OptionsDivider />}
           <GaantChartModeControl
             value={options.mode}
-            onChange={mode => this.updateOptions({ mode })}
+            onChange={(mode) => this.updateOptions({mode})}
             hideTimedMode={options.hideTimedMode}
           />
           {options.mode === GaantChartMode.WATERFALL_TIMED && (
             <>
               <OptionsSpacer />
-              <div style={{ width: 200 }}>
-                <ZoomSlider value={options.zoom} onChange={v => this.updateOptions({ zoom: v })} />
+              <div style={{width: 200}}>
+                <ZoomSlider value={options.zoom} onChange={(v) => this.updateOptions({zoom: v})} />
               </div>
               <OptionsSpacer />
               <Checkbox
-                style={{ marginBottom: 0 }}
+                style={{marginBottom: 0}}
                 label="Hide not started steps"
                 checked={options.hideWaiting}
-                onClick={() => this.updateOptions({ hideWaiting: !options.hideWaiting })}
+                onClick={() => this.updateOptions({hideWaiting: !options.hideWaiting})}
               />
             </>
           )}
-          <div style={{ flex: 1 }} />
+          <div style={{flex: 1}} />
           {this.props.toolbarActions}
         </OptionsContainer>
         <GaantChartInner
@@ -259,7 +259,7 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
           onDoubleClickStep={this.onDoubleClickStep}
           onChange={() =>
             this.updateOptions({
-              hideUnselectedSteps: !options.hideUnselectedSteps
+              hideUnselectedSteps: !options.hideUnselectedSteps,
             })
           }
         />
@@ -277,11 +277,11 @@ type GaantChartInnerProps = GaantChartProps &
   };
 
 const GaantChartInner = (props: GaantChartInnerProps) => {
-  const { viewport, containerProps, onMoveToViewport } = useViewport();
+  const {viewport, containerProps, onMoveToViewport} = useViewport();
   const [hoveredStep, setHoveredNodeName] = React.useState<string | null>(null);
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
   const [nowMs, setNowMs] = React.useState<number>(Date.now());
-  const { options, metadata, selectedSteps } = props;
+  const {options, metadata, selectedSteps} = props;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -294,7 +294,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   }
 
   const scale = Math.exp(
-    Math.log(minScale) + ((Math.log(MAX_SCALE) - Math.log(minScale)) / 100) * options.zoom
+    Math.log(minScale) + ((Math.log(MAX_SCALE) - Math.log(minScale)) / 100) * options.zoom,
   );
 
   // When the pipeline is running we want the graph to be steadily moving, even if logs
@@ -337,22 +337,22 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     options,
     metadata || EMPTY_RUN_METADATA,
     scale,
-    nowMs
+    nowMs,
   );
   const layoutSize = {
-    width: Math.max(0, ...layout.boxes.map(b => b.x + b.width + BOX_SPACING_X)),
-    height: Math.max(0, ...layout.boxes.map(b => b.y * BOX_HEIGHT + BOX_HEIGHT))
+    width: Math.max(0, ...layout.boxes.map((b) => b.x + b.width + BOX_SPACING_X)),
+    height: Math.max(0, ...layout.boxes.map((b) => b.y * BOX_HEIGHT + BOX_HEIGHT)),
   };
 
   React.useEffect(() => {
-    const node = layout.boxes.find(b => selectedSteps.includes(b.node.name));
+    const node = layout.boxes.find((b) => selectedSteps.includes(b.node.name));
     if (!node) {
       return;
     }
     const bounds = boundsForBox(node);
     const x = (bounds.maxX + bounds.minX) / 2 - viewport.width / 2;
     const y = (bounds.maxY + bounds.minY) / 2 - viewport.height / 2;
-    onMoveToViewport({ left: x, top: y }, true);
+    onMoveToViewport({left: x, top: y}, true);
   }, [selectedSteps]); // eslint-disable-line
 
   const highlightedMs: number[] = [];
@@ -360,10 +360,10 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     highlightedMs.push(hoveredTime);
   } else if (selectedSteps.length > 0) {
     const selectedMeta = selectedSteps
-      .map(selectedStep => metadata?.steps[selectedStep])
+      .map((selectedStep) => metadata?.steps[selectedStep])
       .filter((x): x is IStepMetadata => x !== undefined);
     const sortedSelectedSteps = selectedMeta.sort((a, b) =>
-      a.start && b.start ? a.start - b.start : 0
+      a.start && b.start ? a.start - b.start : 0,
     );
     const firstMeta = sortedSelectedSteps[0];
     const lastMeta = sortedSelectedSteps[sortedSelectedSteps.length - 1];
@@ -385,8 +385,8 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
           nowMs={nowMs}
         />
       )}
-      <div style={{ overflow: "scroll", flex: 1 }} {...containerProps}>
-        <div style={{ position: "relative", ...layoutSize }}>
+      <div style={{overflow: 'scroll', flex: 1}} {...containerProps}>
+        <div style={{position: 'relative', ...layoutSize}}>
           {measurementComplete && (
             <GaantChartViewportContents
               options={options}
@@ -410,14 +410,14 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
           placeholder="Type a Step Subset"
           onChange={props.onUpdateQuery}
           presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
-          className={selectedSteps.length > 0 ? "has-step" : ""}
+          className={selectedSteps.length > 0 ? 'has-step' : ''}
         />
         <Checkbox
           checked={options.hideUnselectedSteps}
           label="Hide unselected steps"
           onChange={props.onChange}
           inline={true}
-          style={{ marginLeft: 5 }}
+          style={{marginLeft: 5}}
         />
       </GraphQueryInputContainer>
     </>
@@ -434,7 +434,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
           {...props}
           nowMs={nowMs}
           metadata={metadata}
-          onHighlightStep={name => setHoveredNodeName(name)}
+          onHighlightStep={(name) => setHoveredNodeName(name)}
         />
       }
     />
@@ -455,8 +455,10 @@ interface GaantChartViewportContentsProps {
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
 }
 
-const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportContentsProps> = props => {
-  const { viewport, layout, hoveredStep, focusedSteps, metadata, options } = props;
+const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportContentsProps> = (
+  props,
+) => {
+  const {viewport, layout, hoveredStep, focusedSteps, metadata, options} = props;
   const items: React.ReactChild[] = [];
 
   // To avoid drawing zillions of DOM nodes, we render only the boxes + lines that
@@ -470,10 +472,10 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
   // We track the number of lines that end at each X value (they go over and then down,
   // so this tracks where the vertical lines are). We shift lines by {count}px if there
   // are others at the same X so wide "tracks" show you where data is being collected.
-  const verticalLinesAtXCoord: { [x: string]: number } = {};
+  const verticalLinesAtXCoord: {[x: string]: number} = {};
 
   if (options.mode !== GaantChartMode.FLAT) {
-    layout.boxes.forEach(box => {
+    layout.boxes.forEach((box) => {
       box.children.forEach((child, childIdx) => {
         const bounds = boundsForLine(box, child);
         if (!intersectsViewport(bounds)) {
@@ -496,13 +498,13 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
             depNotDrawn={childNotDrawn}
             depIdx={overlapAtXCoord}
             {...bounds}
-          />
+          />,
         );
       });
     });
   }
 
-  layout.boxes.forEach(box => {
+  layout.boxes.forEach((box) => {
     const bounds = boundsForBox(box);
     const useDot = box.width === BOX_DOT_WIDTH_CUTOFF;
     if (!intersectsViewport(bounds)) {
@@ -519,18 +521,18 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
         onMouseLeave={() => props.setHoveredNodeName(null)}
         className={`
             chart-element
-            ${useDot ? "dot" : "box"}
-            ${focusedSteps.includes(box.node.name) && "focused"}
-            ${hoveredStep === box.node.name && "hovered"}`}
+            ${useDot ? 'dot' : 'box'}
+            ${focusedSteps.includes(box.node.name) && 'focused'}
+            ${hoveredStep === box.node.name && 'hovered'}`}
         style={{
           left: bounds.minX,
           top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
           width: useDot ? BOX_DOT_SIZE : box.width,
-          ...boxStyleFor(box.state, { metadata, options })
+          ...boxStyleFor(box.state, {metadata, options}),
         }}
       >
         {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : undefined}
-      </div>
+      </div>,
     );
   });
 
@@ -538,10 +540,10 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
     // Note: We sort the markers from left to right so that they're added to the DOM in that
     // order and a long one doesn't make ones "behind it" unclickable.
     layout.markers
-      .map((marker, idx) => ({ marker, idx, bounds: boundsForBox(marker) }))
-      .filter(({ bounds }) => intersectsViewport(bounds))
+      .map((marker, idx) => ({marker, idx, bounds: boundsForBox(marker)}))
+      .filter(({bounds}) => intersectsViewport(bounds))
       .sort((a, b) => a.bounds.minX - b.bounds.minX)
-      .forEach(({ marker, bounds, idx }) => {
+      .forEach(({marker, bounds, idx}) => {
         const useDot = marker.width === BOX_DOT_WIDTH_CUTOFF;
 
         items.push(
@@ -550,15 +552,15 @@ const GaantChartViewportContents: React.FunctionComponent<GaantChartViewportCont
             data-tooltip={marker.key}
             className={`
             chart-element
-            ${useDot ? "marker-dot" : "marker-whiskers"}`}
+            ${useDot ? 'marker-dot' : 'marker-whiskers'}`}
             style={{
               left: bounds.minX,
               top: bounds.minY + (useDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y),
-              width: useDot ? BOX_DOT_SIZE : marker.width
+              width: useDot ? BOX_DOT_SIZE : marker.width,
             }}
           >
             <div />
-          </div>
+          </div>,
         );
       });
   }
@@ -582,7 +584,7 @@ const boundsForBox = (a: GaantChartPlacement): Bounds => {
     minX: a.x,
     minY: a.y * BOX_HEIGHT,
     maxX: a.x + a.width,
-    maxY: a.y * BOX_HEIGHT + BOX_HEIGHT
+    maxY: a.y * BOX_HEIGHT + BOX_HEIGHT,
   };
 };
 
@@ -617,7 +619,7 @@ const boundsForLine = (a: GaantChartBox, b: GaantChartBox): Bounds => {
     ? b.y * BOX_HEIGHT + bCenterY
     : b.y * BOX_HEIGHT + (bIsDot ? BOX_DOT_MARGIN_Y : BOX_MARGIN_Y);
 
-  return { minX, minY, maxX, maxY };
+  return {minX, minY, maxX, maxY};
 };
 
 /**
@@ -633,14 +635,14 @@ const GaantLine = React.memo(
     dotted,
     darkened,
     depIdx,
-    depNotDrawn
+    depNotDrawn,
   }: {
     dotted: boolean;
     darkened: boolean;
     depIdx: number;
     depNotDrawn: boolean;
   } & Bounds) => {
-    const border = `${LINE_SIZE}px ${dotted ? "dotted" : "solid"} ${
+    const border = `${LINE_SIZE}px ${dotted ? 'dotted' : 'solid'} ${
       darkened ? Colors.DARK_GRAY1 : Colors.LIGHT_GRAY3
     }`;
 
@@ -656,7 +658,7 @@ const GaantLine = React.memo(
             width: depNotDrawn ? 50 : maxXAvoidingOverlap - minX,
             top: minY - 1,
             borderTop: border,
-            zIndex: darkened ? 100 : 1
+            zIndex: darkened ? 100 : 1,
           }}
         />
         {minY !== maxY && !depNotDrawn && (
@@ -668,14 +670,14 @@ const GaantLine = React.memo(
               top: minY,
               height: maxY - minY,
               borderRight: border,
-              zIndex: darkened ? 100 : 1
+              zIndex: darkened ? 100 : 1,
             }}
           />
         )}
       </>
     );
   },
-  isEqual
+  isEqual,
 );
 
 // Note: It is much faster to use standard CSS class selectors here than make
@@ -773,7 +775,7 @@ const GraphQueryInputContainer = styled.div`
   white-space: nowrap;
 `;
 
-GaantChart.LoadingState = ({ runId }: { runId: string }) => (
+GaantChart.LoadingState = ({runId}: {runId: string}) => (
   <GaantChartContainer>
     <OptionsContainer />
     <SplitPanelContainer

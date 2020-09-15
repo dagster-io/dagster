@@ -1,10 +1,10 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { H3, UL } from "@blueprintjs/core";
-import TypeWithTooltip from "../TypeWithTooltip";
-import { TypeListFragment } from "./types/TypeListFragment";
-import { SidebarSubhead, SidebarSection, SidebarTitle, SectionInner } from "../SidebarComponents";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {H3, UL} from '@blueprintjs/core';
+import TypeWithTooltip from '../TypeWithTooltip';
+import {TypeListFragment} from './types/TypeListFragment';
+import {SidebarSubhead, SidebarSection, SidebarTitle, SectionInner} from '../SidebarComponents';
 
 interface ITypeListProps {
   types: Array<TypeListFragment>;
@@ -13,13 +13,13 @@ interface ITypeListProps {
 function groupTypes(types: Array<TypeListFragment>) {
   const groups = {
     Custom: Array<TypeListFragment>(),
-    "Built-in": Array<TypeListFragment>()
+    'Built-in': Array<TypeListFragment>(),
   };
-  types.forEach(type => {
+  types.forEach((type) => {
     if (type.isBuiltin) {
-      groups["Built-in"].push(type);
+      groups['Built-in'].push(type);
     } else {
-      groups["Custom"].push(type);
+      groups['Custom'].push(type);
     }
   });
   return groups;
@@ -35,7 +35,7 @@ export default class TypeList extends React.Component<ITypeListProps, {}> {
       }
 
       ${TypeWithTooltip.fragments.DagsterTypeWithTooltipFragment}
-    `
+    `,
   };
 
   renderTypes(types: TypeListFragment[]) {

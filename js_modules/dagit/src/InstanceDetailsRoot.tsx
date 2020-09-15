@@ -1,12 +1,12 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { useQuery } from "react-apollo";
-import { Spinner } from "@blueprintjs/core";
-import { InstanceDetailsQuery } from "./types/InstanceDetailsQuery";
-import { Header } from "./ListComponents";
-import { UnControlled as CodeMirrorReact } from "react-codemirror2";
-import { createGlobalStyle } from "styled-components/macro";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {useQuery} from 'react-apollo';
+import {Spinner} from '@blueprintjs/core';
+import {InstanceDetailsQuery} from './types/InstanceDetailsQuery';
+import {Header} from './ListComponents';
+import {UnControlled as CodeMirrorReact} from 'react-codemirror2';
+import {createGlobalStyle} from 'styled-components/macro';
 
 const CodeMirrorShimStyle = createGlobalStyle`
   .react-codemirror2 {
@@ -25,8 +25,8 @@ const CodeMirrorShimStyle = createGlobalStyle`
 `;
 
 export const InstanceDetailsRoot: React.FunctionComponent = () => {
-  const { data } = useQuery<InstanceDetailsQuery>(INSTANCE_DETAILS_QUERY, {
-    fetchPolicy: "cache-and-network"
+  const {data} = useQuery<InstanceDetailsQuery>(INSTANCE_DETAILS_QUERY, {
+    fetchPolicy: 'cache-and-network',
   });
 
   return data ? (
@@ -36,8 +36,8 @@ export const InstanceDetailsRoot: React.FunctionComponent = () => {
       <CodeMirrorReact
         value={data?.instance.info}
         options={{
-          mode: "yaml",
-          readOnly: true
+          mode: 'yaml',
+          readOnly: true,
         }}
       />
     </Container>

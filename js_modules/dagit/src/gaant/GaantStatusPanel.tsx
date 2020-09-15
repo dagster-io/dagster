@@ -1,11 +1,11 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { IRunMetadataDict, IStepState } from "../RunMetadataProvider";
-import { Spinner, Colors } from "@blueprintjs/core";
-import { GaantChartMode } from "./Constants";
-import { boxStyleFor } from "./GaantChartLayout";
-import { formatElapsedTime } from "../Util";
-import { RunGroupPanel } from "./RunGroupPanel";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {IRunMetadataDict, IStepState} from '../RunMetadataProvider';
+import {Spinner, Colors} from '@blueprintjs/core';
+import {GaantChartMode} from './Constants';
+import {boxStyleFor} from './GaantChartLayout';
+import {formatElapsedTime} from '../Util';
+import {RunGroupPanel} from './RunGroupPanel';
 
 interface GaantStatusPanelProps {
   metadata: IRunMetadataDict;
@@ -25,16 +25,16 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
   selectedSteps,
   onClickStep,
   onDoubleClickStep,
-  onHighlightStep
+  onHighlightStep,
 }) => {
   const preparing = Object.keys(metadata.steps).filter(
-    key => metadata.steps[key].state === IStepState.PREPARING
+    (key) => metadata.steps[key].state === IStepState.PREPARING,
   );
   const executing = Object.keys(metadata.steps).filter(
-    key => metadata.steps[key].state === IStepState.RUNNING
+    (key) => metadata.steps[key].state === IStepState.RUNNING,
   );
   const errored = Object.keys(metadata.steps).filter(
-    key => metadata.steps[key].state === IStepState.FAILED
+    (key) => metadata.steps[key].state === IStepState.FAILED,
   );
   const renderStepItem = (stepName: string) => (
     <StepItem
@@ -50,7 +50,7 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
+    <div style={{display: 'flex', flexDirection: 'column', minHeight: 0}}>
       <RunGroupPanel runId={runId} />
       <SectionHeader>Preparing</SectionHeader>
       <Section>{preparing.map(renderStepItem)}</Section>
@@ -72,7 +72,7 @@ const StepItem: React.FunctionComponent<{
   onClick?: (step: string, evt: React.MouseEvent<any>) => void;
   onHover?: (name: string | null) => void;
   onDoubleClick?: (name: string) => void;
-}> = ({ nowMs, name, selected, metadata, onClick, onHover, onDoubleClick }) => {
+}> = ({nowMs, name, selected, metadata, onClick, onHover, onDoubleClick}) => {
   const step = metadata.steps[name];
   const end = step.end ?? nowMs;
   return (
@@ -91,8 +91,8 @@ const StepItem: React.FunctionComponent<{
           style={{
             ...boxStyleFor(metadata.steps[name]?.state, {
               metadata,
-              options: { mode: GaantChartMode.WATERFALL_TIMED }
-            })
+              options: {mode: GaantChartMode.WATERFALL_TIMED},
+            }),
           }}
         />
       )}
@@ -123,7 +123,7 @@ const StepLabel = styled.div`
   flex: 1;
 `;
 
-const StepItemContainer = styled.div<{ selected: boolean }>`
+const StepItemContainer = styled.div<{selected: boolean}>`
   display: flex;
   line-height: 28px;
   height: 28px;
@@ -131,7 +131,7 @@ const StepItemContainer = styled.div<{ selected: boolean }>`
   align-items: center;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
   font-size: 13px;
-  ${({ selected }) => selected && `background: ${Colors.LIGHT_GRAY4};`}
+  ${({selected}) => selected && `background: ${Colors.LIGHT_GRAY4};`}
 
   &:hover {
     background: ${Colors.LIGHT_GRAY3};

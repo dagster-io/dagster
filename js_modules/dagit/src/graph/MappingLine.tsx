@@ -1,7 +1,7 @@
-import * as React from "react";
-import { Edge } from "./SolidLinks";
-import { IPoint } from "./getFullSolidLayout";
-import { isHighlighted } from "./highlighting";
+import * as React from 'react';
+import {Edge} from './SolidLinks';
+import {IPoint} from './getFullSolidLayout';
+import {isHighlighted} from './highlighting';
 
 interface MappingLineProps {
   source: IPoint;
@@ -20,7 +20,7 @@ export const MappingLine: React.FunctionComponent<MappingLineProps> = ({
   leftEdgeX,
   edge,
   highlightedEdges,
-  onHighlightEdges
+  onHighlightEdges,
 }) => {
   const highlighted = isHighlighted(highlightedEdges, edge);
 
@@ -31,7 +31,7 @@ export const MappingLine: React.FunctionComponent<MappingLineProps> = ({
         fill="none"
         strokeWidth={minified ? 6 : 5}
         strokeLinecap="round"
-        stroke={highlighted ? "black" : "rgb(137, 206, 206)"}
+        stroke={highlighted ? 'black' : 'rgb(137, 206, 206)'}
       />
       <path
         d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${target.x}`}

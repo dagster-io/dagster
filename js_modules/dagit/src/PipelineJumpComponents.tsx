@@ -1,11 +1,11 @@
-import * as React from "react";
-import * as ReactDOM from "react-dom";
-import { Select } from "@blueprintjs/select";
-import { Button, MenuItem } from "@blueprintjs/core";
-import gql from "graphql-tag";
-import { SolidJumpBarFragment_solids } from "./types/SolidJumpBarFragment";
-import { ShortcutHandler } from "./ShortcutHandler";
-import styled from "styled-components/macro";
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
+import {Select} from '@blueprintjs/select';
+import {Button, MenuItem} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import {SolidJumpBarFragment_solids} from './types/SolidJumpBarFragment';
+import {ShortcutHandler} from './ShortcutHandler';
+import styled from 'styled-components/macro';
 
 interface SolidJumpBarProps {
   solids: Array<SolidJumpBarFragment_solids>;
@@ -21,30 +21,30 @@ export class SolidJumpBar extends React.Component<SolidJumpBarProps> {
           name
         }
       }
-    `
+    `,
   };
 
   select: React.RefObject<Select<string>> = React.createRef();
 
   render() {
-    const { solids, selectedSolid, onChange } = this.props;
+    const {solids, selectedSolid, onChange} = this.props;
 
     return (
       <ShortcutHandler
         onShortcut={() => activateSelect(this.select.current)}
         shortcutLabel={`⌥S`}
-        shortcutFilter={e => e.keyCode === 83 && e.altKey}
+        shortcutFilter={(e) => e.keyCode === 83 && e.altKey}
       >
         <StringSelectNoIntrinsicWidth
           ref={this.select}
-          items={solids.map(s => s.name)}
+          items={solids.map((s) => s.name)}
           itemRenderer={BasicStringRenderer}
           itemListPredicate={BasicStringPredicate}
           noResults={<MenuItem disabled={true} text="No results." />}
-          onItemSelect={name => onChange(solids.find(s => s.name === name)!)}
+          onItemSelect={(name) => onChange(solids.find((s) => s.name === name)!)}
         >
           <Button
-            text={selectedSolid ? selectedSolid.name : "Select a Solid..."}
+            text={selectedSolid ? selectedSolid.name : 'Select a Solid...'}
             rightIcon="double-caret-vertical"
           />
         </StringSelectNoIntrinsicWidth>
@@ -76,9 +76,9 @@ const StringSelectNoIntrinsicWidth = styled(Select.ofType<string>())`
 `;
 
 const BasicStringPredicate = (text: string, items: string[]) =>
-  items.filter(i => i.toLowerCase().includes(text.toLowerCase())).slice(0, 20);
+  items.filter((i) => i.toLowerCase().includes(text.toLowerCase())).slice(0, 20);
 
-const BasicStringRenderer = (item: string, options: { handleClick: any; modifiers: any }) => (
+const BasicStringRenderer = (item: string, options: {handleClick: any; modifiers: any}) => (
   <MenuItem
     key={item}
     text={item}
@@ -91,7 +91,7 @@ function activateSelect(select: Select<any> | null) {
   if (!select) return;
   // eslint-disable-next-line react/no-find-dom-node
   const selectEl = ReactDOM.findDOMNode(select) as HTMLElement;
-  const btnEl = selectEl.querySelector("button");
+  const btnEl = selectEl.querySelector('button');
   if (btnEl) {
     btnEl.click();
   }

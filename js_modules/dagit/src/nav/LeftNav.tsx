@@ -1,19 +1,19 @@
-import * as React from "react";
-import { Link } from "react-router-dom";
-import { useRouteMatch, useHistory } from "react-router";
-import styled from "styled-components/macro";
-import { Colors, Icon } from "@blueprintjs/core";
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import {useRouteMatch, useHistory} from 'react-router';
+import styled from 'styled-components/macro';
+import {Colors, Icon} from '@blueprintjs/core';
 
-import { TimezonePicker } from "../TimeComponents";
-import { InstanceDetailsLink } from "./InstanceDetailsLink";
-import { WebsocketStatus } from "../WebsocketStatus";
-import { ShortcutHandler } from "../ShortcutHandler";
-import { RepositoryPicker } from "./RepositoryPicker";
-import { RepositoryContentList } from "./RepositoryContentList";
-import navBarImage from "../images/nav-logo-icon.png";
-import navTitleImage from "../images/nav-title.png";
-import { DagsterRepoOption } from "../DagsterRepositoryContext";
-import { SchedulesList } from "./SchedulesList";
+import {TimezonePicker} from '../TimeComponents';
+import {InstanceDetailsLink} from './InstanceDetailsLink';
+import {WebsocketStatus} from '../WebsocketStatus';
+import {ShortcutHandler} from '../ShortcutHandler';
+import {RepositoryPicker} from './RepositoryPicker';
+import {RepositoryContentList} from './RepositoryContentList';
+import navBarImage from '../images/nav-logo-icon.png';
+import navTitleImage from '../images/nav-title.png';
+import {DagsterRepoOption} from '../DagsterRepositoryContext';
+import {SchedulesList} from './SchedulesList';
 
 const KEYCODE_FOR_1 = 49;
 
@@ -22,20 +22,20 @@ const INSTANCE_TABS = [
     to: `/runs`,
     tab: `runs`,
     icon: <Icon icon="history" iconSize={18} />,
-    label: "Runs"
+    label: 'Runs',
   },
   {
     to: `/assets`,
     tab: `assets`,
     icon: <Icon icon="panel-table" iconSize={18} />,
-    label: "Assets"
+    label: 'Assets',
   },
   {
     to: `/scheduler`,
     tab: `scheduler`,
     icon: <Icon icon="time" iconSize={18} />,
-    label: "Scheduler"
-  }
+    label: 'Scheduler',
+  },
 ];
 
 interface LeftNavProps {
@@ -44,12 +44,12 @@ interface LeftNavProps {
   setRepo: (repo: DagsterRepoOption) => void;
 }
 
-export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, setRepo }) => {
+export const LeftNav: React.FunctionComponent<LeftNavProps> = ({options, repo, setRepo}) => {
   const history = useHistory();
   const match = useRouteMatch<
-    | { selector: string; tab: string; rootTab: undefined }
-    | { selector: undefined; tab: undefined; rootTab: string }
-  >(["/pipeline/:selector/:tab?", "/solid/:selector", "/schedules/:selector", "/:rootTab?"]);
+    | {selector: string; tab: string; rootTab: undefined}
+    | {selector: undefined; tab: undefined; rootTab: string}
+  >(['/pipeline/:selector/:tab?', '/solid/:selector', '/schedules/:selector', '/:rootTab?']);
 
   return (
     <LeftNavContainer>
@@ -58,11 +58,11 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, 
           <img
             alt="logo"
             src={navBarImage}
-            style={{ height: 40 }}
-            onClick={() => history.push("/")}
+            style={{height: 40}}
+            onClick={() => history.push('/')}
           />
           <LogoMetaContainer>
-            <img src={navTitleImage} style={{ height: 10 }} alt="title" />
+            <img src={navTitleImage} style={{height: 10}} alt="title" />
             <InstanceDetailsLink />
           </LogoMetaContainer>
           <LogoWebsocketStatus />
@@ -72,31 +72,31 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({ options, repo, 
             key={t.tab}
             onShortcut={() => history.push(t.to)}
             shortcutLabel={`⌥${i + 1}`}
-            shortcutFilter={e => e.keyCode === KEYCODE_FOR_1 + i && e.altKey}
+            shortcutFilter={(e) => e.keyCode === KEYCODE_FOR_1 + i && e.altKey}
           >
-            <Tab to={t.to} className={match?.params.rootTab === t.tab ? "selected" : ""}>
+            <Tab to={t.to} className={match?.params.rootTab === t.tab ? 'selected' : ''}>
               {t.icon}
               <TabLabel>{t.label}</TabLabel>
             </Tab>
           </ShortcutHandler>
         ))}
       </div>
-      <div style={{ height: 20 }} />
+      <div style={{height: 20}} />
       <div
         className="bp3-dark"
         style={{
           background: `rgba(0,0,0,0.3)`,
           color: Colors.WHITE,
-          display: "flex",
+          display: 'flex',
           flex: 1,
-          overflow: "none",
-          flexDirection: "column",
-          minHeight: 0
+          overflow: 'none',
+          flexDirection: 'column',
+          minHeight: 0,
         }}
       >
         <RepositoryPicker options={options} repo={repo} setRepo={setRepo} />
         {repo && (
-          <div style={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
+          <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
             <ItemHeader>Pipelines & Solids:</ItemHeader>
             <RepositoryContentList {...match?.params} repo={repo} />
             <ItemHeader>Schedules:</ItemHeader>

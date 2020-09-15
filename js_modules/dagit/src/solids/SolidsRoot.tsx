@@ -1,31 +1,31 @@
-import * as React from "react";
-import * as querystring from "query-string";
+import * as React from 'react';
+import * as querystring from 'query-string';
 
-import Loading from "../Loading";
-import { RouteComponentProps } from "react-router";
-import { CellMeasurer, CellMeasurerCache, AutoSizer, List } from "react-virtualized";
-import gql from "graphql-tag";
-import { useQuery } from "react-apollo";
-import styled from "styled-components/macro";
+import Loading from '../Loading';
+import {RouteComponentProps} from 'react-router';
+import {CellMeasurer, CellMeasurerCache, AutoSizer, List} from 'react-virtualized';
+import gql from 'graphql-tag';
+import {useQuery} from 'react-apollo';
+import styled from 'styled-components/macro';
 import {
   SolidsRootQuery,
-  SolidsRootQuery_repositoryOrError_Repository_usedSolids
-} from "./types/SolidsRootQuery";
-import { SplitPanelContainer } from "../SplitPanelContainer";
-import { Colors, NonIdealState } from "@blueprintjs/core";
-import SolidTypeSignature from "../SolidTypeSignature";
-import { DagsterRepositoryContext, useRepositorySelector } from "../DagsterRepositoryContext";
-import { UsedSolidDetails, SolidDetailScrollContainer } from "./SolidDetailsRoot";
+  SolidsRootQuery_repositoryOrError_Repository_usedSolids,
+} from './types/SolidsRootQuery';
+import {SplitPanelContainer} from '../SplitPanelContainer';
+import {Colors, NonIdealState} from '@blueprintjs/core';
+import SolidTypeSignature from '../SolidTypeSignature';
+import {DagsterRepositoryContext, useRepositorySelector} from '../DagsterRepositoryContext';
+import {UsedSolidDetails, SolidDetailScrollContainer} from './SolidDetailsRoot';
 import {
   SuggestionProvider,
   TokenizingFieldValue,
   tokenizedValuesFromString,
   stringFromValue,
-  TokenizingField
-} from "../TokenizingField";
+  TokenizingField,
+} from '../TokenizingField';
 
 function flatUniq(arrs: string[][]) {
-  const results: { [key: string]: boolean } = {};
+  const results: {[key: string]: boolean} = {};
   for (const arr of arrs) {
     for (const item of arr) {
       results[item] = true;
@@ -39,47 +39,47 @@ type Solid = SolidsRootQuery_repositoryOrError_Repository_usedSolids;
 function searchSuggestionsForSolids(solids: Solid[]): SuggestionProvider[] {
   return [
     {
-      token: "name",
-      values: () => solids.map(s => s.definition.name)
+      token: 'name',
+      values: () => solids.map((s) => s.definition.name),
     },
     {
-      token: "pipeline",
-      values: () => flatUniq(solids.map(s => s.invocations.map(i => i.pipeline.name)))
+      token: 'pipeline',
+      values: () => flatUniq(solids.map((s) => s.invocations.map((i) => i.pipeline.name))),
     },
     {
-      token: "input",
+      token: 'input',
       values: () =>
-        flatUniq(solids.map(s => s.definition.inputDefinitions.map(d => d.type.displayName)))
+        flatUniq(solids.map((s) => s.definition.inputDefinitions.map((d) => d.type.displayName))),
     },
     {
-      token: "output",
+      token: 'output',
       values: () =>
-        flatUniq(solids.map(s => s.definition.outputDefinitions.map(d => d.type.displayName)))
-    }
+        flatUniq(solids.map((s) => s.definition.outputDefinitions.map((d) => d.type.displayName))),
+    },
   ];
 }
 
 function filterSolidsWithSearch(solids: Solid[], search: TokenizingFieldValue[]) {
-  return solids.filter(s => {
+  return solids.filter((s) => {
     for (const item of search) {
       if (
-        (item.token === "name" || item.token === undefined) &&
+        (item.token === 'name' || item.token === undefined) &&
         !s.definition.name.startsWith(item.value)
       ) {
         return false;
       }
-      if (item.token === "pipeline" && !s.invocations.some(i => i.pipeline.name === item.value)) {
+      if (item.token === 'pipeline' && !s.invocations.some((i) => i.pipeline.name === item.value)) {
         return false;
       }
       if (
-        item.token === "input" &&
-        !s.definition.inputDefinitions.some(i => i.type.displayName.startsWith(item.value))
+        item.token === 'input' &&
+        !s.definition.inputDefinitions.some((i) => i.type.displayName.startsWith(item.value))
       ) {
         return false;
       }
       if (
-        item.token === "output" &&
-        !s.definition.outputDefinitions.some(i => i.type.displayName.startsWith(item.value))
+        item.token === 'output' &&
+        !s.definition.outputDefinitions.some((i) => i.type.displayName.startsWith(item.value))
       ) {
         return false;
       }
@@ -88,19 +88,19 @@ function filterSolidsWithSearch(solids: Solid[], search: TokenizingFieldValue[])
   });
 }
 
-type SolidsRootProps = RouteComponentProps<{ name: string }>;
+type SolidsRootProps = RouteComponentProps<{name: string}>;
 
-export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = props => {
-  const { repositoryLocation, repository } = React.useContext(DagsterRepositoryContext);
+export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = (props) => {
+  const {repositoryLocation, repository} = React.useContext(DagsterRepositoryContext);
   const repositorySelector = useRepositorySelector();
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
     skip: !repository || !repositoryLocation,
-    variables: { repositorySelector }
+    variables: {repositorySelector},
   });
   return (
     <Loading queryResult={queryResult}>
-      {({ repositoryOrError }) => {
-        if (repositoryOrError?.__typename === "Repository" && repositoryOrError.usedSolids) {
+      {({repositoryOrError}) => {
+        if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
           return <SolidsRootWithData usedSolids={repositoryOrError.usedSolids} {...props} />;
         }
         return null;
@@ -109,24 +109,26 @@ export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = props => {
   );
 };
 
-const SolidsRootWithData: React.FunctionComponent<SolidsRootProps & {
-  usedSolids: Solid[];
-}> = ({ location, match, history, usedSolids }) => {
-  const { q, typeExplorer } = querystring.parse(location.search);
+const SolidsRootWithData: React.FunctionComponent<
+  SolidsRootProps & {
+    usedSolids: Solid[];
+  }
+> = ({location, match, history, usedSolids}) => {
+  const {q, typeExplorer} = querystring.parse(location.search);
   const suggestions = searchSuggestionsForSolids(usedSolids);
-  const search = tokenizedValuesFromString((q as string) || "", suggestions);
+  const search = tokenizedValuesFromString((q as string) || '', suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
 
-  const selected = usedSolids.find(s => s.definition.name === match.params.name);
+  const selected = usedSolids.find((s) => s.definition.name === match.params.name);
 
   const onSearch = (search: TokenizingFieldValue[]) => {
     history.push({
-      search: `?${querystring.stringify({ q: stringFromValue(search) })}`
+      search: `?${querystring.stringify({q: stringFromValue(search)})}`,
     });
   };
 
   const onClickSolid = (defName: string) => {
-    history.push(`/solids/${defName}?${querystring.stringify({ q })}`);
+    history.push(`/solids/${defName}?${querystring.stringify({q})}`);
   };
 
   React.useEffect(() => {
@@ -136,41 +138,41 @@ const SolidsRootWithData: React.FunctionComponent<SolidsRootProps & {
     }
 
     // If the user has clicked a type, translate it into a search
-    if (typeof typeExplorer === "string") {
-      onSearch([...search, { token: "input", value: typeExplorer }]);
+    if (typeof typeExplorer === 'string') {
+      onSearch([...search, {token: 'input', value: typeExplorer}]);
     }
   });
 
   return (
     <SplitPanelContainer
-      identifier={"solids"}
+      identifier={'solids'}
       firstInitialPercent={40}
       firstMinSize={420}
       first={
         <SolidListColumnContainer>
           <div
             style={{
-              padding: "15px 10px",
-              borderBottom: `1px solid ${Colors.LIGHT_GRAY2}`
+              padding: '15px 10px',
+              borderBottom: `1px solid ${Colors.LIGHT_GRAY2}`,
             }}
           >
             <TokenizingField
               values={search}
-              onChange={search => onSearch(search)}
+              onChange={(search) => onSearch(search)}
               suggestionProviders={suggestions}
-              placeholder={"Filter by name or input/output type..."}
+              placeholder={'Filter by name or input/output type...'}
             />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{flex: 1}}>
             <AutoSizer>
-              {({ height, width }) => (
+              {({height, width}) => (
                 <SolidList
                   height={height}
                   width={width}
                   selected={selected}
                   onClickSolid={onClickSolid}
                   items={filtered.sort((a, b) =>
-                    a.definition.name.localeCompare(b.definition.name)
+                    a.definition.name.localeCompare(b.definition.name),
                   )}
                 />
               )}
@@ -183,8 +185,8 @@ const SolidsRootWithData: React.FunctionComponent<SolidsRootProps & {
           <SolidDetailScrollContainer>
             <UsedSolidDetails
               name={selected.definition.name}
-              onClickInvocation={({ pipelineName, handleID }) =>
-                history.push(`/pipeline/${pipelineName}/${handleID.split(".").join("/")}`)
+              onClickInvocation={({pipelineName, handleID}) =>
+                history.push(`/pipeline/${pipelineName}/${handleID.split('.').join('/')}`)
               }
             />
           </SolidDetailScrollContainer>
@@ -205,8 +207,8 @@ const SolidList: React.FunctionComponent<{
   height: number;
   selected: Solid | undefined;
   onClickSolid: (name: string) => void;
-}> = props => {
-  const cache = React.useRef(new CellMeasurerCache({ defaultHeight: 60, fixedWidth: true }));
+}> = (props) => {
+  const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 
   // Reset our cell sizes when the panel's width is changed. This is similar to a useEffect
   // but we need it to run /before/ the render not just after it completes.
@@ -222,7 +224,7 @@ const SolidList: React.FunctionComponent<{
       height={props.height}
       rowCount={props.items.length}
       rowHeight={cache.current.rowHeight}
-      rowRenderer={({ parent, index, key, style }) => {
+      rowRenderer={({parent, index, key, style}) => {
         const solid = props.items[index];
         return (
           <CellMeasurer cache={cache.current} index={index} parent={parent} key={key}>
@@ -266,9 +268,9 @@ export const SOLIDS_ROOT_QUERY = gql`
   ${SolidTypeSignature.fragments.SolidTypeSignatureFragment}
 `;
 
-const SolidListItem = styled.div<{ selected: boolean }>`
-  background: ${({ selected }) => (selected ? Colors.BLUE3 : Colors.WHITE)};
-  color: ${({ selected }) => (selected ? Colors.WHITE : Colors.DARK_GRAY3)};
+const SolidListItem = styled.div<{selected: boolean}>`
+  background: ${({selected}) => (selected ? Colors.BLUE3 : Colors.WHITE)};
+  color: ${({selected}) => (selected ? Colors.WHITE : Colors.DARK_GRAY3)};
   font-size: 14px;
   display: flex;
   flex-direction: column;
@@ -276,7 +278,7 @@ const SolidListItem = styled.div<{ selected: boolean }>`
   user-select: none;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY2};
   & > code.bp3-code {
-    color: ${({ selected }) => (selected ? Colors.WHITE : Colors.DARK_GRAY3)};
+    color: ${({selected}) => (selected ? Colors.WHITE : Colors.DARK_GRAY3)};
     background: transparent;
     padding: 5px 0 0 0;
   }

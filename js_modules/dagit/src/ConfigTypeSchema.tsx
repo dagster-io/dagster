@@ -1,9 +1,9 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
 
-type ConfigTypeSchemaTheme = "dark" | "light";
+type ConfigTypeSchemaTheme = 'dark' | 'light';
 
 interface ConfigTypeSchemaProps {
   type: TypeData;
@@ -25,33 +25,33 @@ interface CommonTypeData {
 }
 
 interface CompositeTypeData extends CommonTypeData {
-  __typename: "CompositeConfigType";
+  __typename: 'CompositeConfigType';
   isSelector: boolean;
   fields: FieldData[];
 }
 
 interface ListTypeData extends CommonTypeData {
-  __typename: "ArrayConfigType";
+  __typename: 'ArrayConfigType';
   typeParamKeys: string[];
 }
 
 interface NullableTypeData extends CommonTypeData {
-  __typename: "NullableConfigType";
+  __typename: 'NullableConfigType';
   typeParamKeys: string[];
 }
 
 interface EnumTypeData extends CommonTypeData {
-  __typename: "EnumConfigType";
+  __typename: 'EnumConfigType';
   givenName: string;
 }
 
 interface RegularTypeData extends CommonTypeData {
-  __typename: "RegularConfigType";
+  __typename: 'RegularConfigType';
   givenName: string;
 }
 
 interface ScalarUnionTypeData extends CommonTypeData {
-  __typename: "ScalarUnionConfigType";
+  __typename: 'ScalarUnionConfigType';
   nonScalarTypeKey: string;
   scalarTypeKey: string;
 }
@@ -66,22 +66,22 @@ export type TypeData =
 
 function renderTypeRecursive(
   type: TypeData,
-  typeLookup: { [typeName: string]: TypeData },
+  typeLookup: {[typeName: string]: TypeData},
   depth: number,
-  props: ConfigTypeSchemaProps
+  props: ConfigTypeSchemaProps,
 ): React.ReactElement<HTMLElement> {
-  if (type.__typename === "CompositeConfigType" && props.maxDepth && depth === props.maxDepth) {
+  if (type.__typename === 'CompositeConfigType' && props.maxDepth && depth === props.maxDepth) {
     return <span>...</span>;
   }
-  if (type.__typename === "CompositeConfigType") {
-    const innerIndent = "  ".repeat(depth + 1);
+  if (type.__typename === 'CompositeConfigType') {
+    const innerIndent = '  '.repeat(depth + 1);
     return (
       <>
         {`{`}
         {type.isSelector && (
           <DictBlockComment indent={innerIndent} content={`One of the following:`} />
         )}
-        {type.fields.map(fieldData => (
+        {type.fields.map((fieldData) => (
           <DictEntry key={fieldData.name}>
             <DictBlockComment indent={innerIndent} content={fieldData.description} />
             {innerIndent}
@@ -91,15 +91,15 @@ function renderTypeRecursive(
             {renderTypeRecursive(typeLookup[fieldData.configTypeKey], typeLookup, depth + 1, props)}
           </DictEntry>
         ))}
-        {"  ".repeat(depth) + "}"}
+        {'  '.repeat(depth) + '}'}
       </>
     );
   }
-  if (type.__typename === "ArrayConfigType") {
+  if (type.__typename === 'ArrayConfigType') {
     const ofTypeKey = type.typeParamKeys[0];
     return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}]</>;
   }
-  if (type.__typename === "NullableConfigType") {
+  if (type.__typename === 'NullableConfigType') {
     const ofTypeKey = type.typeParamKeys[0];
     return (
       <>
@@ -109,18 +109,18 @@ function renderTypeRecursive(
     );
   }
 
-  if (type.__typename === "ScalarUnionConfigType") {
+  if (type.__typename === 'ScalarUnionConfigType') {
     const nonScalarTypeMarkup = renderTypeRecursive(
       typeLookup[type.nonScalarTypeKey],
       typeLookup,
       depth,
-      props
+      props,
     );
     const scalarTypeMarkup = renderTypeRecursive(
       typeLookup[type.scalarTypeKey],
       typeLookup,
       depth,
-      props
+      props,
     );
 
     return (
@@ -160,11 +160,11 @@ export class ConfigTypeSchema extends React.PureComponent<ConfigTypeSchemaProps>
           nonScalarTypeKey
         }
       }
-    `
+    `,
   };
 
   public render() {
-    const { type, typesInScope } = this.props;
+    const {type, typesInScope} = this.props;
 
     const typeLookup = {};
     for (const typeInScope of typesInScope) {
@@ -190,8 +190,8 @@ const TypeSchemaContainer = styled.code`
 
 const DictEntry = styled.div``;
 
-const DictKey = styled.span<{ theme: ConfigTypeSchemaTheme | undefined }>`
-  color: ${({ theme }) => (theme === "dark" ? Colors.WHITE : Colors.BLACK)};
+const DictKey = styled.span<{theme: ConfigTypeSchemaTheme | undefined}>`
+  color: ${({theme}) => (theme === 'dark' ? Colors.WHITE : Colors.BLACK)};
 `;
 
 const DictComment = styled.div`
@@ -202,9 +202,9 @@ const DictComment = styled.div`
   white-space: initial;
 `;
 
-const DictBlockComment = ({ indent = "", content }: { indent: string; content: string | null }) =>
-  content !== null && content !== "" ? (
-    <DictComment>{`${indent.replace(/ /g, "\u00A0")}/* ${content} */`}</DictComment>
+const DictBlockComment = ({indent = '', content}: {indent: string; content: string | null}) =>
+  content !== null && content !== '' ? (
+    <DictComment>{`${indent.replace(/ /g, '\u00A0')}/* ${content} */`}</DictComment>
   ) : null;
 
-const Optional = <span style={{ fontWeight: 500, color: Colors.ORANGE2 }}>?</span>;
+const Optional = <span style={{fontWeight: 500, color: Colors.ORANGE2}}>?</span>;

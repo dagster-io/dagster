@@ -1,40 +1,40 @@
-import * as React from "react";
-import { IconNames } from "@blueprintjs/icons";
-import { Button, IconName, Intent } from "@blueprintjs/core";
-import { useMutation } from "react-apollo";
-import { LaunchButtonDropdown, LaunchButtonConfiguration } from "../execute/LaunchButton";
-import { PipelineRunStatus } from "../types/globalTypes";
+import * as React from 'react';
+import {IconNames} from '@blueprintjs/icons';
+import {Button, IconName, Intent} from '@blueprintjs/core';
+import {useMutation} from 'react-apollo';
+import {LaunchButtonDropdown, LaunchButtonConfiguration} from '../execute/LaunchButton';
+import {PipelineRunStatus} from '../types/globalTypes';
 
-import { CANCEL_MUTATION } from "./RunUtils";
-import { SharedToaster } from "../DomUtils";
-import { IStepState } from "../RunMetadataProvider";
-import { useRepository, useRepositoryOptions } from "../DagsterRepositoryContext";
+import {CANCEL_MUTATION} from './RunUtils';
+import {SharedToaster} from '../DomUtils';
+import {IStepState} from '../RunMetadataProvider';
+import {useRepository, useRepositoryOptions} from '../DagsterRepositoryContext';
 
-const CANCEL_TITLE = "Terminate";
+const CANCEL_TITLE = 'Terminate';
 
 // Titles of re-execute options
-const REEXECUTE_FULL_PIPELINE_TITLE = "Full Pipeline";
-const REEXECUTE_SUBSET_NO_SELECTION_TITLE = "Step Not Selected";
+const REEXECUTE_FULL_PIPELINE_TITLE = 'Full Pipeline';
+const REEXECUTE_SUBSET_NO_SELECTION_TITLE = 'Step Not Selected';
 const REEXECUTE_SUBSET_TITLE = `Selected Step Subset`;
-const REEXECUTE_FROM_FAILURE_TITLE = "From Failure";
+const REEXECUTE_FROM_FAILURE_TITLE = 'From Failure';
 
 // Descriptions of re-execute options
 export const REEXECUTE_PIPELINE_UNKNOWN =
-  "Re-execute is unavailable because the pipeline is not present in the current repository.";
+  'Re-execute is unavailable because the pipeline is not present in the current repository.';
 
-const REEXECUTE_FULL_PIPELINE_DESCRIPTION = "Re-execute the pipeline run from scratch";
+const REEXECUTE_FULL_PIPELINE_DESCRIPTION = 'Re-execute the pipeline run from scratch';
 
-const REEXECUTE_SUBSET = "Re-run the following steps with existing configuration:";
+const REEXECUTE_SUBSET = 'Re-run the following steps with existing configuration:';
 const REEXECUTE_SUBSET_NO_SELECTION =
-  "Re-execute is only enabled when steps are selected. Try selecting a step or typing a step subset to re-execute.";
+  'Re-execute is only enabled when steps are selected. Try selecting a step or typing a step subset to re-execute.';
 const REEXECUTE_SUBSET_NO_ARTIFACTS =
   "Use a persisting storage mode such as 'filesystem' to enable step re-execution";
-const REEXECUTE_SUBSET_NOT_DONE = "Wait for the selected steps to finish to re-execute it.";
+const REEXECUTE_SUBSET_NOT_DONE = 'Wait for the selected steps to finish to re-execute it.';
 
-const RETRY_DESCRIPTION = "Retry the pipeline run, skipping steps that completed successfully";
-const RETRY_DISABLED = "Retry is only enabled when the pipeline has failed.";
+const RETRY_DESCRIPTION = 'Retry the pipeline run, skipping steps that completed successfully';
+const RETRY_DISABLED = 'Retry is only enabled when the pipeline has failed.';
 const RETRY_NO_ARTIFACTS =
-  "Retry is only enabled on persistent storage. Try rerunning with a different storage configuration.";
+  'Retry is only enabled on persistent storage. Try rerunning with a different storage configuration.';
 
 interface RunActionButtonsRun {
   runId: string;
@@ -60,7 +60,7 @@ interface RunActionButtonsProps {
 
 const CancelRunButton: React.FunctionComponent<{
   run: RunActionButtonsRun;
-}> = ({ run }) => {
+}> = ({run}) => {
   const [cancel] = useMutation(CANCEL_MUTATION);
   const [inFlight, setInFlight] = React.useState(false);
   return (
@@ -73,14 +73,14 @@ const CancelRunButton: React.FunctionComponent<{
       onClick={async () => {
         setInFlight(true);
         const res = await cancel({
-          variables: { runId: run.runId }
+          variables: {runId: run.runId},
         });
         setInFlight(false);
         if (res.data?.terminatePipelineExecution?.message) {
           SharedToaster.show({
             message: res.data.terminatePipelineExecution.message,
-            icon: "error",
-            intent: Intent.DANGER
+            icon: 'error',
+            intent: Intent.DANGER,
           });
         }
       }}
@@ -94,16 +94,16 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
   onLaunch,
   run,
   selectedStepStates,
-  executionPlan
+  executionPlan,
 }) => {
   // Run's status
 
   const currentRepository = useRepository();
-  const { options: repositoryOptions } = useRepositoryOptions();
-  const isPipelineUnknown = run?.pipeline.__typename === "UnknownPipeline";
+  const {options: repositoryOptions} = useRepositoryOptions();
+  const isPipelineUnknown = run?.pipeline.__typename === 'UnknownPipeline';
   const isSelectionPresent = selectedSteps && selectedSteps.length > 0;
-  const isSelectionFinished = selectedStepStates.every(stepState =>
-    [IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState)
+  const isSelectionFinished = selectedStepStates.every((stepState) =>
+    [IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState),
   );
   const isFinalStatus =
     run?.status === PipelineRunStatus.FAILURE || run?.status === PipelineRunStatus.SUCCESS;
@@ -115,9 +115,9 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
     {
       title: REEXECUTE_FULL_PIPELINE_TITLE,
       tooltip: REEXECUTE_FULL_PIPELINE_DESCRIPTION,
-      icon: "repeat",
+      icon: 'repeat',
       disabled: isPipelineUnknown || !isFinalStatus,
-      onClick: () => onLaunch()
+      onClick: () => onLaunch(),
     },
     {
       title: isSelectionPresent ? REEXECUTE_SUBSET_TITLE : REEXECUTE_SUBSET_NO_SELECTION_TITLE,
@@ -135,28 +135,28 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
             : !isSelectionFinished
             ? REEXECUTE_SUBSET_NOT_DONE
             : REEXECUTE_SUBSET}
-          <div style={{ paddingLeft: "10px" }}>
+          <div style={{paddingLeft: '10px'}}>
             {isSelectionPresent &&
-              selectedSteps.map(step => (
-                <span key={step} style={{ display: "block" }}>{`* ${step}`}</span>
+              selectedSteps.map((step) => (
+                <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>
               ))}
           </div>
         </div>
       ),
-      icon: "select",
-      onClick: () => onLaunch(selectedSteps)
+      icon: 'select',
+      onClick: () => onLaunch(selectedSteps),
     },
     {
       title: REEXECUTE_FROM_FAILURE_TITLE,
-      icon: "play",
+      icon: 'play',
       disabled: isPipelineUnknown || !isFailedWithPlan || !artifactsPersisted,
       tooltip: !artifactsPersisted
         ? RETRY_NO_ARTIFACTS
         : !isFailedWithPlan
         ? RETRY_DISABLED
         : RETRY_DESCRIPTION,
-      onClick: () => onLaunch(undefined, true)
-    }
+      onClick: () => onLaunch(undefined, true),
+    },
   ];
 
   let disabled = false;
@@ -164,7 +164,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
   let icon: IconName | undefined = undefined;
 
   const currentRepositorySnapshots = {};
-  currentRepository.pipelines.forEach(pipeline => {
+  currentRepository.pipelines.forEach((pipeline) => {
     currentRepositorySnapshots[pipeline.name] = pipeline.pipelineSnapshotId;
   });
 
@@ -180,19 +180,19 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
       icon = IconNames.ERROR;
 
       const matchingRepoNames = repositoryOptions
-        .map(x => x.repository)
+        .map((x) => x.repository)
         .filter(
-          x =>
+          (x) =>
             x.name !== currentRepository.name &&
-            x.pipelines.map(x => x.name).includes(run.pipeline.name)
+            x.pipelines.map((x) => x.name).includes(run.pipeline.name),
         )
-        .map(x => x.name);
+        .map((x) => x.name);
 
       if (matchingRepoNames.length) {
         tooltip = `"${
           run.pipeline.name
         }" is not in the current repository.  It is available in the following repositories: ${matchingRepoNames.join(
-          ", "
+          ', ',
         )}.`;
       } else {
         tooltip = `"${run.pipeline.name}" is not in the current repository.`;
@@ -212,7 +212,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
       />
       {run?.canTerminate && (
         <>
-          <div style={{ minWidth: 6 }} />
+          <div style={{minWidth: 6}} />
           <CancelRunButton run={run} />
         </>
       )}

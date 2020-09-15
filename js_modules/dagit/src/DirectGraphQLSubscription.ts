@@ -1,7 +1,7 @@
-import { debounce } from "lodash";
-import { print } from "graphql/language/printer";
-import { WEBSOCKET_URI } from "./DomUtils";
-import { showGraphQLError, DagsterGraphQLError } from "./AppError";
+import {debounce} from 'lodash';
+import {print} from 'graphql/language/printer';
+import {WEBSOCKET_URI} from './DomUtils';
+import {showGraphQLError, DagsterGraphQLError} from './AppError';
 
 type FlushCallback<T> = (messages: T[], isFirstResponse: boolean) => void;
 type ErrorCallback = (error: DagsterGraphQLError) => void;
@@ -31,7 +31,7 @@ export class DirectGraphQLSubscription<T> {
     query: any,
     variables: any,
     onFlushMessages: FlushCallback<T>,
-    onError: ErrorCallback
+    onError: ErrorCallback,
   ) {
     this.onFlushMessages = onFlushMessages;
     this.onError = onError;
@@ -42,27 +42,27 @@ export class DirectGraphQLSubscription<T> {
 
   open() {
     const ws = new WebSocket(WEBSOCKET_URI);
-    ws.addEventListener("message", e => {
+    ws.addEventListener('message', (e) => {
       this.handleEvent(JSON.parse(e.data));
     });
-    ws.addEventListener("error", this.handleRetry);
-    ws.addEventListener("close", this.handleRetry);
-    ws.addEventListener("open", () => {
-      ws.send(JSON.stringify({ type: "connection_init", payload: {} }));
+    ws.addEventListener('error', this.handleRetry);
+    ws.addEventListener('close', this.handleRetry);
+    ws.addEventListener('open', () => {
+      ws.send(JSON.stringify({type: 'connection_init', payload: {}}));
       ws.send(
         JSON.stringify({
-          id: "1",
-          type: "start",
+          id: '1',
+          type: 'start',
           payload: {
             extensions: {},
             variables: this.variables,
-            query: print(this.query)
-          }
-        })
+            query: print(this.query),
+          },
+        }),
       );
     });
 
-    window.addEventListener("beforeunload", this.handleBeforeUnload);
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
     this.messagesReceived = false;
     this.websocket = ws;
     this.closed = false;
@@ -70,7 +70,7 @@ export class DirectGraphQLSubscription<T> {
 
   close() {
     this.closed = true;
-    window.removeEventListener("beforeunload", this.handleBeforeUnload);
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
     this.websocket.close();
   }
 
@@ -87,10 +87,10 @@ export class DirectGraphQLSubscription<T> {
   };
 
   handleEvent = (msg: any) => {
-    if (msg.type === "data") {
+    if (msg.type === 'data') {
       if (msg.payload.errors) {
         const errors = msg.payload.errors as DagsterGraphQLError[];
-        errors.forEach(error => showGraphQLError(error));
+        errors.forEach((error) => showGraphQLError(error));
         this.onError(errors[0]);
         return;
       }

@@ -1,15 +1,15 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import SVGViewport, { DETAIL_ZOOM, SVGViewportInteractor } from "./SVGViewport";
-import { SolidNameOrPath } from "../PipelineExplorer";
-import SolidNode from "./SolidNode";
-import { IFullPipelineLayout, IFullSolidLayout, ILayout } from "./getFullSolidLayout";
-import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
-import { SolidLinks } from "./SolidLinks";
-import { Edge, isHighlighted, isSolidHighlighted } from "./highlighting";
-import { ParentSolidNode, SVGLabeledParentRect } from "./ParentSolidNode";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import SVGViewport, {DETAIL_ZOOM, SVGViewportInteractor} from './SVGViewport';
+import {SolidNameOrPath} from '../PipelineExplorer';
+import SolidNode from './SolidNode';
+import {IFullPipelineLayout, IFullSolidLayout, ILayout} from './getFullSolidLayout';
+import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
+import {SolidLinks} from './SolidLinks';
+import {Edge, isHighlighted, isSolidHighlighted} from './highlighting';
+import {ParentSolidNode, SVGLabeledParentRect} from './ParentSolidNode';
 
 const NoOp = () => {};
 
@@ -47,32 +47,32 @@ interface IPipelineContentsState {
  * outlines around flattened composites.
  */
 function computeSolidPrefixBoundingBoxes(layout: IFullPipelineLayout) {
-  const groups: { [base: string]: ILayout[] } = {};
+  const groups: {[base: string]: ILayout[]} = {};
   let maxDepth = 0;
 
   for (const key of Object.keys(layout.solids)) {
-    const parts = key.split(".");
+    const parts = key.split('.');
     if (parts.length === 1) continue;
     for (let ii = 1; ii < parts.length; ii++) {
-      const base = parts.slice(0, ii).join(".");
+      const base = parts.slice(0, ii).join('.');
       groups[base] = groups[base] || [];
       groups[base].push(layout.solids[key].boundingBox);
       maxDepth = Math.max(maxDepth, ii);
     }
   }
 
-  const boxes: (ILayout & { name: string })[] = [];
+  const boxes: (ILayout & {name: string})[] = [];
   for (const base of Object.keys(groups)) {
     const group = groups[base];
-    const depth = base.split(".").length;
+    const depth = base.split('.').length;
     const margin = 5 + (maxDepth - depth) * 5;
 
     if (group.length === 1) continue;
-    const x1 = Math.min(...group.map(l => l.x)) - margin;
-    const x2 = Math.max(...group.map(l => l.x + l.width)) + margin;
-    const y1 = Math.min(...group.map(l => l.y)) - margin;
-    const y2 = Math.max(...group.map(l => l.y + l.height)) + margin;
-    boxes.push({ name: base, x: x1, y: y1, width: x2 - x1, height: y2 - y1 });
+    const x1 = Math.min(...group.map((l) => l.x)) - margin;
+    const x2 = Math.max(...group.map((l) => l.x + l.width)) + margin;
+    const y1 = Math.min(...group.map((l) => l.y)) - margin;
+    const y2 = Math.max(...group.map((l) => l.y + l.height)) + margin;
+    boxes.push({name: base, x: x1, y: y1, width: x2 - x1, height: y2 - y1});
   }
 
   return boxes;
@@ -83,11 +83,11 @@ export class PipelineGraphContents extends React.PureComponent<
   IPipelineContentsState
 > {
   state: IPipelineContentsState = {
-    highlighted: []
+    highlighted: [],
   };
 
   onHighlightEdges = (highlighted: Edge[]) => {
-    this.setState({ highlighted });
+    this.setState({highlighted});
   };
 
   render() {
@@ -103,7 +103,7 @@ export class PipelineGraphContents extends React.PureComponent<
       onEnterCompositeSolid = NoOp,
       highlightedSolids,
       selectedSolid,
-      selectedHandleID
+      selectedHandleID,
     } = this.props;
 
     return (
@@ -125,7 +125,7 @@ export class PipelineGraphContents extends React.PureComponent<
           <SVGLabeledParentRect
             {...layout.solids[selectedSolid.name].solid}
             key={`composite-rect-${selectedHandleID}`}
-            label={""}
+            label={''}
             fill={Colors.LIGHT_GRAY5}
             minified={true}
           />
@@ -134,7 +134,7 @@ export class PipelineGraphContents extends React.PureComponent<
         {parentSolid && (
           <ParentSolidNode
             onClickSolid={onClickSolid}
-            onDoubleClick={name => onDoubleClickSolid({ name })}
+            onDoubleClick={(name) => onDoubleClickSolid({name})}
             onHighlightEdges={this.onHighlightEdges}
             highlightedEdges={this.state.highlighted}
             key={`composite-rect-${parentHandleID}-definition`}
@@ -153,11 +153,11 @@ export class PipelineGraphContents extends React.PureComponent<
           layout={layout}
           opacity={0.55}
           onHighlight={this.onHighlightEdges}
-          connections={layout.connections.filter(({ from, to }) =>
+          connections={layout.connections.filter(({from, to}) =>
             isHighlighted(this.state.highlighted, {
               a: from.solidName,
-              b: to.solidName
-            })
+              b: to.solidName,
+            }),
           )}
         />
         {computeSolidPrefixBoundingBoxes(layout).map((box, idx) => (
@@ -169,15 +169,15 @@ export class PipelineGraphContents extends React.PureComponent<
             strokeWidth={2}
           />
         ))}
-        {solids.map(solid => (
+        {solids.map((solid) => (
           <SolidNode
             key={solid.name}
             invocation={solid}
             definition={solid.definition}
             minified={minified}
-            onClick={() => onClickSolid({ name: solid.name })}
-            onDoubleClick={() => onDoubleClickSolid({ name: solid.name })}
-            onEnterComposite={() => onEnterCompositeSolid({ name: solid.name })}
+            onClick={() => onClickSolid({name: solid.name})}
+            onDoubleClick={() => onDoubleClickSolid({name: solid.name})}
+            onEnterComposite={() => onEnterCompositeSolid({name: solid.name})}
             onHighlightEdges={this.onHighlightEdges}
             layout={layout.solids[solid.name]}
             selected={selectedSolid === solid}
@@ -212,16 +212,16 @@ export default class PipelineGraph extends React.Component<IPipelineGraphProps> 
       }
       ${SolidNode.fragments.SolidNodeInvocationFragment}
       ${SolidNode.fragments.SolidNodeDefinitionFragment}
-    `
+    `,
   };
 
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
 
   resolveSolidPosition = (
     arg: SolidNameOrPath,
-    cb: (cx: number, cy: number, layout: IFullSolidLayout) => void
+    cb: (cx: number, cy: number, layout: IFullSolidLayout) => void,
   ) => {
-    const lastName = "name" in arg ? arg.name : arg.path[arg.path.length - 1];
+    const lastName = 'name' in arg ? arg.name : arg.path[arg.path.length - 1];
     const solidLayout = this.props.layout.solids[lastName];
     if (!solidLayout) {
       return;
@@ -245,13 +245,13 @@ export default class PipelineGraph extends React.Component<IPipelineGraphProps> 
   };
 
   closestSolidInDirection = (dir: string): string | undefined => {
-    const { layout, selectedSolid } = this.props;
+    const {layout, selectedSolid} = this.props;
     if (!selectedSolid) return;
 
     const current = layout.solids[selectedSolid.name];
-    const center = (solid: IFullSolidLayout): { x: number; y: number } => ({
+    const center = (solid: IFullSolidLayout): {x: number; y: number} => ({
       x: solid.boundingBox.x + solid.boundingBox.width / 2,
-      y: solid.boundingBox.y + solid.boundingBox.height / 2
+      y: solid.boundingBox.y + solid.boundingBox.height / 2,
     });
 
     /* Sort all the solids in the graph based on their attractiveness
@@ -261,24 +261,24 @@ export default class PipelineGraph extends React.Component<IPipelineGraphProps> 
       const dx = center(solid).x - center(current).x;
       const dy = center(solid).y - center(current).y;
 
-      if (dir === "left" && dy === 0 && dx < 0) {
+      if (dir === 'left' && dy === 0 && dx < 0) {
         return -dx;
       }
-      if (dir === "right" && dy === 0 && dx > 0) {
+      if (dir === 'right' && dy === 0 && dx > 0) {
         return dx;
       }
-      if (dir === "up" && dy < 0) {
+      if (dir === 'up' && dy < 0) {
         return -dy + Math.abs(dx) / 5;
       }
-      if (dir === "down" && dy > 0) {
+      if (dir === 'down' && dy > 0) {
         return dy + Math.abs(dx) / 5;
       }
       return Number.NaN;
     };
 
     const closest = Object.keys(layout.solids)
-      .map(name => ({ name, score: score(layout.solids[name]) }))
-      .filter(e => e.name !== selectedSolid.name && !Number.isNaN(e.score))
+      .map((name) => ({name, score: score(layout.solids[name])}))
+      .filter((e) => e.name !== selectedSolid.name && !Number.isNaN(e.score))
       .sort((a, b) => b.score - a.score)
       .pop();
 
@@ -286,16 +286,16 @@ export default class PipelineGraph extends React.Component<IPipelineGraphProps> 
   };
 
   onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.target && (e.target as HTMLElement).nodeName === "INPUT") return;
+    if (e.target && (e.target as HTMLElement).nodeName === 'INPUT') return;
 
-    const dir = { 37: "left", 38: "up", 39: "right", 40: "down" }[e.keyCode];
+    const dir = {37: 'left', 38: 'up', 39: 'right', 40: 'down'}[e.keyCode];
     if (!dir) return;
 
     const nextSolid = this.closestSolidInDirection(dir);
     if (nextSolid && this.props.onClickSolid) {
       e.preventDefault();
       e.stopPropagation();
-      this.props.onClickSolid({ name: nextSolid });
+      this.props.onClickSolid({name: nextSolid});
     }
   };
 
@@ -332,7 +332,7 @@ export default class PipelineGraph extends React.Component<IPipelineGraphProps> 
       pipelineName,
       backgroundColor,
       onClickBackground,
-      onDoubleClickSolid
+      onDoubleClickSolid,
     } = this.props;
 
     return (
@@ -346,7 +346,7 @@ export default class PipelineGraph extends React.Component<IPipelineGraphProps> 
         onKeyDown={this.onKeyDown}
         onDoubleClick={this.unfocusOutsideContainer}
       >
-        {({ scale }: any) => (
+        {({scale}: any) => (
           <>
             <SVGContainer
               width={layout.width}

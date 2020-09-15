@@ -1,7 +1,7 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import { LEFT_INSET, CSS_DURATION, GaantViewport } from "./Constants";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import {LEFT_INSET, CSS_DURATION, GaantViewport} from './Constants';
 
 const msToMinuteLabel = (ms: number) => `${Math.round(ms / 1000 / 60)}m`;
 const msToSecondLabel = (ms: number) => `${(ms / 1000).toFixed(0)}s`;
@@ -19,50 +19,50 @@ const TICK_LABEL_WIDTH = 40;
 const TICK_CONFIG = [
   {
     tickIntervalMs: 0.5 * 1000,
-    tickLabels: msToSubsecondLabel
+    tickLabels: msToSubsecondLabel,
   },
   {
     tickIntervalMs: 1 * 1000,
-    tickLabels: msToSecondLabel
+    tickLabels: msToSecondLabel,
   },
   {
     tickIntervalMs: 5 * 1000,
-    tickLabels: msToSecondLabel
+    tickLabels: msToSecondLabel,
   },
   {
     tickIntervalMs: 10 * 1000,
-    tickLabels: msToSecondLabel
+    tickLabels: msToSecondLabel,
   },
   {
     tickIntervalMs: 30 * 1000,
-    tickLabels: msToSecondLabel
+    tickLabels: msToSecondLabel,
   },
   {
     tickIntervalMs: 60 * 1000,
-    tickLabels: msToSecondLabel
+    tickLabels: msToSecondLabel,
   },
   {
     tickIntervalMs: 2 * 60 * 1000,
-    tickLabels: msToMinuteLabel
+    tickLabels: msToMinuteLabel,
   },
   {
     tickIntervalMs: 5 * 60 * 1000,
-    tickLabels: msToMinuteLabel
+    tickLabels: msToMinuteLabel,
   },
   {
     tickIntervalMs: 10 * 60 * 1000,
-    tickLabels: msToMinuteLabel
+    tickLabels: msToMinuteLabel,
   },
   {
     tickIntervalMs: 20 * 60 * 1000,
-    tickLabels: msToMinuteLabel
-  }
+    tickLabels: msToMinuteLabel,
+  },
 ];
 
 interface GaantChartTimescaleProps {
   scale: number;
   viewport: GaantViewport;
-  layoutSize: { width: number; height: number };
+  layoutSize: {width: number; height: number};
   nowMs: number;
   startMs: number;
   highlightedMs: number[];
@@ -74,15 +74,15 @@ export const GaantChartTimescale = ({
   nowMs,
   startMs,
   highlightedMs,
-  layoutSize
+  layoutSize,
 }: GaantChartTimescaleProps) => {
   const transform = `translate(${LEFT_INSET - viewport.left}px)`;
   const ticks: React.ReactChild[] = [];
   const lines: React.ReactChild[] = [];
 
   const pxPerMs = scale;
-  const { tickIntervalMs, tickLabels } =
-    TICK_CONFIG.find(t => t.tickIntervalMs * pxPerMs > 80) || TICK_CONFIG[TICK_CONFIG.length - 1];
+  const {tickIntervalMs, tickLabels} =
+    TICK_CONFIG.find((t) => t.tickIntervalMs * pxPerMs > 80) || TICK_CONFIG[TICK_CONFIG.length - 1];
 
   const pxPerTick = tickIntervalMs * pxPerMs;
   const firstTickX = Math.floor(viewport.left / pxPerTick) * pxPerTick;
@@ -94,11 +94,11 @@ export const GaantChartTimescale = ({
     const ms = x / pxPerMs;
     const key = `${ms.toFixed(2)}`;
     const label = tickLabels(ms);
-    lines.push(<div className="line" key={key} style={{ left: x, transform }} />);
+    lines.push(<div className="line" key={key} style={{left: x, transform}} />);
     ticks.push(
-      <div className="tick" key={key} style={{ left: x - 20, transform }}>
+      <div className="tick" key={key} style={{left: x - 20, transform}}>
         {label}
-      </div>
+      </div>,
     );
   }
 
@@ -113,7 +113,7 @@ export const GaantChartTimescale = ({
             style={{
               left: (highlightedMs[0] - startMs) * pxPerMs + 2,
               width: (highlightedMs[1] - highlightedMs[0]) * pxPerMs - 2,
-              transform
+              transform,
             }}
           >
             {msToSubsecondLabel(highlightedMs[1] - highlightedMs[0])}
@@ -128,20 +128,20 @@ export const GaantChartTimescale = ({
             <div
               key={`highlight-${idx}`}
               className="tick highlight"
-              style={{ left: timeX + labelOffset, transform }}
+              style={{left: timeX + labelOffset, transform}}
             >
               {msToSubsecondLabel(ms - startMs)}
             </div>
           );
         })}
       </TimescaleTicksContainer>
-      <TimescaleLinesContainer style={{ width: viewport.width, height: viewport.height }}>
+      <TimescaleLinesContainer style={{width: viewport.width, height: viewport.height}}>
         {lines}
         {highlightedMs.map((ms, idx) => (
           <div
             className="line highlight"
             key={`highlight-${idx}`}
-            style={{ left: (ms - startMs) * pxPerMs, transform }}
+            style={{left: (ms - startMs) * pxPerMs, transform}}
           />
         ))}
         {nowMs > startMs && (
@@ -150,7 +150,7 @@ export const GaantChartTimescale = ({
             style={{
               left: (nowMs - startMs) * pxPerMs,
               width: Math.max(layoutSize.width, viewport.width) - (nowMs - startMs) * pxPerMs + 100,
-              transform
+              transform,
             }}
           ></div>
         )}

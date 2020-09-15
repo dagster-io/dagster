@@ -1,4 +1,4 @@
-import * as React from "react";
+import * as React from 'react';
 
 const PX_TO_UNITS = 0.62;
 
@@ -21,7 +21,7 @@ making it compatible with SVGFlowLayoutRect (which inspects it's children's widt
 */
 export class SVGEllipseInRect extends React.PureComponent<ISVGEllipseInRectProps> {
   render() {
-    const { width, height, x, y, ...rest } = this.props;
+    const {width, height, x, y, ...rest} = this.props;
     const rx = width / 2;
     const ry = height / 2;
     return <ellipse cx={(x || 0) + rx} cy={(y || 0) + ry} rx={rx} ry={ry} {...rest} />;
@@ -38,7 +38,7 @@ export interface ISVGMonospaceTextProps {
 const LINE_SPACING = 1.25;
 
 const clipToLength = (str: string, len: number) => {
-  return str.length > len ? str.substr(0, len - 1) + "…" : str;
+  return str.length > len ? str.substr(0, len - 1) + '…' : str;
 };
 
 /*
@@ -51,23 +51,23 @@ export class SVGMonospaceText extends React.PureComponent<
   static intrinsicSizeForProps(props: ISVGMonospaceTextProps): ISize {
     return {
       width: Math.min(props.text.length * props.size * PX_TO_UNITS),
-      height: props.size
+      height: props.size,
     };
   }
 
   render() {
-    const { y, width, size, text, allowTwoLines, ...rest } = this.props;
+    const {y, width, size, text, allowTwoLines, ...rest} = this.props;
 
     const lineChars = width ? Math.round(width / (size * PX_TO_UNITS)) : text.length;
-    let line1 = "";
-    let line2 = "";
+    let line1 = '';
+    let line2 = '';
 
     if (allowTwoLines) {
-      const parts = text.split("_");
+      const parts = text.split('_');
       while (parts.length && line1.length + parts[0].length <= lineChars) {
-        line1 += parts.shift() + (parts.length > 0 ? "_" : "");
+        line1 += parts.shift() + (parts.length > 0 ? '_' : '');
       }
-      line2 = clipToLength(parts.join("_"), lineChars);
+      line2 = clipToLength(parts.join('_'), lineChars);
     } else {
       line1 = clipToLength(text, lineChars);
     }
@@ -76,7 +76,7 @@ export class SVGMonospaceText extends React.PureComponent<
 
     const style: React.CSSProperties = {
       font: `${size}px "Source Code Pro", monospace`,
-      pointerEvents: "none"
+      pointerEvents: 'none',
     };
 
     return (
@@ -129,7 +129,7 @@ function reactChildrenToArray(children: React.ReactNode) {
   const flattened: React.ReactNodeArray = [];
 
   const appendChildren = (arr: React.ReactNodeArray) => {
-    arr.forEach(item => {
+    arr.forEach((item) => {
       if (!item) {
         return;
       }
@@ -163,33 +163,33 @@ export class SVGFlowLayoutRect extends React.Component<
   }
 
   static computeLayout(
-    props: React.SVGAttributes<SVGElement> & ISVGFlowLayoutRectProps
+    props: React.SVGAttributes<SVGElement> & ISVGFlowLayoutRectProps,
   ): {
     width: number;
     height: number;
     childLayouts: Array<SVGFlowLayoutChildLayout>;
   } {
-    const { children, spacing, padding, height } = props;
+    const {children, spacing, padding, height} = props;
 
     const childLayouts = reactChildrenToArray(children).map((el: React.ReactElement<any>) => {
       if (el.type && (el.type as any).intrinsicSizeForProps) {
         return {
           el,
           compressionPriority: 1,
-          ...(el.type as any).intrinsicSizeForProps(el.props)
+          ...(el.type as any).intrinsicSizeForProps(el.props),
         };
       }
       if (!el.props || el.props.width === undefined) {
         console.error(el);
         throw new Error(
-          `SVGFlowLayoutRect children must have a width prop or implement intrinsicSizeForProps`
+          `SVGFlowLayoutRect children must have a width prop or implement intrinsicSizeForProps`,
         );
       }
       return {
         el: el,
         compressionPriority: 0,
         width: el.props.width,
-        height: el.props.height
+        height: el.props.height,
       };
     });
 
@@ -199,12 +199,12 @@ export class SVGFlowLayoutRect extends React.Component<
         padding * 2 +
         spacing * (childLayouts.length - 1),
       height: height,
-      childLayouts: childLayouts
+      childLayouts: childLayouts,
     };
   }
 
   render() {
-    const { x, y, spacing, padding, maxWidth, ...rest } = this.props;
+    const {x, y, spacing, padding, maxWidth, ...rest} = this.props;
     const layout = SVGFlowLayoutRect.computeLayout(this.props);
     rest.children = [];
 
@@ -224,7 +224,7 @@ export class SVGFlowLayoutRect extends React.Component<
       } = {};
 
       // Group child layouts by compression priority
-      layout.childLayouts.forEach(l => {
+      layout.childLayouts.forEach((l) => {
         const p = `${l.compressionPriority}`;
         grouped[p] = grouped[p] || [];
         grouped[p].push(l);
@@ -239,7 +239,7 @@ export class SVGFlowLayoutRect extends React.Component<
         const ratio = Math.max(1, passWidth - (layout.width - finalWidth)) / passWidth;
         if (ratio >= 0.99) break;
 
-        passLayouts.forEach(childLayout => (childLayout.width *= ratio));
+        passLayouts.forEach((childLayout) => (childLayout.width *= ratio));
         layout.width -= passWidth * (1 - ratio);
       }
     }
@@ -253,7 +253,7 @@ export class SVGFlowLayoutRect extends React.Component<
         x: (x || 0) + acc,
         y: (y || 0) + layout.height / 2 - childLayout.height / 2,
         width: childLayout.width,
-        key: idx
+        key: idx,
       });
 
       acc += childLayout.width;
@@ -279,7 +279,7 @@ export class SVGFlowLayoutFiller extends React.PureComponent {
     return {
       compressionPriority: 2,
       width: 1000,
-      height: 1
+      height: 1,
     };
   }
   render() {
@@ -313,7 +313,7 @@ export const SVGLabeledRect: React.FunctionComponent<SVGLabeledRectProps> = ({
       height={undefined}
       size={minified ? 30 : 16}
       text={label}
-      fill={"#979797"}
+      fill={'#979797'}
     />
   </g>
 );

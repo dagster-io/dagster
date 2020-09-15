@@ -1,19 +1,19 @@
-import * as React from "react";
-import PipelineColorScale from "./PipelineColorScale";
-import { ILayout } from "./getFullSolidLayout";
+import * as React from 'react';
+import PipelineColorScale from './PipelineColorScale';
+import {ILayout} from './getFullSolidLayout';
 import {
   SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions,
   SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
-  SolidNodeDefinitionFragment
-} from "./types/SolidNodeDefinitionFragment";
-import { SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText } from "./SVGComponents";
+  SolidNodeDefinitionFragment,
+} from './types/SolidNodeDefinitionFragment';
+import {SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
 
-import { DEFAULT_RESULT_NAME, titleOfIO } from "../Util";
-import { Edge, isHighlighted } from "./highlighting";
-import { SolidNodeInvocationFragment } from "./types/SolidNodeInvocationFragment";
+import {DEFAULT_RESULT_NAME, titleOfIO} from '../Util';
+import {Edge, isHighlighted} from './highlighting';
+import {SolidNodeInvocationFragment} from './types/SolidNodeInvocationFragment';
 
-export const PARENT_IN = "PARENT_IN";
-export const PARENT_OUT = "PARENT_OUT";
+export const PARENT_IN = 'PARENT_IN';
+export const PARENT_OUT = 'PARENT_OUT';
 
 interface SolidIORenderMetadata {
   edges: Edge[];
@@ -22,7 +22,7 @@ interface SolidIORenderMetadata {
 }
 
 interface SolidIOBoxProps extends SolidIORenderMetadata {
-  colorKey: "input" | "output";
+  colorKey: 'input' | 'output';
   item:
     | SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions
     | SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions;
@@ -45,22 +45,22 @@ export const SolidIOBox: React.FunctionComponent<SolidIOBoxProps> = ({
   colorKey,
   item,
   onDoubleClick,
-  onHighlightEdges
+  onHighlightEdges,
 }) => {
-  const { x, y, width, height } = layout;
-  const { name, type } = item;
+  const {x, y, width, height} = layout;
+  const {name, type} = item;
   const showText = width === 0 && !minified;
-  const highlighted = edges.some(e => isHighlighted(highlightedEdges, e));
+  const highlighted = edges.some((e) => isHighlighted(highlightedEdges, e));
 
   return (
     <g
       onMouseEnter={() => onHighlightEdges(edges)}
       onMouseLeave={() => onHighlightEdges([])}
-      onClick={e => {
+      onClick={(e) => {
         jumpTargetSolid && onDoubleClick(jumpTargetSolid);
         e.stopPropagation();
       }}
-      onDoubleClick={e => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
     >
       <title>{title}</title>
       <SVGFlowLayoutRect
@@ -109,46 +109,46 @@ export function metadataForCompositeParentIO(
   parentDefinition: SolidNodeDefinitionFragment,
   item:
     | SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions
-    | SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions
+    | SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
 ): SolidIORenderMetadata {
   const edges: Edge[] = [];
   let title = `${item.name}: ${item.type.displayName}`;
 
-  if (parentDefinition.__typename !== "CompositeSolidDefinition") {
-    throw new Error("Parent solid is not a composite - how did this happen?");
+  if (parentDefinition.__typename !== 'CompositeSolidDefinition') {
+    throw new Error('Parent solid is not a composite - how did this happen?');
   }
 
-  if (item.__typename === "InputDefinition") {
+  if (item.__typename === 'InputDefinition') {
     const others = parentDefinition.inputMappings
-      .filter(i => i.definition.name === item.name)
-      .map(i => i.mappedInput);
+      .filter((i) => i.definition.name === item.name)
+      .map((i) => i.mappedInput);
 
-    title += `\n\nConnected to: ${others.map(titleOfIO).join("\n")}`;
+    title += `\n\nConnected to: ${others.map(titleOfIO).join('\n')}`;
     edges.push(
-      ...others.map(i => ({
+      ...others.map((i) => ({
         a: `${i.solid.name}:${i.definition.name}`,
-        b: PARENT_IN
-      }))
+        b: PARENT_IN,
+      })),
     );
   }
-  if (item.__typename === "OutputDefinition") {
+  if (item.__typename === 'OutputDefinition') {
     const others = parentDefinition.outputMappings
-      .filter(i => i.definition.name === item.name)
-      .map(i => i.mappedOutput);
+      .filter((i) => i.definition.name === item.name)
+      .map((i) => i.mappedOutput);
 
-    title += `\n\nConnected to: ${others.map(titleOfIO).join("\n")}`;
+    title += `\n\nConnected to: ${others.map(titleOfIO).join('\n')}`;
     edges.push(
-      ...others.map(i => ({
+      ...others.map((i) => ({
         a: `${i.solid.name}:${i.definition.name}`,
-        b: PARENT_OUT
-      }))
+        b: PARENT_OUT,
+      })),
     );
   }
 
   return {
     edges,
     title,
-    jumpTargetSolid: edges.length === 1 ? edges[0].a : null
+    jumpTargetSolid: edges.length === 1 ? edges[0].a : null,
   };
 }
 
@@ -156,31 +156,31 @@ export function metadataForIO(
   item:
     | SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions
     | SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
-  invocation?: SolidNodeInvocationFragment
+  invocation?: SolidNodeInvocationFragment,
 ): SolidIORenderMetadata {
   const edges: Edge[] = [];
 
   let title = `${item.name}: ${item.type.displayName}`;
   let jumpTargetSolid: string | null = null;
 
-  if (invocation && item.__typename === "InputDefinition") {
-    const others = invocation.inputs.find(i => i.definition.name === item.name)!.dependsOn;
+  if (invocation && item.__typename === 'InputDefinition') {
+    const others = invocation.inputs.find((i) => i.definition.name === item.name)!.dependsOn;
     if (others.length) {
-      title += `\n\nFrom:\n` + others.map(titleOfIO).join("\n");
+      title += `\n\nFrom:\n` + others.map(titleOfIO).join('\n');
       jumpTargetSolid = others.length === 1 ? others[0].solid.name : null;
-      edges.push(...others.map(o => ({ a: o.solid.name, b: invocation.name })));
+      edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }
-    edges.push({ a: `${invocation.name}:${item.name}`, b: PARENT_IN });
+    edges.push({a: `${invocation.name}:${item.name}`, b: PARENT_IN});
   }
-  if (invocation && item.__typename === "OutputDefinition") {
-    const others = invocation.outputs.find(i => i.definition.name === item.name)!.dependedBy;
+  if (invocation && item.__typename === 'OutputDefinition') {
+    const others = invocation.outputs.find((i) => i.definition.name === item.name)!.dependedBy;
     if (others.length) {
-      title += "\n\nUsed By:\n" + others.map(o => titleOfIO(o)).join("\n");
+      title += '\n\nUsed By:\n' + others.map((o) => titleOfIO(o)).join('\n');
       jumpTargetSolid = others.length === 1 ? others[0].solid.name : null;
-      edges.push(...others.map(o => ({ a: o.solid.name, b: invocation.name })));
+      edges.push(...others.map((o) => ({a: o.solid.name, b: invocation.name})));
     }
-    edges.push({ a: `${invocation.name}:${item.name}`, b: PARENT_OUT });
+    edges.push({a: `${invocation.name}:${item.name}`, b: PARENT_OUT});
   }
 
-  return { edges, title, jumpTargetSolid };
+  return {edges, title, jumpTargetSolid};
 }

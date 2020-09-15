@@ -1,35 +1,35 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { useMutation } from "react-apollo";
-import ApolloClient from "apollo-client";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {useMutation} from 'react-apollo';
+import ApolloClient from 'apollo-client';
 
-import LogsScrollingTable from "./LogsScrollingTable";
-import { LogsProvider, GetDefaultLogFilter, LogFilter } from "./LogsProvider";
-import { RunFragment } from "./types/RunFragment";
-import { SplitPanelContainer, FirstOrSecondPanelToggle } from "../SplitPanelContainer";
-import { RunMetadataProvider, IStepState } from "../RunMetadataProvider";
-import LogsToolbar from "./LogsToolbar";
+import LogsScrollingTable from './LogsScrollingTable';
+import {LogsProvider, GetDefaultLogFilter, LogFilter} from './LogsProvider';
+import {RunFragment} from './types/RunFragment';
+import {SplitPanelContainer, FirstOrSecondPanelToggle} from '../SplitPanelContainer';
+import {RunMetadataProvider, IStepState} from '../RunMetadataProvider';
+import LogsToolbar from './LogsToolbar';
 import {
   handleLaunchResult,
   getReexecutionVariables,
-  LAUNCH_PIPELINE_REEXECUTION_MUTATION
-} from "./RunUtils";
-import { LaunchPipelineReexecutionVariables } from "./types/LaunchPipelineReexecution";
-import { RunStatusToPageAttributes } from "./RunStatusToPageAttributes";
-import { RunContext } from "./RunContext";
+  LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+} from './RunUtils';
+import {LaunchPipelineReexecutionVariables} from './types/LaunchPipelineReexecution';
+import {RunStatusToPageAttributes} from './RunStatusToPageAttributes';
+import {RunContext} from './RunContext';
 
 import {
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
-  RunPipelineRunEventFragment
-} from "./types/RunPipelineRunEventFragment";
-import { GaantChart, GaantChartMode } from "../gaant/GaantChart";
-import { RunActionButtons } from "./RunActionButtons";
-import { showCustomAlert } from "../CustomAlertProvider";
-import PythonErrorInfo from "../PythonErrorInfo";
-import { NonIdealState } from "@blueprintjs/core";
-import { IconNames } from "@blueprintjs/icons";
-import { DagsterRepositoryContext } from "../DagsterRepositoryContext";
+  RunPipelineRunEventFragment,
+} from './types/RunPipelineRunEventFragment';
+import {GaantChart, GaantChartMode} from '../gaant/GaantChart';
+import {RunActionButtons} from './RunActionButtons';
+import {showCustomAlert} from '../CustomAlertProvider';
+import PythonErrorInfo from '../PythonErrorInfo';
+import {NonIdealState} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import {DagsterRepositoryContext} from '../DagsterRepositoryContext';
 
 interface RunProps {
   client: ApolloClient<any>;
@@ -108,52 +108,52 @@ export class Run extends React.Component<RunProps, RunState> {
       ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
       ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
       ${PythonErrorInfo.fragments.PythonErrorFragment}
-    `
+    `,
   };
 
   state: RunState = {
     logsFilter: GetDefaultLogFilter(),
-    query: "*",
-    selectedSteps: []
+    query: '*',
+    selectedSteps: [],
   };
 
   onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
     const errorNode = logs.find(
-      node => node.__typename === "ExecutionStepFailureEvent" && node.stepKey === stepKey
+      (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
     ) as RunPipelineRunEventFragment_ExecutionStepFailureEvent;
 
     if (errorNode) {
       showCustomAlert({
-        body: <PythonErrorInfo error={errorNode} />
+        body: <PythonErrorInfo error={errorNode} />,
       });
     }
   };
 
   onSetLogsFilter = (logsFilter: LogFilter) => {
-    this.setState({ logsFilter });
+    this.setState({logsFilter});
   };
 
   onSetQuery = (query: string) => {
-    this.setState({ query });
+    this.setState({query});
 
     // filter the log following the DSL step selection
-    this.setState(prevState => {
+    this.setState((prevState) => {
       return {
         logsFilter: {
           ...prevState.logsFilter,
-          values: query !== "*" ? [{ token: "query", value: query }] : []
-        }
+          values: query !== '*' ? [{token: 'query', value: query}] : [],
+        },
       };
     });
   };
 
   onSetSelectedSteps = (selectedSteps: string[]) => {
-    this.setState({ selectedSteps });
+    this.setState({selectedSteps});
   };
 
   render() {
-    const { client, run, runId } = this.props;
-    const { logsFilter, query, selectedSteps } = this.state;
+    const {client, run, runId} = this.props;
+    const {logsFilter, query, selectedSteps} = this.state;
 
     return (
       <RunContext.Provider value={run}>
@@ -166,7 +166,7 @@ export class Run extends React.Component<RunProps, RunState> {
           filter={logsFilter}
           selectedSteps={selectedSteps}
         >
-          {({ filteredNodes, allNodes, loaded }) => (
+          {({filteredNodes, allNodes, loaded}) => (
             <RunWithData
               run={run}
               runId={runId}
@@ -192,8 +192,8 @@ export class Run extends React.Component<RunProps, RunState> {
 interface RunWithDataProps {
   run?: RunFragment;
   runId: string;
-  allNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
-  filteredNodes: (RunPipelineRunEventFragment & { clientsideKey: string })[];
+  allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+  filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
   logsFilter: LogFilter;
   query: string;
   selectedSteps: string[];
@@ -224,24 +224,24 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   onSetLogsFilter,
   onSetQuery,
   onSetSelectedSteps,
-  getReexecutionVariables
+  getReexecutionVariables,
 }) => {
   const [launchPipelineReexecution] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
-  const { repositoryLocation, repository } = React.useContext(DagsterRepositoryContext);
+  const {repositoryLocation, repository} = React.useContext(DagsterRepositoryContext);
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
-  const stepQuery = query !== "*" ? query : "";
+  const stepQuery = query !== '*' ? query : '';
   const onLaunch = async (stepKeys?: string[], resumeRetry?: boolean) => {
-    if (!run || run.pipeline.__typename === "UnknownPipeline") return;
+    if (!run || run.pipeline.__typename === 'UnknownPipeline') return;
     const variables = getReexecutionVariables({
       run,
       stepKeys,
       stepQuery,
       resumeRetry,
       repositoryLocationName: repositoryLocation?.name,
-      repositoryName: repository?.name
+      repositoryName: repository?.name,
     });
-    const result = await launchPipelineReexecution({ variables });
-    handleLaunchResult(run.pipeline.name, result, { openInNewWindow: false });
+    const result = await launchPipelineReexecution({variables});
+    handleLaunchResult(run.pipeline.name, result, {openInNewWindow: false});
   };
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
@@ -270,15 +270,15 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
     }
 
     onSetSelectedSteps(newSelected);
-    onSetQuery(newSelected.join(", ") || "*");
+    onSetQuery(newSelected.join(', ') || '*');
   };
 
   return (
     <RunMetadataProvider logs={allNodes}>
-      {metadata => (
+      {(metadata) => (
         <SplitPanelContainer
           ref={splitPanelContainer}
-          axis={"vertical"}
+          axis={'vertical'}
           identifier="run-gaant"
           firstInitialPercent={35}
           firstMinSize={40}
@@ -288,10 +288,10 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
             ) : run?.executionPlan ? (
               <GaantChart
                 options={{
-                  mode: GaantChartMode.WATERFALL_TIMED
+                  mode: GaantChartMode.WATERFALL_TIMED,
                 }}
                 toolbarLeftActions={
-                  <FirstOrSecondPanelToggle axis={"vertical"} container={splitPanelContainer} />
+                  <FirstOrSecondPanelToggle axis={'vertical'} container={splitPanelContainer} />
                 }
                 toolbarActions={
                   <RunActionButtons
@@ -301,9 +301,9 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
                     onLaunch={onLaunch}
                     selectedSteps={selectedSteps}
                     selectedStepStates={selectedSteps.map(
-                      selectedStep =>
+                      (selectedStep) =>
                         (selectedStep && metadata.steps[selectedStep]?.state) ||
-                        IStepState.PREPARING
+                        IStepState.PREPARING,
                     )}
                   />
                 }

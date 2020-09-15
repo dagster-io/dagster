@@ -1,6 +1,6 @@
-import * as React from "react";
-import animate from "amator";
-import { GaantViewport } from "./Constants";
+import * as React from 'react';
+import animate from 'amator';
+import {GaantViewport} from './Constants';
 
 /**
  * useViewport is a React hook that exposes a viewport (top/left/width/height)
@@ -10,13 +10,13 @@ import { GaantViewport } from "./Constants";
  */
 export const useViewport = () => {
   const ref = React.useRef<any>();
-  const [offset, setOffset] = React.useState<{ left: number; top: number }>({
+  const [offset, setOffset] = React.useState<{left: number; top: number}>({
     left: 0,
-    top: 0
+    top: 0,
   });
-  const [size, setSize] = React.useState<{ width: number; height: number }>({
+  const [size, setSize] = React.useState<{width: number; height: number}>({
     width: 0,
-    height: 0
+    height: 0,
   });
 
   // Monitor the container for size changes (if possible, otherwise fall back)
@@ -26,18 +26,18 @@ export const useViewport = () => {
       return;
     }
     let resizeObserver: any;
-    if (ref.current instanceof HTMLElement && "ResizeObserver" in window) {
-      resizeObserver = new window["ResizeObserver"]((entries: any) => {
+    if (ref.current instanceof HTMLElement && 'ResizeObserver' in window) {
+      resizeObserver = new window['ResizeObserver']((entries: any) => {
         setSize({
           width: entries[0].contentRect.width,
-          height: entries[0].contentRect.height
+          height: entries[0].contentRect.height,
         });
       });
       resizeObserver.observe(ref.current);
     } else {
       console.warn(`No ResizeObsrever support, or useViewport is attached to a non-DOM node?`);
       const rect = ref.current.getBoundingClientRect();
-      setSize({ width: rect.width, height: rect.height });
+      setSize({width: rect.width, height: rect.height});
     }
     return () => {
       resizeObserver?.disconnect();
@@ -60,11 +60,11 @@ export const useViewport = () => {
     }
     setOffset({
       left: e.currentTarget.scrollLeft,
-      top: e.currentTarget.scrollTop
+      top: e.currentTarget.scrollTop,
     });
   };
 
-  const onMoveToViewport = (targetOffset: { left: number; top: number }, animated: boolean) => {
+  const onMoveToViewport = (targetOffset: {left: number; top: number}, animated: boolean) => {
     if (animation.current) {
       animation.current.cancel();
       animation.current = null;
@@ -72,11 +72,11 @@ export const useViewport = () => {
 
     targetOffset.left = Math.min(
       ref.current.scrollWidth - size.width,
-      Math.max(0, targetOffset.left)
+      Math.max(0, targetOffset.left),
     );
     targetOffset.top = Math.min(
       ref.current.scrollHeight - size.height,
-      Math.max(0, targetOffset.top)
+      Math.max(0, targetOffset.top),
     );
 
     if (!animated) {
@@ -88,7 +88,7 @@ export const useViewport = () => {
         ref.current.scrollLeft = v.left;
         setOffset({
           left: v.left,
-          top: v.top
+          top: v.top,
         });
       },
       done: () => {
@@ -96,7 +96,7 @@ export const useViewport = () => {
         ref.current.scrollLeft = targetOffset.left;
         setOffset(targetOffset);
         animation.current = null;
-      }
+      },
     });
   };
 
@@ -110,11 +110,11 @@ export const useViewport = () => {
   }, []);
 
   return {
-    viewport: { ...offset, ...size } as GaantViewport,
+    viewport: {...offset, ...size} as GaantViewport,
     containerProps: {
       ref: setRef,
-      onScroll
+      onScroll,
     },
-    onMoveToViewport
+    onMoveToViewport,
   };
 };

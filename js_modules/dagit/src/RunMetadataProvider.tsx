@@ -1,43 +1,43 @@
-import * as React from "react";
-import gql from "graphql-tag";
+import * as React from 'react';
+import gql from 'graphql-tag';
 
-import { RunMetadataProviderMessageFragment } from "./types/RunMetadataProviderMessageFragment";
-import { TempMetadataEntryFragment } from "./types/TempMetadataEntryFragment";
+import {RunMetadataProviderMessageFragment} from './types/RunMetadataProviderMessageFragment';
+import {TempMetadataEntryFragment} from './types/TempMetadataEntryFragment';
 
 export enum IStepState {
-  PREPARING = "preparing",
-  RETRY_REQUESTED = "retry-requested",
-  RUNNING = "running",
-  SUCCEEDED = "succeeded",
-  SKIPPED = "skipped",
-  FAILED = "failed"
+  PREPARING = 'preparing',
+  RETRY_REQUESTED = 'retry-requested',
+  RUNNING = 'running',
+  SUCCEEDED = 'succeeded',
+  SKIPPED = 'skipped',
+  FAILED = 'failed',
 }
 
 export const BOX_EXIT_STATES = [
   IStepState.RETRY_REQUESTED,
   IStepState.SUCCEEDED,
-  IStepState.FAILED
+  IStepState.FAILED,
 ];
 
 export enum IExpectationResultStatus {
-  PASSED = "Passed",
-  FAILED = "Failed"
+  PASSED = 'Passed',
+  FAILED = 'Failed',
 }
 
 export enum IStepDisplayIconType {
-  SUCCESS = "dot-success",
-  FAILURE = "dot-failure",
-  PENDING = "dot-pending",
-  FILE = "file",
-  LINK = "link",
-  NONE = "none"
+  SUCCESS = 'dot-success',
+  FAILURE = 'dot-failure',
+  PENDING = 'dot-pending',
+  FILE = 'file',
+  LINK = 'link',
+  NONE = 'none',
 }
 
 export enum IStepDisplayActionType {
-  OPEN_IN_TAB = "open-in-tab",
-  COPY = "copy",
-  SHOW_IN_MODAL = "show-in-modal",
-  NONE = "none"
+  OPEN_IN_TAB = 'open-in-tab',
+  COPY = 'copy',
+  SHOW_IN_MODAL = 'show-in-modal',
+  NONE = 'none',
 }
 
 interface IDisplayEventItem {
@@ -114,66 +114,66 @@ export const EMPTY_RUN_METADATA: IRunMetadataDict = {
   firstLogAt: 0,
   mostRecentLogAt: 0,
   globalMarkers: [],
-  steps: {}
+  steps: {},
 };
 
 function itemsForMetadataEntries(
-  metadataEntries: TempMetadataEntryFragment[]
+  metadataEntries: TempMetadataEntryFragment[],
 ): IDisplayEventItem[] {
   const items = [];
   for (const metadataEntry of metadataEntries) {
     switch (metadataEntry.__typename) {
-      case "EventPathMetadataEntry":
+      case 'EventPathMetadataEntry':
         items.push({
           text: metadataEntry.label,
-          actionText: "[Copy Path]",
+          actionText: '[Copy Path]',
           action: IStepDisplayActionType.COPY,
-          actionValue: metadataEntry.path
+          actionValue: metadataEntry.path,
         });
         break;
-      case "EventJsonMetadataEntry":
+      case 'EventJsonMetadataEntry':
         items.push({
           text: metadataEntry.label,
-          actionText: "[Show Metadata]",
+          actionText: '[Show Metadata]',
           action: IStepDisplayActionType.SHOW_IN_MODAL,
           // take JSON string, parse, and then pretty print
-          actionValue: JSON.stringify(JSON.parse(metadataEntry.jsonString), null, 2)
+          actionValue: JSON.stringify(JSON.parse(metadataEntry.jsonString), null, 2),
         });
 
         break;
-      case "EventUrlMetadataEntry":
+      case 'EventUrlMetadataEntry':
         items.push({
           text: metadataEntry.label,
-          actionText: "[Open URL]",
+          actionText: '[Open URL]',
           action: IStepDisplayActionType.OPEN_IN_TAB,
-          actionValue: metadataEntry.url
+          actionValue: metadataEntry.url,
         });
 
         break;
-      case "EventTextMetadataEntry":
+      case 'EventTextMetadataEntry':
         items.push({
           text: metadataEntry.label,
           actionText: metadataEntry.text,
           action: IStepDisplayActionType.NONE,
-          actionValue: ""
+          actionValue: '',
         });
 
         break;
-      case "EventPythonArtifactMetadataEntry":
+      case 'EventPythonArtifactMetadataEntry':
         items.push({
           text: metadataEntry.label,
           actionText: `${metadataEntry.module}:${metadataEntry.name} - ${metadataEntry.description}`,
           action: IStepDisplayActionType.NONE,
-          actionValue: ""
+          actionValue: '',
         });
 
         break;
-      case "EventMarkdownMetadataEntry":
+      case 'EventMarkdownMetadataEntry':
         items.push({
           text: metadataEntry.label,
-          actionText: "[Show Metadata]",
+          actionText: '[Show Metadata]',
           action: IStepDisplayActionType.SHOW_IN_MODAL,
-          actionValue: metadataEntry.mdStr
+          actionValue: metadataEntry.mdStr,
         });
 
         break;
@@ -184,32 +184,32 @@ function itemsForMetadataEntries(
 }
 
 export function extractMetadataFromLogs(
-  logs: RunMetadataProviderMessageFragment[]
+  logs: RunMetadataProviderMessageFragment[],
 ): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
     mostRecentLogAt: 0,
     globalMarkers: [],
-    steps: {}
+    steps: {},
   };
 
   // Returns the most recent marker with the given `key` without an end time
   const upsertMarker = (set: IMarker[], key: string) => {
-    let marker = set.find(f => f.key === key && !f.end);
+    let marker = set.find((f) => f.key === key && !f.end);
     if (!marker) {
-      marker = { key };
+      marker = {key};
       set.unshift(marker);
     }
     return marker;
   };
 
   const upsertState = (step: IStepMetadata, time: number, state: IStepState) => {
-    step.transitions.push({ time, state });
+    step.transitions.push({time, state});
     step.state = state;
     step.attempts = [];
   };
 
-  logs.forEach(log => {
+  logs.forEach((log) => {
     const timestamp = Number.parseInt(log.timestamp, 10);
 
     metadata.firstLogAt = metadata.firstLogAt
@@ -217,18 +217,18 @@ export function extractMetadataFromLogs(
       : timestamp;
     metadata.mostRecentLogAt = Math.max(metadata.mostRecentLogAt, timestamp);
 
-    if (log.__typename === "PipelineStartEvent") {
+    if (log.__typename === 'PipelineStartEvent') {
       metadata.startedPipelineAt = timestamp;
     }
-    if (log.__typename === "PipelineInitFailureEvent") {
+    if (log.__typename === 'PipelineInitFailureEvent') {
       metadata.initFailed = true;
       metadata.exitedAt = timestamp;
     }
-    if (log.__typename === "PipelineFailureEvent" || log.__typename === "PipelineSuccessEvent") {
+    if (log.__typename === 'PipelineFailureEvent' || log.__typename === 'PipelineSuccessEvent') {
       metadata.exitedAt = timestamp;
     }
 
-    if (log.__typename === "EngineEvent" && !log.stepKey) {
+    if (log.__typename === 'EngineEvent' && !log.stepKey) {
       if (log.markerStart) {
         upsertMarker(metadata.globalMarkers, log.markerStart).start = timestamp;
       }
@@ -247,43 +247,43 @@ export function extractMetadataFromLogs(
           transitions: [
             {
               state: IStepState.PREPARING,
-              time: timestamp
-            }
+              time: timestamp,
+            },
           ],
           start: undefined,
           end: undefined,
           markers: [],
           expectationResults: [],
-          materializations: []
+          materializations: [],
         } as IStepMetadata);
 
-      if (log.__typename === "ExecutionStepStartEvent") {
+      if (log.__typename === 'ExecutionStepStartEvent') {
         upsertState(step, timestamp, IStepState.RUNNING);
         step.start = timestamp;
-      } else if (log.__typename === "ExecutionStepSuccessEvent") {
+      } else if (log.__typename === 'ExecutionStepSuccessEvent') {
         upsertState(step, timestamp, IStepState.SUCCEEDED);
         step.end = Math.max(timestamp, step.end || 0);
-      } else if (log.__typename === "ExecutionStepSkippedEvent") {
+      } else if (log.__typename === 'ExecutionStepSkippedEvent') {
         upsertState(step, timestamp, IStepState.SKIPPED);
-      } else if (log.__typename === "ExecutionStepFailureEvent") {
+      } else if (log.__typename === 'ExecutionStepFailureEvent') {
         upsertState(step, timestamp, IStepState.FAILED);
         step.end = Math.max(timestamp, step.end || 0);
-      } else if (log.__typename === "ExecutionStepUpForRetryEvent") {
+      } else if (log.__typename === 'ExecutionStepUpForRetryEvent') {
         // We only get one event when the step fails/aborts and is queued for retry,
         // but we create an "exit" state separate from the "preparing for retry" state
         // so that the box representing the attempt doesn't have a final state = preparing.
         // That'd be more confusing.
         upsertState(step, timestamp, IStepState.RETRY_REQUESTED);
         upsertState(step, timestamp + 1, IStepState.PREPARING);
-      } else if (log.__typename === "ExecutionStepRestartEvent") {
+      } else if (log.__typename === 'ExecutionStepRestartEvent') {
         upsertState(step, timestamp, IStepState.RUNNING);
-      } else if (log.__typename === "StepMaterializationEvent") {
+      } else if (log.__typename === 'StepMaterializationEvent') {
         step.materializations.push({
           icon: IStepDisplayIconType.LINK,
-          text: log.materialization.label || "Materialization",
-          items: itemsForMetadataEntries(log.materialization.metadataEntries)
+          text: log.materialization.label || 'Materialization',
+          items: itemsForMetadataEntries(log.materialization.metadataEntries),
         });
-      } else if (log.__typename === "StepExpectationResultEvent") {
+      } else if (log.__typename === 'StepExpectationResultEvent') {
         step.expectationResults.push({
           status: log.expectationResult.success
             ? IExpectationResultStatus.PASSED
@@ -292,19 +292,19 @@ export function extractMetadataFromLogs(
             ? IStepDisplayIconType.SUCCESS
             : IStepDisplayIconType.FAILURE,
           text: log.expectationResult.label,
-          items: itemsForMetadataEntries(log.expectationResult.metadataEntries)
+          items: itemsForMetadataEntries(log.expectationResult.metadataEntries),
         });
-      } else if (log.__typename === "EngineEvent") {
+      } else if (log.__typename === 'EngineEvent') {
         if (log.markerStart) {
           upsertMarker(step.markers, log.markerStart).start = timestamp;
         }
         if (log.markerEnd) {
           upsertMarker(step.markers, log.markerEnd).end = timestamp;
         }
-      } else if (log.__typename === "ObjectStoreOperationEvent") {
+      } else if (log.__typename === 'ObjectStoreOperationEvent') {
         // this indicates the step was skipped and its previous intermediates were copied
         // so we will drop the step because we didn't execute it
-        if (log.operationResult.op === "CP_OBJECT") {
+        if (log.operationResult.op === 'CP_OBJECT') {
           return;
         }
       }
@@ -326,12 +326,12 @@ export function extractMetadataFromLogs(
         start = t.time;
       }
       if (start && BOX_EXIT_STATES.includes(t.state)) {
-        step.attempts.push({ start, end: t.time, exitState: t.state });
+        step.attempts.push({start, end: t.time, exitState: t.state});
         start = null;
       }
     }
     if (start !== null) {
-      step.attempts.push({ start });
+      step.attempts.push({start});
     }
   }
 
@@ -410,7 +410,7 @@ export class RunMetadataProvider extends React.Component<IRunMetadataProviderPro
           }
         }
       }
-    `
+    `,
   };
 
   render() {

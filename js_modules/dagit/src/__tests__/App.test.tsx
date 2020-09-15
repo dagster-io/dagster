@@ -1,13 +1,13 @@
-import * as React from "react";
-import * as TestRenderer from "react-test-renderer";
-import { App } from "../App";
-import AppCache from "../AppCache";
-import { MOCKS } from "./AppMocks";
-import { MockedProvider } from "./MockedProvider";
-import { PipelineGraphContainer } from "../graph/PipelineGraphContainer";
+import * as React from 'react';
+import * as TestRenderer from 'react-test-renderer';
+import {App} from '../App';
+import AppCache from '../AppCache';
+import {MOCKS} from './AppMocks';
+import {MockedProvider} from './MockedProvider';
+import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
 
 function createNodeMock(element: any) {
-  if (element.type === "div") {
+  if (element.type === 'div') {
     return {
       querySelector() {
         return null;
@@ -24,9 +24,9 @@ function createNodeMock(element: any) {
           x: 0,
           y: 0,
           width: 1000,
-          height: 1000
+          height: 1000,
         };
-      }
+      },
     };
   }
   return null;
@@ -39,11 +39,11 @@ async function testApp() {
       <MockedProvider mocks={MOCKS} addTypename={true} cache={AppCache}>
         <App />
       </MockedProvider>,
-      { createNodeMock }
+      {createNodeMock},
     );
     // wait for the graphql promises to settle. Usually one tick is enough for us,
     // except when a query resolves and triggers another query lower in the tree.
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   });
 
   const tree = component!.toJSON();
@@ -51,53 +51,53 @@ async function testApp() {
   return component!.root;
 }
 
-it("renders without error", async () => {
+it('renders without error', async () => {
   await testApp();
 });
 
-it("renders pipeline page", async () => {
-  window.history.pushState({}, "", "/pipelines/airline_demo_ingest_pipeline");
+it('renders pipeline page', async () => {
+  window.history.pushState({}, '', '/pipelines/airline_demo_ingest_pipeline');
   const app = await testApp();
 
   // Sanity check that the pipeline page actually rendered the graph container. This ensures
   // we don't accidentally update the snapshots to a "correct" state that is loading / broken.
-  const graphEls = app.findAllByType(PipelineGraphContainer, { deep: true });
+  const graphEls = app.findAllByType(PipelineGraphContainer, {deep: true});
   expect(graphEls.length).toBe(1);
 });
 
-it("renders pipeline solid page", async () => {
+it('renders pipeline solid page', async () => {
   window.history.pushState(
     {},
-    "",
-    "/pipelines/airline_demo_ingest_pipeline/download_q2_sfo_weather"
+    '',
+    '/pipelines/airline_demo_ingest_pipeline/download_q2_sfo_weather',
   );
   await testApp();
 });
 
-it("renders type page", async () => {
+it('renders type page', async () => {
   window.history.pushState(
     {},
-    "",
-    "/pipelines/airline_demo_ingest_pipeline/download_q2_sfo_weather?types=true"
+    '',
+    '/pipelines/airline_demo_ingest_pipeline/download_q2_sfo_weather?types=true',
   );
   await testApp();
 });
 
-it("renders type page", async () => {
+it('renders type page', async () => {
   window.history.pushState(
     {},
-    "",
-    "/pipelines/airline_demo_ingest_pipeline/download_q2_sfo_weather?typeExplorer=PySparkDataFrame"
+    '',
+    '/pipelines/airline_demo_ingest_pipeline/download_q2_sfo_weather?typeExplorer=PySparkDataFrame',
   );
   await testApp();
 });
 
-it("renders solids explorer", async () => {
-  window.history.pushState({}, "", "/solids/s3_to_df");
+it('renders solids explorer', async () => {
+  window.history.pushState({}, '', '/solids/s3_to_df');
   await testApp();
 });
 
-it("renders execution", async () => {
-  window.history.pushState({}, "", "/pipeline/airline_demo_ingest_pipeline/playground");
+it('renders execution', async () => {
+  window.history.pushState({}, '', '/pipeline/airline_demo_ingest_pipeline/playground');
   await testApp();
 });

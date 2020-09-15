@@ -1,26 +1,26 @@
-import * as React from "react";
-import * as TestRenderer from "react-test-renderer";
-import { BrowserRouter } from "react-router-dom";
-import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
+import * as React from 'react';
+import * as TestRenderer from 'react-test-renderer';
+import {BrowserRouter} from 'react-router-dom';
+import {HighlightedCodeBlock} from '../HighlightedCodeBlock';
 
-it("correctly renders keywords inside a comment", () => {
+it('correctly renders keywords inside a comment', () => {
   const component = TestRenderer.create(
     <BrowserRouter>
       <HighlightedCodeBlock
-        languages={["sql"]}
+        languages={['sql']}
         value={
-          "-- this comment contains a dash - do not highlight if drop table\n" +
-          "select * from q2_on_time_data\n" +
+          '-- this comment contains a dash - do not highlight if drop table\n' +
+          'select * from q2_on_time_data\n' +
           "where origin = 'SFO'"
         }
         style={{
           height: 510,
           margin: 0,
-          overflow: "scroll",
-          fontSize: "0.9em"
+          overflow: 'scroll',
+          fontSize: '0.9em',
         }}
       />
-    </BrowserRouter>
+    </BrowserRouter>,
   );
   expect(component.toJSON()).toMatchSnapshot();
 });

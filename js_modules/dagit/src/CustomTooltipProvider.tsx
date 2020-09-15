@@ -1,5 +1,5 @@
-import React from "react";
-import styled, { CSSProperties } from "styled-components/macro";
+import React from 'react';
+import styled, {CSSProperties} from 'styled-components/macro';
 
 export const CustomTooltipProvider: React.FunctionComponent<{}> = () => {
   const [state, setState] = React.useState<null | {
@@ -8,12 +8,12 @@ export const CustomTooltipProvider: React.FunctionComponent<{}> = () => {
   }>(null);
 
   React.useEffect(() => {
-    document.addEventListener("mouseover", ev => {
+    document.addEventListener('mouseover', (ev) => {
       const el = ev.target;
       if (!(el instanceof Element)) return;
-      if (el.getAttribute("id") === "tooltip-container") return;
+      if (el.getAttribute('id') === 'tooltip-container') return;
 
-      const tooltipParentEl = el.closest("[data-tooltip]") as HTMLElement;
+      const tooltipParentEl = el.closest('[data-tooltip]') as HTMLElement;
       if (!tooltipParentEl) {
         setState(null);
         return;
@@ -23,7 +23,7 @@ export const CustomTooltipProvider: React.FunctionComponent<{}> = () => {
       // element must be overflowing, truncated manually via `...` or be entirely
       // empty.
       const isOverflowing = tooltipParentEl.offsetWidth < tooltipParentEl.scrollWidth;
-      const isManuallyOverflowed = tooltipParentEl.textContent?.includes("…");
+      const isManuallyOverflowed = tooltipParentEl.textContent?.includes('…');
       const isEmpty = !tooltipParentEl.hasChildNodes();
 
       if (!isOverflowing && !isManuallyOverflowed && !isEmpty) {
@@ -31,21 +31,21 @@ export const CustomTooltipProvider: React.FunctionComponent<{}> = () => {
         return;
       }
 
-      const { tooltip, tooltipStyle } = tooltipParentEl.dataset;
-      const { left, top } = tooltipParentEl.getBoundingClientRect();
-      const style = { left, top };
+      const {tooltip, tooltipStyle} = tooltipParentEl.dataset;
+      const {left, top} = tooltipParentEl.getBoundingClientRect();
+      const style = {left, top};
 
       if (tooltipStyle) {
         const overrides = JSON.parse(tooltipStyle);
         Object.assign(style, {
           ...overrides,
           left: left + (overrides.left || 0),
-          top: top + (overrides.top || 0)
+          top: top + (overrides.top || 0),
         });
       }
       setState({
         title: tooltip!,
-        style
+        style,
       });
     });
   }, []);

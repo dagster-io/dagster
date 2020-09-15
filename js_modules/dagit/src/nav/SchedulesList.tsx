@@ -1,15 +1,15 @@
-import React from "react";
-import { Colors, InputGroup, ButtonGroup, Button, Icon } from "@blueprintjs/core";
-import gql from "graphql-tag";
-import { useQuery } from "react-apollo";
-import { Link } from "react-router-dom";
-import styled from "styled-components/macro";
+import React from 'react';
+import {Colors, InputGroup, ButtonGroup, Button, Icon} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import {useQuery} from 'react-apollo';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import { SchedulesListQuery } from "./types/SchedulesListQuery";
-import { DagsterRepoOption } from "../DagsterRepositoryContext";
-import { ShortcutHandler } from "../ShortcutHandler";
-import { useHistory } from "react-router";
-import { ScheduleStatus } from "../types/globalTypes";
+import {SchedulesListQuery} from './types/SchedulesListQuery';
+import {DagsterRepoOption} from '../DagsterRepositoryContext';
+import {ShortcutHandler} from '../ShortcutHandler';
+import {useHistory} from 'react-router';
+import {ScheduleStatus} from '../types/globalTypes';
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
@@ -19,38 +19,38 @@ interface SchedulesListProps {
   repo: DagsterRepoOption;
 }
 
-export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({ repo, selector }) => {
+export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo, selector}) => {
   const [focused, setFocused] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const history = useHistory();
 
-  const [q, setQ] = React.useState<string>("");
+  const [q, setQ] = React.useState<string>('');
 
   const schedules = useQuery<SchedulesListQuery>(SCHEDULES_LIST_QUERY, {
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: 'cache-and-network',
     variables: {
       repositorySelector: {
         repositoryLocationName: repo.repositoryLocation.name,
-        repositoryName: repo.repository.name
-      }
-    }
+        repositoryName: repo.repository.name,
+      },
+    },
   });
 
   const repoSchedules =
-    schedules.data?.scheduleDefinitionsOrError?.__typename === "ScheduleDefinitions"
+    schedules.data?.scheduleDefinitionsOrError?.__typename === 'ScheduleDefinitions'
       ? schedules.data.scheduleDefinitionsOrError.results
       : [];
 
   const items = repoSchedules
-    .filter(({ name }) => !q || iincludes(name, q))
-    .map(({ name, scheduleState }) => ({
+    .filter(({name}) => !q || iincludes(name, q))
+    .map(({name, scheduleState}) => ({
       to: `/schedules/${name}`,
       label: name,
-      status: scheduleState?.status
+      status: scheduleState?.status,
     }));
 
   const onShiftFocus = (dir: 1 | -1) => {
-    const idx = items.findIndex(p => p.label === focused);
+    const idx = items.findIndex((p) => p.label === focused);
     if (idx === -1 && items[0]) {
       setFocused(items[0].label);
     } else if (items[idx + dir]) {
@@ -60,7 +60,7 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({ rep
 
   const onConfirmFocused = () => {
     if (focused) {
-      const item = items.find(p => p.label === focused);
+      const item = items.find((p) => p.label === focused);
       if (item) {
         history.push(item.to);
         return;
@@ -76,58 +76,58 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({ rep
     <div
       style={{
         flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        borderTop: `1px solid ${Colors.DARK_GRAY4}`
+        display: 'flex',
+        flexDirection: 'column',
+        borderTop: `1px solid ${Colors.DARK_GRAY4}`,
       }}
     >
       <Header>
         <ShortcutHandler
           onShortcut={() => inputRef.current?.focus()}
-          shortcutFilter={e => e.altKey && e.keyCode === 80}
+          shortcutFilter={(e) => e.altKey && e.keyCode === 80}
           shortcutLabel={`⌥P then Up / Down`}
         >
           <InputGroup
             type="text"
-            inputRef={c => (inputRef.current = c)}
+            inputRef={(c) => (inputRef.current = c)}
             value={q}
             small
             placeholder={`Search schedules...`}
-            onKeyDown={e => {
-              if (e.key === "ArrowDown") {
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown') {
                 onShiftFocus(1);
               }
-              if (e.key === "ArrowUp") {
+              if (e.key === 'ArrowUp') {
                 onShiftFocus(-1);
               }
-              if (e.key === "Enter" || e.key === "Return") {
+              if (e.key === 'Enter' || e.key === 'Return') {
                 onConfirmFocused();
               }
             }}
             onChange={(e: React.ChangeEvent<any>) => setQ(e.target.value)}
             style={{
               border: `1px solid ${Colors.DARK_GRAY5}`,
-              background: Colors.DARK_GRAY4
+              background: Colors.DARK_GRAY4,
             }}
           />
         </ShortcutHandler>
-        <div style={{ width: 4 }} />
+        <div style={{width: 4}} />
         <ButtonGroup>
           <a href="/schedules">
             <Button small={true} icon={<Icon icon="diagram-tree" iconSize={13} />}>
-              View All{" "}
+              View All{' '}
             </Button>
           </a>
         </ButtonGroup>
       </Header>
       <Items>
-        {items.map(p => (
+        {items.map((p) => (
           <Item
             key={p.label}
             data-tooltip={p.label}
             data-tooltip-style={p.label === selector ? SelectedItemTooltipStyle : ItemTooltipStyle}
-            className={`${p.label === selector ? "selected" : ""} ${
-              p.label === focused ? "focused" : ""
+            className={`${p.label === selector ? 'selected' : ''} ${
+              p.label === focused ? 'focused' : ''
             }`}
             to={p.to}
           >
@@ -152,9 +152,9 @@ const ScheduleStatusDot = styled.div<{
   size: number;
 }>`
   display: inline-block;
-  width: ${({ size }) => size}px;
-  height: ${({ size }) => size}px;
-  border-radius: ${({ size }) => size / 2}px;
+  width: ${({size}) => size}px;
+  height: ${({size}) => size}px;
+  border-radius: ${({size}) => size / 2}px;
   align-self: center;
   transition: background 200ms linear;
   background: ${Colors.GREEN2};
@@ -222,22 +222,22 @@ const BaseTooltipStyle = {
   top: 5,
   color: Colors.WHITE,
   background: Colors.DARK_GRAY1,
-  transform: "none",
+  transform: 'none',
   border: 0,
-  borderRadius: 4
+  borderRadius: 4,
 };
 
 const ItemTooltipStyle = JSON.stringify({
   ...BaseTooltipStyle,
   color: Colors.WHITE,
-  background: Colors.DARK_GRAY1
+  background: Colors.DARK_GRAY1,
 });
 
 const SelectedItemTooltipStyle = JSON.stringify({
   ...BaseTooltipStyle,
   color: Colors.WHITE,
   background: Colors.BLACK,
-  fontWeight: 600
+  fontWeight: 600,
 });
 
 export const SCHEDULES_LIST_QUERY = gql`

@@ -1,17 +1,17 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Button } from "@blueprintjs/core";
-import gql from "graphql-tag";
-import { PythonErrorFragment } from "./types/PythonErrorFragment";
-import { MetadataEntryFragment } from "./runs/types/MetadataEntryFragment";
-import { MetadataEntries } from "./runs/MetadataEntry";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Button} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import {PythonErrorFragment} from './types/PythonErrorFragment';
+import {MetadataEntryFragment} from './runs/types/MetadataEntryFragment';
+import {MetadataEntries} from './runs/MetadataEntry';
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;
   centered?: boolean;
   contextMsg?: string;
-  error: { message: string } | PythonErrorFragment;
-  failureMetadata?: { metadataEntries: MetadataEntryFragment[] } | null;
+  error: {message: string} | PythonErrorFragment;
+  failureMetadata?: {metadataEntries: MetadataEntryFragment[]} | null;
 }
 
 export default class PythonErrorInfo extends React.Component<IPythonErrorInfoProps> {
@@ -26,7 +26,7 @@ export default class PythonErrorInfo extends React.Component<IPythonErrorInfoPro
           stack
         }
       }
-    `
+    `,
   };
 
   render() {
@@ -45,18 +45,18 @@ export default class PythonErrorInfo extends React.Component<IPythonErrorInfoPro
         {context}
         <ErrorHeader>{message}</ErrorHeader>
         {metadataEntries ? (
-          <div style={{ marginTop: 10, marginBottom: 10 }}>
+          <div style={{marginTop: 10, marginBottom: 10}}>
             <MetadataEntries entries={metadataEntries} />
           </div>
         ) : null}
-        <Trace>{stack ? stack.join("") : "No Stack Provided."}</Trace>
+        <Trace>{stack ? stack.join('') : 'No Stack Provided.'}</Trace>
         {cause ? (
           <>
             <CauseHeader>
               The above exception was the direct cause of the following exception:
             </CauseHeader>
             <ErrorHeader>{cause.message}</ErrorHeader>
-            <Trace>{cause.stack ? cause.stack.join("") : "No Stack Provided."}</Trace>
+            <Trace>{cause.stack ? cause.stack.join('') : 'No Stack Provided.'}</Trace>
           </>
         ) : null}
         {this.props.showReload && (

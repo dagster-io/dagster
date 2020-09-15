@@ -1,11 +1,11 @@
-import * as CodeMirror from "codemirror";
-import "codemirror/addon/hint/show-hint";
-import "codemirror/addon/search/search";
-import "codemirror/addon/search/searchcursor";
-import "codemirror/addon/dialog/dialog";
-import "codemirror/addon/dialog/dialog.css";
-import * as yaml from "yaml";
-import { ConfigEditorRunConfigSchemaFragment } from "../types/ConfigEditorRunConfigSchemaFragment";
+import * as CodeMirror from 'codemirror';
+import 'codemirror/addon/hint/show-hint';
+import 'codemirror/addon/search/search';
+import 'codemirror/addon/search/searchcursor';
+import 'codemirror/addon/dialog/dialog';
+import 'codemirror/addon/dialog/dialog.css';
+import * as yaml from 'yaml';
+import {ConfigEditorRunConfigSchemaFragment} from '../types/ConfigEditorRunConfigSchemaFragment';
 
 interface IParseStateParent {
   key: string;
@@ -14,8 +14,8 @@ interface IParseStateParent {
 }
 
 enum ContainerType {
-  Dict = "dict",
-  List = "list"
+  Dict = 'dict',
+  List = 'list',
 }
 
 interface IParseState {
@@ -46,22 +46,22 @@ function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) 
     {
       key: immediateParent.key,
       indent: immediateParent.indent,
-      childKeys: [...immediateParent.childKeys, key]
-    }
+      childKeys: [...immediateParent.childKeys, key],
+    },
   ];
 }
 
 function parentsAddingChildKeyAtIndent(parents: IParseStateParent[], key: string, indent: number) {
   parents = parentsPoppingItemsDeeperThan(parents, indent);
   parents = parentsAddingChildKeyToLast(parents, key);
-  parents = [...parents, { key, indent: indent, childKeys: [] }];
+  parents = [...parents, {key, indent: indent, childKeys: []}];
   return parents;
 }
 
-const Constants = ["true", "false", "on", "off", "yes", "no"];
+const Constants = ['true', 'false', 'on', 'off', 'yes', 'no'];
 
 export const RegExps = {
-  KEYWORD: new RegExp("\\b((" + Constants.join(")|(") + "))$", "i"),
+  KEYWORD: new RegExp('\\b((' + Constants.join(')|(') + '))$', 'i'),
   DICT_COLON: /^:\s*/,
   // eslint-disable-next-line no-useless-escape
   DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
@@ -75,13 +75,13 @@ export const RegExps = {
   // eslint-disable-next-line no-useless-escape
   NUMBER: /^\s*-?[0-9\.]+(?![0-9\.]*[^0-9.\s])\s?/,
   // eslint-disable-next-line no-useless-escape
-  VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+\b/i
+  VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+\b/i,
 };
 
-CodeMirror.defineMode("yaml", () => {
+CodeMirror.defineMode('yaml', () => {
   return {
-    lineComment: "#",
-    fold: "indent",
+    lineComment: '#',
+    fold: 'indent',
     startState: (): IParseState => {
       return {
         trailingSpace: false,
@@ -90,7 +90,7 @@ CodeMirror.defineMode("yaml", () => {
         inBlockLiteral: false,
         inlineContainers: [],
         lastIndent: 0,
-        parents: []
+        parents: [],
       };
     },
     token: (stream, state: IParseState) => {
@@ -108,10 +108,10 @@ CodeMirror.defineMode("yaml", () => {
       const trailingSpace = stream.eatSpace();
       if (trailingSpace) {
         state.trailingSpace = true;
-        return "whitespace";
+        return 'whitespace';
       }
       // escape
-      if (ch === "\\") {
+      if (ch === '\\') {
         state.escaped = true;
         stream.next();
         return null;
@@ -119,16 +119,16 @@ CodeMirror.defineMode("yaml", () => {
 
       // comments
       // either beginning of the line or had whitespace before
-      if (ch === "#" && (stream.sol() || wasTrailingSpace)) {
+      if (ch === '#' && (stream.sol() || wasTrailingSpace)) {
         stream.skipToEnd();
-        return "comment";
+        return 'comment';
       }
 
       if (state.inBlockLiteral) {
         // continuation of a literal string that was started on a previous line
         if (stream.indentation() > lastIndent) {
           stream.skipToEnd();
-          return "string";
+          return 'string';
         }
         state.inBlockLiteral = false;
       }
@@ -136,7 +136,7 @@ CodeMirror.defineMode("yaml", () => {
       // array list item, value to follow
       if (stream.match(/-/)) {
         state.inValue = true;
-        return "meta";
+        return 'meta';
       }
 
       // doc start / end
@@ -145,57 +145,57 @@ CodeMirror.defineMode("yaml", () => {
         state.parents = [];
 
         if (stream.match(/---/) || stream.match(/\.\.\./)) {
-          return "def";
+          return 'def';
         }
       }
 
       // Handle inline objects and arrays. These can be nested arbitrarily but we
       // don't currently support them spanning multiple lines.
       if (stream.match(/^(\{|\}|\[|\])/)) {
-        if (ch === "{") {
+        if (ch === '{') {
           state.inlineContainers = [...state.inlineContainers, ContainerType.Dict];
           state.inValue = false;
-        } else if (ch === "}") {
+        } else if (ch === '}') {
           state.inlineContainers = state.inlineContainers.slice(
             0,
-            state.inlineContainers.length - 1
+            state.inlineContainers.length - 1,
           );
           state.parents = state.parents.slice(0, state.parents.length - 1);
           state.inValue = state.inlineContainers.length > 0;
-        } else if (ch === "[") {
+        } else if (ch === '[') {
           state.inlineContainers = [...state.inlineContainers, ContainerType.List];
-        } else if (ch === "]") {
+        } else if (ch === ']') {
           state.inlineContainers = state.inlineContainers.slice(
             0,
-            state.inlineContainers.length - 1
+            state.inlineContainers.length - 1,
           );
           state.inValue = state.inlineContainers.length > 0;
         }
         state.trailingSpace = false;
-        return "meta";
+        return 'meta';
       }
 
       // Handle inline separators. For dictionaries, we pop from value parsing state back to
       // key parsing state after a comma and unwind the parent stack.
-      if (state.inlineContainers && !wasEscaped && ch === ",") {
+      if (state.inlineContainers && !wasEscaped && ch === ',') {
         const current = state.inlineContainers[state.inlineContainers.length - 1];
         if (current === ContainerType.Dict) {
           state.parents = state.parents.slice(0, state.parents.length - 1);
           state.inValue = false;
         }
         stream.next();
-        return "meta";
+        return 'meta';
       }
 
       // A `:` fragment starts value parsing mode if it is not the last character on the line
       if (stream.match(RegExps.DICT_COLON)) {
         state.inValue = !stream.eol();
-        return "meta";
+        return 'meta';
       }
 
       // general strings
       if (stream.match(RegExps.QUOTED_STRING)) {
-        return "string";
+        return 'string';
       }
 
       // Handle dict key fragments. May be the first element on a line or nested within an inline
@@ -207,7 +207,7 @@ CodeMirror.defineMode("yaml", () => {
           const key = match[0];
           const keyIndent = stream.pos - key.length;
           state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
-          return "atom";
+          return 'atom';
         }
       }
 
@@ -215,20 +215,20 @@ CodeMirror.defineMode("yaml", () => {
         let result = null;
 
         if (stream.match(RegExps.QUOTED_STRING)) {
-          result = "string";
+          result = 'string';
         }
         if (stream.match(RegExps.BLOCKSTART_PIPE_OR_ARROW)) {
           state.inBlockLiteral = true;
-          result = "meta";
+          result = 'meta';
         }
         if (stream.match(RegExps.VARIABLE)) {
-          result = "variable-2";
+          result = 'variable-2';
         }
         if (stream.match(RegExps.NUMBER)) {
-          result = "number";
+          result = 'number';
         }
         if (stream.match(RegExps.KEYWORD)) {
-          result = "keyword";
+          result = 'keyword';
         }
 
         // Child dicts can start within a value if the user is creating a list
@@ -238,14 +238,14 @@ CodeMirror.defineMode("yaml", () => {
           const keyIndent = stream.pos - key.length;
           state.inValue = false;
           state.parents = parentsAddingChildKeyAtIndent(state.parents, key, keyIndent);
-          result = "atom";
+          result = 'atom';
         }
 
         // "In YAML, you can write a string without quotes, if it doesn't have a special meaning.",
         // so if we can't match the content to any other type and we are inValue, we make it a string.
         // http://blogs.perl.org/users/tinita/2018/03/strings-in-yaml---to-quote-or-not-to-quote.html
         if (!result && stream.match(RegExps.UNQUOTED_STRING)) {
-          result = "string";
+          result = 'string';
         }
         stream.eatSpace();
 
@@ -267,7 +267,7 @@ CodeMirror.defineMode("yaml", () => {
       stream.skipToEnd();
 
       return null;
-    }
+    },
   };
 });
 
@@ -298,15 +298,15 @@ type FoundHint = {
 };
 
 CodeMirror.registerHelper(
-  "hint",
-  "yaml",
+  'hint',
+  'yaml',
   (
     editor: any,
     options: {
       schema?: ConfigEditorRunConfigSchemaFragment;
-    }
-  ): { list: Array<CodemirrorHint> } => {
-    if (!options.schema) return { list: [] };
+    },
+  ): {list: Array<CodemirrorHint>} => {
+    if (!options.schema) return {list: []};
 
     const {
       cursor,
@@ -314,10 +314,10 @@ CodeMirror.registerHelper(
       token,
       start,
       searchString,
-      prevToken
+      prevToken,
     } = expandAutocompletionContextAtCursor(editor);
     if (!context) {
-      return { list: [] };
+      return {list: []};
     }
 
     // Since writing meaningful tests for this functionality is difficult given a) no jsdom
@@ -362,33 +362,33 @@ CodeMirror.registerHelper(
       }
       // Using a lookup table here seems like a good idea
       // https://github.com/dagster-io/dagster/issues/1966
-      const type = options.schema.allConfigTypes.find(t => t.key === key);
+      const type = options.schema.allConfigTypes.find((t) => t.key === key);
       if (!type) {
         return false;
       }
-      return type.__typename === "ArrayConfigType" || type.__typename === "CompositeConfigType";
+      return type.__typename === 'ArrayConfigType' || type.__typename === 'CompositeConfigType';
     };
 
     const formatReplacement = (
       field: any,
       start: any,
       token: CodemirrorToken,
-      prevToken: CodemirrorToken
+      prevToken: CodemirrorToken,
     ) => {
       let replacement = `${field.name}`;
 
       const isCompositeOrList = isCompOrList(field.configTypeKey);
 
-      const tokenIsColon = token.string.startsWith(":");
+      const tokenIsColon = token.string.startsWith(':');
 
       if (isCompositeOrList && tokenIsColon) {
-        replacement = `\n${" ".repeat(prevToken.start + 2)}${field.name}:\n${" ".repeat(
-          prevToken.start + 4
+        replacement = `\n${' '.repeat(prevToken.start + 2)}${field.name}:\n${' '.repeat(
+          prevToken.start + 4,
         )}`;
       } else if (isCompositeOrList) {
-        replacement = `${field.name}:\n${" ".repeat(start + 2)}`;
+        replacement = `${field.name}:\n${' '.repeat(start + 2)}`;
       } else if (tokenIsColon) {
-        replacement = `\n${" ".repeat(prevToken.start + 2)}${field.name}`;
+        replacement = `\n${' '.repeat(prevToken.start + 2)}${field.name}`;
       }
       return replacement;
     };
@@ -396,110 +396,110 @@ CodeMirror.registerHelper(
     const buildSuggestion = (
       display: string,
       replacement: string,
-      description: string | null
+      description: string | null,
     ): CodemirrorHint => ({
       text: replacement,
-      render: el => {
-        const div = document.createElement("div");
+      render: (el) => {
+        const div = document.createElement('div');
         div.textContent = display;
         if (description) {
-          const docs = document.createElement("div");
+          const docs = document.createElement('div');
           docs.innerText =
-            description.length < 90 ? description : description.substr(0, 87) + "...";
-          docs.style.opacity = "0.5";
-          docs.style.overflow = "hidden";
-          docs.style.maxHeight = "33px";
-          docs.style.maxWidth = "360px";
-          docs.style.whiteSpace = "normal";
+            description.length < 90 ? description : description.substr(0, 87) + '...';
+          docs.style.opacity = '0.5';
+          docs.style.overflow = 'hidden';
+          docs.style.maxHeight = '33px';
+          docs.style.maxWidth = '360px';
+          docs.style.whiteSpace = 'normal';
           div.appendChild(docs);
         }
         el.appendChild(div);
       },
-      from: { line: cursor.line, ch: start },
-      to: { line: cursor.line, ch: token.end }
+      from: {line: cursor.line, ch: start},
+      to: {line: cursor.line, ch: token.end},
     });
 
     // Calculate if this is on a new-line child of a scalar union type, as an indication that we
     // should autocomplete the selector fields of the scalar union
     const isScalarUnionNewLine =
-      context.type.__typename === "ScalarUnionConfigType" && !prevToken.end;
+      context.type.__typename === 'ScalarUnionConfigType' && !prevToken.end;
 
     // The context will have available fields if the type is a composite config type OR a scalar
     // union type
     if (
       context.availableFields.length &&
-      (context.type.__typename === "CompositeConfigType" || isScalarUnionNewLine)
+      (context.type.__typename === 'CompositeConfigType' || isScalarUnionNewLine)
     ) {
       return {
         list: context.availableFields
-          .filter(field => field.name.startsWith(searchString))
-          .map(field =>
+          .filter((field) => field.name.startsWith(searchString))
+          .map((field) =>
             buildSuggestion(
               field.name,
               formatReplacement(field, start, token, prevToken),
-              field.description
-            )
-          )
+              field.description,
+            ),
+          ),
       };
     }
 
     // Completion of enum field values
-    if (context.type.__typename === "EnumConfigType") {
+    if (context.type.__typename === 'EnumConfigType') {
       const searchWithoutQuotes = searchString.startsWith('"')
         ? searchString.substr(1)
         : searchString;
       return {
         list: context.type.values
-          .filter(val => val.value.startsWith(searchWithoutQuotes))
-          .map(val => buildSuggestion(val.value, `"${val.value}"`, null))
+          .filter((val) => val.value.startsWith(searchWithoutQuotes))
+          .map((val) => buildSuggestion(val.value, `"${val.value}"`, null)),
       };
     }
 
     // Completion of boolean field values
-    if (context.type.__typename === "RegularConfigType" && context.type.givenName === "Bool") {
+    if (context.type.__typename === 'RegularConfigType' && context.type.givenName === 'Bool') {
       return {
-        list: ["True", "False"]
-          .filter(val => val.startsWith(searchString))
-          .map(val => buildSuggestion(val, val, null))
+        list: ['True', 'False']
+          .filter((val) => val.startsWith(searchString))
+          .map((val) => buildSuggestion(val, val, null)),
       };
     }
 
     // Completion of Scalar Union field values, the union of the scalar suggestions and the
     // non-scalar suggestions
     const type = context.type;
-    if (type.__typename === "ScalarUnionConfigType") {
-      const scalarType = options.schema.allConfigTypes.find(x => x.key === type.scalarTypeKey);
+    if (type.__typename === 'ScalarUnionConfigType') {
+      const scalarType = options.schema.allConfigTypes.find((x) => x.key === type.scalarTypeKey);
       const nonScalarType = options.schema.allConfigTypes.find(
-        x => x.key === type.nonScalarTypeKey
+        (x) => x.key === type.nonScalarTypeKey,
       );
       let scalarSuggestions: CodemirrorHint[] = [];
       if (
         scalarType &&
-        scalarType.__typename === "RegularConfigType" &&
-        scalarType.givenName === "Bool"
+        scalarType.__typename === 'RegularConfigType' &&
+        scalarType.givenName === 'Bool'
       ) {
-        scalarSuggestions = ["True", "False"]
-          .filter(val => val.startsWith(searchString))
-          .map(val => buildSuggestion(val, val, null));
+        scalarSuggestions = ['True', 'False']
+          .filter((val) => val.startsWith(searchString))
+          .map((val) => buildSuggestion(val, val, null));
       }
       let nonScalarSuggestions: CodemirrorHint[] = [];
-      if (nonScalarType && nonScalarType.__typename === "CompositeConfigType") {
+      if (nonScalarType && nonScalarType.__typename === 'CompositeConfigType') {
         nonScalarSuggestions = nonScalarType.fields
-          .filter(field => field.name.startsWith(searchString))
-          .map(field =>
+          .filter((field) => field.name.startsWith(searchString))
+          .map((field) =>
             buildSuggestion(
               field.name,
               formatReplacement(field, start, token, prevToken),
-              field.description
-            )
+              field.description,
+            ),
           );
       }
 
-      return { list: [...scalarSuggestions, ...nonScalarSuggestions] };
+      return {list: [...scalarSuggestions, ...nonScalarSuggestions]};
     }
 
-    return { list: [] };
-  }
+    return {list: []};
+  },
 );
 
 /** Takes the pipeline schema and the YAML tokenizer state and returns the
@@ -509,9 +509,9 @@ CodeMirror.registerHelper(
 function findAutocompletionContext(
   schema: ConfigEditorRunConfigSchemaFragment | null,
   parents: IParseStateParent[],
-  currentIndent: number
+  currentIndent: number,
 ) {
-  parents = parents.filter(({ indent }) => currentIndent > indent);
+  parents = parents.filter(({indent}) => currentIndent > indent);
   const immediateParent = parents[parents.length - 1];
 
   if (!schema) {
@@ -519,8 +519,8 @@ function findAutocompletionContext(
     return;
   }
 
-  let type = schema.allConfigTypes.find(t => t.key === schema.rootConfigType.key);
-  if (!type || type.__typename !== "CompositeConfigType") {
+  let type = schema.allConfigTypes.find((t) => t.key === schema.rootConfigType.key);
+  if (!type || type.__typename !== 'CompositeConfigType') {
     return null;
   }
 
@@ -529,7 +529,7 @@ function findAutocompletionContext(
 
   if (available && parents.length > 0) {
     for (const parent of parents) {
-      const parentTypeDef = available.find(({ name }) => parent.key === name);
+      const parentTypeDef = available.find(({name}) => parent.key === name);
       if (!parentTypeDef) {
         return null;
       }
@@ -538,34 +538,36 @@ function findAutocompletionContext(
       // The rest of the configType's information is in the top level schema.allConfigTypes
       // to avoid superlinear GraphQL response size.
       const parentConfigType = schema.allConfigTypes.find(
-        t => t.key === parentTypeDef.configTypeKey
+        (t) => t.key === parentTypeDef.configTypeKey,
       )!;
       let childTypeKey = parentConfigType.key;
       let childEntriesUnique = true;
 
-      if (parentConfigType.__typename === "ArrayConfigType") {
+      if (parentConfigType.__typename === 'ArrayConfigType') {
         childTypeKey = parentConfigType.typeParamKeys[0];
         childEntriesUnique = false;
       }
 
-      type = schema.allConfigTypes.find(t => t.key === childTypeKey);
+      type = schema.allConfigTypes.find((t) => t.key === childTypeKey);
       if (!type) {
         return null;
       }
 
-      if (type.__typename === "ScalarUnionConfigType") {
+      if (type.__typename === 'ScalarUnionConfigType') {
         available = [];
         const nonScalarTypeKey = type.nonScalarTypeKey;
-        const nonScalarType = schema.allConfigTypes.find(x => x.key === nonScalarTypeKey);
-        if (nonScalarType && nonScalarType.__typename === "CompositeConfigType") {
+        const nonScalarType = schema.allConfigTypes.find((x) => x.key === nonScalarTypeKey);
+        if (nonScalarType && nonScalarType.__typename === 'CompositeConfigType') {
           available = nonScalarType.fields;
         }
-      } else if (type.__typename === "CompositeConfigType") {
+      } else if (type.__typename === 'CompositeConfigType') {
         closestCompositeType = type;
         available = type.fields;
 
         if (parent === immediateParent && childEntriesUnique) {
-          available = available.filter(item => immediateParent.childKeys.indexOf(item.name) === -1);
+          available = available.filter(
+            (item) => immediateParent.childKeys.indexOf(item.name) === -1,
+          );
         }
       } else {
         available = [];
@@ -573,7 +575,7 @@ function findAutocompletionContext(
     }
   }
 
-  return { type, closestCompositeType, availableFields: available };
+  return {type, closestCompositeType, availableFields: available};
 }
 
 // Find context for a fully- or partially- typed key or value in the YAML document
@@ -584,13 +586,13 @@ export function expandAutocompletionContextAtCursor(editor: any) {
   const token: CodemirrorToken = editor.getTokenAt(cursor);
   const prevToken: CodemirrorToken = editor.getTokenAt({
     line: cursor.line,
-    ch: token.start
+    ch: token.start,
   });
 
   let searchString: string;
   let start: number;
-  if (token.type === "whitespace" || token.string.startsWith(":")) {
-    searchString = "";
+  if (token.type === 'whitespace' || token.string.startsWith(':')) {
+    searchString = '';
     start = token.end;
   } else {
     searchString = token.string;
@@ -606,14 +608,14 @@ export function expandAutocompletionContextAtCursor(editor: any) {
     searchString,
     token,
     prevToken,
-    context: findAutocompletionContext(schema, token.state.parents, start)
+    context: findAutocompletionContext(schema, token.state.parents, start),
   };
 }
 
 type CodemirrorLintError = {
   message: string;
-  severity: "error" | "warning" | "information" | "hint";
-  type: "validation" | "syntax" | "deprecation";
+  severity: 'error' | 'warning' | 'information' | 'hint';
+  type: 'validation' | 'syntax' | 'deprecation';
   from: CodemirrorLocation;
   to: CodemirrorLocation;
 };
@@ -635,20 +637,20 @@ export type YamlModeValidationError = {
   reason: string;
 };
 
-CodeMirror.registerHelper("dagster-docs", "yaml", (editor: any, pos: CodeMirror.Position) => {
+CodeMirror.registerHelper('dagster-docs', 'yaml', (editor: any, pos: CodeMirror.Position) => {
   const token = editor.getTokenAt(pos);
 
   const schema: ConfigEditorRunConfigSchemaFragment = editor.options.hintOptions.schema;
 
-  if (token.type !== "atom") {
+  if (token.type !== 'atom') {
     return null;
   }
 
   const context = findAutocompletionContext(schema, token.state.parents, token.start);
   const match =
     context &&
-    context.type.__typename === "CompositeConfigType" &&
-    context.type.fields.find(f => f.name === token.string);
+    context.type.__typename === 'CompositeConfigType' &&
+    context.type.fields.find((f) => f.name === token.string);
 
   if (match && match.description) {
     return match.description;
@@ -658,12 +660,12 @@ CodeMirror.registerHelper("dagster-docs", "yaml", (editor: any, pos: CodeMirror.
 });
 
 CodeMirror.registerHelper(
-  "lint",
-  "yaml",
+  'lint',
+  'yaml',
   async (
     text: string,
-    { checkConfig }: { checkConfig: YamlModeValidateFunction },
-    editor: any
+    {checkConfig}: {checkConfig: YamlModeValidateFunction},
+    editor: any,
   ): Promise<Array<CodemirrorLintError>> => {
     const codeMirrorDoc = editor.getDoc();
 
@@ -676,12 +678,12 @@ CodeMirror.registerHelper(
     const lintingTruncated = yamlDoc.errors.length > 10;
     let lastMarkLocation: CodeMirror.Position | undefined;
 
-    yamlDoc.errors.slice(0, 10).forEach(error => {
+    yamlDoc.errors.slice(0, 10).forEach((error) => {
       const from = codeMirrorDoc.posFromIndex(
-        error.source.range ? error.source.range.start : 0
+        error.source.range ? error.source.range.start : 0,
       ) as CodeMirror.Position;
       const to = codeMirrorDoc.posFromIndex(
-        error.source.range ? error.source.range.end : Number.MAX_SAFE_INTEGER
+        error.source.range ? error.source.range.end : Number.MAX_SAFE_INTEGER,
       ) as CodeMirror.Position;
 
       if (!lastMarkLocation || lastMarkLocation.line < from.line) {
@@ -690,24 +692,24 @@ CodeMirror.registerHelper(
 
       lints.push({
         message: error.message,
-        severity: "error",
-        type: "syntax",
+        severity: 'error',
+        type: 'syntax',
         from,
-        to
+        to,
       });
     });
 
     if (lintingTruncated && lastMarkLocation) {
       const nextLineLocation: CodeMirror.Position = {
         line: lastMarkLocation.line + 1,
-        ch: 0
+        ch: 0,
       };
       lints.push({
         message: `${yamlDoc.errors.length - lints.length} more errors - bailed out.`,
-        severity: "warning",
-        type: "syntax",
+        severity: 'warning',
+        type: 'syntax',
         from: nextLineLocation,
-        to: nextLineLocation
+        to: nextLineLocation,
       });
     }
 
@@ -715,7 +717,7 @@ CodeMirror.registerHelper(
       const json = yamlDoc.toJSON() || {};
       const validationResult = await checkConfig(json);
       if (!validationResult.isValid) {
-        validationResult.errors.forEach(error => {
+        validationResult.errors.forEach((error) => {
           const lint = validationErrorToCodemirrorError(error, yamlDoc, codeMirrorDoc);
           if (lint) {
             lints.push(lint);
@@ -725,37 +727,37 @@ CodeMirror.registerHelper(
     }
 
     return lints;
-  }
+  },
 );
 
 export function validationErrorToCodemirrorError(
   error: YamlModeValidationError,
   yamlDoc: yaml.ast.Document,
-  codeMirrorDoc: any
+  codeMirrorDoc: any,
 ): CodemirrorLintError | null {
-  const part = error.reason === "RUNTIME_TYPE_MISMATCH" ? "value" : "key";
+  const part = error.reason === 'RUNTIME_TYPE_MISMATCH' ? 'value' : 'key';
   const range = findRangeInDocumentFromPath(yamlDoc, error.path, part);
   if (range === null) return null;
   return {
     message: error.message,
-    severity: "error",
-    type: "syntax",
+    severity: 'error',
+    type: 'syntax',
     from: codeMirrorDoc.posFromIndex(range ? range.start : 0) as CodeMirror.Position,
     to: codeMirrorDoc.posFromIndex(
-      range ? range.end : Number.MAX_SAFE_INTEGER
-    ) as CodeMirror.Position
+      range ? range.end : Number.MAX_SAFE_INTEGER,
+    ) as CodeMirror.Position,
   };
 }
 
 export function findRangeInDocumentFromPath(
   doc: yaml.ast.Document,
   path: Array<string>,
-  pathPart: "key" | "value"
-): { start: number; end: number } | null {
+  pathPart: 'key' | 'value',
+): {start: number; end: number} | null {
   let node = nodeAtPath(doc, path);
-  if (!node || !("type" in node) || node.type !== "PAIR") return null;
+  if (!node || !('type' in node) || node.type !== 'PAIR') return null;
 
-  if (pathPart === "value" && node.value) {
+  if (pathPart === 'value' && node.value) {
     node = node.value;
   } else {
     node = node.key;
@@ -764,7 +766,7 @@ export function findRangeInDocumentFromPath(
   if (node && node.range) {
     return {
       start: node.range[0],
-      end: node.range[1]
+      end: node.range[1],
     };
   } else {
     return null;
@@ -773,25 +775,25 @@ export function findRangeInDocumentFromPath(
 
 function nodeAtPath(
   doc: yaml.ast.Document,
-  path: Array<string>
+  path: Array<string>,
 ): yaml.ast.AstNode | yaml.ast.Pair | null {
   let node: any = doc.contents;
   for (let i = 0; i < path.length; i++) {
     const part = path[i];
-    if (node && node.type && node.type === "PAIR") {
+    if (node && node.type && node.type === 'PAIR') {
       node = node.value;
     }
 
-    if (node && node.type && (node.type === "SEQ" || node.type === "FLOW_SEQ")) {
+    if (node && node.type && (node.type === 'SEQ' || node.type === 'FLOW_SEQ')) {
       const index = Number.parseInt(part);
       if (!Number.isNaN(index)) {
         node = node.items[index];
       } else {
         return null;
       }
-    } else if (node && node.type && (node.type === "FLOW_MAP" || node.type === "MAP")) {
-      const item = node.items.find(({ key }: { key: any }) => key.value === part);
-      if (item && item.type && item.type === "PAIR") {
+    } else if (node && node.type && (node.type === 'FLOW_MAP' || node.type === 'MAP')) {
+      const item = node.items.find(({key}: {key: any}) => key.value === part);
+      if (item && item.type && item.type === 'PAIR') {
         node = item;
       } else {
         return null;

@@ -1,13 +1,13 @@
-import { SidebarSolidDefinitionFragment } from "../types/SidebarSolidDefinitionFragment";
+import {SidebarSolidDefinitionFragment} from '../types/SidebarSolidDefinitionFragment';
 
-import * as ipynb from "./ipynb";
-import * as sql from "./sql";
-import * as generic from "./generic";
+import * as ipynb from './ipynb';
+import * as sql from './sql';
+import * as generic from './generic';
 
 const plugins = {
   sql: sql,
   ipynb: ipynb,
-  snowflake: sql
+  snowflake: sql,
 };
 
 export interface IPluginSidebarProps {
@@ -19,9 +19,9 @@ export interface IPluginInterface {
 }
 
 export function pluginForMetadata(
-  metadata: { key: string; value: string }[]
+  metadata: {key: string; value: string}[],
 ): IPluginInterface | null {
-  const kindMetadata = metadata.find(m => m.key === "kind");
+  const kindMetadata = metadata.find((m) => m.key === 'kind');
   if (!kindMetadata) return null;
   return plugins[kindMetadata.value] || generic;
 }

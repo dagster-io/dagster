@@ -1,15 +1,15 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Link } from "react-router-dom";
-import { Text, Code, Colors } from "@blueprintjs/core";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Link} from 'react-router-dom';
+import {Text, Code, Colors} from '@blueprintjs/core';
 
-import { titleOfIO } from "./Util";
-import { SectionHeader } from "./SidebarComponents";
-import { SolidColumn } from "./runs/LogsRowComponents";
+import {titleOfIO} from './Util';
+import {SectionHeader} from './SidebarComponents';
+import {SolidColumn} from './runs/LogsRowComponents';
 
 export type SolidLinkInfo = {
-  solid: { name: string };
-  definition: { name: string };
+  solid: {name: string};
+  definition: {name: string};
 };
 
 export interface SidebarSolidInvocationInfo {
@@ -38,11 +38,11 @@ export const SolidLink = (props: SolidLinkInfo) => (
   <Link to={`./${props.solid.name}`}>
     <Code
       style={{
-        display: "inline-block",
-        verticalAlign: "middle",
-        textOverflow: "ellipsis",
-        overflow: "hidden",
-        maxWidth: "100%"
+        display: 'inline-block',
+        verticalAlign: 'middle',
+        textOverflow: 'ellipsis',
+        overflow: 'hidden',
+        maxWidth: '100%',
       }}
     >
       {titleOfIO(props)}
@@ -50,7 +50,7 @@ export const SolidLink = (props: SolidLinkInfo) => (
   </Link>
 );
 
-export const SolidLinks = (props: { title: string; items: SolidLinkInfo[] }) =>
+export const SolidLinks = (props: {title: string; items: SolidLinkInfo[]}) =>
   props.items && props.items.length ? (
     <Text>
       {props.title}
@@ -64,19 +64,19 @@ export const Invocation = (props: {
   invocation: SidebarSolidInvocationInfo;
   onClick: () => void;
 }) => {
-  const { handleID, pipelineName } = props.invocation;
-  const handlePath = handleID.split(".");
+  const {handleID, pipelineName} = props.invocation;
+  const handlePath = handleID.split('.');
   return (
     <InvocationContainer onClick={props.onClick}>
-      {pipelineName && <div style={{ color: Colors.BLUE1 }}>{pipelineName}</div>}
-      <SolidColumn stepKey={handlePath.join(".")} />
+      {pipelineName && <div style={{color: Colors.BLUE1}}>{pipelineName}</div>}
+      <SolidColumn stepKey={handlePath.join('.')} />
     </InvocationContainer>
   );
 };
 
 export const DependencyRow = ({
   from,
-  to
+  to,
 }: {
   from: SolidLinkInfo | string;
   to: SolidLinkInfo | string;
@@ -85,30 +85,30 @@ export const DependencyRow = ({
     <tr>
       <td
         style={{
-          whiteSpace: "nowrap",
+          whiteSpace: 'nowrap',
           maxWidth: 0,
-          width: "45%"
+          width: '45%',
         }}
       >
-        {typeof from === "string" ? (
+        {typeof from === 'string' ? (
           <DependencyLocalIOName>{from}</DependencyLocalIOName>
         ) : (
           <SolidLink {...from} />
         )}
       </td>
       <td>
-        <img alt="arrow" src={require("./images/icon-dependency-arrow.svg")} />
+        <img alt="arrow" src={require('./images/icon-dependency-arrow.svg')} />
       </td>
       <td
         style={{
-          textOverflow: "ellipsis",
-          overflow: "hidden",
-          whiteSpace: "nowrap",
+          textOverflow: 'ellipsis',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
           maxWidth: 0,
-          width: "60%"
+          width: '60%',
         }}
       >
-        {typeof to === "string" ? (
+        {typeof to === 'string' ? (
           <DependencyLocalIOName>{to}</DependencyLocalIOName>
         ) : (
           <SolidLink {...to} />

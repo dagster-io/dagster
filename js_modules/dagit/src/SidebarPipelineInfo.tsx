@@ -1,22 +1,22 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Colors, Icon } from "@blueprintjs/core";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {Colors, Icon} from '@blueprintjs/core';
 import {
   SidebarTitle,
   SidebarSubhead,
   SectionInner,
   SidebarSection,
   SectionItemContainer,
-  SectionHeader
-} from "./SidebarComponents";
-import Description from "./Description";
-import { ConfigTypeSchema } from "./ConfigTypeSchema";
-import { SidebarPipelineInfoFragment } from "./types/SidebarPipelineInfoFragment";
-import { IconNames } from "@blueprintjs/icons";
-import { breakOnUnderscores } from "./Util";
+  SectionHeader,
+} from './SidebarComponents';
+import Description from './Description';
+import {ConfigTypeSchema} from './ConfigTypeSchema';
+import {SidebarPipelineInfoFragment} from './types/SidebarPipelineInfoFragment';
+import {IconNames} from '@blueprintjs/icons';
+import {breakOnUnderscores} from './Util';
 
-const NO_DESCRIPTION = "";
+const NO_DESCRIPTION = '';
 
 interface ISidebarPipelineInfoProps {
   pipeline: SidebarPipelineInfoFragment;
@@ -59,11 +59,11 @@ export default class SidebarPipelineInfo extends React.Component<ISidebarPipelin
       }
 
       ${ConfigTypeSchema.fragments.ConfigTypeSchemaFragment}
-    `
+    `,
   };
 
   render() {
-    const { pipeline } = this.props;
+    const {pipeline} = this.props;
 
     return (
       <div>
@@ -71,15 +71,15 @@ export default class SidebarPipelineInfo extends React.Component<ISidebarPipelin
           <SidebarSubhead>Pipeline</SidebarSubhead>
           <SidebarTitle>{breakOnUnderscores(pipeline.name)}</SidebarTitle>
         </SectionInner>
-        <SidebarSection title={"Description"}>
+        <SidebarSection title={'Description'}>
           <Description description={pipeline ? pipeline.description : NO_DESCRIPTION} />
         </SidebarSection>
-        <SidebarSection title={"Modes"} collapsedByDefault={true}>
-          {pipeline.modes.map(mode => (
+        <SidebarSection title={'Modes'} collapsedByDefault={true}>
+          {pipeline.modes.map((mode) => (
             <SectionItemContainer key={mode.name}>
               <SectionHeader>{mode.name}</SectionHeader>
               <Description description={mode.description || NO_DESCRIPTION} />
-              {mode.resources.map(resource => (
+              {mode.resources.map((resource) => (
                 <ContextResourceContainer key={resource.name}>
                   <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
                   <div>
@@ -94,7 +94,7 @@ export default class SidebarPipelineInfo extends React.Component<ISidebarPipelin
                   </div>
                 </ContextResourceContainer>
               ))}
-              {mode.loggers.map(logger => (
+              {mode.loggers.map((logger) => (
                 <ContextLoggerContainer key={logger.name}>
                   <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
                   <div>

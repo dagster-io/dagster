@@ -1,7 +1,7 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import { showCustomAlert } from "../CustomAlertProvider";
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import {showCustomAlert} from '../CustomAlertProvider';
 
 const OverflowFade = styled.div`
   position: absolute;
@@ -35,10 +35,10 @@ export class CellTruncationProvider extends React.Component<
     style: React.CSSProperties;
     onExpand?: () => void;
   },
-  { isOverflowing: boolean }
+  {isOverflowing: boolean}
 > {
   state = {
-    isOverflowing: false
+    isOverflowing: false,
   };
 
   private contentContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
@@ -61,7 +61,7 @@ export class CellTruncationProvider extends React.Component<
 
     const isOverflowing = child.scrollHeight > this.props.style.height!;
     if (isOverflowing !== this.state.isOverflowing) {
-      this.setState({ isOverflowing });
+      this.setState({isOverflowing});
     }
   }
 
@@ -70,17 +70,17 @@ export class CellTruncationProvider extends React.Component<
       this.contentContainerRef.current && this.contentContainerRef.current.textContent;
     message &&
       showCustomAlert({
-        body: <div style={{ whiteSpace: "pre-wrap" }}>{message}</div>
+        body: <div style={{whiteSpace: 'pre-wrap'}}>{message}</div>,
       });
   }
 
   onView = () => {
-    const { onExpand } = this.props;
+    const {onExpand} = this.props;
     onExpand ? onExpand() : this.defaultExpand();
   };
 
   render() {
-    const { style } = this.props;
+    const {style} = this.props;
 
     return (
       <div style={style}>

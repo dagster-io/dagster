@@ -1,33 +1,33 @@
-import * as React from "react";
-import * as ReactDOM from "react-dom/server";
-import { StyleSheetManager } from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import pretty from "pretty";
-import path from "path";
-import fs from "fs";
+import * as React from 'react';
+import * as ReactDOM from 'react-dom/server';
+import {StyleSheetManager} from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import pretty from 'pretty';
+import path from 'path';
+import fs from 'fs';
 
-import { PipelineGraphContents } from "../../graph/PipelineGraph";
-import { getDagrePipelineLayout } from "../../graph/getFullSolidLayout";
-import { PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot } from "../../types/PipelineExplorerRootQuery";
-import { PipelineGraphSolidFragment } from "../../graph/types/PipelineGraphSolidFragment";
-import { MOCKS } from "./SVGMocks";
+import {PipelineGraphContents} from '../../graph/PipelineGraph';
+import {getDagrePipelineLayout} from '../../graph/getFullSolidLayout';
+import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from '../../types/PipelineExplorerRootQuery';
+import {PipelineGraphSolidFragment} from '../../graph/types/PipelineGraphSolidFragment';
+import {MOCKS} from './SVGMocks';
 
-const snapshotsDir = path.join(__dirname, "__snapshots__");
+const snapshotsDir = path.join(__dirname, '__snapshots__');
 
-function readMock(mock: { filepath: string }) {
-  const { data } = JSON.parse(fs.readFileSync(mock.filepath).toString());
+function readMock(mock: {filepath: string}) {
+  const {data} = JSON.parse(fs.readFileSync(mock.filepath).toString());
   return data.pipelineSnapshotOrError as PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot;
 }
 
 function svgForPipeline(
   name: string,
   solids: PipelineGraphSolidFragment[],
-  parent?: PipelineGraphSolidFragment
+  parent?: PipelineGraphSolidFragment,
 ) {
   // render the pipeline explorer's viewport contents to SVG and capture
   // styled-component styles into a <div>
   const layout = getDagrePipelineLayout(solids, parent);
-  const div = document.createElement("div");
+  const div = document.createElement('div');
   const svgContent = ReactDOM.renderToStaticMarkup(
     <StyleSheetManager target={div}>
       <PipelineGraphContents
@@ -40,7 +40,7 @@ function svgForPipeline(
         backgroundColor={Colors.LIGHT_GRAY5}
         highlightedSolids={[]}
       />
-    </StyleSheetManager>
+    </StyleSheetManager>,
   );
 
   return pretty(
@@ -53,14 +53,14 @@ function svgForPipeline(
     >
       ${div.innerHTML}
       ${svgContent}
-    </svg>`
+    </svg>`,
   );
 }
 
-MOCKS.forEach(mock => {
+MOCKS.forEach((mock) => {
   it(`${mock.name}: renders the expected SVG`, () => {
     // load the GraphQL response and pull out the first layer of solids
-    const solids = readMock(mock).solidHandles.map(h => h.solid);
+    const solids = readMock(mock).solidHandles.map((h) => h.solid);
 
     const expectedPath = path.join(snapshotsDir, `${mock.name}.svg`);
     const actualPath = path.join(snapshotsDir, `${mock.name}.actual.svg`);
@@ -76,8 +76,10 @@ MOCKS.forEach(mock => {
 
 it(`renders the expected SVG when viewing a composite`, () => {
   // load the GraphQL response and pull out the first layer of solids
-  const pipeline = readMock(MOCKS.find(m => m.name === "airline_demo_ingest_pipeline_composite")!);
-  const solids = pipeline.solidHandles.map(h => h.solid);
+  const pipeline = readMock(
+    MOCKS.find((m) => m.name === 'airline_demo_ingest_pipeline_composite')!,
+  );
+  const solids = pipeline.solidHandles.map((h) => h.solid);
 
   const expectedPath = path.join(snapshotsDir, `airline-composite.svg`);
   const actualPath = path.join(snapshotsDir, `airline-composite.actual.svg`);

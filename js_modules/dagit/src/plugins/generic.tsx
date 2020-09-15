@@ -1,24 +1,24 @@
-import * as React from "react";
-import { startCase } from "lodash";
-import { Button, Classes, Dialog } from "@blueprintjs/core";
-import { IPluginSidebarProps } from ".";
+import * as React from 'react';
+import {startCase} from 'lodash';
+import {Button, Classes, Dialog} from '@blueprintjs/core';
+import {IPluginSidebarProps} from '.';
 
 export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   state = {
-    open: false
+    open: false,
   };
 
   componentDidMount() {
-    document.addEventListener("show-kind-info", this.onClick);
+    document.addEventListener('show-kind-info', this.onClick);
   }
 
   componentWillUnmount() {
-    document.removeEventListener("show-kind-info", this.onClick);
+    document.removeEventListener('show-kind-info', this.onClick);
   }
 
   onClick = () => {
     this.setState({
-      open: true
+      open: true,
     });
   };
 
@@ -39,7 +39,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
           isOpen={this.state.open}
           onClose={() =>
             this.setState({
-              open: false
+              open: false,
             })
           }
         >
@@ -47,10 +47,10 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
             className={Classes.DIALOG_BODY}
             style={{
               maxHeight: 400,
-              overflow: "scroll"
+              overflow: 'scroll',
             }}
           >
-            <table className="bp3-html-table bp3-html-table-striped" style={{ width: "100%" }}>
+            <table className="bp3-html-table bp3-html-table-striped" style={{width: '100%'}}>
               <thead>
                 <tr>
                   <th>Key</th>
@@ -58,11 +58,11 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
                 </tr>
               </thead>
               <tbody>
-                {metadata.map(({ key, value }) => (
+                {metadata.map(({key, value}) => (
                   <tr key={key}>
                     <td>{startCase(key)}</td>
                     <td>
-                      <code style={{ whiteSpace: "pre-wrap" }}>{value}</code>
+                      <code style={{whiteSpace: 'pre-wrap'}}>{value}</code>
                     </td>
                   </tr>
                 ))}
@@ -71,7 +71,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
           </div>
           <div className={Classes.DIALOG_FOOTER}>
             <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-              <Button onClick={() => this.setState({ open: false })}>Close</Button>
+              <Button onClick={() => this.setState({open: false})}>Close</Button>
             </div>
           </div>
         </Dialog>

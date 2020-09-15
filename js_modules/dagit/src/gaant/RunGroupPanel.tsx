@@ -1,41 +1,41 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import gql from "graphql-tag";
+import React from 'react';
+import {Link} from 'react-router-dom';
+import gql from 'graphql-tag';
 import {
   RunGroupPanelQuery,
-  RunGroupPanelQuery_runGroupOrError_RunGroup_runs
-} from "./types/RunGroupPanelQuery";
-import { useQuery } from "react-apollo";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import { RunTime, RunElapsed, RunComponentFragments } from "../runs/RunUtils";
-import { RunStatus } from "../runs/RunStatusDots";
+  RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
+} from './types/RunGroupPanelQuery';
+import {useQuery} from 'react-apollo';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import {RunTime, RunElapsed, RunComponentFragments} from '../runs/RunUtils';
+import {RunStatus} from '../runs/RunStatusDots';
 
-function subsetTitleForRun(run: { tags: { key: string; value: string }[] }) {
-  const stepsTag = run.tags.find(t => t.key === "dagster/step_selection");
-  return stepsTag ? stepsTag.value : "*";
+function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
+  const stepsTag = run.tags.find((t) => t.key === 'dagster/step_selection');
+  return stepsTag ? stepsTag.value : '*';
 }
 
-export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({ runId }) => {
+export const RunGroupPanel: React.FunctionComponent<{runId: string}> = ({runId}) => {
   const queryResult = useQuery<RunGroupPanelQuery>(RUN_GROUP_PANEL_QUERY, {
-    variables: { runId },
-    fetchPolicy: "cache-and-network",
-    pollInterval: 3000
+    variables: {runId},
+    fetchPolicy: 'cache-and-network',
+    pollInterval: 3000,
   });
 
   const group = queryResult.data?.runGroupOrError;
 
-  if (!group || group.__typename === "RunGroupNotFoundError") {
+  if (!group || group.__typename === 'RunGroupNotFoundError') {
     return <div />;
   }
-  if (group.__typename === "PythonError") {
+  if (group.__typename === 'PythonError') {
     return <div>The run group for this run could not be loaded: {group.message}</div>;
   }
   if (group.runs?.length === 1) {
     return <div />;
   }
 
-  const runs = (group.runs || []).filter(g => g !== null);
+  const runs = (group.runs || []).filter((g) => g !== null);
 
   return (
     <RunGroupContainer>
@@ -46,7 +46,7 @@ export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({ runI
           to={`/pipeline/${g.pipelineName}/runs/${g.runId}`}
           selected={g.runId === runId}
         >
-          {idx < runs.length - 1 && <ThinLine style={{ height: 36 }} />}
+          {idx < runs.length - 1 && <ThinLine style={{height: 36}} />}
           <div>
             <RunStatus status={g.status} />
           </div>
@@ -56,12 +56,12 @@ export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({ runI
               flex: 1,
               marginLeft: 5,
               minWidth: 0,
-              color: Colors.DARK_GRAY5
+              color: Colors.DARK_GRAY5,
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
               <RunTitle>
-                {g.runId.split("-")[0]}
+                {g.runId.split('-')[0]}
                 {idx === 0 && RootTag}
               </RunTitle>
               <RunTime run={g} size="minimal" />
@@ -69,9 +69,9 @@ export const RunGroupPanel: React.FunctionComponent<{ runId: string }> = ({ runI
 
             <div
               style={{
-                display: "flex",
+                display: 'flex',
                 color: Colors.DARK_GRAY5,
-                justifyContent: "space-between"
+                justifyContent: 'space-between',
               }}
             >
               {subsetTitleForRun(g)}
@@ -116,9 +116,9 @@ const RunGroupContainer = styled.div`
   overflow: scroll;
 `;
 
-const RunGroupRun = styled(Link)<{ selected: boolean }>`
+const RunGroupRun = styled(Link)<{selected: boolean}>`
   align-items: flex-start;
-  background: ${({ selected }) => (selected ? Colors.LIGHT_GRAY2 : Colors.WHITE)};
+  background: ${({selected}) => (selected ? Colors.LIGHT_GRAY2 : Colors.WHITE)};
   padding: 3px 6px;
   font-size: 13px;
   line-height: 20px;
@@ -127,7 +127,7 @@ const RunGroupRun = styled(Link)<{ selected: boolean }>`
   padding-left: 6px;
   &:hover {
     text-decoration: none;
-    background: ${({ selected }) => (selected ? Colors.LIGHT_GRAY2 : Colors.LIGHT_GRAY5)};
+    background: ${({selected}) => (selected ? Colors.LIGHT_GRAY2 : Colors.LIGHT_GRAY5)};
   }
 `;
 
@@ -165,13 +165,13 @@ const RootTag = (
     style={{
       borderRadius: 2,
       fontSize: 12,
-      lineHeight: "14px",
-      background: "rgb(118, 144, 188, 0.5)",
-      color: "white",
-      padding: "0 4px",
+      lineHeight: '14px',
+      background: 'rgb(118, 144, 188, 0.5)',
+      color: 'white',
+      padding: '0 4px',
       fontWeight: 400,
-      userSelect: "none",
-      marginLeft: 4
+      userSelect: 'none',
+      marginLeft: 4,
     }}
   >
     ROOT

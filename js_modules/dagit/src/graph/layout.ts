@@ -1,5 +1,5 @@
-import * as dagre from "dagre";
-import { titleOfIO } from "../Util";
+import * as dagre from 'dagre';
+import {titleOfIO} from '../Util';
 
 export type IPipelineLayoutParams = {
   solids: ILayoutSolid[];
@@ -44,11 +44,11 @@ export interface IFullSolidLayout {
   };
 }
 
-interface IParentSolidLayout extends Omit<IFullSolidLayout, "solid"> {
+interface IParentSolidLayout extends Omit<IFullSolidLayout, 'solid'> {
   mappingLeftEdge: number;
   mappingLeftSpacing: number;
-  dependsOn: { [solidName: string]: IPoint };
-  dependedBy: { [solidName: string]: IPoint };
+  dependsOn: {[solidName: string]: IPoint};
+  dependedBy: {[solidName: string]: IPoint};
   invocationBoundingBox: ILayout;
 }
 
@@ -109,19 +109,19 @@ const PARENT_INVOCATION_PADDING = 70;
 const EXTERNAL_DEPENDENCY_PADDING = 50;
 
 type SolidLinkInfo = {
-  solid: { name: string };
-  definition: { name: string };
+  solid: {name: string};
+  definition: {name: string};
 };
 
 function flattenIO(arrays: SolidLinkInfo[][]) {
-  const map: { [key: string]: SolidLinkInfo } = {};
-  arrays.forEach(array => array.forEach(item => (map[titleOfIO(item)] = item)));
+  const map: {[key: string]: SolidLinkInfo} = {};
+  arrays.forEach((array) => array.forEach((item) => (map[titleOfIO(item)] = item)));
   return Object.values(map);
 }
 
 export function layoutPipeline(
   pipelineSolids: ILayoutSolid[],
-  parentSolid?: ILayoutSolid
+  parentSolid?: ILayoutSolid,
 ): IFullPipelineLayout {
   const g = new dagre.graphlib.Graph();
 
@@ -139,43 +139,43 @@ export function layoutPipeline(
   }
 
   // Define a new top-down, left to right graph layout
-  g.setGraph({ rankdir: "TB", marginx, marginy });
+  g.setGraph({rankdir: 'TB', marginx, marginy});
   g.setDefaultEdgeLabel(() => ({}));
 
   const connections: Array<ILayoutConnection> = [];
-  const solidNamesPresent: { [name: string]: boolean } = {};
+  const solidNamesPresent: {[name: string]: boolean} = {};
 
-  pipelineSolids.forEach(solid => {
+  pipelineSolids.forEach((solid) => {
     solidNamesPresent[solid.name] = true;
   });
-  pipelineSolids.forEach(solid => {
+  pipelineSolids.forEach((solid) => {
     // Lay out each solid individually to get it's width and height based on it's
     // inputs and outputs, and then attach it to the graph. Dagre will give us it's
     // x,y position.
-    const layout = layoutSolid(solid, { x: 0, y: 0 });
+    const layout = layoutSolid(solid, {x: 0, y: 0});
     g.setNode(solid.name, {
       width: layout.boundingBox.width,
-      height: layout.boundingBox.height
+      height: layout.boundingBox.height,
     });
 
     // Give Dagre the dependency edges and build a flat set of them so we
     // can reference them in a single pass later
-    solid.inputs.forEach(input => {
-      input.dependsOn.forEach(dep => {
+    solid.inputs.forEach((input) => {
+      input.dependsOn.forEach((dep) => {
         if (solidNamesPresent[dep.solid.name] && solidNamesPresent[solid.name]) {
-          g.setEdge({ v: dep.solid.name, w: solid.name }, { weight: 1 });
+          g.setEdge({v: dep.solid.name, w: solid.name}, {weight: 1});
 
           connections.push({
             from: {
-              point: { x: 0, y: 0 },
+              point: {x: 0, y: 0},
               solidName: dep.solid.name,
-              edgeName: dep.definition.name
+              edgeName: dep.definition.name,
             },
             to: {
-              point: { x: 0, y: 0 },
+              point: {x: 0, y: 0},
               solidName: solid.name,
-              edgeName: input.definition.name
-            }
+              edgeName: input.definition.name,
+            },
           });
         }
       });
@@ -184,17 +184,17 @@ export function layoutPipeline(
 
   dagre.layout(g);
 
-  const solids: { [solidName: string]: IFullSolidLayout } = {};
-  const nodesBySolid: { [solidName: string]: dagre.Node } = {};
-  g.nodes().forEach(function(solidName) {
+  const solids: {[solidName: string]: IFullSolidLayout} = {};
+  const nodesBySolid: {[solidName: string]: dagre.Node} = {};
+  g.nodes().forEach(function (solidName) {
     const node = g.node(solidName);
     if (!node) return;
     nodesBySolid[solidName] = node;
   });
 
   if (MAX_PER_ROW_ENABLED) {
-    const nodesInRows: { [key: string]: dagre.Node[] } = {};
-    g.nodes().forEach(function(solidName) {
+    const nodesInRows: {[key: string]: dagre.Node[]} = {};
+    g.nodes().forEach(function (solidName) {
       const node = g.node(solidName);
       if (!node) return;
       nodesInRows[`${node.y}`] = nodesInRows[`${node.y}`] || [];
@@ -211,7 +211,7 @@ export function layoutPipeline(
     //   whitespace on the same row into the same block.
 
     const rows = Object.keys(nodesInRows)
-      .map(a => Number(a))
+      .map((a) => Number(a))
       .sort((a, b) => a - b);
 
     const firstRow = nodesInRows[`${rows[0]}`];
@@ -228,36 +228,36 @@ export function layoutPipeline(
 
       for (let r = 0; r < desiredCount; r++) {
         const newRowNodes = rowNodes.slice(r * MAX_PER_ROW, (r + 1) * MAX_PER_ROW);
-        const maxHeight = Math.max(...newRowNodes.map(n => n.height)) + SOLID_BASE_HEIGHT;
+        const maxHeight = Math.max(...newRowNodes.map((n) => n.height)) + SOLID_BASE_HEIGHT;
         const totalWidth = newRowNodes.reduce((sum, n) => sum + n.width + SOLID_BASE_HEIGHT, 0);
 
         let x = firstRowCenterX - totalWidth / 2;
 
         // shift the nodes before the split point so they're centered nicely
-        newRowNodes.forEach(n => {
+        newRowNodes.forEach((n) => {
           n.x = x;
           x += n.width + SOLID_BASE_HEIGHT;
         });
 
         // shift the nodes after the split point downwards
         const shifted = rowNodes.slice((r + 1) * MAX_PER_ROW);
-        shifted.forEach(n => (n.y += maxHeight));
+        shifted.forEach((n) => (n.y += maxHeight));
 
         // shift all nodes in the graph beneath this row down by
         // the height of the newly inserted row.
-        const shiftedMaxHeight = Math.max(0, ...shifted.map(n => n.height)) + SOLID_BASE_HEIGHT;
+        const shiftedMaxHeight = Math.max(0, ...shifted.map((n) => n.height)) + SOLID_BASE_HEIGHT;
 
         for (let jj = ii + 1; jj < rows.length; jj++) {
-          nodesInRows[`${rows[jj]}`].forEach(n => (n.y += shiftedMaxHeight));
+          nodesInRows[`${rows[jj]}`].forEach((n) => (n.y += shiftedMaxHeight));
         }
       }
     }
     let minX = Number.MAX_SAFE_INTEGER;
-    Object.keys(nodesBySolid).forEach(solidName => {
+    Object.keys(nodesBySolid).forEach((solidName) => {
       const node = nodesBySolid[solidName];
       minX = Math.min(minX, node.x - node.width / 2 - marginx);
     });
-    Object.keys(nodesBySolid).forEach(solidName => {
+    Object.keys(nodesBySolid).forEach((solidName) => {
       const node = nodesBySolid[solidName];
       node.x -= minX;
     });
@@ -271,14 +271,14 @@ export function layoutPipeline(
 
   // Read the Dagre layout and map "nodes" back to our solids, but with
   // X,Y coordinates this time.
-  Object.keys(nodesBySolid).forEach(solidName => {
+  Object.keys(nodesBySolid).forEach((solidName) => {
     const node = nodesBySolid[solidName];
-    const solid = pipelineSolids.find(({ name }) => name === solidName);
+    const solid = pipelineSolids.find(({name}) => name === solidName);
     if (!solid) return;
 
     solids[solidName] = layoutSolid(solid, {
       x: node.x - node.width / 2, // Dagre's x/y is the center, we want top left
-      y: node.y - node.height / 2
+      y: node.y - node.height / 2,
     });
     maxWidth = Math.max(maxWidth, node.x + node.width);
     maxHeight = Math.max(maxHeight, node.y + node.height);
@@ -286,8 +286,8 @@ export function layoutPipeline(
 
   // Read the Dagre layout and map "edges" back to our data model. We don't
   // currently use the "closest points on the node" Dagre suggests (but we could).
-  g.edges().forEach(function(e) {
-    const conn = connections.find(c => c.from.solidName === e.v && c.to.solidName === e.w);
+  g.edges().forEach(function (e) {
+    const conn = connections.find((c) => c.from.solidName === e.v && c.to.solidName === e.w);
     const points = g.edge(e).points;
     if (conn) {
       conn.from.point = points[0];
@@ -300,7 +300,7 @@ export function layoutPipeline(
     connections,
     width: maxWidth,
     height: maxHeight + marginBase,
-    parent: null
+    parent: null,
   };
 
   if (parentSolid) {
@@ -315,35 +315,35 @@ export function layoutPipeline(
 function layoutParentCompositeSolid(
   layout: IFullPipelineLayout,
   solid: ILayoutSolid,
-  parentIOPadding: number
+  parentIOPadding: number,
 ) {
   const result: IParentSolidLayout = {
     invocationBoundingBox: {
       x: 1,
       y: 1,
       width: layout.width - 1,
-      height: layout.height - 1
+      height: layout.height - 1,
     },
     boundingBox: {
       x: PARENT_INVOCATION_PADDING,
       y: PARENT_INVOCATION_PADDING + parentIOPadding,
       width: layout.width - PARENT_INVOCATION_PADDING * 2,
-      height: layout.height - (PARENT_INVOCATION_PADDING + parentIOPadding) * 2
+      height: layout.height - (PARENT_INVOCATION_PADDING + parentIOPadding) * 2,
     },
     mappingLeftEdge: PARENT_INVOCATION_PADDING - 20,
     mappingLeftSpacing: 10,
     inputs: {},
     outputs: {},
     dependsOn: layoutExternalConnections(
-      flattenIO(solid.inputs.map(d => d.dependsOn)),
+      flattenIO(solid.inputs.map((d) => d.dependsOn)),
       -EXTERNAL_DEPENDENCY_PADDING,
-      layout.width
+      layout.width,
     ),
     dependedBy: layoutExternalConnections(
-      flattenIO(solid.outputs.map(d => d.dependedBy)),
+      flattenIO(solid.outputs.map((d) => d.dependedBy)),
       layout.height + EXTERNAL_DEPENDENCY_PADDING,
-      layout.width
-    )
+      layout.width,
+    ),
   };
 
   const boundingBottom = result.boundingBox.y + result.boundingBox.height;
@@ -354,12 +354,12 @@ function layoutParentCompositeSolid(
         x: result.boundingBox.x,
         y: result.boundingBox.y - idx * IO_HEIGHT - IO_HEIGHT,
         width: 0,
-        height: IO_HEIGHT
+        height: IO_HEIGHT,
       },
       port: {
         x: result.boundingBox.x + PORT_INSET_X,
-        y: result.boundingBox.y - idx * IO_HEIGHT - IO_HEIGHT / 2
-      }
+        y: result.boundingBox.y - idx * IO_HEIGHT - IO_HEIGHT / 2,
+      },
     };
   });
 
@@ -369,12 +369,12 @@ function layoutParentCompositeSolid(
         x: result.boundingBox.x,
         y: boundingBottom + idx * IO_HEIGHT,
         width: 0,
-        height: IO_HEIGHT
+        height: IO_HEIGHT,
       },
       port: {
         x: result.boundingBox.x + PORT_INSET_X,
-        y: boundingBottom + idx * IO_HEIGHT + IO_HEIGHT / 2
-      }
+        y: boundingBottom + idx * IO_HEIGHT + IO_HEIGHT / 2,
+      },
     };
   });
 
@@ -389,12 +389,12 @@ function layoutExternalConnections(links: SolidLinkInfo[], y: number, layoutWidt
   const baseX = inset + Math.min(0, (insetWidth - links.length * spacing) / 2);
   const yShift = spacing < 300 ? 20 : 0;
 
-  const result: { [solidName: string]: IPoint } = {};
+  const result: {[solidName: string]: IPoint} = {};
   links.forEach((link, idx) => {
     const shiftDirection = 1 - (idx % 2) * 2; // 1 or -1, alternating
     result[titleOfIO(link)] = {
       x: baseX + idx * spacing,
-      y: y + yShift * shiftDirection
+      y: y + yShift * shiftDirection,
     };
   });
   return result;
@@ -406,7 +406,7 @@ export function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout
   let accY = root.y;
 
   const inputsLayouts: {
-    [inputName: string]: { layout: ILayout; port: IPoint };
+    [inputName: string]: {layout: ILayout; port: IPoint};
   } = {};
 
   const buildIOSmallLayout = (idx: number, count: number) => {
@@ -415,26 +415,26 @@ export function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout
     return {
       port: {
         x: x + PORT_INSET_X,
-        y: accY + PORT_INSET_Y
+        y: accY + PORT_INSET_Y,
       },
       layout: {
         x: x,
         y: accY,
         width: IO_MINI_WIDTH,
-        height: IO_HEIGHT
-      }
+        height: IO_HEIGHT,
+      },
     };
   };
 
   const buildIOLayout = () => {
-    const layout: { layout: ILayout; port: IPoint } = {
-      port: { x: root.x + PORT_INSET_X, y: accY + PORT_INSET_Y },
+    const layout: {layout: ILayout; port: IPoint} = {
+      port: {x: root.x + PORT_INSET_X, y: accY + PORT_INSET_Y},
       layout: {
         x: root.x,
         y: accY,
         width: 0,
-        height: IO_HEIGHT
-      }
+        height: IO_HEIGHT,
+      },
     };
     accY += IO_HEIGHT;
     return layout;
@@ -454,7 +454,7 @@ export function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout
     x: root.x,
     y: Math.max(root.y, accY - IO_INSET),
     width: SOLID_WIDTH,
-    height: SOLID_BASE_HEIGHT + IO_INSET * 2
+    height: SOLID_BASE_HEIGHT + IO_INSET * 2,
   };
 
   accY += SOLID_BASE_HEIGHT;
@@ -481,11 +481,11 @@ export function layoutSolid(solid: ILayoutSolid, root: IPoint): IFullSolidLayout
       x: root.x,
       y: root.y,
       width: SOLID_WIDTH,
-      height: accY - root.y
+      height: accY - root.y,
     },
     solid: solidLayout,
     inputs: inputsLayouts,
-    outputs: outputLayouts
+    outputs: outputLayouts,
   };
 }
 
@@ -494,7 +494,7 @@ export function pointsToBox(a: IPoint, b: IPoint): ILayout {
     x: Math.min(a.x, b.x),
     y: Math.min(a.y, b.y),
     width: Math.abs(a.x - b.x),
-    height: Math.abs(a.y - b.y)
+    height: Math.abs(a.y - b.y),
   };
 }
 

@@ -1,9 +1,9 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Colors } from "@blueprintjs/core";
-import { ConfigEditorHelpContext, isHelpContextEqual } from "../configeditor/ConfigEditor";
-import { ConfigTypeSchema, TypeData } from "../ConfigTypeSchema";
+import * as React from 'react';
+import gql from 'graphql-tag';
+import styled from 'styled-components/macro';
+import {Colors} from '@blueprintjs/core';
+import {ConfigEditorHelpContext, isHelpContextEqual} from '../configeditor/ConfigEditor';
+import {ConfigTypeSchema, TypeData} from '../ConfigTypeSchema';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;
@@ -11,7 +11,7 @@ interface ConfigEditorHelpProps {
 }
 
 export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = React.memo(
-  ({ context, allInnerTypes }) => {
+  ({context, allInnerTypes}) => {
     if (!context) {
       return <Container />;
     }
@@ -24,7 +24,7 @@ export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = 
       </Container>
     );
   },
-  (prev, next) => isHelpContextEqual(prev.context, next.context)
+  (prev, next) => isHelpContextEqual(prev.context, next.context),
 );
 
 export const ConfigEditorHelpConfigTypeFragment = gql`
