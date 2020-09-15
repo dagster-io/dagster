@@ -6,7 +6,7 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.config_mappable import IConfigMappable
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
-from dagster.utils.backcompat import rename_warning
+from dagster.utils.backcompat import experimental_arg_warning, rename_warning
 
 from ..decorator_utils import split_function_parameters, validate_decorated_fn_positionals
 
@@ -34,6 +34,9 @@ class ResourceDefinition(IConfigMappable):
         description (Optional[str]): A human-readable description of the resource.
         _configured_config_mapping_fn: This argument is for internal use only. Users should not
             specify this field. To preconfigure a resource, use the :py:func:`configured` API.
+        version (Optional[str]): (Experimental) The version of the resource's definition fn. Two
+            wrapped resource functions should only have the same version if they produce the same
+            resource definition when provided with the same inputs.
     """
 
     def __init__(
@@ -42,6 +45,7 @@ class ResourceDefinition(IConfigMappable):
         config_schema=None,
         description=None,
         _configured_config_mapping_fn=None,
+        version=None,
     ):
         EXPECTED_POSITIONALS = ["*"]
         fn_positionals, _ = split_function_parameters(resource_fn, EXPECTED_POSITIONALS)
@@ -62,6 +66,9 @@ class ResourceDefinition(IConfigMappable):
         self.__configured_config_mapping_fn = check.opt_callable_param(
             _configured_config_mapping_fn, "config_mapping_fn"
         )
+        self._version = check.opt_str_param(version, "version")
+        if version:
+            experimental_arg_warning("version", "ResourceDefinition.__init__")
 
     @property
     def resource_fn(self):
@@ -79,6 +86,10 @@ class ResourceDefinition(IConfigMappable):
     @property
     def description(self):
         return self._description
+
+    @property
+    def version(self):
+        return self._version
 
     @staticmethod
     def none_resource(description=None):
@@ -146,9 +157,10 @@ class ResourceDefinition(IConfigMappable):
 
 
 class _ResourceDecoratorCallable(object):
-    def __init__(self, config_schema=None, description=None):
+    def __init__(self, config_schema=None, description=None, version=None):
         self.config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
         self.description = check.opt_str_param(description, "description")
+        self.version = check.opt_str_param(version, "version")
 
     def __call__(self, fn):
         check.callable_param(fn, "fn")
@@ -162,7 +174,7 @@ class _ResourceDecoratorCallable(object):
         return resource_def
 
 
-def resource(config_schema=None, description=None):
+def resource(config_schema=None, description=None, version=None):
     """Define a resource.
 
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
@@ -178,6 +190,9 @@ def resource(config_schema=None, description=None):
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
         description(Optional[str]): A human-readable description of the resource.
+        version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
+            resource functions should only have the same version if they produce the same resource
+            definition when provided with the same inputs.
     """
 
     # This case is for when decorator is used bare, without arguments.
@@ -186,9 +201,9 @@ def resource(config_schema=None, description=None):
         return _ResourceDecoratorCallable()(config_schema)
 
     def _wrap(resource_fn):
-        return _ResourceDecoratorCallable(config_schema=config_schema, description=description,)(
-            resource_fn
-        )
+        return _ResourceDecoratorCallable(
+            config_schema=config_schema, description=description, version=version,
+        )(resource_fn)
 
     return _wrap
 
