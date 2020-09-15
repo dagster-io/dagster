@@ -439,3 +439,38 @@ def test_hook_resource_mismatch():
         @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
         def _():
             a_solid.with_hooks({a_hook})()
+
+
+def test_hook_subpipeline():
+
+    called_hook_to_solids = defaultdict(set)
+
+    @event_list_hook
+    def hook_a_generic(context, _):
+        called_hook_to_solids[context.hook_def.name].add(context.solid.name)
+        return HookExecutionResult("hook_a_generic")
+
+    @solid
+    def solid_a(_):
+        pass
+
+    @solid
+    def solid_b(_):
+        pass
+
+    @hook_a_generic
+    @pipeline
+    def a_pipeline():
+        solid_a()
+        solid_b()
+
+    result = execute_pipeline(a_pipeline)
+    assert result.success
+    # a generic hook runs on all solids
+    assert called_hook_to_solids["hook_a_generic"] == {"solid_a", "solid_b"}
+
+    called_hook_to_solids = defaultdict(set)
+
+    result = execute_pipeline(a_pipeline, solid_selection=["solid_a"])
+    assert result.success
+    assert called_hook_to_solids["hook_a_generic"] == {"solid_a"}

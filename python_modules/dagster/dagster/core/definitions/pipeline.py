@@ -608,6 +608,7 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
             dependencies=deps,
             _parent_pipeline_def=pipeline_def,
             tags=pipeline_def.tags,
+            hook_defs=pipeline_def.hook_defs,
         )
 
         return sub_pipeline_def
