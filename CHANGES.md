@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.9.8
+
+**New**
+
+- Support for the Dagster step selection DSL: `reexecute_pipeline` now takes `step_selection`, which accepts queries like `*solid_a.compute++` (i.e., `solid_a.compute`, all of its ancestors, its immediate descendants, and their immediate descendants). `steps_to_execute` is deprecated and will be removed in 0.10.0.
+
+**Community contributions**
+
+- [dagster-databricks] Improved setup of Databricks environment (Thanks @[sd2k](https://github.com/sd2k)!)
+- Enabled frozenlist pickling (Thanks @[kinghuang](https://github.com/kinghuang)!)
+
+**Bugfixes**
+
+- Fixed a bug that pipeline-level hooks were not correctly applied on a pipeline subset.
+- Improved error messages when execute command can't load a code pointer.
+- Fixed a bug that prevented serializing Spark intermediates with configured intermediate storages.
+
+**Dagit**
+
+- Enabled subset reexecution via Dagit when part of the pipeline is still running.
+- Made `Schedules` clickable and link to View All page in the schedule section.
+- Various Dagit UI improvements.
+
+**Experimental**
+
+- [lakehouse] Added CLI command for building and executing a pipeline that updates a given set of assets: `house update --module package.module —assets my_asset\*`
+
+**Documentation**
+
+- Fixes and improvements.
+
 ## 0.9.7
 
 **Bugfixes**
