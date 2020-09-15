@@ -202,7 +202,7 @@ class SolidDefinition(ISolidDefinition):
             solid.
         positional_inputs (Optional[List[str]]): The positional order of the input names if it
             differs from the order of the input definitions.
-        version (str): (Experimental) The version of the solid's compute_fn. Two solids should have
+        version (Optional[str]): (Experimental) The version of the solid's compute_fn. Two solids should have
             the same version if and only if they deterministically produce the same outputs when
             provided the same inputs.
         _configured_config_mapping_fn: This argument is for internal use only. Users should not

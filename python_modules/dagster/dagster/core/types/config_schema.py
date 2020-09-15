@@ -8,7 +8,11 @@ from dagster.core.decorator_utils import (
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import ensure_gen, ensure_single_item
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import (
+    canonicalize_backcompat_args,
+    experimental_arg_warning,
+    rename_warning,
+)
 
 
 class DagsterTypeLoader(object):
@@ -71,7 +75,7 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         func,
         required_resource_keys,
         loader_version=None,
-        external_version_fn=lambda x: None,
+        external_version_fn=None,
     ):
         self._config_type = check.inst_param(config_type, "config_type", ConfigType)
         self._func = check.callable_param(func, "func")
@@ -79,7 +83,15 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
             required_resource_keys, "required_resource_keys", of_type=str
         )
         self._loader_version = check.opt_str_param(loader_version, "loader_version")
-        self._external_version_fn = check.callable_param(external_version_fn, "external_version_fn")
+        if self._loader_version:
+            experimental_arg_warning("loader_version", "DagsterTypeLoaderFromDecorator.__init__")
+        self._external_version_fn = check.opt_callable_param(
+            external_version_fn, "external_version_fn"
+        )
+        if self._external_version_fn:
+            experimental_arg_warning(
+                "external_version_fn", "DagsterTypeLoaderFromDecorator.__init__"
+            )
 
     @property
     def schema_type(self):
@@ -93,8 +105,8 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         version = ""
         if self.loader_version:
             version += str(self.loader_version)
-        ext_version = self._external_version_fn(config_value)
-        if ext_version:
+        if self._external_version_fn:
+            ext_version = self._external_version_fn(config_value)
             version += str(ext_version)
 
         if version == "":
@@ -110,11 +122,7 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
 
 
 def _create_type_loader_for_decorator(
-    config_type,
-    func,
-    required_resource_keys,
-    loader_version=None,
-    external_version_fn=lambda x: None,
+    config_type, func, required_resource_keys, loader_version=None, external_version_fn=None,
 ):
     return DagsterTypeLoaderFromDecorator(
         config_type, func, required_resource_keys, loader_version, external_version_fn
@@ -131,10 +139,7 @@ def input_hydration_config(config_schema=None, required_resource_keys=None, conf
 
 
 def dagster_type_loader(
-    config_schema,
-    required_resource_keys=None,
-    loader_version=None,
-    external_version_fn=lambda x: None,
+    config_schema, required_resource_keys=None, loader_version=None, external_version_fn=None,
 ):
     """Create an dagster type loader that maps config data to a runtime value.
 
@@ -147,7 +152,7 @@ def dagster_type_loader(
         loader_version (str): (Experimental) The version of the decorated compute function. Two
             loading functions should have the same version if and only if they deterministically
             produce the same outputs when provided the same inputs.
-        external_version_fn (Callable): A function that takes in the same parameters as the loader
+        external_version_fn (Callable): (Experimental) A function that takes in the same parameters as the loader
             function (config_value) and returns a representation of the version of the external
             asset (str). Two external assets with identical versions are treated as identical to one
             another.
