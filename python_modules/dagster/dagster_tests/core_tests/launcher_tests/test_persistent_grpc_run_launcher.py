@@ -6,6 +6,7 @@ import pytest
 
 from dagster import file_relative_path, pipeline, repository, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.instance import DagsterInstance
@@ -276,6 +277,53 @@ def test_crashy_run(get_external_pipeline):  # pylint: disable=redefined-outer-n
             )
 
             assert _message_exists(event_records, message)
+
+
+def test_terminate_after_shutdown():
+    with grpc_instance() as instance:
+        repository_location_handle = RepositoryLocationHandle.create_process_bound_grpc_server_location(
+            loadable_target_origin=LoadableTargetOrigin(
+                attribute="nope",
+                python_file=file_relative_path(__file__, "test_cli_api_run_launcher.py"),
+            ),
+            location_name="nope",
+        )
+        repository_location = GrpcServerRepositoryLocation(repository_location_handle)
+
+        external_pipeline = repository_location.get_repository("nope").get_full_external_pipeline(
+            "sleepy_pipeline"
+        )
+
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=sleepy_pipeline, run_config=None
+        )
+
+        launcher = instance.run_launcher
+        launcher.launch_run(instance, pipeline_run, external_pipeline)
+
+        poll_for_step_start(instance, pipeline_run.run_id)
+
+        # Tell the server to shut down once executions finish
+        repository_location_handle.client.cleanup_server()
+
+        # Trying to start another run fails
+        doomed_to_fail_external_pipeline = repository_location.get_repository(
+            "nope"
+        ).get_full_external_pipeline("math_diamond")
+        doomed_to_fail_pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=math_diamond, run_config=None
+        )
+
+        with pytest.raises(DagsterLaunchFailedError):
+            launcher.launch_run(
+                instance, doomed_to_fail_pipeline_run, doomed_to_fail_external_pipeline
+            )
+
+        # Can terminate the run even after the shutdown event has been received
+        assert launcher.can_terminate(pipeline_run.run_id)
+        assert launcher.terminate(pipeline_run.run_id)
+
+        # Server process now shuts down cleanly since there are no more executions
 
 
 @pytest.mark.parametrize(

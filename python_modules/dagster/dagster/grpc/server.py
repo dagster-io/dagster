@@ -161,7 +161,7 @@ class DagsterApiServer(DagsterApiServicer):
     # the target passed in here instead of passing in a target in the argument.
     def __init__(
         self,
-        shutdown_server_event,
+        server_termination_event,
         loadable_target_origin=None,
         heartbeat=False,
         heartbeat_timeout=30,
@@ -172,12 +172,17 @@ class DagsterApiServer(DagsterApiServicer):
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
 
-        self._shutdown_server_event = check.inst_param(
-            shutdown_server_event, "shutdown_server_event", seven.ThreadingEventType
+        self._server_termination_event = check.inst_param(
+            server_termination_event, "server_termination_event", seven.ThreadingEventType
         )
         self._loadable_target_origin = check.opt_inst_param(
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
         )
+
+        # Client tells the server to shutdown by calling ShutdownServer (or by failing to send a
+        # hearbeat, at which point this event is set. The cleanup thread will then set the server
+        # termination event once all current executions have finished, which will stop the server)
+        self._shutdown_once_executions_finish_event = threading.Event()
 
         # Dict[str, (multiprocessing.Process, DagsterInstance)]
         self._executions = {}
@@ -212,17 +217,17 @@ class DagsterApiServer(DagsterApiServicer):
 
     def _heartbeat_thread(self, heartbeat_timeout):
         while True:
-            self._shutdown_server_event.wait(heartbeat_timeout)
-            if self._shutdown_server_event.is_set():
+            self._shutdown_once_executions_finish_event.wait(heartbeat_timeout)
+            if self._shutdown_once_executions_finish_event.is_set():
                 break
 
             if self.__last_heartbeat_time < time.time() - heartbeat_timeout:
-                self._shutdown_server_event.set()
+                self._shutdown_once_executions_finish_event.set()
 
     def _cleanup_thread(self):
         while True:
-            self._shutdown_server_event.wait(CLEANUP_TICK)
-            if self._shutdown_server_event.is_set():
+            self._server_termination_event.wait(CLEANUP_TICK)
+            if self._server_termination_event.is_set():
                 break
 
             self._check_for_orphaned_runs()
@@ -243,8 +248,10 @@ class DagsterApiServer(DagsterApiServicer):
                     os.kill(process.pid, signal.SIGKILL)
 
                     with DagsterInstance.from_ref(instance_ref) as instance:
-                        run = instance.get_run_by_id(run_id)
                         runs_to_clear.append(run_id)
+                        run = instance.get_run_by_id(run_id)
+                        if not run:
+                            continue
 
                         message = (
                             "Pipeline execution process for {run_id} killed "
@@ -259,10 +266,10 @@ class DagsterApiServer(DagsterApiServicer):
 
                 else:
                     with DagsterInstance.from_ref(instance_ref) as instance:
-                        run = instance.get_run_by_id(run_id)
                         runs_to_clear.append(run_id)
 
-                        if run.is_finished:
+                        run = instance.get_run_by_id(run_id)
+                        if not run or run.is_finished:
                             continue
 
                         # the process died in an unexpected manner. inform the system
@@ -277,6 +284,12 @@ class DagsterApiServer(DagsterApiServicer):
                 del self._termination_events[run_id]
                 if run_id in self._termination_times:
                     del self._termination_times[run_id]
+
+            # Once there are no more running executions after we have received a request to
+            # shut down, terminate the server
+            if self._shutdown_once_executions_finish_event.is_set():
+                if len(self._executions) == 0:
+                    self._server_termination_event.set()
 
     def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(
@@ -591,6 +604,16 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def ExecuteRun(self, request, _context):
+        if self._shutdown_once_executions_finish_event.is_set():
+            yield api_pb2.ExecuteRunEvent(
+                serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
+                    IPCErrorMessage(
+                        serializable_error_info=None,
+                        message="Tried to start a run on a server after telling it to shut down",
+                    )
+                )
+            )
+
         try:
             execute_run_args = deserialize_json_to_dagster_namedtuple(
                 request.serialized_execute_run_args
@@ -678,7 +701,7 @@ class DagsterApiServer(DagsterApiServicer):
 
     def ShutdownServer(self, request, _context):
         try:
-            self._shutdown_server_event.set()
+            self._shutdown_once_executions_finish_event.set()
             return api_pb2.ShutdownServerReply(
                 serialized_shutdown_server_result=serialize_dagster_namedtuple(
                     ShutdownServerResult(success=True, serializable_error_info=None)
@@ -739,19 +762,23 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
     def StartRun(self, request, _context):
-        execute_run_args = check.inst(
-            deserialize_json_to_dagster_namedtuple(request.serialized_execute_run_args),
-            ExecuteRunArgs,
-        )
+        if self._shutdown_once_executions_finish_event.is_set():
+            return api_pb2.StartRunReply(
+                serialized_start_run_result=serialize_dagster_namedtuple(
+                    StartRunResult(
+                        success=False,
+                        message="Tried to start a run on a server after telling it to shut down",
+                        serializable_error_info=None,
+                    )
+                )
+            )
 
         try:
             execute_run_args = check.inst(
                 deserialize_json_to_dagster_namedtuple(request.serialized_execute_run_args),
                 ExecuteRunArgs,
             )
-
             run_id = execute_run_args.pipeline_run_id
-
             recon_pipeline = self._recon_pipeline_from_origin(execute_run_args.pipeline_origin)
 
         except:  # pylint: disable=bare-except
@@ -867,8 +894,7 @@ SERVER_FAILED_TO_BIND_TOKEN_BYTES = b"dagster_grpc_server_failed_to_bind"
 
 
 def server_termination_target(termination_event, server):
-    while not termination_event.is_set():
-        time.sleep(0.1)
+    termination_event.wait()
     # We could make this grace period configurable if we set it in the ShutdownServer handler
     server.stop(grace=5)
 
@@ -909,10 +935,10 @@ class DagsterGrpcServer(object):
         )
 
         self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
-        self._shutdown_server_event = threading.Event()
+        self._server_termination_event = threading.Event()
 
         self._servicer = DagsterApiServer(
-            shutdown_server_event=self._shutdown_server_event,
+            server_termination_event=self._server_termination_event,
             loadable_target_origin=loadable_target_origin,
             heartbeat=heartbeat,
             heartbeat_timeout=heartbeat_timeout,
@@ -965,7 +991,7 @@ class DagsterGrpcServer(object):
         sys.stdout.flush()
         server_termination_thread = threading.Thread(
             target=server_termination_target,
-            args=[self._shutdown_server_event, self.server],
+            args=[self._server_termination_event, self.server],
             name="grpc-server-termination",
         )
 
