@@ -24,11 +24,21 @@ from dagster import (
 )
 
 WriteCompressionTextOptions = Enum(
-    "WriteCompressionText", [EnumValue("gzip"), EnumValue("bz2"), EnumValue("xz"),],
+    "WriteCompressionText",
+    [
+        EnumValue("gzip"),
+        EnumValue("bz2"),
+        EnumValue("xz"),
+    ],
 )
 
 EngineParquetOptions = Enum(
-    "EngineParquet", [EnumValue("auto"), EnumValue("fastparquet"), EnumValue("pyarrow"),],
+    "EngineParquet",
+    [
+        EnumValue("auto"),
+        EnumValue("fastparquet"),
+        EnumValue("pyarrow"),
+    ],
 )
 
 
@@ -287,7 +297,7 @@ DataFrameToTypes = {
         "options": {
             "path": (Any, True, "Path to a target filename."),
             "key": (String, True, "Datapath within the files."),
-            "scheduler": (String, False, "The scheduler to use, like \"threads\" or \"processes\"."),
+            "scheduler": (String, False, 'The scheduler to use, like "threads" or "processes".'),
         },
     },
     "json": {
@@ -307,7 +317,7 @@ DataFrameToTypes = {
                 False,
                 "Options to be passed in to the compute method.",
             ),
-            "compression": (String, False, "String like \"gzip\" or \"xz\"."),
+            "compression": (String, False, 'String like "gzip" or "xz".'),
         },
     },
     "sql": {
@@ -352,10 +362,16 @@ def _dataframe_loader_config():
 
     return Selector(
         {
-            "read": Field(Selector(read_fields), is_required=False,),
+            "read": Field(
+                Selector(read_fields),
+                is_required=False,
+            ),
             # https://github.com/dagster-io/dagster/issues/2872
             **{
-                field_name: Field(field_config, is_required=False,)
+                field_name: Field(
+                    field_config,
+                    is_required=False,
+                )
                 for field_name, field_config in read_fields.items()
             },
         }
@@ -415,10 +431,16 @@ def _dataframe_materializer_config():
 
     return Selector(
         {
-            "to": Field(Selector(to_fields), is_required=False,),
+            "to": Field(
+                Selector(to_fields),
+                is_required=False,
+            ),
             # https://github.com/dagster-io/dagster/issues/2872
             **{
-                field_name: Field(field_config, is_required=False,)
+                field_name: Field(
+                    field_config,
+                    is_required=False,
+                )
                 for field_name, field_config in to_fields.items()
             },
         }
@@ -459,7 +481,11 @@ def dataframe_materializer(_context, config, dask_df):
         to_kwargs = to_options
 
         # Get the Dask client from the dask resource, if available.
-        client_context = _context.resources.dask.client.as_current() if hasattr(_context.resources, "dask") else contextlib.nullcontext()
+        client_context = (
+            _context.resources.dask.client.as_current()
+            if hasattr(_context.resources, "dask")
+            else contextlib.nullcontext()
+        )
         with client_context:
             to_function(dask_df, *to_args, **to_kwargs)
 
