@@ -5,7 +5,6 @@ import {
   Icon,
   Intent,
   Menu,
-  MenuDivider,
   MenuItem,
   Popover,
   PopoverInteractionKind,
@@ -393,7 +392,15 @@ export const ScheduleRow: React.FunctionComponent<{
                     config: runConfigYaml,
                   })}`}
                 />
-                <MenuDivider />
+
+                {schedule.partitionSet?.name ? (
+                  <MenuItem
+                    text="View Partition History..."
+                    icon="multi-select"
+                    target="_blank"
+                    href={`/pipeline/${pipelineName}/partitions`}
+                  />
+                ) : null}
               </Menu>
             )
           }
