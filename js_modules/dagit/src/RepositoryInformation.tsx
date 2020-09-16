@@ -1,5 +1,6 @@
-import * as React from 'react';
 import gql from 'graphql-tag';
+import * as React from 'react';
+
 import {RepositoryInfoFragment} from './types/RepositoryInfoFragment';
 
 export const RepositoryInformationFragment = gql`

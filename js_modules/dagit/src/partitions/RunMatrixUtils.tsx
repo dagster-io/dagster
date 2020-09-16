@@ -1,5 +1,6 @@
-import styled from 'styled-components/macro';
 import {Colors} from '@blueprintjs/core';
+import styled from 'styled-components/macro';
+
 import {RUN_STATUS_COLORS} from '../runs/RunStatusDots';
 
 const SUCCESS_COLOR = ({dimSuccesses}: {dimSuccesses?: boolean}) =>

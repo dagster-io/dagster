@@ -1,20 +1,21 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
 import {Colors, Icon} from '@blueprintjs/core';
-import {
-  SidebarTitle,
-  SidebarSubhead,
-  SectionInner,
-  SidebarSection,
-  SectionItemContainer,
-  SectionHeader,
-} from './SidebarComponents';
-import Description from './Description';
-import {ConfigTypeSchema} from './ConfigTypeSchema';
-import {SidebarPipelineInfoFragment} from './types/SidebarPipelineInfoFragment';
 import {IconNames} from '@blueprintjs/icons';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {ConfigTypeSchema} from './ConfigTypeSchema';
+import Description from './Description';
+import {
+  SectionHeader,
+  SectionInner,
+  SectionItemContainer,
+  SidebarSection,
+  SidebarSubhead,
+  SidebarTitle,
+} from './SidebarComponents';
 import {breakOnUnderscores} from './Util';
+import {SidebarPipelineInfoFragment} from './types/SidebarPipelineInfoFragment';
 
 const NO_DESCRIPTION = '';
 

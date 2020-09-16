@@ -1,5 +1,6 @@
-import * as React from 'react';
 import {Colors} from '@blueprintjs/core';
+import * as React from 'react';
+
 import PipelineColorScale from './PipelineColorScale';
 import {SVGEllipseInRect} from './SVGComponents';
 

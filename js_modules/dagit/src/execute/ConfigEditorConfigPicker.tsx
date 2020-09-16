@@ -1,36 +1,37 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
 import {
   Button,
-  Menu,
-  Spinner,
-  MenuItem,
-  Intent,
-  IInputGroupProps,
   HTMLInputProps,
+  IInputGroupProps,
+  Intent,
+  Menu,
+  MenuItem,
+  Spinner,
 } from '@blueprintjs/core';
 import {Select, Suggest} from '@blueprintjs/select';
-import styled from 'styled-components';
-import * as ReactDOM from 'react-dom';
 import {isEqual} from 'apollo-utilities';
-import {useQuery, withApollo, WithApolloClient} from 'react-apollo';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {WithApolloClient, useQuery, withApollo} from 'react-apollo';
+import * as ReactDOM from 'react-dom';
+import styled from 'styled-components';
 
 import {showCustomAlert} from '../CustomAlertProvider';
-import {
-  ConfigPartitionsQuery,
-  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
-} from './types/ConfigPartitionsQuery';
-import {IExecutionSession} from '../LocalStorage';
-import {ShortcutHandler} from '../ShortcutHandler';
 import {useRepositorySelector} from '../DagsterRepositoryContext';
+import {IExecutionSession} from '../LocalStorage';
+import PythonErrorInfo from '../PythonErrorInfo';
+import {ShortcutHandler} from '../ShortcutHandler';
+import {PythonErrorFragment} from '../types/PythonErrorFragment';
 import {RepositorySelector} from '../types/globalTypes';
+
 import {ConfigEditorGeneratorPartitionSetsFragment_results} from './types/ConfigEditorGeneratorPartitionSetsFragment';
 import {
   ConfigEditorGeneratorPipelineFragment,
   ConfigEditorGeneratorPipelineFragment_presets,
 } from './types/ConfigEditorGeneratorPipelineFragment';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {PythonErrorFragment} from '../types/PythonErrorFragment';
+import {
+  ConfigPartitionsQuery,
+  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
+} from './types/ConfigPartitionsQuery';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorGeneratorPipelineFragment_presets;

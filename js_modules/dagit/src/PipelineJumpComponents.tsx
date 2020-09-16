@@ -1,11 +1,12 @@
+import {Button, MenuItem} from '@blueprintjs/core';
+import {Select} from '@blueprintjs/select';
+import gql from 'graphql-tag';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import {Select} from '@blueprintjs/select';
-import {Button, MenuItem} from '@blueprintjs/core';
-import gql from 'graphql-tag';
-import {SolidJumpBarFragment_solids} from './types/SolidJumpBarFragment';
-import {ShortcutHandler} from './ShortcutHandler';
 import styled from 'styled-components/macro';
+
+import {ShortcutHandler} from './ShortcutHandler';
+import {SolidJumpBarFragment_solids} from './types/SolidJumpBarFragment';
 
 interface SolidJumpBarProps {
   solids: Array<SolidJumpBarFragment_solids>;

@@ -1,14 +1,16 @@
+import {Colors, Icon, Menu, MenuItem, Popover, Spinner} from '@blueprintjs/core';
 import React from 'react';
-import {Colors, Icon, Popover, Menu, MenuItem, Spinner} from '@blueprintjs/core';
+import {useHistory} from 'react-router';
+import styled from 'styled-components/macro';
+
 import {
   DagsterRepoOption,
   isRepositoryOptionEqual,
   useDagitExecutablePath,
 } from '../DagsterRepositoryContext';
-import styled from 'styled-components/macro';
-import {useHistory} from 'react-router';
-import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 import {RepositoryInformation} from '../RepositoryInformation';
+
+import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
 interface RepositoryPickerProps {
   options: DagsterRepoOption[];

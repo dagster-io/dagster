@@ -1,7 +1,7 @@
-import * as React from 'react';
-import {SubscriptionClient} from 'subscriptions-transport-ws';
-import styled from 'styled-components/macro';
 import {Colors} from '@blueprintjs/core';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 export const WebsocketStatusContext = React.createContext<number>(WebSocket.CONNECTING);
 

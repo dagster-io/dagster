@@ -1,7 +1,6 @@
-import {Operation, GraphQLRequest, ApolloLink, FetchResult, Observable} from 'apollo-link';
-
-import {print} from 'graphql/language/printer';
+import {ApolloLink, FetchResult, GraphQLRequest, Observable, Operation} from 'apollo-link';
 import {addTypenameToDocument} from 'apollo-utilities';
+import {print} from 'graphql/language/printer';
 import {isEqual} from 'lodash';
 
 export interface CachedGraphQLRequest extends GraphQLRequest {

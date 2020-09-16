@@ -1,15 +1,17 @@
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-import {Colors} from '@blueprintjs/core';
-import {IFullPipelineLayout} from './getFullSolidLayout';
-import {SVGLabeledRect} from './SVGComponents';
-import {Edge} from './highlighting';
+
+import {SolidNameOrPath} from '../PipelineExplorer';
+import {titleOfIO} from '../Util';
+
 import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';
-import {titleOfIO} from '../Util';
+import {SVGLabeledRect} from './SVGComponents';
+import {PARENT_IN, PARENT_OUT, SolidIOBox, metadataForCompositeParentIO} from './SolidIOBox';
+import {IFullPipelineLayout} from './getFullSolidLayout';
+import {Edge} from './highlighting';
 import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
-import {SolidNameOrPath} from '../PipelineExplorer';
-import {SolidIOBox, metadataForCompositeParentIO, PARENT_OUT, PARENT_IN} from './SolidIOBox';
 
 interface ParentSolidNodeProps {
   layout: IFullPipelineLayout;

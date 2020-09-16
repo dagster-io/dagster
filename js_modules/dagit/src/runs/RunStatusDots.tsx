@@ -1,9 +1,10 @@
-import * as React from 'react';
 import {Spinner} from '@blueprintjs/core';
-import styled from 'styled-components/macro';
 import {Popover} from '@blueprintjs/core';
-import {RunStats} from './RunStats';
 import {Colors} from '@blueprintjs/core';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {RunStats} from './RunStats';
 
 export type IRunStatus = 'SUCCESS' | 'NOT_STARTED' | 'FAILURE' | 'STARTED' | 'MANAGED';
 

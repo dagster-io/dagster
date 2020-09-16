@@ -1,25 +1,25 @@
-import * as React from 'react';
+import {isEqual} from 'apollo-utilities';
 import gql from 'graphql-tag';
+import * as React from 'react';
 
+import {showCustomAlert} from '../CustomAlertProvider';
+import PythonErrorInfo from '../PythonErrorInfo';
+import {IRunMetadataDict} from '../RunMetadataProvider';
+import {setHighlightedGaantChartTime} from '../gaant/GaantChart';
 import {LogLevel} from '../types/globalTypes';
 
-import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
-import {LogsRowUnstructuredFragment} from './types/LogsRowUnstructuredFragment';
+import {CellTruncationProvider} from './CellTruncationProvider';
 import {
-  Row,
-  StructuredContent,
   EventTypeColumn,
+  Row,
   SolidColumn,
+  StructuredContent,
   TimestampColumn,
 } from './LogsRowComponents';
-import {MetadataEntry} from './MetadataEntry';
-import {CellTruncationProvider} from './CellTruncationProvider';
-import {showCustomAlert} from '../CustomAlertProvider';
-import {setHighlightedGaantChartTime} from '../gaant/GaantChart';
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {isEqual} from 'apollo-utilities';
-import {IRunMetadataDict} from '../RunMetadataProvider';
+import {MetadataEntry} from './MetadataEntry';
+import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
+import {LogsRowUnstructuredFragment} from './types/LogsRowUnstructuredFragment';
 
 interface StructuredProps {
   node: LogsRowStructuredFragment;

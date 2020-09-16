@@ -1,15 +1,16 @@
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
 import {Colors, NonIdealState, Spinner} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import {CellMeasurer, CellMeasurerCache, ListRowProps, List} from 'react-virtualized';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
+import {CellMeasurer, CellMeasurerCache, List, ListRowProps} from 'react-virtualized';
+import styled from 'styled-components/macro';
+
+import {IRunMetadataDict} from '../RunMetadataProvider';
 
 import * as LogsRow from './LogsRow';
+import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
 import {LogsScrollingTableMessageFragment} from './types/LogsScrollingTableMessageFragment';
-import {Headers, ColumnWidthsProvider} from './LogsScrollingTableHeader';
-import {IRunMetadataDict} from '../RunMetadataProvider';
 
 interface ILogsScrollingTableProps {
   nodes?: (LogsScrollingTableMessageFragment & {clientsideKey: string})[];

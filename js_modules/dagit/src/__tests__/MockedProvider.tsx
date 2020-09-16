@@ -1,12 +1,13 @@
 import fs from 'fs';
-import * as React from 'react';
-import ApolloClient from 'apollo-client';
-import {ApolloCache} from 'apollo-cache';
-import {ApolloProvider} from 'react-apollo';
-import {DefaultOptions} from 'apollo-client/ApolloClient';
-import {InMemoryCache as Cache} from 'apollo-cache-inmemory';
 
-import {MockLink, MockedResponse, CachedGraphQLRequest} from './MockedApolloLinks';
+import {ApolloCache} from 'apollo-cache';
+import {InMemoryCache as Cache} from 'apollo-cache-inmemory';
+import ApolloClient from 'apollo-client';
+import {DefaultOptions} from 'apollo-client/ApolloClient';
+import * as React from 'react';
+import {ApolloProvider} from 'react-apollo';
+
+import {CachedGraphQLRequest, MockLink, MockedResponse} from './MockedApolloLinks';
 
 export interface MockedProviderProps<TSerializedCache = {}> {
   mocks: CachedGraphQLRequest[];

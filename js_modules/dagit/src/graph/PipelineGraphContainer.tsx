@@ -1,11 +1,13 @@
-import * as React from 'react';
 import {ProgressBar} from '@blueprintjs/core';
-import PipelineGraph from './PipelineGraph';
+import * as React from 'react';
+
 import {SolidNameOrPath} from '../PipelineExplorer';
-import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
 import {PipelineExplorerSolidHandleFragment} from '../types/PipelineExplorerSolidHandleFragment';
-import {getDagrePipelineLayout, asyncDagrePipelineLayout} from './getFullSolidLayout';
+
+import PipelineGraph from './PipelineGraph';
+import {asyncDagrePipelineLayout, getDagrePipelineLayout} from './getFullSolidLayout';
 import {IFullPipelineLayout} from './layout';
+import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 

@@ -1,5 +1,6 @@
-import * as React from 'react';
 import animate from 'amator';
+import * as React from 'react';
+
 import {GaantViewport} from './Constants';
 
 /**

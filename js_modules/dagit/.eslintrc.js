@@ -15,9 +15,10 @@ module.exports = {
     },
   },
   rules: {
-    'ordered-imports': 'off',
-    'no-unused-expression': 'off',
-    'jsx-no-lambda': 'off',
+    'import/order': [
+      'error',
+      {alphabetize: {order: 'asc', caseInsensitive: false}, 'newlines-between': 'always'},
+    ],
     'react/prop-types': 'off',
     'react/display-name': 'off',
     '@typescript-eslint/no-unused-vars': ['error', {argsIgnorePattern: '^_'}],

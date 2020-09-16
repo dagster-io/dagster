@@ -1,28 +1,30 @@
-import * as React from 'react';
-import {Link} from 'react-router-dom';
+import {Colors, NonIdealState, Tooltip} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
+import {Link} from 'react-router-dom';
 import {RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
-import {Colors, NonIdealState, Tooltip} from '@blueprintjs/core';
-import PipelineGraph from '../graph/PipelineGraph';
-import {IconNames} from '@blueprintjs/icons';
+
+import {usePipelineSelector} from '../DagsterRepositoryContext';
+import {RowColumn, RowContainer} from '../ListComponents';
 import Loading from '../Loading';
+import {Timestamp} from '../TimeComponents';
+import PipelineGraph from '../graph/PipelineGraph';
+import SVGViewport from '../graph/SVGViewport';
+import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
+import {RunActionsMenu} from '../runs/RunActionsMenu';
+import {RunStatus, RunStatusWithStats} from '../runs/RunStatusDots';
+import {RunTime, RunsQueryRefetchContext, titleForRun} from '../runs/RunUtils';
+import {RunComponentFragments, RunElapsed} from '../runs/RunUtils';
+
 import {
   PipelineOverviewQuery,
+  PipelineOverviewQueryVariables,
   PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs,
   PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules,
-  PipelineOverviewQueryVariables,
 } from './types/PipelineOverviewQuery';
-import {RowColumn, RowContainer} from '../ListComponents';
-import {titleForRun, RunTime, RunsQueryRefetchContext} from '../runs/RunUtils';
-import {RunStatus, RunStatusWithStats} from '../runs/RunStatusDots';
-import {Timestamp} from '../TimeComponents';
-import {RunElapsed, RunComponentFragments} from '../runs/RunUtils';
-import {RunActionsMenu} from '../runs/RunActionsMenu';
-import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
-import SVGViewport from '../graph/SVGViewport';
-import {usePipelineSelector} from '../DagsterRepositoryContext';
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules;

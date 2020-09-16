@@ -1,10 +1,11 @@
-import * as React from 'react';
-import styled from 'styled-components/macro';
-import {Colors, MenuItem, Menu, Popover, InputGroup, Button, Intent} from '@blueprintjs/core';
-import {GraphQueryItem} from './GraphQueryImpl';
+import {Button, Colors, InputGroup, Intent, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import {isEqual} from 'lodash';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {GraphQueryItem} from './GraphQueryImpl';
 
 interface GraphQueryInputProps {
   items: GraphQueryItem[];

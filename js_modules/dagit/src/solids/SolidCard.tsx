@@ -1,9 +1,11 @@
-import React from 'react';
 import gql from 'graphql-tag';
-import {SolidCardSolidDefinitionFragment} from './types/SolidCardSolidDefinitionFragment';
-import {layoutSolid} from '../graph/getFullSolidLayout';
-import SolidNode from '../graph/SolidNode';
+import React from 'react';
 import styled from 'styled-components/macro';
+
+import SolidNode from '../graph/SolidNode';
+import {layoutSolid} from '../graph/getFullSolidLayout';
+
+import {SolidCardSolidDefinitionFragment} from './types/SolidCardSolidDefinitionFragment';
 
 interface SolidCardProps {
   definition: SolidCardSolidDefinitionFragment;

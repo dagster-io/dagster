@@ -1,15 +1,16 @@
 import * as React from 'react';
-import PipelineColorScale from './PipelineColorScale';
-import {ILayout} from './getFullSolidLayout';
-import {
-  SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions,
-  SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
-  SolidNodeDefinitionFragment,
-} from './types/SolidNodeDefinitionFragment';
-import {SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
 
 import {DEFAULT_RESULT_NAME, titleOfIO} from '../Util';
+
+import PipelineColorScale from './PipelineColorScale';
+import {SVGEllipseInRect, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
+import {ILayout} from './getFullSolidLayout';
 import {Edge, isHighlighted} from './highlighting';
+import {
+  SolidNodeDefinitionFragment,
+  SolidNodeDefinitionFragment_SolidDefinition_inputDefinitions,
+  SolidNodeDefinitionFragment_SolidDefinition_outputDefinitions,
+} from './types/SolidNodeDefinitionFragment';
 import {SolidNodeInvocationFragment} from './types/SolidNodeInvocationFragment';
 
 export const PARENT_IN = 'PARENT_IN';

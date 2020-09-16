@@ -1,19 +1,21 @@
-import * as React from 'react';
-import styled from 'styled-components';
+import {Button, Menu, MenuItem, NonIdealState, Popover} from '@blueprintjs/core';
 import gql from 'graphql-tag';
+import * as querystring from 'query-string';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
+import {__RouterContext as RouterContext} from 'react-router';
 import {RouteComponentProps} from 'react-router-dom';
+import styled from 'styled-components';
+
 import {useRepositorySelector} from '../DagsterRepositoryContext';
 import Loading from '../Loading';
-import {Button, NonIdealState, Popover, Menu, MenuItem} from '@blueprintjs/core';
+
+import {PartitionView} from './PartitionView';
+import {PartitionsBackfill} from './PartitionsBackfill';
 import {
   PipelinePartitionsRootQuery,
   PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results,
 } from './types/PipelinePartitionsRootQuery';
-import {PartitionView} from './PartitionView';
-import {__RouterContext as RouterContext} from 'react-router';
-import * as querystring from 'query-string';
-import {PartitionsBackfill} from './PartitionsBackfill';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 

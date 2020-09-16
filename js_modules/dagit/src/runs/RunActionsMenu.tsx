@@ -1,33 +1,34 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import {showCustomAlert} from '../CustomAlertProvider';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
-import {RunActionMenuFragment} from './types/RunActionMenuFragment';
-
-import {useMutation, useLazyQuery} from 'react-apollo';
 import {
   Button,
+  Intent,
   Menu,
+  MenuDivider,
   MenuItem,
   Popover,
-  MenuDivider,
-  Intent,
-  Tooltip,
   Position,
+  Tooltip,
 } from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as qs from 'query-string';
+import * as React from 'react';
+import {useLazyQuery, useMutation} from 'react-apollo';
+
+import {showCustomAlert} from '../CustomAlertProvider';
+import {DagsterRepositoryContext} from '../DagsterRepositoryContext';
 import {SharedToaster} from '../DomUtils';
 import {HighlightedCodeBlock} from '../HighlightedCodeBlock';
-import * as qs from 'query-string';
+
 import {REEXECUTE_PIPELINE_UNKNOWN} from './RunActionButtons';
-import {DagsterRepositoryContext} from '../DagsterRepositoryContext';
 import {
-  LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   CANCEL_MUTATION,
   DELETE_MUTATION,
+  LAUNCH_PIPELINE_REEXECUTION_MUTATION,
+  RunsQueryRefetchContext,
   getReexecutionVariables,
   handleLaunchResult,
-  RunsQueryRefetchContext,
 } from './RunUtils';
+import {RunActionMenuFragment} from './types/RunActionMenuFragment';
+import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment | RunActionMenuFragment;

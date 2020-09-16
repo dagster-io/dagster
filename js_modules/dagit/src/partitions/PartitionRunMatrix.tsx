@@ -1,35 +1,30 @@
-import * as React from 'react';
+import {Checkbox, Colors, Intent, MultiSlider} from '@blueprintjs/core';
+import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
+import gql from 'graphql-tag';
 import {uniq} from 'lodash';
-import {Colors, Checkbox, MultiSlider, Intent} from '@blueprintjs/core';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
 import styled from 'styled-components/macro';
 
-import {
-  PartitionRunMatrixPipelineQuery,
-  PartitionRunMatrixPipelineQueryVariables,
-  PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles,
-} from './types/PartitionRunMatrixPipelineQuery';
-import {PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results} from './types/PartitionLongitudinalQuery';
-import gql from 'graphql-tag';
-import {useQuery} from 'react-apollo';
 import {useRepositorySelector} from '../DagsterRepositoryContext';
-import {buildLayout} from '../gaant/GaantChartLayout';
-import {GaantChartMode} from '../gaant/GaantChart';
-import {formatStepKey} from '../Util';
-import {Timestamp} from '../TimeComponents';
-import {StepEventStatus} from '../types/globalTypes';
-import {GaantChartLayout} from '../gaant/Constants';
-import {GraphQueryInput} from '../GraphQueryInput';
-import {OptionsDivider} from '../VizComponents';
-import {RunTable} from '../runs/RunTable';
 import {filterByQuery} from '../GraphQueryImpl';
+import {GraphQueryInput} from '../GraphQueryInput';
+import {Timestamp} from '../TimeComponents';
 import {
-  tokenizedValuesFromString,
+  TokenizingField,
   TokenizingFieldValue,
   stringFromValue,
-  TokenizingField,
+  tokenizedValuesFromString,
 } from '../TokenizingField';
-import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
+import {formatStepKey} from '../Util';
+import {OptionsDivider} from '../VizComponents';
+import {GaantChartLayout} from '../gaant/Constants';
+import {GaantChartMode} from '../gaant/GaantChart';
+import {buildLayout} from '../gaant/GaantChartLayout';
 import {useViewport} from '../gaant/useViewport';
+import {RunTable} from '../runs/RunTable';
+import {StepEventStatus} from '../types/globalTypes';
+
 import {
   GridColumn,
   GridFloatingContainer,
@@ -38,6 +33,12 @@ import {
   TopLabel,
   TopLabelTilted,
 } from './RunMatrixUtils';
+import {PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results} from './types/PartitionLongitudinalQuery';
+import {
+  PartitionRunMatrixPipelineQuery,
+  PartitionRunMatrixPipelineQueryVariables,
+  PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles,
+} from './types/PartitionRunMatrixPipelineQuery';
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
 type SolidHandle = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles;

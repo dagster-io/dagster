@@ -1,7 +1,8 @@
-import * as React from 'react';
-import {Toaster, Position, Intent} from '@blueprintjs/core';
+import {Intent, Position, Toaster} from '@blueprintjs/core';
 import {ErrorResponse, onError} from 'apollo-link-error';
 import {GraphQLError} from 'graphql';
+import * as React from 'react';
+
 import {showCustomAlert} from './CustomAlertProvider';
 
 export interface DagsterGraphQLError extends GraphQLError {

@@ -1,9 +1,10 @@
+import {Tag} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-import {Tag} from '@blueprintjs/core';
-import {IStepDisplayEvent} from '../RunMetadataProvider';
+
 import {showCustomAlert} from '../CustomAlertProvider';
 import {copyValue} from '../DomUtils';
+import {IStepDisplayEvent} from '../RunMetadataProvider';
 
 interface DisplayEventProps {
   event: IStepDisplayEvent;

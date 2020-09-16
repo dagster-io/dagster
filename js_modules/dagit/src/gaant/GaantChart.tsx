@@ -1,49 +1,50 @@
-import * as React from 'react';
+import {Checkbox, Colors, NonIdealState, Spinner} from '@blueprintjs/core';
 import gql from 'graphql-tag';
-import styled from 'styled-components';
 import {isEqual} from 'lodash';
-import {Colors, Checkbox, NonIdealState, Spinner} from '@blueprintjs/core';
+import * as React from 'react';
+import styled from 'styled-components';
 
-import {weakmapMemoize} from '../Util';
-import {GaantChartExecutionPlanFragment} from './types/GaantChartExecutionPlanFragment';
-import {GaantChartTimescale} from './GaantChartTimescale';
+import {GraphQueryItem, filterByQuery} from '../GraphQueryImpl';
 import {GraphQueryInput} from '../GraphQueryInput';
-import {filterByQuery, GraphQueryItem} from '../GraphQueryImpl';
-import {IRunMetadataDict, EMPTY_RUN_METADATA, IStepMetadata} from '../RunMetadataProvider';
+import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../RunMetadataProvider';
+import {SplitPanelContainer} from '../SplitPanelContainer';
+import {weakmapMemoize} from '../Util';
+import {OptionsContainer, OptionsDivider, OptionsSpacer} from '../VizComponents';
+
 import {
-  buildLayout,
-  boxStyleFor,
-  interestingQueriesFor,
-  adjustLayoutWithRunMetadata,
-  BuildLayoutParams,
-} from './GaantChartLayout';
-import {
-  GaantChartLayoutOptions,
-  GaantChartLayout,
-  GaantChartMode,
-  GaantChartBox,
-  IGaantNode,
-  DEFAULT_OPTIONS,
+  BOX_DOT_MARGIN_Y,
+  BOX_DOT_SIZE,
+  BOX_DOT_WIDTH_CUTOFF,
   BOX_HEIGHT,
   BOX_MARGIN_Y,
-  BOX_DOT_MARGIN_Y,
-  BOX_SPACING_X,
-  LINE_SIZE,
-  CSS_DURATION,
-  BOX_DOT_WIDTH_CUTOFF,
   BOX_SHOW_LABEL_WIDTH_CUTOFF,
-  BOX_DOT_SIZE,
-  MIN_SCALE,
-  MAX_SCALE,
-  GaantViewport,
+  BOX_SPACING_X,
+  CSS_DURATION,
+  DEFAULT_OPTIONS,
+  GaantChartBox,
+  GaantChartLayout,
+  GaantChartLayoutOptions,
+  GaantChartMode,
   GaantChartPlacement,
+  GaantViewport,
+  IGaantNode,
+  LINE_SIZE,
+  MAX_SCALE,
+  MIN_SCALE,
 } from './Constants';
-import {SplitPanelContainer} from '../SplitPanelContainer';
+import {
+  BuildLayoutParams,
+  adjustLayoutWithRunMetadata,
+  boxStyleFor,
+  buildLayout,
+  interestingQueriesFor,
+} from './GaantChartLayout';
 import {GaantChartModeControl} from './GaantChartModeControl';
+import {GaantChartTimescale} from './GaantChartTimescale';
 import {GaantStatusPanel} from './GaantStatusPanel';
 import {ZoomSlider} from './ZoomSlider';
+import {GaantChartExecutionPlanFragment} from './types/GaantChartExecutionPlanFragment';
 import {useViewport} from './useViewport';
-import {OptionsContainer, OptionsDivider, OptionsSpacer} from '../VizComponents';
 
 export {GaantChartMode} from './Constants';
 

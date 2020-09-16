@@ -1,8 +1,8 @@
-import * as React from 'react';
-import * as querystring from 'query-string';
-import {__RouterContext as RouterContext} from 'react-router';
-import {useQuery} from 'react-apollo';
 import {DocumentNode} from 'graphql';
+import * as querystring from 'query-string';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
+import {__RouterContext as RouterContext} from 'react-router';
 
 export interface CursorPaginationProps {
   hasPrevPage: boolean;

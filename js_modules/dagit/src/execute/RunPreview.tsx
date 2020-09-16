@@ -1,23 +1,23 @@
-import * as React from 'react';
+import {Button, Checkbox, Code, Colors, Icon, Intent, Position, Tooltip} from '@blueprintjs/core';
 import gql from 'graphql-tag';
+import * as React from 'react';
 import styled from 'styled-components/macro';
-import {Colors, Icon, Checkbox, Tooltip, Intent, Position, Button, Code} from '@blueprintjs/core';
 
-import PythonErrorInfo from '../PythonErrorInfo';
+import {ButtonLink} from '../ButtonLink';
 import {showCustomAlert} from '../CustomAlertProvider';
+import {useConfirmation} from '../CustomConfirmationProvider';
+import PythonErrorInfo from '../PythonErrorInfo';
 import {SplitPanelContainer} from '../SplitPanelContainer';
 import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
-import {ButtonLink} from '../ButtonLink';
-
 import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
 } from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
+
 import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors,
 } from './types/RunPreviewValidationFragment';
-import {useConfirmation} from '../CustomConfirmationProvider';
 
 type ValidationError = RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;

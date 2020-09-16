@@ -1,10 +1,12 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
 import {H3, UL} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from '../SidebarComponents';
 import TypeWithTooltip from '../TypeWithTooltip';
+
 import {TypeListFragment} from './types/TypeListFragment';
-import {SidebarSubhead, SidebarSection, SidebarTitle, SectionInner} from '../SidebarComponents';
 
 interface ITypeListProps {
   types: Array<TypeListFragment>;

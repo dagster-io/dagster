@@ -1,10 +1,10 @@
+import * as querystring from 'query-string';
 import * as React from 'react';
 import {Redirect} from 'react-router';
-import * as querystring from 'query-string';
 import {RouteComponentProps} from 'react-router-dom';
 
 import {useRepositorySelector} from '../DagsterRepositoryContext';
-import {useStorage, applyCreateSession, IExecutionSession} from '../LocalStorage';
+import {IExecutionSession, applyCreateSession, useStorage} from '../LocalStorage';
 
 export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;

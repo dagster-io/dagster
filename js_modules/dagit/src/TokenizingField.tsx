@@ -1,7 +1,7 @@
-import React from 'react';
-import {TagInput, Popover, Menu, MenuItem, Spinner} from '@blueprintjs/core';
-import styled from 'styled-components/macro';
+import {Menu, MenuItem, Popover, Spinner, TagInput} from '@blueprintjs/core';
 import {isEqual} from 'lodash';
+import React from 'react';
+import styled from 'styled-components/macro';
 
 export interface SuggestionProvider {
   token: string;

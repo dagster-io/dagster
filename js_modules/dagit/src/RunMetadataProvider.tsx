@@ -1,5 +1,5 @@
-import * as React from 'react';
 import gql from 'graphql-tag';
+import * as React from 'react';
 
 import {RunMetadataProviderMessageFragment} from './types/RunMetadataProviderMessageFragment';
 import {TempMetadataEntryFragment} from './types/TempMetadataEntryFragment';

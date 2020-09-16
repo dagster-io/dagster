@@ -1,20 +1,22 @@
 import {Colors, Intent} from '@blueprintjs/core';
-import * as React from 'react';
 import gql from 'graphql-tag';
-import PipelineGraph from '../graph/PipelineGraph';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
+import styled from 'styled-components/macro';
+
+import {usePipelineSelector} from '../DagsterRepositoryContext';
+import {filterByQuery} from '../GraphQueryImpl';
+import {GraphQueryInput} from '../GraphQueryInput';
+import {ShortcutHandler} from '../ShortcutHandler';
+import PipelineGraph from '../graph/PipelineGraph';
+import SVGViewport from '../graph/SVGViewport';
+import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
+
 import {
   SolidSelectorQuery,
   SolidSelectorQuery_pipelineOrError,
   SolidSelectorQuery_pipelineOrError_Pipeline_solids,
 } from './types/SolidSelectorQuery';
-import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
-import {ShortcutHandler} from '../ShortcutHandler';
-import {GraphQueryInput} from '../GraphQueryInput';
-import {filterByQuery} from '../GraphQueryImpl';
-import SVGViewport from '../graph/SVGViewport';
-import styled from 'styled-components/macro';
-import {usePipelineSelector} from '../DagsterRepositoryContext';
 
 interface ISolidSelectorProps {
   pipelineName: string;

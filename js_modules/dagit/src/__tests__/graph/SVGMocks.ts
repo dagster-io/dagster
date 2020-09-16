@@ -1,7 +1,8 @@
 import path from 'path';
+
 import {PIPELINE_EXPLORER_ROOT_QUERY} from '../../PipelineExplorerRoot';
-import {CachedGraphQLRequest} from '../MockedApolloLinks';
 import {PipelineExplorerRootQueryVariables} from '../../types/PipelineExplorerRootQuery';
+import {CachedGraphQLRequest} from '../MockedApolloLinks';
 
 const dataDir = path.join(__dirname, '__data__');
 

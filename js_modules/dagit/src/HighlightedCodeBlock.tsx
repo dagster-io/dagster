@@ -1,5 +1,5 @@
-import * as React from 'react';
 import {configure, highlightBlock} from 'highlight.js';
+import * as React from 'react';
 
 import 'highlight.js/styles/xcode.css';
 

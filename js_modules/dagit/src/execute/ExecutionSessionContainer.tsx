@@ -1,48 +1,47 @@
-import * as React from 'react';
-import * as yaml from 'yaml';
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
-import {Colors, Button, Spinner, NonIdealState} from '@blueprintjs/core';
-import {ApolloConsumer} from 'react-apollo';
+import {Button, Colors, NonIdealState, Spinner} from '@blueprintjs/core';
 import ApolloClient from 'apollo-client';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {ApolloConsumer} from 'react-apollo';
+import styled from 'styled-components/macro';
+import * as yaml from 'yaml';
 
-import {RunPreview} from './RunPreview';
-import {SplitPanelContainer, SecondPanelToggle} from '../SplitPanelContainer';
-import SolidSelector from './SolidSelector';
+import {showCustomAlert} from '../CustomAlertProvider';
+import {PipelineRunTag} from '../LocalStorage';
+import {IExecutionSession, IStorageData} from '../LocalStorage';
+import {ShortcutHandler} from '../ShortcutHandler';
+import {SecondPanelToggle, SplitPanelContainer} from '../SplitPanelContainer';
 import {
   ConfigEditor,
   ConfigEditorHelpContext,
   isHelpContextEqual,
 } from '../configeditor/ConfigEditor';
 import {
-  ConfigEditorConfigPicker,
-  CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
-  CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
-} from './ConfigEditorConfigPicker';
-import {ConfigEditorModePicker} from './ConfigEditorModePicker';
-import {IStorageData, IExecutionSession} from '../LocalStorage';
-import {
-  CONFIG_EDITOR_VALIDATION_FRAGMENT,
   CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
+  CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
 } from '../configeditor/ConfigEditorUtils';
-
-import {ConfigEditorHelp} from './ConfigEditorHelp';
-import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
-import {TagContainer, TagEditor} from './TagEditor';
-import {ShortcutHandler} from '../ShortcutHandler';
+import {ConfigEditorRunConfigSchemaFragment} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
 import {PipelineSelector} from '../types/globalTypes';
-import {PipelineRunTag} from '../LocalStorage';
 
-import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
+import {
+  CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
+  CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
+  ConfigEditorConfigPicker,
+} from './ConfigEditorConfigPicker';
+import {ConfigEditorHelp} from './ConfigEditorHelp';
+import {ConfigEditorModePicker} from './ConfigEditorModePicker';
+import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
+import {RunPreview} from './RunPreview';
+import SolidSelector from './SolidSelector';
+import {TagContainer, TagEditor} from './TagEditor';
+import {ExecutionSessionContainerPartitionSetsFragment} from './types/ExecutionSessionContainerPartitionSetsFragment';
 import {ExecutionSessionContainerPipelineFragment} from './types/ExecutionSessionContainerPipelineFragment';
 import {
   ExecutionSessionContainerRunConfigSchemaFragment,
   ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError,
 } from './types/ExecutionSessionContainerRunConfigSchemaFragment';
-import {ExecutionSessionContainerPartitionSetsFragment} from './types/ExecutionSessionContainerPartitionSetsFragment';
-import {ConfigEditorRunConfigSchemaFragment} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
-import {showCustomAlert} from '../CustomAlertProvider';
+import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_PIPELINE = `Loading pipeline and partition sets...`;

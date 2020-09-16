@@ -1,7 +1,7 @@
-import moment from 'moment-timezone';
-import React from 'react';
 import {Button, Menu} from '@blueprintjs/core';
 import {Select} from '@blueprintjs/select';
+import moment from 'moment-timezone';
+import React from 'react';
 
 type TimestampProps = ({ms: number} | {unix: number}) & {
   format?: string;

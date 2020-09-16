@@ -1,13 +1,15 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
-import {MetadataEntryFragment} from './types/MetadataEntryFragment';
-import {assertUnreachable} from '../Util';
-import {copyValue} from '../DomUtils';
-import {showCustomAlert} from '../CustomAlertProvider';
-import {Button, Dialog, Classes, Colors, Icon, Position, Tooltip} from '@blueprintjs/core';
-import ReactMarkdown from 'react-markdown';
+import {Button, Classes, Colors, Dialog, Icon, Position, Tooltip} from '@blueprintjs/core';
 import CSS from 'csstype';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import ReactMarkdown from 'react-markdown';
+import styled from 'styled-components/macro';
+
+import {showCustomAlert} from '../CustomAlertProvider';
+import {copyValue} from '../DomUtils';
+import {assertUnreachable} from '../Util';
+
+import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
 export const LogRowStructuredContentTable: React.FunctionComponent<{
   rows: {label: string; item: JSX.Element}[];

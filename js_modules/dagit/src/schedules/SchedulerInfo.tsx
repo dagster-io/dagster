@@ -1,8 +1,10 @@
-import * as React from 'react';
+import {Callout, Code, Intent} from '@blueprintjs/core';
 import gql from 'graphql-tag';
-import {SchedulerFragment} from './types/SchedulerFragment';
+import * as React from 'react';
+
 import PythonErrorInfo from '../PythonErrorInfo';
-import {Callout, Intent, Code} from '@blueprintjs/core';
+
+import {SchedulerFragment} from './types/SchedulerFragment';
 
 export const SCHEDULER_FRAGMENT = gql`
   fragment SchedulerFragment on SchedulerOrError {

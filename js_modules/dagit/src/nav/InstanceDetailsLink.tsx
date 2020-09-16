@@ -1,8 +1,9 @@
+import {Colors} from '@blueprintjs/core';
+import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
-import gql from 'graphql-tag';
-import {Colors} from '@blueprintjs/core';
 import {Link} from 'react-router-dom';
+
 import {InstanceDetailSummaryQuery} from './types/InstanceDetailSummaryQuery';
 
 export const InstanceDetailsLink: React.FunctionComponent = () => {

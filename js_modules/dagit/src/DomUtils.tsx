@@ -1,4 +1,4 @@
-import {Toaster, Position, Intent} from '@blueprintjs/core';
+import {Intent, Position, Toaster} from '@blueprintjs/core';
 
 export const APP_PATH_PREFIX =
   document.querySelector('meta[name=dagit-path-prefix]')?.getAttribute('content') || '';

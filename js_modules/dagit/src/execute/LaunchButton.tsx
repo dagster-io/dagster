@@ -1,19 +1,20 @@
-import * as React from 'react';
-import styled from 'styled-components/macro';
-import {WebsocketStatusContext} from '../WebsocketStatus';
-import {ShortcutHandler} from '../ShortcutHandler';
 import {
   Button,
   Icon,
-  Intent,
-  Spinner,
   IconName,
-  Tooltip,
-  Position,
-  Popover,
+  Intent,
   Menu,
   MenuItem,
+  Popover,
+  Position,
+  Spinner,
+  Tooltip,
 } from '@blueprintjs/core';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {ShortcutHandler} from '../ShortcutHandler';
+import {WebsocketStatusContext} from '../WebsocketStatus';
 
 export interface LaunchButtonConfiguration {
   title: string;

@@ -1,24 +1,23 @@
-import * as React from 'react';
-
-import Loading from './Loading';
-import {RouteComponentProps} from 'react-router';
-import {RunTable} from './runs/RunTable';
-import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
-import {
-  RunsFilter,
-  RunFilterTokenType,
-  useRunFiltering,
-  runsFilterForSearchTokens,
-} from './runs/RunsFilter';
-
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
-import {IconNames} from '@blueprintjs/icons';
 import {NonIdealState} from '@blueprintjs/core';
-import {ScrollContainer, Header} from './ListComponents';
-import {RunsQueryRefetchContext} from './runs/RunUtils';
-import {useCursorPaginatedQuery} from './runs/useCursorPaginatedQuery';
+import {IconNames} from '@blueprintjs/icons';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {RouteComponentProps} from 'react-router';
+import styled from 'styled-components/macro';
+
 import {CursorPaginationControls} from './CursorPaginationControls';
+import {Header, ScrollContainer} from './ListComponents';
+import Loading from './Loading';
+import {RunTable} from './runs/RunTable';
+import {RunsQueryRefetchContext} from './runs/RunUtils';
+import {
+  RunFilterTokenType,
+  RunsFilter,
+  runsFilterForSearchTokens,
+  useRunFiltering,
+} from './runs/RunsFilter';
+import {useCursorPaginatedQuery} from './runs/useCursorPaginatedQuery';
+import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
 
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['id', 'status', 'tag'];

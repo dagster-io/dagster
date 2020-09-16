@@ -1,12 +1,13 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
-import {useQuery} from 'react-apollo';
 import {Spinner} from '@blueprintjs/core';
-import {InstanceDetailsQuery} from './types/InstanceDetailsQuery';
-import {Header} from './ListComponents';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
 import {UnControlled as CodeMirrorReact} from 'react-codemirror2';
+import styled from 'styled-components/macro';
 import {createGlobalStyle} from 'styled-components/macro';
+
+import {Header} from './ListComponents';
+import {InstanceDetailsQuery} from './types/InstanceDetailsQuery';
 
 const CodeMirrorShimStyle = createGlobalStyle`
   .react-codemirror2 {

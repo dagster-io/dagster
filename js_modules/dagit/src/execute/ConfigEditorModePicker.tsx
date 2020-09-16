@@ -1,7 +1,8 @@
-import * as React from 'react';
 import {Button, Intent, Menu} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import {Select} from '@blueprintjs/select';
+import * as React from 'react';
+
 import {ModeNotFoundError} from './ExecutionSessionContainer';
 
 interface Mode {

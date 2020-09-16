@@ -1,15 +1,16 @@
-import * as React from 'react';
+import {Colors, Icon, IconName} from '@blueprintjs/core';
 import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
-import {Icon, IconName, Colors} from '@blueprintjs/core';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
+
+import {SolidNameOrPath} from './PipelineExplorer';
+import {PipelineExplorerPath} from './PipelinePathUtils';
+import SidebarPipelineInfo from './SidebarPipelineInfo';
+import {SidebarSolidContainer} from './SidebarSolidContainer';
 import {TypeExplorerContainer} from './typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from './typeexplorer/TypeListContainer';
 import {SidebarTabbedContainerPipelineFragment} from './types/SidebarTabbedContainerPipelineFragment';
-import {SidebarSolidContainer} from './SidebarSolidContainer';
-import SidebarPipelineInfo from './SidebarPipelineInfo';
-import {SolidNameOrPath} from './PipelineExplorer';
-import {PipelineExplorerPath} from './PipelinePathUtils';
 
 interface ISidebarTabbedContainerProps {
   types?: string;

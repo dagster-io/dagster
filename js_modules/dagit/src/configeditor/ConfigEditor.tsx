@@ -1,6 +1,3 @@
-import * as React from 'react';
-import {createGlobalStyle} from 'styled-components/macro';
-import * as yaml from 'yaml';
 import 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/material.css';
@@ -17,19 +14,25 @@ import 'codemirror/addon/dialog/dialog';
 import './codemirror-yaml/lint'; // Patch lint
 import 'codemirror/addon/lint/lint.css';
 import 'codemirror/keymap/sublime';
-import {Controlled as CodeMirrorReact} from 'react-codemirror2';
-import {Editor} from 'codemirror';
-import {
-  ConfigEditorRunConfigSchemaFragment,
-  ConfigEditorRunConfigSchemaFragment_allConfigTypes,
-} from './types/ConfigEditorRunConfigSchemaFragment';
 import './codemirror-yaml/mode';
+
+import {Editor} from 'codemirror';
+import * as React from 'react';
+import {Controlled as CodeMirrorReact} from 'react-codemirror2';
+import {createGlobalStyle} from 'styled-components/macro';
+import * as yaml from 'yaml';
+
+import {debounce} from '../Util';
+
 import {
   YamlModeValidateFunction,
   expandAutocompletionContextAtCursor,
   findRangeInDocumentFromPath,
 } from './codemirror-yaml/mode';
-import {debounce} from '../Util';
+import {
+  ConfigEditorRunConfigSchemaFragment,
+  ConfigEditorRunConfigSchemaFragment_allConfigTypes,
+} from './types/ConfigEditorRunConfigSchemaFragment';
 
 export function isHelpContextEqual(
   prev: ConfigEditorHelpContext | null,

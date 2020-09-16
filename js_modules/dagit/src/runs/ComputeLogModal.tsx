@@ -1,15 +1,17 @@
-import * as React from 'react';
+import {Dialog, Intent, Spinner} from '@blueprintjs/core';
 import gql from 'graphql-tag';
+import * as React from 'react';
 import styled from 'styled-components/macro';
-import {Dialog, Spinner, Intent} from '@blueprintjs/core';
-import {RunContext} from '../runs/RunContext';
-import {IStepState} from '../RunMetadataProvider';
+
 import {DirectGraphQLSubscription} from '../DirectGraphQLSubscription';
+import {IStepState} from '../RunMetadataProvider';
+import {RunContext} from '../runs/RunContext';
+import {ComputeIOType} from '../types/globalTypes';
+
 import {ComputeLogContent} from './ComputeLogContent';
+import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
 import {ComputeLogsSubscription} from './types/ComputeLogsSubscription';
 import {ComputeLogsSubscriptionFragment} from './types/ComputeLogsSubscriptionFragment';
-import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
-import {ComputeIOType} from '../types/globalTypes';
 
 const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 

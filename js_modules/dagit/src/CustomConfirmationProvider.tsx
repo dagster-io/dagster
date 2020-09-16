@@ -1,5 +1,5 @@
+import {Button, Classes, Dialog, Intent} from '@blueprintjs/core';
 import * as React from 'react';
-import {Dialog, Classes, Button, Intent} from '@blueprintjs/core';
 
 export interface ConfirmationOptions {
   catchOnCancel?: boolean;
