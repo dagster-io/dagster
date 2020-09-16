@@ -5,9 +5,22 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {CursorHistoryControls} from 'src/CursorControls';
+import {
+  PIPELINE_LABEL,
+  StepSelector,
+  getPipelineDurationForRun,
+  getStepDurationsForRun,
+  getPipelineExpectationFailureForRun,
+  getPipelineExpectationSuccessForRun,
+  getPipelineExpectationRateForRun,
+  getPipelineMaterializationCountForRun,
+  getStepExpectationFailureForRun,
+  getStepExpectationRateForRun,
+  getStepExpectationSuccessForRun,
+  getStepMaterializationCountForRun,
+} from 'src/RunGraphUtils';
 import {TokenizingFieldValue} from 'src/TokenizingField';
-import {colorHash} from 'src/Util';
-import {PIPELINE_LABEL, PartitionGraph} from 'src/partitions/PartitionGraph';
+import {PartitionGraph} from 'src/partitions/PartitionGraph';
 import {PartitionPageSizeSelector} from 'src/partitions/PartitionPageSizeSelector';
 import {PartitionRunMatrix} from 'src/partitions/PartitionRunMatrix';
 import {PartitionSetSelector} from 'src/partitions/PartitionSetSelector';
@@ -192,7 +205,7 @@ const PartitionContent = ({
           title="Expectation Rate by Partition"
           yLabel="Rate of success"
           runsByPartitionName={runsByPartitionName}
-          getPipelineDataForRun={getPipelineExpectationiRateForRun}
+          getPipelineDataForRun={getPipelineExpectationRateForRun}
           getStepDataForRun={getStepExpectationRateForRun}
           ref={rateGraph}
         />
@@ -207,69 +220,6 @@ const PartitionContent = ({
         </NavContainer>
       </div>
     </PartitionContentContainer>
-  );
-};
-
-const StepSelector: React.FunctionComponent<{
-  selected: {[stepKey: string]: boolean};
-  onChange: (selected: {[stepKey: string]: boolean}) => void;
-}> = ({selected, onChange}) => {
-  const onStepClick = (stepKey: string) => {
-    return (evt: React.MouseEvent) => {
-      if (evt.shiftKey) {
-        // toggle on shift+click
-        onChange({...selected, [stepKey]: !selected[stepKey]});
-      } else {
-        // regular click
-        const newSelected = {};
-
-        const alreadySelected = Object.keys(selected).every((key) => {
-          return key === stepKey ? selected[key] : !selected[key];
-        });
-
-        Object.keys(selected).forEach((key) => {
-          newSelected[key] = alreadySelected || key === stepKey;
-        });
-
-        onChange(newSelected);
-      }
-    };
-  };
-
-  return (
-    <>
-      <NavSectionHeader>
-        Run steps
-        <div style={{flex: 1}} />
-        <span style={{fontSize: 13, opacity: 0.5}}>Tip: Shift-click to multi-select</span>
-      </NavSectionHeader>
-      <NavSection>
-        {Object.keys(selected).map((stepKey) => (
-          <Item
-            key={stepKey}
-            shown={selected[stepKey]}
-            onClick={onStepClick(stepKey)}
-            color={stepKey === PIPELINE_LABEL ? Colors.GRAY2 : colorHash(stepKey)}
-          >
-            <div
-              style={{
-                display: 'inline-block',
-                marginRight: 5,
-                borderRadius: 5,
-                height: 10,
-                width: 10,
-                backgroundColor: selected[stepKey]
-                  ? stepKey === PIPELINE_LABEL
-                    ? Colors.GRAY2
-                    : colorHash(stepKey)
-                  : '#aaaaaa',
-              }}
-            />
-            {stepKey}
-          </Item>
-        ))}
-      </NavSection>
-    </>
   );
 };
 
@@ -290,16 +240,6 @@ const NavContainer = styled.div`
   overflow: auto;
 `;
 
-const Item = styled.div`
-  list-style-type: none;
-  padding: 5px 2px;
-  cursor: pointer;
-  text-decoration: ${({shown}: {shown: boolean}) => (shown ? 'none' : 'line-through')};
-  user-select: none;
-  font-size: 12px;
-  color: ${(props) => (props.shown ? props.color : '#aaaaaa')};
-  white-space: nowrap;
-`;
 const PartitionContentContainer = styled.div`
   display: flex;
   flex-direction: row;
@@ -307,113 +247,6 @@ const PartitionContentContainer = styled.div`
   max-width: 1600px;
   margin: 0 auto;
 `;
-
-const getPipelineDurationForRun = (run: Run) => {
-  const {stats} = run;
-  if (
-    stats &&
-    stats.__typename === 'PipelineRunStatsSnapshot' &&
-    stats.endTime &&
-    stats.startTime
-  ) {
-    return stats.endTime - stats.startTime;
-  }
-
-  return undefined;
-};
-
-const getStepDurationsForRun = (run: Run) => {
-  const {stepStats} = run;
-
-  const perStepDuration = {};
-  stepStats.forEach((stepStat) => {
-    if (stepStat.endTime && stepStat.startTime) {
-      perStepDuration[stepStat.stepKey] = stepStat.endTime - stepStat.startTime;
-    }
-  });
-
-  return perStepDuration;
-};
-
-const getPipelineMaterializationCountForRun = (run: Run) => {
-  const {stats} = run;
-  if (stats && stats.__typename === 'PipelineRunStatsSnapshot') {
-    return stats.materializations;
-  }
-  return undefined;
-};
-
-const getStepMaterializationCountForRun = (run: Run) => {
-  const {stepStats} = run;
-  const perStepCounts = {};
-  stepStats.forEach((stepStat) => {
-    perStepCounts[stepStat.stepKey] = stepStat.materializations?.length || 0;
-  });
-  return perStepCounts;
-};
-
-const getPipelineExpectationSuccessForRun = (run: Run) => {
-  const stepCounts: {[key: string]: number} = getStepExpectationSuccessForRun(run);
-  return _arraySum(Object.values(stepCounts));
-};
-
-const getStepExpectationSuccessForRun = (run: Run) => {
-  const {stepStats} = run;
-  const perStepCounts = {};
-  stepStats.forEach((stepStat) => {
-    perStepCounts[stepStat.stepKey] =
-      stepStat.expectationResults?.filter((x) => x.success).length || 0;
-  });
-  return perStepCounts;
-};
-
-const getPipelineExpectationFailureForRun = (run: Run) => {
-  const stepCounts: {[key: string]: number} = getStepExpectationFailureForRun(run);
-  return _arraySum(Object.values(stepCounts));
-};
-
-const getStepExpectationFailureForRun = (run: Run) => {
-  const {stepStats} = run;
-  const perStepCounts = {};
-  stepStats.forEach((stepStat) => {
-    perStepCounts[stepStat.stepKey] =
-      stepStat.expectationResults?.filter((x) => !x.success).length || 0;
-  });
-  return perStepCounts;
-};
-
-const _arraySum = (arr: number[]) => {
-  let sum = 0;
-  arr.forEach((x) => (sum += x));
-  return sum;
-};
-
-const getPipelineExpectationiRateForRun = (run: Run) => {
-  const stepSuccesses: {
-    [key: string]: number;
-  } = getStepExpectationSuccessForRun(run);
-  const stepFailures: {
-    [key: string]: number;
-  } = getStepExpectationFailureForRun(run);
-
-  const pipelineSuccesses = _arraySum(Object.values(stepSuccesses));
-  const pipelineFailures = _arraySum(Object.values(stepFailures));
-  const pipelineTotal = pipelineSuccesses + pipelineFailures;
-
-  return pipelineTotal ? pipelineSuccesses / pipelineTotal : 0;
-};
-
-const getStepExpectationRateForRun = (run: Run) => {
-  const {stepStats} = run;
-  const perStepCounts = {};
-  stepStats.forEach((stepStat) => {
-    const results = stepStat.expectationResults || [];
-    perStepCounts[stepStat.stepKey] = results.length
-      ? results.filter((x) => x.success).length / results.length
-      : 0;
-  });
-  return perStepCounts;
-};
 
 const applyFilter = (filter: TokenizingFieldValue, run: Run) => {
   if (filter.token === 'id') {
@@ -427,3 +260,14 @@ const applyFilter = (filter: TokenizingFieldValue, run: Run) => {
   }
   return true;
 };
+
+interface PartitionPagerProps {
+  displayed: Partition[];
+  pageSize: number | undefined;
+  setPageSize: React.Dispatch<React.SetStateAction<number | undefined>>;
+  hasPrevPage: boolean;
+  hasNextPage: boolean;
+  pushCursor: (nextCursor: string) => void;
+  popCursor: () => void;
+  setCursor: (cursor: string | undefined) => void;
+}
