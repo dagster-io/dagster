@@ -127,9 +127,7 @@ def created_workspace_load_target(kwargs):
         _check_cli_arguments_none(
             kwargs, "workspace", "module_name", "grpc_host", "grpc_port", "grpc_socket"
         )
-        working_directory = (
-            kwargs.get("working_directory") if kwargs.get("working_directory") else os.getcwd()
-        )
+        working_directory = get_working_directory_from_kwargs(kwargs)
         return PythonFileTarget(
             python_file=kwargs.get("python_file"),
             attribute=kwargs.get("attribute"),
@@ -399,7 +397,7 @@ def get_pipeline_python_origin_from_kwargs(kwargs):
 def _get_code_pointer_dict_from_kwargs(kwargs):
     python_file = kwargs.get("python_file")
     module_name = kwargs.get("module_name")
-    working_directory = kwargs.get("working_directory")
+    working_directory = get_working_directory_from_kwargs(kwargs)
     attribute = kwargs.get("attribute")
     loadable_targets = get_loadable_targets(python_file, module_name, working_directory, attribute)
     if python_file:
@@ -422,6 +420,10 @@ def _get_code_pointer_dict_from_kwargs(kwargs):
         check.failed("invalid")
 
 
+def get_working_directory_from_kwargs(kwargs):
+    return kwargs.get("working_directory") if kwargs.get("working_directory") else os.getcwd()
+
+
 def get_repository_python_origin_from_kwargs(kwargs):
     provided_repo_name = kwargs.get("repository")
 
@@ -435,7 +437,9 @@ def get_repository_python_origin_from_kwargs(kwargs):
     if kwargs.get("attribute") and not provided_repo_name:
         if kwargs.get("python_file"):
             code_pointer = CodePointer.from_python_file(
-                kwargs.get("python_file"), kwargs.get("attribute"), kwargs.get("working_directory")
+                kwargs.get("python_file"),
+                kwargs.get("attribute"),
+                get_working_directory_from_kwargs(kwargs),
             )
         elif kwargs.get("module_name"):
             code_pointer = CodePointer.from_module(

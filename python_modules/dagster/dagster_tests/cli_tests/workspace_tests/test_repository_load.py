@@ -12,6 +12,7 @@ from dagster.cli.workspace.cli_target import (
 )
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import new_cwd
 from dagster.utils import file_relative_path
 
 
@@ -170,16 +171,6 @@ def test_missing_repo_name_in_multi_repo_location():
         """Must provide --repository as there is more than one repository in """
         """multi_repo. Options are: ['repo_one', 'repo_two']."""
     ) in result.stdout
-
-
-@contextmanager
-def new_cwd(path):
-    old = os.getcwd()
-    try:
-        os.chdir(path)
-        yield
-    finally:
-        os.chdir(old)
 
 
 def test_legacy_repository_yaml_autoload():
