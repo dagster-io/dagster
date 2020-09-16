@@ -753,7 +753,10 @@ class DagsterApiServer(DagsterApiServicer):
             CanCancelExecutionRequest,
         )
         with self._execution_lock:
-            can_cancel = can_cancel_execution_request.run_id in self._executions
+            run_id = can_cancel_execution_request.run_id
+            can_cancel = (
+                run_id in self._executions and not self._termination_events[run_id].is_set()
+            )
 
         return api_pb2.CanCancelExecutionReply(
             serialized_can_cancel_execution_result=serialize_dagster_namedtuple(

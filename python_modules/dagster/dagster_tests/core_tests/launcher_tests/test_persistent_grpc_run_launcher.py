@@ -352,6 +352,9 @@ def test_terminated_run(get_external_pipeline):  # pylint: disable=redefined-out
             assert launcher.can_terminate(run_id)
             assert launcher.terminate(run_id)
 
+            # can_terminate returns False once termination has starte
+            assert not launcher.can_terminate(run_id)
+
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
             terminated_pipeline_run = instance.get_run_by_id(run_id)
             assert terminated_pipeline_run.status == PipelineRunStatus.FAILURE
