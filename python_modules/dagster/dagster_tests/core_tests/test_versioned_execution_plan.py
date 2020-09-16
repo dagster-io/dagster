@@ -12,7 +12,7 @@ from dagster import (
 )
 from dagster.core.definitions import InputDefinition
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.instance import join_and_hash
+from dagster.core.instance import join_and_hash, resolve_config_version
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
 
@@ -24,6 +24,22 @@ def test_join_and_hash():
     assert join_and_hash(["foo", "bar"]) == hashlib.sha1("barfoo".encode("utf-8")).hexdigest()
 
     assert join_and_hash(["foo", "bar", "zab"]) == join_and_hash(["zab", "bar", "foo"])
+
+
+def test_resolve_config_version():
+    assert resolve_config_version({}) == join_and_hash([])
+
+    assert resolve_config_version({"a": "b", "c": "d"}) == join_and_hash(
+        ["a" + join_and_hash(["b"]), "c" + join_and_hash(["d"])]
+    )
+
+    assert resolve_config_version({"a": "b", "c": "d"}) == resolve_config_version(
+        {"c": "d", "a": "b"}
+    )
+
+    assert resolve_config_version({"a": {"b": "c"}, "d": "e"}) == join_and_hash(
+        ["a" + join_and_hash(["b" + join_and_hash(["c"])]), "d" + join_and_hash(["e"])]
+    )
 
 
 @solid(version="42")

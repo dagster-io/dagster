@@ -149,6 +149,26 @@ def join_and_hash(lst):
         return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
 
 
+def resolve_config_version(config_value):
+    """Resolve a configuration value into a hashed version.
+
+    If a single value is passed in, it is converted to a string, hashed, and returned as the
+    version. If a dictionary of config values is passed in, each value is resolved to a version,
+    concatenated with its key, joined, and hashed into a single version.
+
+    Args:
+        config_value (Union[Any, dict]): Either a single config value or a dictionary of config
+            values.
+    """
+    if not isinstance(config_value, dict):
+        return join_and_hash([str(config_value)])
+    else:
+        config_value = check.dict_param(config_value, "config_value")
+        return join_and_hash(
+            [key + resolve_config_version(val) for key, val in config_value.items()]
+        )
+
+
 class _EventListenerLogHandler(logging.Handler):
     def __init__(self, instance):
         self._instance = instance
