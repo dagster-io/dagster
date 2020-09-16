@@ -25,7 +25,7 @@
 
 **Experimental**
 
-- [lakehouse] Added CLI command for building and executing a pipeline that updates a given set of assets: `house update --module package.module —assets my_asset\*`
+- [lakehouse] Added CLI command for building and executing a pipeline that updates a given set of assets: `house update --module package.module —assets my_asset*`
 
 **Documentation**
 
