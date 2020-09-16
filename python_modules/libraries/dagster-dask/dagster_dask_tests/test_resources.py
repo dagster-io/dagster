@@ -42,33 +42,21 @@ def test_single_local_cluster():
 
     run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
     result = execute_pipeline(
-        scheduler_info_pipeline,
-        run_config=run_config,
-        instance=DagsterInstance.local_temp(),
+        scheduler_info_pipeline, run_config=run_config, instance=DagsterInstance.local_temp(),
     )
     _assert_scheduler_info_result(result, cluster_config)
 
 
 def test_multiple_local_cluster():
     cluster_configs = [
-        {
-            "n_workers": 1,
-            "threads_per_worker": 2,
-            "dashboard_address": None,
-        },
-        {
-            "n_workers": 2,
-            "threads_per_worker": 1,
-            "dashboard_address": None,
-        },
+        {"n_workers": 1, "threads_per_worker": 2, "dashboard_address": None,},
+        {"n_workers": 2, "threads_per_worker": 1, "dashboard_address": None,},
     ]
 
     for cluster_config in cluster_configs:
         run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
         result = execute_pipeline(
-            scheduler_info_pipeline,
-            run_config=run_config,
-            instance=DagsterInstance.local_temp(),
+            scheduler_info_pipeline, run_config=run_config, instance=DagsterInstance.local_temp(),
         )
         _assert_scheduler_info_result(result, cluster_config)
 
