@@ -556,10 +556,7 @@ class DagsterInstance:
             )
 
             step_versions = resolve_step_versions(
-                pipeline_def,
-                run_config=run_config,
                 speculative_execution_plan=speculative_execution_plan,
-                mode=mode,
             )
 
             step_keys_to_execute = self.resolve_unmemoized_steps(

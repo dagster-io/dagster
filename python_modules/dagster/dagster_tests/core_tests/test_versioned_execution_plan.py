@@ -12,6 +12,7 @@ from dagster import (
 )
 from dagster.core.definitions import InputDefinition
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.resolve_versions import (
     join_and_hash,
     resolve_config_version,
@@ -62,7 +63,8 @@ def versioned_pipeline():
 
 
 def test_resolve_step_versions_no_external_dependencies():
-    versions = resolve_step_versions(versioned_pipeline)
+    speculative_execution_plan = create_execution_plan(versioned_pipeline)
+    versions = resolve_step_versions(speculative_execution_plan)
     solid1_hash = join_and_hash([versioned_solid_no_input.version])
     output1_hash = join_and_hash([solid1_hash + "result"])
     outputs_hash = join_and_hash([output1_hash])
@@ -108,10 +110,12 @@ def versioned_pipeline_ext_input():
 
 
 def test_resolve_step_versions_external_dependencies():
-    versions = resolve_step_versions(
+    speculative_execution_plan = create_execution_plan(
         versioned_pipeline_ext_input,
         run_config={"solids": {"versioned_solid_ext_input": {"inputs": {"custom_type": "a"}}}},
     )
+
+    versions = resolve_step_versions(speculative_execution_plan)
 
     ext_input_version = join_and_hash(["a"])
     input_version = join_and_hash([InputHydration.loader_version + ext_input_version])
