@@ -1,5 +1,4 @@
 import datetime
-import hashlib
 import logging
 import os
 import time
@@ -22,6 +21,7 @@ from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster.core.execution.resolve_versions import join_and_hash, resolve_step_versions
 from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
@@ -54,35 +54,6 @@ def _is_memoized_run(tags):
 def _fake_output_address(_version_list):
     # Placeholder function until actual version storage has been implemented
     return {}
-
-
-def _resolve_step_input_versions(step, step_versions):
-    def _resolve_output_version(step_output_handle):
-        if (
-            step_output_handle.step_key not in step_versions
-            or not step_versions[step_output_handle.step_key]
-        ):
-            return None
-        else:
-            return join_and_hash(
-                [step_versions[step_output_handle.step_key], step_output_handle.output_name]
-            )
-
-    input_versions = {}
-    for input_name, step_input in step.step_input_dict.items():
-        if step_input.is_from_output:
-            output_handle_versions = [
-                _resolve_output_version(source_handle)
-                for source_handle in step_input.source_handles
-            ]
-            version = join_and_hash(output_handle_versions)
-        elif step_input.is_from_config:
-            version = step_input.dagster_type.loader.compute_loaded_input_version(
-                step_input.config_data
-            )
-        input_versions[input_name] = version
-
-    return input_versions
 
 
 def _dagster_home():
@@ -137,36 +108,6 @@ def _format_field_diff(field_diff):
             for field_name, (expected_value, candidate_value,) in field_diff.items()
         ]
     )
-
-
-def join_and_hash(lst):
-    lst = check.list_param(lst, "lst")
-    lst = [check.opt_str_param(elem, "elem") for elem in lst]
-    if None in lst:
-        return None
-    else:
-        unhashed = "".join(sorted(lst))
-        return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
-
-
-def resolve_config_version(config_value):
-    """Resolve a configuration value into a hashed version.
-
-    If a single value is passed in, it is converted to a string, hashed, and returned as the
-    version. If a dictionary of config values is passed in, each value is resolved to a version,
-    concatenated with its key, joined, and hashed into a single version.
-
-    Args:
-        config_value (Union[Any, dict]): Either a single config value or a dictionary of config
-            values.
-    """
-    if not isinstance(config_value, dict):
-        return join_and_hash([str(config_value)])
-    else:
-        config_value = check.dict_param(config_value, "config_value")
-        return join_and_hash(
-            [key + resolve_config_version(val) for key, val in config_value.items()]
-        )
 
 
 class _EventListenerLogHandler(logging.Handler):
@@ -538,47 +479,6 @@ class DagsterInstance:
     def get_run_group(self, run_id):
         return self._run_storage.get_run_group(run_id)
 
-    def resolve_step_versions(
-        self, pipeline_def, speculative_execution_plan=None, run_config=None, mode=None,
-    ):
-        """Resolves the version of each step in an execution plan.
-
-        If an execution plan is not provided, then it is constructed from pipeline_def, run_config, and
-        mode. It returns dict[str, str] where each key is a step key, and each value is the associated
-        version for that step.
-
-        Args:
-            pipeline_def (PipelineDefinition): Definition for the pipeline to construct execution plan
-                for.
-            speculative_execution_plan (Optional[ExecutionPlan]): Execution plan to resolve steps for,
-                if provided.
-            run_config (Optional[dict]): The environment configuration that parameterizes the run, as a
-                dict.
-            mode (Optional[str]): The pipeline mode in which to execute this run.
-        """
-        from dagster.core.execution.api import create_execution_plan
-
-        if not speculative_execution_plan:
-            speculative_execution_plan = create_execution_plan(
-                pipeline_def, run_config=run_config, mode=mode,
-            )
-
-        step_versions = {}  # step_key (str) -> version (str)
-
-        for step in speculative_execution_plan.topological_steps():
-            input_version_dict = _resolve_step_input_versions(step, step_versions)
-            input_versions = [version for version in input_version_dict.values()]
-
-            solid_version = step.solid_version
-
-            from_versions = input_versions + [solid_version]
-
-            step_version = join_and_hash(from_versions)
-
-            step_versions[step.key] = step_version
-
-        return step_versions
-
     def resolve_unmemoized_steps(self, speculative_execution_plan, step_versions):
         unmemoized_steps = []
 
@@ -655,7 +555,7 @@ class DagsterInstance:
                 pipeline_def, run_config=run_config, mode=mode,
             )
 
-            step_versions = self.resolve_step_versions(
+            step_versions = resolve_step_versions(
                 pipeline_def,
                 run_config=run_config,
                 speculative_execution_plan=speculative_execution_plan,
