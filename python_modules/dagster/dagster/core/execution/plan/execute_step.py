@@ -27,7 +27,7 @@ from dagster.core.execution.plan.objects import (
     StepSuccessData,
     TypeCheckData,
 )
-from dagster.core.execution.plan.step_version import compute_version_for_step_output
+from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.storage.object_store import ObjectStoreOperation
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.utils import delay_interrupts
@@ -188,11 +188,23 @@ def _create_step_output_event(step_context, output, type_check, success, version
 
 
 def _type_checked_step_output_event_sequence(step_context, output):
+    from dagster.core.execution.api import create_execution_plan
+
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
     check.inst_param(output, "output", Output)
 
     step_output = step_context.step.step_output_named(output.output_name)
-    version = compute_version_for_step_output(step_context, output)
+    speculative_execution_plan = create_execution_plan(
+        step_context.pipeline_def,
+        run_config=step_context.run_config,
+        mode=step_context.mode_def.name,
+    )
+
+    version = resolve_step_output_versions(
+        speculative_execution_plan,
+        run_config=step_context.run_config,
+        mode=step_context.mode_def.name,
+    )[StepOutputHandle(step_context.step.key, output.output_name)]
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (

@@ -29,6 +29,9 @@ def _resolve_step_input_versions(step, step_versions):
             version = step_input.dagster_type.loader.compute_loaded_input_version(
                 step_input.config_data
             )
+        else:
+            version = None
+
         input_versions[input_name] = version
 
     return input_versions
@@ -121,6 +124,21 @@ def resolve_step_versions(speculative_execution_plan, mode=None, run_config=None
         step_versions[step.key] = step_version
 
     return step_versions
+
+
+def resolve_step_output_versions(speculative_execution_plan, run_config, mode):
+    from dagster.core.execution.plan.objects import StepOutputHandle
+
+    step_versions = resolve_step_versions(
+        speculative_execution_plan, run_config=run_config, mode=mode
+    )
+    return {
+        StepOutputHandle(step.key, output_name): join_and_hash(
+            [output_name, step_versions[step.key]]
+        )
+        for step in speculative_execution_plan.steps
+        for output_name in step.step_output_dict.keys()
+    }
 
 
 def join_and_hash(lst):
