@@ -105,34 +105,69 @@ class TestRunStorage:
 
         assert storage.get_run_tags() == []
 
-        storage.add_run_tags(one, {"tag1": "val1"})
+        storage.add_run_tags(one, {"tag1": "val1", "tag2": "val2"})
         storage.add_run_tags(two, {"tag1": "val1"})
 
-        assert storage.get_run_tags() == [("tag1", {"val1"})]
+        assert storage.get_run_tags() == [("tag1", {"val1"}), ("tag2", {"val2"})]
 
-        storage.add_run_tags(one, {"tag1": "val2", "tag2": "val3"})
+        # Adding both existing tags and a new tag
+        storage.add_run_tags(one, {"tag1": "val2", "tag3": "val3"})
 
         test_run = storage.get_run_by_id(one)
 
-        assert len(test_run.tags) == 2
+        assert len(test_run.tags) == 3
         assert test_run.tags["tag1"] == "val2"
-        assert test_run.tags["tag2"] == "val3"
-
-        storage.add_run_tags(one, {"tag3": "val4"})
+        assert test_run.tags["tag2"] == "val2"
+        assert test_run.tags["tag3"] == "val3"
 
         assert storage.get_run_tags() == [
             ("tag1", {"val1", "val2"}),
-            ("tag2", {"val3"}),
-            ("tag3", {"val4"}),
+            ("tag2", {"val2"}),
+            ("tag3", {"val3"}),
+        ]
+
+        # Adding only existing tags
+        storage.add_run_tags(one, {"tag1": "val3"})
+
+        test_run = storage.get_run_by_id(one)
+
+        assert len(test_run.tags) == 3
+        assert test_run.tags["tag1"] == "val3"
+        assert test_run.tags["tag2"] == "val2"
+        assert test_run.tags["tag3"] == "val3"
+
+        assert storage.get_run_tags() == [
+            ("tag1", {"val1", "val3"}),
+            ("tag2", {"val2"}),
+            ("tag3", {"val3"}),
+        ]
+
+        # Adding only a new tag that wasn't there before
+        storage.add_run_tags(one, {"tag4": "val4"})
+
+        test_run = storage.get_run_by_id(one)
+
+        assert len(test_run.tags) == 4
+        assert test_run.tags["tag1"] == "val3"
+        assert test_run.tags["tag2"] == "val2"
+        assert test_run.tags["tag3"] == "val3"
+        assert test_run.tags["tag4"] == "val4"
+
+        assert storage.get_run_tags() == [
+            ("tag1", {"val1", "val3"}),
+            ("tag2", {"val2"}),
+            ("tag3", {"val3"}),
+            ("tag4", {"val4"}),
         ]
 
         test_run = storage.get_run_by_id(one)
-        assert len(test_run.tags) == 3
-        assert test_run.tags["tag1"] == "val2"
-        assert test_run.tags["tag2"] == "val3"
-        assert test_run.tags["tag3"] == "val4"
+        assert len(test_run.tags) == 4
+        assert test_run.tags["tag1"] == "val3"
+        assert test_run.tags["tag2"] == "val2"
+        assert test_run.tags["tag3"] == "val3"
+        assert test_run.tags["tag4"] == "val4"
 
-        some_runs = storage.get_runs(PipelineRunsFilter(tags={"tag2": "val3"}))
+        some_runs = storage.get_runs(PipelineRunsFilter(tags={"tag3": "val3"}))
 
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
@@ -141,9 +176,14 @@ class TestRunStorage:
         assert len(runs_with_old_tag) == 1
         assert runs_with_old_tag[0].tags == {"tag1": "val1"}
 
-        runs_with_new_tag = storage.get_runs(PipelineRunsFilter(tags={"tag1": "val2"}))
+        runs_with_new_tag = storage.get_runs(PipelineRunsFilter(tags={"tag1": "val3"}))
         assert len(runs_with_new_tag) == 1
-        assert runs_with_new_tag[0].tags == {"tag1": "val2", "tag2": "val3", "tag3": "val4"}
+        assert runs_with_new_tag[0].tags == {
+            "tag1": "val3",
+            "tag2": "val2",
+            "tag3": "val3",
+            "tag4": "val4",
+        }
 
     def test_fetch_by_filter(self, storage):
         assert storage
