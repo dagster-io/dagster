@@ -73,17 +73,18 @@ const CancelRunButton: React.FunctionComponent<{
       disabled={inFlight}
       onClick={async () => {
         setInFlight(true);
-        const res = await cancel({
+        const {data} = await cancel({
           variables: {runId: run.runId},
         });
-        setInFlight(false);
-        if (res.data?.terminatePipelineExecution?.message) {
+        const message = data?.terminatePipelineExecution?.message;
+        if (message) {
           SharedToaster.show({
-            message: res.data.terminatePipelineExecution.message,
+            message,
             icon: 'error',
             intent: Intent.DANGER,
           });
         }
+        setInFlight(false);
       }}
     />
   );

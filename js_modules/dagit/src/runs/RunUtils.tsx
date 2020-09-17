@@ -257,6 +257,9 @@ export const CANCEL_MUTATION = gql`
           canTerminate
         }
       }
+      ... on PythonError {
+        message
+      }
     }
   }
 `;
