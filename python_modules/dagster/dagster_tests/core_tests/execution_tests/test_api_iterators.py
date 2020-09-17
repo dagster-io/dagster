@@ -1,5 +1,5 @@
 from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, resource, solid
-from dagster.core.definitions.executable import InMemoryExecutablePipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events.log import EventRecord, construct_event_logger
 from dagster.core.execution.api import (
     create_execution_plan,
@@ -87,9 +87,7 @@ def test_execute_run_iterator():
         pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
     )
 
-    iterator = execute_run_iterator(
-        InMemoryExecutablePipeline(pipeline_def), pipeline_run, instance=instance
-    )
+    iterator = execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
 
     event_type = None
     while event_type != "STEP_START":

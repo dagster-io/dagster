@@ -20,8 +20,8 @@ from dagster import (
     lambda_solid,
     seven,
 )
-from dagster.core.definitions.executable import InMemoryExecutablePipeline
 from dagster.core.definitions.logger import LoggerDefinition
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import ISolidDefinition
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
@@ -239,7 +239,7 @@ def execute_solid_within_pipeline(
 
 @contextmanager
 def yield_empty_pipeline_context(run_id=None, instance=None):
-    pipeline = InMemoryExecutablePipeline(PipelineDefinition([]))
+    pipeline = InMemoryPipeline(PipelineDefinition([]))
     pipeline_def = pipeline.get_definition()
     instance = check.opt_inst_param(
         instance, "instance", DagsterInstance, default=DagsterInstance.ephemeral()

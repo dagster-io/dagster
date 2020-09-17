@@ -7,7 +7,14 @@ from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector import parse_solid_selection
 
 
-class ExecutablePipeline(six.with_metaclass(ABCMeta)):
+class IPipeline(six.with_metaclass(ABCMeta)):
+    '''
+    IPipeline is a wrapper interface for PipelineDefinitions to be used as parameters to Dagster's
+    core execution APIs.  This enables these execution APIs to operate on both in memory pipeline
+    definitions to be executed in the current process (InMemoryPipeline) as well as definitions that
+    can be reconstructed and executed in a different process (ReconstructablePipeline).
+    '''
+
     @abstractmethod
     def get_definition(self):
         pass
@@ -17,7 +24,7 @@ class ExecutablePipeline(six.with_metaclass(ABCMeta)):
         pass
 
 
-class InMemoryExecutablePipeline(ExecutablePipeline, object):
+class InMemoryPipeline(IPipeline, object):
     def __init__(self, pipeline_def, solid_selection=None, solids_to_execute=None):
         self._pipeline_def = pipeline_def
         self._solid_selection = solid_selection
@@ -41,13 +48,13 @@ class InMemoryExecutablePipeline(ExecutablePipeline, object):
 
     def _subset_for_execution(self, solids_to_execute, solid_selection=None):
         if self._pipeline_def.is_subset_pipeline:
-            return InMemoryExecutablePipeline(
+            return InMemoryPipeline(
                 self._pipeline_def.parent_pipeline_def.get_pipeline_subset_def(solids_to_execute),
                 solid_selection=solid_selection,
                 solids_to_execute=solids_to_execute,
             )
 
-        return InMemoryExecutablePipeline(
+        return InMemoryPipeline(
             self._pipeline_def.get_pipeline_subset_def(solids_to_execute),
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,

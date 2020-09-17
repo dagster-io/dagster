@@ -28,7 +28,7 @@ import six
 import yaml
 
 from dagster import check
-from dagster.core.definitions.executable import ExecutablePipeline
+from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
@@ -360,7 +360,7 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
 def log_repo_stats(instance, source, pipeline=None, repo=None):
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")
-    check.opt_inst_param(pipeline, "pipeline", ExecutablePipeline)
+    check.opt_inst_param(pipeline, "pipeline", IPipeline)
     check.opt_inst_param(repo, "repo", ReconstructableRepository)
 
     if _get_instance_telemetry_enabled(instance):

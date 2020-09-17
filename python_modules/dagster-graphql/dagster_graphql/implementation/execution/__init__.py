@@ -14,7 +14,7 @@ from graphql.execution.base import ResolveInfo
 from rx import Observable
 
 from dagster import check
-from dagster.core.definitions import ExecutablePipeline
+from dagster.core.definitions import IPipeline
 from dagster.core.definitions.schedule import ScheduleExecutionContext
 from dagster.core.errors import (
     DagsterInvalidConfigError,

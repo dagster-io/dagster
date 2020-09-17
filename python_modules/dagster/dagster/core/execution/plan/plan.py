@@ -3,7 +3,7 @@ from collections import OrderedDict, namedtuple
 from dagster import check
 from dagster.core.definitions import (
     CompositeSolidDefinition,
-    ExecutablePipeline,
+    IPipeline,
     InputDefinition,
     Solid,
     SolidDefinition,
@@ -35,7 +35,7 @@ class _PlanBuilder(object):
     """
 
     def __init__(self, pipeline, environment_config, mode, step_keys_to_execute):
-        self.pipeline = check.inst_param(pipeline, "pipeline", ExecutablePipeline)
+        self.pipeline = check.inst_param(pipeline, "pipeline", IPipeline)
         self.environment_config = check.inst_param(
             environment_config, "environment_config", EnvironmentConfig
         )
@@ -294,7 +294,7 @@ class ExecutionPlan(
             )
         return super(ExecutionPlan, cls).__new__(
             cls,
-            pipeline=check.inst_param(pipeline, "pipeline", ExecutablePipeline),
+            pipeline=check.inst_param(pipeline, "pipeline", IPipeline),
             step_dict=check.dict_param(
                 step_dict, "step_dict", key_type=str, value_type=ExecutionStep
             ),
@@ -398,7 +398,7 @@ class ExecutionPlan(
         Once we've processed the entire pipeline, we invoke _PlanBuilder.build() to construct the
         ExecutionPlan object.
         """
-        check.inst_param(pipeline, "pipeline", ExecutablePipeline)
+        check.inst_param(pipeline, "pipeline", IPipeline)
         check.inst_param(environment_config, "environment_config", EnvironmentConfig)
         check.opt_str_param(mode, "mode")
         check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)

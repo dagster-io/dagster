@@ -2,8 +2,8 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
-    ExecutablePipeline,
     ExecutorDefinition,
+    IPipeline,
     IntermediateStorageDefinition,
     ModeDefinition,
     SystemStorageDefinition,
@@ -23,7 +23,7 @@ class InitExecutorContext(
     """Executor-specific initialization context.
 
     Attributes:
-        pipeline (ExecutablePipeline): The pipeline to be executed.
+        pipeline (IPipeline): The pipeline to be executed.
         mode_def (ModeDefinition): The mode in which the pipeline is to be executed.
         executor_def (ExecutorDefinition): The definition of the executor currently being
             constructed.
@@ -50,7 +50,7 @@ class InitExecutorContext(
     ):
         return super(InitExecutorContext, cls).__new__(
             cls,
-            pipeline=check.inst_param(pipeline, "pipeline", ExecutablePipeline),
+            pipeline=check.inst_param(pipeline, "pipeline", IPipeline),
             mode_def=check.inst_param(mode_def, "mode_def", ModeDefinition),
             executor_def=check.inst_param(executor_def, "executor_def", ExecutorDefinition),
             pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),

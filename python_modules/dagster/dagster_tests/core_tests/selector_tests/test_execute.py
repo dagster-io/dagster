@@ -8,7 +8,7 @@ from dagster import (
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
-from dagster.core.definitions.executable import InMemoryExecutablePipeline
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import step_output_event_filter
@@ -17,7 +17,7 @@ from .test_subset_selector import foo_pipeline
 
 
 def test_subset_for_execution():
-    pipeline = InMemoryExecutablePipeline(foo_pipeline)
+    pipeline = InMemoryPipeline(foo_pipeline)
     sub_pipeline = pipeline.subset_for_execution(["*add_nums"])
     assert sub_pipeline.solid_selection == ["*add_nums"]
     assert sub_pipeline.solids_to_execute == {"add_nums", "return_one", "return_two"}

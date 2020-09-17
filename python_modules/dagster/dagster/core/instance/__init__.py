@@ -529,7 +529,7 @@ class DagsterInstance:
 
         if solids_to_execute:
             if isinstance(pipeline_def, PipelineSubsetDefinition):
-                # for the case when pipeline_def is created by ExecutablePipeline or ExternalPipeline
+                # for the case when pipeline_def is created by IPipeline or ExternalPipeline
                 check.invariant(
                     solids_to_execute == pipeline_def.solids_to_execute,
                     "Cannot create a PipelineRun from pipeline subset {pipeline_solids_to_execute} "

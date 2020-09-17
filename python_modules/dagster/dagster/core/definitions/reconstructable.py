@@ -17,7 +17,7 @@ from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.seven import lru_cache
 from dagster.utils.backcompat import experimental
 
-from .executable import ExecutablePipeline
+from .pipeline_base import IPipeline
 
 
 def get_ephemeral_repository_name(pipeline_name):
@@ -76,7 +76,7 @@ class ReconstructablePipeline(
         "_ReconstructablePipeline",
         "repository pipeline_name solid_selection_str solids_to_execute",
     ),
-    ExecutablePipeline,
+    IPipeline,
 ):
     def __new__(
         cls, repository, pipeline_name, solid_selection_str=None, solids_to_execute=None,
@@ -218,7 +218,7 @@ def reconstructable(target):
     When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
     in different systems (like dagstermill), Dagster must know how to reconstruct the pipeline
     on the other side of the process boundary.
-    
+
     This function implements a very conservative strategy for reconstructing pipelines, so that
     its behavior is easy to predict, but as a consequence it is not able to reconstruct certain
     kinds of pipelines, such as those defined by lambdas, in nested scopes (e.g., dynamically
@@ -244,7 +244,7 @@ def reconstructable(target):
 
         def make_bar_pipeline():
             return PipelineDefinition(...)
-            
+
         reconstructable_bar_pipeline = reconstructable(bar_pipeline)
     """
     from dagster.core.definitions import PipelineDefinition
@@ -302,7 +302,7 @@ def build_reconstructable_pipeline(
     When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
     in different systems (like dagstermill), Dagster must know how to reconstruct the pipeline
     on the other side of the process boundary.
-    
+
     This function allows you to use the strategy of your choice for reconstructing pipelines, so
     that you can reconstruct certain kinds of pipelines that are not supported by
     :py:func:`reconstructable`, such as those defined by lambdas, in nested scopes (e.g.,
@@ -310,7 +310,7 @@ def build_reconstructable_pipeline(
     Jupyter notebooks.
 
     If you need to reconstruct pipelines constructed in these ways, use this function instead of
-    :py:func:`reconstructable`. 
+    :py:func:`reconstructable`.
 
     Args:
         reconstructor_module_name (str): The name of the module containing the function to use to
@@ -338,7 +338,7 @@ def build_reconstructable_pipeline(
                     ...
 
                 return _pipeline
-       
+
         def reconstruct_pipeline(*args):
             factory = PipelineFactory()
             return factory.make_pipeline(*args)

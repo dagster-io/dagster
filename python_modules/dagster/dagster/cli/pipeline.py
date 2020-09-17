@@ -20,7 +20,7 @@ from dagster.cli.workspace.cli_target import (
     python_pipeline_target_argument,
     repository_target_argument,
 )
-from dagster.core.definitions.executable import ExecutablePipeline
+from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.errors import (
     DagsterBackfillFailedError,
     DagsterInvariantViolationError,
@@ -473,7 +473,7 @@ def _create_external_pipeline_run(
 def do_execute_command(
     pipeline, instance, config, mode=None, tags=None, solid_selection=None, preset=None,
 ):
-    check.inst_param(pipeline, "pipeline", ExecutablePipeline)
+    check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
     check.opt_list_param(config, "config", of_type=str)
 

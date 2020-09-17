@@ -8,9 +8,9 @@ in the user_context module
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.definitions.executable import ExecutablePipeline
 from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
+from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvariantViolationError
@@ -66,7 +66,7 @@ class SystemExecutionContextData(
             environment_config=check.inst_param(
                 environment_config, "environment_config", EnvironmentConfig
             ),
-            pipeline=check.inst_param(pipeline, "pipeline", ExecutablePipeline),
+            pipeline=check.inst_param(pipeline, "pipeline", IPipeline),
             mode_def=check.inst_param(mode_def, "mode_def", ModeDefinition),
             system_storage_def=check.inst_param(
                 system_storage_def, "system_storage_def", SystemStorageDefinition

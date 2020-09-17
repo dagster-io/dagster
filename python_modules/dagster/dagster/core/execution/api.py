@@ -1,9 +1,9 @@
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.core.definitions import ExecutablePipeline, PipelineDefinition, SystemStorageData
-from dagster.core.definitions.executable import InMemoryExecutablePipeline
+from dagster.core.definitions import IPipeline, PipelineDefinition, SystemStorageData
 from dagster.core.definitions.pipeline import PipelineSubsetDefinition
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -31,14 +31,14 @@ from .results import PipelineExecutionResult
 # | function name               | operates over      | sync  | supports    | creates new PipelineRun |
 # |                             |                    |       | reexecution | in instance             |
 # | --------------------------- | ------------------ | ----- | ----------- | ----------------------- |
-# | execute_pipeline_iterator   | ExecutablePipeline | async | no          | yes                     |
-# | execute_pipeline            | ExecutablePipeline | sync  | no          | yes                     |
+# | execute_pipeline_iterator   | IPipeline | async | no          | yes                     |
+# | execute_pipeline            | IPipeline | sync  | no          | yes                     |
 # | execute_run_iterator        | PipelineRun        | async | (1)         | no                      |
 # | execute_run                 | PipelineRun        | sync  | (1)         | no                      |
 # | execute_plan_iterator       | ExecutionPlan      | async | (2)         | no                      |
 # | execute_plan                | ExecutionPlan      | sync  | (2)         | no                      |
-# | reexecute_pipeline          | ExecutablePipeline | sync  | yes         | yes                     |
-# | reexecute_pipeline_iterator | ExecutablePipeline | async | yes         | yes                     |
+# | reexecute_pipeline          | IPipeline | sync  | yes         | yes                     |
+# | reexecute_pipeline_iterator | IPipeline | async | yes         | yes                     |
 #
 # Notes on reexecution support:
 # (1) The appropriate bits must be set on the PipelineRun passed to this function. Specifically,
@@ -48,7 +48,7 @@ from .results import PipelineExecutionResult
 
 
 def execute_run_iterator(pipeline, pipeline_run, instance):
-    check.inst_param(pipeline, "pipeline", ExecutablePipeline)
+    check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
@@ -99,7 +99,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     Synchronous version of execute_run_iterator.
 
     Args:
-        pipeline (ExecutablePipeline): The pipeline to execute.
+        pipeline (IPipeline): The pipeline to execute.
         pipeline_run (PipelineRun): The run to execute
         instance (DagsterInstance): The instance in which the run has been created.
         raise_on_error (Optional[bool]): Whether or not to raise exceptions when they occur.
@@ -110,13 +110,13 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     """
     if isinstance(pipeline, PipelineDefinition):
         raise DagsterInvariantViolationError(
-            "execute_run requires an ExecutablePipeline but received a PipelineDefinition "
+            "execute_run requires an IPipeline but received a PipelineDefinition "
             "directly instead. To support hand-off to other processes provide a "
             "ReconstructablePipeline which can be done using reconstructable(). For in "
-            "process only execution you can use InMemoryExecutablePipeline."
+            "process only execution you can use InMemoryPipeline."
         )
 
-    check.inst_param(pipeline, "pipeline", ExecutablePipeline)
+    check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
@@ -198,7 +198,7 @@ def execute_pipeline_iterator(
     way is appropriate.
 
     Parameters:
-        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
         run_config (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
@@ -276,7 +276,7 @@ def execute_pipeline(
     scripts.
 
     Parameters:
-        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
         run_config (Optional[dict]): The environment configuration that parametrizes this run,
             as a dict.
         mode (Optional[str]): The name of the pipeline mode to use. You may not set both ``mode``
@@ -380,7 +380,7 @@ def reexecute_pipeline(
     scripts.
 
     Parameters:
-        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
         parent_run_id (str): The id of the previous run to reexecute. The run must exist in the
             instance.
         run_config (Optional[dict]): The environment configuration that parametrizes this run,
@@ -480,7 +480,7 @@ def reexecute_pipeline_iterator(
     way is appropriate.
 
     Parameters:
-        pipeline (Union[ExecutablePipeline, PipelineDefinition]): The pipeline to execute.
+        pipeline (Union[IPipeline, PipelineDefinition]): The pipeline to execute.
         parent_run_id (str): The id of the previous run to reexecute. The run must exist in the
             instance.
         run_config (Optional[dict]): The environment configuration that parametrizes this run,
@@ -610,9 +610,9 @@ def execute_plan(
 def _check_pipeline(pipeline):
     # backcompat
     if isinstance(pipeline, PipelineDefinition):
-        pipeline = InMemoryExecutablePipeline(pipeline)
+        pipeline = InMemoryPipeline(pipeline)
 
-    check.inst_param(pipeline, "pipeline", ExecutablePipeline)
+    check.inst_param(pipeline, "pipeline", IPipeline)
     return pipeline
 
 
