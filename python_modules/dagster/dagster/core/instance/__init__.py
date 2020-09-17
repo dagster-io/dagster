@@ -544,6 +544,13 @@ class DagsterInstance:
                     solids_to_execute=solids_to_execute
                 )
 
+        full_execution_plan = execution_plan or create_execution_plan(
+            pipeline_def, run_config=run_config, mode=mode,
+        )
+        check.invariant(
+            len(full_execution_plan.step_keys_to_execute) == len(full_execution_plan.steps)
+        )
+
         if _is_memoized_run(tags):
             if step_keys_to_execute:
                 raise DagsterInvariantViolationError(
@@ -551,27 +558,19 @@ class DagsterInstance:
                     "pipeline runs."
                 )
 
-            speculative_execution_plan = create_execution_plan(
-                pipeline_def, run_config=run_config, mode=mode,
-            )
-
             step_versions = resolve_step_versions(
-                speculative_execution_plan=speculative_execution_plan,
-                run_config=run_config,
-                mode=mode,
+                full_execution_plan, run_config=run_config, mode=mode,
             )
 
             step_keys_to_execute = self.resolve_unmemoized_steps(
-                speculative_execution_plan, step_versions
+                full_execution_plan, step_versions
             )  # TODO: tighter integration with existing step_keys_to_execute functionality
 
-        if execution_plan is None:
-            execution_plan = create_execution_plan(
-                pipeline_def,
-                run_config=run_config,
-                mode=mode,
-                step_keys_to_execute=step_keys_to_execute,
-            )
+        subsetted_execution_plan = (
+            full_execution_plan.build_subset_plan(step_keys_to_execute)
+            if step_keys_to_execute
+            else full_execution_plan
+        )
 
         return self.create_run(
             pipeline_name=pipeline_def.name,
@@ -587,7 +586,7 @@ class DagsterInstance:
             parent_run_id=parent_run_id,
             pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
             execution_plan_snapshot=snapshot_from_execution_plan(
-                execution_plan, pipeline_def.get_pipeline_snapshot_id()
+                subsetted_execution_plan, pipeline_def.get_pipeline_snapshot_id()
             ),
             parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
         )
