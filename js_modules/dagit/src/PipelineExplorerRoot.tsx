@@ -6,7 +6,7 @@ import {useQuery} from 'react-apollo';
 import {Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePipelineSelector} from './DagsterRepositoryContext';
+import {usePipelineSelector, useActivePipelineForName} from './DagsterRepositoryContext';
 import Loading from './Loading';
 import PipelineExplorer, {PipelineExplorerOptions} from './PipelineExplorer';
 import {
@@ -131,6 +131,8 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
 
   const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
 
+  const pipeline = useActivePipelineForName(explorerPath.pipelineName);
+
   return (
     <ExplorerSnapshotResolver explorerPath={explorerPath} options={options}>
       {(result) => {
@@ -158,9 +160,11 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
           return <Redirect to={`/pipeline/${explorerPathToString(n)}`} />;
         }
 
+        const pathID = explorerPath.snapshotId;
+
         return (
           <>
-            {explorerPath.snapshotId && (
+            {pathID && pipeline?.pipelineSnapshotId !== pathID && (
               <SnapshotNotice>You are viewing a historical pipeline snapshot.</SnapshotNotice>
             )}
             <PipelineExplorer

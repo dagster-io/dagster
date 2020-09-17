@@ -149,6 +149,12 @@ export const useRepository = () => {
   return repository;
 };
 
+export const useActivePipelineForName = (pipelineName: string) => {
+  const repository = useRepository();
+  const {pipelines} = repository;
+  return pipelines.find((pipeline) => pipeline.name === pipelineName);
+};
+
 export const usePipelineSelector = (pipelineName: string, solidSelection?: string[]) => {
   const repositorySelector = useRepositorySelector();
   return {
