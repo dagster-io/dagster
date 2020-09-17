@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.9.9
+
+**New**
+
+- [Databricks] solids created with create_databricks_job_solid now log a URL for accessing the job in the Databricks UI.
+- The pipeline execute command now defaults to using your current directory if you don’t specify a working directory.
+
+**Bugfixes**
+
+- [Celery-K8s] Surface errors to Dagit that previously were not caught in the Celery workers.
+- Fix issues with calling add_run_tags on tags that already exist.
+- Add “Unknown” step state in Dagit’s pipeline run logs view for when pipeline has completed but step has not emitted a completion event
+
+**Experimental**
+
+- Version tags for resources and external inputs.
+
+**Documentation**
+
+- Fix rendering of example solid config in “Basics of Solids” tutorial.
+
 ## 0.9.8
 
 **New**
