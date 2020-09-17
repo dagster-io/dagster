@@ -90,20 +90,22 @@ class ScheduleSelector(
         )
 
 
-class TriggerSelector(namedtuple("_TriggerSelector", "location_name repository_name trigger_name")):
-    def __new__(cls, location_name, repository_name, trigger_name):
+class TriggerSelector(
+    namedtuple("_TriggerSelector", "location_name repository_name executable_name")
+):
+    def __new__(cls, location_name, repository_name, executable_name):
         return super(TriggerSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
-            trigger_name=check.str_param(trigger_name, "trigger_name"),
+            executable_name=check.str_param(executable_name, "executable_name"),
         )
 
     def to_graphql_input(self):
         return {
             "repositoryLocationName": self.location_name,
             "repositoryName": self.repository_name,
-            "triggered_executionName": self.trigger_name,
+            "executableName": self.executable_name,
         }
 
     @staticmethod
@@ -111,5 +113,5 @@ class TriggerSelector(namedtuple("_TriggerSelector", "location_name repository_n
         return TriggerSelector(
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
-            trigger_name=graphql_data["triggerName"],
+            executable_name=graphql_data["executableName"],
         )

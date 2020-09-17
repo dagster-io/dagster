@@ -53,7 +53,7 @@ from dagster import (
     weekly_schedule,
 )
 from dagster.cli.workspace import Workspace
-from dagster.core.definitions.decorators import triggered_execution
+from dagster.core.definitions.decorators import executable
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import InProcessRepositoryLocation, RepositoryLocationHandle
@@ -1006,12 +1006,12 @@ def define_partitions():
     return [integer_set, enum_set, chained_partition_set]
 
 
-def define_triggers():
-    @triggered_execution(pipeline_name="no_config_pipeline")
-    def triggered_no_config(_):
+def define_executables():
+    @executable(pipeline_name="no_config_pipeline")
+    def executable_no_config(_):
         return {"storage": {"filesystem": {}}}
 
-    return [triggered_no_config]
+    return [executable_no_config]
 
 
 @pipeline
@@ -1078,5 +1078,5 @@ def test_repo():
         ]
         + define_schedules()
         + define_partitions()
-        + define_triggers()
+        + define_executables()
     )

@@ -21,18 +21,16 @@ def trigger_execution(graphene_info, trigger_selector):
     repository = location.get_repository(trigger_selector.repository_name)
 
     matches = [
-        triggered_execution
-        for triggered_execution in repository.get_external_triggered_executions()
-        if triggered_execution.name == trigger_selector.trigger_name
+        executable
+        for executable in repository.get_external_executables()
+        if executable.name == trigger_selector.executable_name
     ]
 
     launched_run_ids = []
-    for external_triggered_execution in matches:
-        external_pipeline = repository.get_full_external_pipeline(
-            external_triggered_execution.pipeline_name
-        )
-        result = graphene_info.context.get_external_triggered_execution_param_data(
-            repository.handle, external_triggered_execution.name
+    for executable in matches:
+        external_pipeline = repository.get_full_external_pipeline(executable.pipeline_name)
+        result = graphene_info.context.get_external_executable_param_data(
+            repository.handle, executable.name
         )
         if isinstance(result, ExternalExecutionParamsErrorData):
             continue
@@ -43,12 +41,12 @@ def trigger_execution(graphene_info, trigger_selector):
             location_name=location.name,
             repository_name=repository.name,
             pipeline_name=external_pipeline.name,
-            solid_selection=external_triggered_execution.solid_selection,
+            solid_selection=executable.solid_selection,
         )
         execution_params = ExecutionParams(
             selector=pipeline_selector,
             run_config=result.run_config,
-            mode=external_triggered_execution.mode,
+            mode=executable.mode,
             execution_metadata=ExecutionMetadata(run_id=None, tags=result.tags),
             step_keys=None,
         )

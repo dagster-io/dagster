@@ -9,12 +9,12 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
+    ExecutableDefinition,
     PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
     RepositoryDefinition,
     ScheduleDefinition,
-    TriggeredExecutionDefinition,
 )
 from dagster.core.definitions.partition import PartitionScheduleDefinition
 from dagster.core.snap import PipelineSnapshot
@@ -26,7 +26,7 @@ from dagster.utils.error import SerializableErrorInfo
 class ExternalRepositoryData(
     namedtuple(
         "_ExternalRepositoryData",
-        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_triggered_execution_datas",
+        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_executable_datas",
     )
 ):
     def __new__(
@@ -35,7 +35,7 @@ class ExternalRepositoryData(
         external_pipeline_datas,
         external_schedule_datas,
         external_partition_set_datas,
-        external_triggered_execution_datas,
+        external_executable_datas,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -51,10 +51,10 @@ class ExternalRepositoryData(
                 "external_partition_set_datas",
                 of_type=ExternalPartitionSetData,
             ),
-            external_triggered_execution_datas=check.list_param(
-                external_triggered_execution_datas,
-                "external_triggered_execution_datas",
-                of_type=ExternalTriggeredExecutionData,
+            external_executable_datas=check.list_param(
+                external_executable_datas,
+                "external_executable_datas",
+                of_type=ExternalExecutableData,
             ),
         )
 
@@ -94,12 +94,12 @@ class ExternalRepositoryData(
 
         check.failed("Could not find external partition set data named " + name)
 
-    def get_external_triggered_execution_data(self, name):
+    def get_external_executable_data(self, name):
         check.str_param(name, "name")
 
-        for external_triggered_execution_data in self.external_triggered_execution_datas:
-            if external_triggered_execution_data.name == name:
-                return external_triggered_execution_data
+        for external_executable_data in self.external_executable_datas:
+            if external_executable_data.name == name:
+                return external_executable_data
 
         check.failed("Could not find external triggered execution data named " + name)
 
@@ -211,13 +211,13 @@ class ExternalScheduleExecutionErrorData(
 
 
 @whitelist_for_serdes
-class ExternalTriggeredExecutionData(
-    namedtuple("_ExternalTriggeredExecutionData", "name pipeline_name solid_selection mode")
+class ExternalExecutableData(
+    namedtuple("_ExternalExecutableData", "name pipeline_name solid_selection mode")
 ):
     def __new__(
         cls, name, pipeline_name, solid_selection, mode,
     ):
-        return super(ExternalTriggeredExecutionData, cls).__new__(
+        return super(ExternalExecutableData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
@@ -227,15 +227,12 @@ class ExternalTriggeredExecutionData(
 
 
 @whitelist_for_serdes
-class ExternalExecutionParamsData(
-    namedtuple("_ExternalExecutionParamsData", "run_config tags should_execute")
-):
-    def __new__(cls, run_config=None, tags=None, should_execute=None):
+class ExternalExecutionParamsData(namedtuple("_ExternalExecutionParamsData", "run_config tags")):
+    def __new__(cls, run_config=None, tags=None):
         return super(ExternalExecutionParamsData, cls).__new__(
             cls,
             run_config=check.opt_dict_param(run_config, "run_config"),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
-            should_execute=check.opt_bool_param(should_execute, "should_execute"),
         )
 
 
@@ -340,8 +337,8 @@ def external_repository_data_from_def(repository_def):
             list(map(external_partition_set_data_from_def, repository_def.partition_set_defs)),
             key=lambda psd: psd.name,
         ),
-        external_triggered_execution_datas=sorted(
-            list(map(external_triggered_execution_def, repository_def.triggered_execution_defs)),
+        external_executable_datas=sorted(
+            list(map(external_executable_from_def, repository_def.executable_defs)),
             key=lambda ted: ted.name,
         ),
     )
@@ -385,15 +382,13 @@ def external_partition_set_data_from_def(partition_set_def):
     )
 
 
-def external_triggered_execution_def(triggered_execution_def):
-    check.inst_param(
-        triggered_execution_def, "triggered_execution_def", TriggeredExecutionDefinition
-    )
-    return ExternalTriggeredExecutionData(
-        name=triggered_execution_def.name,
-        pipeline_name=triggered_execution_def.pipeline_name,
-        solid_selection=triggered_execution_def.solid_selection,
-        mode=triggered_execution_def.mode,
+def external_executable_from_def(executable_def):
+    check.inst_param(executable_def, "executable_def", ExecutableDefinition)
+    return ExternalExecutableData(
+        name=executable_def.name,
+        pipeline_name=executable_def.pipeline_name,
+        solid_selection=executable_def.solid_selection,
+        mode=executable_def.mode,
     )
 
 

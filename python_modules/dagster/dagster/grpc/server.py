@@ -41,10 +41,10 @@ from .impl import (
     RunInSubprocessComplete,
     StartRunInSubprocessSuccessful,
     execute_run_in_subprocess,
+    get_external_executable_params,
     get_external_execution_plan_snapshot,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
-    get_external_triggered_execution_params,
     start_run_in_subprocess,
 )
 from .types import (
@@ -54,8 +54,8 @@ from .types import (
     CancelExecutionResult,
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
+    ExternalExecutableArgs,
     ExternalScheduleExecutionArgs,
-    ExternalTriggeredExecutionArgs,
     GetCurrentImageResult,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
@@ -582,24 +582,18 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def ExternalTriggerExecutionParams(self, request, _context):
-        external_triggered_execution_args = deserialize_json_to_dagster_namedtuple(
-            request.serialized_external_triggered_execution_args
+    def ExternalExecutableParams(self, request, _context):
+        external_executable_args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_external_executable_args
         )
         check.inst_param(
-            external_triggered_execution_args,
-            "external_triggered_execution_args",
-            ExternalTriggeredExecutionArgs,
+            external_executable_args, "external_executable_args", ExternalExecutableArgs,
         )
 
-        recon_repo = self._recon_repository_from_origin(
-            external_triggered_execution_args.repository_origin
-        )
-        return api_pb2.ExternalTriggerExecutionParamsReply(
+        recon_repo = self._recon_repository_from_origin(external_executable_args.repository_origin)
+        return api_pb2.ExternalExecutableParamsReply(
             serialized_external_execution_params_or_external_execution_params_error_data=serialize_dagster_namedtuple(
-                get_external_triggered_execution_params(
-                    recon_repo, external_triggered_execution_args
-                )
+                get_external_executable_params(recon_repo, external_executable_args)
             )
         )
 

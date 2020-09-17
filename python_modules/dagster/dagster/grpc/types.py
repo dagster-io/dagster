@@ -239,17 +239,17 @@ class ExternalScheduleExecutionArgs(
 
 
 @whitelist_for_serdes
-class ExternalTriggeredExecutionArgs(
-    namedtuple("_ExternalTriggeredExecutionArgs", "repository_origin instance_ref trigger_name",)
+class ExternalExecutableArgs(
+    namedtuple("_ExternalExecutableArgs", "repository_origin instance_ref name",)
 ):
-    def __new__(cls, repository_origin, instance_ref, trigger_name):
-        return super(ExternalTriggeredExecutionArgs, cls).__new__(
+    def __new__(cls, repository_origin, instance_ref, name):
+        return super(ExternalExecutableArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", RepositoryOrigin
             ),
             instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
-            trigger_name=check.str_param(trigger_name, "trigger_name"),
+            name=check.str_param(name, "name"),
         )
 
 

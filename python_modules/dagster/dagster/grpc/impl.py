@@ -5,7 +5,7 @@ import sys
 from datetime import datetime
 
 from dagster import check
-from dagster.core.definitions import ScheduleExecutionContext, TriggeredExecutionContext
+from dagster.core.definitions import ExecutableContext, ScheduleExecutionContext
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
@@ -14,9 +14,9 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterRunNotFoundError,
     DagsterSubprocessError,
+    ExecutableError,
     PartitionExecutionError,
     ScheduleExecutionError,
-    TriggeredExecutionError,
     user_code_error_boundary,
 )
 from dagster.core.events import EngineEventData
@@ -43,8 +43,8 @@ from dagster.core.snap.execution_plan_snapshot import (
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import (
     ExecutionPlanSnapshotArgs,
+    ExternalExecutableArgs,
     ExternalScheduleExecutionArgs,
-    ExternalTriggeredExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
     ScheduleExecutionDataMode,
@@ -281,50 +281,33 @@ def get_external_schedule_execution(recon_repo, external_schedule_execution_args
             )
 
 
-def get_external_triggered_execution_params(recon_repo, external_triggered_execution_args):
+def get_external_executable_params(recon_repo, external_executable_args):
     check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
     check.inst_param(
-        external_triggered_execution_args,
-        "external_triggered_execution_args",
-        ExternalTriggeredExecutionArgs,
+        external_executable_args, "external_executable_args", ExternalExecutableArgs,
     )
     definition = recon_repo.get_definition()
-    triggered_execution_def = definition.get_triggered_execution_def(
-        external_triggered_execution_args.trigger_name
-    )
-    with DagsterInstance.from_ref(external_triggered_execution_args.instance_ref) as instance:
-        context = TriggeredExecutionContext(instance)
+    executable_def = definition.get_executable_def(external_executable_args.name)
+    with DagsterInstance.from_ref(external_executable_args.instance_ref) as instance:
+        context = ExecutableContext(instance)
 
         try:
             with user_code_error_boundary(
-                TriggeredExecutionError,
-                lambda: "Error occured during the execution of should_execute_fn for triggered "
-                "execution {name}".format(name=triggered_execution_def.name),
-            ):
-                should_execute = triggered_execution_def.should_execute(context)
-                if not should_execute:
-                    return ExternalExecutionParamsData(
-                        run_config=None, tags=None, should_execute=False
-                    )
-
-            with user_code_error_boundary(
-                TriggeredExecutionError,
+                ExecutableError,
                 lambda: "Error occured during the execution of run_config_fn for triggered "
-                "execution {name}".format(name=triggered_execution_def.name),
+                "execution {name}".format(name=executable_def.name),
             ):
-                run_config = triggered_execution_def.get_run_config(context)
+                run_config = executable_def.get_run_config(context)
 
             with user_code_error_boundary(
-                TriggeredExecutionError,
+                ExecutableError,
                 lambda: "Error occured during the execution of tags_fn for triggered "
-                "execution {name}".format(name=triggered_execution_def.name),
+                "execution {name}".format(name=executable_def.name),
             ):
-                tags = triggered_execution_def.get_tags(context)
+                tags = executable_def.get_tags(context)
 
-            return ExternalExecutionParamsData(
-                run_config=run_config, tags=tags, should_execute=should_execute
-            )
-        except TriggeredExecutionError:
+            return ExternalExecutionParamsData(run_config=run_config, tags=tags)
+        except ExecutableError:
             return ExternalExecutionParamsErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())
             )

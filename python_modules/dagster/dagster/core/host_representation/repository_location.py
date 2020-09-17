@@ -4,6 +4,10 @@ from datetime import datetime
 import six
 
 from dagster import check
+from dagster.api.snapshot_executable import (
+    sync_get_external_executable_params,
+    sync_get_external_executable_params_grpc,
+)
 from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster.api.snapshot_partition import (
     sync_get_external_partition_config,
@@ -23,10 +27,6 @@ from dagster.api.snapshot_repository import (
 from dagster.api.snapshot_schedule import (
     sync_get_external_schedule_execution_data,
     sync_get_external_schedule_execution_data_grpc,
-)
-from dagster.api.snapshot_trigger import (
-    sync_get_external_trigger_execution_params,
-    sync_get_external_trigger_execution_params_grpc,
 )
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
@@ -49,16 +49,16 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.impl import (
+    get_external_executable_params,
     get_external_schedule_execution,
-    get_external_triggered_execution_params,
     get_partition_config,
     get_partition_names,
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
 from dagster.grpc.types import (
+    ExternalExecutableArgs,
     ExternalScheduleExecutionArgs,
-    ExternalTriggeredExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
@@ -175,7 +175,7 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def get_external_triggered_execution_params(self, instance, repository_handle, trigger_name):
+    def get_external_executable_params(self, instance, repository_handle, name):
         pass
 
     @abstractproperty
@@ -398,19 +398,17 @@ class InProcessRepositoryLocation(RepositoryLocation):
         recon_repo = recon_repository_from_origin(repo_origin)
         return get_external_schedule_execution(recon_repo, args)
 
-    def get_external_triggered_execution_params(self, instance, repository_handle, trigger_name):
+    def get_external_executable_params(self, instance, repository_handle, name):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(trigger_name, "trigger_name")
+        check.str_param(name, "name")
 
         repo_origin = repository_handle.get_origin()
         recon_repo = recon_repository_from_origin(repo_origin)
-        args = ExternalTriggeredExecutionArgs(
-            instance_ref=instance.get_ref(),
-            repository_origin=repo_origin,
-            trigger_name=trigger_name,
+        args = ExternalExecutableArgs(
+            instance_ref=instance.get_ref(), repository_origin=repo_origin, name=name,
         )
-        return get_external_triggered_execution_params(recon_repo, args)
+        return get_external_executable_params(recon_repo, args)
 
     def get_external_partition_set_execution_param_data(
         self, repository_handle, partition_set_name, partition_names
@@ -583,12 +581,12 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             scheduled_execution_datetime_utc,
         )
 
-    def get_external_triggered_execution_params(self, instance, repository_handle, trigger_name):
+    def get_external_executable_params(self, instance, repository_handle, name):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(trigger_name, "trigger_name")
-        return sync_get_external_trigger_execution_params_grpc(
-            self._handle.client, instance, repository_handle, trigger_name
+        check.str_param(name, "name")
+        return sync_get_external_executable_params_grpc(
+            self._handle.client, instance, repository_handle, name
         )
 
     def get_external_partition_set_execution_param_data(
@@ -792,11 +790,11 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
             scheduled_execution_datetime_utc,
         )
 
-    def get_external_triggered_execution_params(self, instance, repository_handle, trigger_name):
+    def get_external_executable_params(self, instance, repository_handle, name):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(trigger_name, "trigger_name")
-        return sync_get_external_trigger_execution_params(instance, repository_handle, trigger_name)
+        check.str_param(name, "name")
+        return sync_get_external_executable_params(instance, repository_handle, name)
 
     def get_external_partition_set_execution_param_data(
         self, repository_handle, partition_set_name, partition_names

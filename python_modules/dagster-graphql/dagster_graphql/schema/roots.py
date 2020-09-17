@@ -829,7 +829,7 @@ class DauphinTriggerSelector(dauphin.InputObjectType):
 
     repositoryName = dauphin.NonNull(dauphin.String)
     repositoryLocationName = dauphin.NonNull(dauphin.String)
-    triggerName = dauphin.NonNull(dauphin.String)
+    executableName = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPartitionBackfillParams(dauphin.InputObjectType):

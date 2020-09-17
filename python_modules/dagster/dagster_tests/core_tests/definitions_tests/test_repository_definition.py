@@ -11,7 +11,7 @@ from dagster import (
     lambda_solid,
     repository,
 )
-from dagster.core.definitions.decorators import triggered_execution
+from dagster.core.definitions.decorators import executable
 
 
 def create_single_node_pipeline(name, called):
@@ -165,8 +165,8 @@ def test_schedule_partitions():
     assert some_repo.get_partition_set_def("daily_foo_partitions")
 
 
-def test_triggered_executions():
-    @triggered_execution(pipeline_name="foo")
+def test_executables():
+    @executable(pipeline_name="foo")
     def unscheduled_foo(_):
         return {}
 
@@ -174,8 +174,8 @@ def test_triggered_executions():
     def some_repo():
         return {
             "pipelines": {"foo": lambda: create_single_node_pipeline("foo", {})},
-            "triggered_executions": {"unscheduled_foo": lambda: unscheduled_foo},
+            "executables": {"unscheduled_foo": lambda: unscheduled_foo},
         }
 
-    assert len(some_repo.triggered_execution_defs) == 1
-    assert some_repo.get_triggered_execution_def("unscheduled_foo")
+    assert len(some_repo.executable_defs) == 1
+    assert some_repo.get_executable_def("unscheduled_foo")

@@ -58,10 +58,10 @@ from dagster.core.storage.tags import check_tags
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcServer
 from dagster.grpc.impl import (
+    get_external_executable_params,
     get_external_execution_plan_snapshot,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
-    get_external_triggered_execution_params,
     get_partition_config,
     get_partition_names,
     get_partition_set_execution_param_data,
@@ -71,8 +71,8 @@ from dagster.grpc.types import (
     ExecuteRunArgs,
     ExecuteStepArgs,
     ExecutionPlanSnapshotArgs,
+    ExternalExecutableArgs,
     ExternalScheduleExecutionArgs,
-    ExternalTriggeredExecutionArgs,
     ListRepositoriesInput,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
@@ -277,17 +277,17 @@ def schedule_execution_data_command(args):
 
 
 @unary_api_cli_command(
-    name="trigger_execution_params",
+    name="executable_params",
     help_str=(
         "[INTERNAL] Return the execution params for a triggered execution. This is an internal "
         "utility. Users should generally not invoke this command interactively."
     ),
-    input_cls=ExternalTriggeredExecutionArgs,
+    input_cls=ExternalExecutableArgs,
     output_cls=(ExternalExecutionParamsData, ExternalExecutionParamsErrorData),
 )
-def trigger_execution_params_command(args):
+def executable_params_command(args):
     recon_repo = recon_repository_from_origin(args.repository_origin)
-    return get_external_triggered_execution_params(recon_repo, args)
+    return get_external_executable_params(recon_repo, args)
 
 
 @whitelist_for_serdes
@@ -727,7 +727,7 @@ def create_api_cli_group():
     group.add_command(partition_names_command)
     group.add_command(partition_set_execution_param_command)
     group.add_command(schedule_execution_data_command)
-    group.add_command(trigger_execution_params_command)
+    group.add_command(executable_params_command)
     group.add_command(launch_scheduled_execution)
     group.add_command(grpc_command)
     return group

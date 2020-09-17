@@ -6,11 +6,11 @@ from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
 
 from .external_data import (
+    ExternalExecutableData,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalRepositoryData,
     ExternalScheduleData,
-    ExternalTriggeredExecutionData,
 )
 from .handle import PartitionSetHandle, PipelineHandle, RepositoryHandle, ScheduleHandle
 from .pipeline_index import PipelineIndex
@@ -89,10 +89,10 @@ class ExternalRepository:
     def get_all_external_pipelines(self):
         return [self.get_full_external_pipeline(pn) for pn in self._pipeline_index_map]
 
-    def get_external_triggered_executions(self):
+    def get_external_executables(self):
         return [
-            ExternalTriggeredExecution(external_triggered_execution_data, self._handle)
-            for external_triggered_execution_data in self.external_repository_data.external_triggered_execution_datas
+            ExternalExecutable(external_executable_data, self._handle)
+            for external_executable_data in self.external_repository_data.external_executable_datas
         ]
 
     @property
@@ -409,27 +409,25 @@ class ExternalPipelineExecutionResult(namedtuple("_ExternalPipelineExecutionResu
         return all([not event.is_failure for event in self.event_list])
 
 
-class ExternalTriggeredExecution:
-    def __init__(self, external_triggered_execution_data, handle):
-        self._external_triggered_execution_data = check.inst_param(
-            external_triggered_execution_data,
-            "external_triggered_execution_data",
-            ExternalTriggeredExecutionData,
+class ExternalExecutable:
+    def __init__(self, external_executable_data, handle):
+        self._external_executable_data = check.inst_param(
+            external_executable_data, "external_executable_data", ExternalExecutableData,
         )
         self._handle = check.inst_param(handle, "handle", RepositoryHandle)
 
     @property
     def name(self):
-        return self._external_triggered_execution_data.name
+        return self._external_executable_data.name
 
     @property
     def pipeline_name(self):
-        return self._external_triggered_execution_data.pipeline_name
+        return self._external_executable_data.pipeline_name
 
     @property
     def solid_selection(self):
-        return self._external_triggered_execution_data.solid_selection
+        return self._external_executable_data.solid_selection
 
     @property
     def mode(self):
-        return self._external_triggered_execution_data.mode
+        return self._external_executable_data.mode

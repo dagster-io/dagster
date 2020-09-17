@@ -21,8 +21,8 @@ from .types import (
     CancelExecutionRequest,
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
+    ExternalExecutableArgs,
     ExternalScheduleExecutionArgs,
-    ExternalTriggeredExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
@@ -239,18 +239,16 @@ class DagsterGrpcClient(object):
             res.serialized_external_schedule_execution_data_or_external_schedule_execution_error
         )
 
-    def external_trigger_execution_params(self, external_triggered_execution_args):
+    def external_executable_params(self, external_executable_args):
         check.inst_param(
-            external_triggered_execution_args,
-            "external_triggered_execution_args",
-            ExternalTriggeredExecutionArgs,
+            external_executable_args, "external_executable_args", ExternalExecutableArgs,
         )
 
         res = self._query(
-            "ExternalTriggerExecutionParams",
-            api_pb2.ExternalTriggerExecutionParamsRequest,
-            serialized_external_triggered_execution_args=serialize_dagster_namedtuple(
-                external_triggered_execution_args
+            "ExternalExecutableParams",
+            api_pb2.ExternalExecutableParamsRequest,
+            serialized_external_executable_args=serialize_dagster_namedtuple(
+                external_executable_args
             ),
         )
 
