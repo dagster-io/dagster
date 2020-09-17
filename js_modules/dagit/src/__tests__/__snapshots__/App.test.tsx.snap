@@ -536,8 +536,9 @@ exports[`renders execution 1`] = `
       >
         airline_demo_ingest_pipeline
       </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/overview"
         onClick={[Function]}
       >
         <span
@@ -565,9 +566,10 @@ exports[`renders execution 1`] = `
           </svg>
         </span>
         Overview
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/"
         onClick={[Function]}
       >
         <span
@@ -595,9 +597,10 @@ exports[`renders execution 1`] = `
           </svg>
         </span>
         Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dmhgRM"
+        href="/pipeline/airline_demo_ingest_pipeline/playground"
         onClick={[Function]}
       >
         <span
@@ -625,9 +628,10 @@ exports[`renders execution 1`] = `
           </svg>
         </span>
         Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/runs"
         onClick={[Function]}
       >
         <span
@@ -655,14 +659,7 @@ exports[`renders execution 1`] = `
           </svg>
         </span>
         Runs
-      </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
+      </a>
     </div>
     <div
       className="ExecutionTabs__ExecutionTabsContainer-sc-1e2gc9p-0 ijLiyT"
@@ -1323,8 +1320,9 @@ exports[`renders pipeline page 1`] = `
       >
         airline_demo_ingest_pipeline
       </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/overview"
         onClick={[Function]}
       >
         <span
@@ -1352,9 +1350,10 @@ exports[`renders pipeline page 1`] = `
           </svg>
         </span>
         Overview
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dmhgRM"
+        href="/pipeline/airline_demo_ingest_pipeline/"
         onClick={[Function]}
       >
         <span
@@ -1382,9 +1381,10 @@ exports[`renders pipeline page 1`] = `
           </svg>
         </span>
         Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/playground"
         onClick={[Function]}
       >
         <span
@@ -1412,9 +1412,10 @@ exports[`renders pipeline page 1`] = `
           </svg>
         </span>
         Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/runs"
         onClick={[Function]}
       >
         <span
@@ -1442,14 +1443,7 @@ exports[`renders pipeline page 1`] = `
           </svg>
         </span>
         Runs
-      </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
+      </a>
     </div>
     <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
@@ -6060,8 +6054,9 @@ exports[`renders pipeline solid page 1`] = `
       >
         airline_demo_ingest_pipeline
       </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/overview"
         onClick={[Function]}
       >
         <span
@@ -6089,9 +6084,10 @@ exports[`renders pipeline solid page 1`] = `
           </svg>
         </span>
         Overview
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dmhgRM"
+        href="/pipeline/airline_demo_ingest_pipeline/"
         onClick={[Function]}
       >
         <span
@@ -6119,9 +6115,10 @@ exports[`renders pipeline solid page 1`] = `
           </svg>
         </span>
         Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/playground"
         onClick={[Function]}
       >
         <span
@@ -6149,9 +6146,10 @@ exports[`renders pipeline solid page 1`] = `
           </svg>
         </span>
         Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/runs"
         onClick={[Function]}
       >
         <span
@@ -6179,14 +6177,7 @@ exports[`renders pipeline solid page 1`] = `
           </svg>
         </span>
         Runs
-      </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
+      </a>
     </div>
     <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
@@ -12660,8 +12651,9 @@ exports[`renders type page 1`] = `
       >
         airline_demo_ingest_pipeline
       </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/overview"
         onClick={[Function]}
       >
         <span
@@ -12689,9 +12681,10 @@ exports[`renders type page 1`] = `
           </svg>
         </span>
         Overview
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dmhgRM"
+        href="/pipeline/airline_demo_ingest_pipeline/"
         onClick={[Function]}
       >
         <span
@@ -12719,9 +12712,10 @@ exports[`renders type page 1`] = `
           </svg>
         </span>
         Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/playground"
         onClick={[Function]}
       >
         <span
@@ -12749,9 +12743,10 @@ exports[`renders type page 1`] = `
           </svg>
         </span>
         Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/runs"
         onClick={[Function]}
       >
         <span
@@ -12779,14 +12774,7 @@ exports[`renders type page 1`] = `
           </svg>
         </span>
         Runs
-      </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
+      </a>
     </div>
     <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
@@ -17397,8 +17385,9 @@ exports[`renders type page 2`] = `
       >
         airline_demo_ingest_pipeline
       </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/overview"
         onClick={[Function]}
       >
         <span
@@ -17426,9 +17415,10 @@ exports[`renders type page 2`] = `
           </svg>
         </span>
         Overview
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dmhgRM"
+        href="/pipeline/airline_demo_ingest_pipeline/"
         onClick={[Function]}
       >
         <span
@@ -17456,9 +17446,10 @@ exports[`renders type page 2`] = `
           </svg>
         </span>
         Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/playground"
         onClick={[Function]}
       >
         <span
@@ -17486,9 +17477,10 @@ exports[`renders type page 2`] = `
           </svg>
         </span>
         Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/runs"
         onClick={[Function]}
       >
         <span
@@ -17516,14 +17508,7 @@ exports[`renders type page 2`] = `
           </svg>
         </span>
         Runs
-      </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
+      </a>
     </div>
     <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
@@ -22134,8 +22119,9 @@ exports[`renders without error 1`] = `
       >
         airline_demo_ingest_pipeline
       </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/overview"
         onClick={[Function]}
       >
         <span
@@ -22163,9 +22149,10 @@ exports[`renders without error 1`] = `
           </svg>
         </span>
         Overview
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dmhgRM"
+        href="/pipeline/airline_demo_ingest_pipeline/"
         onClick={[Function]}
       >
         <span
@@ -22193,9 +22180,10 @@ exports[`renders without error 1`] = `
           </svg>
         </span>
         Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/playground"
         onClick={[Function]}
       >
         <span
@@ -22223,9 +22211,10 @@ exports[`renders without error 1`] = `
           </svg>
         </span>
         Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
+      </a>
+      <a
+        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fYCaVw"
+        href="/pipeline/airline_demo_ingest_pipeline/runs"
         onClick={[Function]}
       >
         <span
@@ -22253,14 +22242,7 @@ exports[`renders without error 1`] = `
           </svg>
         </span>
         Runs
-      </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
+      </a>
     </div>
     <div
       className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
