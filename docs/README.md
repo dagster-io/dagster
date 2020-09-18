@@ -34,7 +34,7 @@ cd /tmp/dagster-docs
 git push
 ```
 
-You should also have a new commit in your dagster repository. Run `git push` here as well. 
+You should also have a new commit in your dagster repository. Run `git push` here as well.
 
 ```
 cd $DAGSTER_REPO
@@ -44,10 +44,17 @@ git push
 Once you have _confirmed_ that the new version of the site is up at `docs.dagster.io` (may take up to 5 min), clone the following repo and run:
 
 ```
-# This updates the search index against the live site
+# If you haven't already, check out the doc scraper repo, which builds the search index against
+# the live site.  If you are not running from a fresh checkout, make sure you've picked up any
+# new changes.
 git clone https://github.com/dagster-io/docsearch-scraper.git
 cd docsearch-scraper
 pipenv install
 pipenv shell
+
+# This command will update the search index against the live site.
+# If this is your first time running this, you will be prompted to set up your `.env` file with the
+# appropriate values for `APPLICATION_ID`, and `API_KEY` (see `.env.example`).  These should be
+# the same as NEXT_ALGOLIA_APP_ID and NEXT_ALGOLIA_ADMIN_KEY, respectively.
 ./docsearch docker:run config.json
 ```
