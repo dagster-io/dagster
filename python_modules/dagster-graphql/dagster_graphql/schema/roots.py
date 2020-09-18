@@ -558,8 +558,16 @@ class DauphinExecutionMetadata(dauphin.InputObjectType):
 
     runId = dauphin.String()
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
-    rootRunId = dauphin.String()
-    parentRunId = dauphin.String()
+    rootRunId = dauphin.String(
+        description="""The ID of the run at the root of the run group. All partial /
+        full re-executions should use the first run as the rootRunID so they are
+        grouped together."""
+    )
+    parentRunId = dauphin.String(
+        description="""The ID of the run serving as the parent within the run group.
+        For the first re-execution, this will be the same as the `rootRunId`. For
+        subsequent runs, the root or a previous re-execution could be the parent run."""
+    )
 
 
 def create_execution_params(graphene_info, graphql_execution_params):
@@ -771,11 +779,28 @@ class DauphinExecutionParams(dauphin.InputObjectType):
     class Meta(object):
         name = "ExecutionParams"
 
-    selector = dauphin.NonNull("PipelineSelector")
+    selector = dauphin.NonNull(
+        "PipelineSelector",
+        description="""Defines the pipeline and solid subset that should be executed.
+        All subsequent executions in the same run group (for example, a single-step
+        re-execution) are scoped to the original run's pipeline selector and solid
+        subset.""",
+    )
     runConfigData = dauphin.Field("RunConfigData")
     mode = dauphin.Field(dauphin.String)
-    executionMetadata = dauphin.Field("ExecutionMetadata")
-    stepKeys = dauphin.Field(dauphin.List(dauphin.NonNull(dauphin.String)))
+    executionMetadata = dauphin.Field(
+        "ExecutionMetadata",
+        description="""Defines run tags and parent / root relationships.\n\nNote: To
+        'restart from failure', provide a `parentRunId` and pass the
+        'dagster/is_resume_retry' tag. Dagster's automatic step key selection will
+        override any stepKeys provided.""",
+    )
+    stepKeys = dauphin.Field(
+        dauphin.List(dauphin.NonNull(dauphin.String)),
+        description="""Defines step keys to execute within the execution plan defined
+        by the pipeline `selector`. To execute the entire execution plan, you can omit
+        this parameter, provide an empty array, or provide every step name.""",
+    )
     preset = dauphin.Field(dauphin.String)
 
 
