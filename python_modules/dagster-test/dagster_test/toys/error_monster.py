@@ -14,6 +14,7 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.utils import segfault
 
 
 class ErrorableResource(object):
@@ -37,12 +38,15 @@ def define_errorable_resource():
 
 solid_throw_config = {
     "throw_in_solid": Field(bool, is_required=False, default_value=False),
+    "crash_in_solid": Field(bool, is_required=False, default_value=False),
     "return_wrong_type": Field(bool, is_required=False, default_value=False),
     "request_retry": Field(bool, is_required=False, default_value=False),
 }
 
 
 def _act_on_config(solid_config):
+    if solid_config["crash_in_solid"]:
+        segfault()
     if solid_config["throw_in_solid"]:
         raise Failure(
             description="I'm a Failure",
