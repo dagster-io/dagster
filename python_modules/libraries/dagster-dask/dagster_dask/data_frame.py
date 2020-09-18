@@ -1,3 +1,4 @@
+import contextlib
 import warnings
 
 import dask.dataframe as dd
@@ -233,7 +234,6 @@ DataFrameToTypes = {
                 False,
                 "A string representing the compression to use in the output file.",
             ),
-            "compute": (Bool, False, "If true, immediate executes."),
             "compute_kwargs": (
                 Permissive(),
                 False,
@@ -274,7 +274,6 @@ DataFrameToTypes = {
                 False,
                 "Whether to write the special ``_metadata`` file.",
             ),
-            "compute": (Bool, False, "If true, immediate executes."),
             "compute_kwargs": (
                 Permissive(),
                 False,
@@ -288,7 +287,6 @@ DataFrameToTypes = {
         "options": {
             "path": (Any, True, "Path to a target filename."),
             "key": (String, True, "Datapath within the files."),
-            "compute": (Bool, False, "Whether or not to execute immediately."),
             "scheduler": (String, False, 'The scheduler to use, like "threads" or "processes".'),
         },
     },
@@ -304,7 +302,6 @@ DataFrameToTypes = {
                 False,
                 "Passed to backend file-system implementation.",
             ),
-            "compute": (Bool, False, "If true, immediate executes."),
             "compute_kwargs": (
                 Permissive(),
                 False,
@@ -330,7 +327,6 @@ DataFrameToTypes = {
             ),
             "dtype": (Any, False, "Specifying the datatype for columns."),
             "method": (String, False, "Controls the SQL insertion clause used."),
-            "compute": (Bool, False, "When true, call dask.compute and perform the load into SQL."),
             "parallel": (
                 Bool,
                 False,
@@ -462,7 +458,14 @@ def dataframe_materializer(_context, config, dask_df):
         to_args = [to_path] if to_path else []
         to_kwargs = to_options
 
-        to_function(dask_df, *to_args, **to_kwargs)
+        # Get the Dask client from the dask resource, if available.
+        client_context = (
+            _context.resources.dask.client.as_current()
+            if hasattr(_context.resources, "dask")
+            else contextlib.nullcontext()
+        )
+        with client_context:
+            to_function(dask_df, *to_args, **to_kwargs)
 
         if to_path:
             yield AssetMaterialization.file(to_path)

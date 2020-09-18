@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.10 (Upcoming)
+
+**Breaking Changes**
+
+- [dagster_dask] Removed the `compute` option from Dask DataFrame materialization configs for all output types. Setting this option to `False` (default `True`) would result in a future that is never computed, leading to missing materializations.
+
 ## 0.9.9
 
 **New**
