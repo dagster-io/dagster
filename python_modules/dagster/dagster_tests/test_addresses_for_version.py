@@ -31,21 +31,22 @@ def get_instance(temp_dir, event_log_storage):
 @contextmanager
 def create_in_memory_event_log_instance():
     with seven.TemporaryDirectory() as temp_dir:
-        asset_storage = InMemoryEventLogStorage()
-        instance = get_instance(temp_dir, asset_storage)
-        yield [instance, asset_storage]
+        event_storage = InMemoryEventLogStorage()
+        instance = get_instance(temp_dir, event_storage)
+        yield [instance, event_storage]
 
 
 @contextmanager
 def create_consolidated_sqlite_event_log_instance():
     with seven.TemporaryDirectory() as temp_dir:
-        asset_storage = ConsolidatedSqliteEventLogStorage(temp_dir)
-        instance = get_instance(temp_dir, asset_storage)
-        yield [instance, asset_storage]
+        event_storage = ConsolidatedSqliteEventLogStorage(temp_dir)
+        instance = get_instance(temp_dir, event_storage)
+        yield [instance, event_storage]
 
 
 versioned_storage_test = pytest.mark.parametrize(
-    "version_storing_context", [create_in_memory_event_log_instance],
+    "version_storing_context",
+    [create_in_memory_event_log_instance, create_consolidated_sqlite_event_log_instance],
 )
 
 
@@ -67,10 +68,10 @@ def test_addresses_for_version(version_storing_context):
         instance, _ = ctx
         execute_pipeline(instance=instance, pipeline=my_pipeline)
 
-    step_output_handle = StepOutputHandle("solid1.compute", "result")
-    output_version = resolve_step_output_versions(
-        create_execution_plan(my_pipeline), run_config={}, mode="default"
-    )[step_output_handle]
-    assert instance.get_addresses_for_step_output_versions(
-        {("my_pipeline", step_output_handle): output_version}
-    ) == {("my_pipeline", step_output_handle): "some_address"}
+        step_output_handle = StepOutputHandle("solid1.compute", "result")
+        output_version = resolve_step_output_versions(
+            create_execution_plan(my_pipeline), run_config={}, mode="default"
+        )[step_output_handle]
+        assert instance.get_addresses_for_step_output_versions(
+            {("my_pipeline", step_output_handle): output_version}
+        ) == {("my_pipeline", step_output_handle): "some_address"}
