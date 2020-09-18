@@ -365,7 +365,6 @@ class DagsterGrpcClient(object):
 
         with DagsterInstance.from_ref(execute_run_args.instance_ref) as instance:
             try:
-                pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
                 res = self._query(
                     "StartRun",
                     api_pb2.StartRunRequest,
@@ -374,6 +373,7 @@ class DagsterGrpcClient(object):
                 return deserialize_json_to_dagster_namedtuple(res.serialized_start_run_result)
 
             except Exception:  # pylint: disable=bare-except
+                pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
                 instance.report_engine_event(
                     message="Unexpected error in IPC client",
                     pipeline_run=pipeline_run,

@@ -12,6 +12,7 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.errors import (
     DagsterInvalidSubsetError,
+    DagsterRunNotFoundError,
     DagsterSubprocessError,
     PartitionExecutionError,
     ScheduleExecutionError,
@@ -111,12 +112,23 @@ def _run_in_subprocess(
         instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
         pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
 
+        if not pipeline_run:
+            raise DagsterRunNotFoundError(
+                "gRPC server could not load run {run_id} in order to execute it. Make sure that the gRPC server has access to your run storage.".format(
+                    run_id=execute_run_args.pipeline_run_id
+                ),
+                invalid_run_id=execute_run_args.pipeline_run_id,
+            )
+
         pid = os.getpid()
 
     except:  # pylint: disable=bare-except
+        serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
         event = IPCErrorMessage(
-            serializable_error_info=serializable_error_info_from_exc_info(sys.exc_info()),
-            message="Error during RPC setup for ExecuteRun",
+            serializable_error_info=serializable_error_info,
+            message="Error during RPC setup for executing run: {message}".format(
+                message=serializable_error_info.message
+            ),
         )
         subprocess_status_handler(event)
         subprocess_status_handler(RunInSubprocessComplete())

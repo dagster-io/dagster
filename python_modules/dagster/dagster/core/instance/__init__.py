@@ -978,7 +978,7 @@ class DagsterInstance:
         from dagster.core.events.log import DagsterEventRecord
 
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        message = "This pipeline run has been marked as failed from outside the execution context"
+        message = "This pipeline run has been marked as failed from outside the execution context."
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_FAILURE.value,

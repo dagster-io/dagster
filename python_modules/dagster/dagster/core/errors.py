@@ -116,7 +116,7 @@ class DagsterExecutionStepNotFoundError(DagsterError):
 
 
 class DagsterRunNotFoundError(DagsterError):
-    """Thrown when re-execution is attempted but the original run cannot be found."""
+    """Thrown when a run cannot be found in run storage."""
 
     def __init__(self, *args, **kwargs):
         self.invalid_run_id = check.str_param(kwargs.pop("invalid_run_id"), "invalid_run_id")

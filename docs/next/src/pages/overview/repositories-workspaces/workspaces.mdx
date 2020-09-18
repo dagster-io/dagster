@@ -159,7 +159,8 @@ load_from:
 
 If you are using the <PyObject module="dagster.core.launcher" object="DefaultRunLauncher"/>, which is configured by
 default on your <PyObject module="dagster.core.instance" object="DagsterInstance"/>, the run launcher will launch
-runs against your hosted gRPC server.
+runs against your hosted gRPC server. The gRPC server needs to be able to access your run storage in
+order to be able to execute launched runs.
 
 If you have implemented a custom run launcher and would like to host your code using the Dagster
 gRPC server, please reach out to us.
