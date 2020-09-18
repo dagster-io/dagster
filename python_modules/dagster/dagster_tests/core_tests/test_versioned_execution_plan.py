@@ -4,9 +4,12 @@ import pytest
 
 from dagster import (
     DagsterInstance,
+    Field,
+    ModeDefinition,
     String,
     dagster_type_loader,
     pipeline,
+    resource,
     solid,
     usable_as_dagster_type,
 )
@@ -16,9 +19,11 @@ from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.resolve_versions import (
     join_and_hash,
     resolve_config_version,
+    resolve_resource_versions,
     resolve_step_versions,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster.core.system_config.objects import EnvironmentConfig
 
 
 def test_join_and_hash():
@@ -65,14 +70,29 @@ def versioned_pipeline():
 def test_resolve_step_versions_no_external_dependencies():
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
     versions = resolve_step_versions(speculative_execution_plan)
-    solid1_hash = join_and_hash([versioned_solid_no_input.version])
-    output1_hash = join_and_hash([solid1_hash + "result"])
+
+    solid1_def_version = versioned_solid_no_input.version
+    solid1_config_version = resolve_config_version(None)
+    solid1_resources_version = join_and_hash([])
+    solid1_version = join_and_hash(
+        [solid1_def_version, solid1_config_version, solid1_resources_version]
+    )
+    step1_version = join_and_hash([solid1_version])
+
+    assert versions["versioned_solid_no_input.compute"] == step1_version
+
+    output1_hash = join_and_hash([step1_version + "result"])
     outputs_hash = join_and_hash([output1_hash])
-    solid2_hash = join_and_hash([outputs_hash, versioned_solid_takes_input.version])
 
-    assert versions["versioned_solid_no_input.compute"] == solid1_hash
+    solid2_def_version = versioned_solid_takes_input.version
+    solid2_config_version = resolve_config_version(None)
+    solid2_resources_version = join_and_hash([])
+    solid2_version = join_and_hash(
+        [solid2_def_version, solid2_config_version, solid2_resources_version]
+    )
+    step2_version = join_and_hash([outputs_hash, solid2_version])
 
-    assert versions["versioned_solid_takes_input.compute"] == solid2_hash
+    assert versions["versioned_solid_takes_input.compute"] == step2_version
 
 
 def test_versioned_execution_plan_no_external_dependencies():  # TODO: flesh out this test once version storage has been implemented
@@ -110,22 +130,38 @@ def versioned_pipeline_ext_input():
 
 
 def test_resolve_step_versions_external_dependencies():
+    run_config = {"solids": {"versioned_solid_ext_input": {"inputs": {"custom_type": "a"}}}}
     speculative_execution_plan = create_execution_plan(
-        versioned_pipeline_ext_input,
-        run_config={"solids": {"versioned_solid_ext_input": {"inputs": {"custom_type": "a"}}}},
+        versioned_pipeline_ext_input, run_config=run_config,
     )
 
-    versions = resolve_step_versions(speculative_execution_plan)
+    versions = resolve_step_versions(speculative_execution_plan, run_config=run_config,)
 
     ext_input_version = join_and_hash(["a"])
     input_version = join_and_hash([InputHydration.loader_version + ext_input_version])
-    step_version1 = join_and_hash([input_version, versioned_solid_ext_input.version])
-    assert versions["versioned_solid_ext_input.compute"] == step_version1
 
-    output_version = join_and_hash([step_version1, "result"])
+    solid1_def_version = versioned_solid_ext_input.version
+    solid1_config_version = resolve_config_version(None)
+    solid1_resources_version = join_and_hash([])
+    solid1_version = join_and_hash(
+        [solid1_def_version, solid1_config_version, solid1_resources_version]
+    )
+
+    step1_version = join_and_hash([input_version, solid1_version])
+    assert versions["versioned_solid_ext_input.compute"] == step1_version
+
+    output_version = join_and_hash([step1_version, "result"])
     hashed_input2 = join_and_hash([output_version])
-    step_version2 = join_and_hash([hashed_input2, versioned_solid_takes_input.version])
-    assert versions["versioned_solid_takes_input.compute"] == step_version2
+
+    solid2_def_version = versioned_solid_takes_input.version
+    solid2_config_version = resolve_config_version(None)
+    solid2_resources_version = join_and_hash([])
+    solid2_version = join_and_hash(
+        [solid2_def_version, solid2_config_version, solid2_resources_version]
+    )
+
+    step2_version = join_and_hash([hashed_input2, solid2_version])
+    assert versions["versioned_solid_takes_input.compute"] == step2_version
 
 
 def test_external_dependencies():  # TODO: flesh out this test once version storage has been implemented
@@ -178,3 +214,135 @@ def test_step_keys_already_provided():
             tags={MEMOIZED_RUN_TAG: "true"},
             step_keys_to_execute=["basic_takes_input_solid.compute"],
         )
+
+
+@resource(config_schema={"input_str": Field(String)}, version="5")
+def test_resource(context):
+    return context.resource_config["input_str"]
+
+
+@resource(config_schema={"input_str": Field(String)})
+def test_resource_no_version(context):
+    return context.resource_config["input_str"]
+
+
+@resource(version="42")
+def test_resource_no_config(_):
+    return "Hello"
+
+
+@solid(
+    required_resource_keys={"test_resource", "test_resource_no_version", "test_resource_no_config"},
+)
+def fake_solid_resources(context):
+    return (
+        "solidified_"
+        + context.resources.test_resource
+        + context.resources.test_resource_no_version
+        + context.resources.test_resource_no_config
+    )
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            name="fakemode",
+            resource_defs={
+                "test_resource": test_resource,
+                "test_resource_no_version": test_resource_no_version,
+                "test_resource_no_config": test_resource_no_config,
+            },
+        ),
+        ModeDefinition(
+            name="fakemode2",
+            resource_defs={
+                "test_resource": test_resource,
+                "test_resource_no_version": test_resource_no_version,
+                "test_resource_no_config": test_resource_no_config,
+            },
+        ),
+    ]
+)
+def modes_pipeline():
+    fake_solid_resources()
+
+
+def test_resource_versions():
+    run_config = {
+        "resources": {
+            "test_resource": {"config": {"input_str": "apple"},},
+            "test_resource_no_version": {"config": {"input_str": "banana"}},
+        }
+    }
+    environment_config = EnvironmentConfig.build(
+        modes_pipeline, run_config=run_config, mode="fakemode",
+    )
+
+    resource_versions_by_key = resolve_resource_versions(
+        environment_config, modes_pipeline.get_mode_definition("fakemode")
+    )
+
+    assert resource_versions_by_key["test_resource"] == join_and_hash(
+        [resolve_config_version({"config": {"input_str": "apple"}}), test_resource.version]
+    )
+
+    assert resource_versions_by_key["test_resource_no_version"] == None
+
+    assert resource_versions_by_key["test_resource_no_config"] == join_and_hash(
+        [join_and_hash([]), "42"]
+    )
+
+
+@solid(required_resource_keys={"test_resource", "test_resource_no_config"}, version="39")
+def fake_solid_resources_versioned(context):
+    return (
+        "solidified_" + context.resources.test_resource + context.resources.test_resource_no_config
+    )
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            name="fakemode",
+            resource_defs={
+                "test_resource": test_resource,
+                "test_resource_no_config": test_resource_no_config,
+            },
+        ),
+    ]
+)
+def versioned_modes_pipeline():
+    fake_solid_resources_versioned()
+
+
+def test_step_versions_with_resources():
+    run_config = {"resources": {"test_resource": {"config": {"input_str": "apple"}}}}
+    speculative_execution_plan = create_execution_plan(
+        versioned_modes_pipeline, run_config=run_config,
+    )
+
+    versions = resolve_step_versions(
+        speculative_execution_plan, run_config=run_config, mode="fakemode"
+    )
+
+    solid_def_version = fake_solid_resources_versioned.version
+    solid_config_version = resolve_config_version(None)
+    environment_config = EnvironmentConfig.build(
+        versioned_modes_pipeline, mode="fakemode", run_config=run_config
+    )
+    resource_versions_by_key = resolve_resource_versions(
+        environment_config, versioned_modes_pipeline.get_mode_definition("fakemode")
+    )
+    solid_resources_version = join_and_hash(
+        [
+            resource_versions_by_key[resource_key]
+            for resource_key in fake_solid_resources_versioned.required_resource_keys
+        ]
+    )
+    solid_version = join_and_hash(
+        [solid_def_version, solid_config_version, solid_resources_version]
+    )
+
+    step_version = join_and_hash([solid_version])
+
+    assert versions["fake_solid_resources_versioned.compute"] == step_version

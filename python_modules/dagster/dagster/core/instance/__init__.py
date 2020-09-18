@@ -557,6 +557,8 @@ class DagsterInstance:
 
             step_versions = resolve_step_versions(
                 speculative_execution_plan=speculative_execution_plan,
+                run_config=run_config,
+                mode=mode,
             )
 
             step_keys_to_execute = self.resolve_unmemoized_steps(
