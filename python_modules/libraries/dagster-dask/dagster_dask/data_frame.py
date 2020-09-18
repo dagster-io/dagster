@@ -462,7 +462,7 @@ def dataframe_materializer(_context, config, dask_df):
         client_context = (
             _context.resources.dask.client.as_current()
             if hasattr(_context.resources, "dask")
-            else contextlib.nullcontext()
+            else contextlib.suppress()
         )
         with client_context:
             to_function(dask_df, *to_args, **to_kwargs)
