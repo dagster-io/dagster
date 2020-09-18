@@ -166,7 +166,10 @@ class _ResourceDecoratorCallable(object):
         check.callable_param(fn, "fn")
 
         resource_def = ResourceDefinition(
-            resource_fn=fn, config_schema=self.config_schema, description=self.description,
+            resource_fn=fn,
+            config_schema=self.config_schema,
+            description=self.description,
+            version=self.version,
         )
 
         update_wrapper(resource_def, wrapped=fn)

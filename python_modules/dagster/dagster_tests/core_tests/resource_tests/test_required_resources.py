@@ -623,3 +623,19 @@ def test_custom_type_with_resource_dependent_type_check():
 
     sufficiently_required_pipeline = define_type_check_pipeline(should_require_resources=True)
     assert execute_pipeline(sufficiently_required_pipeline).success
+
+
+def test_resource_no_version():
+    @resource
+    def no_version_resource(_):
+        pass
+
+    assert no_version_resource.version == None
+
+
+def test_resource_passed_version():
+    @resource(version="42")
+    def passed_version_resource(_):
+        pass
+
+    assert passed_version_resource.version == "42"
