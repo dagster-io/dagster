@@ -3,6 +3,7 @@ import subprocess
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import wait_for_grpc_server
 from dagster.utils import file_relative_path, find_free_port
+from dagster.utils.error import SerializableErrorInfo
 
 
 def test_ping():
@@ -14,8 +15,52 @@ def test_ping():
     )
 
     try:
-        wait_for_grpc_server(process)
+        assert wait_for_grpc_server(process)
         assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
+    finally:
+        process.terminate()
+
+
+def test_load_with_error(capfd):
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
+
+    process = subprocess.Popen(
+        ["dagster", "api", "grpc", "--port", str(port), "--python-file", python_file],
+        stdout=subprocess.PIPE,
+    )
+
+    try:
+        assert not wait_for_grpc_server(process)
+        _, err = capfd.readouterr()
+        assert "No module named" in err
+    finally:
+        process.terminate()
+
+
+def test_lazy_load_with_error():
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
+
+    process = subprocess.Popen(
+        [
+            "dagster",
+            "api",
+            "grpc",
+            "--port",
+            str(port),
+            "--python-file",
+            python_file,
+            "--lazy-load-user-code",
+        ],
+        stdout=subprocess.PIPE,
+    )
+
+    try:
+        assert wait_for_grpc_server(process)
+        list_repositories_response = DagsterGrpcClient(port=port).list_repositories()
+        assert isinstance(list_repositories_response, SerializableErrorInfo)
+        assert "No module named" in list_repositories_response.message
     finally:
         process.terminate()
 

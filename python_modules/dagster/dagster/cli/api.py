@@ -502,7 +502,16 @@ def _schedule_tick_state(instance, stream, tick_data):
     type=click.INT,
     required=False,
     default=30,
-    help="Timout after which to shutdown if --heartbeat is set and a heartbeat is not received",
+    help="Timeout after which to shutdown if --heartbeat is set and a heartbeat is not received",
+)
+@click.option(
+    "--lazy-load-user-code",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Wait until the first LoadRepositories call to actually load the repositoriies, instead of"
+    "waiting to load them when the server is launched. Useful for surfacing errors when the server "
+    "is managed directly from Dagit",
 )
 @python_origin_target_argument
 def grpc_command(
@@ -512,6 +521,7 @@ def grpc_command(
     max_workers=1,
     heartbeat=False,
     heartbeat_timeout=30,
+    lazy_load_user_code=False,
     **kwargs
 ):
     if seven.IS_WINDOWS and port is None:
@@ -539,6 +549,7 @@ def grpc_command(
         max_workers=max_workers,
         heartbeat=heartbeat,
         heartbeat_timeout=heartbeat_timeout,
+        lazy_load_user_code=lazy_load_user_code,
     )
 
     server.serve()

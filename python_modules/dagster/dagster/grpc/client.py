@@ -433,5 +433,6 @@ def ephemeral_grpc_api_client(
         force_port=force_port,
         max_retries=max_retries,
         max_workers=max_workers,
+        lazy_load_user_code=True,
     ).create_ephemeral_client() as client:
         yield client

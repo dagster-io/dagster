@@ -137,7 +137,10 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         from dagster.grpc.server import GrpcServerProcess
 
         server = GrpcServerProcess(
-            loadable_target_origin=loadable_target_origin, max_workers=2, heartbeat=True
+            loadable_target_origin=loadable_target_origin,
+            max_workers=2,
+            heartbeat=True,
+            lazy_load_user_code=True,
         )
         client = server.create_ephemeral_client()
 
