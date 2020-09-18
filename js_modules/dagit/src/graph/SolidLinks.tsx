@@ -1,9 +1,11 @@
-import * as React from 'react';
 import {Colors} from '@blueprintjs/core';
 import {pathVerticalDiagonal} from '@vx/shape';
-import {ILayoutConnection, IFullPipelineLayout, IFullSolidLayout} from './getFullSolidLayout';
+import * as React from 'react';
 import styled from 'styled-components/macro';
+
 import {weakmapMemoize} from '../Util';
+
+import {IFullPipelineLayout, IFullSolidLayout, ILayoutConnection} from './getFullSolidLayout';
 
 export type Edge = {a: string; b: string};
 

@@ -1,13 +1,15 @@
-import * as React from 'react';
 import {Colors, Icon} from '@blueprintjs/core';
+import {Intent, Spinner} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
-import styled, {createGlobalStyle} from 'styled-components/macro';
-import {Spinner, Intent} from '@blueprintjs/core';
 import Ansi from 'ansi-to-react';
-import {IStepState} from '../RunMetadataProvider';
-import {ExecutionStateDot} from './ExecutionStateDot';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import styled, {createGlobalStyle} from 'styled-components/macro';
+
 import {ROOT_SERVER_URI} from '../DomUtils';
+import {IStepState} from '../RunMetadataProvider';
+
+import {ExecutionStateDot} from './ExecutionStateDot';
 import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
 
 interface IComputeLogContentProps {

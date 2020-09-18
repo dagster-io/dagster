@@ -128,7 +128,7 @@ def solid(
             expect and require certain metadata to be attached to a solid. Users should generally
             not set metadata directly. Values that are not strings will be json encoded and must meet
             the criteria that `json.loads(json.dumps(value)) == value`.
-        version (str): (Experimental) The version of the solid's compute_fn. Two solids should have
+        version (Optional[str]): (Experimental) The version of the solid's compute_fn. Two solids should have
             the same version if and only if they deterministically produce the same outputs when
             provided the same inputs.
 

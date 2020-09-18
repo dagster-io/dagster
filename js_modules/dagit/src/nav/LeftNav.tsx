@@ -1,18 +1,19 @@
-import * as React from 'react';
-import {Link} from 'react-router-dom';
-import {useRouteMatch, useHistory} from 'react-router';
-import styled from 'styled-components/macro';
 import {Colors, Icon} from '@blueprintjs/core';
+import * as React from 'react';
+import {useHistory, useRouteMatch} from 'react-router';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {TimezonePicker} from '../TimeComponents';
-import {InstanceDetailsLink} from './InstanceDetailsLink';
-import {WebsocketStatus} from '../WebsocketStatus';
+import {DagsterRepoOption} from '../DagsterRepositoryContext';
 import {ShortcutHandler} from '../ShortcutHandler';
-import {RepositoryPicker} from './RepositoryPicker';
-import {RepositoryContentList} from './RepositoryContentList';
+import {TimezonePicker} from '../TimeComponents';
+import {WebsocketStatus} from '../WebsocketStatus';
 import navBarImage from '../images/nav-logo-icon.png';
 import navTitleImage from '../images/nav-title.png';
-import {DagsterRepoOption} from '../DagsterRepositoryContext';
+
+import {InstanceDetailsLink} from './InstanceDetailsLink';
+import {RepositoryContentList} from './RepositoryContentList';
+import {RepositoryPicker} from './RepositoryPicker';
 import {SchedulesList} from './SchedulesList';
 
 const KEYCODE_FOR_1 = 49;

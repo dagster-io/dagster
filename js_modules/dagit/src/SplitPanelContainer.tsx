@@ -1,6 +1,6 @@
+import {Button, ButtonGroup, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {CSSProperties} from 'styled-components/macro';
-import {Colors, ButtonGroup, Button} from '@blueprintjs/core';
 
 const DIVIDER_THICKNESS = 4;
 

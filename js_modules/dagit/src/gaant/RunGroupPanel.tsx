@@ -1,15 +1,17 @@
-import React from 'react';
-import {Link} from 'react-router-dom';
+import {Colors} from '@blueprintjs/core';
 import gql from 'graphql-tag';
+import React from 'react';
+import {useQuery} from 'react-apollo';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
+
+import {RunStatus} from '../runs/RunStatusDots';
+import {RunComponentFragments, RunElapsed, RunTime} from '../runs/RunUtils';
+
 import {
   RunGroupPanelQuery,
   RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
 } from './types/RunGroupPanelQuery';
-import {useQuery} from 'react-apollo';
-import styled from 'styled-components/macro';
-import {Colors} from '@blueprintjs/core';
-import {RunTime, RunElapsed, RunComponentFragments} from '../runs/RunUtils';
-import {RunStatus} from '../runs/RunStatusDots';
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   const stepsTag = run.tags.find((t) => t.key === 'dagster/step_selection');

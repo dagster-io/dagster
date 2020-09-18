@@ -1,6 +1,5 @@
 import threading
 from collections import namedtuple
-from contextlib import contextmanager
 
 import psycopg2
 import sqlalchemy as db
@@ -20,12 +19,9 @@ from dagster.serdes import (
 )
 
 from ..pynotify import await_pg_notifications
-from ..utils import pg_config, pg_url_from_config
+from ..utils import create_pg_connection, pg_config, pg_url_from_config
 
 CHANNEL_NAME = "run_events"
-
-# Why? Because this is about as long as we expect a roundtrip to RDS to take.
-WATCHER_POLL_INTERVAL = 0.2
 
 
 class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
@@ -56,7 +52,9 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
         self._disposed = False
-        SqlEventLogStorageMetadata.create_all(self._engine)
+
+        with self.connect() as conn:
+            SqlEventLogStorageMetadata.create_all(conn)
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
@@ -89,19 +87,21 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         """
         check.inst_param(event, "event", EventRecord)
         sql_statement = self.prepare_insert_statement(event)  # from SqlEventLogStorage.py
-        result_proxy = self._engine.execute(
-            sql_statement.returning(SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id)
-        )
-        res = result_proxy.fetchone()
-        result_proxy.close()
-        self._engine.execute(
-            """NOTIFY {channel}, %s; """.format(channel=CHANNEL_NAME),
-            (res[0] + "_" + str(res[1]),),
-        )
+        with self.connect() as conn:
+            result_proxy = conn.execute(
+                sql_statement.returning(
+                    SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
+                )
+            )
+            res = result_proxy.fetchone()
+            result_proxy.close()
+            conn.execute(
+                """NOTIFY {channel}, %s; """.format(channel=CHANNEL_NAME),
+                (res[0] + "_" + str(res[1]),),
+            )
 
-    @contextmanager
     def connect(self, run_id=None):
-        yield self._engine
+        return create_pg_connection(self._engine, __file__, "event log")
 
     def watch(self, run_id, start_cursor, callback):
         self._event_watcher.watch_run(run_id, start_cursor, callback)

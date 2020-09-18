@@ -5,6 +5,7 @@ import time
 from abc import ABCMeta
 from collections import defaultdict, namedtuple
 from enum import Enum
+from typing import Optional
 
 import six
 import yaml
@@ -20,8 +21,10 @@ from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
+from dagster.core.execution.resolve_versions import join_and_hash, resolve_step_versions
 from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.seven import get_current_datetime_in_utc
@@ -42,6 +45,15 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 def _is_dagster_home_set():
     return bool(os.getenv("DAGSTER_HOME"))
+
+
+def _is_memoized_run(tags):
+    return tags is not None and MEMOIZED_RUN_TAG in tags and tags.get(MEMOIZED_RUN_TAG) == "true"
+
+
+def _fake_output_address(_version_list):
+    # Placeholder function until actual version storage has been implemented
+    return {}
 
 
 def _dagster_home():
@@ -467,6 +479,24 @@ class DagsterInstance:
     def get_run_group(self, run_id):
         return self._run_storage.get_run_group(run_id)
 
+    def resolve_unmemoized_steps(self, speculative_execution_plan, step_versions):
+        unmemoized_steps = []
+
+        for step in speculative_execution_plan.topological_steps():
+            step_version = step_versions[step.key]
+            output_versions = [
+                join_and_hash([name, step_version]) for name in step.step_output_dict.keys()
+            ]
+
+            addresses = _fake_output_address(
+                output_versions
+            )  # TODO: replace with real version storage once that has landed.
+
+            if any([not version in addresses for version in output_versions]):
+                unmemoized_steps.append(step.key)
+
+        return unmemoized_steps
+
     def create_run_for_pipeline(
         self,
         pipeline_def,
@@ -513,6 +543,25 @@ class DagsterInstance:
                 pipeline_def = pipeline_def.get_pipeline_subset_def(
                     solids_to_execute=solids_to_execute
                 )
+
+        if _is_memoized_run(tags):
+            if step_keys_to_execute:
+                raise DagsterInvariantViolationError(
+                    "step_keys_to_execute parameter cannot be used in conjunction with memoized "
+                    "pipeline runs."
+                )
+
+            speculative_execution_plan = create_execution_plan(
+                pipeline_def, run_config=run_config, mode=mode,
+            )
+
+            step_versions = resolve_step_versions(
+                speculative_execution_plan=speculative_execution_plan,
+            )
+
+            step_keys_to_execute = self.resolve_unmemoized_steps(
+                speculative_execution_plan, step_versions
+            )  # TODO: tighter integration with existing step_keys_to_execute functionality
 
         if execution_plan is None:
             execution_plan = create_execution_plan(
@@ -1088,3 +1137,18 @@ class DagsterInstance:
 
     def __exit__(self, exception_type, exception_value, traceback):
         self.dispose()
+
+    def get_addresses_for_step_output_versions(self, step_output_versions):
+        """
+        For each given step output, finds whether an output exists with the given
+        version, and returns its address if it does.
+
+        Args:
+            step_output_versions (Dict[(str, StepOutputHandle), str]):
+                (pipeline name, step output handle) -> version.
+
+        Returns:
+            Dict[(str, StepOutputHandle), str]: (pipeline name, step output handle) -> address.
+                For each step output, an address if there is one and None otherwise.
+        """
+        return self._event_storage.get_addresses_for_step_output_versions(step_output_versions)

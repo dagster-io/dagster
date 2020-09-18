@@ -237,7 +237,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_run_tags(self):
         result = defaultdict(set)
-        query = db.select([RunTagsTable.c.key, RunTagsTable.c.value]).distinct(RunTagsTable.c.value)
+        query = db.select([RunTagsTable.c.key, RunTagsTable.c.value]).distinct(
+            RunTagsTable.c.key, RunTagsTable.c.value
+        )
         rows = self.fetchall(query)
         for r in rows:
             result[r[0]].add(r[1])
@@ -271,14 +273,15 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             for tag in existing_tags:
                 conn.execute(
                     RunTagsTable.update()  # pylint: disable=no-value-for-parameter
-                    .where(RunTagsTable.c.run_id == run_id and RunTagsTable.c.key == tag)
+                    .where(db.and_(RunTagsTable.c.run_id == run_id, RunTagsTable.c.key == tag))
                     .values(value=new_tags[tag])
                 )
 
-            conn.execute(
-                RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter
-                [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
-            )
+            if added_tags:
+                conn.execute(
+                    RunTagsTable.insert(),  # pylint: disable=no-value-for-parameter
+                    [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
+                )
 
     def get_run_group(self, run_id):
         check.str_param(run_id, "run_id")

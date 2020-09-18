@@ -1,10 +1,11 @@
-import * as React from 'react';
-import styled from 'styled-components/macro';
 import {Button} from '@blueprintjs/core';
 import gql from 'graphql-tag';
-import {PythonErrorFragment} from './types/PythonErrorFragment';
-import {MetadataEntryFragment} from './runs/types/MetadataEntryFragment';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
 import {MetadataEntries} from './runs/MetadataEntry';
+import {MetadataEntryFragment} from './runs/types/MetadataEntryFragment';
+import {PythonErrorFragment} from './types/PythonErrorFragment';
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;

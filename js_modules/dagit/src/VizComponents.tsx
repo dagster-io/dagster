@@ -1,5 +1,5 @@
-import styled from 'styled-components/macro';
 import {Colors} from '@blueprintjs/core';
+import styled from 'styled-components/macro';
 
 export const OptionsContainer = styled.div`
 min-height: 40px;

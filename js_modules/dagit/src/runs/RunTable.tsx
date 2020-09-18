@@ -1,15 +1,17 @@
-import * as React from 'react';
+import {Checkbox, Icon, NonIdealState} from '@blueprintjs/core';
 import gql from 'graphql-tag';
-import {Legend, LegendColumn, RowColumn, RowContainer} from '../ListComponents';
-import {RunTag} from './RunTag';
-import {RunTableRunFragment, RunTableRunFragment_tags} from './types/RunTableRunFragment';
-import {TokenizingFieldValue} from '../TokenizingField';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {NonIdealState, Icon, Checkbox} from '@blueprintjs/core';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {titleForRun, RunTime, RunElapsed, RunComponentFragments} from './RunUtils';
+
+import {Legend, LegendColumn, RowColumn, RowContainer} from '../ListComponents';
+import PythonErrorInfo from '../PythonErrorInfo';
+import {TokenizingFieldValue} from '../TokenizingField';
+
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusWithStats} from './RunStatusDots';
+import {RunTag} from './RunTag';
+import {RunComponentFragments, RunElapsed, RunTime, titleForRun} from './RunUtils';
+import {RunTableRunFragment, RunTableRunFragment_tags} from './types/RunTableRunFragment';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];

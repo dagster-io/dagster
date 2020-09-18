@@ -1,5 +1,6 @@
 import * as React from 'react';
-import {SVGFlowLayoutRect, SVGFlowLayoutFiller, SVGMonospaceText} from './SVGComponents';
+
+import {SVGFlowLayoutFiller, SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
 
 export interface ISolidTag {
   label: string;

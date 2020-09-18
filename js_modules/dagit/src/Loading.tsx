@@ -1,8 +1,8 @@
-import * as React from 'react';
-import styled from 'styled-components/macro';
-import {QueryResult} from 'react-apollo';
-import {ProgressBar, NonIdealState} from '@blueprintjs/core';
+import {NonIdealState, ProgressBar} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import * as React from 'react';
+import {QueryResult} from 'react-apollo';
+import styled from 'styled-components/macro';
 
 interface ILoadingProps<TData> {
   queryResult: QueryResult<TData, any>;

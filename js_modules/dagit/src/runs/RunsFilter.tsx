@@ -1,18 +1,20 @@
 import gql from 'graphql-tag';
-import * as React from 'react';
 import * as querystring from 'query-string';
-import {useQuery, QueryResult} from 'react-apollo';
+import * as React from 'react';
+import {QueryResult, useQuery} from 'react-apollo';
 import {__RouterContext as RouterContext} from 'react-router';
-import {RunsSearchSpaceQuery} from './types/RunsSearchSpaceQuery';
-import {PipelineRunsFilter, PipelineRunStatus} from '../types/globalTypes';
+
 import {DagsterRepositoryContext, useRepositorySelector} from '../DagsterRepositoryContext';
 import {
+  SuggestionProvider,
   TokenizingField,
   TokenizingFieldValue,
-  SuggestionProvider,
   stringFromValue,
   tokenizedValuesFromString,
 } from '../TokenizingField';
+import {PipelineRunStatus, PipelineRunsFilter} from '../types/globalTypes';
+
+import {RunsSearchSpaceQuery} from './types/RunsSearchSpaceQuery';
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'tag';
 

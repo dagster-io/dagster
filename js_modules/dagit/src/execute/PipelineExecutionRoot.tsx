@@ -1,28 +1,30 @@
-import * as React from 'react';
+import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
+import * as React from 'react';
+import {Query} from 'react-apollo';
+import {RouteComponentProps} from 'react-router-dom';
+
+import {usePipelineSelector, useRepositorySelector} from '../DagsterRepositoryContext';
+import {
+  IExecutionSessionChanges,
+  applyChangesToSession,
+  applyCreateSession,
+  useStorage,
+} from '../LocalStorage';
+
 import ExecutionSessionContainer, {
   ExecutionSessionContainerError,
   ExecutionSessionContainerLoading,
 } from './ExecutionSessionContainer';
-import {Query} from 'react-apollo';
-import {IconNames} from '@blueprintjs/icons';
-import {
-  useStorage,
-  IExecutionSessionChanges,
-  applyChangesToSession,
-  applyCreateSession,
-} from '../LocalStorage';
-import {
-  PipelineExecutionRootQuery,
-  PipelineExecutionRootQueryVariables,
-} from './types/PipelineExecutionRootQuery';
 import {ExecutionTabs} from './ExecutionTabs';
-import {RouteComponentProps} from 'react-router-dom';
-import {usePipelineSelector, useRepositorySelector} from '../DagsterRepositoryContext';
 import {
   PipelineExecutionConfigSchemaQuery,
   PipelineExecutionConfigSchemaQueryVariables,
 } from './types/PipelineExecutionConfigSchemaQuery';
+import {
+  PipelineExecutionRootQuery,
+  PipelineExecutionRootQueryVariables,
+} from './types/PipelineExecutionRootQuery';
 
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;

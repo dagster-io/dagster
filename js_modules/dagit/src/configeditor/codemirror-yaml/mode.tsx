@@ -5,6 +5,7 @@ import 'codemirror/addon/search/searchcursor';
 import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/dialog/dialog.css';
 import * as yaml from 'yaml';
+
 import {ConfigEditorRunConfigSchemaFragment} from '../types/ConfigEditorRunConfigSchemaFragment';
 
 interface IParseStateParent {

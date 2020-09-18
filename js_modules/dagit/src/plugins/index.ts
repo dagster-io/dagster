@@ -1,8 +1,8 @@
 import {SidebarSolidDefinitionFragment} from '../types/SidebarSolidDefinitionFragment';
 
+import * as generic from './generic';
 import * as ipynb from './ipynb';
 import * as sql from './sql';
-import * as generic from './generic';
 
 const plugins = {
   sql: sql,

@@ -1,15 +1,15 @@
-import * as React from 'react';
 import gql from 'graphql-tag';
-import PipelineColorScale from './PipelineColorScale';
-import {IFullSolidLayout} from './getFullSolidLayout';
-import {SolidNodeInvocationFragment} from './types/SolidNodeInvocationFragment';
-import {SolidNodeDefinitionFragment} from './types/SolidNodeDefinitionFragment';
-import {SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
+import * as React from 'react';
 
-import SolidTags, {ISolidTag} from './SolidTags';
+import PipelineColorScale from './PipelineColorScale';
+import {SVGFlowLayoutRect, SVGMonospaceText} from './SVGComponents';
 import {SolidConfigPort} from './SolidConfigPort';
 import {SolidIOBox, metadataForIO} from './SolidIOBox';
+import SolidTags, {ISolidTag} from './SolidTags';
+import {IFullSolidLayout} from './getFullSolidLayout';
 import {Edge} from './highlighting';
+import {SolidNodeDefinitionFragment} from './types/SolidNodeDefinitionFragment';
+import {SolidNodeInvocationFragment} from './types/SolidNodeInvocationFragment';
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;

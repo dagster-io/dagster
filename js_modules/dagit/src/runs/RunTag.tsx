@@ -1,5 +1,5 @@
+import {Position, Tag, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
-import {Tooltip, Tag, Position} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 export const DAGSTER_TAG_NAMESPACE = 'dagster/';
 

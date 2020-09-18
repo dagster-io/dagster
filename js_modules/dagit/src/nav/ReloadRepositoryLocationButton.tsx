@@ -1,13 +1,15 @@
-import * as React from 'react';
-import {useMutation, useApolloClient} from 'react-apollo';
+import {Button, Icon, Intent, Spinner, Tooltip} from '@blueprintjs/core';
 import gql from 'graphql-tag';
-import {Button, Icon, Tooltip, Intent, Spinner} from '@blueprintjs/core';
+import * as React from 'react';
+import {useApolloClient, useMutation} from 'react-apollo';
+
+import {SharedToaster} from '../DomUtils';
+import {ShortcutHandler} from '../ShortcutHandler';
+
 import {
   ReloadRepositoryLocationMutation,
   ReloadRepositoryLocationMutationVariables,
 } from './types/ReloadRepositoryLocationMutation';
-import {ShortcutHandler} from '../ShortcutHandler';
-import {SharedToaster} from '../DomUtils';
 
 export const ReloadRepositoryLocationButton: React.FunctionComponent<{
   location: string;

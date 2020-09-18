@@ -1,12 +1,14 @@
+import {Colors, Divider, Intent, Tag} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-import {Colors, Tag, Intent, Divider} from '@blueprintjs/core';
-import {DisplayEvent} from './DisplayEvent';
+
 import {
   IExpectationResult,
   IExpectationResultStatus,
   IMaterialization,
 } from '../RunMetadataProvider';
+
+import {DisplayEvent} from './DisplayEvent';
 
 interface IDisplayEventsProps {
   expectationResults: IExpectationResult[];

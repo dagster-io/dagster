@@ -1,11 +1,12 @@
-import * as React from 'react';
-import {SVGMonospaceText} from './SVGComponents';
-import {LinkVertical as Link} from '@vx/shape';
-import {IPoint} from './getFullSolidLayout';
-import {Edge} from './SolidLinks';
-import {isHighlighted} from './highlighting';
 import {Colors} from '@blueprintjs/core';
+import {LinkVertical as Link} from '@vx/shape';
+import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {SVGMonospaceText} from './SVGComponents';
+import {Edge} from './SolidLinks';
+import {IPoint} from './getFullSolidLayout';
+import {isHighlighted} from './highlighting';
 
 interface ExternalConnectionNodeProps {
   layout: IPoint;

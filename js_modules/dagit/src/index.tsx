@@ -1,22 +1,23 @@
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import {createGlobalStyle} from 'styled-components/macro';
-import ApolloClient from 'apollo-client';
-import {ApolloLink} from 'apollo-link';
-import {ApolloProvider} from 'react-apollo';
-import {SubscriptionClient} from 'subscriptions-transport-ws';
-import {WebSocketLink} from 'apollo-link-ws';
-import {WebsocketStatusProvider} from './WebsocketStatus';
-import {App} from './App';
-import AppCache from './AppCache';
-
 import '@blueprintjs/core/lib/css/blueprint.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/icons/lib/css/blueprint-icons.css';
 import '@blueprintjs/select/lib/css/blueprint-select.css';
-import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
-import {WEBSOCKET_URI} from './DomUtils';
+
+import ApolloClient from 'apollo-client';
+import {ApolloLink} from 'apollo-link';
+import {WebSocketLink} from 'apollo-link-ws';
+import * as React from 'react';
+import {ApolloProvider} from 'react-apollo';
+import * as ReactDOM from 'react-dom';
+import {createGlobalStyle} from 'styled-components/macro';
+import {SubscriptionClient} from 'subscriptions-transport-ws';
+
+import {App} from './App';
+import AppCache from './AppCache';
 import {AppErrorLink} from './AppError';
+import {WEBSOCKET_URI} from './DomUtils';
+import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
+import {WebsocketStatusProvider} from './WebsocketStatus';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these

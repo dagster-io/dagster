@@ -1,9 +1,10 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
 import {Colors} from '@blueprintjs/core';
-import {ConfigEditorHelpContext, isHelpContextEqual} from '../configeditor/ConfigEditor';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
 import {ConfigTypeSchema, TypeData} from '../ConfigTypeSchema';
+import {ConfigEditorHelpContext, isHelpContextEqual} from '../configeditor/ConfigEditor';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;

@@ -1,6 +1,7 @@
-import * as React from 'react';
 import {Button} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import * as React from 'react';
+
 import {CursorPaginationProps} from './runs/useCursorPaginatedQuery';
 
 export const CursorPaginationControls: React.FunctionComponent<CursorPaginationProps> = ({

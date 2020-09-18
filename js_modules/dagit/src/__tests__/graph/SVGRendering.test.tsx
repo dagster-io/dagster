@@ -1,15 +1,17 @@
+import fs from 'fs';
+import path from 'path';
+
+import {Colors} from '@blueprintjs/core';
+import pretty from 'pretty';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/server';
 import {StyleSheetManager} from 'styled-components/macro';
-import {Colors} from '@blueprintjs/core';
-import pretty from 'pretty';
-import path from 'path';
-import fs from 'fs';
 
 import {PipelineGraphContents} from '../../graph/PipelineGraph';
 import {getDagrePipelineLayout} from '../../graph/getFullSolidLayout';
-import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from '../../types/PipelineExplorerRootQuery';
 import {PipelineGraphSolidFragment} from '../../graph/types/PipelineGraphSolidFragment';
+import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from '../../types/PipelineExplorerRootQuery';
+
 import {MOCKS} from './SVGMocks';
 
 const snapshotsDir = path.join(__dirname, '__snapshots__');

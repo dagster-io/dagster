@@ -1,7 +1,9 @@
-import * as React from 'react';
 import {Button, Classes, Dialog} from '@blueprintjs/core';
-import {IPluginSidebarProps} from '.';
+import * as React from 'react';
+
 import {ROOT_SERVER_URI} from '../DomUtils';
+
+import {IPluginSidebarProps} from '.';
 
 export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   state = {

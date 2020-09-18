@@ -1,32 +1,32 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import {Icon, Colors} from '@blueprintjs/core';
+import {Colors, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import gql from 'graphql-tag';
+import * as React from 'react';
 
-import {pluginForMetadata} from './plugins';
-import SolidTypeSignature from './SolidTypeSignature';
-import TypeWithTooltip from './TypeWithTooltip';
-import {
-  SidebarSection,
-  SidebarTitle,
-  SidebarSubhead,
-  SectionSmallHeader,
-  SectionItemContainer,
-} from './SidebarComponents';
-import Description from './Description';
 import {ConfigTypeSchema} from './ConfigTypeSchema';
-import {SidebarSolidDefinitionFragment} from './types/SidebarSolidDefinitionFragment';
+import Description from './Description';
 import {
-  SolidMappingTable,
+  SectionItemContainer,
+  SectionSmallHeader,
+  SidebarSection,
+  SidebarSubhead,
+  SidebarTitle,
+} from './SidebarComponents';
+import {
+  Invocation,
   ResourceContainer,
   ResourceHeader,
-  TypeWrapper,
-  SolidLinks,
-  Invocation,
   ShowAllButton,
   SidebarSolidInvocationInfo,
+  SolidLinks,
+  SolidMappingTable,
+  TypeWrapper,
 } from './SidebarSolidHelpers';
+import SolidTypeSignature from './SolidTypeSignature';
+import TypeWithTooltip from './TypeWithTooltip';
 import {breakOnUnderscores} from './Util';
+import {pluginForMetadata} from './plugins';
+import {SidebarSolidDefinitionFragment} from './types/SidebarSolidDefinitionFragment';
 
 interface SidebarSolidDefinitionProps {
   definition: SidebarSolidDefinitionFragment;

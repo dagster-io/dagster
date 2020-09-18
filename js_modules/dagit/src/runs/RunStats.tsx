@@ -1,11 +1,13 @@
-import * as React from 'react';
+import {Spinner} from '@blueprintjs/core';
 import gql from 'graphql-tag';
-import PythonErrorInfo from '../PythonErrorInfo';
-import styled from 'styled-components/macro';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
+
+import PythonErrorInfo from '../PythonErrorInfo';
+
 import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStatsQuery';
-import {Spinner} from '@blueprintjs/core';
 
 export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {

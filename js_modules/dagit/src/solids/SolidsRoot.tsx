@@ -1,28 +1,29 @@
-import * as React from 'react';
-import * as querystring from 'query-string';
-
-import Loading from '../Loading';
-import {RouteComponentProps} from 'react-router';
-import {CellMeasurer, CellMeasurerCache, AutoSizer, List} from 'react-virtualized';
+import {Colors, NonIdealState} from '@blueprintjs/core';
 import gql from 'graphql-tag';
+import * as querystring from 'query-string';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
+import {RouteComponentProps} from 'react-router';
+import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
 import styled from 'styled-components/macro';
+
+import {DagsterRepositoryContext, useRepositorySelector} from '../DagsterRepositoryContext';
+import Loading from '../Loading';
+import SolidTypeSignature from '../SolidTypeSignature';
+import {SplitPanelContainer} from '../SplitPanelContainer';
+import {
+  SuggestionProvider,
+  TokenizingField,
+  TokenizingFieldValue,
+  stringFromValue,
+  tokenizedValuesFromString,
+} from '../TokenizingField';
+
+import {SolidDetailScrollContainer, UsedSolidDetails} from './SolidDetailsRoot';
 import {
   SolidsRootQuery,
   SolidsRootQuery_repositoryOrError_Repository_usedSolids,
 } from './types/SolidsRootQuery';
-import {SplitPanelContainer} from '../SplitPanelContainer';
-import {Colors, NonIdealState} from '@blueprintjs/core';
-import SolidTypeSignature from '../SolidTypeSignature';
-import {DagsterRepositoryContext, useRepositorySelector} from '../DagsterRepositoryContext';
-import {UsedSolidDetails, SolidDetailScrollContainer} from './SolidDetailsRoot';
-import {
-  SuggestionProvider,
-  TokenizingFieldValue,
-  tokenizedValuesFromString,
-  stringFromValue,
-  TokenizingField,
-} from '../TokenizingField';
 
 function flatUniq(arrs: string[][]) {
   const results: {[key: string]: boolean} = {};

@@ -1,37 +1,36 @@
+import {NonIdealState, Spinner} from '@blueprintjs/core';
 import * as React from 'react';
-
 import {BrowserRouter, Redirect, Route, Switch} from 'react-router-dom';
 
 import CustomAlertProvider from './CustomAlertProvider';
-import {NonIdealState, Spinner} from '@blueprintjs/core';
-import {PipelineExecutionRoot} from './execute/PipelineExecutionRoot';
-import {PipelineExecutionSetupRoot} from './execute/PipelineExecutionSetupRoot';
-import {PipelineExplorerRoot} from './PipelineExplorerRoot';
-import {PipelineOverviewRoot} from './pipelines/PipelineOverviewRoot';
-import {PipelinePartitionsRoot} from './partitions/PipelinePartitionsRoot';
-import {PipelineRunsRoot} from './PipelineRunsRoot';
-import PythonErrorInfo from './PythonErrorInfo';
-import {RunRoot} from './runs/RunRoot';
-import {RunsRoot} from './runs/RunsRoot';
-import {SolidsRoot} from './solids/SolidsRoot';
-import {SchedulerRoot} from './schedules/SchedulerRoot';
-import {SchedulesRoot} from './schedules/SchedulesRoot';
-import {ScheduleRoot} from './schedules/ScheduleRoot';
-import {AssetsRoot} from './assets/AssetsRoot';
-import {LeftNav} from './nav/LeftNav';
-import {PipelineNav} from './nav/PipelineNav';
-import {FeatureFlagsRoot} from './FeatureFlagsRoot';
-import {InstanceDetailsRoot} from './InstanceDetailsRoot';
-import {SolidDetailsRoot} from './solids/SolidDetailsRoot';
+import {CustomConfirmationProvider} from './CustomConfirmationProvider';
+import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {
   DagsterRepositoryContext,
-  useRepositoryOptions,
   useCurrentRepositoryState,
+  useRepositoryOptions,
 } from './DagsterRepositoryContext';
-import {CustomTooltipProvider} from './CustomTooltipProvider';
-import {TimezoneProvider} from './TimeComponents';
 import {APP_PATH_PREFIX} from './DomUtils';
-import {CustomConfirmationProvider} from './CustomConfirmationProvider';
+import {FeatureFlagsRoot} from './FeatureFlagsRoot';
+import {InstanceDetailsRoot} from './InstanceDetailsRoot';
+import {PipelineExplorerRoot} from './PipelineExplorerRoot';
+import {PipelineRunsRoot} from './PipelineRunsRoot';
+import PythonErrorInfo from './PythonErrorInfo';
+import {TimezoneProvider} from './TimeComponents';
+import {AssetsRoot} from './assets/AssetsRoot';
+import {PipelineExecutionRoot} from './execute/PipelineExecutionRoot';
+import {PipelineExecutionSetupRoot} from './execute/PipelineExecutionSetupRoot';
+import {LeftNav} from './nav/LeftNav';
+import {PipelineNav} from './nav/PipelineNav';
+import {PipelinePartitionsRoot} from './partitions/PipelinePartitionsRoot';
+import {PipelineOverviewRoot} from './pipelines/PipelineOverviewRoot';
+import {RunRoot} from './runs/RunRoot';
+import {RunsRoot} from './runs/RunsRoot';
+import {ScheduleRoot} from './schedules/ScheduleRoot';
+import {SchedulerRoot} from './schedules/SchedulerRoot';
+import {SchedulesRoot} from './schedules/SchedulesRoot';
+import {SolidDetailsRoot} from './solids/SolidDetailsRoot';
+import {SolidsRoot} from './solids/SolidsRoot';
 
 const AppRoutes = () => (
   <Switch>

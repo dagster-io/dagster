@@ -68,9 +68,9 @@ Pipeline configuration
 
 .. _config_schema:
 
-Environment Dict Schema
+Run Config Schema
 ^^^^^^^^^^^^^^^^^^^^^^^
-  The ``environment_dict`` used by :py:func:`execute_pipeline` and
+  The ``run_config`` used by :py:func:`execute_pipeline` and
   :py:func:`execute_pipeline_iterator` has the following schema:
 
   ::

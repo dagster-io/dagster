@@ -1,10 +1,11 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
 import {Code, Colors} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
 import TypeWithTooltip from './TypeWithTooltip';
-import {SolidTypeSignatureFragment} from './types/SolidTypeSignatureFragment';
 import {breakOnUnderscores} from './Util';
+import {SolidTypeSignatureFragment} from './types/SolidTypeSignatureFragment';
 
 interface ISolidTypeSignature {
   definition: SolidTypeSignatureFragment;

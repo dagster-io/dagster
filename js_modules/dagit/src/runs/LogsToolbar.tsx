@@ -1,12 +1,14 @@
+import {Button, ButtonGroup, Colors} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-import {Colors, Button, ButtonGroup} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
-import {LogLevel, LogFilterValue, GetFilterProviders, LogFilter} from './LogsProvider';
-import {ComputeLogLink} from './ComputeLogModal';
+
 import {IStepState} from '../RunMetadataProvider';
-import {TokenizingField, TokenizingFieldValue, SuggestionProvider} from '../TokenizingField';
 import {IRunMetadataDict} from '../RunMetadataProvider';
+import {SuggestionProvider, TokenizingField, TokenizingFieldValue} from '../TokenizingField';
+
+import {ComputeLogLink} from './ComputeLogModal';
+import {GetFilterProviders, LogFilter, LogFilterValue, LogLevel} from './LogsProvider';
 
 interface ILogsToolbarProps {
   steps: string[];

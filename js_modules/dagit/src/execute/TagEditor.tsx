@@ -1,10 +1,11 @@
-import * as React from 'react';
 import {Button, Classes, Dialog, Icon} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import * as React from 'react';
 import styled from 'styled-components/macro';
+
+import {PipelineRunTag} from '../LocalStorage';
 import {ShortcutHandler} from '../ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
-import {IconNames} from '@blueprintjs/icons';
-import {PipelineRunTag} from '../LocalStorage';
 
 interface ITagEditorProps {
   tags: PipelineRunTag[];

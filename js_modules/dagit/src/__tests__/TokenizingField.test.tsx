@@ -1,9 +1,10 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import * as TestRenderer from 'react-test-renderer';
-import {TokenizingField} from '../TokenizingField';
 import {unmountComponentAtNode} from 'react-dom';
 import {act} from 'react-dom/test-utils';
+import * as TestRenderer from 'react-test-renderer';
+
+import {TokenizingField} from '../TokenizingField';
 
 // https://github.com/jsdom/jsdom/issues/317
 (global as any).document.createRange = () => ({

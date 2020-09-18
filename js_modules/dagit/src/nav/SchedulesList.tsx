@@ -1,15 +1,16 @@
-import React from 'react';
-import {Colors, InputGroup, ButtonGroup, Button, Icon} from '@blueprintjs/core';
+import {Button, ButtonGroup, Colors, Icon, InputGroup} from '@blueprintjs/core';
 import gql from 'graphql-tag';
+import React from 'react';
 import {useQuery} from 'react-apollo';
+import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SchedulesListQuery} from './types/SchedulesListQuery';
 import {DagsterRepoOption} from '../DagsterRepositoryContext';
 import {ShortcutHandler} from '../ShortcutHandler';
-import {useHistory} from 'react-router';
 import {ScheduleStatus} from '../types/globalTypes';
+
+import {SchedulesListQuery} from './types/SchedulesListQuery';
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());

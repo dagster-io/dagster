@@ -1,24 +1,25 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import {useQuery} from 'react-apollo';
-import {RouteComponentProps, Redirect} from 'react-router-dom';
-import {NonIdealState, IconName, Colors} from '@blueprintjs/core';
+import {Colors, IconName, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
+import {Redirect, RouteComponentProps} from 'react-router-dom';
+import styled from 'styled-components/macro';
+
+import {usePipelineSelector, useActivePipelineForName} from './DagsterRepositoryContext';
 import Loading from './Loading';
 import PipelineExplorer, {PipelineExplorerOptions} from './PipelineExplorer';
-import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
+import {
+  PipelineExplorerPath,
+  explorerPathFromString,
+  explorerPathToString,
+} from './PipelinePathUtils';
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot,
 } from './types/PipelineExplorerRootQuery';
-import {
-  explorerPathFromString,
-  PipelineExplorerPath,
-  explorerPathToString,
-} from './PipelinePathUtils';
-import styled from 'styled-components/macro';
-import {usePipelineSelector} from './DagsterRepositoryContext';
+import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
 
 function explodeComposite(
   handles: PipelineExplorerSolidHandleFragment[],
@@ -130,6 +131,8 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
 
   const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
 
+  const pipeline = useActivePipelineForName(explorerPath.pipelineName);
+
   return (
     <ExplorerSnapshotResolver explorerPath={explorerPath} options={options}>
       {(result) => {
@@ -157,9 +160,11 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
           return <Redirect to={`/pipeline/${explorerPathToString(n)}`} />;
         }
 
+        const pathID = explorerPath.snapshotId;
+
         return (
           <>
-            {explorerPath.snapshotId && (
+            {pathID && pipeline?.pipelineSnapshotId !== pathID && (
               <SnapshotNotice>You are viewing a historical pipeline snapshot.</SnapshotNotice>
             )}
             <PipelineExplorer

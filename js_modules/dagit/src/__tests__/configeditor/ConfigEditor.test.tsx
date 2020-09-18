@@ -1,6 +1,6 @@
 import * as React from 'react';
-import * as TestRenderer from 'react-test-renderer';
 import {BrowserRouter} from 'react-router-dom';
+import * as TestRenderer from 'react-test-renderer';
 
 import {ConfigEditor} from '../../configeditor/ConfigEditor';
 

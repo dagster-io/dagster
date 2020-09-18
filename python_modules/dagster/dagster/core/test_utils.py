@@ -258,3 +258,13 @@ def poll_for_event(instance, run_id, event_type, message, timeout=10):
         backoff = backoff * 2
         if total_time > timeout:
             raise Exception("Timed out")
+
+
+@contextmanager
+def new_cwd(path):
+    old = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(old)

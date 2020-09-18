@@ -1,8 +1,9 @@
 import {execSync} from 'child_process';
+import fs from 'fs';
+import path from 'path';
+
 import {addTypenameToDocument} from 'apollo-utilities';
 import {print} from 'graphql/language/printer';
-import path from 'path';
-import fs from 'fs';
 
 /*
 Why is this script structured as a Jest test? Jest goes to great lengths to
@@ -13,8 +14,8 @@ leveraging Jest is easiest.
 */
 
 // collect mocks from various tests in the codebase
-import {MOCKS as SVGMocks} from '../__tests__/graph/SVGMocks';
 import {MOCKS as AppMocks} from '../__tests__/AppMocks';
+import {MOCKS as SVGMocks} from '../__tests__/graph/SVGMocks';
 
 const dagsterRoot = path.resolve(path.join(__dirname, '..', '..', '..', '..'));
 

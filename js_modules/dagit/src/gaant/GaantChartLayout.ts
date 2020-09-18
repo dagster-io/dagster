@@ -1,16 +1,18 @@
-import {IRunMetadataDict, IStepState, IStepAttempt} from '../RunMetadataProvider';
 import {Colors} from '@blueprintjs/core';
+
+import {IRunMetadataDict, IStepAttempt, IStepState} from '../RunMetadataProvider';
+
 import {
-  GaantChartLayoutOptions,
-  GaantChartBox,
-  GaantChartMode,
-  GaantChartLayout,
-  GaantChartMarker,
-  BOX_SPACING_X,
-  LEFT_INSET,
-  BOX_WIDTH,
   BOX_DOT_WIDTH_CUTOFF,
+  BOX_SPACING_X,
+  BOX_WIDTH,
+  GaantChartBox,
+  GaantChartLayout,
+  GaantChartLayoutOptions,
+  GaantChartMarker,
+  GaantChartMode,
   IGaantNode,
+  LEFT_INSET,
 } from './Constants';
 
 export interface BuildLayoutParams {

@@ -1,11 +1,12 @@
-import * as React from 'react';
 import gql from 'graphql-tag';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
-import {ConfigTypeSchema} from '../ConfigTypeSchema';
-import {TypeExplorerFragment} from './types/TypeExplorerFragment';
-import {SidebarSubhead, SidebarSection, SidebarTitle, SectionInner} from '../SidebarComponents';
 
+import {ConfigTypeSchema} from '../ConfigTypeSchema';
 import Description from '../Description';
+import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from '../SidebarComponents';
+
+import {TypeExplorerFragment} from './types/TypeExplorerFragment';
 
 interface ITypeExplorerProps {
   type: TypeExplorerFragment;

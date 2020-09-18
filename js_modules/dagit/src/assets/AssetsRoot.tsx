@@ -1,16 +1,17 @@
-import * as React from 'react';
-import styled from 'styled-components';
-import {} from '@blueprintjs/core';
+import {Icon, InputGroup, Menu, MenuItem, NonIdealState, Popover} from '@blueprintjs/core';
 import gql from 'graphql-tag';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
-import {AssetsRootQuery_assetsOrError_AssetConnection_nodes} from './types/AssetsRootQuery';
-import Loading from '../Loading';
-import {Link, RouteComponentProps} from 'react-router-dom';
-import {AssetRoot} from './AssetRoot';
-import {Header, Legend, LegendColumn, RowContainer, RowColumn} from '../ListComponents';
 import {useHistory} from 'react-router';
-import {Icon, InputGroup, NonIdealState, Popover, Menu, MenuItem} from '@blueprintjs/core';
+import {Link, RouteComponentProps} from 'react-router-dom';
+import styled from 'styled-components';
+
+import {Header, Legend, LegendColumn, RowColumn, RowContainer} from '../ListComponents';
+import Loading from '../Loading';
 import {Timestamp} from '../TimeComponents';
+
+import {AssetRoot} from './AssetRoot';
+import {AssetsRootQuery_assetsOrError_AssetConnection_nodes} from './types/AssetsRootQuery';
 
 type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
 

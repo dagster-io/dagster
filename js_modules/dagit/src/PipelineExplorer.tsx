@@ -1,23 +1,23 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
+import {Checkbox, Colors, Icon, InputGroup} from '@blueprintjs/core';
 import Color from 'color';
-import styled from 'styled-components/macro';
+import gql from 'graphql-tag';
 import {History} from 'history';
-import {Icon, Colors, InputGroup, Checkbox} from '@blueprintjs/core';
+import * as querystring from 'query-string';
+import * as React from 'react';
 import {Route} from 'react-router';
 import {Link} from 'react-router-dom';
-import * as querystring from 'query-string';
+import styled from 'styled-components/macro';
 
-import {PipelineExplorerFragment} from './types/PipelineExplorerFragment';
-import {PipelineGraphContainer} from './graph/PipelineGraphContainer';
-import PipelineGraph from './graph/PipelineGraph';
-import {SplitPanelContainer} from './SplitPanelContainer';
-import SidebarTabbedContainer from './SidebarTabbedContainer';
-import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
 import {filterByQuery} from './GraphQueryImpl';
-import {SolidJumpBar} from './PipelineJumpComponents';
 import {GraphQueryInput} from './GraphQueryInput';
+import {SolidJumpBar} from './PipelineJumpComponents';
 import {PipelineExplorerPath, explorerPathToString} from './PipelinePathUtils';
+import SidebarTabbedContainer from './SidebarTabbedContainer';
+import {SplitPanelContainer} from './SplitPanelContainer';
+import PipelineGraph from './graph/PipelineGraph';
+import {PipelineGraphContainer} from './graph/PipelineGraphContainer';
+import {PipelineExplorerFragment} from './types/PipelineExplorerFragment';
+import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;

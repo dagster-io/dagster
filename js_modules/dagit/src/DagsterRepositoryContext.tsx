@@ -1,14 +1,15 @@
-import * as React from 'react';
 import gql from 'graphql-tag';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
+
+import PythonErrorInfo from './PythonErrorInfo';
+import {RepositoryInformationFragment} from './RepositoryInformation';
+import {InstanceExecutableQuery} from './types/InstanceExecutableQuery';
 import {
   RootRepositoriesQuery,
   RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes,
   RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location,
 } from './types/RootRepositoriesQuery';
-import {InstanceExecutableQuery} from './types/InstanceExecutableQuery';
-import PythonErrorInfo from './PythonErrorInfo';
-import {RepositoryInformationFragment} from './RepositoryInformation';
 import {RepositorySelector} from './types/globalTypes';
 
 export type Repository = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes;
@@ -146,6 +147,12 @@ export const useRepository = () => {
   }
 
   return repository;
+};
+
+export const useActivePipelineForName = (pipelineName: string) => {
+  const repository = useRepository();
+  const {pipelines} = repository;
+  return pipelines.find((pipeline) => pipeline.name === pipelineName);
 };
 
 export const usePipelineSelector = (pipelineName: string, solidSelection?: string[]) => {

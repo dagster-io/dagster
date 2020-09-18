@@ -1,9 +1,10 @@
-import React from 'react';
-import styled from 'styled-components/macro';
 import {Colors, Icon, IconName} from '@blueprintjs/core';
-import {useRouteMatch, useHistory} from 'react-router-dom';
-import {explorerPathFromString, explorerPathToString} from '../PipelinePathUtils';
+import React from 'react';
+import {useHistory, useRouteMatch} from 'react-router-dom';
+import styled from 'styled-components/macro';
+
 import {useRepository} from '../DagsterRepositoryContext';
+import {explorerPathFromString, explorerPathToString} from '../PipelinePathUtils';
 
 const PIPELINE_TABS: {
   title: string;

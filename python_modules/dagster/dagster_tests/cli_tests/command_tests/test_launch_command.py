@@ -6,6 +6,8 @@ import pytest
 from click.testing import CliRunner
 
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
+from dagster.core.test_utils import instance_for_test, new_cwd
+from dagster.utils import file_relative_path
 
 from .test_cli_commands import (
     default_instance,
@@ -145,3 +147,23 @@ def test_launch_subset_pipeline_invalid_value(gen_pipeline_args):
             assert "No qualified solids to execute found for solid_selection" in str(
                 result.exception
             )
+
+
+def test_empty_working_directory():
+    runner = CliRunner()
+    import os
+
+    with instance_for_test() as instance:
+        with new_cwd(os.path.dirname(__file__)):
+            result = runner.invoke(
+                pipeline_launch_command,
+                [
+                    "-f",
+                    file_relative_path(__file__, "file_with_local_import.py"),
+                    "-a",
+                    "foo_pipeline",
+                ],
+            )
+            assert result.exit_code == 0
+            runs = instance.get_runs()
+            assert len(runs) == 1

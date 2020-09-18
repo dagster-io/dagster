@@ -9,7 +9,7 @@ from click.testing import CliRunner
 
 from dagster.cli.pipeline import execute_execute_command, pipeline_execute_command
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import instance_for_test, new_cwd
 from dagster.utils import file_relative_path, merge_dicts
 
 from .test_cli_commands import (
@@ -504,3 +504,23 @@ def test_execute_subset_pipeline_invalid():
         )
         assert result.exit_code == 1
         assert "No qualified solids to execute found for solid_selection" in str(result.exception)
+
+
+def test_empty_working_directory():
+    runner = CliRunner()
+    import os
+
+    with instance_for_test() as instance:
+        with new_cwd(os.path.dirname(__file__)):
+            result = runner.invoke(
+                pipeline_execute_command,
+                [
+                    "-f",
+                    file_relative_path(__file__, "file_with_local_import.py"),
+                    "-a",
+                    "foo_pipeline",
+                ],
+            )
+            assert result.exit_code == 0
+            runs = instance.get_runs()
+            assert len(runs) == 1

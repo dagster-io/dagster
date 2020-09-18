@@ -1,10 +1,10 @@
+import {Code, Colors, Text} from '@blueprintjs/core';
 import * as React from 'react';
-import styled from 'styled-components/macro';
 import {Link} from 'react-router-dom';
-import {Text, Code, Colors} from '@blueprintjs/core';
+import styled from 'styled-components/macro';
 
-import {titleOfIO} from './Util';
 import {SectionHeader} from './SidebarComponents';
+import {titleOfIO} from './Util';
 import {SolidColumn} from './runs/LogsRowComponents';
 
 export type SolidLinkInfo = {

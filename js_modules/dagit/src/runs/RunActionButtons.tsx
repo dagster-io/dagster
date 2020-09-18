@@ -1,14 +1,15 @@
-import * as React from 'react';
-import {IconNames} from '@blueprintjs/icons';
 import {Button, IconName, Intent} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import * as React from 'react';
 import {useMutation} from 'react-apollo';
-import {LaunchButtonDropdown, LaunchButtonConfiguration} from '../execute/LaunchButton';
+
+import {useRepository, useRepositoryOptions} from '../DagsterRepositoryContext';
+import {SharedToaster} from '../DomUtils';
+import {IStepState} from '../RunMetadataProvider';
+import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../execute/LaunchButton';
 import {PipelineRunStatus} from '../types/globalTypes';
 
 import {CANCEL_MUTATION} from './RunUtils';
-import {SharedToaster} from '../DomUtils';
-import {IStepState} from '../RunMetadataProvider';
-import {useRepository, useRepositoryOptions} from '../DagsterRepositoryContext';
 
 const CANCEL_TITLE = 'Terminate';
 
@@ -72,17 +73,18 @@ const CancelRunButton: React.FunctionComponent<{
       disabled={inFlight}
       onClick={async () => {
         setInFlight(true);
-        const res = await cancel({
+        const {data} = await cancel({
           variables: {runId: run.runId},
         });
-        setInFlight(false);
-        if (res.data?.terminatePipelineExecution?.message) {
+        const message = data?.terminatePipelineExecution?.message;
+        if (message) {
           SharedToaster.show({
-            message: res.data.terminatePipelineExecution.message,
+            message,
             icon: 'error',
             intent: Intent.DANGER,
           });
         }
+        setInFlight(false);
       }}
     />
   );

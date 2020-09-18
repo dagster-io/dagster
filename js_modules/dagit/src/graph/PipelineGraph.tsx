@@ -1,15 +1,17 @@
-import * as React from 'react';
-import gql from 'graphql-tag';
-import styled from 'styled-components/macro';
 import {Colors} from '@blueprintjs/core';
-import SVGViewport, {DETAIL_ZOOM, SVGViewportInteractor} from './SVGViewport';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
 import {SolidNameOrPath} from '../PipelineExplorer';
+
+import {ParentSolidNode, SVGLabeledParentRect} from './ParentSolidNode';
+import SVGViewport, {DETAIL_ZOOM, SVGViewportInteractor} from './SVGViewport';
+import {SolidLinks} from './SolidLinks';
 import SolidNode from './SolidNode';
 import {IFullPipelineLayout, IFullSolidLayout, ILayout} from './getFullSolidLayout';
-import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
-import {SolidLinks} from './SolidLinks';
 import {Edge, isHighlighted, isSolidHighlighted} from './highlighting';
-import {ParentSolidNode, SVGLabeledParentRect} from './ParentSolidNode';
+import {PipelineGraphSolidFragment} from './types/PipelineGraphSolidFragment';
 
 const NoOp = () => {};
 

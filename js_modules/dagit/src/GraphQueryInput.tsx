@@ -1,10 +1,11 @@
-import * as React from 'react';
-import styled from 'styled-components/macro';
-import {Colors, MenuItem, Menu, Popover, InputGroup, Button, Intent} from '@blueprintjs/core';
-import {GraphQueryItem} from './GraphQueryImpl';
+import {Button, Colors, InputGroup, Intent, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import {isEqual} from 'lodash';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {GraphQueryItem} from './GraphQueryImpl';
 
 interface GraphQueryInputProps {
   items: GraphQueryItem[];
@@ -79,12 +80,13 @@ export const GraphQueryInput = React.memo(
     let menu: JSX.Element | undefined = undefined;
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
-    const suggestions =
-      lastElementName && !suffix
+    const suggestions = React.useMemo(() => {
+      return lastElementName && !suffix
         ? props.items
             .map((s) => s.name)
             .filter((n) => n.startsWith(lastElementName) && n !== lastElementName)
         : [];
+    }, [lastElementName, props.items, suffix]);
 
     const onConfirmSuggestion = (suggestion: string) => {
       const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : '';

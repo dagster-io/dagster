@@ -1,14 +1,16 @@
-import * as React from 'react';
+import {ApolloClient} from 'apollo-client';
 import gql from 'graphql-tag';
 import * as querystring from 'query-string';
-import {ApolloClient} from 'apollo-client';
+import * as React from 'react';
+
 import {DirectGraphQLSubscription} from '../DirectGraphQLSubscription';
-import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
-import {PipelineRunStatus} from '../types/globalTypes';
-import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
-import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';
-import {Run} from './Run';
 import {TokenizingFieldValue, tokenizedValuesFromString} from '../TokenizingField';
+import {PipelineRunStatus} from '../types/globalTypes';
+
+import {Run} from './Run';
+import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';
+import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
+import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
 
 export enum LogLevel {
   DEBUG = 'DEBUG',

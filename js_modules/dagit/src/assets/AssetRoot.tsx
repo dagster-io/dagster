@@ -1,23 +1,25 @@
-import * as React from 'react';
-import styled from 'styled-components';
-import gql from 'graphql-tag';
 import {Colors} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
+import {Line} from 'react-chartjs-2';
+import styled from 'styled-components';
+
+import {Header, Legend, LegendColumn, RowColumn, RowContainer} from '../ListComponents';
 import Loading from '../Loading';
 import {Timestamp} from '../TimeComponents';
-import {AssetsRootQuery_assetsOrError_AssetConnection_nodes_key} from './types/AssetsRootQuery';
+import {colorHash} from '../Util';
+import {MetadataEntries, MetadataEntry} from '../runs/MetadataEntry';
+import {RunStatus} from '../runs/RunStatusDots';
+import {RunTable} from '../runs/RunTable';
+import {titleForRun} from '../runs/RunUtils';
+import {PipelineRunStatus} from '../types/globalTypes';
+
 import {
   AssetQuery_assetOrError_Asset_graphMaterializations,
   AssetQuery_assetOrError_Asset_lastMaterializations,
 } from './types/AssetQuery';
-import {Header, Legend, LegendColumn, RowContainer, RowColumn} from '../ListComponents';
-import {MetadataEntries, MetadataEntry} from '../runs/MetadataEntry';
-import {RunTable} from '../runs/RunTable';
-import {RunStatus} from '../runs/RunStatusDots';
-import {titleForRun} from '../runs/RunUtils';
-import {PipelineRunStatus} from '../types/globalTypes';
-import {Line} from 'react-chartjs-2';
-import {colorHash} from '../Util';
+import {AssetsRootQuery_assetsOrError_AssetConnection_nodes_key} from './types/AssetsRootQuery';
 
 type AssetKey = AssetsRootQuery_assetsOrError_AssetConnection_nodes_key;
 type GraphMaterialization = AssetQuery_assetOrError_Asset_graphMaterializations;

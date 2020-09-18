@@ -1,35 +1,33 @@
-import * as React from 'react';
-
 import {
   Callout,
-  Intent,
-  Code,
   Card,
+  Code,
   Colors,
-  Tooltip,
-  PopoverInteractionKind,
+  Intent,
   NonIdealState,
+  PopoverInteractionKind,
+  Tooltip,
 } from '@blueprintjs/core';
-import {Header, Legend, LegendColumn, ScrollContainer} from '../ListComponents';
+import {IconNames} from '@blueprintjs/icons';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
+
+import {useRepositorySelector} from '../DagsterRepositoryContext';
+import {Header, Legend, LegendColumn, ScrollContainer} from '../ListComponents';
+import Loading from '../Loading';
+import PythonErrorInfo from '../PythonErrorInfo';
+import {RepositoryInformation} from '../RepositoryInformation';
+
+import {ReconcileButton} from './ReconcileButton';
+import {ScheduleRow, ScheduleStateRow} from './ScheduleRow';
+import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from './ScheduleUtils';
+import {SchedulerInfo} from './SchedulerInfo';
 import {
   SchedulesRootQuery,
   SchedulesRootQuery_repositoryOrError_Repository,
   SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results,
   SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results,
 } from './types/SchedulesRootQuery';
-
-import Loading from '../Loading';
-import PythonErrorInfo from '../PythonErrorInfo';
-
-import {ScheduleRow, ScheduleStateRow} from './ScheduleRow';
-import {RepositoryInformation} from '../RepositoryInformation';
-
-import {useRepositorySelector} from '../DagsterRepositoryContext';
-import {ReconcileButton} from './ReconcileButton';
-import {SchedulerInfo} from './SchedulerInfo';
-import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from './ScheduleUtils';
-import {IconNames} from '@blueprintjs/icons';
 
 const GetStaleReconcileSection: React.FunctionComponent<{
   scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];

@@ -1,14 +1,16 @@
-import * as React from 'react';
 import gql from 'graphql-tag';
-import Loading from '../Loading';
+import * as React from 'react';
 import {useQuery} from 'react-apollo';
+
+import {usePipelineSelector} from '../DagsterRepositoryContext';
+import Loading from '../Loading';
+import {PipelineExplorerPath} from '../PipelinePathUtils';
+
 import TypeExplorer from './TypeExplorer';
 import {
   TypeExplorerContainerQuery,
   TypeExplorerContainerQueryVariables,
 } from './types/TypeExplorerContainerQuery';
-import {PipelineExplorerPath} from '../PipelinePathUtils';
-import {usePipelineSelector} from '../DagsterRepositoryContext';
 
 interface ITypeExplorerContainerProps {
   explorerPath: PipelineExplorerPath;

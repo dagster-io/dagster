@@ -1,4 +1,5 @@
 import gql from 'graphql-tag';
+
 import {YamlModeValidationResult} from './codemirror-yaml/mode';
 import {ConfigEditorValidationFragment} from './types/ConfigEditorValidationFragment';
 
