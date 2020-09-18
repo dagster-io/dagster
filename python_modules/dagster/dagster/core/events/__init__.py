@@ -176,7 +176,19 @@ class DagsterEvent(
 ):
     """Events yielded by solid and pipeline execution.
 
-    Users should not instantiate this class."""
+    Users should not instantiate this class.
+
+    Attributes:
+        event_type_value (str): Value for a DagsterEventType.
+        pipeline_name (str)
+        step_key (str)
+        solid_handle (SolidHandle)
+        step_kind_value (str): Value for a StepKind.
+        logging_tags (Dict[str, str])
+        event_specific_data (Any): Type must correspond to event_type_value.
+        message (str)
+        pid (int)
+    """
 
     @staticmethod
     def from_step(event_type, step_context, event_specific_data=None, message=None):
