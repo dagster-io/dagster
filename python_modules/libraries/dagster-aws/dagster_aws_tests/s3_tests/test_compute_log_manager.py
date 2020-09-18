@@ -18,7 +18,7 @@ HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
 EXPECTED_LOGS = [
     'STEP_START - Started execution of step "easy.compute".',
-    'STEP_OUTPUT - Yielded output "result" of type "Any". (Type check passed).',
+    'STEP_OUTPUT - Yielded output "result" of type "Any"',
     'STEP_SUCCESS - Finished execution of step "easy.compute"',
 ]
 

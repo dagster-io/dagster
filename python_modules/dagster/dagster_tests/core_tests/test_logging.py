@@ -106,7 +106,7 @@ def test_multiline_logging_complex():
     msg = "DagsterEventType.STEP_FAILURE for step start.materialization.output.result.0"
     kwargs = {
         "pipeline": "example",
-        "pipeline_name": "example",
+        "pipeline_name": "error_monster",
         "step_key": "start.materialization.output.result.0",
         "solid": "start",
         "solid_definition": "emit_num",
@@ -141,12 +141,6 @@ def test_multiline_logging_complex():
     expected_results = [
         "error_monster - 123 - STEP_FAILURE - DagsterEventType.STEP_FAILURE for step "
         "start.materialization.output.result.0",
-        '            cls_name = "FileNotFoundError"',
-        '       error_message = "FileNotFoundError: [Errno 2] No such file or directory:'
-        " '/path/to/file'\\n\"",
-        '               solid = "start"',
-        '    solid_definition = "emit_num"',
-        '            step_key = "start.materialization.output.result.0"',
         "",
         "FileNotFoundError: [Errno 2] No such file or directory: '/path/to/file'",
         "",
@@ -231,9 +225,9 @@ def test_resource_logging(capsys):
 
     expected_log_regexes = [
         r"dagster - INFO - resource:foo - [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-"
-        r'[a-f0-9]{12} - test logging from foo resource\n\s*resource_fn_name = "foo_resource"',
+        r"[a-f0-9]{12} - process.compute - test logging from foo resource",
         r"dagster - INFO - resource:bar - [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-"
-        r'[a-f0-9]{12} - test logging from bar resource\n\s*resource_fn_name = "bar_resource"',
+        r"[a-f0-9]{12} - process.compute - test logging from bar resource",
     ]
     for expected_log_regex in expected_log_regexes:
         assert re.search(expected_log_regex, captured.err, re.MULTILINE)

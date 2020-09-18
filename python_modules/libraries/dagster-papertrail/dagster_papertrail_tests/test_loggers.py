@@ -49,12 +49,6 @@ def test_papertrail_logger():
     assert log_record.name == "hello_pipeline"
     assert log_record.levelname == "INFO"
 
-    assert (
-        log_record.msg
-        == '''system - {run_id} - Hello, world!
-               solid = "hello_logs"
-    solid_definition = "hello_logs"
-            step_key = "hello_logs.compute"'''.format(
-            run_id=result.run_id
-        )
+    assert log_record.msg == "system - {run_id} - hello_logs.compute - Hello, world!".format(
+        run_id=result.run_id
     )

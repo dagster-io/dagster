@@ -6,6 +6,7 @@ from collections import OrderedDict, namedtuple
 from dagster import check, seven
 from dagster.core.utils import make_new_run_id
 from dagster.utils import frozendict, merge_dicts
+from dagster.utils.error import SerializableErrorInfo
 
 DAGSTER_META_KEY = "dagster_meta"
 
@@ -35,37 +36,16 @@ def _dump_value(value):
 
 
 def construct_log_string(synth_props, logging_tags, message_props):
-    from dagster.core.execution.plan.objects import StepFailureData
-
-    format_str = "{key:>20} = {value}"
-
-    # reduce noise and key duplication
-    skip_keys = [
-        "dagster_event",  #         separately included
-        "event_type_value",  #      separately included
-        "logging_tags",  #          separately included
-        "message",  #               dupe
-        "pipeline_name",  #         separately included
-        "resource_name",  #         separately included
-        "pipeline",  #              dupe
-        "solid_handle",  #          we have solid and solid_definition keys
-        "step_kind_value",  #       can be inferred from step_key
-    ]
-
     # Handle this explicitly
     dagster_event = (
         message_props["dagster_event"]._asdict() if "dagster_event" in message_props else {}
     )
 
-    log_props = dict(
-        itertools.chain(logging_tags.items(), message_props.items(), dagster_event.items())
-    )
-
-    event_specific_data = log_props.get("event_specific_data")
+    event_specific_data = dagster_event.get("event_specific_data")
     stack = ""
-    if isinstance(event_specific_data, StepFailureData):
-        log_props["error_message"] = event_specific_data.error.message
-        log_props["cls_name"] = event_specific_data.error.cls_name
+    if hasattr(event_specific_data, "error") and isinstance(
+        event_specific_data.error, SerializableErrorInfo
+    ):
         stack = (
             "\n"
             + "\n"
@@ -73,20 +53,11 @@ def construct_log_string(synth_props, logging_tags, message_props):
             + "\n"
             + "".join(event_specific_data.error.stack)
         )
-        log_props["user_failure_data"] = event_specific_data.user_failure_data
-        del log_props["event_specific_data"]
-
-    log_props_list = [
-        format_str.format(key=key, value=_dump_value(value))
-        for key, value in sorted(log_props.items())
-        if key not in skip_keys and value != None
-    ]
-    log_props_str = "\n" + "\n".join(log_props_list) if log_props_list else ""
 
     log_source_prefix = (
-        "resource:%s" % log_props["resource_name"]
-        if "resource_name" in log_props
-        else log_props.get("pipeline_name", "system")
+        "resource:%s" % logging_tags["resource_name"]
+        if "resource_name" in logging_tags
+        else message_props.get("pipeline_name", "system")
     )
 
     prefix = " - ".join(
@@ -95,12 +66,14 @@ def construct_log_string(synth_props, logging_tags, message_props):
             (
                 log_source_prefix,
                 synth_props.get("run_id"),
-                log_props.get("event_type_value"),
+                str(dagster_event["pid"]) if dagster_event.get("pid") is not None else None,
+                logging_tags.get("step_key"),
+                dagster_event.get("event_type_value"),
                 synth_props.get("orig_message"),
             ),
         )
     )
-    return prefix + log_props_str + stack
+    return prefix + stack
 
 
 def coerce_valid_log_level(log_level):
@@ -147,7 +120,9 @@ class DagsterLogManager(namedtuple("_DagsterLogManager", "run_id logging_tags lo
         return super(DagsterLogManager, cls).__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
-            logging_tags=check.dict_param(logging_tags, "logging_tags"),
+            logging_tags=check.dict_param(
+                logging_tags, "logging_tags", key_type=str, value_type=str
+            ),
             loggers=check.list_param(loggers, "loggers", of_type=logging.Logger),
         )
 
