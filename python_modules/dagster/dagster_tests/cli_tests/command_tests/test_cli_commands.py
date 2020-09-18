@@ -184,7 +184,7 @@ class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
 
 
 @contextmanager
-def default_instance_tempdir(temp_dir, overrides=None):
+def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
     default_overrides = {
         "run_launcher": {
             "module": "dagster_tests.cli_tests.command_tests.test_cli_commands",
@@ -200,14 +200,14 @@ def default_instance_tempdir(temp_dir, overrides=None):
 
 
 @contextmanager
-def default_instance(overrides=None):
+def default_cli_test_instance(overrides=None):
     with seven.TemporaryDirectory() as temp_dir:
-        with default_instance_tempdir(temp_dir, overrides) as instance:
+        with _default_cli_test_instance_tempdir(temp_dir, overrides) as instance:
             yield instance
 
 
 def managed_grpc_instance():
-    return default_instance(overrides={"opt_in": {"local_servers": True}})
+    return default_cli_test_instance(overrides={"opt_in": {"local_servers": True}})
 
 
 @contextmanager
@@ -216,8 +216,8 @@ def args_with_instance(gen_instance, *args):
         yield args + (instance,)
 
 
-def args_with_default_instance(*args):
-    return args_with_instance(default_instance(), *args)
+def args_with_default_cli_test_instance(*args):
+    return args_with_instance(default_cli_test_instance(), *args)
 
 
 def args_with_managed_grpc_instance(*args):
@@ -282,7 +282,7 @@ def grpc_server_bar_cli_args(pipeline_name=None):
 
 @contextmanager
 def grpc_server_bar_pipeline_args():
-    with default_instance() as instance:
+    with default_cli_test_instance() as instance:
         with grpc_server_bar_kwargs(pipeline_name="foo") as kwargs:
             yield kwargs, False, instance
 
@@ -291,7 +291,7 @@ def grpc_server_bar_pipeline_args():
 # (cli_args, uses_legacy_repository_yaml_format, instance tuples)
 def launch_command_contexts():
     for pipeline_target_args in valid_external_pipeline_target_args():
-        yield args_with_default_instance(*pipeline_target_args)
+        yield args_with_default_cli_test_instance(*pipeline_target_args)
         yield pytest.param(
             args_with_managed_grpc_instance(*pipeline_target_args), marks=pytest.mark.managed_grpc
         )
@@ -300,7 +300,7 @@ def launch_command_contexts():
 
 def pipeline_python_origin_contexts():
     return [
-        args_with_default_instance(pipeline_target_args)
+        args_with_default_cli_test_instance(pipeline_target_args)
         for pipeline_target_args in valid_pipeline_python_origin_target_args()
     ]
 
@@ -308,7 +308,7 @@ def pipeline_python_origin_contexts():
 @contextmanager
 def scheduler_instance(overrides=None):
     with seven.TemporaryDirectory() as temp_dir:
-        with default_instance_tempdir(
+        with _default_cli_test_instance_tempdir(
             temp_dir,
             overrides=merge_dicts(
                 {
@@ -361,7 +361,7 @@ def backfill_command_contexts():
         "workspace": (file_relative_path(__file__, "repository_file.yaml"),),
     }
     return [
-        args_with_instance(default_instance(), repo_args, True),
+        args_with_instance(default_cli_test_instance(), repo_args, True),
         pytest.param(
             args_with_instance(managed_grpc_instance(), repo_args, True),
             marks=pytest.mark.managed_grpc,
@@ -372,7 +372,7 @@ def backfill_command_contexts():
 
 @contextmanager
 def grpc_server_backfill_args():
-    with default_instance() as instance:
+    with default_cli_test_instance() as instance:
         with grpc_server_bar_kwargs() as args:
             yield merge_dicts(args, {"noprompt": True}), False, instance
 

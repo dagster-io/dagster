@@ -6,11 +6,11 @@ import pytest
 from click.testing import CliRunner
 
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
-from dagster.core.test_utils import instance_for_test, new_cwd
+from dagster.core.test_utils import new_cwd
 from dagster.utils import file_relative_path
 
 from .test_cli_commands import (
-    default_instance,
+    default_cli_test_instance,
     grpc_server_bar_cli_args,
     launch_command_contexts,
     python_bar_cli_args,
@@ -51,7 +51,7 @@ def test_launch_pipeline(gen_pipeline_args):
 
 @pytest.mark.parametrize("pipeline_cli_args", valid_external_pipeline_target_cli_args_with_preset())
 def test_launch_pipeline_cli(pipeline_cli_args):
-    with default_instance() as instance:
+    with default_cli_test_instance() as instance:
         cli_args, uses_legacy_repository_yaml_format = pipeline_cli_args
         if uses_legacy_repository_yaml_format:
             with pytest.warns(
@@ -74,7 +74,7 @@ def test_launch_pipeline_cli(pipeline_cli_args):
 )
 def test_launch_subset_pipeline_single_clause_solid_name(gen_pipeline_args):
     runner = CliRunner()
-    with default_instance() as instance:
+    with default_cli_test_instance() as instance:
         with gen_pipeline_args as args:
             result = runner.invoke(
                 pipeline_launch_command, args + ["--solid-selection", "do_something",],
@@ -96,7 +96,7 @@ def test_launch_subset_pipeline_single_clause_solid_name(gen_pipeline_args):
 )
 def test_launch_subset_pipeline_single_clause_dsl_query(gen_pipeline_args):
     runner = CliRunner()
-    with default_instance() as instance:
+    with default_cli_test_instance() as instance:
         with gen_pipeline_args as args:
             result = runner.invoke(
                 pipeline_launch_command, args + ["--solid-selection", "*do_something+",],
@@ -118,7 +118,7 @@ def test_launch_subset_pipeline_single_clause_dsl_query(gen_pipeline_args):
 )
 def test_launch_subset_pipeline_multiple_clauses(gen_pipeline_args):
     runner = CliRunner()
-    with default_instance() as instance:
+    with default_cli_test_instance() as instance:
         with gen_pipeline_args as args:
             result = runner.invoke(
                 pipeline_launch_command, args + ["--solid-selection", "*do_something+,do_input",],
@@ -140,7 +140,7 @@ def test_launch_subset_pipeline_multiple_clauses(gen_pipeline_args):
 )
 def test_launch_subset_pipeline_invalid_value(gen_pipeline_args):
     runner = CliRunner()
-    with default_instance() as _instance:
+    with default_cli_test_instance() as _instance:
         with gen_pipeline_args as args:
             result = runner.invoke(pipeline_launch_command, args + ["--solid-selection", "a, b",],)
             assert result.exit_code == 1
@@ -153,7 +153,7 @@ def test_empty_working_directory():
     runner = CliRunner()
     import os
 
-    with instance_for_test() as instance:
+    with default_cli_test_instance() as instance:
         with new_cwd(os.path.dirname(__file__)):
             result = runner.invoke(
                 pipeline_launch_command,
