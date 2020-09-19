@@ -71,18 +71,17 @@ function isLinkLegit(
   if (rawTarget.startsWith('_apidocs/')) {
     // NOTE: this currently fails all anchored links to `_apidocs`
     // (e.g. `_apidocs/foo#bar`)
-    try {
-      fs.statSync(
-        path.resolve(
-          ROOT_DIR,
-          '../sections/api/apidocs',
-          `${rawTarget.replace(/^_apidocs\//, '')}.rst`,
-        ),
-      );
-      return true;
-    } catch (_) {
-      return false;
-    }
+    return fileExists(
+      path.resolve(
+        ROOT_DIR,
+        '../sections/api/apidocs',
+        `${rawTarget.replace(/^_apidocs\//, '')}.rst`,
+      ),
+    );
+  }
+
+  if (rawTarget.startsWith('assets/')) {
+    return fileExists(path.resolve(ROOT_DIR, 'public', rawTarget));
   }
 
   if (!rawTarget.includes('#')) {
@@ -143,7 +142,7 @@ function collectInternalLinks(
       queue.push(...node.children);
     }
 
-    if (!(node.type === 'link' && node.url)) {
+    if (!((node.type === 'link' || node.type === 'image') && node.url)) {
       continue;
     }
 
@@ -159,8 +158,6 @@ function collectInternalLinks(
       throw new Error(
         `Do not use relative references ('${url}'). All links should start with '/'`,
       );
-    } else if (url.startsWith('/assets/')) {
-      // TODO: handle assets
     } else {
       // remove the leading `/` from the link target
       result.push(url.substr(1));
@@ -195,4 +192,13 @@ function collectHeadingsAsAnchors(rootAstNode: MdxAstNode): Array<string> {
   }
 
   return result;
+}
+
+function fileExists(filePath: string): boolean {
+  try {
+    fs.statSync(filePath);
+    return true;
+  } catch (_) {
+    return false;
+  }
 }
