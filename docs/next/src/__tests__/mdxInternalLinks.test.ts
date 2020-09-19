@@ -7,7 +7,8 @@ import { getAnchorLinkFromHeadingContent } from 'components/AnchorHeading';
 
 const { parse: parseMdxContent } = createCompiler();
 
-const DOCS_ROOT = path.resolve(__dirname, '..', 'pages');
+const ROOT_DIR = path.resolve(__dirname, '../..');
+const DOCS_DIR = path.resolve(ROOT_DIR, 'src/pages');
 
 type MdxAstNode = any;
 
@@ -22,7 +23,7 @@ test('no dead links', async () => {
   // parse mdx files to find all internal links and populate the store
   await Promise.all(
     allMdxFilePaths.map(async (relativeFilePath) => {
-      const absolutePath = path.resolve(DOCS_ROOT, relativeFilePath);
+      const absolutePath = path.resolve(DOCS_DIR, relativeFilePath);
       const fileContent = await fs.promises.readFile(absolutePath, 'utf-8');
       astStore[relativeFilePath] = parseMdxContent(fileContent);
     }),
@@ -45,7 +46,7 @@ test('no dead links', async () => {
       linkCount++;
       if (!isLinkLegit(link, allMdxFileSet, astStore)) {
         deadLinks.push({
-          sourceFile: path.resolve(DOCS_ROOT, source),
+          sourceFile: path.resolve(DOCS_DIR, source),
           deadLink: link,
         });
       }
@@ -68,8 +69,20 @@ function isLinkLegit(
   astStore: { [filePath: string]: MdxAstNode },
 ): boolean {
   if (rawTarget.startsWith('_apidocs/')) {
-    // TODO: handle dynamic routes (which can also have "#" headings)
-    return true;
+    // NOTE: this currently fails all anchored links to `_apidocs`
+    // (e.g. `_apidocs/foo#bar`)
+    try {
+      fs.statSync(
+        path.resolve(
+          ROOT_DIR,
+          '../sections/api/apidocs',
+          `${rawTarget.replace(/^_apidocs\//, '')}.rst`,
+        ),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   if (!rawTarget.includes('#')) {
@@ -93,10 +106,10 @@ function isLinkLegit(
   return false;
 }
 
-// recursively find all filepaths relative to `DOCS_ROOT`
+// recursively find all filepaths relative to `DOCS_DIR`
 function findAllMdxFileRelativePaths(): Promise<Array<string>> {
   const options = {
-    cwd: DOCS_ROOT,
+    cwd: DOCS_DIR,
   };
 
   return new Promise((resolve, reject) => {
