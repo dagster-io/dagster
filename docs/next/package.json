@@ -71,5 +71,11 @@
     "prettier": "^2.0.5",
     "tailwindcss": "^1.4.0",
     "typescript": "^3.8.3"
+  },
+  "jest": {
+    "moduleDirectories": [
+      "node_modules",
+      "src"
+    ]
   }
 }
