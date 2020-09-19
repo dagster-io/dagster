@@ -2,18 +2,19 @@ import logging
 import sys
 from io import BytesIO, StringIO
 
-import boto3
-
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.storage.object_store import ObjectStore
 from dagster.core.types.marshal import SerializationStrategy
 
+from .utils import construct_s3_client
+
 
 class S3ObjectStore(ObjectStore):
     def __init__(self, bucket, s3_session=None):
         self.bucket = check.str_param(bucket, "bucket")
-        self.s3 = s3_session or boto3.client("s3")
+
+        self.s3 = s3_session or construct_s3_client(max_attempts=5)
         self.s3.head_bucket(Bucket=bucket)
         super(S3ObjectStore, self).__init__("s3", sep="/")
 
