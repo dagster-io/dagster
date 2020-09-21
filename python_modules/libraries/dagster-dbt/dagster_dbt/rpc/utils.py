@@ -46,7 +46,7 @@ def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
             DBTErrors.server_error,
         ]:
             context.log.warning(error["message"])
-            raise RetryRequested(max_retries=5, seconds_to_wait=30)  # TODO backoff logic
+            raise RetryRequested(max_retries=5, seconds_to_wait=30)
         elif error["code"] == DBTErrors.project_compile_failure_error:
             raise Failure(
                 description=error["message"],

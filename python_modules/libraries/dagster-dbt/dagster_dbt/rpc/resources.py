@@ -53,7 +53,7 @@ class DbtRpcClient(object):
             if is_fatal_code(e):
                 raise e
             else:
-                raise RetryRequested(max_retries=5, seconds_to_wait=30)  # TODO backoff logic
+                raise RetryRequested(max_retries=5, seconds_to_wait=30)
         return response
 
     def _default_request(self, method: str) -> Dict:

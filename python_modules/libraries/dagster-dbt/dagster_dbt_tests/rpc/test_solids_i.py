@@ -2,9 +2,14 @@ import uuid
 from typing import Any, Dict, Tuple
 
 import pytest
-from dagster_dbt import DbtRpcPollResult, dbt_rpc_run_and_wait, dbt_rpc_test, local_dbt_rpc_resource
-from dagster_dbt.resources import DbtRpcClient
-from dagster_dbt.solids import dbt_rpc_run
+from dagster_dbt import (
+    DbtRpcClient,
+    DbtRpcPollResult,
+    dbt_rpc_run,
+    dbt_rpc_run_and_wait,
+    dbt_rpc_test,
+    local_dbt_rpc_resource,
+)
 from mock import MagicMock
 
 from dagster import (

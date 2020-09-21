@@ -1,4 +1,4 @@
-from dagster_dbt.utils import fmt_rpc_logs
+from dagster_dbt.rpc.utils import fmt_rpc_logs
 
 
 def test_fmt_rpc_logs(rpc_logs):

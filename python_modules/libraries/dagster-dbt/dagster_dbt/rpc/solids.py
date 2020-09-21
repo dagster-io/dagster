@@ -717,14 +717,12 @@ def create_dbt_rpc_run_sql_solid(
     """
     check.str_param(obj=name, param_name="name")
     check.opt_inst_param(obj=output_def, param_name="output_def", ttype=OutputDefinition)
-    check.param_invariant(
-        "input_defs" not in kwargs, "input_defs", "Overriding input_defs is not supported."
-    )
-    check.param_invariant(
-        "required_resource_keys" not in kwargs,
-        "required_resource_keys",
-        "Overriding required_resource_keys is not supported.",
-    )
+
+    if "input_defs" in kwargs:
+        raise TypeError("Overriding input_defs is not supported.")
+
+    if "required_resource_keys" in kwargs:
+        raise TypeError("Overriding required_resource_keys is not supported.")
 
     @solid(
         name=name,
