@@ -106,6 +106,20 @@ def test_solid_def_bad_input_name():
             pass
 
 
+def test_solid_def_receives_version():
+    @solid
+    def solid_no_version(_):
+        pass
+
+    assert solid_no_version.version == None
+
+    @solid(version="42")
+    def solid_with_version(_):
+        pass
+
+    assert solid_with_version.version == "42"
+
+
 def test_pipeline_types():
     @lambda_solid
     def produce_string():
