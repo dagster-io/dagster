@@ -1,6 +1,8 @@
 import time
 import weakref
 
+import grpc
+
 from dagster import check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import ExternalPipeline
@@ -136,7 +138,11 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
         if not client:
             return False
 
-        res = client.can_cancel_execution(CanCancelExecutionRequest(run_id=run_id))
+        try:
+            res = client.can_cancel_execution(CanCancelExecutionRequest(run_id=run_id), timeout=5)
+        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+            # Server that created the run may no longer exist
+            return False
 
         return res.can_cancel
 

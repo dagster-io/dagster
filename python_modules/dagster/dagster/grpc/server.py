@@ -1,6 +1,5 @@
 import os
 import queue
-import signal
 import subprocess
 import sys
 import threading
@@ -30,7 +29,7 @@ from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, Repo
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
-from dagster.seven import multiprocessing
+from dagster.seven import kill_process, multiprocessing
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_repository_from_origin
@@ -248,7 +247,7 @@ class DagsterApiServer(DagsterApiServicer):
 
                     # the process failed to handle the KeyboardInterrupt cleanly after termination.
                     # Inform the system and mark the run as failed.
-                    os.kill(process.pid, signal.SIGKILL)
+                    kill_process(process)
 
                     with DagsterInstance.from_ref(instance_ref) as instance:
                         runs_to_clear.append(run_id)

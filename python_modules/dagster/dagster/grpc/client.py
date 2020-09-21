@@ -66,10 +66,10 @@ class DagsterGrpcClient(object):
         else:
             self._server_address = "unix:" + os.path.abspath(socket)
 
-    def _query(self, method, request_type, **kwargs):
+    def _query(self, method, request_type, timeout=None, **kwargs):
         with grpc.insecure_channel(self._server_address) as channel:
             stub = DagsterApiStub(channel)
-            response = getattr(stub, method)(request_type(**kwargs))
+            response = getattr(stub, method)(request_type(**kwargs), timeout=timeout)
         # TODO need error handling here
         return response
 
@@ -324,8 +324,8 @@ class DagsterGrpcClient(object):
                 )
                 raise exc
 
-    def shutdown_server(self):
-        res = self._query("ShutdownServer", api_pb2.Empty)
+    def shutdown_server(self, timeout=15):
+        res = self._query("ShutdownServer", api_pb2.Empty, timeout=timeout)
         return deserialize_json_to_dagster_namedtuple(res.serialized_shutdown_server_result)
 
     def cancel_execution(self, cancel_execution_request):
@@ -343,7 +343,7 @@ class DagsterGrpcClient(object):
 
         return deserialize_json_to_dagster_namedtuple(res.serialized_cancel_execution_result)
 
-    def can_cancel_execution(self, can_cancel_execution_request):
+    def can_cancel_execution(self, can_cancel_execution_request, timeout=None):
         check.inst_param(
             can_cancel_execution_request, "can_cancel_execution_request", CanCancelExecutionRequest,
         )
@@ -351,6 +351,7 @@ class DagsterGrpcClient(object):
         res = self._query(
             "CanCancelExecution",
             api_pb2.CanCancelExecutionRequest,
+            timeout=timeout,
             serialized_can_cancel_execution_request=serialize_dagster_namedtuple(
                 can_cancel_execution_request
             ),
