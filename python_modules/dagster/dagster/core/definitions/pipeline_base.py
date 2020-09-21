@@ -8,12 +8,12 @@ from dagster.core.selector import parse_solid_selection
 
 
 class IPipeline(six.with_metaclass(ABCMeta)):
-    '''
+    """
     IPipeline is a wrapper interface for PipelineDefinitions to be used as parameters to Dagster's
     core execution APIs.  This enables these execution APIs to operate on both in memory pipeline
     definitions to be executed in the current process (InMemoryPipeline) as well as definitions that
     can be reconstructed and executed in a different process (ReconstructablePipeline).
-    '''
+    """
 
     @abstractmethod
     def get_definition(self):
