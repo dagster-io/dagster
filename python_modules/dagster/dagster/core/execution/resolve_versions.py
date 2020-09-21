@@ -102,7 +102,7 @@ def resolve_step_versions(speculative_execution_plan, mode=None, run_config=None
         input_version_dict = _resolve_step_input_versions(step, step_versions)
         input_versions = [version for version in input_version_dict.values()]
 
-        solid_name = step.solid_handle.name
+        solid_name = str(step.solid_handle)
         solid_def_version = step.solid_version
         solid_config_version = resolve_config_version(environment_config.solids[solid_name].config)
         hashed_resources = [

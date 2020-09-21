@@ -6,7 +6,9 @@ from dagster import (
     DagsterInstance,
     Field,
     ModeDefinition,
+    Output,
     String,
+    composite_solid,
     dagster_type_loader,
     pipeline,
     resource,
@@ -346,3 +348,31 @@ def test_step_versions_with_resources():
     step_version = join_and_hash([solid_version])
 
     assert versions["fake_solid_resources_versioned.compute"] == step_version
+
+
+def test_step_versions_composite_solid():
+    @solid(config_schema=Field(String, is_required=False))
+    def scalar_config_solid(context):
+        yield Output(context.solid_config)
+
+    @composite_solid(
+        config_schema={"override_str": Field(String)},
+        config_fn=lambda cfg: {"scalar_config_solid": {"config": cfg["override_str"]}},
+    )
+    def wrap():
+        return scalar_config_solid()
+
+    @pipeline
+    def wrap_pipeline():
+        return wrap.alias("do_stuff")()
+
+    run_config = {
+        "solids": {"do_stuff": {"config": {"override_str": "override"}}},
+        "loggers": {"console": {"config": {"log_level": "ERROR"}}},
+    }
+
+    speculative_execution_plan = create_execution_plan(wrap_pipeline, run_config=run_config,)
+
+    versions = resolve_step_versions(speculative_execution_plan, run_config=run_config)
+
+    assert versions["do_stuff.scalar_config_solid.compute"] == None
