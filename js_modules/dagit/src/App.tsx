@@ -78,8 +78,8 @@ const AppRoutes = () => (
 
     <DagsterRepositoryContext.Consumer>
       {(context) =>
-        context.repository?.pipelines.length ? (
-          <Redirect to={`/pipeline/${context.repository.pipelines[0].name}/`} />
+        context?.repository?.pipelines.length ? (
+          <Redirect to={`/pipeline/${context?.repository.pipelines[0].name}/`} />
         ) : (
           <Route render={() => <NonIdealState title="No pipelines" />} />
         )
@@ -89,31 +89,41 @@ const AppRoutes = () => (
 );
 
 export const App: React.FunctionComponent = () => {
-  const {options, error} = useRepositoryOptions();
+  const {options, loading, error} = useRepositoryOptions();
   const [repo, setRepo] = useCurrentRepositoryState(options);
+
+  const content = () => {
+    if (error) {
+      return (
+        <PythonErrorInfo
+          contextMsg={`${error.__typename} encountered when loading pipelines:`}
+          error={error}
+          centered={true}
+        />
+      );
+    }
+
+    if (loading) {
+      return <NonIdealState icon={<Spinner size={24} />} />;
+    }
+
+    return (
+      <CustomConfirmationProvider>
+        <DagsterRepositoryContext.Provider value={repo}>
+          <AppRoutes />
+          <CustomTooltipProvider />
+          <CustomAlertProvider />
+        </DagsterRepositoryContext.Provider>
+      </CustomConfirmationProvider>
+    );
+  };
 
   return (
     <div style={{display: 'flex', height: '100%'}}>
       <BrowserRouter basename={APP_PATH_PREFIX}>
         <TimezoneProvider>
-          <LeftNav options={options} repo={repo} setRepo={setRepo} />
-          {error ? (
-            <PythonErrorInfo
-              contextMsg={`${error.__typename} encountered when loading pipelines:`}
-              error={error}
-              centered={true}
-            />
-          ) : repo ? (
-            <CustomConfirmationProvider>
-              <DagsterRepositoryContext.Provider value={repo}>
-                <AppRoutes />
-                <CustomTooltipProvider />
-                <CustomAlertProvider />
-              </DagsterRepositoryContext.Provider>
-            </CustomConfirmationProvider>
-          ) : (
-            <NonIdealState icon={<Spinner size={24} />} />
-          )}
+          <LeftNav options={options} loading={loading} repo={repo} setRepo={setRepo} />
+          {content()}
         </TimezoneProvider>
       </BrowserRouter>
     </div>

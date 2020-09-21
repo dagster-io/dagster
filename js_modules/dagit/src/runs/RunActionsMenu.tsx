@@ -38,10 +38,13 @@ export const RunActionsMenu: React.FunctionComponent<{
   const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
   const [cancel] = useMutation(CANCEL_MUTATION, {onCompleted: refetch});
   const [destroy] = useMutation(DELETE_MUTATION, {onCompleted: refetch});
-  const {repositoryLocation, repository} = React.useContext(DagsterRepositoryContext);
   const [loadEnv, {called, loading, data}] = useLazyQuery(PipelineEnvironmentYamlQuery, {
     variables: {runId: run.runId},
   });
+
+  const repoContext = React.useContext(DagsterRepositoryContext);
+  const repositoryLocation = repoContext?.repositoryLocation;
+  const repository = repoContext?.repository;
 
   const envYaml = data?.pipelineRunOrError?.runConfigYaml;
   const infoReady = called ? !loading : false;
@@ -61,58 +64,64 @@ export const RunActionsMenu: React.FunctionComponent<{
             }
           />
           <MenuDivider />
-
-          <Tooltip
-            content={OPEN_PLAYGROUND_UNKNOWN}
-            position={Position.BOTTOM}
-            disabled={infoReady}
-            wrapperTagName="div"
-          >
-            <MenuItem
-              text="Open in Playground..."
-              disabled={!infoReady}
-              icon="edit"
-              target="_blank"
-              href={`/pipeline/${run.pipelineName}/playground/setup?${qs.stringify({
-                mode: run.mode,
-                config: envYaml,
-                solidSelection: run.solidSelection,
-              })}`}
-            />
-          </Tooltip>
-          <Tooltip
-            content={REEXECUTE_PIPELINE_UNKNOWN}
-            position={Position.BOTTOM}
-            disabled={infoReady}
-            wrapperTagName="div"
-          >
-            <MenuItem
-              text="Re-execute"
-              disabled={!infoReady}
-              icon="repeat"
-              onClick={async () => {
-                const result = await reexecute({
-                  variables: getReexecutionVariables({
-                    run,
-                    envYaml,
-                    repositoryLocationName: repositoryLocation?.name,
-                    repositoryName: repository?.name,
-                  }),
-                });
-                handleLaunchResult(run.pipelineName, result, {openInNewWindow: false});
-              }}
-            />
-          </Tooltip>
-          <MenuItem
-            text="Cancel"
-            icon="stop"
-            disabled={!run.canTerminate}
-            onClick={async () => {
-              const result = await cancel({variables: {runId: run.runId}});
-              showToastFor(result.data.terminatePipelineExecution, `Run ${run.runId} cancelled.`);
-            }}
-          />
-          <MenuDivider />
+          {repository ? (
+            <>
+              <Tooltip
+                content={OPEN_PLAYGROUND_UNKNOWN}
+                position={Position.BOTTOM}
+                disabled={infoReady}
+                wrapperTagName="div"
+              >
+                <MenuItem
+                  text="Open in Playground..."
+                  disabled={!infoReady}
+                  icon="edit"
+                  target="_blank"
+                  href={`/pipeline/${run.pipelineName}/playground/setup?${qs.stringify({
+                    mode: run.mode,
+                    config: envYaml,
+                    solidSelection: run.solidSelection,
+                  })}`}
+                />
+              </Tooltip>
+              <Tooltip
+                content={REEXECUTE_PIPELINE_UNKNOWN}
+                position={Position.BOTTOM}
+                disabled={infoReady}
+                wrapperTagName="div"
+              >
+                <MenuItem
+                  text="Re-execute"
+                  disabled={!infoReady}
+                  icon="repeat"
+                  onClick={async () => {
+                    const result = await reexecute({
+                      variables: getReexecutionVariables({
+                        run,
+                        envYaml,
+                        repositoryLocationName: repositoryLocation?.name || '',
+                        repositoryName: repository?.name,
+                      }),
+                    });
+                    handleLaunchResult(run.pipelineName, result, {openInNewWindow: false});
+                  }}
+                />
+              </Tooltip>
+              <MenuItem
+                text="Cancel"
+                icon="stop"
+                disabled={!run.canTerminate}
+                onClick={async () => {
+                  const result = await cancel({variables: {runId: run.runId}});
+                  showToastFor(
+                    result.data.terminatePipelineExecution,
+                    `Run ${run.runId} cancelled.`,
+                  );
+                }}
+              />
+              <MenuDivider />
+            </>
+          ) : null}
           <MenuItem
             text="Delete"
             icon="trash"

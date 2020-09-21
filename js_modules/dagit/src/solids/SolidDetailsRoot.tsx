@@ -29,10 +29,10 @@ export const UsedSolidDetails: React.FunctionComponent<{
   name: string;
   onClickInvocation: (arg: SidebarSolidInvocationInfo) => void;
 }> = ({name, onClickInvocation}) => {
-  const {repositoryLocation, repository} = React.useContext(DagsterRepositoryContext);
+  const repoContext = React.useContext(DagsterRepositoryContext);
   const repositorySelector = useRepositorySelector();
   const queryResult = useQuery<UsedSolidDetailsQuery>(USED_SOLID_DETAILS_QUERY, {
-    skip: !repository || !repositoryLocation,
+    skip: !repoContext?.repository || !repoContext?.repositoryLocation,
     variables: {
       name,
       repositorySelector,

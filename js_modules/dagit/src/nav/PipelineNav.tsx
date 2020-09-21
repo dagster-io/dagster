@@ -46,7 +46,7 @@ export const PipelineNav: React.FunctionComponent = () => {
 
   const active = tabForPipelinePathComponent(match.params.tab);
   const explorerPath = explorerPathFromString(match.params.selector);
-  const hasPartitionSet = repository.partitionSets
+  const hasPartitionSet = repository?.partitionSets
     .map((x) => x.pipelineName)
     .includes(explorerPath.pipelineName);
 

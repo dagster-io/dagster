@@ -40,12 +40,18 @@ const INSTANCE_TABS = [
 ];
 
 interface LeftNavProps {
+  loading: boolean;
   options: DagsterRepoOption[];
   repo: DagsterRepoOption | null;
   setRepo: (repo: DagsterRepoOption) => void;
 }
 
-export const LeftNav: React.FunctionComponent<LeftNavProps> = ({options, repo, setRepo}) => {
+export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
+  loading,
+  options,
+  repo,
+  setRepo,
+}) => {
   const history = useHistory();
   const match = useRouteMatch<
     | {selector: string; tab: string; rootTab: undefined}
@@ -95,7 +101,7 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({options, repo, s
           minHeight: 0,
         }}
       >
-        <RepositoryPicker options={options} repo={repo} setRepo={setRepo} />
+        <RepositoryPicker loading={loading} options={options} repo={repo} setRepo={setRepo} />
         {repo && (
           <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
             <ItemHeader>Pipelines & Solids:</ItemHeader>

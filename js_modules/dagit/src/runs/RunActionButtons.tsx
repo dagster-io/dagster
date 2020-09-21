@@ -166,7 +166,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
   let icon: IconName | undefined = undefined;
 
   const currentRepositorySnapshots = {};
-  currentRepository.pipelines.forEach((pipeline) => {
+  currentRepository?.pipelines.forEach((pipeline) => {
     currentRepositorySnapshots[pipeline.name] = pipeline.pipelineSnapshotId;
   });
 
@@ -185,7 +185,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
         .map((x) => x.repository)
         .filter(
           (x) =>
-            x.name !== currentRepository.name &&
+            x.name !== currentRepository?.name &&
             x.pipelines.map((x) => x.name).includes(run.pipeline.name),
         )
         .map((x) => x.name);

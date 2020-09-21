@@ -143,13 +143,13 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
   onChange,
   enabledFilters,
 }) => {
-  const {repositoryLocation, repository} = React.useContext(DagsterRepositoryContext);
+  const repoContext = React.useContext(DagsterRepositoryContext);
   const repositorySelector = useRepositorySelector();
   const suggestions = searchSuggestionsForRuns(
     useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
       fetchPolicy: 'cache-and-network',
-      skip: !repository || !repositoryLocation,
-      variables: {repositorySelector},
+      skip: !repoContext?.repository || !repoContext?.repositoryLocation,
+      variables: repoContext?.repository ? {repositorySelector} : {},
     }),
     enabledFilters,
   );

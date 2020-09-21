@@ -92,10 +92,10 @@ function filterSolidsWithSearch(solids: Solid[], search: TokenizingFieldValue[])
 type SolidsRootProps = RouteComponentProps<{name: string}>;
 
 export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = (props) => {
-  const {repositoryLocation, repository} = React.useContext(DagsterRepositoryContext);
+  const repoContext = React.useContext(DagsterRepositoryContext);
   const repositorySelector = useRepositorySelector();
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
-    skip: !repository || !repositoryLocation,
+    skip: !repoContext?.repository || !repoContext?.repositoryLocation,
     variables: {repositorySelector},
   });
   return (
