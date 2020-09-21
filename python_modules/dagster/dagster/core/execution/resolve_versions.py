@@ -6,7 +6,31 @@ from dagster.core.system_config.objects import EnvironmentConfig
 
 
 def _resolve_step_input_versions(step, step_versions):
+    """Computes and returns the versions for each input defined for a given step.
+
+    If an input is constructed from outputs of other steps, the input version is computed by
+    sorting, concatenating, and hashing the versions of each output it is constructed from.
+
+    If an input is constructed from externally loaded input (via run config) or a default value (no
+    run config provided), the input version is the version of the provided type loader for that
+    input.
+
+    Args:
+        step (ExecutionStep): The step for which to compute input versions.
+        step_versions (Dict[str, Optional[str]]): Each key is a step key, and the value is the
+            version of the corresponding step.
+
+    Returns:
+        Dict[str, Optional[str]]: A dictionary that maps the names of the inputs to the provided
+            step to their computed versions.
+    """
+
     def _resolve_output_version(step_output_handle):
+        """Returns version of step output.
+
+        Step output version is computed by sorting, concatenating, and hashing together the version
+        of the step corresponding to the provided step output handle and the name of the output.
+        """
         if (
             step_output_handle.step_key not in step_versions
             or not step_versions[step_output_handle.step_key]
@@ -77,10 +101,29 @@ def resolve_step_versions(speculative_execution_plan, mode=None, run_config=None
     Execution plan provides execution steps for analysis. It returns dict[str, str] where each key
     is a step key, and each value is the associated version for that step.
 
+    The version for a step combines the versions of all inputs to the step, and the version of the
+    solid that the step contains. The inputs consist of all input definitions provided to the step.
+    The process for computing the step version is as follows:
+        1.  Compute the version for each input to the step.
+        2.  Compute the version of the solid provided to the step.
+        3.  Sort, concatenate and hash the input and solid versions.
+
+    The solid version combines the version of the solid definition, the versions of the required
+    resources, and the version of the config provided to the solid.
+    The process for computing the solid version is as follows:
+        1.  Sort, concatenate and hash the versions of the required resources.
+        2.  Resolve the version of the configuration provided to the solid.
+        3.  Sort, concatenate and hash together the concatted resource versions, the config version,
+                and the solid's version definition.
+
     Args:
         speculative_execution_plan (ExecutionPlan): Execution plan to resolve steps for.
         mode (Optional[str]): The pipeline mode in which to execute this run.
         run_config (Optional[dict]): The config value to use for this pipeline.
+
+    Returns:
+        Dict[str, Optional[str]]: A dictionary that maps the key of an execution step to a version.
+            If a step has no computed version, then the step key maps to None.
     """
     from dagster.core.execution.plan.plan import ExecutionPlan
 

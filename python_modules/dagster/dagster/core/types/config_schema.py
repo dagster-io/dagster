@@ -102,6 +102,15 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         return self._loader_version
 
     def compute_loaded_input_version(self, config_value):
+        """Compute the type-loaded input from a given config_value.
+
+        Args:
+            config_value (Union[Any, Dict]): Config value to be ingested by the external version
+                loading function.
+        Returns:
+            Optional[str]: Hash of concatenated loader version and external input version if both
+                are provided, else None.
+        """
         version = ""
         if self.loader_version:
             version += str(self.loader_version)
