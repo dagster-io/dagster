@@ -232,7 +232,7 @@ class DagsterInstance:
     # ctors
 
     @staticmethod
-    def ephemeral(tempdir=None):
+    def ephemeral(tempdir=None, preload=None):
         from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
         from dagster.core.storage.event_log import InMemoryEventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
@@ -245,8 +245,8 @@ class DagsterInstance:
         return DagsterInstance(
             InstanceType.EPHEMERAL,
             local_artifact_storage=LocalArtifactStorage(tempdir),
-            run_storage=InMemoryRunStorage(),
-            event_storage=InMemoryEventLogStorage(),
+            run_storage=InMemoryRunStorage(preload=preload),
+            event_storage=InMemoryEventLogStorage(preload=preload),
             compute_log_manager=NoOpComputeLogManager(),
             run_launcher=SyncInMemoryRunLauncher(),
         )
@@ -340,7 +340,7 @@ class DagsterInstance:
 
     def info_str(self):
 
-        settings = self._settings if self._settings else None
+        settings = self._settings if self._settings else {}
 
         return (
             "local_artifact_storage:\n{artifact}\n"
