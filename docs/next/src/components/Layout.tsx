@@ -15,6 +15,7 @@ const Layout: React.FunctionComponent = (props) => {
   const anchorHeadings = Object.values(anchors);
 
   const isHomepage = router.pathname === '/';
+  const shouldUseMarkdown = router.pathname !== '/examples';
 
   return (
     <>
@@ -43,7 +44,7 @@ const Layout: React.FunctionComponent = (props) => {
             <div className={cx('max-w-7xl mx-auto px-4 sm:px-6 md:px-8')}>
               <div className="flex justify-between">
                 <div className={cx('flex-1 overflow-hidden')}>
-                  <div className={cx('markdown')}>
+                  <div className={cx({ markdown: shouldUseMarkdown })}>
                     {props.children}
                   </div>
 
