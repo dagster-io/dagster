@@ -32,65 +32,65 @@ const suggestionProvidersFilter = (
   );
 };
 
-export default class LogsToolbar extends React.PureComponent<ILogsToolbarProps> {
-  render() {
-    const {steps, filter, metadata, onSetFilter} = this.props;
+const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
+  const {steps, filter, metadata, onSetFilter} = props;
 
-    const selectedStep = filter.values.find((v) => v.token === 'step')?.value || null;
-    const selectedStepState =
-      (selectedStep && metadata.steps[selectedStep]?.state) || IStepState.PREPARING;
+  const selectedStep = filter.values.find((v) => v.token === 'step')?.value || null;
+  const selectedStepState =
+    (selectedStep && metadata.steps[selectedStep]?.state) || IStepState.PREPARING;
 
-    return (
-      <LogsToolbarContainer>
-        <TokenizingField
-          small
-          values={filter.values}
-          onChangeBeforeCommit
-          onChange={(values: LogFilterValue[]) => onSetFilter({...filter, values})}
-          suggestionProviders={GetFilterProviders(steps)}
-          suggestionProvidersFilter={suggestionProvidersFilter}
-          loading={false}
-        />
+  return (
+    <LogsToolbarContainer>
+      <TokenizingField
+        small
+        values={filter.values}
+        onChangeBeforeCommit
+        onChange={(values: LogFilterValue[]) => onSetFilter({...filter, values})}
+        suggestionProviders={GetFilterProviders(steps)}
+        suggestionProvidersFilter={suggestionProvidersFilter}
+        loading={false}
+      />
 
-        <LogsToolbarDivider />
-        <ButtonGroup>
-          {Object.keys(LogLevel).map((level) => (
-            <Button
-              key={level}
-              text={level.toLowerCase()}
-              small={true}
-              style={{textTransform: 'capitalize'}}
-              active={filter.levels[level]}
-              onClick={() =>
-                onSetFilter({
-                  ...filter,
-                  levels: {
-                    ...filter.levels,
-                    [level]: !filter.levels[level],
-                  },
-                })
-              }
-            />
-          ))}
-        </ButtonGroup>
-        {selectedStep && <LogsToolbarDivider />}
-        {selectedStep && (
-          <ComputeLogLink stepKey={selectedStep} runState={selectedStepState}>
-            View Raw Step Output
-          </ComputeLogLink>
-        )}
-        <div style={{minWidth: 15, flex: 1}} />
-        <Button
-          text={'Clear'}
-          small={true}
-          icon={IconNames.ERASER}
-          onClick={() => onSetFilter({...filter, since: Date.now()})}
-        />
-        {this.props.children}
-      </LogsToolbarContainer>
-    );
-  }
-}
+      <LogsToolbarDivider />
+      <ButtonGroup>
+        {Object.keys(LogLevel).map((level) => (
+          <Button
+            key={level}
+            text={level.toLowerCase()}
+            small={true}
+            style={{textTransform: 'capitalize'}}
+            active={filter.levels[level]}
+            onClick={() =>
+              onSetFilter({
+                ...filter,
+                levels: {
+                  ...filter.levels,
+                  [level]: !filter.levels[level],
+                },
+              })
+            }
+          />
+        ))}
+      </ButtonGroup>
+      {selectedStep && <LogsToolbarDivider />}
+      {selectedStep && (
+        <ComputeLogLink stepKey={selectedStep} runState={selectedStepState}>
+          View Raw Step Output
+        </ComputeLogLink>
+      )}
+      <div style={{minWidth: 15, flex: 1}} />
+      <Button
+        text={'Clear'}
+        small={true}
+        icon={IconNames.ERASER}
+        onClick={() => onSetFilter({...filter, since: Date.now()})}
+      />
+      {props.children}
+    </LogsToolbarContainer>
+  );
+};
+
+export default LogsToolbar;
 
 const LogsToolbarContainer = styled.div`
   display: flex;

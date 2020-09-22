@@ -20,6 +20,7 @@ module.exports = {
       'error',
       {alphabetize: {order: 'asc', caseInsensitive: false}, 'newlines-between': 'always'},
     ],
+    'react/prefer-stateless-function': 'error',
     'react/prop-types': 'off',
     'react/display-name': 'off',
     '@typescript-eslint/no-unused-vars': [

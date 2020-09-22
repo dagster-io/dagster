@@ -6,18 +6,18 @@ interface ISidebarProps {
   onClose: () => void;
 }
 
-export default class Sidebar extends React.Component<ISidebarProps, {}> {
-  render() {
-    return (
-      <SidebarWrapper>
-        <SidebarCloseButton role="button" onClick={this.props.onClose}>
-          {'<'} Close
-        </SidebarCloseButton>
-        <SidebarContent>{this.props.children}</SidebarContent>
-      </SidebarWrapper>
-    );
-  }
-}
+const Sidebar: React.FunctionComponent<ISidebarProps> = (props) => {
+  return (
+    <SidebarWrapper>
+      <SidebarCloseButton role="button" onClick={props.onClose}>
+        {'<'} Close
+      </SidebarCloseButton>
+      <SidebarContent>{props.children}</SidebarContent>
+    </SidebarWrapper>
+  );
+};
+
+export default Sidebar;
 
 const SidebarWrapper = styled.div`
   position: fixed;

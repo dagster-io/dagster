@@ -19,14 +19,12 @@ export interface ISVGEllipseInRectProps extends React.SVGProps<SVGEllipseElement
 Wraps <ellipse>, but takes a width and height rather than center + radius,
 making it compatible with SVGFlowLayoutRect (which inspects it's children's widths.)
 */
-export class SVGEllipseInRect extends React.PureComponent<ISVGEllipseInRectProps> {
-  render() {
-    const {width, height, x, y, ...rest} = this.props;
-    const rx = width / 2;
-    const ry = height / 2;
-    return <ellipse cx={(x || 0) + rx} cy={(y || 0) + ry} rx={rx} ry={ry} {...rest} />;
-  }
-}
+export const SVGEllipseInRect = React.memo<ISVGEllipseInRectProps>((props) => {
+  const {width, height, x, y, ...rest} = props;
+  const rx = width / 2;
+  const ry = height / 2;
+  return <ellipse cx={(x || 0) + rx} cy={(y || 0) + ry} rx={rx} ry={ry} {...rest} />;
+});
 
 export interface ISVGMonospaceTextProps {
   width?: number;
