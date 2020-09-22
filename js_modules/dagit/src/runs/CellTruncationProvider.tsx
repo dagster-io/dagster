@@ -81,7 +81,7 @@ export class CellTruncationProvider extends React.Component<
   };
 
   render() {
-    const {style} = this.props;
+    const style = {...this.props.style, overflow: 'hidden'};
 
     return (
       <div style={style}>
