@@ -38,7 +38,7 @@ def _resolve_step_input_versions(step, step_versions):
             return None
         else:
             return join_and_hash(
-                [step_versions[step_output_handle.step_key], step_output_handle.output_name]
+                step_versions[step_output_handle.step_key], step_output_handle.output_name
             )
 
     input_versions = {}
@@ -48,7 +48,7 @@ def _resolve_step_input_versions(step, step_versions):
                 _resolve_output_version(source_handle)
                 for source_handle in step_input.source_handles
             ]
-            version = join_and_hash(output_handle_versions)
+            version = join_and_hash(*output_handle_versions)
         else:
             version = step_input.dagster_type.loader.compute_loaded_input_version(
                 step_input.config_data
@@ -89,7 +89,7 @@ def resolve_resource_versions(environment_config, mode_def):
     for resource_key, config in environment_config.resources.items():
         resource_def_version = mode_def.resource_defs[resource_key].version
         resource_versions[resource_key] = join_and_hash(
-            [resolve_config_version(config), resource_def_version]
+            resolve_config_version(config), resource_def_version
         )
 
     return resource_versions
@@ -153,14 +153,14 @@ def resolve_step_versions(speculative_execution_plan, mode=None, run_config=None
             resource_versions_by_key[resource_key]
             for resource_key in step.solid_required_resource_keys
         ]
-        solid_resources_version = join_and_hash(hashed_resources)
+        solid_resources_version = join_and_hash(*hashed_resources)
         solid_version = join_and_hash(
-            [solid_def_version, solid_config_version, solid_resources_version]
+            solid_def_version, solid_config_version, solid_resources_version
         )
 
         from_versions = input_versions + [solid_version]
 
-        step_version = join_and_hash(from_versions)
+        step_version = join_and_hash(*from_versions)
 
         step_versions[step.key] = step_version
 
@@ -174,17 +174,14 @@ def resolve_step_output_versions(speculative_execution_plan, run_config, mode):
         speculative_execution_plan, run_config=run_config, mode=mode
     )
     return {
-        StepOutputHandle(step.key, output_name): join_and_hash(
-            [output_name, step_versions[step.key]]
-        )
+        StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
         for step in speculative_execution_plan.steps
         for output_name in step.step_output_dict.keys()
     }
 
 
-def join_and_hash(lst):
-    lst = check.list_param(lst, "lst")
-    lst = [check.opt_str_param(elem, "elem") for elem in lst]
+def join_and_hash(*args):
+    lst = [check.opt_str_param(elem, "elem") for elem in args]
     if None in lst:
         return None
     else:
@@ -204,9 +201,9 @@ def resolve_config_version(config_value):
             values.
     """
     if not isinstance(config_value, dict):
-        return join_and_hash([str(config_value)])
+        return join_and_hash(str(config_value))
     else:
         config_value = check.dict_param(config_value, "config_value")
         return join_and_hash(
-            [key + resolve_config_version(val) for key, val in config_value.items()]
+            *[key + resolve_config_version(val) for key, val in config_value.items()]
         )

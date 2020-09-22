@@ -32,20 +32,20 @@ from dagster.seven import mock
 
 
 def test_join_and_hash():
-    assert join_and_hash(["foo"]) == hashlib.sha1("foo".encode("utf-8")).hexdigest()
+    assert join_and_hash("foo") == hashlib.sha1("foo".encode("utf-8")).hexdigest()
 
-    assert join_and_hash(["foo", None, "bar"]) == None
+    assert join_and_hash("foo", None, "bar") == None
 
-    assert join_and_hash(["foo", "bar"]) == hashlib.sha1("barfoo".encode("utf-8")).hexdigest()
+    assert join_and_hash("foo", "bar") == hashlib.sha1("barfoo".encode("utf-8")).hexdigest()
 
-    assert join_and_hash(["foo", "bar", "zab"]) == join_and_hash(["zab", "bar", "foo"])
+    assert join_and_hash("foo", "bar", "zab") == join_and_hash("zab", "bar", "foo")
 
 
 def test_resolve_config_version():
-    assert resolve_config_version({}) == join_and_hash([])
+    assert resolve_config_version({}) == join_and_hash()
 
     assert resolve_config_version({"a": "b", "c": "d"}) == join_and_hash(
-        ["a" + join_and_hash(["b"]), "c" + join_and_hash(["d"])]
+        "a" + join_and_hash("b"), "c" + join_and_hash("d")
     )
 
     assert resolve_config_version({"a": "b", "c": "d"}) == resolve_config_version(
@@ -53,7 +53,7 @@ def test_resolve_config_version():
     )
 
     assert resolve_config_version({"a": {"b": "c"}, "d": "e"}) == join_and_hash(
-        ["a" + join_and_hash(["b" + join_and_hash(["c"])]), "d" + join_and_hash(["e"])]
+        "a" + join_and_hash("b" + join_and_hash("c")), "d" + join_and_hash("e")
     )
 
 
@@ -75,34 +75,34 @@ def versioned_pipeline():
 def versioned_pipeline_expected_step1_version():
     solid1_def_version = versioned_solid_no_input.version
     solid1_config_version = resolve_config_version(None)
-    solid1_resources_version = join_and_hash([])
+    solid1_resources_version = join_and_hash()
     solid1_version = join_and_hash(
-        [solid1_def_version, solid1_config_version, solid1_resources_version]
+        solid1_def_version, solid1_config_version, solid1_resources_version
     )
-    return join_and_hash([solid1_version])
+    return join_and_hash(solid1_version)
 
 
 def versioned_pipeline_expected_step1_output_version():
     step1_version = versioned_pipeline_expected_step1_version()
-    return join_and_hash([step1_version + "result"])
+    return join_and_hash(step1_version + "result")
 
 
 def versioned_pipeline_expected_step2_version():
     solid2_def_version = versioned_solid_takes_input.version
     solid2_config_version = resolve_config_version(None)
-    solid2_resources_version = join_and_hash([])
+    solid2_resources_version = join_and_hash()
     solid2_version = join_and_hash(
-        [solid2_def_version, solid2_config_version, solid2_resources_version]
+        solid2_def_version, solid2_config_version, solid2_resources_version
     )
-    step1_outputs_hash = join_and_hash([versioned_pipeline_expected_step1_output_version()])
+    step1_outputs_hash = join_and_hash(versioned_pipeline_expected_step1_output_version())
 
-    step2_version = join_and_hash([step1_outputs_hash, solid2_version])
+    step2_version = join_and_hash(step1_outputs_hash, solid2_version)
     return step2_version
 
 
 def versioned_pipeline_expected_step2_output_version():
     step2_version = versioned_pipeline_expected_step2_version()
-    return join_and_hash([step2_version + "result"])
+    return join_and_hash(step2_version + "result")
 
 
 def test_resolve_step_versions_no_external_dependencies():
@@ -171,7 +171,7 @@ def test_versioned_execution_plan_no_external_dependencies():  # TODO: flesh out
 
 
 def _get_ext_version(config_value):
-    return join_and_hash([str(config_value)])
+    return join_and_hash(str(config_value))
 
 
 @dagster_type_loader(String, loader_version="97", external_version_fn=_get_ext_version)
@@ -202,30 +202,30 @@ def test_resolve_step_versions_external_dependencies():
 
     versions = resolve_step_versions(speculative_execution_plan, run_config=run_config,)
 
-    ext_input_version = join_and_hash(["a"])
-    input_version = join_and_hash([InputHydration.loader_version + ext_input_version])
+    ext_input_version = join_and_hash("a")
+    input_version = join_and_hash(InputHydration.loader_version + ext_input_version)
 
     solid1_def_version = versioned_solid_ext_input.version
     solid1_config_version = resolve_config_version(None)
-    solid1_resources_version = join_and_hash([])
+    solid1_resources_version = join_and_hash()
     solid1_version = join_and_hash(
-        [solid1_def_version, solid1_config_version, solid1_resources_version]
+        solid1_def_version, solid1_config_version, solid1_resources_version
     )
 
-    step1_version = join_and_hash([input_version, solid1_version])
+    step1_version = join_and_hash(input_version, solid1_version)
     assert versions["versioned_solid_ext_input.compute"] == step1_version
 
-    output_version = join_and_hash([step1_version, "result"])
-    hashed_input2 = join_and_hash([output_version])
+    output_version = join_and_hash(step1_version, "result")
+    hashed_input2 = join_and_hash(output_version)
 
     solid2_def_version = versioned_solid_takes_input.version
     solid2_config_version = resolve_config_version(None)
-    solid2_resources_version = join_and_hash([])
+    solid2_resources_version = join_and_hash()
     solid2_version = join_and_hash(
-        [solid2_def_version, solid2_config_version, solid2_resources_version]
+        solid2_def_version, solid2_config_version, solid2_resources_version
     )
 
-    step2_version = join_and_hash([hashed_input2, solid2_version])
+    step2_version = join_and_hash(hashed_input2, solid2_version)
     assert versions["versioned_solid_takes_input.compute"] == step2_version
 
 
@@ -246,18 +246,16 @@ def test_resolve_step_versions_default_value():
     speculative_execution_plan = create_execution_plan(versioned_pipeline_default_value)
     versions = resolve_step_versions(speculative_execution_plan)
 
-    default_val_version = join_and_hash(["DEFAULTVAL"])
+    default_val_version = join_and_hash("DEFAULTVAL")
 
-    input_version = join_and_hash([InputHydration.loader_version + default_val_version])
+    input_version = join_and_hash(InputHydration.loader_version + default_val_version)
 
     solid_def_version = versioned_solid_ext_input.version
     solid_config_version = resolve_config_version(None)
-    solid_resources_version = join_and_hash([])
-    solid_version = join_and_hash(
-        [solid_def_version, solid_config_version, solid_resources_version]
-    )
+    solid_resources_version = join_and_hash()
+    solid_version = join_and_hash(solid_def_version, solid_config_version, solid_resources_version)
 
-    step_version = join_and_hash([input_version, solid_version])
+    step_version = join_and_hash(input_version, solid_version)
     assert versions["versioned_solid_default_value.compute"] == step_version
 
 
@@ -380,13 +378,13 @@ def test_resource_versions():
     )
 
     assert resource_versions_by_key["test_resource"] == join_and_hash(
-        [resolve_config_version({"config": {"input_str": "apple"}}), test_resource.version]
+        resolve_config_version({"config": {"input_str": "apple"}}), test_resource.version
     )
 
     assert resource_versions_by_key["test_resource_no_version"] == None
 
     assert resource_versions_by_key["test_resource_no_config"] == join_and_hash(
-        [join_and_hash([]), "42"]
+        join_and_hash(), "42"
     )
 
 
@@ -431,16 +429,14 @@ def test_step_versions_with_resources():
         environment_config, versioned_modes_pipeline.get_mode_definition("fakemode")
     )
     solid_resources_version = join_and_hash(
-        [
+        *[
             resource_versions_by_key[resource_key]
             for resource_key in fake_solid_resources_versioned.required_resource_keys
         ]
     )
-    solid_version = join_and_hash(
-        [solid_def_version, solid_config_version, solid_resources_version]
-    )
+    solid_version = join_and_hash(solid_def_version, solid_config_version, solid_resources_version)
 
-    step_version = join_and_hash([solid_version])
+    step_version = join_and_hash(solid_version)
 
     assert versions["fake_solid_resources_versioned.compute"] == step_version
 
