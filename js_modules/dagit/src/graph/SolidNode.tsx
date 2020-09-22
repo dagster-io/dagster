@@ -141,17 +141,30 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   };
 
   shouldComponentUpdate(prevProps: ISolidNodeProps) {
-    if (prevProps.dim !== this.props.dim) return true;
-    if (prevProps.selected !== this.props.selected) return true;
-    if (prevProps.focused !== this.props.focused) return true;
-    if (prevProps.minified !== this.props.minified) return true;
-    if (prevProps.highlightedEdges !== this.props.highlightedEdges) return true;
-    if (prevProps.layout !== this.props.layout) return true;
+    if (prevProps.dim !== this.props.dim) {
+      return true;
+    }
+    if (prevProps.selected !== this.props.selected) {
+      return true;
+    }
+    if (prevProps.focused !== this.props.focused) {
+      return true;
+    }
+    if (prevProps.minified !== this.props.minified) {
+      return true;
+    }
+    if (prevProps.highlightedEdges !== this.props.highlightedEdges) {
+      return true;
+    }
+    if (prevProps.layout !== this.props.layout) {
+      return true;
+    }
     if (
       (prevProps.invocation && prevProps.invocation.name) !==
       (this.props.invocation && this.props.invocation.name)
-    )
+    ) {
       return true;
+    }
     return false;
   }
 

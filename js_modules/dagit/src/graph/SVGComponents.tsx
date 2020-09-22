@@ -237,7 +237,9 @@ export class SVGFlowLayoutRect extends React.Component<
         const passLayouts = grouped[priorities[i]];
         const passWidth = passLayouts.reduce((sum, cl) => sum + cl.width, 0);
         const ratio = Math.max(1, passWidth - (layout.width - finalWidth)) / passWidth;
-        if (ratio >= 0.99) break;
+        if (ratio >= 0.99) {
+          break;
+        }
 
         passLayouts.forEach((childLayout) => (childLayout.width *= ratio));
         layout.width -= passWidth * (1 - ratio);

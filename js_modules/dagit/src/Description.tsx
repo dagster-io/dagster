@@ -67,7 +67,9 @@ export default class Description extends React.Component<IDescriptionProps, IDes
       <Container
         onDoubleClick={() => {
           const sel = document.getSelection();
-          if (!sel || !this._container.current) return;
+          if (!sel || !this._container.current) {
+            return;
+          }
           const range = document.createRange();
           range.selectNodeContents(this._container.current);
           sel.removeAllRanges();

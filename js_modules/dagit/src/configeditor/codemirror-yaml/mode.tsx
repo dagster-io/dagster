@@ -39,7 +39,9 @@ function parentsPoppingItemsDeeperThan(parents: IParseStateParent[], indent: num
 }
 
 function parentsAddingChildKeyToLast(parents: IParseStateParent[], key: string) {
-  if (parents.length === 0) return [];
+  if (parents.length === 0) {
+    return [];
+  }
 
   const immediateParent = parents[parents.length - 1];
   return [
@@ -307,7 +309,9 @@ CodeMirror.registerHelper(
       schema?: ConfigEditorRunConfigSchemaFragment;
     },
   ): {list: Array<CodemirrorHint>} => {
-    if (!options.schema) return {list: []};
+    if (!options.schema) {
+      return {list: []};
+    }
 
     const {
       cursor,
@@ -738,7 +742,9 @@ export function validationErrorToCodemirrorError(
 ): CodemirrorLintError | null {
   const part = error.reason === 'RUNTIME_TYPE_MISMATCH' ? 'value' : 'key';
   const range = findRangeInDocumentFromPath(yamlDoc, error.path, part);
-  if (range === null) return null;
+  if (range === null) {
+    return null;
+  }
   return {
     message: error.message,
     severity: 'error',
@@ -756,7 +762,9 @@ export function findRangeInDocumentFromPath(
   pathPart: 'key' | 'value',
 ): {start: number; end: number} | null {
   let node = nodeAtPath(doc, path);
-  if (!node || !('type' in node) || node.type !== 'PAIR') return null;
+  if (!node || !('type' in node) || node.type !== 'PAIR') {
+    return null;
+  }
 
   if (pathPart === 'value' && node.value) {
     node = node.value;

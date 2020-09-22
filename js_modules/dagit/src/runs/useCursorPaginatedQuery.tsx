@@ -69,9 +69,13 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
       setCursorStack(nextStack);
     },
     onNextPage: () => {
-      if (cursor) setCursorStack([...cursorStack, cursor]);
+      if (cursor) {
+        setCursorStack([...cursorStack, cursor]);
+      }
       const nextCursor = queryResult.data && options.nextCursorForResult(queryResult.data);
-      if (!nextCursor) return;
+      if (!nextCursor) {
+        return;
+      }
       setCursor(nextCursor);
     },
     onReset: () => {

@@ -46,7 +46,9 @@ function findProviderByToken(token: string, providers: SuggestionProvider[]) {
 }
 
 export function tokenizedValuesFromString(str: string, providers: SuggestionProvider[]) {
-  if (str === '') return [];
+  if (str === '') {
+    return [];
+  }
   const tokens = str.split(',');
   return tokens.map((token) => tokenizedValueFromString(token, providers));
 }
@@ -197,7 +199,9 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   }, [active, suggestions]);
 
   const onConfirmSuggestion = (suggestion: Suggestion) => {
-    if (atMaxValues) return;
+    if (atMaxValues) {
+      return;
+    }
 
     if (suggestion.final) {
       // The user has finished a key-value pair
@@ -212,9 +216,15 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
   };
 
   const onConfirmText = (str: string) => {
-    if (atMaxValues) return;
-    if (str.endsWith(':')) return;
-    if (str === '') return;
+    if (atMaxValues) {
+      return;
+    }
+    if (str.endsWith(':')) {
+      return;
+    }
+    if (str === '') {
+      return;
+    }
 
     setTyped('');
     onChange([...values, tokenizedValueFromString(str, filteredSuggestionProviders)]);
@@ -231,7 +241,9 @@ export const TokenizingField: React.FunctionComponent<TokenizingFieldProps> = ({
     if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Tab') {
       if (active) {
         const picked = suggestions.find((s) => s.text === active.text);
-        if (!picked) throw new Error('Selection out of sync with suggestions');
+        if (!picked) {
+          throw new Error('Selection out of sync with suggestions');
+        }
         onConfirmSuggestion(picked);
         e.preventDefault();
         e.stopPropagation();

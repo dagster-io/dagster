@@ -211,7 +211,9 @@ export class ComputeLogsProvider extends React.Component<
   };
 
   merge(a: ComputeLogContentFileFragment | null, b: ComputeLogContentFileFragment | null) {
-    if (!b) return a;
+    if (!b) {
+      return a;
+    }
     let data = a?.data;
     if (a?.data && b?.data) {
       data = this.slice(a.data + b.data);

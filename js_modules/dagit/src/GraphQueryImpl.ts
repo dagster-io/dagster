@@ -94,7 +94,9 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
 
   for (const clause of clauses) {
     const parts = /(\*?\+*)([.\w\d_-]+)(\+*\*?)/.exec(clause.trim());
-    if (!parts) continue;
+    if (!parts) {
+      continue;
+    }
     const [, parentsClause, itemName, descendentsClause] = parts;
     const itemsMatching = items.filter(
       (s) => itemName === s.name || (itemName.length > 3 && s.name.includes(itemName)),

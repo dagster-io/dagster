@@ -10,8 +10,12 @@ export const CustomTooltipProvider: React.FunctionComponent<{}> = () => {
   React.useEffect(() => {
     document.addEventListener('mouseover', (ev) => {
       const el = ev.target;
-      if (!(el instanceof Element)) return;
-      if (el.getAttribute('id') === 'tooltip-container') return;
+      if (!(el instanceof Element)) {
+        return;
+      }
+      if (el.getAttribute('id') === 'tooltip-container') {
+        return;
+      }
 
       const tooltipParentEl = el.closest('[data-tooltip]') as HTMLElement;
       if (!tooltipParentEl) {

@@ -125,7 +125,9 @@ export default (props: ISolidSelectorProps) => {
       : pipelineErrorMessage;
 
   const onCommitPendingValue = (applied: string) => {
-    if (data?.pipelineOrError.__typename !== 'Pipeline') return;
+    if (data?.pipelineOrError.__typename !== 'Pipeline') {
+      return;
+    }
 
     if (applied === '') {
       applied = '*';

@@ -64,7 +64,9 @@ export function useRunFiltering(enabledFilters?: RunFilterTokenType[]) {
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
-  if (!search[0]) return {};
+  if (!search[0]) {
+    return {};
+  }
 
   const obj: PipelineRunsFilter = {};
 

@@ -95,8 +95,12 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
   _editor?: Editor;
 
   componentDidUpdate(prevProps: ConfigEditorProps) {
-    if (!this._editor) return;
-    if (prevProps.runConfigSchema === this.props.runConfigSchema) return;
+    if (!this._editor) {
+      return;
+    }
+    if (prevProps.runConfigSchema === this.props.runConfigSchema) {
+      return;
+    }
     this.performInitialPass();
   }
 
@@ -115,7 +119,9 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
   // Public API
 
   moveCursor = (line: number, ch: number) => {
-    if (!this._editor) return;
+    if (!this._editor) {
+      return;
+    }
     this._editor.setCursor(line, ch, {scroll: false});
     const {clientHeight} = this._editor.getScrollInfo();
     const {left, top} = this._editor.cursorCoords(true, 'local');
@@ -131,11 +137,15 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
   };
 
   moveCursorToPath = (path: string[]) => {
-    if (!this._editor) return;
+    if (!this._editor) {
+      return;
+    }
     const codeMirrorDoc = this._editor.getDoc();
     const yamlDoc = yaml.parseDocument(this.props.configCode);
     const range = findRangeInDocumentFromPath(yamlDoc, path, 'key');
-    if (!range) return;
+    if (!range) {
+      return;
+    }
     const from = codeMirrorDoc.posFromIndex(range ? range.start : 0) as CodeMirror.Position;
     this.moveCursor(from.line, from.ch);
   };

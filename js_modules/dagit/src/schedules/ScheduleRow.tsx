@@ -476,13 +476,17 @@ export const ScheduleStateRow: React.FunctionComponent<{
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   const goToRepositorySchedules = () => {
-    if (!dagsterRepoOption) return;
+    if (!dagsterRepoOption) {
+      return;
+    }
     setRepo(dagsterRepoOption);
     history.push(`/schedules`);
   };
 
   const goToSchedule = () => {
-    if (!dagsterRepoOption) return;
+    if (!dagsterRepoOption) {
+      return;
+    }
     setRepo(dagsterRepoOption);
     history.push(`/schedules/${scheduleName}`);
   };

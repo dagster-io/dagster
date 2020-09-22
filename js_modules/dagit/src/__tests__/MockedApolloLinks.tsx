@@ -106,7 +106,9 @@ export class MockLink extends ApolloLink {
           if (error) {
             observer.error(error);
           } else {
-            if (result) observer.next(result);
+            if (result) {
+              observer.next(result);
+            }
             observer.complete();
           }
         },
@@ -144,9 +146,15 @@ export class MockSubscriptionLink extends ApolloLink {
   public simulateResult(result: MockedSubscriptionResult) {
     setTimeout(() => {
       const {observer} = this;
-      if (!observer) throw new Error('subscription torn down');
-      if (result.result && observer.next) observer.next(result.result);
-      if (result.error && observer.error) observer.error(result.error);
+      if (!observer) {
+        throw new Error('subscription torn down');
+      }
+      if (result.result && observer.next) {
+        observer.next(result.result);
+      }
+      if (result.error && observer.error) {
+        observer.error(result.error);
+      }
     }, result.delay || 0);
   }
 

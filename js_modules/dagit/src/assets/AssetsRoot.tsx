@@ -149,7 +149,9 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
     if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Tab') {
       if (active) {
         const picked = assets.find((asset) => asset.key.path.join('.') === active.text);
-        if (!picked) throw new Error('Selection out of sync with suggestions');
+        if (!picked) {
+          throw new Error('Selection out of sync with suggestions');
+        }
         selectOption(picked);
         e.preventDefault();
         e.stopPropagation();

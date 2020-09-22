@@ -234,7 +234,9 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
   const stepQuery = query !== '*' ? query : '';
   const onLaunch = async (stepKeys?: string[], resumeRetry?: boolean) => {
-    if (!run || run.pipeline.__typename === 'UnknownPipeline') return;
+    if (!run || run.pipeline.__typename === 'UnknownPipeline') {
+      return;
+    }
     const variables = getReexecutionVariables({
       run,
       stepKeys,

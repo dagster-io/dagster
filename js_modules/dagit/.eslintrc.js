@@ -15,6 +15,7 @@ module.exports = {
     },
   },
   rules: {
+    curly: 'error',
     'import/order': [
       'error',
       {alphabetize: {order: 'asc', caseInsensitive: false}, 'newlines-between': 'always'},

@@ -202,8 +202,12 @@ export class LogsProvider extends React.Component<
     const filteredNodes = nodes.filter((node) => {
       const l = node.__typename === 'LogMessageEvent' ? node.level : 'EVENT';
 
-      if (!filter.levels[l]) return false;
-      if (filter.since && Number(node.timestamp) < filter.since) return false;
+      if (!filter.levels[l]) {
+        return false;
+      }
+      if (filter.since && Number(node.timestamp) < filter.since) {
+        return false;
+      }
 
       return (
         filter.values.length === 0 ||

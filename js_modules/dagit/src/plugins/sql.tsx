@@ -27,7 +27,9 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   render() {
     const metadata = this.props.definition.metadata;
     const sql = metadata.find((m) => m.key === 'sql');
-    if (!sql) return <span />;
+    if (!sql) {
+      return <span />;
+    }
 
     return (
       <div>

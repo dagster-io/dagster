@@ -95,7 +95,9 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
   }
 
   componentDidUpdate(prevProps: ILogsScrollingTableSizedProps) {
-    if (!this.list.current) return;
+    if (!this.list.current) {
+      return;
+    }
 
     if (this.props.width !== prevProps.width) {
       this.didResize();
@@ -131,8 +133,12 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
         lastHeight = null;
         return;
       }
-      if (rowgroupEl.style.height === lastHeight) return;
-      if (!this.isAtBottomOrZero) return;
+      if (rowgroupEl.style.height === lastHeight) {
+        return;
+      }
+      if (!this.isAtBottomOrZero) {
+        return;
+      }
 
       lastHeight = rowgroupEl.style.height;
       el.scrollTop = el.scrollHeight - el.clientHeight;
@@ -145,7 +151,9 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
   }
 
   onScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (!this.list.current) return;
+    if (!this.list.current) {
+      return;
+    }
 
     const {scrollTop, scrollHeight, clientHeight} = e.target as Element;
     const atTopAndStarting = scrollTop === 0 && scrollHeight <= clientHeight;
@@ -156,10 +164,14 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
   };
 
   rowRenderer = ({parent, index, style}: ListRowProps) => {
-    if (!this.props.nodes) return;
+    if (!this.props.nodes) {
+      return;
+    }
     const node = this.props.nodes[index];
     const metadata = this.props.metadata;
-    if (!node) return <span />;
+    if (!node) {
+      return <span />;
+    }
     const isLastRow = index === this.props.nodes.length - 1;
     const lastRowStyles = isLastRow
       ? {
@@ -257,7 +269,9 @@ class AutoSizer extends React.Component<{
   measure() {
     // eslint-disable-next-line react/no-find-dom-node
     const el = ReactDOM.findDOMNode(this);
-    if (!el || !(el instanceof HTMLElement)) return;
+    if (!el || !(el instanceof HTMLElement)) {
+      return;
+    }
     if (el.clientWidth !== this.state.width || el.clientHeight !== this.state.height) {
       this.setState({width: el.clientWidth, height: el.clientHeight});
     }

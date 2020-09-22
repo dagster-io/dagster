@@ -92,7 +92,9 @@ export class ShortcutHandler extends React.Component<ShortcutHandlerProps, Short
       // https://reactjs.org/docs/refs-and-the-dom.html#exposing-dom-refs-to-parent-components
       // eslint-disable-next-line react/no-find-dom-node
       const el = ReactDOM.findDOMNode(this);
-      if (!el || !(el instanceof HTMLElement)) return;
+      if (!el || !(el instanceof HTMLElement)) {
+        return;
+      }
       const rect = el.getBoundingClientRect();
       this.setState({
         previewPosition: {

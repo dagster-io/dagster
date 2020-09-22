@@ -99,18 +99,24 @@ export const buildLayout = (params: BuildLayoutParams) => {
         const box = boxes[idx];
         const boxParents = parents[box.node.name] || [];
         const highestYParent = boxParents.sort((a, b) => b.y - a.y)[0];
-        if (!highestYParent) continue;
+        if (!highestYParent) {
+          continue;
+        }
 
         const onTargetY = boxesByY[`${highestYParent.y}`];
         const taken = onTargetY.find((r) => r.x === box.x);
-        if (taken) continue;
+        if (taken) {
+          continue;
+        }
 
         const parentX = highestYParent.x;
         const willCross = onTargetY.some((r) => r.x > parentX && r.x < box.x);
         const willCauseCrossing = onTargetY.some(
           (r) => r.x < box.x && r.children.some((c) => c.y >= highestYParent.y && c.x > box.x),
         );
-        if (willCross || willCauseCrossing) continue;
+        if (willCross || willCauseCrossing) {
+          continue;
+        }
 
         boxesByY[`${box.y}`] = boxesByY[`${box.y}`].filter((b) => b !== box);
         box.y = highestYParent.y;
@@ -165,9 +171,13 @@ const addChildren = (boxes: GaantChartBox[], box: GaantChartBox, params: BuildLa
   for (const out of box.node.outputs) {
     for (const dep of out.dependedBy) {
       const depNode = params.nodes.find((n) => dep.solid.name === n.name);
-      if (!depNode) continue;
+      if (!depNode) {
+        continue;
+      }
 
-      if (seen.includes(depNode.name)) continue;
+      if (seen.includes(depNode.name)) {
+        continue;
+      }
       seen.push(depNode.name);
 
       const depBoxIdx = boxes.findIndex((r) => r.node === depNode);
@@ -318,7 +328,9 @@ const positionUntimedBoxes = (boxes: GaantChartBox[], earliestAllowedX: number) 
       // If we are visiting the box for the first time (by traversing the tree from
       // another starting box), starting another pass using it as the root is unnecessary.
       const idx = unstarted.indexOf(box);
-      if (idx !== -1) unstarted.splice(idx, 1);
+      if (idx !== -1) {
+        unstarted.splice(idx, 1);
+      }
     }
 
     box.x = Math.max(box.x, earliestAllowedX, parentX);
@@ -332,7 +344,9 @@ const positionUntimedBoxes = (boxes: GaantChartBox[], earliestAllowedX: number) 
   };
 
   let box: GaantChartBox | undefined;
-  while ((box = unstarted.shift())) visit(box, earliestAllowedX);
+  while ((box = unstarted.shift())) {
+    visit(box, earliestAllowedX);
+  }
 };
 
 export const adjustLayoutWithRunMetadata = (
@@ -367,7 +381,9 @@ export const adjustLayoutWithRunMetadata = (
 
     // Add markers to the layout using the run metadata
     metadata.globalMarkers.forEach((m) => {
-      if (m.start === undefined) return;
+      if (m.start === undefined) {
+        return;
+      }
       markers.push({
         key: `global:${m.key}`,
         y: 0,
@@ -377,9 +393,13 @@ export const adjustLayoutWithRunMetadata = (
     });
     Object.entries(metadata.steps).forEach(([name, step]) => {
       for (const m of step.markers) {
-        if (m.start === undefined) continue;
+        if (m.start === undefined) {
+          continue;
+        }
         const stepBox = layout.boxes.find((b) => b.node.name === name);
-        if (!stepBox) continue;
+        if (!stepBox) {
+          continue;
+        }
 
         markers.push({
           key: `${name}:${m.key}`,

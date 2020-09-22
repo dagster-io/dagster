@@ -308,7 +308,9 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
   let [minUnix, maxUnix] = [Date.now() / 1000, 1];
   for (const partition of partitionColumns) {
     for (const step of partition.steps) {
-      if (step.unix === 0) continue;
+      if (step.unix === 0) {
+        continue;
+      }
       [minUnix, maxUnix] = [Math.min(minUnix, step.unix), Math.max(maxUnix, step.unix)];
     }
   }
@@ -623,7 +625,9 @@ const SliceSlider: React.FunctionComponent<{
           </span>
         )}
         onChange={(values: number[]) => {
-          if (timeout.current) clearTimeout(timeout.current);
+          if (timeout.current) {
+            clearTimeout(timeout.current);
+          }
           timeout.current = setTimeout(() => onChange(delta * values[0] + minUnix), 10);
         }}
       >

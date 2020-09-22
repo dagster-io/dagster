@@ -214,11 +214,15 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
     } = {};
 
     const root = allConfigTypes.find((t) => t.key === rootConfigType.key);
-    if (root?.__typename !== 'CompositeConfigType') return children;
+    if (root?.__typename !== 'CompositeConfigType') {
+      return children;
+    }
 
     root.fields.forEach((field) => {
       const allConfigVersion = allConfigTypes.find((t) => t.key === field.configTypeKey);
-      if (allConfigVersion?.__typename !== 'CompositeConfigType') return;
+      if (allConfigVersion?.__typename !== 'CompositeConfigType') {
+        return;
+      }
       children[field.name] = allConfigVersion;
     });
 
@@ -579,8 +583,12 @@ function truncateErrorMessage(message: string) {
 }
 
 function pathExistsInObject(path: string[], object: any): boolean {
-  if (!object || typeof object !== 'object') return false;
-  if (path.length === 0) return true;
+  if (!object || typeof object !== 'object') {
+    return false;
+  }
+  if (path.length === 0) {
+    return true;
+  }
   const [first, ...rest] = path;
   return pathExistsInObject(rest, object[first]);
 }

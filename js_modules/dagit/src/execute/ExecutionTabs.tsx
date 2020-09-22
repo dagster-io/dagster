@@ -30,7 +30,9 @@ class ExecutionTab extends React.Component<ExecutationTabProps, ExecutationTabSt
   state = {editing: false};
 
   onDoubleClick = () => {
-    if (!this.props.onChange) return;
+    if (!this.props.onChange) {
+      return;
+    }
     this.setState({editing: true}, () => {
       const el = this.input.current;
       if (el) {

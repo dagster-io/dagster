@@ -189,7 +189,9 @@ export function layoutPipeline(
   const nodesBySolid: {[solidName: string]: dagre.Node} = {};
   g.nodes().forEach(function (solidName) {
     const node = g.node(solidName);
-    if (!node) return;
+    if (!node) {
+      return;
+    }
     nodesBySolid[solidName] = node;
   });
 
@@ -197,7 +199,9 @@ export function layoutPipeline(
     const nodesInRows: {[key: string]: dagre.Node[]} = {};
     g.nodes().forEach(function (solidName) {
       const node = g.node(solidName);
-      if (!node) return;
+      if (!node) {
+        return;
+      }
       nodesInRows[`${node.y}`] = nodesInRows[`${node.y}`] || [];
       nodesInRows[`${node.y}`].push(node);
     });
@@ -225,7 +229,9 @@ export function layoutPipeline(
       const rowNodes = nodesInRows[rowKey];
 
       const desiredCount = Math.ceil(rowNodes.length / MAX_PER_ROW);
-      if (desiredCount === 1) continue;
+      if (desiredCount === 1) {
+        continue;
+      }
 
       for (let r = 0; r < desiredCount; r++) {
         const newRowNodes = rowNodes.slice(r * MAX_PER_ROW, (r + 1) * MAX_PER_ROW);
@@ -275,7 +281,9 @@ export function layoutPipeline(
   Object.keys(nodesBySolid).forEach((solidName) => {
     const node = nodesBySolid[solidName];
     const solid = pipelineSolids.find(({name}) => name === solidName);
-    if (!solid) return;
+    if (!solid) {
+      return;
+    }
 
     solids[solidName] = layoutSolid(solid, {
       x: node.x - node.width / 2, // Dagre's x/y is the center, we want top left

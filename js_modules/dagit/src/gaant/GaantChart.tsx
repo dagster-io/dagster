@@ -306,7 +306,9 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   // Because renders can happen "out of band" of our update interval, we set a timer for
   // "time until the next interval after the current nowMs".
   React.useEffect(() => {
-    if (scale === 0) return;
+    if (scale === 0) {
+      return;
+    }
     if (metadata?.exitedAt) {
       if (nowMs !== metadata.exitedAt) {
         setNowMs(metadata.exitedAt);
@@ -368,8 +370,12 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     );
     const firstMeta = sortedSelectedSteps[0];
     const lastMeta = sortedSelectedSteps[sortedSelectedSteps.length - 1];
-    if (firstMeta?.start) highlightedMs.push(firstMeta.start);
-    if (lastMeta?.end) highlightedMs.push(lastMeta.end);
+    if (firstMeta?.start) {
+      highlightedMs.push(firstMeta.start);
+    }
+    if (lastMeta?.end) {
+      highlightedMs.push(lastMeta.end);
+    }
   }
 
   const measurementComplete = viewport.width > 0;

@@ -52,7 +52,9 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
     setCursorStack(nextStack);
   };
   const pushCursor = (nextCursor: string) => {
-    if (cursor) setCursorStack([...cursorStack, cursor]);
+    if (cursor) {
+      setCursorStack([...cursorStack, cursor]);
+    }
     setCursor(nextCursor);
   };
 

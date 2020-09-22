@@ -81,7 +81,9 @@ export class DirectGraphQLSubscription<T> {
 
   handleRetry = () => {
     setTimeout(() => {
-      if (this.closed || this.websocket.readyState !== WebSocket.CLOSED) return;
+      if (this.closed || this.websocket.readyState !== WebSocket.CLOSED) {
+        return;
+      }
       this.websocket.close();
       this.open();
     }, 500);

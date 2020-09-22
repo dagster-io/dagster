@@ -105,7 +105,9 @@ export const useViewport = () => {
   // (eg the parent is showing a loading state). This means it may be undefined during our initial render
   // and we need to measure it when it's actually assigned a value.
   const setRef = React.useCallback((el: any) => {
-    if (el === ref.current) return;
+    if (el === ref.current) {
+      return;
+    }
     ref.current = el;
     measureRef();
   }, []);

@@ -167,7 +167,9 @@ export function getFeatureFlags(): FeatureFlag[] {
 }
 
 export function setFeatureFlags(flags: FeatureFlag[]) {
-  if (!(flags instanceof Array)) throw new Error('flags must be an array');
+  if (!(flags instanceof Array)) {
+    throw new Error('flags must be an array');
+  }
   localStorage.setItem(DAGIT_FLAGS_KEY, JSON.stringify(flags));
 }
 

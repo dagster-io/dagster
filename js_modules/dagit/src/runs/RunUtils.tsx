@@ -168,7 +168,9 @@ export function getReexecutionVariables(input: {
     const {executionPlan} = run;
     if (stepKeys && stepKeys.length > 0 && executionPlan) {
       const step = executionPlan.steps.find((s) => stepKeys.includes(s.key));
-      if (!step) return;
+      if (!step) {
+        return;
+      }
       executionParams['stepKeys'] = stepKeys;
     }
 
@@ -351,7 +353,9 @@ export class TimeElapsed extends React.Component<{
   _timeout?: NodeJS.Timer;
 
   componentDidMount() {
-    if (this.props.endUnix) return;
+    if (this.props.endUnix) {
+      return;
+    }
 
     // align to the next second and then update every second so the elapsed
     // time "ticks" up. Our render method uses Date.now(), so all we need to
@@ -364,8 +368,12 @@ export class TimeElapsed extends React.Component<{
   }
 
   componentWillUnmount() {
-    if (this._timeout) clearInterval(this._timeout);
-    if (this._interval) clearInterval(this._interval);
+    if (this._timeout) {
+      clearInterval(this._timeout);
+    }
+    if (this._interval) {
+      clearInterval(this._interval);
+    }
   }
 
   render() {
