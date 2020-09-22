@@ -59,3 +59,7 @@ class DagsterDbtFatalCliRuntimeError(DagsterDbtCliRuntimeError):
 
     def __init__(self, parsed_output: List[dict], raw_output: str):
         super().__init__("Fatal error in the dbt CLI (return code 2)", parsed_output, raw_output)
+
+
+class DagsterDbtUnexpectedRpcPollOutput(DagsterDbtError):
+    pass

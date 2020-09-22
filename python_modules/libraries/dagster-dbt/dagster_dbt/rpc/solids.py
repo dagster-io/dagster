@@ -9,6 +9,7 @@ from dagster import (
     Array,
     AssetMaterialization,
     Bool,
+    DagsterInvalidDefinitionError,
     EventMetadataEntry,
     Failure,
     Field,
@@ -25,6 +26,7 @@ from dagster import (
     solid,
 )
 
+from ..errors import DagsterDbtUnexpectedRpcPollOutput
 from .types import DbtRpcPollResult
 from .utils import log_rpc, raise_for_rpc_error
 
@@ -144,6 +146,33 @@ def dbt_rpc_poll(
         for materialization in generate_materializations(rpc_poll_result=rpc_poll_result):
             yield materialization
     yield Output(value=rpc_poll_result, output_name="result")
+
+
+def unwrap_result(dbt_rpc_poll_generator) -> DbtRpcPollResult:
+    """A helper function that extracts the `DbtRpcPollResult` value from a generator.
+
+    The parameter `dbt_rpc_poll_generator` is expected to be an invocation of `dbt_rpc_poll`.
+    """
+    output = None
+    for x in dbt_rpc_poll_generator:
+        output = x
+
+    if output is None:
+        raise DagsterDbtUnexpectedRpcPollOutput(
+            description="dbt_rpc_poll yielded None as its last value. Expected value of type Output containing DbtRpcPollResult.",
+        )
+
+    if not isinstance(output, Output):
+        raise DagsterDbtUnexpectedRpcPollOutput(
+            description=f"dbt_rpc_poll yielded value of type {type(output)} as its last value. Expected value of type Output containing DbtRpcPollResult.",
+        )
+
+    if not isinstance(output.value, DbtRpcPollResult):
+        raise DagsterDbtUnexpectedRpcPollOutput(
+            description=f"dbt_rpc_poll yielded Output containing {type(output.value)}. Expected DbtRpcPollResult.",
+        )
+
+    return output.value
 
 
 @solid(
@@ -693,8 +722,8 @@ def dbt_rpc_compile_sql(context, sql: String) -> String:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    result = dbt_rpc_poll(context, request_token)
-    return result.results[0].node["compiled_sql"]  # pylint: disable=no-member # TODO
+    result = unwrap_result(dbt_rpc_poll(context, request_token))
+    return result.results[0].node["compiled_sql"]
 
 
 def create_dbt_rpc_run_sql_solid(
@@ -718,11 +747,14 @@ def create_dbt_rpc_run_sql_solid(
     check.str_param(obj=name, param_name="name")
     check.opt_inst_param(obj=output_def, param_name="output_def", ttype=OutputDefinition)
 
+    if "config_schema" in kwargs:
+        raise DagsterInvalidDefinitionError("Overriding config_schema is not supported.")
+
     if "input_defs" in kwargs:
-        raise TypeError("Overriding input_defs is not supported.")
+        raise DagsterInvalidDefinitionError("Overriding input_defs is not supported.")
 
     if "required_resource_keys" in kwargs:
-        raise TypeError("Overriding required_resource_keys is not supported.")
+        raise DagsterInvalidDefinitionError("Overriding required_resource_keys is not supported.")
 
     @solid(
         name=name,
@@ -766,8 +798,8 @@ def create_dbt_rpc_run_sql_solid(
         context.log.debug(resp.text)
         raise_for_rpc_error(context, resp)
         request_token = resp.json().get("result").get("request_token")
-        result = dbt_rpc_poll(context, request_token)
-        table = result.results[0].table  # pylint: disable=no-member  # TODO
+        result = unwrap_result(dbt_rpc_poll(context, request_token))
+        table = result.results[0].table
         return pd.DataFrame.from_records(data=table["rows"], columns=table["column_names"])
 
     return _dbt_rpc_run_sql
