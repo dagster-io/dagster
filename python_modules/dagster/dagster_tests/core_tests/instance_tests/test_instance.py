@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from dagster import PipelineDefinition, execute_pipeline, pipeline, solid
@@ -91,12 +93,20 @@ def test_create_execution_plan_snapshot():
     assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)
 
 
+def test_dagster_home_not_set():
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=r"The environment variable \$DAGSTER_HOME is not set\.",
+    ):
+        _dagster_home()
+
+
 @pytest.mark.parametrize("dirname", (".", ".."))
-def test_dagster_home_raises(dirname):
+def test_dagster_home_not_abspath(dirname):
     with environ({"DAGSTER_HOME": dirname}):
         with pytest.raises(
             DagsterInvariantViolationError,
-            match="DAGSTER_HOME must be absolute path: {}".format(dirname),
+            match=re.escape('$DAGSTER_HOME "{}" must be an absolute path.'.format(dirname)),
         ):
             _dagster_home()
 
@@ -107,6 +117,8 @@ def test_dagster_home_not_dir():
     with environ({"DAGSTER_HOME": dirname}):
         with pytest.raises(
             DagsterInvariantViolationError,
-            match='DAGSTER_HOME "{}" is not a folder or does not exist!'.format(dirname),
+            match=re.escape(
+                '$DAGSTER_HOME "{}" is not a directory or does not exist.'.format(dirname)
+            ),
         ):
             _dagster_home()
