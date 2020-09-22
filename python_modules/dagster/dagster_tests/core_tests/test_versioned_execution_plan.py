@@ -229,6 +229,38 @@ def test_resolve_step_versions_external_dependencies():
     assert versions["versioned_solid_takes_input.compute"] == step2_version
 
 
+@solid(
+    version="42",
+    input_defs=[InputDefinition("custom_type", CustomType, default_value="DEFAULTVAL")],
+)
+def versioned_solid_default_value(_, custom_type):
+    return custom_type * 4
+
+
+@pipeline
+def versioned_pipeline_default_value():
+    return versioned_solid_default_value()
+
+
+def test_resolve_step_versions_default_value():
+    speculative_execution_plan = create_execution_plan(versioned_pipeline_default_value)
+    versions = resolve_step_versions(speculative_execution_plan)
+
+    default_val_version = join_and_hash(["DEFAULTVAL"])
+
+    input_version = join_and_hash([InputHydration.loader_version + default_val_version])
+
+    solid_def_version = versioned_solid_ext_input.version
+    solid_config_version = resolve_config_version(None)
+    solid_resources_version = join_and_hash([])
+    solid_version = join_and_hash(
+        [solid_def_version, solid_config_version, solid_resources_version]
+    )
+
+    step_version = join_and_hash([input_version, solid_version])
+    assert versions["versioned_solid_default_value.compute"] == step_version
+
+
 def test_external_dependencies():  # TODO: flesh out this test once version storage has been implemented
     instance = DagsterInstance.ephemeral()
     pipeline_run = instance.create_run_for_pipeline(

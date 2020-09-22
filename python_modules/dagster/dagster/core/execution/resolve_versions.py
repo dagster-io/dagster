@@ -25,12 +25,10 @@ def _resolve_step_input_versions(step, step_versions):
                 for source_handle in step_input.source_handles
             ]
             version = join_and_hash(output_handle_versions)
-        elif step_input.is_from_config:
+        else:
             version = step_input.dagster_type.loader.compute_loaded_input_version(
                 step_input.config_data
             )
-        else:
-            version = None
 
         input_versions[input_name] = version
 
