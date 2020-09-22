@@ -10,6 +10,7 @@ import six
 
 from dagster import check
 from dagster.seven import multiprocessing
+from dagster.utils import delay_interrupts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -57,20 +58,21 @@ def _execute_command_in_child_process(event_queue, command):
 
     check.inst_param(command, "command", ChildProcessCommand)
 
-    pid = os.getpid()
-    event_queue.put(ChildProcessStartEvent(pid=pid))
-    try:
-        for step_event in command.execute():
-            event_queue.put(step_event)
-        event_queue.put(ChildProcessDoneEvent(pid=pid))
-    except (Exception, KeyboardInterrupt):  # pylint: disable=broad-except
-        event_queue.put(
-            ChildProcessSystemErrorEvent(
-                pid=pid, error_info=serializable_error_info_from_exc_info(sys.exc_info())
+    with delay_interrupts():
+        pid = os.getpid()
+        event_queue.put(ChildProcessStartEvent(pid=pid))
+        try:
+            for step_event in command.execute():
+                event_queue.put(step_event)
+            event_queue.put(ChildProcessDoneEvent(pid=pid))
+        except (Exception, KeyboardInterrupt):  # pylint: disable=broad-except
+            event_queue.put(
+                ChildProcessSystemErrorEvent(
+                    pid=pid, error_info=serializable_error_info_from_exc_info(sys.exc_info())
+                )
             )
-        )
-    finally:
-        event_queue.close()
+        finally:
+            event_queue.close()
 
 
 TICK = 20.0 * 1.0 / 1000.0
@@ -83,8 +85,6 @@ PROCESS_DEAD_AND_QUEUE_EMPTY = "PROCESS_DEAD_AND_QUEUE_EMPTY"
 def _poll_for_event(process, event_queue):
     try:
         return event_queue.get(block=True, timeout=TICK)
-    except KeyboardInterrupt as e:
-        return e
     except queue.Empty:
         if not process.is_alive():
             # There is a possibility that after the last queue.get the

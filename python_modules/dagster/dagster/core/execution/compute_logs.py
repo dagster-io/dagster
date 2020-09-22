@@ -10,7 +10,7 @@ from contextlib import contextmanager
 
 from dagster.core.execution import poll_compute_logs, watch_orphans
 from dagster.seven import IS_WINDOWS
-from dagster.utils import delay_interrupts, ensure_file
+from dagster.utils import ensure_file
 
 WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is disabled for the current environment. Set the environment variable `PYTHONLEGACYWINDOWSSTDIO` to enable.\n\u001b[0m"""
 
@@ -91,13 +91,9 @@ def execute_windows_tail(path, stream):
     stream = stream if _fileno(stream) else None
 
     try:
-        tail_process = None
-        # A thrown interrupt while opening the subprocess can leave us unable to clean them up.
-        # wait until we have a process we can terminate before raising the KeyboardInterrupt
-        with delay_interrupts():
-            tail_process = subprocess.Popen(
-                [sys.executable, poll_file, path, str(os.getpid())], stdout=stream
-            )
+        tail_process = subprocess.Popen(
+            [sys.executable, poll_file, path, str(os.getpid())], stdout=stream
+        )
         yield (tail_process.pid, None)
     finally:
         if tail_process:
@@ -114,17 +110,14 @@ def execute_posix_tail(path, stream):
     try:
         tail_process = None
         watcher_process = None
-        # A thrown interrupt while opening the subprocesses can leave us unable to clean them up.
-        # wait until we have a process we can terminate before raising the KeyboardInterrupt
-        with delay_interrupts():
-            tail_process = subprocess.Popen(tail_cmd, stdout=stream)
+        tail_process = subprocess.Popen(tail_cmd, stdout=stream)
 
-            # open a watcher process to check for the orphaning of the tail process (e.g. when the
-            # current process is suddenly killed)
-            watcher_file = os.path.abspath(watch_orphans.__file__)
-            watcher_process = subprocess.Popen(
-                [sys.executable, watcher_file, str(os.getpid()), str(tail_process.pid),]
-            )
+        # open a watcher process to check for the orphaning of the tail process (e.g. when the
+        # current process is suddenly killed)
+        watcher_file = os.path.abspath(watch_orphans.__file__)
+        watcher_process = subprocess.Popen(
+            [sys.executable, watcher_file, str(os.getpid()), str(tail_process.pid),]
+        )
 
         yield (tail_process.pid, watcher_process.pid)
     finally:

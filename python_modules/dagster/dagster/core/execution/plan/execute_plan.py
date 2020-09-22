@@ -9,7 +9,7 @@ from dagster.core.errors import (
     HookExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.events import DagsterEvent, DagsterEventType
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemExecutionContext, SystemStepExecutionContext
 from dagster.core.execution.memoization import copy_required_intermediates_for_execution
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
@@ -202,8 +202,6 @@ def _dagster_event_sequence_for_step(step_context, retries):
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
     check.inst_param(retries, "retries", Retries)
 
-    succeeded = False
-
     try:
         prior_attempt_count = retries.get_attempt_count(step_context.step.key)
         if step_context.step_launcher:
@@ -212,8 +210,6 @@ def _dagster_event_sequence_for_step(step_context, retries):
             step_events = core_dagster_event_sequence_for_step(step_context, prior_attempt_count)
 
         for step_event in check.generator(step_events):
-            if step_event.event_type == DagsterEventType.STEP_SUCCESS:
-                succeeded = True
             yield step_event
 
     # case (1) in top comment
@@ -284,9 +280,7 @@ def _dagster_event_sequence_for_step(step_context, retries):
 
     # case (5) in top comment
     except (Exception, KeyboardInterrupt) as unexpected_exception:  # pylint: disable=broad-except
-        # Log a step failure if the step hadn't succeeded yet
-        if not succeeded:
-            yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
+        yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
         raise unexpected_exception
 
 

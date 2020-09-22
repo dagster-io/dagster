@@ -45,7 +45,12 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
-from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
+from dagster.utils import (
+    DEFAULT_WORKSPACE_YAML_FILENAME,
+    delay_interrupts,
+    load_yaml_from_glob_list,
+    merge_dicts,
+)
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.indenting_printer import IndentingPrinter
@@ -273,8 +278,9 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
     ),
 )
 def pipeline_execute_command(**kwargs):
-    with DagsterInstance.get() as instance:
-        execute_execute_command(instance, kwargs)
+    with delay_interrupts():
+        with DagsterInstance.get() as instance:
+            execute_execute_command(instance, kwargs)
 
 
 @telemetry_wrapper

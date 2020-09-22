@@ -9,7 +9,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
-from dagster.utils import frozentags
+from dagster.utils import frozentags, iterate_with_context, raise_interrupts_immediately
 from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
@@ -246,10 +246,12 @@ class DaskExecutor(Executor):
 
             # This tells Dask to awaits the step executions and retrieve their results to the
             # master
-            for future in dask.distributed.as_completed(execution_futures):
-                for step_event in future.result():
-                    check.inst(step_event, DagsterEvent)
+            futures = dask.distributed.as_completed(execution_futures, with_results=True)
 
+            # Allow interrupts while waiting for the results from Dask
+            for future, result in iterate_with_context(raise_interrupts_immediately, futures):
+                for step_event in result:
+                    check.inst(step_event, DagsterEvent)
                     yield step_event
 
     def build_dict(self, pipeline_name):

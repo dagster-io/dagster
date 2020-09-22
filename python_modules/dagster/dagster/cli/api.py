@@ -95,6 +95,7 @@ from dagster.serdes.ipc import (
     read_unary_input,
     setup_interrupt_support,
 )
+from dagster.utils import delay_interrupts
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
@@ -306,17 +307,20 @@ class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
 @click.argument("input_file", type=click.Path())
 @click.argument("output_file", type=click.Path())
 def execute_run_command(input_file, output_file):
-    args = check.inst(read_unary_input(input_file), ExecuteRunArgs)
-    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
-    with DagsterInstance.from_ref(args.instance_ref) as instance:
-        with ipc_write_stream(output_file) as ipc_stream:
+    # Ensure that interrupts from the run launcher only happen inside user code or specially
+    # designated checkpoints
+    with delay_interrupts():
+        args = check.inst(read_unary_input(input_file), ExecuteRunArgs)
+        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+        with DagsterInstance.from_ref(args.instance_ref) as instance:
+            with ipc_write_stream(output_file) as ipc_stream:
 
-            def send_to_stream(event):
-                ipc_stream.send(event)
+                def send_to_stream(event):
+                    ipc_stream.send(event)
 
-            return _execute_run_command_body(
-                recon_pipeline, args.pipeline_run_id, instance, send_to_stream
-            )
+                return _execute_run_command_body(
+                    recon_pipeline, args.pipeline_run_id, instance, send_to_stream
+                )
 
 
 @click.command(

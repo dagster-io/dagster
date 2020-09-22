@@ -186,7 +186,7 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
     ):
         pass
 
-    def prepare_context(self):  # ode to Preperable
+    def prepare_context(self):  # ode to Preparable
         return self._manager.generate_setup_events()
 
     def get_context(self):
