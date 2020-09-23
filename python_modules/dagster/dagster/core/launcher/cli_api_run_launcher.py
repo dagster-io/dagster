@@ -156,17 +156,20 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
 
         return run
 
-    def join(self, timeout=15):
-        # If this hasn't been initialized at all, we can just do a noop
-        if not self._instance:
-            return
-
-        # Stop the watcher tread
+    def dispose(self):
+        # Stop the watcher thread
         if self._cleanup_thread:
             self._cleanup_stop_event.set()
             self._cleanup_thread.join()
             self._cleanup_thread = None
             self._cleanup_stop_event = None
+
+    def join(self, timeout=15):
+        self.dispose()
+
+        # If this hasn't been initialized at all, we can just do a noop
+        if not self._instance:
+            return
 
         # Wrap up all open executions
         with self._processes_lock:

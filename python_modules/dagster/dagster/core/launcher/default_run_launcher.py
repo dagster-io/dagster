@@ -54,6 +54,10 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             run_id
         )
 
+    def dispose(self):
+        self._cli_api_run_launcher.dispose()
+        self._grpc_run_launcher.dispose()
+
     def join(self, timeout=30):
         self._cli_api_run_launcher.join(timeout=timeout)
         self._grpc_run_launcher.join(timeout=timeout)

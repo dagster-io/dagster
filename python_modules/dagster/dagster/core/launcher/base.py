@@ -48,5 +48,11 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
         the process was alive and was successfully terminated
         """
 
+    def dispose(self):
+        """
+        Do any resource cleanup that should happen when the DagsterInstance is
+        cleaning itself up.
+        """
+
     def join(self, timeout=30):
         pass

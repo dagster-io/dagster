@@ -446,6 +446,7 @@ class DagsterInstance:
 
     def dispose(self):
         self._run_storage.dispose()
+        self._run_launcher.dispose()
         self._event_storage.dispose()
 
     # run storage
