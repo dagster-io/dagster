@@ -1,12 +1,13 @@
+import datetime
+import os
 import sys
 import time
-from datetime import datetime
 
 import click
 from croniter import croniter_range
 
 from dagster import check
-from dagster.core.errors import DagsterLaunchFailedError, DagsterSubprocessError
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation import (
     ExternalPipeline,
@@ -25,7 +26,7 @@ from dagster.core.scheduler import (
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.grpc.types import ScheduleExecutionDataMode
-from dagster.seven import get_utc_timezone
+from dagster.seven import get_current_datetime_in_utc, get_utc_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -68,28 +69,36 @@ def scheduler_run_command(interval):
 
 def execute_scheduler_command(interval):
     while True:
-        instance = DagsterInstance.get()
-        start_time = datetime.now()
-        launch_scheduled_runs(instance)
+        with DagsterInstance.get() as instance:
+            end_datetime_utc = get_current_datetime_in_utc()
+            launch_scheduled_runs(instance, end_datetime_utc)
 
-        time_left = interval - (datetime.now() - start_time).seconds
+            time_left = interval - (get_current_datetime_in_utc() - end_datetime_utc).seconds
 
-        if time_left > 0:
-            time.sleep(time_left)
+            if time_left > 0:
+                time.sleep(time_left)
 
 
-def launch_scheduled_runs(instance):
+def launch_scheduled_runs(instance, end_datetime_utc, debug_crash_flags=None):
     schedules = [
         s for s in instance.all_stored_schedule_state() if s.status == ScheduleStatus.RUNNING
     ]
 
     for schedule_state in schedules:
-        launch_scheduled_runs_for_schedule(instance, schedule_state)
+        launch_scheduled_runs_for_schedule(
+            instance,
+            schedule_state,
+            end_datetime_utc,
+            (debug_crash_flags.get(schedule_state.name) if debug_crash_flags else None),
+        )
 
 
-def launch_scheduled_runs_for_schedule(instance, schedule_state):
+def launch_scheduled_runs_for_schedule(
+    instance, schedule_state, end_datetime_utc, debug_crash_flags=None
+):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(schedule_state, "schedule_state", ScheduleState)
+    check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
 
     latest_tick = instance.get_latest_tick(schedule_state.schedule_origin_id)
 
@@ -101,10 +110,10 @@ def launch_scheduled_runs_for_schedule(instance, schedule_state):
     else:
         start_timestamp_utc = latest_tick.timestamp + 1
 
-    start_time_utc = datetime.fromtimestamp(start_timestamp_utc, tz=get_utc_timezone())
+    start_time_utc = datetime.datetime.fromtimestamp(start_timestamp_utc, tz=get_utc_timezone())
 
     for schedule_time_utc in croniter_range(
-        start_time_utc, datetime.now(get_utc_timezone()), schedule_state.cron_schedule
+        start_time_utc, end_datetime_utc, schedule_state.cron_schedule
     ):
         if latest_tick and latest_tick.timestamp == schedule_time_utc.timestamp():
             tick = latest_tick
@@ -120,21 +129,43 @@ def launch_scheduled_runs_for_schedule(instance, schedule_state):
                 )
             )
 
+            _check_for_debug_crash(debug_crash_flags, "TICK_CREATED")
+
         with ScheduleTickHolder(tick, instance) as tick_holder:
-            _schedule_run_at_time(instance, schedule_state, schedule_time_utc, tick_holder)
+
+            _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
+
+            with RepositoryLocationHandle.create_from_repository_origin(
+                schedule_state.origin.repository_origin, instance
+            ) as repo_location_handle:
+                repo_location = RepositoryLocation.from_handle(repo_location_handle)
+                _schedule_run_at_time(
+                    instance,
+                    repo_location,
+                    schedule_state,
+                    schedule_time_utc,
+                    tick_holder,
+                    debug_crash_flags,
+                )
+
+
+def _check_for_debug_crash(debug_crash_flags, key):
+    if not debug_crash_flags:
+        return
+
+    kill_signal = debug_crash_flags.get(key)
+    if not kill_signal:
+        return
+
+    os.kill(os.getpid(), kill_signal)
+    time.sleep(10)
+    raise Exception("Process didn't terminate after sending crash signal")
 
 
 def _schedule_run_at_time(
-    instance, schedule_state, schedule_time_utc, tick_holder,
+    instance, repo_location, schedule_state, schedule_time_utc, tick_holder, debug_crash_flags,
 ):
-    schedule_origin = schedule_state.origin
     schedule_name = schedule_state.name
-
-    repo_location = RepositoryLocation.from_handle(
-        RepositoryLocationHandle.create_from_repository_origin(
-            schedule_origin.repository_origin, instance,
-        )
-    )
 
     repo_dict = repo_location.get_repositories()
     check.invariant(
@@ -177,6 +208,8 @@ def _schedule_run_at_time(
             # A run already exists and was launched for this time period,
             # but the scheduler must have crashed before the tick could be put
             # into a SUCCESS state
+            tick_holder.update_with_status(ScheduleTickStatus.SUCCESS, run_id=run.run_id)
+
             return
         run_to_launch = run
     else:
@@ -190,6 +223,8 @@ def _schedule_run_at_time(
             tick_holder,
         )
 
+        _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
+
     if not run_to_launch:
         check.invariant(
             tick_holder.status != ScheduleTickStatus.STARTED
@@ -197,17 +232,21 @@ def _schedule_run_at_time(
         )
         return
 
-    try:
-        instance.launch_run(run_to_launch.run_id, external_pipeline)
-    except DagsterLaunchFailedError:
-        error = serializable_error_info_from_exc_info(sys.exc_info())
-        instance.report_engine_event(
-            error.message, run_to_launch, EngineEventData.engine_error(error),
-        )
-        instance.report_run_failed(run_to_launch.run_id)
-        raise
+    if run_to_launch.status != PipelineRunStatus.FAILURE:
+        try:
+            instance.launch_run(run_to_launch.run_id, external_pipeline)
+        except Exception as e:  # pylint: disable=broad-except
+            if not isinstance(e, KeyboardInterrupt):
+                error = serializable_error_info_from_exc_info(sys.exc_info())
+                instance.report_engine_event(
+                    error.message, run_to_launch, EngineEventData.engine_error(error),
+                )
+                instance.report_run_failed(run_to_launch)
+
+    _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
 
     tick_holder.update_with_status(ScheduleTickStatus.SUCCESS, run_id=run_to_launch.run_id)
+    _check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
 
 
 def _create_scheduler_run(

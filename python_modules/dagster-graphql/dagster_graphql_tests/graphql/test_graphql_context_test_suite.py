@@ -2,9 +2,9 @@ import inspect
 import sys
 
 import pytest
-from dagster_graphql.test.exploding_run_launcher import ExplodingRunLauncher
 
 from dagster import check
+from dagster.core.test_utils import ExplodingRunLauncher
 
 from .graphql_context_test_suite import GraphQLContextVariant, manage_graphql_context
 

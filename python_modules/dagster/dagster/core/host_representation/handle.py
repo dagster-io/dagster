@@ -75,6 +75,12 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
     def create_reloaded_handle(self):
         pass
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.cleanup()
+
     def cleanup(self):
         pass
 

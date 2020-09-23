@@ -5,7 +5,6 @@ from contextlib import contextmanager
 import pytest
 import six
 from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.test.exploding_run_launcher import ExplodingRunLauncher
 
 from dagster import check, file_relative_path, seven
 from dagster.cli.workspace import Workspace
@@ -19,7 +18,7 @@ from dagster.core.storage.local_compute_log_manager import LocalComputeLogManage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test_tempdir
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
@@ -135,7 +134,7 @@ class InstanceManagers:
                             "config": {"base_dir": temp_dir},
                         },
                         "run_launcher": {
-                            "module": "dagster_graphql.test.exploding_run_launcher",
+                            "module": "dagster.core.test_utils",
                             "class": "ExplodingRunLauncher",
                         },
                     },
@@ -151,7 +150,7 @@ class InstanceManagers:
             with graphql_postgres_instance(
                 overrides={
                     "run_launcher": {
-                        "module": "dagster_graphql.test.exploding_run_launcher",
+                        "module": "dagster.core.test_utils",
                         "class": "ExplodingRunLauncher",
                     }
                 }
