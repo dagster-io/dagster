@@ -1,4 +1,4 @@
-import {Button, ButtonGroup, Colors} from '@blueprintjs/core';
+import {Button, Colors, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -52,26 +52,31 @@ const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
       />
 
       <LogsToolbarDivider />
-      <ButtonGroup>
-        {Object.keys(LogLevel).map((level) => (
-          <Button
-            key={level}
-            text={level.toLowerCase()}
-            small={true}
-            style={{textTransform: 'capitalize'}}
-            active={filter.levels[level]}
-            onClick={() =>
-              onSetFilter({
-                ...filter,
-                levels: {
-                  ...filter.levels,
-                  [level]: !filter.levels[level],
-                },
-              })
-            }
-          />
-        ))}
-      </ButtonGroup>
+      <div style={{display: 'flex'}}>
+        {Object.keys(LogLevel).map((level) => {
+          const enabled = filter.levels[level];
+          return (
+            <FilterTag
+              key={level}
+              intent={enabled ? 'primary' : 'none'}
+              interactive
+              minimal={!enabled}
+              onClick={() =>
+                onSetFilter({
+                  ...filter,
+                  levels: {
+                    ...filter.levels,
+                    [level]: !enabled,
+                  },
+                })
+              }
+              round
+            >
+              {level.toLowerCase()}
+            </FilterTag>
+          );
+        })}
+      </div>
       {selectedStep && <LogsToolbarDivider />}
       {selectedStep && (
         <ComputeLogLink stepKey={selectedStep} runState={selectedStepState}>
@@ -110,4 +115,10 @@ const LogsToolbarDivider = styled.div`
   height: 30px;
   margin: 0 15px;
   border-right: 1px solid ${Colors.LIGHT_GRAY3};
+`;
+
+const FilterTag = styled(Tag)`
+  margin-right: 8px;
+  text-transform: capitalize;
+  opacity: ${({minimal}) => (minimal ? '0.5' : '1')};
 `;
