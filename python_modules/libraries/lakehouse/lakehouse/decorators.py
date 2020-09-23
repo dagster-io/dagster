@@ -8,7 +8,7 @@ from .computation import AssetDependency, Computation
 from .table import Table
 
 
-def computed_asset(storage_key="default_storage", path=None, input_assets=None):
+def computed_asset(storage_key="default_storage", path=None, input_assets=None, version=None):
     """Create an Asset with its computation built from the decorated function.
 
     The type annotations on the arguments and return value of the decorated function are use to
@@ -24,6 +24,9 @@ def computed_asset(storage_key="default_storage", path=None, input_assets=None):
             passed, the keys should be the same as the names of the decorated function's arguments.
             If a list is passed, the first asset in the list is mapped to the first argument of the
             decorated function, and so on.
+        version (Optional[str]): The version of the asset's computation.  Two assets should have
+            the same version if and only if their computations deterministically produce the same
+            outputs when provided the same inputs.
 
     Examples:
 
@@ -62,14 +65,19 @@ def computed_asset(storage_key="default_storage", path=None, input_assets=None):
             storage_key=storage_key,
             path=_path,
             computation=Computation(
-                compute_fn=fn, deps=kwarg_deps, output_in_memory_type=_infer_output_type(fn),
+                compute_fn=fn,
+                deps=kwarg_deps,
+                output_in_memory_type=_infer_output_type(fn),
+                version=version,
             ),
         )
 
     return _computed_asset
 
 
-def computed_table(storage_key="default_storage", path=None, input_assets=None, columns=None):
+def computed_table(
+    storage_key="default_storage", path=None, input_assets=None, columns=None, version=None
+):
     """Create a Table with its computation built from the decorated function.
 
     The type annotations on the arguments and return value of the decorated function are use to
@@ -86,6 +94,9 @@ def computed_table(storage_key="default_storage", path=None, input_assets=None, 
             If a list is passed, the first asset in the list is mapped to the first argument of the
             decorated function, and so on.
         columns (Optional[List[Column]]): The table's columns.
+        version (Optional[str]): The version of the table's computation. Two tables should have
+            the same version if and only if their computations deterministically produce the same
+            outputs when provided the same inputs.
     """
 
     def _computed_table(fn):
@@ -97,7 +108,10 @@ def computed_table(storage_key="default_storage", path=None, input_assets=None, 
             storage_key=storage_key,
             path=_path,
             computation=Computation(
-                compute_fn=fn, deps=kwarg_deps, output_in_memory_type=_infer_output_type(fn),
+                compute_fn=fn,
+                deps=kwarg_deps,
+                output_in_memory_type=_infer_output_type(fn),
+                version=version,
             ),
             columns=columns,
         )

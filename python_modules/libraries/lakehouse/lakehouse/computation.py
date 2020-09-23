@@ -14,7 +14,7 @@ class AssetDependency(namedtuple("_AssetDependency", "asset in_memory_type")):
     """
 
 
-class Computation(namedtuple("_Computation", "compute_fn deps output_in_memory_type")):
+class Computation(namedtuple("_Computation", "compute_fn deps output_in_memory_type version")):
     """A description of the computation responsible for producing an asset.
 
     E.g. a SQL select statement or python code that trains an ML model.
@@ -31,9 +31,12 @@ class Computation(namedtuple("_Computation", "compute_fn deps output_in_memory_t
             to produce the asset's contents, keyed by their arg names in the compute_fn
             definition.
         output_in_memory_type (Type): The python type that the compute_fn will return.
+        version (Optional[str]): The version of the computation. Two computations should have
+            the same version if and only if they deterministically produce the same outputs when
+            provided the same inputs.
     """
 
-    def __new__(cls, compute_fn, deps, output_in_memory_type):
+    def __new__(cls, compute_fn, deps, output_in_memory_type, version):
         return super(Computation, cls).__new__(
             cls,
             compute_fn=check.callable_param(compute_fn, "compute_fn"),
@@ -41,4 +44,5 @@ class Computation(namedtuple("_Computation", "compute_fn deps output_in_memory_t
             output_in_memory_type=check.inst_param(
                 output_in_memory_type, "output_in_memory_type", type
             ),
+            version=version,
         )

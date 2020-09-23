@@ -155,6 +155,7 @@ class Lakehouse:
             config_schema=None,
             required_resource_keys=required_resource_keys,
             positional_inputs=None,
+            version=computed_asset.computation.version,
         )
 
     def _create_asset_solid_compute_wrapper(self, asset, input_defs, output_def):

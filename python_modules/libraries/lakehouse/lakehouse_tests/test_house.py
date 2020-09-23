@@ -27,12 +27,13 @@ def test_get_computed_asset_solid_def_name(basic_lakehouse):
 
 
 def test_get_computed_asset_solid_def_no_deps(basic_lakehouse):
-    @computed_asset(storage_key="storage1")
+    @computed_asset(storage_key="storage1", version="some_version")
     def some_asset() -> int:
         return 1
 
     solid_def = basic_lakehouse.get_computed_asset_solid_def(some_asset, [])
     assert solid_def.required_resource_keys == {"storage1"}
+    assert solid_def.version == "some_version"
     _assert_input_defs(solid_def, [])
     _assert_output_def(solid_def, some_asset.dagster_type, "result")
 

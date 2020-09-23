@@ -167,3 +167,11 @@ def test_computed_table_multiple_deps_list():
     assert casset.computation.deps["c_"].in_memory_type == float
     assert casset.computation.deps["c_"].asset == source_asset2
     assert casset.columns == COLUMNS
+
+
+def test_version():
+    @computed_asset(version="some_version")
+    def casset() -> str:
+        return "a"
+
+    assert casset.computation.version == "some_version"
