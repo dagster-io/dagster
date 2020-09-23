@@ -81,6 +81,7 @@ class InProgressCompositionContext(object):
     ):
         if given_alias is None:
             solid_name = solid_def.name
+            self._pending_invocations.pop(solid_name, None)
             if self._collisions.get(solid_name):
                 self._collisions[solid_name] += 1
                 solid_name = "{solid_name}_{n}".format(
@@ -90,6 +91,7 @@ class InProgressCompositionContext(object):
                 self._collisions[solid_name] = 1
         else:
             solid_name = given_alias
+            self._pending_invocations.pop(solid_name, None)
 
         if self._invocations.get(solid_name):
             raise DagsterInvalidDefinitionError(
@@ -97,8 +99,6 @@ class InProgressCompositionContext(object):
                     source=self.source, name=self.name, solid_name=solid_name
                 )
             )
-
-        self._pending_invocations.pop(solid_name, None)
 
         self._invocations[solid_name] = InvokedSolidNode(
             solid_name, solid_def, input_bindings, input_mappings, tags, hook_defs

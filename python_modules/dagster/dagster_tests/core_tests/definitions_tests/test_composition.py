@@ -533,6 +533,18 @@ def single_input_solid():
     return
 
 
+def test_collision_invocations():
+    with pytest.warns(None) as record:
+
+        @pipeline
+        def _():
+            single_input_solid()
+            single_input_solid()
+            single_input_solid()
+
+    assert len(record) == 0
+
+
 def test_alias_invoked(recwarn):
     @pipeline
     def _():
