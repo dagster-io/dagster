@@ -1,4 +1,4 @@
-import {Button, Colors, Tag} from '@blueprintjs/core';
+import {Button, Checkbox, Colors, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -13,8 +13,10 @@ import {GetFilterProviders, LogFilter, LogFilterValue, LogLevel} from './LogsPro
 interface ILogsToolbarProps {
   steps: string[];
   filter: LogFilter;
+  hideNonMatches: boolean;
   metadata: IRunMetadataDict;
 
+  onHideNonMatches: (checked: boolean) => void;
   onSetFilter: (filter: LogFilter) => void;
 }
 
@@ -33,11 +35,20 @@ const suggestionProvidersFilter = (
 };
 
 const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
-  const {steps, filter, metadata, onSetFilter} = props;
+  const {steps, filter, hideNonMatches, metadata, onHideNonMatches, onSetFilter} = props;
 
   const selectedStep = filter.values.find((v) => v.token === 'step')?.value || null;
   const selectedStepState =
     (selectedStep && metadata.steps[selectedStep]?.state) || IStepState.PREPARING;
+
+  const filterText = filter.values.reduce((accum, value) => accum + value.value, '');
+
+  const handleCheckboxChange = React.useCallback(
+    (event) => {
+      onHideNonMatches(event.target.checked);
+    },
+    [onHideNonMatches],
+  );
 
   return (
     <LogsToolbarContainer>
@@ -50,7 +61,11 @@ const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
         suggestionProvidersFilter={suggestionProvidersFilter}
         loading={false}
       />
-
+      {filterText ? (
+        <NonMatchCheckbox inline onChange={handleCheckboxChange} checked={hideNonMatches}>
+          Hide non-matches
+        </NonMatchCheckbox>
+      ) : null}
       <LogsToolbarDivider />
       <div style={{display: 'flex'}}>
         {Object.keys(LogLevel).map((level) => {
@@ -90,7 +105,6 @@ const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
         icon={IconNames.ERASER}
         onClick={() => onSetFilter({...filter, since: Date.now()})}
       />
-      {props.children}
     </LogsToolbarContainer>
   );
 };
@@ -101,7 +115,6 @@ const LogsToolbarContainer = styled.div`
   display: flex;
   flex-direction: row;
   background: ${Colors.WHITE};
-  height: 40px;
   align-items: center;
   padding: 5px 15px;
   border-bottom: 1px solid ${Colors.GRAY4};
@@ -109,11 +122,17 @@ const LogsToolbarContainer = styled.div`
   z-index: 2;
 `;
 
+const NonMatchCheckbox = styled(Checkbox)`
+  &&& {
+    margin: 0 4px 0 12px;
+  }
+`;
+
 const LogsToolbarDivider = styled.div`
   display: inline-block;
   width: 1px;
   height: 30px;
-  margin: 0 15px;
+  margin: 0 8px;
   border-right: 1px solid ${Colors.LIGHT_GRAY3};
 `;
 

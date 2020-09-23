@@ -17,7 +17,7 @@ const bgcolorForLevel = (level: LogLevel) =>
     [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`,
   }[level]);
 
-export const Row = styled.div<{level: LogLevel}>`
+export const Row = styled.div<{level: LogLevel; textMatch: boolean}>`
   font-size: 0.75em;
   width: 100%;
   height: 100%;
@@ -31,9 +31,9 @@ export const Row = styled.div<{level: LogLevel}>`
   align-items: baseline;
   overflow: hidden;
   border-top: 1px solid ${Colors.LIGHT_GRAY3};
-  background: ${(props) => bgcolorForLevel(props.level)};
+  background: ${({textMatch, level}) => (textMatch ? '#ffe39f' : bgcolorForLevel(level))};
   &:hover {
-    background: white;
+    background: ${({textMatch}) => (textMatch ? '#ffe39f' : 'white')};
   }
   color: ${(props) =>
     ({

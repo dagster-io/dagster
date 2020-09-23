@@ -166,12 +166,13 @@ export class Run extends React.Component<RunProps, RunState> {
           filter={logsFilter}
           selectedSteps={selectedSteps}
         >
-          {({filteredNodes, allNodes, loaded}) => (
+          {({filteredNodes, hasTextFilter, textMatchNodes, loaded}) => (
             <RunWithData
               run={run}
               runId={runId}
               filteredNodes={filteredNodes}
-              allNodes={allNodes}
+              hasTextFilter={hasTextFilter}
+              textMatchNodes={textMatchNodes}
               logsLoading={!loaded}
               logsFilter={logsFilter}
               query={query}
@@ -192,8 +193,9 @@ export class Run extends React.Component<RunProps, RunState> {
 interface RunWithDataProps {
   run?: RunFragment;
   runId: string;
-  allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
   filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+  hasTextFilter: boolean;
+  textMatchNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
   logsFilter: LogFilter;
   query: string;
   selectedSteps: string[];
@@ -215,8 +217,9 @@ interface RunWithDataProps {
 const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   run,
   runId,
-  allNodes,
   filteredNodes,
+  hasTextFilter,
+  textMatchNodes,
   logsFilter,
   logsLoading,
   query,
@@ -230,6 +233,8 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const repoContext = React.useContext(DagsterRepositoryContext);
   const repository = repoContext?.repository;
   const repositoryLocation = repoContext?.repositoryLocation;
+
+  const [hideNonMatches, setHideNonMatches] = React.useState(true);
 
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
   const stepQuery = query !== '*' ? query : '';
@@ -278,8 +283,10 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
     onSetQuery(newSelected.join(', ') || '*');
   };
 
+  const onHideNonMatches = (checked: boolean) => setHideNonMatches(checked);
+
   return (
-    <RunMetadataProvider logs={allNodes}>
+    <RunMetadataProvider logs={filteredNodes}>
       {(metadata) => (
         <SplitPanelContainer
           ref={splitPanelContainer}
@@ -329,14 +336,17 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
             <LogsContainer>
               <LogsToolbar
                 filter={logsFilter}
+                hideNonMatches={hideNonMatches}
+                onHideNonMatches={onHideNonMatches}
                 onSetFilter={onSetLogsFilter}
                 steps={Object.keys(metadata.steps)}
                 metadata={metadata}
               />
               <LogsScrollingTable
-                nodes={filteredNodes}
+                filteredNodes={hasTextFilter && hideNonMatches ? textMatchNodes : filteredNodes}
+                textMatchNodes={textMatchNodes}
                 loading={logsLoading}
-                filterKey={JSON.stringify(logsFilter)}
+                filterKey={`${JSON.stringify(logsFilter)}-${JSON.stringify(hideNonMatches)}`}
                 metadata={metadata}
               />
             </LogsContainer>

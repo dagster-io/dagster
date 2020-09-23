@@ -64,8 +64,9 @@ interface LogsFilterProviderProps {
   filter: LogFilter;
   selectedSteps: string[];
   children: (props: {
-    allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+    hasTextFilter: boolean;
     filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
+    textMatchNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
     loaded: boolean;
   }) => React.ReactChild;
 }
@@ -191,8 +192,9 @@ export class LogsProvider extends React.Component<
 
     if (nodes === null) {
       return this.props.children({
-        allNodes: [],
+        hasTextFilter: false,
         filteredNodes: [],
+        textMatchNodes: [],
         loaded: false,
       });
     }
@@ -201,34 +203,41 @@ export class LogsProvider extends React.Component<
 
     const filteredNodes = nodes.filter((node) => {
       const l = node.__typename === 'LogMessageEvent' ? node.level : 'EVENT';
-
       if (!filter.levels[l]) {
         return false;
       }
       if (filter.since && Number(node.timestamp) < filter.since) {
         return false;
       }
-
-      return (
-        filter.values.length === 0 ||
-        filter.values.every((f) => {
-          if (f.token === 'query') {
-            return node.stepKey && selectedSteps.includes(node.stepKey);
-          }
-          if (f.token === 'step') {
-            return node.stepKey && node.stepKey === f.value;
-          }
-          if (f.token === 'type') {
-            return node.__typename.toLowerCase().includes(f.value);
-          }
-          return node.message.toLowerCase().includes(f.value.toLowerCase());
-        })
-      );
+      return true;
     });
 
+    const hasTextFilter = !!(filter.values.length && filter.values[0].value !== '');
+
+    const textMatchNodes = hasTextFilter
+      ? filteredNodes.filter((node) => {
+          return (
+            filter.values.length > 0 &&
+            filter.values.every((f) => {
+              if (f.token === 'query') {
+                return node.stepKey && selectedSteps.includes(node.stepKey);
+              }
+              if (f.token === 'step') {
+                return node.stepKey && node.stepKey === f.value;
+              }
+              if (f.token === 'type') {
+                return node.__typename.toLowerCase().includes(f.value);
+              }
+              return node.message.toLowerCase().includes(f.value.toLowerCase());
+            })
+          );
+        })
+      : [];
+
     return this.props.children({
-      allNodes: nodes,
+      hasTextFilter,
       filteredNodes,
+      textMatchNodes,
       loaded: true,
     });
   }

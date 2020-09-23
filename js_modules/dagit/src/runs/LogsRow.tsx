@@ -25,6 +25,7 @@ interface StructuredProps {
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   style: React.CSSProperties;
+  textMatch: boolean;
 }
 
 interface StructuredState {
@@ -166,7 +167,11 @@ export class Structured extends React.Component<StructuredProps, StructuredState
   render() {
     return (
       <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
-        <StructuredMemoizedContent node={this.props.node} metadata={this.props.metadata} />
+        <StructuredMemoizedContent
+          node={this.props.node}
+          metadata={this.props.metadata}
+          textMatch={this.props.textMatch}
+        />
       </CellTruncationProvider>
     );
   }
@@ -175,12 +180,14 @@ export class Structured extends React.Component<StructuredProps, StructuredState
 const StructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
+  textMatch: boolean;
 }> = React.memo(
-  ({node, metadata}) => (
+  ({node, metadata, textMatch}) => (
     <Row
       level={LogLevel.INFO}
       onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
       onMouseLeave={() => setHighlightedGaantChartTime(null)}
+      textMatch={textMatch}
     >
       <SolidColumn stepKey={'stepKey' in node && node.stepKey} />
       <StructuredContent>
@@ -195,6 +202,7 @@ const StructuredMemoizedContent: React.FunctionComponent<{
 interface UnstructuredProps {
   node: LogsRowUnstructuredFragment;
   style: React.CSSProperties;
+  textMatch: boolean;
 }
 
 export class Unstructured extends React.Component<UnstructuredProps> {
@@ -221,7 +229,7 @@ export class Unstructured extends React.Component<UnstructuredProps> {
   render() {
     return (
       <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
-        <UnstructuredMemoizedContent node={this.props.node} />
+        <UnstructuredMemoizedContent node={this.props.node} textMatch={this.props.textMatch} />
       </CellTruncationProvider>
     );
   }
@@ -229,12 +237,14 @@ export class Unstructured extends React.Component<UnstructuredProps> {
 
 const UnstructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowUnstructuredFragment;
+  textMatch: boolean;
 }> = React.memo(
-  ({node}) => (
+  ({node, textMatch}) => (
     <Row
       level={node.level}
       onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
       onMouseLeave={() => setHighlightedGaantChartTime(null)}
+      textMatch={textMatch}
     >
       <SolidColumn stepKey={node.stepKey} />
       <EventTypeColumn>{node.level}</EventTypeColumn>
