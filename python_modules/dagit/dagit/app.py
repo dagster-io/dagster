@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import gzip
 import io
 import os
 import uuid
@@ -18,6 +19,7 @@ from nbconvert import HTMLExporter
 from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.cli.workspace import Workspace
+from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
@@ -83,7 +85,7 @@ def notebook_view(request_args):
         return "<style>" + resources["inlining"]["css"][0] + "</style>" + body, 200
 
 
-def download_view(context):
+def download_log_view(context):
     context = check.inst_param(context, "context", DagsterGraphQLContext)
 
     def view(run_id, step_key, file_type):
@@ -108,6 +110,26 @@ def download_view(context):
         return send_file(
             result, as_attachment=True, attachment_filename=out_name, cache_timeout=timeout
         )
+
+    return view
+
+
+def download_dump_view(context):
+    context = check.inst_param(context, "context", DagsterGraphQLContext)
+
+    def view(run_id):
+        run = context.instance.get_run_by_id(run_id)
+        debug_payload = DebugRunPayload.build(context.instance, run)
+        check.invariant(run is not None)
+        out_name = "{}.gzip".format(run_id)
+
+        result = io.BytesIO()
+        with gzip.GzipFile(fileobj=result, mode="wb") as file:
+            debug_payload.write(file)
+
+        result.seek(0)  # be kind, please rewind
+
+        return send_file(result, as_attachment=True, attachment_filename=out_name)
 
     return view
 
@@ -151,7 +173,11 @@ def instantiate_app_with_views(context, app_path_prefix):
         # should match the `build_local_download_url`
         "/download/<string:run_id>/<string:step_key>/<string:file_type>",
         "download_view",
-        download_view(context),
+        download_log_view(context),
+    )
+
+    bp.add_url_rule(
+        "/download_debug/<string:run_id>", "download_dump_view", download_dump_view(context),
     )
 
     # these routes are specifically for the Dagit UI and are not part of the graphql

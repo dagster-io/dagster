@@ -16,6 +16,7 @@ import {useLazyQuery, useMutation} from 'react-apollo';
 import {showCustomAlert} from '../CustomAlertProvider';
 import {DagsterRepositoryContext} from '../DagsterRepositoryContext';
 import {SharedToaster} from '../DomUtils';
+import {ROOT_SERVER_URI} from '../DomUtils';
 import {HighlightedCodeBlock} from '../HighlightedCodeBlock';
 
 import {REEXECUTE_PIPELINE_UNKNOWN} from './RunActionButtons';
@@ -122,6 +123,12 @@ export const RunActionsMenu: React.FunctionComponent<{
               <MenuDivider />
             </>
           ) : null}
+          <MenuItem
+            text="Download Debug File"
+            icon="download"
+            download
+            href={`${ROOT_SERVER_URI}/download_debug/${run.runId}`}
+          />
           <MenuItem
             text="Delete"
             icon="trash"
