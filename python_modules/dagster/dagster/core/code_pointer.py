@@ -12,7 +12,7 @@ from dagster import check
 from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import whitelist_for_serdes
-from dagster.seven import import_module_from_path
+from dagster.seven import get_import_error_message, import_module_from_path
 from dagster.utils import alter_sys_path, load_yaml_from_path
 
 
@@ -91,7 +91,8 @@ def load_python_file(python_file, working_directory):
             with alter_sys_path(to_add=[working_directory], to_remove=[cwd]):
                 return import_module_from_path(module_name, python_file)
         except ImportError as ie:
-            if ie.msg == "attempted relative import with no known parent package":
+            msg = get_import_error_message(ie)
+            if msg == "attempted relative import with no known parent package":
                 six.raise_from(
                     DagsterImportError(
                         (
@@ -99,7 +100,7 @@ def load_python_file(python_file, working_directory):
                             "file {python_file}. Consider using the module-based options `-m` for "
                             "CLI-based targets or the `python_package` workspace.yaml target."
                         ).format(
-                            msg=ie.msg,
+                            msg=msg,
                             module=module_name,
                             python_file=os.path.abspath(os.path.expanduser(python_file)),
                         )
@@ -117,7 +118,7 @@ def load_python_file(python_file, working_directory):
                         "`--working-directory` for CLI based targets or the `working_directory` "
                         "configuration option for `python_file`-based workspace.yaml targets. "
                     ).format(
-                        msg=ie.msg,
+                        msg=msg,
                         module=module_name,
                         python_file=os.path.abspath(os.path.expanduser(python_file)),
                         working_directory=os.path.abspath(os.path.expanduser(working_directory)),

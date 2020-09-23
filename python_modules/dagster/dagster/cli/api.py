@@ -13,6 +13,7 @@ from dagster import check, seven
 from dagster.cli.workspace.cli_target import (
     get_repository_location_from_kwargs,
     get_repository_origin_from_kwargs,
+    get_working_directory_from_kwargs,
     python_origin_target_argument,
     repository_target_argument,
 )
@@ -536,7 +537,7 @@ def grpc_command(
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute=kwargs["attribute"],
-            working_directory=kwargs["working_directory"],
+            working_directory=get_working_directory_from_kwargs(kwargs),
             module_name=kwargs["module_name"],
             python_file=kwargs["python_file"],
         )

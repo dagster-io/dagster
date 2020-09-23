@@ -314,3 +314,10 @@ def is_main_thread():
         return isinstance(
             threading.current_thread(), threading._MainThread  # pylint: disable=W0212
         )
+
+
+def get_import_error_message(import_error):
+    if sys.version_info.major >= 3:
+        return import_error.msg
+    else:
+        return str(import_error)
