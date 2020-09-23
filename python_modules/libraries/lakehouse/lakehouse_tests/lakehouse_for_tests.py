@@ -1,7 +1,7 @@
-from lakehouse import Lakehouse, asset_storage, computed_asset
+from lakehouse import Lakehouse, computed_asset
 from lakehouse_tests.conftest import DictStorage
 
-from dagster import ModeDefinition
+from dagster import ModeDefinition, resource
 
 
 @computed_asset()
@@ -14,7 +14,7 @@ def asset2(_):
     pass
 
 
-@asset_storage()
+@resource()
 def a_storage(_):
     return DictStorage()
 

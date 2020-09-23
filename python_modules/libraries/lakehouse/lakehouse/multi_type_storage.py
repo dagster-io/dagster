@@ -1,8 +1,8 @@
 from typing import Dict, Type
 
-from dagster import check
+from dagster import ResourceDefinition, check, resource
 
-from .storage import AssetStorage, AssetStorageDefinition, asset_storage
+from .storage import AssetStorage
 
 
 class MultiTypeAssetStorage(AssetStorage):
@@ -45,9 +45,9 @@ class MultiTypeAssetStorage(AssetStorage):
 
 
 def multi_type_asset_storage(
-    config_schema, type_storage_defs: Dict[Type, AssetStorageDefinition]
+    config_schema, type_storage_defs: Dict[Type, ResourceDefinition]
 ) -> MultiTypeAssetStorage:
-    @asset_storage(config_schema=config_schema)
+    @resource(config_schema=config_schema)
     def result(init_context):
         type_storages = {
             type_: storage_def.resource_fn(init_context)

@@ -11,5 +11,5 @@ from .computation import Computation
 from .decorators import computed_asset, computed_table
 from .house import Lakehouse
 from .multi_type_storage import multi_type_asset_storage
-from .storage import AssetStorage, AssetStorageDefinition, asset_storage
+from .storage import AssetStorage
 from .table import Column, Table, source_table

@@ -13,11 +13,11 @@ from typing import Tuple
 
 import pandas as pd
 from dagster_pyspark import pyspark_resource
-from lakehouse import AssetStorage, Lakehouse, asset_storage, multi_type_asset_storage
+from lakehouse import AssetStorage, Lakehouse, multi_type_asset_storage
 from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 
-from dagster import ModeDefinition, StringSource
+from dagster import ModeDefinition, StringSource, resource
 
 
 class LocalFileSystem:
@@ -31,7 +31,7 @@ class LocalFileSystem:
 local_filesystem_config_schema = {"root": StringSource}
 
 
-@asset_storage(config_schema=local_filesystem_config_schema)
+@resource(config_schema=local_filesystem_config_schema)
 def pandas_df_local_filesystem_storage(init_context):
     local_fs = LocalFileSystem(init_context.resource_config)
 
@@ -72,7 +72,7 @@ def pandas_df_local_filesystem_storage(init_context):
     return Storage()
 
 
-@asset_storage(config_schema=local_filesystem_config_schema)
+@resource(config_schema=local_filesystem_config_schema)
 def spark_df_local_filesystem_storage(init_context):
     local_fs = LocalFileSystem(init_context.resource_config)
 

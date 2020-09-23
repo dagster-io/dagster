@@ -10,9 +10,9 @@ import os
 from typing import Tuple
 
 import pandas as pd
-from lakehouse import AssetStorage, Lakehouse, asset_storage
+from lakehouse import AssetStorage, Lakehouse
 
-from dagster import ModeDefinition, StringSource
+from dagster import ModeDefinition, StringSource, resource
 
 
 class LocalFileSystemStorage(AssetStorage):
@@ -34,7 +34,7 @@ class LocalFileSystemStorage(AssetStorage):
         return pd.read_csv(fpath)
 
 
-@asset_storage(config_schema={"root": StringSource})
+@resource(config_schema={"root": StringSource})
 def local_fs_storage(init_context):
     return LocalFileSystemStorage(init_context.resource_config["root"])
 
