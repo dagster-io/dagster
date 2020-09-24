@@ -24,7 +24,9 @@ from .test_scheduler_run import (
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         with freeze_time(execution_datetime):
-            launch_scheduled_runs(instance, get_current_datetime_in_utc(), debug_crash_flags)
+            launch_scheduled_runs(
+                instance, get_current_datetime_in_utc(), debug_crash_flags=debug_crash_flags
+            )
 
 
 @pytest.mark.parametrize("external_repo_context", [cli_api_repo, grpc_repo])

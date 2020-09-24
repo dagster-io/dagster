@@ -683,3 +683,48 @@ def test_launch_failure(external_repo_context):
                 ScheduleTickStatus.SUCCESS,
                 run.run_id,
             )
+
+
+def test_max_catchup_runs():
+    initial_datetime = datetime(
+        year=2019, month=2, day=27, hour=23, minute=59, second=59, tzinfo=get_utc_timezone(),
+    )
+    with instance_with_schedules(grpc_repo) as (instance, external_repo):
+        with freeze_time(initial_datetime) as frozen_datetime:
+            external_schedule = external_repo.get_external_schedule("simple_schedule")
+            schedule_origin = external_schedule.get_origin()
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            # Day is now March 4 at 11:59PM
+            frozen_datetime.tick(delta=timedelta(days=5))
+
+            launch_scheduled_runs(instance, get_current_datetime_in_utc(), max_catchup_runs=2)
+
+            assert instance.get_runs_count() == 2
+            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
+            assert len(ticks) == 2
+
+            first_datetime = datetime(year=2019, month=3, day=4, tzinfo=get_utc_timezone())
+
+            wait_for_all_runs_to_start(instance)
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                first_datetime,
+                ScheduleTickStatus.SUCCESS,
+                instance.get_runs()[0].run_id,
+            )
+            validate_run_started(instance.get_runs()[0], first_datetime, "2019-03-03")
+
+            second_datetime = datetime(year=2019, month=3, day=3, tzinfo=get_utc_timezone())
+
+            validate_tick(
+                ticks[1],
+                external_schedule,
+                second_datetime,
+                ScheduleTickStatus.SUCCESS,
+                instance.get_runs()[1].run_id,
+            )
+
+            validate_run_started(instance.get_runs()[1], second_datetime, "2019-03-02")

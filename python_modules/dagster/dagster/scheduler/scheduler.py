@@ -59,19 +59,27 @@ class ScheduleTickHolder:
         self._write()
 
 
+_DEFAULT_MAX_CATCHUP_RUNS = 5
+
+
 @click.command(
     name="run", help="Poll for scheduled runs form all running schedules and launch them",
 )
 @click.option("--interval", help="How frequently to check for runs to launch", default=30)
-def scheduler_run_command(interval):
-    execute_scheduler_command(interval)
+@click.option(
+    "--max-catchup-runs",
+    help="Max number of past runs since the schedule was started that we should execute",
+    default=_DEFAULT_MAX_CATCHUP_RUNS,
+)
+def scheduler_run_command(interval, max_catchup_runs):
+    execute_scheduler_command(interval, max_catchup_runs)
 
 
-def execute_scheduler_command(interval):
+def execute_scheduler_command(interval, max_catchup_runs):
     while True:
         with DagsterInstance.get() as instance:
             end_datetime_utc = get_current_datetime_in_utc()
-            launch_scheduled_runs(instance, end_datetime_utc)
+            launch_scheduled_runs(instance, end_datetime_utc, max_catchup_runs)
 
             time_left = interval - (get_current_datetime_in_utc() - end_datetime_utc).seconds
 
@@ -79,7 +87,9 @@ def execute_scheduler_command(interval):
                 time.sleep(time_left)
 
 
-def launch_scheduled_runs(instance, end_datetime_utc, debug_crash_flags=None):
+def launch_scheduled_runs(
+    instance, end_datetime_utc, max_catchup_runs=_DEFAULT_MAX_CATCHUP_RUNS, debug_crash_flags=None
+):
     schedules = [
         s for s in instance.all_stored_schedule_state() if s.status == ScheduleStatus.RUNNING
     ]
@@ -89,12 +99,13 @@ def launch_scheduled_runs(instance, end_datetime_utc, debug_crash_flags=None):
             instance,
             schedule_state,
             end_datetime_utc,
+            max_catchup_runs,
             (debug_crash_flags.get(schedule_state.name) if debug_crash_flags else None),
         )
 
 
 def launch_scheduled_runs_for_schedule(
-    instance, schedule_state, end_datetime_utc, debug_crash_flags=None
+    instance, schedule_state, end_datetime_utc, max_catchup_runs, debug_crash_flags=None
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(schedule_state, "schedule_state", ScheduleState)
@@ -110,11 +121,13 @@ def launch_scheduled_runs_for_schedule(
     else:
         start_timestamp_utc = latest_tick.timestamp + 1
 
-    start_time_utc = datetime.datetime.fromtimestamp(start_timestamp_utc, tz=get_utc_timezone())
+    start_datetime_utc = datetime.datetime.fromtimestamp(start_timestamp_utc, tz=get_utc_timezone())
 
-    for schedule_time_utc in croniter_range(
-        start_time_utc, end_datetime_utc, schedule_state.cron_schedule
-    ):
+    tick_times = list(
+        croniter_range(start_datetime_utc, end_datetime_utc, schedule_state.cron_schedule)
+    )
+
+    for schedule_time_utc in tick_times[-max_catchup_runs:]:
         if latest_tick and latest_tick.timestamp == schedule_time_utc.timestamp():
             tick = latest_tick
 
