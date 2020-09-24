@@ -1,6 +1,6 @@
 import fg from 'fast-glob';
 import path from 'path';
-import { promises as fs } from 'fs';
+import {promises as fs} from 'fs';
 import algoliasearch from 'algoliasearch';
 import data from '../data/searchindex.json';
 
@@ -25,32 +25,56 @@ async function preProcess() {
 }
 
 async function rewriteRelativeLinks() {
-  /* Generate list of all module files */
   const glob = path.join(DATA_PATH, '/**/*.json');
-  const excludeGlob = path.join(MODULE_PATH, '/**/*.json');
-  const entries = await fg([glob], { ignore: [excludeGlob] });
+  const moduleGlob = path.join(MODULE_PATH, '/**/*.json');
 
-  for (const entry of entries) {
-    const rawData = (await fs.readFile(entry)).toString();
-    const fileData = JSON.parse(rawData);
-    const body: string = fileData.body;
-    if (body) {
-      let transformed = body
-        .replace(/href="\.\.\/.*?(\/#.*?)"/g, (match) => {
-          return match.replace('/#', '#');
-        })
-        .replace(/href="(\.\.\/)[^.]/g, (match, p1) => {
-          return match.replace(p1, '');
-        });
-
-      if (entry.includes('/libraries/')) {
-        transformed = body.replace(/href="\.\.\/\.\.\//g, 'href="../');
-      }
-      fileData.body = transformed;
-      await fs.writeFile(entry, JSON.stringify(fileData), 'utf8');
-    }
+  const docEntries = await fg([glob], {ignore: [moduleGlob]});
+  for (const entry of docEntries) {
+    applyTransform(entry, transformDocLink);
   }
+
+  const moduleEntries = await fg([moduleGlob]);
+  for (const entry of moduleEntries) {
+    applyTransform(entry, transformModuleLink);
+  }
+
   console.log('✅ Re-wrote all relative links');
+}
+
+function transformDocLink(filename: string, fileContent: string) {
+  let transformed = fileContent
+    .replace(/href="\.\.\/.*?(\/#.*?)"/g, (match) => {
+      return match.replace('/#', '#');
+    })
+    .replace(/href="(\.\.\/)[^.]/g, (match, p1) => {
+      return match.replace(p1, '');
+    });
+
+  if (filename.includes('/libraries/')) {
+    transformed = fileContent.replace(/href="\.\.\/\.\.\//g, 'href="../');
+  }
+
+  return transformed;
+}
+
+function transformModuleLink(filename: string, fileContent: string) {
+  return fileContent.replace(/href="[^"]*"/g, (match) => {
+    return match.replace(/sections\/api\/apidocs\//g, '_apidocs/').replace('/#', '#');
+  });
+}
+
+async function applyTransform(
+  entry: string,
+  transformFn: (filename: string, content: string) => string,
+) {
+  const rawData = (await fs.readFile(entry)).toString();
+  const fileData = JSON.parse(rawData);
+  const body: string = fileData.body;
+  if (!body) {
+    return;
+  }
+  fileData.body = transformFn(entry, body);
+  await fs.writeFile(entry, JSON.stringify(fileData), 'utf8');
 }
 
 async function createModuleIndex() {
@@ -66,10 +90,7 @@ async function createModuleIndex() {
   const index = {
     docnames: relativeEntries,
   };
-  await fs.writeFile(
-    path.join(MODULE_PATH, 'searchindex.json'),
-    JSON.stringify(index),
-  );
+  await fs.writeFile(path.join(MODULE_PATH, 'searchindex.json'), JSON.stringify(index));
 
   console.log('✅ Generated list of all list and module files');
 }
@@ -85,7 +106,7 @@ const dirs = async (dirPath: string) => {
 };
 
 async function createAlgoliaIndex() {
-  const { NEXT_ALGOLIA_APP_ID, NEXT_ALGOLIA_ADMIN_KEY } = process.env;
+  const {NEXT_ALGOLIA_APP_ID, NEXT_ALGOLIA_ADMIN_KEY} = process.env;
 
   if (!NEXT_ALGOLIA_APP_ID || !NEXT_ALGOLIA_ADMIN_KEY) {
     if (process.env.NODE_ENV === 'production') {
@@ -125,15 +146,10 @@ async function createAlgoliaIndex() {
       const typeIndex: number = objProperties[1] as number;
       const type = objectNames[typeIndex][1];
       const alias: string = objProperties[3] as string;
-      const relativePath = data.docnames[docNamesIndex].replace(
-        'sections/api/apidocs/',
-        '',
-      );
+      const relativePath = data.docnames[docNamesIndex].replace('sections/api/_apidocs/', '');
 
       const path =
-        alias === ''
-          ? relativePath + `#${module}.${object}`
-          : relativePath + '#' + alias;
+        alias === '' ? relativePath + `#${module}.${object}` : relativePath + '#' + alias;
 
       const record = {
         objectID: `${module}.${object}.${type}.${alias}`,
@@ -148,19 +164,14 @@ async function createAlgoliaIndex() {
   }
 
   try {
-    await index.saveObjects(records, { autoGenerateObjectIDIfNotExist: true });
+    await index.saveObjects(records, {autoGenerateObjectIDIfNotExist: true});
     console.log('✅ Updated Algolia index');
   } catch {
     console.log('❌ Updated Algolia index');
   }
 }
 
-const steps = [
-  preProcess,
-  rewriteRelativeLinks,
-  createModuleIndex,
-  createAlgoliaIndex,
-];
+const steps = [preProcess, rewriteRelativeLinks, createModuleIndex, createAlgoliaIndex];
 
 (async () => {
   for (const step of steps) {
