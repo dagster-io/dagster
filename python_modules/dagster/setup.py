@@ -90,5 +90,10 @@ if __name__ == "__main__":
             'docstring-parser==0.7.1; python_version >="3.6"',
         ],
         extras_require={"docker": ["docker"],},
-        entry_points={"console_scripts": ["dagster = dagster.cli:main"]},
+        entry_points={
+            "console_scripts": [
+                "dagster = dagster.cli:main",
+                "dagster-scheduler = dagster.scheduler.cli:main",
+            ]
+        },
     )

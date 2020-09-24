@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import sys
 import time
@@ -26,15 +27,21 @@ from dagster.core.scheduler import (
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.grpc.types import ScheduleExecutionDataMode
-from dagster.seven import get_current_datetime_in_utc, get_utc_timezone
+from dagster.seven import (
+    get_current_datetime_in_utc,
+    get_timestamp_from_utc_datetime,
+    get_utc_timezone,
+)
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.log import default_format_string
 
 
 class ScheduleTickHolder:
-    def __init__(self, tick, instance):
+    def __init__(self, tick, instance, logger):
         self._tick = tick
         self._instance = instance
+        self._logger = logger
 
     @property
     def status(self):
@@ -54,12 +61,19 @@ class ScheduleTickHolder:
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
             self.update_with_status(ScheduleTickStatus.FAILURE, error=error_data)
             self._write()
+            self._logger.error(
+                "Error launching scheduled run: {error_info}".format(
+                    error_info=error_data.to_string()
+                ),
+            )
             return True  # Swallow the exception after logging in the tick DB
 
         self._write()
 
 
 _DEFAULT_MAX_CATCHUP_RUNS = 5
+
+_SCHEDULER_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
 
 
 @click.command(
@@ -75,11 +89,27 @@ def scheduler_run_command(interval, max_catchup_runs):
     execute_scheduler_command(interval, max_catchup_runs)
 
 
+def get_default_scheduler_logger():
+    handler = logging.StreamHandler(sys.stdout)
+    logger = logging.getLogger("dagster-scheduler")
+    logger.setLevel(logging.INFO)
+    logger.handlers = [handler]
+
+    formatter = logging.Formatter(default_format_string(), "%Y-%m-%d %H:%M:%S")
+
+    formatter.converter = time.localtime
+
+    handler.setFormatter(formatter)
+    return logger
+
+
 def execute_scheduler_command(interval, max_catchup_runs):
+    logger = get_default_scheduler_logger()
     while True:
         with DagsterInstance.get() as instance:
             end_datetime_utc = get_current_datetime_in_utc()
-            launch_scheduled_runs(instance, end_datetime_utc, max_catchup_runs)
+
+            launch_scheduled_runs(instance, logger, end_datetime_utc, max_catchup_runs)
 
             time_left = interval - (get_current_datetime_in_utc() - end_datetime_utc).seconds
 
@@ -88,15 +118,26 @@ def execute_scheduler_command(interval, max_catchup_runs):
 
 
 def launch_scheduled_runs(
-    instance, end_datetime_utc, max_catchup_runs=_DEFAULT_MAX_CATCHUP_RUNS, debug_crash_flags=None
+    instance,
+    logger,
+    end_datetime_utc,
+    max_catchup_runs=_DEFAULT_MAX_CATCHUP_RUNS,
+    debug_crash_flags=None,
 ):
     schedules = [
         s for s in instance.all_stored_schedule_state() if s.status == ScheduleStatus.RUNNING
     ]
 
+    logger.info(
+        "Checking for new runs for the following schedules: {schedule_names}".format(
+            schedule_names=", ".join([schedule.name for schedule in schedules]),
+        )
+    )
+
     for schedule_state in schedules:
         launch_scheduled_runs_for_schedule(
             instance,
+            logger,
             schedule_state,
             end_datetime_utc,
             max_catchup_runs,
@@ -105,7 +146,7 @@ def launch_scheduled_runs(
 
 
 def launch_scheduled_runs_for_schedule(
-    instance, schedule_state, end_datetime_utc, max_catchup_runs, debug_crash_flags=None
+    instance, logger, schedule_state, end_datetime_utc, max_catchup_runs, debug_crash_flags=None
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(schedule_state, "schedule_state", ScheduleState)
@@ -127,16 +168,46 @@ def launch_scheduled_runs_for_schedule(
         croniter_range(start_datetime_utc, end_datetime_utc, schedule_state.cron_schedule)
     )
 
-    for schedule_time_utc in tick_times[-max_catchup_runs:]:
-        if latest_tick and latest_tick.timestamp == schedule_time_utc.timestamp():
+    if not tick_times:
+        logger.info("No new runs for {schedule_name}".format(schedule_name=schedule_state.name))
+        return
+
+    if len(tick_times) > max_catchup_runs:
+        logger.warn(
+            "{schedule_name} has fallen behind, only launching {max_catchup_runs} runs".format(
+                schedule_name=schedule_state.name, max_catchup_runs=max_catchup_runs
+            )
+        )
+        tick_times = tick_times[-max_catchup_runs:]
+
+    if len(tick_times) == 1:
+        logger.info(
+            "Launching run for {schedule_name} at {time}".format(
+                schedule_name=schedule_state.name,
+                time=tick_times[0].strftime(_SCHEDULER_DATETIME_FORMAT),
+            )
+        )
+    else:
+        logger.info(
+            "Launching {num_runs} runs for {schedule_name} at the following times: {times}".format(
+                num_runs=len(tick_times),
+                schedule_name=schedule_state.name,
+                times=", ".join([time.strftime(_SCHEDULER_DATETIME_FORMAT) for time in tick_times]),
+            )
+        )
+
+    for schedule_time_utc in tick_times:
+        schedule_timestamp = get_timestamp_from_utc_datetime(schedule_time_utc)
+        if latest_tick and latest_tick.timestamp == schedule_timestamp:
             tick = latest_tick
+            logger.info("Resuming previously interrupted schedule execution")
 
         else:
             tick = instance.create_schedule_tick(
                 ScheduleTickData(
                     schedule_origin_id=schedule_state.schedule_origin_id,
                     schedule_name=schedule_state.name,
-                    timestamp=schedule_time_utc.timestamp(),
+                    timestamp=schedule_timestamp,
                     cron_schedule=schedule_state.cron_schedule,
                     status=ScheduleTickStatus.STARTED,
                 )
@@ -144,7 +215,7 @@ def launch_scheduled_runs_for_schedule(
 
             _check_for_debug_crash(debug_crash_flags, "TICK_CREATED")
 
-        with ScheduleTickHolder(tick, instance) as tick_holder:
+        with ScheduleTickHolder(tick, instance, logger) as tick_holder:
 
             _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
 
@@ -154,6 +225,7 @@ def launch_scheduled_runs_for_schedule(
                 repo_location = RepositoryLocation.from_handle(repo_location_handle)
                 _schedule_run_at_time(
                     instance,
+                    logger,
                     repo_location,
                     schedule_state,
                     schedule_time_utc,
@@ -176,7 +248,13 @@ def _check_for_debug_crash(debug_crash_flags, key):
 
 
 def _schedule_run_at_time(
-    instance, repo_location, schedule_state, schedule_time_utc, tick_holder, debug_crash_flags,
+    instance,
+    logger,
+    repo_location,
+    schedule_state,
+    schedule_time_utc,
+    tick_holder,
+    debug_crash_flags,
 ):
     schedule_name = schedule_state.name
 
@@ -221,13 +299,26 @@ def _schedule_run_at_time(
             # A run already exists and was launched for this time period,
             # but the scheduler must have crashed before the tick could be put
             # into a SUCCESS state
+
+            logger.info(
+                "Run {run_id} already completed for this execution of {schedule_name}".format(
+                    run_id=run.run_id, schedule_name=schedule_state.name
+                )
+            )
             tick_holder.update_with_status(ScheduleTickStatus.SUCCESS, run_id=run.run_id)
 
             return
-        run_to_launch = run
+        else:
+            logger.info(
+                "Run {run_id} already created for this execution of {schedule_name}".format(
+                    run_id=run.run_id, schedule_name=schedule_state.name
+                )
+            )
+            run_to_launch = run
     else:
         run_to_launch = _create_scheduler_run(
             instance,
+            logger,
             schedule_time_utc,
             repo_location,
             external_repo,
@@ -248,6 +339,11 @@ def _schedule_run_at_time(
     if run_to_launch.status != PipelineRunStatus.FAILURE:
         try:
             instance.launch_run(run_to_launch.run_id, external_pipeline)
+            logger.info(
+                "Completed scheduled launch of run {run_id} for {schedule_name}".format(
+                    run_id=run_to_launch.run_id, schedule_name=schedule_name
+                )
+            )
         except Exception as e:  # pylint: disable=broad-except
             if not isinstance(e, KeyboardInterrupt):
                 error = serializable_error_info_from_exc_info(sys.exc_info())
@@ -255,6 +351,11 @@ def _schedule_run_at_time(
                     error.message, run_to_launch, EngineEventData.engine_error(error),
                 )
                 instance.report_run_failed(run_to_launch)
+                logger.error(
+                    "Run {run_id} created successfully but failed to launch.".format(
+                        run_id=run_to_launch.run_id
+                    )
+                )
 
     _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
 
@@ -264,6 +365,7 @@ def _schedule_run_at_time(
 
 def _create_scheduler_run(
     instance,
+    logger,
     schedule_time_utc,
     repo_location,
     external_repo,
@@ -281,9 +383,19 @@ def _create_scheduler_run(
 
     if isinstance(schedule_execution_data, ExternalScheduleExecutionErrorData):
         error = schedule_execution_data.error
+        logger.error(
+            "Failed to fetch schedule data for {schedule_name}: {error}".format(
+                schedule_name=external_schedule.name, error=error.to_string()
+            ),
+        )
         tick_holder.update_with_status(ScheduleTickStatus.FAILURE, error=error)
         return None
     elif not schedule_execution_data.should_execute:
+        logger.info(
+            "should_execute returned False for {schedule_name}, skipping".format(
+                schedule_name=external_schedule.name
+            )
+        )
         # Update tick to skipped state and return
         tick_holder.update_with_status(ScheduleTickStatus.SKIPPED)
         return None
@@ -339,7 +451,12 @@ def _create_scheduler_run(
                 error.message, possibly_invalid_pipeline_run, EngineEventData.engine_error(error),
             )
         instance.report_run_failed(possibly_invalid_pipeline_run)
-
+        logger.error(
+            "Failed to fetch execution plan for {schedule_name}: {error_string}".format(
+                schedule_name=external_schedule.name,
+                error_string="\n".join([error.to_string() for error in execution_plan_errors]),
+            ),
+        )
     return possibly_invalid_pipeline_run
 
 
