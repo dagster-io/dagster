@@ -135,6 +135,36 @@ def test_resolve_step_output_versions_no_external_dependencies():
     )
 
 
+@solid
+def basic_solid(_):
+    return 5
+
+
+@solid
+def basic_takes_input_solid(_, intpt):
+    return intpt * 4
+
+
+@pipeline
+def default_version_pipeline():
+    return basic_takes_input_solid(basic_solid())
+
+
+def test_default_unmemoized_steps():
+    speculative_execution_plan = create_execution_plan(default_version_pipeline)
+
+    instance = DagsterInstance.ephemeral()
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=(
+            "While creating a memoized pipeline run, a version is None for step "
+            "(basic_takes_input_solid.compute|basic_solid.compute). Versions must be non-null "
+            "values when running a memoized pipeline."
+        ),
+    ):
+        instance.resolve_unmemoized_steps(speculative_execution_plan, run_config={}, mode="default")
+
+
 def test_resolve_unmemoized_steps_no_stored_results():
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
 
@@ -268,32 +298,6 @@ def test_external_dependencies():  # TODO: flesh out this test once version stor
     )
     assert "versioned_solid_ext_input.compute" in pipeline_run.step_keys_to_execute
     assert "versioned_solid_takes_input.compute" in pipeline_run.step_keys_to_execute
-    assert len(pipeline_run.step_keys_to_execute) == 2
-
-
-@solid
-def basic_solid(_):
-    return 5
-
-
-@solid
-def basic_takes_input_solid(_, intpt):
-    return intpt * 4
-
-
-@pipeline
-def default_version_pipeline():
-    return basic_takes_input_solid(basic_solid())
-
-
-def test_default_version():
-    instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=default_version_pipeline, tags={MEMOIZED_RUN_TAG: "true"},
-    )
-
-    assert "basic_solid.compute" in pipeline_run.step_keys_to_execute
-    assert "basic_takes_input_solid.compute" in pipeline_run.step_keys_to_execute
     assert len(pipeline_run.step_keys_to_execute) == 2
 
 
