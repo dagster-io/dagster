@@ -1,10 +1,45 @@
 # Changelog
 
-## 0.9.10 (Upcoming)
+## 0.9.10
 
 **Breaking Changes**
 
-- [dagster_dask] Removed the `compute` option from Dask DataFrame materialization configs for all output types. Setting this option to `False` (default `True`) would result in a future that is never computed, leading to missing materializations.
+- [dagster-dask] Removed the `compute` option from Dask DataFrame materialization configs for all output types. Setting this option to `False` (default `True`) would result in a future that is never computed, leading to missing materializations
+
+**Community Contributions**
+
+- Added a Dask resource (Thanks @[kinghuang](https://github.com/kinghuang)!)
+
+**New**
+
+- Console log messages are now streamlined to live on a single line per message
+- Added better messaging around `$DAGSTER_HOME` if it is not set or improperly setup when starting up a Dagster instance
+- Tools for exporting a file for debugging a run have been added:
+  - `dagster debug export` - a new CLI entry added for exporting a run by id to a file
+  - `dagit-debug` - a new CLI added for loading dagit with a run to debug
+  - `dagit` now has a button to download the debug file for a run via the action menu on the runs page
+- The `dagster api grpc` command now defaults to the current working directory if none is specified
+- Added retries to dagster-postgres connections
+- Fixed faulty warning message when invoking the same solid multiple times in the same context
+- Added ability to specify custom liveness probe for celery workers in kubernetes deployment
+
+**Bugfixes**
+
+- Fixed a bug where Dagster types like List/Set/Tuple/Dict/Optional were not displaying properly on dagit logs
+- Fixed endless spinners on `dagit --empty-workspace`
+- Fixed incorrect snapshot banner on pipeline view
+- Fixed visual overlapping of overflowing dagit logs
+- Fixed a bug where hanging runs when executing against a gRPC server could cause the Runs page to be unable to load
+- Fixed a bug in celery integration where celery tasks could return `None` when an iterable is expected, causing errors in the celery execution loop.
+
+**Experimental**
+
+- [lakehouse] Each time a Lakehouse solid updates an asset, it automatically generates an AssetMaterialization event
+- [lakehouse] Lakehouse computed_assets now accept a version argument that describes the version of the computation
+- Setting the “dagster/is_memoized_run” tag to true will cause the run to skip any steps whose versions match the versions of outputs produced in prior runs.
+- [dagster-dbt] Solids for running dbt CLI commands
+- Added extensive documentation to illuminate how versions are computed
+- Added versions for step inputs from config, default values, and from other step outputs
 
 ## 0.9.9
 
