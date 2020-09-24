@@ -59,7 +59,7 @@ def _dagster_home():
             (
                 "The environment variable $DAGSTER_HOME is not set. Dagster requires this "
                 "environment variable to be set to an existing directory in your filesystem "
-                "contains your dagster instance configuration file (dagster.yaml).\n"
+                "that contains your dagster instance configuration file (dagster.yaml).\n"
                 "You can resolve this error by exporting the environment variable."
                 "For example, you can run the following command in your shell or "
                 "include it in your shell configuration file:\n"
