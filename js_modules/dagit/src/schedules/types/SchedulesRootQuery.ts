@@ -99,6 +99,30 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   name: string;
 }
 
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
+  __typename: "CodePointerMetadata";
+  key: string;
+  value: string;
+}
+
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer {
+  __typename: "CodePointer";
+  metadata: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
+}
+
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin_PythonRepositoryOrigin {
+  __typename: "PythonRepositoryOrigin";
+  codePointer: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer;
+  executablePath: string;
+}
+
+export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin_GrpcRepositoryOrigin {
+  __typename: "GrpcRepositoryOrigin";
+  grpcUrl: string;
+}
+
+export type SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin = SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin_PythonRepositoryOrigin | SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin_GrpcRepositoryOrigin;
+
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
   pipelineName: string;
@@ -157,6 +181,7 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  repositoryOrigin: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_repositoryOrigin;
   repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;
@@ -202,6 +227,30 @@ export type SchedulesRootQuery_scheduleDefinitionsOrError = SchedulesRootQuery_s
 export interface SchedulesRootQuery_scheduleStatesOrError_RepositoryNotFoundError {
   __typename: "RepositoryNotFoundError";
 }
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
+  __typename: "CodePointerMetadata";
+  key: string;
+  value: string;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer {
+  __typename: "CodePointer";
+  metadata: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin {
+  __typename: "PythonRepositoryOrigin";
+  codePointer: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer;
+  executablePath: string;
+}
+
+export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_GrpcRepositoryOrigin {
+  __typename: "GrpcRepositoryOrigin";
+  grpcUrl: string;
+}
+
+export type SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin = SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin | SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_GrpcRepositoryOrigin;
 
 export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
@@ -261,6 +310,7 @@ export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  repositoryOrigin: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin;
   repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;

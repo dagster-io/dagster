@@ -6,6 +6,7 @@ from dagster_graphql.schema.errors import (
 )
 
 from dagster import check
+from dagster.core.origin import RepositoryGrpcServerOrigin
 from dagster.core.scheduler import ScheduleState
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
@@ -47,6 +48,7 @@ class DauphinScheduleState(dauphin.ObjectType):
     stats = dauphin.NonNull("ScheduleTickStatsSnapshot")
     logs_path = dauphin.NonNull(dauphin.String)
     running_schedule_count = dauphin.NonNull(dauphin.Int)
+    repository_origin = dauphin.NonNull("RepositoryOrigin")
     repository_origin_id = dauphin.NonNull(dauphin.String)
     id = dauphin.NonNull(dauphin.ID)
 
@@ -117,3 +119,10 @@ class DauphinScheduleState(dauphin.ObjectType):
 
     def resolve_repository_origin_id(self, _graphene_info):
         return self._schedule_state.repository_origin_id
+
+    def resolve_repository_origin(self, graphene_info):
+        origin = self._schedule_state.origin.get_repo_origin()
+        if isinstance(origin, RepositoryGrpcServerOrigin):
+            return graphene_info.schema.type_named("GrpcRepositoryOrigin")(origin)
+        else:
+            return graphene_info.schema.type_named("PythonRepositoryOrigin")(origin)

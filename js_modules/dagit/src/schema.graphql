@@ -1268,6 +1268,7 @@ type ScheduleState {
   stats: ScheduleTickStatsSnapshot!
   logsPath: String!
   runningScheduleCount: Int!
+  repositoryOrigin: RepositoryOrigin!
   repositoryOriginId: String!
   id: ID!
 }

@@ -58,7 +58,7 @@ const GetStaleReconcileSection: React.FunctionComponent<{
               storage database.
             </p>
             <p>
-              To reconcile schedule state, run <Code>dagster schedule reconcile</Code> or click{' '}
+              To reconcile schedule state, run <Code>dagster schedule up</Code> or click{' '}
               <ReconcileButton />
             </p>
           </div>

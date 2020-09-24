@@ -12,6 +12,20 @@ export const SCHEDULE_STATE_FRAGMENT = gql`
     __typename
     id
     scheduleOriginId
+    repositoryOrigin {
+      ... on PythonRepositoryOrigin {
+        codePointer {
+          metadata {
+            key
+            value
+          }
+        }
+        executablePath
+      }
+      ... on GrpcRepositoryOrigin {
+        grpcUrl
+      }
+    }
     repositoryOriginId
     scheduleName
     cronSchedule

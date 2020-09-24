@@ -38,6 +38,30 @@ export interface SchedulerRootQuery_scheduleStatesOrError_RepositoryNotFoundErro
   __typename: "RepositoryNotFoundError";
 }
 
+export interface SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
+  __typename: "CodePointerMetadata";
+  key: string;
+  value: string;
+}
+
+export interface SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer {
+  __typename: "CodePointer";
+  metadata: SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
+}
+
+export interface SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin {
+  __typename: "PythonRepositoryOrigin";
+  codePointer: SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer;
+  executablePath: string;
+}
+
+export interface SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_GrpcRepositoryOrigin {
+  __typename: "GrpcRepositoryOrigin";
+  grpcUrl: string;
+}
+
+export type SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin = SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin | SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin_GrpcRepositoryOrigin;
+
 export interface SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
   pipelineName: string;
@@ -96,6 +120,7 @@ export interface SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  repositoryOrigin: SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repositoryOrigin;
   repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;
