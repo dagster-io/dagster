@@ -1,12 +1,20 @@
-import {Button, Callout, Code, Intent} from '@blueprintjs/core';
+import {Button, Callout, Code, Divider, Icon, Intent} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import React, {useState} from 'react';
 import {useQuery} from 'react-apollo';
+import {useHistory} from 'react-router-dom';
 
-import {useRepositoryOptions} from '../DagsterRepositoryContext';
+import {ButtonLink} from '../ButtonLink';
+import {
+  DagsterRepoOption,
+  useCurrentRepositoryState,
+  useRepositoryOptions,
+} from '../DagsterRepositoryContext';
 import {Header, ScrollContainer} from '../ListComponents';
 import Loading from '../Loading';
 import PythonErrorInfo from '../PythonErrorInfo';
+import {RepositoryInformation} from '../RepositoryInformation';
 
 import {ScheduleStateRow} from './ScheduleRow';
 import {SCHEDULE_STATE_FRAGMENT, SchedulerTimezoneNote} from './ScheduleUtils';
@@ -14,7 +22,10 @@ import {SCHEDULER_FRAGMENT, SchedulerInfo} from './SchedulerInfo';
 import {
   SchedulerRootQuery,
   SchedulerRootQuery_scheduleStatesOrError,
+  SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results,
 } from './types/SchedulerRootQuery';
+
+type ScheduleState = SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results;
 
 export const SchedulerRoot: React.FunctionComponent<{}> = () => {
   const queryResult = useQuery<SchedulerRootQuery>(SCHEDULER_ROOT_QUERY, {
@@ -73,6 +84,63 @@ const UnloadableScheduleInfo: React.FunctionComponent<{}> = () => {
   );
 };
 
+const RepositorySchedules = ({
+  repositoryLoadableSchedules,
+  repositoryOriginId,
+  option,
+}: {
+  repositoryLoadableSchedules: ScheduleState[];
+  repositoryOriginId: string;
+  option: DagsterRepoOption;
+}) => {
+  const history = useHistory();
+  const {options} = useRepositoryOptions();
+  const [, setRepo] = useCurrentRepositoryState(options);
+
+  const {repository} = option;
+
+  const [showRepositoryOrigin, setShowRepositoryOrigin] = useState(false);
+
+  const goToRepositorySchedules = (dagsterRepoOption: DagsterRepoOption) => {
+    setRepo(dagsterRepoOption);
+    history.push(`/schedules`);
+  };
+
+  return (
+    <div key={repositoryOriginId} style={{marginTop: 30}}>
+      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 20}}>
+        <div style={{display: 'flex', alignItems: 'base'}}>
+          <h3 style={{marginTop: 0, marginBottom: 0}}>Repository: {repository.name}</h3>
+          <ButtonLink onClick={() => setShowRepositoryOrigin(!showRepositoryOrigin)}>
+            show info{' '}
+            <Icon icon={showRepositoryOrigin ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_RIGHT} />
+          </ButtonLink>
+        </div>
+        <Button
+          style={{marginLeft: 10}}
+          onClick={() => goToRepositorySchedules(option)}
+          small={true}
+        >
+          Go to repository schedules
+        </Button>{' '}
+      </div>
+      {showRepositoryOrigin && (
+        <Callout style={{marginBottom: 20}}>
+          <RepositoryInformation repository={repository} />
+        </Callout>
+      )}
+      {repositoryLoadableSchedules.map((scheduleState: any) => (
+        <ScheduleStateRow
+          scheduleState={scheduleState}
+          key={scheduleState.scheduleOriginId}
+          showStatus={true}
+          dagsterRepoOption={option}
+        />
+      ))}
+    </div>
+  );
+};
+
 const ScheduleStates: React.FunctionComponent<{
   scheduleStatesOrError: SchedulerRootQuery_scheduleStatesOrError;
 }> = ({scheduleStatesOrError}) => {
@@ -104,32 +172,56 @@ const ScheduleStates: React.FunctionComponent<{
     ({repositoryOriginId}) => !repositoryOriginIdMap.hasOwnProperty(repositoryOriginId),
   );
 
+  // Group loadable schedules by repository
+  const loadableSchedulesByRepositoryOriginId: {
+    [key: string]: ScheduleState[];
+  } = {};
+  for (const loadableSchedule of loadableSchedules) {
+    const {repositoryOriginId} = loadableSchedule;
+    if (!loadableSchedulesByRepositoryOriginId.hasOwnProperty(repositoryOriginId)) {
+      loadableSchedulesByRepositoryOriginId[repositoryOriginId] = [];
+    }
+
+    loadableSchedulesByRepositoryOriginId[repositoryOriginId].push(loadableSchedule);
+  }
+
   return (
     <div>
       <div style={{display: 'flex'}}>
-        <h2>All Schedules:</h2>
+        <h2 style={{marginBottom: 0}}>All Schedules:</h2>
         <div style={{flex: 1}} />
         <SchedulerTimezoneNote />
       </div>
-      {loadableSchedules.map((scheduleState) => (
-        <ScheduleStateRow
-          scheduleState={scheduleState}
-          key={scheduleState.scheduleOriginId}
-          showStatus={true}
-          dagsterRepoOption={repositoryOriginIdMap[scheduleState.repositoryOriginId]}
-        />
-      ))}
+      <Divider />
 
-      <h3 style={{marginTop: 20}}>Unloadable schedules:</h3>
-      <UnloadableScheduleInfo />
+      {Object.entries(loadableSchedulesByRepositoryOriginId).map((item) => {
+        const [repositoryOriginId, repositoryloadableSchedules]: [string, ScheduleState[]] = item;
+        const option = repositoryOriginIdMap[repositoryOriginId];
 
-      {unLoadableSchedules.map((scheduleState) => (
-        <ScheduleStateRow
-          scheduleState={scheduleState}
-          key={scheduleState.scheduleOriginId}
-          showStatus={true}
-        />
-      ))}
+        return (
+          <RepositorySchedules
+            key={repositoryOriginId}
+            repositoryOriginId={repositoryOriginId}
+            repositoryLoadableSchedules={repositoryloadableSchedules}
+            option={option}
+          />
+        );
+      })}
+
+      {unLoadableSchedules.length > 0 && (
+        <>
+          <h3 style={{marginTop: 20}}>Unloadable schedules:</h3>
+          <UnloadableScheduleInfo />
+
+          {unLoadableSchedules.map((scheduleState) => (
+            <ScheduleStateRow
+              scheduleState={scheduleState}
+              key={scheduleState.scheduleOriginId}
+              showStatus={true}
+            />
+          ))}
+        </>
+      )}
     </div>
   );
 };
