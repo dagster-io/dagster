@@ -1,16 +1,16 @@
-import {Button, Callout, Code, Intent} from '@blueprintjs/core';
+import { Button, Callout, Code, Intent } from '@blueprintjs/core';
 import gql from 'graphql-tag';
-import React, {useState} from 'react';
-import {useQuery} from 'react-apollo';
+import React, { useState } from 'react';
+import { useQuery } from 'react-apollo';
 
-import {useRepositoryOptions} from '../DagsterRepositoryContext';
-import {Header, ScrollContainer} from '../ListComponents';
+import { useRepositoryOptions } from '../DagsterRepositoryContext';
+import { Header, ScrollContainer } from '../ListComponents';
 import Loading from '../Loading';
 import PythonErrorInfo from '../PythonErrorInfo';
 
-import {ScheduleStateRow} from './ScheduleRow';
-import {SCHEDULE_STATE_FRAGMENT, SchedulerTimezoneNote} from './ScheduleUtils';
-import {SCHEDULER_FRAGMENT, SchedulerInfo} from './SchedulerInfo';
+import { ScheduleStateRow } from './ScheduleRow';
+import { SCHEDULE_STATE_FRAGMENT, SchedulerTimezoneNote } from './ScheduleUtils';
+import { SCHEDULER_FRAGMENT, SchedulerInfo } from './SchedulerInfo';
 import {
   SchedulerRootQuery,
   SchedulerRootQuery_scheduleStatesOrError,
@@ -27,7 +27,7 @@ export const SchedulerRoot: React.FunctionComponent<{}> = () => {
       <Header>Scheduler</Header>
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
-          const {scheduler, scheduleStatesOrError} = result;
+          const { scheduler, scheduleStatesOrError } = result;
           return (
             <>
               <SchedulerInfo schedulerOrError={scheduler} />
@@ -44,9 +44,9 @@ const UnloadableScheduleInfo: React.FunctionComponent<{}> = () => {
   const [showMore, setShowMore] = useState(false);
 
   return (
-    <Callout style={{marginBottom: 20}} intent={Intent.WARNING}>
-      <div style={{display: 'flex', justifyContent: 'space-between'}}>
-        <h4 style={{margin: 0}}>
+    <Callout style={{ marginBottom: 20 }} intent={Intent.WARNING}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <h4 style={{ margin: 0 }}>
           Note: You can turn off any of following running schedules, but you cannot turn them back
           on.{' '}
         </h4>
@@ -59,7 +59,7 @@ const UnloadableScheduleInfo: React.FunctionComponent<{}> = () => {
       </div>
 
       {showMore && (
-        <div style={{marginTop: 10}}>
+        <div style={{ marginTop: 10 }}>
           <p>
             Each schedule below was been previously reconciled and stored, but its corresponding{' '}
             <Code>ScheduleDefinition</Code> is not available in any of the currently loaded
@@ -75,8 +75,8 @@ const UnloadableScheduleInfo: React.FunctionComponent<{}> = () => {
 
 const ScheduleStates: React.FunctionComponent<{
   scheduleStatesOrError: SchedulerRootQuery_scheduleStatesOrError;
-}> = ({scheduleStatesOrError}) => {
-  const {options, error} = useRepositoryOptions();
+}> = ({ scheduleStatesOrError }) => {
+  const { options, error } = useRepositoryOptions();
 
   if (error) {
     return <PythonErrorInfo error={error} />;
@@ -87,7 +87,7 @@ const ScheduleStates: React.FunctionComponent<{
     return null;
   }
 
-  const {results: scheduleStates} = scheduleStatesOrError;
+  const { results: scheduleStates } = scheduleStatesOrError;
 
   // Build map of repositoryOriginId to DagsterRepoOption
   const repositoryOriginIdMap = {};
@@ -96,19 +96,19 @@ const ScheduleStates: React.FunctionComponent<{
   }
 
   // Seperate out schedules into in-scope and out-of-scope
-  const loadableSchedules = scheduleStates.filter(({repositoryOriginId}) =>
+  const loadableSchedules = scheduleStates.filter(({ repositoryOriginId }) =>
     repositoryOriginIdMap.hasOwnProperty(repositoryOriginId),
   );
 
   const unLoadableSchedules = scheduleStates.filter(
-    ({repositoryOriginId}) => !repositoryOriginIdMap.hasOwnProperty(repositoryOriginId),
+    ({ repositoryOriginId }) => !repositoryOriginIdMap.hasOwnProperty(repositoryOriginId),
   );
 
   return (
     <div>
-      <div style={{display: 'flex'}}>
+      <div style={{ display: 'flex' }}>
         <h2>All Schedules:</h2>
-        <div style={{flex: 1}} />
+        <div style={{ flex: 1 }} />
         <SchedulerTimezoneNote />
       </div>
       {loadableSchedules.map((scheduleState) => (
@@ -120,16 +120,21 @@ const ScheduleStates: React.FunctionComponent<{
         />
       ))}
 
-      <h3 style={{marginTop: 20}}>Unloadable schedules:</h3>
-      <UnloadableScheduleInfo />
+      {unLoadableSchedules.length ?
+        <>
+          <h3 style={{ marginTop: 20 }}>Unloadable schedules:</h3>
+          <UnloadableScheduleInfo />
 
-      {unLoadableSchedules.map((scheduleState) => (
-        <ScheduleStateRow
-          scheduleState={scheduleState}
-          key={scheduleState.scheduleOriginId}
-          showStatus={true}
-        />
-      ))}
+          {unLoadableSchedules.map((scheduleState) => (
+            <ScheduleStateRow
+              scheduleState={scheduleState}
+              key={scheduleState.scheduleOriginId}
+              showStatus={true}
+            />
+          ))}
+        </>
+        : <h3 style={{ marginTop: 20 }}>No unloadable schedules</h3>
+      }
     </div>
   );
 };
