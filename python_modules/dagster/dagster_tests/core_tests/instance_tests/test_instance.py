@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from dagster import PipelineDefinition, execute_pipeline, pipeline, solid
+from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, _dagster_home
@@ -11,7 +11,7 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster.core.test_utils import create_run_for_test, environ
+from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
 
 
 def test_get_run_by_id():
@@ -94,11 +94,40 @@ def test_create_execution_plan_snapshot():
 
 
 def test_dagster_home_not_set():
+    with environ({"DAGSTER_HOME": ""}):
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match=r"The environment variable \$DAGSTER_HOME is not set\.",
+        ):
+            _dagster_home()
+
+
+def test_invalid_configurable_class():
     with pytest.raises(
-        DagsterInvariantViolationError,
-        match=r"The environment variable \$DAGSTER_HOME is not set\.",
+        check.CheckError,
+        match=re.escape(
+            "Couldn't find class MadeUpRunLauncher in module when attempting to "
+            "load the configurable class dagster.MadeUpRunLauncher"
+        ),
     ):
-        _dagster_home()
+        with instance_for_test(
+            overrides={"run_launcher": {"module": "dagster", "class": "MadeUpRunLauncher"}}
+        ):
+            pass
+
+
+def test_invalid_configurable_module():
+    with pytest.raises(
+        check.CheckError,
+        match=re.escape(
+            "Couldn't import module made_up_module when attempting to load "
+            "the configurable class made_up_module.MadeUpRunLauncher",
+        ),
+    ):
+        with instance_for_test(
+            overrides={"run_launcher": {"module": "made_up_module", "class": "MadeUpRunLauncher"}}
+        ):
+            pass
 
 
 @pytest.mark.parametrize("dirname", (".", ".."))

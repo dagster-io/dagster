@@ -343,7 +343,7 @@ class ConfigurableClassData(
             module = importlib.import_module(self.module_name)
         except seven.ModuleNotFoundError:
             check.failed(
-                "Couldn't import module {module_name} when attempting to rehydrate the "
+                "Couldn't import module {module_name} when attempting to load the "
                 "configurable class {configurable_class}".format(
                     module_name=self.module_name,
                     configurable_class=self.module_name + "." + self.class_name,
@@ -353,7 +353,7 @@ class ConfigurableClassData(
             klass = getattr(module, self.class_name)
         except AttributeError:
             check.failed(
-                "Couldn't find class {class_name} in module when attempting to rehydrate the "
+                "Couldn't find class {class_name} in module when attempting to load the "
                 "configurable class {configurable_class}".format(
                     class_name=self.class_name,
                     configurable_class=self.module_name + "." + self.class_name,
@@ -381,7 +381,7 @@ class ConfigurableClassData(
 
 
 class ConfigurableClass(six.with_metaclass(ABCMeta)):
-    """Abstract mixin for classes that can be rehydrated from config.
+    """Abstract mixin for classes that can be loaded from config.
 
     This supports a powerful plugin pattern which avoids both a) a lengthy, hard-to-synchronize list
     of conditional imports / optional extras_requires in dagster core and b) a magic directory or

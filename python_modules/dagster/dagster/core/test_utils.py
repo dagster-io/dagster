@@ -140,16 +140,16 @@ def instance_for_test_tempdir(temp_dir, overrides=None, enable_telemetry=False):
     with environ({"DAGSTER_HOME": temp_dir}):
         with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
             yaml.dump(overrides, fd, default_flow_style=False)
-        try:
-            with DagsterInstance.get() as instance:
+        with DagsterInstance.get() as instance:
+            try:
                 yield instance
-        finally:
-            # To avoid filesystem contention when we close the temporary directory, wait for
-            # all runs to reach a terminal state, and close any subprocesses or threads
-            # that might be accessing the run history DB.
-            instance.run_launcher.join()
-            if isinstance(instance.run_launcher, (DefaultRunLauncher, GrpcRunLauncher)):
-                instance.run_launcher.cleanup_managed_grpc_servers()
+            finally:
+                # To avoid filesystem contention when we close the temporary directory, wait for
+                # all runs to reach a terminal state, and close any subprocesses or threads
+                # that might be accessing the run history DB.
+                instance.run_launcher.join()
+                if isinstance(instance.run_launcher, (DefaultRunLauncher, GrpcRunLauncher)):
+                    instance.run_launcher.cleanup_managed_grpc_servers()
 
 
 def create_run_for_test(

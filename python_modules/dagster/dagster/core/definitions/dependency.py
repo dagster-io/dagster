@@ -276,7 +276,7 @@ class SolidHandle(namedtuple("_SolidHandle", "name parent")):
 
     @classmethod
     def from_dict(cls, dict_repr):
-        """This method makes it possible to rehydrate a potentially nested SolidHandle after a
+        """This method makes it possible to load a potentially nested SolidHandle after a
         roundtrip through json.loads(json.dumps(SolidHandle._asdict()))"""
 
         check.dict_param(dict_repr, "dict_repr", key_type=str)
