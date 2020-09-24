@@ -313,7 +313,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 CeleryK8sJobExecutor,
                 step_key=step_key,
             )
-            return
+            return []
 
         # Ensure we stay below k8s name length limits
         k8s_name_key = get_k8s_job_name(run_id, step_key)
@@ -411,7 +411,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     CeleryK8sJobExecutor,
                     step_key=step_key,
                 )
-            return
+            return []
 
         try:
             wait_for_job_success(
@@ -432,7 +432,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 step_key=step_key,
             )
             delete_job(job_name=job_name, namespace=job_namespace)
-            return
+            return []
         except kubernetes.client.rest.ApiException as e:
             instance.report_engine_event(
                 "Encountered unexpected error while waiting on Kubernetes job {} for step {}, "
@@ -447,7 +447,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 CeleryK8sJobExecutor,
                 step_key=step_key,
             )
-            return
+            return []
 
         try:
             pod_names = get_pod_names_in_job(job_name, namespace=job_namespace)
@@ -465,7 +465,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 CeleryK8sJobExecutor,
                 step_key=step_key,
             )
-            return
+            return []
 
         # Post engine event for log retrieval
         engine_event = instance.report_engine_event(
