@@ -38,41 +38,45 @@ const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
   const isApiDocs = router.pathname.startsWith('/_apidocs');
 
   return (
-    <nav className="bg-white border-b border-gray-200 shadow fixed left-0 right-0 h-16 z-10">
-      <div className="mx-auto px-2 sm:px-4 lg:px-8">
+    <nav className="bg-white shadow-sm fixed left-0 right-0 h-16 z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex px-2 lg:px-0">
-            <div className="flex-shrink-0 flex items-center">
-              <VersionedLink href="/">
-                <a>
-                  <VersionedImage
-                    className="block h-6 w-auto"
-                    src="/assets/logos/small.png"
-                    alt="Logo"
-                  />
-                </a>
-              </VersionedLink>
-              <div className="ml-3 flex items-baseline">
-                <VersionedLink href="/">
-                  <a>
-                    <div className="text-lg font-bold tracking-widest uppercase hidden md:block">
-                      Dagster
-                    </div>
-                  </a>
-                </VersionedLink>
-
-                <div className="group ml-3 relative tracking-wide border-b font-medium cursor-pointer">
-                  <a href="/versions">{version}</a>
-                </div>
+          <div className="flex">
+            <a
+              href="https://dagster.io"
+              className="flex-shrink-0 flex items-center"
+            >
+              <img
+                className="block h-6 w-auto"
+                src="/assets/logos/small.png"
+                alt="Dagster logo"
+              />
+              <div
+                className="text-lg font-bold tracking-widest uppercase hidden md:block"
+                style={{ marginLeft: '.75rem' }}
+              >
+                Dagster
               </div>
-            </div>
+            </a>
             <div className="ml-6 flex">
+              <a
+                href="https://dagster.io"
+                className="ml-8 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out"
+              >
+                Home
+              </a>
+              <a
+                href="https://dagster.io/blog"
+                className="ml-8 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out"
+              >
+                Blog
+              </a>
               <VersionedLink href="/install">
                 <a
                   className={cx(
-                    'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-900 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out',
+                    'ml-8 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out',
                     {
-                      'border-indigo-500': !router.pathname.startsWith(
+                      'border-indigo-500 text-gray-900 ': !router.pathname.startsWith(
                         '/_apidocs',
                       ),
                     },
@@ -87,7 +91,7 @@ const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
                   className={cx(
                     'ml-2 lg:ml-8 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 focus:outline-none focus:border-indigo-700 transition duration-150 ease-in-out',
                     {
-                      'border-indigo-500': router.pathname.startsWith(
+                      'border-indigo-500 text-gray-900 ': router.pathname.startsWith(
                         '/_apidocs',
                       ),
                     },
@@ -96,17 +100,16 @@ const Header: React.FC<HeaderProps> = ({ onMobileToggleNavigationClick }) => {
                   API Docs
                 </a>
               </VersionedLink>
-
-              <a
-                href="https://dagster.io/blog"
-                target="_blank"
-                className="ml-2 lg:ml-8 inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition duration-150 ease-in-out"
-              >
-                Blog
-              </a>
             </div>
           </div>
           {isApiDocs ? <Search /> : <DocSearch />}
+
+          <div className="flex-shrink-0 flex items-center">
+            <div className="group ml-3 relative tracking-wide border-b font-medium cursor-pointer">
+              <a href="/versions">{version}</a>
+            </div>
+          </div>
+
           <div className="flex items-center lg:hidden">
             <button
               onClick={() => onMobileToggleNavigationClick()}

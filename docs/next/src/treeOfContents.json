@@ -468,7 +468,7 @@
         "name": "Changing Public APIs"
       },
       {
-        "path": "https://join.slack.com/t/dagster/shared_invite/enQtNjEyNjkzNTA2OTkzLTI0MzdlNjU0ODVhZjQyOTMyMGM1ZDUwZDQ1YjJmYjI3YzExZGViMDI1ZDlkNTY5OThmYWVlOWM1MWVjN2I3NjU",
+        "path": "https://dagster-slackin.herokuapp.com/",
         "isAbsolutePath": true,
         "isExternal": true,
         "name": "Slack"
