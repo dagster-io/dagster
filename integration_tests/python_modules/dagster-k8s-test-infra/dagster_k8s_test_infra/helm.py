@@ -254,15 +254,6 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
             # https://github.com/dagster-io/dagster/issues/2671
             # 'extraWorkerQueues': [{'name': 'extra-queue-1', 'replicaCount': 1},],
             'livenessProbe': {
-                'exec': {
-                    'command': [
-                        '/bin/sh',
-                        '-c',
-                        'celery status -A dagster_celery_k8s.app -b {broker_url} | grep "{HOSTNAME}:.*OK"'.format(
-                            broker_url='some_broker_url', HOSTNAME='some_hostname',
-                        ),
-                    ]
-                },
                 'initialDelaySeconds': 15,
                 'periodSeconds': 10,
                 'timeoutSeconds': 10,
@@ -339,15 +330,6 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
             # https://github.com/dagster-io/dagster/issues/2671
             # 'extraWorkerQueues': [{'name': 'extra-queue-1', 'replicaCount': 1},],
             'livenessProbe': {
-                'exec': {
-                    'command': [
-                        '/bin/sh',
-                        '-c',
-                        'celery status -A dagster_celery_k8s.app -b {broker_url} | grep "{HOSTNAME}:.*OK"'.format(
-                            broker_url='some_broker_url', HOSTNAME='some_hostname',
-                        ),
-                    ]
-                },
                 'initialDelaySeconds': 15,
                 'periodSeconds': 10,
                 'timeoutSeconds': 10,

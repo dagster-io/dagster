@@ -75,9 +75,8 @@ spec:
               subPath: celery.yaml
           resources:
             {{- toYaml .Values.celery.resources | nindent 12 }}
-    {{- if .Values.celery.livenessProbe }}
-      {{- if .Values.celery.livenessProbe.default }}
-        {{- if eq .Values.celery.livenessProbe.default true }}
+      {{- if .Values.celery.livenessProbe }}
+        {{- if not .Values.celery.livenessProbe.exec }}
           livenessProbe:
             exec:
               command:
@@ -104,11 +103,11 @@ spec:
             failureThreshold:
               {{- toYaml .Values.celery.livenessProbe.failureThreshold | nindent 14 }}
             {{- end }}
+        {{- else}}
+          livenessProbe:
+          {{- toYaml .Values.celery.livenessProbe | nindent 12 }}
         {{- end }}
-      {{- else}}
-        {{- toYaml .Values.celery.livenessProbe | nindent 12 }}
       {{- end }}
-    {{- end }}
       {{- with .Values.celery.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

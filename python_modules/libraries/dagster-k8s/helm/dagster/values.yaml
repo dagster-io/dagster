@@ -253,14 +253,13 @@ celery:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-  # For livenessProbe, leave `default: true` to use
-  # exec:
-  #   command:
-  #     - /bin/sh
-  #     - -c
-  #     - celery status -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
   livenessProbe:
-    default: true
+    # If `livenessProbe` does not contain `exec` field, then we will default to using:
+    # exec:
+    #   command:
+    #     - /bin/sh
+    #     - -c
+    #     - celery status -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
     initialDelaySeconds: 15
     periodSeconds: 10
     timeoutSeconds: 10
