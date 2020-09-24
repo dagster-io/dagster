@@ -15,11 +15,11 @@ interface DagsterErrorResponse extends ErrorResponse {
 
 const ErrorToaster = Toaster.create({position: Position.TOP_RIGHT});
 
-export const showGraphQLError = (error: DagsterGraphQLError) => {
+export const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) => {
   const message = (
     <div>
       Unexpected GraphQL error
-      <AppStackTraceLink error={error} />
+      <AppStackTraceLink error={error} operationName={operationName} />
     </div>
   );
   ErrorToaster.show({message, intent: Intent.DANGER});
@@ -29,7 +29,9 @@ export const showGraphQLError = (error: DagsterGraphQLError) => {
 export const AppErrorLink = () => {
   return onError((response: DagsterErrorResponse) => {
     if (response.graphQLErrors) {
-      response.graphQLErrors.forEach((error) => showGraphQLError(error));
+      const {graphQLErrors, operation} = response;
+      const {operationName} = operation;
+      graphQLErrors.forEach((error) => showGraphQLError(error, operationName));
     }
     if (response.networkError) {
       ErrorToaster.show({
@@ -41,7 +43,12 @@ export const AppErrorLink = () => {
   });
 };
 
-const AppStackTraceLink = ({error}: {error: DagsterGraphQLError}) => {
+interface AppStackTraceLinkProps {
+  error: DagsterGraphQLError;
+  operationName?: string;
+}
+
+const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
   const title = 'Error';
   const stackTraceContent = error.stack_trace ? (
     <>
@@ -116,6 +123,7 @@ const AppStackTraceLink = ({error}: {error: DagsterGraphQLError}) => {
           overflowX: 'auto',
         }}
       >
+        {operationName ? `Operation name: ${operationName}\n\n` : null}
         Message: {error.message}
         {'\n\n'}
         Path: {JSON.stringify(error.path)}
