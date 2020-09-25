@@ -84,7 +84,7 @@ def test_should_publish(dagster_modules):
 
     assert dagster.should_publish
     assert dagster_k8s.should_publish
-    assert not lakehouse.should_publish
+    assert lakehouse.should_publish
 
 
 def test_construct_publish_comands():
