@@ -49,4 +49,4 @@ INTEGRATION_BASE_VERSION = "2020-07-03T094007"
 # Per README.md, run the unit build image pipeline
 # and then find the tag of the created images. A string
 # like the following will be in that tag.
-UNIT_IMAGE_VERSION = "2020-09-01T153819"
+UNIT_IMAGE_VERSION = "2020-09-25T230550"
