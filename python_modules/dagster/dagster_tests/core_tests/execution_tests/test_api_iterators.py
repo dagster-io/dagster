@@ -1,12 +1,16 @@
-from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, resource, solid
+import pytest
+
+from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, check, resource, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events.log import EventRecord, construct_event_logger
 from dagster.core.execution.api import (
     create_execution_plan,
     execute_pipeline_iterator,
     execute_plan_iterator,
+    execute_run,
     execute_run_iterator,
 )
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 
 @resource
@@ -100,6 +104,52 @@ def test_execute_run_iterator():
     assert len([event for event in events if event.is_pipeline_failure]) > 0
     assert len([message for message in messages if message == "CLEANING A"]) > 0
     assert len([message for message in messages if message == "CLEANING B"]) > 0
+
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
+    ).with_status(PipelineRunStatus.SUCCESS)
+
+    with pytest.raises(
+        check.CheckError,
+        match=r"Pipeline run basic_resource_pipeline \({}\) in state"
+        r" PipelineRunStatus.SUCCESS, expected PipelineRunStatus.NOT_STARTED".format(
+            pipeline_run.run_id
+        ),
+    ):
+        execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+
+
+def test_execute_run_bad_state():
+    records = []
+
+    def event_callback(record):
+        assert isinstance(record, EventRecord)
+        records.append(record)
+
+    instance = DagsterInstance.local_temp()
+
+    pipeline_def = PipelineDefinition(
+        name="basic_resource_pipeline",
+        solid_defs=[resource_solid],
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"a": resource_a, "b": resource_b},
+                logger_defs={"callback": construct_event_logger(event_callback)},
+            )
+        ],
+    )
+    pipeline_run = instance.create_run_for_pipeline(
+        pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
+    ).with_status(PipelineRunStatus.SUCCESS)
+
+    with pytest.raises(
+        check.CheckError,
+        match=r"Pipeline run basic_resource_pipeline \({}\) in state"
+        r" PipelineRunStatus.SUCCESS, expected PipelineRunStatus.NOT_STARTED".format(
+            pipeline_run.run_id
+        ),
+    ):
+        execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
 
 
 def test_execute_plan_iterator():

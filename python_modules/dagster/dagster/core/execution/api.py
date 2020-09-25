@@ -51,7 +51,12 @@ def execute_run_iterator(pipeline, pipeline_run, instance):
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
-    check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
+    check.invariant(
+        pipeline_run.status == PipelineRunStatus.NOT_STARTED,
+        desc="Pipeline run {} ({}) in state {}, expected PipelineRunStatus.NOT_STARTED".format(
+            pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+        ),
+    )
 
     if pipeline_run.solids_to_execute:
         pipeline_def = pipeline.get_definition()
@@ -119,8 +124,12 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
-    check.invariant(pipeline_run.status == PipelineRunStatus.NOT_STARTED)
-
+    check.invariant(
+        pipeline_run.status == PipelineRunStatus.NOT_STARTED,
+        desc="Pipeline run {} ({}) in state {}, expected PipelineRunStatus.NOT_STARTED".format(
+            pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
+        ),
+    )
     pipeline_def = pipeline.get_definition()
     if pipeline_run.solids_to_execute:
         if isinstance(pipeline_def, PipelineSubsetDefinition):
