@@ -1,0 +1,57 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+import PyObject from 'components/PyObject';
+
+<DynamicMetaTags
+  title="Execution | Dagster"
+  description="How to execute solids and pipelines in Dagster"
+/>
+
+# Executing Pipelines
+
+We provide several different ways to do one-off execution of pipelines and solids. For recurring execution, consult the /overview/scheduling-partitions/schedules section.
+
+## Dagit
+
+The Dagit [playground](/overview/dagit#playground) offers a way to interactively build up the configuration for a run of a pipeline. Drops downs are available for selecting any defined <PyObject module="dagster" object="PresetDefinition" displayText='Presets' /> or [partitions](/overview/scheduling-partitions/partitions)
+
+## CLI
+
+The `dagster` [cli](/_apidocs/cli) includes both `dagster pipeline execute` for direct execution as well as `dagster pipeline launch` for async launching.
+
+```
+dagster pipeline execute -f my_pipeline.py
+```
+
+## Python APIs
+
+We also provide python APIs for execution that are useful when writing tests or scripts. <PyObject module="dagster" object="execute_pipeline" /> allows for execution of a full pipeline, and returns a <PyObject module="dagster" object="PipelineExecutionResult" />
+
+```python literalinclude caption=test_pipeline.py
+file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
+startAfter:start_exec_pipeline
+endBefore:end_exec_pipeline
+```
+
+We also provide <PyObject module="dagster" object="execute_solid" /> for executing an individual solid. Under the hood this constructs an ephermal pipeline containing only this solid.
+
+```python literalinclude caption=test_solid.py
+file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
+startAfter:start_exec_solid
+endBefore:end_exec_solid
+```
+
+By default the python APIs will use an ephemeral <PyObject module="dagster.core.instance" object="DagsterInstance" /> to avoid reporting test runs to the instance. When using the python API for production runs, set the instance using `instance=DagsterInstance.get()` to use the default loading behavior for the instance.
+
+```python literalinclude caption=execute.py
+file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
+startAfter:start_script
+endBefore:end_script
+```
+
+If pipeline execution will involve reconstucting the pipeline in another process, such as when using the multi-process executor or dagstermill, the python APIs will need a <PyObject module="dagster" object="reconstructable" /> instance of the pipeline. This work is handled for you when using dagit or the cli. You will also need to configure the intermediate values between solids to be stored in a way that they can be accessed across processes.
+
+```python literalinclude caption=execute.py
+file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
+startAfter:start_multi_proc
+endBefore:end_multi_proc
+```

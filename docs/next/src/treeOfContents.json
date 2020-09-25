@@ -96,6 +96,10 @@
         ]
       },
       {
+        "name": "Execution",
+        "path": "/overview/execution/"
+      },
+      {
         "name": "Configuration",
         "path": "/overview/configuration/run-config",
         "childPath": true,
