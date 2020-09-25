@@ -32,7 +32,7 @@ DAGSTER_PG_PASSWORD_ENV_VAR = "DAGSTER_PG_PASSWORD"
 # We expect the PG secret to have this key.
 #
 # For an example, see:
-# python_modules/libraries/dagster-k8s/helm/dagster/templates/secret-postgres.yaml
+# helm/dagster/templates/secret-postgres.yaml
 DAGSTER_PG_PASSWORD_SECRET_KEY = "postgresql-password"
 
 # Kubernetes Job object names cannot be longer than 63 characters

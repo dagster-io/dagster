@@ -7,7 +7,8 @@
 To install the Dagster chart into your Kubernetes cluster:
 
 ```bash
-helm install --namespace "dagster" dagster dagster-k8s/helm/dagster/
+# TODO: Double check
+helm install --namespace "dagster" dagster /helm/dagster/
 ```
 
 After installation succeeds, you can get the chart status with:

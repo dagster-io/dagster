@@ -233,7 +233,7 @@ def helm(helm_repo, ver, dry_run):
     for more info on this process
     """
 
-    helm_path = os.path.join(git_repo_root(), "python_modules", "libraries", "dagster-k8s", "helm")
+    helm_path = os.path.join(git_repo_root(), "helm")
 
     check.invariant(
         get_git_repo_branch(helm_repo) == "gh-pages", "helm repo must be on gh-pages branch"
