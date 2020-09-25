@@ -26,6 +26,10 @@ def test_heartbeat():
         time.sleep(0.5)
         assert server.server_process.poll() is None
 
-        # without the heartbeat, the server dies
-        time.sleep(2)
-        assert server.server_process.poll() is not None
+        start_time = time.time()
+        while (time.time() - start_time) < 10:
+            if server.server_process.poll() is not None:
+                return
+            time.sleep(0.1)
+
+        raise Exception("Timed out waiting for server to terminate after heartbeat stopped")
