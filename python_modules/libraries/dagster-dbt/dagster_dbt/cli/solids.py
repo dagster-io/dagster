@@ -130,6 +130,7 @@ def passthrough_flags_only(solid_config, additional_flags):
 )
 @experimental
 def dbt_cli_run(context) -> DbtCliStatsResult:
+    """This solid executes ``dbt run`` via the dbt CLI."""
     logs, raw_output, return_code = execute_dbt(
         context.solid_config["dbt_executable"],
         command=("run",),
@@ -216,6 +217,7 @@ def dbt_cli_run(context) -> DbtCliStatsResult:
 )
 @experimental
 def dbt_cli_test(context) -> DbtCliStatsResult:
+    """This solid executes ``dbt test`` via the dbt CLI."""
     logs, raw_output, return_code = execute_dbt(
         context.solid_config["dbt_executable"],
         command=("test",),
@@ -284,6 +286,7 @@ def dbt_cli_test(context) -> DbtCliStatsResult:
 )
 @experimental
 def dbt_cli_snapshot(context) -> DbtCliResult:
+    """This solid executes ``dbt snapshot`` via the dbt CLI."""
     logs, raw_output, return_code = execute_dbt(
         context.solid_config["dbt_executable"],
         command=("snapshot",),
@@ -332,6 +335,7 @@ def dbt_cli_snapshot(context) -> DbtCliResult:
 )
 @experimental
 def dbt_cli_run_operation(context) -> DbtCliResult:
+    """This solid executes ``dbt run-operation`` via the dbt CLI."""
     logs, raw_output, return_code = execute_dbt(
         context.solid_config["dbt_executable"],
         command=("run-operation", context.solid_config["macro"]),
@@ -388,6 +392,7 @@ def dbt_cli_run_operation(context) -> DbtCliResult:
 )
 @experimental
 def dbt_cli_snapshot_freshness(context) -> DbtCliResult:
+    """This solid executes ``dbt source snapshot-freshness`` via the dbt CLI."""
     logs, raw_output, return_code = execute_dbt(
         context.solid_config["dbt_executable"],
         command=("source", "snapshot-freshness"),
@@ -470,6 +475,7 @@ def dbt_cli_snapshot_freshness(context) -> DbtCliResult:
 )
 @experimental
 def dbt_cli_compile(context) -> DbtCliResult:
+    """This solid executes ``dbt compile`` via the dbt CLI."""
     logs, raw_output, return_code = execute_dbt(
         context.solid_config["dbt_executable"],
         command=("compile",),

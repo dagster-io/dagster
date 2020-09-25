@@ -5,10 +5,12 @@ from dagster import EventMetadataEntry, Failure, check
 
 
 class DagsterDbtError(Failure, metaclass=ABCMeta):
-    """An exception in the Dagster dbt intergration."""
+    """The base exception of the ``dagster-dbt`` library."""
 
 
 class DagsterDbtUnexpectedCliOutputError(DagsterDbtError):
+    """Represents an error when parsing the output of a dbt CLI command."""
+
     invalid_line_nos: List[int]
 
     def __init__(self, invalid_line_nos: List[int]):
@@ -25,7 +27,7 @@ class DagsterDbtUnexpectedCliOutputError(DagsterDbtError):
 
 
 class DagsterDbtCliRuntimeError(DagsterDbtError, metaclass=ABCMeta):
-    """A runtime exception from dbt."""
+    """Represents an error while executing a dbt CLI command."""
 
     def __init__(self, description: str, parsed_output: List[dict], raw_output: str):
         metadata_entries = [
@@ -62,4 +64,4 @@ class DagsterDbtFatalCliRuntimeError(DagsterDbtCliRuntimeError):
 
 
 class DagsterDbtUnexpectedRpcPollOutput(DagsterDbtError):
-    pass
+    """Represents an unexpected response when polling the dbt RPC server."""

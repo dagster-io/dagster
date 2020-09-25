@@ -341,6 +341,10 @@
             "path": "/_apidocs/libraries/dagster_databricks"
           },
           {
+            "name": "dbt (dagster_dbt)",
+            "path": "/_apidocs/libraries/dagster_dbt"
+          },
+          {
             "name": "GCP (dagster_gcp)",
             "path": "/_apidocs/libraries/dagster_gcp"
           },

@@ -203,6 +203,11 @@ def unwrap_result(dbt_rpc_poll_generator) -> DbtRpcPollResult:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_run(context) -> String:
+    """This solid sends the ``dbt run`` command to a dbt RPC server and returns the request token.
+
+    This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
+    poll the progress of the running dbt process.
+    """
     resp = context.resources.dbt_rpc.run(
         models=context.solid_config["models"], exclude=context.solid_config["exclude"]
     )
@@ -266,7 +271,12 @@ def dbt_rpc_run(context) -> String:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_run_and_wait(context) -> DbtRpcPollResult:
+    """This solid sends the ``dbt run`` command to a dbt RPC server and returns the result of the
+    executed dbt process.
 
+    This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
+    process is completed.
+    """
     if context.solid_config["task_tags"]:
         results = context.resources.dbt_rpc.ps().json()
         for task in results["result"]["rows"]:
@@ -348,6 +358,11 @@ def dbt_rpc_run_and_wait(context) -> DbtRpcPollResult:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_test(context) -> String:
+    """This solid sends the ``dbt test`` command to a dbt RPC server and returns the request token.
+
+    This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
+    poll the progress of the running dbt process.
+    """
     resp = context.resources.dbt_rpc.test(
         models=context.solid_config["models"],
         exclude=context.solid_config["exclude"],
@@ -405,6 +420,12 @@ def dbt_rpc_test(context) -> String:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_test_and_wait(context) -> DbtRpcPollResult:
+    """This solid sends the ``dbt test`` command to a dbt RPC server and returns the result of the
+    executed dbt process.
+
+    This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
+    process is completed.
+    """
     resp = context.resources.dbt_rpc.test(
         models=context.solid_config["models"],
         exclude=context.solid_config["exclude"],
@@ -444,6 +465,12 @@ def dbt_rpc_test_and_wait(context) -> DbtRpcPollResult:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_run_operation(context) -> String:
+    """This solid sends the ``dbt run-operation`` command to a dbt RPC server and returns the
+    request token.
+
+    This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
+    poll the progress of the running dbt process.
+    """
     resp = context.resources.dbt_rpc.run_operation(
         macro=context.solid_config["macro"], args=context.solid_config["args"]
     )
@@ -485,6 +512,12 @@ def dbt_rpc_run_operation(context) -> String:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_run_operation_and_wait(context) -> DbtRpcPollResult:
+    """This solid sends the ``dbt run-operation`` command to a dbt RPC server and returns the result of the
+    executed dbt process.
+
+    This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
+    process is completed.
+    """
     resp = context.resources.dbt_rpc.run_operation(
         macro=context.solid_config["macro"], args=context.solid_config["args"]
     )
@@ -522,6 +555,12 @@ def dbt_rpc_run_operation_and_wait(context) -> DbtRpcPollResult:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_snapshot(context) -> String:
+    """This solid sends the ``dbt snapshot`` command to a dbt RPC server and returns the
+    request token.
+
+    This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
+    poll the progress of the running dbt process.
+    """
     resp = context.resources.dbt_rpc.snapshot(
         select=context.solid_config["select"], exclude=context.solid_config["exclude"]
     )
@@ -567,7 +606,12 @@ def dbt_rpc_snapshot(context) -> String:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_snapshot_and_wait(context) -> DbtRpcPollResult:
+    """This solid sends the ``dbt snapshot`` command to a dbt RPC server and returns the result of
+    the executed dbt process.
 
+    This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
+    process is completed.
+    """
     if context.solid_config["task_tags"]:
         results = context.resources.dbt_rpc.ps().json()
         for task in results["result"]["rows"]:
@@ -617,6 +661,12 @@ def dbt_rpc_snapshot_and_wait(context) -> DbtRpcPollResult:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_snapshot_freshness(context) -> String:
+    """This solid sends the ``dbt source snapshot-freshness`` command to a dbt RPC server and
+    returns the request token.
+
+    This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
+    poll the progress of the running dbt process.
+    """
     command = ""
 
     if context.solid_config["warn_error"]:
@@ -669,6 +719,12 @@ def dbt_rpc_snapshot_freshness(context) -> String:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_snapshot_freshness_and_wait(context) -> DbtRpcPollResult:
+    """This solid sends the ``dbt source snapshot`` command to a dbt RPC server and returns the
+    result of the executed dbt process.
+
+    This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
+    process is completed.
+    """
     command = ""
 
     if context.solid_config["warn_error"]:
@@ -718,6 +774,12 @@ def dbt_rpc_snapshot_freshness_and_wait(context) -> DbtRpcPollResult:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_compile_sql(context, sql: String) -> String:
+    """This solid sends the ``dbt compile`` command to a dbt RPC server and returns the request
+    token.
+
+    This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
+    poll the progress of the running dbt process.
+    """
     resp = context.resources.dbt_rpc.compile_sql(sql=sql, name=context.solid_config["name"])
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
@@ -729,17 +791,24 @@ def dbt_rpc_compile_sql(context, sql: String) -> String:
 def create_dbt_rpc_run_sql_solid(
     name: str, output_def: Optional[OutputDefinition] = None, **kwargs
 ) -> Callable:
-    """This function is a factory which constructs a solid that will copy the results of a SQL query run within the context of a dbt project to a DataFrame.
+    """This function is a factory which constructs a solid that will copy the results of a SQL query
+    run within the context of a dbt project to a pandas ``DataFrame``.
 
-    Any kwargs passed to this function will be passed along to the underlying @solid decorator.
-    However, note that overriding config, input_defs, and required_resource_keys is not supported. You might consider using
-    @composite_solid to wrap this solid in the cases where you'd like to configure the solid
-    with different config fields.
+    Any kwargs passed to this function will be passed along to the underlying :func:`@solid
+    <dagster.solid>` decorator. However, note that overriding ``config_schema``, ``input_defs``, and
+    ``required_resource_keys`` is not allowed and will throw a :class:`DagsterInvalidDefinitionError
+    <dagster.DagsterInvalidDefinitionError>`.
+
+    If you would like to configure this solid with different config fields, you could consider using
+    :func:`@composite_solid <dagster.composite_solid>` to wrap this solid.
 
     Args:
         name (str): The name of this solid.
-        output_def (OutputDefinition, optional): The OutputDefinition for the solid. This value should always be a representation
-            of a pandas DataFrame. If not specificed, the solid will default to an OutputDefinition named "df" with a DataFrame dagster type.
+        output_def (OutputDefinition, optional): The :class:`OutputDefinition
+            <dagster.OutputDefinition>` for the solid. This value should always be a representation
+            of a pandas ``DataFrame``. If not specified, the solid will default to an
+            :class:`OutputDefinition <dagster.OutputDefinition>` named "df" with a ``DataFrame``
+            dagster type.
 
     Returns:
         SolidDefinition: Returns the constructed solid definition.

@@ -14,6 +14,8 @@ from .errors import (
     DagsterDbtError,
     DagsterDbtFatalCliRuntimeError,
     DagsterDbtHandledCliRuntimeError,
+    DagsterDbtUnexpectedCliOutputError,
+    DagsterDbtUnexpectedRpcPollOutput,
 )
 from .rpc.resources import DbtRpcClient, dbt_rpc_resource, local_dbt_rpc_resource
 from .rpc.solids import (
@@ -30,7 +32,7 @@ from .rpc.solids import (
     dbt_rpc_test,
     dbt_rpc_test_and_wait,
 )
-from .rpc.types import DbtRpcPollResult
+from .rpc.types import DbtRpcPollResult, NodeResult, NodeTiming
 from .version import __version__
 
 check_dagster_package_version("dagster-dbt", __version__)
