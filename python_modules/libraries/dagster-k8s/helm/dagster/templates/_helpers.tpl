@@ -143,7 +143,7 @@ redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.broke
 
 {{- define "dagster.celery.backend_url" -}}
 {{- if .Values.rabbitmq.enabled -}}
-amqp
+rpc://
 {{- else if .Values.redis.enabled -}}
 redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}/{{ .Values.redis.backendDbNumber | default 0}}
 {{- end -}}
