@@ -67,21 +67,22 @@ Input and Output definitions are:
 
 _Inputs:_
 
-Inputs are arguments to a solid's `compute_fn`, and are specified using <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitionss" />.
+Inputs are arguments to a solid's `compute_fn`, and are specified using <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitions" />.
 They can be passed from outputs of other solids, or stubbed using config.
 
 A solid only executes once all of its inputs have been resolved, which
 means that the all of the outputs that the solid depends on have been
 successfully yielded.
 
-The argument names of the `compute_fn` must match the <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitionss" /> names,
+The argument names of the `compute_fn` must match the <PyObject module="dagster" object="InputDefinition" displayText="InputDefinitions" /> names,
 and must be in the same order after the context argument.
 
 For example, if we wanted a solid with an input of type `str` and an input of type `int`:
 
 ```python literalinclude caption=solids.py
 file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
-lines:25-27
+startAfter:input_example_solid_start
+endBefore:input_example_solid_end
 ```
 
 _Outputs:_
@@ -91,7 +92,8 @@ multiple outputs.
 
 ```python literalinclude caption=solids.py
 file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
-lines:30-36
+startAfter:my_input_output_example_solid_start
+endBefore:my_input_output_example_solid_end
 ```
 
 ## Solid context
@@ -109,5 +111,6 @@ For example, to access the logger
 
 ```python literalinclude caption=solids.py
 file:/docs_snippets/docs_snippets/legacy/how_tos/solids.py
-lines:20-22
+startAfter:my_logging_solid_start
+endBefore:my_logging_solid_end
 ```
