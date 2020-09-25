@@ -227,30 +227,30 @@ dl.function > dd > dl.field-list.simple {
   @apply bg-gray-50 rounded p-4 -mx-4;
 }
 
-dl.class > dd > dl.field-list.simple > dt.field-odd,
-dl.data > dd > dl.field-list.simple > dt.field-odd,
-dl.attribute > dd > dl.field-list.simple > dt.field-odd,
-dl.method > dd > dl.field-list.simple > dt.field-odd,
-dl.exception > dd > dl.field-list.simple > dt.field-odd,
-dl.function > dd > dl.field-list.simple > dt.field-odd {
+dl.class > dd > dl.field-list.simple > dt,
+dl.data > dd > dl.field-list.simple > dt,
+dl.attribute > dd > dl.field-list.simple > dt,
+dl.method > dd > dl.field-list.simple > dt,
+dl.exception > dd > dl.field-list.simple > dt,
+dl.function > dd > dl.field-list.simple > dt {
   @apply font-bold my-2;
 }
 
-dl.class > dd > dl.field-list.simple > dd.field-odd > ul > li,
-dl.data > dd > dl.field-list.simple > dd.field-odd > ul > li,
-dl.attribute > dd > dl.field-list.simple > dd.field-odd > ul > li,
-dl.method > dd > dl.field-list.simple > dd.field-odd > ul > li,
-dl.exception > dd > dl.field-list.simple > dd.field-odd > ul > li,
-dl.function > dd > dl.field-list.simple > dd.field-odd > ul > li {
+dl.class > dd > dl.field-list.simple > dd > ul > li,
+dl.data > dd > dl.field-list.simple > dd > ul > li,
+dl.attribute > dd > dl.field-list.simple > dd > ul > li,
+dl.method > dd > dl.field-list.simple > dd > ul > li,
+dl.exception > dd > dl.field-list.simple > dd > ul > li,
+dl.function > dd > dl.field-list.simple > dd > ul > li {
   @apply my-4;
 }
 
-dl.class > dd > dl.field-list.simple > dd.field-odd p,
-dl.data > dd > dl.field-list.simple > dd.field-odd p,
-dl.attribute > dd > dl.field-list.simple > dd.field-odd p,
-dl.method > dd > dl.field-list.simple > dd.field-odd p,
-dl.exception > dd > dl.field-list.simple > dd.field-odd p,
-dl.function > dd > dl.field-list.simple > dd.field-odd p {
+dl.class > dd > dl.field-list.simple > dd p,
+dl.data > dd > dl.field-list.simple > dd p,
+dl.attribute > dd > dl.field-list.simple > dd p,
+dl.method > dd > dl.field-list.simple > dd p,
+dl.exception > dd > dl.field-list.simple > dd p,
+dl.function > dd > dl.field-list.simple > dd p {
   @apply my-1;
 }
 
