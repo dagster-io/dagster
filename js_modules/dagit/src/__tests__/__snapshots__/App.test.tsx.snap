@@ -680,7 +680,7 @@ exports[`renders execution 1`] = `
       </div>
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 iGxzwI"
+      className="SplitPanelContainer__Container-wb7tmo-4 ktljQg"
       id="split-panel-container"
     >
       <div
@@ -1446,7 +1446,7 @@ exports[`renders pipeline page 1`] = `
       </a>
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div
@@ -6180,7 +6180,7 @@ exports[`renders pipeline solid page 1`] = `
       </a>
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div
@@ -10770,7 +10770,7 @@ exports[`renders solids explorer 1`] = `
     </div>
   </div>
   <div
-    className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+    className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
     id="split-panel-container"
   >
     <div
@@ -12777,7 +12777,7 @@ exports[`renders type page 1`] = `
       </a>
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div
@@ -17511,7 +17511,7 @@ exports[`renders type page 2`] = `
       </a>
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div
@@ -22245,7 +22245,7 @@ exports[`renders without error 1`] = `
       </a>
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div

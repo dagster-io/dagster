@@ -248,5 +248,6 @@ const Container = styled.div<{
     flex-direction: column;
     display: flex;
     min-${({axis}) => (axis === 'vertical' ? 'height' : 'width')}: 0;
+    z-index: 0;
   }
 `;
