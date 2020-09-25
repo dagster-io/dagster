@@ -12,6 +12,7 @@ from dagster.core.host_representation.repository_location import GrpcServerRepos
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher.grpc_run_launcher import GrpcRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.core.test_utils import (
     instance_for_test,
     poll_for_event,
@@ -20,6 +21,7 @@ from dagster.core.test_utils import (
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
+from dagster.utils import find_free_port, merge_dicts
 
 
 @solid
@@ -524,7 +526,7 @@ def test_server_down():
         recon_repo = ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
         loadable_target_origin = recon_repo.get_origin().loadable_target_origin
         server_process = GrpcServerProcess(
-            loadable_target_origin=loadable_target_origin, max_workers=4
+            loadable_target_origin=loadable_target_origin, max_workers=4, force_port=True
         )
 
         with server_process.create_ephemeral_client() as api_client:
@@ -553,10 +555,24 @@ def test_server_down():
 
             assert launcher.can_terminate(pipeline_run.run_id)
 
-            server_process.server_process.kill()
+            original_run_tags = instance.get_run_by_id(pipeline_run.run_id).tags[GRPC_INFO_TAG]
 
-        assert not launcher.can_terminate(pipeline_run.run_id)
+            # Replace run tags with an invalid port
+            instance.add_run_tags(
+                pipeline_run.run_id,
+                {
+                    GRPC_INFO_TAG: seven.json.dumps(
+                        merge_dicts({"host": "localhost"}, {"port": find_free_port()})
+                    )
+                },
+            )
 
-        instance.report_run_failed(pipeline_run)
+            assert not launcher.can_terminate(pipeline_run.run_id)
+
+            instance.add_run_tags(
+                pipeline_run.run_id, {GRPC_INFO_TAG: original_run_tags,},
+            )
+
+            assert launcher.terminate(pipeline_run.run_id)
 
         server_process.wait()
