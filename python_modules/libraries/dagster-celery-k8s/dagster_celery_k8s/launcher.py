@@ -1,3 +1,4 @@
+import sys
 import weakref
 
 import kubernetes
@@ -22,6 +23,7 @@ from dagster.core.origin import PipelineGrpcServerOrigin, PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
 
@@ -257,7 +259,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                     EventMetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
-            cls=CeleryK8sRunLauncher,
+            cls=self.__class__,
         )
         return run
 
@@ -277,14 +279,55 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
     def terminate(self, run_id):
         check.str_param(run_id, "run_id")
 
-        if not self.can_terminate(run_id):
+        run = self._instance.get_run_by_id(run_id)
+        if not run:
+            return False
+
+        self._instance.report_engine_event(
+            message="Received pipeline termination request.", pipeline_run=run, cls=self.__class__,
+        )
+
+        can_terminate = self.can_terminate(run_id)
+        if not can_terminate:
+            self._instance.report_engine_event(
+                message="Unable to terminate pipeline: can_terminate returned {}.".format(
+                    can_terminate
+                ),
+                pipeline_run=run,
+                cls=self.__class__,
+            )
             return False
 
         job_name = get_job_name_from_run_id(run_id)
 
         job_namespace = self.get_namespace_from_run_config(run_id)
 
-        return delete_job(job_name=job_name, namespace=job_namespace)
+        try:
+            termination_result = delete_job(job_name=job_name, namespace=job_namespace)
+            if termination_result:
+                self._instance.report_engine_event(
+                    message="Pipeline was terminated successfully.",
+                    pipeline_run=run,
+                    cls=self.__class__,
+                )
+            else:
+                self._instance.report_engine_event(
+                    message="Pipeline was not terminated successfully; delete_job returned {}".format(
+                        termination_result
+                    ),
+                    pipeline_run=run,
+                    cls=self.__class__,
+                )
+            return termination_result
+        except Exception:  # pylint: disable=broad-except
+            self._instance.report_engine_event(
+                message="Pipeline was not terminated successfully; encountered error in delete_job",
+                pipeline_run=run,
+                engine_event_data=EngineEventData.engine_error(
+                    serializable_error_info_from_exc_info(sys.exc_info())
+                ),
+                cls=self.__class__,
+            )
 
     def get_namespace_from_run_config(self, run_id):
         check.str_param(run_id, "run_id")

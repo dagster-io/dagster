@@ -258,17 +258,36 @@ def _test_termination(dagster_instance, run_config):
         step_failures_count = 0
         resource_tear_down_count = 0
         resource_init_count = 0
+        termination_request_count = 0
+        termination_success_count = 0
         event_records = dagster_instance.all_logs(run.run_id)
         for event_record in event_records:
             if event_record.dagster_event:
                 if event_record.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
                     step_failures_count += 1
+                elif event_record.dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
+                    if (
+                        event_record.dagster_event.message
+                        == '[CeleryK8sRunLauncher] Received pipeline termination request.'
+                    ):
+                        termination_request_count += 1
+                    elif (
+                        event_record.dagster_event.message
+                        == '[CeleryK8sRunLauncher] Pipeline was terminated successfully.'
+                    ):
+                        termination_success_count += 1
             elif event_record.message:
                 if 'initializing s3_resource_with_context_manager' in event_record.message:
                     resource_init_count += 1
                 if 'tearing down s3_resource_with_context_manager' in event_record.message:
                     resource_tear_down_count += 1
-        if step_failures_count == 1 and resource_init_count == 1 and resource_tear_down_count == 1:
+        if (
+            step_failures_count == 1
+            and resource_init_count == 1
+            and resource_tear_down_count == 1
+            and termination_request_count == 2
+            and termination_success_count == 1
+        ):
             expected_events_found = True
             break
         time.sleep(5)

@@ -66,10 +66,10 @@ class DagsterKubernetesClient:
         check.str_param(job_name, "job_name")
         check.str_param(namespace, "namespace")
 
-        pod_names = self.get_pod_names_for_job(job_name, namespace)
-
         try:
             # Collect all the errors so that we can post-process before raising
+            pod_names = self.get_pod_names_for_job(job_name, namespace)
+
             errors = []
             try:
                 self.batch_api.delete_namespaced_job(name=job_name, namespace=namespace)
