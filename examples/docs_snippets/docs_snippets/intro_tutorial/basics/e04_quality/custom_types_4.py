@@ -66,6 +66,11 @@ def less_simple_data_frame_type_check(_, value):
                 "column_names",
                 "Keys of columns seen in the data frame",
             ),
+            EventMetadataEntry.int(  # TODO remove this test example
+                24.3,
+                "random_int",
+                "testing int EventMetadataEntry"
+            )
         ],
     )
 
