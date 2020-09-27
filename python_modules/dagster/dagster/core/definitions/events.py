@@ -339,7 +339,7 @@ EntryDataUnion = (
     MarkdownMetadataEntryData,
     PythonArtifactMetadataEntryData,
     FloatMetadataEntryData,
-    IntMetadataEntryData
+    IntMetadataEntryData,
 )
 
 
