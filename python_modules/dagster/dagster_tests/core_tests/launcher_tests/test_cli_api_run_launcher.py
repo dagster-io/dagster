@@ -167,7 +167,9 @@ def test_terminated_run():
         terminated_pipeline_run = instance.get_run_by_id(run_id)
         assert terminated_pipeline_run.status == PipelineRunStatus.FAILURE
 
-        events = [event.dagster_event.event_type_value for event in instance.all_logs(run_id)]
+        all_logs = instance.all_logs(run_id)
+
+        events = [event.dagster_event.event_type_value for event in all_logs]
 
         assert events == [
             "ENGINE_EVENT",
@@ -175,10 +177,27 @@ def test_terminated_run():
             "PIPELINE_START",
             "ENGINE_EVENT",
             "STEP_START",
+            "ENGINE_EVENT",
             "STEP_FAILURE",
             "PIPELINE_FAILURE",
             "ENGINE_EVENT",
+            "ENGINE_EVENT",
+            "ENGINE_EVENT",
         ]
+
+        expected_termination_events = [
+            "[CliApiRunLauncher] Received pipeline termination request.",
+            "[CliApiRunLauncher] Pipeline was terminated successfully.",
+            "[DefaultRunLauncher] Pipeline was not terminated since CliApiRunLauncher and GrpcRunLauncher could not find in-progress run.",
+        ]
+
+        actual_termination_events = [
+            event.dagster_event.message
+            for event in all_logs
+            if event.dagster_event.message in expected_termination_events
+        ]
+
+        assert expected_termination_events == actual_termination_events
 
 
 def _get_engine_events(event_records):

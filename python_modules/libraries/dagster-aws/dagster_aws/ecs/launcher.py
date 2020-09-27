@@ -177,7 +177,7 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
 
     def can_terminate(self, run_id):
         check.str_param(run_id, "run_id")
-        return self.client.check_if_done(offset=self.run_id_to_task_offset[run_id])
+        return False
 
     def terminate(self, run_id):
         check.str_param(run_id, "run_id")

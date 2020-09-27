@@ -148,14 +148,28 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
 
     def terminate(self, run_id):
         check.str_param(run_id, "run_id")
+        if not self._instance:
+            return False
+
+        run = self._instance.get_run_by_id(run_id)
+        if not run:
+            return False
+
+        self._instance.report_engine_event(
+            message="Received pipeline termination request.", pipeline_run=run, cls=self.__class__
+        )
 
         client = self._get_grpc_client_for_termination(run_id)
 
         if not client:
+            self._instance.report_engine_event(
+                message="Unable to get grpc client to send termination request to.",
+                pipeline_run=run,
+                cls=self.__class__,
+            )
             return False
 
         res = client.cancel_execution(CancelExecutionRequest(run_id=run_id))
-
         return res.success
 
     def join(self, timeout=30):

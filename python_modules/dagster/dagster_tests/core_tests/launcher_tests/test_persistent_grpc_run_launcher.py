@@ -372,6 +372,7 @@ def test_terminated_run(get_external_pipeline):  # pylint: disable=redefined-out
                 "PIPELINE_START",
                 "ENGINE_EVENT",
                 "STEP_START",
+                "ENGINE_EVENT",
                 "STEP_FAILURE",
                 "PIPELINE_FAILURE",
                 "ENGINE_EVENT",

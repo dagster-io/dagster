@@ -50,9 +50,28 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         ) or self._grpc_run_launcher.can_terminate(run_id)
 
     def terminate(self, run_id):
-        return self._cli_api_run_launcher.terminate(run_id) or self._grpc_run_launcher.terminate(
-            run_id
-        )
+        if self._cli_api_run_launcher.can_terminate(run_id):
+            return self._cli_api_run_launcher.terminate(run_id)
+        elif self._grpc_run_launcher.can_terminate(run_id):
+            return self._grpc_run_launcher.terminate(run_id)
+        else:
+            instance = self._cli_api_run_launcher._instance  # pylint: disable=protected-access
+            if not instance:
+                return False
+
+            run = instance.get_run_by_id(run_id)
+            if not run:
+                return False
+
+            instance.report_engine_event(
+                message="Pipeline was not terminated since {} and {} could not find in-progress run.".format(
+                    self._cli_api_run_launcher.__class__.__name__,
+                    self._grpc_run_launcher.__class__.__name__,
+                ),
+                pipeline_run=run,
+                cls=self.__class__,
+            )
+            return False
 
     def dispose(self):
         self._cli_api_run_launcher.dispose()
