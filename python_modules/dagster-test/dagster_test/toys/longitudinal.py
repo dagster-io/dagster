@@ -84,7 +84,9 @@ def _base_compute(context):
             metadata_entries = None
 
         yield AssetMaterialization(
-            asset_key=asset_key, metadata_entries=metadata_entries,
+            asset_key=asset_key,
+            metadata_entries=metadata_entries,
+            partition=context.solid_config.get("partition"),
         )
 
     yield Output(1)
@@ -169,6 +171,7 @@ def longitudinal_config(partition):
                 "config": {
                     "error_rate": random() * 0.15,  # ingestion is slightly error prone
                     "sleep": SLEEP_INGEST * cost_data_size,  # sleep dependent on data size
+                    "partition": partition.name,
                 }
             },
             "persist_costs": {
@@ -177,12 +180,14 @@ def longitudinal_config(partition):
                     "sleep": SLEEP_PERSIST * cost_data_size,  # sleep dependent on data size
                     "materialization_key": "cost_db_table",
                     "materialization_value": cost_data_size,
+                    "partition": partition.name,
                 }
             },
             "ingest_traffic": {
                 "config": {
                     "error_rate": random() * 0.15,  # ingestion is slightly error prone
                     "sleep": SLEEP_INGEST * traffic_data_size,  # sleep dependent on data size
+                    "partition": partition.name,
                 }
             },
             "persist_traffic": {
@@ -191,25 +196,29 @@ def longitudinal_config(partition):
                     "sleep": SLEEP_PERSIST * traffic_data_size,
                     "materialization_key": "traffic_db_table",
                     "materialization_value": traffic_data_size,
+                    "partition": partition.name,
                 }
             },
             "build_cost_dashboard": {
                 "config": {
                     "materialization_key_list": ["dashboards", "cost_dashboard"],
                     "materialization_url": "http://docs.dagster.io/cost",
+                    "partition": partition.name,
                 }
             },
             "build_traffic_dashboard": {
                 "config": {
                     "materialization_key_list": ["dashboards", "traffic_dashboard"],
                     "materialization_url": "http://docs.dagster.io/traffic",
+                    "partition": partition.name,
                 }
             },
             "build_model": {
                 "config": {
                     "sleep": SLEEP_BUILD
                     * traffic_data_size
-                    * cost_data_size  # sleep dependent on data size
+                    * cost_data_size,  # sleep dependent on data size
+                    "partition": partition.name,
                 }
             },
             "train_model": {
@@ -217,12 +226,14 @@ def longitudinal_config(partition):
                     "sleep": SLEEP_TRAIN
                     * traffic_data_size
                     * cost_data_size,  # sleep dependent on data size
+                    "partition": partition.name,
                 }
             },
             "persist_model": {
                 "config": {
                     "materialization_key": "model",
                     "materialization_json": {"traffic": traffic_data_size, "cost": cost_data_size,},
+                    "partition": partition.name,
                 }
             },
         },
