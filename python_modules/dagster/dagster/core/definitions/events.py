@@ -228,7 +228,7 @@ class EventMetadataEntry(
         :py:class:`IntMetadataEntryData`.
 
         Args:
-            value (Optional[int]): The int value contained by this metadata entry.
+            value (Optional[int]): The int value contained by this metadata entry. 
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
