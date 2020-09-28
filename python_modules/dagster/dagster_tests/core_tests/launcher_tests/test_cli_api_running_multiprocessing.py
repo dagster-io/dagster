@@ -190,9 +190,8 @@ def test_running():
         assert events
 
         engine_events = get_events_of_type(events, DagsterEventType.ENGINE_EVENT)
-        assert len(engine_events) == 5
+        assert len(engine_events) == 4
         (
-            _about_to_start,
             _started,
             _executing_step_in_process,
             _finished_steps_in_process,

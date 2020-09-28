@@ -1,3 +1,3 @@
 repository:
-  file: test_cli_api_run_launcher.py
+  file: test_default_run_launcher.py
   fn: nope

@@ -64,14 +64,6 @@ def _cli_api_execute_run_process(input_file, output_file, instance, pipeline_ori
         output_file,
     ]
 
-    instance.report_engine_event(
-        'About to start process for pipeline "{pipeline_name}" (run_id: {run_id}).'.format(
-            pipeline_name=pipeline_run.pipeline_name, run_id=pipeline_run.run_id
-        ),
-        pipeline_run,
-        engine_event_data=EngineEventData(marker_start="cli_api_subprocess_init"),
-    )
-
     return open_ipc_subprocess(parts)
 
 

@@ -373,6 +373,10 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
     try:
         for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
             write_stream_fn(event)
+    except KeyboardInterrupt:
+        instance.report_engine_event(
+            message="Pipeline execution terminated by interrupt", pipeline_run=pipeline_run,
+        )
     except DagsterSubprocessError as err:
         if not all(
             [err_info.cls_name == "KeyboardInterrupt" for err_info in err.subprocess_error_infos]

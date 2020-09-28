@@ -1,4 +1,7 @@
+import os
+import time
 import uuid
+from threading import Thread
 
 import pytest
 
@@ -6,7 +9,9 @@ from dagster import (
     Field,
     ModeDefinition,
     RetryRequested,
+    String,
     execute_pipeline,
+    execute_pipeline_iterator,
     pipeline,
     reconstructable,
     resource,
@@ -26,6 +31,7 @@ from dagster.core.execution.plan.external_step import (
 from dagster.core.execution.retries import Retries, RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.utils import safe_tempfile_path, send_interrupt
 from dagster.utils.merger import deep_merge_dicts
 
 RUN_CONFIG_BASE = {"solids": {"return_two": {"config": {"a": "b"}}}}
@@ -101,6 +107,33 @@ def define_basic_pipeline():
         add_one(return_two())
 
     return basic_pipeline
+
+
+def define_sleepy_pipeline():
+    @solid(
+        config_schema={"tempfile": Field(String)},
+        required_resource_keys=set(["first_step_launcher"]),
+    )
+    def sleepy_solid(context):
+        with open(context.solid_config["tempfile"], "w") as ff:
+            ff.write("yup")
+        start_time = time.time()
+        while True:
+            time.sleep(0.1)
+            if time.time() - start_time > 120:
+                raise Exception("Timed out")
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                "external", resource_defs={"first_step_launcher": local_external_step_launcher,},
+            ),
+        ]
+    )
+    def sleepy_pipeline():
+        sleepy_solid()
+
+    return sleepy_pipeline
 
 
 def initialize_step_context(scratch_dir, instance):
@@ -188,3 +221,44 @@ def test_launcher_requests_retry():
                 event_types = [event.event_type for event in events]
                 assert DagsterEventType.STEP_UP_FOR_RETRY in event_types
                 assert DagsterEventType.STEP_RESTARTED in event_types
+
+
+def _send_interrupt_thread(temp_file):
+    while not os.path.exists(temp_file):
+        time.sleep(0.1)
+    send_interrupt()
+
+
+@pytest.mark.parametrize("mode", ["external"])
+def test_interrupt_step_launcher(mode):
+    with seven.TemporaryDirectory() as tmpdir:
+
+        with safe_tempfile_path() as success_tempfile:
+
+            sleepy_run_config = {
+                "resources": {"first_step_launcher": {"config": {"scratch_dir": tmpdir}}},
+                "storage": {"filesystem": {"config": {"base_dir": tmpdir}}},
+                "solids": {"sleepy_solid": {"config": {"tempfile": success_tempfile}}},
+            }
+
+            interrupt_thread = Thread(target=_send_interrupt_thread, args=(success_tempfile,))
+
+            interrupt_thread.start()
+
+            results = []
+
+            try:
+                for result in execute_pipeline_iterator(
+                    pipeline=reconstructable(define_sleepy_pipeline),
+                    mode=mode,
+                    run_config=sleepy_run_config,
+                ):
+                    results.append(result.event_type)
+                assert False
+            except KeyboardInterrupt:
+                pass
+
+            assert DagsterEventType.STEP_FAILURE in results
+            assert DagsterEventType.PIPELINE_FAILURE in results
+
+            interrupt_thread.join()

@@ -247,9 +247,6 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         interrupt_ipc_subprocess(process)
         seven.wait_for_process(process, timeout=30)
 
-        self._instance.report_engine_event(
-            message="Pipeline was terminated successfully.", pipeline_run=run, cls=self.__class__
-        )
         return True
 
     def get_active_run_count(self):
