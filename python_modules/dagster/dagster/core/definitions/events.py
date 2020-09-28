@@ -326,9 +326,7 @@ class FloatMetadataEntryData(namedtuple("_FloatMetadataEntryData", "value"), Per
 @whitelist_for_persistence
 class IntMetadataEntryData(namedtuple("_IntMetadataEntryData", "value"), Persistable):
     def __new__(cls, value):
-        return super(IntMetadataEntryData, cls).__new__(
-            cls, check.opt_int_param(value, "value")
-        )
+        return super(IntMetadataEntryData, cls).__new__(cls, check.opt_int_param(value, "value"))
 
 
 EntryDataUnion = (
