@@ -416,10 +416,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     "exiting.".format(job_name, step_key),
                     pipeline_run,
                     EngineEventData(
-                        [
-                            EventMetadataEntry.text(step_key, "Step key"),
-                            EventMetadataEntry.text(str(e), "Error"),
-                        ]
+                        [EventMetadataEntry.text(step_key, "Step key"),],
+                        error=serializable_error_info_from_exc_info(sys.exc_info()),
                     ),
                     CeleryK8sJobExecutor,
                     step_key=step_key,
@@ -475,10 +473,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 "exiting.".format(job_name, step_key),
                 pipeline_run,
                 EngineEventData(
-                    [
-                        EventMetadataEntry.text(step_key, "Step key"),
-                        EventMetadataEntry.text(str(e), "Error"),
-                    ]
+                    [EventMetadataEntry.text(step_key, "Step key"),],
+                    error=serializable_error_info_from_exc_info(sys.exc_info()),
                 ),
                 CeleryK8sJobExecutor,
                 step_key=step_key,
@@ -493,10 +489,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 "exiting.".format(job_name, step_key),
                 pipeline_run,
                 EngineEventData(
-                    [
-                        EventMetadataEntry.text(step_key, "Step key"),
-                        EventMetadataEntry.text(str(e), "Error"),
-                    ]
+                    [EventMetadataEntry.text(step_key, "Step key"),],
+                    error=serializable_error_info_from_exc_info(sys.exc_info()),
                 ),
                 CeleryK8sJobExecutor,
                 step_key=step_key,
@@ -526,10 +520,8 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     ),
                     pipeline_run,
                     EngineEventData(
-                        [
-                            EventMetadataEntry.text(step_key, "Step key"),
-                            EventMetadataEntry.text(str(e), "Error"),
-                        ]
+                        [EventMetadataEntry.text(step_key, "Step key"),],
+                        error=serializable_error_info_from_exc_info(sys.exc_info()),
                     ),
                     CeleryK8sJobExecutor,
                     step_key=step_key,
