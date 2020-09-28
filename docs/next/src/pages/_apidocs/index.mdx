@@ -69,6 +69,9 @@ APIs from the core `dagster` package, divided roughly by topic:
   default system storages used for intermediates, and the default
   executors available for executing pipelines.
 
+- [Hooks](/_apidocs/hooks)
+  APIs to define Dagster hooks, which can be triggered on specific Dagster events.
+
 - [Utilities](/_apidocs/utilities)
   Miscellaneous helpers used by Dagster that may be useful to users.
 
@@ -108,6 +111,12 @@ functionality:
 - [dbt](/_apidocs/libraries/dagster_dbt) (`dagster_dbt`) Provides solids and resources to run
   [dbt](https://getdbt.com/) projects.
 
+- [Datadog](/_apidocs/libraries/dagster_datadog) (`dagster_datadog`) Provides an integration with
+  Datadog, to support publishing metrics to Datadog from within Dagster solids.
+
+- [Databricks](/_apidocs/libraries/dagster_databricks) (`dagster_databricks`) Provides solids and
+  resources for integrating with Databricks.
+
 - [Flyte](/_apidocs/libraries/dagster_flyte) (`dagster_flyte`) (experimental) Provides an
   integration for runninig Dagster pipelines on [Flyte](https://flyte.org/).
 
@@ -119,9 +128,6 @@ functionality:
 
 - [GitHub](/_apidocs/libraries/dagster_github) (`dagster_github`) Provides a resource for
   issuing GitHub GraphQL queries and filing GitHub issues from Dagster pipelines.
-
-- [Jupyter](/_apidocs/libraries/dagstermill) (`dagstermill`) Wraps Jupyter notebooks as solids
-  for integrated execution within pipeline runs.
 
 - [Kubernetes](/_apidocs/libraries/dagster_k8s) (`dagster_k8s`) Provides components for
   deploying Dagster to Kubernetes, along with an experimental Helm chart.

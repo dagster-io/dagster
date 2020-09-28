@@ -345,8 +345,16 @@
             "path": "/_apidocs/libraries/dagster_dbt"
           },
           {
+            "name": "Flyte (dagster_flyte)",
+            "path": "/_apidocs/libraries/dagster_flyte"
+          },
+          {
             "name": "GCP (dagster_gcp)",
             "path": "/_apidocs/libraries/dagster_gcp"
+          },
+          {
+            "name": "Great Expectations (dagster_ge)",
+            "path": "/_apidocs/libraries/dagster_ge"
           },
           {
             "name": "Github (dagster_github)",
@@ -363,6 +371,10 @@
           {
             "name": "Pandas (dagster_pandas)",
             "path": "/_apidocs/libraries/dagster_pandas"
+          },
+          {
+            "name": "Papertrail (dagster_papertrail)",
+            "path": "/_apidocs/libraries/dagster_papertrail"
           },
           {
             "name": "PostgreSQL (dagster_postgres)",

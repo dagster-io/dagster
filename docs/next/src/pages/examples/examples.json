@@ -1,13 +1,18 @@
 [
     {
+        "name": "airflow_ingest",
+        "title": "Airflow Ingest",
+        "description": "Create a pipeline from an Airflow DAG"
+    },
+    {
         "name": "airline_demo",
         "title": "Airline Demo",
         "description": "A comprehensive demo to showcase Dagster and"
     },
     {
-        "name": "airflow_ingest",
-        "title": "Airflow Ingest",
-        "description": "Create a pipeline from an Airflow DAG"
+        "name": "materializations",
+        "title": "Asset Materialization",
+        "description": "Record that a solid materialized an asset"
     },
     {
         "name": "basic_pyspark",
@@ -17,7 +22,7 @@
     {
         "name": "config_mapping",
         "title": "Config Mapping",
-        "description": ""
+        "description": "Simplify solid config schemas with config mapping."
     },
     {
         "name": "dep_dsl",
@@ -45,14 +50,29 @@
         "description": "Create a pipeline with hooks"
     },
     {
-        "name": "materializations",
-        "title": "Asset Materialization",
-        "description": "Record that a solid materialized an asset"
+        "name": "deploy_k8s",
+        "title": "Kubernetes Deployment",
+        "description": "Deploy Dagster on Kubernetes"
+    },
+    {
+        "name": "simple_lakehouse",
+        "title": "Lakehouse (Experimental)",
+        "description": "Define a computation graph in terms of the tables it produces."
+    },
+    {
+        "name": "multi_type_lakehouse",
+        "title": "Lakehouse with Pandas and Pyspark (Experimental)",
+        "description": "Use the Lakehouse API with multiple compute types."
     },
     {
         "name": "multi_location",
         "title": "Multi-Location Workspace",
-        "description": ""
+        "description": "Setup a Dagster workspace with multiple locations."
+    },
+    {
+        "name": "nothing",
+        "title": "No-Data Dependencies",
+        "description": "Modeling dependencies without inputs and outputs"
     },
     {
         "name": "pipeline_tags",
@@ -63,20 +83,5 @@
         "name": "pipeline_unittesting",
         "title": "Pipeline Unit Test",
         "description": "Unit-test a pipeline"
-    },
-    {
-        "name": "nothing",
-        "title": "No-Data Dependencies",
-        "description": "Modeling dependencies without inputs and outputs"
-    },
-    {
-        "name": "simple_lakehouse",
-        "title": "Basic Lakehouse (Experimental)",
-        "description": "Define a computation graph in terms of the tables it produces."
-    },
-    {
-        "name": "multi_type_lakehouse",
-        "title": "Lakehouse with Pandas and Pyspark (Experimental)",
-        "description": "Use the Lakehouse API with multiple compute types."
     }
 ]
