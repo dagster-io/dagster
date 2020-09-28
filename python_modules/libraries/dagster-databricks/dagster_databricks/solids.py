@@ -20,6 +20,9 @@ def create_databricks_job_solid(
 
     As config, the solid accepts a blob of the form described in Databricks' job API:
     https://docs.databricks.com/dev-tools/api/latest/jobs.html.
+
+    Returns:
+        SolidDefinition: A solid definition.
     """
     check.str_param(name, "name")
     check.opt_str_param(description, "description")
