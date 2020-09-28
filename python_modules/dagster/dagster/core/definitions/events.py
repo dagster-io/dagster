@@ -16,7 +16,7 @@ def last_file_comp(path):
     return os.path.basename(os.path.normpath(path))
 
 
-ASSET_KEY_REGEX = re.compile("^[a-zA-Z0-9_]+$")  # alphanumeric, _, -, .
+ASSET_KEY_REGEX = re.compile("^[a-zA-Z0-9_.-]+$")  # alphanumeric, _, -, .
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_STRUCTURED_DELIMITER = "."
 
@@ -228,7 +228,7 @@ class EventMetadataEntry(
         :py:class:`IntMetadataEntryData`.
 
         Args:
-            value (Optional[int]): The int value contained by this metadata entry. 
+            value (Optional[int]): The int value contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """

@@ -448,7 +448,7 @@ class PartitionExecutionError(DagsterUserCodeExecutionError):
     """Errors raised during the execution of user-provided functions of a partition set schedule."""
 
 
-class DagsterInvalidAssetKey(DagsterUserCodeExecutionError):
+class DagsterInvalidAssetKey(DagsterError):
     """ Error raised by invalid asset key """
 
 

@@ -12,6 +12,12 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.definitions.events import (
+    parse_asset_key_string,
+    validate_asset_key_string,
+    validate_structured_asset_key,
+)
+from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.core.events.log import EventRecord
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -90,6 +96,24 @@ def pipeline_two():
 @pipeline
 def pipeline_normalization():
     solid_normalization()
+
+
+def test_validate_asset_key_string():
+    assert validate_asset_key_string("H3_lL0.h-1") == "H3_lL0.h-1"
+    with pytest.raises(DagsterInvalidAssetKey):
+        validate_asset_key_string("(Hello)")
+
+
+def test_parse_asset_key_string():
+    assert parse_asset_key_string("foo.bar_b-az") == ["foo", "bar_b", "az"]
+
+
+def test_validate_structured_asset_key():
+    asset_key_valid = ["f0-O", "b4_r"]
+    assert asset_key_valid == validate_structured_asset_key(asset_key_valid)
+    asset_key_invalid = ["(foo)"]
+    with pytest.raises(DagsterInvalidAssetKey):
+        validate_structured_asset_key(asset_key_invalid)
 
 
 @asset_test
