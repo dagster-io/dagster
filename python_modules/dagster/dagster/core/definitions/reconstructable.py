@@ -363,10 +363,10 @@ def build_reconstructable_pipeline(
     check.str_param(reconstructor_module_name, "reconstructor_module_name")
     check.str_param(reconstructor_function_name, "reconstructor_function_name")
 
-    reconstructable_args = check.opt_tuple_param(reconstructable_args, "reconstructable_args")
-    reconstructable_kwargs = tuple(
+    reconstructable_args = list(check.opt_tuple_param(reconstructable_args, "reconstructable_args"))
+    reconstructable_kwargs = list(
         (
-            (key, value)
+            [key, value]
             for key, value in check.opt_dict_param(
                 reconstructable_kwargs, "reconstructable_kwargs", key_type=str
             ).items()

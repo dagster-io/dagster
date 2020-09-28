@@ -13,7 +13,7 @@ from dagster.core.errors import DagsterImportError, DagsterInvariantViolationErr
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.seven import get_import_error_message, import_module_from_path
-from dagster.utils import alter_sys_path, load_yaml_from_path
+from dagster.utils import alter_sys_path, frozenlist, load_yaml_from_path
 
 
 class CodePointer(six.with_metaclass(ABCMeta)):
@@ -387,14 +387,29 @@ class CustomPointer(
 ):
     def __new__(cls, reconstructor_pointer, reconstructable_args, reconstructable_kwargs):
         check.inst_param(reconstructor_pointer, "reconstructor_pointer", ModuleCodePointer)
-        check.tuple_param(reconstructable_args, "reconstructable_args")
-        check.tuple_param(reconstructable_kwargs, "reconstructable_kwargs")
+        # These are lists rather than tuples to circumvent the tuple serdes machinery -- since these
+        # are user-provided, they aren't whitelisted for serdes.
+        check.list_param(reconstructable_args, "reconstructable_args")
+        check.list_param(reconstructable_kwargs, "reconstructable_kwargs")
         for reconstructable_kwarg in reconstructable_kwargs:
-            check.tuple_param(reconstructable_kwarg, "reconstructable_kwarg")
+            check.list_param(reconstructable_kwarg, "reconstructable_kwarg")
             check.invariant(check.is_str(reconstructable_kwarg[0]), "Bad kwarg key")
+            check.invariant(
+                len(reconstructable_kwarg) == 2,
+                "Bad kwarg of length {length}, should be 2".format(
+                    length=len(reconstructable_kwarg)
+                ),
+            )
+
+        # These are frozenlists, rather than lists, so that they can be hashed and the pointer
+        # stored in the lru_cache on the repository and pipeline get_definition methods
+        reconstructable_args = frozenlist(reconstructable_args)
+        reconstructable_kwargs = frozenlist(
+            [frozenlist(reconstructable_kwarg) for reconstructable_kwarg in reconstructable_kwargs]
+        )
 
         return super(CustomPointer, cls).__new__(
-            cls, reconstructor_pointer, reconstructable_args, reconstructable_kwargs
+            cls, reconstructor_pointer, reconstructable_args, reconstructable_kwargs,
         )
 
     def load_target(self):

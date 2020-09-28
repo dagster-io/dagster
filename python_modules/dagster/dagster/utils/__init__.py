@@ -189,6 +189,9 @@ class frozenlist(list):
     reverse = __readonly__
     sort = __readonly__
 
+    def __hash__(self):
+        return hash(tuple(self))
+
 
 def make_readonly_value(value):
     if isinstance(value, list):
