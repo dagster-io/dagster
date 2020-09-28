@@ -462,3 +462,10 @@ class DagsterImportError(DagsterError):
 
 class ExecutableError(DagsterUserCodeExecutionError):
     """Errors raised during the execution of user-provided functions for a defined Executable."""
+
+
+class DagsterAddressIOError(DagsterError):
+    """ IO error raised while operating data assets. """
+
+    def __init__(self, msg):
+        super(DagsterAddressIOError, self).__init__(msg if msg else "")
