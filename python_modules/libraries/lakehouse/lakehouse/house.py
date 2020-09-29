@@ -111,8 +111,10 @@ class Lakehouse:
         """Build a composite solid definition for the assets in `assets_to_update`.
 
         By default the composite solid will not accept any inputs. If you need to run this composite
-        _after_ other solids have run, pass `include_nothing_input=True`, which will add a single
-        input of type `Nothing` to the solid.
+        _after_ other solids have run, pass `include_nothing_input=True`, which will create a
+        single input of type `Nothing` to the composite solid, and a mapping to each 'source' asset
+        input (i.e. those assets without `compute_fn`s, such as those created by `source_asset` or
+        `source_table`).
 
         Examples:
 
