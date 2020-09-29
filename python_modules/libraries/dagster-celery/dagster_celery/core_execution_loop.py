@@ -1,6 +1,8 @@
 import sys
 import time
 
+from celery.exceptions import TaskRevokedError
+
 from dagster import check
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
@@ -50,7 +52,6 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
 
     step_results = {}  # Dict[ExecutionStep, celery.AsyncResult]
     step_errors = {}
-    completed_steps = set({})  # Set[step_key]
 
     with execution_plan.start(
         retries=pipeline_context.executor.retries, sort_key_fn=priority_for_step,
@@ -59,7 +60,16 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
         stopping = False
 
         while (not active_execution.is_complete and not stopping) or step_results:
-
+            if active_execution.check_for_interrupts():
+                yield DagsterEvent.engine_event(
+                    pipeline_context,
+                    "Celery executor: received termination signal - revoking active tasks from workers",
+                    EngineEventData.interrupted(list(step_results.keys())),
+                )
+                stopping = True
+                for key, result in step_results.items():
+                    result.revoke()
+                    active_execution.mark_interrupted(key)
             results_to_pop = []
             for step_key, result in sorted(
                 step_results.items(), key=lambda x: priority_for_key(x[0])
@@ -67,6 +77,16 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                 if result.ready():
                     try:
                         step_events = result.get()
+                    except TaskRevokedError:
+                        step_events = []
+                        yield DagsterEvent.engine_event(
+                            pipeline_context,
+                            'celery task for running step "{step_key}" was revoked.'.format(
+                                step_key=step_key,
+                            ),
+                            EngineEventData(marker_end=DELEGATE_MARKER),
+                            step_key=step_key,
+                        )
                     except Exception:  # pylint: disable=broad-except
                         # We will want to do more to handle the exception here.. maybe subclass Task
                         # Certainly yield an engine or pipeline event
@@ -74,14 +94,12 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                         step_errors[step_key] = serializable_error_info_from_exc_info(
                             sys.exc_info()
                         )
-                        stopping = True
                     for step_event in step_events:
                         event = deserialize_json_to_dagster_namedtuple(step_event)
                         yield event
                         active_execution.handle_event(event)
 
                     results_to_pop.append(step_key)
-                    completed_steps.add(step_key)
 
             for step_key in results_to_pop:
                 if step_key in step_results:
@@ -93,7 +111,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                 yield event
 
             # don't add any new steps if we are stopping
-            if stopping:
+            if stopping or step_errors:
                 continue
 
             # This is a slight refinement. If we have n workers idle and schedule m > n steps for

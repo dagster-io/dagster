@@ -29,7 +29,7 @@ from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, Repo
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
-from dagster.seven import kill_process, multiprocessing
+from dagster.seven import multiprocessing
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_repository_from_origin
@@ -70,10 +70,6 @@ from .utils import get_loadable_targets
 EVENT_QUEUE_POLL_INTERVAL = 0.1
 
 CLEANUP_TICK = 0.5
-
-# How long an execution process has to clean itself after termination before we hard-kill
-# the process
-GRACE_PERIOD_AFTER_PROCESS_TERMINATION = 15
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -238,35 +234,7 @@ class DagsterApiServer(DagsterApiServicer):
         with self._execution_lock:
             runs_to_clear = []
             for run_id, (process, instance_ref) in self._executions.items():
-                if process.is_alive():
-                    if not self._termination_events[run_id].is_set() or (
-                        time.time() - self._termination_times[run_id]
-                        < GRACE_PERIOD_AFTER_PROCESS_TERMINATION
-                    ):
-                        continue
-
-                    # the process failed to handle the KeyboardInterrupt cleanly after termination.
-                    # Inform the system and mark the run as failed.
-                    kill_process(process)
-
-                    with DagsterInstance.from_ref(instance_ref) as instance:
-                        runs_to_clear.append(run_id)
-                        run = instance.get_run_by_id(run_id)
-                        if not run:
-                            continue
-
-                        message = (
-                            "Pipeline execution process for {run_id} killed "
-                            + "after failing to terminate"
-                        ).format(run_id=run.run_id)
-                        instance.report_engine_event(message, run, cls=self.__class__)
-
-                        if run.is_finished:
-                            continue
-
-                        instance.report_run_failed(run)
-
-                else:
+                if not process.is_alive():
                     with DagsterInstance.from_ref(instance_ref) as instance:
                         runs_to_clear.append(run_id)
 

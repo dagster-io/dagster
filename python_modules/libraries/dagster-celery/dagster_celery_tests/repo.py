@@ -308,6 +308,12 @@ def hi_pipeline():
     sleep_solid.alias("hi_five")()
 
 
+@pipeline(mode_defs=celery_mode_defs)
+def interrupt_pipeline():
+    for i in range(50):
+        sleep_solid.alias("sleep_" + str(i))()
+
+
 # test_queues pipelines
 
 
