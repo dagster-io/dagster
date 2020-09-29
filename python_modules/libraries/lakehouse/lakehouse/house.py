@@ -120,67 +120,6 @@ class Lakehouse:
 
             .. code-block:: python
 
-            from pyspark.sql import DataFrame, Row
-
-            from dagster import InputDefinition, ModeDefinition, PresetDefinition, Nothing, StringSource, solid, lambda_solid, pipeline, resource
-            from dagster_pyspark import pyspark_resource
-            from lakehouse import AssetStorage, Lakehouse, source_asset, computed_asset
-
-            class LocalFileSystemStorage():
-                def __init__(self, root):
-                    self.root = root
-
-                def get_fs_path(self, path) -> str:
-                    return '/'.join((self.root,) + path)
-
-            local_filesystem_config_schema = {"root": StringSource}
-
-            @resource(config_schema=local_filesystem_config_schema)
-            def local_file_system_storage(init_context):
-                return LocalFileSystemStorage(init_context.resource_config["root"])
-
-
-            @resource(config_schema=local_filesystem_config_schema)
-            def spark_df_local_storage(init_context):
-                local_fs = LocalFileSystemStorage(init_context.resource_config["root"])
-
-                class Storage(AssetStorage):
-                    def save(self, obj, path, _resources):
-                        obj.write.format("csv").options(header="true").save(
-                            local_fs.get_fs_path(path), mode="overwrite"
-                        )
-
-                    def load(cls, _python_type, path, resources):
-                        return (
-                            resources.pyspark.spark_session.read.format("csv")
-                            .options(header="true")
-                            .load(local_fs.get_fs_path(path))
-                        )
-
-                return Storage()
-
-            mode_def = ModeDefinition(
-                name='default',
-                resource_defs={
-                    'filesystem': local_file_system_storage,
-                    'default_storage': spark_df_local_storage,
-                    'pyspark': pyspark_resource,
-                }
-            )
-
-            preset_def = PresetDefinition(
-                name='default',
-                mode='default',
-                run_config={'resources': {'filesystem': {'config': {'root': '.'}}}},
-                solid_selection=None,
-            )
-
-            lakehouse = Lakehouse(
-                preset_defs=[preset_def],
-                mode_defs=[mode_def],
-                in_memory_type_resource_keys={DataFrame: ["pyspark"]},
-            )
-
             @solid(required_resource_keys={"filesystem", "pyspark"})
             def save_orders(context) -> Nothing:
                 orders = context.resources.pyspark.spark_session.createDataFrame([
