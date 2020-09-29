@@ -3,13 +3,14 @@ import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
-import {Link} from 'react-router-dom';
+import {Link, Redirect} from 'react-router-dom';
 import {RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {RowColumn, RowContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
+import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {Timestamp} from 'src/TimeComponents';
 import {PipelineGraph} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
@@ -32,7 +33,7 @@ type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_s
 export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({match}) => {
-  const pipelineName = match.params.pipelinePath.split(':')[0];
+  const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
 
   const pipelineSelector = usePipelineSelector(pipelineName);
@@ -44,6 +45,11 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
       variables: {pipelineSelector, limit: 5},
     },
   );
+
+  if (snapshotId) {
+    return <Redirect to={`/pipeline/${pipelineName}/overview`} />;
+  }
+
   return (
     <Loading queryResult={queryResult}>
       {({pipelineSnapshotOrError}) => {

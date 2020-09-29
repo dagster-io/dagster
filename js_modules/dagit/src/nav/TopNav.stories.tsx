@@ -42,3 +42,24 @@ WithTag.args = {
     },
   ],
 };
+
+export const WithTagAndTabs = Template.bind({});
+WithTagAndTabs.args = {
+  breadcrumbs: [
+    {text: 'Snapshots', icon: 'camera'},
+    {
+      text: (
+        <div style={{display: 'flex', alignItems: 'center'}}>
+          <div style={{marginRight: '12px'}}>c513370e7e15df09c9edd297dfa8f3b4</div>
+          <Tag minimal intent="warning">
+            Historical snapshot
+          </Tag>
+        </div>
+      ),
+    },
+  ],
+  tabs: [
+    {text: 'Overview', href: '#'},
+    {text: 'Definition', href: '#'},
+  ],
+};

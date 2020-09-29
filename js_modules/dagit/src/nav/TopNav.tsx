@@ -46,9 +46,9 @@ const BreadcrumbContainer = styled.div`
 `;
 
 const PipelineTabBarContainer = styled.div`
-  align-items: center;
   background: ${Colors.LIGHT_GRAY4};
   border-bottom: 1px solid ${Colors.GRAY5};
   display: flex;
+  flex-wrap: wrap;
   padding: 2px 16px 0;
 `;

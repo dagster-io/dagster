@@ -15,7 +15,7 @@ import {
 import {RunsSearchSpaceQuery} from 'src/runs/types/RunsSearchSpaceQuery';
 import {PipelineRunStatus, PipelineRunsFilter} from 'src/types/globalTypes';
 
-export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'tag';
+export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'snapshotId' | 'tag';
 
 export const RUN_PROVIDERS_EMPTY = [
   {
@@ -32,6 +32,10 @@ export const RUN_PROVIDERS_EMPTY = [
   },
   {
     token: 'tag',
+    values: () => [],
+  },
+  {
+    token: 'snapshotId',
     values: () => [],
   },
 ];
@@ -76,6 +80,8 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
       obj.runId = item.value;
     } else if (item.token === 'status') {
       obj.status = item.value as PipelineRunStatus;
+    } else if (item.token === 'snapshotId') {
+      obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
       const [key, value] = item.value.split('=');
       if (obj.tags) {
@@ -121,6 +127,10 @@ function searchSuggestionsForRuns(
           .forEach((t) => t.values.forEach((v) => all.push(`${t.key}=${v}`)));
         return all;
       },
+    },
+    {
+      token: 'snapshotId',
+      values: () => [],
     },
   ];
 
@@ -174,7 +184,7 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
     }
 
     // Can only have one filter value for pipeline, status, or id
-    const limitedTokens = new Set<string>(['id', 'pipeline', 'status']);
+    const limitedTokens = new Set<string>(['id', 'pipeline', 'status', 'snapshotId']);
     const presentLimitedTokens = tokens.filter((token) => limitedTokens.has(token));
 
     return suggestionProviders.filter((provider) => !presentLimitedTokens.includes(provider.token));

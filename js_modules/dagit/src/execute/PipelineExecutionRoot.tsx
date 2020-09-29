@@ -3,7 +3,7 @@ import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {Query} from 'react-apollo';
-import {RouteComponentProps} from 'react-router-dom';
+import {Redirect, RouteComponentProps} from 'react-router-dom';
 
 import {
   usePipelineSelector,
@@ -16,6 +16,7 @@ import {
   applyCreateSession,
   useStorage,
 } from 'src/LocalStorage';
+import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {
   ExecutionSessionContainer,
   ExecutionSessionContainerError,
@@ -35,7 +36,7 @@ import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({match}) => {
-  const pipelineName = match.params.pipelinePath.split(':')[0];
+  const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
 
   const {loading} = useRepositoryOptions();
@@ -44,6 +45,10 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
 
   const session = data.sessions[data.current];
   const pipelineSelector = usePipelineSelector(pipelineName, session?.solidSelection || undefined);
+
+  if (snapshotId) {
+    return <Redirect to={`/pipeline/${pipelineName}/playground`} />;
+  }
 
   const onSaveSession = (session: string, changes: IExecutionSessionChanges) => {
     onSave(applyChangesToSession(data, session, changes));

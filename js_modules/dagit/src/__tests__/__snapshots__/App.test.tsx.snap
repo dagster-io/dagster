@@ -529,7 +529,7 @@ exports[`renders execution 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -1327,7 +1327,7 @@ exports[`renders pipeline page 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -5226,7 +5226,7 @@ load_q2_sfo_weather:data_frame
             </svg>
           </div>
           <div
-            className="sc-bdVaJa gXekTZ"
+            className="sc-EHOje lmfiVM"
             id="zoom-slider-container"
           >
             <span
@@ -6084,7 +6084,7 @@ exports[`renders pipeline solid page 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -9983,7 +9983,7 @@ load_q2_sfo_weather:data_frame
             </svg>
           </div>
           <div
-            className="sc-bdVaJa gXekTZ"
+            className="sc-EHOje lmfiVM"
             id="zoom-slider-container"
           >
             <span
@@ -10862,7 +10862,7 @@ exports[`renders solids explorer 1`] = `
               onClick={[Function]}
             >
               <div
-                className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 eDKGJi"
+                className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 eoYAEk"
                 onBlur={[Function]}
                 onClick={[Function]}
               >
@@ -12704,7 +12704,7 @@ exports[`renders type page 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -16603,7 +16603,7 @@ load_q2_sfo_weather:data_frame
             </svg>
           </div>
           <div
-            className="sc-bdVaJa gXekTZ"
+            className="sc-EHOje lmfiVM"
             id="zoom-slider-container"
           >
             <span
@@ -17461,7 +17461,7 @@ exports[`renders type page 2`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -21360,7 +21360,7 @@ load_q2_sfo_weather:data_frame
             </svg>
           </div>
           <div
-            className="sc-bdVaJa gXekTZ"
+            className="sc-EHOje lmfiVM"
             id="zoom-slider-container"
           >
             <span
@@ -22218,7 +22218,7 @@ exports[`renders without error 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -26117,7 +26117,7 @@ load_q2_sfo_weather:data_frame
             </svg>
           </div>
           <div
-            className="sc-bdVaJa gXekTZ"
+            className="sc-EHOje lmfiVM"
             id="zoom-slider-container"
           >
             <span

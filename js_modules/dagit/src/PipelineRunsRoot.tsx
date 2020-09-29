@@ -8,6 +8,7 @@ import styled from 'styled-components/macro';
 import {CursorPaginationControls} from 'src/CursorPaginationControls';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
+import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {RunTable} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
@@ -24,14 +25,13 @@ import {
 } from 'src/types/PipelineRunsRootQuery';
 
 const PAGE_SIZE = 25;
-const ENABLED_FILTERS: RunFilterTokenType[] = ['id', 'status', 'tag'];
+const ENABLED_FILTERS: RunFilterTokenType[] = ['id', 'snapshotId', 'status', 'tag'];
 
 export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({match}) => {
-  const pipelineName = match.params.pipelinePath.split(':')[0];
+  const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
-
   const [filterTokens, setFilterTokens] = useRunFiltering(ENABLED_FILTERS);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
@@ -41,7 +41,7 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
     query: PIPELINE_RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
     variables: {
-      filter: {...runsFilterForSearchTokens(filterTokens), pipelineName},
+      filter: {...runsFilterForSearchTokens(filterTokens), pipelineName, snapshotId},
     },
     nextCursorForResult: (runs) => {
       if (runs.pipelineRunsOrError.__typename !== 'PipelineRuns') {
@@ -57,6 +57,11 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
     },
   });
 
+  const tokens = [{token: 'pipeline', value: pipelineName}, ...filterTokens];
+  if (snapshotId) {
+    tokens.push({token: 'snapshotId', value: snapshotId});
+  }
+
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <ScrollContainer>
@@ -71,7 +76,7 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
             <Filters>
               <RunsFilter
                 enabledFilters={ENABLED_FILTERS}
-                tokens={[{token: 'pipeline', value: pipelineName}, ...filterTokens]}
+                tokens={tokens}
                 onChange={setFilterTokens}
                 loading={queryResult.loading}
               />
@@ -106,7 +111,6 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
 };
 
 const Filters = styled.div`
-  float: right;
   display: flex;
   align-items: center;
   margin-bottom: 14px;

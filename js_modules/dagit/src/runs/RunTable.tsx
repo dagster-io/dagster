@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 
 import {useActivePipelineForName} from 'src/DagsterRepositoryContext';
 import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
+import {explorerPathToString} from 'src/PipelinePathUtils';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
@@ -135,7 +136,13 @@ const RunRow: React.FunctionComponent<{
   checked?: boolean;
   onToggleChecked?: () => void;
 }> = ({run, onSetFilter, checked, onToggleChecked}) => {
-  const pipelineLink = `/pipeline/${run.pipelineName}@${run.pipelineSnapshotId}/`;
+  const pipelineLink = `/pipeline/${explorerPathToString({
+    pipelineName: run.pipelineName,
+    snapshotId: run.pipelineSnapshotId || '',
+    solidsQuery: '',
+    pathSolids: [],
+  })}`;
+
   const activePipeline = useActivePipelineForName(run.pipelineName);
   const isHistorical = activePipeline?.pipelineSnapshotId !== run.pipelineSnapshotId;
 
@@ -157,7 +164,7 @@ const RunRow: React.FunctionComponent<{
         <RunStatusWithStats status={run.status} runId={run.runId} size={14} />
       </RowColumn>
       <RowColumn style={{maxWidth: 90, fontFamily: 'monospace'}}>
-        <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</Link>
+        <Link to={`${pipelineLink}/runs/${run.runId}`}>{titleForRun(run)}</Link>
       </RowColumn>
       <RowColumn style={{flex: 5}}>
         {run.pipelineName}

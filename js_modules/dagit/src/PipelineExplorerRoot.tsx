@@ -1,12 +1,11 @@
-import {Colors, IconName, NonIdealState} from '@blueprintjs/core';
+import {IconName, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
 import {Redirect, RouteComponentProps} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
-import {usePipelineSelector, useActivePipelineForName} from 'src/DagsterRepositoryContext';
+import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
 import {PipelineExplorer, PipelineExplorerOptions} from 'src/PipelineExplorer';
 import {
@@ -133,8 +132,6 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
 
   const selectedName = explorerPath.pathSolids[explorerPath.pathSolids.length - 1];
 
-  const pipeline = useActivePipelineForName(explorerPath.pipelineName);
-
   return (
     <ExplorerSnapshotResolver explorerPath={explorerPath} options={options}>
       {(result) => {
@@ -162,29 +159,22 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
           return <Redirect to={`/pipeline/${explorerPathToString(n)}`} />;
         }
 
-        const pathID = explorerPath.snapshotId;
-
         return (
-          <>
-            {pathID && pipeline?.pipelineSnapshotId !== pathID && (
-              <SnapshotNotice>You are viewing a historical pipeline snapshot.</SnapshotNotice>
-            )}
-            <PipelineExplorer
-              options={options}
-              setOptions={setOptions}
-              explorerPath={explorerPath}
-              history={props.history}
-              pipeline={result}
-              handles={displayedHandles}
-              parentHandle={parentHandle ? parentHandle : undefined}
-              selectedHandle={selectedHandle}
-              getInvocations={(definitionName) =>
-                displayedHandles
-                  .filter((s) => s.solid.definition.name === definitionName)
-                  .map((s) => ({handleID: s.handleID}))
-              }
-            />
-          </>
+          <PipelineExplorer
+            options={options}
+            setOptions={setOptions}
+            explorerPath={explorerPath}
+            history={props.history}
+            pipeline={result}
+            handles={displayedHandles}
+            parentHandle={parentHandle ? parentHandle : undefined}
+            selectedHandle={selectedHandle}
+            getInvocations={(definitionName) =>
+              displayedHandles
+                .filter((s) => s.solid.definition.name === definitionName)
+                .map((s) => ({handleID: s.handleID}))
+            }
+          />
         );
       }}
     </ExplorerSnapshotResolver>
@@ -293,11 +283,3 @@ const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
     </Loading>
   );
 };
-
-const SnapshotNotice = styled.div`
-  background: linear-gradient(to bottom, ${Colors.GOLD5}, ${Colors.GOLD4});
-  border-bottom: 1px solid ${Colors.GOLD3};
-  text-align: center;
-  padding: 4px 10px;
-  user-select: none;
-`;
