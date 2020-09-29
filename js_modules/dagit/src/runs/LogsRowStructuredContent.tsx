@@ -149,6 +149,16 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
     case 'HookErroredEvent':
       return <FailureContent eventType="Hook Failed" error={node.error} />;
     case 'PipelineFailureEvent':
+      if (node.pipelineFailureError) {
+        return (
+          <FailureContent
+            message={node.message}
+            error={node.pipelineFailureError}
+            eventType="Pipeline Failed"
+          />
+        );
+      }
+
       return (
         <DefaultContent message={node.message} eventType="Pipeline Failed" eventIntent="danger" />
       );

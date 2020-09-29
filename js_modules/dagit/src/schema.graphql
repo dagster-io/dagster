@@ -829,6 +829,7 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   stepKey: String
   solidHandleID: String
   pipelineName: String!
+  error: PythonError
 }
 
 type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {

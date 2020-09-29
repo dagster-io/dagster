@@ -10,7 +10,7 @@ import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 // ====================================================
 
 export interface RunPipelineRunEventFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -111,6 +111,28 @@ export interface RunPipelineRunEventFragment_PipelineInitFailureEvent {
   level: LogLevel;
   stepKey: string | null;
   error: RunPipelineRunEventFragment_PipelineInitFailureEvent_error;
+}
+
+export interface RunPipelineRunEventFragment_PipelineFailureEvent_pipelineFailureError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RunPipelineRunEventFragment_PipelineFailureEvent_pipelineFailureError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RunPipelineRunEventFragment_PipelineFailureEvent_pipelineFailureError_cause | null;
+}
+
+export interface RunPipelineRunEventFragment_PipelineFailureEvent {
+  __typename: "PipelineFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  pipelineFailureError: RunPipelineRunEventFragment_PipelineFailureEvent_pipelineFailureError | null;
 }
 
 export interface RunPipelineRunEventFragment_ExecutionStepFailureEvent_error_cause {
@@ -568,4 +590,4 @@ export interface RunPipelineRunEventFragment_HookErroredEvent {
   error: RunPipelineRunEventFragment_HookErroredEvent_error;
 }
 
-export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent | RunPipelineRunEventFragment_HookErroredEvent;
+export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_PipelineFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent | RunPipelineRunEventFragment_HookErroredEvent;

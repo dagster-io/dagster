@@ -59,6 +59,11 @@ export class Structured extends React.Component<StructuredProps, StructuredState
             ...PythonErrorFragment
           }
         }
+        ... on PipelineFailureEvent {
+          pipelineFailureError: error {
+            ...PythonErrorFragment
+          }
+        }
         ... on ExecutionStepFailureEvent {
           error {
             ...PythonErrorFragment
@@ -150,6 +155,11 @@ export class Structured extends React.Component<StructuredProps, StructuredState
       showCustomAlert({
         title: 'Error',
         body: <PythonErrorInfo error={node.engineError} />,
+      });
+    } else if (node.__typename === 'PipelineFailureEvent' && node.pipelineFailureError) {
+      showCustomAlert({
+        title: 'Error',
+        body: <PythonErrorInfo error={node.pipelineFailureError} />,
       });
     } else {
       showCustomAlert({

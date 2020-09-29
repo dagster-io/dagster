@@ -375,6 +375,8 @@ class DauphinPipelineFailureEvent(dauphin.ObjectType):
         name = "PipelineFailureEvent"
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
+    error = dauphin.Field("PythonError")
+
 
 class DauphinPipelineInitFailureEvent(dauphin.ObjectType):
     class Meta(object):
@@ -788,7 +790,13 @@ def from_dagster_event_record(event_record, pipeline_name):
     elif dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS:
         return DauphinPipelineSuccessEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_FAILURE:
-        return DauphinPipelineFailureEvent(pipelineName=pipeline_name, **basic_params)
+        return DauphinPipelineFailureEvent(
+            pipelineName=pipeline_name,
+            error=DauphinPythonError(dagster_event.pipeline_failure_data.error)
+            if (dagster_event.pipeline_failure_data and dagster_event.pipeline_failure_data.error)
+            else None,
+            **basic_params
+        )
 
     elif dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
         return DauphinPipelineInitFailureEvent(
