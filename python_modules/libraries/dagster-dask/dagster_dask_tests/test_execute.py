@@ -1,7 +1,9 @@
 import dagster_pandas as dagster_pd
+import pytest
 from dagster_dask import DataFrame, dask_executor
 
 from dagster import (
+    DagsterUnmetExecutorRequirementsError,
     InputDefinition,
     ModeDefinition,
     execute_pipeline,
@@ -120,3 +122,28 @@ def test_dask():
     )
 
     assert result.success
+
+
+def test_execute_on_dask_local_with_intermediate_storage():
+    with seven.TemporaryDirectory() as tempdir:
+        result = execute_pipeline(
+            reconstructable(dask_engine_pipeline),
+            run_config={
+                "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+            },
+            instance=DagsterInstance.local_temp(),
+        )
+        assert result.result_for_solid("simple").output_value() == 1
+
+
+def test_execute_on_dask_local_with_default_storage():
+    with pytest.raises(DagsterUnmetExecutorRequirementsError):
+        result = execute_pipeline(
+            reconstructable(dask_engine_pipeline),
+            run_config={
+                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+            },
+            instance=DagsterInstance.local_temp(),
+        )
+        assert result.result_for_solid("simple").output_value() == 1

@@ -139,19 +139,9 @@ class DaskExecutor(Executor):
             "Expected executor to be DaskExecutor got {}".format(pipeline_context.executor),
         )
 
-        # Checks to ensure storage is compatible with Dask configuration
-        storage = pipeline_context.run_config.get("storage")
-        check.invariant(storage.keys(), "Must specify storage to use Dask execution")
-
         check.invariant(
             pipeline_context.instance.is_persistent,
             "Dask execution requires a persistent DagsterInstance",
-        )
-
-        # https://github.com/dagster-io/dagster/issues/2440
-        check.invariant(
-            pipeline_context.system_storage_def.is_persistent,
-            "Cannot use in-memory storage with Dask, use filesystem, S3, or GCS",
         )
 
         step_levels = execution_plan.execution_step_levels()
