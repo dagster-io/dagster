@@ -51,7 +51,7 @@ same directory in which you saved the pipeline file (we'll explain why
 in a moment), run:
 
 ```shell
-dagster-celery worker start
+dagster-celery worker start -A dagster_celery.app
 ```
 
 Now you can execute this pipeline with Celery. Again, from the same
