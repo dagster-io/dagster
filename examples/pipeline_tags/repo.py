@@ -1,3 +1,4 @@
+# start_repo_marker_0
 from dagster import PresetDefinition, pipeline, repository, solid
 
 
@@ -19,3 +20,6 @@ def tags_pipeline():
 @repository
 def pipeline_tags_example():
     return [tags_pipeline]
+
+
+# end_repo_marker_0

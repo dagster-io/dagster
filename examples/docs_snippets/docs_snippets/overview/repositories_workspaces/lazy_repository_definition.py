@@ -25,6 +25,7 @@ def subtract(left, right):
     return left - right
 
 
+# start_lazy_repository_definition_marker_0
 def load_addition_pipeline():
     @pipeline
     def addition_pipeline():
@@ -63,3 +64,6 @@ def my_lazy_repository():
         },
         "schedules": {"daily_addition_schedule": load_daily_addition_schedule},
     }
+
+
+# end_lazy_repository_definition_marker_0

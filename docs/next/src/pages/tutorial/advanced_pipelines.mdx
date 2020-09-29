@@ -41,7 +41,8 @@ Let's transform our dataset and then store it in a normalized table in the wareh
 
 ```python literalinclude showLines startLine=59 emphasize-lines=18 caption=resources.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.py
-lines:59-82
+startAfter:start_resources_marker_1
+endBefore:end_resources_marker_1
 ```
 
 Resources are another facility that Dagster makes available on the `context` object passed to solid
@@ -62,7 +63,8 @@ an instance of <PyObject module="dagster" object="InitResourceContext" />.)
 
 ```python literalinclude showLines startLine=17 emphasize-lines=28-30 caption=resources.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.py
-lines:17-46
+startAfter:start_resources_marker_0
+endBefore:end_resources_marker_0
 ```
 
 The last thing we need to do is to attach the resource to our pipeline, so that it's properly
@@ -146,7 +148,8 @@ Or, from the Python API:
 
 ```python literalinclude showLines startLine=149 emphasize-lines=12 caption=modes.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/modes.py
-lines:149-161
+startAfter:start_modes_main
+endBefore:end_modes_main
 dedent:4
 ```
 

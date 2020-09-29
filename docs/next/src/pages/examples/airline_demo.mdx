@@ -78,7 +78,8 @@ Let's start by looking at the pipeline definition (in `airline_demo/pipelines.py
 
 ```python literalinclude caption=pipelines.py showLines startLine=117
 file:/airline_demo/airline_demo/pipelines.py
-lines:117-124
+startAfter:start_airline_demo_ingest_pipeline
+endBefore:end_airline_demo_ingest_pipeline
 ```
 
 In general, you won't want every data science user in your organization to have to roll their own implementation of common functionality like downloading and unzipping files. Instead, you'll want to abstract common functionality into reusable solids, separating task-specific parameters out into declarative config, and building up a library of building blocks for new data pipelines. Here, that's been accomplished by implementing the shared functionality in a `s3_to_df` solid and then re-using that for ingesting several datasets.
@@ -124,7 +125,8 @@ Let's look at how we make configurable resources available to our pipelines with
 
 ```python literalinclude caption=pipelines.py showLines startLine=84 emphasize-lines=3
 file:/airline_demo/airline_demo/pipelines.py
-lines:84-86
+startAfter:start_pipelines_marker_0
+endBefore:end_pipelines_marker_0
 ```
 
 This is intended to mimic a typical setup where you may have pipelines running locally on developer machines, often with a (anonymized or scrubbed) subset of data and with limited compute resources; remotely in CI/CD, with access to a production or replica environment, but where speed is of the essence; and remotely in production on live data.

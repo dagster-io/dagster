@@ -10,6 +10,7 @@ from dagster import (
 )
 
 
+# start_repo_marker_0
 @solid
 def add_one(_, num: int) -> int:
     return num + 1
@@ -55,6 +56,9 @@ def emit_events_solid(_, input_num):
 @pipeline
 def emit_events_pipeline():
     emit_events_solid()
+
+
+# end_repo_marker_0
 
 
 @repository

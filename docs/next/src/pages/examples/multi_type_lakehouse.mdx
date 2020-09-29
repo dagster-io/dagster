@@ -60,7 +60,8 @@ ingesting a folder of csv files as opposed to a single csv file.
 
 ```python literalinclude caption=lakehouse_def.py
 file:/multi_type_lakehouse/multi_type_lakehouse/lakehouse_def.py
-lines:23-72
+startAfter:start_lakehouse_def_marker_0
+endBefore:end_lakehouse_def_marker_0
 ```
 
 The `load` method takes in all csv files within a given directory, rather than specifying
@@ -70,7 +71,8 @@ directory in parts.
 We'll do something similar for conversion between a csv and a spark datafarame:
 ```python literalinclude caption=lakehouse_def.py
 file:/multi_type_lakehouse/multi_type_lakehouse/lakehouse_def.py
-lines:75-92
+startAfter:start_lakehouse_def_marker_1
+endBefore:end_lakehouse_def_marker_1
 ```
 
 To compose these two compute types, we utilize the `multi_type_asset_storage` function

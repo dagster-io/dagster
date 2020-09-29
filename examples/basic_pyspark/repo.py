@@ -1,3 +1,4 @@
+# start_repo_marker_0
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
@@ -35,6 +36,9 @@ def count_people(_, people: DataFrame) -> int:
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"pyspark": pyspark_resource})])
 def my_pipeline():
     count_people(filter_over_50(make_people()))
+
+
+# end_repo_marker_0
 
 
 @repository

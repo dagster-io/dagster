@@ -40,7 +40,8 @@ For example, we have a pipeline that computes metrics data for a given day of th
 ```python literalinclude caption=pipeline.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/pipeline.py
 lineno-start:
-lines:4-12
+startAfter:start_pipeline_marker_0
+endBefore:end_pipeline_marker_0
 ```
 
 The solid `process_data_for_day` takes, as config, a string `day_of_week`. This piece of config will
@@ -57,7 +58,8 @@ partitions and how to define the run config for a given partition.
 ```python literalinclude caption=partition_definition.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/partition_definition.py
 lineno-start:
-lines:4-26
+startAfter:start_partition_definition_marker_0
+endBefore:end_partition_definition_marker_0
 ```
 
 ## Using Partitions in Dagit

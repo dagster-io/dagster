@@ -23,7 +23,8 @@ The core API for defining Dagster types is <PyObject module="dagster" object="Da
 ```python literalinclude caption=test_type_guide.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:28-31
+startAfter:start_test_basic_even_type
+endBefore:end_test_basic_even_type
 ```
 
 Once created, types can be attached to solid <PyObject module="dagster" object="InputDefinition" />s and <PyObject module="dagster" object="OutputDefinition" />s.
@@ -31,7 +32,8 @@ Once created, types can be attached to solid <PyObject module="dagster" object="
 ```python literalinclude caption=types_on_definitions.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:51-56
+startAfter:start_test_basic_even_type_no_annotations
+endBefore:end_test_basic_even_type_no_annotations
 ```
 
 Using Python 3 and type annotations, the same declaration can be

@@ -29,7 +29,8 @@ Let's look back at our simple `read_csv` solid.
 
 ```python literalinclude showLines startLine=7 caption=inputs_typed.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/inputs_typed.py
-lines:7-15
+startAfter:start_inputs_typed_marker_0
+endBefore:end_inputs_typed_marker_0
 ```
 
 The `lines` object returned by Python's built-in `csv.DictReader` is a list of
@@ -63,7 +64,8 @@ To do this, we'll use the <PyObject module="dagster" object="DagsterType" displa
 
 ```python literalinclude  showLines startLine=6 caption=custom_types.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types.py
-lines:6-10
+startAfter:start_custom_types_marker_0
+endBefore:end_custom_types_marker_0
 ```
 
 Now we can annotate the rest of our pipeline with our new type:

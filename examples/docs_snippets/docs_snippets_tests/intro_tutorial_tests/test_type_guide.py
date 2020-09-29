@@ -25,10 +25,12 @@ from dagster.utils import safe_tempfile_path
 
 
 def test_basic_even_type():
+    # start_test_basic_even_type
     EvenDagsterType = DagsterType(
         name="EvenDagsterType",
         type_check_fn=lambda _, value: isinstance(value, int) and value % 2 is 0,
     )
+    # end_test_basic_even_type
 
     @solid
     def double_even(_, num: EvenDagsterType) -> EvenDagsterType:
@@ -48,12 +50,15 @@ def test_basic_even_type_no_annotations():
         type_check_fn=lambda _, value: isinstance(value, int) and value % 2 is 0,
     )
 
+    # start_test_basic_even_type_no_annotations
     @solid(
         input_defs=[InputDefinition("num", EvenDagsterType)],
         output_defs=[OutputDefinition(EvenDagsterType)],
     )
     def double_even(_, num):
         return num
+
+    # end_test_basic_even_type_no_annotations
 
     assert execute_solid(double_even, input_values={"num": 2}).success
 

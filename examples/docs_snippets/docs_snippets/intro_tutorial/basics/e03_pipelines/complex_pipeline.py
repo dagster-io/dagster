@@ -4,6 +4,7 @@ import os
 from dagster import execute_pipeline, pipeline, solid
 
 
+# start_complex_pipeline_marker_0
 @solid
 def load_cereals(_):
     dataset_path = os.path.join(os.path.dirname(__file__), "cereal.csv")
@@ -64,6 +65,8 @@ def complex_pipeline():
         protein_results=sort_by_protein(cereals),
     )
 
+
+# end_complex_pipeline_marker_0
 
 if __name__ == "__main__":
     result = execute_pipeline(complex_pipeline)

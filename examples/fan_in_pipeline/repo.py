@@ -1,3 +1,4 @@
+# start_repo_marker_0
 from dagster import InputDefinition, List, OutputDefinition, pipeline, repository, solid
 
 
@@ -22,3 +23,6 @@ def fan_in_pipeline():
 @repository
 def fan_in_pipeline_repository():
     return [fan_in_pipeline]
+
+
+# end_repo_marker_0

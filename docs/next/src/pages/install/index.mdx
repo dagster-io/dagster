@@ -47,7 +47,8 @@ The telemetry-instrumented functions are:
 
 ```python literalinclude showLines caption=telemetry.py
 file:../python_modules/dagster/dagster/core/telemetry.py
-lines:52-56
+startAfter:start_TELEMETRY_WHITELISTED_FUNCTIONS
+endBefore:end_TELEMETRY_WHITELISTED_FUNCTIONS
 ```
 
 To see the logs we send, open `$DAGSTER_HOME/logs/` if `$DAGSTER_HOME` is set or `~/.dagster/logs/`

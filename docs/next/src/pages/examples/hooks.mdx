@@ -11,7 +11,8 @@ A <PyObject module="dagster" object="success_hook" displayText="@success_hook" /
 
 ```python literalinclude caption=repo.py showLines startLine=20 emphasize-lines=1,7
 file:/hooks/repo.py
-lines:20-29
+startAfter:start_repo_marker_0
+endBefore:end_repo_marker_0
 ```
 
 ## Apply a hook on a pipeline
@@ -22,7 +23,8 @@ You can simply use the hook created "slack_on_failure" above to decorate the pip
 
 ```python literalinclude caption=repo.py showLines startLine=55 emphasize-lines=1
 file:/hooks/repo.py
-lines:55-60
+startAfter:start_repo_marker_1
+endBefore:end_repo_marker_1
 ```
 
 ## Apply a hook on a solid

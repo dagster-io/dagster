@@ -15,11 +15,16 @@ def calculate_bytes(df):
     return 1.0
 
 
+# start_materialization_solids_marker_0
 @solid
 def my_simple_solid(context, df):
     do_some_transform(df)
     persist_to_storage(df)
     return df
+
+
+# end_materialization_solids_marker_0
+# start_materialization_solids_marker_1
 
 
 @solid
@@ -28,6 +33,9 @@ def my_materialization_solid(context, df):
     persist_to_storage(df)
     yield AssetMaterialization(asset_key="my_dataset", description="Persisted result to storage")
     yield Output(df)
+
+
+# end_materialization_solids_marker_1
 
 
 @solid

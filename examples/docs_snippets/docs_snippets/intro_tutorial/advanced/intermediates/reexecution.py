@@ -36,6 +36,7 @@ def sort_by_calories(context, cereals: list):
     return sorted_cereals
 
 
+# start_reexecution_marker_0
 @pipeline
 def reexecution_pipeline():
     sort_by_calories(read_csv())
@@ -65,4 +66,5 @@ if __name__ == "__main__":
         instance=instance,
         run_config=run_config,
     )
+    # end_reexecution_marker_0
     assert reexecution_result.success

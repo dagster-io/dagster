@@ -1,3 +1,4 @@
+# start_serial_pipeline_marker_0
 import csv
 import os
 
@@ -38,6 +39,7 @@ def serial_pipeline():
     sort_by_calories(load_cereals())
 
 
+# end_serial_pipeline_marker_0
 if __name__ == "__main__":
     result = execute_pipeline(serial_pipeline)
     assert result.success

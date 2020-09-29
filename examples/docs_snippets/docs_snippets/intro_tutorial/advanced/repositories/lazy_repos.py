@@ -12,6 +12,7 @@ from complex_pipeline import complex_pipeline
 
 
 @repository
+# start_lazy_repos_marker_0
 def hello_cereal_repository():
     # Note that we can pass a dict of functions, rather than a list of
     # pipeline definitions. This allows us to construct pipelines lazily,
@@ -22,3 +23,6 @@ def hello_cereal_repository():
             "complex_pipeline": lambda: complex_pipeline,
         }
     }
+
+
+# end_lazy_repos_marker_0

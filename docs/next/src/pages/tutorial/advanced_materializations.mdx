@@ -31,7 +31,7 @@ the newly sorted data frame to disk.
 
 ```python literalinclude showLines startLine=25 emphasize-lines=20-23 caption=materializations.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/materializations.py
-lines:25-47
+lines:25-43
 ```
 
 We've taken the basic precaution of ensuring that the saved csv file has a
@@ -40,7 +40,8 @@ to know about this persistent artifact. So we'll add the following lines:
 
 ```python literalinclude showLines startLine=24 emphasize-lines=25-33 caption=materializations.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/materializations.py
-lines:24-57
+startAfter:start_materializations_marker_0
+endBefore:end_materializations_marker_0
 ```
 
 Note that we've had to add the last line, yielding an <PyObject module="dagster" object="Output" />.

@@ -26,7 +26,8 @@ can construct a custom dataframe type to represent a set of e-bike trips in the 
 
 ```python literalinclude caption=core_trip_pipeline.py
 file:/docs_snippets/docs_snippets/legacy/dagster_pandas_guide/core_trip_pipeline.py
-lines:9-22
+startAfter:start_core_trip_pipeline_marker_0
+endBefore:end_core_trip_pipeline_marker_0
 ```
 
 Once our custom data type is defined, we can use it as the type declaration for the inputs / outputs
@@ -34,7 +35,8 @@ of our solid:
 
 ```python literalinclude caption=hello_cereal.py
 file:/docs_snippets/docs_snippets/legacy/dagster_pandas_guide/core_trip_pipeline.py
-lines:25-31
+startAfter:start_core_trip_pipeline_marker_1
+endBefore:end_core_trip_pipeline_marker_1
 ```
 
 By passing in these `PandasColumn` objects, we are expressing the schema and constraints we expect

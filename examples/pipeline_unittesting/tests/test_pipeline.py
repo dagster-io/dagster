@@ -10,6 +10,7 @@ from dagster import (
 from ..repo import do_math, emit_events_pipeline
 
 
+# start_test_pipeline_marker_0
 def test_full_execution():
     result = execute_pipeline(
         do_math, {"solids": {"add_one": {"inputs": {"num": 2}}, "add_two": {"inputs": {"num": 3}}}}
@@ -88,3 +89,6 @@ def test_event_stream():
     materialization = materialization_event.event_specific_data.materialization
     assert isinstance(materialization, AssetMaterialization)
     assert materialization.label == "persisted_string"
+
+
+# end_test_pipeline_marker_0

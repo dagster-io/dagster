@@ -15,7 +15,8 @@ Any solid can emit log messages at any point in its computation:
 
 ```python literalinclude caption=builtin_logger.py showLines startLine=4 emphasize-lines=3
 file:/docs_snippets/docs_snippets/overview/logging/builtin_logger.py
-lines:4-11
+startAfter:start_builtin_logger_marker_0
+endBefore:end_builtin_logger_marker_0
 ```
 
 ## Built-in loggers
@@ -48,7 +49,8 @@ What happens if we introduce an error into our solid logic?
 
 ```python literalinclude caption=builtin_logger_error.py showLines startLine=4 emphasize-lines=3
 file:/docs_snippets/docs_snippets/overview/logging/builtin_logger_error.py
-lines:4-11
+startAfter:start_builtin_logger_error_marker_0
+endBefore:end_builtin_logger_error_marker_0
 ```
 
 Errors in user code are caught by the Dagster machinery to ensure pipelines gracefully halt or

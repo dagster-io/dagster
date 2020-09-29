@@ -14,6 +14,7 @@ from dagster import (
 )
 
 
+# start_resources_marker_0
 class LocalSQLiteWarehouse(object):
     def __init__(self, conn_str):
         self._conn_str = conn_str
@@ -46,6 +47,9 @@ def local_sqlite_warehouse_resource(context):
     return LocalSQLiteWarehouse(context.resource_config["conn_str"])
 
 
+# end_resources_marker_0
+
+
 @solid
 def read_csv(context, csv_path):
     csv_path = os.path.join(os.path.dirname(__file__), csv_path)
@@ -56,6 +60,7 @@ def read_csv(context, csv_path):
     return lines
 
 
+# start_resources_marker_1
 @solid(required_resource_keys={"warehouse"})
 def normalize_calories(context, cereals):
     columns_to_normalize = [
@@ -80,6 +85,9 @@ def normalize_calories(context, cereals):
             cereal[column] = float(cereal[column]) * reweights[idx]
 
     context.resources.warehouse.update_normalized_cereals(normalized_cereals)
+
+
+# end_resources_marker_1
 
 
 @pipeline(

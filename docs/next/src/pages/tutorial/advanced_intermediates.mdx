@@ -112,7 +112,8 @@ re-execute.
 
 ```python literalinclude showLines startLine=39 caption=reexecution.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/reexecution.py
-lines:39-67
+startAfter:start_reexecution_marker_0
+endBefore:end_reexecution_marker_0
 ```
 
 When you specify `step_keys_to_execute` as above, you will find that in the logs,
@@ -141,7 +142,8 @@ it to tell Dagster how to store intermediates of this type.
 
 ```python literalinclude showLines startLine=15 caption=serialization_strategy.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/serialization_strategy.py
-lines:15-50
+startAfter:start_serialization_strategy_marker_0
+endBefore:end_serialization_strategy_marker_0
 ```
 
 Now, when we set the `storage` key in the pipeline config and run this

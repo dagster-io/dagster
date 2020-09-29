@@ -25,6 +25,7 @@ def subtract(left, right):
     return left - right
 
 
+# start_repository_definition_marker_0
 @pipeline
 def addition_pipeline():
     return add(return_one(), return_two())
@@ -45,3 +46,6 @@ def daily_addition_schedule(date):
 @repository
 def my_repository():
     return [addition_pipeline, subtraction_pipeline, daily_addition_schedule]
+
+
+# end_repository_definition_marker_0

@@ -12,6 +12,7 @@ from dagster import (
 )
 
 
+# start_serialization_strategy_marker_0
 class CsvSerializationStrategy(SerializationStrategy):
     def __init__(self):
         super(CsvSerializationStrategy, self).__init__(
@@ -48,6 +49,7 @@ def less_simple_data_frame_loader(context, selector):
     loader=less_simple_data_frame_loader,
 )
 class LessSimpleDataFrame(list):
+    # end_serialization_strategy_marker_0
     pass
 
 

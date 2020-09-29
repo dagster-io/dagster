@@ -1,3 +1,4 @@
+# start_scheduler_marker_0
 import csv
 from datetime import datetime, time
 
@@ -24,6 +25,10 @@ def hello_cereal_pipeline():
     hello_cereal()
 
 
+# end_scheduler_marker_0
+# start_scheduler_marker_1
+
+
 @daily_schedule(
     pipeline_name="hello_cereal_pipeline",
     start_date=datetime(2020, 6, 1),
@@ -37,6 +42,9 @@ def good_morning_schedule(date):
             }
         }
     }
+
+
+# end_scheduler_marker_1
 
 
 @repository

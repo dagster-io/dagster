@@ -81,9 +81,11 @@ prod_mode = ModeDefinition(
 )
 
 
+# start_pipelines_marker_0
 @pipeline(
     # ordered so the local is first and therefore the default
     mode_defs=[local_mode, test_mode, prod_mode],
+    # end_pipelines_marker_0
     preset_defs=[
         PresetDefinition.from_pkg_resources(
             name="local_fast",
@@ -114,6 +116,7 @@ prod_mode = ModeDefinition(
 )
 def airline_demo_ingest_pipeline():
     # on time data
+    # start_airline_demo_ingest_pipeline
     load_data_to_database_from_spark.alias("load_q2_on_time_data")(
         data_frame=join_q2_data(
             april_data=s3_to_df.alias("april_on_time_s3_to_df")(),
@@ -122,6 +125,7 @@ def airline_demo_ingest_pipeline():
             master_cord_data=s3_to_df.alias("master_cord_s3_to_df")(),
         )
     )
+    # end_airline_demo_ingest_pipeline
 
     # load weather data
     load_data_to_database_from_spark.alias("load_q2_sfo_weather")(

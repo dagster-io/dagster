@@ -20,6 +20,7 @@ from pyspark.sql import DataFrame as SparkDF
 from dagster import ModeDefinition, StringSource, resource
 
 
+# start_lakehouse_def_marker_0
 class LocalFileSystem:
     def __init__(self, config):
         self._root = config["root"]
@@ -72,6 +73,10 @@ def pandas_df_local_filesystem_storage(init_context):
     return Storage()
 
 
+# end_lakehouse_def_marker_0
+# start_lakehouse_def_marker_1
+
+
 @resource(config_schema=local_filesystem_config_schema)
 def spark_df_local_filesystem_storage(init_context):
     local_fs = LocalFileSystem(init_context.resource_config)
@@ -90,6 +95,9 @@ def spark_df_local_filesystem_storage(init_context):
             )
 
     return Storage()
+
+
+# end_lakehouse_def_marker_1
 
 
 local_file_system_storage = multi_type_asset_storage(

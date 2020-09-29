@@ -19,7 +19,7 @@ a `day_partition_set` partition set that targeted the pipeline:
 ```python literalinclude caption=partition_definition.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/partition_definition.py
 lineno-start:
-lines:21-26
+lines:22-28
 ```
 
 Let's also setup a <PyObject module="dagster" object="RepositoryDefinition"/> and `workspace.yaml` for this pipeline and partition set:
@@ -27,7 +27,8 @@ Let's also setup a <PyObject module="dagster" object="RepositoryDefinition"/> an
 ```python literalinclude caption=repo.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/repo.py
 lineno-start:
-lines:8-13
+startAfter:start_repo_marker_0
+endBefore:end_repo_marker_0
 ```
 
 ```python literalinclude caption=workspace.yaml

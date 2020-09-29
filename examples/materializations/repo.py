@@ -1,3 +1,4 @@
+# start_repo_marker_0
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -42,3 +43,6 @@ def materialization_pipeline():
 @repository
 def materializations_example_repo():
     return [materialization_pipeline]
+
+
+# end_repo_marker_0

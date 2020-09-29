@@ -6,6 +6,7 @@ from pandas import DataFrame, read_csv
 from dagster import OutputDefinition, pipeline, solid
 from dagster.utils import script_relative_path
 
+# start_core_trip_pipeline_marker_0
 TripDataFrame = create_dagster_pandas_dataframe_type(
     name="TripDataFrame",
     columns=[
@@ -20,6 +21,8 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
         PandasColumn.boolean_column("was_member"),
     ],
 )
+# end_core_trip_pipeline_marker_0
+# start_core_trip_pipeline_marker_1
 
 
 @solid(output_defs=[OutputDefinition(name="trip_dataframe", dagster_type=TripDataFrame)])
@@ -29,6 +32,9 @@ def load_trip_dataframe(_) -> DataFrame:
         parse_dates=["start_time", "end_time"],
         date_parser=lambda x: datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f"),
     )
+
+
+# end_core_trip_pipeline_marker_1
 
 
 @pipeline

@@ -11,10 +11,15 @@ def calculate_bytes(df):
     return 1.0
 
 
+# start_expectation_solids_marker_0
 @solid
 def my_simple_solid(context, df):
     do_some_transform(df)
     return df
+
+
+# end_expectation_solids_marker_0
+# start_expectation_solids_marker_1
 
 
 @solid
@@ -22,6 +27,9 @@ def my_expectation_solid(context, df):
     do_some_transform(df)
     yield ExpectationResult(success=len(df) > 0, description="ensure dataframe has rows")
     yield Output(df)
+
+
+# end_expectation_solids_marker_1
 
 
 @solid
