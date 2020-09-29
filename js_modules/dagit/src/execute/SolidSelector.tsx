@@ -1,4 +1,4 @@
-import {Colors, Intent} from '@blueprintjs/core';
+import {Colors, Intent, Popover} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
@@ -148,49 +148,52 @@ export default (props: ISolidSelectorProps) => {
 
   return (
     <div style={{position: 'relative'}}>
-      <ShortcutHandler shortcutLabel={'⌥S'} shortcutFilter={(e) => e.keyCode === 83 && e.altKey}>
-        <GraphQueryInput
-          width={(pending !== '*' && pending !== '') || focused ? 350 : 90}
-          intent={errorMessage ? Intent.DANGER : Intent.NONE}
-          items={
-            data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError.solids : []
-          }
-          value={pending}
-          placeholder="Type a Solid Subset"
-          onChange={setPending}
-          onBlur={(pending) => {
-            onCommitPendingValue(pending);
-            setFocused(false);
-          }}
-          onFocus={() => setFocused(true)}
-          onKeyDown={(e) => {
-            if (e.isDefaultPrevented()) {
-              return;
+      <Popover
+        autoFocus={false}
+        isOpen={focused}
+        minimal
+        modifiers={{arrow: {enabled: false}, offset: {enabled: true, offset: '0, 8px'}}}
+        position="bottom-left"
+      >
+        <ShortcutHandler shortcutLabel={'⌥S'} shortcutFilter={(e) => e.keyCode === 83 && e.altKey}>
+          <GraphQueryInput
+            width={(pending !== '*' && pending !== '') || focused ? 350 : 90}
+            intent={errorMessage ? Intent.DANGER : Intent.NONE}
+            items={
+              data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError.solids : []
             }
-            if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Escape') {
-              e.currentTarget.blur();
-            }
-          }}
-        />
-      </ShortcutHandler>
-      {focused && data?.pipelineOrError && (
-        <SolidSelectorModal
-          pipelineOrError={data?.pipelineOrError}
-          errorMessage={errorMessage}
-          queryResultSolids={queryResultSolids}
-        />
-      )}
+            value={pending}
+            placeholder="Type a Solid Subset"
+            onChange={setPending}
+            onBlur={(pending) => {
+              onCommitPendingValue(pending);
+              setFocused(false);
+            }}
+            onFocus={() => setFocused(true)}
+            onKeyDown={(e) => {
+              if (e.isDefaultPrevented()) {
+                return;
+              }
+              if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Escape') {
+                e.currentTarget.blur();
+              }
+            }}
+          />
+        </ShortcutHandler>
+        {data?.pipelineOrError && (
+          <SolidSelectorModal
+            pipelineOrError={data?.pipelineOrError}
+            errorMessage={errorMessage}
+            queryResultSolids={queryResultSolids}
+          />
+        )}
+      </Popover>
     </div>
   );
 };
 
 const SolidSelectorModalContainer = styled.div`
-  position: absolute;
   border-radius: 4px;
-  box-shadow: 0 3px 20px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.3);
-  z-index: 10;
-  top: 45px;
-  left: 0;
   width: 60vw;
   height: 60vh;
   background: ${Colors.WHITE};
