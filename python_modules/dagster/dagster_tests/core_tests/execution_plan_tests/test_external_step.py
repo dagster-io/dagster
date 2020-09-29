@@ -182,7 +182,7 @@ def test_launcher_requests_retry():
             mode=mode,
             run_config=make_run_config(tmpdir, mode),
         )
-        assert not result.success
+        assert result.success
         assert result.result_for_solid("return_two").output_value() == 2
         assert result.result_for_solid("add_one").output_value() == 3
         for step_key, events in result.events_by_step_key.items():

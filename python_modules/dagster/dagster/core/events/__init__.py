@@ -410,6 +410,11 @@ class DagsterEvent(
         return self.event_specific_data
 
     @property
+    def pipeline_failure_data(self):
+        _assert_type("pipeline_failure_data", DagsterEventType.PIPELINE_FAILURE, self.event_type)
+        return self.event_specific_data
+
+    @property
     def engine_event_data(self):
         _assert_type("engine_event_data", DagsterEventType.ENGINE_EVENT, self.event_type)
         return self.event_specific_data
@@ -598,12 +603,17 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def pipeline_failure(pipeline_context):
+    def pipeline_failure(pipeline_context, context_msg, error_info=None):
+
         return DagsterEvent.from_pipeline(
             DagsterEventType.PIPELINE_FAILURE,
             pipeline_context,
-            message='Execution of pipeline "{pipeline_name}" failed.'.format(
-                pipeline_name=pipeline_context.pipeline_def.name
+            message='Execution of pipeline "{pipeline_name}" failed. {context_msg}'.format(
+                pipeline_name=pipeline_context.pipeline_def.name,
+                context_msg=check.str_param(context_msg, "context_msg"),
+            ),
+            event_specific_data=PipelineFailureData(
+                check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
             ),
         )
 
@@ -945,6 +955,14 @@ class PipelineInitFailureData(namedtuple("_PipelineInitFailureData", "error")):
     def __new__(cls, error):
         return super(PipelineInitFailureData, cls).__new__(
             cls, error=check.inst_param(error, "error", SerializableErrorInfo)
+        )
+
+
+@whitelist_for_serdes
+class PipelineFailureData(namedtuple("_PipelineFailureData", "error")):
+    def __new__(cls, error):
+        return super(PipelineFailureData, cls).__new__(
+            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
         )
 
 

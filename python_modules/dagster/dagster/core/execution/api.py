@@ -1,3 +1,4 @@
+import sys
 from contextlib import contextmanager
 
 from dagster import check
@@ -18,6 +19,7 @@ from dagster.core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster.core.utils import str_format_set
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import canonicalize_backcompat_args
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .context_creation_pipeline import (
     ExecutionContextManager,
@@ -641,29 +643,6 @@ def create_execution_plan(pipeline, run_config=None, mode=None, step_keys_to_exe
     )
 
 
-class BoolRef:
-    def __init__(self, value):
-        self.value = value
-
-
-def _core_execution_iterator(pipeline_context, execution_plan, steps_started, pipeline_success_ref):
-    try:
-        for event in pipeline_context.executor.execute(pipeline_context, execution_plan):
-            if event.is_step_start:
-                steps_started.add(event.step_key)
-            if event.is_step_success:
-                if event.step_key not in steps_started:
-                    pipeline_success_ref.value = False
-                else:
-                    steps_started.remove(event.step_key)
-            if event.is_step_failure:
-                pipeline_success_ref.value = False
-            yield event
-    except (Exception, KeyboardInterrupt):
-        pipeline_success_ref.value = False
-        raise  # finally block will run before this is re-raised
-
-
 def _pipeline_execution_iterator(pipeline_context, execution_plan):
     """A complete execution of a pipeline. Yields pipeline start, success,
     and failure events.
@@ -677,27 +656,37 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan):
 
     yield DagsterEvent.pipeline_start(pipeline_context)
 
-    steps_started = set([])
-    pipeline_success_ref = BoolRef(True)
+    pipeline_exception_info = None
+    failed_steps = []
     generator_closed = False
     try:
-        for event in _core_execution_iterator(
-            pipeline_context, execution_plan, steps_started, pipeline_success_ref
-        ):
+        for event in pipeline_context.executor.execute(pipeline_context, execution_plan):
+            if event.is_step_failure:
+                failed_steps.append(event.step_key)
+
             yield event
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
         # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
         generator_closed = True
-        pipeline_success_ref.value = False
+        pipeline_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise
+    except (Exception, KeyboardInterrupt):  # pylint: disable=broad-except
+        pipeline_exception_info = serializable_error_info_from_exc_info(sys.exc_info())
+        raise  # finally block will run before this is re-raised
     finally:
-        if steps_started:
-            pipeline_success_ref.value = False
-        if pipeline_success_ref.value:
-            event = DagsterEvent.pipeline_success(pipeline_context)
+        if pipeline_exception_info:
+            event = DagsterEvent.pipeline_failure(
+                pipeline_context,
+                "An exception was thrown during execution.",
+                pipeline_exception_info,
+            )
+        elif failed_steps:
+            event = DagsterEvent.pipeline_failure(
+                pipeline_context, "Steps failed: {}.".format(failed_steps),
+            )
         else:
-            event = DagsterEvent.pipeline_failure(pipeline_context)
+            event = DagsterEvent.pipeline_success(pipeline_context)
         if not generator_closed:
             yield event
 
