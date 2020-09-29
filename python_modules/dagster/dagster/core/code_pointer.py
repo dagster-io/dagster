@@ -353,28 +353,13 @@ class PackageCodePointer(namedtuple("_PackageCodePointer", "module attribute"), 
         )
 
 
-def get_python_file_from_previous_stack_frame():
-    """inspect.stack() lets us introspect the call stack; inspect.stack()[1] is the previous
-    stack frame.
+def get_python_file_from_target(target):
+    module = inspect.getmodule(target)
+    python_file = getattr(module, "__file__", None)
 
-    In Python < 3.5, this is just a tuple, of which the python file of the previous frame is the 1st
-    element.
+    if not python_file:
+        return None
 
-    In Python 3.5+, this is a FrameInfo namedtuple instance; the python file of the previous frame
-    remains the 1st element.
-    """
-
-    # Since this is now a function in this file, we need to go back two hops to find the
-    # callsite file.
-    previous_stack_frame = inspect.stack(0)[2]
-
-    # See: https://docs.python.org/3/library/inspect.html
-    if sys.version_info.major == 3 and sys.version_info.minor >= 5:
-        check.inst(previous_stack_frame, inspect.FrameInfo)
-    else:
-        check.inst(previous_stack_frame, tuple)
-
-    python_file = previous_stack_frame[1]
     return os.path.abspath(python_file)
 
 

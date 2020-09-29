@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import types
 
 import pytest
 
@@ -53,6 +54,17 @@ def test_lambda():
         DagsterInvariantViolationError, match="Reconstructable target can not be a lambda"
     ):
         reconstructable(lambda_version)
+
+
+def test_not_defined_in_module(mocker):
+    mocker.patch("inspect.getmodule", return_value=types.ModuleType("__main__"))
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match=re.escape(
+            "reconstructable() can not reconstruct pipelines defined in interactive environments"
+        ),
+    ):
+        reconstructable(get_the_pipeline)
 
 
 def test_manual_instance():

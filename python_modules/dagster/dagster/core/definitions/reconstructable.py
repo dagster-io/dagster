@@ -8,7 +8,7 @@ from dagster.core.code_pointer import (
     CustomPointer,
     FileCodePointer,
     ModuleCodePointer,
-    get_python_file_from_previous_stack_frame,
+    get_python_file_from_target,
 )
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin, SchedulePythonOrigin
@@ -235,7 +235,7 @@ def reconstructable(target):
 
     .. code-block:: python
 
-        from dagster import PipelineDefinition, pipeline, recontructable
+        from dagster import PipelineDefinition, pipeline, reconstructable
 
         @pipeline
         def foo_pipeline():
@@ -274,20 +274,19 @@ def reconstructable(target):
             )
         )
 
-    python_file = get_python_file_from_previous_stack_frame()
-    if python_file.endswith("<stdin>"):
+    python_file = get_python_file_from_target(target)
+    if not python_file:
         raise DagsterInvariantViolationError(
-            "reconstructable() can not reconstruct pipelines from <stdin>, unable to "
-            "target file {}. Use a pipeline defined in a module or file instead, or "
-            "use build_reconstructable_pipeline.".format(python_file)
+            "reconstructable() can not reconstruct pipelines defined in interactive environments "
+            "like <stdin>, IPython, or Jupyter notebooks. "
+            "Use a pipeline defined in a module or file instead, or "
+            "use build_reconstructable_pipeline."
         )
+
     pointer = FileCodePointer(
         python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
     )
 
-    # ipython:
-    # Exception: Can not import module <ipython-input-3-70f55f9e97d2> from path /Users/max/Desktop/richard_brady_repro/<ipython-input-3-70f55f9e97d2>, unable to load spec.
-    # Exception: Can not import module  from path /private/var/folders/zc/zyv5jx615157j4mypwcx_kxr0000gn/T/b3edec1e-b4c5-4ea4-a4ae-24a01e566aba/, unable to load spec.
     return bootstrap_standalone_recon_pipeline(pointer)
 
 
