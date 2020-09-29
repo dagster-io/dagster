@@ -7,6 +7,7 @@ import styled from 'styled-components/macro';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {Header} from 'src/ListComponents';
+import {TopNav} from 'src/nav/TopNav';
 import {InstanceDetailsQuery} from 'src/types/InstanceDetailsQuery';
 
 const CodeMirrorShimStyle = createGlobalStyle`
@@ -32,15 +33,18 @@ export const InstanceDetailsRoot: React.FunctionComponent = () => {
 
   return data ? (
     <Container>
-      <Header>{`Dagster ${data.version}`}</Header>
-      <CodeMirrorShimStyle />
-      <CodeMirrorReact
-        value={data?.instance.info}
-        options={{
-          mode: 'yaml',
-          readOnly: true,
-        }}
-      />
+      <TopNav breadcrumbs={[{text: 'Instance Details', icon: 'database'}]} />
+      <div style={{flexGrow: 1, padding: '16px 16px 32px'}}>
+        <Header>{`Dagster ${data.version}`}</Header>
+        <CodeMirrorShimStyle />
+        <CodeMirrorReact
+          value={data?.instance.info}
+          options={{
+            mode: 'yaml',
+            readOnly: true,
+          }}
+        />
+      </div>
     </Container>
   ) : (
     <Spinner size={35} />
@@ -48,7 +52,8 @@ export const InstanceDetailsRoot: React.FunctionComponent = () => {
 };
 
 const Container = styled.div`
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
   width: 100%;
 `;
 

@@ -3,6 +3,7 @@ import {
   Card,
   Code,
   Colors,
+  IBreadcrumbProps,
   Intent,
   NonIdealState,
   PopoverInteractionKind,
@@ -17,6 +18,7 @@ import {Header, Legend, LegendColumn, ScrollContainer} from 'src/ListComponents'
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformation} from 'src/RepositoryInformation';
+import {TopNav} from 'src/nav/TopNav';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {ScheduleRow, ScheduleStateRow} from 'src/schedules/ScheduleRow';
 import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
@@ -81,77 +83,82 @@ export const SchedulesRoot: React.FunctionComponent = () => {
     partialRefetch: true,
   });
 
+  const breadcrumbs: IBreadcrumbProps[] = [{icon: 'time', text: 'Schedules'}];
+
   return (
-    <Loading queryResult={queryResult} allowStaleData={true}>
-      {(result) => {
-        const {
-          scheduler,
-          repositoryOrError,
-          scheduleDefinitionsOrError,
-          scheduleStatesOrError: scheduleStatesWithoutDefinitionsOrError,
-        } = result;
-        let staleReconcileSection = null;
-        let scheduleDefinitionsSection = null;
+    <ScrollContainer>
+      <TopNav breadcrumbs={breadcrumbs} />
+      <Loading queryResult={queryResult} allowStaleData={true}>
+        {(result) => {
+          const {
+            scheduler,
+            repositoryOrError,
+            scheduleDefinitionsOrError,
+            scheduleStatesOrError: scheduleStatesWithoutDefinitionsOrError,
+          } = result;
+          let staleReconcileSection = null;
+          let scheduleDefinitionsSection = null;
 
-        if (scheduleDefinitionsOrError.__typename === 'PythonError') {
-          scheduleDefinitionsSection = <PythonErrorInfo error={scheduleDefinitionsOrError} />;
-        } else if (repositoryOrError.__typename === 'PythonError') {
-          scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
-        } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
-          // Should not be possible, the schedule definitions call will error out
-        } else if (scheduleDefinitionsOrError.__typename === 'ScheduleDefinitions') {
-          const scheduleDefinitions = scheduleDefinitionsOrError.results;
-          const scheduleDefinitionsWithState = scheduleDefinitions.filter((s) => s.scheduleState);
-          const scheduleDefinitionsWithoutState = scheduleDefinitions.filter(
-            (s) => !s.scheduleState,
+          if (scheduleDefinitionsOrError.__typename === 'PythonError') {
+            scheduleDefinitionsSection = <PythonErrorInfo error={scheduleDefinitionsOrError} />;
+          } else if (repositoryOrError.__typename === 'PythonError') {
+            scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
+          } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
+            // Should not be possible, the schedule definitions call will error out
+          } else if (scheduleDefinitionsOrError.__typename === 'ScheduleDefinitions') {
+            const scheduleDefinitions = scheduleDefinitionsOrError.results;
+            const scheduleDefinitionsWithState = scheduleDefinitions.filter((s) => s.scheduleState);
+            const scheduleDefinitionsWithoutState = scheduleDefinitions.filter(
+              (s) => !s.scheduleState,
+            );
+
+            if (!scheduleDefinitions.length) {
+              scheduleDefinitionsSection = (
+                <NonIdealState
+                  icon={IconNames.ERROR}
+                  title="No Schedules Found"
+                  description={
+                    <p>
+                      This repository does not have any schedules defined. Visit the{' '}
+                      <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
+                        scheduler documentation
+                      </a>{' '}
+                      for more information about scheduling pipeline runs in Dagster. .
+                    </p>
+                  }
+                />
+              );
+            } else {
+              scheduleDefinitionsSection = (
+                <ScheduleTable
+                  schedules={scheduleDefinitionsWithState}
+                  repository={repositoryOrError}
+                />
+              );
+            }
+
+            if (scheduleStatesWithoutDefinitionsOrError.__typename === 'ScheduleStates') {
+              const scheduleStatesWithoutDefinitions =
+                scheduleStatesWithoutDefinitionsOrError.results;
+              staleReconcileSection = (
+                <GetStaleReconcileSection
+                  scheduleDefinitionsWithoutState={scheduleDefinitionsWithoutState}
+                  scheduleStatesWithoutDefinitions={scheduleStatesWithoutDefinitions}
+                />
+              );
+            }
+          }
+
+          return (
+            <div style={{padding: '16px'}}>
+              <SchedulerInfo schedulerOrError={scheduler} errorsOnly={true} />
+              {staleReconcileSection}
+              {scheduleDefinitionsSection}
+            </div>
           );
-
-          if (!scheduleDefinitions.length) {
-            scheduleDefinitionsSection = (
-              <NonIdealState
-                icon={IconNames.ERROR}
-                title="No Schedules Found"
-                description={
-                  <p>
-                    This repository does not have any schedules defined. Visit the{' '}
-                    <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
-                      scheduler documentation
-                    </a>{' '}
-                    for more information about scheduling pipeline runs in Dagster. .
-                  </p>
-                }
-              />
-            );
-          } else {
-            scheduleDefinitionsSection = (
-              <ScheduleTable
-                schedules={scheduleDefinitionsWithState}
-                repository={repositoryOrError}
-              />
-            );
-          }
-
-          if (scheduleStatesWithoutDefinitionsOrError.__typename === 'ScheduleStates') {
-            const scheduleStatesWithoutDefinitions =
-              scheduleStatesWithoutDefinitionsOrError.results;
-            staleReconcileSection = (
-              <GetStaleReconcileSection
-                scheduleDefinitionsWithoutState={scheduleDefinitionsWithoutState}
-                scheduleStatesWithoutDefinitions={scheduleStatesWithoutDefinitions}
-              />
-            );
-          }
-        }
-
-        return (
-          <ScrollContainer>
-            <SchedulerInfo schedulerOrError={scheduler} errorsOnly={true} />
-            {staleReconcileSection}
-            {scheduleDefinitionsSection}
-          </ScrollContainer>
-        );
-      }}
-    </Loading>
+        }}
+      </Loading>
+    </ScrollContainer>
   );
 };
 

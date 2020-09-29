@@ -1,4 +1,11 @@
-import {Icon, InputGroup, Menu, MenuItem, NonIdealState, Popover} from '@blueprintjs/core';
+import {
+  IBreadcrumbProps,
+  InputGroup,
+  Menu,
+  MenuItem,
+  NonIdealState,
+  Popover,
+} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
@@ -6,10 +13,11 @@ import {useHistory} from 'react-router';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {Header, Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
+import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {AssetRoot} from 'src/assets/AssetRoot';
 import {AssetsRootQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsRootQuery';
+import {TopNav} from 'src/nav/TopNav';
 
 type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
 
@@ -17,108 +25,88 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({match}
   const urlPathString = match.params['0'];
   const queryResult = useQuery(ASSETS_ROOT_QUERY);
 
-  return (
-    <Loading queryResult={queryResult}>
-      {({assetsOrError}) => {
-        if (assetsOrError.__typename === 'AssetsNotSupportedError') {
-          return (
-            <Wrapper>
-              <NonIdealState
-                icon="panel-table"
-                title="Assets"
-                description={
-                  <p>
-                    An asset-aware event storage (e.g. <code>PostgresEventLogStorage</code>) must be
-                    configured in order to use any Asset-based features. You can configure this on
-                    your instance through <code>dagster.yaml</code>. See the{' '}
-                    <a href="https://docs.dagster.io/overview/instances/dagster-instance">
-                      instance documentation
-                    </a>{' '}
-                    for more information.
-                  </p>
-                }
-              />
-            </Wrapper>
-          );
-        }
+  const currentPath = (urlPathString || '').split('/').filter((x: string) => x);
 
-        const currentPath = (urlPathString || '').split('/').filter((x: string) => x);
-        const [exactMatchingAsset] = assetsOrError.nodes.filter(
-          (asset: Asset) => asset.key.path.join('/') === urlPathString,
-        );
-        const prefixMatchingAssets = assetsOrError.nodes.filter(
-          (asset: Asset) =>
-            currentPath.length < asset.key.path.length &&
-            currentPath.every((part: string, i: number) => part === asset.key.path[i]),
-        );
-
-        if (!prefixMatchingAssets.length && !exactMatchingAsset) {
-          return (
-            <Wrapper>
-              <NonIdealState
-                icon="panel-table"
-                title="Assets"
-                description={
-                  <p>
-                    There are no {urlPathString ? 'matching ' : 'known '}
-                    materialized assets with {urlPathString ? 'the ' : 'a '}
-                    specified asset key. Any asset keys that have been specified with a{' '}
-                    <code>Materialization</code> during a pipeline run will appear here. See the{' '}
-                    <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
-                      Materialization documentation
-                    </a>{' '}
-                    for more information.
-                  </p>
-                }
-              />
-            </Wrapper>
-          );
-        }
-
-        return (
-          <Wrapper>
-            <AssetsTopNav path={currentPath} />
-            {prefixMatchingAssets.length ? (
-              <AssetsTable assets={prefixMatchingAssets} currentPath={currentPath} />
-            ) : null}
-            {exactMatchingAsset ? <AssetRoot assetKey={exactMatchingAsset.key} /> : null}
-          </Wrapper>
-        );
-      }}
-    </Loading>
-  );
-};
-
-const AssetsTopNav = ({path}: {path: string[]}) => {
-  if (!path.length) {
-    return null;
+  const breadcrumbs: IBreadcrumbProps[] = [{icon: 'panel-table', text: 'Assets', href: '/assets'}];
+  if (currentPath.length) {
+    currentPath.reduce((accum: string, elem: string) => {
+      const href = `${accum}/${elem}`;
+      breadcrumbs.push({text: elem, href});
+      return href;
+    }, '/assets');
   }
 
-  if (path.length === 1) {
-    return (
-      <div style={{margin: 20}}>
-        <Link to="/assets">
-          <Icon icon="chevron-left" />
-          Assets
-        </Link>
+  return (
+    <div style={{display: 'flex', flexDirection: 'column', width: '100%'}}>
+      <TopNav breadcrumbs={breadcrumbs} />
+      <div style={{flexGrow: 1}}>
+        <Loading queryResult={queryResult}>
+          {({assetsOrError}) => {
+            if (assetsOrError.__typename === 'AssetsNotSupportedError') {
+              return (
+                <Wrapper>
+                  <NonIdealState
+                    icon="panel-table"
+                    title="Assets"
+                    description={
+                      <p>
+                        An asset-aware event storage (e.g. <code>PostgresEventLogStorage</code>)
+                        must be configured in order to use any Asset-based features. You can
+                        configure this on your instance through <code>dagster.yaml</code>. See the{' '}
+                        <a href="https://docs.dagster.io/overview/instances/dagster-instance">
+                          instance documentation
+                        </a>{' '}
+                        for more information.
+                      </p>
+                    }
+                  />
+                </Wrapper>
+              );
+            }
+
+            const [exactMatchingAsset] = assetsOrError.nodes.filter(
+              (asset: Asset) => asset.key.path.join('/') === urlPathString,
+            );
+            const prefixMatchingAssets = assetsOrError.nodes.filter(
+              (asset: Asset) =>
+                currentPath.length < asset.key.path.length &&
+                currentPath.every((part: string, i: number) => part === asset.key.path[i]),
+            );
+
+            if (!prefixMatchingAssets.length && !exactMatchingAsset) {
+              return (
+                <Wrapper>
+                  <NonIdealState
+                    icon="panel-table"
+                    title="Assets"
+                    description={
+                      <p>
+                        There are no {urlPathString ? 'matching ' : 'known '}
+                        materialized assets with {urlPathString ? 'the ' : 'a '}
+                        specified asset key. Any asset keys that have been specified with a{' '}
+                        <code>Materialization</code> during a pipeline run will appear here. See the{' '}
+                        <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
+                          Materialization documentation
+                        </a>{' '}
+                        for more information.
+                      </p>
+                    }
+                  />
+                </Wrapper>
+              );
+            }
+
+            return (
+              <Wrapper>
+                {prefixMatchingAssets.length ? (
+                  <AssetsTable assets={prefixMatchingAssets} currentPath={currentPath} />
+                ) : null}
+                {exactMatchingAsset ? <AssetRoot assetKey={exactMatchingAsset.key} /> : null}
+              </Wrapper>
+            );
+          }}
+        </Loading>
       </div>
-    );
-  }
-
-  return (
-    <div style={{margin: 20}}>
-      {path.map((part, idx) =>
-        idx ? (
-          <span key={idx}>
-            <Icon icon="chevron-right" />
-            <Link to={`/assets/${path.slice(0, idx).join('/')}`}>{path[idx - 1]}</Link>
-          </span>
-        ) : (
-          <Link to="/assets" key="navRoot">
-            Assets
-          </Link>
-        ),
-      )}
     </div>
   );
 };
@@ -240,29 +228,29 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
   });
 
   const pathKeys = Object.keys(pathMap).sort();
-  const title = currentPath.join('.') || 'Assets';
 
   return (
-    <div style={{margin: 30}}>
-      <Header>{title}</Header>
-      {currentPath.length ? null : <AssetSearch assets={assets} />}
-      <div style={{marginTop: 30}}>
-        <Legend>
-          <LegendColumn>Asset Key</LegendColumn>
-        </Legend>
-        {pathKeys.map((pathKey: string, idx: number) => {
-          const linkUrl = `/assets/${
-            currentPath.length ? currentPath.join('/') + `/${pathKey}` : pathKey
-          }`;
-          return (
-            <RowContainer key={idx}>
-              <RowColumn>
-                <Link to={linkUrl}>{pathKey}</Link>
-              </RowColumn>
-            </RowContainer>
-          );
-        })}
-      </div>
+    <div style={{margin: '16px'}}>
+      {currentPath.length ? null : (
+        <div style={{marginBottom: 30}}>
+          <AssetSearch assets={assets} />
+        </div>
+      )}
+      <Legend>
+        <LegendColumn>Asset Key</LegendColumn>
+      </Legend>
+      {pathKeys.map((pathKey: string, idx: number) => {
+        const linkUrl = `/assets/${
+          currentPath.length ? currentPath.join('/') + `/${pathKey}` : pathKey
+        }`;
+        return (
+          <RowContainer key={idx}>
+            <RowColumn>
+              <Link to={linkUrl}>{pathKey}</Link>
+            </RowColumn>
+          </RowContainer>
+        );
+      })}
     </div>
   );
 };

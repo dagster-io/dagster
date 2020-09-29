@@ -126,8 +126,6 @@ export const SchedulerTimezoneNote = () => (
   <div
     style={{
       color: Colors.GRAY3,
-      maxWidth: 340,
-      textAlign: 'right',
       fontSize: 12.5,
       marginBottom: 20,
     }}

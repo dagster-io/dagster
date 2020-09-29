@@ -64,7 +64,6 @@ export const ScrollingRowColumn = styled.div`
 `;
 
 export const ScrollContainer = styled.div`
-  padding: 20px;
   overflow: auto;
   width: 100%;
 `;

@@ -45,7 +45,6 @@ export const AssetRoot = ({assetKey}: {assetKey: AssetKey}) => {
         const lastMaterialization = assetOrError.lastMaterializations[0];
         return (
           <Container>
-            <TitleHeader>Asset: {assetKey.path.join('.')}</TitleHeader>
             <AssetLastMaterialization assetMaterialization={lastMaterialization} />
             <div>
               <Header>Recent Runs</Header>

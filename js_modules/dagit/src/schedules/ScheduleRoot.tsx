@@ -1,13 +1,13 @@
-import {Icon} from '@blueprintjs/core';
+import {IBreadcrumbProps} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
 import {RouteComponentProps} from 'react-router';
-import {Link} from 'react-router-dom';
 
 import {useScheduleSelector} from 'src/DagsterRepositoryContext';
-import {Header, ScrollContainer} from 'src/ListComponents';
+import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
+import {TopNav} from 'src/nav/TopNav';
 import {ScheduleRow, ScheduleRowHeader} from 'src/schedules/ScheduleRow';
 import {SCHEDULE_DEFINITION_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {ScheduleRootQuery} from 'src/schedules/types/ScheduleRootQuery';
@@ -30,19 +30,19 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
     <Loading queryResult={queryResult} allowStaleData={true}>
       {({scheduleDefinitionOrError}) => {
         if (scheduleDefinitionOrError.__typename === 'ScheduleDefinition') {
+          const breadcrumbs: IBreadcrumbProps[] = [
+            {icon: 'time', text: 'Schedules', href: '/schedules'},
+            {text: scheduleDefinitionOrError.name},
+          ];
+
           return (
             <ScrollContainer>
-              <div style={{display: 'flex'}}>
-                <Header>
-                  <Link to="/schedules">Schedules</Link>
-                  <Icon icon="chevron-right" />
-                  {scheduleDefinitionOrError.name}
-                </Header>
-                <div style={{flex: 1}} />
+              <TopNav breadcrumbs={breadcrumbs} />
+              <div style={{padding: '16px'}}>
                 <SchedulerTimezoneNote />
+                <ScheduleRowHeader schedule={scheduleDefinitionOrError} />
+                <ScheduleRow schedule={scheduleDefinitionOrError} />
               </div>
-              <ScheduleRowHeader schedule={scheduleDefinitionOrError} />
-              <ScheduleRow schedule={scheduleDefinitionOrError} />
             </ScrollContainer>
           );
         } else {

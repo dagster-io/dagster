@@ -1,4 +1,4 @@
-import {Button, Callout, Code, Divider, Icon, Intent} from '@blueprintjs/core';
+import {Button, Callout, Code, Divider, IBreadcrumbProps, Icon, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import React, {useState} from 'react';
@@ -11,10 +11,11 @@ import {
   useCurrentRepositoryState,
   useRepositoryOptions,
 } from 'src/DagsterRepositoryContext';
-import {Header, ScrollContainer} from 'src/ListComponents';
+import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformation} from 'src/RepositoryInformation';
+import {TopNav} from 'src/nav/TopNav';
 import {ScheduleStateRow} from 'src/schedules/ScheduleRow';
 import {SCHEDULE_STATE_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
@@ -32,20 +33,24 @@ export const SchedulerRoot: React.FunctionComponent<{}> = () => {
     fetchPolicy: 'cache-and-network',
   });
 
+  const breadcrumbs: IBreadcrumbProps[] = [{icon: 'time', text: 'Scheduler'}];
+
   return (
     <ScrollContainer>
-      <Header>Scheduler</Header>
-      <Loading queryResult={queryResult} allowStaleData={true}>
-        {(result) => {
-          const {scheduler, scheduleStatesOrError} = result;
-          return (
-            <>
-              <SchedulerInfo schedulerOrError={scheduler} />
-              <ScheduleStates scheduleStatesOrError={scheduleStatesOrError} />
-            </>
-          );
-        }}
-      </Loading>
+      <TopNav breadcrumbs={breadcrumbs} />
+      <div style={{padding: '16px'}}>
+        <Loading queryResult={queryResult} allowStaleData={true}>
+          {(result) => {
+            const {scheduler, scheduleStatesOrError} = result;
+            return (
+              <>
+                <SchedulerInfo schedulerOrError={scheduler} />
+                <ScheduleStates scheduleStatesOrError={scheduleStatesOrError} />
+              </>
+            );
+          }}
+        </Loading>
+      </div>
     </ScrollContainer>
   );
 };

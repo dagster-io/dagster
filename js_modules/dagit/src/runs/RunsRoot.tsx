@@ -6,8 +6,9 @@ import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components/macro';
 
 import {CursorPaginationControls} from 'src/CursorPaginationControls';
-import {Header, ScrollContainer} from 'src/ListComponents';
+import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
+import {TopNav} from 'src/nav/TopNav';
 import {RunTable} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
 import {RunsFilter, runsFilterForSearchTokens, useRunFiltering} from 'src/runs/RunsFilter';
@@ -42,45 +43,47 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <ScrollContainer>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Header>All Runs</Header>
-          <Filters>
-            <RunsFilter
-              tokens={filterTokens}
-              onChange={setFilterTokens}
-              loading={queryResult.loading}
-            />
-          </Filters>
-        </div>
+        <TopNav breadcrumbs={[{icon: 'outdated', text: 'Runs'}]} />
+        <div style={{padding: '16px'}}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Filters>
+              <RunsFilter
+                tokens={filterTokens}
+                onChange={setFilterTokens}
+                loading={queryResult.loading}
+              />
+            </Filters>
+          </div>
 
-        <Loading queryResult={queryResult} allowStaleData={true}>
-          {({pipelineRunsOrError}) => {
-            if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
+          <Loading queryResult={queryResult} allowStaleData={true}>
+            {({pipelineRunsOrError}) => {
+              if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
+                return (
+                  <NonIdealState
+                    icon={IconNames.ERROR}
+                    title="Query Error"
+                    description={pipelineRunsOrError.message}
+                  />
+                );
+              }
               return (
-                <NonIdealState
-                  icon={IconNames.ERROR}
-                  title="Query Error"
-                  description={pipelineRunsOrError.message}
-                />
+                <>
+                  <RunTable
+                    runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
+                    onSetFilter={setFilterTokens}
+                  />
+                  <CursorPaginationControls {...paginationProps} />
+                </>
               );
-            }
-            return (
-              <>
-                <RunTable
-                  runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                  onSetFilter={setFilterTokens}
-                />
-                <CursorPaginationControls {...paginationProps} />
-              </>
-            );
-          }}
-        </Loading>
+            }}
+          </Loading>
+        </div>
       </ScrollContainer>
     </RunsQueryRefetchContext.Provider>
   );
