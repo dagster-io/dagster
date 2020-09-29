@@ -85,10 +85,7 @@ def define_pyspark_pipe():
     return pyspark_pipe
 
 
-@solid(
-    output_defs=[OutputDefinition(DataFrame)],
-    required_resource_keys={"pyspark_step_launcher", "pyspark"},
-)
+@solid(required_resource_keys={"pyspark_step_launcher", "pyspark"},)
 def do_nothing_solid(_):
     pass
 
@@ -112,8 +109,13 @@ def test_local():
 
 
 @mock_emr
+@mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.read_events")
 @mock.patch("dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete")
-def test_pyspark_emr(mock_is_emr_step_complete):
+def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events):
+    mock_read_events.return_value = execute_pipeline(
+        reconstructable(define_do_nothing_pipe), mode="local"
+    ).events_by_step_key["do_nothing_solid.compute"]
+
     run_job_flow_args = dict(
         Instances={
             "InstanceCount": 1,

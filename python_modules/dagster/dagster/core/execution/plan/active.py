@@ -1,6 +1,7 @@
 import time
 
 from dagster import check
+from dagster.core.errors import DagsterIncompleteExecutionPlanError, DagsterUnknownStepStateError
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.retries import Retries
 
@@ -20,6 +21,8 @@ class ActiveExecution(object):
         self._retries = check.inst_param(retries, "retries", Retries)
         self._sort_key_fn = check.opt_callable_param(sort_key_fn, "sort_key_fn", _default_sort_key)
 
+        self._context_guard = False  # Prevent accidental direct use
+
         # All steps to be executed start out here in _pending
         self._pending = self._plan.execution_deps()
 
@@ -37,9 +40,38 @@ class ActiveExecution(object):
         self._success = set()
         self._failed = set()
         self._skipped = set()
+        self._unknown_state = set()
 
         # Start the show by loading _executable with the set of _pending steps that have no deps
         self._update()
+
+    def __enter__(self):
+        self._context_guard = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._context_guard = False
+
+        # Exiting due to exception, return to allow exception to bubble
+        if exc_type or exc_value or traceback:
+            return
+
+        # Requested termination is the only time we should be exiting incomplete without an exception
+        if not self.is_complete:
+            raise DagsterIncompleteExecutionPlanError(
+                "Execution of pipeline finished without completing the execution plan, "
+                "likely as a result of a termination request."
+            )
+
+        # See verify_complete - steps for which we did not observe a failure/success event are in an unknown
+        # state so we raise to ensure pipeline failure.
+        if self.is_complete and len(self._unknown_state) > 0:
+            raise DagsterUnknownStepStateError(
+                "Execution of pipeline exited with steps {step_list} in an unknown state to this process.\n"
+                "This was likely caused by losing communication with the process performing step execution.".format(
+                    step_list=self._unknown_state
+                )
+            )
 
     def _update(self):
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
@@ -117,6 +149,9 @@ class ActiveExecution(object):
         return self._plan.get_step_by_key(step_key)
 
     def get_steps_to_execute(self, limit=None):
+        check.invariant(
+            self._context_guard, "ActiveExecution must be used as a context manager",
+        )
         check.opt_int_param(limit, "limit")
         self._update()
 
@@ -147,10 +182,10 @@ class ActiveExecution(object):
     def skipped_step_events_iterator(self, pipeline_context):
         """Process all steps that can be skipped by repeated calls to get_steps_to_skip
         """
-        failed_or_skipped_steps = self._skipped.union(self._failed)
 
         steps_to_skip = self.get_steps_to_skip()
         while steps_to_skip:
+            failed_or_skipped_steps = self._skipped.union(self._failed)
             for step in steps_to_skip:
                 step_context = pipeline_context.for_step(step)
                 failed_inputs = []
@@ -160,7 +195,7 @@ class ActiveExecution(object):
                     )
 
                 step_context.log.info(
-                    "Dependencies for step {step} failed: {failed_inputs}. Not executing.".format(
+                    "Dependencies for step {step} failed or skipped: {failed_inputs}. Not executing.".format(
                         step=step.key, failed_inputs=failed_inputs
                     )
                 )
@@ -181,6 +216,10 @@ class ActiveExecution(object):
     def mark_skipped(self, step_key):
         self._skipped.add(step_key)
         self._mark_complete(step_key)
+
+    def mark_unknown_state(self, step_key):
+        self._unknown_state.add(step_key)
+        self.mark_failed(step_key)
 
     def mark_up_for_retry(self, step_key, at_time=None):
         check.invariant(
@@ -242,7 +281,7 @@ class ActiveExecution(object):
                     key=step_key
                 )
             )
-            self.mark_failed(step_key)
+            self.mark_unknown_state(step_key)
 
     @property
     def is_complete(self):

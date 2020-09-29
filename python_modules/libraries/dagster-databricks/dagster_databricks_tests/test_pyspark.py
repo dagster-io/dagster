@@ -115,10 +115,7 @@ def define_pyspark_pipe():
     return pyspark_pipe
 
 
-@solid(
-    output_defs=[OutputDefinition(DataFrame)],
-    required_resource_keys={"pyspark_step_launcher", "pyspark"},
-)
+@solid(required_resource_keys={"pyspark_step_launcher", "pyspark"},)
 def do_nothing_solid(_):
     pass
 
@@ -146,6 +143,10 @@ def test_local():
 @mock.patch("dagster_databricks.DatabricksPySparkStepLauncher.get_step_events")
 @mock.patch("dagster_databricks.databricks.DatabricksJobRunner.wait_for_run_to_complete")
 def test_pyspark_databricks(mock_wait, mock_get_step_events, mock_put_file, mock_submit_run):
+    mock_get_step_events.return_value = execute_pipeline(
+        pipeline=reconstructable(define_do_nothing_pipe), mode="local"
+    ).events_by_step_key["do_nothing_solid.compute"]
+
     result = execute_pipeline(
         pipeline=reconstructable(define_do_nothing_pipe),
         mode="prod_s3",

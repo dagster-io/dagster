@@ -151,10 +151,7 @@ def step_run_ref_to_step_context(step_run_ref, instance):
         pass
     execution_context = initialization_manager.get_context()
 
-    active_execution = execution_plan.start(retries=retries)
-    step = active_execution.get_next_step()
-
-    return execution_context.for_step(step)
+    return execution_context.for_step(execution_plan.get_step_by_key(step_run_ref.step_key))
 
 
 def run_step_from_ref(step_run_ref, instance):

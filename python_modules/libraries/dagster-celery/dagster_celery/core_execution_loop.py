@@ -52,94 +52,99 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
     step_errors = {}
     completed_steps = set({})  # Set[step_key]
 
-    active_execution = execution_plan.start(
+    with execution_plan.start(
         retries=pipeline_context.executor.retries, sort_key_fn=priority_for_step,
-    )
-    stopping = False
+    ) as active_execution:
 
-    while (not active_execution.is_complete and not stopping) or step_results:
+        stopping = False
 
-        results_to_pop = []
-        for step_key, result in sorted(step_results.items(), key=lambda x: priority_for_key(x[0])):
-            if result.ready():
+        while (not active_execution.is_complete and not stopping) or step_results:
+
+            results_to_pop = []
+            for step_key, result in sorted(
+                step_results.items(), key=lambda x: priority_for_key(x[0])
+            ):
+                if result.ready():
+                    try:
+                        step_events = result.get()
+                    except Exception:  # pylint: disable=broad-except
+                        # We will want to do more to handle the exception here.. maybe subclass Task
+                        # Certainly yield an engine or pipeline event
+                        step_events = []
+                        step_errors[step_key] = serializable_error_info_from_exc_info(
+                            sys.exc_info()
+                        )
+                        stopping = True
+                    for step_event in step_events:
+                        event = deserialize_json_to_dagster_namedtuple(step_event)
+                        yield event
+                        active_execution.handle_event(event)
+
+                    results_to_pop.append(step_key)
+                    completed_steps.add(step_key)
+
+            for step_key in results_to_pop:
+                if step_key in step_results:
+                    del step_results[step_key]
+                    active_execution.verify_complete(pipeline_context, step_key)
+
+            # process skips from failures or uncovered inputs
+            for event in active_execution.skipped_step_events_iterator(pipeline_context):
+                yield event
+
+            # don't add any new steps if we are stopping
+            if stopping:
+                continue
+
+            # This is a slight refinement. If we have n workers idle and schedule m > n steps for
+            # execution, the first n steps will be picked up by the idle workers in the order in
+            # which they are scheduled (and the following m-n steps will be executed in priority
+            # order, provided that it takes longer to execute a step than to schedule it). The test
+            # case has m >> n to exhibit this behavior in the absence of this sort step.
+            for step in active_execution.get_steps_to_execute():
                 try:
-                    step_events = result.get()
-                except Exception:  # pylint: disable=broad-except
-                    # We will want to do more to handle the exception here.. maybe subclass Task
-                    # Certainly yield an engine or pipeline event
-                    step_events = []
-                    step_errors[step_key] = serializable_error_info_from_exc_info(sys.exc_info())
-                    stopping = True
-                for step_event in step_events:
-                    event = deserialize_json_to_dagster_namedtuple(step_event)
-                    yield event
-                    active_execution.handle_event(event)
+                    queue = step.tags.get(DAGSTER_CELERY_QUEUE_TAG, task_default_queue)
+                    yield DagsterEvent.engine_event(
+                        pipeline_context,
+                        'Submitting celery task for step "{step_key}" to queue "{queue}".'.format(
+                            step_key=step.key, queue=queue
+                        ),
+                        EngineEventData(marker_start=DELEGATE_MARKER),
+                        step_key=step.key,
+                    )
 
-                results_to_pop.append(step_key)
-                completed_steps.add(step_key)
+                    # Get the Celery priority for this step
+                    priority = _get_step_priority(pipeline_context, step)
 
-        for step_key in results_to_pop:
-            if step_key in step_results:
-                del step_results[step_key]
-                active_execution.verify_complete(pipeline_context, step_key)
+                    # Submit the Celery tasks
+                    step_results[step.key] = step_execution_fn(
+                        app, pipeline_context, step, queue, priority
+                    )
 
-        # process skips from failures or uncovered inputs
-        for event in active_execution.skipped_step_events_iterator(pipeline_context):
-            yield event
+                except Exception:
+                    yield DagsterEvent.engine_event(
+                        pipeline_context,
+                        "Encountered error during celery task submission.".format(),
+                        event_specific_data=EngineEventData.engine_error(
+                            serializable_error_info_from_exc_info(sys.exc_info()),
+                        ),
+                    )
+                    raise
 
-        # don't add any new steps if we are stopping
-        if stopping:
-            continue
+            time.sleep(TICK_SECONDS)
 
-        # This is a slight refinement. If we have n workers idle and schedule m > n steps for
-        # execution, the first n steps will be picked up by the idle workers in the order in
-        # which they are scheduled (and the following m-n steps will be executed in priority
-        # order, provided that it takes longer to execute a step than to schedule it). The test
-        # case has m >> n to exhibit this behavior in the absence of this sort step.
-        for step in active_execution.get_steps_to_execute():
-            try:
-                queue = step.tags.get(DAGSTER_CELERY_QUEUE_TAG, task_default_queue)
-                yield DagsterEvent.engine_event(
-                    pipeline_context,
-                    'Submitting celery task for step "{step_key}" to queue "{queue}".'.format(
-                        step_key=step.key, queue=queue
-                    ),
-                    EngineEventData(marker_start=DELEGATE_MARKER),
-                    step_key=step.key,
-                )
-
-                # Get the Celery priority for this step
-                priority = _get_step_priority(pipeline_context, step)
-
-                # Submit the Celery tasks
-                step_results[step.key] = step_execution_fn(
-                    app, pipeline_context, step, queue, priority
-                )
-
-            except Exception:
-                yield DagsterEvent.engine_event(
-                    pipeline_context,
-                    "Encountered error during celery task submission.".format(),
-                    event_specific_data=EngineEventData.engine_error(
-                        serializable_error_info_from_exc_info(sys.exc_info()),
-                    ),
-                )
-                raise
-
-        time.sleep(TICK_SECONDS)
-
-    if step_errors:
-        raise DagsterSubprocessError(
-            "During celery execution errors occurred in workers:\n{error_list}".format(
-                error_list="\n".join(
-                    [
-                        "[{step}]: {err}".format(step=key, err=err.to_string())
-                        for key, err in step_errors.items()
-                    ]
-                )
-            ),
-            subprocess_error_infos=list(step_errors.values()),
-        )
+        if step_errors:
+            raise DagsterSubprocessError(
+                "During celery execution errors occurred in workers:\n{error_list}".format(
+                    error_list="\n".join(
+                        [
+                            "[{step}]: {err}".format(step=key, err=err.to_string())
+                            for key, err in step_errors.items()
+                        ]
+                    )
+                ),
+                subprocess_error_infos=list(step_errors.values()),
+            )
 
 
 def _get_step_priority(context, step):

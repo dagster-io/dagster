@@ -122,9 +122,7 @@ def initialize_step_context(scratch_dir, instance):
         pass
     pipeline_context = initialization_manager.get_context()
 
-    active_execution = plan.start(retries=Retries(RetryMode.DISABLED))
-    step = active_execution.get_next_step()
-    step_context = pipeline_context.for_step(step)
+    step_context = pipeline_context.for_step(plan.get_step_by_key("return_two.compute"))
     return step_context
 
 
