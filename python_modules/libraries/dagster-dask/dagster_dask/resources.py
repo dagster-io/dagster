@@ -54,6 +54,13 @@ class DaskResource(object):
     @property
     def client(self):
         return self._client
+        
+    def close(self):
+        self.client.close()
+        if self.cluster:
+            self.cluster.close()
+        
+        self._client, self._cluster = None, None
 
 
 @resource(
@@ -130,3 +137,5 @@ def dask_resource(context):
     resource = DaskResource(context)
     
     yield resource
+
+    resource.close()
