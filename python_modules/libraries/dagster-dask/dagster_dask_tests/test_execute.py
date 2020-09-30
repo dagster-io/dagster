@@ -1,3 +1,6 @@
+import time
+from threading import Thread
+
 import dagster_pandas as dagster_pd
 import pytest
 from dagster_dask import DataFrame, dask_executor
@@ -7,6 +10,7 @@ from dagster import (
     InputDefinition,
     ModeDefinition,
     execute_pipeline,
+    execute_pipeline_iterator,
     file_relative_path,
     pipeline,
     reconstructable,
@@ -15,8 +19,10 @@ from dagster import (
 )
 from dagster.core.definitions.executor import default_executors
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.events import DagsterEventType
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import nesting_composite_pipeline
+from dagster.utils import send_interrupt
 
 
 @solid
@@ -147,3 +153,55 @@ def test_execute_on_dask_local_with_default_storage():
             instance=DagsterInstance.local_temp(),
         )
         assert result.result_for_solid("simple").output_value() == 1
+
+
+@solid(input_defs=[InputDefinition("df", DataFrame)])
+def sleepy_dask_solid(_, df):  # pylint: disable=unused-argument
+    start_time = time.time()
+    while True:
+        time.sleep(0.1)
+        if time.time() - start_time > 120:
+            raise Exception("Timed out")
+
+
+@pipeline(mode_defs=[ModeDefinition(executor_defs=default_executors + [dask_executor])])
+def sleepy_dask_pipeline():
+    return sleepy_dask_solid()
+
+
+def test_dask_terminate():
+    run_config = {
+        "solids": {
+            "sleepy_dask_solid": {
+                "inputs": {"df": {"csv": {"path": file_relative_path(__file__, "ex*.csv")}}}
+            }
+        }
+    }
+
+    interrupt_thread = None
+    result_types = []
+
+    try:
+        for result in execute_pipeline_iterator(
+            pipeline=ReconstructablePipeline.for_file(__file__, sleepy_dask_pipeline.name),
+            run_config=run_config,
+            instance=DagsterInstance.local_temp(),
+        ):
+            # Interrupt once the first step starts
+            if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
+                interrupt_thread = Thread(target=send_interrupt, args=())
+                interrupt_thread.start()
+
+            if result.event_type == DagsterEventType.STEP_FAILURE:
+                assert "KeyboardInterrupt" in result.event_specific_data.error.message
+
+            result_types.append(result.event_type)
+
+        assert False
+    except KeyboardInterrupt:
+        pass
+
+    interrupt_thread.join()
+
+    assert DagsterEventType.STEP_FAILURE in result_types
+    assert DagsterEventType.PIPELINE_FAILURE in result_types
