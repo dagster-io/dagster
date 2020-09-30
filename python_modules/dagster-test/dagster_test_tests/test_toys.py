@@ -5,6 +5,7 @@ from dagster_test.toys.fan_in_fan_out import fan_in_fan_out_pipeline
 from dagster_test.toys.hammer import hammer_pipeline
 from dagster_test.toys.log_spew import log_spew
 from dagster_test.toys.many_events import many_events
+from dagster_test.toys.pyspark_assets.pyspark_assets_pipeline import pyspark_assets_pipeline
 from dagster_test.toys.resources import resource_pipeline
 from dagster_test.toys.sleepy import sleepy_pipeline
 
@@ -14,6 +15,7 @@ from dagster import (
     DagsterTypeCheckDidNotPass,
     execute_pipeline,
 )
+from dagster.utils.temp_file import get_temp_dir
 
 
 def test_many_events_pipeline():
@@ -40,6 +42,34 @@ def test_resource_pipeline_no_config():
 def test_resource_pipeline_with_config():
     result = execute_pipeline(resource_pipeline, run_config={"resources": {"R1": {"config": 2}}})
     assert result.result_for_solid("one").output_value() == 3
+
+
+def test_pyspark_assets_pipeline():
+
+    with get_temp_dir() as temp_dir:
+        run_config = {
+            "solids": {
+                "get_max_temp_per_station": {
+                    "config": {"temperature_file": "temperature.csv", "version_salt": "foo",}
+                },
+                "get_consolidated_location": {
+                    "config": {"station_file": "stations.csv", "version_salt": "foo",}
+                },
+                "combine_dfs": {"config": {"version_salt": "foo",}},
+                "pretty_output": {"config": {"version_salt": "foo",}},
+            },
+            "resources": {
+                "source_data_dir": {
+                    "config": {
+                        "dir": "python_modules/dagster-test/dagster_test/toys/pyspark_assets/asset_pipeline_files"
+                    }
+                },
+                "savedir": {"config": {"dir": temp_dir}},
+            },
+        }
+
+        result = execute_pipeline(pyspark_assets_pipeline, run_config=run_config,)
+        assert result.success
 
 
 def test_error_monster_success():
