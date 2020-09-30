@@ -60,6 +60,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.6.0",
     "@babel/preset-env": "^7.7.1",
     "@babel/preset-typescript": "^7.7.2",
+    "@types/chart.js": "^2.9.24",
     "@types/codemirror": "^0.0.80",
     "@types/color": "^3.0.0",
     "@types/dagre": "^0.7.42",

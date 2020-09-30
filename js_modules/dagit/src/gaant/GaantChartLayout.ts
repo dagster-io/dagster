@@ -12,6 +12,7 @@ import {
   GaantChartMode,
   IGaantNode,
   LEFT_INSET,
+  FLAT_INSET_FROM_PARENT,
 } from 'src/gaant/Constants';
 
 export interface BuildLayoutParams {
@@ -59,75 +60,87 @@ export const buildLayout = (params: BuildLayoutParams) => {
   };
   roots.forEach((box) => deepen(box, LEFT_INSET));
 
+  const parents: {[name: string]: GaantChartBox[]} = {};
+  const boxesByY: {[y: string]: GaantChartBox[]} = {};
+
   // Step 4: Assign Y values (row numbers not pixel values)
-  if (mode === GaantChartMode.FLAT) {
-    boxes.forEach((box, idx) => {
-      box.y = idx;
-      box.width = 400;
-      box.x = LEFT_INSET + box.x * 0.1;
+  // First put each box on it's own line. We know this will generate a fine gaant viz
+  // because we sorted the boxes array as we built it.
+  boxes.forEach((box, idx) => {
+    box.y = idx;
+    box.children.forEach((child) => {
+      parents[child.node.name] = parents[child.node.name] || [];
+      parents[child.node.name].push(box);
     });
-  } else {
-    const parents: {[name: string]: GaantChartBox[]} = {};
-    const boxesByY: {[y: string]: GaantChartBox[]} = {};
+  });
 
-    // First put each box on it's own line. We know this will generate a fine gaant viz
-    // because we sorted the boxes array as we built it.
-    boxes.forEach((box, idx) => {
-      box.y = idx;
-      box.children.forEach((child) => {
-        parents[child.node.name] = parents[child.node.name] || [];
-        parents[child.node.name].push(box);
-      });
-    });
+  boxes.forEach((box) => {
+    boxesByY[`${box.y}`] = boxesByY[`${box.y}`] || [];
+    boxesByY[`${box.y}`].push(box);
+  });
 
-    boxes.forEach((box) => {
-      boxesByY[`${box.y}`] = boxesByY[`${box.y}`] || [];
+  // Next, start at the bottom of the viz and "collapse" boxes up on to the previous line
+  // as long as that does not result in them being higher than their parents AND does
+  // not cause them to sit on top of an existing on-the-same-line A ---> B arrow.
+
+  // This makes basic box series (A -> B -> C -> D) one row instead of four rows.
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (let idx = boxes.length - 1; idx > 0; idx--) {
+      const box = boxes[idx];
+      const boxParents = parents[box.node.name] || [];
+      const highestYParent = boxParents.sort((a, b) => b.y - a.y)[0];
+      if (!highestYParent) {
+        continue;
+      }
+
+      const onTargetY = boxesByY[`${highestYParent.y}`];
+      const taken = onTargetY.find((r) => r.x === box.x);
+      if (taken) {
+        continue;
+      }
+
+      const parentX = highestYParent.x;
+      const willCross = onTargetY.some((r) => r.x > parentX && r.x < box.x);
+      const willCauseCrossing = onTargetY.some(
+        (r) => r.x < box.x && r.children.some((c) => c.y >= highestYParent.y && c.x > box.x),
+      );
+      if (willCross || willCauseCrossing) {
+        continue;
+      }
+
+      boxesByY[`${box.y}`] = boxesByY[`${box.y}`].filter((b) => b !== box);
+      box.y = highestYParent.y;
       boxesByY[`${box.y}`].push(box);
-    });
 
-    // Next, start at the bottom of the viz and "collapse" boxes up on to the previous line
-    // as long as that does not result in them being higher than their parents AND does
-    // not cause them to sit on top of an existing on-the-same-line A ---> B arrow.
+      changed = true;
+      break;
+    }
+  }
 
-    // This makes basic box series (A -> B -> C -> D) one row instead of four rows.
-
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (let idx = boxes.length - 1; idx > 0; idx--) {
-        const box = boxes[idx];
-        const boxParents = parents[box.node.name] || [];
-        const highestYParent = boxParents.sort((a, b) => b.y - a.y)[0];
-        if (!highestYParent) {
-          continue;
-        }
-
-        const onTargetY = boxesByY[`${highestYParent.y}`];
-        const taken = onTargetY.find((r) => r.x === box.x);
-        if (taken) {
-          continue;
-        }
-
-        const parentX = highestYParent.x;
-        const willCross = onTargetY.some((r) => r.x > parentX && r.x < box.x);
-        const willCauseCrossing = onTargetY.some(
-          (r) => r.x < box.x && r.children.some((c) => c.y >= highestYParent.y && c.x > box.x),
-        );
-        if (willCross || willCauseCrossing) {
-          continue;
-        }
-
-        boxesByY[`${box.y}`] = boxesByY[`${box.y}`].filter((b) => b !== box);
-        box.y = highestYParent.y;
-        boxesByY[`${box.y}`].push(box);
-
-        changed = true;
-        break;
+  if (mode === GaantChartMode.FLAT) {
+    // Now that we've inlined chains of boxes where possible, flatten everything back out onto the
+    // Y axis. Doing this after inlining ensures that children are close to their parents in the
+    // resulting tree rather than placed randomly before their mutual dependents.
+    let bottomY = 0;
+    for (const y of Object.keys(boxesByY)) {
+      const row = boxesByY[y];
+      if (!row.length) {
+        continue;
+      }
+      let x = row[0].root ? LEFT_INSET : parents[row[0].node.name][0].x + FLAT_INSET_FROM_PARENT;
+      for (const box of row) {
+        box.x = x;
+        box.y = bottomY;
+        bottomY += 1;
+        x += FLAT_INSET_FROM_PARENT;
       }
     }
-
-    // The collapsing above can leave rows entirely empty - shift rows up and fill empty
-    // space until every Y value has a box.
+    boxes.sort((a, b) => a.y - b.y || a.x - b.x);
+  } else {
+    // Since we've inlined boxes, shift rows up and fill empty space until every Y value has a box.
     changed = true;
     while (changed) {
       changed = false;
@@ -415,10 +428,9 @@ export const adjustLayoutWithRunMetadata = (
     }
   } else if (options.mode === GaantChartMode.WATERFALL) {
     positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
-      x: run ? box.x + (runIdx ? (BOX_SPACING_X + BOX_WIDTH) * runIdx : 0) : 0,
+      x: box.x + (runIdx ? (BOX_SPACING_X + BOX_WIDTH) * runIdx : 0),
       width: BOX_WIDTH,
     }));
-    positionUntimedBoxes(boxes, LEFT_INSET);
   } else if (options.mode === GaantChartMode.FLAT) {
     positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
       x: box.x + (runIdx ? (2 + BOX_WIDTH) * runIdx : 0),
