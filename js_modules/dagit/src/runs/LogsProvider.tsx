@@ -3,14 +3,13 @@ import gql from 'graphql-tag';
 import * as querystring from 'query-string';
 import * as React from 'react';
 
-import {DirectGraphQLSubscription} from '../DirectGraphQLSubscription';
-import {TokenizingFieldValue, tokenizedValuesFromString} from '../TokenizingField';
-import {PipelineRunStatus} from '../types/globalTypes';
-
-import {Run} from './Run';
-import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';
-import {PipelineRunLogsSubscriptionStatusFragment} from './types/PipelineRunLogsSubscriptionStatusFragment';
-import {RunPipelineRunEventFragment} from './types/RunPipelineRunEventFragment';
+import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
+import {TokenizingFieldValue, tokenizedValuesFromString} from 'src/TokenizingField';
+import {Run} from 'src/runs/Run';
+import {PipelineRunLogsSubscription} from 'src/runs/types/PipelineRunLogsSubscription';
+import {PipelineRunLogsSubscriptionStatusFragment} from 'src/runs/types/PipelineRunLogsSubscriptionStatusFragment';
+import {RunPipelineRunEventFragment} from 'src/runs/types/RunPipelineRunEventFragment';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 
 export enum LogLevel {
   DEBUG = 'DEBUG',

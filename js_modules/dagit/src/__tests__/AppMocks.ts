@@ -1,18 +1,17 @@
 import path from 'path';
 
-import {ROOT_REPOSITORIES_QUERY} from '../DagsterRepositoryContext';
-import {PIPELINE_EXPLORER_ROOT_QUERY} from '../PipelineExplorerRoot';
-import {SIDEBAR_TABBED_CONTAINER_SOLID_QUERY} from '../SidebarSolidContainer';
-import {USED_SOLID_DETAILS_QUERY} from '../solids/SolidDetailsRoot';
-import {SOLIDS_ROOT_QUERY} from '../solids/SolidsRoot';
-import {TYPE_EXPLORER_CONTAINER_QUERY} from '../typeexplorer/TypeExplorerContainer';
-import {TYPE_LIST_CONTAINER_QUERY} from '../typeexplorer/TypeListContainer';
-import {TypeExplorerContainerQueryVariables} from '../typeexplorer/types/TypeExplorerContainerQuery';
-import {TypeListContainerQueryVariables} from '../typeexplorer/types/TypeListContainerQuery';
-import {PipelineExplorerRootQueryVariables} from '../types/PipelineExplorerRootQuery';
-import {SidebarTabbedContainerSolidQueryVariables} from '../types/SidebarTabbedContainerSolidQuery';
-
-import {CachedGraphQLRequest} from './MockedApolloLinks';
+import {ROOT_REPOSITORIES_QUERY} from 'src/DagsterRepositoryContext';
+import {PIPELINE_EXPLORER_ROOT_QUERY} from 'src/PipelineExplorerRoot';
+import {SIDEBAR_TABBED_CONTAINER_SOLID_QUERY} from 'src/SidebarSolidContainer';
+import {CachedGraphQLRequest} from 'src/__tests__/MockedApolloLinks';
+import {USED_SOLID_DETAILS_QUERY} from 'src/solids/SolidDetailsRoot';
+import {SOLIDS_ROOT_QUERY} from 'src/solids/SolidsRoot';
+import {TYPE_EXPLORER_CONTAINER_QUERY} from 'src/typeexplorer/TypeExplorerContainer';
+import {TYPE_LIST_CONTAINER_QUERY} from 'src/typeexplorer/TypeListContainer';
+import {TypeExplorerContainerQueryVariables} from 'src/typeexplorer/types/TypeExplorerContainerQuery';
+import {TypeListContainerQueryVariables} from 'src/typeexplorer/types/TypeListContainerQuery';
+import {PipelineExplorerRootQueryVariables} from 'src/types/PipelineExplorerRootQuery';
+import {SidebarTabbedContainerSolidQueryVariables} from 'src/types/SidebarTabbedContainerSolidQuery';
 
 export const MOCKS: CachedGraphQLRequest[] = [
   {

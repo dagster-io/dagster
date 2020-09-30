@@ -3,13 +3,12 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {useMutation} from 'react-apollo';
 
-import {useRepository, useRepositoryOptions} from '../DagsterRepositoryContext';
-import {SharedToaster} from '../DomUtils';
-import {IStepState} from '../RunMetadataProvider';
-import {LaunchButtonConfiguration, LaunchButtonDropdown} from '../execute/LaunchButton';
-import {PipelineRunStatus} from '../types/globalTypes';
-
-import {CANCEL_MUTATION} from './RunUtils';
+import {useRepository, useRepositoryOptions} from 'src/DagsterRepositoryContext';
+import {SharedToaster} from 'src/DomUtils';
+import {IStepState} from 'src/RunMetadataProvider';
+import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
+import {CANCEL_MUTATION} from 'src/runs/RunUtils';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 
 const CANCEL_TITLE = 'Terminate';
 

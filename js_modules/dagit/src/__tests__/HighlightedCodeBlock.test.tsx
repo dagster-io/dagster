@@ -2,7 +2,7 @@ import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import * as TestRenderer from 'react-test-renderer';
 
-import {HighlightedCodeBlock} from '../HighlightedCodeBlock';
+import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 
 it('correctly renders keywords inside a comment', () => {
   const component = TestRenderer.create(

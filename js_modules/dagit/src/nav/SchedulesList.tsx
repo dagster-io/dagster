@@ -6,11 +6,10 @@ import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {DagsterRepoOption} from '../DagsterRepositoryContext';
-import {ShortcutHandler} from '../ShortcutHandler';
-import {ScheduleStatus} from '../types/globalTypes';
-
-import {SchedulesListQuery} from './types/SchedulesListQuery';
+import {DagsterRepoOption} from 'src/DagsterRepositoryContext';
+import {ShortcutHandler} from 'src/ShortcutHandler';
+import {SchedulesListQuery} from 'src/nav/types/SchedulesListQuery';
+import {ScheduleStatus} from 'src/types/globalTypes';
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());

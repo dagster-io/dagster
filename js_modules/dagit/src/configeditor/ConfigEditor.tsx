@@ -1,20 +1,20 @@
 import 'codemirror';
-import 'codemirror/lib/codemirror.css';
-import 'codemirror/theme/material.css';
-import 'codemirror/addon/hint/show-hint';
-import 'codemirror/addon/hint/show-hint.css';
 import 'codemirror/addon/comment/comment';
+import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/fold/foldgutter';
 import 'codemirror/addon/fold/foldgutter.css';
 import 'codemirror/addon/fold/indent-fold';
+import 'codemirror/addon/hint/show-hint';
+import 'codemirror/addon/hint/show-hint.css';
+import 'codemirror/addon/lint/lint.css';
+import 'codemirror/addon/search/jump-to-line';
 import 'codemirror/addon/search/search';
 import 'codemirror/addon/search/searchcursor';
-import 'codemirror/addon/search/jump-to-line';
-import 'codemirror/addon/dialog/dialog';
-import './codemirror-yaml/lint'; // Patch lint
-import 'codemirror/addon/lint/lint.css';
 import 'codemirror/keymap/sublime';
-import './codemirror-yaml/mode';
+import 'codemirror/lib/codemirror.css';
+import 'codemirror/theme/material.css';
+import 'src/configeditor/codemirror-yaml/lint'; // Patch lint
+import 'src/configeditor/codemirror-yaml/mode';
 
 import {Editor} from 'codemirror';
 import * as React from 'react';
@@ -22,17 +22,16 @@ import {Controlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {debounce} from '../Util';
-
+import {debounce} from 'src/Util';
 import {
   YamlModeValidateFunction,
   expandAutocompletionContextAtCursor,
   findRangeInDocumentFromPath,
-} from './codemirror-yaml/mode';
+} from 'src/configeditor/codemirror-yaml/mode';
 import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes,
-} from './types/ConfigEditorRunConfigSchemaFragment';
+} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
 
 export function isHelpContextEqual(
   prev: ConfigEditorHelpContext | null,

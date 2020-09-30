@@ -6,9 +6,8 @@ import {
   IExpectationResult,
   IExpectationResultStatus,
   IMaterialization,
-} from '../RunMetadataProvider';
-
-import {DisplayEvent} from './DisplayEvent';
+} from 'src/RunMetadataProvider';
+import {DisplayEvent} from 'src/runs/DisplayEvent';
 
 interface IDisplayEventsProps {
   expectationResults: IExpectationResult[];

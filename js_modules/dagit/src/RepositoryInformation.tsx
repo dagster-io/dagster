@@ -1,8 +1,8 @@
 import gql from 'graphql-tag';
 import * as React from 'react';
 
-import {RepositoryInfoFragment} from './types/RepositoryInfoFragment';
-import {RepositoryOriginFragment} from './types/RepositoryOriginFragment';
+import {RepositoryInfoFragment} from 'src/types/RepositoryInfoFragment';
+import {RepositoryOriginFragment} from 'src/types/RepositoryOriginFragment';
 
 export const RepositoryInformationFragment = gql`
   fragment RepositoryOriginFragment on RepositoryOrigin {

@@ -3,15 +3,14 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {Legend, LegendColumn, RowColumn, RowContainer} from '../ListComponents';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {TokenizingFieldValue} from '../TokenizingField';
-
-import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
-import {RunStatusWithStats} from './RunStatusDots';
-import {RunTag} from './RunTag';
-import {RunComponentFragments, RunElapsed, RunTime, titleForRun} from './RunUtils';
-import {RunTableRunFragment, RunTableRunFragment_tags} from './types/RunTableRunFragment';
+import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {TokenizingFieldValue} from 'src/TokenizingField';
+import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
+import {RunStatusWithStats} from 'src/runs/RunStatusDots';
+import {RunTag} from 'src/runs/RunTag';
+import {RunComponentFragments, RunElapsed, RunTime, titleForRun} from 'src/runs/RunUtils';
+import {RunTableRunFragment, RunTableRunFragment_tags} from 'src/runs/types/RunTableRunFragment';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];

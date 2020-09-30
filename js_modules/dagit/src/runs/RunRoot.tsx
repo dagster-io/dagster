@@ -5,10 +5,9 @@ import * as React from 'react';
 import {useApolloClient, useQuery} from 'react-apollo';
 import {RouteComponentProps} from 'react-router';
 
-import {AssetsSupported} from '../AssetsSupported';
-
-import {Run} from './Run';
-import {RunRootQuery} from './types/RunRootQuery';
+import {AssetsSupported} from 'src/AssetsSupported';
+import {Run} from 'src/runs/Run';
+import {RunRootQuery} from 'src/runs/types/RunRootQuery';
 
 export const RunRoot: React.FunctionComponent<RouteComponentProps<{
   runId: string;

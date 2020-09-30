@@ -3,10 +3,10 @@ import {LinkVertical as Link} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {SVGMonospaceText} from './SVGComponents';
-import {Edge} from './SolidLinks';
-import {IPoint} from './getFullSolidLayout';
-import {isHighlighted} from './highlighting';
+import {SVGMonospaceText} from 'src/graph/SVGComponents';
+import {Edge} from 'src/graph/SolidLinks';
+import {IPoint} from 'src/graph/getFullSolidLayout';
+import {isHighlighted} from 'src/graph/highlighting';
 
 interface ExternalConnectionNodeProps {
   layout: IPoint;

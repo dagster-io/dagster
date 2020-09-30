@@ -3,9 +3,8 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import {useMutation} from 'react-apollo';
 
-import {useRepositorySelector} from '../DagsterRepositoryContext';
-
-import {SCHEDULES_ROOT_QUERY} from './ScheduleUtils';
+import {useRepositorySelector} from 'src/DagsterRepositoryContext';
+import {SCHEDULES_ROOT_QUERY} from 'src/schedules/ScheduleUtils';
 
 export const ReconcileButton: React.FunctionComponent<{}> = () => {
   const repositorySelector = useRepositorySelector();

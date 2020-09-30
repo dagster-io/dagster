@@ -1,7 +1,7 @@
 import gql from 'graphql-tag';
 
-import {YamlModeValidationResult} from './codemirror-yaml/mode';
-import {ConfigEditorValidationFragment} from './types/ConfigEditorValidationFragment';
+import {YamlModeValidationResult} from 'src/configeditor/codemirror-yaml/mode';
+import {ConfigEditorValidationFragment} from 'src/configeditor/types/ConfigEditorValidationFragment';
 
 export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
   fragment ConfigEditorRunConfigSchemaFragment on RunConfigSchema {

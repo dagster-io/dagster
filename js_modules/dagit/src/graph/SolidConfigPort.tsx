@@ -1,8 +1,8 @@
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 
-import PipelineColorScale from './PipelineColorScale';
-import {SVGEllipseInRect} from './SVGComponents';
+import PipelineColorScale from 'src/graph/PipelineColorScale';
+import {SVGEllipseInRect} from 'src/graph/SVGComponents';
 
 interface ISolidConfigPortProps {
   x: number;

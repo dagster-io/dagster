@@ -2,13 +2,13 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
 
-import {usePipelineSelector} from './DagsterRepositoryContext';
-import Loading from './Loading';
-import {SolidNameOrPath} from './PipelineExplorer';
-import {PipelineExplorerPath} from './PipelinePathUtils';
-import {SidebarSolidDefinition} from './SidebarSolidDefinition';
-import {SidebarSolidInvocation} from './SidebarSolidInvocation';
-import {SidebarTabbedContainerSolidQuery} from './types/SidebarTabbedContainerSolidQuery';
+import {usePipelineSelector} from 'src/DagsterRepositoryContext';
+import Loading from 'src/Loading';
+import {SolidNameOrPath} from 'src/PipelineExplorer';
+import {PipelineExplorerPath} from 'src/PipelinePathUtils';
+import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
+import {SidebarSolidInvocation} from 'src/SidebarSolidInvocation';
+import {SidebarTabbedContainerSolidQuery} from 'src/types/SidebarTabbedContainerSolidQuery';
 
 interface SidebarSolidContainerProps {
   handleID: string;

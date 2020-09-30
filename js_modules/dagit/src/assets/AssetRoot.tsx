@@ -5,21 +5,20 @@ import {useQuery} from 'react-apollo';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
 
-import {Header, Legend, LegendColumn, RowColumn, RowContainer} from '../ListComponents';
-import Loading from '../Loading';
-import {Timestamp} from '../TimeComponents';
-import {colorHash} from '../Util';
-import {MetadataEntries, MetadataEntry} from '../runs/MetadataEntry';
-import {RunStatus} from '../runs/RunStatusDots';
-import {RunTable} from '../runs/RunTable';
-import {titleForRun} from '../runs/RunUtils';
-import {PipelineRunStatus} from '../types/globalTypes';
-
+import {Header, Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
+import Loading from 'src/Loading';
+import {Timestamp} from 'src/TimeComponents';
+import {colorHash} from 'src/Util';
 import {
   AssetQuery_assetOrError_Asset_graphMaterializations,
   AssetQuery_assetOrError_Asset_lastMaterializations,
-} from './types/AssetQuery';
-import {AssetsRootQuery_assetsOrError_AssetConnection_nodes_key} from './types/AssetsRootQuery';
+} from 'src/assets/types/AssetQuery';
+import {AssetsRootQuery_assetsOrError_AssetConnection_nodes_key} from 'src/assets/types/AssetsRootQuery';
+import {MetadataEntries, MetadataEntry} from 'src/runs/MetadataEntry';
+import {RunStatus} from 'src/runs/RunStatusDots';
+import {RunTable} from 'src/runs/RunTable';
+import {titleForRun} from 'src/runs/RunUtils';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 
 type AssetKey = AssetsRootQuery_assetsOrError_AssetConnection_nodes_key;
 type GraphMaterialization = AssetQuery_assetOrError_Asset_graphMaterializations;

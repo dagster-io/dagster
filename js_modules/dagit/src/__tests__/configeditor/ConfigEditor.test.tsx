@@ -2,7 +2,7 @@ import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import * as TestRenderer from 'react-test-renderer';
 
-import {ConfigEditor} from '../../configeditor/ConfigEditor';
+import {ConfigEditor} from 'src/configeditor/ConfigEditor';
 
 it('renders a codemirror', () => {
   // This test does very little, unfortunately, because JSDOM doesn't really support the APIs that

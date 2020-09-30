@@ -24,9 +24,9 @@ import {useState} from 'react';
 import {Link, useHistory, useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ButtonLink} from '../ButtonLink';
-import {showCustomAlert} from '../CustomAlertProvider';
-import {ConfirmationOptions, useConfirmation} from '../CustomConfirmationProvider';
+import {ButtonLink} from 'src/ButtonLink';
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {ConfirmationOptions, useConfirmation} from 'src/CustomConfirmationProvider';
 import {
   DagsterRepoOption,
   repositorySelectorFromDagsterRepoOption,
@@ -34,25 +34,30 @@ import {
   useCurrentRepositoryState,
   useRepositoryOptions,
   useScheduleSelector,
-} from '../DagsterRepositoryContext';
-import {HighlightedCodeBlock} from '../HighlightedCodeBlock';
-import {RowColumn, RowContainer, ScrollingRowColumn} from '../ListComponents';
-import {Legend, LegendColumn} from '../ListComponents';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {RepositoryOriginInformation} from '../RepositoryInformation';
-import {assertUnreachable} from '../Util';
-import {RunStatus} from '../runs/RunStatusDots';
-import {titleForRun} from '../runs/RunUtils';
-import {ScheduleStatus, ScheduleTickStatus} from '../types/globalTypes';
-
-import {ReconcileButton} from './ReconcileButton';
+} from 'src/DagsterRepositoryContext';
+import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
+import {RowColumn, RowContainer, ScrollingRowColumn} from 'src/ListComponents';
+import {Legend, LegendColumn} from 'src/ListComponents';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {RepositoryOriginInformation} from 'src/RepositoryInformation';
+import {assertUnreachable} from 'src/Util';
+import {RunStatus} from 'src/runs/RunStatusDots';
+import {titleForRun} from 'src/runs/RunUtils';
+import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {
   ScheduleDefinitionFragment,
   ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData,
-} from './types/ScheduleDefinitionFragment';
-import {ScheduleStateFragment} from './types/ScheduleStateFragment';
-import {StartSchedule, StartSchedule_startSchedule_PythonError} from './types/StartSchedule';
-import {StopSchedule, StopSchedule_stopRunningSchedule_PythonError} from './types/StopSchedule';
+} from 'src/schedules/types/ScheduleDefinitionFragment';
+import {ScheduleStateFragment} from 'src/schedules/types/ScheduleStateFragment';
+import {
+  StartSchedule,
+  StartSchedule_startSchedule_PythonError,
+} from 'src/schedules/types/StartSchedule';
+import {
+  StopSchedule,
+  StopSchedule_stopRunningSchedule_PythonError,
+} from 'src/schedules/types/StopSchedule';
+import {ScheduleStatus, ScheduleTickStatus} from 'src/types/globalTypes';
 
 type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 

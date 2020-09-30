@@ -15,23 +15,22 @@ import {WithApolloClient, useQuery, withApollo} from 'react-apollo';
 import * as ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
-import {showCustomAlert} from '../CustomAlertProvider';
-import {useRepositorySelector} from '../DagsterRepositoryContext';
-import {IExecutionSession} from '../LocalStorage';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {ShortcutHandler} from '../ShortcutHandler';
-import {PythonErrorFragment} from '../types/PythonErrorFragment';
-import {RepositorySelector} from '../types/globalTypes';
-
-import {ConfigEditorGeneratorPartitionSetsFragment_results} from './types/ConfigEditorGeneratorPartitionSetsFragment';
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {useRepositorySelector} from 'src/DagsterRepositoryContext';
+import {IExecutionSession} from 'src/LocalStorage';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {ShortcutHandler} from 'src/ShortcutHandler';
+import {ConfigEditorGeneratorPartitionSetsFragment_results} from 'src/execute/types/ConfigEditorGeneratorPartitionSetsFragment';
 import {
   ConfigEditorGeneratorPipelineFragment,
   ConfigEditorGeneratorPipelineFragment_presets,
-} from './types/ConfigEditorGeneratorPipelineFragment';
+} from 'src/execute/types/ConfigEditorGeneratorPipelineFragment';
 import {
   ConfigPartitionsQuery,
   ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
-} from './types/ConfigPartitionsQuery';
+} from 'src/execute/types/ConfigPartitionsQuery';
+import {PythonErrorFragment} from 'src/types/PythonErrorFragment';
+import {RepositorySelector} from 'src/types/globalTypes';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorGeneratorPipelineFragment_presets;

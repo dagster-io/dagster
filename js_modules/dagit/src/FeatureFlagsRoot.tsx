@@ -1,7 +1,6 @@
-/* eslint-disable */
 import * as React from 'react';
-import {getFeatureFlags, setFeatureFlags, FeatureFlag} from './Util';
-import {Checkbox} from '@blueprintjs/core';
+
+import {getFeatureFlags, setFeatureFlags, FeatureFlag} from 'src/Util';
 
 export const FeatureFlagsRoot = () => {
   const [flags, setFlags] = React.useState<FeatureFlag[]>(getFeatureFlags());
@@ -10,6 +9,7 @@ export const FeatureFlagsRoot = () => {
     setFeatureFlags(flags);
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const toggleFlag = (flag: FeatureFlag) => {
     setFlags(flags.includes(flag) ? flags.filter((f) => f !== flag) : [...flags, flag]);
   };

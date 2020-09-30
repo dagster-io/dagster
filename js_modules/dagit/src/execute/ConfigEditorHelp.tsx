@@ -3,8 +3,8 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ConfigTypeSchema, TypeData} from '../ConfigTypeSchema';
-import {ConfigEditorHelpContext, isHelpContextEqual} from '../configeditor/ConfigEditor';
+import {ConfigTypeSchema, TypeData} from 'src/ConfigTypeSchema';
+import {ConfigEditorHelpContext, isHelpContextEqual} from 'src/configeditor/ConfigEditor';
 
 interface ConfigEditorHelpProps {
   context: ConfigEditorHelpContext | null;

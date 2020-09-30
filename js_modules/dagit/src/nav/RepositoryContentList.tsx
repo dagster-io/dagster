@@ -6,11 +6,10 @@ import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {DagsterRepoOption} from '../DagsterRepositoryContext';
-import {ShortcutHandler} from '../ShortcutHandler';
-
-import {tabForPipelinePathComponent} from './PipelineNav';
-import {ContentListSolidsQuery} from './types/ContentListSolidsQuery';
+import {DagsterRepoOption} from 'src/DagsterRepositoryContext';
+import {ShortcutHandler} from 'src/ShortcutHandler';
+import {tabForPipelinePathComponent} from 'src/nav/PipelineNav';
+import {ContentListSolidsQuery} from 'src/nav/types/ContentListSolidsQuery';
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());

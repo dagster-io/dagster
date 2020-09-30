@@ -2,11 +2,10 @@ import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 import {createGlobalStyle} from 'styled-components/macro';
 
-import {RowContainer} from '../ListComponents';
-import {RUN_STATUS_COLORS, RUN_STATUS_HOVER_COLORS} from '../runs/RunStatusDots';
-import {openRunInBrowser} from '../runs/RunUtils';
-
-import {PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs} from './types/PartitionLongitudinalQuery';
+import {RowContainer} from 'src/ListComponents';
+import {PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs} from 'src/partitions/types/PartitionLongitudinalQuery';
+import {RUN_STATUS_COLORS, RUN_STATUS_HOVER_COLORS} from 'src/runs/RunStatusDots';
+import {openRunInBrowser} from 'src/runs/RunUtils';
 
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 interface Point {

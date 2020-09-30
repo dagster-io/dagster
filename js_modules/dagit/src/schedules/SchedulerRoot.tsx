@@ -5,25 +5,24 @@ import React, {useState} from 'react';
 import {useQuery} from 'react-apollo';
 import {useHistory} from 'react-router-dom';
 
-import {ButtonLink} from '../ButtonLink';
+import {ButtonLink} from 'src/ButtonLink';
 import {
   DagsterRepoOption,
   useCurrentRepositoryState,
   useRepositoryOptions,
-} from '../DagsterRepositoryContext';
-import {Header, ScrollContainer} from '../ListComponents';
-import Loading from '../Loading';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {RepositoryInformation} from '../RepositoryInformation';
-
-import {ScheduleStateRow} from './ScheduleRow';
-import {SCHEDULE_STATE_FRAGMENT, SchedulerTimezoneNote} from './ScheduleUtils';
-import {SCHEDULER_FRAGMENT, SchedulerInfo} from './SchedulerInfo';
+} from 'src/DagsterRepositoryContext';
+import {Header, ScrollContainer} from 'src/ListComponents';
+import Loading from 'src/Loading';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {RepositoryInformation} from 'src/RepositoryInformation';
+import {ScheduleStateRow} from 'src/schedules/ScheduleRow';
+import {SCHEDULE_STATE_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
+import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {
   SchedulerRootQuery,
   SchedulerRootQuery_scheduleStatesOrError,
   SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results,
-} from './types/SchedulerRootQuery';
+} from 'src/schedules/types/SchedulerRootQuery';
 
 type ScheduleState = SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results;
 

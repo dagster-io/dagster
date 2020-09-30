@@ -5,19 +5,22 @@ import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components/macro';
 
-import {CursorPaginationControls} from './CursorPaginationControls';
-import {Header, ScrollContainer} from './ListComponents';
-import Loading from './Loading';
-import {RunTable} from './runs/RunTable';
-import {RunsQueryRefetchContext} from './runs/RunUtils';
+import {CursorPaginationControls} from 'src/CursorPaginationControls';
+import {Header, ScrollContainer} from 'src/ListComponents';
+import Loading from 'src/Loading';
+import {RunTable} from 'src/runs/RunTable';
+import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
 import {
   RunFilterTokenType,
   RunsFilter,
   runsFilterForSearchTokens,
   useRunFiltering,
-} from './runs/RunsFilter';
-import {useCursorPaginatedQuery} from './runs/useCursorPaginatedQuery';
-import {PipelineRunsRootQuery, PipelineRunsRootQueryVariables} from './types/PipelineRunsRootQuery';
+} from 'src/runs/RunsFilter';
+import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
+import {
+  PipelineRunsRootQuery,
+  PipelineRunsRootQueryVariables,
+} from 'src/types/PipelineRunsRootQuery';
 
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['id', 'status', 'tag'];

@@ -3,12 +3,11 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {IStepState} from '../RunMetadataProvider';
-import {IRunMetadataDict} from '../RunMetadataProvider';
-import {SuggestionProvider, TokenizingField, TokenizingFieldValue} from '../TokenizingField';
-
-import {ComputeLogLink} from './ComputeLogModal';
-import {GetFilterProviders, LogFilter, LogFilterValue, LogLevel} from './LogsProvider';
+import {IStepState} from 'src/RunMetadataProvider';
+import {IRunMetadataDict} from 'src/RunMetadataProvider';
+import {SuggestionProvider, TokenizingField, TokenizingFieldValue} from 'src/TokenizingField';
+import {ComputeLogLink} from 'src/runs/ComputeLogModal';
+import {GetFilterProviders, LogFilter, LogFilterValue, LogLevel} from 'src/runs/LogsProvider';
 
 interface ILogsToolbarProps {
   steps: string[];

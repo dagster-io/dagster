@@ -1,7 +1,7 @@
 import '@blueprintjs/core/lib/css/blueprint.css';
-import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/icons/lib/css/blueprint-icons.css';
 import '@blueprintjs/select/lib/css/blueprint-select.css';
+import '@blueprintjs/table/lib/css/table.css';
 
 import ApolloClient from 'apollo-client';
 import {ApolloLink} from 'apollo-link';
@@ -12,12 +12,12 @@ import * as ReactDOM from 'react-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
-import {App} from './App';
-import AppCache from './AppCache';
-import {AppErrorLink} from './AppError';
-import {WEBSOCKET_URI} from './DomUtils';
-import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
-import {WebsocketStatusProvider} from './WebsocketStatus';
+import {App} from 'src/App';
+import AppCache from 'src/AppCache';
+import {AppErrorLink} from 'src/AppError';
+import {WEBSOCKET_URI} from 'src/DomUtils';
+import {patchCopyToRemoveZeroWidthUnderscores} from 'src/Util';
+import {WebsocketStatusProvider} from 'src/WebsocketStatus';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these

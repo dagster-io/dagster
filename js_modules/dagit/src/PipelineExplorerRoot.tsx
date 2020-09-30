@@ -6,20 +6,20 @@ import {useQuery} from 'react-apollo';
 import {Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePipelineSelector, useActivePipelineForName} from './DagsterRepositoryContext';
-import Loading from './Loading';
-import PipelineExplorer, {PipelineExplorerOptions} from './PipelineExplorer';
+import {usePipelineSelector, useActivePipelineForName} from 'src/DagsterRepositoryContext';
+import Loading from 'src/Loading';
+import PipelineExplorer, {PipelineExplorerOptions} from 'src/PipelineExplorer';
 import {
   PipelineExplorerPath,
   explorerPathFromString,
   explorerPathToString,
-} from './PipelinePathUtils';
+} from 'src/PipelinePathUtils';
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot,
-} from './types/PipelineExplorerRootQuery';
-import {PipelineExplorerSolidHandleFragment} from './types/PipelineExplorerSolidHandleFragment';
+} from 'src/types/PipelineExplorerRootQuery';
+import {PipelineExplorerSolidHandleFragment} from 'src/types/PipelineExplorerSolidHandleFragment';
 
 function explodeComposite(
   handles: PipelineExplorerSolidHandleFragment[],

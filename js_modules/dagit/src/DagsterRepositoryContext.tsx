@@ -2,15 +2,15 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
 
-import PythonErrorInfo from './PythonErrorInfo';
-import {RepositoryInformationFragment} from './RepositoryInformation';
-import {InstanceExecutableQuery} from './types/InstanceExecutableQuery';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {RepositoryInformationFragment} from 'src/RepositoryInformation';
+import {InstanceExecutableQuery} from 'src/types/InstanceExecutableQuery';
 import {
   RootRepositoriesQuery,
   RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes,
   RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location,
-} from './types/RootRepositoriesQuery';
-import {RepositorySelector} from './types/globalTypes';
+} from 'src/types/RootRepositoriesQuery';
+import {RepositorySelector} from 'src/types/globalTypes';
 
 export type Repository = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes;
 export type RepositoryLocation = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location;

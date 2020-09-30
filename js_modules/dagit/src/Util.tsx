@@ -1,6 +1,6 @@
 import LRU from 'lru-cache';
 
-import {getJSONForKey} from './LocalStorage';
+import {getJSONForKey} from 'src/LocalStorage';
 
 export const DEFAULT_RESULT_NAME = 'result';
 

@@ -3,9 +3,9 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SectionHeader} from './SidebarComponents';
-import {titleOfIO} from './Util';
-import {SolidColumn} from './runs/LogsRowComponents';
+import {SectionHeader} from 'src/SidebarComponents';
+import {titleOfIO} from 'src/Util';
+import {SolidColumn} from 'src/runs/LogsRowComponents';
 
 export type SolidLinkInfo = {
   solid: {name: string};

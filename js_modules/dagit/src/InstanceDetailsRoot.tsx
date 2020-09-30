@@ -6,8 +6,8 @@ import {UnControlled as CodeMirrorReact} from 'react-codemirror2';
 import styled from 'styled-components/macro';
 import {createGlobalStyle} from 'styled-components/macro';
 
-import {Header} from './ListComponents';
-import {InstanceDetailsQuery} from './types/InstanceDetailsQuery';
+import {Header} from 'src/ListComponents';
+import {InstanceDetailsQuery} from 'src/types/InstanceDetailsQuery';
 
 const CodeMirrorShimStyle = createGlobalStyle`
   .react-codemirror2 {

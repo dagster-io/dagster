@@ -1,7 +1,7 @@
 import {Colors} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 
-import {IStepState} from '../RunMetadataProvider';
+import {IStepState} from 'src/RunMetadataProvider';
 
 export const ExecutionStateDot = styled.div<{state: IStepState}>`
   display: inline-block;

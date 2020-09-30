@@ -7,7 +7,7 @@ import {DefaultOptions} from 'apollo-client/ApolloClient';
 import * as React from 'react';
 import {ApolloProvider} from 'react-apollo';
 
-import {CachedGraphQLRequest, MockLink, MockedResponse} from './MockedApolloLinks';
+import {CachedGraphQLRequest, MockLink, MockedResponse} from 'src/__tests__/MockedApolloLinks';
 
 export interface MockedProviderProps<TSerializedCache = {}> {
   mocks: CachedGraphQLRequest[];

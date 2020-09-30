@@ -13,13 +13,12 @@ import * as qs from 'query-string';
 import * as React from 'react';
 import {useLazyQuery, useMutation} from 'react-apollo';
 
-import {showCustomAlert} from '../CustomAlertProvider';
-import {DagsterRepositoryContext} from '../DagsterRepositoryContext';
-import {SharedToaster} from '../DomUtils';
-import {ROOT_SERVER_URI} from '../DomUtils';
-import {HighlightedCodeBlock} from '../HighlightedCodeBlock';
-
-import {REEXECUTE_PIPELINE_UNKNOWN} from './RunActionButtons';
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {DagsterRepositoryContext} from 'src/DagsterRepositoryContext';
+import {SharedToaster} from 'src/DomUtils';
+import {ROOT_SERVER_URI} from 'src/DomUtils';
+import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
+import {REEXECUTE_PIPELINE_UNKNOWN} from 'src/runs/RunActionButtons';
 import {
   CANCEL_MUTATION,
   DELETE_MUTATION,
@@ -27,9 +26,9 @@ import {
   RunsQueryRefetchContext,
   getReexecutionVariables,
   handleLaunchResult,
-} from './RunUtils';
-import {RunActionMenuFragment} from './types/RunActionMenuFragment';
-import {RunTableRunFragment} from './types/RunTableRunFragment';
+} from 'src/runs/RunUtils';
+import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
+import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
 
 export const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment | RunActionMenuFragment;

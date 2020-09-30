@@ -4,17 +4,16 @@ import * as React from 'react';
 import {QueryResult, useQuery} from 'react-apollo';
 import {__RouterContext as RouterContext} from 'react-router';
 
-import {DagsterRepositoryContext, useRepositorySelector} from '../DagsterRepositoryContext';
+import {DagsterRepositoryContext, useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {
   SuggestionProvider,
   TokenizingField,
   TokenizingFieldValue,
   stringFromValue,
   tokenizedValuesFromString,
-} from '../TokenizingField';
-import {PipelineRunStatus, PipelineRunsFilter} from '../types/globalTypes';
-
-import {RunsSearchSpaceQuery} from './types/RunsSearchSpaceQuery';
+} from 'src/TokenizingField';
+import {RunsSearchSpaceQuery} from 'src/runs/types/RunsSearchSpaceQuery';
+import {PipelineRunStatus, PipelineRunsFilter} from 'src/types/globalTypes';
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'tag';
 

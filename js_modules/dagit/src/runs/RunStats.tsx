@@ -5,9 +5,8 @@ import {useQuery} from 'react-apollo';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import PythonErrorInfo from '../PythonErrorInfo';
-
-import {RunStatsQuery, RunStatsQueryVariables} from './types/RunStatsQuery';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {RunStatsQuery, RunStatsQueryVariables} from 'src/runs/types/RunStatsQuery';
 
 export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {

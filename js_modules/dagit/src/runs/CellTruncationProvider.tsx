@@ -2,7 +2,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from '../CustomAlertProvider';
+import {showCustomAlert} from 'src/CustomAlertProvider';
 
 const OverflowFade = styled.div`
   position: absolute;

@@ -4,17 +4,16 @@ import {useHistory, useRouteMatch} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {DagsterRepoOption} from '../DagsterRepositoryContext';
-import {ShortcutHandler} from '../ShortcutHandler';
-import {TimezonePicker} from '../TimeComponents';
-import {WebsocketStatus} from '../WebsocketStatus';
-import navBarImage from '../images/nav-logo-icon.png';
-import navTitleImage from '../images/nav-title.png';
-
-import {InstanceDetailsLink} from './InstanceDetailsLink';
-import {RepositoryContentList} from './RepositoryContentList';
-import {RepositoryPicker} from './RepositoryPicker';
-import {SchedulesList} from './SchedulesList';
+import {DagsterRepoOption} from 'src/DagsterRepositoryContext';
+import {ShortcutHandler} from 'src/ShortcutHandler';
+import {TimezonePicker} from 'src/TimeComponents';
+import {WebsocketStatus} from 'src/WebsocketStatus';
+import navBarImage from 'src/images/nav-logo-icon.png';
+import navTitleImage from 'src/images/nav-title.png';
+import {InstanceDetailsLink} from 'src/nav/InstanceDetailsLink';
+import {RepositoryContentList} from 'src/nav/RepositoryContentList';
+import {RepositoryPicker} from 'src/nav/RepositoryPicker';
+import {SchedulesList} from 'src/nav/SchedulesList';
 
 const KEYCODE_FOR_1 = 49;
 

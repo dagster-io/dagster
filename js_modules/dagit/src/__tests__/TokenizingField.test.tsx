@@ -4,7 +4,7 @@ import {unmountComponentAtNode} from 'react-dom';
 import {act} from 'react-dom/test-utils';
 import * as TestRenderer from 'react-test-renderer';
 
-import {TokenizingField} from '../TokenizingField';
+import {TokenizingField} from 'src/TokenizingField';
 
 // https://github.com/jsdom/jsdom/issues/317
 (global as any).document.createRange = () => ({

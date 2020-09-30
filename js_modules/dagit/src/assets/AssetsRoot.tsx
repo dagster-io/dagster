@@ -6,12 +6,11 @@ import {useHistory} from 'react-router';
 import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {Header, Legend, LegendColumn, RowColumn, RowContainer} from '../ListComponents';
-import Loading from '../Loading';
-import {Timestamp} from '../TimeComponents';
-
-import {AssetRoot} from './AssetRoot';
-import {AssetsRootQuery_assetsOrError_AssetConnection_nodes} from './types/AssetsRootQuery';
+import {Header, Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
+import Loading from 'src/Loading';
+import {Timestamp} from 'src/TimeComponents';
+import {AssetRoot} from 'src/assets/AssetRoot';
+import {AssetsRootQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsRootQuery';
 
 type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
 

@@ -7,15 +7,14 @@ import {__RouterContext as RouterContext} from 'react-router';
 import {RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useRepositorySelector} from '../DagsterRepositoryContext';
-import Loading from '../Loading';
-
-import {PartitionView} from './PartitionView';
-import {PartitionsBackfill} from './PartitionsBackfill';
+import {useRepositorySelector} from 'src/DagsterRepositoryContext';
+import Loading from 'src/Loading';
+import {PartitionView} from 'src/partitions/PartitionView';
+import {PartitionsBackfill} from 'src/partitions/PartitionsBackfill';
 import {
   PipelinePartitionsRootQuery,
   PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results,
-} from './types/PipelinePartitionsRootQuery';
+} from 'src/partitions/types/PipelinePartitionsRootQuery';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 

@@ -6,30 +6,29 @@ import * as React from 'react';
 import {useMutation} from 'react-apollo';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from '../CustomAlertProvider';
-import {DagsterRepositoryContext} from '../DagsterRepositoryContext';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {IStepState, RunMetadataProvider} from '../RunMetadataProvider';
-import {FirstOrSecondPanelToggle, SplitPanelContainer} from '../SplitPanelContainer';
-import {GaantChart, GaantChartMode} from '../gaant/GaantChart';
-
-import {GetDefaultLogFilter, LogFilter, LogsProvider} from './LogsProvider';
-import LogsScrollingTable from './LogsScrollingTable';
-import LogsToolbar from './LogsToolbar';
-import {RunActionButtons} from './RunActionButtons';
-import {RunContext} from './RunContext';
-import {RunStatusToPageAttributes} from './RunStatusToPageAttributes';
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {DagsterRepositoryContext} from 'src/DagsterRepositoryContext';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {IStepState, RunMetadataProvider} from 'src/RunMetadataProvider';
+import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
+import {GaantChart, GaantChartMode} from 'src/gaant/GaantChart';
+import {GetDefaultLogFilter, LogFilter, LogsProvider} from 'src/runs/LogsProvider';
+import LogsScrollingTable from 'src/runs/LogsScrollingTable';
+import LogsToolbar from 'src/runs/LogsToolbar';
+import {RunActionButtons} from 'src/runs/RunActionButtons';
+import {RunContext} from 'src/runs/RunContext';
+import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
 import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   getReexecutionVariables,
   handleLaunchResult,
-} from './RunUtils';
-import {LaunchPipelineReexecutionVariables} from './types/LaunchPipelineReexecution';
-import {RunFragment} from './types/RunFragment';
+} from 'src/runs/RunUtils';
+import {LaunchPipelineReexecutionVariables} from 'src/runs/types/LaunchPipelineReexecution';
+import {RunFragment} from 'src/runs/types/RunFragment';
 import {
   RunPipelineRunEventFragment,
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
-} from './types/RunPipelineRunEventFragment';
+} from 'src/runs/types/RunPipelineRunEventFragment';
 
 interface RunProps {
   client: ApolloClient<any>;

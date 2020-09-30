@@ -3,9 +3,9 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import TypeWithTooltip from './TypeWithTooltip';
-import {breakOnUnderscores} from './Util';
-import {SolidTypeSignatureFragment} from './types/SolidTypeSignatureFragment';
+import TypeWithTooltip from 'src/TypeWithTooltip';
+import {breakOnUnderscores} from 'src/Util';
+import {SolidTypeSignatureFragment} from 'src/types/SolidTypeSignatureFragment';
 
 interface ISolidTypeSignature {
   definition: SolidTypeSignatureFragment;

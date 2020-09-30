@@ -1,7 +1,6 @@
 import {Colors} from '@blueprintjs/core';
 
-import {IRunMetadataDict, IStepAttempt, IStepState} from '../RunMetadataProvider';
-
+import {IRunMetadataDict, IStepAttempt, IStepState} from 'src/RunMetadataProvider';
 import {
   BOX_DOT_WIDTH_CUTOFF,
   BOX_SPACING_X,
@@ -13,7 +12,7 @@ import {
   GaantChartMode,
   IGaantNode,
   LEFT_INSET,
-} from './Constants';
+} from 'src/gaant/Constants';
 
 export interface BuildLayoutParams {
   nodes: IGaantNode[];

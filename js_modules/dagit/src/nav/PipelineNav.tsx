@@ -3,8 +3,8 @@ import React from 'react';
 import {Link, LinkProps, useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useRepository} from '../DagsterRepositoryContext';
-import {explorerPathFromString, explorerPathToString} from '../PipelinePathUtils';
+import {useRepository} from 'src/DagsterRepositoryContext';
+import {explorerPathFromString, explorerPathToString} from 'src/PipelinePathUtils';
 
 const PIPELINE_TABS: {
   title: string;

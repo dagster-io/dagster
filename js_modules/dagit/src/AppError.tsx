@@ -3,7 +3,7 @@ import {ErrorResponse, onError} from 'apollo-link-error';
 import {GraphQLError} from 'graphql';
 import * as React from 'react';
 
-import {showCustomAlert} from './CustomAlertProvider';
+import {showCustomAlert} from 'src/CustomAlertProvider';
 
 export interface DagsterGraphQLError extends GraphQLError {
   stack_trace: string[];

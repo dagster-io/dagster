@@ -4,19 +4,18 @@ import * as React from 'react';
 import {useQuery} from 'react-apollo';
 import styled from 'styled-components/macro';
 
-import {usePipelineSelector} from '../DagsterRepositoryContext';
-import {filterByQuery} from '../GraphQueryImpl';
-import {GraphQueryInput} from '../GraphQueryInput';
-import {ShortcutHandler} from '../ShortcutHandler';
-import PipelineGraph from '../graph/PipelineGraph';
-import SVGViewport from '../graph/SVGViewport';
-import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
-
+import {usePipelineSelector} from 'src/DagsterRepositoryContext';
+import {filterByQuery} from 'src/GraphQueryImpl';
+import {GraphQueryInput} from 'src/GraphQueryInput';
+import {ShortcutHandler} from 'src/ShortcutHandler';
 import {
   SolidSelectorQuery,
   SolidSelectorQuery_pipelineOrError,
   SolidSelectorQuery_pipelineOrError_Pipeline_solids,
-} from './types/SolidSelectorQuery';
+} from 'src/execute/types/SolidSelectorQuery';
+import PipelineGraph from 'src/graph/PipelineGraph';
+import SVGViewport from 'src/graph/SVGViewport';
+import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 
 interface ISolidSelectorProps {
   pipelineName: string;

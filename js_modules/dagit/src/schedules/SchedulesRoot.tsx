@@ -12,22 +12,21 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
 
-import {useRepositorySelector} from '../DagsterRepositoryContext';
-import {Header, Legend, LegendColumn, ScrollContainer} from '../ListComponents';
-import Loading from '../Loading';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {RepositoryInformation} from '../RepositoryInformation';
-
-import {ReconcileButton} from './ReconcileButton';
-import {ScheduleRow, ScheduleStateRow} from './ScheduleRow';
-import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from './ScheduleUtils';
-import {SchedulerInfo} from './SchedulerInfo';
+import {useRepositorySelector} from 'src/DagsterRepositoryContext';
+import {Header, Legend, LegendColumn, ScrollContainer} from 'src/ListComponents';
+import Loading from 'src/Loading';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {RepositoryInformation} from 'src/RepositoryInformation';
+import {ReconcileButton} from 'src/schedules/ReconcileButton';
+import {ScheduleRow, ScheduleStateRow} from 'src/schedules/ScheduleRow';
+import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
+import {SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {
   SchedulesRootQuery,
   SchedulesRootQuery_repositoryOrError_Repository,
   SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results,
   SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results,
-} from './types/SchedulesRootQuery';
+} from 'src/schedules/types/SchedulesRootQuery';
 
 const GetStaleReconcileSection: React.FunctionComponent<{
   scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];

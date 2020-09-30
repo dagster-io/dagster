@@ -3,8 +3,8 @@ import * as React from 'react';
 import {Redirect} from 'react-router';
 import {RouteComponentProps} from 'react-router-dom';
 
-import {useRepositorySelector} from '../DagsterRepositoryContext';
-import {IExecutionSession, applyCreateSession, useStorage} from '../LocalStorage';
+import {useRepositorySelector} from 'src/DagsterRepositoryContext';
+import {IExecutionSession, applyCreateSession, useStorage} from 'src/LocalStorage';
 
 export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;

@@ -2,7 +2,7 @@ import {Button} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {CursorPaginationProps} from './runs/useCursorPaginatedQuery';
+import {CursorPaginationProps} from 'src/runs/useCursorPaginatedQuery';
 
 export const CursorPaginationControls: React.FunctionComponent<CursorPaginationProps> = ({
   hasPrevPage,

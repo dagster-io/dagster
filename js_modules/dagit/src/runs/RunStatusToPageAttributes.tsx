@@ -1,9 +1,8 @@
 import gql from 'graphql-tag';
 import * as React from 'react';
 
-import {PipelineRunStatus} from '../types/globalTypes';
-
-import {RunStatusPipelineRunFragment} from './types/RunStatusPipelineRunFragment';
+import {RunStatusPipelineRunFragment} from 'src/runs/types/RunStatusPipelineRunFragment';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 
 const link = (document.querySelector("link[rel*='icon']") ||
   document.createElement('link')) as HTMLLinkElement;

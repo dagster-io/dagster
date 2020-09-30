@@ -5,11 +5,10 @@ import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import styled from 'styled-components/macro';
 
-import {showCustomAlert} from '../CustomAlertProvider';
-import {copyValue} from '../DomUtils';
-import {assertUnreachable} from '../Util';
-
-import {MetadataEntryFragment} from './types/MetadataEntryFragment';
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {copyValue} from 'src/DomUtils';
+import {assertUnreachable} from 'src/Util';
+import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
 
 export const LogRowStructuredContentTable: React.FunctionComponent<{
   rows: {label: string; item: JSX.Element}[];

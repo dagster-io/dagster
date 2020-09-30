@@ -3,21 +3,20 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ButtonLink} from '../ButtonLink';
-import {showCustomAlert} from '../CustomAlertProvider';
-import {useConfirmation} from '../CustomConfirmationProvider';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {SplitPanelContainer} from '../SplitPanelContainer';
-import {errorStackToYamlPath} from '../configeditor/ConfigEditorUtils';
+import {ButtonLink} from 'src/ButtonLink';
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {useConfirmation} from 'src/CustomConfirmationProvider';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {SplitPanelContainer} from 'src/SplitPanelContainer';
+import {errorStackToYamlPath} from 'src/configeditor/ConfigEditorUtils';
 import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType,
-} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
-
+} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
 import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors,
-} from './types/RunPreviewValidationFragment';
+} from 'src/execute/types/RunPreviewValidationFragment';
 
 type ValidationError = RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;

@@ -4,8 +4,8 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ConfigTypeSchema} from './ConfigTypeSchema';
-import Description from './Description';
+import {ConfigTypeSchema} from 'src/ConfigTypeSchema';
+import Description from 'src/Description';
 import {
   SectionHeader,
   SectionInner,
@@ -13,9 +13,9 @@ import {
   SidebarSection,
   SidebarSubhead,
   SidebarTitle,
-} from './SidebarComponents';
-import {breakOnUnderscores} from './Util';
-import {SidebarPipelineInfoFragment} from './types/SidebarPipelineInfoFragment';
+} from 'src/SidebarComponents';
+import {breakOnUnderscores} from 'src/Util';
+import {SidebarPipelineInfoFragment} from 'src/types/SidebarPipelineInfoFragment';
 
 const NO_DESCRIPTION = '';
 

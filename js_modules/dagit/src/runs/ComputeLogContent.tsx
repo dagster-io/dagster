@@ -6,11 +6,10 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
-import {ROOT_SERVER_URI} from '../DomUtils';
-import {IStepState} from '../RunMetadataProvider';
-
-import {ExecutionStateDot} from './ExecutionStateDot';
-import {ComputeLogContentFileFragment} from './types/ComputeLogContentFileFragment';
+import {ROOT_SERVER_URI} from 'src/DomUtils';
+import {IStepState} from 'src/RunMetadataProvider';
+import {ExecutionStateDot} from 'src/runs/ExecutionStateDot';
+import {ComputeLogContentFileFragment} from 'src/runs/types/ComputeLogContentFileFragment';
 
 interface IComputeLogContentProps {
   runState: IStepState;

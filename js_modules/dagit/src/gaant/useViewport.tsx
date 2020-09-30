@@ -1,7 +1,7 @@
 import animate from 'amator';
 import * as React from 'react';
 
-import {GaantViewport} from './Constants';
+import {GaantViewport} from 'src/gaant/Constants';
 
 /**
  * useViewport is a React hook that exposes a viewport (top/left/width/height)

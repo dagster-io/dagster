@@ -1,8 +1,8 @@
 import gql from 'graphql-tag';
 import * as React from 'react';
 
-import {RunMetadataProviderMessageFragment} from './types/RunMetadataProviderMessageFragment';
-import {TempMetadataEntryFragment} from './types/TempMetadataEntryFragment';
+import {RunMetadataProviderMessageFragment} from 'src/types/RunMetadataProviderMessageFragment';
+import {TempMetadataEntryFragment} from 'src/types/TempMetadataEntryFragment';
 
 export enum IStepState {
   PREPARING = 'preparing',

@@ -4,13 +4,12 @@ import {useQuery} from 'react-apollo';
 import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components/macro';
 
-import {DagsterRepositoryContext, useRepositorySelector} from '../DagsterRepositoryContext';
-import Loading from '../Loading';
-import {SidebarSolidDefinition} from '../SidebarSolidDefinition';
-import {SidebarSolidInvocationInfo} from '../SidebarSolidHelpers';
-
-import {SolidCard} from './SolidCard';
-import {UsedSolidDetailsQuery} from './types/UsedSolidDetailsQuery';
+import {DagsterRepositoryContext, useRepositorySelector} from 'src/DagsterRepositoryContext';
+import Loading from 'src/Loading';
+import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
+import {SidebarSolidInvocationInfo} from 'src/SidebarSolidHelpers';
+import {SolidCard} from 'src/solids/SolidCard';
+import {UsedSolidDetailsQuery} from 'src/solids/types/UsedSolidDetailsQuery';
 
 export const SolidDetailsRoot: React.FunctionComponent<RouteComponentProps<{
   name: string;

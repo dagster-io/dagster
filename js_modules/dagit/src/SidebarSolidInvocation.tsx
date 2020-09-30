@@ -2,12 +2,12 @@ import {Button} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import * as React from 'react';
 
-import {SolidNameOrPath} from './PipelineExplorer';
-import {SidebarSection, SidebarTitle} from './SidebarComponents';
-import {DependencyHeaderRow, DependencyRow, DependencyTable} from './SidebarSolidHelpers';
-import TypeWithTooltip from './TypeWithTooltip';
-import {breakOnUnderscores} from './Util';
-import {SidebarSolidInvocationFragment} from './types/SidebarSolidInvocationFragment';
+import {SolidNameOrPath} from 'src/PipelineExplorer';
+import {SidebarSection, SidebarTitle} from 'src/SidebarComponents';
+import {DependencyHeaderRow, DependencyRow, DependencyTable} from 'src/SidebarSolidHelpers';
+import TypeWithTooltip from 'src/TypeWithTooltip';
+import {breakOnUnderscores} from 'src/Util';
+import {SidebarSolidInvocationFragment} from 'src/types/SidebarSolidInvocationFragment';
 
 interface ISidebarSolidInvocationProps {
   solid: SidebarSolidInvocationFragment;

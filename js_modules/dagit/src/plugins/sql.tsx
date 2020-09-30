@@ -1,9 +1,8 @@
 import {Button, Classes, Dialog} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {HighlightedCodeBlock} from '../HighlightedCodeBlock';
-
-import {IPluginSidebarProps} from '.';
+import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
+import {IPluginSidebarProps} from 'src/plugins';
 
 export class SidebarComponent extends React.Component<IPluginSidebarProps> {
   state = {

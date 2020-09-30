@@ -1,10 +1,9 @@
 import * as React from 'react';
 import {useMutation} from 'react-apollo';
 
-import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
-import {LaunchPipelineExecutionVariables} from '../runs/types/LaunchPipelineExecution';
-
-import {LaunchButton} from './LaunchButton';
+import {LaunchButton} from 'src/execute/LaunchButton';
+import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from 'src/runs/RunUtils';
+import {LaunchPipelineExecutionVariables} from 'src/runs/types/LaunchPipelineExecution';
 
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;

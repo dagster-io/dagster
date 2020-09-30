@@ -7,12 +7,11 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/server';
 import {StyleSheetManager} from 'styled-components/macro';
 
-import {PipelineGraphContents} from '../../graph/PipelineGraph';
-import {getDagrePipelineLayout} from '../../graph/getFullSolidLayout';
-import {PipelineGraphSolidFragment} from '../../graph/types/PipelineGraphSolidFragment';
-import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from '../../types/PipelineExplorerRootQuery';
-
-import {MOCKS} from './SVGMocks';
+import {MOCKS} from 'src/__tests__/graph/SVGMocks';
+import {PipelineGraphContents} from 'src/graph/PipelineGraph';
+import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
+import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';
+import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from 'src/types/PipelineExplorerRootQuery';
 
 const snapshotsDir = path.join(__dirname, '__snapshots__');
 

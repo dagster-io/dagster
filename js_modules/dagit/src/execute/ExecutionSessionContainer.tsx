@@ -6,42 +6,44 @@ import {ApolloConsumer} from 'react-apollo';
 import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
 
-import {showCustomAlert} from '../CustomAlertProvider';
-import {PipelineRunTag} from '../LocalStorage';
-import {IExecutionSession, IStorageData} from '../LocalStorage';
-import {ShortcutHandler} from '../ShortcutHandler';
-import {SecondPanelToggle, SplitPanelContainer} from '../SplitPanelContainer';
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {PipelineRunTag} from 'src/LocalStorage';
+import {IExecutionSession, IStorageData} from 'src/LocalStorage';
+import {ShortcutHandler} from 'src/ShortcutHandler';
+import {SecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
 import {
   ConfigEditor,
   ConfigEditorHelpContext,
   isHelpContextEqual,
-} from '../configeditor/ConfigEditor';
+} from 'src/configeditor/ConfigEditor';
 import {
   CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT,
   CONFIG_EDITOR_VALIDATION_FRAGMENT,
   responseToYamlValidationResult,
-} from '../configeditor/ConfigEditorUtils';
-import {ConfigEditorRunConfigSchemaFragment} from '../configeditor/types/ConfigEditorRunConfigSchemaFragment';
-import {PipelineSelector} from '../types/globalTypes';
-
+} from 'src/configeditor/ConfigEditorUtils';
+import {ConfigEditorRunConfigSchemaFragment} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
 import {
   CONFIG_EDITOR_GENERATOR_PARTITION_SETS_FRAGMENT,
   CONFIG_EDITOR_GENERATOR_PIPELINE_FRAGMENT,
   ConfigEditorConfigPicker,
-} from './ConfigEditorConfigPicker';
-import {ConfigEditorHelp} from './ConfigEditorHelp';
-import {ConfigEditorModePicker} from './ConfigEditorModePicker';
-import {LaunchRootExecutionButton} from './LaunchRootExecutionButton';
-import {RunPreview} from './RunPreview';
-import SolidSelector from './SolidSelector';
-import {TagContainer, TagEditor} from './TagEditor';
-import {ExecutionSessionContainerPartitionSetsFragment} from './types/ExecutionSessionContainerPartitionSetsFragment';
-import {ExecutionSessionContainerPipelineFragment} from './types/ExecutionSessionContainerPipelineFragment';
+} from 'src/execute/ConfigEditorConfigPicker';
+import {ConfigEditorHelp} from 'src/execute/ConfigEditorHelp';
+import {ConfigEditorModePicker} from 'src/execute/ConfigEditorModePicker';
+import {LaunchRootExecutionButton} from 'src/execute/LaunchRootExecutionButton';
+import {RunPreview} from 'src/execute/RunPreview';
+import SolidSelector from 'src/execute/SolidSelector';
+import {TagContainer, TagEditor} from 'src/execute/TagEditor';
+import {ExecutionSessionContainerPartitionSetsFragment} from 'src/execute/types/ExecutionSessionContainerPartitionSetsFragment';
+import {ExecutionSessionContainerPipelineFragment} from 'src/execute/types/ExecutionSessionContainerPipelineFragment';
 import {
   ExecutionSessionContainerRunConfigSchemaFragment,
   ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError,
-} from './types/ExecutionSessionContainerRunConfigSchemaFragment';
-import {PreviewConfigQuery, PreviewConfigQueryVariables} from './types/PreviewConfigQuery';
+} from 'src/execute/types/ExecutionSessionContainerRunConfigSchemaFragment';
+import {
+  PreviewConfigQuery,
+  PreviewConfigQueryVariables,
+} from 'src/execute/types/PreviewConfigQuery';
+import {PipelineSelector} from 'src/types/globalTypes';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_PIPELINE = `Loading pipeline and partition sets...`;

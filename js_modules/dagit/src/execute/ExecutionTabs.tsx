@@ -9,7 +9,7 @@ import {
   applyCreateSession,
   applyRemoveSession,
   applySelectSession,
-} from '../LocalStorage';
+} from 'src/LocalStorage';
 
 interface ExecutationTabProps {
   title: string;

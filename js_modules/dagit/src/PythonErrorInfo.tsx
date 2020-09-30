@@ -3,9 +3,9 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {MetadataEntries} from './runs/MetadataEntry';
-import {MetadataEntryFragment} from './runs/types/MetadataEntryFragment';
-import {PythonErrorFragment} from './types/PythonErrorFragment';
+import {MetadataEntries} from 'src/runs/MetadataEntry';
+import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
+import {PythonErrorFragment} from 'src/types/PythonErrorFragment';
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;

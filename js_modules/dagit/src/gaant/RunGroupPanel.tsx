@@ -5,13 +5,12 @@ import {useQuery} from 'react-apollo';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {RunStatus} from '../runs/RunStatusDots';
-import {RunComponentFragments, RunElapsed, RunTime} from '../runs/RunUtils';
-
 import {
   RunGroupPanelQuery,
   RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
-} from './types/RunGroupPanelQuery';
+} from 'src/gaant/types/RunGroupPanelQuery';
+import {RunStatus} from 'src/runs/RunStatusDots';
+import {RunComponentFragments, RunElapsed, RunTime} from 'src/runs/RunUtils';
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   const stepsTag = run.tags.find((t) => t.key === 'dagster/step_selection');

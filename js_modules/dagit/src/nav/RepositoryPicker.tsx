@@ -7,10 +7,9 @@ import {
   DagsterRepoOption,
   isRepositoryOptionEqual,
   useDagitExecutablePath,
-} from '../DagsterRepositoryContext';
-import {RepositoryInformation} from '../RepositoryInformation';
-
-import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
+} from 'src/DagsterRepositoryContext';
+import {RepositoryInformation} from 'src/RepositoryInformation';
+import {ReloadRepositoryLocationButton} from 'src/nav/ReloadRepositoryLocationButton';
 
 interface RepositoryPickerProps {
   loading: boolean;

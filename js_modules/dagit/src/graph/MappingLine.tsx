@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import {Edge} from './SolidLinks';
-import {IPoint} from './getFullSolidLayout';
-import {isHighlighted} from './highlighting';
+import {Edge} from 'src/graph/SolidLinks';
+import {IPoint} from 'src/graph/getFullSolidLayout';
+import {isHighlighted} from 'src/graph/highlighting';
 
 interface MappingLineProps {
   source: IPoint;

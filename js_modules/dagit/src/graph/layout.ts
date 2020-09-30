@@ -1,6 +1,6 @@
 import * as dagre from 'dagre';
 
-import {titleOfIO} from '../Util';
+import {titleOfIO} from 'src/Util';
 
 export type IPipelineLayoutParams = {
   solids: ILayoutSolid[];

@@ -4,13 +4,12 @@ import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {GraphQueryItem, filterByQuery} from '../GraphQueryImpl';
-import {GraphQueryInput} from '../GraphQueryInput';
-import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from '../RunMetadataProvider';
-import {SplitPanelContainer} from '../SplitPanelContainer';
-import {weakmapMemoize} from '../Util';
-import {OptionsContainer, OptionsDivider, OptionsSpacer} from '../VizComponents';
-
+import {GraphQueryItem, filterByQuery} from 'src/GraphQueryImpl';
+import {GraphQueryInput} from 'src/GraphQueryInput';
+import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from 'src/RunMetadataProvider';
+import {SplitPanelContainer} from 'src/SplitPanelContainer';
+import {weakmapMemoize} from 'src/Util';
+import {OptionsContainer, OptionsDivider, OptionsSpacer} from 'src/VizComponents';
 import {
   BOX_DOT_MARGIN_Y,
   BOX_DOT_SIZE,
@@ -31,22 +30,22 @@ import {
   LINE_SIZE,
   MAX_SCALE,
   MIN_SCALE,
-} from './Constants';
+} from 'src/gaant/Constants';
 import {
   BuildLayoutParams,
   adjustLayoutWithRunMetadata,
   boxStyleFor,
   buildLayout,
   interestingQueriesFor,
-} from './GaantChartLayout';
-import {GaantChartModeControl} from './GaantChartModeControl';
-import {GaantChartTimescale} from './GaantChartTimescale';
-import {GaantStatusPanel} from './GaantStatusPanel';
-import {ZoomSlider} from './ZoomSlider';
-import {GaantChartExecutionPlanFragment} from './types/GaantChartExecutionPlanFragment';
-import {useViewport} from './useViewport';
+} from 'src/gaant/GaantChartLayout';
+import {GaantChartModeControl} from 'src/gaant/GaantChartModeControl';
+import {GaantChartTimescale} from 'src/gaant/GaantChartTimescale';
+import {GaantStatusPanel} from 'src/gaant/GaantStatusPanel';
+import {ZoomSlider} from 'src/gaant/ZoomSlider';
+import {GaantChartExecutionPlanFragment} from 'src/gaant/types/GaantChartExecutionPlanFragment';
+import {useViewport} from 'src/gaant/useViewport';
 
-export {GaantChartMode} from './Constants';
+export {GaantChartMode} from 'src/gaant/Constants';
 
 const HIGHLIGHT_TIME_EVENT = 'gaant-highlight-time';
 

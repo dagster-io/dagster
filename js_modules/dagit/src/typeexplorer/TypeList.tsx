@@ -3,10 +3,9 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from '../SidebarComponents';
-import TypeWithTooltip from '../TypeWithTooltip';
-
-import {TypeListFragment} from './types/TypeListFragment';
+import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from 'src/SidebarComponents';
+import TypeWithTooltip from 'src/TypeWithTooltip';
+import {TypeListFragment} from 'src/typeexplorer/types/TypeListFragment';
 
 interface ITypeListProps {
   types: Array<TypeListFragment>;

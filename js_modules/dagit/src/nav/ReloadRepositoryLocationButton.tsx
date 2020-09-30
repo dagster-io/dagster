@@ -3,13 +3,12 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import {useApolloClient, useMutation} from 'react-apollo';
 
-import {SharedToaster} from '../DomUtils';
-import {ShortcutHandler} from '../ShortcutHandler';
-
+import {SharedToaster} from 'src/DomUtils';
+import {ShortcutHandler} from 'src/ShortcutHandler';
 import {
   ReloadRepositoryLocationMutation,
   ReloadRepositoryLocationMutationVariables,
-} from './types/ReloadRepositoryLocationMutation';
+} from 'src/nav/types/ReloadRepositoryLocationMutation';
 
 export const ReloadRepositoryLocationButton: React.FunctionComponent<{
   location: string;

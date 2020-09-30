@@ -14,8 +14,8 @@ leveraging Jest is easiest.
 */
 
 // collect mocks from various tests in the codebase
-import {MOCKS as AppMocks} from '../__tests__/AppMocks';
-import {MOCKS as SVGMocks} from '../__tests__/graph/SVGMocks';
+import {MOCKS as AppMocks} from 'src/__tests__/AppMocks';
+import {MOCKS as SVGMocks} from 'src/__tests__/graph/SVGMocks';
 
 const dagsterRoot = path.resolve(path.join(__dirname, '..', '..', '..', '..'));
 

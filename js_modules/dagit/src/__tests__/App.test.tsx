@@ -1,12 +1,11 @@
 import * as React from 'react';
 import * as TestRenderer from 'react-test-renderer';
 
-import {App} from '../App';
-import AppCache from '../AppCache';
-import {PipelineGraphContainer} from '../graph/PipelineGraphContainer';
-
-import {MOCKS} from './AppMocks';
-import {MockedProvider} from './MockedProvider';
+import {App} from 'src/App';
+import AppCache from 'src/AppCache';
+import {MOCKS} from 'src/__tests__/AppMocks';
+import {MockedProvider} from 'src/__tests__/MockedProvider';
+import {PipelineGraphContainer} from 'src/graph/PipelineGraphContainer';
 
 function createNodeMock(element: any) {
   if (element.type === 'div') {

@@ -5,7 +5,7 @@ import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {GraphQueryItem} from './GraphQueryImpl';
+import {GraphQueryItem} from 'src/GraphQueryImpl';
 
 interface GraphQueryInputProps {
   items: GraphQueryItem[];

@@ -6,11 +6,10 @@ import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
-import {IRunMetadataDict} from '../RunMetadataProvider';
-
-import * as LogsRow from './LogsRow';
-import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
-import {LogsScrollingTableMessageFragment} from './types/LogsScrollingTableMessageFragment';
+import {IRunMetadataDict} from 'src/RunMetadataProvider';
+import * as LogsRow from 'src/runs/LogsRow';
+import {ColumnWidthsProvider, Headers} from 'src/runs/LogsScrollingTableHeader';
+import {LogsScrollingTableMessageFragment} from 'src/runs/types/LogsScrollingTableMessageFragment';
 
 interface ILogsScrollingTableProps {
   filteredNodes?: (LogsScrollingTableMessageFragment & {clientsideKey: string})[];

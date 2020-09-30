@@ -4,7 +4,7 @@ import * as React from 'react';
 import {useQuery} from 'react-apollo';
 import {Link} from 'react-router-dom';
 
-import {InstanceDetailSummaryQuery} from './types/InstanceDetailSummaryQuery';
+import {InstanceDetailSummaryQuery} from 'src/nav/types/InstanceDetailSummaryQuery';
 
 export const InstanceDetailsLink: React.FunctionComponent = () => {
   const {data} = useQuery<InstanceDetailSummaryQuery>(INSTANCE_DETAIL_SUMMARY_QUERY, {

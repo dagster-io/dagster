@@ -2,11 +2,10 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Timestamp} from '../TimeComponents';
-import {formatStepKey} from '../Util';
-
-import {LogLevel} from './LogsProvider';
-import {ColumnWidthsContext} from './LogsScrollingTableHeader';
+import {Timestamp} from 'src/TimeComponents';
+import {formatStepKey} from 'src/Util';
+import {LogLevel} from 'src/runs/LogsProvider';
+import {ColumnWidthsContext} from 'src/runs/LogsScrollingTableHeader';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({

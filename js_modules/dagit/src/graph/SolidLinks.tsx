@@ -3,9 +3,12 @@ import {pathVerticalDiagonal} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {weakmapMemoize} from '../Util';
-
-import {IFullPipelineLayout, IFullSolidLayout, ILayoutConnection} from './getFullSolidLayout';
+import {weakmapMemoize} from 'src/Util';
+import {
+  IFullPipelineLayout,
+  IFullSolidLayout,
+  ILayoutConnection,
+} from 'src/graph/getFullSolidLayout';
 
 export type Edge = {a: string; b: string};
 

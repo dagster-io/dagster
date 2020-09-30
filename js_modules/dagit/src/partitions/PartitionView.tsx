@@ -6,22 +6,21 @@ import * as React from 'react';
 import {Query, QueryResult} from 'react-apollo';
 import styled from 'styled-components/macro';
 
-import {useRepositorySelector} from '../DagsterRepositoryContext';
-import {Header} from '../ListComponents';
-import Loading from '../Loading';
-import PythonErrorInfo from '../PythonErrorInfo';
-import {TokenizingFieldValue} from '../TokenizingField';
-import {colorHash} from '../Util';
-import {RunTable} from '../runs/RunTable';
-import {RunsFilter} from '../runs/RunsFilter';
-
-import {PIPELINE_LABEL, PartitionGraph} from './PartitionGraph';
-import {PartitionRunMatrix} from './PartitionRunMatrix';
+import {useRepositorySelector} from 'src/DagsterRepositoryContext';
+import {Header} from 'src/ListComponents';
+import Loading from 'src/Loading';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {TokenizingFieldValue} from 'src/TokenizingField';
+import {colorHash} from 'src/Util';
+import {PIPELINE_LABEL, PartitionGraph} from 'src/partitions/PartitionGraph';
+import {PartitionRunMatrix} from 'src/partitions/PartitionRunMatrix';
 import {
   PartitionLongitudinalQuery,
   PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
   PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs,
-} from './types/PartitionLongitudinalQuery';
+} from 'src/partitions/types/PartitionLongitudinalQuery';
+import {RunTable} from 'src/runs/RunTable';
+import {RunsFilter} from 'src/runs/RunsFilter';
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;

@@ -1,5 +1,5 @@
-import {GraphQueryItem} from '../GraphQueryImpl';
-import {IStepState} from '../RunMetadataProvider';
+import {GraphQueryItem} from 'src/GraphQueryImpl';
+import {IStepState} from 'src/RunMetadataProvider';
 
 export type IGaantNode = GraphQueryItem;
 

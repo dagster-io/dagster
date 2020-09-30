@@ -9,27 +9,26 @@ import {
   usePipelineSelector,
   useRepositoryOptions,
   useRepositorySelector,
-} from '../DagsterRepositoryContext';
+} from 'src/DagsterRepositoryContext';
 import {
   IExecutionSessionChanges,
   applyChangesToSession,
   applyCreateSession,
   useStorage,
-} from '../LocalStorage';
-
+} from 'src/LocalStorage';
 import ExecutionSessionContainer, {
   ExecutionSessionContainerError,
   ExecutionSessionContainerLoading,
-} from './ExecutionSessionContainer';
-import {ExecutionTabs} from './ExecutionTabs';
+} from 'src/execute/ExecutionSessionContainer';
+import {ExecutionTabs} from 'src/execute/ExecutionTabs';
 import {
   PipelineExecutionConfigSchemaQuery,
   PipelineExecutionConfigSchemaQueryVariables,
-} from './types/PipelineExecutionConfigSchemaQuery';
+} from 'src/execute/types/PipelineExecutionConfigSchemaQuery';
 import {
   PipelineExecutionRootQuery,
   PipelineExecutionRootQueryVariables,
-} from './types/PipelineExecutionRootQuery';
+} from 'src/execute/types/PipelineExecutionRootQuery';
 
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;

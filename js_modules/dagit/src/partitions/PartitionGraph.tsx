@@ -2,10 +2,9 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
-import {RowContainer} from '../ListComponents';
-import {colorHash} from '../Util';
-
-import {PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs} from './types/PartitionLongitudinalQuery';
+import {RowContainer} from 'src/ListComponents';
+import {colorHash} from 'src/Util';
+import {PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs} from 'src/partitions/types/PartitionLongitudinalQuery';
 
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 type PointValue = number | null | undefined;

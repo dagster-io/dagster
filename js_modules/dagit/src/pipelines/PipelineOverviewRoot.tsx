@@ -7,24 +7,23 @@ import {Link} from 'react-router-dom';
 import {RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePipelineSelector} from '../DagsterRepositoryContext';
-import {RowColumn, RowContainer} from '../ListComponents';
-import Loading from '../Loading';
-import {Timestamp} from '../TimeComponents';
-import PipelineGraph from '../graph/PipelineGraph';
-import SVGViewport from '../graph/SVGViewport';
-import {getDagrePipelineLayout} from '../graph/getFullSolidLayout';
-import {RunActionsMenu} from '../runs/RunActionsMenu';
-import {RunStatus, RunStatusWithStats} from '../runs/RunStatusDots';
-import {RunTime, RunsQueryRefetchContext, titleForRun} from '../runs/RunUtils';
-import {RunComponentFragments, RunElapsed} from '../runs/RunUtils';
-
+import {usePipelineSelector} from 'src/DagsterRepositoryContext';
+import {RowColumn, RowContainer} from 'src/ListComponents';
+import Loading from 'src/Loading';
+import {Timestamp} from 'src/TimeComponents';
+import PipelineGraph from 'src/graph/PipelineGraph';
+import SVGViewport from 'src/graph/SVGViewport';
+import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 import {
   PipelineOverviewQuery,
   PipelineOverviewQueryVariables,
   PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs,
   PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules,
-} from './types/PipelineOverviewQuery';
+} from 'src/pipelines/types/PipelineOverviewQuery';
+import {RunActionsMenu} from 'src/runs/RunActionsMenu';
+import {RunStatus, RunStatusWithStats} from 'src/runs/RunStatusDots';
+import {RunTime, RunsQueryRefetchContext, titleForRun} from 'src/runs/RunUtils';
+import {RunComponentFragments, RunElapsed} from 'src/runs/RunUtils';
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules;

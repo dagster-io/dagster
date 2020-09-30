@@ -5,15 +5,14 @@ import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components/macro';
 
-import {CursorPaginationControls} from '../CursorPaginationControls';
-import {Header, ScrollContainer} from '../ListComponents';
-import Loading from '../Loading';
-
-import {RunTable} from './RunTable';
-import {RunsQueryRefetchContext} from './RunUtils';
-import {RunsFilter, runsFilterForSearchTokens, useRunFiltering} from './RunsFilter';
-import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
-import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
+import {CursorPaginationControls} from 'src/CursorPaginationControls';
+import {Header, ScrollContainer} from 'src/ListComponents';
+import Loading from 'src/Loading';
+import {RunTable} from 'src/runs/RunTable';
+import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
+import {RunsFilter, runsFilterForSearchTokens, useRunFiltering} from 'src/runs/RunsFilter';
+import {RunsRootQuery, RunsRootQueryVariables} from 'src/runs/types/RunsRootQuery';
+import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 
 const PAGE_SIZE = 25;
 

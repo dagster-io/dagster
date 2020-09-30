@@ -3,15 +3,15 @@ import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import * as React from 'react';
 
-import {ConfigTypeSchema} from './ConfigTypeSchema';
-import Description from './Description';
+import {ConfigTypeSchema} from 'src/ConfigTypeSchema';
+import Description from 'src/Description';
 import {
   SectionItemContainer,
   SectionSmallHeader,
   SidebarSection,
   SidebarSubhead,
   SidebarTitle,
-} from './SidebarComponents';
+} from 'src/SidebarComponents';
 import {
   Invocation,
   ResourceContainer,
@@ -21,12 +21,12 @@ import {
   SolidLinks,
   SolidMappingTable,
   TypeWrapper,
-} from './SidebarSolidHelpers';
-import SolidTypeSignature from './SolidTypeSignature';
-import TypeWithTooltip from './TypeWithTooltip';
-import {breakOnUnderscores} from './Util';
-import {pluginForMetadata} from './plugins';
-import {SidebarSolidDefinitionFragment} from './types/SidebarSolidDefinitionFragment';
+} from 'src/SidebarSolidHelpers';
+import SolidTypeSignature from 'src/SolidTypeSignature';
+import TypeWithTooltip from 'src/TypeWithTooltip';
+import {breakOnUnderscores} from 'src/Util';
+import {pluginForMetadata} from 'src/plugins';
+import {SidebarSolidDefinitionFragment} from 'src/types/SidebarSolidDefinitionFragment';
 
 interface SidebarSolidDefinitionProps {
   definition: SidebarSolidDefinitionFragment;

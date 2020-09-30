@@ -4,7 +4,7 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {RunStats} from './RunStats';
+import {RunStats} from 'src/runs/RunStats';
 
 export type IRunStatus = 'SUCCESS' | 'NOT_STARTED' | 'FAILURE' | 'STARTED' | 'MANAGED';
 

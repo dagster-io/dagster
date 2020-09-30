@@ -2,10 +2,9 @@ import {Colors} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import React from 'react';
 
-import PythonErrorInfo from '../PythonErrorInfo';
-import {RepositoryInformationFragment} from '../RepositoryInformation';
-
-import {SCHEDULER_FRAGMENT} from './SchedulerInfo';
+import PythonErrorInfo from 'src/PythonErrorInfo';
+import {RepositoryInformationFragment} from 'src/RepositoryInformation';
+import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 
 export const SCHEDULE_STATE_FRAGMENT = gql`
   fragment ScheduleStateFragment on ScheduleState {

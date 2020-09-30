@@ -1,9 +1,8 @@
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import LayoutWorker from 'worker-loader!babel-loader!../workers/dagre_layout.worker';
 
-import {asyncMemoize, memoize} from '../Util';
-
-import {ILayoutSolid, layoutPipeline} from './layout';
+import {asyncMemoize, memoize} from 'src/Util';
+import {ILayoutSolid, layoutPipeline} from 'src/graph/layout';
 
 // Loads the web worker using the Webpack loader `worker-loader`, specifying the import inline.
 // This allows us to use web workers without ejecting from `create-react-app` (in order to use the
@@ -31,4 +30,4 @@ const _asyncDagrePipelineLayout = (solids: ILayoutSolid[], parentSolid?: ILayout
 
 export const asyncDagrePipelineLayout = asyncMemoize(_asyncDagrePipelineLayout, _layoutCacheKey);
 
-export * from './layout';
+export * from 'src/graph/layout';

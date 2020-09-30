@@ -5,13 +5,12 @@ import {useQuery} from 'react-apollo';
 import {RouteComponentProps} from 'react-router';
 import {Link} from 'react-router-dom';
 
-import {useScheduleSelector} from '../DagsterRepositoryContext';
-import {Header, ScrollContainer} from '../ListComponents';
-import Loading from '../Loading';
-
-import {ScheduleRow, ScheduleRowHeader} from './ScheduleRow';
-import {SCHEDULE_DEFINITION_FRAGMENT, SchedulerTimezoneNote} from './ScheduleUtils';
-import {ScheduleRootQuery} from './types/ScheduleRootQuery';
+import {useScheduleSelector} from 'src/DagsterRepositoryContext';
+import {Header, ScrollContainer} from 'src/ListComponents';
+import Loading from 'src/Loading';
+import {ScheduleRow, ScheduleRowHeader} from 'src/schedules/ScheduleRow';
+import {SCHEDULE_DEFINITION_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
+import {ScheduleRootQuery} from 'src/schedules/types/ScheduleRootQuery';
 
 export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
   scheduleName: string;
