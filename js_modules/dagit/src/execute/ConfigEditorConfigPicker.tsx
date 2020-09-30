@@ -1,6 +1,7 @@
 import {
   Button,
   HTMLInputProps,
+  Icon,
   IInputGroupProps,
   Intent,
   Menu,
@@ -207,11 +208,16 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
       fetchPolicy: 'network-only',
     });
 
-    const partitions: Partition[] =
-      data?.partitionSetOrError.__typename === 'PartitionSet' &&
-      data?.partitionSetOrError.partitionsOrError.__typename === 'Partitions'
-        ? data.partitionSetOrError.partitionsOrError.results
-        : [];
+    const [sortOrder, setSortOrder] = React.useState('asc');
+
+    const partitions: Partition[] = React.useMemo(() => {
+      const retrieved =
+        data?.partitionSetOrError.__typename === 'PartitionSet' &&
+        data?.partitionSetOrError.partitionsOrError.__typename === 'Partitions'
+          ? data.partitionSetOrError.partitionsOrError.results
+          : [];
+      return sortOrder === 'asc' ? retrieved : [...retrieved].reverse();
+    }, [data, sortOrder]);
 
     const error: PythonErrorFragment | null =
       data?.partitionSetOrError.__typename === 'PartitionSet' &&
@@ -221,10 +227,22 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
 
     const selected = partitions.find((p) => p.name === value);
 
+    const onClickSort = React.useCallback((event) => {
+      event.preventDefault();
+      setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'));
+    }, []);
+
+    const rightElement = partitions.length ? (
+      <Button text={undefined} minimal onMouseDown={onClickSort}>
+        <Icon icon={sortOrder === 'asc' ? 'sort-alphabetical' : 'sort-alphabetical-desc'} />
+      </Button>
+    ) : undefined;
+
     const inputProps: IInputGroupProps & HTMLInputProps = {
       placeholder: 'Partition',
       style: {width: 180},
       intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
+      rightElement,
     };
 
     // If we are loading the partitions and do NOT have any cached data to display,
