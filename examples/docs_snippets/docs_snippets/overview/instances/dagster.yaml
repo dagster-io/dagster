@@ -88,8 +88,8 @@ compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
   config:
-    bucket: "mycorp-dagster-compute-logs"
-    prefix: "dagster-test-"
+    bucket: 'mycorp-dagster-compute-logs'
+    prefix: 'dagster-test-'
 
 # ==================================================================================================
 # Local Artifact Storage
@@ -103,7 +103,7 @@ local_artifact_storage:
   module: dagster.core.storage.root
   class: LocalArtifactStorage
   config:
-    base_dir: "/var/shared/dagster"
+    base_dir: '/var/shared/dagster'
 
 # ==================================================================================================
 # Opt-Ins
