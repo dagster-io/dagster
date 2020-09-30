@@ -134,8 +134,8 @@ class DaskResource(object):
     ),
 )
 def dask_resource(context):
-    resource = DaskResource(context)
+    res = DaskResource(context)
 
-    yield resource
+    yield res
 
-    resource.close()
+    res.close()
