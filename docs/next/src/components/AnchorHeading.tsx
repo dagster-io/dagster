@@ -26,13 +26,7 @@ const AnchorHeading: React.FC<AnchorHeadingProps> = ({
   let localHref: string = '#';
   if (href) localHref = href;
   else if (typeof children === 'string')
-    localHref = `#${(children as string)
-      .toLowerCase()
-      .trim()
-      // Remove special characters
-      .replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/gi, '')
-      .split(' ')
-      .join('-')}`;
+    localHref = getAnchorLinkFromHeadingContent(children);
 
   useEffect(() => {
     const title =
@@ -58,5 +52,16 @@ const AnchorHeading: React.FC<AnchorHeadingProps> = ({
     </Tag>
   );
 };
+
+export function getAnchorLinkFromHeadingContent(content: string): string {
+  return `#${content
+    .trim()
+    .toLowerCase()
+    // Remove special characters
+    .replace(/[^a-zA-Z0-9 ]/g, '')
+    .split(' ')
+    .filter(Boolean)
+    .join('-')}`;
+}
 
 export default AnchorHeading;
