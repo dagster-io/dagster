@@ -8,7 +8,13 @@ from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
 from dagster_celery.defaults import broker_url, result_backend
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
-from dagster_k8s.client import DagsterK8sError, DagsterK8sPipelineStatusException
+from dagster_k8s.client import (
+    DagsterK8sAPIRetryLimitExceeded,
+    DagsterK8sError,
+    DagsterK8sPipelineStatusException,
+    DagsterK8sTimeoutError,
+    DagsterK8sUnrecoverableAPIError,
+)
 from dagster_k8s.job import (
     UserDefinedDagsterK8sConfig,
     get_k8s_job_name,
@@ -235,6 +241,31 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
     )
 
 
+def construct_step_failure_event_and_handle(pipeline_run, step_key, err, instance):
+    step_failure_event = DagsterEvent(
+        event_type_value=DagsterEventType.STEP_FAILURE.value,
+        pipeline_name=pipeline_run.pipeline_name,
+        step_key=step_key,
+        event_specific_data=StepFailureData(
+            error=serializable_error_info_from_exc_info(sys.exc_info()),
+            user_failure_data=UserFailureData(label="K8sError"),
+        ),
+    )
+    event_record = DagsterEventRecord(
+        message=str(err),
+        user_message=str(err),
+        level=logging.ERROR,
+        pipeline_name=pipeline_run.pipeline_name,
+        run_id=pipeline_run.run_id,
+        error_info=None,
+        step_key=step_key,
+        timestamp=time.time(),
+        dagster_event=step_failure_event,
+    )
+    instance.handle_new_event(event_record)
+    return step_failure_event
+
+
 def create_k8s_job_task(celery_app, **task_kwargs):
     @celery_app.task(bind=True, name="execute_step_k8s_job", **task_kwargs)
     def _execute_step_k8s_job(
@@ -428,28 +459,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             wait_for_job_success(
                 job_name=job_name, namespace=job_namespace, instance=instance, run_id=run_id,
             )
-        except DagsterK8sError as err:
-            step_failure_event = DagsterEvent(
-                event_type_value=DagsterEventType.STEP_FAILURE.value,
-                pipeline_name=pipeline_run.pipeline_name,
-                step_key=step_key,
-                event_specific_data=StepFailureData(
-                    error=serializable_error_info_from_exc_info(sys.exc_info()),
-                    user_failure_data=UserFailureData(label="K8sError"),
-                ),
+        except (DagsterK8sError, DagsterK8sTimeoutError) as err:
+            step_failure_event = construct_step_failure_event_and_handle(
+                pipeline_run, step_key, err, instance=instance
             )
-            event_record = DagsterEventRecord(
-                message=str(err),
-                user_message=str(err),
-                level=logging.ERROR,
-                pipeline_name=pipeline_run.pipeline_name,
-                run_id=pipeline_run.run_id,
-                error_info=None,
-                step_key=step_key,
-                timestamp=time.time(),
-                dagster_event=step_failure_event,
-            )
-            instance.handle_new_event(event_record)
             events.append(step_failure_event)
         except DagsterK8sPipelineStatusException:
             instance.report_engine_event(
@@ -467,7 +480,14 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             )
             delete_job(job_name=job_name, namespace=job_namespace)
             return []
-        except kubernetes.client.rest.ApiException as e:
+        except (
+            DagsterK8sUnrecoverableAPIError,
+            DagsterK8sAPIRetryLimitExceeded,
+            # We shouldn't see unwrapped APIExceptions anymore, as they should all be wrapped in
+            # a retry boundary. We still catch it here just in case we missed one so that we can
+            # report it to the event log
+            kubernetes.client.rest.ApiException,
+        ) as err:
             instance.report_engine_event(
                 "Encountered unexpected error while waiting on Kubernetes job {} for step {}, "
                 "exiting.".format(job_name, step_key),

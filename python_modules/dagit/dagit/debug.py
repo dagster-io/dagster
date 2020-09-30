@@ -15,7 +15,14 @@ from .cli import DEFAULT_DAGIT_HOST, DEFAULT_DAGIT_PORT, host_dagit_ui_with_work
     help="Load dagit with an ephemeral instance loaded from a dagster debug export file.",
 )
 @click.argument("input_file", type=click.Path(exists=True))
-def dagit_debug_command(input_file):
+@click.option(
+    "--port",
+    "-p",
+    type=click.INT,
+    help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
+    default=DEFAULT_DAGIT_PORT,
+)
+def dagit_debug_command(input_file, port):
     click.echo("Loading {} ...".format(input_file))
     with GzipFile(input_file, "rb") as file:
         blob = file.read().decode()
@@ -33,7 +40,7 @@ def dagit_debug_command(input_file):
     host_dagit_ui_with_workspace(
         workspace=Workspace([]),
         instance=instance,
-        port=DEFAULT_DAGIT_PORT,
+        port=port,
         port_lookup=True,
         host=DEFAULT_DAGIT_HOST,
         path_prefix="",

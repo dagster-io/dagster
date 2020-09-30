@@ -1,9 +1,12 @@
 import time
 from collections import namedtuple
 
+import kubernetes
 import pytest
 from dagster_k8s.client import (
+    DagsterK8sAPIRetryLimitExceeded,
     DagsterK8sError,
+    DagsterK8sUnrecoverableAPIError,
     DagsterKubernetesClient,
     KubernetesWaitingReasons,
     WaitForPodState,
@@ -89,6 +92,104 @@ def test_wait_for_job_success():
     assert not mock_client.sleeper.mock_calls
 
 
+def test_wait_for_job_success_with_api_errors():
+    mock_client = create_mocked_client()
+
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    a_job_is_launched_list = V1JobList(items=[V1Job(metadata=a_job_metadata)])
+    mock_client.batch_api.list_namespaced_job.side_effect = [a_job_is_launched_list]
+
+    completed_job = V1Job(metadata=a_job_metadata, status=V1JobStatus(failed=0, succeeded=1))
+    mock_client.batch_api.read_namespaced_job_status.side_effect = [
+        kubernetes.client.rest.ApiException(status=429, reason="Too many requests"),
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        completed_job,
+    ]
+
+    mock_client.wait_for_job_success(job_name, namespace)
+
+    # logger should not have been called
+    assert not mock_client.logger.mock_calls
+    # sleeper should not have been called
+    assert not mock_client.sleeper.mock_calls
+
+    # 2 retries due to errors + 1 SUCCESS
+    assert len(mock_client.batch_api.read_namespaced_job_status.mock_calls) == 3
+
+
+def test_wait_for_job_success_with_api_errors_retry_limit_exceeded():
+    mock_client = create_mocked_client()
+
+    job_name = "a_job"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    a_job_is_launched_list = V1JobList(items=[V1Job(metadata=a_job_metadata)])
+    mock_client.batch_api.list_namespaced_job.side_effect = [a_job_is_launched_list]
+
+    completed_job = V1Job(metadata=a_job_metadata, status=V1JobStatus(failed=0, succeeded=1))
+    mock_client.batch_api.read_namespaced_job_status.side_effect = [
+        kubernetes.client.rest.ApiException(status=429, reason="Too many requests"),
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        kubernetes.client.rest.ApiException(status=429, reason="Too many requests"),
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        completed_job,
+    ]
+
+    with pytest.raises(DagsterK8sAPIRetryLimitExceeded) as exc_info:
+        mock_client.wait_for_job_success("a_job", "a_namespace")
+
+    assert "Retry limit of {limit} exceeded: " "Unexpected error encountered in Kubernetes API Client.".format(
+        limit=3
+    ) in str(
+        exc_info.value
+    )
+
+    # logger should not have been called
+    assert not mock_client.logger.mock_calls
+    # sleeper should not have been called
+    assert not mock_client.sleeper.mock_calls
+
+    # 2 retries due to errors + 1 SUCCESS
+    assert len(mock_client.batch_api.read_namespaced_job_status.mock_calls) == 3
+
+
+def test_wait_for_job_success_with_unrecoverable_api_errors():
+    mock_client = create_mocked_client()
+
+    job_name = "a_job"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    a_job_is_launched_list = V1JobList(items=[V1Job(metadata=a_job_metadata)])
+    mock_client.batch_api.list_namespaced_job.side_effect = [a_job_is_launched_list]
+
+    completed_job = V1Job(metadata=a_job_metadata, status=V1JobStatus(failed=0, succeeded=1))
+    mock_client.batch_api.read_namespaced_job_status.side_effect = [
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        kubernetes.client.rest.ApiException(status=503, reason="Service unavailable"),
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        completed_job,
+    ]
+
+    with pytest.raises(DagsterK8sUnrecoverableAPIError) as exc_info:
+        mock_client.wait_for_job_success("a_job", "a_namespace")
+
+    assert "Unexpected error encountered in Kubernetes API Client." in str(exc_info.value)
+
+    # logger should not have been called
+    assert not mock_client.logger.mock_calls
+    # sleeper should not have been called
+    assert not mock_client.sleeper.mock_calls
+
+    # 2 retries due to errors + 1 SUCCESS
+    assert len(mock_client.batch_api.read_namespaced_job_status.mock_calls) == 2
+
+
 def test_wait_for_job_not_launched():
     mock_client = create_mocked_client()
 
@@ -120,7 +221,67 @@ def test_timed_out_while_waiting_for_launch():
     with pytest.raises(DagsterK8sError) as exc_info:
         mock_client.wait_for_job_success("a_job", "a_namespace")
 
-    assert str(exc_info.value) == "Timed out while waiting for job to launch"
+    assert str(exc_info.value) == "Timed out while waiting for job a_job to launch"
+
+
+def test_wait_for_job_with_api_errors():
+    mock_client = create_mocked_client()
+
+    job_name = "a_job"
+    namespace = "a_namespace"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    not_launched_yet_list = V1JobList(items=[])
+    a_job_is_launched_list = V1JobList(items=[V1Job(metadata=a_job_metadata)])
+    mock_client.batch_api.list_namespaced_job.side_effect = [
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        not_launched_yet_list,
+        a_job_is_launched_list,
+    ]
+
+    completed_job = V1Job(metadata=a_job_metadata, status=V1JobStatus(failed=0, succeeded=1))
+    mock_client.batch_api.read_namespaced_job_status.side_effect = [completed_job]
+
+    mock_client.wait_for_job_success(job_name, namespace)
+
+    # 2 retries due to errors + 1 not launched + 1 launched
+    assert len(mock_client.batch_api.list_namespaced_job.mock_calls) == 4
+
+
+def test_wait_for_job_with_api_errors_retry_limit_exceeded():
+    mock_client = create_mocked_client()
+
+    job_name = "a_job"
+
+    a_job_metadata = V1ObjectMeta(name=job_name)
+
+    not_launched_yet_list = V1JobList(items=[])
+    a_job_is_launched_list = V1JobList(items=[V1Job(metadata=a_job_metadata)])
+    mock_client.batch_api.list_namespaced_job.side_effect = [
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        kubernetes.client.rest.ApiException(status=504, reason="Gateway Timeout"),
+        not_launched_yet_list,
+        a_job_is_launched_list,
+    ]
+
+    completed_job = V1Job(metadata=a_job_metadata, status=V1JobStatus(failed=0, succeeded=1))
+    mock_client.batch_api.read_namespaced_job_status.side_effect = [completed_job]
+
+    with pytest.raises(DagsterK8sAPIRetryLimitExceeded) as exc_info:
+        mock_client.wait_for_job_success("a_job", "a_namespace")
+
+    assert "Retry limit of {limit} exceeded: " "Unexpected error encountered in Kubernetes API Client.".format(
+        limit=3
+    ) in str(
+        exc_info.value
+    )
+
+    # 2 retries due to errors + 1 not launched + 1 launched
+    assert len(mock_client.batch_api.list_namespaced_job.mock_calls) == 3
 
 
 def test_timed_out_while_waiting_for_job_to_complete():
@@ -137,7 +298,7 @@ def test_timed_out_while_waiting_for_job_to_complete():
     with pytest.raises(DagsterK8sError) as exc_info:
         mock_client.wait_for_job_success(job_name, namespace)
 
-    assert str(exc_info.value) == "Timed out while waiting for job to complete"
+    assert str(exc_info.value) == "Timed out while waiting for job a_job to complete"
 
 
 def test_job_failed():
@@ -158,7 +319,7 @@ def test_job_failed():
     with pytest.raises(DagsterK8sError) as exc_info:
         mock_client.wait_for_job_success(job_name, namespace)
 
-    assert "Encountered failed job pods with status" in str(exc_info.value)
+    assert "Encountered failed job pods for job a_job with status" in str(exc_info.value)
 
 
 def test_long_running_job():
