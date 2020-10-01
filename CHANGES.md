@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.9.12
+
+**Breaking Changes**
+
+- Dagster now warns when a solid, pipeline, or other definition is created with an invalid name (for example, a Python keyword). This warning will become an error in the 0.9.13 release.
+
+**Community Contributions**
+
+- Added an int type to `EventMetadataEntry` (Thanks @[ChocoletMousse](https://github.com/ChocoletMousse)!)
+- Added a `build_composite_solid_definition` method to Lakehouse (Thanks @[sd2k](https://github.com/sd2k)!)
+- Improved broken link detection in Dagster docs (Thanks @[keyz](https://github.com/keyz)!)
+
+**New**
+
+- Improvements to log filtering on Run view in Dagit
+- Improvements to instance level scheduler page
+- Log engine events when pipeline termination is initiated
+
+**Bugfixes**
+
+- Syntax errors in user code now display the file and line number with the error in Dagit
+- Dask executor no longer fails when using intermediate_storage
+- Fixes an issue using `build_reconstructable_pipeline`
+- In the Celery K8s executor, we now mark the step as failed when the step job fails
+- Changed the `DagsterInvalidAssetKey` error so that it no longer fails upon being thrown
+
+**Documentation**
+
+- Added API docs for dagster-dbt experimental library
+- Fixed some cosmetic issues with docs.dagster.io
+- Added code snippets from Solids examples to test path, and fixed some inconsistencies regarding parameter ordering
+- Changed to using markers instead of exact line numbers to mark out code snippets
+
 ## 0.9.10
 
 **Breaking Changes**
