@@ -58,6 +58,13 @@ class DaskResource(object):
     def client(self):
         return self._client
 
+    def close(self):
+        self.client.close()
+        if self.cluster:
+            self.cluster.close()
+
+        self._client, self._cluster = None, None
+
 
 @resource(
     description="Dask Client resource.",
@@ -130,4 +137,8 @@ class DaskResource(object):
     ),
 )
 def dask_resource(context):
-    return DaskResource(context)
+    res = DaskResource(context)
+
+    yield res
+
+    res.close()
