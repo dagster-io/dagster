@@ -15,6 +15,9 @@ DaskClusterTypes = {
         "slurm": ("SLURM", "dask_jobqueue", "SLURMCluster"),
         "oar": ("OAR", "dask_jobqueue", "OARCluster"),
         "kube": ("Kubernetes", "dask_kubernetes", "KubeCluster"),
+        "azureml": ("Azure ML", "dask_cloudprovider", "AzureMLCluster"),
+        "ecs": ("AWS ECS", "dask_cloudprovider", "ECSCluster"),
+        "fargate": ("AWS ECS on Fargate", "dask_cloudprovider", "FargateCluster"),
     }.items()
 }
 
