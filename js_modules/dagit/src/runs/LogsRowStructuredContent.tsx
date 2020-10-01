@@ -266,6 +266,13 @@ const FailureContent: React.FunctionComponent<{
       <span style={{color: Colors.RED3}}>{`${error.message}`}</span>
       <MetadataEntries entries={metadataEntries} />
       <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.stack}`}</span>
+      {error.cause ? (
+        <>
+          {`The above exception was caused by the following exception:\n`}
+          <span style={{color: Colors.RED3}}>{`${error.cause.message}`}</span>
+          <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.cause.stack}`}</span>
+        </>
+      ) : null}
     </span>
   </>
 );

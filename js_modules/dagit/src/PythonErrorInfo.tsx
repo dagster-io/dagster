@@ -53,9 +53,7 @@ export default class PythonErrorInfo extends React.Component<IPythonErrorInfoPro
         <Trace>{stack ? stack.join('') : 'No Stack Provided.'}</Trace>
         {cause ? (
           <>
-            <CauseHeader>
-              The above exception was the direct cause of the following exception:
-            </CauseHeader>
+            <CauseHeader>The above exception was caused by the following exception:</CauseHeader>
             <ErrorHeader>{cause.message}</ErrorHeader>
             <Trace>{cause.stack ? cause.stack.join('') : 'No Stack Provided.'}</Trace>
           </>

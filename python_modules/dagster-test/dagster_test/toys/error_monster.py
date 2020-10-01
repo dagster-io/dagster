@@ -1,3 +1,5 @@
+import six
+
 from dagster import (
     EventMetadataEntry,
     Failure,
@@ -44,20 +46,30 @@ solid_throw_config = {
 }
 
 
+class ExampleException(Exception):
+    pass
+
+
 def _act_on_config(solid_config):
     if solid_config["crash_in_solid"]:
         segfault()
     if solid_config["throw_in_solid"]:
-        raise Failure(
-            description="I'm a Failure",
-            metadata_entries=[
-                EventMetadataEntry.text(
-                    label="metadata_label",
-                    text="I am metadata text",
-                    description="metadata_description",
-                )
-            ],
-        )
+        try:
+            raise ExampleException("sample cause exception")
+        except ExampleException as e:
+            six.raise_from(
+                Failure(
+                    description="I'm a Failure",
+                    metadata_entries=[
+                        EventMetadataEntry.text(
+                            label="metadata_label",
+                            text="I am metadata text",
+                            description="metadata_description",
+                        )
+                    ],
+                ),
+                e,
+            )
     elif solid_config["request_retry"]:
         raise RetryRequested()
 
