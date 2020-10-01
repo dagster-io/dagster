@@ -8,7 +8,6 @@ import styled from 'styled-components';
 
 import {Header, Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
 import Loading from 'src/Loading';
-import {Timestamp} from 'src/TimeComponents';
 import {AssetRoot} from 'src/assets/AssetRoot';
 import {AssetsRootQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsRootQuery';
 
@@ -226,12 +225,6 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
   );
 };
 
-const timestampForAsset = (asset: Asset) => {
-  return asset.assetMaterializations.length
-    ? parseInt(asset.assetMaterializations[0].materializationEvent.timestamp)
-    : null;
-};
-
 const matches = (haystack: string, needle: string) =>
   needle
     .toLowerCase()
@@ -243,16 +236,7 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
   const pathMap: {[key: string]: Asset} = {};
   assets.forEach((asset) => {
     const [pathKey] = asset.key.path.slice(currentPath.length, currentPath.length + 1);
-    if (pathKey in pathMap) {
-      const currentTimestamp = timestampForAsset(asset);
-      const existingTimestamp = timestampForAsset(pathMap[pathKey]);
-      pathMap[pathKey] =
-        !existingTimestamp || (currentTimestamp && currentTimestamp > existingTimestamp)
-          ? asset
-          : pathMap[pathKey];
-    } else {
-      pathMap[pathKey] = asset;
-    }
+    pathMap[pathKey] = asset;
   });
 
   const pathKeys = Object.keys(pathMap).sort();
@@ -265,11 +249,8 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
       <div style={{marginTop: 30}}>
         <Legend>
           <LegendColumn>Asset Key</LegendColumn>
-          <LegendColumn>Last materialized</LegendColumn>
         </Legend>
         {pathKeys.map((pathKey: string, idx: number) => {
-          const asset = pathMap[pathKey];
-          const timestamp = timestampForAsset(asset);
           const linkUrl = `/assets/${
             currentPath.length ? currentPath.join('/') + `/${pathKey}` : pathKey
           }`;
@@ -278,7 +259,6 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
               <RowColumn>
                 <Link to={linkUrl}>{pathKey}</Link>
               </RowColumn>
-              <RowColumn>{timestamp ? <Timestamp ms={timestamp} /> : '-'}</RowColumn>
             </RowContainer>
           );
         })}
@@ -308,11 +288,6 @@ export const ASSETS_ROOT_QUERY = gql`
         nodes {
           key {
             path
-          }
-          assetMaterializations(limit: 1) {
-            materializationEvent {
-              timestamp
-            }
           }
         }
       }
