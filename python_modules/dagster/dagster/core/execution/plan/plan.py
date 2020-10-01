@@ -373,6 +373,70 @@ class ExecutionPlan(
             step_keys_to_execute,
         )
 
+    def build_memoized_plan(self, step_keys_to_execute, addresses):
+        """Using cached outputs from previous runs, create a new execution plan.
+
+        For steps where values have been cached, addresses are provided so that at runtime, those
+        steps do not need to re-execute.
+
+        Args:
+            step_keys_to_execute (List[String]): A list of execution step keys to actually run in this
+                execution plan.
+            addresses: (Dict[(str, StepOutputHandle), str]): A dictionary mapping pipeline name and
+                step output handle to an "address", which the intermediate storage can use to
+                retrieve the value for this step output.
+        Returns:
+            ExecutionPlan: An execution plan where addresses have been provided to steps such that
+                the intermediate storage layer can retrieve the addresses instead of searching for
+                the output from within the current run.
+        """
+        check.list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
+        check.dict_param(addresses, "addresses")
+        pipeline_name = self.pipeline_def.name
+        memoized_plan_step_dict = self.step_dict.copy()
+        for step_key in step_keys_to_execute:
+            step_inputs = []
+            step = memoized_plan_step_dict[step_key]
+            for step_input in step.step_inputs:
+                if step_input.is_from_output:
+                    address_dict = {
+                        source_handle: addresses[(pipeline_name, source_handle)]
+                        for source_handle in step_input.source_handles
+                        if (pipeline_name, source_handle) in addresses
+                    }
+                    reconstructed_step_input = StepInput(
+                        step_input.name,
+                        dagster_type=step_input.dagster_type,
+                        source_type=step_input.source_type,
+                        source_handles=step_input.source_handles,
+                        config_data=None,
+                        addresses=address_dict,
+                    )
+                    step_inputs.append(reconstructed_step_input)
+                else:
+                    step_inputs.append(step_input)
+
+            memoized_step = ExecutionStep(
+                pipeline_name=step.pipeline_name,
+                key_suffix=step.key_suffix,
+                step_inputs=step_inputs,
+                step_outputs=step.step_outputs,
+                compute_fn=step.compute_fn,
+                kind=step.kind,
+                solid_handle=step.solid_handle,
+                solid=step.solid,
+                logging_tags=step.logging_tags,
+            )
+            memoized_plan_step_dict[step_key] = memoized_step
+
+        return ExecutionPlan(
+            self.pipeline,
+            memoized_plan_step_dict,
+            self.deps,
+            self.artifacts_persisted,
+            step_keys_to_execute,
+        )
+
     def start(
         self, retries, sort_key_fn=None,
     ):

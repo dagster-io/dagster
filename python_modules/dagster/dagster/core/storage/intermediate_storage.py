@@ -27,6 +27,10 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
         pass
 
     @abstractmethod
+    def has_intermediate_at_address(self, address=None):
+        pass
+
+    @abstractmethod
     def copy_intermediate_from_run(self, context, run_id, step_output_handle):
         pass
 
@@ -46,15 +50,28 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
 
             if step_input.is_from_single_output:
                 for source_handle in step_input.source_handles:
-                    if not self.has_intermediate(context, source_handle):
+                    if (
+                        source_handle in step_input.addresses
+                        and not self.has_intermediate_at_address(
+                            step_input.addresses[source_handle]
+                        )
+                    ):
+                        uncovered_inputs.append(source_handle)
+                    elif not self.has_intermediate(context, source_handle):
                         uncovered_inputs.append(source_handle)
 
             elif step_input.is_from_multiple_outputs:
-                missing_source_handles = [
-                    source_handle
-                    for source_handle in step_input.source_handles
-                    if not self.has_intermediate(context, source_handle)
-                ]
+                missing_source_handles = []
+                for source_handle in step_input.source_handles:
+                    if (
+                        source_handle in step_input.addresses
+                        and not self.has_intermediate_at_address(
+                            step_input.addresses[source_handle]
+                        )
+                    ):
+                        missing_source_handles.append(source_handle)
+                    elif not self.has_intermediate(context, source_handle):
+                        missing_source_handles.append(source_handle)
                 # only report as uncovered if all are missing from a multi-dep input
                 if len(missing_source_handles) == len(step_input.source_handles):
                     uncovered_inputs = uncovered_inputs + missing_source_handles
@@ -190,6 +207,21 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
             return self.object_store.set_object(
                 key=address, obj=value, serialization_strategy=dagster_type.serialization_strategy
             )
+        except IOError as e:
+            raise DagsterAddressIOError(str(e))
+
+    @experimental
+    def has_intermediate_at_address(self, address=None):
+        """
+        This is an experimental method.
+        This will likely to be merged into `has_intermediate`. To do so, we will need to
+        update the `has_intermediate` to take `address` as an arg
+        """
+        check.str_param(address, "address")
+
+        # currently it doesn't support type_storage_plugin_registry
+        try:
+            return self.object_store.has_object(key=address)
         except IOError as e:
             raise DagsterAddressIOError(str(e))
 

@@ -444,16 +444,32 @@ def _input_values_from_intermediate_storage(step_context):
             else:  # This is the case where the fan-in is typed Any
                 dagster_type = step_input.dagster_type
 
-            input_value = [
-                step_context.intermediate_storage.get_intermediate(
-                    context=step_context,
-                    step_output_handle=source_handle,
-                    dagster_type=dagster_type,
-                )
-                for source_handle in step_input.source_handles
-                # Filter out missing intermediates from skipped upstream outputs
-                if step_context.intermediate_storage.has_intermediate(step_context, source_handle)
-            ]
+            input_value = []
+            for source_handle in step_input.source_handles:
+                if (
+                    source_handle in step_input.addresses
+                    and step_context.intermediate_storage.has_intermediate_at_address(
+                        step_input.addresses[source_handle]
+                    )
+                ):
+                    input_value.append(
+                        step_context.intermediate_storage.get_intermediate_from_address(
+                            step_context,
+                            dagster_type=dagster_type,
+                            step_output_handle=source_handle,
+                            address=step_input.addresses[source_handle],
+                        )
+                    )
+                elif step_context.intermediate_storage.has_intermediate(
+                    step_context, source_handle
+                ):
+                    input_value.append(
+                        step_context.intermediate_storage.get_intermediate(
+                            context=step_context,
+                            step_output_handle=source_handle,
+                            dagster_type=dagster_type,
+                        )
+                    )
 
             # When we're using an object store-backed intermediate store, we wrap the
             # ObjectStoreOperation[] representing the fan-in values in a MultipleStepOutputsListWrapper
@@ -462,11 +478,20 @@ def _input_values_from_intermediate_storage(step_context):
                 input_value = MultipleStepOutputsListWrapper(input_value)
 
         elif step_input.is_from_single_output:
-            input_value = step_context.intermediate_storage.get_intermediate(
-                context=step_context,
-                step_output_handle=step_input.source_handles[0],
-                dagster_type=step_input.dagster_type,
-            )
+            source_handle = step_input.source_handles[0]
+            if source_handle in step_input.addresses:
+                input_value = step_context.intermediate_storage.get_intermediate_from_address(
+                    step_context,
+                    dagster_type=step_input.dagster_type,
+                    step_output_handle=source_handle,
+                    address=step_input.addresses[source_handle],
+                )
+            else:
+                input_value = step_context.intermediate_storage.get_intermediate(
+                    context=step_context,
+                    step_output_handle=step_input.source_handles[0],
+                    dagster_type=step_input.dagster_type,
+                )
 
         elif step_input.is_from_config:
             with user_code_error_boundary(

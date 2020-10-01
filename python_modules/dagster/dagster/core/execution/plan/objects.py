@@ -138,6 +138,7 @@ class StepInputSourceType(Enum):
     MULTIPLE_OUTPUTS = "MULTIPLE_OUTPUTS"
     CONFIG = "CONFIG"
     DEFAULT_VALUE = "DEFAULT_VALUE"
+    CACHED_OUTPUT = "CACHED_OUTPUT"
 
 
 class StepInput(
@@ -188,6 +189,10 @@ class StepInput(
     @property
     def is_from_multiple_outputs(self):
         return self.source_type == StepInputSourceType.MULTIPLE_OUTPUTS
+
+    @property
+    def is_from_cached_output(self):
+        return self.source_type == StepInputSourceType.CACHED_OUTPUT and self.addresses is not None
 
     @property
     def dependency_keys(self):

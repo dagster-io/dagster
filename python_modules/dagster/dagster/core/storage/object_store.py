@@ -14,7 +14,7 @@ from dagster.utils import mkdir_p
 class ObjectStore(six.with_metaclass(ABCMeta)):
     def __init__(self, name, sep="/"):
         """Create an ObjectStore.
-        
+
         Args:
             name (str) -- The user-visible name of the object store.
             sep (Optional[str]) -- The path separator specific to the object store. On S3, this should be
@@ -26,41 +26,41 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def set_object(self, key, obj, serialization_strategy=None):
         """Implement this method to set an object in the object store.
-        
+
         Should return an ObjectStoreOperation with op==ObjectStoreOperationType.SET_OBJECT
         on success."""
 
     @abstractmethod
     def get_object(self, key, serialization_strategy=None):
         """Implement this method to get an object from the object store.
-        
+
         Should return an ObjectStoreOperation with op==ObjectStoreOperationType.GET_OBJECT
         on success."""
 
     @abstractmethod
     def has_object(self, key):
         """Implement this method to check if an object exists in the object store.
-        
+
         Should return a boolean."""
 
     @abstractmethod
     def rm_object(self, key):
         """Implement this method to remove an object from the object store.
-        
+
         Should return an ObjectStoreOperation with op==ObjectStoreOperationType.RM_OBJECT
         on success."""
 
     @abstractmethod
     def cp_object(self, src, dst):
         """Implement this method to copy an object from one key to another in the object store.
-        
+
         Should return an ObjectStoreOperation with op==ObjectStoreOperationType.CP_OBJECT
         on success."""
 
     @abstractmethod
     def uri_for_key(self, key, protocol=None):
         """Implement this method to get a URI for a key in the object store.
-        
+
         Should return a URI as a string."""
 
     def key_for_paths(self, path_fragments):
