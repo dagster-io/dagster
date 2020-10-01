@@ -141,10 +141,16 @@ class StepInputSourceType(Enum):
 
 
 class StepInput(
-    namedtuple("_StepInput", "name dagster_type source_type source_handles config_data")
+    namedtuple("_StepInput", "name dagster_type source_type source_handles config_data addresses")
 ):
     def __new__(
-        cls, name, dagster_type=None, source_type=None, source_handles=None, config_data=None,
+        cls,
+        name,
+        dagster_type=None,
+        source_type=None,
+        source_handles=None,
+        config_data=None,
+        addresses=None,
     ):
         return super(StepInput, cls).__new__(
             cls,
@@ -155,6 +161,9 @@ class StepInput(
                 source_handles, "source_handles", of_type=StepOutputHandle
             ),
             config_data=config_data,  # can be any type
+            addresses=check.opt_dict_param(
+                addresses, "addresses", key_type=StepOutputHandle, value_type=str
+            ),
         )
 
     @property
