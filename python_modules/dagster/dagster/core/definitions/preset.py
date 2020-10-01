@@ -8,8 +8,8 @@ from dagster import check
 from dagster.core.definitions.utils import config_from_files, config_from_yaml_strings
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
-from dagster.utils import merge_dicts
 from dagster.utils.backcompat import canonicalize_backcompat_args
+from dagster.utils.merger import deep_merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
 from .utils import check_for_invalid_name_and_warn
@@ -211,5 +211,5 @@ class PresetDefinition(
                 solid_selection=self.solid_selection,
                 mode=self.mode,
                 tags=self.tags,
-                run_config=merge_dicts(self.run_config, run_config),
+                run_config=deep_merge_dicts(self.run_config, run_config),
             )
