@@ -68,7 +68,7 @@ def test_list_command_grpc_socket():
             {"grpc_socket": api_client.socket}, no_print, DagsterInstance.local_temp(),
         )
         execute_list_command(
-            {"grpc_socket": api_client.socket, "grpc-host": api_client.host},
+            {"grpc_socket": api_client.socket, "grpc_host": api_client.host},
             no_print,
             DagsterInstance.local_temp(),
         )

@@ -35,8 +35,18 @@ def test_invoke_ui_with_port_taken(monkeypatch):
     assert ":3001" in result.output
 
 
-def test_invoke_cli_wrapper_with_bad_option():
+def test_invoke_cli_wrapper_with_nonexistant_option():
     process = subprocess.Popen(["dagit", "--fubar"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     _, stderr = process.communicate()
     assert process.returncode != 0
     assert b"Error: no such option: --fubar\n" in stderr
+
+
+def test_invoke_cli_wrapper_with_invalid_option():
+    process = subprocess.Popen(["dagit", "-d", "."], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    _, stderr = process.communicate()
+    assert process.returncode != 0
+    assert (
+        b"Error: Invalid set of CLI arguments for loading repository/pipeline. See --help for details.\n"
+        in stderr
+    )

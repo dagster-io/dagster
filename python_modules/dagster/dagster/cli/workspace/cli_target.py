@@ -31,6 +31,8 @@ from .load import (
 )
 from .workspace import Workspace
 
+WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
+
 
 def _cli_load_invariant(condition, msg=None):
     msg = (
@@ -162,7 +164,8 @@ def created_workspace_load_target(kwargs):
             socket=kwargs.get("grpc_socket"),
             host=(kwargs.get("grpc_host") if kwargs.get("grpc_host") else "localhost"),
         )
-    check.failed("invalid")
+    else:
+        _cli_load_invariant(False)
 
 
 def workspace_from_load_target(load_target, instance):
@@ -219,7 +222,7 @@ def python_target_click_options():
             "--python-file",
             "-f",
             type=click.Path(exists=True),
-            help="Specify python file where repository or pipeline function lives.",
+            help="Specify python file where repository or pipeline function lives",
         ),
         click.option(
             "--module-name", "-m", help="Specify module where repository or pipeline function lives"
@@ -230,7 +233,7 @@ def python_target_click_options():
             "-a",
             help=(
                 "Attribute that is either a 1) repository or pipeline or "
-                "2) a function that returns a repository or pipeline."
+                "2) a function that returns a repository or pipeline"
             ),
         ),
     ]
@@ -238,9 +241,24 @@ def python_target_click_options():
 
 def grpc_server_target_click_options():
     return [
-        click.option("--grpc-port", type=click.INT, required=False),
-        click.option("--grpc-socket", type=click.Path(), required=False),
-        click.option("--grpc-host", type=click.STRING, required=False),
+        click.option(
+            "--grpc-port",
+            type=click.INT,
+            required=False,
+            help=("Port to use to connect to gRPC server"),
+        ),
+        click.option(
+            "--grpc-socket",
+            type=click.Path(),
+            required=False,
+            help=("Named socket to use to connect to gRPC server"),
+        ),
+        click.option(
+            "--grpc-host",
+            type=click.STRING,
+            required=False,
+            help=("Host to use to connect to gRPC server, defaults to localhost"),
+        ),
     ]
 
 

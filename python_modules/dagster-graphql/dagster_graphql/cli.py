@@ -12,7 +12,7 @@ from graphql.execution.executors.sync import SyncExecutor
 
 from dagster import check, seven
 from dagster.cli.workspace import workspace_target_argument
-from dagster.cli.workspace.cli_target import get_workspace_from_kwargs
+from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, get_workspace_from_kwargs
 from dagster.cli.workspace.workspace import Workspace
 from dagster.core.instance import DagsterInstance
 from dagster.seven import urljoin, urlparse
@@ -27,11 +27,6 @@ from .client.query import (
 from .implementation.context import DagsterGraphQLContext
 from .schema import create_schema
 from .version import __version__
-
-# TODO we may want to start extracting shared copy like this to some central location.
-REPO_TARGET_WARNING = (
-    "Can only use ONE of --repository-yaml/-y, --python-file/-f, --module-name/-m."
-)
 
 
 def create_dagster_graphql_cli():
@@ -146,16 +141,16 @@ PREDEFINED_QUERIES = {
     name="ui",
     help=(
         "Run a GraphQL query against the dagster interface to a specified repository or pipeline."
-        "\n\n{warning}".format(warning=REPO_TARGET_WARNING)
+        "\n\n{warning}".format(warning=WORKSPACE_TARGET_WARNING)
     )
     + (
         "\n\n Examples:"
         "\n\n1. dagster-graphql"
         "\n\n2. dagster-graphql -y path/to/{default_filename}"
-        "\n\n3. dagster-graphql -f path/to/file.py -n define_repo"
-        "\n\n4. dagster-graphql -m some_module -n define_repo"
-        "\n\n5. dagster-graphql -f path/to/file.py -n define_pipeline"
-        "\n\n6. dagster-graphql -m some_module -n define_pipeline"
+        "\n\n3. dagster-graphql -f path/to/file.py -a define_repo"
+        "\n\n4. dagster-graphql -m some_module -a define_repo"
+        "\n\n5. dagster-graphql -f path/to/file.py -a define_pipeline"
+        "\n\n6. dagster-graphql -m some_module -a define_pipeline"
     ).format(default_filename=DEFAULT_REPOSITORY_YAML_FILENAME),
 )
 @click.version_option(version=__version__)

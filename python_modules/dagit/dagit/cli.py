@@ -10,6 +10,7 @@ from geventwebsocket.handler import WebSocketHandler
 
 from dagster import check, seven
 from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
+from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action, log_repo_stats, upload_logs
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
@@ -22,8 +23,6 @@ def create_dagit_cli():
     return ui  # pylint: disable=no-value-for-parameter
 
 
-REPO_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m."
-
 DEFAULT_DAGIT_HOST = "127.0.0.1"
 DEFAULT_DAGIT_PORT = 3000
 
@@ -32,17 +31,18 @@ DEFAULT_DAGIT_PORT = 3000
     name="ui",
     help=(
         "Run dagit. Loads a repository or pipeline.\n\n{warning}".format(
-            warning=REPO_TARGET_WARNING
+            warning=WORKSPACE_TARGET_WARNING
         )
         + (
             "\n\n Examples:"
             "\n\n1. dagit (works if .{default_filename} exists)"
             "\n\n2. dagit -w path/to/{default_filename}"
             "\n\n3. dagit -f path/to/file.py"
-            "\n\n4. dagit -m some_module"
-            "\n\n5. dagit -f path/to/file.py -a define_repo"
-            "\n\n6. dagit -m some_module -a define_repo"
-            "\n\n7. dagit -p 3333"
+            "\n\n4. dagit -f path/to/file.py -d path/to/working_directory"
+            "\n\n5. dagit -m some_module"
+            "\n\n6. dagit -f path/to/file.py -a define_repo"
+            "\n\n7. dagit -m some_module -a define_repo"
+            "\n\n8. dagit -p 3333"
             "\n\nOptions Can also provide arguments via environment variables prefixed with DAGIT_"
             "\n\n    DAGIT_PORT=3333 dagit"
         ).format(default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)

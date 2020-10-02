@@ -10,6 +10,7 @@ import yaml
 
 from dagster import PipelineDefinition, check, execute_pipeline
 from dagster.cli.workspace.cli_target import (
+    WORKSPACE_TARGET_WARNING,
     get_external_pipeline_from_external_repo,
     get_external_pipeline_from_kwargs,
     get_external_repository_from_kwargs,
@@ -61,10 +62,6 @@ def create_pipeline_cli_group():
     group.add_command(pipeline_scaffold_command)
     group.add_command(pipeline_launch_command)
     return group
-
-
-WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m."
-WORKSPACE_ARG_NAMES = ["workspace", "module_name", "python_file", "attribute"]
 
 
 def apply_click_params(command, *click_params):
