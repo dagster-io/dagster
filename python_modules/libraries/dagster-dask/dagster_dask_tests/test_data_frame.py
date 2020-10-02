@@ -4,6 +4,8 @@ import shutil
 import dask.dataframe as dd
 import pytest
 from dagster_dask import DataFrame
+from dagster_dask.data_frame import DataFrameReadTypes, DataFrameToTypes
+from dagster_dask.utils import DataFrameUtilities
 from dask.dataframe.utils import assert_eq
 
 from dagster import InputDefinition, OutputDefinition, execute_solid, file_relative_path, solid
@@ -94,3 +96,27 @@ def test_dataframe_outputs(file_type, read, kwargs):
             assert result.success
             actual = read(f"{temp_path}/*")
             assert assert_eq(actual, df)
+
+
+def test_dataframe_loader_config_keys_dont_overlap():
+    """
+    Test that the read_keys, which are deprecated, do not overlap with
+    the normal loader config_keys.
+    """
+    config_keys = set(DataFrameUtilities.keys())
+    config_keys.add("read")
+    read_keys = set(DataFrameReadTypes.keys())
+    
+    assert len(config_keys.intersection(read_keys)) == 0
+
+
+def test_dataframe_materializer_config_keys_dont_overlap():
+    """
+    Test that the to_keys, which are deprecated, do not overlap with
+    the normal materializer config_keys.
+    """
+    config_keys = set(DataFrameUtilities.keys())
+    config_keys.add("to")
+    to_keys = set(DataFrameToTypes.keys())
+    
+    assert len(config_keys.intersection(to_keys)) == 0
