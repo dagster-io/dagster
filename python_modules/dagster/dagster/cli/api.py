@@ -473,14 +473,14 @@ def _schedule_tick_state(instance, stream, tick_data):
     "-p",
     type=click.INT,
     required=False,
-    help="Port over which to serve. You must pass one and only one of --port/-p or --socket/-f.",
+    help="Port over which to serve. You must pass one and only one of --port/-p or --socket/-s.",
 )
 @click.option(
     "--socket",
     "-s",
     type=click.Path(),
     required=False,
-    help="Serve over a UDS socket. You must pass one and only one of --port/-p or --socket/-f.",
+    help="Serve over a UDS socket. You must pass one and only one of --port/-p or --socket/-s.",
 )
 @click.option(
     "--host",
@@ -518,7 +518,7 @@ def _schedule_tick_state(instance, stream, tick_data):
     is_flag=True,
     required=False,
     default=False,
-    help="Wait until the first LoadRepositories call to actually load the repositoriies, instead of"
+    help="Wait until the first LoadRepositories call to actually load the repositories, instead of "
     "waiting to load them when the server is launched. Useful for surfacing errors when the server "
     "is managed directly from Dagit",
 )
@@ -535,10 +535,10 @@ def grpc_command(
 ):
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
-            "You must pass a valid --port/-p on Windows: --socket/-f not supported."
+            "You must pass a valid --port/-p on Windows: --socket/-s not supported."
         )
     if not (port or socket and not (port and socket)):
-        raise click.UsageError("You must pass one and only one of --port/-p or --socket/-f.")
+        raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
     loadable_target_origin = None
     if any(kwargs[key] for key in ["attribute", "working_directory", "module_name", "python_file"]):
