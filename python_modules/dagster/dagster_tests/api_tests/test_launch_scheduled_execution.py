@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import sys
 from contextlib import contextmanager
@@ -16,6 +17,7 @@ from dagster.core.scheduler import (
     ScheduledExecutionSkipped,
     ScheduledExecutionSuccess,
 )
+from dagster.core.telemetry import get_dir_from_dagster_home
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
@@ -123,6 +125,28 @@ def test_launch_successful_execution(schedule_origin_context):
 
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
             assert ticks[0].status == ScheduleTickStatus.SUCCESS
+
+
+@pytest.mark.parametrize(
+    "schedule_origin_context", [cli_api_schedule_origin],
+)
+def test_launch_successful_execution_telemetry(schedule_origin_context):
+    with instance_for_test(enable_telemetry=True):
+        with schedule_origin_context("simple_schedule") as schedule_origin:
+            sync_launch_scheduled_execution(schedule_origin)
+
+            event_log_path = "{logs_dir}/event.log".format(
+                logs_dir=get_dir_from_dagster_home("logs")
+            )
+            with open(event_log_path, "r") as f:
+                event_log = f.readlines()
+                assert len(event_log) == 2
+
+                message_start = json.loads(event_log[0])
+                message_end = json.loads(event_log[1])
+
+                assert message_start.get("action") == "_launch_scheduled_execution_started"
+                assert message_end.get("action") == "_launch_scheduled_execution_ended"
 
 
 @pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])

@@ -56,6 +56,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
 )
 from dagster.core.storage.tags import check_tags
+from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcServer
 from dagster.grpc.impl import (
@@ -622,6 +623,7 @@ def launch_scheduled_execution(output_file, schedule_name, **kwargs):
                     )
 
 
+@telemetry_wrapper
 def _launch_scheduled_execution(
     instance, repo_location, external_repo, external_schedule, tick, stream
 ):

@@ -47,12 +47,11 @@ UPDATE_REPO_STATS = "update_repo_stats"
 START_DAGIT_WEBSERVER = "start_dagit_webserver"
 TELEMETRY_VERSION = "0.2"
 
-# When adding to TELEMETRY_WHITELISTED_FUNCTIONS, please also update the literalinclude in
-# docs/next/src/pages/install/index.mdx
 # start_TELEMETRY_WHITELISTED_FUNCTIONS
 TELEMETRY_WHITELISTED_FUNCTIONS = {
-    "execute_execute_command",
+    "_launch_scheduled_execution",
     "_logged_execute_pipeline",
+    "execute_execute_command",
     "execute_launch_command",
 }
 # end_TELEMETRY_WHITELISTED_FUNCTIONS
