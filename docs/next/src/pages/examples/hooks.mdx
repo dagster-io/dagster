@@ -33,7 +33,8 @@ However, sometimes a pipeline is a shared responsibility or you only want to be 
 
 ```python literalinclude caption=repo.py showLines startLine=63 emphasize-lines=4
 file:/hooks/repo.py
-lines:63-68
+startAfter:start_repo_marker_2
+endBefore:end_repo_marker_2
 ```
 
 In this case, solid "b" won't trigger any hooks, while when solid "a" fails or succeeds it will send a slack message.
@@ -52,7 +53,7 @@ Hooks use resource keys to access resources. After including the resource key in
 
 ```python literalinclude caption=repo.py showLines startLine=26 emphasize-lines=1,4
 file:/hooks/repo.py
-lines:26-29
+lines:27-30
 ```
 
 It also enables you to switch resource values in different modes so that, for example, you can send slack messages only when you are in "prod" mode and mock the slack resource when you are in "dev" mode.
@@ -61,7 +62,8 @@ In this case, we can mock the `slack_resource` in the "dev" mode using a helper 
 
 ```python literalinclude caption=repo.py showLines startLine=42 emphasize-lines=5-6
 file:/hooks/repo.py
-lines:42-52
+startAfter:start_repo_marker_3
+endBefore:end_repo_marker_3
 ```
 
 When we switch to "prod" mode, we can provide the real slack token in the `run_config` and therefore enable sending messages to a certain slack channel when a hook is triggered.
@@ -74,7 +76,7 @@ Then, we can execute a pipeline with the config through Python API, CLI, or the 
 
 ```python literalinclude caption=repo.py showLines startLine=77 emphasize-lines=3
 file:/hooks/repo.py
-lines:77-79
+lines:89-91
 ```
 
 ## Open in a playground

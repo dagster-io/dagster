@@ -72,10 +72,13 @@ if __name__ == "__main__":
     result = execute_pipeline(complex_pipeline)
     assert result.success
 
-
+# start_complex_pipeline_marker_1
 def test_complex_pipeline():
     res = execute_pipeline(complex_pipeline)
     assert res.success
     assert len(res.solid_result_list) == 4
     for solid_res in res.solid_result_list:
         assert solid_res.success
+
+
+# end_complex_pipeline_marker_1

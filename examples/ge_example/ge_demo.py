@@ -1,3 +1,4 @@
+# start_ge_demo_marker_0
 from dagster_ge.factory import ge_data_context, ge_validation_solid_factory
 from pandas import read_csv
 
@@ -15,7 +16,6 @@ def process_payroll(_, df):
     return len(df)
 
 
-# start_ge_demo_marker_0
 @solid(input_defs=[InputDefinition(name="numrows"), InputDefinition(name="expectation")])
 def postprocess_payroll(_, numrows, expectation):
     if expectation["success"]:
@@ -24,14 +24,9 @@ def postprocess_payroll(_, numrows, expectation):
         raise ValueError
 
 
-# end_ge_demo_marker_0
-
-
-# start_ge_demo_marker_1
 payroll_expectations = ge_validation_solid_factory(
     datasource_name="getest", suite_name="basic.warning"
 )
-# end_ge_demo_marker_1
 
 
 @pipeline(
@@ -83,3 +78,6 @@ def payroll_data_pipeline():
     output_df = read_in_datafile()
 
     return postprocess_payroll(process_payroll(output_df), payroll_expectations(output_df))
+
+
+# end_ge_demo_marker_0

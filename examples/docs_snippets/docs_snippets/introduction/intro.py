@@ -11,7 +11,7 @@ from dagster import (
 
 make_python_type_usable_as_dagster_type(python_type=DataFrame, dagster_type=DagsterPandasDataFrame)
 
-
+# start_intro_0
 @solid(description="Calculates the grams of sugar per cup of each kind of cereal.")
 def sugar_by_volume(_, cereals: DataFrame) -> DataFrame:
     df = cereals[["name"]].copy()
@@ -33,6 +33,9 @@ def sugariest_cereals(_, cereals: DataFrame, cutoff: float) -> DataFrame:
 def sugariest_pipeline():
     sugar_by_vol = sugar_by_volume()
     sugariest_cereals(sugar_by_vol, top_quartile_cutoff(sugar_by_vol))
+
+
+# end_intro_0
 
 
 if __name__ == "__main__":

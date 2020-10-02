@@ -36,6 +36,7 @@ from .solids import (
     westbound_delays,
 )
 
+# start_pipelines_marker_2
 test_mode = ModeDefinition(
     name="test",
     resource_defs={
@@ -79,6 +80,8 @@ prod_mode = ModeDefinition(
     },
     intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
 )
+
+# end_pipelines_marker_2
 
 
 # start_pipelines_marker_0

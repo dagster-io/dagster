@@ -46,6 +46,7 @@ def _notebook_path(name):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), "notebooks", name)
 
 
+# start_solids_marker_3
 def notebook_solid(name, notebook_path, input_defs, output_defs, required_resource_keys):
     return define_dagstermill_solid(
         name,
@@ -54,6 +55,9 @@ def notebook_solid(name, notebook_path, input_defs, output_defs, required_resour
         output_defs,
         required_resource_keys=required_resource_keys,
     )
+
+
+# end_solids_3
 
 
 # need a sql context w a sqlalchemy engine
@@ -115,6 +119,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         "drop table if exists {table_name};\n" "create table {table_name} as {select_statement};"
     ).format(table_name=table_name, select_statement=select_statement)
 
+    # start_solids_marker_1
     @solid(
         name=name,
         input_defs=input_defs,
@@ -145,6 +150,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         context.resources.db_info.engine.execute(text(sql_statement))
         yield Output(value=table_name, output_name="result")
 
+    # end_solids_1
     return _sql_solid
 
 
@@ -213,6 +219,7 @@ def process_sfo_weather_data(_context, sfo_weather_data: DataFrame) -> DataFrame
     return rename_spark_dataframe_columns(normalized_sfo_weather_data, lambda c: c.lower())
 
 
+# start_solids_marker_0
 @solid(
     output_defs=[OutputDefinition(name="table_name", dagster_type=String)],
     config_schema={"table_name": String},
@@ -233,6 +240,9 @@ def load_data_to_database_from_spark(context, data_frame: DataFrame):
         ],
     )
     yield Output(value=table_name, output_name="table_name")
+
+
+# end_solids_0
 
 
 @solid(
@@ -420,6 +430,7 @@ eastbound_delays = sql_solid(
     table_name="eastbound_delays",
 )
 
+# start_solids_marker_2
 westbound_delays = sql_solid(
     "westbound_delays",
     """
@@ -447,7 +458,9 @@ westbound_delays = sql_solid(
     "table",
     table_name="westbound_delays",
 )
+# end_solids_2
 
+# start_solids_marker_4
 delays_by_geography = notebook_solid(
     "delays_by_geography",
     "Delays_by_Geography.ipynb",
@@ -472,6 +485,7 @@ delays_by_geography = notebook_solid(
     ],
     required_resource_keys={"db_info"},
 )
+# end_solids_4
 
 delays_vs_fares_nb = notebook_solid(
     "fares_vs_delays",

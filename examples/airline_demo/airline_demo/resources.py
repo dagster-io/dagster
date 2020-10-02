@@ -4,7 +4,9 @@ import sqlalchemy
 
 from dagster import Field, IntSource, StringSource, resource
 
+# start_resources_marker_0
 DbInfo = namedtuple("DbInfo", "engine url jdbc_url dialect load_table host db_name")
+# end_resources_0
 
 
 def create_redshift_db_url(username, password, hostname, port, db_name, jdbc=True):
@@ -94,6 +96,7 @@ def redshift_db_info_resource(init_context):
     )
 
 
+# start_resources_marker_1
 @resource(
     {
         "username": Field(StringSource),
@@ -138,3 +141,6 @@ def postgres_db_info_resource(init_context):
         host=host,
         db_name=db_name,
     )
+
+
+# end_resources_1

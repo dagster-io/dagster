@@ -43,6 +43,7 @@ def b(_):
     raise Exception()
 
 
+# start_repo_marker_3
 mode_defs = [
     ModeDefinition(
         "dev",
@@ -54,9 +55,9 @@ mode_defs = [
     ),
     ModeDefinition("prod", resource_defs={"slack": slack_resource}),
 ]
+# end_repo_marker_3
+
 # start_repo_marker_1
-
-
 @slack_on_failure
 @pipeline(mode_defs=mode_defs)
 def notif_all():
@@ -67,13 +68,16 @@ def notif_all():
 
 # end_repo_marker_1
 
-
+# start_repo_marker_2
 @pipeline(mode_defs=mode_defs)
 def selective_notif():
     # only solid "a" triggers hooks: a slack message will be sent when it fails or succeeds
     a.with_hooks({slack_on_failure, slack_on_success})()
     # solid "b" won't trigger any hooks
     b()
+
+
+# end_repo_marker_2
 
 
 @repository
