@@ -114,7 +114,7 @@ class DbtRpcClient(object):
 
     def status(self):
         """Sends a request with the method ``status`` to the dbt RPC server, and returns the
-        response. For more details, see the `dbt docs for the this method
+        response. For more details, see the dbt docs for the RPC method `status
         <https://docs.getdbt.com/reference/commands/rpc/#status>`_.
 
         Returns:
@@ -127,7 +127,7 @@ class DbtRpcClient(object):
         self, *, request_token: str, logs: bool = False, logs_start: int = 0
     ) -> requests.Response:
         """Sends a request with the method ``poll`` to the dbt RPC server, and returns the response.
-        For more details, see the `dbt docs for the this method
+        For more details, see the dbt docs for the RPC method `poll
         <https://docs.getdbt.com/reference/commands/rpc/#poll>`_.
 
         Args:
@@ -144,7 +144,7 @@ class DbtRpcClient(object):
 
     def ps(self, *, completed: bool = False) -> requests.Response:
         """Sends a request with the method ``ps`` to the dbt RPC server, and returns the response.
-        For more details, see the `dbt docs for the this method
+        For more details, see the dbt docs for the RPC method `ps
         <https://docs.getdbt.com/reference/commands/rpc/#ps>`_.
 
         Args:
@@ -159,7 +159,7 @@ class DbtRpcClient(object):
 
     def kill(self, *, task_id: str) -> requests.Response:
         """Sends a request with the method ``kill`` to the dbt RPC server, and returns the response.
-        For more details, see the `dbt docs for the this method
+        For more details, see the dbt docs for the RPC method `kill
         <https://docs.getdbt.com/reference/commands/rpc/#kill>`_.
 
         Args:
@@ -174,7 +174,7 @@ class DbtRpcClient(object):
 
     def cli(self, *, cli: str, **kwargs) -> requests.Response:
         """Sends a request with CLI syntax to the dbt RPC server, and returns the response.
-        For more details, see the `dbt docs for the running CLI commands via RPC
+        For more details, see the dbt docs for `running CLI commands via RPC
         <https://docs.getdbt.com/reference/commands/rpc/#running-a-task-with-cli-syntax>`_.
 
         Args:
@@ -195,7 +195,7 @@ class DbtRpcClient(object):
         self, *, models: List[str] = None, exclude: List[str] = None, **kwargs
     ) -> requests.Response:
         """Sends a request with the method ``compile`` to the dbt RPC server, and returns the
-        response. For more details, see the `dbt docs for the this method
+        response. For more details, see the dbt docs for `compiling projects via RPC
         <https://docs.getdbt.com/reference/commands/rpc/#compile-a-project>`_.
 
         Args:
@@ -217,7 +217,7 @@ class DbtRpcClient(object):
         self, *, models: List[str] = None, exclude: List[str] = None, **kwargs
     ) -> requests.Response:
         """Sends a request with the method ``run`` to the dbt RPC server, and returns the response.
-        For more details, see the `dbt docs for the this method
+        For more details, see the dbt docs for the RPC method `run
         <https://docs.getdbt.com/reference/commands/rpc/#run-models>`_.
 
         Args:
@@ -227,7 +227,7 @@ class DbtRpcClient(object):
         Returns:
             Response: the HTTP response from the dbt RPC server.
         """
-        data = self._default_request(method="compile")
+        data = self._default_request(method="run")
         data["params"].update(self._selection(models=models, exclude=exclude))
 
         if kwargs is not None:
@@ -238,9 +238,9 @@ class DbtRpcClient(object):
     def snapshot(
         self, *, select: List[str] = None, exclude: List[str] = None, **kwargs
     ) -> requests.Response:
-        """Sends a request with the method ``cli`` to the dbt RPC server, and returns the response.
-        For more details, see the `dbt docs for the this method
-        <https://docs.getdbt.com/reference/commands/rpc/#kill>`_.
+        """Sends a request with the method ``snapshot`` to the dbt RPC server, and returns the
+        response. For more details, see the dbt docs for the command `snapshot
+        <https://docs.getdbt.com/reference/commands/snapshot>`_.
 
         Args:
             select (List[str], optional): the snapshots to include in the run.
@@ -267,7 +267,7 @@ class DbtRpcClient(object):
         **kwargs,
     ) -> requests.Response:
         """Sends a request with the method ``test`` to the dbt RPC server, and returns the response.
-        For more details, see the `dbt docs for the this method
+        For more details, see the dbt docs for the RPC method `test
         <https://docs.getdbt.com/reference/commands/rpc/#run-test>`_.
 
         Args:
@@ -291,7 +291,7 @@ class DbtRpcClient(object):
 
     def seed(self, *, show: bool = False, **kwargs) -> requests.Response:
         """Sends a request with the method ``seed`` to the dbt RPC server, and returns the response.
-        For more details, see the `dbt docs for the this method
+        For more details, see the dbt docs for the RPC method `seed
         <https://docs.getdbt.com/reference/commands/rpc/#run-seed>`_.
 
         Args:
@@ -318,7 +318,7 @@ class DbtRpcClient(object):
         **kwargs,
     ) -> requests.Response:
         """Sends a request with the method ``docs.generate`` to the dbt RPC server, and returns the
-        response. For more details, see the `dbt docs for the this method
+        response. For more details, see the dbt docs for the RPC method `docs.generate
         <https://docs.getdbt.com/reference/commands/rpc/#generate-docs>`_.
 
         Args:
@@ -344,7 +344,7 @@ class DbtRpcClient(object):
         self, *, macro: str, args: Optional[Dict[str, Any]] = None, **kwargs
     ) -> requests.Response:
         """Sends a request with the method ``run-operation`` to the dbt RPC server, and returns the
-        response. For more details, see the `dbt docs for the this CLI command
+        response. For more details, see the dbt docs for the command `run-operation
         <https://docs.getdbt.com/reference/commands/run-operation>`_.
 
         Args:
@@ -369,7 +369,7 @@ class DbtRpcClient(object):
         self, *, select: Optional[List[str]] = None, **kwargs
     ) -> requests.Response:
         """Sends a request with the method ``snapshot-freshness`` to the dbt RPC server, and returns
-        the response. For more details, see the `dbt docs for the this method
+        the response. For more details, see the dbt docs for the command `source snapshot-freshness
         <https://docs.getdbt.com/reference/commands/source#dbt-source-snapshot-freshness>`_.
 
         Args:
@@ -388,7 +388,7 @@ class DbtRpcClient(object):
 
     def compile_sql(self, *, sql: str, name: str) -> requests.Response:
         """Sends a request with the method ``compile_sql`` to the dbt RPC server, and returns the
-        response. For more details, see the `dbt docs for the this method
+        response. For more details, see the dbt docs for `compiling SQL via RPC
         <https://docs.getdbt.com/reference/commands/rpc#compiling-a-query>`_.
 
         Args:
@@ -404,7 +404,7 @@ class DbtRpcClient(object):
 
     def run_sql(self, *, sql: str, name: str) -> requests.Response:
         """Sends a request with the method ``run_sql`` to the dbt RPC server, and returns the
-        response. For more details, see the `dbt docs for the this method
+        response. For more details, see the dbt docs for `running SQL via RPC
         <https://docs.getdbt.com/reference/commands/rpc#executing-a-query>`_.
 
         Args:
@@ -446,4 +446,14 @@ def dbt_rpc_resource(context) -> DbtRpcClient:
     return DbtRpcClient(host=context.resource_config["host"], port=context.resource_config["port"])
 
 
-local_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580})
+@resource(
+    description="A resource representing a dbt RPC client that is configured for 0.0.0.0:8580",
+)
+def local_dbt_rpc_resource(_context) -> DbtRpcClient:
+    """This resource defines a dbt RPC client that is configured for ``0.0.0.0:8580``.
+
+    Returns:
+        ResourceDefinition: A Dagster resource that defines a dbt RPC client that is configured
+            for dbt RPC server at ``0.0.0.0:8580``.
+    """
+    return DbtRpcClient(host="0.0.0.0", port=8580)
