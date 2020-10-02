@@ -212,6 +212,12 @@ def solid_asset_b(_, num):
     yield Output(num)
 
 
+@solid
+def solid_partitioned_asset(_):
+    yield AssetMaterialization(asset_key="a", partition="partition_1")
+    yield Output(1)
+
+
 @pipeline
 def single_asset_pipeline():
     solid_asset_a()
@@ -220,6 +226,11 @@ def single_asset_pipeline():
 @pipeline
 def multi_asset_pipeline():
     solid_asset_b(solid_asset_a())
+
+
+@pipeline
+def partitioned_asset_pipeline():
+    solid_partitioned_asset()
 
 
 @pipeline
@@ -1062,6 +1073,7 @@ def test_repo():
             no_config_chain_pipeline,
             no_config_pipeline,
             noop_pipeline,
+            partitioned_asset_pipeline,
             pipeline_with_enum_config,
             pipeline_with_expectations,
             pipeline_with_invalid_definition_error,

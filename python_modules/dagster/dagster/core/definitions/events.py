@@ -374,7 +374,8 @@ class Output(namedtuple("_Output", "value output_name address")):
 
 @whitelist_for_persistence
 class AssetMaterialization(
-    namedtuple("_AssetMaterialization", "asset_key description metadata_entries"), Persistable,
+    namedtuple("_AssetMaterialization", "asset_key description metadata_entries partition"),
+    Persistable,
 ):
     """Event indicating that a solid has materialized an asset.
 
@@ -393,9 +394,10 @@ class AssetMaterialization(
         description (Optional[str]): A longer human-radable description of the materialized value.
         metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
             materialized value.
+        partition (Optional[str]): The name of the partition that was materialized.
     """
 
-    def __new__(cls, asset_key, description=None, metadata_entries=None):
+    def __new__(cls, asset_key, description=None, metadata_entries=None, partition=None):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif check.is_str(asset_key):
@@ -414,6 +416,7 @@ class AssetMaterialization(
             metadata_entries=check.opt_list_param(
                 metadata_entries, metadata_entries, of_type=EventMetadataEntry
             ),
+            partition=check.opt_str_param(partition, "partition"),
         )
 
     @property
@@ -440,7 +443,8 @@ class AssetMaterialization(
 
 @whitelist_for_persistence
 class Materialization(
-    namedtuple("_Materialization", "label description metadata_entries asset_key"), Persistable
+    namedtuple("_Materialization", "label description metadata_entries asset_key partition"),
+    Persistable,
 ):
     """Event indicating that a solid has materialized a value.
 
@@ -459,6 +463,7 @@ class Materialization(
             materialized value.
         asset_key (Optional[str|AssetKey]): An optional parameter to identify the materialized asset
             across pipeline runs
+        partition (Optional[str]): The name of the partition that was materialized.
     """
 
     def __new__(
@@ -467,6 +472,7 @@ class Materialization(
         description=None,
         metadata_entries=None,
         asset_key=None,
+        partition=None,
         skip_deprecation_warning=False,
     ):
         if asset_key and check.is_str(asset_key):
@@ -493,6 +499,7 @@ class Materialization(
                 metadata_entries, metadata_entries, of_type=EventMetadataEntry
             ),
             asset_key=asset_key,
+            partition=check.opt_str_param(partition, "partition"),
         )
 
     @staticmethod
