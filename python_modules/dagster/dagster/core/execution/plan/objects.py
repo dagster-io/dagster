@@ -203,7 +203,7 @@ class ExecutionStep(
         "_ExecutionStep",
         (
             "pipeline_name key_suffix step_inputs step_input_dict step_outputs step_output_dict "
-            "compute_fn kind solid_handle solid_version solid_required_resource_keys logging_tags tags hook_defs"
+            "compute_fn kind solid_handle solid logging_tags tags hook_defs"
         ),
     )
 ):
@@ -219,7 +219,6 @@ class ExecutionStep(
         solid,
         logging_tags=None,
     ):
-        check.inst_param(solid, "solid", Solid)
 
         return super(ExecutionStep, cls).__new__(
             cls,
@@ -235,8 +234,7 @@ class ExecutionStep(
             #     Not to be confused with the compute_fn of the passed in solid.
             kind=check.inst_param(kind, "kind", StepKind),
             solid_handle=check.inst_param(solid_handle, "solid_handle", SolidHandle),
-            solid_version=solid.definition.version,
-            solid_required_resource_keys=solid.definition.required_resource_keys,
+            solid=check.inst_param(solid, "solid", Solid),
             logging_tags=merge_dicts(
                 {
                     "step_key": str(solid_handle) + "." + key_suffix,
