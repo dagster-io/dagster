@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.13
+
+**Bugfixes**
+
+- Fixes an issue using `build_reconstructable_pipeline`.
+- Improved loading times for the asset catalog in Dagit.
+
+**Documentations**
+
+- Improved error messages when invoking dagit from the CLI with bad arguments.
+
 ## 0.9.12
 
 **Breaking Changes**
@@ -22,7 +33,6 @@
 
 - Syntax errors in user code now display the file and line number with the error in Dagit
 - Dask executor no longer fails when using intermediate_storage
-- Fixes an issue using `build_reconstructable_pipeline`
 - In the Celery K8s executor, we now mark the step as failed when the step job fails
 - Changed the `DagsterInvalidAssetKey` error so that it no longer fails upon being thrown
 
