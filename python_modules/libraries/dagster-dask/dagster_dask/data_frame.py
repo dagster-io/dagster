@@ -1,6 +1,8 @@
 import contextlib
 import warnings
 
+import dask.dataframe as dd
+
 from dagster import (
     Any,
     AssetMaterialization,
@@ -21,10 +23,8 @@ from dagster import (
     dagster_type_loader,
     dagster_type_materializer,
 )
-import dask.dataframe as dd
 
 from .utils import DataFrameUtilities, apply_utilities_to_df
-
 
 WriteCompressionTextOptions = Enum(
     "WriteCompressionText", [EnumValue("gzip"), EnumValue("bz2"), EnumValue("xz"),],
