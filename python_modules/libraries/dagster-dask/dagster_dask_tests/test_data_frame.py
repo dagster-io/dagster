@@ -106,7 +106,7 @@ def test_dataframe_loader_config_keys_dont_overlap():
     config_keys = set(DataFrameUtilities.keys())
     config_keys.add("read")
     read_keys = set(DataFrameReadTypes.keys())
-    
+
     assert len(config_keys.intersection(read_keys)) == 0
 
 
@@ -118,5 +118,5 @@ def test_dataframe_materializer_config_keys_dont_overlap():
     config_keys = set(DataFrameUtilities.keys())
     config_keys.add("to")
     to_keys = set(DataFrameToTypes.keys())
-    
+
     assert len(config_keys.intersection(to_keys)) == 0

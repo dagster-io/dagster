@@ -31,16 +31,19 @@ class ActiveExecution(object):
         self._executable = []
         self._pending_skip = []
         self._pending_retry = []
+        self._pending_abandon = []
         self._waiting_to_retry = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
         self._in_flight = set()
 
         # and finally their terminal state is tracked by these sets, via mark_*
-        self._completed = set()
         self._success = set()
         self._failed = set()
         self._skipped = set()
+        self._abandoned = set()
+
+        # see verify_complete
         self._unknown_state = set()
         self._interrupted = set()
 
@@ -60,14 +63,31 @@ class ActiveExecution(object):
 
         # Requested termination is the only time we should be exiting incomplete without an exception
         if not self.is_complete:
+            pending_action = (
+                self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
+            )
             raise DagsterIncompleteExecutionPlanError(
                 "Execution of pipeline finished without completing the execution plan, "
                 "likely as a result of a termination request."
+                "{pending_str}{in_flight_str}{action_str}{retry_str}".format(
+                    in_flight_str="\nSteps still in flight: {}".format(self._in_flight)
+                    if self._in_flight
+                    else "",
+                    pending_str="\nSteps pending processing: {}".format(self._pending.keys())
+                    if self._pending
+                    else "",
+                    action_str="\nSteps pending action: {}".format(pending_action)
+                    if pending_action
+                    else "",
+                    retry_str="\nSteps waiting to retry: {}".format(self._waiting_to_retry.keys())
+                    if self._waiting_to_retry
+                    else "",
+                )
             )
 
         # See verify_complete - steps for which we did not observe a failure/success event are in an unknown
         # state so we raise to ensure pipeline failure.
-        if self.is_complete and len(self._unknown_state) > 0:
+        if len(self._unknown_state) > 0:
             raise DagsterUnknownStepStateError(
                 "Execution of pipeline exited with steps {step_list} in an unknown state to this process.\n"
                 "This was likely caused by losing communication with the process performing step execution.".format(
@@ -81,32 +101,43 @@ class ActiveExecution(object):
         """
         new_steps_to_execute = []
         new_steps_to_skip = []
+        new_steps_to_abandon = []
+
+        successful_or_skipped_steps = self._success | self._skipped
+        failed_or_abandoned_steps = self._failed | self._abandoned
+
         for step_key, requirements in self._pending.items():
-            if requirements.issubset(self._completed):
-                if requirements.issubset(self._success):
-                    new_steps_to_execute.append(step_key)
+            # If any upstream deps failed - this is not executable
+            if requirements.intersection(failed_or_abandoned_steps):
+                new_steps_to_abandon.append(step_key)
+
+            # If all upstream deps are good - this is executable
+            elif requirements.issubset(self._success):
+                new_steps_to_execute.append(step_key)
+
+            # If some upstream deps skipped...
+            elif requirements.issubset(successful_or_skipped_steps):
+                step = self.get_step_by_key(step_key)
+
+                # The base case is downstream step will skip
+                should_skip = True
+
+                # Unless a fan-in input has any successful inputs
+                for inp in step.step_inputs:
+                    if inp.is_from_multiple_outputs:
+                        if any([key in self._success for key in inp.dependency_keys]):
+                            should_skip = False
+
+                # but no missing regular inputs
+                for inp in step.step_inputs:
+                    if inp.is_from_single_output:
+                        if any([key not in self._success for key in inp.dependency_keys]):
+                            should_skip = True
+
+                if should_skip:
+                    new_steps_to_skip.append(step_key)
                 else:
-                    step = self.get_step_by_key(step_key)
-
-                    # The step will skip on any upstream failure
-                    should_skip = True
-
-                    # Unless a fan-in input has any successful inputs
-                    for inp in step.step_inputs:
-                        if inp.is_from_multiple_outputs:
-                            if any([key in self._success for key in inp.dependency_keys]):
-                                should_skip = False
-
-                    # but no missing regular inputs
-                    for inp in step.step_inputs:
-                        if inp.is_from_single_output:
-                            if any([key not in self._success for key in inp.dependency_keys]):
-                                should_skip = True
-
-                    if should_skip:
-                        new_steps_to_skip.append(step_key)
-                    else:
-                        new_steps_to_execute.append(step_key)
+                    new_steps_to_execute.append(step_key)
 
         for key in new_steps_to_execute:
             self._executable.append(key)
@@ -114,6 +145,10 @@ class ActiveExecution(object):
 
         for key in new_steps_to_skip:
             self._pending_skip.append(key)
+            del self._pending[key]
+
+        for key in new_steps_to_abandon:
+            self._pending_abandon.append(key)
             del self._pending[key]
 
         ready_to_retry = []
@@ -181,24 +216,33 @@ class ActiveExecution(object):
 
         return sorted(steps, key=self._sort_key_fn)
 
-    def skipped_step_events_iterator(self, pipeline_context):
-        """Process all steps that can be skipped by repeated calls to get_steps_to_skip
+    def get_steps_to_abandon(self):
+        self._update()
+
+        steps = []
+        steps_to_abandon = list(self._pending_abandon)
+        for key in steps_to_abandon:
+            steps.append(self.get_step_by_key(key))
+            self._in_flight.add(key)
+            self._pending_abandon.remove(key)
+
+        return sorted(steps, key=self._sort_key_fn)
+
+    def plan_events_iterator(self, pipeline_context):
+        """Process all steps that can be skipped and abandoned
         """
 
         steps_to_skip = self.get_steps_to_skip()
         while steps_to_skip:
-            failed_or_skipped_steps = self._skipped.union(self._failed)
             for step in steps_to_skip:
                 step_context = pipeline_context.for_step(step)
-                failed_inputs = []
+                skipped_inputs = []
                 for step_input in step.step_inputs:
-                    failed_inputs.extend(
-                        failed_or_skipped_steps.intersection(step_input.dependency_keys)
-                    )
+                    skipped_inputs.extend(self._skipped.intersection(step_input.dependency_keys))
 
                 step_context.log.info(
-                    "Dependencies for step {step} failed or skipped: {failed_inputs}. Not executing.".format(
-                        step=step.key, failed_inputs=failed_inputs
+                    "Skipping step {step} due to skipped dependencies: {skipped_inputs}.".format(
+                        step=step.key, skipped_inputs=skipped_inputs
                     )
                 )
                 yield DagsterEvent.step_skipped_event(step_context)
@@ -206,6 +250,33 @@ class ActiveExecution(object):
                 self.mark_skipped(step.key)
 
             steps_to_skip = self.get_steps_to_skip()
+
+        steps_to_abandon = self.get_steps_to_abandon()
+        while steps_to_abandon:
+            for step in steps_to_abandon:
+                step_context = pipeline_context.for_step(step)
+                failed_inputs = []
+                for step_input in step.step_inputs:
+                    failed_inputs.extend(self._failed.intersection(step_input.dependency_keys))
+
+                abandoned_inputs = []
+                for step_input in step.step_inputs:
+                    abandoned_inputs.extend(
+                        self._abandoned.intersection(step_input.dependency_keys)
+                    )
+
+                step_context.log.error(
+                    "Dependencies for step {step}{fail_str}{abandon_str}. Not executing.".format(
+                        step=step.key,
+                        fail_str=" failed: {}".format(failed_inputs) if failed_inputs else "",
+                        abandon_str=" were not executed: {}".format(abandoned_inputs)
+                        if abandoned_inputs
+                        else "",
+                    )
+                )
+                self.mark_abandoned(step.key)
+
+            steps_to_abandon = self.get_steps_to_abandon()
 
     def mark_failed(self, step_key):
         self._failed.add(step_key)
@@ -219,9 +290,9 @@ class ActiveExecution(object):
         self._skipped.add(step_key)
         self._mark_complete(step_key)
 
-    def mark_unknown_state(self, step_key):
-        self._unknown_state.add(step_key)
-        self.mark_failed(step_key)
+    def mark_abandoned(self, step_key):
+        self._abandoned.add(step_key)
+        self._mark_complete(step_key)
 
     def mark_interrupted(self, step_key):
         self._interrupted.add(step_key)
@@ -244,16 +315,14 @@ class ActiveExecution(object):
                 self._pending[step_key] = self._plan.execution_deps()[step_key]
 
         elif self._retries.deferred:
-            self._completed.add(step_key)
+            # do not attempt to execute again
+            self._abandoned.add(step_key)
 
         self._retries.mark_attempt(step_key)
-        self._in_flight.remove(step_key)
+
+        self._mark_complete(step_key)
 
     def _mark_complete(self, step_key):
-        check.invariant(
-            step_key not in self._completed,
-            "Attempted to mark step {} as complete that was already completed".format(step_key),
-        )
         check.invariant(
             step_key in self._in_flight,
             "Attempted to mark step {} as complete that was not known to be in flight".format(
@@ -261,7 +330,6 @@ class ActiveExecution(object):
             ),
         )
         self._in_flight.remove(step_key)
-        self._completed.add(step_key)
 
     def handle_event(self, dagster_event):
         check.inst_param(dagster_event, "dagster_event", DagsterEvent)
@@ -285,16 +353,24 @@ class ActiveExecution(object):
         """
         if step_key in self._in_flight:
             if step_key in self._interrupted:
-                pipeline_context.log.info(
+                pipeline_context.log.error(
                     "Step {key} did not complete due to being interrupted.".format(key=step_key)
                 )
+                self.mark_abandoned(step_key)
             else:
                 pipeline_context.log.error(
-                    "Step {key} finished without success or failure event, assuming failure.".format(
+                    "Step {key} finished without success or failure event. Downstream steps will not execute.".format(
                         key=step_key
                     )
                 )
                 self.mark_unknown_state(step_key)
+
+    # factored out for test
+    def mark_unknown_state(self, step_key):
+        # note the step so that we throw upon plan completion
+        self._unknown_state.add(step_key)
+        # mark as abandoned so downstream tasks do not execute
+        self.mark_abandoned(step_key)
 
     @property
     def is_complete(self):
@@ -304,5 +380,6 @@ class ActiveExecution(object):
             and len(self._executable) == 0
             and len(self._pending_skip) == 0
             and len(self._pending_retry) == 0
+            and len(self._pending_abandon) == 0
             and len(self._waiting_to_retry) == 0
         )

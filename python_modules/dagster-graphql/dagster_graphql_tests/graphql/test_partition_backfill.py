@@ -16,7 +16,6 @@ from .utils import (
     get_all_logs_for_finished_run_via_subscription,
     step_did_fail,
     step_did_not_run,
-    step_did_skip,
     step_did_succeed,
 )
 
@@ -135,7 +134,7 @@ class TestLaunchBackfillFromFailure(
             ]["messages"]
             assert step_did_succeed(logs, "always_succeed.compute")
             assert step_did_fail(logs, "conditionally_fail.compute")
-            assert step_did_skip(logs, "after_failure.compute")
+            assert step_did_not_run(logs, "after_failure.compute")
 
         # re-execute from failure (without the failure environment variable)
         result = execute_dagster_graphql_and_finish_runs(

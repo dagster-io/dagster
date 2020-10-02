@@ -187,8 +187,8 @@ class MultiprocessExecutor(Executor):
                         del term_events[key]
                         active_execution.verify_complete(pipeline_context, key)
 
-                    # process skips from failures or uncovered inputs
-                    for event in active_execution.skipped_step_events_iterator(pipeline_context):
+                    # process skipped and abandoned steps
+                    for event in active_execution.plan_events_iterator(pipeline_context):
                         yield event
 
                 errs = {pid: err for pid, err in errors.items() if err}

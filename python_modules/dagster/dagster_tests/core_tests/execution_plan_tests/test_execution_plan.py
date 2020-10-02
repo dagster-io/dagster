@@ -119,12 +119,12 @@ def test_failing_execution_plan():
 
         assert not active_execution.is_complete
 
-        steps = active_execution.get_steps_to_skip()
+        steps = active_execution.get_steps_to_abandon()
         assert len(steps) == 1
         step_4 = steps[0]
 
         assert step_4.key == "adder.compute"
-        active_execution.mark_skipped(step_4.key)
+        active_execution.mark_abandoned(step_4.key)
 
         assert active_execution.is_complete
 
@@ -181,12 +181,12 @@ def test_retries_active_execution():
 
         assert not active_execution.is_complete
 
-        steps = active_execution.get_steps_to_skip()
+        steps = active_execution.get_steps_to_abandon()
         assert len(steps) == 1
         step_4 = steps[0]
 
         assert step_4.key == "adder.compute"
-        active_execution.mark_skipped(step_4.key)
+        active_execution.mark_abandoned(step_4.key)
 
         assert active_execution.is_complete
 
@@ -231,17 +231,17 @@ def test_retries_deferred_active_execution():
 
         assert not active_execution.is_complete
 
-        steps = active_execution.get_steps_to_skip()
+        steps = active_execution.get_steps_to_abandon()
         # skip split of diamond
         assert len(steps) == 2
-        _ = [active_execution.mark_skipped(step.key) for step in steps]
+        _ = [active_execution.mark_abandoned(step.key) for step in steps]
 
         assert not active_execution.is_complete
 
-        steps = active_execution.get_steps_to_skip()
+        steps = active_execution.get_steps_to_abandon()
         # skip end of diamond
         assert len(steps) == 1
-        active_execution.mark_skipped(steps[0].key)
+        active_execution.mark_abandoned(steps[0].key)
 
         assert active_execution.is_complete
 
@@ -336,9 +336,9 @@ def test_lost_steps():
             active_execution.mark_unknown_state(step_1.key)
 
             # failure assumed for start step - so rest should skip
-            steps_to_skip = active_execution.get_steps_to_skip()
-            while steps_to_skip:
-                _ = [active_execution.mark_skipped(step.key) for step in steps_to_skip]
-                steps_to_skip = active_execution.get_steps_to_skip()
+            steps_to_abandon = active_execution.get_steps_to_abandon()
+            while steps_to_abandon:
+                _ = [active_execution.mark_abandoned(step.key) for step in steps_to_abandon]
+                steps_to_abandon = active_execution.get_steps_to_abandon()
 
             assert active_execution.is_complete

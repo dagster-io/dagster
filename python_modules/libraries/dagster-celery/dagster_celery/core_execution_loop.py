@@ -107,7 +107,7 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                     active_execution.verify_complete(pipeline_context, step_key)
 
             # process skips from failures or uncovered inputs
-            for event in active_execution.skipped_step_events_iterator(pipeline_context):
+            for event in active_execution.plan_events_iterator(pipeline_context):
                 yield event
 
             # don't add any new steps if we are stopping

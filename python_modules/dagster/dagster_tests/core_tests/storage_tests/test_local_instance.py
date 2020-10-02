@@ -152,6 +152,8 @@ def test_get_run_by_id():
 
 
 def test_run_step_stats():
+    _called = None
+
     @pipeline
     def simple():
         @solid
@@ -165,23 +167,21 @@ def test_run_step_stats():
             raise Exception("booo")
 
         @solid
-        def should_skip(context, _input):
-            context.log.info("skip")
-            return _input
+        def should_not_execute(_, x):
+            _called = True
+            return x
 
-        should_skip(should_fail(should_succeed()))
+        should_not_execute(should_fail(should_succeed()))
 
     with seven.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
         result = execute_pipeline(simple, instance=instance, raise_on_error=False)
         step_stats = sorted(instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time)
-        assert len(step_stats) == 3
+        assert len(step_stats) == 2
         assert step_stats[0].step_key == "should_succeed.compute"
         assert step_stats[0].status == StepEventStatus.SUCCESS
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[1].step_key == "should_fail.compute"
         assert step_stats[1].status == StepEventStatus.FAILURE
         assert step_stats[1].end_time > step_stats[0].start_time
-        assert step_stats[2].step_key == "should_skip.compute"
-        assert step_stats[2].status == StepEventStatus.SKIPPED
-        assert step_stats[2].end_time > step_stats[0].start_time
+        assert not _called

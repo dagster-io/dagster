@@ -88,9 +88,9 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
 
         assert step_did_succeed(logs, "spawn.compute")
         assert step_did_fail(logs, "fail.compute")
-        assert step_did_skip(logs, "fail_2.compute")
-        assert step_did_skip(logs, "fail_3.compute")
-        assert step_did_skip(logs, "reset.compute")
+        assert step_did_not_run(logs, "fail_2.compute")
+        assert step_did_not_run(logs, "fail_3.compute")
+        assert step_did_not_run(logs, "reset.compute")
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -116,8 +116,8 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert step_did_not_run(logs, "spawn.compute")
         assert step_did_succeed(logs, "fail.compute")
         assert step_did_fail(logs, "fail_2.compute")
-        assert step_did_skip(logs, "fail_3.compute")
-        assert step_did_skip(logs, "reset.compute")
+        assert step_did_not_run(logs, "fail_3.compute")
+        assert step_did_not_run(logs, "reset.compute")
 
         retry_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -145,7 +145,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert step_did_not_run(logs, "fail.compute")
         assert step_did_succeed(logs, "fail_2.compute")
         assert step_did_fail(logs, "fail_3.compute")
-        assert step_did_skip(logs, "reset.compute")
+        assert step_did_not_run(logs, "reset.compute")
 
         retry_three = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -237,9 +237,9 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert step_did_succeed(logs, "multi.compute")
         assert step_did_skip(logs, "child_multi_skip.compute")
         assert step_did_fail(logs, "can_fail.compute")
-        assert step_did_skip(logs, "child_fail.compute")
-        assert step_did_skip(logs, "child_skip.compute")
-        assert step_did_skip(logs, "grandchild_fail.compute")
+        assert step_did_not_run(logs, "child_fail.compute")
+        assert step_did_not_run(logs, "child_skip.compute")
+        assert step_did_not_run(logs, "grandchild_fail.compute")
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             context,
@@ -258,9 +258,9 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert step_did_not_run(logs, "multi.compute")
         assert step_did_not_run(logs, "child_multi_skip.compute")
         assert step_did_fail(logs, "can_fail.compute")
-        assert step_did_skip(logs, "child_fail.compute")
-        assert step_did_skip(logs, "child_skip.compute")
-        assert step_did_skip(logs, "grandchild_fail.compute")
+        assert step_did_not_run(logs, "child_fail.compute")
+        assert step_did_not_run(logs, "child_skip.compute")
+        assert step_did_not_run(logs, "grandchild_fail.compute")
 
         retry_two = execute_dagster_graphql_and_finish_runs(
             context,
@@ -540,9 +540,9 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
 
     assert step_did_succeed(logs, "spawn.compute")
     assert step_did_fail(logs, "fail.compute")
-    assert step_did_skip(logs, "fail_2.compute")
-    assert step_did_skip(logs, "fail_3.compute")
-    assert step_did_skip(logs, "reset.compute")
+    assert step_did_not_run(logs, "fail_2.compute")
+    assert step_did_not_run(logs, "fail_3.compute")
+    assert step_did_not_run(logs, "reset.compute")
 
     retry_one = execute_dagster_graphql_and_finish_runs(
         graphql_context,

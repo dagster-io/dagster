@@ -85,7 +85,7 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
                 active_execution.verify_complete(pipeline_context, step.key)
 
             # process skips from failures or uncovered inputs
-            for event in active_execution.skipped_step_events_iterator(pipeline_context):
+            for event in active_execution.plan_events_iterator(pipeline_context):
                 step_event_list.append(event)
                 yield event
 

@@ -2,7 +2,7 @@ import re
 
 import dask.dataframe as dd
 
-from dagster import Any, Bool, Field, Float, Int, Permissive, Selector, Shape, String
+from dagster import Any, Bool, Field, Float, Int, Permissive, Shape, String
 
 
 def normalize_column_names(df: dd.DataFrame, enabled) -> dd.DataFrame:
