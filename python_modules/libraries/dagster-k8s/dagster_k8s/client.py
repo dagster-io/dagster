@@ -73,22 +73,24 @@ class DagsterK8sPipelineStatusException(Exception):
 
 
 WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
-    429,  # Too many requests
+    503,  # Service unavailable
     504,  # Gateway timeout
 ]
 
 
 def k8s_api_retry(
     fn,
+    max_retries,
+    timeout,
     msg_fn=lambda: "Unexpected error encountered in Kubernetes API Client.",
-    max_retries=1,
-    timeout=10,
 ):
     check.callable_param(fn, "fn")
+    check.int_param(max_retries, "max_retries")
+    check.numeric_param(timeout, "timeout")
 
-    retries = max_retries
-    while retries > 0:
-        retries -= 1
+    remaining_attempts = 1 + max_retries
+    while remaining_attempts > 0:
+        remaining_attempts -= 1
 
         try:
             return fn()
@@ -99,10 +101,10 @@ def k8s_api_retry(
             # Check if the status code is generally whitelisted
             whitelisted = status in WHITELISTED_TRANSIENT_K8S_STATUS_CODES
 
-            # If there are remaining retries, swallow the error
-            if whitelisted and retries > 0:
+            # If there are remaining attempts, swallow the error
+            if whitelisted and remaining_attempts > 0:
                 time.sleep(timeout)
-            elif whitelisted and retries == 0:
+            elif whitelisted and remaining_attempts == 0:
                 raise_from(
                     DagsterK8sAPIRetryLimitExceeded(
                         msg_fn(),
@@ -202,7 +204,9 @@ class DagsterKubernetesClient:
                 else:
                     return None
 
-            job = k8s_api_retry(_get_jobs_for_namespace, max_retries=3)
+            job = k8s_api_retry(
+                _get_jobs_for_namespace, max_retries=3, timeout=wait_time_between_attempts
+            )
 
             if not job:
                 self.logger('Job "{job_name}" not yet launched, waiting'.format(job_name=job_name))
@@ -267,7 +271,9 @@ class DagsterKubernetesClient:
                 job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
                 return job.status
 
-            status = k8s_api_retry(_get_job_status, max_retries=3)
+            status = k8s_api_retry(
+                _get_job_status, max_retries=3, timeout=wait_time_between_attempts
+            )
 
             # status.succeeded represents the number of pods which reached phase Succeeded.
             if status.succeeded == num_pods_to_wait_for:
