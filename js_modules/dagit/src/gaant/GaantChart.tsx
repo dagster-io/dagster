@@ -44,6 +44,7 @@ import {GaantStatusPanel} from 'src/gaant/GaantStatusPanel';
 import {ZoomSlider} from 'src/gaant/ZoomSlider';
 import {GaantChartExecutionPlanFragment} from 'src/gaant/types/GaantChartExecutionPlanFragment';
 import {useViewport} from 'src/gaant/useViewport';
+import {StepSelection} from 'src/runs/Run';
 
 export {GaantChartMode} from 'src/gaant/Constants';
 
@@ -111,8 +112,7 @@ export const toGraphQueryItems = weakmapMemoize((plan: GaantChartExecutionPlanFr
 });
 
 interface GaantChartProps {
-  selectedSteps: string[];
-  query: string;
+  selection: StepSelection;
   runId: string;
   plan: GaantChartExecutionPlanFragment;
   options?: Partial<GaantChartLayoutOptions>;
@@ -121,8 +121,7 @@ interface GaantChartProps {
   toolbarLeftActions?: React.ReactChild;
 
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
-  onSetSelectedSteps: (steps: string[]) => void;
-  onSetQuery: (value: string) => void;
+  onSetSelection: (selection: StepSelection) => void;
 }
 
 interface GaantChartState {
@@ -192,9 +191,6 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
   };
 
   onUpdateQuery = (query: string) => {
-    // update query
-    this.props.onSetQuery(query || '*');
-
     // update selectedSteps
     let currSelectedSteps: string[] = [];
     if (query !== '*' && query) {
@@ -202,20 +198,25 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
       const graphFiltered = filterByQuery(graph, query);
       currSelectedSteps = graphFiltered.all.map((node) => node.name);
     }
-    this.props.onSetSelectedSteps(currSelectedSteps);
+
+    // update query
+    this.props.onSetSelection({
+      query: query || '*',
+      keys: currSelectedSteps,
+    });
   };
 
   onDoubleClickStep = (stepKey: string) => {
     const query = `*${stepKey}*`;
-    this.onUpdateQuery(this.props.query !== query ? query : '*');
+    this.onUpdateQuery(this.props.selection.query !== query ? query : '*');
   };
 
   render() {
-    const {plan, query} = this.props;
+    const {plan, selection} = this.props;
     const {options} = this.state;
 
     const graph = toGraphQueryItems(plan);
-    const graphFiltered = filterByQuery(graph, query);
+    const graphFiltered = filterByQuery(graph, selection.query);
 
     const layout = this.getLayout({
       nodes: options.hideUnselectedSteps ? graphFiltered.all : graph,
@@ -281,7 +282,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   const [hoveredStep, setHoveredNodeName] = React.useState<string | null>(null);
   const [hoveredTime, setHoveredTime] = React.useState<number | null>(null);
   const [nowMs, setNowMs] = React.useState<number>(Date.now());
-  const {options, metadata, selectedSteps} = props;
+  const {options, metadata, selection} = props;
 
   // The slider in the UI updates `options.zoom` from 1-100. We convert that value
   // into a px-per-ms "scale", where the minimum is the value required to zoom-to-fit.
@@ -347,7 +348,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   };
 
   React.useEffect(() => {
-    const node = layout.boxes.find((b) => selectedSteps.includes(b.node.name));
+    const node = layout.boxes.find((b) => selection.keys.includes(b.node.name));
     if (!node) {
       return;
     }
@@ -355,14 +356,14 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     const x = (bounds.maxX + bounds.minX) / 2 - viewport.width / 2;
     const y = (bounds.maxY + bounds.minY) / 2 - viewport.height / 2;
     onMoveToViewport({left: x, top: y}, true);
-  }, [selectedSteps]); // eslint-disable-line
+  }, [selection]); // eslint-disable-line
 
   const highlightedMs: number[] = [];
   if (hoveredTime) {
     highlightedMs.push(hoveredTime);
-  } else if (selectedSteps.length > 0) {
-    const selectedMeta = selectedSteps
-      .map((selectedStep) => metadata?.steps[selectedStep])
+  } else if (selection.keys.length > 0) {
+    const selectedMeta = selection.keys
+      .map((stepKey) => metadata?.steps[stepKey])
       .filter((x): x is IStepMetadata => x !== undefined);
     const sortedSelectedSteps = selectedMeta.sort((a, b) =>
       a.start && b.start ? a.start - b.start : 0,
@@ -399,7 +400,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
               metadata={metadata || EMPTY_RUN_METADATA}
               layout={layout}
               hoveredStep={hoveredStep}
-              focusedSteps={selectedSteps}
+              focusedSteps={selection.keys}
               viewport={viewport}
               setHoveredNodeName={setHoveredNodeName}
               onClickStep={props.onClickStep}
@@ -412,11 +413,11 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
       <GraphQueryInputContainer>
         <GraphQueryInput
           items={props.graph}
-          value={props.query}
+          value={props.selection.query}
           placeholder="Type a Step Subset"
           onChange={props.onUpdateQuery}
           presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
-          className={selectedSteps.length > 0 ? 'has-step' : ''}
+          className={selection.keys.length > 0 ? 'has-step' : ''}
         />
         <Checkbox
           checked={options.hideUnselectedSteps}
@@ -792,7 +793,7 @@ GaantChart.LoadingState = ({runId}: {runId: string}) => (
       second={
         <GaantStatusPanel
           metadata={EMPTY_RUN_METADATA}
-          selectedSteps={[]}
+          selection={{keys: [], query: '*'}}
           runId={runId}
           nowMs={0}
         />

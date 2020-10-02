@@ -22,8 +22,12 @@ import {
   LAUNCH_PIPELINE_REEXECUTION_MUTATION,
   getReexecutionVariables,
   handleLaunchResult,
+  ReExecutionStyle,
 } from 'src/runs/RunUtils';
-import {LaunchPipelineReexecutionVariables} from 'src/runs/types/LaunchPipelineReexecution';
+import {
+  LaunchPipelineReexecution,
+  LaunchPipelineReexecutionVariables,
+} from 'src/runs/types/LaunchPipelineReexecution';
 import {RunFragment} from 'src/runs/types/RunFragment';
 import {
   RunPipelineRunEventFragment,
@@ -38,8 +42,12 @@ interface RunProps {
 
 interface RunState {
   logsFilter: LogFilter;
+  selection: StepSelection;
+}
+
+export interface StepSelection {
+  keys: string[];
   query: string;
-  selectedSteps: string[];
 }
 
 export class Run extends React.Component<RunProps, RunState> {
@@ -112,8 +120,10 @@ export class Run extends React.Component<RunProps, RunState> {
 
   state: RunState = {
     logsFilter: GetDefaultLogFilter(),
-    query: '*',
-    selectedSteps: [],
+    selection: {
+      query: '*',
+      keys: [],
+    },
   };
 
   onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
@@ -132,27 +142,23 @@ export class Run extends React.Component<RunProps, RunState> {
     this.setState({logsFilter});
   };
 
-  onSetQuery = (query: string) => {
-    this.setState({query});
+  onSetSelection = (selection: StepSelection) => {
+    this.setState({selection});
 
     // filter the log following the DSL step selection
     this.setState((prevState) => {
       return {
         logsFilter: {
           ...prevState.logsFilter,
-          values: query !== '*' ? [{token: 'query', value: query}] : [],
+          values: selection.query !== '*' ? [{token: 'query', value: selection.query}] : [],
         },
       };
     });
   };
 
-  onSetSelectedSteps = (selectedSteps: string[]) => {
-    this.setState({selectedSteps});
-  };
-
   render() {
     const {client, run, runId} = this.props;
-    const {logsFilter, query, selectedSteps} = this.state;
+    const {logsFilter, selection} = this.state;
 
     return (
       <RunContext.Provider value={run}>
@@ -163,7 +169,7 @@ export class Run extends React.Component<RunProps, RunState> {
           client={client}
           runId={runId}
           filter={logsFilter}
-          selectedSteps={selectedSteps}
+          selectedSteps={selection.keys}
         >
           {({filteredNodes, hasTextFilter, textMatchNodes, loaded}) => (
             <RunWithData
@@ -174,13 +180,10 @@ export class Run extends React.Component<RunProps, RunState> {
               textMatchNodes={textMatchNodes}
               logsLoading={!loaded}
               logsFilter={logsFilter}
-              query={query}
-              selectedSteps={selectedSteps}
+              selection={selection}
               onSetLogsFilter={this.onSetLogsFilter}
-              onSetQuery={this.onSetQuery}
-              onSetSelectedSteps={this.onSetSelectedSteps}
+              onSetSelection={this.onSetSelection}
               onShowStateDetails={this.onShowStateDetails}
-              getReexecutionVariables={getReexecutionVariables}
             />
           )}
         </LogsProvider>
@@ -192,25 +195,15 @@ export class Run extends React.Component<RunProps, RunState> {
 interface RunWithDataProps {
   run?: RunFragment;
   runId: string;
+  selection: StepSelection;
   filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
   hasTextFilter: boolean;
   textMatchNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
   logsFilter: LogFilter;
-  query: string;
-  selectedSteps: string[];
   logsLoading: boolean;
-  onSetQuery: (v: string) => void;
-  onSetSelectedSteps: (v: string[]) => void;
   onSetLogsFilter: (v: LogFilter) => void;
+  onSetSelection: (v: StepSelection) => void;
   onShowStateDetails: (stepKey: string, logs: RunPipelineRunEventFragment[]) => void;
-  getReexecutionVariables: (input: {
-    run: RunFragment;
-    stepKeys?: string[];
-    stepQuery?: string;
-    resumeRetry?: boolean;
-    repositoryLocationName: string;
-    repositoryName: string;
-  }) => LaunchPipelineReexecutionVariables | undefined;
 }
 
 const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
@@ -221,45 +214,39 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   textMatchNodes,
   logsFilter,
   logsLoading,
-  query,
-  selectedSteps,
+  selection,
   onSetLogsFilter,
-  onSetQuery,
-  onSetSelectedSteps,
-  getReexecutionVariables,
+  onSetSelection,
 }) => {
-  const [launchPipelineReexecution] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
-  const repoContext = React.useContext(DagsterRepositoryContext);
-  const repository = repoContext?.repository;
-  const repositoryLocation = repoContext?.repositoryLocation;
-
   const [hideNonMatches, setHideNonMatches] = React.useState(true);
-
+  const [launchPipelineReexecution] = useMutation<
+    LaunchPipelineReexecution,
+    LaunchPipelineReexecutionVariables
+  >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
+  const repoContext = React.useContext(DagsterRepositoryContext);
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
-  const stepQuery = query !== '*' ? query : '';
-  const onLaunch = async (stepKeys?: string[], resumeRetry?: boolean) => {
-    if (!run || run.pipeline.__typename === 'UnknownPipeline') {
+
+  const onLaunch = async (style: ReExecutionStyle) => {
+    if (!run || run.pipeline.__typename === 'UnknownPipeline' || !repoContext) {
       return;
     }
     const variables = getReexecutionVariables({
       run,
-      stepKeys,
-      stepQuery,
-      resumeRetry,
-      repositoryLocationName: repositoryLocation?.name || '',
-      repositoryName: repository?.name || '',
+      style,
+      repositoryLocationName: repoContext.repositoryLocation?.name,
+      repositoryName: repoContext.repository?.name,
     });
     const result = await launchPipelineReexecution({variables});
     handleLaunchResult(run.pipeline.name, result, {openInNewWindow: false});
   };
 
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
-    const index = selectedSteps.indexOf(stepKey);
+    const index = selection.keys.indexOf(stepKey);
     let newSelected: string[];
 
     if (evt.shiftKey) {
       // shift-click to multi select steps
-      newSelected = [...selectedSteps];
+      newSelected = [...selection.keys];
 
       if (index !== -1) {
         // deselect the step if already selected
@@ -269,7 +256,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
         newSelected.push(stepKey);
       }
     } else {
-      if (selectedSteps.length === 1 && index !== -1) {
+      if (selection.keys.length === 1 && index !== -1) {
         // deselect the step if already selected
         newSelected = [];
       } else {
@@ -278,8 +265,10 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
       }
     }
 
-    onSetSelectedSteps(newSelected);
-    onSetQuery(newSelected.join(', ') || '*');
+    onSetSelection({
+      query: newSelected.join(', ') || '*',
+      keys: newSelected,
+    });
   };
 
   const onHideNonMatches = (checked: boolean) => setHideNonMatches(checked);
@@ -310,22 +299,18 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
                     executionPlan={run.executionPlan}
                     artifactsPersisted={run.executionPlan.artifactsPersisted}
                     onLaunch={onLaunch}
-                    selectedSteps={selectedSteps}
-                    selectedStepStates={selectedSteps.map(
-                      (selectedStep) =>
-                        (selectedStep && metadata.steps[selectedStep]?.state) ||
-                        IStepState.PREPARING,
+                    selection={selection}
+                    selectionStates={selection.keys.map(
+                      (key) => (key && metadata.steps[key]?.state) || IStepState.PREPARING,
                     )}
                   />
                 }
                 runId={runId}
                 plan={run.executionPlan}
                 metadata={metadata}
-                selectedSteps={selectedSteps}
+                selection={selection}
                 onClickStep={onClickStep}
-                onSetSelectedSteps={onSetSelectedSteps}
-                query={query}
-                onSetQuery={onSetQuery}
+                onSetSelection={onSetSelection}
               />
             ) : (
               <NonIdealState icon={IconNames.ERROR} title="Unable to build execution plan" />

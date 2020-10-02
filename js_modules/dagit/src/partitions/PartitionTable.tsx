@@ -1,5 +1,6 @@
+import {ChartOptions} from 'chart.js';
 import * as React from 'react';
-import {Line} from 'react-chartjs-2';
+import {Line, ChartData} from 'react-chartjs-2';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {RowContainer} from 'src/ListComponents';
@@ -56,10 +57,11 @@ export const PartitionTable: React.FunctionComponent<{
     radius: 8,
     pointHoverRadius: 8,
   }));
+
   const graphData = {
     labels: Object.keys(runsByPartitionName),
     datasets,
-  };
+  } as ChartData<any>;
 
   const onPointClick = (events: any[]) => {
     const [element] = events.slice().reverse();
@@ -72,7 +74,7 @@ export const PartitionTable: React.FunctionComponent<{
     }
   };
 
-  const options = {
+  const options: ChartOptions = {
     title: {display: true, text: title},
     scales: {
       yAxes: [

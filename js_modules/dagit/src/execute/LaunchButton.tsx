@@ -19,6 +19,7 @@ import {WebsocketStatusContext} from 'src/WebsocketStatus';
 export interface LaunchButtonConfiguration {
   title: string;
   disabled: boolean;
+  scope?: string;
   onClick: () => void;
   icon?: IconName | JSX.Element | 'dagster-spinner';
   tooltip?: string | JSX.Element;
@@ -103,6 +104,7 @@ export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({config
 interface LaunchButtonDropdownProps {
   title: string;
   small?: boolean;
+  primary: LaunchButtonConfiguration;
   options: LaunchButtonConfiguration[];
   disabled?: boolean;
   tooltip?: string;
@@ -112,10 +114,11 @@ interface LaunchButtonDropdownProps {
 export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownProps> = ({
   title,
   small,
+  primary,
   options,
   disabled,
-  tooltip,
   icon,
+  tooltip,
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
@@ -124,15 +127,25 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
 
   return (
     <ShortcutHandler
-      onShortcut={() => setIsOpen(true)}
+      onShortcut={() => onConfigSelected(primary)}
       shortcutLabel={`⌥L`}
       shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
     >
+      <ButtonWithConfiguration
+        status={status}
+        small={small}
+        title={title}
+        joined="right"
+        icon={icon}
+        tooltip={tooltip}
+        onClick={() => onConfigSelected(primary)}
+        {...forced}
+      />
       <Popover
         isOpen={isOpen}
         onInteraction={(nextOpen) => setIsOpen(nextOpen)}
         disabled={status === LaunchButtonStatus.Disabled}
-        position={'bottom'}
+        position="bottom-right"
         content={
           <Menu>
             {options.map((option, idx) => (
@@ -155,12 +168,13 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
           </Menu>
         }
       >
-        <ButtonWithConfiguration
+        <ButtonContainer
+          role="button"
           status={status}
           small={small}
-          title={title}
-          rightIcon={'caret-down'}
-          {...{tooltip, icon, ...forced}}
+          style={{minWidth: 'initial', padding: '0 15px'}}
+          icon={'caret-down'}
+          joined={'left'}
         />
       </Popover>
     </ShortcutHandler>
@@ -170,8 +184,9 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
 interface ButtonWithConfigurationProps {
   title: string;
   status: LaunchButtonStatus;
+  style?: React.CSSProperties;
   icon?: IconName | JSX.Element | 'dagster-spinner';
-  rightIcon?: IconName;
+  joined?: 'left' | 'right';
   tooltip?: string | JSX.Element;
   small?: boolean;
   onClick?: () => void;
@@ -185,46 +200,51 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
   title,
   small,
   status,
+  style,
   onClick,
-  rightIcon,
-}) => (
-  <Tooltip
-    hoverOpenDelay={300}
-    position={Position.LEFT}
-    openOnTargetFocus={false}
-    targetTagName="div"
-    content={tooltip}
-  >
-    <ButtonContainer
-      role="button"
-      style={small ? {height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15} : {}}
-      status={status}
-      onClick={onClick}
-      rightIcon={rightIcon}
+  joined,
+}) => {
+  const sizeStyles = small ? {height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15} : {};
+
+  return (
+    <Tooltip
+      hoverOpenDelay={300}
+      position={Position.LEFT}
+      openOnTargetFocus={false}
+      targetTagName="div"
+      content={tooltip}
     >
-      {icon === 'dagster-spinner' ? (
-        <span style={{paddingRight: 6}}>
-          <Spinner intent={Intent.NONE} size={small ? 12 : 17} />
-        </span>
-      ) : (
-        <Icon
-          icon={icon}
-          iconSize={small ? 12 : 17}
-          style={{textAlign: 'center', marginRight: 5}}
-        />
-      )}
-      <ButtonText>{title}</ButtonText>
-    </ButtonContainer>
-  </Tooltip>
-);
+      <ButtonContainer
+        role="button"
+        style={{...sizeStyles, ...style}}
+        status={status}
+        onClick={onClick}
+        joined={joined}
+      >
+        {icon === 'dagster-spinner' ? (
+          <span style={{paddingRight: 6}}>
+            <Spinner intent={Intent.NONE} size={small ? 12 : 17} />
+          </span>
+        ) : (
+          <Icon
+            icon={icon}
+            iconSize={small ? 12 : 17}
+            style={{textAlign: 'center', marginRight: 5}}
+          />
+        )}
+        <ButtonText>{title}</ButtonText>
+      </ButtonContainer>
+    </Tooltip>
+  );
+};
 
 const ButtonContainer = styled(Button)<{
   status: LaunchButtonStatus;
   small?: boolean;
+  joined?: 'right' | 'left';
 }>`
   &&& {
     height: ${({small}) => (small ? '24' : '30')}px;
-    border-radius: 3px;
     flex-shrink: 0;
     background: ${({status}) =>
       ({
@@ -234,6 +254,9 @@ const ButtonContainer = styled(Button)<{
       }[status])};
     border-top: 1px solid rgba(255, 255, 255, 0.25);
     border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+    border-top-${({joined}) => joined}-radius: 0;
+    border-bottom-${({joined}) => joined}-radius: 0;
     transition: background 200ms linear;
     justify-content: center;
     align-items: center;
@@ -242,7 +265,7 @@ const ButtonContainer = styled(Button)<{
     cursor: ${({status}) => (status !== 'ready' ? 'normal' : 'pointer')};
     z-index: 2;
     min-width: 150px;
-    margin-left: 6px;
+    margin-left: ${({joined}) => (joined ? '0' : '6px')};
     padding: 0 25px;
     min-height: 0;
 
@@ -274,7 +297,7 @@ const ButtonText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 300px;
+  max-width: 350px;
 `;
 
 const LaunchMenuItem = styled(MenuItem)`

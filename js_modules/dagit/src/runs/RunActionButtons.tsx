@@ -7,34 +7,17 @@ import {useRepository, useRepositoryOptions} from 'src/DagsterRepositoryContext'
 import {SharedToaster} from 'src/DomUtils';
 import {IStepState} from 'src/RunMetadataProvider';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
-import {CANCEL_MUTATION} from 'src/runs/RunUtils';
+import {StepSelection} from 'src/runs/Run';
+import {CANCEL_MUTATION, ReExecutionStyle} from 'src/runs/RunUtils';
 import {PipelineRunStatus} from 'src/types/globalTypes';
-
-const CANCEL_TITLE = 'Terminate';
-
-// Titles of re-execute options
-const REEXECUTE_FULL_PIPELINE_TITLE = 'Full Pipeline';
-const REEXECUTE_SUBSET_NO_SELECTION_TITLE = 'Step Not Selected';
-const REEXECUTE_SUBSET_TITLE = `Selected Step Subset`;
-const REEXECUTE_FROM_FAILURE_TITLE = 'From Failure';
 
 // Descriptions of re-execute options
 export const REEXECUTE_PIPELINE_UNKNOWN =
   'Re-execute is unavailable because the pipeline is not present in the current repository.';
-
-const REEXECUTE_FULL_PIPELINE_DESCRIPTION = 'Re-execute the pipeline run from scratch';
-
 const REEXECUTE_SUBSET = 'Re-run the following steps with existing configuration:';
 const REEXECUTE_SUBSET_NO_SELECTION =
   'Re-execute is only enabled when steps are selected. Try selecting a step or typing a step subset to re-execute.';
-const REEXECUTE_SUBSET_NO_ARTIFACTS =
-  "Use a persisting storage mode such as 'filesystem' to enable step re-execution";
 const REEXECUTE_SUBSET_NOT_DONE = 'Wait for the selected steps to finish to re-execute it.';
-
-const RETRY_DESCRIPTION = 'Retry the pipeline run, skipping steps that completed successfully';
-const RETRY_DISABLED = 'Retry is only enabled when the pipeline has failed.';
-const RETRY_NO_ARTIFACTS =
-  'Retry is only enabled on persistent storage. Try rerunning with a different storage configuration.';
 
 interface RunActionButtonsRun {
   runId: string;
@@ -49,13 +32,13 @@ interface RunActionButtonsRun {
 
 interface RunActionButtonsProps {
   run?: RunActionButtonsRun;
-  selectedSteps: string[];
-  selectedStepStates: IStepState[];
+  selection: StepSelection;
+  selectionStates: IStepState[];
   artifactsPersisted: boolean;
   executionPlan?: {
     artifactsPersisted: boolean;
   } | null;
-  onLaunch: (stepKeys?: string[], resumeRetry?: boolean) => Promise<void>;
+  onLaunch: (style: ReExecutionStyle) => Promise<void>;
 }
 
 const CancelRunButton: React.FunctionComponent<{
@@ -67,7 +50,7 @@ const CancelRunButton: React.FunctionComponent<{
     <Button
       icon={IconNames.STOP}
       small={true}
-      text={CANCEL_TITLE}
+      text="Terminate"
       intent="warning"
       disabled={inFlight}
       onClick={async () => {
@@ -90,126 +73,95 @@ const CancelRunButton: React.FunctionComponent<{
 };
 
 export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = ({
-  selectedSteps,
+  selection,
+  selectionStates,
   artifactsPersisted,
   onLaunch,
   run,
-  selectedStepStates,
   executionPlan,
 }) => {
-  // Run's status
+  const pipelineError = usePipelineAvailabilityErrorForRun(run);
 
-  const currentRepository = useRepository();
-  const {options: repositoryOptions} = useRepositoryOptions();
-  const isPipelineUnknown = run?.pipeline.__typename === 'UnknownPipeline';
-  const isSelectionPresent = selectedSteps && selectedSteps.length > 0;
-  const isSelectionFinished = selectedStepStates.every((stepState) =>
+  const isSelectionPresent = selection.keys.length > 0;
+  const isSelectionFinished = selectionStates.every((stepState) =>
     [IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState),
   );
   const isFinalStatus =
     run?.status === PipelineRunStatus.FAILURE || run?.status === PipelineRunStatus.SUCCESS;
   const isFailedWithPlan = executionPlan && run && run.status === PipelineRunStatus.FAILURE;
-  // allow subset re-execution when there is a failure in the selection
-  const isFailureInSelection = selectedSteps && selectedStepStates.includes(IStepState.FAILED);
+  const isFailureInSelection = selection.keys.length && selectionStates.includes(IStepState.FAILED);
 
-  const options: LaunchButtonConfiguration[] = [
-    {
-      title: REEXECUTE_FULL_PIPELINE_TITLE,
-      tooltip: REEXECUTE_FULL_PIPELINE_DESCRIPTION,
-      icon: 'repeat',
-      disabled: isPipelineUnknown || !isFinalStatus,
-      onClick: () => onLaunch(),
-    },
-    {
-      title: isSelectionPresent ? REEXECUTE_SUBSET_TITLE : REEXECUTE_SUBSET_NO_SELECTION_TITLE,
-      disabled:
-        isPipelineUnknown ||
-        !isSelectionPresent ||
-        !(isSelectionFinished || isFailureInSelection) ||
-        !artifactsPersisted,
-      tooltip: (
-        <div>
-          {!artifactsPersisted
-            ? REEXECUTE_SUBSET_NO_ARTIFACTS
-            : !isSelectionPresent
-            ? REEXECUTE_SUBSET_NO_SELECTION
-            : !isSelectionFinished
-            ? REEXECUTE_SUBSET_NOT_DONE
-            : REEXECUTE_SUBSET}
-          <div style={{paddingLeft: '10px'}}>
-            {isSelectionPresent &&
-              selectedSteps.map((step) => (
-                <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>
-              ))}
-          </div>
+  const full: LaunchButtonConfiguration = {
+    icon: 'repeat',
+    scope: '*',
+    title: 'All Steps',
+    tooltip: 'Re-execute the pipeline run from scratch',
+    disabled: !isFinalStatus,
+    onClick: () => onLaunch({type: 'all'}),
+  };
+
+  const selected: LaunchButtonConfiguration = {
+    icon: 'select',
+    scope: selection.query,
+    title: selection.keys.length > 1 ? 'Selected Steps' : 'Selected Step',
+    disabled: !isSelectionPresent || !(isSelectionFinished || isFailureInSelection),
+    tooltip: (
+      <div>
+        {!isSelectionPresent
+          ? REEXECUTE_SUBSET_NO_SELECTION
+          : !isSelectionFinished
+          ? REEXECUTE_SUBSET_NOT_DONE
+          : REEXECUTE_SUBSET}
+        <div style={{paddingLeft: '10px'}}>
+          {isSelectionPresent &&
+            selection.keys.map((step) => (
+              <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>
+            ))}
         </div>
-      ),
-      icon: 'select',
-      onClick: () => onLaunch(selectedSteps),
-    },
-    {
-      title: REEXECUTE_FROM_FAILURE_TITLE,
-      icon: 'play',
-      disabled: isPipelineUnknown || !isFailedWithPlan || !artifactsPersisted,
-      tooltip: !artifactsPersisted
-        ? RETRY_NO_ARTIFACTS
-        : !isFailedWithPlan
-        ? RETRY_DISABLED
-        : RETRY_DESCRIPTION,
-      onClick: () => onLaunch(undefined, true),
-    },
-  ];
+      </div>
+    ),
+    onClick: () => onLaunch({type: 'selection', selection}),
+  };
 
-  let disabled = false;
-  let tooltip = undefined;
-  let icon: IconName | undefined = undefined;
+  const fromSelected: LaunchButtonConfiguration = {
+    icon: 'inheritance',
+    title: 'From Selected',
+    disabled: !isFinalStatus || selection.keys.length !== 1,
+    tooltip: 'Re-execute the pipeline downstream from the selected steps',
+    onClick: () => onLaunch({type: 'from-selected', selection}),
+  };
 
-  const currentRepositorySnapshots = {};
-  currentRepository?.pipelines.forEach((pipeline) => {
-    currentRepositorySnapshots[pipeline.name] = pipeline.pipelineSnapshotId;
-  });
+  const fromFailure: LaunchButtonConfiguration = {
+    icon: 'redo',
+    title: 'From Failure',
+    disabled: !isFailedWithPlan,
+    tooltip: !isFailedWithPlan
+      ? 'Retry is only enabled when the pipeline has failed.'
+      : 'Retry the pipeline run, skipping steps that completed successfully',
+    onClick: () => onLaunch({type: 'from-failure'}),
+  };
 
-  if (run) {
-    if (run.pipeline.name in currentRepositorySnapshots) {
-      if (currentRepositorySnapshots[run.pipeline.name] === run.pipelineSnapshotId) {
-      } else {
-        icon = IconNames.WARNING_SIGN;
-        tooltip = `The pipeline "${run.pipeline.name}" in the current repository is a different version than the original pipeline run.`;
-      }
-    } else {
-      disabled = true;
-      icon = IconNames.ERROR;
-
-      const matchingRepoNames = repositoryOptions
-        .map((x) => x.repository)
-        .filter(
-          (x) =>
-            x.name !== currentRepository?.name &&
-            x.pipelines.map((x) => x.name).includes(run.pipeline.name),
-        )
-        .map((x) => x.name);
-
-      if (matchingRepoNames.length) {
-        tooltip = `"${
-          run.pipeline.name
-        }" is not in the current repository.  It is available in the following repositories: ${matchingRepoNames.join(
-          ', ',
-        )}.`;
-      } else {
-        tooltip = `"${run.pipeline.name}" is not in the current repository.`;
-      }
-    }
+  if (!artifactsPersisted) {
+    [selected, fromFailure, fromSelected].forEach((option) => {
+      option.disabled = true;
+      option.title =
+        'Retry and re-execute are only enabled on persistent storage. Try rerunning with a different storage configuration.';
+    });
   }
+
+  const options = [full, selected, fromSelected, fromFailure];
+  const primary = isSelectionPresent && artifactsPersisted ? selected : full;
 
   return (
     <>
       <LaunchButtonDropdown
         small={true}
+        primary={primary}
         options={options}
-        disabled={disabled}
-        tooltip={tooltip}
-        title="Launch Re-execution"
-        icon={icon}
+        title={primary.scope === '*' ? `Re-execute All (*)` : `Re-execute (${primary.scope})`}
+        tooltip={pipelineError?.tooltip}
+        icon={pipelineError?.icon}
+        disabled={!!pipelineError}
       />
       {run?.canTerminate && (
         <>
@@ -220,3 +172,53 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
     </>
   );
 };
+
+function usePipelineAvailabilityErrorForRun(
+  run?: RunActionButtonsRun,
+): null | {tooltip?: string; icon?: IconName} {
+  const currentRepository = useRepository();
+  const {options: repositoryOptions} = useRepositoryOptions();
+
+  if (!run || !currentRepository) {
+    return null;
+  }
+
+  const currentRepositorySnapshots: {[name: string]: string} = {};
+  currentRepository.pipelines.forEach((pipeline) => {
+    currentRepositorySnapshots[pipeline.name] = pipeline.pipelineSnapshotId;
+  });
+
+  if (!currentRepositorySnapshots[run.pipeline.name]) {
+    const otherReposWithSnapshot = repositoryOptions
+      .map((x) => x.repository)
+      .filter(
+        (x) =>
+          x.name !== currentRepository.name &&
+          x.pipelines.map((p) => p.name).includes(run.pipeline.name),
+      )
+      .map((x) => x.name);
+
+    return {
+      icon: IconNames.ERROR,
+      tooltip:
+        `"${run.pipeline.name}" is not in the current repository.` +
+        (otherReposWithSnapshot.length
+          ? ` It is available in the following repositories: ${otherReposWithSnapshot.join(', ')}.`
+          : ''),
+    };
+  }
+  if (currentRepositorySnapshots[run.pipeline.name] !== run.pipelineSnapshotId) {
+    return {
+      icon: IconNames.WARNING_SIGN,
+      tooltip:
+        `The pipeline "${run.pipeline.name}" in the current repository is` +
+        ` a different version than the original pipeline run.`,
+    };
+  }
+
+  if (run?.pipeline.__typename === 'UnknownPipeline') {
+    return {icon: IconNames.ERROR, tooltip: `"${run.pipeline.name}" is unknown.`};
+  }
+
+  return null;
+}

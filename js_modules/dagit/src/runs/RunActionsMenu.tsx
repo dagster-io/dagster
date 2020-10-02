@@ -42,11 +42,9 @@ export const RunActionsMenu: React.FunctionComponent<{
     variables: {runId: run.runId},
   });
 
+  const runConfigYaml = data?.pipelineRunOrError?.runConfigYaml;
   const repoContext = React.useContext(DagsterRepositoryContext);
-  const repositoryLocation = repoContext?.repositoryLocation;
-  const repository = repoContext?.repository;
 
-  const envYaml = data?.pipelineRunOrError?.runConfigYaml;
   const infoReady = called ? !loading : false;
   return (
     <Popover
@@ -54,23 +52,24 @@ export const RunActionsMenu: React.FunctionComponent<{
         <Menu>
           <MenuItem
             text={loading ? 'Loading Configuration...' : 'View Configuration...'}
-            disabled={envYaml == null}
+            disabled={runConfigYaml == null}
             icon="share"
             onClick={() =>
               showCustomAlert({
                 title: 'Config',
-                body: <HighlightedCodeBlock value={envYaml} languages={['yaml']} />,
+                body: <HighlightedCodeBlock value={runConfigYaml} languages={['yaml']} />,
               })
             }
           />
           <MenuDivider />
-          {repository ? (
+          {repoContext ? (
             <>
               <Tooltip
                 content={OPEN_PLAYGROUND_UNKNOWN}
                 position={Position.BOTTOM}
                 disabled={infoReady}
                 wrapperTagName="div"
+                targetTagName="div"
               >
                 <MenuItem
                   text="Open in Playground..."
@@ -79,7 +78,7 @@ export const RunActionsMenu: React.FunctionComponent<{
                   target="_blank"
                   href={`/pipeline/${run.pipelineName}/playground/setup?${qs.stringify({
                     mode: run.mode,
-                    config: envYaml,
+                    config: runConfigYaml,
                     solidSelection: run.solidSelection,
                   })}`}
                 />
@@ -89,6 +88,7 @@ export const RunActionsMenu: React.FunctionComponent<{
                 position={Position.BOTTOM}
                 disabled={infoReady}
                 wrapperTagName="div"
+                targetTagName="div"
               >
                 <MenuItem
                   text="Re-execute"
@@ -97,10 +97,10 @@ export const RunActionsMenu: React.FunctionComponent<{
                   onClick={async () => {
                     const result = await reexecute({
                       variables: getReexecutionVariables({
-                        run,
-                        envYaml,
-                        repositoryLocationName: repositoryLocation?.name || '',
-                        repositoryName: repository?.name,
+                        run: {...run, runConfigYaml},
+                        style: {type: 'all'},
+                        repositoryLocationName: repoContext.repositoryLocation?.name,
+                        repositoryName: repoContext.repository?.name,
                       }),
                     });
                     handleLaunchResult(run.pipelineName, result, {openInNewWindow: false});
