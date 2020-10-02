@@ -113,16 +113,21 @@ file:/docs_snippets/docs_snippets/intro_tutorial/basics/e04_quality/custom_types
 lines:32-39
 ```
 
-When we run the pipeline with this solid, we'll see an error like:
+Before we run the pipeline, don't forget to add the config:
+
+![custom_types_2_yaml.png](/assets/images/tutorial/custom_types_2_yaml.png)
+
+When we run the pipeline with this solid, we'll see an error in your terminal like:
 
 ```bash
-2020-06-15 14:08:00 - dagster - ERROR - custom_type_pipeline - 7fd9dce5-10e8-44ed-ba0c-0d48fdf9a5fc - STEP_FAILURE - Execution of step "bad_read_csv.compute" failed.
-            cls_name = "AttributeError"
-       error_message = "AttributeError: 'str' object has no attribute 'keys'\n"
-               solid = "bad_read_csv"
-    solid_definition = "bad_read_csv"
-            step_key = "bad_read_csv.compute"
+2020-10-01 17:20:54 - dagster - ERROR - custom_type_pipeline - c3267e86-10e9-472d-80e9-15a61d2b6360 - 8649 - bad_read_csv.compute - STEP_FAILURE - Execution of step "bad_read_csv.compute" failed.
+
+AttributeError: 'str' object has no attribute 'keys'
 ```
+
+We will also see the error message in Dagit:
+
+![custom_types_2_dagit_error_messasge.png](/assets/images/tutorial/custom_types_2_dagit_error_message.png)
 
 <br />
 
