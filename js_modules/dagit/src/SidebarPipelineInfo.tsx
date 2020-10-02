@@ -5,7 +5,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ConfigTypeSchema} from 'src/ConfigTypeSchema';
-import Description from 'src/Description';
+import {Description} from 'src/Description';
 import {
   SectionHeader,
   SectionInner,
@@ -23,7 +23,7 @@ interface ISidebarPipelineInfoProps {
   pipeline: SidebarPipelineInfoFragment;
 }
 
-export default class SidebarPipelineInfo extends React.Component<ISidebarPipelineInfoProps> {
+export class SidebarPipelineInfo extends React.Component<ISidebarPipelineInfoProps> {
   static fragments = {
     SidebarPipelineInfoFragment: gql`
       fragment SidebarPipelineInfoFragment on IPipelineSnapshot {

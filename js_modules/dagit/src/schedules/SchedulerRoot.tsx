@@ -12,8 +12,8 @@ import {
   useRepositoryOptions,
 } from 'src/DagsterRepositoryContext';
 import {Header, ScrollContainer} from 'src/ListComponents';
-import Loading from 'src/Loading';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {Loading} from 'src/Loading';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformation} from 'src/RepositoryInformation';
 import {ScheduleStateRow} from 'src/schedules/ScheduleRow';
 import {SCHEDULE_STATE_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';

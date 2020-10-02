@@ -32,7 +32,7 @@ import {ConfigEditorModePicker} from 'src/execute/ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from 'src/execute/LaunchRootExecutionButton';
 import {ModeNotFoundError} from 'src/execute/ModeNotFoundError';
 import {RunPreview} from 'src/execute/RunPreview';
-import SolidSelector from 'src/execute/SolidSelector';
+import {SolidSelector} from 'src/execute/SolidSelector';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';
 import {ExecutionSessionContainerPartitionSetsFragment} from 'src/execute/types/ExecutionSessionContainerPartitionSetsFragment';
 import {ExecutionSessionContainerPipelineFragment} from 'src/execute/types/ExecutionSessionContainerPipelineFragment';
@@ -71,7 +71,7 @@ interface IExecutionSessionContainerState {
   tagEditorOpen: boolean;
 }
 
-export default class ExecutionSessionContainer extends React.Component<
+export class ExecutionSessionContainer extends React.Component<
   IExecutionSessionContainerProps,
   IExecutionSessionContainerState
 > {

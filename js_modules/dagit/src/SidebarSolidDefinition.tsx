@@ -4,7 +4,7 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 
 import {ConfigTypeSchema} from 'src/ConfigTypeSchema';
-import Description from 'src/Description';
+import {Description} from 'src/Description';
 import {
   SectionItemContainer,
   SectionSmallHeader,
@@ -22,8 +22,8 @@ import {
   SolidMappingTable,
   TypeWrapper,
 } from 'src/SidebarSolidHelpers';
-import SolidTypeSignature from 'src/SolidTypeSignature';
-import TypeWithTooltip from 'src/TypeWithTooltip';
+import {SolidTypeSignature} from 'src/SolidTypeSignature';
+import {TypeWithTooltip} from 'src/TypeWithTooltip';
 import {breakOnUnderscores} from 'src/Util';
 import {pluginForMetadata} from 'src/plugins';
 import {SidebarSolidDefinitionFragment} from 'src/types/SidebarSolidDefinitionFragment';

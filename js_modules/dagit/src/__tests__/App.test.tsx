@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as TestRenderer from 'react-test-renderer';
 
 import {App} from 'src/App';
-import AppCache from 'src/AppCache';
+import {AppCache} from 'src/AppCache';
 import {MOCKS} from 'src/__tests__/AppMocks';
 import {MockedProvider} from 'src/__tests__/MockedProvider';
 import {PipelineGraphContainer} from 'src/graph/PipelineGraphContainer';

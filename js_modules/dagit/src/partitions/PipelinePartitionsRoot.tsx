@@ -8,7 +8,7 @@ import {RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
-import Loading from 'src/Loading';
+import {Loading} from 'src/Loading';
 import {PartitionView} from 'src/partitions/PartitionView';
 import {PartitionsBackfill} from 'src/partitions/PartitionsBackfill';
 import {

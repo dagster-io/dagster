@@ -16,7 +16,8 @@ import {
   applyCreateSession,
   useStorage,
 } from 'src/LocalStorage';
-import ExecutionSessionContainer, {
+import {
+  ExecutionSessionContainer,
   ExecutionSessionContainerError,
   ExecutionSessionContainerLoading,
 } from 'src/execute/ExecutionSessionContainer';

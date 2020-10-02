@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useQuery} from 'react-apollo';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';
-import Loading from 'src/Loading';
+import {Loading} from 'src/Loading';
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
 import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
 import {SidebarSolidInvocation} from 'src/SidebarSolidInvocation';

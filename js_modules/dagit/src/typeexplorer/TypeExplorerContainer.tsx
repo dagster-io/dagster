@@ -3,9 +3,9 @@ import * as React from 'react';
 import {useQuery} from 'react-apollo';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';
-import Loading from 'src/Loading';
+import {Loading} from 'src/Loading';
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
-import TypeExplorer from 'src/typeexplorer/TypeExplorer';
+import {TypeExplorer} from 'src/typeexplorer/TypeExplorer';
 import {
   TypeExplorerContainerQuery,
   TypeExplorerContainerQueryVariables,

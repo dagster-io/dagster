@@ -23,7 +23,7 @@ export const showCustomAlert = (opts: Partial<ICustomAlert>) => {
   setCustomAlert(Object.assign({body: '', title: 'Error'}, opts));
 };
 
-export default class CustomAlertProvider extends React.Component<{}, {alert: ICustomAlert | null}> {
+export class CustomAlertProvider extends React.Component<{}, {alert: ICustomAlert | null}> {
   state = {alert: CurrentAlert};
 
   bodyRef = React.createRef<HTMLDivElement>();

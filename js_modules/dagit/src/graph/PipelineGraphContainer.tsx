@@ -1,7 +1,7 @@
 import {ProgressBar} from '@blueprintjs/core';
 import * as React from 'react';
 
-import PipelineGraph from 'src/graph/PipelineGraph';
+import {PipelineGraph} from 'src/graph/PipelineGraph';
 import {asyncDagrePipelineLayout, getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 import {IFullPipelineLayout} from 'src/graph/layout';
 import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';

@@ -6,7 +6,7 @@ interface ISidebarProps {
   onClose: () => void;
 }
 
-const Sidebar: React.FunctionComponent<ISidebarProps> = (props) => {
+export const Sidebar: React.FunctionComponent<ISidebarProps> = (props) => {
   return (
     <SidebarWrapper>
       <SidebarCloseButton role="button" onClick={props.onClose}>
@@ -16,8 +16,6 @@ const Sidebar: React.FunctionComponent<ISidebarProps> = (props) => {
     </SidebarWrapper>
   );
 };
-
-export default Sidebar;
 
 const SidebarWrapper = styled.div`
   position: fixed;

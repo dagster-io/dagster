@@ -5,7 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
-import SidebarPipelineInfo from 'src/SidebarPipelineInfo';
+import {SidebarPipelineInfo} from 'src/SidebarPipelineInfo';
 import {SidebarSolidContainer} from 'src/SidebarSolidContainer';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {TypeExplorerContainer} from 'src/typeexplorer/TypeExplorerContainer';
@@ -46,7 +46,7 @@ const TabInfo: Array<ITabInfo> = [
   },
 ];
 
-export default class SidebarTabbedContainer extends React.Component<ISidebarTabbedContainerProps> {
+export class SidebarTabbedContainer extends React.Component<ISidebarTabbedContainerProps> {
   static fragments = {
     SidebarTabbedContainerPipelineFragment: gql`
       fragment SidebarTabbedContainerPipelineFragment on IPipelineSnapshot {

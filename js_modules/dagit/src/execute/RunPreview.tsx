@@ -6,7 +6,7 @@ import styled from 'styled-components/macro';
 import {ButtonLink} from 'src/ButtonLink';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {useConfirmation} from 'src/CustomConfirmationProvider';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {errorStackToYamlPath} from 'src/configeditor/ConfigEditorUtils';
 import {

@@ -38,7 +38,7 @@ import {
 import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 import {RowColumn, RowContainer, ScrollingRowColumn} from 'src/ListComponents';
 import {Legend, LegendColumn} from 'src/ListComponents';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryOriginInformation} from 'src/RepositoryInformation';
 import {assertUnreachable} from 'src/Util';
 import {RunStatus} from 'src/runs/RunStatusDots';

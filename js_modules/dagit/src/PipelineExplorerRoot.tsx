@@ -7,8 +7,8 @@ import {Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePipelineSelector, useActivePipelineForName} from 'src/DagsterRepositoryContext';
-import Loading from 'src/Loading';
-import PipelineExplorer, {PipelineExplorerOptions} from 'src/PipelineExplorer';
+import {Loading} from 'src/Loading';
+import {PipelineExplorer, PipelineExplorerOptions} from 'src/PipelineExplorer';
 import {
   PipelineExplorerPath,
   explorerPathFromString,

@@ -2,7 +2,7 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
 
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformationFragment} from 'src/RepositoryInformation';
 import {InstanceExecutableQuery} from 'src/types/InstanceExecutableQuery';
 import {

@@ -7,13 +7,13 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {DagsterRepositoryContext} from 'src/DagsterRepositoryContext';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {IStepState, RunMetadataProvider} from 'src/RunMetadataProvider';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
 import {GaantChart, GaantChartMode} from 'src/gaant/GaantChart';
 import {GetDefaultLogFilter, LogFilter, LogsProvider} from 'src/runs/LogsProvider';
-import LogsScrollingTable from 'src/runs/LogsScrollingTable';
-import LogsToolbar from 'src/runs/LogsToolbar';
+import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
+import {LogsToolbar} from 'src/runs/LogsToolbar';
 import {RunActionButtons} from 'src/runs/RunActionButtons';
 import {RunContext} from 'src/runs/RunContext';
 import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';

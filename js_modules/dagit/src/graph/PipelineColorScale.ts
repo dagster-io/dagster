@@ -1,7 +1,7 @@
 import {Colors} from '@blueprintjs/core';
 import {scaleOrdinal} from '@vx/scale';
 
-const PipelineColorScale = scaleOrdinal({
+export const PipelineColorScale = scaleOrdinal({
   domain: [
     'source',
     'input',
@@ -27,5 +27,3 @@ const PipelineColorScale = scaleOrdinal({
     Colors.ORANGE5,
   ],
 });
-
-export default PipelineColorScale;

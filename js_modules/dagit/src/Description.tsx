@@ -31,7 +31,7 @@ function removeLeadingSpaces(input: string) {
   return lines.map((l) => l.substr(leadingSpaces[1].length)).join('\n');
 }
 
-export default class Description extends React.Component<IDescriptionProps, IDescriptionState> {
+export class Description extends React.Component<IDescriptionProps, IDescriptionState> {
   private _container: React.RefObject<HTMLDivElement> = React.createRef();
 
   public state: IDescriptionState = {

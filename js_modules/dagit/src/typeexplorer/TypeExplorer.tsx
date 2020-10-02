@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {ConfigTypeSchema} from 'src/ConfigTypeSchema';
-import Description from 'src/Description';
+import {Description} from 'src/Description';
 import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from 'src/SidebarComponents';
 import {TypeExplorerFragment} from 'src/typeexplorer/types/TypeExplorerFragment';
 
@@ -11,7 +11,7 @@ interface ITypeExplorerProps {
   type: TypeExplorerFragment;
 }
 
-export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
+export class TypeExplorer extends React.Component<ITypeExplorerProps> {
   static fragments = {
     TypeExplorerFragment: gql`
       fragment TypeExplorerFragment on DagsterType {

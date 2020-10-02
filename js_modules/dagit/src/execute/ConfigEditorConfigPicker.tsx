@@ -19,7 +19,7 @@ import styled from 'styled-components';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {IExecutionSession} from 'src/LocalStorage';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {ShortcutHandler} from 'src/ShortcutHandler';
 import {ConfigEditorGeneratorPartitionSetsFragment_results} from 'src/execute/types/ConfigEditorGeneratorPartitionSetsFragment';
 import {

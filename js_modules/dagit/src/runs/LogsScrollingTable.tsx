@@ -30,7 +30,7 @@ interface ILogsScrollingTableSizedProps extends ILogsScrollingTableProps {
   height: number;
 }
 
-export default class LogsScrollingTable extends React.Component<ILogsScrollingTableProps> {
+export class LogsScrollingTable extends React.Component<ILogsScrollingTableProps> {
   static fragments = {
     LogsScrollingTableMessageFragment: gql`
       fragment LogsScrollingTableMessageFragment on PipelineRunEvent {

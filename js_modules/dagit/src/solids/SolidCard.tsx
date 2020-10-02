@@ -2,7 +2,7 @@ import gql from 'graphql-tag';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import SolidNode from 'src/graph/SolidNode';
+import {SolidNode} from 'src/graph/SolidNode';
 import {layoutSolid} from 'src/graph/getFullSolidLayout';
 import {SolidCardSolidDefinitionFragment} from 'src/solids/types/SolidCardSolidDefinitionFragment';
 

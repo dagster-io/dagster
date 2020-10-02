@@ -33,7 +33,13 @@ function hueForTag(text = '') {
   );
 }
 
-const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({tags, x, y, width, minified}) => {
+const SolidTagsInner: React.FunctionComponent<ISolidTagsProps> = ({
+  tags,
+  x,
+  y,
+  width,
+  minified,
+}) => {
   const height = minified ? 32 : 20;
   const overhang = 10;
 
@@ -76,4 +82,4 @@ const SolidTags: React.FunctionComponent<ISolidTagsProps> = ({tags, x, y, width,
   );
 };
 
-export default React.memo(SolidTags);
+export const SolidTags = React.memo(SolidTagsInner);

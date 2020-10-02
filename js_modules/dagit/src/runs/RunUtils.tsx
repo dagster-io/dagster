@@ -6,7 +6,7 @@ import * as yaml from 'yaml';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {APP_PATH_PREFIX} from 'src/DomUtils';
 import {filterByQuery} from 'src/GraphQueryImpl';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {Timestamp, TimezoneContext, timestampToString} from 'src/TimeComponents';
 import {formatElapsedTime} from 'src/Util';
 import {toGraphQueryItems} from 'src/gaant/toGraphQueryItems';

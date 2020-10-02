@@ -6,7 +6,7 @@ import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
 
 import {Header, Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
-import Loading from 'src/Loading';
+import {Loading} from 'src/Loading';
 import {Timestamp} from 'src/TimeComponents';
 import {colorHash} from 'src/Util';
 import {

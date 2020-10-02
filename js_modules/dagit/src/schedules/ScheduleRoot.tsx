@@ -7,7 +7,7 @@ import {Link} from 'react-router-dom';
 
 import {useScheduleSelector} from 'src/DagsterRepositoryContext';
 import {Header, ScrollContainer} from 'src/ListComponents';
-import Loading from 'src/Loading';
+import {Loading} from 'src/Loading';
 import {ScheduleRow, ScheduleRowHeader} from 'src/schedules/ScheduleRow';
 import {SCHEDULE_DEFINITION_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {ScheduleRootQuery} from 'src/schedules/types/ScheduleRootQuery';

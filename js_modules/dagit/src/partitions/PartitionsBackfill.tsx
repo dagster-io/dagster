@@ -19,7 +19,7 @@ import {filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {Header} from 'src/ListComponents';
 import {PipelineRunTag} from 'src/LocalStorage';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {OptionsDivider} from 'src/VizComponents';
 import {LaunchButton} from 'src/execute/LaunchButton';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';

@@ -34,7 +34,7 @@ const suggestionProvidersFilter = (
   );
 };
 
-const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
+export const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
   const {steps, filter, hideNonMatches, metadata, onHideNonMatches, onSetFilter} = props;
 
   const selectedStep = filter.values.find((v) => v.token === 'step')?.value || null;
@@ -108,8 +108,6 @@ const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
     </LogsToolbarContainer>
   );
 };
-
-export default LogsToolbar;
 
 const LogsToolbarContainer = styled.div`
   display: flex;

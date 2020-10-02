@@ -137,7 +137,7 @@ const NoneInteractor: SVGViewportInteractor = {
   },
 };
 
-export default class SVGViewport extends React.Component<SVGViewportProps, SVGViewportState> {
+export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportState> {
   static Interactors = {
     PanAndZoom: PanAndZoomInteractor,
     None: NoneInteractor,

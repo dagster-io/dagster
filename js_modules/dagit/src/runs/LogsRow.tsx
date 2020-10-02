@@ -3,7 +3,7 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {IRunMetadataDict} from 'src/RunMetadataProvider';
 import {setHighlightedGaantChartTime} from 'src/gaant/GaantChart';
 import {CellTruncationProvider} from 'src/runs/CellTruncationProvider';

@@ -14,7 +14,7 @@ const fragmentMatcher = new IntrospectionFragmentMatcher({
   },
 });
 
-const AppCache = new InMemoryCache({
+export const AppCache = new InMemoryCache({
   addTypename: true,
   fragmentMatcher,
   cacheRedirects: {
@@ -49,5 +49,3 @@ const AppCache = new InMemoryCache({
     }
   },
 });
-
-export default AppCache;

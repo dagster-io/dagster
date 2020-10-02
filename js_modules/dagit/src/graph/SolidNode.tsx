@@ -1,11 +1,11 @@
 import gql from 'graphql-tag';
 import * as React from 'react';
 
-import PipelineColorScale from 'src/graph/PipelineColorScale';
+import {PipelineColorScale} from 'src/graph/PipelineColorScale';
 import {SVGFlowLayoutRect, SVGMonospaceText} from 'src/graph/SVGComponents';
 import {SolidConfigPort} from 'src/graph/SolidConfigPort';
 import {SolidIOBox, metadataForIO} from 'src/graph/SolidIOBox';
-import SolidTags, {ISolidTag} from 'src/graph/SolidTags';
+import {SolidTags, ISolidTag} from 'src/graph/SolidTags';
 import {IFullSolidLayout} from 'src/graph/getFullSolidLayout';
 import {Edge} from 'src/graph/highlighting';
 import {SolidNodeDefinitionFragment} from 'src/graph/types/SolidNodeDefinitionFragment';
@@ -41,7 +41,7 @@ const TOOLTIP_STYLE = JSON.stringify({
   left: 5,
 });
 
-export default class SolidNode extends React.Component<ISolidNodeProps> {
+export class SolidNode extends React.Component<ISolidNodeProps> {
   static fragments = {
     SolidNodeInvocationFragment: gql`
       fragment SolidNodeInvocationFragment on Solid {

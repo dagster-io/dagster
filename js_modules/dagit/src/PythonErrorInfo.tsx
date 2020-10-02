@@ -15,7 +15,7 @@ interface IPythonErrorInfoProps {
   failureMetadata?: {metadataEntries: MetadataEntryFragment[]} | null;
 }
 
-export default class PythonErrorInfo extends React.Component<IPythonErrorInfoProps> {
+export class PythonErrorInfo extends React.Component<IPythonErrorInfoProps> {
   static fragments = {
     PythonErrorFragment: gql`
       fragment PythonErrorFragment on PythonError {

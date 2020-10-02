@@ -8,8 +8,8 @@ import styled from 'styled-components/macro';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {Header} from 'src/ListComponents';
-import Loading from 'src/Loading';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {Loading} from 'src/Loading';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {colorHash} from 'src/Util';
 import {PIPELINE_LABEL, PartitionGraph} from 'src/partitions/PartitionGraph';

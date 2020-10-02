@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
 import {RunStatusWithStats} from 'src/runs/RunStatusDots';

@@ -8,8 +8,8 @@ import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualize
 import styled from 'styled-components/macro';
 
 import {DagsterRepositoryContext, useRepositorySelector} from 'src/DagsterRepositoryContext';
-import Loading from 'src/Loading';
-import SolidTypeSignature from 'src/SolidTypeSignature';
+import {Loading} from 'src/Loading';
+import {SolidTypeSignature} from 'src/SolidTypeSignature';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import {
   SuggestionProvider,

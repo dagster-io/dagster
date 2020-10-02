@@ -14,8 +14,8 @@ import {useQuery} from 'react-apollo';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {Header, Legend, LegendColumn, ScrollContainer} from 'src/ListComponents';
-import Loading from 'src/Loading';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {Loading} from 'src/Loading';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformation} from 'src/RepositoryInformation';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {ScheduleRow, ScheduleStateRow} from 'src/schedules/ScheduleRow';

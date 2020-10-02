@@ -11,7 +11,7 @@ interface ITypeWithTooltipProps {
   };
 }
 
-export default class TypeWithTooltip extends React.Component<ITypeWithTooltipProps> {
+export class TypeWithTooltip extends React.Component<ITypeWithTooltipProps> {
   static fragments = {
     DagsterTypeWithTooltipFragment: gql`
       fragment DagsterTypeWithTooltipFragment on DagsterType {

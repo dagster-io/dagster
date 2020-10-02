@@ -13,7 +13,7 @@ import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
 import {App} from 'src/App';
-import AppCache from 'src/AppCache';
+import {AppCache} from 'src/AppCache';
 import {AppErrorLink} from 'src/AppError';
 import {WEBSOCKET_URI} from 'src/DomUtils';
 import {patchCopyToRemoveZeroWidthUnderscores} from 'src/Util';

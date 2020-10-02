@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import {SidebarSection, SidebarTitle} from 'src/SidebarComponents';
 import {DependencyHeaderRow, DependencyRow, DependencyTable} from 'src/SidebarSolidHelpers';
-import TypeWithTooltip from 'src/TypeWithTooltip';
+import {TypeWithTooltip} from 'src/TypeWithTooltip';
 import {breakOnUnderscores} from 'src/Util';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {SidebarSolidInvocationFragment} from 'src/types/SidebarSolidInvocationFragment';

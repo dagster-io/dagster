@@ -13,8 +13,8 @@ import {
   SolidSelectorQuery_pipelineOrError,
   SolidSelectorQuery_pipelineOrError_Pipeline_solids,
 } from 'src/execute/types/SolidSelectorQuery';
-import PipelineGraph from 'src/graph/PipelineGraph';
-import SVGViewport from 'src/graph/SVGViewport';
+import {PipelineGraph} from 'src/graph/PipelineGraph';
+import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 
 interface ISolidSelectorProps {
@@ -90,7 +90,7 @@ const SOLID_SELECTOR_QUERY = gql`
   ${PipelineGraph.fragments.PipelineGraphSolidFragment}
 `;
 
-export default (props: ISolidSelectorProps) => {
+export const SolidSelector = (props: ISolidSelectorProps) => {
   const {serverProvidedSubsetError, query, onChange} = props;
   const [pending, setPending] = React.useState<string>(query || '*');
   const [focused, setFocused] = React.useState(false);

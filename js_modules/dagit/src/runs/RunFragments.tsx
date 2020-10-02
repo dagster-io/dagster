@@ -1,9 +1,9 @@
 import gql from 'graphql-tag';
 
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RunMetadataProvider} from 'src/RunMetadataProvider';
 import {GaantChart} from 'src/gaant/GaantChart';
-import LogsScrollingTable from 'src/runs/LogsScrollingTable';
+import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
 import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
 
 export const RunFragments = {

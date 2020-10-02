@@ -4,9 +4,9 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ParentSolidNode, SVGLabeledParentRect} from 'src/graph/ParentSolidNode';
-import SVGViewport, {DETAIL_ZOOM, SVGViewportInteractor} from 'src/graph/SVGViewport';
+import {SVGViewport, DETAIL_ZOOM, SVGViewportInteractor} from 'src/graph/SVGViewport';
 import {SolidLinks} from 'src/graph/SolidLinks';
-import SolidNode from 'src/graph/SolidNode';
+import {SolidNode} from 'src/graph/SolidNode';
 import {IFullPipelineLayout, IFullSolidLayout, ILayout} from 'src/graph/getFullSolidLayout';
 import {Edge, isHighlighted, isSolidHighlighted} from 'src/graph/highlighting';
 import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';
@@ -204,7 +204,7 @@ export class PipelineGraphContents extends React.PureComponent<
 // so that SolidNode can use shallow equality comparisons in shouldComponentUpdate.
 const EmptyHighlightedArray: never[] = [];
 
-export default class PipelineGraph extends React.Component<IPipelineGraphProps> {
+export class PipelineGraph extends React.Component<IPipelineGraphProps> {
   static fragments = {
     PipelineGraphSolidFragment: gql`
       fragment PipelineGraphSolidFragment on Solid {

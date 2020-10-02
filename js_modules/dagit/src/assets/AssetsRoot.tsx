@@ -7,7 +7,7 @@ import {Link, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {Header, Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
-import Loading from 'src/Loading';
+import {Loading} from 'src/Loading';
 import {AssetRoot} from 'src/assets/AssetRoot';
 import {AssetsRootQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsRootQuery';
 

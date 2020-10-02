@@ -10,33 +10,31 @@ interface ILoadingProps<TData> {
   allowStaleData?: boolean;
 }
 
-export default class Loading<TData> extends React.Component<ILoadingProps<TData>> {
-  public render() {
-    const {children, allowStaleData = false} = this.props;
-    const {error, data, loading} = this.props.queryResult;
+export const Loading = <TData extends {}>(props: ILoadingProps<TData>) => {
+  const {children, allowStaleData = false} = props;
+  const {error, data, loading} = props.queryResult;
 
-    if (error) {
-      console.error(error);
-      return (
-        <LoadingContainer>
-          <LoadingCentering>
-            <NonIdealState icon={IconNames.ERROR} title="GraphQL Error - see console for details" />
-          </LoadingCentering>
-        </LoadingContainer>
-      );
-    }
-    if (!data || (loading && !allowStaleData) || Object.keys(data).length === 0) {
-      return (
-        <LoadingContainer>
-          <LoadingCentering>
-            <ProgressBar />
-          </LoadingCentering>
-        </LoadingContainer>
-      );
-    }
-    return children(data as TData);
+  if (error) {
+    console.error(error);
+    return (
+      <LoadingContainer>
+        <LoadingCentering>
+          <NonIdealState icon={IconNames.ERROR} title="GraphQL Error - see console for details" />
+        </LoadingCentering>
+      </LoadingContainer>
+    );
   }
-}
+  if (!data || (loading && !allowStaleData) || Object.keys(data).length === 0) {
+    return (
+      <LoadingContainer>
+        <LoadingCentering>
+          <ProgressBar />
+        </LoadingCentering>
+      </LoadingContainer>
+    );
+  }
+  return <>{children(data as TData)}</>;
+};
 
 const LoadingContainer = styled.div`
   width: 100%;

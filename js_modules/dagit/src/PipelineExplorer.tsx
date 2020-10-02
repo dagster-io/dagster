@@ -12,9 +12,9 @@ import {filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {SolidJumpBar} from 'src/PipelineJumpComponents';
 import {PipelineExplorerPath, explorerPathToString} from 'src/PipelinePathUtils';
-import SidebarTabbedContainer from 'src/SidebarTabbedContainer';
+import {SidebarTabbedContainer} from 'src/SidebarTabbedContainer';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
-import PipelineGraph from 'src/graph/PipelineGraph';
+import {PipelineGraph} from 'src/graph/PipelineGraph';
 import {PipelineGraphContainer} from 'src/graph/PipelineGraphContainer';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {PipelineExplorerFragment} from 'src/types/PipelineExplorerFragment';
@@ -40,7 +40,7 @@ interface PipelineExplorerState {
   highlighted: string;
 }
 
-export default class PipelineExplorer extends React.Component<
+export class PipelineExplorer extends React.Component<
   PipelineExplorerProps,
   PipelineExplorerState
 > {

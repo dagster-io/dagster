@@ -2,7 +2,7 @@ import {NonIdealState, Spinner} from '@blueprintjs/core';
 import * as React from 'react';
 import {BrowserRouter, Redirect, Route, Switch} from 'react-router-dom';
 
-import CustomAlertProvider from 'src/CustomAlertProvider';
+import {CustomAlertProvider} from 'src/CustomAlertProvider';
 import {CustomConfirmationProvider} from 'src/CustomConfirmationProvider';
 import {CustomTooltipProvider} from 'src/CustomTooltipProvider';
 import {
@@ -15,7 +15,7 @@ import {FeatureFlagsRoot} from 'src/FeatureFlagsRoot';
 import {InstanceDetailsRoot} from 'src/InstanceDetailsRoot';
 import {PipelineExplorerRoot} from 'src/PipelineExplorerRoot';
 import {PipelineRunsRoot} from 'src/PipelineRunsRoot';
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TimezoneProvider} from 'src/TimeComponents';
 import {AssetsRoot} from 'src/assets/AssetsRoot';
 import {PipelineExecutionRoot} from 'src/execute/PipelineExecutionRoot';

@@ -5,7 +5,7 @@ import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components/macro';
 
 import {DagsterRepositoryContext, useRepositorySelector} from 'src/DagsterRepositoryContext';
-import Loading from 'src/Loading';
+import {Loading} from 'src/Loading';
 import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
 import {SidebarSolidInvocationInfo} from 'src/SidebarSolidHelpers';
 import {SolidCard} from 'src/solids/SolidCard';

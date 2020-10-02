@@ -9,10 +9,10 @@ import styled from 'styled-components/macro';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {RowColumn, RowContainer} from 'src/ListComponents';
-import Loading from 'src/Loading';
+import {Loading} from 'src/Loading';
 import {Timestamp} from 'src/TimeComponents';
-import PipelineGraph from 'src/graph/PipelineGraph';
-import SVGViewport from 'src/graph/SVGViewport';
+import {PipelineGraph} from 'src/graph/PipelineGraph';
+import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 import {
   PipelineOverviewQuery,

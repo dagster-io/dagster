@@ -17,6 +17,7 @@ module.exports = {
   rules: {
     curly: 'error',
     'import/no-cycle': 'error',
+    'import/no-default-export': 'error',
     'import/order': [
       'error',
       {

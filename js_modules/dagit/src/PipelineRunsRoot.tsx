@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 
 import {CursorPaginationControls} from 'src/CursorPaginationControls';
 import {Header, ScrollContainer} from 'src/ListComponents';
-import Loading from 'src/Loading';
+import {Loading} from 'src/Loading';
 import {RunTable} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
 import {

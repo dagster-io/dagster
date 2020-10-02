@@ -2,7 +2,7 @@ import {Colors} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import React from 'react';
 
-import PythonErrorInfo from 'src/PythonErrorInfo';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformationFragment} from 'src/RepositoryInformation';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 
