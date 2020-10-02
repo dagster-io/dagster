@@ -16,14 +16,13 @@ import SidebarTabbedContainer from 'src/SidebarTabbedContainer';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
 import PipelineGraph from 'src/graph/PipelineGraph';
 import {PipelineGraphContainer} from 'src/graph/PipelineGraphContainer';
+import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {PipelineExplorerFragment} from 'src/types/PipelineExplorerFragment';
 import {PipelineExplorerSolidHandleFragment} from 'src/types/PipelineExplorerSolidHandleFragment';
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;
 }
-
-export type SolidNameOrPath = {name: string} | {path: string[]};
 
 interface PipelineExplorerProps {
   history: History;

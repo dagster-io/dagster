@@ -30,15 +30,13 @@ import {
 import {ConfigEditorHelp} from 'src/execute/ConfigEditorHelp';
 import {ConfigEditorModePicker} from 'src/execute/ConfigEditorModePicker';
 import {LaunchRootExecutionButton} from 'src/execute/LaunchRootExecutionButton';
+import {ModeNotFoundError} from 'src/execute/ModeNotFoundError';
 import {RunPreview} from 'src/execute/RunPreview';
 import SolidSelector from 'src/execute/SolidSelector';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';
 import {ExecutionSessionContainerPartitionSetsFragment} from 'src/execute/types/ExecutionSessionContainerPartitionSetsFragment';
 import {ExecutionSessionContainerPipelineFragment} from 'src/execute/types/ExecutionSessionContainerPipelineFragment';
-import {
-  ExecutionSessionContainerRunConfigSchemaFragment,
-  ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError,
-} from 'src/execute/types/ExecutionSessionContainerRunConfigSchemaFragment';
+import {ExecutionSessionContainerRunConfigSchemaFragment} from 'src/execute/types/ExecutionSessionContainerRunConfigSchemaFragment';
 import {
   PreviewConfigQuery,
   PreviewConfigQueryVariables,
@@ -72,10 +70,6 @@ interface IExecutionSessionContainerState {
   showWhitespace: boolean;
   tagEditorOpen: boolean;
 }
-
-export type ModeNotFoundError =
-  | ExecutionSessionContainerRunConfigSchemaFragment_ModeNotFoundError
-  | undefined;
 
 export default class ExecutionSessionContainer extends React.Component<
   IExecutionSessionContainerProps,

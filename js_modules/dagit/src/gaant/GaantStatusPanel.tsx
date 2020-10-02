@@ -7,7 +7,7 @@ import {formatElapsedTime} from 'src/Util';
 import {GaantChartMode} from 'src/gaant/Constants';
 import {boxStyleFor} from 'src/gaant/GaantChartLayout';
 import {RunGroupPanel} from 'src/gaant/RunGroupPanel';
-import {StepSelection} from 'src/runs/Run';
+import {StepSelection} from 'src/runs/StepSelection';
 
 interface GaantStatusPanelProps {
   metadata: IRunMetadataDict;

@@ -2,7 +2,6 @@ import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {SolidNameOrPath} from 'src/PipelineExplorer';
 import {titleOfIO} from 'src/Util';
 import {ExternalConnectionNode} from 'src/graph/ExternalConnectionNode';
 import {MappingLine} from 'src/graph/MappingLine';
@@ -16,6 +15,7 @@ import {
 import {IFullPipelineLayout} from 'src/graph/getFullSolidLayout';
 import {Edge} from 'src/graph/highlighting';
 import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';
+import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 
 interface ParentSolidNodeProps {
   layout: IFullPipelineLayout;

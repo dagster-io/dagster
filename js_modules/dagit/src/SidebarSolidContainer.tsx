@@ -4,10 +4,10 @@ import {useQuery} from 'react-apollo';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import Loading from 'src/Loading';
-import {SolidNameOrPath} from 'src/PipelineExplorer';
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
 import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
 import {SidebarSolidInvocation} from 'src/SidebarSolidInvocation';
+import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {SidebarTabbedContainerSolidQuery} from 'src/types/SidebarTabbedContainerSolidQuery';
 
 interface SidebarSolidContainerProps {

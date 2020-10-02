@@ -1,7 +1,6 @@
 import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import ApolloClient from 'apollo-client';
-import gql from 'graphql-tag';
 import * as React from 'react';
 import {useMutation} from 'react-apollo';
 import styled from 'styled-components/macro';
@@ -24,6 +23,7 @@ import {
   handleLaunchResult,
   ReExecutionStyle,
 } from 'src/runs/RunUtils';
+import {StepSelection} from 'src/runs/StepSelection';
 import {
   LaunchPipelineReexecution,
   LaunchPipelineReexecutionVariables,
@@ -45,79 +45,7 @@ interface RunState {
   selection: StepSelection;
 }
 
-export interface StepSelection {
-  keys: string[];
-  query: string;
-}
-
 export class Run extends React.Component<RunProps, RunState> {
-  static fragments = {
-    RunFragment: gql`
-      fragment RunFragment on PipelineRun {
-        ...RunStatusPipelineRunFragment
-
-        runConfigYaml
-        runId
-        canTerminate
-        status
-        mode
-        tags {
-          key
-          value
-        }
-        rootRunId
-        parentRunId
-        pipeline {
-          __typename
-          ... on PipelineReference {
-            name
-            solidSelection
-          }
-        }
-        pipelineSnapshotId
-        executionPlan {
-          steps {
-            key
-            inputs {
-              dependsOn {
-                key
-                outputs {
-                  name
-                  type {
-                    name
-                  }
-                }
-              }
-            }
-          }
-          artifactsPersisted
-          ...GaantChartExecutionPlanFragment
-        }
-        stepKeysToExecute
-      }
-
-      ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
-      ${GaantChart.fragments.GaantChartExecutionPlanFragment}
-    `,
-    RunPipelineRunEventFragment: gql`
-      fragment RunPipelineRunEventFragment on PipelineRunEvent {
-        ... on MessageEvent {
-          message
-          timestamp
-          level
-          stepKey
-        }
-
-        ...LogsScrollingTableMessageFragment
-        ...RunMetadataProviderMessageFragment
-      }
-
-      ${RunMetadataProvider.fragments.RunMetadataProviderMessageFragment}
-      ${LogsScrollingTable.fragments.LogsScrollingTableMessageFragment}
-      ${PythonErrorInfo.fragments.PythonErrorFragment}
-    `,
-  };
-
   state: RunState = {
     logsFilter: GetDefaultLogFilter(),
     selection: {

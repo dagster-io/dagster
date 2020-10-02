@@ -4,7 +4,7 @@ import styled from 'styled-components/macro';
 
 import {Timestamp} from 'src/TimeComponents';
 import {formatStepKey} from 'src/Util';
-import {LogLevel} from 'src/runs/LogsProvider';
+import {LogLevel} from 'src/runs/LogLevel';
 import {ColumnWidthsContext} from 'src/runs/LogsScrollingTableHeader';
 
 const bgcolorForLevel = (level: LogLevel) =>

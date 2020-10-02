@@ -4,10 +4,10 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {SolidNameOrPath} from 'src/PipelineExplorer';
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
 import SidebarPipelineInfo from 'src/SidebarPipelineInfo';
 import {SidebarSolidContainer} from 'src/SidebarSolidContainer';
+import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {TypeExplorerContainer} from 'src/typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from 'src/typeexplorer/TypeListContainer';
 import {SidebarTabbedContainerPipelineFragment} from 'src/types/SidebarTabbedContainerPipelineFragment';

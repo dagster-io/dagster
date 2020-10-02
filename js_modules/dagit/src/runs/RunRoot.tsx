@@ -7,6 +7,7 @@ import {RouteComponentProps} from 'react-router';
 
 import {AssetsSupported} from 'src/AssetsSupported';
 import {Run} from 'src/runs/Run';
+import {RunFragments} from 'src/runs/RunFragments';
 import {RunRootQuery} from 'src/runs/types/RunRootQuery';
 
 export const RunRoot: React.FunctionComponent<RouteComponentProps<{
@@ -65,5 +66,5 @@ export const RUN_ROOT_QUERY = gql`
     }
   }
 
-  ${Run.fragments.RunFragment}
+  ${RunFragments.RunFragment}
 `;

@@ -7,7 +7,8 @@ import {IStepState} from 'src/RunMetadataProvider';
 import {IRunMetadataDict} from 'src/RunMetadataProvider';
 import {SuggestionProvider, TokenizingField, TokenizingFieldValue} from 'src/TokenizingField';
 import {ComputeLogLink} from 'src/runs/ComputeLogModal';
-import {GetFilterProviders, LogFilter, LogFilterValue, LogLevel} from 'src/runs/LogsProvider';
+import {LogLevel} from 'src/runs/LogLevel';
+import {GetFilterProviders, LogFilter, LogFilterValue} from 'src/runs/LogsProvider';
 
 interface ILogsToolbarProps {
   steps: string[];

@@ -7,8 +7,8 @@ import {useRepository, useRepositoryOptions} from 'src/DagsterRepositoryContext'
 import {SharedToaster} from 'src/DomUtils';
 import {IStepState} from 'src/RunMetadataProvider';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
-import {StepSelection} from 'src/runs/Run';
 import {CANCEL_MUTATION, ReExecutionStyle} from 'src/runs/RunUtils';
+import {StepSelection} from 'src/runs/StepSelection';
 import {PipelineRunStatus} from 'src/types/globalTypes';
 
 // Descriptions of re-execute options

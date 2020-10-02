@@ -5,20 +5,12 @@ import * as React from 'react';
 
 import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
 import {TokenizingFieldValue, tokenizedValuesFromString} from 'src/TokenizingField';
-import {Run} from 'src/runs/Run';
+import {LogLevel} from 'src/runs/LogLevel';
+import {RunFragments} from 'src/runs/RunFragments';
 import {PipelineRunLogsSubscription} from 'src/runs/types/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscriptionStatusFragment} from 'src/runs/types/PipelineRunLogsSubscriptionStatusFragment';
 import {RunPipelineRunEventFragment} from 'src/runs/types/RunPipelineRunEventFragment';
 import {PipelineRunStatus} from 'src/types/globalTypes';
-
-export enum LogLevel {
-  DEBUG = 'DEBUG',
-  INFO = 'INFO',
-  WARNING = 'WARNING',
-  ERROR = 'ERROR',
-  CRITICAL = 'CRITICAL',
-  EVENT = 'EVENT', // structured events
-}
 
 export function GetFilterProviders(stepNames: string[] = []) {
   return [
@@ -261,7 +253,7 @@ export const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
     }
   }
 
-  ${Run.fragments.RunPipelineRunEventFragment}
+  ${RunFragments.RunPipelineRunEventFragment}
 `;
 
 export const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`

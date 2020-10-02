@@ -8,7 +8,6 @@ import {GraphQueryItem, filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {EMPTY_RUN_METADATA, IRunMetadataDict, IStepMetadata} from 'src/RunMetadataProvider';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
-import {weakmapMemoize} from 'src/Util';
 import {OptionsContainer, OptionsDivider, OptionsSpacer} from 'src/VizComponents';
 import {
   BOX_DOT_MARGIN_Y,
@@ -26,7 +25,6 @@ import {
   GaantChartMode,
   GaantChartPlacement,
   GaantViewport,
-  IGaantNode,
   LINE_SIZE,
   MAX_SCALE,
   MIN_SCALE,
@@ -42,9 +40,10 @@ import {GaantChartModeControl} from 'src/gaant/GaantChartModeControl';
 import {GaantChartTimescale} from 'src/gaant/GaantChartTimescale';
 import {GaantStatusPanel} from 'src/gaant/GaantStatusPanel';
 import {ZoomSlider} from 'src/gaant/ZoomSlider';
+import {toGraphQueryItems} from 'src/gaant/toGraphQueryItems';
 import {GaantChartExecutionPlanFragment} from 'src/gaant/types/GaantChartExecutionPlanFragment';
 import {useViewport} from 'src/gaant/useViewport';
-import {StepSelection} from 'src/runs/Run';
+import {StepSelection} from 'src/runs/StepSelection';
 
 export {GaantChartMode} from 'src/gaant/Constants';
 
@@ -65,51 +64,6 @@ export function setHighlightedGaantChartTime(timestamp: null | string, debounced
     document.dispatchEvent(new CustomEvent(HIGHLIGHT_TIME_EVENT, {detail: timestamp}));
   }
 }
-
-/**
- * Converts a Run execution plan into a tree of `GraphQueryItem` items that
- * can be used as the input to the "solid query" filtering algorithm. The idea
- * is that this data structure is generic, but it's really a fake solid tree.
- */
-export const toGraphQueryItems = weakmapMemoize((plan: GaantChartExecutionPlanFragment) => {
-  const nodeTable: {[key: string]: IGaantNode} = {};
-
-  for (const step of plan.steps) {
-    const node: IGaantNode = {
-      name: step.key,
-      inputs: [],
-      outputs: [],
-    };
-    nodeTable[step.key] = node;
-  }
-
-  for (const step of plan.steps) {
-    for (const input of step.inputs) {
-      nodeTable[step.key].inputs.push({
-        dependsOn: input.dependsOn.map((d) => ({
-          solid: {
-            name: d.key,
-          },
-        })),
-      });
-
-      for (const upstream of input.dependsOn) {
-        let output = nodeTable[upstream.key].outputs[0];
-        if (!output) {
-          output = {
-            dependedBy: [],
-          };
-          nodeTable[upstream.key].outputs.push(output);
-        }
-        output.dependedBy.push({
-          solid: {name: step.key},
-        });
-      }
-    }
-  }
-
-  return Object.values(nodeTable);
-});
 
 interface GaantChartProps {
   selection: StepSelection;
