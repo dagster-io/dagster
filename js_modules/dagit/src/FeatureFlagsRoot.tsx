@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import {getFeatureFlags, setFeatureFlags, FeatureFlag} from 'src/Util';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 
 export const FeatureFlagsRoot = () => {
   const [flags, setFlags] = React.useState<FeatureFlag[]>(getFeatureFlags());
@@ -8,6 +9,8 @@ export const FeatureFlagsRoot = () => {
   React.useEffect(() => {
     setFeatureFlags(flags);
   });
+
+  useDocumentTitle('Feature Flags');
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const toggleFlag = (flag: FeatureFlag) => {

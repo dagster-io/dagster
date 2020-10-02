@@ -7,6 +7,7 @@ import {RouteComponentProps} from 'react-router';
 import {useScheduleSelector} from 'src/DagsterRepositoryContext';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
 import {ScheduleRow, ScheduleRowHeader} from 'src/schedules/ScheduleRow';
 import {SCHEDULE_DEFINITION_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
@@ -16,6 +17,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
   scheduleName: string;
 }>> = ({match}) => {
   const {scheduleName} = match.params;
+  useDocumentTitle(`Schedule: ${scheduleName}`);
   const scheduleSelector = useScheduleSelector(scheduleName);
   const queryResult = useQuery<ScheduleRootQuery>(SCHEDULE_ROOT_QUERY, {
     variables: {

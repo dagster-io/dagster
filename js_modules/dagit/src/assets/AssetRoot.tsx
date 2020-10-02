@@ -14,6 +14,7 @@ import {
   AssetQuery_assetOrError_Asset_lastMaterializations,
 } from 'src/assets/types/AssetQuery';
 import {AssetsRootQuery_assetsOrError_AssetConnection_nodes_key} from 'src/assets/types/AssetsRootQuery';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {MetadataEntries, MetadataEntry} from 'src/runs/MetadataEntry';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {RunTable} from 'src/runs/RunTable';
@@ -25,6 +26,8 @@ type GraphMaterialization = AssetQuery_assetOrError_Asset_graphMaterializations;
 type LastMaterialization = AssetQuery_assetOrError_Asset_lastMaterializations;
 
 export const AssetRoot = ({assetKey}: {assetKey: AssetKey}) => {
+  const assetPath = assetKey.path.join('.');
+  useDocumentTitle(`Asset: ${assetPath}`);
   const queryResult = useQuery(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
   });
@@ -37,7 +40,7 @@ export const AssetRoot = ({assetKey}: {assetKey: AssetKey}) => {
         if (!assetOrError.lastMaterializations.length) {
           return (
             <Container>
-              <TitleHeader>Asset: {assetKey.path.join('.')}</TitleHeader>
+              <TitleHeader>Asset: {assetPath}</TitleHeader>
             </Container>
           );
         }
@@ -143,7 +146,7 @@ const AssetValueGraph = (props: any) => {
     })),
   };
   const options = {
-    title: {display: true, text: `${props.assetKey.path.join('.')} values`},
+    title: {display: true, text: `${props.assetPath} values`},
     scales: {
       yAxes: [{scaleLabel: {display: true, labelString: 'Value'}}],
       xAxes: [

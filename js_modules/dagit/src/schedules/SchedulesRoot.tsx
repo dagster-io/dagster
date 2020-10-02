@@ -18,6 +18,7 @@ import {Header, Legend, LegendColumn, ScrollContainer} from 'src/ListComponents'
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformation} from 'src/RepositoryInformation';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {ScheduleRow, ScheduleStateRow} from 'src/schedules/ScheduleRow';
@@ -72,6 +73,7 @@ const GetStaleReconcileSection: React.FunctionComponent<{
 };
 
 export const SchedulesRoot: React.FunctionComponent = () => {
+  useDocumentTitle('Schedules');
   const repositorySelector = useRepositorySelector();
 
   const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {

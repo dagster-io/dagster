@@ -14,6 +14,7 @@ import {Timestamp} from 'src/TimeComponents';
 import {PipelineGraph} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {
   PipelineOverviewQuery,
   PipelineOverviewQueryVariables,
@@ -32,6 +33,8 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({match}) => {
   const pipelineName = match.params.pipelinePath.split(':')[0];
+  useDocumentTitle(`Pipeline: ${pipelineName}`);
+
   const pipelineSelector = usePipelineSelector(pipelineName);
   const queryResult = useQuery<PipelineOverviewQuery, PipelineOverviewQueryVariables>(
     PIPELINE_OVERVIEW_QUERY,

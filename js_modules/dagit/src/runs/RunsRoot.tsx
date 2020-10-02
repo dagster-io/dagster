@@ -8,6 +8,7 @@ import styled from 'styled-components/macro';
 import {CursorPaginationControls} from 'src/CursorPaginationControls';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
 import {RunTable} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
@@ -18,6 +19,7 @@ import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 const PAGE_SIZE = 25;
 
 export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
+  useDocumentTitle('All Runs');
   const [filterTokens, setFilterTokens] = useRunFiltering();
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,

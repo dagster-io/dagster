@@ -6,6 +6,7 @@ import {useApolloClient, useQuery} from 'react-apollo';
 import {RouteComponentProps} from 'react-router';
 
 import {AssetsSupported} from 'src/AssetsSupported';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {Run} from 'src/runs/Run';
 import {RunFragments} from 'src/runs/RunFragments';
 import {RunRootQuery} from 'src/runs/types/RunRootQuery';
@@ -18,6 +19,8 @@ export const RunRoot: React.FunctionComponent<RouteComponentProps<{
 export const RunById: React.FunctionComponent<{
   runId: string;
 }> = ({runId}) => {
+  useDocumentTitle(`Run: ${runId}`);
+
   const client = useApolloClient();
   const {data} = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
     fetchPolicy: 'cache-and-network',

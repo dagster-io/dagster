@@ -14,6 +14,7 @@ import {
   explorerPathFromString,
   explorerPathToString,
 } from 'src/PipelinePathUtils';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {
   PipelineExplorerRootQuery,
   PipelineExplorerRootQueryVariables,
@@ -124,6 +125,7 @@ function explodeCompositesInHandleGraph(handles: PipelineExplorerSolidHandleFrag
 
 export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> = (props) => {
   const explorerPath = explorerPathFromString(props.match.params['0']);
+  useDocumentTitle(`Pipeline: ${explorerPath.pipelineName}`);
 
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false,

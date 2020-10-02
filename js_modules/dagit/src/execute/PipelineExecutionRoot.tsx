@@ -30,11 +30,14 @@ import {
   PipelineExecutionRootQuery,
   PipelineExecutionRootQueryVariables,
 } from 'src/execute/types/PipelineExecutionRootQuery';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 
 export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({match}) => {
   const pipelineName = match.params.pipelinePath.split(':')[0];
+  useDocumentTitle(`Pipeline: ${pipelineName}`);
+
   const {loading} = useRepositoryOptions();
   const {repositoryName, repositoryLocationName} = useRepositorySelector();
   const [data, onSave] = useStorage(repositoryName, pipelineName);

@@ -20,6 +20,7 @@ import {TimezoneProvider} from 'src/TimeComponents';
 import {AssetsRoot} from 'src/assets/AssetsRoot';
 import {PipelineExecutionRoot} from 'src/execute/PipelineExecutionRoot';
 import {PipelineExecutionSetupRoot} from 'src/execute/PipelineExecutionSetupRoot';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {LeftNav} from 'src/nav/LeftNav';
 import {PipelineNav} from 'src/nav/PipelineNav';
 import {PipelinePartitionsRoot} from 'src/partitions/PipelinePartitionsRoot';
@@ -91,6 +92,7 @@ const AppRoutes = () => (
 export const App: React.FunctionComponent = () => {
   const {options, loading, error} = useRepositoryOptions();
   const [repo, setRepo] = useCurrentRepositoryState(options);
+  useDocumentTitle('Dagit');
 
   const content = () => {
     if (error) {

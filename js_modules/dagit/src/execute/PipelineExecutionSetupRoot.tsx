@@ -5,12 +5,15 @@ import {RouteComponentProps} from 'react-router-dom';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {IExecutionSession, applyCreateSession, useStorage} from 'src/LocalStorage';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 
 export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({match}) => {
   const {repositoryName} = useRepositorySelector();
   const pipelineName = match.params.pipelinePath.split(':')[0];
+  useDocumentTitle(`Pipeline: ${pipelineName}`);
+
   const [data, onSave] = useStorage(repositoryName, pipelineName);
   const qs = querystring.parse(window.location.search);
 

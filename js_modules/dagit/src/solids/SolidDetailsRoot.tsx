@@ -8,21 +8,26 @@ import {DagsterRepositoryContext, useRepositorySelector} from 'src/DagsterReposi
 import {Loading} from 'src/Loading';
 import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
 import {SidebarSolidInvocationInfo} from 'src/SidebarSolidHelpers';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {SolidCard} from 'src/solids/SolidCard';
 import {UsedSolidDetailsQuery} from 'src/solids/types/UsedSolidDetailsQuery';
 
 export const SolidDetailsRoot: React.FunctionComponent<RouteComponentProps<{
   name: string;
-}>> = (props) => (
-  <SolidDetailScrollContainer>
-    <UsedSolidDetails
-      name={props.match.params.name}
-      onClickInvocation={({pipelineName, handleID}) =>
-        props.history.push(`/pipeline/${pipelineName}/${handleID.split('.').join('/')}`)
-      }
-    />
-  </SolidDetailScrollContainer>
-);
+}>> = (props) => {
+  const {name} = props.match.params;
+  useDocumentTitle(`Solid: ${name}`);
+  return (
+    <SolidDetailScrollContainer>
+      <UsedSolidDetails
+        name={name}
+        onClickInvocation={({pipelineName, handleID}) =>
+          props.history.push(`/pipeline/${pipelineName}/${handleID.split('.').join('/')}`)
+        }
+      />
+    </SolidDetailScrollContainer>
+  );
+};
 
 export const UsedSolidDetails: React.FunctionComponent<{
   name: string;

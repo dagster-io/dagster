@@ -8,6 +8,7 @@ import styled from 'styled-components/macro';
 import {CursorPaginationControls} from 'src/CursorPaginationControls';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {RunTable} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
 import {
@@ -29,6 +30,8 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
 }>> = ({match}) => {
   const pipelineName = match.params.pipelinePath.split(':')[0];
+  useDocumentTitle(`Pipeline: ${pipelineName}`);
+
   const [filterTokens, setFilterTokens] = useRunFiltering(ENABLED_FILTERS);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<

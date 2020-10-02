@@ -18,6 +18,7 @@ import {
   stringFromValue,
   tokenizedValuesFromString,
 } from 'src/TokenizingField';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {SolidDetailScrollContainer, UsedSolidDetails} from 'src/solids/SolidDetailsRoot';
 import {
   SolidsRootQuery,
@@ -91,6 +92,7 @@ function filterSolidsWithSearch(solids: Solid[], search: TokenizingFieldValue[])
 type SolidsRootProps = RouteComponentProps<{name: string}>;
 
 export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = (props) => {
+  useDocumentTitle('Solids');
   const repoContext = React.useContext(DagsterRepositoryContext);
   const repositorySelector = useRepositorySelector();
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
