@@ -772,6 +772,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'solid_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'partitioned_asset_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'solid_partitioned_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'solid_that_gets_tags'
                 },
                 'invocations': [
