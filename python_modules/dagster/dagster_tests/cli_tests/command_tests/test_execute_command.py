@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import os
 import re
 
 import click
@@ -217,6 +218,42 @@ def test_more_than_one_pipeline():
                     "attribute": None,
                 },
                 instance=instance,
+            )
+
+
+def invalid_pipeline_python_origin_target_args():
+    return [
+        {
+            "pipeline": "foo",
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "attribute": "bar",
+        },
+        {
+            "pipeline": "foo",
+            "python_file": file_relative_path(__file__, "test_cli_commands.py"),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "attribute": None,
+        },
+        {
+            "pipeline": "foo",
+            "python_file": None,
+            "working_directory": os.path.dirname(__file__),
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "attribute": "bar",
+        },
+    ]
+
+
+@pytest.mark.parametrize("args", invalid_pipeline_python_origin_target_args())
+def test_invalid_parameters(args):
+    with instance_for_test() as instance:
+        with pytest.raises(
+            UsageError,
+            match=re.escape("Invalid set of CLI arguments for loading repository/pipeline"),
+        ):
+            execute_execute_command(
+                kwargs=args, instance=instance,
             )
 
 
@@ -508,7 +545,6 @@ def test_execute_subset_pipeline_invalid():
 
 def test_empty_working_directory():
     runner = CliRunner()
-    import os
 
     with instance_for_test() as instance:
         with new_cwd(os.path.dirname(__file__)):
