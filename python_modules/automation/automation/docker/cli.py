@@ -101,7 +101,12 @@ def push_dockerhub(name, dagster_version):
     succeed.
     """
 
-    check.invariant(dagster_version == current_dagster_version)
+    check.invariant(
+        dagster_version == current_dagster_version,
+        desc="Current dagster version ({}) does not match provided arg ({})".format(
+            current_dagster_version, dagster_version
+        ),
+    )
 
     image = DagsterDockerImage(name)
 

@@ -144,8 +144,12 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm")):
     def build(self, timestamp, dagster_version, python_version):
         check.str_param(timestamp, "timestamp")
         check.str_param(python_version, "python_version")
-        check.invariant(dagster_version == current_dagster_version)
-
+        check.invariant(
+            dagster_version == current_dagster_version,
+            desc="Current dagster version ({}) does not match provided arg ({})".format(
+                current_dagster_version, dagster_version
+            ),
+        )
         with self.build_cm(self.path):
             self._set_last_updated_for_python_version(timestamp, python_version)
 
