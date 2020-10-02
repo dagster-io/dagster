@@ -34,8 +34,8 @@ def is_phab_and_dagit_only():
         subprocess.check_call(["git", "fetch", "--tags"])
         diff_files = (
             str(subprocess.check_output(["git", "diff", base_branch, branch_name, "--name-only"]))
-            .strip("'b\\n")
-            .split("\\n")
+            .strip("'b\n")
+            .split("\n")
         )
         return all(filepath.startswith(DAGIT_PATH) for (filepath) in diff_files)
 
