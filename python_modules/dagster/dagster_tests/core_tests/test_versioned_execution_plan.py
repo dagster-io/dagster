@@ -72,6 +72,16 @@ def versioned_pipeline():
     return versioned_solid_takes_input(versioned_solid_no_input())
 
 
+@solid
+def solid_takes_input(_, intput):
+    return 2 * intput
+
+
+@pipeline
+def partially_versioned_pipeline():
+    return solid_takes_input(versioned_solid_no_input())
+
+
 def versioned_pipeline_expected_step1_version():
     solid1_def_version = versioned_solid_no_input.version
     solid1_config_version = resolve_config_version(None)
@@ -146,20 +156,19 @@ def basic_takes_input_solid(_, intpt):
 
 
 @pipeline
-def default_version_pipeline():
+def no_version_pipeline():
     return basic_takes_input_solid(basic_solid())
 
 
 def test_default_unmemoized_steps():
-    speculative_execution_plan = create_execution_plan(default_version_pipeline)
+    speculative_execution_plan = create_execution_plan(no_version_pipeline)
 
     instance = DagsterInstance.ephemeral()
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
-            "While creating a memoized pipeline run, a version is None for step "
-            "(basic_takes_input_solid.compute|basic_solid.compute). Versions must be non-null "
-            "values when running a memoized pipeline."
+            "While creating a memoized pipeline run, no steps have versions. At least one step "
+            "must have a version."
         ),
     ):
         instance.resolve_unmemoized_steps(speculative_execution_plan, run_config={}, mode="default")
@@ -188,6 +197,20 @@ def test_resolve_unmemoized_steps_yes_stored_results():
     assert instance.resolve_unmemoized_steps(
         speculative_execution_plan, run_config={}, mode="default"
     ) == ["versioned_solid_takes_input.compute"]
+
+
+def test_resolve_unmemoized_steps_partial_versioning():
+    speculative_execution_plan = create_execution_plan(partially_versioned_pipeline)
+    step_output_handle = StepOutputHandle("versioned_solid_no_input.compute", "result")
+
+    instance = DagsterInstance.ephemeral()
+    instance.get_addresses_for_step_output_versions = mock.MagicMock(
+        return_value={(partially_versioned_pipeline.name, step_output_handle): "some_address"}
+    )
+
+    assert instance.resolve_unmemoized_steps(
+        speculative_execution_plan, run_config={}, mode="default"
+    ) == ["solid_takes_input.compute"]
 
 
 def test_versioned_execution_plan_no_external_dependencies():  # TODO: flesh out this test once version storage has been implemented
@@ -309,7 +332,7 @@ def test_step_keys_already_provided():
     ):
         instance = DagsterInstance.ephemeral()
         instance.create_run_for_pipeline(
-            pipeline_def=default_version_pipeline,
+            pipeline_def=no_version_pipeline,
             tags={MEMOIZED_RUN_TAG: "true"},
             step_keys_to_execute=["basic_takes_input_solid.compute"],
         )

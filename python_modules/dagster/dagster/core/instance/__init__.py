@@ -501,18 +501,17 @@ class DagsterInstance:
         step_output_versions = resolve_step_output_versions(
             execution_plan, run_config=run_config, mode=mode
         )
+        if all(version is None for version in step_output_versions.values()):
+            raise DagsterInvariantViolationError(
+                "While creating a memoized pipeline run, no steps have versions. At least one step "
+                "must have a version."
+            )
 
-        for step_output_handle, version in step_output_versions.items():
-            if version is None:
-                raise DagsterInvariantViolationError(
-                    "While creating a memoized pipeline run, a version is None for step "
-                    "{step_output}. Versions must be non-null values when running a memoized "
-                    "pipeline.".format(step_output=step_output_handle.step_key)
-                )
         step_output_addresses = self.get_addresses_for_step_output_versions(
             {
                 (pipeline_name, step_output_handle): version
                 for step_output_handle, version in step_output_versions.items()
+                if version
             }
         )
 
