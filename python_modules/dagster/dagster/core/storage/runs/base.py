@@ -41,7 +41,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):
 
         Args:
             filters (Optional[PipelineRunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
+                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunsFilter` by which to filter
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
@@ -88,7 +88,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):
 
         Args:
             filter (Optional[PipelineRunsFilter]) -- The
-                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunFilter` by which to filter
+                :py:class:`~dagster.core.storage.pipeline_run.PipelineRunsFilter` by which to filter
                 runs
             cursor (Optional[str]): Starting cursor (run_id) of range of runs
             limit (Optional[int]): Number of results to get. Defaults to infinite.
