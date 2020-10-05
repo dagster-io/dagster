@@ -14,7 +14,7 @@ from .cli import DEFAULT_DAGIT_HOST, DEFAULT_DAGIT_PORT, host_dagit_ui_with_work
     name="debug",
     help="Load dagit with an ephemeral instance loaded from a dagster debug export file.",
 )
-@click.argument("input_file", type=click.Path(exists=True))
+@click.argument("input_files", nargs=-1, type=click.Path(exists=True))
 @click.option(
     "--port",
     "-p",
@@ -22,21 +22,24 @@ from .cli import DEFAULT_DAGIT_HOST, DEFAULT_DAGIT_PORT, host_dagit_ui_with_work
     help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
     default=DEFAULT_DAGIT_PORT,
 )
-def dagit_debug_command(input_file, port):
-    click.echo("Loading {} ...".format(input_file))
-    with GzipFile(input_file, "rb") as file:
-        blob = file.read().decode()
-        debug_payload = deserialize_json_to_dagster_namedtuple(blob)
+def dagit_debug_command(input_files, port):
+    debug_payloads = []
+    for input_file in input_files:
+        click.echo("Loading {} ...".format(input_file))
+        with GzipFile(input_file, "rb") as file:
+            blob = file.read().decode()
+            debug_payload = deserialize_json_to_dagster_namedtuple(blob)
 
-        check.invariant(isinstance(debug_payload, DebugRunPayload))
+            check.invariant(isinstance(debug_payload, DebugRunPayload))
 
-        click.echo(
-            "Creating instance from debug payload \n\trun_id: {} \n\tdagster version: {}".format(
-                debug_payload.pipeline_run.run_id, debug_payload.version
+            click.echo(
+                "\trun_id: {} \n\tdagster version: {}".format(
+                    debug_payload.pipeline_run.run_id, debug_payload.version
+                )
             )
-        )
+            debug_payloads.append(debug_payload)
 
-    instance = DagsterInstance.ephemeral(preload=debug_payload)
+    instance = DagsterInstance.ephemeral(preload=debug_payloads)
     host_dagit_ui_with_workspace(
         workspace=Workspace([]),
         instance=instance,
