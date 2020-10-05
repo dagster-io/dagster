@@ -640,7 +640,7 @@ def dagit_steps():
             "cd js_modules/dagit",
             "yarn install",
             "yarn run ts",
-            "yarn run jest",
+            "yarn run jest --collectCoverage",
             "yarn run check-prettier",
             "yarn run check-lint",
             "yarn run download-schema",
