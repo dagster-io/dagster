@@ -16,12 +16,15 @@ from dagster import (
     Int,
     Permissive,
     Selector,
+    Shape,
     String,
     TypeCheck,
     check,
     dagster_type_loader,
     dagster_type_materializer,
 )
+
+from .utils import DataFrameUtilities, apply_utilities_to_df
 
 WriteCompressionTextOptions = Enum(
     "WriteCompressionText", [EnumValue("gzip"), EnumValue("bz2"), EnumValue("xz"),],
@@ -350,9 +353,13 @@ def _dataframe_loader_config():
         for read_from, read_opts in DataFrameReadTypes.items()
     }
 
-    return Selector(
+    return Shape(
         {
             "read": Field(Selector(read_fields), is_required=False,),
+            **{
+                util_name: util_spec["options"]
+                for util_name, util_spec in DataFrameUtilities.items()
+            },
             # https://github.com/dagster-io/dagster/issues/2872
             **{
                 field_name: Field(field_config, is_required=False,)
@@ -395,7 +402,10 @@ def dataframe_loader(_context, config):
     read_args = [read_options.pop("path")] if read_meta.get("is_path_based", False) else []
     read_kwargs = read_options
 
+    # Read the dataframe and apply any utility functions
     df = read_function(*read_args, **read_kwargs)
+    df = apply_utilities_to_df(df, config)
+    df = df.persist()
 
     return df
 
@@ -413,9 +423,13 @@ def _dataframe_materializer_config():
         for write_to, to_opts in DataFrameToTypes.items()
     }
 
-    return Selector(
+    return Shape(
         {
             "to": Field(Selector(to_fields), is_required=False,),
+            **{
+                util_name: util_spec["options"]
+                for util_name, util_spec in DataFrameUtilities.items()
+            },
             # https://github.com/dagster-io/dagster/issues/2872
             **{
                 field_name: Field(field_config, is_required=False,)
@@ -442,6 +456,11 @@ def dataframe_materializer(_context, config, dask_df):
         for key in to_specs.keys():
             warnings.warn("Specifying {key}: is deprecated. Use to:{key}: instead.".format(key=key))
 
+    # Apply any utility functions in preparation for materialization
+    dask_df = apply_utilities_to_df(dask_df, config)
+    dask_df = dask_df.persist()
+
+    # Materialize to specified types
     for to_type, to_options in to_specs.items():
         if not to_type in DataFrameToTypes:
             check.failed("Unsupported to_type {to_type}".format(to_type=to_type))
