@@ -148,10 +148,6 @@ def monthly_schedule(
     fmt = "%Y-%m"
     delta = relativedelta(months=1)
 
-    execution_offset = relativedelta(
-        days=execution_day_of_month - 1, hours=execution_time.hour, minutes=execution_time.minute,
-    )
-
     partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
 
     def inner(fn):
@@ -178,7 +174,7 @@ def monthly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(delta + execution_offset, fmt),
+            partition_selector=create_default_partition_selector_fn(delta, fmt),
         )
 
     return inner
@@ -254,9 +250,7 @@ def weekly_schedule(
 
     day_difference = (execution_day_of_week - start_date.weekday()) % 7
 
-    execution_offset = relativedelta(
-        days=day_difference, hours=execution_time.hour, minutes=execution_time.minute
-    )
+    execution_offset = relativedelta(days=day_difference)
 
     partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
 
@@ -346,10 +340,9 @@ def daily_schedule(
     )
 
     delta = datetime.timedelta(days=1)
+    fmt = "%Y-%m-%d"
 
     partition_fn = date_partition_range(start_date, end=end_date, delta=delta)
-
-    execution_offset = datetime.timedelta(hours=execution_time.hour, minutes=execution_time.minute)
 
     def inner(fn):
         check.callable_param(fn, "fn")
@@ -375,7 +368,7 @@ def daily_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(delta + execution_offset),
+            partition_selector=create_default_partition_selector_fn(fmt=fmt, delta=delta),
         )
 
     return inner
@@ -477,7 +470,13 @@ def hourly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(delta + execution_offset, fmt),
+            partition_selector=create_default_partition_selector_fn(
+                delta + execution_offset,
+                fmt,
+                # Express hourly partitions in UTC so that they don't change
+                # depending on what timezone the schedule runs in
+                partition_in_utc=True,
+            ),
         )
 
     return inner

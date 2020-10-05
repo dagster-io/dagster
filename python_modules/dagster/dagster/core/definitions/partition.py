@@ -1,6 +1,7 @@
 from collections import namedtuple
 from datetime import timedelta
 
+import pendulum
 from dateutil.relativedelta import relativedelta
 
 from dagster import check
@@ -34,23 +35,37 @@ class Partition(namedtuple("_Partition", ("value name"))):
         )
 
 
-def create_default_partition_selector_fn(delta=timedelta(days=1), fmt=DEFAULT_DATE_FORMAT):
+def create_default_partition_selector_fn(
+    delta=timedelta(days=1), fmt=DEFAULT_DATE_FORMAT, partition_in_utc=False
+):
     check.inst_param(delta, "timedelta", (timedelta, relativedelta))
     check.str_param(fmt, "fmt")
 
-    def inner(context, partition_set_def):
+    def default_partition_selector(context, partition_set_def):
         check.inst_param(context, "context", ScheduleExecutionContext)
         check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
 
-        if not context.scheduled_execution_time_utc:
+        if not context.scheduled_execution_time:
             return last_partition(context, partition_set_def)
 
         # The tick at a given datetime corresponds to the time for the previous partition
         # e.g. midnight on 12/31 is actually the 12/30 partition
-        partition_time = context.scheduled_execution_time_utc - delta
-        return Partition(value=partition_time, name=partition_time.strftime(fmt))
 
-    return inner
+        if partition_in_utc:
+            partition_time = (
+                pendulum.instance(context.scheduled_execution_time).in_tz("UTC") - delta
+            )
+        else:
+            partition_time = context.scheduled_execution_time - delta
+
+        partition_name = partition_time.strftime(fmt)
+
+        if not partition_name in partition_set_def.get_partition_names():
+            return None
+
+        return partition_set_def.get_partition(partition_name)
+
+    return default_partition_selector
 
 
 def last_partition(context, partition_set_def):
@@ -228,7 +243,7 @@ class PartitionSetDefinition(
         def _run_config_fn_wrapper(context):
             check.inst_param(context, "context", ScheduleExecutionContext)
             selected_partition = partition_selector(context, self)
-            if not selected_partition:
+            if not selected_partition or not selected_partition.name in self.get_partition_names():
                 raise DagsterInvariantViolationError(
                     "The partition selection function `{selector}` did not return "
                     "a partition from PartitionSet {partition_set}".format(

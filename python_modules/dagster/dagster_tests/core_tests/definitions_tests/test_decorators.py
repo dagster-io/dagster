@@ -317,8 +317,8 @@ def test_scheduler():
         return {
             "echo_time": (
                 (
-                    context.scheduled_execution_time_utc.isoformat()
-                    if context.scheduled_execution_time_utc
+                    context.scheduled_execution_time.isoformat()
+                    if context.scheduled_execution_time
                     else ""
                 )
             )
@@ -406,7 +406,7 @@ def test_partitions_for_hourly_schedule_decorators():
         assert hourly_foo_schedule.should_execute(context_without_time)
 
         # time that's invalid since it corresponds to a partition that hasn't happened yet
-        # should still generate run config, but should not execute
+        # should not execute and should throw if it tries to generate run config
         execution_time_with_invalid_partition = datetime(
             year=2019, month=2, day=27, hour=3, minute=25
         )
@@ -414,11 +414,13 @@ def test_partitions_for_hourly_schedule_decorators():
             instance, execution_time_with_invalid_partition
         )
 
-        assert hourly_foo_schedule.get_run_config(context_with_invalid_time) == {
-            "hourly_time": datetime(year=2019, month=2, day=27, hour=2, minute=1).isoformat()
-        }
-
         assert not hourly_foo_schedule.should_execute(context_with_invalid_time)
+
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="The partition selection function `default_partition_selector` did not return a partition from PartitionSet hourly_foo_schedule_partitions",
+        ):
+            hourly_foo_schedule.get_run_config(context_with_invalid_time)
 
         valid_time = datetime(year=2019, month=1, day=27, hour=1, minute=25)
         context_with_valid_time = ScheduleExecutionContext(instance, valid_time)

@@ -79,8 +79,8 @@ def define_bar_schedules():
             cron_schedule="* * * * *",
             pipeline_name="test_pipeline",
             run_config_fn=lambda context: {
-                "passed_in_time": context.scheduled_execution_time_utc.isoformat()
-                if context.scheduled_execution_time_utc
+                "passed_in_time": context.scheduled_execution_time.isoformat()
+                if context.scheduled_execution_time
                 else ""
             },
         ),

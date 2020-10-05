@@ -1,4 +1,4 @@
-from datetime import datetime
+import pendulum
 
 from dagster import check
 from dagster.core.host_representation.external_data import (
@@ -8,7 +8,6 @@ from dagster.core.host_representation.external_data import (
 from dagster.core.host_representation.handle import RepositoryHandle
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.types import ExternalScheduleExecutionArgs, ScheduleExecutionDataMode
-from dagster.seven import get_timestamp_from_utc_datetime
 
 from .utils import execute_unary_api_cli_command
 
@@ -18,14 +17,12 @@ def sync_get_external_schedule_execution_data(
     repository_handle,
     schedule_name,
     schedule_execution_data_mode,
-    scheduled_execution_datetime_utc,
+    scheduled_execution_time,
 ):
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(schedule_name, "schedule_name")
-    check.opt_inst_param(
-        scheduled_execution_datetime_utc, "scheduled_execution_datetime_utc", datetime
-    )
+    check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", pendulum.Pendulum)
     check.inst_param(
         schedule_execution_data_mode, "schedule_execution_data_mode", ScheduleExecutionDataMode
     )
@@ -40,12 +37,13 @@ def sync_get_external_schedule_execution_data(
                 repository_origin=origin,
                 instance_ref=instance.get_ref(),
                 schedule_name=schedule_name,
-                scheduled_execution_timestamp_utc=(
-                    get_timestamp_from_utc_datetime(scheduled_execution_datetime_utc)
-                    if scheduled_execution_datetime_utc
-                    else None
-                ),
                 schedule_execution_data_mode=schedule_execution_data_mode,
+                scheduled_execution_timestamp=scheduled_execution_time.timestamp()
+                if scheduled_execution_time
+                else None,
+                scheduled_execution_timezone=scheduled_execution_time.timezone.name
+                if scheduled_execution_time
+                else None,
             ),
         ),
         (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
@@ -57,7 +55,7 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
     repository_handle,
     schedule_name,
     schedule_execution_data_mode,
-    scheduled_execution_datetime_utc,
+    scheduled_execution_time,
 ):
     from dagster.grpc.client import ephemeral_grpc_api_client
 
@@ -71,7 +69,7 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
             repository_handle,
             schedule_name,
             schedule_execution_data_mode,
-            scheduled_execution_datetime_utc,
+            scheduled_execution_time,
         )
 
 
@@ -81,16 +79,14 @@ def sync_get_external_schedule_execution_data_grpc(
     repository_handle,
     schedule_name,
     schedule_execution_data_mode,
-    scheduled_execution_datetime_utc,
+    scheduled_execution_time,
 ):
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(schedule_name, "schedule_name")
-    check.opt_inst_param(
-        scheduled_execution_datetime_utc, "scheduled_execution_datetime_utc", datetime
-    )
     check.inst_param(
         schedule_execution_data_mode, "schedule_execution_data_mode", ScheduleExecutionDataMode
     )
+    check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", pendulum.Pendulum)
 
     origin = repository_handle.get_origin()
 
@@ -100,12 +96,13 @@ def sync_get_external_schedule_execution_data_grpc(
                 repository_origin=origin,
                 instance_ref=instance.get_ref(),
                 schedule_name=schedule_name,
-                scheduled_execution_timestamp_utc=(
-                    get_timestamp_from_utc_datetime(scheduled_execution_datetime_utc)
-                    if scheduled_execution_datetime_utc
-                    else None
-                ),
                 schedule_execution_data_mode=schedule_execution_data_mode,
+                scheduled_execution_timestamp=scheduled_execution_time.timestamp()
+                if scheduled_execution_time
+                else None,
+                scheduled_execution_timezone=scheduled_execution_time.timezone.name
+                if scheduled_execution_time
+                else None,
             )
         ),
         (ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),

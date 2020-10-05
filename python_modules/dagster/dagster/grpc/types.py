@@ -209,7 +209,7 @@ class ExternalScheduleExecutionArgs(
     namedtuple(
         "_ExternalScheduleExecutionArgs",
         "repository_origin instance_ref schedule_name schedule_execution_data_mode "
-        "scheduled_execution_timestamp_utc",
+        "scheduled_execution_timestamp scheduled_execution_timezone",
     )
 ):
     def __new__(
@@ -218,7 +218,8 @@ class ExternalScheduleExecutionArgs(
         instance_ref,
         schedule_name,
         schedule_execution_data_mode,
-        scheduled_execution_timestamp_utc,
+        scheduled_execution_timestamp=None,
+        scheduled_execution_timezone=None,
     ):
         return super(ExternalScheduleExecutionArgs, cls).__new__(
             cls,
@@ -232,8 +233,11 @@ class ExternalScheduleExecutionArgs(
                 "schedule_execution_data_mode",
                 ScheduleExecutionDataMode,
             ),
-            scheduled_execution_timestamp_utc=check.opt_float_param(
-                scheduled_execution_timestamp_utc, "scheduled_execution_timestamp_utc"
+            scheduled_execution_timestamp=check.opt_float_param(
+                scheduled_execution_timestamp, "scheduled_execution_timestamp"
+            ),
+            scheduled_execution_timezone=check.opt_str_param(
+                scheduled_execution_timezone, "scheduled_execution_timezone",
             ),
         )
 

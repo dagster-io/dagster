@@ -6,7 +6,7 @@ from enum import Enum
 
 import six
 
-from dagster import check
+from dagster import Field, String, check
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
@@ -435,10 +435,9 @@ class DagsterCommandLineScheduler(Scheduler, ConfigurableClass):
     long-lived process.
     """
 
-    def __init__(
-        self, inst_data=None,
-    ):
+    def __init__(self, inst_data=None, default_timezone_str="UTC"):
         self._inst_data = inst_data
+        self.default_timezone_str = default_timezone_str
 
     @property
     def inst_data(self):
@@ -446,11 +445,15 @@ class DagsterCommandLineScheduler(Scheduler, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {}
+        return {"default_timezone": Field(String, is_required=False, default_value="UTC")}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return DagsterCommandLineScheduler(inst_data=inst_data)
+        default_timezone = config_value.get("default_timezone")
+        return DagsterCommandLineScheduler(
+            inst_data=inst_data,
+            default_timezone_str=default_timezone if default_timezone else "UTC",
+        )
 
     def debug_info(self):
         return ""

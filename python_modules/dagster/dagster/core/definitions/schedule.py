@@ -13,7 +13,7 @@ from .utils import check_for_invalid_name_and_warn
 
 
 class ScheduleExecutionContext(
-    namedtuple("ScheduleExecutionContext", "instance scheduled_execution_time_utc")
+    namedtuple("ScheduleExecutionContext", "instance scheduled_execution_time")
 ):
     """Schedule-specific execution context.
 
@@ -23,21 +23,19 @@ class ScheduleExecutionContext(
 
     Attributes:
         instance (DagsterInstance): The instance configured to run the schedule
-        scheduled_execution_time_utc (datetime):
-            The time in UTC in which the execution was scheduled to happen. May differ slightly
+        scheduled_execution_time (datetime):
+            The time in which the execution was scheduled to happen. May differ slightly
             from both the actual execution time and the time at which the run config is computed.
     """
 
     def __new__(
-        cls, instance, scheduled_execution_time_utc,
+        cls, instance, scheduled_execution_time,
     ):
 
         return super(ScheduleExecutionContext, cls).__new__(
             cls,
             check.inst_param(instance, "instance", DagsterInstance),
-            check.opt_inst_param(
-                scheduled_execution_time_utc, "scheduled_execution_time_utc", datetime
-            ),
+            check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", datetime),
         )
 
 
