@@ -10,7 +10,7 @@ from dagster import check
 
 from .dagster_docker import DagsterDockerImage
 
-DAGSTER_REPO = os.environ["DAGSTER_REPO"] or git_repo_root()
+DAGSTER_REPO = git_repo_root()
 
 
 @contextlib.contextmanager
