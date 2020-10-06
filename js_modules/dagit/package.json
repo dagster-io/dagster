@@ -60,6 +60,12 @@
     "@babel/plugin-proposal-optional-chaining": "^7.6.0",
     "@babel/preset-env": "^7.7.1",
     "@babel/preset-typescript": "^7.7.2",
+    "@storybook/addon-actions": "^6.0.26",
+    "@storybook/addon-essentials": "^6.0.26",
+    "@storybook/addon-links": "^6.0.26",
+    "@storybook/node-logger": "^6.0.26",
+    "@storybook/preset-create-react-app": "^3.1.4",
+    "@storybook/react": "^6.0.26",
     "@types/chart.js": "^2.9.24",
     "@types/codemirror": "^0.0.80",
     "@types/color": "^3.0.0",
@@ -96,6 +102,7 @@
     "eslint-plugin-react-hooks": "^4.0.8",
     "prettier": "2.1.1",
     "pretty": "^2.0.0",
+    "react-is": "^16.13.1",
     "react-scripts": "3.4.3",
     "react-test-renderer": "^16.11.0",
     "ts-node": "^8.4.1",
@@ -117,7 +124,9 @@
     "download-mocks": "jest -i --collectCoverage=false --testRegex='src/scripts/DownloadMocks.ts'",
     "download-schema": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/DownloadSchema.ts",
     "generate-types": "find src -type d -name types | xargs rm -r && apollo codegen:generate --includes \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python append_generated.py",
-    "watch-types": "apollo codegen:generate --includes \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql  --globalTypesFile ./src/types/globalTypes.ts --watch"
+    "watch-types": "apollo codegen:generate --includes \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql  --globalTypesFile ./src/types/globalTypes.ts --watch",
+    "storybook": "start-storybook -p 6006 -s public",
+    "build-storybook": "build-storybook -s public"
   },
   "jest": {
     "collectCoverageFrom": [
