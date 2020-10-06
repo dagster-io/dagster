@@ -1,11 +1,10 @@
-import {Checkbox, Colors, Icon, InputGroup} from '@blueprintjs/core';
+import {Breadcrumbs, Checkbox, Colors, Icon, InputGroup} from '@blueprintjs/core';
 import Color from 'color';
 import gql from 'graphql-tag';
 import {History} from 'history';
 import * as querystring from 'query-string';
 import * as React from 'react';
 import {Route} from 'react-router';
-import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from 'src/GraphQueryImpl';
@@ -162,26 +161,23 @@ export class PipelineExplorer extends React.Component<
         first={
           <>
             <PathOverlay style={{background: backgroundTranslucent}} ref={this.pathOverlayEl}>
-              {explorerPath.pathSolids
-                .slice(0, explorerPath.pathSolids.length - 1)
-                .map((name, idx) => (
-                  <React.Fragment key={idx}>
-                    <Link
-                      style={{padding: 3}}
-                      to={`/pipeline/${explorerPathToString({
-                        ...explorerPath,
-                        pathSolids: explorerPath.pathSolids.slice(0, idx + 1),
-                      })}`}
-                    >
-                      {name}
-                    </Link>
-                    <Icon icon="chevron-right" />
-                  </React.Fragment>
-                ))}
-              <SolidJumpBar
-                solids={queryResultSolids.all}
-                selectedSolid={selectedHandle && selectedHandle.solid}
-                onChange={(solid) => this.handleClickSolid({name: solid.name})}
+              <Breadcrumbs
+                items={explorerPath.pathSolids.map((name, idx) => {
+                  return {
+                    text: name,
+                    href: `/pipeline/${explorerPathToString({
+                      ...explorerPath,
+                      pathSolids: explorerPath.pathSolids.slice(0, idx + 1),
+                    })}`,
+                  };
+                })}
+                currentBreadcrumbRenderer={() => (
+                  <SolidJumpBar
+                    solids={queryResultSolids.all}
+                    selectedSolid={selectedHandle && selectedHandle.solid}
+                    onChange={(solid) => this.handleClickSolid({name: solid.name})}
+                  />
+                )}
               />
             </PathOverlay>
             {solidsQueryEnabled && (

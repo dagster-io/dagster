@@ -68,6 +68,7 @@ const StringSelectNoIntrinsicWidth = styled(Select.ofType<string>())`
   }
   & .bp3-button {
     max-width: 100%;
+    white-space: nowrap;
   }
   & .bp3-button-text {
     min-width: 0;

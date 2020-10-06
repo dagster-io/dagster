@@ -1495,51 +1495,60 @@ exports[`renders pipeline page 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
@@ -6243,51 +6252,60 @@ exports[`renders pipeline solid page 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
@@ -12854,51 +12872,60 @@ exports[`renders type page 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
@@ -17602,51 +17629,60 @@ exports[`renders type page 2`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
@@ -22350,51 +22386,60 @@ exports[`renders without error 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
