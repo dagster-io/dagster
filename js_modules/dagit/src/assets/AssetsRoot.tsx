@@ -38,7 +38,7 @@ export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({match}
   }
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', width: '100%'}}>
+    <div style={{display: 'flex', flexDirection: 'column', width: '100%', overflow: 'auto'}}>
       <TopNav breadcrumbs={breadcrumbs} />
       <div style={{flexGrow: 1}}>
         <Loading queryResult={queryResult}>
