@@ -879,6 +879,7 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
     pipeline_name = dauphin.Field(dauphin.String)
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
     status = dauphin.Field(DauphinPipelineRunStatus)
+    snapshot_id = dauphin.Field(dauphin.String)
 
     def to_selector(self):
         if self.status:
@@ -894,7 +895,11 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
 
         run_ids = [self.run_id] if self.run_id else []
         return PipelineRunsFilter(
-            run_ids=run_ids, pipeline_name=self.pipeline_name, tags=tags, status=status,
+            run_ids=run_ids,
+            pipeline_name=self.pipeline_name,
+            tags=tags,
+            status=status,
+            snapshot_id=self.snapshot_id,
         )
 
 

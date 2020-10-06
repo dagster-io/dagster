@@ -110,6 +110,7 @@ export interface PipelineRunsFilter {
   pipelineName?: string | null;
   tags?: ExecutionTag[] | null;
   status?: PipelineRunStatus | null;
+  snapshotId?: string | null;
 }
 
 export interface PipelineSelector {

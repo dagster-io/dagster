@@ -90,6 +90,9 @@ class InMemoryRunStorage(RunStorage):
             ):
                 return False
 
+            if filters.snapshot_id and filters.snapshot_id != run.pipeline_snapshot_id:
+                return False
+
             return True
 
         matching_runs = list(filter(run_filter, reversed(self._runs.values())))

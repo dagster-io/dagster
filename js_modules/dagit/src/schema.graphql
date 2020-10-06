@@ -921,6 +921,7 @@ input PipelineRunsFilter {
   pipelineName: String
   tags: [ExecutionTag!]
   status: PipelineRunStatus
+  snapshotId: String
 }
 
 union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | PythonError

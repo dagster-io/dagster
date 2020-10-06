@@ -173,6 +173,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             if len(filters.tags) > 0:
                 query = query.having(db.func.count(RunsTable.c.run_id) == len(filters.tags))
 
+        if filters.snapshot_id:
+            query = query.where(RunsTable.c.snapshot_id == filters.snapshot_id)
+
         return query
 
     def _runs_query(self, filters=None, cursor=None, limit=None, columns=None):

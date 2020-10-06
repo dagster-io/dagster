@@ -43,6 +43,7 @@ class TestRunStorage:
         status=PipelineRunStatus.NOT_STARTED,
         parent_run_id=None,
         root_run_id=None,
+        pipeline_snapshot_id=None,
     ):
         return PipelineRun(
             pipeline_name=pipeline_name,
@@ -53,6 +54,7 @@ class TestRunStorage:
             status=status,
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
+            pipeline_snapshot_id=pipeline_snapshot_id,
         )
 
     def test_basic_storage(self, storage):
@@ -94,6 +96,43 @@ class TestRunStorage:
         some_runs = storage.get_runs(PipelineRunsFilter(pipeline_name="some_pipeline"))
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
+
+    def test_fetch_by_snapshot_id(self, storage):
+        assert storage
+        pipeline_def_a = PipelineDefinition(name="some_pipeline", solid_defs=[])
+        pipeline_def_b = PipelineDefinition(name="some_other_pipeline", solid_defs=[])
+        pipeline_snapshot_a = pipeline_def_a.get_pipeline_snapshot()
+        pipeline_snapshot_b = pipeline_def_b.get_pipeline_snapshot()
+        pipeline_snapshot_a_id = create_pipeline_snapshot_id(pipeline_snapshot_a)
+        pipeline_snapshot_b_id = create_pipeline_snapshot_id(pipeline_snapshot_b)
+
+        assert storage.add_pipeline_snapshot(pipeline_snapshot_a) == pipeline_snapshot_a_id
+        assert storage.add_pipeline_snapshot(pipeline_snapshot_b) == pipeline_snapshot_b_id
+
+        one = make_new_run_id()
+        two = make_new_run_id()
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one,
+                pipeline_name="some_pipeline",
+                pipeline_snapshot_id=pipeline_snapshot_a_id,
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=two,
+                pipeline_name="some_other_pipeline",
+                pipeline_snapshot_id=pipeline_snapshot_b_id,
+            )
+        )
+        assert len(storage.get_runs()) == 2
+        runs_a = storage.get_runs(PipelineRunsFilter(snapshot_id=pipeline_snapshot_a_id))
+        assert len(runs_a) == 1
+        assert runs_a[0].run_id == one
+
+        runs_b = storage.get_runs(PipelineRunsFilter(snapshot_id=pipeline_snapshot_b_id))
+        assert len(runs_b) == 1
+        assert runs_b[0].run_id == two
 
     def test_add_run_tags(self, storage):
         assert storage
