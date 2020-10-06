@@ -5,6 +5,10 @@ import pytest
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.host_representation.handle import (
+    UserProcessApi,
+    python_user_process_api_from_instance,
+)
 from dagster.core.instance import DagsterInstance, _dagster_home
 from dagster.core.snap import (
     create_execution_plan_snapshot_id,
@@ -151,3 +155,18 @@ def test_dagster_home_not_dir():
             ),
         ):
             _dagster_home()
+
+
+def test_default_user_process_api():
+    with instance_for_test() as instance:
+        assert python_user_process_api_from_instance(instance) == UserProcessApi.GRPC
+
+
+def test_manually_set_grpc_instance():
+    with instance_for_test(overrides={"opt_in": {"local_servers": True}}) as instance:
+        assert python_user_process_api_from_instance(instance) == UserProcessApi.GRPC
+
+
+def test_manually_set_cli_api_instance():
+    with instance_for_test(overrides={"opt_in": {"local_servers": False}}) as instance:
+        assert python_user_process_api_from_instance(instance) == UserProcessApi.CLI

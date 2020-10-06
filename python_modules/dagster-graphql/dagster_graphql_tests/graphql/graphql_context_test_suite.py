@@ -10,6 +10,7 @@ from dagster import check, file_relative_path, seven
 from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import RepositoryLocationHandle
+from dagster.core.host_representation.handle import UserProcessApi
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
@@ -282,7 +283,9 @@ class EnvironmentManagers:
             with Workspace(
                 [
                     RepositoryLocationHandle.create_python_env_location(
-                        loadable_target_origin=loadable_target_origin, location_name="test",
+                        loadable_target_origin=loadable_target_origin,
+                        location_name="test",
+                        user_process_api=UserProcessApi.CLI,
                     )
                 ]
             ) as workspace:

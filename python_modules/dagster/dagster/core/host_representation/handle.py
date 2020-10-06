@@ -64,9 +64,9 @@ def python_user_process_api_from_instance(instance):
 
     opt_in_settings = instance.get_settings("opt_in")
     return (
-        UserProcessApi.GRPC
-        if (opt_in_settings and opt_in_settings["local_servers"])
-        else UserProcessApi.CLI
+        UserProcessApi.CLI
+        if (opt_in_settings and not opt_in_settings["local_servers"])
+        else UserProcessApi.GRPC
     )
 
 
@@ -117,7 +117,7 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
     def create_python_env_location(
         loadable_target_origin,
         location_name=None,
-        user_process_api=UserProcessApi.CLI,
+        user_process_api=UserProcessApi.GRPC,
         use_python_package=False,
     ):
         check.inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)

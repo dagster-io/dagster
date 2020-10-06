@@ -104,6 +104,7 @@ def test_giant_external_repository():
             attribute="giant_repo",
         ),
         location_name="giant_repo_location",
+        user_process_api=UserProcessApi.CLI,
     )
     external_repos = sync_get_external_repositories(repository_location_handle)
 

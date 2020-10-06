@@ -1,7 +1,15 @@
+import sys
+
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import repository
-from dagster.core.host_representation import external_repository_data_from_def
+from dagster.core.code_pointer import CodePointer
+from dagster.core.host_representation import (
+    ExternalRepository,
+    RepositoryHandle,
+    external_repository_data_from_def,
+)
+from dagster.grpc.types import ListRepositoriesResponse
 from dagster.seven import mock
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
@@ -31,26 +39,51 @@ class TestReloadRepositoriesOutOfProcess(
             # note it where the function is *used* that needs to mocked, not
             # where it is defined.
             # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
-            "dagster.api.snapshot_repository.execute_unary_api_cli_command"
+            "dagster.core.host_representation.handle.sync_list_repositories_grpc"
         ) as cli_command_mock:
 
-            @repository
-            def new_repo():
-                return []
+            with mock.patch(
+                # note it where the function is *used* that needs to mocked, not
+                # where it is defined.
+                # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
+                "dagster.core.host_representation.repository_location.sync_get_streaming_external_repositories_grpc"
+            ) as external_repository_mock:
 
-            new_repo_data = external_repository_data_from_def(new_repo)
+                @repository
+                def new_repo():
+                    return []
 
-            cli_command_mock.return_value = new_repo_data
+                new_repo_data = external_repository_data_from_def(new_repo)
 
-            result = execute_dagster_graphql(
-                graphql_context,
-                RELOAD_REPOSITORY_LOCATION_QUERY,
-                {"repositoryLocationName": "test"},
-            )
+                external_repository_mock.return_value = [
+                    ExternalRepository(
+                        new_repo_data,
+                        RepositoryHandle(
+                            "new_repo", graphql_context.repository_locations[0].location_handle
+                        ),
+                    )
+                ]
 
-            assert cli_command_mock.call_count == 1
+                cli_command_mock.return_value = ListRepositoriesResponse(
+                    repository_symbols=[],
+                    executable_path=sys.executable,
+                    repository_code_pointer_dict={
+                        "new_repo": CodePointer.from_python_file(__file__, "new_repo", None)
+                    },
+                )
 
-            assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "new_repo"}]
+                result = execute_dagster_graphql(
+                    graphql_context,
+                    RELOAD_REPOSITORY_LOCATION_QUERY,
+                    {"repositoryLocationName": "test"},
+                )
+
+                assert cli_command_mock.call_count == 1
+                assert external_repository_mock.call_count == 1
+
+                assert result.data["reloadRepositoryLocation"]["repositories"] == [
+                    {"name": "new_repo"}
+                ]
 
 
 class TestReloadRepositoriesInProcess(

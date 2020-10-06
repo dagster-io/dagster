@@ -9,6 +9,7 @@ from dagster.cli.workspace import Workspace
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import RepositoryLocationHandle
+from dagster.core.host_representation.handle import UserProcessApi
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
@@ -65,6 +66,7 @@ def define_out_of_process_context(python_file, fn_name, instance):
                         executable_path=sys.executable, python_file=python_file, attribute=fn_name,
                     ),
                     location_name="test_location",
+                    user_process_api=UserProcessApi.CLI,
                 )
             ]
         ),

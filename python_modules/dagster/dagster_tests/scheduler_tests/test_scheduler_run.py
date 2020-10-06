@@ -10,17 +10,13 @@ import pytest
 from dagster import DagsterEventType, daily_schedule, hourly_schedule, pipeline, repository, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.host_representation import (
-    PythonEnvRepositoryLocation,
-    RepositoryLocation,
-    RepositoryLocationHandle,
-)
+from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
+from dagster.core.host_representation.handle import UserProcessApi
 from dagster.core.scheduler import ScheduleState, ScheduleStatus, ScheduleTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.grpc.server import GrpcServerProcess
 from dagster.scheduler.scheduler import get_default_scheduler_logger, launch_scheduled_runs
 from dagster.utils import merge_dicts
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
@@ -217,38 +213,32 @@ def instance_with_schedules(external_repo_context, overrides=None):
 
 
 @contextmanager
-def grpc_repo_location():
+def default_repo(user_process_api):
     loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable, python_file=__file__, attribute="the_repo"
-    )
-    server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
-    try:
-        with server_process.create_ephemeral_client() as api_client:
-            yield RepositoryLocation.from_handle(
-                RepositoryLocationHandle.create_grpc_server_location(
-                    port=api_client.port, socket=api_client.socket, host=api_client.host,
-                )
-            )
-    finally:
-        server_process.wait()
-
-
-@contextmanager
-def grpc_repo():
-    with grpc_repo_location() as repo_location:
-        yield repo_location.get_repository("the_repo")
-
-
-@contextmanager
-def default_repo():
-    loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable, python_file=__file__, attribute="the_repo",
+        executable_path=sys.executable,
+        python_file=__file__,
+        attribute="the_repo",
+        working_directory=os.getcwd(),
     )
 
     with RepositoryLocationHandle.create_python_env_location(
-        loadable_target_origin=loadable_target_origin, location_name="test_location",
+        loadable_target_origin=loadable_target_origin,
+        location_name="test_location",
+        user_process_api=user_process_api,
     ) as handle:
-        yield PythonEnvRepositoryLocation(handle).get_repository("the_repo")
+        yield RepositoryLocation.from_handle(handle).get_repository("the_repo")
+
+
+def cli_api_repo():
+    return default_repo(UserProcessApi.CLI)
+
+
+def grpc_repo():
+    return default_repo(UserProcessApi.GRPC)
+
+
+def repos():
+    return [cli_api_repo, grpc_repo]
 
 
 def validate_tick(
@@ -307,9 +297,7 @@ def test_with_incorrect_scheduler():
             )
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_simple_schedule(external_repo_context, capfd):
     freeze_datetime = pendulum.datetime(
         year=2019, month=2, day=27, hour=23, minute=59, second=59,
@@ -441,9 +429,7 @@ def test_simple_schedule(external_repo_context, capfd):
             assert len(ticks) == 3
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_no_started_schedules(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -460,9 +446,7 @@ def test_no_started_schedules(external_repo_context, capfd):
         assert "Not checking for any runs since no schedules have been started." in captured.out
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_schedule_without_timezone(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("daily_schedule_without_timezone")
@@ -496,9 +480,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
             assert len(ticks) == 0
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_bad_env_fn(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("bad_env_fn_schedule")
@@ -533,9 +515,7 @@ def test_bad_env_fn(external_repo_context, capfd):
             )
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_bad_should_execute(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
@@ -575,9 +555,7 @@ def test_bad_should_execute(external_repo_context, capfd):
             assert "Exception: bananas" in captured.out
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_skip(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("skip_schedule")
@@ -607,9 +585,7 @@ def test_skip(external_repo_context, capfd):
             )
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_wrong_config(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
@@ -673,9 +649,7 @@ def _get_unloadable_schedule_origin():
     return schedule.get_origin()
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         good_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -794,9 +768,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             assert "doesnt_exist not found at module scope" in captured.out
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_run_scheduled_on_time_boundary(external_repo_context):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -851,9 +823,7 @@ def test_bad_load(capfd):
             assert len(ticks) == 0
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_multiple_schedules_on_different_time_ranges(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -925,9 +895,7 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
             )
 
 
-@pytest.mark.parametrize(
-    "external_repo_context", [default_repo, grpc_repo],
-)
+@pytest.mark.parametrize("external_repo_context", repos())
 def test_launch_failure(external_repo_context, capfd):
     with instance_with_schedules(
         external_repo_context,

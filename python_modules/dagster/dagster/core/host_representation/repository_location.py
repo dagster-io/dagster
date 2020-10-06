@@ -495,7 +495,9 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         step_keys_to_execute,
         retries=None,
     ):
-        raise NotImplementedError("execute_plan is not implemented for grpc servers")
+        raise NotImplementedError(
+            "execute_plan is not supported for out-of-process repository locations."
+        )
 
     def execute_pipeline(
         self, instance, external_pipeline, pipeline_run,

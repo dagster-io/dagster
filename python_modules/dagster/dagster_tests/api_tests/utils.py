@@ -11,7 +11,7 @@ from dagster.core.host_representation.handle import (
 from dagster.core.host_representation.repository_location import (
     GrpcServerRepositoryLocation,
     InProcessRepositoryLocation,
-    PythonEnvRepositoryLocation,
+    RepositoryLocation,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
@@ -44,7 +44,7 @@ def get_bar_repo_grpc_repository_location_handle():
 
 def get_bar_repo_handle():
     return (
-        PythonEnvRepositoryLocation(get_bar_repo_repository_location_handle())
+        RepositoryLocation.from_handle(get_bar_repo_repository_location_handle(UserProcessApi.CLI))
         .get_repository("bar_repo")
         .handle
     )

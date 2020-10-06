@@ -170,7 +170,7 @@ def test_external_diamond_toposort():
             python_file=__file__,
             attribute="create_diamond_pipeline",
             working_directory=None,
-            user_process_api=UserProcessApi.CLI,
+            user_process_api=UserProcessApi.GRPC,
         )
     )
     external_repo = next(iter(repo_location.get_repositories().values()))

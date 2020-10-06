@@ -7,10 +7,10 @@ import pytest
 
 from dagster import DefaultRunLauncher, file_relative_path, pipeline, repository, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation.handle import RepositoryLocationHandle
+from dagster.core.host_representation.handle import RepositoryLocationHandle, UserProcessApi
 from dagster.core.host_representation.repository_location import (
     GrpcServerRepositoryLocation,
-    PythonEnvRepositoryLocation,
+    RepositoryLocation,
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
@@ -150,10 +150,11 @@ def get_external_pipeline_from_python_location(pipeline_name):
             python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
         ),
         location_name="nope",
+        user_process_api=UserProcessApi.CLI,
     )
 
     yield (
-        PythonEnvRepositoryLocation(repository_location_handle)
+        RepositoryLocation.from_handle(repository_location_handle)
         .get_repository("nope")
         .get_full_external_pipeline(pipeline_name)
     )
