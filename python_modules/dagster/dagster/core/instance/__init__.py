@@ -25,6 +25,7 @@ from dagster.core.execution.resolve_versions import join_and_hash, resolve_step_
 from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass, whitelist_for_serdes
 from dagster.seven import get_current_datetime_in_utc
@@ -497,9 +498,13 @@ class DagsterInstance:
             List[str]: Step keys for all steps that don't have existing results stored for their
                 versions.
         """
-        pipeline_name = execution_plan.pipeline.get_definition().name
+        pipeline_def = execution_plan.pipeline.get_definition()
+        pipeline_name = pipeline_def.name
+
         step_output_versions = resolve_step_output_versions(
-            execution_plan, run_config=run_config, mode=mode
+            execution_plan,
+            EnvironmentConfig.build(pipeline_def, run_config, mode),
+            pipeline_def.get_mode_definition(mode),
         )
         if all(version is None for version in step_output_versions.values()):
             raise DagsterInvariantViolationError(

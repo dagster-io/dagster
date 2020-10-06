@@ -28,7 +28,7 @@ class SystemExecutionContextData(
         (
             "pipeline_run scoped_resources_builder environment_config pipeline "
             "mode_def system_storage_def intermediate_storage_def instance intermediate_storage file_manager "
-            "raise_on_error retries"
+            "raise_on_error retries execution_plan"
         ),
     )
 ):
@@ -51,11 +51,13 @@ class SystemExecutionContextData(
         file_manager,
         raise_on_error,
         retries,
+        execution_plan,
     ):
         from dagster.core.definitions.system_storage import SystemStorageDefinition
         from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
         from dagster.core.storage.intermediate_storage import IntermediateStorage
         from dagster.core.instance import DagsterInstance
+        from dagster.core.execution.plan.plan import ExecutionPlan
 
         return super(SystemExecutionContextData, cls).__new__(
             cls,
@@ -81,6 +83,7 @@ class SystemExecutionContextData(
             file_manager=check.inst_param(file_manager, "file_manager", FileManager),
             raise_on_error=check.bool_param(raise_on_error, "raise_on_error"),
             retries=check.inst_param(retries, "retries", Retries),
+            execution_plan=check.inst_param(execution_plan, "execution_plan", ExecutionPlan),
         )
 
     @property
@@ -172,6 +175,10 @@ class SystemExecutionContext(object):
     @property
     def logging_tags(self):
         return self._log_manager.logging_tags
+
+    @property
+    def execution_plan(self):
+        return self._execution_context_data.execution_plan
 
     def has_tag(self, key):
         check.str_param(key, "key")

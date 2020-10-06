@@ -95,7 +95,7 @@ def resolve_resource_versions(environment_config, mode_def):
     return resource_versions
 
 
-def resolve_step_versions(speculative_execution_plan, mode=None, run_config=None):
+def resolve_step_versions(execution_plan, environment_config, mode_def):
     """Resolves the version of each step in an execution plan.
 
     Execution plan provides execution steps for analysis. It returns dict[str, str] where each key
@@ -117,32 +117,26 @@ def resolve_step_versions(speculative_execution_plan, mode=None, run_config=None
                 and the solid's version definition.
 
     Args:
-        speculative_execution_plan (ExecutionPlan): Execution plan to resolve steps for.
-        mode (Optional[str]): The pipeline mode in which to execute this run.
-        run_config (Optional[dict]): The config value to use for this pipeline.
+        execution_plan (ExecutionPlan): Execution plan to resolve steps for.
+        environment_config (EnvironmentConfig): Parsed Configuration for current execution
+        mode_def (ModeDefinition): The Mode of the current execution
 
     Returns:
         Dict[str, Optional[str]]: A dictionary that maps the key of an execution step to a version.
             If a step has no computed version, then the step key maps to None.
     """
+
     from dagster.core.execution.plan.plan import ExecutionPlan
 
-    check.inst_param(speculative_execution_plan, "speculative_execution_plan", ExecutionPlan)
-    check.opt_str_param(mode, "mode")
-    check.opt_dict_param(run_config, "run_config", key_type=str)
-
-    environment_config = EnvironmentConfig.build(
-        speculative_execution_plan.pipeline_def, run_config, mode
-    )  # environment_config.resources guaranteed to have an entry for each resource in mode,
-    # environment_config.solids guaranteed to have an entry for each solid in pipeline.
-
-    mode_def = speculative_execution_plan.pipeline_def.get_mode_definition(mode)
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(environment_config, "environment_config", EnvironmentConfig)
+    check.inst_param(mode_def, "mode_def", ModeDefinition)
 
     resource_versions_by_key = resolve_resource_versions(environment_config, mode_def)
 
     step_versions = {}  # step_key (str) -> version (str)
 
-    for step in speculative_execution_plan.topological_steps():
+    for step in execution_plan.topological_steps():
         input_version_dict = _resolve_step_input_versions(step, step_versions)
         input_versions = [version for version in input_version_dict.values()]
 
@@ -167,15 +161,18 @@ def resolve_step_versions(speculative_execution_plan, mode=None, run_config=None
     return step_versions
 
 
-def resolve_step_output_versions(speculative_execution_plan, run_config, mode):
+def resolve_step_output_versions(execution_plan, environment_config, mode_def):
+    from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.objects import StepOutputHandle
 
-    step_versions = resolve_step_versions(
-        speculative_execution_plan, run_config=run_config, mode=mode
-    )
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(environment_config, "environment_config", EnvironmentConfig)
+    check.inst_param(mode_def, "mode_def", ModeDefinition)
+
+    step_versions = resolve_step_versions(execution_plan, environment_config, mode_def)
     return {
         StepOutputHandle(step.key, output_name): join_and_hash(output_name, step_versions[step.key])
-        for step in speculative_execution_plan.steps
+        for step in execution_plan.steps
         for output_name in step.step_output_dict.keys()
     }
 

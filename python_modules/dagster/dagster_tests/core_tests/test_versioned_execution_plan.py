@@ -115,9 +115,25 @@ def versioned_pipeline_expected_step2_output_version():
     return join_and_hash(step2_version + "result")
 
 
+def resolve_step_versions_for_test(execution_plan, run_config=None, mode=None):
+    return resolve_step_versions(
+        execution_plan=execution_plan,
+        environment_config=EnvironmentConfig.build(execution_plan.pipeline_def, run_config, mode),
+        mode_def=execution_plan.pipeline_def.get_mode_definition(mode),
+    )
+
+
+def resolve_step_output_versions_for_test(execution_plan, run_config=None, mode=None):
+    return resolve_step_output_versions(
+        execution_plan=execution_plan,
+        environment_config=EnvironmentConfig.build(execution_plan.pipeline_def, run_config, mode),
+        mode_def=execution_plan.pipeline_def.get_mode_definition(mode),
+    )
+
+
 def test_resolve_step_versions_no_external_dependencies():
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
-    versions = resolve_step_versions(speculative_execution_plan)
+    versions = resolve_step_versions_for_test(speculative_execution_plan)
 
     assert (
         versions["versioned_solid_no_input.compute"] == versioned_pipeline_expected_step1_version()
@@ -131,7 +147,7 @@ def test_resolve_step_versions_no_external_dependencies():
 
 def test_resolve_step_output_versions_no_external_dependencies():
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
-    versions = resolve_step_output_versions(
+    versions = resolve_step_output_versions_for_test(
         speculative_execution_plan, run_config={}, mode="default"
     )
 
@@ -253,7 +269,7 @@ def test_resolve_step_versions_external_dependencies():
         versioned_pipeline_ext_input, run_config=run_config,
     )
 
-    versions = resolve_step_versions(speculative_execution_plan, run_config=run_config,)
+    versions = resolve_step_versions_for_test(speculative_execution_plan, run_config=run_config)
 
     ext_input_version = join_and_hash("a")
     input_version = join_and_hash(InputHydration.loader_version + ext_input_version)
@@ -297,7 +313,7 @@ def versioned_pipeline_default_value():
 
 def test_resolve_step_versions_default_value():
     speculative_execution_plan = create_execution_plan(versioned_pipeline_default_value)
-    versions = resolve_step_versions(speculative_execution_plan)
+    versions = resolve_step_versions_for_test(speculative_execution_plan)
 
     default_val_version = join_and_hash("DEFAULTVAL")
 
@@ -443,7 +459,7 @@ def test_step_versions_with_resources():
         versioned_modes_pipeline, run_config=run_config,
     )
 
-    versions = resolve_step_versions(
+    versions = resolve_step_versions_for_test(
         speculative_execution_plan, run_config=run_config, mode="fakemode"
     )
 
@@ -491,6 +507,6 @@ def test_step_versions_composite_solid():
 
     speculative_execution_plan = create_execution_plan(wrap_pipeline, run_config=run_config,)
 
-    versions = resolve_step_versions(speculative_execution_plan, run_config=run_config)
+    versions = resolve_step_versions_for_test(speculative_execution_plan, run_config=run_config)
 
     assert versions["do_stuff.scalar_config_solid.compute"] == None

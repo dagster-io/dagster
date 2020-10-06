@@ -106,7 +106,8 @@ class ContextCreationData(
     namedtuple(
         "_ContextCreationData",
         "pipeline environment_config pipeline_run mode_def system_storage_def "
-        "intermediate_storage_def executor_def instance resource_keys_to_init",
+        "intermediate_storage_def executor_def instance resource_keys_to_init "
+        "execution_plan",
     )
 ):
     @property
@@ -137,6 +138,7 @@ def create_context_creation_data(
         resource_keys_to_init=get_required_resource_keys_to_init(
             execution_plan, system_storage_def, intermediate_storage_def
         ),
+        execution_plan=execution_plan,
     )
 
 
@@ -513,6 +515,7 @@ def construct_execution_context_data(
         file_manager=system_storage_data.file_manager,
         raise_on_error=raise_on_error,
         retries=retries,
+        execution_plan=context_creation_data.execution_plan,
     )
 
 
