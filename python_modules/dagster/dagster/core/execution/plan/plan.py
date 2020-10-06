@@ -360,6 +360,11 @@ class ExecutionPlan(
         return [step_key for step_key in self.step_keys_to_execute if not self.has_step(step_key)]
 
     def execution_deps(self):
+        """
+        Returns:
+            Dict[str, Set[str]]: Maps step keys to sets of step keys that they depend on. Includes
+                only steps that are included in step_keys_to_execute.
+        """
         deps = OrderedDict()
 
         for key in self.step_keys_to_execute:
