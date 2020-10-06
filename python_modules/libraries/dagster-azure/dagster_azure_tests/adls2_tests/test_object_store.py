@@ -15,8 +15,8 @@ def test_adls2_object_store(
     adls2_obj_store = ADLS2ObjectStore(
         file_system, adls2_client=adls2_fake_client, blob_client=blob_fake_client
     )
-    res = adls2_obj_store.set_object(key, True, DEFAULT_SERIALIZATION_STRATEGY)
-    assert res.key == "abfss://{fs}@{account}.dfs.core.windows.net/{key}".format(
+    res_key = adls2_obj_store.set_object(key, True, DEFAULT_SERIALIZATION_STRATEGY)
+    assert res_key == "abfss://{fs}@{account}.dfs.core.windows.net/{key}".format(
         fs=file_system, account=storage_account, key=key
     )
 
@@ -24,7 +24,7 @@ def test_adls2_object_store(
     assert "Removing existing ADLS2 key" in caplog.text
 
     assert adls2_obj_store.has_object(key)
-    assert adls2_obj_store.get_object(key, DEFAULT_SERIALIZATION_STRATEGY).obj is True
+    assert adls2_obj_store.get_object(key, DEFAULT_SERIALIZATION_STRATEGY)[0] is True
 
     # Harder to test this since it requires a fake synchronised Blob client,
     # since cp_object uses blob APIs to communicate...

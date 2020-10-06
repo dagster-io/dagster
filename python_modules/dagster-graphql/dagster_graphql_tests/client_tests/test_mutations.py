@@ -41,6 +41,12 @@ EXPECTED_EVENTS = {
     ("STEP_SUCCESS", "sleeper_3.compute"),
     ("STEP_SUCCESS", "sleeper_4.compute"),
     ("STEP_SUCCESS", "total.compute"),
+    ("OBJECT_STORE_OPERATION", "giver.compute"),
+    ("OBJECT_STORE_OPERATION", "sleeper.compute"),
+    ("OBJECT_STORE_OPERATION", "sleeper_2.compute"),
+    ("OBJECT_STORE_OPERATION", "sleeper_3.compute"),
+    ("OBJECT_STORE_OPERATION", "sleeper_4.compute"),
+    ("OBJECT_STORE_OPERATION", "total.compute"),
 }
 
 

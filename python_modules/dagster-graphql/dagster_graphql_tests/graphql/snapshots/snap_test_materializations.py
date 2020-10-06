@@ -11,6 +11,7 @@ snapshots['TestMaterializations.test_materializations[in_memory_instance_in_proc
     'ExecutionStepStartEvent',
     'StepMaterializationEvent',
     'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
     'ExecutionStepSuccessEvent',
     'PipelineSuccessEvent'
 ]
@@ -20,6 +21,7 @@ snapshots['TestMaterializations.test_materializations[sqlite_with_sync_run_launc
     'ExecutionStepStartEvent',
     'StepMaterializationEvent',
     'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
     'ExecutionStepSuccessEvent',
     'PipelineSuccessEvent'
 ]
@@ -29,15 +31,7 @@ snapshots['TestMaterializations.test_materializations[sqlite_with_default_run_la
     'ExecutionStepStartEvent',
     'StepMaterializationEvent',
     'ExecutionStepOutputEvent',
-    'ExecutionStepSuccessEvent',
-    'PipelineSuccessEvent'
-]
-
-snapshots['TestMaterializations.test_materializations[sqlite_with_grpc_run_launcher_in_process_env] 1'] = [
-    'PipelineStartEvent',
-    'ExecutionStepStartEvent',
-    'StepMaterializationEvent',
-    'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
     'ExecutionStepSuccessEvent',
     'PipelineSuccessEvent'
 ]
@@ -47,6 +41,7 @@ snapshots['TestMaterializations.test_materializations[sqlite_with_default_run_la
     'ExecutionStepStartEvent',
     'StepMaterializationEvent',
     'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
     'ExecutionStepSuccessEvent',
     'PipelineSuccessEvent'
 ]
@@ -56,6 +51,7 @@ snapshots['TestMaterializations.test_materializations[sqlite_with_default_run_la
     'ExecutionStepStartEvent',
     'StepMaterializationEvent',
     'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
     'ExecutionStepSuccessEvent',
     'PipelineSuccessEvent'
 ]
@@ -65,6 +61,47 @@ snapshots['TestMaterializations.test_materializations[sqlite_with_default_run_la
     'ExecutionStepStartEvent',
     'StepMaterializationEvent',
     'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
+    'ExecutionStepSuccessEvent',
+    'PipelineSuccessEvent'
+]
+
+snapshots['TestMaterializations.test_materializations[postgres_with_default_run_launcher_in_process_env] 1'] = [
+    'PipelineStartEvent',
+    'ExecutionStepStartEvent',
+    'StepMaterializationEvent',
+    'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
+    'ExecutionStepSuccessEvent',
+    'PipelineSuccessEvent'
+]
+
+snapshots['TestMaterializations.test_materializations[postgres_with_default_run_launcher_out_of_process_env] 1'] = [
+    'PipelineStartEvent',
+    'ExecutionStepStartEvent',
+    'StepMaterializationEvent',
+    'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
+    'ExecutionStepSuccessEvent',
+    'PipelineSuccessEvent'
+]
+
+snapshots['TestMaterializations.test_materializations[postgres_with_default_run_launcher_managed_grpc_env] 1'] = [
+    'PipelineStartEvent',
+    'ExecutionStepStartEvent',
+    'StepMaterializationEvent',
+    'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
+    'ExecutionStepSuccessEvent',
+    'PipelineSuccessEvent'
+]
+
+snapshots['TestMaterializations.test_materializations[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = [
+    'PipelineStartEvent',
+    'ExecutionStepStartEvent',
+    'StepMaterializationEvent',
+    'ExecutionStepOutputEvent',
+    'ObjectStoreOperationEvent',
     'ExecutionStepSuccessEvent',
     'PipelineSuccessEvent'
 ]

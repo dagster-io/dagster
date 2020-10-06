@@ -59,10 +59,13 @@ def test_execution_plan_for_composite_solid():
     assert [e.event_type_value for e in events] == [
         "STEP_START",
         "STEP_OUTPUT",
+        "OBJECT_STORE_OPERATION",
         "STEP_SUCCESS",
         "STEP_START",
+        "OBJECT_STORE_OPERATION",
         "STEP_INPUT",
         "STEP_OUTPUT",
+        "OBJECT_STORE_OPERATION",
         "STEP_SUCCESS",
     ]
 
@@ -90,9 +93,12 @@ def test_execution_plan_for_composite_solid_with_config_mapping():
     assert [e.event_type_value for e in events] == [
         "STEP_START",
         "STEP_OUTPUT",
+        "OBJECT_STORE_OPERATION",
         "STEP_SUCCESS",
         "STEP_START",
+        "OBJECT_STORE_OPERATION",
         "STEP_INPUT",
         "STEP_OUTPUT",
+        "OBJECT_STORE_OPERATION",
         "STEP_SUCCESS",
     ]

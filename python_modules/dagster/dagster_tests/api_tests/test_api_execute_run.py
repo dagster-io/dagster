@@ -39,16 +39,19 @@ def test_execute_run_api(pipeline_handle):
             pipeline_run=pipeline_run,
         )
 
-    assert len(events) == 11
+    assert len(events) == 14
     assert [event.event_type_value for event in events] == [
         "PIPELINE_START",
         "ENGINE_EVENT",
         "STEP_START",
         "STEP_OUTPUT",
+        "OBJECT_STORE_OPERATION",
         "STEP_SUCCESS",
         "STEP_START",
+        "OBJECT_STORE_OPERATION",
         "STEP_INPUT",
         "STEP_OUTPUT",
+        "OBJECT_STORE_OPERATION",
         "STEP_SUCCESS",
         "ENGINE_EVENT",
         "PIPELINE_SUCCESS",
@@ -84,7 +87,7 @@ def test_execute_run_api_grpc_server_handle():
                 )
             ]
 
-    assert len(events) == 14
+    assert len(events) == 17
     assert [event.event_type_value for event in events] == [
         "ENGINE_EVENT",
         "ENGINE_EVENT",
@@ -92,10 +95,13 @@ def test_execute_run_api_grpc_server_handle():
         "ENGINE_EVENT",
         "STEP_START",
         "STEP_OUTPUT",
+        "OBJECT_STORE_OPERATION",
         "STEP_SUCCESS",
         "STEP_START",
+        "OBJECT_STORE_OPERATION",
         "STEP_INPUT",
         "STEP_OUTPUT",
+        "OBJECT_STORE_OPERATION",
         "STEP_SUCCESS",
         "ENGINE_EVENT",
         "PIPELINE_SUCCESS",
@@ -142,7 +148,7 @@ def test_execute_run_api_grpc_python_handle(pipeline_handle):
                 )
             ]
 
-            assert len(events) == 14
+            assert len(events) == 17
             assert [event.event_type_value for event in events] == [
                 "ENGINE_EVENT",
                 "ENGINE_EVENT",
@@ -150,10 +156,13 @@ def test_execute_run_api_grpc_python_handle(pipeline_handle):
                 "ENGINE_EVENT",
                 "STEP_START",
                 "STEP_OUTPUT",
+                "OBJECT_STORE_OPERATION",
                 "STEP_SUCCESS",
                 "STEP_START",
+                "OBJECT_STORE_OPERATION",
                 "STEP_INPUT",
                 "STEP_OUTPUT",
+                "OBJECT_STORE_OPERATION",
                 "STEP_SUCCESS",
                 "ENGINE_EVENT",
                 "PIPELINE_SUCCESS",

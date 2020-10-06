@@ -522,11 +522,13 @@ def test_raise_on_error_true_type_check_returns_true():
 
     pipeline_result = execute_pipeline(foo_pipeline, raise_on_error=False)
     assert pipeline_result.success
-    assert [event.event_type_value for event in pipeline_result.step_event_list] == [
-        DagsterEventType.STEP_START.value,
-        DagsterEventType.STEP_OUTPUT.value,
-        DagsterEventType.STEP_SUCCESS.value,
-    ]
+    assert set(
+        [
+            DagsterEventType.STEP_START.value,
+            DagsterEventType.STEP_OUTPUT.value,
+            DagsterEventType.STEP_SUCCESS.value,
+        ]
+    ).issubset([event.event_type_value for event in pipeline_result.step_event_list])
 
 
 def test_raise_on_error_true_type_check_returns_successful_type_check():
@@ -561,11 +563,13 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
 
     pipeline_result = execute_pipeline(foo_pipeline, raise_on_error=False)
     assert pipeline_result.success
-    assert [event.event_type_value for event in pipeline_result.step_event_list] == [
-        DagsterEventType.STEP_START.value,
-        DagsterEventType.STEP_OUTPUT.value,
-        DagsterEventType.STEP_SUCCESS.value,
-    ]
+    assert set(
+        [
+            DagsterEventType.STEP_START.value,
+            DagsterEventType.STEP_OUTPUT.value,
+            DagsterEventType.STEP_SUCCESS.value,
+        ]
+    ).issubset([event.event_type_value for event in pipeline_result.step_event_list])
 
 
 def test_contextual_type_check():

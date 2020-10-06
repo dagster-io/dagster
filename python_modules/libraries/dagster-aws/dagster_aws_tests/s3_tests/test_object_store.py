@@ -14,14 +14,14 @@ def test_s3_object_store(s3_bucket, caplog):
     key = "foo"
 
     s3_obj_store = S3ObjectStore(s3_bucket)
-    res = s3_obj_store.set_object(key, True, DEFAULT_SERIALIZATION_STRATEGY)
-    assert res.key == "s3://{s3_bucket}/{key}".format(s3_bucket=s3_bucket, key=key)
+    res_key = s3_obj_store.set_object(key, True, DEFAULT_SERIALIZATION_STRATEGY)
+    assert res_key == "s3://{s3_bucket}/{key}".format(s3_bucket=s3_bucket, key=key)
 
     s3_obj_store.set_object(key, True, DEFAULT_SERIALIZATION_STRATEGY)
     assert "Removing existing S3 key" in caplog.text
 
     assert s3_obj_store.has_object(key)
-    assert s3_obj_store.get_object(key, DEFAULT_SERIALIZATION_STRATEGY).obj == True
+    assert s3_obj_store.get_object(key, DEFAULT_SERIALIZATION_STRATEGY)[0] == True
 
     s3_obj_store.cp_object(key, "bar")
     assert s3_obj_store.has_object("bar")

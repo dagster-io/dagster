@@ -8,6 +8,7 @@ from dagster.core.definitions import (
     RetryRequested,
     TypeCheck,
 )
+from dagster.core.definitions.events import ObjectStoreOperation
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
@@ -28,7 +29,6 @@ from dagster.core.execution.plan.objects import (
     TypeCheckData,
 )
 from dagster.core.execution.resolve_versions import resolve_step_output_versions
-from dagster.core.storage.object_store import ObjectStoreOperation
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.utils import iterate_with_context, raise_interrupts_immediately
 from dagster.utils.timing import time_execution_scope

@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 
 from dagster import check
+from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.errors import DagsterAddressIOError
 from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
@@ -98,8 +99,17 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         check.param_invariant(len(paths) > 0, "paths")
 
         key = self.object_store.key_for_paths([self.root] + paths)
-        return self.object_store.get_object(
+        obj, uri = self.object_store.get_object(
             key, serialization_strategy=dagster_type.serialization_strategy
+        )
+
+        return ObjectStoreOperation(
+            op=ObjectStoreOperationType.GET_OBJECT,
+            key=uri,
+            dest_key=None,
+            obj=obj,
+            serialization_strategy_name=dagster_type.serialization_strategy.name,
+            object_store_name=self.object_store.name,
         )
 
     def get_intermediate(
@@ -129,8 +139,16 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         check.param_invariant(len(paths) > 0, "paths")
 
         key = self.object_store.key_for_paths([self.root] + paths)
-        return self.object_store.set_object(
+        uri = self.object_store.set_object(
             key, value, serialization_strategy=dagster_type.serialization_strategy
+        )
+        return ObjectStoreOperation(
+            op=ObjectStoreOperationType.SET_OBJECT,
+            key=uri,
+            dest_key=None,
+            obj=value,
+            serialization_strategy_name=dagster_type.serialization_strategy.name,
+            object_store_name=self.object_store.name,
         )
 
     def set_intermediate(
@@ -174,7 +192,16 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         paths = self._get_paths(step_output_handle)
         check.param_invariant(len(paths) > 0, "paths")
         key = self.object_store.key_for_paths([self.root] + paths)
-        return self.object_store.rm_object(key)
+
+        uri = self.object_store.rm_object(key)
+        return ObjectStoreOperation(
+            op=ObjectStoreOperationType.RM_OBJECT,
+            key=uri,
+            dest_key=None,
+            obj=None,
+            serialization_strategy_name=None,
+            object_store_name=self.object_store.name,
+        )
 
     def copy_intermediate_from_run(self, context, run_id, step_output_handle):
         check.opt_inst_param(context, "context", SystemExecutionContext)
@@ -185,7 +212,13 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         src = self.object_store.key_for_paths([self.root_for_run_id(run_id)] + paths)
         dst = self.object_store.key_for_paths([self.root] + paths)
 
-        return self.object_store.cp_object(src, dst)
+        src_uri, dst_uri = self.object_store.cp_object(src, dst)
+        return ObjectStoreOperation(
+            op=ObjectStoreOperationType.CP_OBJECT,
+            key=src_uri,
+            dest_key=dst_uri,
+            object_store_name=self.object_store.name,
+        )
 
     @experimental
     def set_intermediate_to_address(
@@ -204,8 +237,16 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
 
         # currently it doesn't support type_storage_plugin_registry
         try:
-            return self.object_store.set_object(
+            uri = self.object_store.set_object(
                 key=address, obj=value, serialization_strategy=dagster_type.serialization_strategy
+            )
+            return ObjectStoreOperation(
+                op=ObjectStoreOperationType.SET_OBJECT,
+                key=uri,
+                dest_key=None,
+                obj=value,
+                serialization_strategy_name=dagster_type.serialization_strategy.name,
+                object_store_name=self.object_store.name,
             )
         except IOError as e:
             raise DagsterAddressIOError(str(e))
@@ -242,8 +283,16 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
 
         # currently it doesn't support type_storage_plugin_registry
         try:
-            return self.object_store.get_object(
+            obj, uri = self.object_store.get_object(
                 key=address, serialization_strategy=dagster_type.serialization_strategy
+            )
+            return ObjectStoreOperation(
+                op=ObjectStoreOperationType.GET_OBJECT,
+                key=uri,
+                dest_key=None,
+                obj=obj,
+                serialization_strategy_name=dagster_type.serialization_strategy.name,
+                object_store_name=self.object_store.name,
             )
         except IOError as e:
             raise DagsterAddressIOError(str(e))

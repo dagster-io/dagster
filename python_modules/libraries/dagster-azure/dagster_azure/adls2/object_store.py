@@ -4,7 +4,6 @@ import sys
 from io import BytesIO, StringIO
 
 from dagster import check
-from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.storage.object_store import ObjectStore
 from dagster.core.types.marshal import SerializationStrategy
 
@@ -55,14 +54,7 @@ class ADLS2ObjectStore(ObjectStore):
                 bytes_io.seek(0)
                 file.upload_data(bytes_io, lease=lease, overwrite=True)
 
-        return ObjectStoreOperation(
-            op=ObjectStoreOperationType.SET_OBJECT,
-            key=self.uri_for_key(key),
-            dest_key=None,
-            obj=obj,
-            serialization_strategy_name=serialization_strategy.name,
-            object_store_name=self.name,
-        )
+        return self.uri_for_key(key)
 
     def get_object(self, key, serialization_strategy=None):
         check.str_param(key, "key")
@@ -79,14 +71,7 @@ class ADLS2ObjectStore(ObjectStore):
             if serialization_strategy.read_mode == "rb"
             else StringIO(stream.readall().decode(serialization_strategy.encoding))
         )
-        return ObjectStoreOperation(
-            op=ObjectStoreOperationType.GET_OBJECT,
-            key=self.uri_for_key(key),
-            dest_key=None,
-            obj=obj,
-            serialization_strategy_name=serialization_strategy.name,
-            object_store_name=self.name,
-        )
+        return obj, self.uri_for_key(key)
 
     def has_object(self, key):
         check.str_param(key, "key")
@@ -106,14 +91,7 @@ class ADLS2ObjectStore(ObjectStore):
         # This operates recursively already so is nice and simple.
         self.file_system_client.delete_file(key)
 
-        return ObjectStoreOperation(
-            op=ObjectStoreOperationType.RM_OBJECT,
-            key=self.uri_for_key(key),
-            dest_key=None,
-            obj=None,
-            serialization_strategy_name=None,
-            object_store_name=self.name,
-        )
+        return self.uri_for_key(key)
 
     def cp_object(self, src, dst):
         check.str_param(src, "src")
@@ -130,11 +108,9 @@ class ADLS2ObjectStore(ObjectStore):
             new_blob = self.blob_container_client.get_blob_client(new_blob_path)
             new_blob.start_copy_from_url(src_blob.url)
 
-        return ObjectStoreOperation(
-            op=ObjectStoreOperationType.CP_OBJECT,
-            key=self.uri_for_key(src),
-            dest_key=self.uri_for_key(dst),
-            object_store_name=self.name,
+        return (
+            self.uri_for_key(src),
+            self.uri_for_key(dst),
         )
 
     def uri_for_key(self, key, protocol=None):

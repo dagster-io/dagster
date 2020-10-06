@@ -97,6 +97,7 @@ def test_basic_event_store(conn_string):
             DagsterEventType.STEP_SUCCESS,
             DagsterEventType.PIPELINE_SUCCESS,
             DagsterEventType.STEP_OUTPUT,
+            DagsterEventType.OBJECT_STORE_OPERATION,
             DagsterEventType.ENGINE_EVENT,
         ]
     )
@@ -105,6 +106,7 @@ def test_basic_event_store(conn_string):
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.OBJECT_STORE_OPERATION,
         DagsterEventType.STEP_SUCCESS,
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
@@ -141,6 +143,7 @@ def test_basic_get_logs_for_run(conn_string):
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.OBJECT_STORE_OPERATION,
         DagsterEventType.STEP_SUCCESS,
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
@@ -169,6 +172,7 @@ def test_wipe_postgres_event_log(conn_string):
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.OBJECT_STORE_OPERATION,
         DagsterEventType.STEP_SUCCESS,
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
@@ -201,6 +205,7 @@ def test_delete_postgres_event_log(conn_string):
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.OBJECT_STORE_OPERATION,
         DagsterEventType.STEP_SUCCESS,
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
@@ -231,6 +236,7 @@ def test_basic_get_logs_for_run_cursor(conn_string):
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.OBJECT_STORE_OPERATION,
         DagsterEventType.STEP_SUCCESS,
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
@@ -241,6 +247,7 @@ def test_basic_get_logs_for_run_cursor(conn_string):
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.STEP_START,
         DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.OBJECT_STORE_OPERATION,
         DagsterEventType.STEP_SUCCESS,
         DagsterEventType.ENGINE_EVENT,
         DagsterEventType.PIPELINE_SUCCESS,
@@ -266,7 +273,7 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
         event_log_storage.store_event(event)
 
     out_events_one = event_log_storage.get_logs_for_run(result_one.run_id)
-    assert len(out_events_one) == 7
+    assert len(out_events_one) == 8
 
     assert set(event_types(out_events_one)) == set(
         [
@@ -274,6 +281,7 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
             DagsterEventType.ENGINE_EVENT,
             DagsterEventType.STEP_START,
             DagsterEventType.STEP_OUTPUT,
+            DagsterEventType.OBJECT_STORE_OPERATION,
             DagsterEventType.STEP_SUCCESS,
             DagsterEventType.ENGINE_EVENT,
             DagsterEventType.PIPELINE_SUCCESS,
@@ -286,11 +294,12 @@ def test_basic_get_logs_for_run_multiple_runs(conn_string):
     assert stats_one.steps_succeeded == 1
 
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id)
-    assert len(out_events_two) == 7
+    assert len(out_events_two) == 8
 
     assert set(event_types(out_events_two)) == set(
         [
             DagsterEventType.STEP_OUTPUT,
+            DagsterEventType.OBJECT_STORE_OPERATION,
             DagsterEventType.PIPELINE_START,
             DagsterEventType.ENGINE_EVENT,
             DagsterEventType.STEP_START,
@@ -325,7 +334,7 @@ def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
         event_log_storage.store_event(event)
 
     out_events_one = event_log_storage.get_logs_for_run(result_one.run_id, cursor=1)
-    assert len(out_events_one) == 7
+    assert len(out_events_one) == 8
 
     assert set(event_types(out_events_one)) == set(
         [
@@ -333,6 +342,7 @@ def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
             DagsterEventType.ENGINE_EVENT,
             DagsterEventType.STEP_START,
             DagsterEventType.STEP_OUTPUT,
+            DagsterEventType.OBJECT_STORE_OPERATION,
             DagsterEventType.STEP_SUCCESS,
             DagsterEventType.ENGINE_EVENT,
             DagsterEventType.PIPELINE_SUCCESS,
@@ -342,12 +352,13 @@ def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
     assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id, cursor=2)
-    assert len(out_events_two) == 7
+    assert len(out_events_two) == 8
     assert set(event_types(out_events_two)) == set(
         [
             DagsterEventType.PIPELINE_START,
             DagsterEventType.ENGINE_EVENT,
             DagsterEventType.STEP_OUTPUT,
+            DagsterEventType.OBJECT_STORE_OPERATION,
             DagsterEventType.STEP_START,
             DagsterEventType.STEP_SUCCESS,
             DagsterEventType.ENGINE_EVENT,
@@ -380,10 +391,10 @@ def test_listen_notify_single_run_event(conn_string):
             event_log_storage.store_event(event)
 
         start = time.time()
-        while len(event_list) < 7 and time.time() - start < TEST_TIMEOUT:
+        while len(event_list) < 8 and time.time() - start < TEST_TIMEOUT:
             pass
 
-        assert len(event_list) == 7
+        assert len(event_list) == 8
         assert all([isinstance(event, DagsterEventRecord) for event in event_list])
     finally:
         del event_log_storage
@@ -419,12 +430,12 @@ def test_listen_notify_filter_two_runs_event(conn_string):
 
         start = time.time()
         while (
-            len(event_list_one) < 7 or len(event_list_two) < 7
+            len(event_list_one) < 8 or len(event_list_two) < 8
         ) and time.time() - start < TEST_TIMEOUT:
             pass
 
-        assert len(event_list_one) == 7
-        assert len(event_list_two) == 7
+        assert len(event_list_one) == 8
+        assert len(event_list_two) == 8
         assert all([isinstance(event, DagsterEventRecord) for event in event_list_one])
         assert all([isinstance(event, DagsterEventRecord) for event in event_list_two])
 
@@ -459,10 +470,10 @@ def test_listen_notify_filter_run_event(conn_string):
             event_log_storage.store_event(event)
 
         start = time.time()
-        while len(event_list) < 7 and time.time() - start < TEST_TIMEOUT:
+        while len(event_list) < 8 and time.time() - start < TEST_TIMEOUT:
             pass
 
-        assert len(event_list) == 7
+        assert len(event_list) == 8
         assert all([isinstance(event, DagsterEventRecord) for event in event_list])
 
     finally:

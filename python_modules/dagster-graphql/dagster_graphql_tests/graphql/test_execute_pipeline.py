@@ -238,10 +238,13 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "ObjectStoreOperationEvent",
             "ExecutionStepSuccessEvent",
             "ExecutionStepStartEvent",
+            "ObjectStoreOperationEvent",
             "ExecutionStepInputEvent",
             "ExecutionStepOutputEvent",
+            "ObjectStoreOperationEvent",
             "ExecutionStepSuccessEvent",
             "PipelineSuccessEvent",
         ]

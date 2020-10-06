@@ -65,7 +65,9 @@ def test_event_stream():
         DagsterEventType.STEP_EXPECTATION_RESULT,
         DagsterEventType.STEP_MATERIALIZATION,
         DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.OBJECT_STORE_OPERATION,
         DagsterEventType.STEP_OUTPUT,
+        DagsterEventType.OBJECT_STORE_OPERATION,
         DagsterEventType.STEP_SUCCESS,
     ]
 
@@ -76,7 +78,9 @@ def test_event_stream():
         expectation_event,
         materialization_event,
         _num_output_event,
+        _num_object_store_operation,
         _str_output_event,
+        _str_object_store_operation,
         _success,
     ) = solid_result.step_events
 

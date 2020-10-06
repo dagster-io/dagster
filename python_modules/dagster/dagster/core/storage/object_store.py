@@ -6,7 +6,6 @@ from abc import ABCMeta, abstractmethod
 import six
 
 from dagster import check
-from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.types.marshal import PickleSerializationStrategy, SerializationStrategy
 from dagster.utils import mkdir_p
 
@@ -27,15 +26,17 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
     def set_object(self, key, obj, serialization_strategy=None):
         """Implement this method to set an object in the object store.
 
-        Should return an ObjectStoreOperation with op==ObjectStoreOperationType.SET_OBJECT
-        on success."""
+        Returns:
+            str: The fully qualified key that the object was written to.
+        """
 
     @abstractmethod
     def get_object(self, key, serialization_strategy=None):
         """Implement this method to get an object from the object store.
 
-        Should return an ObjectStoreOperation with op==ObjectStoreOperationType.GET_OBJECT
-        on success."""
+        Returns:
+            Tuple[Any, str]: The object and the fully qualified key it was gotten from.
+        """
 
     @abstractmethod
     def has_object(self, key):
@@ -47,15 +48,18 @@ class ObjectStore(six.with_metaclass(ABCMeta)):
     def rm_object(self, key):
         """Implement this method to remove an object from the object store.
 
-        Should return an ObjectStoreOperation with op==ObjectStoreOperationType.RM_OBJECT
-        on success."""
+        Returns:
+            str: The fully qualified key that was removed.
+        """
 
     @abstractmethod
     def cp_object(self, src, dst):
         """Implement this method to copy an object from one key to another in the object store.
 
-        Should return an ObjectStoreOperation with op==ObjectStoreOperationType.CP_OBJECT
-        on success."""
+        Returns:
+            Tuple[str, str]: The fully qualified key of the source object and the fully qualified
+                destination key.
+        """
 
     @abstractmethod
     def uri_for_key(self, key, protocol=None):
@@ -79,12 +83,13 @@ class InMemoryObjectStore(ObjectStore):
     def set_object(self, key, obj, serialization_strategy=None):
         check.str_param(key, "key")
         self.values[key] = obj
+        return key
 
     def get_object(self, key, serialization_strategy=DEFAULT_SERIALIZATION_STRATEGY):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")
         obj = self.values[key]
-        return obj
+        return obj, key
 
     def has_object(self, key):
         check.str_param(key, "key")
@@ -98,10 +103,13 @@ class InMemoryObjectStore(ObjectStore):
         if self.has_object(key):
             self.values.pop(key)
 
+        return key
+
     def cp_object(self, src, dst):
         check.invariant(not dst in self.values, "key {} already in use".format(dst))
         check.invariant(src in self.values, "key {} not present".format(src))
         self.values[dst] = self.values[src]
+        return src, dst
 
     def uri_for_key(self, key, protocol=None):
         check.str_param(key, "key")
@@ -126,30 +134,14 @@ class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init
 
         serialization_strategy.serialize_to_file(obj, key)
 
-        return ObjectStoreOperation(
-            op=ObjectStoreOperationType.SET_OBJECT,
-            key=key,
-            dest_key=None,
-            obj=obj,
-            serialization_strategy_name=serialization_strategy.name,
-            object_store_name=self.name,
-        )
+        return key
 
     def get_object(self, key, serialization_strategy=DEFAULT_SERIALIZATION_STRATEGY):
         check.str_param(key, "key")
         check.param_invariant(len(key) > 0, "key")
         check.inst_param(serialization_strategy, "serialization_strategy", SerializationStrategy)
 
-        obj = serialization_strategy.deserialize_from_file(key)
-
-        return ObjectStoreOperation(
-            op=ObjectStoreOperationType.GET_OBJECT,
-            key=key,
-            dest_key=None,
-            obj=obj,
-            serialization_strategy_name=serialization_strategy.name,
-            object_store_name=self.name,
-        )
+        return serialization_strategy.deserialize_from_file(key), key
 
     def has_object(self, key):
         check.str_param(key, "key")
@@ -167,14 +159,7 @@ class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init
             elif os.path.isdir(key):
                 shutil.rmtree(key)
 
-        return ObjectStoreOperation(
-            op=ObjectStoreOperationType.RM_OBJECT,
-            key=key,
-            dest_key=None,
-            obj=None,
-            serialization_strategy_name=None,
-            object_store_name=self.name,
-        )
+        return key
 
     def cp_object(self, src, dst):
         check.invariant(not os.path.exists(dst), "Path already exists {}".format(dst))
@@ -189,14 +174,7 @@ class FilesystemObjectStore(ObjectStore):  # pylint: disable=no-init
         else:
             check.failed("should not get here")
 
-        return ObjectStoreOperation(
-            op=ObjectStoreOperationType.CP_OBJECT,
-            key=src,
-            dest_key=dst,
-            obj=None,
-            serialization_strategy_name=None,
-            object_store_name=self.name,
-        )
+        return src, dst
 
     def uri_for_key(self, key, protocol=None):
         check.str_param(key, "key")
