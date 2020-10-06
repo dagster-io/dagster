@@ -122,6 +122,9 @@ def output_handles_from_execution_plan(execution_plan):
     for step_level in execution_plan.execution_step_levels():
         for step in step_level:
             for step_input in step.step_inputs:
-                if step_input.source_handles:
-                    output_handles_for_current_run.update(step_input.source_handles)
+                for step_output_handle in step_input.source_handles or []:
+                    # Only include handles that won't be satisfied by steps included in this
+                    # execution.
+                    if step_output_handle.step_key not in execution_plan.step_keys_to_execute:
+                        output_handles_for_current_run.add(step_output_handle)
     return output_handles_for_current_run
