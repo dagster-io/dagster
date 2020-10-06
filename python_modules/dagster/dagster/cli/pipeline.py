@@ -7,6 +7,7 @@ import textwrap
 
 import click
 import yaml
+from tabulate import tabulate
 
 from dagster import PipelineDefinition, check, execute_pipeline
 from dagster.cli.workspace.cli_target import (
@@ -18,6 +19,7 @@ from dagster.cli.workspace.cli_target import (
     get_pipeline_python_origin_from_kwargs,
     get_repository_location_from_kwargs,
     pipeline_target_argument,
+    python_pipeline_config_argument,
     python_pipeline_target_argument,
     repository_target_argument,
 )
@@ -27,6 +29,8 @@ from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterLaunchFailedError,
 )
+from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.host_representation import (
     ExternalPipeline,
     ExternalRepository,
@@ -42,6 +46,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
@@ -67,6 +72,7 @@ def create_pipeline_cli_group():
     group.add_command(pipeline_backfill_command)
     group.add_command(pipeline_scaffold_command)
     group.add_command(pipeline_launch_command)
+    group.add_command(pipeline_list_versions_command)
     return group
 
 
@@ -227,32 +233,81 @@ def print_solid(printer, pipeline_snapshot, solid_invocation_snap):
 
 
 @click.command(
+    name="list_versions",
+    help="Display the freshness of memoized results for the given pipeline.\n\n{instructions}".format(
+        instructions=get_pipeline_in_same_python_env_instructions("list_versions")
+    ),
+)
+@python_pipeline_target_argument
+@python_pipeline_config_argument("list_versions")
+@click.option(
+    "--preset",
+    type=click.STRING,
+    help="Specify a preset to use for this pipeline. Presets are defined on pipelines under "
+    "preset_defs.",
+)
+@click.option(
+    "--mode", type=click.STRING, help="The name of the mode in which to execute the pipeline."
+)
+def pipeline_list_versions_command(**kwargs):
+    with DagsterInstance.get() as instance:
+        execute_list_versions_command(instance, kwargs)
+
+
+def execute_list_versions_command(instance, kwargs):
+    check.inst_param(instance, "instance", DagsterInstance)
+
+    config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))
+    preset = kwargs.get("preset")
+    mode = kwargs.get("mode")
+
+    if preset and config:
+        raise click.UsageError("Can not use --preset with --config.")
+
+    pipeline_origin = get_pipeline_python_origin_from_kwargs(kwargs)
+    pipeline = recon_pipeline_from_origin(pipeline_origin)
+    run_config = get_run_config_from_file_list(config)
+    pipeline_def = pipeline.get_definition()
+    pipeline_name = pipeline_def.name
+    execution_plan = create_execution_plan(
+        pipeline.get_definition(), run_config=run_config, mode=mode
+    )
+    step_output_versions = resolve_step_output_versions(
+        execution_plan,
+        environment_config=EnvironmentConfig.build(pipeline_def, run_config=run_config, mode=mode),
+        mode_def=pipeline_def.get_mode_definition(mode),
+    )
+    step_output_addresses = instance.get_addresses_for_step_output_versions(
+        {
+            (pipeline_name, step_output_handle): version
+            for step_output_handle, version in step_output_versions.items()
+            if version
+        }
+    )
+    table = []
+    for step_output_handle, version in step_output_versions.items():
+        address = step_output_addresses.get((pipeline_name, step_output_handle), "None")
+        table.append(
+            [
+                "{key}.{output}".format(
+                    key=step_output_handle.step_key, output=step_output_handle.output_name
+                ),
+                version,
+                address,
+            ]
+        )
+    table_str = tabulate(table, headers=["Step Output", "Version", "Address"], tablefmt="github")
+    click.echo(table_str)
+
+
+@click.command(
     name="execute",
     help="Execute a pipeline.\n\n{instructions}".format(
         instructions=get_pipeline_in_same_python_env_instructions("execute")
     ),
 )
 @python_pipeline_target_argument
-@click.option(
-    "-c",
-    "--config",
-    type=click.Path(exists=True),
-    multiple=True,
-    help=(
-        "Specify one or more run config files. These can also be file patterns. "
-        "If more than one run config file is captured then those files are merged. "
-        "Files listed first take precedence. They will smash the values of subsequent "
-        "files at the key-level granularity. If the file is a pattern then you must "
-        "enclose it in double quotes"
-        "\n\nExample: "
-        "dagster pipeline execute -f hello_world.py -p pandas_hello_world "
-        '-c "pandas_hello_world/*.yaml"'
-        "\n\nYou can also specify multiple files:"
-        "\n\nExample: "
-        "dagster pipeline execute -f hello_world.py -p pandas_hello_world "
-        "-c pandas_hello_world/solids.yaml -e pandas_hello_world/env.yaml"
-    ),
-)
+@python_pipeline_config_argument("execute")
 @click.option(
     "--preset",
     type=click.STRING,
@@ -500,25 +555,7 @@ def do_execute_command(
     ),
 )
 @pipeline_target_argument
-@click.option(
-    "-c",
-    "--config",
-    type=click.Path(exists=True),
-    multiple=True,
-    help=(
-        "Specify one or more run config files. These can also be file patterns. "
-        "If more than one run config file is captured then those files are merged. "
-        "Files listed first take precedence. They will smash the values of subsequent "
-        "files at the key-level granularity. If the file is a pattern then you must "
-        "enclose it in double quotes"
-        "\n\nExample: "
-        'dagster pipeline launch pandas_hello_world -c "pandas_hello_world/*.yaml"'
-        "\n\nYou can also specify multiple files:"
-        "\n\nExample: "
-        "dagster pipeline launch pandas_hello_world -c pandas_hello_world/solids.yaml "
-        "-e pandas_hello_world/env.yaml"
-    ),
-)
+@python_pipeline_config_argument("launch")
 @click.option(
     "--config-json",
     type=click.STRING,

@@ -303,6 +303,36 @@ def python_pipeline_target_click_options():
     )
 
 
+def target_with_config_option(command_name):
+    return click.option(
+        "-c",
+        "--config",
+        type=click.Path(exists=True),
+        multiple=True,
+        help=(
+            "Specify one or more run config files. These can also be file patterns. "
+            "If more than one run config file is captured then those files are merged. "
+            "Files listed first take precedence. They will smash the values of subsequent "
+            "files at the key-level granularity. If the file is a pattern then you must "
+            "enclose it in double quotes"
+            "\n\nExample: "
+            "dagster pipeline {name} -f hello_world.py -p pandas_hello_world "
+            '-c "pandas_hello_world/*.yaml"'
+            "\n\nYou can also specify multiple files:"
+            "\n\nExample: "
+            "dagster pipeline {name} -f hello_world.py -p pandas_hello_world "
+            "-c pandas_hello_world/solids.yaml -e pandas_hello_world/env.yaml"
+        ).format(name=command_name),
+    )
+
+
+def python_pipeline_config_argument(command_name):
+    def wrap(f):
+        return target_with_config_option(command_name)(f)
+
+    return wrap
+
+
 def python_pipeline_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 

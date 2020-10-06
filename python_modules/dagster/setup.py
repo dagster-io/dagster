@@ -77,6 +77,7 @@ if __name__ == "__main__":
             "rx<=1.6.1",  # 3.0 was a breaking change. No py2 compatability as well.
             'futures; python_version < "3"',
             "six",
+            "tabulate",
             "tqdm",
             "sqlalchemy>=1.0",
             'typing; python_version<"3"',
