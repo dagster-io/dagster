@@ -265,12 +265,6 @@ type ExecutePlanSuccess {
   rawEventRecords: [String!]!
 }
 
-union ExecuteRunInProcessResult = ExecuteRunInProcessSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | PipelineRunNotFoundError
-
-type ExecuteRunInProcessSuccess {
-  run: PipelineRun!
-}
-
 input ExecutionMetadata {
   runId: String
   tags: [ExecutionTag!]
@@ -634,9 +628,8 @@ type Mutation {
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   launchPartitionBackfill(backfillParams: PartitionBackfillParams!): PartitionBackfillResult!
-  executePlan(executionParams: ExecutionParams!, retries: Retries): ExecutePlanResult!
-  executeRunInProcess(repositoryLocationName: String!, repositoryName: String!, runId: String!): ExecuteRunInProcessResult!
   triggerExecution(triggerSelector: TriggerSelector!): TriggerMutationResult!
+  executePlan(executionParams: ExecutionParams!, retries: Retries): ExecutePlanResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {

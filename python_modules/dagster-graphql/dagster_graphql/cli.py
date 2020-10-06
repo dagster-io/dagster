@@ -19,11 +19,7 @@ from dagster.seven import urljoin, urlparse
 from dagster.utils import DEFAULT_REPOSITORY_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 
-from .client.query import (
-    EXECUTE_PLAN_MUTATION,
-    EXECUTE_RUN_IN_PROCESS_MUTATION,
-    LAUNCH_PIPELINE_EXECUTION_MUTATION,
-)
+from .client.query import EXECUTE_PLAN_MUTATION, LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .implementation.context import DagsterGraphQLContext
 from .schema import create_schema
 from .version import __version__
@@ -130,7 +126,6 @@ def execute_query_against_remote(host, query, variables):
 
 
 PREDEFINED_QUERIES = {
-    "executeRunInProcess": EXECUTE_RUN_IN_PROCESS_MUTATION,
     "executePlan": EXECUTE_PLAN_MUTATION,
     "launchPipelineExecution": LAUNCH_PIPELINE_EXECUTION_MUTATION,
 }

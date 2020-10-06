@@ -20,7 +20,6 @@ from dagster_test.test_project import (
 )
 
 from dagster import __version__ as dagster_version
-from dagster import seven
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import create_run_for_test
@@ -51,12 +50,10 @@ spec:
     spec:
       containers:
       - args:
-        - -p
-        - executeRunInProcess
-        - -v
-        - '{{"runId": "{run_id}"}}'
+        - api
+        - execute_run_with_structured_logs
         command:
-        - dagster-graphql
+        - dagster
         env:
         - name: DAGSTER_HOME
           value: /opt/dagster/dagster_home
@@ -117,12 +114,10 @@ spec:
       {affinity}
       containers:
       - args:
-        - -p
-        - executeRunInProcess
-        - -v
-        - '{{"runId": "{run_id}"}}'
+        - api
+        - execute_run_with_structured_logs
         command:
-        - dagster-graphql
+        - dagster
         env:
         - name: DAGSTER_HOME
           value: /opt/dagster/dagster_home
@@ -168,8 +163,8 @@ def test_valid_job_format(run_launcher):
     pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
-        command=["dagster-graphql"],
-        args=["-p", "executeRunInProcess", "-v", seven.json.dumps({"runId": run.run_id}),],
+        command=["dagster"],
+        args=["api", "execute_run_with_structured_logs"],
         job_name=job_name,
         pod_name=pod_name,
         component="run_coordinator",
@@ -209,8 +204,8 @@ def test_valid_job_format_with_backcompat_resources(run_launcher):
     pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
-        command=["dagster-graphql"],
-        args=["-p", "executeRunInProcess", "-v", seven.json.dumps({"runId": run.run_id}),],
+        command=["dagster"],
+        args=["api", "execute_run_with_structured_logs"],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
         pod_name=pod_name,
@@ -284,8 +279,8 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
     pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
-        command=["dagster-graphql"],
-        args=["-p", "executeRunInProcess", "-v", seven.json.dumps({"runId": run.run_id}),],
+        command=["dagster"],
+        args=["api", "execute_run_with_structured_logs"],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
         pod_name=pod_name,

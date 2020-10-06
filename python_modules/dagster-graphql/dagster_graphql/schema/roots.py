@@ -13,9 +13,6 @@ from dagster_graphql.implementation.execution import (
     terminate_pipeline_execution,
     trigger_execution,
 )
-from dagster_graphql.implementation.execution.execute_run_in_process import (
-    execute_run_in_graphql_process,
-)
 from dagster_graphql.implementation.external import (
     fetch_repositories,
     fetch_repository,
@@ -385,30 +382,6 @@ class DauphinTerminatePipelineExecutionResult(dauphin.Union):
         )
 
 
-class DauphinExecuteRunInProcessMutation(dauphin.Mutation):
-    class Meta(object):
-        name = "ExecuteRunInProcessMutation"
-        description = (
-            "Execute a pipeline run in the python environment "
-            "dagit/dagster-graphql is currently operating in."
-        )
-
-    class Arguments(object):
-        run_id = dauphin.NonNull(dauphin.String)
-        repositoryName = dauphin.NonNull(dauphin.String)
-        repositoryLocationName = dauphin.NonNull(dauphin.String)
-
-    Output = dauphin.NonNull("ExecuteRunInProcessResult")
-
-    def mutate(self, graphene_info, run_id, repositoryLocationName, repositoryName):
-        return execute_run_in_graphql_process(
-            graphene_info,
-            repository_location_name=repositoryLocationName,
-            repository_name=repositoryName,
-            run_id=run_id,
-        )
-
-
 @capture_dauphin_error
 def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_params_dict):
     # refactored into a helper function here in order to wrap with @capture_dauphin_error,
@@ -723,6 +696,7 @@ class DauphinMutation(dauphin.ObjectType):
     delete_pipeline_run = DauphinDeleteRunMutation.Field()
     reload_repository_location = DauphinReloadRepositoryLocationMutation.Field()
     launch_partition_backfill = DauphinLaunchPartitionBackfillMutation.Field()
+    trigger_execution = DauphinTriggerExecution.Field()
 
     # These below are never invoked by tools such as a dagit. They are in the
     # graphql layer because it was a convenient, pre-existing IPC layer.
@@ -732,8 +706,6 @@ class DauphinMutation(dauphin.ObjectType):
     # grpc).
 
     execute_plan = DauphinExecutePlan.Field()
-    execute_run_in_process = DauphinExecuteRunInProcessMutation.Field()
-    trigger_execution = DauphinTriggerExecution.Field()
 
 
 DauphinComputeIOType = dauphin.Enum.from_enum(ComputeIOType)
