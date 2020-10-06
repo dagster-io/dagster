@@ -20,7 +20,9 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
         pass
 
     @abstractmethod
-    def set_intermediate(self, context, dagster_type=None, step_output_handle=None, value=None):
+    def set_intermediate(
+        self, context, dagster_type=None, step_output_handle=None, value=None, version=None
+    ):
         pass
 
     @abstractmethod
@@ -132,7 +134,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
 
         return self.get_intermediate_object(dagster_type, step_output_handle)
 
-    def set_intermediate_object(self, dagster_type, step_output_handle, value):
+    def set_intermediate_object(self, dagster_type, step_output_handle, value, version=None):
         check.inst_param(dagster_type, "dagster_type", DagsterType)
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         paths = self._get_paths(step_output_handle)
@@ -149,15 +151,17 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
             obj=value,
             serialization_strategy_name=dagster_type.serialization_strategy.name,
             object_store_name=self.object_store.name,
+            version=version,
         )
 
     def set_intermediate(
-        self, context, dagster_type=None, step_output_handle=None, value=None,
+        self, context, dagster_type=None, step_output_handle=None, value=None, version=None,
     ):
         dagster_type = resolve_dagster_type(dagster_type)
         check.opt_inst_param(context, "context", SystemExecutionContext)
         check.inst_param(dagster_type, "dagster_type", DagsterType)
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
+        check.opt_str_param(version, "version")
 
         if self.has_intermediate(context, step_output_handle):
             context.log.warning(
@@ -174,7 +178,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
                 dagster_type
             )
 
-        return self.set_intermediate_object(dagster_type, step_output_handle, value)
+        return self.set_intermediate_object(dagster_type, step_output_handle, value, version)
 
     def has_intermediate(self, context, step_output_handle):
         check.opt_inst_param(context, "context", SystemExecutionContext)
@@ -222,7 +226,13 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
 
     @experimental
     def set_intermediate_to_address(
-        self, context, dagster_type=None, step_output_handle=None, value=None, address=None
+        self,
+        context,
+        dagster_type=None,
+        step_output_handle=None,
+        value=None,
+        address=None,
+        version=None,
     ):
         """
         This is an experimental method.
@@ -234,6 +244,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         check.inst_param(dagster_type, "dagster_type", DagsterType)
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         check.str_param(address, "address")
+        check.opt_str_param(version, "version")
 
         # currently it doesn't support type_storage_plugin_registry
         try:
@@ -247,6 +258,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
                 obj=value,
                 serialization_strategy_name=dagster_type.serialization_strategy.name,
                 object_store_name=self.object_store.name,
+                version=version,
             )
         except (IOError, OSError) as e:
             raise DagsterAddressIOError(str(e))

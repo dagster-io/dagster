@@ -181,22 +181,16 @@ def _create_step_output_event(step_context, output, type_check, success, version
                 description=type_check.description if type_check else None,
                 metadata_entries=type_check.metadata_entries if type_check else [],
             ),
-            address=output.address,
             version=version,
         ),
     )
 
 
-def _type_checked_step_output_event_sequence(step_context, output):
+def _type_checked_step_output_event_sequence(step_context, output, version):
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
     check.inst_param(output, "output", Output)
 
     step_output = step_context.step.step_output_named(output.output_name)
-
-    version = resolve_step_output_versions(
-        step_context.execution_plan, step_context.environment_config, step_context.mode_def,
-    )[StepOutputHandle(step_context.step.key, output.output_name)]
-
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
@@ -308,28 +302,34 @@ def _create_step_events_for_output(step_context, output):
     step = step_context.step
     step_output = step.step_output_named(output.output_name)
 
-    for output_event in _type_checked_step_output_event_sequence(step_context, output):
+    version = resolve_step_output_versions(
+        step_context.execution_plan, step_context.environment_config, step_context.mode_def,
+    )[StepOutputHandle(step_context.step.key, output.output_name)]
+
+    for output_event in _type_checked_step_output_event_sequence(step_context, output, version):
         yield output_event
 
     step_output_handle = StepOutputHandle.from_step(step=step, output_name=output.output_name)
 
-    for evt in _set_intermediates(step_context, step_output, step_output_handle, output):
+    for evt in _set_intermediates(step_context, step_output, step_output_handle, output, version):
         yield evt
 
     for evt in _create_output_materializations(step_context, output.output_name, output.value):
         yield evt
 
 
-def _set_intermediates(step_context, step_output, step_output_handle, output):
+def _set_intermediates(step_context, step_output, step_output_handle, output, version):
     res = step_context.intermediate_storage.set_intermediate(
         context=step_context,
         dagster_type=step_output.dagster_type,
         step_output_handle=step_output_handle,
         value=output.value,
+        version=version,
     )
+
     if isinstance(res, ObjectStoreOperation):
         yield DagsterEvent.object_store_operation(
-            step_context, ObjectStoreOperation.serializable(res, value_name=output.output_name)
+            step_context, ObjectStoreOperation.serializable(res, value_name=output.output_name),
         )
 
 

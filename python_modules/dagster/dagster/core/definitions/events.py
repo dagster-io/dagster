@@ -633,7 +633,7 @@ class ObjectStoreOperationType(Enum):
 class ObjectStoreOperation(
     namedtuple(
         "_ObjectStoreOperation",
-        "op key dest_key obj serialization_strategy_name object_store_name value_name",
+        "op key dest_key obj serialization_strategy_name object_store_name value_name version",
     )
 ):
     """This event is used internally by Dagster machinery when values are written to and read from
@@ -650,6 +650,7 @@ class ObjectStoreOperation(
             employed by the operation
         object_store_name (Optional[str]): The name of the object store that performed the
             operation.
+        version (Optional[str]): (Experimental) The version of the stored data.
     """
 
     def __new__(
@@ -661,6 +662,7 @@ class ObjectStoreOperation(
         serialization_strategy_name=None,
         object_store_name=None,
         value_name=None,
+        version=None,
     ):
         return super(ObjectStoreOperation, cls).__new__(
             cls,
@@ -673,6 +675,7 @@ class ObjectStoreOperation(
             ),
             object_store_name=check.opt_str_param(object_store_name, "object_store_name"),
             value_name=check.opt_str_param(value_name, "value_name"),
+            version=check.opt_str_param(version, "version"),
         )
 
     @classmethod
@@ -687,6 +690,7 @@ class ObjectStoreOperation(
                     "serialization_strategy_name": inst.serialization_strategy_name,
                     "object_store_name": inst.object_store_name,
                     "value_name": inst.value_name,
+                    "version": inst.version,
                 },
                 **kwargs
             )

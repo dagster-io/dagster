@@ -717,6 +717,12 @@ class DagsterEvent(
 
     @staticmethod
     def object_store_operation(step_context, object_store_operation_result):
+        from dagster.core.definitions.events import ObjectStoreOperation
+
+        check.inst_param(
+            object_store_operation_result, "object_store_operation_result", ObjectStoreOperation
+        )
+
         object_store_name = (
             "{object_store_name} ".format(
                 object_store_name=object_store_operation_result.object_store_name
@@ -779,9 +785,11 @@ class DagsterEvent(
             event_specific_data=ObjectStoreOperationResultData(
                 op=object_store_operation_result.op,
                 value_name=value_name,
+                address=object_store_operation_result.key,
                 metadata_entries=[
                     EventMetadataEntry.path(object_store_operation_result.key, label="key")
                 ],
+                version=object_store_operation_result.version,
             ),
             message=message,
         )
@@ -886,7 +894,7 @@ class StepExpectationResultData(namedtuple("_StepExpectationResultData", "expect
 
 @whitelist_for_serdes
 class ObjectStoreOperationResultData(
-    namedtuple("_ObjectStoreOperationResultData", "op value_name metadata_entries")
+    namedtuple("_ObjectStoreOperationResultData", "op value_name metadata_entries address version")
 ):
     pass
 

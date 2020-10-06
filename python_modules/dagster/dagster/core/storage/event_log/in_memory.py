@@ -160,15 +160,15 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
             Dict[(str, StepOutputHandle), str]: (pipeline name, step output handle) -> address.
                 For each step output, an address if there is one and None otherwise.
         """
-        step_output_records = (
+        object_store_operation_records = (
             record
             for records in self._logs.values()
             for record in records
             if record.is_dagster_event
-            and record.dagster_event.event_type == DagsterEventType.STEP_OUTPUT
+            and record.dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION
         )
 
         return get_addresses_for_step_output_versions_helper(
             step_output_versions,
-            [(record.timestamp, record.dagster_event) for record in step_output_records],
+            [(record.timestamp, record.dagster_event) for record in object_store_operation_records],
         )

@@ -67,7 +67,7 @@ class UserFailureData(namedtuple("_UserFailureData", "label description metadata
 class StepOutputData(
     namedtuple(
         "_StepOutputData",
-        "step_output_handle intermediate_materialization type_check_data address version",
+        "step_output_handle intermediate_materialization type_check_data version",
     )
 ):
     def __new__(
@@ -75,7 +75,6 @@ class StepOutputData(
         step_output_handle,
         intermediate_materialization=None,
         type_check_data=None,
-        address=None,
         version=None,
     ):
         return super(StepOutputData, cls).__new__(
@@ -89,7 +88,6 @@ class StepOutputData(
                 (AssetMaterialization, Materialization),
             ),
             type_check_data=check.opt_inst_param(type_check_data, "type_check_data", TypeCheckData),
-            address=check.opt_str_param(address, "address"),
             version=check.opt_str_param(version, "version"),
         )
 

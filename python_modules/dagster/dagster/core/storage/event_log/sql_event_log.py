@@ -358,11 +358,11 @@ class SqlEventLogStorage(EventLogStorage):
             check.inst_param(step_output_handle, "step_output_versions key[1]", StepOutputHandle)
 
         c = SqlEventLogStorageTable.c
-        output_events_query = db.select([c.id, c.timestamp, c.event]).where(
-            c.dagster_event_type == DagsterEventType.STEP_OUTPUT.value
+        object_store_operation_events_query = db.select([c.id, c.timestamp, c.event]).where(
+            c.dagster_event_type == DagsterEventType.OBJECT_STORE_OPERATION.value
         )
         with self.connect() as conn:
-            step_output_records = conn.execute(output_events_query).fetchall()
+            step_output_records = conn.execute(object_store_operation_events_query).fetchall()
 
         return get_addresses_for_step_output_versions_helper(
             step_output_versions,
