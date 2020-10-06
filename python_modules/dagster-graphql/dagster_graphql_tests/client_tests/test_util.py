@@ -19,11 +19,13 @@ from dagster import (
     lambda_solid,
     solid,
 )
-from dagster.cli.workspace.cli_target import PythonFileTarget, workspace_from_load_target
+from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
 from dagster.core.events import STEP_EVENTS, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.core.instance import DagsterInstance
+from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
 
 def test_can_handle_all_step_events():
@@ -106,11 +108,14 @@ def test_pipeline():
 def test_all_step_events():  # pylint: disable=too-many-locals
     instance = DagsterInstance.ephemeral()
 
-    workspace = workspace_from_load_target(
-        PythonFileTarget(__file__, define_test_events_pipeline.__name__, working_directory=None),
-        instance,
-    )
     pipeline_def = define_test_events_pipeline()
+
+    workspace = create_in_process_ephemeral_workspace(
+        pointer=CodePointer.from_python_file(
+            __file__, define_test_events_pipeline.__name__, working_directory=None
+        )
+    )
+
     mode = pipeline_def.get_default_mode_name()
     execution_plan = create_execution_plan(pipeline_def, mode=mode)
     pipeline_run = instance.create_run_for_pipeline(
@@ -137,7 +142,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
             variables = {
                 "executionParams": {
                     "selector": {
-                        "repositoryLocationName": get_ephemeral_repository_name(pipeline_def.name),
+                        "repositoryLocationName": IN_PROCESS_NAME,
                         "repositoryName": get_ephemeral_repository_name(pipeline_def.name),
                         "pipelineName": pipeline_def.name,
                     },

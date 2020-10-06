@@ -1,4 +1,8 @@
+import re
+
+import pytest
 from dagster_graphql.client.mutations import (
+    DagsterGraphQLClientError,
     execute_execute_plan_mutation,
     execute_execute_plan_mutation_raw,
 )
@@ -9,7 +13,9 @@ from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     get_ephemeral_repository_name,
 )
+from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.core.instance import DagsterInstance
+from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
 EXPECTED_EVENTS = {
     ("STEP_INPUT", "sleeper.compute"),
@@ -53,7 +59,7 @@ def sleepy_recon_pipeline():
     )
 
 
-def test_execute_execute_plan_mutation():
+def test_execute_execute_plan_mutation_out_of_process_fails():
     pipeline_name = "sleepy_pipeline"
     instance = DagsterInstance.local_temp()
 
@@ -66,6 +72,32 @@ def test_execute_execute_plan_mutation():
             "mode": "default",
             "selector": {
                 "repositoryLocationName": get_ephemeral_repository_name(pipeline_name),
+                "repositoryName": get_ephemeral_repository_name(pipeline_name),
+                "pipelineName": pipeline_name,
+            },
+            "executionMetadata": {"runId": pipeline_run.run_id},
+        }
+    }
+    with pytest.raises(
+        DagsterGraphQLClientError,
+        match=re.escape("execute_plan is not supported for out-of-process repository locations"),
+    ):
+        execute_execute_plan_mutation(workspace, variables, instance_ref=instance.get_ref())
+
+
+def test_execute_execute_plan_mutation():
+    pipeline_name = "sleepy_pipeline"
+    instance = DagsterInstance.local_temp()
+
+    pipeline = sleepy_recon_pipeline()
+    workspace = create_in_process_ephemeral_workspace(pointer=pipeline.repository.pointer)
+    pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
+    variables = {
+        "executionParams": {
+            "runConfigData": {},
+            "mode": "default",
+            "selector": {
+                "repositoryLocationName": IN_PROCESS_NAME,
                 "repositoryName": get_ephemeral_repository_name(pipeline_name),
                 "pipelineName": pipeline_name,
             },
@@ -85,7 +117,7 @@ def test_execute_execute_plan_mutation_raw():
     pipeline = sleepy_recon_pipeline()
     instance = DagsterInstance.local_temp()
 
-    workspace = load_sleepy_workspace(instance)
+    workspace = create_in_process_ephemeral_workspace(pointer=pipeline.repository.pointer)
 
     pipeline_run = instance.create_run_for_pipeline(pipeline_def=pipeline.get_definition())
     variables = {
@@ -93,7 +125,7 @@ def test_execute_execute_plan_mutation_raw():
             "runConfigData": {},
             "mode": "default",
             "selector": {
-                "repositoryLocationName": get_ephemeral_repository_name(pipeline_name),
+                "repositoryLocationName": IN_PROCESS_NAME,
                 "repositoryName": get_ephemeral_repository_name(pipeline_name),
                 "pipelineName": pipeline_name,
             },

@@ -65,11 +65,7 @@ from dagster.grpc.types import (
     ScheduleExecutionDataMode,
 )
 from dagster.seven import get_timestamp_from_utc_datetime
-from dagster.utils.hosted_user_process import (
-    external_repo_from_def,
-    is_repository_location_in_same_python_env,
-    recon_repository_from_origin,
-)
+from dagster.utils.hosted_user_process import external_repo_from_def, recon_repository_from_origin
 
 from .selector import PipelineSelector
 
@@ -670,41 +666,9 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
         step_keys_to_execute,
         retries=None,
     ):
-        if (
-            is_repository_location_in_same_python_env(self.location_handle)
-            and len(self.location_handle.repository_code_pointer_dict) == 1
-        ):
-            check.inst_param(instance, "instance", DagsterInstance)
-            check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-            check.dict_param(run_config, "run_config")
-            check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-            check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-
-            pointer = next(iter(self.location_handle.repository_code_pointer_dict.values()))
-            recon_repo = ReconstructableRepository(pointer)
-
-            execution_plan = create_execution_plan(
-                pipeline=recon_repo.get_reconstructable_pipeline(
-                    external_pipeline.name
-                ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute),
-                run_config=run_config,
-                mode=pipeline_run.mode,
-                step_keys_to_execute=step_keys_to_execute,
-            )
-
-            execute_plan(
-                execution_plan=execution_plan,
-                instance=instance,
-                pipeline_run=pipeline_run,
-                run_config=run_config,
-                retries=retries,
-            )
-        else:
-            raise NotImplementedError(
-                "execute_plan is currently only supported when the location is a python "
-                "environment with the exact same executable and when there is only a single "
-                "repository."
-            )
+        raise NotImplementedError(
+            "execute_plan is not supported for out-of-process repository locations."
+        )
 
     def execute_pipeline(
         self, instance, external_pipeline, pipeline_run,
