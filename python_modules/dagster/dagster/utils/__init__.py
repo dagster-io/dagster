@@ -349,6 +349,18 @@ def start_termination_thread(termination_event):
 _received_interrupt = {"received": False}
 
 
+def setup_windows_interrupt_support():
+    """ Set SIGBREAK handler to SIGINT on Windows """
+    if sys.platform == "win32":
+        signal.signal(signal.SIGBREAK, signal.getsignal(signal.SIGINT))  # pylint: disable=no-member
+
+
+def _replace_interrupt_signal(new_signal_handler):
+    signal.signal(signal.SIGINT, new_signal_handler)
+    # Update the windows interrupt signal as well if needed
+    setup_windows_interrupt_support()
+
+
 # Wraps code that we don't want a SIGINT to interrupt (but throw a KeyboardInterrupt if a
 # SIGINT was received while it ran). You can also call raise_delayed_interrupts within this
 # context when you reach a checkpoint where it's safe to raise a KeyboardInterrupt, or open a
@@ -358,15 +370,14 @@ _received_interrupt = {"received": False}
 def delay_interrupts():
     original_signal_handler = signal.getsignal(signal.SIGINT)
 
-    def _new_signal_handler(signo, _):
-        check.invariant(signo == signal.SIGINT)
+    def _new_signal_handler(_signo, _):
         _received_interrupt["received"] = True
 
     signal_replaced = False
 
     try:
         try:
-            signal.signal(signal.SIGINT, _new_signal_handler)
+            _replace_interrupt_signal(_new_signal_handler)
             signal_replaced = True
         except ValueError:
             # Can't replace signal handlers when not on the main thread, ignore
@@ -374,7 +385,7 @@ def delay_interrupts():
         yield
     finally:
         if signal_replaced:
-            signal.signal(signal.SIGINT, original_signal_handler)
+            _replace_interrupt_signal(original_signal_handler)
             raise_delayed_interrupts()
 
 
@@ -388,14 +399,13 @@ def raise_interrupts_immediately():
     original_signal_handler = signal.getsignal(signal.SIGINT)
 
     def _new_signal_handler(signo, _):
-        check.invariant(signo == signal.SIGINT)
         raise KeyboardInterrupt
 
     signal_replaced = False
 
     try:
         try:
-            signal.signal(signal.SIGINT, _new_signal_handler)
+            _replace_interrupt_signal(_new_signal_handler)
             signal_replaced = True
         except ValueError:
             # Can't replace signal handlers when not on the main thread, ignore
@@ -403,7 +413,7 @@ def raise_interrupts_immediately():
         yield
     finally:
         if signal_replaced:
-            signal.signal(signal.SIGINT, original_signal_handler)
+            _replace_interrupt_signal(original_signal_handler)
 
 
 # Call within a `delay_interrupts` context whenever you reach a checkpoint where it's safe to

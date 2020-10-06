@@ -165,12 +165,6 @@ def ipc_read_event_stream(file_path, timeout=30):
 # https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
 
 
-def setup_interrupt_support():
-    """ Set SIGBREAK handler to SIGINT on Windows """
-    if sys.platform == "win32":
-        signal.signal(signal.SIGBREAK, signal.getsignal(signal.SIGINT))  # pylint: disable=no-member
-
-
 def open_ipc_subprocess(parts, **kwargs):
     """ Sets new process group flags on Windows to support graceful termination. """
     check.list_param(parts, "parts", str)

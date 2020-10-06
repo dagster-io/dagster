@@ -90,13 +90,8 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.serdes.ipc import (
-    ipc_write_stream,
-    ipc_write_unary_response,
-    read_unary_input,
-    setup_interrupt_support,
-)
-from dagster.utils import delay_interrupts
+from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, read_unary_input
+from dagster.utils import delay_interrupts, setup_windows_interrupt_support
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
@@ -369,7 +364,7 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
 
     # Perform setup so that termination of the execution will unwind and report to the
     # instance correctly
-    setup_interrupt_support()
+    setup_windows_interrupt_support()
 
     try:
         for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
