@@ -388,7 +388,6 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
         supported_pythons=SupportedPython3s,
     ),
-    ModuleBuildSpec("python_modules/libraries/dagster-flyte", supported_pythons=SupportedPython3s),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-gcp",
         env_vars=[
@@ -657,13 +656,6 @@ def dagit_steps():
 def python_steps():
     steps = []
     steps += publish_test_images()
-
-    steps += [
-        StepBuilder("dagster-flyte build example")
-        .run("cd python_modules/libraries/dagster-flyte/examples", "make docker_build")
-        .on_integration_image(SupportedPython.V3_6)
-        .build()
-    ]
 
     steps += pylint_steps()
     steps += [
