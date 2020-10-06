@@ -37,7 +37,6 @@ from dagster.core.scheduler import ScheduleStatus, Scheduler
 from dagster.core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
 from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.file_manager import LocalFileManager
-from dagster.core.storage.intermediate_storage import InMemoryIntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.types.dagster_type import resolve_dagster_type
 from dagster.core.utility_solids import define_stub_solid
@@ -81,7 +80,7 @@ def create_test_pipeline_execution_context(logger_defs=None):
             scoped_resources_builder=scoped_resources_builder,
             intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
             system_storage_data=SystemStorageData(
-                intermediate_storage=InMemoryIntermediateStorage(),
+                intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
                 file_manager=LocalFileManager.for_instance(instance, pipeline_run.run_id),
             ),
             log_manager=log_manager,

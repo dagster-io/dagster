@@ -62,47 +62,6 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
         return uncovered_inputs
 
 
-class InMemoryIntermediateStorage(IntermediateStorage):
-    def __init__(self):
-
-        self.values = {}
-
-    # Note:
-    # For the in-memory manager context and runtime are currently optional
-    # because they are not strictly required. So we allow one to access
-    # these values in places where those are not immediately available
-    # but one wants to inspect intermediates. This is useful in test contexts
-    # especially
-
-    def get_intermediate(
-        self, context, dagster_type=None, step_output_handle=None,
-    ):
-        check.opt_inst_param(context, "context", SystemExecutionContext)
-        check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
-        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-        return self.values[step_output_handle]
-
-    def set_intermediate(
-        self, context, dagster_type=None, step_output_handle=None, value=None,
-    ):
-        check.opt_inst_param(context, "context", SystemExecutionContext)
-        check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
-        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-        self.values[step_output_handle] = value
-
-    def has_intermediate(self, context, step_output_handle):
-        check.opt_inst_param(context, "context", SystemExecutionContext)
-        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-        return step_output_handle in self.values
-
-    def copy_intermediate_from_run(self, context, run_id, step_output_handle):
-        check.failed("not implemented in in memory")
-
-    @property
-    def is_persistent(self):
-        return False
-
-
 class ObjectStoreIntermediateStorage(IntermediateStorage):
     def __init__(self, object_store, root_for_run_id, run_id, type_storage_plugin_registry):
         self.root_for_run_id = check.callable_param(root_for_run_id, "root_for_run_id")
