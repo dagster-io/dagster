@@ -47,7 +47,7 @@ spec:
           imagePullPolicy: {{ $deployment.image.pullPolicy }}
           image: "{{ $deployment.image.repository }}:{{ $deployment.image.tag }}"
           command: ["dagster"]
-          args: ["api", "grpc", "-h", "0.0.0.0", "-p", "3030", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
+          args: ["api", "grpc", "-h", "0.0.0.0", "-p", "{{ $deployment.port }}", "{{- join "\",\"" $deployment.dagsterApiGrpcArgs }}"]
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
