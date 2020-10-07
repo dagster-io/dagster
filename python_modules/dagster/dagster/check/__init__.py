@@ -568,14 +568,18 @@ def _check_key_value_types(obj, key_type, value_type, key_check=isinstance, valu
     return obj
 
 
-def dict_param(obj, param_name, key_type=None, value_type=None):
+def dict_param(obj, param_name, key_type=None, value_type=None, additional_message=None):
     """Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
     returns obj.
     """
     from dagster.utils import frozendict
 
     if not isinstance(obj, (frozendict, dict)):
-        raise_with_traceback(_param_type_mismatch_exception(obj, (frozendict, dict), param_name))
+        raise_with_traceback(
+            _param_type_mismatch_exception(
+                obj, (frozendict, dict), param_name, additional_message=additional_message
+            )
+        )
 
     if not (key_type or value_type):
         return obj

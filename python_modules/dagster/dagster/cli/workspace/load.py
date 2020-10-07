@@ -19,10 +19,18 @@ def load_workspace_from_yaml_paths(yaml_paths, python_user_process_api):
     check.inst_param(python_user_process_api, "python_user_process_api", UserProcessApi)
 
     workspace_configs = [load_yaml_from_path(yaml_path) for yaml_path in yaml_paths]
-    workspaces = [
-        load_workspace_from_config(workspace_config, yaml_path, python_user_process_api)
-        for workspace_config, yaml_path in zip(workspace_configs, yaml_paths)
-    ]
+    workspaces = []
+    for workspace_config, yaml_path in zip(workspace_configs, yaml_paths):
+        check.invariant(
+            workspace_config is not None,
+            (
+                "Could not parse a workspace config from the yaml file at {yaml_path}. Check that "
+                "the file contains valid yaml."
+            ).format(yaml_path=os.path.abspath(yaml_path)),
+        )
+        workspaces.append(
+            load_workspace_from_config(workspace_config, yaml_path, python_user_process_api)
+        )
 
     repository_location_handles_dict = {}
     for workspace in workspaces:

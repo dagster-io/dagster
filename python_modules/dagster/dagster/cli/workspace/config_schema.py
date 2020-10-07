@@ -1,3 +1,5 @@
+import os
+
 from dagster import check
 from dagster.config import Field, ScalarUnion, Selector
 from dagster.config.source import StringSource
@@ -13,13 +15,15 @@ def process_workspace_config(workspace_config):
 
 
 def ensure_workspace_config(workspace_config, yaml_path):
-    check.dict_param(workspace_config, "workspace_config")
     check.str_param(yaml_path, "yaml_path")
+    check.dict_param(workspace_config, "workspace_config")
 
     validation_result = process_workspace_config(workspace_config)
     if not validation_result.success:
         raise DagsterInvalidConfigError(
-            "Errors while loading workspace config at {}.".format(yaml_path),
+            "Errors while loading workspace config from {yaml_path}.".format(
+                yaml_path=os.path.abspath(yaml_path)
+            ),
             validation_result.errors,
             workspace_config,
         )
