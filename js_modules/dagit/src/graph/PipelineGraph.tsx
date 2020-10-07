@@ -122,7 +122,7 @@ export class PipelineGraphContents extends React.PureComponent<
             minified={minified}
           />
         )}
-        {selectedSolid && (
+        {selectedSolid && layout.solids[selectedSolid.name] && (
           // this rect is hidden beneath the user's selection with a React key so that
           // when they expand the composite solid React sees this component becoming
           // the one above and re-uses the DOM node. This allows us to animate the rect's
