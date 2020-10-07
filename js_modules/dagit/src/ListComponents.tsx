@@ -13,6 +13,7 @@ export const Legend = styled.div`
   text-decoration: none;
 `;
 export const LegendColumn = styled.div`
+  align-self: flex-end;
   flex: 1;
   color: #8a9ba8;
   padding: 7px 10px;

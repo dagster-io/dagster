@@ -1,8 +1,9 @@
-import {Checkbox, Icon, NonIdealState} from '@blueprintjs/core';
+import {Checkbox, NonIdealState, Tag} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useActivePipelineForName} from 'src/DagsterRepositoryContext';
 import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
@@ -86,7 +87,7 @@ export class RunTable extends React.Component<RunTableProps, RunTableState> {
     return (
       <div>
         <Legend>
-          <LegendColumn style={{padding: '0 3px', display: 'flex', alignItems: 'center'}}>
+          <LegendColumn style={{paddingLeft: '3px', display: 'flex', alignItems: 'center'}}>
             <Checkbox
               style={{marginBottom: 0, marginTop: 1}}
               indeterminate={checkedRuns.length > 0 && checkedOnPage.length < runs.length}
@@ -103,6 +104,7 @@ export class RunTable extends React.Component<RunTableProps, RunTableState> {
             />
           </LegendColumn>
           <LegendColumn style={{flex: 5}}></LegendColumn>
+          <LegendColumn style={{maxWidth: '90px'}}>Pipeline Snapshot</LegendColumn>
           <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
           <LegendColumn style={{maxWidth: 150}}>Timing</LegendColumn>
           <LegendColumn style={{maxWidth: 50}}></LegendColumn>
@@ -134,6 +136,8 @@ const RunRow: React.FunctionComponent<{
   onToggleChecked?: () => void;
 }> = ({run, onSetFilter, checked, onToggleChecked}) => {
   const pipelineLink = `/pipeline/${run.pipelineName}@${run.pipelineSnapshotId}/`;
+  const activePipeline = useActivePipelineForName(run.pipelineName);
+  const isHistorical = activePipeline?.pipelineSnapshotId !== run.pipelineSnapshotId;
 
   return (
     <RowContainer key={run.runId} style={{paddingRight: 3}}>
@@ -156,12 +160,20 @@ const RunRow: React.FunctionComponent<{
         <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</Link>
       </RowColumn>
       <RowColumn style={{flex: 5}}>
-        <div style={{display: 'flex'}}>
-          <Link to={pipelineLink}>
-            <Icon icon="diagram-tree" /> {run.pipelineName}
-          </Link>
-        </div>
+        {run.pipelineName}
         <RunTags tags={run.tags} onSetFilter={onSetFilter} />
+      </RowColumn>
+      <RowColumn style={{maxWidth: '90px'}}>
+        <div>
+          <div style={{fontFamily: 'monospace', marginBottom: '4px'}}>
+            <Link to={pipelineLink}>{run.pipelineSnapshotId?.slice(0, 8)}</Link>
+          </div>
+          {isHistorical ? (
+            <Tag minimal intent="warning">
+              Historical
+            </Tag>
+          ) : null}
+        </div>
       </RowColumn>
       <RowColumn>
         <div>
