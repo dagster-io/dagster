@@ -17,7 +17,7 @@ SimpleDataFrame = DagsterType(
     description="A naive representation of a data frame, e.g., as returned by csv.DictReader.",
 )
 
-
+# start_custom_types_mypy_verbose_marker_0
 @solid(
     input_defs=[InputDefinition("csv_path", String)],
     output_defs=[OutputDefinition(SimpleDataFrame)],
@@ -44,6 +44,9 @@ def sort_by_calories(context, cereals: list):
             most_caloric=sorted_cereals[-1]["name"]
         )
     )
+
+
+# end_custom_types_mypy_verbose_marker_0
 
 
 @pipeline

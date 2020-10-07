@@ -4,6 +4,7 @@ import typing
 
 from dagster import DagsterType, execute_pipeline, pipeline, solid
 
+# start_custom_types_mypy_typing_trick_marker_0
 if typing.TYPE_CHECKING:
     SimpleDataFrame = list
 else:
@@ -12,6 +13,7 @@ else:
         type_check_fn=lambda _, value: isinstance(value, list),
         description="A naive representation of a data frame, e.g., as returned by csv.DictReader.",
     )
+# end_custom_types_mypy_typing_trick_marker_0
 
 
 @solid

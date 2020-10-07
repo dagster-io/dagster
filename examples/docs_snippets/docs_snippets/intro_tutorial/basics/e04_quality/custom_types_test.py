@@ -99,6 +99,7 @@ if __name__ == "__main__":
     )
 
 
+# start_custom_types_test_marker_0
 def test_less_simple_data_frame():
     assert check_dagster_type(
         LessSimpleDataFrame, [{"foo": 1}, {"foo": 2}]
@@ -112,3 +113,6 @@ def test_less_simple_data_frame():
         "Rows in LessSimpleDataFrame should have the same fields, "
         "got ['bar'] for row 2, expected ['foo']"
     )
+
+
+# end_custom_types_test_marker_0

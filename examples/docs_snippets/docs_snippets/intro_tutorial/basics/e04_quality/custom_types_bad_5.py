@@ -90,6 +90,7 @@ LessSimpleDataFrame = DagsterType(
 )
 
 
+# start_custom_types_5_marker_0
 def expect_column_to_be_integers(
     data_frame: LessSimpleDataFrame, column_name: str
 ) -> ExpectationResult:
@@ -133,6 +134,9 @@ def sort_by_calories(context, cereals: LessSimpleDataFrame):
         )
     )
     yield Output(sorted_cereals)
+
+
+# end_custom_types_5_marker_0
 
 
 @pipeline

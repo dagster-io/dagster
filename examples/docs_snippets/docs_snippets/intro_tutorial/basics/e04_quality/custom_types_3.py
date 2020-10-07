@@ -29,6 +29,7 @@ def less_simple_data_frame_type_check(_, value):
     return True
 
 
+# start_custom_types_3_marker_0
 @dagster_type_loader(Selector({"csv": Field(String)}))
 def less_simple_data_frame_loader(context, selector):
     csv_path = os.path.join(os.path.dirname(__file__), selector["csv"])
@@ -39,12 +40,16 @@ def less_simple_data_frame_loader(context, selector):
     return lines
 
 
+# end_custom_types_3_marker_0
+
+# start_custom_types_3_marker_1
 LessSimpleDataFrame = DagsterType(
     name="LessSimpleDataFrame",
     description="A more sophisticated data frame that type checks its structure.",
     type_check_fn=less_simple_data_frame_type_check,
     loader=less_simple_data_frame_loader,
 )
+# end_custom_types_3_marker_1
 
 
 @solid
@@ -68,6 +73,7 @@ def custom_type_pipeline():
 
 
 if __name__ == "__main__":
+    # start_custom_types_3_marker_2
     execute_pipeline(
         custom_type_pipeline,
         {
@@ -78,3 +84,4 @@ if __name__ == "__main__":
             }
         },
     )
+    # end_custom_types_3_marker_2

@@ -12,6 +12,7 @@ SimpleDataFrame = DagsterType(
 # end_custom_types_marker_0
 
 
+# start_custom_types_marker_1
 @solid
 def read_csv(context, csv_path: str) -> SimpleDataFrame:
     csv_path = os.path.join(os.path.dirname(__file__), csv_path)
@@ -35,6 +36,9 @@ def sort_by_calories(context, cereals: SimpleDataFrame):
             most_caloric=sorted_cereals[-1]["name"]
         )
     )
+
+
+# end_custom_types_marker_1
 
 
 @pipeline

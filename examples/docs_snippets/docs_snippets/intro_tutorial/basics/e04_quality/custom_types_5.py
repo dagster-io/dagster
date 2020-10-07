@@ -72,6 +72,7 @@ def less_simple_data_frame_type_check(_, value):
     )
 
 
+# start_custom_types_5_marker_0
 @dagster_type_loader(Selector({"csv": Field(String)}))
 def less_simple_data_frame_loader(context, selector):
     lines = []
@@ -83,6 +84,9 @@ def less_simple_data_frame_loader(context, selector):
 
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return lines
+
+
+# end_custom_types_5_marker_0
 
 
 LessSimpleDataFrame = DagsterType(

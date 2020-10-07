@@ -15,6 +15,7 @@ from dagster import (
 )
 
 
+# start_custom_types_4_marker_0
 def less_simple_data_frame_type_check(_, value):
     if not isinstance(value, list):
         return TypeCheck(
@@ -68,6 +69,9 @@ def less_simple_data_frame_type_check(_, value):
             ),
         ],
     )
+
+
+# end_custom_types_4_marker_0
 
 
 @dagster_type_loader(Selector({"csv": Field(String)}))

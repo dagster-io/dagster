@@ -4,6 +4,7 @@ import os
 from dagster import DagsterType, execute_pipeline, pipeline, solid
 
 
+# start_custom_types_2_marker_0
 def less_simple_data_frame_type_check(_, value):
     if not isinstance(value, list):
         return False
@@ -26,8 +27,10 @@ LessSimpleDataFrame = DagsterType(
     description="A more sophisticated data frame that type checks its structure.",
     type_check_fn=less_simple_data_frame_type_check,
 )
+# end_custom_types_2_marker_0
 
 
+# start_custom_types_2_marker_1
 @solid
 def bad_read_csv(context, csv_path: str) -> LessSimpleDataFrame:
     csv_path = os.path.join(os.path.dirname(__file__), csv_path)
@@ -36,6 +39,9 @@ def bad_read_csv(context, csv_path: str) -> LessSimpleDataFrame:
 
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return ["not_a_dict"]
+
+
+# end_custom_types_2_marker_1
 
 
 @solid
