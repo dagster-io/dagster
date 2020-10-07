@@ -1,18 +1,9 @@
-import logging
 import time
-from contextlib import contextmanager
 
 import psycopg2
-import six
-import sqlalchemy
 
-from dagster import Field, IntSource, Selector, StringSource, check
-from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
+from dagster import Field, IntSource, Selector, StringSource
 from dagster.seven import quote_plus as urlquote
-
-
-class DagsterPostgresException(Exception):
-    pass
 
 
 def get_conn(conn_string):
@@ -53,58 +44,18 @@ def get_conn_string(username, password, hostname, db_name, port="5432"):
     )
 
 
-def retry_pg_connection_fn(fn, retry_limit=20, retry_wait=0.2):
-    """Reusable retry logic for any psycopg2/sqlalchemy PG connection functions that may fail.
-    Intended to be used anywhere we connect to PG, to gracefully handle transient connection issues.
-    """
-    check.callable_param(fn, "fn")
-    check.int_param(retry_limit, "retry_limit")
-    check.numeric_param(retry_wait, "retry_wait")
+def wait_for_connection(conn_string):
+    retry_limit = 20
 
-    while True:
+    while retry_limit:
         try:
-            return fn()
-        except (
-            # See: https://www.psycopg.org/docs/errors.html
-            # These are broad, we may want to list out specific exceptions to capture
-            psycopg2.DatabaseError,
-            psycopg2.OperationalError,
-            sqlalchemy.exc.OperationalError,
-        ) as exc:
-            logging.warning("Retrying failed database connection")
-            if retry_limit == 0:
-                six.raise_from(DagsterPostgresException("too many retries for DB connection"), exc)
+            psycopg2.connect(conn_string)
+            return True
+        except psycopg2.OperationalError:
+            pass
 
-        time.sleep(retry_wait)
+        time.sleep(0.2)
         retry_limit -= 1
 
-
-def wait_for_connection(conn_string):
-    retry_pg_connection_fn(lambda: psycopg2.connect(conn_string))
-    return True
-
-
-@contextmanager
-def create_pg_connection(engine, dunder_file, storage_type_desc=None):
-    check.inst_param(engine, "engine", sqlalchemy.engine.Engine)
-    check.str_param(dunder_file, "dunder_file")
-    check.opt_str_param(storage_type_desc, "storage_type_desc", "")
-
-    if storage_type_desc:
-        storage_type_desc += " "
-    else:
-        storage_type_desc = ""
-
-    conn = None
-    try:
-        # Retry connection to gracefully handle transient connection issues
-        conn = retry_pg_connection_fn(engine.connect)
-        with handle_schema_errors(
-            conn,
-            get_alembic_config(dunder_file),
-            msg="Postgres {}storage requires migration".format(storage_type_desc),
-        ):
-            yield conn
-    finally:
-        if conn:
-            conn.close()
+    assert retry_limit == 0
+    raise Exception("too many retries for db at {conn_string}".format(conn_string=conn_string))
