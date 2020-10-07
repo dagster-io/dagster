@@ -63,10 +63,13 @@ _**Note:** In this example, Dagit runs with the user code image. In
 
 ## System overview
 
-The Helm chart installs several different components, including Dagit. In this system, the <PyObject
-module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> coupled with the corresponding
-`celery_k8s_job_executor` handles physical execution of Dagster pipelines via Celery-on-K8s. This
-deployment aims to provide:
+The Helm chart installs several different components, including Dagit.
+
+### Celery K8s
+By default, we configure Dagster to deploy with Celery.
+In this system, the <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" /> coupled
+with the corresponding <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />
+handles physical execution of Dagster pipelines via Celery-on-K8s. This deployment aims to provide:
 
 - **User Code Separation:** In this system, the Celery workers can be deployed via fixed images
   without user code, but rest of the system still uses the user code image. In the next part, we
@@ -93,8 +96,17 @@ Celery workers poll for new tasks, and for each step execution task that it fetc
 step execution Job is launched to execute that step. These step execution Jobs are also launched
 using the `pipeline_run:` image, and each will be named `dagster-job-<hash>`.
 
-_**Note:** In the default Helm chart, we configure a <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />.
-It is also possible to deploy with a <PyObject module="dagster_k8s" object="K8sRunLauncher" /> or a custom Run Launcher.
+### Celery-less K8s
+The published helm chart also supports a celery-less deployment. In this case, we configure the <PyObject
+module="dagster_k8s" object="K8sRunLauncher" /> on the Dagster instance. This will launch each
+pipeline and its associated step executions in a single Kubernetes Job. We can use this option
+with the following command:
+
+```shell
+helm install dagster dagster/dagster -f /path/to/values.yaml --set celery.enabled=false
+```
+
+_**Note:** It is also possible to deploy with a custom Run Launcher.
 If you have questions, please reach out to us on [Slack](https://dagster-slackin.herokuapp.com/) and we're happy to help!_
 
 ## Helm chart

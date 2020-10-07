@@ -58,6 +58,7 @@ data:
           port: {{ .Values.postgresql.service.port }}
 
     run_launcher:
+      {{- if .Values.celery.enabled }}
       module: dagster_celery_k8s
       class: CeleryK8sRunLauncher
       config:
@@ -73,6 +74,20 @@ data:
         {{- if .Values.celery.configSource }}
         {{- toYaml .Values.celery.configSource | nindent 10 }}
         {{- end }}
+      {{- else }}
+      module: dagster_k8s
+      class: K8sRunLauncher
+      config:
+        service_account_name: {{ include "dagster.serviceAccountName" . }}
+        dagster_home:
+          env: DAGSTER_HOME
+        instance_config_map:
+          env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
+        postgres_password_secret:
+          env: DAGSTER_K8S_PG_PASSWORD_SECRET
+        env_config_maps:
+          - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
+      {{- end }}
 
     run_storage:
       module: dagster_postgres.run_storage

@@ -1,3 +1,4 @@
+{{- if .Values.celery.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -16,3 +17,4 @@ data:
   {{- end }}
   {{- end }}
   {{- end }}
+{{- end }}

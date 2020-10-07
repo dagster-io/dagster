@@ -207,6 +207,7 @@ celery:
     tag: "latest"
     pullPolicy: Always
 
+  # If disabled, the k8s run launcher will be used, which launches pipeline runs as single K8s Jobs.
   enabled: true
   # support overriding the name of Celery workers
   workers:

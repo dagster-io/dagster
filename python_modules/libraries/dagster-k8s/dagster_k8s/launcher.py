@@ -157,7 +157,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_cfg = DagsterK8sJobConfig.config_type()
 
         run_launcher_extra_cfg = {
-            "job_namespace": StringSource,
+            "job_namespace": Field(StringSource, is_required=False, default_value="default"),
             "load_incluster_config": Field(bool, is_required=False, default_value=True),
             "kubeconfig_file": Field(Noneable(str), is_required=False, default_value=None),
         }
