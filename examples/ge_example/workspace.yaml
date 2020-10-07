@@ -1,0 +1,4 @@
+load_from:
+  - python_module:
+      module_name: ge_example.repo
+      attribute: ge_example_repo

@@ -46,7 +46,9 @@ payroll_expectations = ge_validation_solid_factory(
                 "solids": {
                     "read_in_datafile": {
                         "inputs": {
-                            "csv_path": {"value": file_relative_path(__file__, "./succeed.csv")}
+                            "csv_path": {
+                                "value": file_relative_path(__file__, "./data/succeed.csv")
+                            }
                         }
                     }
                 },
@@ -66,7 +68,7 @@ payroll_expectations = ge_validation_solid_factory(
                 "solids": {
                     "read_in_datafile": {
                         "inputs": {
-                            "csv_path": {"value": file_relative_path(__file__, "./fail.csv")}
+                            "csv_path": {"value": file_relative_path(__file__, "./data/fail.csv")}
                         }
                     }
                 },
