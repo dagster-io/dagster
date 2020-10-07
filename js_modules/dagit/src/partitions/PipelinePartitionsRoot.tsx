@@ -29,6 +29,7 @@ export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps
   const queryResult = useQuery<PipelinePartitionsRootQuery>(PIPELINE_PARTITIONS_ROOT_QUERY, {
     variables: {repositorySelector, pipelineName},
     fetchPolicy: 'network-only',
+    skip: !repositorySelector.repositoryLocationName || !repositorySelector.repositoryName,
   });
   const {history} = React.useContext(RouterContext);
   const qs = querystring.parse(location.search);
