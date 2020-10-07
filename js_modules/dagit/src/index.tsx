@@ -16,7 +16,7 @@ import {App} from 'src/App';
 import {AppCache} from 'src/AppCache';
 import {AppErrorLink} from 'src/AppError';
 import {WEBSOCKET_URI} from 'src/DomUtils';
-import {patchCopyToRemoveZeroWidthUnderscores} from 'src/Util';
+import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from 'src/Util';
 import {WebsocketStatusProvider} from 'src/WebsocketStatus';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
@@ -55,9 +55,27 @@ const websocketClient = new SubscriptionClient(WEBSOCKET_URI, {
   lazy: true,
 });
 
+const timeStartLink = new ApolloLink((operation, forward) => {
+  operation.setContext({start: performance.now()});
+  return forward(operation);
+});
+
+const logTimeLink = new ApolloLink((operation, forward) => {
+  return forward(operation).map((data) => {
+    const time = performance.now() - operation.getContext().start;
+    debugLog(`${operation.operationName} took ${formatElapsedTime(time)}`);
+    return data;
+  });
+});
+
 const client = new ApolloClient({
   cache: AppCache,
-  link: ApolloLink.from([AppErrorLink(), new WebSocketLink(websocketClient)]),
+  link: ApolloLink.from([
+    logTimeLink,
+    AppErrorLink(),
+    timeStartLink,
+    new WebSocketLink(websocketClient),
+  ]),
 });
 
 ReactDOM.render(

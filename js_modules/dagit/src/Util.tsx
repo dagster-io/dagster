@@ -159,11 +159,15 @@ export function assertUnreachable(_: never): never {
 const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 export enum FeatureFlag {
-  GaantExecutionPlan = 'GAANT',
+  DebugConsoleLogging = 'DebugConsoleLogging',
 }
 
 export function getFeatureFlags(): FeatureFlag[] {
   return getJSONForKey(DAGIT_FLAGS_KEY) || [];
+}
+
+export function featureEnabled(flag: FeatureFlag): boolean {
+  return getFeatureFlags().includes(flag);
 }
 
 export function setFeatureFlags(flags: FeatureFlag[]) {
@@ -171,6 +175,12 @@ export function setFeatureFlags(flags: FeatureFlag[]) {
     throw new Error('flags must be an array');
   }
   localStorage.setItem(DAGIT_FLAGS_KEY, JSON.stringify(flags));
+}
+
+export function debugLog(...args: any[]) {
+  if (featureEnabled(FeatureFlag.DebugConsoleLogging)) {
+    console.log(...args);
+  }
 }
 
 export function colorHash(str: string) {
