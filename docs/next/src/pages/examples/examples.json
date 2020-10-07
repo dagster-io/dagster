@@ -20,6 +20,11 @@
         "description": "Run PySpark code in solids"
     },
     {
+        "name": "conditional_execution",
+        "title": "Conditional Execution",
+        "description": "Conditionally execute part of a pipeline"
+    },
+    {
         "name": "config_mapping",
         "title": "Config Mapping",
         "description": "Simplify solid config schemas with config mapping."
