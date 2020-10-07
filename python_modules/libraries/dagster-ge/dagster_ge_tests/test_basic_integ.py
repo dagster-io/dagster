@@ -78,7 +78,7 @@ def test_yielded_results_config_pandas(snapshot):
     snapshot.assert_match(metadata)
 
 
-def test_yielded_results_config_pyspark(snapshot):
+def test_yielded_results_config_pyspark(snapshot):  # pylint:disable=unused-argument
     run_config = {
         "resources": {
             "ge_data_context": {

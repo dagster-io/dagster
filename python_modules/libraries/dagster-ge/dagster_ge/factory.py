@@ -15,6 +15,7 @@ from dagster import (
     Output,
     OutputDefinition,
     StringSource,
+    check,
     resource,
     solid,
 )
@@ -56,6 +57,12 @@ def ge_validation_solid_factory(
         and an output with all the metadata (for user processing)
 
     """
+
+    check.str_param(datasource_name, "datasource_name")
+    check.str_param(suite_name, "suite_name")
+    check.opt_str_param(validation_operator_name, "validation_operator_name")
+
+    batch_kwargs = check.opt_dict_param(batch_kwargs, "batch_kwargs")
 
     @solid(
         input_defs=[InputDefinition("dataset", input_dagster_type)],
