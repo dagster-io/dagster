@@ -7,6 +7,8 @@ import sys
 
 from automation.git import git_commit_updates, git_repo_root
 
+from dagster.utils import mkdir_p
+
 
 class DagsterRepo:
     """For manipulating a dagster cloned repo.
@@ -21,7 +23,9 @@ class DagsterRepo:
 
     @property
     def out_path(self):
-        return os.path.join(self.docs_path, "out")
+        path = os.path.join(self.docs_path, "out")
+        mkdir_p(path)
+        return path
 
     def build_docs(self, docs_version):
         """Run docs build
