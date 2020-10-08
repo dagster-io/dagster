@@ -66,9 +66,14 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
-        self._schedule_state = graphene_info.context.instance.get_schedule_state(
+        self._schedule_state = graphene_info.context.instance.get_stored_schedule_state(
             self._external_schedule.get_origin_id()
         )
+
+        if not self._schedule_state:
+            # Also include a ScheduleState for a stopped schedule that may not
+            # have a stored database row yet
+            self._schedule_state = self._external_schedule.get_default_schedule_state()
 
         super(DauphinScheduleDefinition, self).__init__(
             name=external_schedule.name,

@@ -394,6 +394,16 @@ class ExternalSchedule:
     def get_origin_id(self):
         return self.get_origin().get_id()
 
+    # ScheduleState that represents the state of the schedule
+    # when there is no row in the schedule DB (for example, when
+    # the schedule is first created in code)
+    def get_default_schedule_state(self):
+        from dagster.core.scheduler import ScheduleState, ScheduleStatus
+
+        return ScheduleState(
+            self.get_origin(), ScheduleStatus.STOPPED, self.cron_schedule, start_timestamp=None,
+        )
+
 
 class ExternalPartitionSet:
     def __init__(self, external_partition_set_data, handle):

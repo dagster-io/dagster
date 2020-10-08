@@ -180,19 +180,12 @@ def test_re_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-
         with get_test_external_repo() as external_repo:
 
             now = get_current_datetime_in_utc()
-
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
-
             # Start schedule
             schedule_state = instance.start_schedule_and_update_storage_state(
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
             )
 
             assert schedule_state.start_timestamp == get_timestamp_from_utc_datetime(now)
-
-            # Re-initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
 
             # Check schedules are saved to disk
             assert "schedules" in os.listdir(tempdir)
@@ -204,15 +197,16 @@ def test_re_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-
                     assert state == schedule_state
 
 
+@pytest.mark.parametrize("do_initial_reconcile", [True, False])
 def test_start_and_stop_schedule(
-    restore_cron_tab,
+    restore_cron_tab, do_initial_reconcile,
 ):  # pylint:disable=unused-argument,redefined-outer-name
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
 
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
+            if do_initial_reconcile:
+                instance.reconcile_scheduler_state(external_repo)
 
             schedule = external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
             schedule_origin_id = schedule.get_origin_id()
@@ -239,19 +233,19 @@ def test_start_non_existent_schedule(
         instance = define_scheduler_instance(tempdir)
 
         with pytest.raises(DagsterScheduleDoesNotExist):
-            # Initialize scheduler
             instance.stop_schedule_and_update_storage_state("asdf")
 
 
+@pytest.mark.parametrize("do_initial_reconcile", [True, False])
 def test_start_schedule_cron_job(
-    restore_cron_tab,
+    do_initial_reconcile, restore_cron_tab,
 ):  # pylint:disable=unused-argument,redefined-outer-name
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
 
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
+            if do_initial_reconcile:
+                instance.reconcile_scheduler_state(external_repo)
 
             instance.start_schedule_and_update_storage_state(
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
@@ -298,8 +292,6 @@ def test_remove_schedule_def(
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
-
-            # Initialize scheduler
             instance.reconcile_scheduler_state(external_repo)
 
             assert len(instance.all_stored_schedule_state()) == 3
@@ -313,9 +305,6 @@ def test_add_schedule_def(restore_cron_tab):  # pylint:disable=unused-argument,r
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         with get_smaller_external_repo() as external_repo:
-
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
 
             # Start all schedule and verify cron tab, schedule storage, and errors
             instance.start_schedule_and_update_storage_state(
@@ -353,9 +342,6 @@ def test_start_and_stop_schedule_cron_tab(
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
-
             # Start schedule
             instance.start_schedule_and_update_storage_state(
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
@@ -465,9 +451,6 @@ def test_script_execution(
 
         instance = DagsterInstance.get()
         with get_test_external_repo() as external_repo:
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
-
             instance.start_schedule_and_update_storage_state(
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
             )
@@ -493,9 +476,6 @@ def test_start_schedule_fails(
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
 
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
-
             def raises(*args, **kwargs):
                 raise Exception("Patch")
 
@@ -505,7 +485,7 @@ def test_start_schedule_fails(
                     external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
                 )
 
-            schedule = instance.get_schedule_state(
+            schedule = instance.get_stored_schedule_state(
                 external_repo.get_external_schedule(
                     "no_config_pipeline_every_min_schedule"
                 ).get_origin_id()
@@ -520,9 +500,6 @@ def test_start_schedule_unsuccessful(
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
-
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
 
             def do_nothing(*_):
                 pass
@@ -546,9 +523,6 @@ def test_start_schedule_manual_delete_debug(
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
-
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
 
             instance.start_schedule_and_update_storage_state(
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
@@ -605,8 +579,6 @@ def test_start_schedule_manual_duplicate_schedules_add_debug(
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
 
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
             external_schedule = external_repo.get_external_schedule(
                 "no_config_pipeline_every_min_schedule"
             )
@@ -638,9 +610,6 @@ def test_stop_schedule_fails(
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
 
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
-
             external_schedule = external_repo.get_external_schedule(
                 "no_config_pipeline_every_min_schedule"
             )
@@ -663,7 +632,7 @@ def test_stop_schedule_fails(
             with pytest.raises(Exception, match="Patch"):
                 instance.stop_schedule_and_update_storage_state(schedule_origin_id)
 
-            schedule = instance.get_schedule_state(schedule_origin_id)
+            schedule = instance.get_stored_schedule_state(schedule_origin_id)
 
             assert schedule.status == ScheduleStatus.RUNNING
 
@@ -674,9 +643,6 @@ def test_stop_schedule_unsuccessful(
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
-
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
 
             def do_nothing(*_):
                 pass
@@ -706,9 +672,6 @@ def test_wipe(restore_cron_tab):  # pylint:disable=unused-argument,redefined-out
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
 
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
-
             # Start schedule
             instance.start_schedule_and_update_storage_state(
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
@@ -736,9 +699,6 @@ def test_log_directory(restore_cron_tab):  # pylint:disable=unused-argument,rede
                     schedule_origin_id=external_schedule.get_origin_id()
                 )
             )
-
-            # Initialize scheduler
-            instance.reconcile_scheduler_state(external_repo)
 
             # Start schedule
             instance.start_schedule_and_update_storage_state(external_schedule)
@@ -771,7 +731,6 @@ def test_reconcile_failure(restore_cron_tab):  # pylint:disable=unused-argument,
             )
             instance._scheduler.stop_schedule = failed_end_job  # pylint: disable=protected-access
 
-            # Initialize scheduler
             with pytest.raises(
                 DagsterScheduleReconciliationError,
                 match="Error 1: Failed to stop\n    Error 2: Failed to stop\n    Error 3: Failed to stop",
@@ -799,7 +758,7 @@ def test_reconcile_schedule_without_start_time():
 
             instance.reconcile_scheduler_state(external_repository=external_repo)
 
-            reconciled_schedule_state = instance.get_schedule_state(
+            reconciled_schedule_state = instance.get_stored_schedule_state(
                 external_schedule.get_origin_id()
             )
 
@@ -816,7 +775,6 @@ def test_reconcile_failure_when_deleting_schedule_def(
         instance = define_scheduler_instance(tempdir)
         with get_test_external_repo() as external_repo:
 
-            # Initialize scheduler
             instance.reconcile_scheduler_state(external_repo)
 
             assert len(instance.all_stored_schedule_state()) == 3

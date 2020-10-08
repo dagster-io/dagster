@@ -225,7 +225,6 @@ def logger():
 def instance_with_schedules(external_repo_context, overrides=None):
     with schedule_instance(overrides) as instance:
         with external_repo_context() as external_repo:
-            instance.reconcile_scheduler_state(external_repo)
             yield (instance, external_repo)
 
 
@@ -855,11 +854,11 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
             assert (
                 captured.out
-                == """2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_hourly_schedule, simple_schedule
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Launching run for simple_hourly_schedule at 2019-02-28 00:00:00+0000
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_hourly_schedule
+                == """2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule, simple_hourly_schedule
 2019-02-27 18:00:01 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-28 00:00:00+0000
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Launching run for simple_hourly_schedule at 2019-02-28 00:00:00+0000
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_hourly_schedule
 """.format(
                     first_run_id=instance.get_runs()[1].run_id,
                     second_run_id=instance.get_runs()[0].run_id,
@@ -886,10 +885,10 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-02-27 19:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_hourly_schedule, simple_schedule
+                == """2019-02-27 19:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule, simple_hourly_schedule
+2019-02-27 19:00:01 - SchedulerDaemon - INFO - No new runs for simple_schedule
 2019-02-27 19:00:01 - SchedulerDaemon - INFO - Launching run for simple_hourly_schedule at 2019-02-28 01:00:00+0000
 2019-02-27 19:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {third_run_id} for simple_hourly_schedule
-2019-02-27 19:00:01 - SchedulerDaemon - INFO - No new runs for simple_schedule
 """.format(
                     third_run_id=instance.get_runs()[0].run_id
                 )

@@ -469,7 +469,7 @@ def test_start_schedule_fails(
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
             )
 
-        schedule = instance.get_schedule_state(
+        schedule = instance.get_stored_schedule_state(
             external_repo.get_external_schedule(
                 "no_config_pipeline_every_min_schedule"
             ).get_origin_id()
@@ -595,7 +595,7 @@ def test_stop_schedule_fails(
         with pytest.raises(Exception, match="Patch"):
             instance.stop_schedule_and_update_storage_state(schedule_origin_id)
 
-        schedule = instance.get_schedule_state(schedule_origin_id)
+        schedule = instance.get_stored_schedule_state(schedule_origin_id)
 
         assert schedule.status == ScheduleStatus.RUNNING
 

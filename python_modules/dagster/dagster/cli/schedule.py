@@ -406,8 +406,10 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 )
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
-                schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
-                if schedule_state.status != ScheduleStatus.RUNNING:
+                schedule_state = instance.get_stored_schedule_state(
+                    external_schedule.get_origin_id()
+                )
+                if schedule_state != None and schedule_state.status != ScheduleStatus.RUNNING:
                     click.UsageError(
                         "Cannot restart a schedule {name} because is not currently running".format(
                             name=schedule_state.name

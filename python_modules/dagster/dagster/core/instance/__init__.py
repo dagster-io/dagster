@@ -1248,7 +1248,7 @@ class DagsterInstance:
     def all_stored_schedule_state(self, repository_origin_id=None):
         return self._schedule_storage.all_stored_schedule_state(repository_origin_id)
 
-    def get_schedule_state(self, schedule_origin_id):
+    def get_stored_schedule_state(self, schedule_origin_id):
         return self._schedule_storage.get_schedule_state(schedule_origin_id)
 
     def add_schedule_state(self, schedule_state):

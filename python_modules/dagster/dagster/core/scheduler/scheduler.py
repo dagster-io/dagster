@@ -179,7 +179,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
     """
 
     def _get_schedule_state(self, instance, schedule_origin_id):
-        schedule_state = instance.get_schedule_state(schedule_origin_id)
+        schedule_state = instance.get_stored_schedule_state(schedule_origin_id)
         if not schedule_state:
             raise DagsterScheduleDoesNotExist(
                 "You have attempted to start the job for schedule id {id}, but its state is not in storage.".format(
@@ -187,6 +187,17 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
                 )
             )
 
+        return schedule_state
+
+    def _create_new_schedule_state(self, instance, external_schedule):
+        schedule_state = ScheduleState(
+            external_schedule.get_origin(),
+            ScheduleStatus.STOPPED,
+            external_schedule.cron_schedule,
+            start_timestamp=None,
+        )
+
+        instance.add_schedule_state(schedule_state)
         return schedule_state
 
     def reconcile_scheduler_state(self, instance, external_repository):
@@ -210,7 +221,9 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         for external_schedule in external_repository.get_external_schedules():
             # If a schedule already exists for schedule_def, overwrite bash script and
             # metadata file
-            existing_schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
+            existing_schedule_state = instance.get_stored_schedule_state(
+                external_schedule.get_origin_id()
+            )
             if existing_schedule_state:
 
                 new_timestamp = existing_schedule_state.start_timestamp
@@ -228,14 +241,7 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
                 instance.update_schedule_state(schedule_state)
                 schedules_to_restart.append((existing_schedule_state, external_schedule))
             else:
-                schedule_state = ScheduleState(
-                    external_schedule.get_origin(),
-                    ScheduleStatus.STOPPED,
-                    external_schedule.cron_schedule,
-                    start_timestamp=None,
-                )
-
-                instance.add_schedule_state(schedule_state)
+                self._create_new_schedule_state(instance, external_schedule)
 
         # Delete all existing schedules that are not in external schedules
         external_schedule_origin_ids = {
@@ -293,7 +299,10 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = self._get_schedule_state(instance, external_schedule.get_origin_id())
+        schedule_state = instance.get_stored_schedule_state(external_schedule.get_origin_id())
+
+        if not schedule_state:
+            schedule_state = self._create_new_schedule_state(instance, external_schedule)
 
         if schedule_state.status == ScheduleStatus.RUNNING:
             raise DagsterSchedulerError(
@@ -466,7 +475,7 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
         pass
 
     def running_schedule_count(self, instance, schedule_origin_id):
-        state = instance.get_schedule_state(schedule_origin_id)
+        state = instance.get_stored_schedule_state(schedule_origin_id)
         if not state:
             return 0
         return 1 if state.status == ScheduleStatus.RUNNING else 0
