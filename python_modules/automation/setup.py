@@ -25,7 +25,7 @@ setup(
         "pandas",
         'pytablereader; python_version >="3"',
         "requests",
-        "slackclient==1.3.1",
+        "slackclient<2.0.0",
         "twine==1.15.0",
         "virtualenv==16.5.0",
         "wheel==0.33.6",

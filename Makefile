@@ -39,6 +39,7 @@ install_dev_python_modules:
 				-e python_modules/dagster-graphql \
 				-e python_modules/dagster-test \
 				-e python_modules/dagit \
+				-e python_modules/automation \
 				-e python_modules/libraries/dagster-pandas \
 				-e python_modules/libraries/dagster-aws \
 				-e python_modules/libraries/dagster-celery \
