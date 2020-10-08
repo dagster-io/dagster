@@ -400,13 +400,8 @@ class AssetMaterialization(
 
     def __new__(cls, asset_key, description=None, metadata_entries=None, partition=None):
         if isinstance(asset_key, AssetKey):
-<<<<<<< HEAD
             check.inst_param(asset_key, 'asset_key', AssetKey)
         elif is_str(asset_key):
-=======
-            check.inst_param(asset_key, "asset_key", AssetKey)
-        elif check.is_str(asset_key):
->>>>>>> master
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
             check.is_list(asset_key, of_type=str)
