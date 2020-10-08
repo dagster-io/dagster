@@ -788,6 +788,50 @@ def bool_elem(ddict, key):
     return value
 
 
+def opt_float_elem(ddict, key):
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+
+    value = ddict.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, float):
+        raise_with_traceback(_element_check_error(key, value, ddict, float))
+    return value
+
+
+def float_elem(ddict, key):
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+
+    value = ddict[key]
+    if not isinstance(value, float):
+        raise_with_traceback(_element_check_error(key, value, ddict, float))
+    return value
+
+
+def opt_int_elem(ddict, key):
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+
+    value = ddict.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, integer_types):
+        raise_with_traceback(_element_check_error(key, value, ddict, int))
+    return value
+
+
+def int_elem(ddict, key):
+    dict_param(ddict, "ddict")
+    str_param(key, "key")
+
+    value = ddict[key]
+    if not isinstance(value, integer_types):
+        raise_with_traceback(_element_check_error(key, value, ddict, int))
+    return value
+
+
 def opt_str_elem(ddict, key):
     dict_param(ddict, "ddict")
     str_param(key, "key")

@@ -552,6 +552,78 @@ def test_bool_elem():
         check.bool_elem(ddict, "a_str")
 
 
+def test_float_elem():
+    ddict = {"a_bool": True, "a_float": 1.0, "a_int": 1, "a_none": None, "a_str": "a"}
+
+    assert check.float_elem(ddict, "a_float") == 1.0
+
+    with pytest.raises(ElementCheckError):
+        check.float_elem(ddict, "a_bool")
+
+    with pytest.raises(ElementCheckError):
+        check.float_elem(ddict, "a_int")
+
+    with pytest.raises(ElementCheckError):
+        check.float_elem(ddict, "a_none")
+
+    with pytest.raises(ElementCheckError):
+        check.float_elem(ddict, "a_str")
+
+
+def test_opt_float_elem():
+    ddict = {"a_bool": True, "a_float": 1.0, "a_int": 1, "a_none": None, "a_str": "a"}
+
+    assert check.opt_float_elem(ddict, "a_float") == 1.0
+
+    assert check.opt_float_elem(ddict, "a_none") == None
+
+    assert check.opt_float_elem(ddict, "nonexistentkey") == None
+
+    with pytest.raises(ElementCheckError):
+        check.opt_float_elem(ddict, "a_bool")
+
+    with pytest.raises(ElementCheckError):
+        check.opt_float_elem(ddict, "a_int")
+
+    with pytest.raises(ElementCheckError):
+        check.opt_float_elem(ddict, "a_str")
+
+
+def test_int_elem():
+    ddict = {"a_bool": True, "a_float": 1.0, "a_int": 1, "a_none": None, "a_str": "a"}
+
+    assert check.int_elem(ddict, "a_int") == 1
+
+    assert check.int_elem(ddict, "a_bool") == True
+
+    with pytest.raises(ElementCheckError):
+        check.int_elem(ddict, "a_float")
+
+    with pytest.raises(ElementCheckError):
+        check.int_elem(ddict, "a_none")
+
+    with pytest.raises(ElementCheckError):
+        check.int_elem(ddict, "a_str")
+
+
+def test_opt_int_elem():
+    ddict = {"a_bool": True, "a_float": 1.0, "a_int": 1, "a_none": None, "a_str": "a"}
+
+    assert check.opt_int_elem(ddict, "a_int") == 1
+
+    assert check.opt_int_elem(ddict, "a_none") == None
+
+    assert check.opt_int_elem(ddict, "nonexistentkey") == None
+
+    assert check.opt_int_elem(ddict, "a_bool") == True
+
+    with pytest.raises(ElementCheckError):
+        check.opt_int_elem(ddict, "a_float")
+
+    with pytest.raises(ElementCheckError):
+        check.opt_int_elem(ddict, "a_str")
+
+
 def test_invariant():
     assert check.invariant(True)
 
