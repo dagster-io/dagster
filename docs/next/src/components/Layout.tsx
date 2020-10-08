@@ -20,13 +20,13 @@ const Layout: React.FunctionComponent = (props) => {
   return (
     <>
       <Header
-        onMobileToggleNavigationClick={() => {
+        onMobileToggleSidebarClick={() => {
           setIsNavigationVisible(!isNavigationVisible);
         }}
       />
       <div className="max-w-full mx-auto">
         <div
-          className={cx('h-screen flex overflow-hidden bg-white pt-16', {
+          className={cx('h-screen flex overflow-hidden bg-white lg:pt-16', {
             'bg-gray-100': router.pathname.indexOf('_apidocs') > 0,
           })}
         >
