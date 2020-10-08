@@ -1,7 +1,7 @@
 import csv
 import os
 
-from dagster import execute_pipeline, pipeline, solid
+from dagster import Bool, Field, execute_pipeline, pipeline, solid
 
 
 @solid
@@ -14,8 +14,18 @@ def read_csv(context, csv_path):
     return lines
 
 
-# start_config_marker_0
-@solid(config_schema={"reverse": bool})
+# start_details_marker_0
+@solid(
+    config_schema={
+        "reverse": Field(
+            Bool,
+            default_value=False,
+            is_required=False,
+            description="If `True`, cereals will be sorted in reverse order. Default: `False`",
+        )
+    }
+)
+# end_details_marker_0
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(
         cereals,
@@ -29,23 +39,17 @@ def sort_by_calories(context, cereals):
                 x="Most", first_cereal_after_sort=sorted_cereals[0]["name"]
             )
         )
-        return {
-            "most_caloric": sorted_cereals[0],
-            "least_caloric": sorted_cereals[-1],
-        }
     else:  # find the least caloric cereal
         context.log.info(
             "{x} caloric cereal: {first_cereal_after_sort}".format(
                 x="Least", first_cereal_after_sort=sorted_cereals[0]["name"]
             )
         )
-        return {
-            "least_caloric": sorted_cereals[0],
-            "most_caloric": sorted_cereals[-1],
-        }
 
-
-# end_config_marker_0
+    return {
+        "least_caloric": sorted_cereals[0],
+        "most_caloric": sorted_cereals[-1],
+    }
 
 
 @pipeline
@@ -54,16 +58,12 @@ def config_pipeline():
 
 
 if __name__ == "__main__":
-    # start_config_marker_1
     run_config = {
         "solids": {
             "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}},
             "sort_by_calories": {"config": {"reverse": True}},
         }
     }
-    # end_config_marker_1
-
-    # start_config_marker_2
     result = execute_pipeline(config_pipeline, run_config=run_config)
-    # end_config_marker_2
+
     assert result.success

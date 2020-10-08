@@ -167,31 +167,14 @@ you are while making changes.
 ## Parametrizing Solids with Config
 
 Solids often depend in predictable ways on features of the external world or the pipeline in which
-they're invoked. For example, consider an extended version of our CSV-reading solid that implements
-more of the options available in the underlying Python API:
-
-```python literalinclude showLines startLine=8 emphasize-lines=9-15 caption=config_bad_1.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_bad_1.py
-startAfter:start_config_bad_1_marker_0
-endBefore:end_config_bad_1_marker_0
-```
-
-We obviously don't want to have to write a separate solid for each permutation of these parameters
-that we use in our pipelines&mdash;especially because, in more realistic cases like configuring a
-Spark job or even parametrizing the `read_csv` function from a popular package like
-[Pandas](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html#pandas.read_csv),
-we might have dozens or hundreds of parameters like these.
+they're invoked. We obviously don't want to have to write a separate solid for each permutation of these parameters
+that we use in our pipelines&mdash; especially because, in more realistic cases like configuring a
+Spark job, we might have dozens or hundreds of parameters to configure.
 
 But hoisting all of these parameters into the signature of the solid function as inputs isn't the
-right answer either:
+right answer.
 
-```python literalinclude showLines startLine=8 emphasize-lines=5-11 caption=config_bad_2.py
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_bad_2.py
-startAfter:start_config_bad_2_marker_0
-endBefore:end_config_bad_2_marker_0
-```
-
-Defaults are often sufficient for configuration values like these, and sets of parameters are often
+Defaults are often sufficient for configuration values, and sets of parameters are often
 reusable. Moreover, it's unlikely that values like this will be provided dynamically by the outputs
 of other solids in a pipeline.
 
@@ -203,26 +186,61 @@ values.
 
 The solution is to define a config schema for our solid:
 
-```python literalinclude showLines startLine=2 emphasize-lines=17,35-43,90 caption=config.py
+```python literalinclude showLines startLine=16 emphasize-lines=1,6,9 caption=config.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config.py
 startAfter:start_config_marker_0
 endBefore:end_config_marker_0
 ```
 
-First, we pass the `config` argument to the <PyObject module="dagster" object="solid"
-displayText="@solid" /> decorator. This tells Dagster to give our solid a config field structured as
-a dictionary, whose keys are the keys of this argument, and the types of whose values are defined by
-the values of this argument (instances of <PyObject module="dagster" object="Field" />).
+We want to control the way our solid sorts the cereals.
+First, we pass the `config_schema` argument to the <PyObject module="dagster" object="solid" displayText="@solid" /> decorator.
+This tells Dagster to give our solid a config field structured as a dictionary.
+Then, we use the expected type of `reverse`, setting it to be a boolean.
+Finally, inside the body of the solid function `sort_by_calories`, we access the config value set by the user using the
+`solid_config` field on the familiar <PyObject module="dagster" object="SystemComputeExecutionContext" displayText="context" /> object.
 
-Then, we define one of these fields, `escapechar`, to be a string, setting a default value, making
-it optional, and setting a human-readable description.
+To execute this `config_pipeline`, we can specify the pipeline run config in the Python API:
 
-Finally, inside the body of the solid function, we access the config value set by the user using the
-`solid_config` field on the familiar <PyObject module="dagster"
-object="SystemComputeExecutionContext" displayText="context" /> object. When Dagster executes our
-pipeline, the framework will make validated config for each solid available on this object.
+```python literalinclude showLines startLine=60, emphasize-lines=4 caption=config.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config.py
+startAfter: start_config_marker_1
+endBefore: end_config_marker_1
+dedent:4
+```
 
-Let's see how all of this looks in Dagit. As usual, run:
+You can see that we've added a new section to the solid config. In addition to the `inputs` section for `read_csv`,
+we now have a `config` section for `sort_by_calories`, where we can set values defined in the `config_schema` argument
+to <PyObject module="dagster" object="solid" displayText="@solid" />.
+
+We can also pass the run config in a YAML file to the Dagster CLI tool like below. Since we want to sort the cereals by calories in a reversed order
+and find the most caloric cereal, we set the reverse value to `True` in the `config` section.
+
+```bash
+dagster pipeline execute -f config.py -c config_env.yaml
+```
+
+```YAML literalinclude showLines caption=config_env.yaml
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_env.yaml
+```
+In the console, we'll see the most caloric cereal is Mueslix Crispy Blend.
+
+```bash
+dagster - INFO - system - 0039ddb3-4b13-4d0c-8c01-4eb6fb1b90c6 - sort_by_calories.compute - Most caloric cereal: Mueslix Crispy Blend
+```
+
+In this case, we have only defined one key value pair, `reverse` being the key. We can define more key value pairs like this.
+What's more, we can define the value as an <PyObject module="dagster" object="Field" /> object to make the config optional:
+
+```python literalinclude showLines startLine=18, caption=config_more_details.py
+file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_more_details.py
+startAfter: start_details_marker_0
+endBefore: end_details_marker_0
+```
+
+Here, we can see the Dagster config type <PyObject module="dagster" object="Bool" displayText="Bool" /> is equivalent to the ordinary `bool` type.
+The `default_value` and `is_required` are set to be `False`, and a human-readable description for this config is provided.
+
+Let's see how the config section looks in Dagit. As usual, run:
 
 ```bash
 dagit -f config.py
@@ -230,28 +248,9 @@ dagit -f config.py
 
 ![config_figure_one.png](/assets/images/tutorial/config_figure_one.png)
 
-As you may by now expect, Dagit provides a fully type-aware and schema-aware config editing
-environment with a typeahead. The human-readable descriptions we provided on our config fields
-appear in the config context minimap, as well as in typeahead tooltips and in the Explore pane when
-clicking into the individual solid definition.
-
-![config_figure_two.png](/assets/images/tutorial/config_figure_two.png)
-
-You can see that we've added a new section to the solid config. In addition to the `inputs` section,
-which we'll still use to set the `csv_path` input, we now have a `config` section, where we can set
-values defined in the `config` argument to <PyObject module="dagster" object="solid"
-displayText="@solid" />.
-
-```YAML literalinclude caption=config_env_bad.yaml
-file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_env_bad.yaml
-```
-
-Of course, this config won't give us the results we're expecting. The values in `cereal.csv` are
-comma-separated, not semicolon-separated, as they might be if this were a CSV from Europe, where
-commas are frequently used in place of the decimal point.
-
-We'll see later how we can use Dagster's facilities for automatic data quality checks to guard
-against semantic issues like this, which won't be caught by the type system.
+Dagit provides a fully type-aware and schema-aware config editing environment with a typeahead.
+The human-readable description of `reverse` we provided on our config fields
+appears in the config section on the right when we click into the `sort_by_calories` solid definition.
 
 <br />
 

@@ -68,17 +68,7 @@ cli_args = [
         0,
         None,
     ),
-    ("basics/e02_solids/", "config.py", "config_pipeline", "inputs_env.yaml", None, None, 0, None),
-    (
-        "basics/e02_solids/",
-        "config.py",
-        "config_pipeline",
-        "config_env_bad.yaml",
-        None,
-        None,
-        0,
-        None,
-    ),
+    ("basics/e02_solids/", "config.py", "config_pipeline", "config_env.yaml", None, None, 0, None,),
     (
         "basics/e02_solids/",
         "multiple_outputs.py",

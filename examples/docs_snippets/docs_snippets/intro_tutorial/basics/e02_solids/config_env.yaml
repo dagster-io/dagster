@@ -1,7 +1,8 @@
 solids:
   read_csv:
-    config:
-      delimiter: ";"
     inputs:
       csv_path:
         value: "cereal.csv"
+  sort_by_calories:
+    config:
+      reverse: True
