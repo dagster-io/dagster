@@ -22,7 +22,7 @@ from dagster.api.snapshot_partition import (
 from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster.api.snapshot_repository import (
     sync_get_external_repositories,
-    sync_get_external_repositories_grpc,
+    sync_get_streaming_external_repositories_grpc,
 )
 from dagster.api.snapshot_schedule import (
     sync_get_external_schedule_execution_data,
@@ -431,7 +431,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
         self._handle = repository_location_handle
 
-        external_repositories_list = sync_get_external_repositories_grpc(
+        external_repositories_list = sync_get_streaming_external_repositories_grpc(
             self._handle.client, self._handle,
         )
 

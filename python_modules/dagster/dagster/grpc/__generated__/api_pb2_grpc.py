@@ -77,6 +77,11 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalRepositoryRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalRepositoryReply.FromString,
         )
+        self.StreamingExternalRepository = channel.unary_stream(
+            "/api.DagsterApi/StreamingExternalRepository",
+            request_serializer=api__pb2.ExternalRepositoryRequest.SerializeToString,
+            response_deserializer=api__pb2.StreamingExternalRepositoryEvent.FromString,
+        )
         self.ExternalScheduleExecution = channel.unary_unary(
             "/api.DagsterApi/ExternalScheduleExecution",
             request_serializer=api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
@@ -188,6 +193,12 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def StreamingExternalRepository(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
     def ExternalScheduleExecution(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -293,6 +304,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ExternalRepository,
             request_deserializer=api__pb2.ExternalRepositoryRequest.FromString,
             response_serializer=api__pb2.ExternalRepositoryReply.SerializeToString,
+        ),
+        "StreamingExternalRepository": grpc.unary_stream_rpc_method_handler(
+            servicer.StreamingExternalRepository,
+            request_deserializer=api__pb2.ExternalRepositoryRequest.FromString,
+            response_serializer=api__pb2.StreamingExternalRepositoryEvent.SerializeToString,
         ),
         "ExternalScheduleExecution": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalScheduleExecution,
@@ -631,6 +647,33 @@ class DagsterApi(object):
             "/api.DagsterApi/ExternalRepository",
             api__pb2.ExternalRepositoryRequest.SerializeToString,
             api__pb2.ExternalRepositoryReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def StreamingExternalRepository(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            "/api.DagsterApi/StreamingExternalRepository",
+            api__pb2.ExternalRepositoryRequest.SerializeToString,
+            api__pb2.StreamingExternalRepositoryEvent.FromString,
             options,
             channel_credentials,
             call_credentials,
