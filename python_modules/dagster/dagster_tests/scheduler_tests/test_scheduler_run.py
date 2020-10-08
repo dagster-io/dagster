@@ -542,10 +542,17 @@ def test_wrong_config(external_repo_context, capfd):
             assert 'Missing required field "solids" at the root.' in captured.out
 
 
+def _get_unloadable_schedule_origin():
+    working_directory = os.path.dirname(__file__)
+    recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
+    schedule = recon_repo.get_reconstructable_schedule("also_doesnt_exist")
+    return schedule.get_origin()
+
+
 @pytest.mark.parametrize(
     "external_repo_context", [default_repo, grpc_repo],
 )
-def test_bad_schedule_mixed_with_good_schedule(external_repo_context):
+def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
     with instance_with_schedules(external_repo_context) as (instance, external_repo):
         good_schedule = external_repo.get_external_schedule("simple_schedule")
         bad_schedule = external_repo.get_external_schedule(
@@ -554,12 +561,21 @@ def test_bad_schedule_mixed_with_good_schedule(external_repo_context):
 
         good_origin = good_schedule.get_origin()
         bad_origin = bad_schedule.get_origin()
+        unloadable_origin = _get_unloadable_schedule_origin()
         initial_datetime = pendulum.datetime(
             year=2019, month=2, day=27, hour=0, minute=0, second=0,
         )
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(good_schedule)
             instance.start_schedule_and_update_storage_state(bad_schedule)
+
+            unloadable_schedule_state = ScheduleState(
+                unloadable_origin,
+                ScheduleStatus.RUNNING,
+                "0 0 * * *",
+                pendulum.now("UTC").timestamp(),
+            )
+            instance.add_schedule_state(unloadable_schedule_state)
 
             launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
 
@@ -586,6 +602,13 @@ def test_bad_schedule_mixed_with_good_schedule(external_repo_context):
                 "Error occurred during the execution of should_execute "
                 "for schedule bad_should_execute_schedule" in bad_ticks[0].error.message
             )
+
+            unloadable_ticks = instance.get_schedule_ticks(unloadable_origin.get_id())
+            assert len(unloadable_ticks) == 0
+
+            captured = capfd.readouterr()
+            assert "Scheduler failed for also_doesnt_exist" in captured.out
+            assert "doesnt_exist not found at module scope" in captured.out
 
         initial_datetime = initial_datetime.add(days=1)
         with pendulum.test(initial_datetime):
@@ -627,6 +650,13 @@ def test_bad_schedule_mixed_with_good_schedule(external_repo_context):
                 bad_schedule_runs[0].run_id,
             )
 
+            unloadable_ticks = instance.get_schedule_ticks(unloadable_origin.get_id())
+            assert len(unloadable_ticks) == 0
+
+            captured = capfd.readouterr()
+            assert "Scheduler failed for also_doesnt_exist" in captured.out
+            assert "doesnt_exist not found at module scope" in captured.out
+
 
 @pytest.mark.parametrize(
     "external_repo_context", [default_repo, grpc_repo],
@@ -653,11 +683,7 @@ def test_run_scheduled_on_time_boundary(external_repo_context):
 
 def test_bad_load(capfd):
     with schedule_instance() as instance:
-        working_directory = os.path.dirname(__file__)
-        recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
-        schedule = recon_repo.get_reconstructable_schedule("also_doesnt_exist")
-        fake_origin = schedule.get_origin()
-
+        fake_origin = _get_unloadable_schedule_origin()
         initial_datetime = pendulum.datetime(
             year=2019, month=2, day=27, hour=23, minute=59, second=59,
         )
@@ -675,31 +701,18 @@ def test_bad_load(capfd):
 
             ticks = instance.get_schedule_ticks(fake_origin.get_id())
 
-            assert len(ticks) == 1
-            assert ticks[0].status == ScheduleTickStatus.FAILURE
-            assert ticks[0].timestamp == pendulum.now("UTC").timestamp()
-            assert "doesnt_exist not found at module scope in file" in ticks[0].error.message
+            assert len(ticks) == 0
 
             captured = capfd.readouterr()
-            assert "Error launching scheduled run" in captured.out
+            assert "Scheduler failed for also_doesnt_exist" in captured.out
             assert "doesnt_exist not found at module scope" in captured.out
 
         initial_datetime = initial_datetime.add(days=1)
         with pendulum.test(initial_datetime):
             launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
-
             assert instance.get_runs_count() == 0
-
             ticks = instance.get_schedule_ticks(fake_origin.get_id())
-
-            assert len(ticks) == 2
-            assert ticks[0].status == ScheduleTickStatus.FAILURE
-            assert ticks[0].timestamp == pendulum.now("UTC").timestamp()
-            assert "doesnt_exist not found at module scope in file" in ticks[0].error.message
-
-            captured = capfd.readouterr()
-            assert "Error launching scheduled run" in captured.out
-            assert "doesnt_exist not found at module scope" in captured.out
+            assert len(ticks) == 0
 
 
 @pytest.mark.parametrize(
