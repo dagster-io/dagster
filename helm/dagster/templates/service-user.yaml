@@ -11,7 +11,7 @@ metadata:
 spec:
   type: "ClusterIP"
   ports:
-    - port: 3030
+    - port: {{ $deployment.port }}
       protocol: TCP
       name: http
   selector:
