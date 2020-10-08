@@ -3,8 +3,11 @@ import hashlib
 import pytest
 
 from dagster import (
+    Bool,
     DagsterInstance,
     Field,
+    Float,
+    Int,
     ModeDefinition,
     Output,
     String,
@@ -270,28 +273,41 @@ class CustomType(str):
     pass
 
 
-@solid(version="42", input_defs=[InputDefinition("custom_type", CustomType)])
-def versioned_solid_ext_input(_, custom_type):
-    return custom_type * 4
+def test_externally_loaded_inputs():
+    for type_to_test, loader_version, type_value in [
+        (String, "String", "foo"),
+        (Int, "Int", int(42)),
+        (Float, "Float", float(5.42)),
+        (Bool, "Bool", False),
+        (CustomType, "97", "bar"),
+    ]:
+        run_test_with_builtin_type(type_to_test, loader_version, type_value)
 
 
-@pipeline
-def versioned_pipeline_ext_input():
-    return versioned_solid_takes_input(versioned_solid_ext_input())
+def run_test_with_builtin_type(type_to_test, loader_version, type_value):
+    @solid(version="42", input_defs=[InputDefinition("_builtin_type", type_to_test)])
+    def versioned_solid_ext_input_builtin_type(_, _builtin_type):
+        pass
 
+    @pipeline
+    def versioned_pipeline_ext_input_builtin_type():
+        return versioned_solid_takes_input(versioned_solid_ext_input_builtin_type())
 
-def test_resolve_step_versions_external_dependencies():
-    run_config = {"solids": {"versioned_solid_ext_input": {"inputs": {"custom_type": "a"}}}}
+    run_config = {
+        "solids": {
+            "versioned_solid_ext_input_builtin_type": {"inputs": {"_builtin_type": type_value}}
+        }
+    }
     speculative_execution_plan = create_execution_plan(
-        versioned_pipeline_ext_input, run_config=run_config,
+        versioned_pipeline_ext_input_builtin_type, run_config=run_config,
     )
 
     versions = resolve_step_versions_for_test(speculative_execution_plan, run_config=run_config)
 
-    ext_input_version = join_and_hash("a")
-    input_version = join_and_hash(InputHydration.loader_version + ext_input_version)
+    ext_input_version = join_and_hash(str(type_value))
+    input_version = join_and_hash(loader_version + ext_input_version)
 
-    solid1_def_version = versioned_solid_ext_input.version
+    solid1_def_version = versioned_solid_ext_input_builtin_type.version
     solid1_config_version = resolve_config_version(None)
     solid1_resources_version = join_and_hash()
     solid1_version = join_and_hash(
@@ -299,7 +315,7 @@ def test_resolve_step_versions_external_dependencies():
     )
 
     step1_version = join_and_hash(input_version, solid1_version)
-    assert versions["versioned_solid_ext_input.compute"] == step1_version
+    assert versions["versioned_solid_ext_input_builtin_type.compute"] == step1_version
 
     output_version = join_and_hash(step1_version, "result")
     hashed_input2 = join_and_hash(output_version)
@@ -316,11 +332,10 @@ def test_resolve_step_versions_external_dependencies():
 
 
 @solid(
-    version="42",
-    input_defs=[InputDefinition("custom_type", CustomType, default_value="DEFAULTVAL")],
+    version="42", input_defs=[InputDefinition("default_input", String, default_value="DEFAULTVAL")],
 )
-def versioned_solid_default_value(_, custom_type):
-    return custom_type * 4
+def versioned_solid_default_value(_, default_input):
+    return default_input * 4
 
 
 @pipeline
@@ -334,27 +349,17 @@ def test_resolve_step_versions_default_value():
 
     default_val_version = join_and_hash("DEFAULTVAL")
 
-    input_version = join_and_hash(InputHydration.loader_version + default_val_version)
+    input_version = join_and_hash(
+        "String" + default_val_version
+    )  # Since we use the type name as the loader version for default types.
 
-    solid_def_version = versioned_solid_ext_input.version
+    solid_def_version = versioned_solid_default_value.version
     solid_config_version = resolve_config_version(None)
     solid_resources_version = join_and_hash()
     solid_version = join_and_hash(solid_def_version, solid_config_version, solid_resources_version)
 
     step_version = join_and_hash(input_version, solid_version)
     assert versions["versioned_solid_default_value.compute"] == step_version
-
-
-def test_external_dependencies():  # TODO: flesh out this test once version storage has been implemented
-    instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=versioned_pipeline_ext_input,
-        tags={MEMOIZED_RUN_TAG: "true"},
-        run_config={"solids": {"versioned_solid_ext_input": {"inputs": {"custom_type": "a"}}}},
-    )
-    assert "versioned_solid_ext_input.compute" in pipeline_run.step_keys_to_execute
-    assert "versioned_solid_takes_input.compute" in pipeline_run.step_keys_to_execute
-    assert len(pipeline_run.step_keys_to_execute) == 2
 
 
 def test_step_keys_already_provided():

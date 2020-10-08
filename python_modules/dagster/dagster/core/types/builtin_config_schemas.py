@@ -52,6 +52,11 @@ def define_any_input_schema():
 
 
 def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
+    def _external_version_fn(val):
+        from dagster.core.execution.resolve_versions import join_and_hash
+
+        return join_and_hash(str(val),)
+
     check.str_param(scalar_name, "scalar_name")
     check.inst_param(config_scalar_type, "config_scalar_type", ConfigType)
     check.param_invariant(config_scalar_type.kind == ConfigTypeKind.SCALAR, "config_scalar_type")
@@ -60,7 +65,9 @@ def define_builtin_scalar_input_schema(scalar_name, config_scalar_type):
         ScalarUnion(
             scalar_type=config_scalar_type,
             non_scalar_schema=define_typed_input_schema_dict(config_scalar_type),
-        )
+        ),
+        loader_version=scalar_name,  # different for each scalar type this is called upon
+        external_version_fn=_external_version_fn,
     )
     def _builtin_input_schema(_context, value):
         return load_type_input_schema_dict(value) if isinstance(value, dict) else value
