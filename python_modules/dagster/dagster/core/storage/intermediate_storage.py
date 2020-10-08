@@ -248,7 +248,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
                 serialization_strategy_name=dagster_type.serialization_strategy.name,
                 object_store_name=self.object_store.name,
             )
-        except IOError as e:
+        except (IOError, OSError) as e:
             raise DagsterAddressIOError(str(e))
 
     @experimental
@@ -263,7 +263,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         # currently it doesn't support type_storage_plugin_registry
         try:
             return self.object_store.has_object(key=address)
-        except IOError as e:
+        except (IOError, OSError) as e:
             raise DagsterAddressIOError(str(e))
 
     @experimental
@@ -294,7 +294,7 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
                 serialization_strategy_name=dagster_type.serialization_strategy.name,
                 object_store_name=self.object_store.name,
             )
-        except IOError as e:
+        except (IOError, OSError) as e:
             raise DagsterAddressIOError(str(e))
 
     def uri_for_paths(self, paths, protocol=None):

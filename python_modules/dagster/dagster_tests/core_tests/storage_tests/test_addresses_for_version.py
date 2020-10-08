@@ -18,6 +18,7 @@ from dagster.core.storage.intermediate_storage import build_fs_intermediate_stor
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.core.system_config.objects import EnvironmentConfig
 
 
 def get_instance(temp_dir, event_log_storage):
@@ -73,7 +74,9 @@ def test_addresses_for_version(version_storing_context):
 
         step_output_handle = StepOutputHandle("solid1.compute", "result")
         output_version = resolve_step_output_versions(
-            create_execution_plan(my_pipeline), run_config={}, mode="default"
+            create_execution_plan(my_pipeline),
+            EnvironmentConfig.build(my_pipeline, {}, "default"),
+            my_pipeline.get_mode_definition("default"),
         )[step_output_handle]
         assert instance.get_addresses_for_step_output_versions(
             {("my_pipeline", step_output_handle): output_version}
