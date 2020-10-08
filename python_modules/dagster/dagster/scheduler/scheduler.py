@@ -9,7 +9,7 @@ import pendulum
 from croniter import croniter
 
 from dagster import check
-from dagster.core.errors import DagsterSubprocessError
+from dagster.core.errors import DagsterInvariantViolationError, DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation import (
     ExternalPipeline,
@@ -130,7 +130,18 @@ def launch_scheduled_runs(
         s for s in instance.all_stored_schedule_state() if s.status == ScheduleStatus.RUNNING
     ]
 
-    check.invariant(isinstance(instance.scheduler, DagsterCommandLineScheduler))
+    if not isinstance(instance.scheduler, DagsterCommandLineScheduler):
+        raise DagsterInvariantViolationError(
+            """Your dagster.yaml must be configured as follows in order to use dagster-scheduler:
+scheduler:
+  module: dagster.core.scheduler
+  class: DagsterCommandLineScheduler
+        """,
+        )
+
+    if not schedules:
+        logger.info("Not checking for any runs since no schedules have been started.")
+        return
 
     logger.info(
         "Checking for new runs for the following schedules: {schedule_names}".format(
@@ -177,8 +188,6 @@ def launch_scheduled_runs_for_schedule(
     check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
 
-    scheduler = instance.scheduler
-
     latest_tick = instance.get_latest_tick(schedule_state.schedule_origin_id)
 
     if not latest_tick:
@@ -189,11 +198,6 @@ def launch_scheduled_runs_for_schedule(
     else:
         start_timestamp_utc = latest_tick.timestamp + 1
 
-    timezone_str = scheduler.default_timezone_str
-
-    end_datetime = end_datetime_utc.in_tz(timezone_str)
-    start_datetime = pendulum.from_timestamp(start_timestamp_utc, tz=timezone_str)
-
     schedule_name = schedule_state.name
 
     repo_dict = repo_location.get_repositories()
@@ -203,6 +207,17 @@ def launch_scheduled_runs_for_schedule(
     external_repo = next(iter(repo_dict.values()))
 
     external_schedule = external_repo.get_external_schedule(schedule_name)
+
+    timezone_str = external_schedule.execution_timezone
+    if not timezone_str:
+        logger.error(
+            "Scheduler could not run for {schedule_name} as it did not specify "
+            "an execution_timezone in its definition.".format(schedule_name=schedule_name)
+        )
+        return
+
+    end_datetime = end_datetime_utc.in_tz(timezone_str)
+    start_datetime = pendulum.from_timestamp(start_timestamp_utc, tz=timezone_str)
 
     date_iter = croniter(external_schedule.cron_schedule, start_datetime)
     tick_times = []

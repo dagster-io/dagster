@@ -1,7 +1,7 @@
 import datetime
 import warnings
 
-from dateutil.relativedelta import relativedelta
+import pendulum
 
 from dagster import check
 from dagster.core.definitions.partition import (
@@ -9,7 +9,13 @@ from dagster.core.definitions.partition import (
     create_default_partition_selector_fn,
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils.partitions import date_partition_range
+from dagster.utils.partitions import (
+    DEFAULT_DATE_FORMAT,
+    DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
+    DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
+    DEFAULT_MONTHLY_FORMAT,
+    date_partition_range,
+)
 
 from ..mode import DEFAULT_MODE_NAME
 from ..schedule import ScheduleDefinition
@@ -28,6 +34,7 @@ def schedule(
     mode="default",
     should_execute=None,
     environment_vars=None,
+    execution_timezone=None,
 ):
     """Create a schedule.
 
@@ -57,6 +64,8 @@ def schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
+            with DagsterCommandLineScheduler, and must be set when using that scheduler.
     """
 
     def inner(fn):
@@ -75,6 +84,7 @@ def schedule(
             mode=mode,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            execution_timezone=execution_timezone,
         )
 
     return inner
@@ -92,6 +102,7 @@ def monthly_schedule(
     should_execute=None,
     environment_vars=None,
     end_date=None,
+    execution_timezone=None,
 ):
     """Create a schedule that runs monthly.
 
@@ -122,6 +133,8 @@ def monthly_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
+            with DagsterCommandLineScheduler, and must be set when using that scheduler.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -134,6 +147,7 @@ def monthly_schedule(
     check.str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_month, "execution_day")
     check.inst_param(execution_time, "execution_time", datetime.time)
+    check.opt_str_param(execution_timezone, "execution_timezone")
 
     if execution_day_of_month <= 0 or execution_day_of_month > 31:
         raise DagsterInvalidDefinitionError(
@@ -145,10 +159,11 @@ def monthly_schedule(
         minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_month
     )
 
-    fmt = "%Y-%m"
-    delta = relativedelta(months=1)
+    fmt = DEFAULT_MONTHLY_FORMAT
 
-    partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
+    partition_fn = date_partition_range(
+        start_date, end=end_date, delta_range="months", fmt=fmt, timezone=execution_timezone
+    )
 
     def inner(fn):
         check.callable_param(fn, "fn")
@@ -174,7 +189,10 @@ def monthly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(delta, fmt),
+            partition_selector=create_default_partition_selector_fn(
+                delta_fn=lambda d: pendulum.instance(d).subtract(months=1), fmt=fmt
+            ),
+            execution_timezone=execution_timezone,
         )
 
     return inner
@@ -192,6 +210,7 @@ def weekly_schedule(
     should_execute=None,
     environment_vars=None,
     end_date=None,
+    execution_timezone=None,
 ):
     """Create a schedule that runs weekly.
 
@@ -222,6 +241,8 @@ def weekly_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
+            with DagsterCommandLineScheduler, and must be set when using that scheduler.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -234,6 +255,7 @@ def weekly_schedule(
     check.str_param(pipeline_name, "pipeline_name")
     check.int_param(execution_day_of_week, "execution_day_of_week")
     check.inst_param(execution_time, "execution_time", datetime.time)
+    check.opt_str_param(execution_timezone, "execution_timezone")
 
     if execution_day_of_week < 0 or execution_day_of_week >= 7:
         raise DagsterInvalidDefinitionError(
@@ -245,14 +267,13 @@ def weekly_schedule(
         minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_week
     )
 
-    fmt = "%Y-%m-%d"
-    delta = relativedelta(weeks=1)
+    fmt = DEFAULT_DATE_FORMAT
 
     day_difference = (execution_day_of_week - start_date.weekday()) % 7
 
-    execution_offset = relativedelta(days=day_difference)
-
-    partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
+    partition_fn = date_partition_range(
+        start_date, end=end_date, delta_range="weeks", fmt=fmt, timezone=execution_timezone
+    )
 
     def inner(fn):
         check.callable_param(fn, "fn")
@@ -278,7 +299,11 @@ def weekly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(delta + execution_offset, fmt),
+            partition_selector=create_default_partition_selector_fn(
+                delta_fn=lambda d: pendulum.instance(d).subtract(weeks=1, days=day_difference),
+                fmt=fmt,
+            ),
+            execution_timezone=execution_timezone,
         )
 
     return inner
@@ -295,6 +320,7 @@ def daily_schedule(
     should_execute=None,
     environment_vars=None,
     end_date=None,
+    execution_timezone=None,
 ):
     """Create a schedule that runs daily.
 
@@ -323,26 +349,30 @@ def daily_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
+            with DagsterCommandLineScheduler, and must be set when using that scheduler.
     """
-    check.opt_str_param(name, "name")
+    check.str_param(pipeline_name, "pipeline_name")
     check.inst_param(start_date, "start_date", datetime.datetime)
+    check.opt_str_param(name, "name")
+    check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_inst_param(end_date, "end_date", datetime.datetime)
     check.opt_callable_param(tags_fn_for_date, "tags_fn_for_date")
     check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
     mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
     check.opt_callable_param(should_execute, "should_execute")
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
-    check.str_param(pipeline_name, "pipeline_name")
-    check.inst_param(execution_time, "execution_time", datetime.time)
+    check.opt_str_param(execution_timezone, "execution_timezone")
 
     cron_schedule = "{minute} {hour} * * *".format(
         minute=execution_time.minute, hour=execution_time.hour
     )
 
-    delta = datetime.timedelta(days=1)
-    fmt = "%Y-%m-%d"
+    fmt = DEFAULT_DATE_FORMAT
 
-    partition_fn = date_partition_range(start_date, end=end_date, delta=delta)
+    partition_fn = date_partition_range(
+        start_date, end=end_date, delta_range="days", timezone=execution_timezone,
+    )
 
     def inner(fn):
         check.callable_param(fn, "fn")
@@ -368,7 +398,10 @@ def daily_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
-            partition_selector=create_default_partition_selector_fn(fmt=fmt, delta=delta),
+            partition_selector=create_default_partition_selector_fn(
+                fmt=fmt, delta_fn=lambda d: pendulum.instance(d).subtract(days=1)
+            ),
+            execution_timezone=execution_timezone,
         )
 
     return inner
@@ -385,6 +418,7 @@ def hourly_schedule(
     should_execute=None,
     environment_vars=None,
     end_date=None,
+    execution_timezone=None,
 ):
     """Create a schedule that runs hourly.
 
@@ -415,6 +449,8 @@ def hourly_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
+        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
+            with DagsterCommandLineScheduler, and must be set when using that scheduler.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -426,6 +462,7 @@ def hourly_schedule(
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
     check.str_param(pipeline_name, "pipeline_name")
     check.inst_param(execution_time, "execution_time", datetime.time)
+    check.opt_str_param(execution_timezone, "execution_timezone")
 
     if execution_time.hour != 0:
         warnings.warn(
@@ -439,12 +476,15 @@ def hourly_schedule(
 
     cron_schedule = "{minute} * * * *".format(minute=execution_time.minute)
 
-    fmt = "%Y-%m-%d-%H:%M"
-    delta = datetime.timedelta(hours=1)
+    fmt = (
+        DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
+        if execution_timezone
+        else DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+    )
 
-    execution_offset = datetime.timedelta(minutes=(execution_time.minute - start_date.minute) % 60)
-
-    partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
+    partition_fn = date_partition_range(
+        start_date, end=end_date, delta_range="hours", fmt=fmt, timezone=execution_timezone
+    )
 
     def inner(fn):
         check.callable_param(fn, "fn")
@@ -471,12 +511,12 @@ def hourly_schedule(
             should_execute=should_execute,
             environment_vars=environment_vars,
             partition_selector=create_default_partition_selector_fn(
-                delta + execution_offset,
-                fmt,
-                # Express hourly partitions in UTC so that they don't change
-                # depending on what timezone the schedule runs in
-                partition_in_utc=True,
+                delta_fn=lambda d: pendulum.instance(d).subtract(
+                    hours=1, minutes=(execution_time.minute - start_date.minute) % 60
+                ),
+                fmt=fmt,
             ),
+            execution_timezone=execution_timezone,
         )
 
     return inner

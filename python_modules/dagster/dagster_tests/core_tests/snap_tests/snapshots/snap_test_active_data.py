@@ -1129,6 +1129,7 @@ snapshots['test_external_repository_data 1'] = '''{
       "__class__": "ExternalScheduleData",
       "cron_schedule": "0 0 * * *",
       "environment_vars": {},
+      "execution_timezone": "US/Central",
       "mode": "default",
       "name": "a_schedule",
       "partition_set_name": "a_schedule_partitions",

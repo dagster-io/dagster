@@ -9,6 +9,7 @@ import pytest
 
 from dagster import DagsterEventType, daily_schedule, hourly_schedule, pipeline, repository, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import (
     PythonEnvRepositoryLocation,
     RepositoryLocation,
@@ -22,6 +23,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.scheduler.scheduler import get_default_scheduler_logger, launch_scheduled_runs
 from dagster.utils import merge_dicts
+from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
 _COUPLE_DAYS_AGO = datetime.datetime(year=2019, month=2, day=25)
 
@@ -42,9 +44,9 @@ def _never(_context):
     return False
 
 
-@solid(config_schema={"work_amt": str})
+@solid(config_schema={"partition_time": str})
 def the_solid(context):
-    return "0.8.0 was {} of work".format(context.solid_config["work_amt"])
+    return "Ran at this partition date: {}".format(context.solid_config["partition_time"])
 
 
 @pipeline
@@ -52,11 +54,27 @@ def the_pipeline():
     the_solid()
 
 
-@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO)
-def simple_schedule(_context):
+def _solid_config(date):
     return {
-        "solids": {"the_solid": {"config": {"work_amt": "a lot"}}},
+        "solids": {"the_solid": {"config": {"partition_time": date.isoformat()}}},
     }
+
+
+@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC")
+def simple_schedule(date):
+    return _solid_config(date)
+
+
+@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO)
+def daily_schedule_without_timezone(date):
+    return _solid_config(date)
+
+
+@daily_schedule(
+    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Central"
+)
+def daily_central_time_schedule(date):
+    return _solid_config(date)
 
 
 # Schedule that runs on a different day in Central Time vs UTC
@@ -64,68 +82,94 @@ def simple_schedule(_context):
     pipeline_name="the_pipeline",
     start_date=_COUPLE_DAYS_AGO,
     execution_time=datetime.time(hour=23, minute=0),
+    execution_timezone="US/Central",
 )
-def daily_late_schedule(_context):
-    return {
-        "solids": {"the_solid": {"config": {"work_amt": "a lot"}}},
-    }
+def daily_late_schedule(date):
+    return _solid_config(date)
 
 
 @daily_schedule(
     pipeline_name="the_pipeline",
     start_date=_COUPLE_DAYS_AGO,
     execution_time=datetime.time(hour=2, minute=30),
+    execution_timezone="US/Central",
 )
-def daily_dst_transition_schedule(_context):
-    return {
-        "solids": {"the_solid": {"config": {"work_amt": "a lot"}}},
-    }
+def daily_dst_transition_schedule(date):
+    return _solid_config(date)
+
+
+@daily_schedule(
+    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Eastern",
+)
+def daily_eastern_time_schedule(date):
+    return _solid_config(date)
 
 
 @daily_schedule(
     pipeline_name="the_pipeline",
     start_date=_COUPLE_DAYS_AGO,
     end_date=datetime.datetime(year=2019, month=3, day=1),
+    execution_timezone="UTC",
 )
-def simple_temporary_schedule(_context):
-    return {}
+def simple_temporary_schedule(date):
+    return _solid_config(date)
 
 
-@daily_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO)
+@daily_schedule(
+    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC",
+)
 def bad_env_fn_schedule():  # forgot context arg
     return {}
 
 
-@hourly_schedule(pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO)
-def simple_hourly_schedule(_context):
-    return {"solids": {"the_solid": {"config": {"work_amt": "even more"}}}}
+@hourly_schedule(
+    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC",
+)
+def simple_hourly_schedule(date):
+    return _solid_config(date)
+
+
+@hourly_schedule(
+    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="US/Central"
+)
+def hourly_central_time_schedule(date):
+    return _solid_config(date)
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, should_execute=_throw,
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    should_execute=_throw,
+    execution_timezone="UTC",
 )
-def bad_should_execute_schedule(_context):
-    return {"solids": {"the_solid": {"config": {"work_amt": "a lot"}}}}
+def bad_should_execute_schedule(date):
+    return _solid_config(date)
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, should_execute=_throw_on_odd_day,
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    should_execute=_throw_on_odd_day,
+    execution_timezone="UTC",
 )
-def bad_should_execute_schedule_on_odd_days(_context):
-    return {"solids": {"the_solid": {"config": {"work_amt": "a lot"}}}}
+def bad_should_execute_schedule_on_odd_days(date):
+    return _solid_config(date)
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, should_execute=_never,
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    should_execute=_never,
+    execution_timezone="UTC",
 )
-def skip_schedule(_context):
-    return {"solids": {"the_solid": {"config": {"work_amt": "a lot"}}}}
+def skip_schedule(date):
+    return _solid_config(date)
 
 
 @daily_schedule(
-    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO,
+    pipeline_name="the_pipeline", start_date=_COUPLE_DAYS_AGO, execution_timezone="UTC",
 )
-def wrong_config_schedule(_context):
+def wrong_config_schedule(_date):
     return {}
 
 
@@ -136,8 +180,12 @@ def the_repo():
         simple_schedule,
         simple_temporary_schedule,
         simple_hourly_schedule,
+        daily_schedule_without_timezone,
         daily_late_schedule,
         daily_dst_transition_schedule,
+        daily_central_time_schedule,
+        daily_eastern_time_schedule,
+        hourly_central_time_schedule,
         bad_env_fn_schedule,
         bad_should_execute_schedule,
         bad_should_execute_schedule_on_odd_days,
@@ -146,14 +194,14 @@ def the_repo():
     ]
 
 
-def schedule_instance(timezone=None, overrides=None):
+def schedule_instance(overrides=None):
     return instance_for_test(
         overrides=merge_dicts(
             {
-                "scheduler": merge_dicts(
-                    {"module": "dagster.core.scheduler", "class": "DagsterCommandLineScheduler",},
-                    ({"config": {"default_timezone": timezone}} if timezone else {}),
-                ),
+                "scheduler": {
+                    "module": "dagster.core.scheduler",
+                    "class": "DagsterCommandLineScheduler",
+                },
             },
             (overrides if overrides else {}),
         )
@@ -161,8 +209,8 @@ def schedule_instance(timezone=None, overrides=None):
 
 
 @contextmanager
-def instance_with_schedules(external_repo_context, timezone=None, overrides=None):
-    with schedule_instance(timezone, overrides) as instance:
+def instance_with_schedules(external_repo_context, overrides=None):
+    with schedule_instance(overrides) as instance:
         with external_repo_context() as external_repo:
             instance.reconcile_scheduler_state(external_repo)
             yield (instance, external_repo)
@@ -222,11 +270,15 @@ def validate_tick(
         assert expected_error in tick_data.error.message
 
 
-def validate_run_started(run, expected_datetime, expected_partition, expected_success=True):
-    assert run.tags[SCHEDULED_EXECUTION_TIME_TAG] == expected_datetime.in_tz("UTC").isoformat()
-    assert run.tags[PARTITION_NAME_TAG] == expected_partition
+def validate_run_started(
+    run, execution_time, partition_time, partition_fmt=DEFAULT_DATE_FORMAT, expected_success=True,
+):
+    assert run.tags[SCHEDULED_EXECUTION_TIME_TAG] == execution_time.in_tz("UTC").isoformat()
+
+    assert run.tags[PARTITION_NAME_TAG] == partition_time.strftime(partition_fmt)
 
     if expected_success:
+        assert run.run_config == _solid_config(partition_time)
         assert run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.SUCCESS
     else:
         assert run.status == PipelineRunStatus.FAILURE
@@ -245,6 +297,14 @@ def wait_for_all_runs_to_start(instance, timeout=10):
 
         if len(not_started_runs) == 0:
             break
+
+
+def test_with_incorrect_scheduler():
+    with instance_for_test() as instance:
+        with pytest.raises(DagsterInvariantViolationError):
+            launch_scheduled_runs(
+                instance, get_default_scheduler_logger(), pendulum.now("UTC"),
+            )
 
 
 @pytest.mark.parametrize(
@@ -304,7 +364,11 @@ def test_simple_schedule(external_repo_context, capfd):
             )
 
             wait_for_all_runs_to_start(instance)
-            validate_run_started(instance.get_runs()[0], expected_datetime, "2019-02-27")
+            validate_run_started(
+                instance.get_runs()[0],
+                execution_time=pendulum.datetime(2019, 2, 28),
+                partition_time=pendulum.datetime(2019, 2, 27),
+            )
 
             captured = capfd.readouterr()
 
@@ -375,6 +439,61 @@ def test_simple_schedule(external_repo_context, capfd):
             assert instance.get_runs_count() == 3
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
             assert len(ticks) == 3
+
+
+@pytest.mark.parametrize(
+    "external_repo_context", [default_repo, grpc_repo],
+)
+def test_no_started_schedules(external_repo_context, capfd):
+    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+        external_schedule = external_repo.get_external_schedule("simple_schedule")
+        schedule_origin = external_schedule.get_origin()
+
+        launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+        assert instance.get_runs_count() == 0
+
+        ticks = instance.get_schedule_ticks(schedule_origin.get_id())
+        assert len(ticks) == 0
+
+        captured = capfd.readouterr()
+
+        assert "Not checking for any runs since no schedules have been started." in captured.out
+
+
+@pytest.mark.parametrize(
+    "external_repo_context", [default_repo, grpc_repo],
+)
+def test_schedule_without_timezone(external_repo_context, capfd):
+    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+        external_schedule = external_repo.get_external_schedule("daily_schedule_without_timezone")
+        schedule_origin = external_schedule.get_origin()
+        initial_datetime = pendulum.datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+
+        with pendulum.test(initial_datetime):
+
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+
+            assert instance.get_runs_count() == 0
+
+            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
+
+            assert len(ticks) == 0
+
+            captured = capfd.readouterr()
+
+            assert (
+                "Scheduler could not run for daily_schedule_without_timezone as it did not specify "
+                "an execution_timezone in its definition." in captured.out
+            )
+
+        initial_datetime = initial_datetime.add(days=1)
+        with pendulum.test(initial_datetime):
+            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
+            assert len(ticks) == 0
 
 
 @pytest.mark.parametrize(
@@ -507,7 +626,12 @@ def test_wrong_config(external_repo_context, capfd):
 
             run = instance.get_runs()[0]
 
-            validate_run_started(run, initial_datetime, "2019-02-26", expected_success=False)
+            validate_run_started(
+                run,
+                execution_time=initial_datetime,
+                partition_time=pendulum.datetime(2019, 2, 26),
+                expected_success=False,
+            )
 
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
@@ -581,7 +705,11 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
 
             assert instance.get_runs_count() == 1
             wait_for_all_runs_to_start(instance)
-            validate_run_started(instance.get_runs()[0], initial_datetime, "2019-02-26")
+            validate_run_started(
+                instance.get_runs()[0],
+                execution_time=initial_datetime,
+                partition_time=pendulum.datetime(2019, 2, 26),
+            )
 
             good_ticks = instance.get_schedule_ticks(good_origin.get_id())
             assert len(good_ticks) == 1
@@ -622,7 +750,11 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 filters=PipelineRunsFilter.for_schedule(good_schedule)
             )
             assert len(good_schedule_runs) == 2
-            validate_run_started(good_schedule_runs[0], new_now, "2019-02-27")
+            validate_run_started(
+                good_schedule_runs[0],
+                execution_time=new_now,
+                partition_time=pendulum.datetime(2019, 2, 27),
+            )
 
             good_ticks = instance.get_schedule_ticks(good_origin.get_id())
             assert len(good_ticks) == 2
@@ -638,7 +770,11 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 filters=PipelineRunsFilter.for_schedule(bad_schedule)
             )
             assert len(bad_schedule_runs) == 1
-            validate_run_started(bad_schedule_runs[0], new_now, "2019-02-27")
+            validate_run_started(
+                bad_schedule_runs[0],
+                execution_time=new_now,
+                partition_time=pendulum.datetime(2019, 2, 27),
+            )
 
             bad_ticks = instance.get_schedule_ticks(bad_origin.get_id())
             assert len(bad_ticks) == 2
@@ -815,7 +951,12 @@ def test_launch_failure(external_repo_context, capfd):
 
             run = instance.get_runs()[0]
 
-            validate_run_started(run, initial_datetime, "2019-02-26", expected_success=False)
+            validate_run_started(
+                run,
+                execution_time=initial_datetime,
+                partition_time=pendulum.datetime(2019, 2, 26),
+                expected_success=False,
+            )
 
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
@@ -871,7 +1012,11 @@ def test_max_catchup_runs(capfd):
                 ScheduleTickStatus.SUCCESS,
                 instance.get_runs()[0].run_id,
             )
-            validate_run_started(instance.get_runs()[0], first_datetime, "2019-03-03")
+            validate_run_started(
+                instance.get_runs()[0],
+                execution_time=first_datetime,
+                partition_time=pendulum.datetime(2019, 3, 3),
+            )
 
             second_datetime = pendulum.datetime(year=2019, month=3, day=3)
 
@@ -883,7 +1028,11 @@ def test_max_catchup_runs(capfd):
                 instance.get_runs()[1].run_id,
             )
 
-            validate_run_started(instance.get_runs()[1], second_datetime, "2019-03-02")
+            validate_run_started(
+                instance.get_runs()[1],
+                execution_time=second_datetime,
+                partition_time=pendulum.datetime(2019, 3, 2),
+            )
 
             captured = capfd.readouterr()
             assert (

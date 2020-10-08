@@ -87,7 +87,11 @@ def test_failure_recovery_before_run_created(
 
             assert instance.get_runs_count() == 1
             wait_for_all_runs_to_start(instance)
-            validate_run_started(instance.get_runs()[0], initial_datetime, "2019-02-26")
+            validate_run_started(
+                instance.get_runs()[0],
+                execution_time=initial_datetime,
+                partition_time=pendulum.datetime(2019, 2, 26),
+            )
 
             ticks = instance.get_schedule_ticks(external_schedule.get_origin_id())
             assert len(ticks) == 1
@@ -167,7 +171,9 @@ def test_failure_recovery_after_run_created(
                 wait_for_all_runs_to_start(instance)
 
                 run = instance.get_runs()[0]
-                validate_run_started(instance.get_runs()[0], frozen_datetime, "2019-02-26")
+                validate_run_started(
+                    instance.get_runs()[0], frozen_datetime, pendulum.datetime(2019, 2, 26)
+                )
 
                 assert run.status in [PipelineRunStatus.STARTED, PipelineRunStatus.SUCCESS]
 
@@ -185,7 +191,9 @@ def test_failure_recovery_after_run_created(
 
             assert instance.get_runs_count() == 1
             wait_for_all_runs_to_start(instance)
-            validate_run_started(instance.get_runs()[0], initial_datetime, "2019-02-26")
+            validate_run_started(
+                instance.get_runs()[0], initial_datetime, pendulum.datetime(2019, 2, 26)
+            )
 
             ticks = instance.get_schedule_ticks(external_schedule.get_origin_id())
             assert len(ticks) == 1
@@ -244,7 +252,9 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
             wait_for_all_runs_to_start(instance)
 
             assert instance.get_runs_count() == 1
-            validate_run_started(instance.get_runs()[0], initial_datetime, "2019-02-26")
+            validate_run_started(
+                instance.get_runs()[0], initial_datetime, pendulum.datetime(2019, 2, 26)
+            )
 
             ticks = instance.get_schedule_ticks(external_schedule.get_origin_id())
             assert len(ticks) == 1
@@ -274,7 +284,9 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
             assert scheduler_process.exitcode == 0
 
             assert instance.get_runs_count() == 1
-            validate_run_started(instance.get_runs()[0], initial_datetime, "2019-02-26")
+            validate_run_started(
+                instance.get_runs()[0], initial_datetime, pendulum.datetime(2019, 2, 26)
+            )
 
             ticks = instance.get_schedule_ticks(external_schedule.get_origin_id())
             assert len(ticks) == 1

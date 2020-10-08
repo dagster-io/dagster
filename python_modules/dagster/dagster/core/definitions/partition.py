@@ -1,8 +1,4 @@
 from collections import namedtuple
-from datetime import timedelta
-
-import pendulum
-from dateutil.relativedelta import relativedelta
 
 from dagster import check
 from dagster.core.definitions.schedule import ScheduleDefinition, ScheduleExecutionContext
@@ -10,7 +6,6 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
-from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
 from .mode import DEFAULT_MODE_NAME
 from .utils import check_for_invalid_name_and_warn
@@ -36,9 +31,9 @@ class Partition(namedtuple("_Partition", ("value name"))):
 
 
 def create_default_partition_selector_fn(
-    delta=timedelta(days=1), fmt=DEFAULT_DATE_FORMAT, partition_in_utc=False
+    delta_fn, fmt,
 ):
-    check.inst_param(delta, "timedelta", (timedelta, relativedelta))
+    check.callable_param(delta_fn, "delta_fn")
     check.str_param(fmt, "fmt")
 
     def default_partition_selector(context, partition_set_def):
@@ -50,13 +45,7 @@ def create_default_partition_selector_fn(
 
         # The tick at a given datetime corresponds to the time for the previous partition
         # e.g. midnight on 12/31 is actually the 12/30 partition
-
-        if partition_in_utc:
-            partition_time = (
-                pendulum.instance(context.scheduled_execution_time).in_tz("UTC") - delta
-            )
-        else:
-            partition_time = context.scheduled_execution_time - delta
+        partition_time = delta_fn(context.scheduled_execution_time)
 
         partition_name = partition_time.strftime(fmt)
 
@@ -206,6 +195,7 @@ class PartitionSetDefinition(
         should_execute=None,
         partition_selector=last_partition,
         environment_vars=None,
+        execution_timezone=None,
     ):
         """Create a ScheduleDefinition from a PartitionSetDefinition.
 
@@ -218,6 +208,8 @@ class PartitionSetDefinition(
             partition_selector (Callable[ScheduleExecutionContext, PartitionSetDefinition],
             Partition): A partition selector for the schedule.
             environment_vars (Optional[dict]): The environment variables to set for the schedule.
+            execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
+                with DagsterCommandLineScheduler, and must be set when using that scheduler.
 
         Returns:
             ScheduleDefinition: The generated ScheduleDefinition for the partition selector
@@ -228,6 +220,7 @@ class PartitionSetDefinition(
         check.opt_callable_param(should_execute, "should_execute")
         check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
         check.callable_param(partition_selector, "partition_selector")
+        check.opt_str_param(execution_timezone, "execution_timezone")
 
         def _should_execute_wrapper(context):
             check.inst_param(context, "context", ScheduleExecutionContext)
@@ -279,6 +272,7 @@ class PartitionSetDefinition(
             should_execute=_should_execute_wrapper,
             environment_vars=environment_vars,
             partition_set=self,
+            execution_timezone=execution_timezone,
         )
 
 
@@ -297,6 +291,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         environment_vars,
         partition_set,
         run_config_fn=None,
+        execution_timezone=None,
     ):
         super(PartitionScheduleDefinition, self).__init__(
             name=check_for_invalid_name_and_warn(name),
@@ -308,6 +303,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
             mode=mode,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            execution_timezone=execution_timezone,
         )
         self._partition_set = check.inst_param(
             partition_set, "partition_set", PartitionSetDefinition
