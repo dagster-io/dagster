@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.9.14
+
+**New**
+
+- Steps down stream of a failed step no longer report skip events and instead simply do not execute.
+- dagit-debug can load multiple debug files.
+- dagit now has a Debug Console Logging feature flag accessible at /flags .
+- Telemetry metrics are now taken when scheduled jobs are executed.
+- With memoized reexecution, we now only copy outputs that current plan won't generate
+- Document titles throughout dagit
+
+**Community Contributions**
+
+- [dagster-ge] solid factory can now handle arbitrary types (thanks @sd2k!)
+- [dagster-dask] utility options are now available in loader/materializer for Dask DataFrame (thanks @kinghuang!)
+
+**Bugfixes**
+
+- Fixed an issue where run termination would sometimes be ignored or leave the execution process hanging
+- [dagster-k8s] fixed issue that would cause timeouts on clusters with many jobs
+- Fixed an issue where reconstructable was unusable in an interactive environment, even when the pipeline is defined in a different module.
+- Bugfixes and UX improvements in dagit
+
+**Experimental**
+
+- AssetMaterializations now have an optional “partition” attribute
+
 ## 0.9.13
 
 **Bugfixes**
