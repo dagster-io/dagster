@@ -23,7 +23,7 @@ def backoff(
     max_retries=BACKOFF_MAX_RETRIES,
     delay_generator=backoff_delay_generator(),
 ):
-    '''Straightforward backoff implementation.
+    """Straightforward backoff implementation.
 
     Note that this doesn't implement any jitter on the delays, so probably won't be appropriate for very
     parallel situations.
@@ -37,13 +37,13 @@ def backoff(
         max_retries (Optional[Int]): The maximum number of times to retry a failed fn call. Set to 0 for no backoff.
             Default: 4
         delay_generator (Generator[float, None, None]): Generates the successive delays between retry attempts.
-    '''
-    check.callable_param(fn, 'fn')
-    retry_on = check.tuple_param(retry_on, 'retry_on')
-    args = check.opt_list_param(args, 'args')
-    kwargs = check.opt_dict_param(kwargs, 'kwargs', key_type=str)
-    check.int_param(max_retries, 'max_retries')
-    check.generator_param(delay_generator, 'delay_generator')
+    """
+    check.callable_param(fn, "fn")
+    retry_on = check.tuple_param(retry_on, "retry_on")
+    args = check.opt_list_param(args, "args")
+    kwargs = check.opt_dict_param(kwargs, "kwargs", key_type=str)
+    check.int_param(max_retries, "max_retries")
+    check.generator_param(delay_generator, "delay_generator")
 
     retries = 0
 

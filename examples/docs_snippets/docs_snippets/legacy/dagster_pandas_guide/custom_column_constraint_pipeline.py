@@ -31,24 +31,24 @@ class DivisibleByFiveConstraint(ColumnConstraint):
 
 
 CustomTripDataFrame = create_dagster_pandas_dataframe_type(
-    name='CustomTripDataFrame',
+    name="CustomTripDataFrame",
     columns=[
         PandasColumn(
-            'amount_paid',
-            constraints=[ColumnDTypeInSetConstraint({'int64'}), DivisibleByFiveConstraint()],
+            "amount_paid",
+            constraints=[ColumnDTypeInSetConstraint({"int64"}), DivisibleByFiveConstraint()],
         )
     ],
 )
 
 
 @solid(
-    output_defs=[OutputDefinition(name='custom_trip_dataframe', dagster_type=CustomTripDataFrame)],
+    output_defs=[OutputDefinition(name="custom_trip_dataframe", dagster_type=CustomTripDataFrame)],
 )
 def load_custom_trip_dataframe(_) -> DataFrame:
     return read_csv(
-        script_relative_path('./ebike_trips.csv'),
-        parse_dates=['start_time', 'end_time'],
-        date_parser=lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'),
+        script_relative_path("./ebike_trips.csv"),
+        parse_dates=["start_time", "end_time"],
+        date_parser=lambda x: datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f"),
     )
 
 

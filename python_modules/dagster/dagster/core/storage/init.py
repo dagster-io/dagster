@@ -15,14 +15,14 @@ from dagster.core.system_config.objects import EnvironmentConfig
 
 class InitSystemStorageContext(
     namedtuple(
-        'InitSystemStorageContext',
+        "InitSystemStorageContext",
         (
-            'pipeline_def mode_def system_storage_def pipeline_run instance environment_config '
-            'type_storage_plugin_registry resources system_storage_config'
+            "pipeline_def mode_def system_storage_def pipeline_run instance environment_config "
+            "type_storage_plugin_registry resources system_storage_config"
         ),
     )
 ):
-    '''System storage-specific initialization context.
+    """System storage-specific initialization context.
 
     Attributes:
         pipeline_def (PipelineDefinition): The definition of the pipeline in context.
@@ -38,7 +38,7 @@ class InitSystemStorageContext(
         system_storage_config (Dict[str, Any]): The system storage-specific configuration data
             provided by the environment config. The schema for this data is defined by the
             ``config_field`` argument to :py:class:`SystemStorageDefinition`.
-    '''
+    """
 
     def __new__(
         cls,
@@ -54,22 +54,22 @@ class InitSystemStorageContext(
     ):
         return super(InitSystemStorageContext, cls).__new__(
             cls,
-            pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            mode_def=check.inst_param(mode_def, 'mode_def', ModeDefinition),
+            pipeline_def=check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
+            mode_def=check.inst_param(mode_def, "mode_def", ModeDefinition),
             system_storage_def=check.inst_param(
-                system_storage_def, 'system_storage_def', SystemStorageDefinition
+                system_storage_def, "system_storage_def", SystemStorageDefinition
             ),
-            pipeline_run=check.inst_param(pipeline_run, 'pipeline_run', PipelineRun),
-            instance=check.inst_param(instance, 'instance', DagsterInstance),
+            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            instance=check.inst_param(instance, "instance", DagsterInstance),
             environment_config=check.inst_param(
-                environment_config, 'environment_config', EnvironmentConfig
+                environment_config, "environment_config", EnvironmentConfig
             ),
             type_storage_plugin_registry=check.inst_param(
                 type_storage_plugin_registry,
-                'type_storage_plugin_registry',
+                "type_storage_plugin_registry",
                 TypeStoragePluginRegistry,
             ),
-            resources=check.not_none_param(resources, 'resources'),
+            resources=check.not_none_param(resources, "resources"),
             system_storage_config=check.dict_param(
                 system_storage_config, system_storage_config, key_type=str
             ),
@@ -78,14 +78,14 @@ class InitSystemStorageContext(
 
 class InitIntermediateStorageContext(
     namedtuple(
-        'InitIntermediateStorageContext',
+        "InitIntermediateStorageContext",
         (
-            'pipeline_def mode_def intermediate_storage_def pipeline_run instance environment_config '
-            'type_storage_plugin_registry resources intermediate_storage_config'
+            "pipeline_def mode_def intermediate_storage_def pipeline_run instance environment_config "
+            "type_storage_plugin_registry resources intermediate_storage_config"
         ),
     )
 ):
-    '''Intermediate storage-specific initialization context.
+    """Intermediate storage-specific initialization context.
 
     Attributes:
         pipeline_def (PipelineDefinition): The definition of the pipeline in context.
@@ -101,7 +101,7 @@ class InitIntermediateStorageContext(
         intermediate_storage_config (Dict[str, Any]): The intermediate storage-specific configuration data
             provided by the environment config. The schema for this data is defined by the
             ``config_field`` argument to :py:class:`IntermediateStorageDefinition`.
-    '''
+    """
 
     def __new__(
         cls,
@@ -117,22 +117,22 @@ class InitIntermediateStorageContext(
     ):
         return super(InitIntermediateStorageContext, cls).__new__(
             cls,
-            pipeline_def=check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition),
-            mode_def=check.inst_param(mode_def, 'mode_def', ModeDefinition),
+            pipeline_def=check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
+            mode_def=check.inst_param(mode_def, "mode_def", ModeDefinition),
             intermediate_storage_def=check.inst_param(
-                intermediate_storage_def, 'intermediate_storage_def', IntermediateStorageDefinition
+                intermediate_storage_def, "intermediate_storage_def", IntermediateStorageDefinition
             ),
-            pipeline_run=check.inst_param(pipeline_run, 'pipeline_run', PipelineRun),
-            instance=check.inst_param(instance, 'instance', DagsterInstance),
+            pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
+            instance=check.inst_param(instance, "instance", DagsterInstance),
             environment_config=check.inst_param(
-                environment_config, 'environment_config', EnvironmentConfig
+                environment_config, "environment_config", EnvironmentConfig
             ),
             type_storage_plugin_registry=check.inst_param(
                 type_storage_plugin_registry,
-                'type_storage_plugin_registry',
+                "type_storage_plugin_registry",
                 TypeStoragePluginRegistry,
             ),
-            resources=check.not_none_param(resources, 'resources'),
+            resources=check.not_none_param(resources, "resources"),
             intermediate_storage_config=check.dict_param(
                 intermediate_storage_config, intermediate_storage_config, key_type=str
             ),

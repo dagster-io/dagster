@@ -6,7 +6,7 @@ def define_dagster_checker():
     from pylint.checkers import BaseChecker
     from pylint.interfaces import IAstroidChecker
 
-    INFO_LINK = 'https://amir.rachum.com/blog/2017/03/03/generator-cleanup/'
+    INFO_LINK = "https://amir.rachum.com/blog/2017/03/03/generator-cleanup/"
 
     class DagsterChecker(BaseChecker):
         __implements__ = IAstroidChecker
@@ -15,17 +15,17 @@ def define_dagster_checker():
         priority = -1
         msgs = {
             "W0001": (
-                'Yield in finally without handling GeneratorExit (see {})'.format(INFO_LINK),
-                'finally-yield',
-                'Cannot yield in a finally block without handling GeneratorExit (see {})'.format(
+                "Yield in finally without handling GeneratorExit (see {})".format(INFO_LINK),
+                "finally-yield",
+                "Cannot yield in a finally block without handling GeneratorExit (see {})".format(
                     INFO_LINK
                 ),
             ),
-            'W0002': ('print() call', 'print-call', 'Cannot call print()'),
-            'W0003': (
-                'setting daemon=True in threading.Thread constructor',
-                'daemon-thread',
-                'Cannot set daemon=True in threading.Thread constructor (py2 compat)',
+            "W0002": ("print() call", "print-call", "Cannot call print()"),
+            "W0003": (
+                "setting daemon=True in threading.Thread constructor",
+                "daemon-thread",
+                "Cannot set daemon=True in threading.Thread constructor (py2 compat)",
             ),
         }
         options = ()
@@ -50,13 +50,13 @@ def define_dagster_checker():
                         current.body
                         and isinstance(current.body[0], astroid.TryExcept)
                         and any(
-                            handler.catch(['GeneratorExit']) for handler in current.body[0].handlers
+                            handler.catch(["GeneratorExit"]) for handler in current.body[0].handlers
                         )
                     ):
                         # this try block catches and handles GeneratorExit
                         return
 
-                    self.add_message('finally-yield', node=node)
+                    self.add_message("finally-yield", node=node)
 
                 current = current.parent
 
@@ -64,18 +64,18 @@ def define_dagster_checker():
             if (
                 node.callable
                 and isinstance(node.func, astroid.node_classes.Name)
-                and node.func.name == 'print'
+                and node.func.name == "print"
             ):
-                self.add_message('print-call', node=node)
+                self.add_message("print-call", node=node)
             if (
                 node.callable
                 and isinstance(node.func, astroid.node_classes.Attribute)
-                and node.func.attrname == 'Thread'
+                and node.func.attrname == "Thread"
                 and isinstance(node.func.expr, astroid.node_classes.Name)
-                and node.func.expr.name == 'threading'
-                and 'daemon' in [keyword.arg for keyword in node.keywords]
+                and node.func.expr.name == "threading"
+                and "daemon" in [keyword.arg for keyword in node.keywords]
             ):
-                self.add_message('daemon-thread', node=node)
+                self.add_message("daemon-thread", node=node)
 
     return DagsterChecker
 

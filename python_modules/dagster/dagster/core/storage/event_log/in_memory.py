@@ -2,23 +2,28 @@ from collections import OrderedDict, defaultdict
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.serdes import ConfigurableClass
 
 from .base import AssetAwareEventLogStorage, EventLogSequence, EventLogStorage
+from .version_addresses import get_addresses_for_step_output_versions_helper
 
 
 class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, ConfigurableClass):
-    '''
+    """
     In memory only event log storage. Used by ephemeral DagsterInstance or for testing purposes.
 
     WARNING: Dagit and other core functionality will not work if this is used on a real DagsterInstance
-    '''
+    """
 
-    def __init__(self, inst_data=None):
+    def __init__(self, inst_data=None, preload=None):
         self._logs = defaultdict(EventLogSequence)
         self._handlers = defaultdict(set)
         self._inst_data = inst_data
+        if preload:
+            for payload in preload:
+                self._logs[payload.pipeline_run.run_id] = EventLogSequence(payload.event_list)
 
     @property
     def inst_data(self):
@@ -33,18 +38,18 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
         return cls(inst_data)
 
     def get_logs_for_run(self, run_id, cursor=-1):
-        check.str_param(run_id, 'run_id')
-        check.int_param(cursor, 'cursor')
+        check.str_param(run_id, "run_id")
+        check.int_param(cursor, "cursor")
         check.invariant(
             cursor >= -1,
-            'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
+            "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
 
         cursor = cursor + 1
         return self._logs[run_id][cursor:]
 
     def store_event(self, event):
-        check.inst_param(event, 'event', EventRecord)
+        check.inst_param(event, "event", EventRecord)
         run_id = event.run_id
         self._logs[run_id] = self._logs[run_id].append(event)
         for handler in self._handlers[run_id]:
@@ -82,7 +87,7 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
         ]
         asset_keys = OrderedDict()
         for event in asset_events:
-            asset_keys['/'.join(event.asset_key.path)] = event.asset_key
+            asset_keys["/".join(event.asset_key.path)] = event.asset_key
         return list(asset_keys.values())
 
     def get_asset_events(self, asset_key, cursor=None, limit=None):
@@ -115,7 +120,7 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
         return list(asset_run_ids)
 
     def wipe_asset(self, asset_key):
-        check.inst_param(asset_key, 'asset_key', AssetKey)
+        check.inst_param(asset_key, "asset_key", AssetKey)
 
         for run_id in self._logs.keys():
             updated_records = []
@@ -141,3 +146,29 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
                     updated_record = record._replace(dagster_event=updated_dagster_event)
                     updated_records.append(updated_record)
             self._logs[run_id] = updated_records
+
+    def get_addresses_for_step_output_versions(self, step_output_versions):
+        """
+        For each given step output, finds whether an output exists with the given
+        version, and returns its address if it does.
+
+        Args:
+            step_output_versions (Dict[(str, StepOutputHandle), str]):
+                (pipeline name, step output handle) -> version.
+
+        Returns:
+            Dict[(str, StepOutputHandle), str]: (pipeline name, step output handle) -> address.
+                For each step output, an address if there is one and None otherwise.
+        """
+        step_output_records = (
+            record
+            for records in self._logs.values()
+            for record in records
+            if record.is_dagster_event
+            and record.dagster_event.event_type == DagsterEventType.STEP_OUTPUT
+        )
+
+        return get_addresses_for_step_output_versions_helper(
+            step_output_versions,
+            [(record.timestamp, record.dagster_event) for record in step_output_records],
+        )

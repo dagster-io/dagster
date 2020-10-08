@@ -1,9 +1,16 @@
+import { DynamicMetaTags } from 'components/MetaTags';
+
+<DynamicMetaTags
+  title="Lakehouse Example with Pandas and PySpark | Dagster"
+  description="In this example, we'll be demonstrating how we can use Lakehouse to construct a Dagster pipeline with multiple compute options."
+/>
+
 # Lakehouse with Pandas and Pyspark
 
 Lakehouse is an experimental API built on top of Dagster's core abstractions that makes it easy to
 define computations in terms of the data assets that they produce. In the last example, we
-demonstrated how to use Lakehouse to transform data assets into a core dagster pipeline. In this
-example, we'll be demonstrating how we can use Lakehouse to construct a dagster pipeline with
+demonstrated how to use Lakehouse to transform data assets into a core Dagster pipeline. In this
+example, we'll be demonstrating how we can use Lakehouse to construct a Dagster pipeline with
 multiple compute options. Users unfamiliar with lakehouse should first view the first lakehouse
 tutorial [here](https://docs.dagster.io/examples/simple_lakehouse).
 
@@ -53,7 +60,8 @@ ingesting a folder of csv files as opposed to a single csv file.
 
 ```python literalinclude caption=lakehouse_def.py
 file:/multi_type_lakehouse/multi_type_lakehouse/lakehouse_def.py
-lines:23-72
+startAfter:start_lakehouse_def_marker_0
+endBefore:end_lakehouse_def_marker_0
 ```
 
 The `load` method takes in all csv files within a given directory, rather than specifying
@@ -63,7 +71,8 @@ directory in parts.
 We'll do something similar for conversion between a csv and a spark datafarame:
 ```python literalinclude caption=lakehouse_def.py
 file:/multi_type_lakehouse/multi_type_lakehouse/lakehouse_def.py
-lines:75-92
+startAfter:start_lakehouse_def_marker_1
+endBefore:end_lakehouse_def_marker_1
 ```
 
 To compose these two compute types, we utilize the `multi_type_asset_storage` function

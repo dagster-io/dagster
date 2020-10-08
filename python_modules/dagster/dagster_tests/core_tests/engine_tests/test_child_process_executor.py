@@ -29,7 +29,7 @@ class AnError(Exception):
 
 class ThrowAnErrorCommand(ChildProcessCommand):  # pylint: disable=no-init
     def execute(self):
-        raise AnError('Oh noes!')
+        raise AnError("Oh noes!")
 
 
 class CrashyCommand(ChildProcessCommand):  # pylint: disable=no-init
@@ -54,22 +54,22 @@ def test_basic_child_process_command():
     events = list(
         filter(
             lambda x: x and not isinstance(x, ChildProcessEvent),
-            execute_child_process_command(DoubleAStringChildProcessCommand('aa')),
+            execute_child_process_command(DoubleAStringChildProcessCommand("aa")),
         )
     )
-    assert events == ['aaaa']
+    assert events == ["aaaa"]
 
 
 def test_basic_child_process_command_with_process_events():
     events = list(
-        filter(lambda x: x, execute_child_process_command(DoubleAStringChildProcessCommand('aa')))
+        filter(lambda x: x, execute_child_process_command(DoubleAStringChildProcessCommand("aa")))
     )
     assert len(events) == 3
 
     assert isinstance(events[0], ChildProcessStartEvent)
     child_pid = events[0].pid
     assert child_pid != os.getpid()
-    assert events[1] == 'aaaa'
+    assert events[1] == "aaaa"
     assert isinstance(events[2], ChildProcessDoneEvent)
     assert events[2].pid == child_pid
 
@@ -83,7 +83,7 @@ def test_child_process_uncaught_exception():
     )
     assert len(results) == 1
 
-    assert 'AnError' in str(results[0].error_info.message)
+    assert "AnError" in str(results[0].error_info.message)
 
 
 def test_child_process_crashy_process():
@@ -92,13 +92,13 @@ def test_child_process_crashy_process():
     assert exc.value.exit_code == 1
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Segfault not being caught on Windows: See issue #2791")
+@pytest.mark.skipif(os.name == "nt", reason="Segfault not being caught on Windows: See issue #2791")
 def test_child_process_segfault():
     with pytest.raises(ChildProcessCrashException) as exc:
         list(execute_child_process_command(SegfaultCommand()))
     assert exc.value.exit_code == -11
 
 
-@pytest.mark.skip('too long')
+@pytest.mark.skip("too long")
 def test_long_running_command():
     list(execute_child_process_command(LongRunningCommand()))

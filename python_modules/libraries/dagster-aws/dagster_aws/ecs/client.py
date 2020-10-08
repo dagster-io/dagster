@@ -25,20 +25,20 @@ class ECSClient:
 
     def __init__(
         self,
-        region_name='us-east-2',
-        key_id='',
-        access_key='',
-        launch_type='FARGATE',
+        region_name="us-east-2",
+        key_id="",
+        access_key="",
+        launch_type="FARGATE",
         starter_client=None,
         starter_log_client=None,
         grab_logs=True,
     ):
-        self.key_id = check.str_param(key_id, 'key_id')
-        self.region_name = check.str_param(region_name, 'region_name')
-        self.access_key = check.str_param(access_key, 'access_key')
-        self.launch_type = check.str_param(launch_type, 'launch_type')
-        self.account_id = '123412341234'
-        self.grab_logs = check.bool_param(grab_logs, 'grab_logs')
+        self.key_id = check.str_param(key_id, "key_id")
+        self.region_name = check.str_param(region_name, "region_name")
+        self.access_key = check.str_param(access_key, "access_key")
+        self.launch_type = check.str_param(launch_type, "launch_type")
+        self.account_id = "123412341234"
+        self.grab_logs = check.bool_param(grab_logs, "grab_logs")
         self.task_definition_arn = None
         self.tasks = []
         self.tasks_done = []
@@ -49,12 +49,12 @@ class ECSClient:
         self.warnings = []
         self.cluster = None
         if starter_client is None:
-            self.ecs_client = self.make_client('ecs')
-            self.account_id = boto3.client('sts').get_caller_identity().get('Account')
+            self.ecs_client = self.make_client("ecs")
+            self.account_id = boto3.client("sts").get_caller_identity().get("Account")
         else:
             self.ecs_client = starter_client
         if starter_log_client is None:
-            self.log_client = self.make_client('logs')
+            self.log_client = self.make_client("logs")
         else:
             self.log_client = starter_log_client
         self.set_cluster()
@@ -69,7 +69,7 @@ class ECSClient:
         Returns:
             client: the constructed client object
         """
-        if self.key_id != '':
+        if self.key_id != "":
             clients = boto3.client(
                 client_type,
                 aws_access_key_id=self.key_id,
@@ -86,17 +86,17 @@ class ECSClient:
         """
         sets the task's compute cluster to be the first available/default compute cluster.
         """
-        self.cluster = self.ecs_client.list_clusters()['clusterArns'][0]
+        self.cluster = self.ecs_client.list_clusters()["clusterArns"][0]
 
     def set_and_register_task(
         self,
         command,
         entrypoint,
-        family='echostart',
-        containername='basictest',
+        family="echostart",
+        containername="basictest",
         imagename="httpd:2.4",
-        memory='512',
-        cpu='256',
+        memory="512",
+        cpu="256",
     ):
         """
         Generates a task corresponding to a given docker image, command, and entry point
@@ -163,8 +163,8 @@ class ECSClient:
             cluster=self.cluster,
             **kwargs
         )
-        task = taskdict['tasks'][0]
-        container = task['containers'][0]
+        task = taskdict["tasks"][0]
+        container = task["containers"][0]
         running_task_arn = container["taskArn"]
         self.tasks.append(running_task_arn)
         self.tasks_done.append(False)
@@ -184,24 +184,24 @@ class ECSClient:
         if self.tasks_done[offset]:
             return True
         response = self.ecs_client.describe_tasks(tasks=self.tasks, cluster=self.cluster)
-        resp = response['tasks'][offset]
-        if resp['lastStatus'] == 'STOPPED':
+        resp = response["tasks"][offset]
+        if resp["lastStatus"] == "STOPPED":
             if self.grab_logs:
-                check_arn = resp['taskDefinitionArn']
+                check_arn = resp["taskDefinitionArn"]
                 taskDefinition = self.ecs_client.describe_task_definition(taskDefinition=check_arn)[
-                    'taskDefinition'
+                    "taskDefinition"
                 ]
-                logconfig = taskDefinition['containerDefinitions'][0]['logConfiguration']['options']
+                logconfig = taskDefinition["containerDefinitions"][0]["logConfiguration"]["options"]
                 streamobj = self.log_client.describe_log_streams(
-                    logGroupName=logconfig['awslogs-group'],
-                    logStreamNamePrefix=logconfig['awslogs-stream-prefix'],
+                    logGroupName=logconfig["awslogs-group"],
+                    logStreamNamePrefix=logconfig["awslogs-stream-prefix"],
                 )
                 logs = self.log_client.get_log_events(
-                    logGroupName=logconfig['awslogs-group'],
-                    logStreamName=streamobj['logStreams'][-1]['logStreamName'],
+                    logGroupName=logconfig["awslogs-group"],
+                    logStreamName=streamobj["logStreams"][-1]["logStreamName"],
                 )
-                self.ecs_logs[offset] = logs['events']
-                self.logs_messages[offset] = [log['message'] for log in logs['events']]
+                self.ecs_logs[offset] = logs["events"]
+                self.logs_messages[offset] = [log["message"] for log in logs["events"]]
             self.tasks_done[offset] = True
             return True
         return False
@@ -230,28 +230,28 @@ class ECSClient:
 if __name__ == "__main__":
     import yaml
 
-    with open('config.yaml') as f:
+    with open("config.yaml") as f:
         data = yaml.load(f, Loader=yaml.SafeLoader)
 
     testclient = ECSClient()
     testclient.set_and_register_task(
-        ["echo start"], ["/bin/bash", "-c"], family='multimessage',
+        ["echo start"], ["/bin/bash", "-c"], family="multimessage",
     )
     networkConfiguration = {
-        'awsvpcConfiguration': {
-            'subnets': ['subnet-0f3b1467',],
-            'securityGroups': ['sg-08627da7435350fa6',],
-            'assignPublicIp': 'ENABLED',
+        "awsvpcConfiguration": {
+            "subnets": ["subnet-0f3b1467",],
+            "securityGroups": ["sg-08627da7435350fa6",],
+            "assignPublicIp": "ENABLED",
         }
     }
     testclient.run_task(networkConfiguration=networkConfiguration)
 
     testclient.set_and_register_task(
-        ["echo middle"], ["/bin/bash", "-c"], family='multimessage',
+        ["echo middle"], ["/bin/bash", "-c"], family="multimessage",
     )
     testclient.run_task(networkConfiguration=networkConfiguration)
     testclient.set_and_register_task(
-        ["echo $TEST"], ["/bin/bash", "-c"], family='multimessage',
+        ["echo $TEST"], ["/bin/bash", "-c"], family="multimessage",
     )
     testclient.run_task(networkConfiguration=networkConfiguration)
     testclient.spin_til_done(offset=2)

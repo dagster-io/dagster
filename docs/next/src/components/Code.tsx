@@ -1,5 +1,5 @@
 import SyntaxHighlighter from 'react-syntax-highlighter';
-import { dracula } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
+import { tomorrowNight } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 import Transition from 'components/Transition';
 import CopyToClipboard from 'react-copy-to-clipboard';
 
@@ -112,7 +112,7 @@ const Code: React.FunctionComponent<CodeProps> = ({
         )}
         <SyntaxHighlighter
           language={language}
-          style={dracula}
+          style={tomorrowNight}
           showLineNumbers={showLines}
           startingLineNumber={parseInt(startLine)}
           wrapLines={true}

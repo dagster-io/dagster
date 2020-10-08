@@ -13,13 +13,13 @@ from .solid import validate_solid_fn
 
 class _LambdaSolid(object):
     def __init__(self, name=None, input_defs=None, output_def=None, description=None):
-        self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_nullable_list_param(input_defs, 'input_defs', InputDefinition)
-        self.output_def = check.opt_inst_param(output_def, 'output_def', OutputDefinition)
-        self.description = check.opt_str_param(description, 'description')
+        self.name = check.opt_str_param(name, "name")
+        self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
+        self.output_def = check.opt_inst_param(output_def, "output_def", OutputDefinition)
+        self.description = check.opt_str_param(description, "description")
 
     def __call__(self, fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
@@ -32,10 +32,10 @@ class _LambdaSolid(object):
         output_def = (
             self.output_def
             if self.output_def is not None
-            else infer_output_definitions('@lambda_solid', self.name, fn)[0]
+            else infer_output_definitions("@lambda_solid", self.name, fn)[0]
         )
 
-        positional_inputs = validate_solid_fn('@lambda_solid', self.name, fn, input_defs)
+        positional_inputs = validate_solid_fn("@lambda_solid", self.name, fn, input_defs)
         compute_fn = _create_lambda_solid_compute_wrapper(fn, input_defs, output_def)
 
         solid_def = SolidDefinition(
@@ -51,7 +51,7 @@ class _LambdaSolid(object):
 
 
 def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
-    '''Create a simple solid from the decorated function.
+    """Create a simple solid from the decorated function.
 
     This shortcut allows the creation of simple solids that do not require
     configuration and whose implementations do not require a
@@ -97,7 +97,7 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
             # same as above inferred from signature
             return foo
 
-    '''
+    """
     if callable(name):
         check.invariant(input_defs is None)
         check.invariant(description is None)
@@ -109,9 +109,9 @@ def lambda_solid(name=None, description=None, input_defs=None, output_def=None):
 
 
 def _create_lambda_solid_compute_wrapper(fn, input_defs, output_def):
-    check.callable_param(fn, 'fn')
-    check.list_param(input_defs, 'input_defs', of_type=InputDefinition)
-    check.inst_param(output_def, 'output_def', OutputDefinition)
+    check.callable_param(fn, "fn")
+    check.list_param(input_defs, "input_defs", of_type=InputDefinition)
+    check.inst_param(output_def, "output_def", OutputDefinition)
 
     input_names = [
         input_def.name

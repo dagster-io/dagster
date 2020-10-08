@@ -1,0 +1,16 @@
+dagster_dbt_test_project:
+    target: dev
+    outputs:
+        dev:
+            type: postgres
+            host: "{{ env_var('POSTGRES_TEST_DB_DBT_HOST') }}" # POSTGRES_TEST_DB_DBT_HOST
+            user: test
+            pass: test
+            port: 5432
+            dbname: test
+            schema: test-schema
+            threads: 2
+            keepalives_idle: 0 # default 0, indicating the system default
+            # search_path: [optional, override the default postgres search_path]
+            # role: [optional, set the role dbt assumes when executing queries]
+            # sslmode: [optional, set the sslmode used to connect to the database]

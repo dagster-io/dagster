@@ -35,8 +35,8 @@ class DagsterAirflowError(Exception):
 
 
 def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
-    check.inst_param(dag_bag, 'dag_bag', DagBag)
-    check.bool_param(refresh_from_airflow_db, 'refresh_from_airflow_db')
+    check.inst_param(dag_bag, "dag_bag", DagBag)
+    check.bool_param(refresh_from_airflow_db, "refresh_from_airflow_db")
     seen_task_names = set()
 
     # To enforce predictable iteration order
@@ -54,7 +54,7 @@ def contains_duplicate_task_names(dag_bag, refresh_from_airflow_db):
 def make_dagster_repo_from_airflow_dag_bag(
     dag_bag, repo_name, refresh_from_airflow_db=False, use_airflow_template_context=False
 ):
-    ''' Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
+    """ Construct a Dagster repository corresponding to Airflow DAGs in DagBag.
 
     Usage:
         Create `make_dagster_repo.py`:
@@ -79,11 +79,11 @@ def make_dagster_repo_from_airflow_dag_bag(
 
     Returns:
         RepositoryDefinition
-    '''
-    check.inst_param(dag_bag, 'dag_bag', DagBag)
-    check.str_param(repo_name, 'repo_name')
-    check.bool_param(refresh_from_airflow_db, 'refresh_from_airflow_db')
-    check.bool_param(use_airflow_template_context, 'use_airflow_template_context')
+    """
+    check.inst_param(dag_bag, "dag_bag", DagBag)
+    check.str_param(repo_name, "repo_name")
+    check.bool_param(refresh_from_airflow_db, "refresh_from_airflow_db")
+    check.bool_param(use_airflow_template_context, "use_airflow_template_context")
 
     use_unique_id = contains_duplicate_task_names(dag_bag, refresh_from_airflow_db)
 
@@ -118,8 +118,8 @@ def make_dagster_repo_from_airflow_dag_bag(
     return _repo
 
 
-def make_dagster_repo_from_airflow_example_dags(repo_name='airflow_example_dags_repo'):
-    ''' Construct a Dagster repository for Airflow's example DAGs.
+def make_dagster_repo_from_airflow_example_dags(repo_name="airflow_example_dags_repo"):
+    """ Construct a Dagster repository for Airflow's example DAGs.
 
     Execution of the following Airflow example DAGs is not currently supported:
             'example_external_task_marker_child',
@@ -145,9 +145,9 @@ def make_dagster_repo_from_airflow_example_dags(repo_name='airflow_example_dags_
 
     Returns:
         RepositoryDefinition
-    '''
+    """
     dag_bag = DagBag(
-        dag_folder='some/empty/folder/with/no/dags',  # prevent defaulting to settings.DAGS_FOLDER
+        dag_folder="some/empty/folder/with/no/dags",  # prevent defaulting to settings.DAGS_FOLDER
         include_examples=True,
     )
 
@@ -167,7 +167,7 @@ def make_dagster_repo_from_airflow_dags_path(
     store_serialized_dags=False,
     use_airflow_template_context=False,
 ):
-    ''' Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
+    """ Construct a Dagster repository corresponding to Airflow DAGs in dag_path.
 
     ``DagBag.get_dag()`` dependency requires Airflow DB to be initialized.
 
@@ -200,12 +200,12 @@ def make_dagster_repo_from_airflow_dags_path(
 
     Returns:
         RepositoryDefinition
-    '''
-    check.str_param(dag_path, 'dag_path')
-    check.str_param(repo_name, 'repo_name')
-    check.bool_param(safe_mode, 'safe_mode')
-    check.bool_param(store_serialized_dags, 'store_serialized_dags')
-    check.bool_param(use_airflow_template_context, 'use_airflow_template_context')
+    """
+    check.str_param(dag_path, "dag_path")
+    check.str_param(repo_name, "repo_name")
+    check.bool_param(safe_mode, "safe_mode")
+    check.bool_param(store_serialized_dags, "store_serialized_dags")
+    check.bool_param(use_airflow_template_context, "use_airflow_template_context")
 
     try:
         dag_bag = DagBag(
@@ -215,7 +215,7 @@ def make_dagster_repo_from_airflow_dags_path(
             store_serialized_dags=store_serialized_dags,
         )
     except Exception:  # pylint: disable=broad-except
-        raise DagsterAirflowError('Error initializing airflow.models.dagbag object with arguments')
+        raise DagsterAirflowError("Error initializing airflow.models.dagbag object with arguments")
 
     return make_dagster_repo_from_airflow_dag_bag(dag_bag, repo_name, use_airflow_template_context)
 
@@ -223,7 +223,7 @@ def make_dagster_repo_from_airflow_dags_path(
 def make_dagster_pipeline_from_airflow_dag(
     dag, tags=None, use_airflow_template_context=False, unique_id=None
 ):
-    '''Construct a Dagster pipeline corresponding to a given Airflow DAG.
+    """Construct a Dagster pipeline corresponding to a given Airflow DAG.
 
     Tasks in the resulting pipeline will execute the ``execute()`` method on the corresponding
     Airflow Operator. Dagster, any dependencies required by Airflow Operators, and the module
@@ -275,14 +275,14 @@ def make_dagster_pipeline_from_airflow_dag(
     Returns:
         pipeline_def (PipelineDefinition): The generated Dagster pipeline
 
-    '''
-    check.inst_param(dag, 'dag', DAG)
-    tags = check.opt_dict_param(tags, 'tags')
-    check.bool_param(use_airflow_template_context, 'use_airflow_template_context')
-    unique_id = check.opt_int_param(unique_id, 'unique_id')
+    """
+    check.inst_param(dag, "dag", DAG)
+    tags = check.opt_dict_param(tags, "tags")
+    check.bool_param(use_airflow_template_context, "use_airflow_template_context")
+    unique_id = check.opt_int_param(unique_id, "unique_id")
 
     if IS_AIRFLOW_INGEST_PIPELINE_STR not in tags:
-        tags[IS_AIRFLOW_INGEST_PIPELINE_STR] = 'true'
+        tags[IS_AIRFLOW_INGEST_PIPELINE_STR] = "true"
 
     tags = validate_tags(tags)
 
@@ -302,17 +302,17 @@ def make_dagster_pipeline_from_airflow_dag(
 # dashes, dots and underscores) than Dagster's naming conventions (alphanumeric characters,
 # underscores), so Dagster will strip invalid characters and replace with '_'
 def normalized_name(name, unique_id):
-    base_name = 'airflow_' + ''.join(c if VALID_NAME_REGEX.match(c) else '_' for c in name)
+    base_name = "airflow_" + "".join(c if VALID_NAME_REGEX.match(c) else "_" for c in name)
     if not unique_id:
         return base_name
     else:
-        return base_name + '_' + str(unique_id)
+        return base_name + "_" + str(unique_id)
 
 
 def _get_pipeline_definition_args(dag, use_airflow_template_context, unique_id=None):
-    check.inst_param(dag, 'dag', DAG)
-    check.bool_param(use_airflow_template_context, 'use_airflow_template_context')
-    unique_id = check.opt_int_param(unique_id, 'unique_id')
+    check.inst_param(dag, "dag", DAG)
+    check.bool_param(use_airflow_template_context, "use_airflow_template_context")
+    unique_id = check.opt_int_param(unique_id, "unique_id")
 
     pipeline_dependencies = {}
     solid_defs = []
@@ -335,11 +335,11 @@ def _get_pipeline_definition_args(dag, use_airflow_template_context, unique_id=N
 def _traverse_airflow_dag(
     task, seen_tasks, pipeline_dependencies, solid_defs, use_airflow_template_context, unique_id
 ):
-    check.inst_param(task, 'task', BaseOperator)
-    check.list_param(seen_tasks, 'seen_tasks', BaseOperator)
-    check.list_param(solid_defs, 'solid_defs', SolidDefinition)
-    check.bool_param(use_airflow_template_context, 'use_airflow_template_context')
-    unique_id = check.opt_int_param(unique_id, 'unique_id')
+    check.inst_param(task, "task", BaseOperator)
+    check.list_param(seen_tasks, "seen_tasks", BaseOperator)
+    check.list_param(solid_defs, "solid_defs", SolidDefinition)
+    check.bool_param(use_airflow_template_context, "use_airflow_template_context")
+    unique_id = check.opt_int_param(unique_id, "unique_id")
 
     seen_tasks.append(task)
     current_solid = make_dagster_solid_from_airflow_task(
@@ -352,11 +352,11 @@ def _traverse_airflow_dag(
         task_upstream_list = sorted(task.upstream_list, key=lambda x: x.task_id)
 
         pipeline_dependencies[current_solid.name] = {
-            'airflow_task_ready': MultiDependencyDefinition(
+            "airflow_task_ready": MultiDependencyDefinition(
                 [
                     DependencyDefinition(
                         solid=normalized_name(task_upstream.task_id, unique_id),
-                        output='airflow_task_complete',
+                        output="airflow_task_complete",
                     )
                     for task_upstream in task_upstream_list
                 ]
@@ -381,28 +381,28 @@ def _traverse_airflow_dag(
 def replace_airflow_logger_handlers():
     try:
         # Redirect airflow handlers to stdout / compute logs
-        prev_airflow_handlers = logging.getLogger('airflow.task').handlers
+        prev_airflow_handlers = logging.getLogger("airflow.task").handlers
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter(LOG_FORMAT))
-        root = logging.getLogger('airflow.task')
+        root = logging.getLogger("airflow.task")
         root.handlers = [handler]
         yield
     finally:
         # Restore previous log handlers
-        logging.getLogger('airflow.task').handlers = prev_airflow_handlers
+        logging.getLogger("airflow.task").handlers = prev_airflow_handlers
 
 
 # If unique_id is not None, this id will be postpended to generated solid names, generally used
 # to enforce unique solid names within a repo.
 def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, unique_id=None):
-    check.inst_param(task, 'task', BaseOperator)
-    check.bool_param(use_airflow_template_context, 'use_airflow_template_context')
-    unique_id = check.opt_int_param(unique_id, 'unique_id')
+    check.inst_param(task, "task", BaseOperator)
+    check.bool_param(use_airflow_template_context, "use_airflow_template_context")
+    unique_id = check.opt_int_param(unique_id, "unique_id")
 
     @solid(
         name=normalized_name(task.task_id, unique_id),
-        input_defs=[InputDefinition('airflow_task_ready', Nothing)],
-        output_defs=[OutputDefinition(Nothing, 'airflow_task_complete')],
+        input_defs=[InputDefinition("airflow_task_ready", Nothing)],
+        output_defs=[OutputDefinition(Nothing, "airflow_task_complete")],
     )
     def _solid(context):  # pylint: disable=unused-argument
         if AIRFLOW_EXECUTION_DATE_STR not in context.pipeline_run.tags:
@@ -415,13 +415,13 @@ def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, uni
             )
         execution_date_str = context.pipeline_run.tags.get(AIRFLOW_EXECUTION_DATE_STR)
 
-        check.str_param(execution_date_str, 'execution_date_str')
+        check.str_param(execution_date_str, "execution_date_str")
         try:
             execution_date = dateutil.parser.parse(execution_date_str)
         except ValueError:
             raise DagsterInvariantViolationError(
                 'Could not parse execution_date "{execution_date_str}". Please use datetime format '
-                'compatible with  dateutil.parser.parse.'.format(
+                "compatible with  dateutil.parser.parse.".format(
                     execution_date_str=execution_date_str,
                 )
             )
@@ -432,7 +432,7 @@ def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, uni
                 )
             )
 
-        check.inst_param(execution_date, 'execution_date', datetime.datetime)
+        check.inst_param(execution_date, "execution_date", datetime.datetime)
 
         with replace_airflow_logger_handlers():
             task_instance = TaskInstance(task=task, execution_date=execution_date)
@@ -452,7 +452,7 @@ def make_dagster_solid_from_airflow_task(task, use_airflow_template_context, uni
 
 
 def dagster_get_template_context(task_instance, task, execution_date):
-    '''
+    """
     Modified from /airflow/models/taskinstance.py to not reference Airflow DB
     (1) Removes the following block, which queries DB, removes dagrun instances, recycles run_id
     if hasattr(task, 'dag'):
@@ -471,21 +471,21 @@ def dagster_get_template_context(task_instance, task, execution_date):
     (2) Removes returning 'conf': conf which passes along Airflow config
     (3) Removes 'var': {'value': VariableAccessor(), 'json': VariableJsonAccessor()}, which allows
         fetching Variable from Airflow DB
-    '''
+    """
     from airflow import macros
 
     tables = None
-    if 'tables' in task.params:
-        tables = task.params['tables']
+    if "tables" in task.params:
+        tables = task.params["tables"]
 
     params = {}
-    run_id = ''
+    run_id = ""
     dag_run = None
 
-    ds = execution_date.strftime('%Y-%m-%d')
+    ds = execution_date.strftime("%Y-%m-%d")
     ts = execution_date.isoformat()
-    yesterday_ds = (execution_date - datetime.timedelta(1)).strftime('%Y-%m-%d')
-    tomorrow_ds = (execution_date + datetime.timedelta(1)).strftime('%Y-%m-%d')
+    yesterday_ds = (execution_date - datetime.timedelta(1)).strftime("%Y-%m-%d")
+    tomorrow_ds = (execution_date + datetime.timedelta(1)).strftime("%Y-%m-%d")
 
     # For manually triggered dagruns that aren't run on a schedule, next/previous
     # schedule dates don't make sense, and should be set to execution date for
@@ -501,22 +501,22 @@ def dagster_get_template_context(task_instance, task, execution_date):
     next_ds = None
     next_ds_nodash = None
     if next_execution_date:
-        next_ds = next_execution_date.strftime('%Y-%m-%d')
-        next_ds_nodash = next_ds.replace('-', '')
+        next_ds = next_execution_date.strftime("%Y-%m-%d")
+        next_ds_nodash = next_ds.replace("-", "")
         next_execution_date = pendulum.instance(next_execution_date)
 
     prev_ds = None
     prev_ds_nodash = None
     if prev_execution_date:
-        prev_ds = prev_execution_date.strftime('%Y-%m-%d')
-        prev_ds_nodash = prev_ds.replace('-', '')
+        prev_ds = prev_execution_date.strftime("%Y-%m-%d")
+        prev_ds_nodash = prev_ds.replace("-", "")
         prev_execution_date = pendulum.instance(prev_execution_date)
 
-    ds_nodash = ds.replace('-', '')
-    ts_nodash = execution_date.strftime('%Y%m%dT%H%M%S')
-    ts_nodash_with_tz = ts.replace('-', '').replace(':', '')
-    yesterday_ds_nodash = yesterday_ds.replace('-', '')
-    tomorrow_ds_nodash = tomorrow_ds.replace('-', '')
+    ds_nodash = ds.replace("-", "")
+    ts_nodash = execution_date.strftime("%Y%m%dT%H%M%S")
+    ts_nodash_with_tz = ts.replace("-", "").replace(":", "")
+    yesterday_ds_nodash = yesterday_ds.replace("-", "")
+    tomorrow_ds_nodash = tomorrow_ds.replace("-", "")
 
     ti_key_str = "{dag_id}__{task_id}__{ds_nodash}".format(
         dag_id=task.dag_id, task_id=task.task_id, ds_nodash=ds_nodash
@@ -526,42 +526,42 @@ def dagster_get_template_context(task_instance, task, execution_date):
         params.update(task.params)
 
     return {
-        'dag': task.dag,
-        'ds': ds,
-        'next_ds': next_ds,
-        'next_ds_nodash': next_ds_nodash,
-        'prev_ds': prev_ds,
-        'prev_ds_nodash': prev_ds_nodash,
-        'ds_nodash': ds_nodash,
-        'ts': ts,
-        'ts_nodash': ts_nodash,
-        'ts_nodash_with_tz': ts_nodash_with_tz,
-        'yesterday_ds': yesterday_ds,
-        'yesterday_ds_nodash': yesterday_ds_nodash,
-        'tomorrow_ds': tomorrow_ds,
-        'tomorrow_ds_nodash': tomorrow_ds_nodash,
-        'END_DATE': ds,
-        'end_date': ds,
-        'dag_run': dag_run,
-        'run_id': run_id,
-        'execution_date': pendulum.instance(execution_date),
-        'prev_execution_date': prev_execution_date,
-        'prev_execution_date_success': lazy_object_proxy.Proxy(
+        "dag": task.dag,
+        "ds": ds,
+        "next_ds": next_ds,
+        "next_ds_nodash": next_ds_nodash,
+        "prev_ds": prev_ds,
+        "prev_ds_nodash": prev_ds_nodash,
+        "ds_nodash": ds_nodash,
+        "ts": ts,
+        "ts_nodash": ts_nodash,
+        "ts_nodash_with_tz": ts_nodash_with_tz,
+        "yesterday_ds": yesterday_ds,
+        "yesterday_ds_nodash": yesterday_ds_nodash,
+        "tomorrow_ds": tomorrow_ds,
+        "tomorrow_ds_nodash": tomorrow_ds_nodash,
+        "END_DATE": ds,
+        "end_date": ds,
+        "dag_run": dag_run,
+        "run_id": run_id,
+        "execution_date": pendulum.instance(execution_date),
+        "prev_execution_date": prev_execution_date,
+        "prev_execution_date_success": lazy_object_proxy.Proxy(
             lambda: task_instance.previous_execution_date_success
         ),
-        'prev_start_date_success': lazy_object_proxy.Proxy(
+        "prev_start_date_success": lazy_object_proxy.Proxy(
             lambda: task_instance.previous_start_date_success
         ),
-        'next_execution_date': next_execution_date,
-        'latest_date': ds,
-        'macros': macros,
-        'params': params,
-        'tables': tables,
-        'task': task,
-        'task_instance': task_instance,
-        'ti': task_instance,
-        'task_instance_key_str': ti_key_str,
-        'test_mode': task_instance.test_mode,
-        'inlets': task.inlets,
-        'outlets': task.outlets,
+        "next_execution_date": next_execution_date,
+        "latest_date": ds,
+        "macros": macros,
+        "params": params,
+        "tables": tables,
+        "task": task,
+        "task_instance": task_instance,
+        "ti": task_instance,
+        "task_instance_key_str": ti_key_str,
+        "test_mode": task_instance.test_mode,
+        "inlets": task.inlets,
+        "outlets": task.outlets,
     }

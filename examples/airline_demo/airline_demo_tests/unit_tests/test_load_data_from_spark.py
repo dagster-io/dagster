@@ -11,12 +11,12 @@ from dagster.seven import mock
 def test_airline_demo_load_df():
     db_info_mock = DbInfo(
         engine=mock.MagicMock(),
-        url='url',
-        jdbc_url='url',
-        dialect='dialect',
+        url="url",
+        jdbc_url="url",
+        dialect="dialect",
         load_table=mock.MagicMock(),
-        host='host',
-        db_name='db_name',
+        host="host",
+        db_name="db_name",
     )
 
     @solid
@@ -27,9 +27,9 @@ def test_airline_demo_load_df():
         mode_defs=[
             ModeDefinition(
                 resource_defs={
-                    'db_info': ResourceDefinition.hardcoded_resource(db_info_mock),
-                    'pyspark': pyspark_resource,
-                    'pyspark_step_launcher': no_step_launcher,
+                    "db_info": ResourceDefinition.hardcoded_resource(db_info_mock),
+                    "pyspark": pyspark_resource,
+                    "pyspark_step_launcher": no_step_launcher,
                 }
             )
         ]
@@ -40,9 +40,9 @@ def test_airline_demo_load_df():
     solid_result = execute_pipeline(
         load_df_test,
         run_config={
-            'solids': {'load_data_to_database_from_spark': {'config': {'table_name': 'foo'}}}
+            "solids": {"load_data_to_database_from_spark": {"config": {"table_name": "foo"}}}
         },
-    ).result_for_solid('load_data_to_database_from_spark')
+    ).result_for_solid("load_data_to_database_from_spark")
 
     assert solid_result.success
     mats = solid_result.materializations_during_compute
@@ -50,5 +50,5 @@ def test_airline_demo_load_df():
     mat = mats[0]
     assert len(mat.metadata_entries) == 2
     entries = {me.label: me for me in mat.metadata_entries}
-    assert entries['Host'].entry_data.text == 'host'
-    assert entries['Db'].entry_data.text == 'db_name'
+    assert entries["Host"].entry_data.text == "host"
+    assert entries["Db"].entry_data.text == "db_name"

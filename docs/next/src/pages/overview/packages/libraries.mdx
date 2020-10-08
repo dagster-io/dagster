@@ -1,6 +1,11 @@
 import { DynamicMetaTags } from 'components/MetaTags';
 
-<DynamicMetaTags title="Libraries | Dagster" />
+<DynamicMetaTags
+  title="Libraries | Dagster"
+  description="Dagster also provides a growing set of optional add-on libraries to
+integrate with infrastructure and other components of the data
+ecosystem."
+/>
 
 ## Libraries
 
@@ -32,7 +37,7 @@ the community (dagster-github).
 
 Enables incremental adoption of Dagster in existing [Apache
 Airflow](https://airflow.apache.org/) environments with a facility
-for compiling dagster pipelines to Airflow DAGs. Not recommended for
+for compiling Dagster pipelines to Airflow DAGs. Not recommended for
 greenfield installations.
 
 **dagster-aws**
@@ -41,7 +46,7 @@ Tools for working with [Amazon Web
 Services](https://aws.amazon.com/), including custom Cloudwatch
 loggers, EMR for hosted cluster compute, and S3 for persistent
 storage of logs and intermediate artifacts. Includes a CLI tool for
-easy-up/proof-of-concept deployment of hosted dagit to AWS. S3 and
+easy-up/proof-of-concept deployment of hosted Dagit to AWS. S3 and
 GCS are the preferred persistence solutions for long-running
 deploys.
 
@@ -89,7 +94,7 @@ dataframe-wide semantic constraints.
 **dagster-postgres**
 
 Pluggable Postgres-backed storage for run history and event logs,
-allowing Dagit and other dagster tools to point at shared remote
+allowing Dagit and other Dagster tools to point at shared remote
 databases. Preferred storage solution for long-running deploys.
 
 ### Experimental

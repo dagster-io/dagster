@@ -1,7 +1,7 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Link } from "react-router-dom";
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 interface ITypeWithTooltipProps {
   type: {
@@ -11,7 +11,7 @@ interface ITypeWithTooltipProps {
   };
 }
 
-export default class TypeWithTooltip extends React.Component<ITypeWithTooltipProps> {
+export class TypeWithTooltip extends React.Component<ITypeWithTooltipProps> {
   static fragments = {
     DagsterTypeWithTooltipFragment: gql`
       fragment DagsterTypeWithTooltipFragment on DagsterType {
@@ -19,17 +19,17 @@ export default class TypeWithTooltip extends React.Component<ITypeWithTooltipPro
         displayName
         description
       }
-    `
+    `,
   };
 
   render() {
-    const { name, displayName } = this.props.type;
+    const {name, displayName} = this.props.type;
 
     // TODO: link to most inner type
     if (name) {
       const search = `?typeExplorer=${displayName}`;
       return (
-        <Link to={{ search }}>
+        <Link to={{search}}>
           <TypeName>{displayName}</TypeName>
         </Link>
       );

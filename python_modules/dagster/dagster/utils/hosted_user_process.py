@@ -1,4 +1,4 @@
-'''
+"""
 This file contains a set of utilities for dealing with test
 environments where we want to go back and forth between
 abstractions that reside in user process (e.g. definitions and
@@ -7,7 +7,7 @@ reconstructables) and abstractions that reside in host processes
 
 These should only be invoked from contexts where we know this
 to be the case.
-'''
+"""
 
 import sys
 
@@ -31,13 +31,13 @@ from dagster.core.origin import PipelinePythonOrigin, RepositoryOrigin
 
 
 def recon_pipeline_from_origin(origin):
-    check.inst_param(origin, 'origin', PipelinePythonOrigin)
+    check.inst_param(origin, "origin", PipelinePythonOrigin)
     recon_repo = ReconstructableRepository(origin.get_repo_pointer())
     return recon_repo.get_reconstructable_pipeline(origin.pipeline_name)
 
 
 def recon_repository_from_origin(origin):
-    check.inst_param(origin, 'origin', RepositoryOrigin)
+    check.inst_param(origin, "origin", RepositoryOrigin)
     return ReconstructableRepository(origin.code_pointer)
 
 
@@ -74,12 +74,12 @@ def is_repository_location_in_same_python_env(repository_location_handle):
 
 
 def repository_def_from_repository_handle(repository_handle):
-    check.inst_param(repository_handle, 'repository_handle', RepositoryHandle)
+    check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.param_invariant(
         is_repository_location_in_same_python_env(repository_handle.repository_location_handle),
-        'repository_handle',
-        'In order to use this function the location of the repository must be in process '
-        'or it must a python environment with the exact same executable.',
+        "repository_handle",
+        "In order to use this function the location of the repository must be in process "
+        "or it must a python environment with the exact same executable.",
     )
     return repository_def_from_pointer(repository_handle.get_origin().code_pointer)
 
@@ -87,7 +87,7 @@ def repository_def_from_repository_handle(repository_handle):
 def create_in_process_ephemeral_workspace(pointer):
     from dagster.cli.workspace.workspace import Workspace
 
-    check.inst_param(pointer, 'pointer', CodePointer)
+    check.inst_param(pointer, "pointer", CodePointer)
     repository_location_handles = [RepositoryLocationHandle.create_in_process_location(pointer)]
     workspace = Workspace(repository_location_handles=repository_location_handles)
     return workspace

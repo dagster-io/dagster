@@ -19,9 +19,9 @@ from dagster.seven import urljoin, urlparse
 
 class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, address, timeout, inst_data=None):
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
-        self._address = check.str_param(address, 'address')
-        self._timeout = check.numeric_param(timeout, 'timeout')
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self._address = check.str_param(address, "address")
+        self._timeout = check.numeric_param(timeout, "timeout")
         self._handle = None
         self._instance_ref = None
         self._validated = False
@@ -29,7 +29,7 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         parsed_url = urlparse(address)
         check.invariant(
             parsed_url.scheme and parsed_url.netloc,
-            'Address {address} is not a valid URL. Host URL should include scheme ie http://localhost'.format(
+            "Address {address} is not a valid URL. Host URL should include scheme ie http://localhost".format(
                 address=self._address
             ),
         )
@@ -37,14 +37,14 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return {
-            'address': str,
-            'timeout': Field(float, is_required=False, default_value=30.0),
+            "address": str,
+            "timeout": Field(float, is_required=False, default_value=30.0),
         }
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
         return cls(
-            address=config_value['address'], timeout=config_value['timeout'], inst_data=inst_data,
+            address=config_value["address"], timeout=config_value["timeout"], inst_data=inst_data,
         )
 
     @property
@@ -66,15 +66,15 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
             return
         try:
             sanity_check = requests.get(
-                urljoin(self._address, '/dagit_info'), timeout=self._timeout
+                urljoin(self._address, "/dagit_info"), timeout=self._timeout
             )
-            self._validated = sanity_check.status_code = 200 and 'dagit' in sanity_check.text
+            self._validated = sanity_check.status_code = 200 and "dagit" in sanity_check.text
         except RequestException:
             self._validated = False
 
         if not self._validated:
             raise DagsterLaunchFailedError(
-                'Host {host} failed sanity check. It is not a dagit server.'.format(
+                "Host {host} failed sanity check. It is not a dagit server.".format(
                     host=self._address
                 ),
             )
@@ -84,30 +84,30 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         self._instance_ref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
-        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         self.validate()
 
         variables = {
-            'repositoryLocationName': external_pipeline.handle.location_name,
-            'repositoryName': external_pipeline.handle.repository_name,
-            'runId': run.run_id,
+            "repositoryLocationName": external_pipeline.handle.location_name,
+            "repositoryName": external_pipeline.handle.repository_name,
+            "runId": run.run_id,
         }
         response = requests.post(
-            urljoin(self._address, '/graphql'),
+            urljoin(self._address, "/graphql"),
             params={
-                'query': EXECUTE_RUN_IN_PROCESS_MUTATION,
-                'variables': seven.json.dumps(variables),
+                "query": EXECUTE_RUN_IN_PROCESS_MUTATION,
+                "variables": seven.json.dumps(variables),
             },
             timeout=self._timeout,
         )
         response.raise_for_status()
-        result = response.json()['data']['executeRunInProcess']
+        result = response.json()["data"]["executeRunInProcess"]
 
-        if result['__typename'] in ['LaunchPipelineRunSuccess', 'PipelineConfigValidationInvalid']:
+        if result["__typename"] in ["LaunchPipelineRunSuccess", "PipelineConfigValidationInvalid"]:
             return self._instance.get_run_by_id(run.run_id)
 
         raise DagsterLaunchFailedError(
-            'Failed to launch run with {cls} targeting {address}:\n{result}'.format(
+            "Failed to launch run with {cls} targeting {address}:\n{result}".format(
                 cls=self.__class__.__name__, address=self._address, result=result
             )
         )
@@ -116,4 +116,4 @@ class RemoteDagitRunLauncher(RunLauncher, ConfigurableClass):
         return False
 
     def terminate(self, run_id):
-        check.not_implemented('Termination not supported')
+        check.not_implemented("Termination not supported")

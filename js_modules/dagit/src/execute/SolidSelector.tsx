@@ -1,24 +1,25 @@
-import { Colors, Intent } from "@blueprintjs/core";
-import * as React from "react";
-import gql from "graphql-tag";
-import PipelineGraph from "../graph/PipelineGraph";
-import { useQuery } from "react-apollo";
+import {Colors, Intent, Popover} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
+import styled from 'styled-components/macro';
+
+import {usePipelineSelector} from 'src/DagsterRepositoryContext';
+import {filterByQuery} from 'src/GraphQueryImpl';
+import {GraphQueryInput} from 'src/GraphQueryInput';
+import {ShortcutHandler} from 'src/ShortcutHandler';
 import {
   SolidSelectorQuery,
   SolidSelectorQuery_pipelineOrError,
-  SolidSelectorQuery_pipelineOrError_Pipeline_solids
-} from "./types/SolidSelectorQuery";
-import { getDagrePipelineLayout } from "../graph/getFullSolidLayout";
-import { ShortcutHandler } from "../ShortcutHandler";
-import { GraphQueryInput } from "../GraphQueryInput";
-import { filterByQuery } from "../GraphQueryImpl";
-import SVGViewport from "../graph/SVGViewport";
-import styled from "styled-components/macro";
-import { usePipelineSelector } from "../DagsterRepositoryContext";
+  SolidSelectorQuery_pipelineOrError_Pipeline_solids,
+} from 'src/execute/types/SolidSelectorQuery';
+import {PipelineGraph} from 'src/graph/PipelineGraph';
+import {SVGViewport} from 'src/graph/SVGViewport';
+import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 
 interface ISolidSelectorProps {
   pipelineName: string;
-  serverProvidedSubsetError?: { message: string };
+  serverProvidedSubsetError?: {message: string};
   value: string[] | null;
   query: string | null;
   onChange: (value: string[] | null, query: string | null) => void;
@@ -35,9 +36,9 @@ class SolidSelectorModal extends React.PureComponent<SolidSelectorModalProps> {
   graphRef = React.createRef<PipelineGraph>();
 
   render() {
-    const { pipelineOrError, queryResultSolids, errorMessage } = this.props;
+    const {pipelineOrError, queryResultSolids, errorMessage} = this.props;
 
-    if (pipelineOrError.__typename !== "Pipeline") {
+    if (pipelineOrError.__typename !== 'Pipeline') {
       return (
         <SolidSelectorModalContainer>
           {errorMessage && <ModalErrorOverlay>{errorMessage}</ModalErrorOverlay>}
@@ -89,27 +90,27 @@ const SOLID_SELECTOR_QUERY = gql`
   ${PipelineGraph.fragments.PipelineGraphSolidFragment}
 `;
 
-export default (props: ISolidSelectorProps) => {
-  const { serverProvidedSubsetError, query, onChange } = props;
-  const [pending, setPending] = React.useState<string>(query || "*");
+export const SolidSelector = (props: ISolidSelectorProps) => {
+  const {serverProvidedSubsetError, query, onChange} = props;
+  const [pending, setPending] = React.useState<string>(query || '*');
   const [focused, setFocused] = React.useState(false);
   const selector = usePipelineSelector(props.pipelineName);
-  const { data, loading } = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: { selector },
-    fetchPolicy: "cache-and-network"
+  const {data, loading} = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
+    variables: {selector},
+    fetchPolicy: 'cache-and-network',
   });
 
   React.useEffect(() => {
-    setPending(query || "*");
+    setPending(query || '*');
   }, [query, focused]);
 
   const queryResultSolids =
-    data?.pipelineOrError.__typename === "Pipeline"
+    data?.pipelineOrError.__typename === 'Pipeline'
       ? filterByQuery(data!.pipelineOrError.solids, pending).all
       : [];
 
   const pipelineErrorMessage =
-    data?.pipelineOrError.__typename !== "Pipeline" ? data?.pipelineOrError.message || null : null;
+    data?.pipelineOrError.__typename !== 'Pipeline' ? data?.pipelineOrError.message || null : null;
 
   if (pipelineErrorMessage) {
     console.error(`Could not load pipeline ${props.pipelineName}`);
@@ -123,10 +124,12 @@ export default (props: ISolidSelectorProps) => {
       : pipelineErrorMessage;
 
   const onCommitPendingValue = (applied: string) => {
-    if (data?.pipelineOrError.__typename !== "Pipeline") return;
+    if (data?.pipelineOrError.__typename !== 'Pipeline') {
+      return;
+    }
 
-    if (applied === "") {
-      applied = "*";
+    if (applied === '') {
+      applied = '*';
     }
     const queryResultSolids = filterByQuery(data.pipelineOrError.solids, applied).all;
 
@@ -136,57 +139,60 @@ export default (props: ISolidSelectorProps) => {
       onChange(null, applied);
     } else {
       onChange(
-        queryResultSolids.map(s => s.name),
-        applied
+        queryResultSolids.map((s) => s.name),
+        applied,
       );
     }
   };
 
   return (
-    <div style={{ position: "relative" }}>
-      <ShortcutHandler shortcutLabel={"⌥S"} shortcutFilter={e => e.keyCode === 83 && e.altKey}>
-        <GraphQueryInput
-          width={(pending !== "*" && pending !== "") || focused ? 350 : 90}
-          intent={errorMessage ? Intent.DANGER : Intent.NONE}
-          items={
-            data?.pipelineOrError.__typename === "Pipeline" ? data?.pipelineOrError.solids : []
-          }
-          value={pending}
-          placeholder="Type a Solid Subset"
-          onChange={setPending}
-          onBlur={pending => {
-            onCommitPendingValue(pending);
-            setFocused(false);
-          }}
-          onFocus={() => setFocused(true)}
-          onKeyDown={e => {
-            if (e.isDefaultPrevented()) {
-              return;
+    <div style={{position: 'relative'}}>
+      <Popover
+        autoFocus={false}
+        isOpen={focused}
+        minimal
+        modifiers={{arrow: {enabled: false}, offset: {enabled: true, offset: '0, 8px'}}}
+        position="bottom-left"
+      >
+        <ShortcutHandler shortcutLabel={'⌥S'} shortcutFilter={(e) => e.keyCode === 83 && e.altKey}>
+          <GraphQueryInput
+            width={(pending !== '*' && pending !== '') || focused ? 350 : 90}
+            intent={errorMessage ? Intent.DANGER : Intent.NONE}
+            items={
+              data?.pipelineOrError.__typename === 'Pipeline' ? data?.pipelineOrError.solids : []
             }
-            if (e.key === "Enter" || e.key === "Return" || e.key === "Escape") {
-              e.currentTarget.blur();
-            }
-          }}
-        />
-      </ShortcutHandler>
-      {focused && data?.pipelineOrError && (
-        <SolidSelectorModal
-          pipelineOrError={data?.pipelineOrError}
-          errorMessage={errorMessage}
-          queryResultSolids={queryResultSolids}
-        />
-      )}
+            value={pending}
+            placeholder="Type a Solid Subset"
+            onChange={setPending}
+            onBlur={(pending) => {
+              onCommitPendingValue(pending);
+              setFocused(false);
+            }}
+            onFocus={() => setFocused(true)}
+            onKeyDown={(e) => {
+              if (e.isDefaultPrevented()) {
+                return;
+              }
+              if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Escape') {
+                e.currentTarget.blur();
+              }
+            }}
+          />
+        </ShortcutHandler>
+        {data?.pipelineOrError && (
+          <SolidSelectorModal
+            pipelineOrError={data?.pipelineOrError}
+            errorMessage={errorMessage}
+            queryResultSolids={queryResultSolids}
+          />
+        )}
+      </Popover>
     </div>
   );
 };
 
 const SolidSelectorModalContainer = styled.div`
-  position: absolute;
   border-radius: 4px;
-  box-shadow: 0 3px 20px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.3);
-  z-index: 10;
-  top: 45px;
-  left: 0;
   width: 60vw;
   height: 60vh;
   background: ${Colors.WHITE};

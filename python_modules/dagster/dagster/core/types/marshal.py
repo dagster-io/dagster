@@ -9,12 +9,12 @@ from dagster.utils import PICKLE_PROTOCOL
 
 
 class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
-    '''This is the base class for serialization / deserialization of dagster objects. The primary
+    """This is the base class for serialization / deserialization of dagster objects. The primary
     use case is serialize to / from files, but any file-like objects (e.g. byte buffers) are
     supported.
-    '''
+    """
 
-    def __init__(self, name, write_mode='wb', read_mode='rb', encoding=None):
+    def __init__(self, name, write_mode="wb", read_mode="rb", encoding=None):
         # It's conceivable that we might want to enforce write_mode == read_mode, and that
         # encoding be None when write_mode/read_mode are 'wb'/'rb'.
         self._name = name
@@ -37,33 +37,33 @@ class SerializationStrategy(six.with_metaclass(ABCMeta)):  # pylint: disable=no-
     @property
     def encoding(self):
         # Default to utf-8/ascii only if we are expecting to read and write strings
-        if self._write_mode == 'w' or self._read_mode == 'w':
-            return self._encoding or ('utf-8' if sys.version_info >= (3, 0) else 'ascii')
+        if self._write_mode == "w" or self._read_mode == "w":
+            return self._encoding or ("utf-8" if sys.version_info >= (3, 0) else "ascii")
         return self._encoding
 
     @abstractmethod
     def serialize(self, value, write_file_obj):
-        '''Core serialization method.'''
+        """Core serialization method."""
 
     @abstractmethod
     def deserialize(self, read_file_obj):
-        '''Core deserialization method'''
+        """Core deserialization method"""
 
     def serialize_to_file(self, value, write_path):
-        check.str_param(write_path, 'write_path')
+        check.str_param(write_path, "write_path")
 
         with open(write_path, self.write_mode) as write_obj:
             return self.serialize(value, write_obj)
 
     def deserialize_from_file(self, read_path):
-        check.str_param(read_path, 'read_path')
+        check.str_param(read_path, "read_path")
 
         with open(read_path, self.read_mode) as read_obj:
             return self.deserialize(read_obj)
 
 
 class PickleSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
-    def __init__(self, name='pickle'):
+    def __init__(self, name="pickle"):
         super(PickleSerializationStrategy, self).__init__(name)
 
     def serialize(self, value, write_file_obj):

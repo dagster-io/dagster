@@ -5,16 +5,16 @@ from dagster import Field, check, resource
 
 
 class PrometheusResource(object):
-    '''Integrates with Prometheus via the prometheus_client library.
-    '''
+    """Integrates with Prometheus via the prometheus_client library.
+    """
 
     def __init__(self, gateway, timeout):
-        self.gateway = check.str_param(gateway, 'gateway')
-        self.timeout = check.opt_int_param(timeout, 'timeout')
+        self.gateway = check.str_param(gateway, "gateway")
+        self.timeout = check.opt_int_param(timeout, "timeout")
         self.registry = prometheus_client.CollectorRegistry()
 
     def push_to_gateway(self, job, grouping_key=None, handler=default_handler):
-        '''Push metrics to the given pushgateway.
+        """Push metrics to the given pushgateway.
         `job` is the job label to be attached to all pushed metrics
         `grouping_key` please see the pushgateway documentation for details.
                     Defaults to None
@@ -43,7 +43,7 @@ class PrometheusResource(object):
                 'content' is the data which should be used to form the HTTP
                 Message Body.
         This overwrites all metrics with the same job and grouping_key.
-        This uses the PUT HTTP method.'''
+        This uses the PUT HTTP method."""
         prometheus_client.push_to_gateway(
             gateway=self.gateway,
             job=job,
@@ -54,7 +54,7 @@ class PrometheusResource(object):
         )
 
     def pushadd_to_gateway(self, job, grouping_key=None, handler=default_handler):
-        '''PushAdd metrics to the given pushgateway.
+        """PushAdd metrics to the given pushgateway.
         `job` is the job label to be attached to all pushed metrics
         `registry` is an instance of CollectorRegistry
         `grouping_key` please see the pushgateway documentation for details.
@@ -66,7 +66,7 @@ class PrometheusResource(object):
                 See the 'prometheus_client.push_to_gateway' documentation
                 for implementation requirements.
         This replaces metrics with the same name, job and grouping_key.
-        This uses the POST HTTP method.'''
+        This uses the POST HTTP method."""
         prometheus_client.pushadd_to_gateway(
             gateway=self.gateway,
             job=job,
@@ -77,7 +77,7 @@ class PrometheusResource(object):
         )
 
     def delete_from_gateway(self, job, grouping_key=None, handler=default_handler):
-        '''Delete metrics from the given pushgateway.
+        """Delete metrics from the given pushgateway.
         `job` is the job label to be attached to all pushed metrics
         `grouping_key` please see the pushgateway documentation for details.
                     Defaults to None
@@ -88,7 +88,7 @@ class PrometheusResource(object):
                 See the 'prometheus_client.push_to_gateway' documentation
                 for implementation requirements.
         This deletes metrics with the given job and grouping_key.
-        This uses the DELETE HTTP method.'''
+        This uses the DELETE HTTP method."""
         prometheus_client.delete_from_gateway(
             gateway=self.gateway,
             job=job,
@@ -100,23 +100,23 @@ class PrometheusResource(object):
 
 @resource(
     {
-        'gateway': Field(
+        "gateway": Field(
             str,
-            description='the url for your push gateway. Either of the form '
-            '\'http://pushgateway.local\', or \'pushgateway.local\'. '
-            'Scheme defaults to \'http\' if none is provided',
+            description="the url for your push gateway. Either of the form "
+            "'http://pushgateway.local', or 'pushgateway.local'. "
+            "Scheme defaults to 'http' if none is provided",
         ),
-        'timeout': Field(
+        "timeout": Field(
             int,
             default_value=30,
             is_required=False,
-            description='is how long delete will attempt to connect before giving up. '
-            'Defaults to 30s.',
+            description="is how long delete will attempt to connect before giving up. "
+            "Defaults to 30s.",
         ),
     },
-    description='''This resource is for sending metrics to a Prometheus Pushgateway.''',
+    description="""This resource is for sending metrics to a Prometheus Pushgateway.""",
 )
 def prometheus_resource(context):
     return PrometheusResource(
-        gateway=context.resource_config['gateway'], timeout=context.resource_config['timeout']
+        gateway=context.resource_config["gateway"], timeout=context.resource_config["timeout"]
     )

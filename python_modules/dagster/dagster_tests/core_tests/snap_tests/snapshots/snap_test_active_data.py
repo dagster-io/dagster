@@ -8,6 +8,7 @@ snapshots = Snapshot()
 
 snapshots['test_external_repository_data 1'] = '''{
   "__class__": "ExternalRepositoryData",
+  "external_executable_datas": [],
   "external_partition_set_datas": [
     {
       "__class__": "ExternalPartitionSetData",

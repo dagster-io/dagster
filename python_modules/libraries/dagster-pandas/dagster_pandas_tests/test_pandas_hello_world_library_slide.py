@@ -7,9 +7,9 @@ from dagster.utils import file_relative_path
 
 def create_num_csv_environment():
     return {
-        'solids': {
-            'hello_world': {
-                'inputs': {'num_csv': {'csv': {'path': file_relative_path(__file__, 'num.csv')}}}
+        "solids": {
+            "hello_world": {
+                "inputs": {"num_csv": {"csv": {"path": file_relative_path(__file__, "num.csv")}}}
             }
         }
     }
@@ -27,20 +27,20 @@ def run_hello_world(hello_world):
 
     assert result.success
 
-    assert result.output_value().to_dict('list') == {'num1': [1, 3], 'num2': [2, 4], 'sum': [3, 7]}
+    assert result.output_value().to_dict("list") == {"num1": [1, 3], "num2": [2, 4], "sum": [3, 7]}
 
 
 def create_definition_based_solid():
-    table_input = InputDefinition('num_csv', DataFrame)
+    table_input = InputDefinition("num_csv", DataFrame)
 
     def compute_fn(_context, inputs):
-        num_csv = inputs['num_csv']
-        num_csv['sum'] = num_csv['num1'] + num_csv['num2']
+        num_csv = inputs["num_csv"]
+        num_csv["sum"] = num_csv["num1"] + num_csv["num2"]
         return num_csv
 
     # supports CSV and PARQUET by default
     hello_world = single_output_solid(
-        name='hello_world',
+        name="hello_world",
         input_defs=[table_input],
         compute_fn=compute_fn,
         output_def=OutputDefinition(DataFrame),
@@ -51,10 +51,10 @@ def create_definition_based_solid():
 
 def create_decorator_based_solid():
     @lambda_solid(
-        input_defs=[InputDefinition('num_csv', DataFrame)], output_def=OutputDefinition(DataFrame)
+        input_defs=[InputDefinition("num_csv", DataFrame)], output_def=OutputDefinition(DataFrame)
     )
     def hello_world(num_csv):
-        num_csv['sum'] = num_csv['num1'] + num_csv['num2']
+        num_csv["sum"] = num_csv["num1"] + num_csv["num2"]
         return num_csv
 
     return hello_world

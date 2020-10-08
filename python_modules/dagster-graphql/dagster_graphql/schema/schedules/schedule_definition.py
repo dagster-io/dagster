@@ -12,36 +12,36 @@ from dagster.core.host_representation import ExternalSchedule
 
 class DapuphinScheduleDefinitionOrError(dauphin.Union):
     class Meta(object):
-        name = 'ScheduleDefinitionOrError'
-        types = ('ScheduleDefinition', DauphinScheduleDefinitionNotFoundError, DauphinPythonError)
+        name = "ScheduleDefinitionOrError"
+        types = ("ScheduleDefinition", DauphinScheduleDefinitionNotFoundError, DauphinPythonError)
 
 
 class DauphinScheduleDefinitions(dauphin.ObjectType):
     class Meta(object):
-        name = 'ScheduleDefinitions'
+        name = "ScheduleDefinitions"
 
-    results = dauphin.non_null_list('ScheduleDefinition')
+    results = dauphin.non_null_list("ScheduleDefinition")
 
 
 class DauphinScheduleDefintionsOrError(dauphin.Union):
     class Meta(object):
-        name = 'ScheduleDefinitionsOrError'
+        name = "ScheduleDefinitionsOrError"
         types = (DauphinScheduleDefinitions, DauphinRepositoryNotFoundError, DauphinPythonError)
 
 
 class DauphinScheduleDefinition(dauphin.ObjectType):
     class Meta(object):
-        name = 'ScheduleDefinition'
+        name = "ScheduleDefinition"
 
     name = dauphin.NonNull(dauphin.String)
     cron_schedule = dauphin.NonNull(dauphin.String)
     pipeline_name = dauphin.NonNull(dauphin.String)
     solid_selection = dauphin.List(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
-    schedule_state = dauphin.Field('ScheduleState')
+    schedule_state = dauphin.Field("ScheduleState")
 
-    runConfigOrError = dauphin.Field('ScheduleRunConfigOrError')
-    partition_set = dauphin.Field('PartitionSet')
+    runConfigOrError = dauphin.Field("ScheduleRunConfigOrError")
+    partition_set = dauphin.Field("PartitionSet")
 
     def resolve_runConfigOrError(self, graphene_info):
         return get_schedule_config(graphene_info, self._external_schedule)
@@ -57,14 +57,14 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
             self._external_schedule.partition_set_name
         )
 
-        return graphene_info.schema.type_named('PartitionSet')(
+        return graphene_info.schema.type_named("PartitionSet")(
             external_repository_handle=repository.handle,
             external_partition_set=external_partition_set,
         )
 
     def __init__(self, graphene_info, external_schedule):
         self._external_schedule = check.inst_param(
-            external_schedule, 'external_schedule', ExternalSchedule
+            external_schedule, "external_schedule", ExternalSchedule
         )
         self._schedule_state = graphene_info.context.instance.get_schedule_state(
             self._external_schedule.get_origin_id()
@@ -76,7 +76,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,
             mode=external_schedule.mode,
-            schedule_state=graphene_info.schema.type_named('ScheduleState')(
+            schedule_state=graphene_info.schema.type_named("ScheduleState")(
                 graphene_info, self._schedule_state
             )
             if self._schedule_state
@@ -86,12 +86,12 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
 
 class DauphinScheduleRunConfig(dauphin.ObjectType):
     class Meta(object):
-        name = 'ScheduleRunConfig'
+        name = "ScheduleRunConfig"
 
     yaml = dauphin.NonNull(dauphin.String)
 
 
 class DauphinScheduleRunConfigOrError(dauphin.Union):
     class Meta(object):
-        name = 'ScheduleRunConfigOrError'
+        name = "ScheduleRunConfigOrError"
         types = (DauphinScheduleRunConfig, DauphinPythonError)

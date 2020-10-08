@@ -12,25 +12,25 @@ from .utils import ResourceNotFoundError
 
 
 class FakeADLS2Resource(ADLS2Resource):
-    '''Stateful mock of an ADLS2Resource for testing.
+    """Stateful mock of an ADLS2Resource for testing.
 
     Wraps a ``mock.MagicMock``. Containers are implemented using an in-memory dict.
-    '''
+    """
 
     def __init__(
-        self, account_name, credential='fake-creds'
+        self, account_name, credential="fake-creds"
     ):  # pylint: disable=unused-argument,super-init-not-called
         self._adls2_client = FakeADLS2ServiceClient(account_name)
         self._blob_client = FakeBlobServiceClient(account_name)
 
 
 class FakeADLS2ServiceClient(object):
-    '''Stateful mock of an ADLS2 service client for testing.
+    """Stateful mock of an ADLS2 service client for testing.
 
     Wraps a ``mock.MagicMock``. Containers are implemented using an in-memory dict.
-    '''
+    """
 
-    def __init__(self, account_name, credential='fake-creds'):
+    def __init__(self, account_name, credential="fake-creds"):
 
         self._account_name = account_name
         self._credential = mock.MagicMock()
@@ -59,7 +59,7 @@ class FakeADLS2ServiceClient(object):
 
 
 class FakeADLS2FilesystemClient(object):
-    '''Stateful mock of an ADLS2 filesystem client for testing.'''
+    """Stateful mock of an ADLS2 filesystem client for testing."""
 
     def __init__(self, account_name, file_system_name):
         self._file_system = defaultdict(FakeADLS2FileClient)
@@ -96,7 +96,7 @@ class FakeADLS2FilesystemClient(object):
 
 
 class FakeADLS2FileClient(object):
-    '''Stateful mock of an ADLS2 file client for testing.'''
+    """Stateful mock of an ADLS2 file client for testing."""
 
     def __init__(self):
         self.contents = None
@@ -113,11 +113,11 @@ class FakeADLS2FileClient(object):
                 raise Exception("Invalid lease!")
         if self.contents is not None or overwrite is True:
             if isinstance(contents, str):
-                self.contents = contents.encode('utf8')
+                self.contents = contents.encode("utf8")
             elif isinstance(contents, io.BytesIO):
                 self.contents = contents.read()
             elif isinstance(contents, io.StringIO):
-                self.contents = contents.read().encode('utf8')
+                self.contents = contents.read().encode("utf8")
             elif isinstance(contents, bytes):
                 self.contents = contents
             else:
@@ -141,7 +141,7 @@ class FakeADLS2FileClient(object):
 
 
 class FakeADLS2FileDownloader(object):
-    '''Mock of an ADLS2 file downloader for testing.'''
+    """Mock of an ADLS2 file downloader for testing."""
 
     def __init__(self, contents):
         self.contents = contents

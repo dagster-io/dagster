@@ -6,99 +6,99 @@ from .solids import train_daily_bike_supply_model, trip_etl, weather_etl
 
 MODES = [
     ModeDefinition(
-        name='development',
+        name="development",
         resource_defs={
-            'postgres_db': postgres_db_info_resource,
-            'gcs_client': local_client,
-            'credentials_vault': credentials_vault,
-            'volume': mount,
+            "postgres_db": postgres_db_info_resource,
+            "gcs_client": local_client,
+            "credentials_vault": credentials_vault,
+            "volume": mount,
         },
-        description='Mode to be used during local demo.',
+        description="Mode to be used during local demo.",
     ),
     ModeDefinition(
-        name='production',
+        name="production",
         resource_defs={
-            'postgres_db': postgres_db_info_resource,
-            'gcs_client': gcs_client,
-            'credentials_vault': credentials_vault,
-            'volume': mount,
+            "postgres_db": postgres_db_info_resource,
+            "gcs_client": gcs_client,
+            "credentials_vault": credentials_vault,
+            "volume": mount,
         },
-        description='Mode to be used on a remote production server',
+        description="Mode to be used on a remote production server",
     ),
 ]
 
 WEATHER_INGEST_PRESETS = [
     PresetDefinition.from_pkg_resources(
-        'dev_weather_etl',
-        mode='development',
+        "dev_weather_etl",
+        mode="development",
         pkg_resource_defs=[
-            ('dagster_examples.bay_bikes.environments', 'dev_credentials_vault.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'dev_database_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'weather.yaml'),
+            ("dagster_examples.bay_bikes.environments", "dev_credentials_vault.yaml"),
+            ("dagster_examples.bay_bikes.environments", "dev_database_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "file_system_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "weather.yaml"),
         ],
-        solid_selection=['weather_etl'],
+        solid_selection=["weather_etl"],
     ),
     PresetDefinition.from_pkg_resources(
-        'prod_weather_etl',
-        mode='production',
+        "prod_weather_etl",
+        mode="production",
         pkg_resource_defs=[
-            ('dagster_examples.bay_bikes.environments', 'prod_credentials_vault.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'prod_database_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'weather.yaml'),
+            ("dagster_examples.bay_bikes.environments", "prod_credentials_vault.yaml"),
+            ("dagster_examples.bay_bikes.environments", "prod_database_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "file_system_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "weather.yaml"),
         ],
-        solid_selection=['weather_etl'],
+        solid_selection=["weather_etl"],
     ),
 ]
 
 TRIP_INGEST_PRESETS = [
     PresetDefinition.from_pkg_resources(
-        'dev_trip_etl',
-        mode='development',
+        "dev_trip_etl",
+        mode="development",
         pkg_resource_defs=[
-            ('dagster_examples.bay_bikes.environments', 'dev_credentials_vault.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'dev_database_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'trips.yaml'),
+            ("dagster_examples.bay_bikes.environments", "dev_credentials_vault.yaml"),
+            ("dagster_examples.bay_bikes.environments", "dev_database_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "file_system_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "trips.yaml"),
         ],
-        solid_selection=['trip_etl'],
+        solid_selection=["trip_etl"],
     ),
     PresetDefinition.from_pkg_resources(
-        'prod_trip_etl',
-        mode='production',
+        "prod_trip_etl",
+        mode="production",
         pkg_resource_defs=[
-            ('dagster_examples.bay_bikes.environments', 'prod_credentials_vault.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'prod_database_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'trips.yaml'),
+            ("dagster_examples.bay_bikes.environments", "prod_credentials_vault.yaml"),
+            ("dagster_examples.bay_bikes.environments", "prod_database_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "file_system_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "trips.yaml"),
         ],
-        solid_selection=['trip_etl'],
+        solid_selection=["trip_etl"],
     ),
 ]
 
 TRAINING_PRESETS = [
     PresetDefinition.from_pkg_resources(
-        'dev_train_daily_bike_supply_model',
-        mode='development',
+        "dev_train_daily_bike_supply_model",
+        mode="development",
         pkg_resource_defs=[
-            ('dagster_examples.bay_bikes.environments', 'dev_credentials_vault.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'dev_database_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'training.yaml'),
+            ("dagster_examples.bay_bikes.environments", "dev_credentials_vault.yaml"),
+            ("dagster_examples.bay_bikes.environments", "dev_database_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "file_system_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "training.yaml"),
         ],
-        solid_selection=['train_daily_bike_supply_model'],
+        solid_selection=["train_daily_bike_supply_model"],
     ),
     PresetDefinition.from_pkg_resources(
-        'prod_train_daily_bike_supply_model',
-        mode='production',
+        "prod_train_daily_bike_supply_model",
+        mode="production",
         pkg_resource_defs=[
-            ('dagster_examples.bay_bikes.environments', 'prod_credentials_vault.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'prod_database_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'file_system_resources.yaml'),
-            ('dagster_examples.bay_bikes.environments', 'training.yaml'),
+            ("dagster_examples.bay_bikes.environments", "prod_credentials_vault.yaml"),
+            ("dagster_examples.bay_bikes.environments", "prod_database_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "file_system_resources.yaml"),
+            ("dagster_examples.bay_bikes.environments", "training.yaml"),
         ],
-        solid_selection=['train_daily_bike_supply_model'],
+        solid_selection=["train_daily_bike_supply_model"],
     ),
 ]
 

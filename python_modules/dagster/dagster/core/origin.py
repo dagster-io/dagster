@@ -28,66 +28,70 @@ class RepositoryOrigin(six.with_metaclass(ABCMeta)):
 
 @whitelist_for_serdes
 class RepositoryGrpcServerOrigin(
-    namedtuple('_RepositoryGrpcServerOrigin', 'host port socket repository_name'), RepositoryOrigin,
+    namedtuple("_RepositoryGrpcServerOrigin", "host port socket repository_name"), RepositoryOrigin,
 ):
-    '''
+    """
     Subset of information needed to load a RepositoryDefinition from a GRPC server.
-    '''
+    """
 
     def __new__(cls, host, port, socket, repository_name):
         return super(RepositoryGrpcServerOrigin, cls).__new__(
             cls,
-            check.str_param(host, 'host'),
-            check.opt_int_param(port, 'port'),
-            check.opt_str_param(socket, 'socket'),
-            check.str_param(repository_name, 'repository_name'),
+            check.str_param(host, "host"),
+            check.opt_int_param(port, "port"),
+            check.opt_str_param(socket, "socket"),
+            check.str_param(repository_name, "repository_name"),
         )
 
     def get_pipeline_origin(self, pipeline_name):
-        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(pipeline_name, "pipeline_name")
         return PipelineGrpcServerOrigin(pipeline_name, self)
 
     def get_schedule_origin(self, schedule_name):
-        check.str_param(schedule_name, 'schedule_name')
+        check.str_param(schedule_name, "schedule_name")
         return ScheduleGrpcServerOrigin(schedule_name, self)
 
     def get_cli_args(self):
         if self.port:
-            return '--grpc_host {host} --grpc_port {port} -r {repository_name}'.format(
+            return "--grpc-host {host} --grpc-port {port} -r {repository_name}".format(
                 host=self.host, port=self.port, repository_name=self.repository_name,
             )
         else:
-            return '--grpc_host {host} --grpc_socket {socket} -r {repository_name}'.format(
+            return "--grpc-host {host} --grpc-socket {socket} -r {repository_name}".format(
                 host=self.host, socket=self.socket, repository_name=self.repository_name,
             )
 
 
 @whitelist_for_serdes
 class RepositoryPythonOrigin(
-    namedtuple('_RepositoryPythonOrigin', 'executable_path code_pointer'), RepositoryOrigin,
+    namedtuple("_RepositoryPythonOrigin", "executable_path code_pointer"), RepositoryOrigin,
 ):
-    '''
+    """
     Derived from the handle structure in the host process, this is the subset of information
     necessary to load a target RepositoryDefinition in a "user process" locally.
-    '''
+    """
 
     def __new__(cls, executable_path, code_pointer):
         return super(RepositoryPythonOrigin, cls).__new__(
             cls,
-            check.str_param(executable_path, 'executable_path'),
-            check.inst_param(code_pointer, 'code_pointer', CodePointer),
+            check.str_param(executable_path, "executable_path"),
+            check.inst_param(code_pointer, "code_pointer", CodePointer),
         )
 
     def get_cli_args(self):
         return self.code_pointer.get_cli_args()
 
     def get_pipeline_origin(self, pipeline_name):
-        check.str_param(pipeline_name, 'pipeline_name')
+        check.str_param(pipeline_name, "pipeline_name")
         return PipelinePythonOrigin(pipeline_name, self)
 
     def get_schedule_origin(self, schedule_name):
-        check.str_param(schedule_name, 'schedule_name')
+        check.str_param(schedule_name, "schedule_name")
         return SchedulePythonOrigin(schedule_name, self)
+
+    @property
+    def loadable_target_origin(self):
+        return self.code_pointer.get_loadable_target_origin(self.executable_path)
 
 
 class PipelineOrigin(six.with_metaclass(ABCMeta)):
@@ -105,13 +109,13 @@ class PipelineOrigin(six.with_metaclass(ABCMeta)):
 
 @whitelist_for_serdes
 class PipelinePythonOrigin(
-    namedtuple('_PipelinePythonOrigin', 'pipeline_name repository_origin'), PipelineOrigin
+    namedtuple("_PipelinePythonOrigin", "pipeline_name repository_origin"), PipelineOrigin
 ):
     def __new__(cls, pipeline_name, repository_origin):
         return super(PipelinePythonOrigin, cls).__new__(
             cls,
-            check.str_param(pipeline_name, 'pipeline_name'),
-            check.inst_param(repository_origin, 'repository_origin', RepositoryPythonOrigin),
+            check.str_param(pipeline_name, "pipeline_name"),
+            check.inst_param(repository_origin, "repository_origin", RepositoryPythonOrigin),
         )
 
     @property
@@ -127,13 +131,13 @@ class PipelinePythonOrigin(
 
 @whitelist_for_serdes
 class PipelineGrpcServerOrigin(
-    namedtuple('_PipelineGrpcServerOrigin', 'pipeline_name repository_origin'), PipelineOrigin
+    namedtuple("_PipelineGrpcServerOrigin", "pipeline_name repository_origin"), PipelineOrigin
 ):
     def __new__(cls, pipeline_name, repository_origin):
         return super(PipelineGrpcServerOrigin, cls).__new__(
             cls,
-            check.str_param(pipeline_name, 'pipeline_name'),
-            check.inst_param(repository_origin, 'repository_origin', RepositoryGrpcServerOrigin),
+            check.str_param(pipeline_name, "pipeline_name"),
+            check.inst_param(repository_origin, "repository_origin", RepositoryGrpcServerOrigin),
         )
 
     @property
@@ -149,6 +153,10 @@ class ScheduleOrigin(six.with_metaclass(ABCMeta)):
         return create_snapshot_id(self)
 
     @abstractmethod
+    def get_repo_origin(self):
+        pass
+
+    @abstractmethod
     def get_repo_cli_args(self):
         pass
 
@@ -159,18 +167,21 @@ class ScheduleOrigin(six.with_metaclass(ABCMeta)):
 
 @whitelist_for_serdes
 class SchedulePythonOrigin(
-    namedtuple('_SchedulePythonOrigin', 'schedule_name repository_origin'), ScheduleOrigin
+    namedtuple("_SchedulePythonOrigin", "schedule_name repository_origin"), ScheduleOrigin
 ):
     def __new__(cls, schedule_name, repository_origin):
         return super(SchedulePythonOrigin, cls).__new__(
             cls,
-            check.str_param(schedule_name, 'schedule_name'),
-            check.inst_param(repository_origin, 'repository_origin', RepositoryPythonOrigin),
+            check.str_param(schedule_name, "schedule_name"),
+            check.inst_param(repository_origin, "repository_origin", RepositoryPythonOrigin),
         )
 
     @property
     def executable_path(self):
         return self.repository_origin.executable_path
+
+    def get_repo_origin(self):
+        return self.repository_origin
 
     def get_repo_cli_args(self):
         return self.repository_origin.get_cli_args()
@@ -181,14 +192,17 @@ class SchedulePythonOrigin(
 
 @whitelist_for_serdes
 class ScheduleGrpcServerOrigin(
-    namedtuple('_ScheduleGrpcServerOrigin', 'schedule_name repository_origin'), ScheduleOrigin
+    namedtuple("_ScheduleGrpcServerOrigin", "schedule_name repository_origin"), ScheduleOrigin
 ):
     def __new__(cls, schedule_name, repository_origin):
         return super(ScheduleGrpcServerOrigin, cls).__new__(
             cls,
-            check.str_param(schedule_name, 'schedule_name'),
-            check.inst_param(repository_origin, 'repository_origin', RepositoryGrpcServerOrigin),
+            check.str_param(schedule_name, "schedule_name"),
+            check.inst_param(repository_origin, "repository_origin", RepositoryGrpcServerOrigin),
         )
+
+    def get_repo_origin(self):
+        return self.repository_origin
 
     def get_repo_cli_args(self):
         return self.repository_origin.get_cli_args()

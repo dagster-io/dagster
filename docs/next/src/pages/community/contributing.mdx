@@ -2,7 +2,7 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags
   title="Contributing | Dagster"
-  description="Dagster is a system for building modern data applications."
+  description="Contributions are welcome and are greatly appreciated. Here's the contribution guide."
 />
 
 # Contributing
@@ -14,7 +14,7 @@ up a local development environment.
 
 1.  Install Python. Python 3.6 or above recommended, but our CI/CD
     pipeline currently tests against up-to-date patch versions of Python
-    2.7, 3.5, 3.6, and 3.7. Note that dagster is a 2/3 compatible
+    2.7, 3.5, 3.6, and 3.7. Note that Dagster is a 2/3 compatible
     project: tests must pass against Python 2.7.
 2.  Create and activate a virtualenv, using the tool of your choice.
     On macOS you can install `pyenv` with Homebrew:
@@ -31,6 +31,7 @@ eval "$(pyenv virtualenv-init -)"
 ```
 
 &nbsp;&nbsp;&nbsp&nbsp&nbsp&nbsp&nbspand finally create and activate the virtualenev:
+
 ```
 pyenv install 3.7.4
 pyenv virtualenv 3.7.4 dagster37
@@ -45,16 +46,16 @@ pyenv activate dagster37
 brew install yarn
 ```
 
-4.  Clone the dagster repository to the destination of your choice:
+4.  Clone the Dagster repository to the destination of your choice:
 
 ```bash
 git clone git@github.com:dagster-io/dagster.git
 ```
 
 5.  Run `make dev_install` at the root of the repository. This sets up a
-    full dagster developer environment with all modules and runs tests
+    full Dagster developer environment with all modules and runs tests
     that do not require heavy external dependencies such as docker. This
-    will take a few minutes.  Note that certain sections of the makefile (sanity_check,
+    will take a few minutes. Note that certain sections of the makefile (sanity_check,
     which is part of rebuild_dagit) require POSIX compliant shells and will fail
     on CMD and powershell -- if developing on windows, using something like WSL or git-bash
     is recommended.
@@ -96,13 +97,12 @@ PYENV=py27 tox
 
 ## Developing Dagit
 
-For development, run the dagit GraphQL server on a different port than
-the webapp, from any directory that contains a repository.yaml file. For
-example:
+For development, run the Dagit GraphQL server on a different port than
+the webapp, with any pipeline. For example:
 
 ```bash
 cd dagster/examples/docs_snippets/docs_snippets/intro_tutorial
-dagit -p 3333
+dagit -p 3333 -f airflow.py
 ```
 
 Keep this running. Then, in another terminal, run the local development
@@ -113,7 +113,7 @@ cd dagster/js_modules/dagit
 make dev_webapp
 ```
 
-To run JavaScript tests for the dagit frontend, you can run:
+To run JavaScript tests for the Dagit frontend, you can run:
 
 ```bash
 cd dagster/js_modules/dagit
@@ -133,13 +133,19 @@ interactively when you are in `--watch` mode.
 
 ## Developing Docs
 
-Running a live html version of the docs can expedite documentation
-development:
+To run the Dagster documentation website locally, run the following commands:
 
 ```bash
 cd docs
-make livehtml
+yarn --cwd next dev  # Serves the docs website on http://localhost:3001
 ```
 
-Our documentation employs a combination of Markdown and
-reStructuredText.
+The API documentation is generated from ReStructured Text files (`.rst`), which extracts Python
+docstrings from the library files. The `.rst` files can be found in the `docs/sections/api/apidocs`
+directory.
+
+If you change any `.rst` files, be sure to run the following command in the `docs` directory:
+
+```bash
+make buildnext
+```

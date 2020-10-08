@@ -27,10 +27,10 @@ from dagster.core.instance import DagsterInstance
 
 
 def test_can_handle_all_step_events():
-    '''This test is designed to ensure we catch the case when new step events are added, as they
+    """This test is designed to ensure we catch the case when new step events are added, as they
     must be handled by the event parsing, but this does not check that the event parsing works
     correctly.
-    '''
+    """
     handled = set(HANDLED_EVENTS.values())
     # The distinction between "step events" and "pipeline events" needs to be reexamined
     assert handled == STEP_EVENTS.union(set([DagsterEventType.ENGINE_EVENT]))
@@ -40,33 +40,33 @@ def define_test_events_pipeline():
     @solid(output_defs=[OutputDefinition(Bool)])
     def materialization_and_expectation(_context):
         yield AssetMaterialization(
-            asset_key='all_types',
-            description='a materialization with all metadata types',
+            asset_key="all_types",
+            description="a materialization with all metadata types",
             metadata_entries=[
-                EventMetadataEntry.text('text is cool', 'text'),
-                EventMetadataEntry.url('https://bigty.pe/neato', 'url'),
-                EventMetadataEntry.fspath('/tmp/awesome', 'path'),
-                EventMetadataEntry.json({'is_dope': True}, 'json'),
+                EventMetadataEntry.text("text is cool", "text"),
+                EventMetadataEntry.url("https://bigty.pe/neato", "url"),
+                EventMetadataEntry.fspath("/tmp/awesome", "path"),
+                EventMetadataEntry.json({"is_dope": True}, "json"),
             ],
         )
-        yield ExpectationResult(success=True, label='row_count', description='passed')
+        yield ExpectationResult(success=True, label="row_count", description="passed")
         yield ExpectationResult(True)
         yield Output(True)
 
     @solid(
         output_defs=[
-            OutputDefinition(name='output_one'),
-            OutputDefinition(name='output_two', is_required=False),
+            OutputDefinition(name="output_one"),
+            OutputDefinition(name="output_two", is_required=False),
         ]
     )
     def optional_only_one(_context):  # pylint: disable=unused-argument
-        yield Output(output_name='output_one', value=1)
+        yield Output(output_name="output_one", value=1)
 
-    @solid(input_defs=[InputDefinition('some_input')])
+    @solid(input_defs=[InputDefinition("some_input")])
     def should_fail(_context, some_input):  # pylint: disable=unused-argument
-        raise Exception('should fail')
+        raise Exception("should fail")
 
-    @solid(input_defs=[InputDefinition('some_input')])
+    @solid(input_defs=[InputDefinition("some_input")])
     def should_be_skipped(_context, some_input):  # pylint: disable=unused-argument
         pass
 
@@ -75,7 +75,7 @@ def define_test_events_pipeline():
         raise RetryRequested()
 
     return PipelineDefinition(
-        name='test_events',
+        name="test_events",
         solid_defs=[
             materialization_and_expectation,
             optional_only_one,
@@ -84,23 +84,23 @@ def define_test_events_pipeline():
             retries,
         ],
         dependencies={
-            'optional_only_one': {},
-            'should_fail': {
-                'some_input': DependencyDefinition(optional_only_one.name, 'output_one')
+            "optional_only_one": {},
+            "should_fail": {
+                "some_input": DependencyDefinition(optional_only_one.name, "output_one")
             },
-            'should_be_skipped': {
-                'some_input': DependencyDefinition(optional_only_one.name, 'output_two')
+            "should_be_skipped": {
+                "some_input": DependencyDefinition(optional_only_one.name, "output_two")
             },
         },
     )
 
 
 def test_pipeline():
-    '''just a sanity check to ensure the above pipeline works without layering on graphql'''
+    """just a sanity check to ensure the above pipeline works without layering on graphql"""
     result = execute_pipeline(define_test_events_pipeline(), raise_on_error=False)
-    assert result.result_for_solid('materialization_and_expectation').success
-    assert not result.result_for_solid('should_fail').success
-    assert result.result_for_solid('should_be_skipped').skipped
+    assert result.result_for_solid("materialization_and_expectation").success
+    assert not result.result_for_solid("should_fail").success
+    assert result.result_for_solid("should_be_skipped").skipped
 
 
 def test_all_step_events():  # pylint: disable=too-many-locals
@@ -122,11 +122,11 @@ def test_all_step_events():  # pylint: disable=too-many-locals
 
     # Exclude types that are not step events
     ignored_events = {
-        'LogMessageEvent',
-        'PipelineStartEvent',
-        'PipelineSuccessEvent',
-        'PipelineInitFailureEvent',
-        'PipelineFailureEvent',
+        "LogMessageEvent",
+        "PipelineStartEvent",
+        "PipelineSuccessEvent",
+        "PipelineInitFailureEvent",
+        "PipelineFailureEvent",
     }
 
     event_counts = defaultdict(int)
@@ -135,43 +135,43 @@ def test_all_step_events():  # pylint: disable=too-many-locals
         for step in step_level:
 
             variables = {
-                'executionParams': {
-                    'selector': {
-                        'repositoryLocationName': get_ephemeral_repository_name(pipeline_def.name),
-                        'repositoryName': get_ephemeral_repository_name(pipeline_def.name),
-                        'pipelineName': pipeline_def.name,
+                "executionParams": {
+                    "selector": {
+                        "repositoryLocationName": get_ephemeral_repository_name(pipeline_def.name),
+                        "repositoryName": get_ephemeral_repository_name(pipeline_def.name),
+                        "pipelineName": pipeline_def.name,
                     },
-                    'runConfigData': {'storage': {'filesystem': {}}},
-                    'mode': mode,
-                    'executionMetadata': {'runId': pipeline_run.run_id},
-                    'stepKeys': [step.key],
+                    "runConfigData": {"storage": {"filesystem": {}}},
+                    "mode": mode,
+                    "executionMetadata": {"runId": pipeline_run.run_id},
+                    "stepKeys": [step.key],
                 },
             }
             res = execute_query(workspace, EXECUTE_PLAN_MUTATION, variables, instance=instance,)
 
             # go through the same dict, decrement all the event records we've seen from the GraphQL
             # response
-            if not res.get('errors'):
-                assert 'data' in res, res
-                assert 'executePlan' in res['data'], res
-                assert 'stepEvents' in res['data']['executePlan'], res
-                step_events = res['data']['executePlan']['stepEvents']
+            if not res.get("errors"):
+                assert "data" in res, res
+                assert "executePlan" in res["data"], res
+                assert "stepEvents" in res["data"]["executePlan"], res
+                step_events = res["data"]["executePlan"]["stepEvents"]
 
                 events = [
                     dagster_event_from_dict(e, pipeline_def.name)
                     for e in step_events
-                    if e['__typename'] not in ignored_events
+                    if e["__typename"] not in ignored_events
                 ]
 
                 for event in events:
                     if event.step_key:
-                        key = event.step_key + '.' + event.event_type_value
+                        key = event.step_key + "." + event.event_type_value
                     else:
                         key = event.event_type_value
                     event_counts[key] -= 1
                 unhandled_events -= {DagsterEventType(e.event_type_value) for e in events}
             else:
-                raise Exception(res['errors'])
+                raise Exception(res["errors"])
 
     # build up a dict, incrementing all the event records we've produced in the run storage
     logs = instance.all_logs(pipeline_run.run_id)
@@ -182,7 +182,7 @@ def test_all_step_events():  # pylint: disable=too-many-locals
         ):
             continue
         if log.dagster_event.step_key:
-            key = log.dagster_event.step_key + '.' + log.dagster_event.event_type_value
+            key = log.dagster_event.step_key + "." + log.dagster_event.event_type_value
         else:
             key = log.dagster_event.event_type_value
         event_counts[key] += 1
@@ -199,10 +199,10 @@ def test_all_step_events():  # pylint: disable=too-many-locals
 
 def test_parse_raw_log_lines():
     raw_log_lines = [
-        'Some extraneous log line',
-        'Another extraneous log line, JSON data is on the next line',
+        "Some extraneous log line",
+        "Another extraneous log line, JSON data is on the next line",
         '{"data": {"executePlan": {"__typename": "ExecutePlanSuccess"}}}',
     ]
 
-    result = {'data': {'executePlan': {'__typename': 'ExecutePlanSuccess'}}}
+    result = {"data": {"executePlan": {"__typename": "ExecutePlanSuccess"}}}
     assert parse_raw_log_lines(raw_log_lines) == result

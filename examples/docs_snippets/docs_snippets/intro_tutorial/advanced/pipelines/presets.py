@@ -27,36 +27,36 @@ class LocalSQLiteWarehouse(object):
         self._conn_str = conn_str
 
     def update_normalized_cereals(self, records):
-        conn = sqlite3.connect('example.db')
+        conn = sqlite3.connect("example.db")
         curs = conn.cursor()
         try:
-            curs.execute('DROP TABLE IF EXISTS normalized_cereals')
+            curs.execute("DROP TABLE IF EXISTS normalized_cereals")
             curs.execute(
-                '''CREATE TABLE IF NOT EXISTS normalized_cereals
+                """CREATE TABLE IF NOT EXISTS normalized_cereals
                 (name text, mfr text, type text, calories real,
                  protein real, fat real, sodium real, fiber real,
                  carbo real, sugars real, potass real, vitamins real,
-                 shelf real, weight real, cups real, rating real)'''
+                 shelf real, weight real, cups real, rating real)"""
             )
             curs.executemany(
-                '''INSERT INTO normalized_cereals VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                """INSERT INTO normalized_cereals VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 [tuple(record.values()) for record in records],
             )
         finally:
             curs.close()
 
 
-@resource(config_schema={'conn_str': Field(String)})
+@resource(config_schema={"conn_str": Field(String)})
 def local_sqlite_warehouse_resource(context):
-    return LocalSQLiteWarehouse(context.resource_config['conn_str'])
+    return LocalSQLiteWarehouse(context.resource_config["conn_str"])
 
 
 Base = sqlalchemy.ext.declarative.declarative_base()  # type: Any
 
 
 class NormalizedCereal(Base):
-    __tablename__ = 'normalized_cereals'
+    __tablename__ = "normalized_cereals"
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True)
     name = sqlalchemy.Column(sqlalchemy.String)
     mfr = sqlalchemy.Column(sqlalchemy.String)
@@ -88,36 +88,36 @@ class SqlAlchemyPostgresWarehouse(object):
         NormalizedCereal.__table__.insert().execute(records)
 
 
-@resource(config_schema={'conn_str': Field(String)})
+@resource(config_schema={"conn_str": Field(String)})
 def sqlalchemy_postgres_warehouse_resource(context):
-    return SqlAlchemyPostgresWarehouse(context.resource_config['conn_str'])
+    return SqlAlchemyPostgresWarehouse(context.resource_config["conn_str"])
 
 
 @solid
 def read_csv(context, csv_path):
     csv_path = os.path.join(os.path.dirname(__file__), csv_path)
-    with open(csv_path, 'r') as fd:
+    with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
-    context.log.info('Read {n_lines} lines'.format(n_lines=len(lines)))
+    context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return lines
 
 
-@solid(required_resource_keys={'warehouse'})
+@solid(required_resource_keys={"warehouse"})
 def normalize_calories(context, cereals):
     columns_to_normalize = [
-        'calories',
-        'protein',
-        'fat',
-        'sodium',
-        'fiber',
-        'carbo',
-        'sugars',
-        'potass',
-        'vitamins',
-        'weight',
+        "calories",
+        "protein",
+        "fat",
+        "sodium",
+        "fiber",
+        "carbo",
+        "sugars",
+        "potass",
+        "vitamins",
+        "weight",
     ]
-    quantities = [cereal['cups'] for cereal in cereals]
+    quantities = [cereal["cups"] for cereal in cereals]
     reweights = [1.0 / float(quantity) for quantity in quantities]
 
     normalized_cereals = deepcopy(cereals)
@@ -132,38 +132,38 @@ def normalize_calories(context, cereals):
 @pipeline(
     mode_defs=[
         ModeDefinition(
-            name='unittest',
-            resource_defs={'warehouse': local_sqlite_warehouse_resource},
+            name="unittest",
+            resource_defs={"warehouse": local_sqlite_warehouse_resource},
         ),
         ModeDefinition(
-            name='dev',
+            name="dev",
             resource_defs={
-                'warehouse': sqlalchemy_postgres_warehouse_resource
+                "warehouse": sqlalchemy_postgres_warehouse_resource
             },
         ),
     ],
     preset_defs=[
         PresetDefinition(
-            'unittest',
+            "unittest",
             run_config={
-                'solids': {
-                    'read_csv': {
-                        'inputs': {'csv_path': {'value': 'cereal.csv'}}
+                "solids": {
+                    "read_csv": {
+                        "inputs": {"csv_path": {"value": "cereal.csv"}}
                     }
                 },
-                'resources': {
-                    'warehouse': {'config': {'conn_str': ':memory:'}}
+                "resources": {
+                    "warehouse": {"config": {"conn_str": ":memory:"}}
                 },
             },
-            mode='unittest',
+            mode="unittest",
         ),
         PresetDefinition.from_files(
-            'dev',
+            "dev",
             config_files=[
-                file_relative_path(__file__, 'presets_dev_warehouse.yaml'),
-                file_relative_path(__file__, 'presets_csv.yaml'),
+                file_relative_path(__file__, "presets_dev_warehouse.yaml"),
+                file_relative_path(__file__, "presets_csv.yaml"),
             ],
-            mode='dev',
+            mode="dev",
         ),
     ],
 )
@@ -171,6 +171,6 @@ def presets_pipeline():
     normalize_calories(read_csv())
 
 
-if __name__ == '__main__':
-    result = execute_pipeline(presets_pipeline, preset='unittest')
+if __name__ == "__main__":
+    result = execute_pipeline(presets_pipeline, preset="unittest")
     assert result.success

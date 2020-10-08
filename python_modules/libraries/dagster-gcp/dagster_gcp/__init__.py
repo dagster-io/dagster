@@ -15,19 +15,19 @@ from .dataproc.solids import dataproc_solid
 from .gcs import gcs_resource, gcs_system_storage
 from .version import __version__
 
-check_dagster_package_version('dagster-gcp', __version__)
+check_dagster_package_version("dagster-gcp", __version__)
 
 __all__ = [
-    'BigQueryError',
-    'bigquery_resource',
-    'bq_create_dataset',
-    'bq_delete_dataset',
-    'bq_solid_for_queries',
-    'dataproc_resource',
-    'dataproc_solid',
-    'gcs_resource',
-    'gcs_system_storage',
-    'import_df_to_bq',
-    'import_file_to_bq',
-    'import_gcs_paths_to_bq',
+    "BigQueryError",
+    "bigquery_resource",
+    "bq_create_dataset",
+    "bq_delete_dataset",
+    "bq_solid_for_queries",
+    "dataproc_resource",
+    "dataproc_solid",
+    "gcs_resource",
+    "gcs_system_storage",
+    "import_df_to_bq",
+    "import_file_to_bq",
+    "import_gcs_paths_to_bq",
 ]

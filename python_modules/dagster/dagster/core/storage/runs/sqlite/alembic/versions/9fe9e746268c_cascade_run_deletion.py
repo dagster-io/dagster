@@ -11,8 +11,8 @@ from sqlalchemy.engine import reflection
 # pylint: disable=no-member
 
 # revision identifiers, used by Alembic.
-revision = '9fe9e746268c'
-down_revision = 'da7cd32b690d'
+revision = "9fe9e746268c"
+down_revision = "da7cd32b690d"
 branch_labels = None
 depends_on = None
 
@@ -22,8 +22,8 @@ def upgrade():
     inspector = reflection.Inspector.from_engine(bind)
     has_tables = inspector.get_table_names()
 
-    if 'runs' in has_tables and 'run_tags' in has_tables:
-        op.execute('delete from run_tags where run_id not in (select distinct run_id from runs);')
+    if "runs" in has_tables and "run_tags" in has_tables:
+        op.execute("delete from run_tags where run_id not in (select distinct run_id from runs);")
 
 
 def downgrade():

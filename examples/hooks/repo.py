@@ -17,16 +17,20 @@ from dagster.seven import mock
 slack_resource_mock = mock.MagicMock()
 
 
-@success_hook(required_resource_keys={'slack'})
+# start_repo_marker_0
+@success_hook(required_resource_keys={"slack"})
 def slack_on_success(context):
-    message = 'Solid {} finished successfully'.format(context.solid.name)
-    context.resources.slack.chat.post_message(channel='#foo', text=message)
+    message = "Solid {} finished successfully".format(context.solid.name)
+    context.resources.slack.chat.post_message(channel="#foo", text=message)
 
 
-@failure_hook(required_resource_keys={'slack'})
+@failure_hook(required_resource_keys={"slack"})
 def slack_on_failure(context):
-    message = 'Solid {} failed'.format(context.solid.name)
-    context.resources.slack.chat.post_message(channel='#foo', text=message)
+    message = "Solid {} failed".format(context.solid.name)
+    context.resources.slack.chat.post_message(channel="#foo", text=message)
+
+
+# end_repo_marker_0
 
 
 @solid
@@ -39,19 +43,21 @@ def b(_):
     raise Exception()
 
 
+# start_repo_marker_3
 mode_defs = [
     ModeDefinition(
-        'dev',
+        "dev",
         resource_defs={
-            'slack': ResourceDefinition.hardcoded_resource(
-                slack_resource_mock, 'do not send messages in dev'
+            "slack": ResourceDefinition.hardcoded_resource(
+                slack_resource_mock, "do not send messages in dev"
             )
         },
     ),
-    ModeDefinition('prod', resource_defs={'slack': slack_resource}),
+    ModeDefinition("prod", resource_defs={"slack": slack_resource}),
 ]
+# end_repo_marker_3
 
-
+# start_repo_marker_1
 @slack_on_failure
 @pipeline(mode_defs=mode_defs)
 def notif_all():
@@ -60,6 +66,9 @@ def notif_all():
     b()
 
 
+# end_repo_marker_1
+
+# start_repo_marker_2
 @pipeline(mode_defs=mode_defs)
 def selective_notif():
     # only solid "a" triggers hooks: a slack message will be sent when it fails or succeeds
@@ -68,12 +77,15 @@ def selective_notif():
     b()
 
 
+# end_repo_marker_2
+
+
 @repository
 def repo():
     return [notif_all, selective_notif]
 
 
 if __name__ == "__main__":
-    with open(file_relative_path(__file__, 'prod.yaml'), 'r',) as fd:
+    with open(file_relative_path(__file__, "prod.yaml"), "r",) as fd:
         run_config = yaml.safe_load(fd.read())
-    result = execute_pipeline(notif_all, run_config=run_config, mode='prod')
+    result = execute_pipeline(notif_all, run_config=run_config, mode="prod")

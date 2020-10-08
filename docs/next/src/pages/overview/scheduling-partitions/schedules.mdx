@@ -1,7 +1,10 @@
 import { DynamicMetaTags } from 'components/MetaTags';
 import PyObject from 'components/PyObject';
 
-<DynamicMetaTags title="Schedules | Dagster" />
+<DynamicMetaTags
+  title="Schedules | Dagster"
+  description="Dagster comes with a scheduler that is capable of instigating runs on a given interval."
+/>
 
 # Schedules
 
@@ -28,7 +31,8 @@ For example, we have a pipeline that computes metrics data for a given date.
 ```python literalinclude caption=pipeline.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/pipeline.py
 lineno-start:
-lines:15-23
+startAfter:start_pipeline_marker_1
+endBefore:end_pipeline_marker_1
 ```
 
 ### Cron-string based interval
@@ -41,12 +45,13 @@ At every time the schedule should execute, according to the cron string, the fun
 ```python literalinclude caption=schedule_definition.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/schedule_definition.py
 lineno-start:
-lines:4-10
+startAfter:start_schedule_definition_marker_0
+endBefore:end_schedule_definition_marker_0
 ```
 
 ### Partition set based schedule [recommended]
 
-You can also create a schedule that is composed using an underyling partition set.
+You can also create a schedule that is composed using an underlying partition set.
 Each time the schedule executes, it selects the latest valid date partition and passes it to the decorated schedule function as an argument.
 
 ```python literalinclude caption=schedule_definition.py

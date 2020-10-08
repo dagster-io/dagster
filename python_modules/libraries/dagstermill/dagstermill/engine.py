@@ -17,10 +17,10 @@ class DagstermillExecutePreprocessor(PapermillExecutePreprocessor):
         )
 
         new_cell = nbformat.v4.new_code_cell(
-            source=('import dagstermill as __dm_dagstermill\n' '__dm_dagstermill._teardown()\n')
+            source=("import dagstermill as __dm_dagstermill\n" "__dm_dagstermill._teardown()\n")
         )
-        new_cell.metadata['tags'] = ['injected-teardown']
-        new_cell.metadata['papermill'] = {}
+        new_cell.metadata["tags"] = ["injected-teardown"]
+        new_cell.metadata["papermill"] = {}
         index = len(nb_man.nb.cells)
         nb_man.nb.cells = nb_man.nb.cells + [new_cell]
 
@@ -51,7 +51,7 @@ class DagstermillNBConvertEngine(NBConvertEngine):
     ):
         # Nicely handle preprocessor arguments prioritizing values set by engine
         preprocessor = DagstermillExecutePreprocessor(
-            timeout=execution_timeout if execution_timeout else kwargs.get('timeout'),
+            timeout=execution_timeout if execution_timeout else kwargs.get("timeout"),
             startup_timeout=start_timeout,
             kernel_name=kernel_name,
             log=logger,

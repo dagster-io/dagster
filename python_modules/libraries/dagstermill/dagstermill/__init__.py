@@ -6,7 +6,7 @@ from .manager import MANAGER_FOR_NOTEBOOK_INSTANCE as _MANAGER_FOR_NOTEBOOK_INST
 from .solids import define_dagstermill_solid
 from .version import __version__
 
-check_dagster_package_version('dagstermill', __version__)
+check_dagster_package_version("dagstermill", __version__)
 
 get_context = _MANAGER_FOR_NOTEBOOK_INSTANCE.get_context
 

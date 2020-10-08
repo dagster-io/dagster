@@ -1,29 +1,30 @@
-import gql from "graphql-tag";
-import * as React from "react";
-import Loading from "../Loading";
-import { useQuery } from "react-apollo";
-import TypeList from "./TypeList";
-import { TypeListContainerQuery } from "./types/TypeListContainerQuery";
-import { PipelineExplorerPath } from "../PipelinePathUtils";
-import { usePipelineSelector } from "../DagsterRepositoryContext";
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
+
+import {usePipelineSelector} from 'src/DagsterRepositoryContext';
+import {Loading} from 'src/Loading';
+import {PipelineExplorerPath} from 'src/PipelinePathUtils';
+import {TypeList} from 'src/typeexplorer/TypeList';
+import {TypeListContainerQuery} from 'src/typeexplorer/types/TypeListContainerQuery';
 
 interface ITypeListContainerProps {
   explorerPath: PipelineExplorerPath;
 }
 
 export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps> = ({
-  explorerPath
+  explorerPath,
 }) => {
   const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
   const queryResult = useQuery<TypeListContainerQuery>(TYPE_LIST_CONTAINER_QUERY, {
-    fetchPolicy: "cache-and-network",
-    variables: { pipelineSelector }
+    fetchPolicy: 'cache-and-network',
+    variables: {pipelineSelector},
   });
 
   return (
     <Loading queryResult={queryResult}>
-      {data => {
-        if (data.pipelineOrError.__typename === "Pipeline") {
+      {(data) => {
+        if (data.pipelineOrError.__typename === 'Pipeline') {
           return <TypeList types={data.pipelineOrError.dagsterTypes} />;
         } else {
           return null;

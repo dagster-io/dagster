@@ -16,12 +16,12 @@ from dagster import (
 )
 
 
-@solid(input_defs=[InputDefinition('word', str)], config_schema={'factor': int})
+@solid(input_defs=[InputDefinition("word", str)], config_schema={"factor": int})
 def multiply_the_word(context, word):
-    return word * context.solid_config['factor']
+    return word * context.solid_config["factor"]
 
 
-@solid(input_defs=[InputDefinition('word')])
+@solid(input_defs=[InputDefinition("word")])
 def count_letters(_context, word):
     return dict(Counter(word))
 
@@ -30,18 +30,18 @@ def count_letters(_context, word):
     mode_defs=[
         ModeDefinition(
             intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
-            resource_defs={'s3': s3_resource},
+            resource_defs={"s3": s3_resource},
             executor_defs=default_executors + [celery_k8s_job_executor],
         )
     ],
     preset_defs=[
         PresetDefinition.from_files(
-            'example',
+            "example",
             config_files=[
-                file_relative_path(__file__, os.path.join('..', 'run_config', 'celery_k8s.yaml')),
-                file_relative_path(__file__, os.path.join('..', 'run_config', 'pipeline.yaml')),
+                file_relative_path(__file__, os.path.join("..", "run_config", "celery_k8s.yaml")),
+                file_relative_path(__file__, os.path.join("..", "run_config", "pipeline.yaml")),
             ],
-            mode='default',
+            mode="default",
         ),
     ],
 )

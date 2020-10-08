@@ -13,11 +13,11 @@ from dagster import execute_pipeline
 def test_pipelines():
     result = execute_pipeline(addition_pipeline)
     assert result.success
-    assert result.result_for_solid('add').output_value() == 3
+    assert result.result_for_solid("add").output_value() == 3
 
     result = execute_pipeline(subtraction_pipeline)
     assert result.success
-    assert result.result_for_solid('subtract').output_value() == -1
+    assert result.result_for_solid("subtract").output_value() == -1
 
 
 def test_my_repository():

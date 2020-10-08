@@ -1,14 +1,16 @@
 import re
 import sys
+from collections import defaultdict
 
 from dagster.core.definitions.dependency import DependencyStructure
+from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.utils import check, is_str
 
 MAX_NUM = sys.maxsize
 
 
 def generate_dep_graph(pipeline_def):
-    ''''pipeline to dependency graph. It currently only supports top-level solids.
+    """'pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
         pipeline (PipelineDefinition): The pipeline to execute.
@@ -17,40 +19,40 @@ def generate_dep_graph(pipeline_def):
         graph (Dict[str, Dict[str, Set[str]]]): the input and output dependency graph. e.g.
             ```
             {
-                'upstream': {
-                    'solid_one_1': set(),
-                    'solid_one_2': set(),
-                    'solid_two': set(['solid_one_1', 'solid_one_2']),
-                    'solid_three': set(['solid_two']),
+                "upstream": {
+                    "solid_one_1": set(),
+                    "solid_one_2": set(),
+                    "solid_two": {"solid_one_1", "solid_one_2"},
+                    "solid_three": {"solid_two"},
                 },
-                'downstream': {
-                    'solid_one_1': set(['solid_two']),
-                    'solid_one_2': set(['solid_two']),
-                    'solid_two': set(['solid_three']),
-                    'solid_three': set(),
+                "downstream": {
+                    "solid_one_1": {"solid_two"},
+                    "solid_one_2": {"solid_two"},
+                    "solid_two": {"solid_three"},
+                    "solid_three": set(),
                 },
             }
             ```
-    '''
+    """
     dependency_structure = check.inst_param(
-        pipeline_def.dependency_structure, 'dependency_structure', DependencyStructure
+        pipeline_def.dependency_structure, "dependency_structure", DependencyStructure
     )
     item_names = [i.name for i in pipeline_def.solids]
 
     # defaultdict isn't appropriate because we also want to include items without dependencies
-    graph = {'upstream': {}, 'downstream': {}}
+    graph = {"upstream": {}, "downstream": {}}
     for item_name in item_names:
-        graph['upstream'][item_name] = set()
+        graph["upstream"][item_name] = set()
         upstream_dep = dependency_structure.input_to_upstream_outputs_for_solid(item_name)
         for upstreams in upstream_dep.values():
             for up in upstreams:
-                graph['upstream'][item_name].add(up.solid_name)
+                graph["upstream"][item_name].add(up.solid_name)
 
-        graph['downstream'][item_name] = set()
+        graph["downstream"][item_name] = set()
         downstream_dep = dependency_structure.output_to_downstream_inputs_for_solid(item_name)
         for downstreams in downstream_dep.values():
             for down in downstreams:
-                graph['downstream'][item_name].add(down.solid_name)
+                graph["downstream"][item_name].add(down.solid_name)
 
     return graph
 
@@ -81,25 +83,24 @@ class Traverser:
 
     def fetch_upstream(self, item_name, depth):
         # return a set of ancestors of the given item, up to the given depth
-        return self._fetch_items(item_name, depth, 'upstream')
+        return self._fetch_items(item_name, depth, "upstream")
 
     def fetch_downstream(self, item_name, depth):
         # return a set of descendants of the given item, down to the given depth
-        return self._fetch_items(item_name, depth, 'downstream')
+        return self._fetch_items(item_name, depth, "downstream")
 
 
 def parse_clause(clause):
-    # TODO use query_parser
     def _get_depth(part):
-        if part == '':
+        if part == "":
             return 0
-        if '*' in part:
+        if "*" in part:
             return MAX_NUM
-        if set(part) == set('+'):
+        if set(part) == set("+"):
             return len(part)
         return None
 
-    token_matching = re.compile(r'^(\*?\+*)?([.\w\d_-]+)(\+*\*?)?$').search(clause.strip())
+    token_matching = re.compile(r"^(\*?\+*)?([.\w\d_-]+)(\+*\*?)?$").search(clause.strip())
     # return None if query is invalid
     parts = token_matching.groups() if token_matching is not None else []
     if len(parts) != 3:
@@ -112,8 +113,8 @@ def parse_clause(clause):
     return (up_depth, item_name, down_depth)
 
 
-def _clause_to_subset(traverser, graph, clause):
-    '''Take a selection query and return a list of the selected and qualified items.
+def clause_to_subset(traverser, graph, clause):
+    """Take a selection query and return a list of the selected and qualified items.
 
     Args:
         graph (Dict[str, Dict[str, Set[str]]]): the input and output dependency graph.
@@ -123,7 +124,7 @@ def _clause_to_subset(traverser, graph, clause):
     Returns:
         subset_list (List[str]): a list of selected and qualified solid names, empty if input is
             invalid.
-    '''
+    """
     # parse cluase
     if not is_str(clause):
         return []
@@ -132,7 +133,7 @@ def _clause_to_subset(traverser, graph, clause):
         return []
     up_depth, item_name, down_depth = parts
     # item_name invalid
-    if item_name not in graph['upstream']:
+    if item_name not in graph["upstream"]:
         return []
 
     subset_list = []
@@ -146,8 +147,8 @@ def _clause_to_subset(traverser, graph, clause):
 
 
 def parse_solid_selection(pipeline_def, solid_selection):
-    '''Take pipeline definition and a list of solid selection queries (inlcuding names of solid
-        invocations. See syntax examples below) and return a list of the qualified solid names.
+    """Take pipeline definition and a list of solid selection queries (inlcuding names of solid
+        invocations. See syntax examples below) and return a set of the qualified solid names.
 
     It currently only supports top-level solids.
 
@@ -171,8 +172,8 @@ def parse_solid_selection(pipeline_def, solid_selection):
     Returns:
         FrozenSet[str]: a frozenset of qualified deduplicated solid names, empty if no qualified
             subset selected.
-    '''
-    check.list_param(solid_selection, 'solid_selection', of_type=str)
+    """
+    check.list_param(solid_selection, "solid_selection", of_type=str)
 
     graph = generate_dep_graph(pipeline_def)
     traverser = Traverser(graph=graph)
@@ -180,6 +181,57 @@ def parse_solid_selection(pipeline_def, solid_selection):
 
     # loop over clauses
     for clause in solid_selection:
-        solids_set.update(_clause_to_subset(traverser, graph, clause))
+        subset = clause_to_subset(traverser, graph, clause)
+        if len(subset) == 0:
+            raise DagsterInvalidSubsetError(
+                "No qualified solids to execute found for solid_selection={requested}".format(
+                    requested=solid_selection
+                )
+            )
+        solids_set.update(subset)
 
     return frozenset(solids_set)
+
+
+def parse_step_selection(step_deps, step_selection):
+    """Take the dependency dictionary generated while building execution plan and a list of step key
+     selection queries and return a set of the qualified step keys.
+
+    It currently only supports top-level solids.
+
+    Args:
+        step_deps (Dict[str, Set[str]]): a dictionary of execution step dependency where the key is
+            a step key and the value is a set of direct upstream dependency of the step.
+        step_selection (List[str]): a list of the step key selection queries (including single
+            step key) to execute.
+
+    Returns:
+        FrozenSet[str]: a frozenset of qualified deduplicated solid names, empty if no qualified
+            subset selected.
+    """
+    check.list_param(step_selection, "step_selection", of_type=str)
+
+    # reverse step_deps to get the downstream_deps
+    # make sure we have all items as keys, including the ones without downstream dependencies
+    downstream_deps = defaultdict(set, {k: set() for k in step_deps.keys()})
+    for downstream_key, upstream_keys in step_deps.items():
+        for step_key in upstream_keys:
+            downstream_deps[step_key].add(downstream_key)
+
+    # generate dep graph
+    graph = {"upstream": step_deps, "downstream": downstream_deps}
+    traverser = Traverser(graph=graph)
+    steps_set = set()
+
+    # loop over clauses
+    for clause in step_selection:
+        subset = clause_to_subset(traverser, graph, clause)
+        if len(subset) == 0:
+            raise DagsterInvalidSubsetError(
+                "No qualified steps to execute found for step_selection={requested}".format(
+                    requested=step_selection
+                )
+            )
+        steps_set.update(subset)
+
+    return frozenset(steps_set)

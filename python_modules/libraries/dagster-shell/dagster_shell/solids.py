@@ -19,63 +19,63 @@ from .utils import execute, execute_script_file
 
 def shell_solid_config():
     return {
-        'env': Field(
+        "env": Field(
             Noneable(Permissive()),
             default_value=os.environ.copy(),
             is_required=False,
-            description='An optional dict of environment variables to pass to the subprocess. '
-            'Defaults to using os.environ.copy().',
+            description="An optional dict of environment variables to pass to the subprocess. "
+            "Defaults to using os.environ.copy().",
         ),
-        'output_logging': Field(
+        "output_logging": Field(
             Enum(
-                name='OutputType',
+                name="OutputType",
                 enum_values=[
-                    EnumValue('STREAM', description='Stream script stdout/stderr.'),
+                    EnumValue("STREAM", description="Stream script stdout/stderr."),
                     EnumValue(
-                        'BUFFER',
-                        description='Buffer shell script stdout/stderr, then log upon completion.',
+                        "BUFFER",
+                        description="Buffer shell script stdout/stderr, then log upon completion.",
                     ),
-                    EnumValue('NONE', description='No logging'),
+                    EnumValue("NONE", description="No logging"),
                 ],
             ),
             is_required=False,
-            default_value='BUFFER',
+            default_value="BUFFER",
         ),
-        'cwd': Field(
+        "cwd": Field(
             Noneable(str),
             default_value=None,
             is_required=False,
-            description='Working directory in which to execute shell script',
+            description="Working directory in which to execute shell script",
         ),
     }
 
 
 @solid(
-    name='shell_solid',
+    name="shell_solid",
     description=(
-        'This solid executes a shell command it receives as input.\n\n'
-        'This solid is suitable for uses where the command to execute is generated dynamically by '
-        'upstream solids. If you know the command to execute at pipeline construction time, '
-        'consider `shell_command_solid` instead.'
+        "This solid executes a shell command it receives as input.\n\n"
+        "This solid is suitable for uses where the command to execute is generated dynamically by "
+        "upstream solids. If you know the command to execute at pipeline construction time, "
+        "consider `shell_command_solid` instead."
     ),
-    input_defs=[InputDefinition('shell_command', str)],
-    output_defs=[OutputDefinition(str, 'result')],
+    input_defs=[InputDefinition("shell_command", str)],
+    output_defs=[OutputDefinition(str, "result")],
     config_schema=shell_solid_config(),
 )
 def shell_solid(context, shell_command):
-    '''This solid executes a shell command it receives as input.
+    """This solid executes a shell command it receives as input.
 
     This solid is suitable for uses where the command to execute is generated dynamically by
     upstream solids. If you know the command to execute at pipeline construction time, consider
     `shell_command_solid` instead.
-    '''
+    """
     output, return_code = execute(
         shell_command=shell_command, log=context.log, **context.solid_config
     )
 
     if return_code:
         raise Failure(
-            description='Shell command execution failed with output: {output}'.format(output=output)
+            description="Shell command execution failed with output: {output}".format(output=output)
         )
 
     return output
@@ -84,7 +84,7 @@ def shell_solid(context, shell_command):
 def create_shell_command_solid(
     shell_command, name, description=None, required_resource_keys=None, tags=None,
 ):
-    '''This function is a factory that constructs solids to execute a shell command.
+    """This function is a factory that constructs solids to execute a shell command.
 
     Note that you can only use `shell_command_solid` if you know the command you'd like to execute
     at pipeline construction time. If you'd like to construct shell commands dynamically during
@@ -113,15 +113,15 @@ def create_shell_command_solid(
 
     Returns:
         SolidDefinition: Returns the constructed solid definition.
-    '''
-    check.str_param(shell_command, 'shell_command')
-    name = check.str_param(name, 'name')
+    """
+    check.str_param(shell_command, "shell_command")
+    name = check.str_param(name, "name")
 
     @solid(
         name=name,
         description=description,
-        input_defs=[InputDefinition('start', Nothing)],
-        output_defs=[OutputDefinition(str, 'result')],
+        input_defs=[InputDefinition("start", Nothing)],
+        output_defs=[OutputDefinition(str, "result")],
         config_schema=shell_solid_config(),
         required_resource_keys=required_resource_keys,
         tags=tags,
@@ -133,7 +133,7 @@ def create_shell_command_solid(
 
         if return_code:
             raise Failure(
-                description='Shell command execution failed with output: {output}'.format(
+                description="Shell command execution failed with output: {output}".format(
                     output=output
                 )
             )
@@ -144,9 +144,9 @@ def create_shell_command_solid(
 
 
 def create_shell_script_solid(
-    shell_script_path, name='create_shell_script_solid', input_defs=None, **kwargs
+    shell_script_path, name="create_shell_script_solid", input_defs=None, **kwargs
 ):
-    '''This function is a factory which constructs a solid that will execute a shell command read
+    """This function is a factory which constructs a solid that will execute a shell command read
     from a script file.
 
     Any kwargs passed to this function will be passed along to the underlying :func:`@solid
@@ -174,22 +174,22 @@ def create_shell_script_solid(
 
     Returns:
         SolidDefinition: Returns the constructed solid definition.
-    '''
-    check.str_param(shell_script_path, 'shell_script_path')
-    name = check.str_param(name, 'name')
-    check.opt_list_param(input_defs, 'input_defs', of_type=InputDefinition)
+    """
+    check.str_param(shell_script_path, "shell_script_path")
+    name = check.str_param(name, "name")
+    check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
 
-    if 'output_defs' in kwargs:
-        raise TypeError('Overriding output_defs for shell solid is not supported.')
+    if "output_defs" in kwargs:
+        raise TypeError("Overriding output_defs for shell solid is not supported.")
 
-    if 'config' in kwargs:
-        raise TypeError('Overriding config for shell solid is not supported.')
+    if "config" in kwargs:
+        raise TypeError("Overriding config for shell solid is not supported.")
 
     @solid(
         name=name,
-        description=kwargs.pop('description', 'A solid to invoke a shell command.'),
-        input_defs=input_defs or [InputDefinition('start', Nothing)],
-        output_defs=[OutputDefinition(str, 'result')],
+        description=kwargs.pop("description", "A solid to invoke a shell command."),
+        input_defs=input_defs or [InputDefinition("start", Nothing)],
+        output_defs=[OutputDefinition(str, "result")],
         config_schema=shell_solid_config(),
         **kwargs
     )
@@ -200,7 +200,7 @@ def create_shell_script_solid(
 
         if return_code:
             raise Failure(
-                description='Shell command execution failed with output: {output}'.format(
+                description="Shell command execution failed with output: {output}".format(
                     output=output
                 )
             )

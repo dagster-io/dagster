@@ -13,12 +13,12 @@ def _compute_fn(context, inputs):
 
     result = []
     result.extend(passed_rows)
-    result.append({context.solid.name: 'compute_called'})
+    result.append({context.solid.name: "compute_called"})
     yield Output(result)
 
 
 def define_stub_solid(name, value):
-    check.str_param(name, 'name')
+    check.str_param(name, "name")
 
     @lambda_solid(name=name)
     def _stub():
@@ -28,7 +28,7 @@ def define_stub_solid(name, value):
 
 
 def create_root_solid(name):
-    input_name = name + '_input'
+    input_name = name + "_input"
     inp = InputDefinition(input_name)
 
     return SolidDefinition(
@@ -45,4 +45,4 @@ def create_solid_with_deps(name, *solid_deps):
 
 
 def input_set(name):
-    return {name: 'input_set'}
+    return {name: "input_set"}

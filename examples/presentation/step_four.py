@@ -5,19 +5,19 @@ from dagster import repository, file_relative_path, PresetDefinition  # isort:sk
 
 def get_in_repo_preset_definition():
     return PresetDefinition(
-        'in_repo',
+        "in_repo",
         run_config={
-            'solids': {
-                'add_sugar_per_cup': {
-                    'inputs': {
-                        'cereals': {
-                            'csv': {'path': file_relative_path(__file__, 'data/cereal.csv')}
+            "solids": {
+                "add_sugar_per_cup": {
+                    "inputs": {
+                        "cereals": {
+                            "csv": {"path": file_relative_path(__file__, "data/cereal.csv")}
                         }
                     }
                 }
             },
-            'execution': {'multiprocess': {}},
-            'storage': {'filesystem': {}},
+            "execution": {"multiprocess": {}},
+            "storage": {"filesystem": {}},
         },
     )
 
@@ -29,19 +29,19 @@ from dagster import pipeline, solid
 
 @solid
 def add_sugar_per_cup(_, cereals: DataFrame) -> DataFrame:
-    df = cereals[['name']]
-    df['sugar_per_cup'] = cereals['sugars'] / cereals['cups']
+    df = cereals[["name"]]
+    df["sugar_per_cup"] = cereals["sugars"] / cereals["cups"]
     return df
 
 
 @solid
 def compute_cutoff(_, cereals: DataFrame) -> float:
-    return cereals['sugar_per_cup'].quantile(0.75)
+    return cereals["sugar_per_cup"].quantile(0.75)
 
 
 @solid
 def filter_below_cutoff(_, cereals: DataFrame, cutoff: float) -> DataFrame:
-    return cereals[cereals['sugar_per_cup'] > cutoff]
+    return cereals[cereals["sugar_per_cup"] > cutoff]
 
 
 @pipeline(preset_defs=[get_in_repo_preset_definition()])

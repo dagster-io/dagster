@@ -14,35 +14,35 @@ def test_defensive_pipeline_not_a_string():
     assert mock_logger.warning.call_count == 1
 
     mock_logger.warning.assert_called_with(
-        'get-pipeline-snapshot: First entry in row is not a binary type.'
+        "get-pipeline-snapshot: First entry in row is not a binary type."
     )
 
 
 def test_defensive_pipeline_not_bytes():
     mock_logger = mock.MagicMock()
 
-    assert defensively_unpack_pipeline_snapshot_query(mock_logger, ['notbytes']) is None
+    assert defensively_unpack_pipeline_snapshot_query(mock_logger, ["notbytes"]) is None
     assert mock_logger.warning.call_count == 1
 
     if sys.version_info.major == 2:
         # this error is not detected in python and instead fails on decompress
         # the joys of the python 2/3 unicode debacle
         mock_logger.warning.assert_called_with(
-            'get-pipeline-snapshot: Could not decompress bytes stored in snapshot table.'
+            "get-pipeline-snapshot: Could not decompress bytes stored in snapshot table."
         )
     else:
         mock_logger.warning.assert_called_with(
-            'get-pipeline-snapshot: First entry in row is not a binary type.'
+            "get-pipeline-snapshot: First entry in row is not a binary type."
         )
 
 
 def test_defensive_pipelines_cannot_decompress():
     mock_logger = mock.MagicMock()
 
-    assert defensively_unpack_pipeline_snapshot_query(mock_logger, ['notbytes'.encode()]) is None
+    assert defensively_unpack_pipeline_snapshot_query(mock_logger, ["notbytes".encode()]) is None
     assert mock_logger.warning.call_count == 1
     mock_logger.warning.assert_called_with(
-        'get-pipeline-snapshot: Could not decompress bytes stored in snapshot table.'
+        "get-pipeline-snapshot: Could not decompress bytes stored in snapshot table."
     )
 
 
@@ -52,14 +52,14 @@ def test_defensive_pipelines_cannot_decode_post_decompress():
     # guarantee that we cannot decode by double compressing bytes.
     assert (
         defensively_unpack_pipeline_snapshot_query(
-            mock_logger, [zlib.compress(zlib.compress('notbytes'.encode()))]
+            mock_logger, [zlib.compress(zlib.compress("notbytes".encode()))]
         )
         is None
     )
     assert mock_logger.warning.call_count == 1
     mock_logger.warning.assert_called_with(
-        'get-pipeline-snapshot: Could not unicode decode decompressed bytes '
-        'stored in snapshot table.'
+        "get-pipeline-snapshot: Could not unicode decode decompressed bytes "
+        "stored in snapshot table."
     )
 
 
@@ -67,12 +67,12 @@ def test_defensive_pipelines_cannot_parse_json():
     mock_logger = mock.MagicMock()
 
     assert (
-        defensively_unpack_pipeline_snapshot_query(mock_logger, [zlib.compress('notjson'.encode())])
+        defensively_unpack_pipeline_snapshot_query(mock_logger, [zlib.compress("notjson".encode())])
         is None
     )
     assert mock_logger.warning.call_count == 1
     mock_logger.warning.assert_called_with(
-        'get-pipeline-snapshot: Could not parse json in snapshot table.'
+        "get-pipeline-snapshot: Could not parse json in snapshot table."
     )
 
 

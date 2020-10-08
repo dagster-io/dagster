@@ -1,54 +1,63 @@
-import * as React from "react";
-import * as qs from "query-string";
-import { useMutation, useQuery } from "@apollo/react-hooks";
-
+import {useMutation, useQuery} from '@apollo/react-hooks';
 import {
-  Switch,
   Button,
+  Callout,
+  Code,
   Icon,
+  Intent,
   Menu,
   MenuItem,
-  MenuDivider,
   Popover,
-  Tooltip,
-  Tag,
-  Intent,
   PopoverInteractionKind,
   Position,
   Spinner,
-  Code
-} from "@blueprintjs/core";
-import { HighlightedCodeBlock } from "../HighlightedCodeBlock";
-import { RowColumn, RowContainer } from "../ListComponents";
+  Switch,
+  Tag,
+  Tooltip,
+} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import cronstrue from 'cronstrue';
+import gql from 'graphql-tag';
+import * as qs from 'query-string';
+import * as React from 'react';
+import {useState} from 'react';
+import {Link, useHistory, useRouteMatch} from 'react-router-dom';
+import styled from 'styled-components/macro';
+
+import {ButtonLink} from 'src/ButtonLink';
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {ConfirmationOptions, useConfirmation} from 'src/CustomConfirmationProvider';
+import {
+  DagsterRepoOption,
+  repositorySelectorFromDagsterRepoOption,
+  scheduleSelectorWithRepository,
+  useCurrentRepositoryState,
+  useRepositoryOptions,
+  useScheduleSelector,
+} from 'src/DagsterRepositoryContext';
+import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
+import {RowColumn, RowContainer, ScrollingRowColumn} from 'src/ListComponents';
+import {Legend, LegendColumn} from 'src/ListComponents';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {RepositoryOriginInformation} from 'src/RepositoryInformation';
+import {assertUnreachable} from 'src/Util';
+import {RunStatus} from 'src/runs/RunStatusDots';
+import {titleForRun} from 'src/runs/RunUtils';
+import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {
   ScheduleDefinitionFragment,
-  ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData
-} from "./types/ScheduleDefinitionFragment";
-import { StartSchedule, StartSchedule_startSchedule_PythonError } from "./types/StartSchedule";
-import { StopSchedule, StopSchedule_stopRunningSchedule_PythonError } from "./types/StopSchedule";
-import { ScheduleStatus, ScheduleTickStatus } from "../types/globalTypes";
-import { Legend, LegendColumn } from "../ListComponents";
-
-import { Link, useRouteMatch, useHistory } from "react-router-dom";
-import cronstrue from "cronstrue";
-import gql from "graphql-tag";
-import { showCustomAlert } from "../CustomAlertProvider";
-import styled from "styled-components/macro";
-import { titleForRun } from "../runs/RunUtils";
-import { RunStatus } from "../runs/RunStatusDots";
-import PythonErrorInfo from "../PythonErrorInfo";
+  ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData,
+} from 'src/schedules/types/ScheduleDefinitionFragment';
+import {ScheduleStateFragment} from 'src/schedules/types/ScheduleStateFragment';
 import {
-  useScheduleSelector,
-  scheduleSelectorWithRepository,
-  DagsterRepoOption,
-  useRepositoryOptions,
-  useCurrentRepositoryState,
-  repositorySelectorFromDagsterRepoOption
-} from "../DagsterRepositoryContext";
-import { ScheduleStateFragment } from "./types/ScheduleStateFragment";
-import { assertUnreachable } from "../Util";
-import { ReconcileButton } from "./ReconcileButton";
-import { useConfirmation, ConfirmationOptions } from "../CustomConfirmationProvider";
+  StartSchedule,
+  StartSchedule_startSchedule_PythonError,
+} from 'src/schedules/types/StartSchedule';
+import {
+  StopSchedule,
+  StopSchedule_stopRunningSchedule_PythonError,
+} from 'src/schedules/types/StopSchedule';
+import {ScheduleStatus, ScheduleTickStatus} from 'src/types/globalTypes';
 
 type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 
@@ -58,7 +67,7 @@ const getNaturalLanguageCronString = (cronSchedule: string) => {
   try {
     return cronstrue.toString(cronSchedule);
   } catch {
-    return "Invalid cron string";
+    return 'Invalid cron string';
   }
 };
 
@@ -72,14 +81,14 @@ const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
   const errors = [];
   if (status === ScheduleStatus.RUNNING && runningScheduleCount === 0) {
     errors.push(
-      "Schedule is set to be running, but either the scheduler is not configured or the scheduler is not running the schedule"
+      'Schedule is set to be running, but either the scheduler is not configured or the scheduler is not running the schedule',
     );
   } else if (status === ScheduleStatus.STOPPED && runningScheduleCount > 0) {
-    errors.push("Schedule is set to be stopped, but the scheduler is still running the schedule");
+    errors.push('Schedule is set to be stopped, but the scheduler is still running the schedule');
   }
 
   if (runningScheduleCount > 0) {
-    errors.push("Duplicate cron job for schedule found.");
+    errors.push('Duplicate cron job for schedule found.');
   }
 
   return (
@@ -116,40 +125,40 @@ const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
     | StopSchedule_stopRunningSchedule_PythonError
     | null = null;
 
-  if ("startSchedule" in data && data.startSchedule.__typename === "PythonError") {
+  if ('startSchedule' in data && data.startSchedule.__typename === 'PythonError') {
     error = data.startSchedule;
   } else if (
-    "stopRunningSchedule" in data &&
-    data.stopRunningSchedule.__typename === "PythonError"
+    'stopRunningSchedule' in data &&
+    data.stopRunningSchedule.__typename === 'PythonError'
   ) {
     error = data.stopRunningSchedule;
   }
 
   if (error) {
     showCustomAlert({
-      title: "Schedule Response",
+      title: 'Schedule Response',
       body: (
         <>
           <PythonErrorInfo error={error} />
         </>
-      )
+      ),
     });
   }
 };
 
 export const ScheduleRow: React.FunctionComponent<{
   schedule: ScheduleDefinitionFragment;
-}> = ({ schedule }) => {
-  const match = useRouteMatch("/schedules/:scheduleName");
+}> = ({schedule}) => {
+  const match = useRouteMatch('/schedules/:scheduleName');
 
-  const [startSchedule, { loading: toggleOnInFlight }] = useMutation(START_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors
+  const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
   });
-  const [stopSchedule, { loading: toggleOffInFlight }] = useMutation(STOP_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
   });
 
-  const { name, cronSchedule, pipelineName, mode, solidSelection, scheduleState } = schedule;
+  const {name, cronSchedule, pipelineName, mode, solidSelection, scheduleState} = schedule;
 
   const scheduleId = scheduleState?.scheduleOriginId;
 
@@ -157,13 +166,13 @@ export const ScheduleRow: React.FunctionComponent<{
 
   const [configRequested, setConfigRequested] = React.useState(false);
 
-  const { data, loading: yamlLoading } = useQuery(FETCH_SCHEDULE_YAML, {
-    variables: { scheduleSelector },
-    skip: !configRequested
+  const {data, loading: yamlLoading} = useQuery(FETCH_SCHEDULE_YAML, {
+    variables: {scheduleSelector},
+    skip: !configRequested,
   });
 
   const runConfigError =
-    data?.scheduleDefinitionOrError?.runConfigOrError.__typename === "PythonError"
+    data?.scheduleDefinitionOrError?.runConfigOrError.__typename === 'PythonError'
       ? data.scheduleDefinitionOrError.runConfigOrError
       : null;
 
@@ -179,14 +188,14 @@ export const ScheduleRow: React.FunctionComponent<{
         <ScheduleName>{name}</ScheduleName>
       </Link>
 
-      {scheduleId && <span style={{ fontSize: 10 }}>Schedule ID: {scheduleId}</span>}
+      {scheduleId && <span style={{fontSize: 10}}>Schedule ID: {scheduleId}</span>}
     </>
   );
 
   if (!scheduleState) {
     return (
       <RowContainer key={name}>
-        <RowColumn style={{ flex: 1.4 }}>{displayName}</RowColumn>
+        <RowColumn style={{flex: 1.4}}>{displayName}</RowColumn>
         <RowColumn>
           <Link to={`/pipeline/${pipelineName}/`}>
             <Icon icon="diagram-tree" /> {pipelineName}
@@ -194,19 +203,19 @@ export const ScheduleRow: React.FunctionComponent<{
         </RowColumn>
         <RowColumn
           style={{
-            maxWidth: 150
+            maxWidth: 150,
           }}
         >
           <div
             style={{
-              position: "relative",
-              width: "100%",
-              whiteSpace: "pre-wrap",
-              display: "block"
+              position: 'relative',
+              width: '100%',
+              whiteSpace: 'pre-wrap',
+              display: 'block',
             }}
           >
             {cronSchedule ? (
-              <Tooltip position={"bottom"} content={cronSchedule}>
+              <Tooltip position={'bottom'} content={cronSchedule}>
                 {getNaturalLanguageCronString(cronSchedule)}
               </Tooltip>
             ) : (
@@ -216,12 +225,12 @@ export const ScheduleRow: React.FunctionComponent<{
         </RowColumn>
         <RowColumn
           style={{
-            display: "flex",
-            alignItems: "flex-start",
-            flex: 1
+            display: 'flex',
+            alignItems: 'flex-start',
+            flex: 1,
           }}
         >
-          <div style={{ flex: 1 }}>
+          <div style={{flex: 1}}>
             <div>{`Mode: ${mode}`}</div>
           </div>
         </RowColumn>
@@ -229,13 +238,13 @@ export const ScheduleRow: React.FunctionComponent<{
     );
   }
 
-  const { status, runningScheduleCount, ticks, runs, runsCount, scheduleOriginId } = scheduleState;
+  const {status, runningScheduleCount, ticks, runs, runsCount, scheduleOriginId} = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   return (
     <RowContainer key={name}>
-      <RowColumn style={{ maxWidth: 60, paddingLeft: 0, textAlign: "center" }}>
+      <RowColumn style={{maxWidth: 60, paddingLeft: 0, textAlign: 'center'}}>
         <Switch
           checked={status === ScheduleStatus.RUNNING}
           large={true}
@@ -245,11 +254,11 @@ export const ScheduleRow: React.FunctionComponent<{
           onChange={() => {
             if (status === ScheduleStatus.RUNNING) {
               stopSchedule({
-                variables: { scheduleOriginId }
+                variables: {scheduleOriginId},
               });
             } else {
               startSchedule({
-                variables: { scheduleSelector }
+                variables: {scheduleSelector},
               });
             }
           }}
@@ -257,7 +266,7 @@ export const ScheduleRow: React.FunctionComponent<{
 
         {errorDisplay(status, runningScheduleCount)}
       </RowColumn>
-      <RowColumn style={{ flex: 1.4 }}>{displayName}</RowColumn>
+      <RowColumn style={{flex: 1.4}}>{displayName}</RowColumn>
       <RowColumn>
         <Link to={`/pipeline/${pipelineName}/`}>
           <Icon icon="diagram-tree" /> {pipelineName}
@@ -265,19 +274,19 @@ export const ScheduleRow: React.FunctionComponent<{
       </RowColumn>
       <RowColumn
         style={{
-          maxWidth: 150
+          maxWidth: 150,
         }}
       >
         <div
           style={{
-            position: "relative",
-            width: "100%",
-            whiteSpace: "pre-wrap",
-            display: "block"
+            position: 'relative',
+            width: '100%',
+            whiteSpace: 'pre-wrap',
+            display: 'block',
           }}
         >
           {cronSchedule ? (
-            <Tooltip position={"bottom"} content={cronSchedule}>
+            <Tooltip position={'bottom'} content={cronSchedule}>
               {getNaturalLanguageCronString(cronSchedule)}
             </Tooltip>
           ) : (
@@ -285,7 +294,7 @@ export const ScheduleRow: React.FunctionComponent<{
           )}
         </div>
       </RowColumn>
-      <RowColumn style={{ maxWidth: 100 }}>
+      <RowColumn style={{maxWidth: 100}}>
         {latestTick ? (
           <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
         ) : null}
@@ -293,16 +302,16 @@ export const ScheduleRow: React.FunctionComponent<{
       <RowColumn
         style={{
           flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between"
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
         <div>
-          {runs.map(run => {
+          {runs.map((run) => {
             const [partition] = run.tags
-              .filter(tag => tag.key === "dagster/partition")
-              .map(tag => tag.value);
+              .filter((tag) => tag.key === 'dagster/partition')
+              .map((tag) => tag.value);
             const runLabel = partition ? (
               <>
                 <div>Run id: {titleForRun(run)}</div>
@@ -314,15 +323,15 @@ export const ScheduleRow: React.FunctionComponent<{
             return (
               <div
                 style={{
-                  display: "inline-block",
-                  cursor: "pointer",
-                  marginRight: 5
+                  display: 'inline-block',
+                  cursor: 'pointer',
+                  marginRight: 5,
                 }}
                 key={run.runId}
               >
                 <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
                   <Tooltip
-                    position={"top"}
+                    position={'top'}
                     content={runLabel}
                     wrapperTagName="div"
                     targetTagName="div"
@@ -337,9 +346,9 @@ export const ScheduleRow: React.FunctionComponent<{
           {runsCount > NUM_RUNS_TO_DISPLAY && (
             <Link
               to={`/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${name}`)}`}
-              style={{ verticalAlign: "top" }}
+              style={{verticalAlign: 'top'}}
             >
-              {" "}
+              {' '}
               +{runsCount - NUM_RUNS_TO_DISPLAY} more
             </Link>
           )}
@@ -347,12 +356,12 @@ export const ScheduleRow: React.FunctionComponent<{
       </RowColumn>
       <RowColumn
         style={{
-          display: "flex",
-          alignItems: "flex-start",
-          flex: 1
+          display: 'flex',
+          alignItems: 'flex-start',
+          flex: 1,
         }}
       >
-        <div style={{ flex: 1 }}>
+        <div style={{flex: 1}}>
           <div>{`Mode: ${mode}`}</div>
         </div>
         <Popover
@@ -367,17 +376,17 @@ export const ScheduleRow: React.FunctionComponent<{
                   onClick={() => {
                     if (runConfigError) {
                       showCustomAlert({
-                        body: <PythonErrorInfo error={runConfigError} />
+                        body: <PythonErrorInfo error={runConfigError} />,
                       });
                     } else {
                       showCustomAlert({
-                        title: "Config",
+                        title: 'Config',
                         body: (
                           <HighlightedCodeBlock
-                            value={runConfigYaml || "Unable to resolve config"}
-                            languages={["yaml"]}
+                            value={runConfigYaml || 'Unable to resolve config'}
+                            languages={['yaml']}
                           />
-                        )
+                        ),
                       });
                     }
                   }}
@@ -390,14 +399,22 @@ export const ScheduleRow: React.FunctionComponent<{
                   href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify({
                     mode,
                     solidSelection,
-                    config: runConfigYaml
+                    config: runConfigYaml,
                   })}`}
                 />
-                <MenuDivider />
+
+                {schedule.partitionSet?.name ? (
+                  <MenuItem
+                    text="View Partition History..."
+                    icon="multi-select"
+                    target="_blank"
+                    href={`/pipeline/${pipelineName}/partitions`}
+                  />
+                ) : null}
               </Menu>
             )
           }
-          position={"bottom"}
+          position={'bottom'}
         >
           <Button
             minimal={true}
@@ -414,26 +431,26 @@ export const ScheduleRow: React.FunctionComponent<{
 
 export const ScheduleRowHeader: React.FunctionComponent<{
   schedule: ScheduleDefinitionFragment;
-}> = ({ schedule }) => {
+}> = ({schedule}) => {
   if (!schedule.scheduleState) {
     return (
       <Legend>
-        <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+        <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
         <LegendColumn>Pipeline</LegendColumn>
-        <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
-        <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
+        <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
+        <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
       </Legend>
     );
   } else {
     return (
       <Legend>
-        <LegendColumn style={{ maxWidth: 60 }}></LegendColumn>
-        <LegendColumn style={{ flex: 1.4 }}>Schedule Name</LegendColumn>
+        <LegendColumn style={{maxWidth: 60}}></LegendColumn>
+        <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
         <LegendColumn>Pipeline</LegendColumn>
-        <LegendColumn style={{ maxWidth: 150 }}>Schedule</LegendColumn>
-        <LegendColumn style={{ maxWidth: 100 }}>Last Tick</LegendColumn>
-        <LegendColumn style={{ flex: 1 }}>Latest Runs</LegendColumn>
-        <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
+        <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
+        <LegendColumn style={{maxWidth: 100}}>Last Tick</LegendColumn>
+        <LegendColumn style={{flex: 1}}>Latest Runs</LegendColumn>
+        <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
       </Legend>
     );
   }
@@ -443,19 +460,19 @@ export const ScheduleStateRow: React.FunctionComponent<{
   scheduleState: ScheduleStateFragment;
   showStatus?: boolean;
   dagsterRepoOption?: DagsterRepoOption;
-}> = ({ scheduleState, showStatus = false, dagsterRepoOption }) => {
-  const [startSchedule, { loading: toggleOnInFlight }] = useMutation(START_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors
+}> = ({scheduleState, showStatus = false, dagsterRepoOption}) => {
+  const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
   });
-  const [stopSchedule, { loading: toggleOffInFlight }] = useMutation(STOP_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {
+    onCompleted: displayScheduleMutationErrors,
   });
 
-  const { options } = useRepositoryOptions();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_, setRepo] = useCurrentRepositoryState(options);
   const history = useHistory();
   const confirm = useConfirmation();
+  const {options} = useRepositoryOptions();
+  const [, setRepo] = useCurrentRepositoryState(options);
+  const [showRepositoryOrigin, setShowRepositoryOrigin] = useState(false);
 
   const {
     status,
@@ -464,18 +481,15 @@ export const ScheduleStateRow: React.FunctionComponent<{
     ticks,
     runs,
     runsCount,
-    scheduleOriginId
+    scheduleOriginId,
+    repositoryOrigin,
   } = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
-  const goToRepositorySchedules = () => {
-    if (!dagsterRepoOption) return;
-    setRepo(dagsterRepoOption);
-    history.push(`/schedules`);
-  };
-
   const goToSchedule = () => {
-    if (!dagsterRepoOption) return;
+    if (!dagsterRepoOption) {
+      return;
+    }
     setRepo(dagsterRepoOption);
     history.push(`/schedules/${scheduleName}`);
   };
@@ -483,21 +497,21 @@ export const ScheduleStateRow: React.FunctionComponent<{
   const switchScheduleStatus = async (
     status: ScheduleStatus,
     confirm: (options: ConfirmationOptions) => Promise<void>,
-    dagsterRepoOption?: DagsterRepoOption
+    dagsterRepoOption?: DagsterRepoOption,
   ) => {
     if (!dagsterRepoOption) {
       if (status === ScheduleStatus.RUNNING) {
         // If we don't have the dagster repo in context, then we can only switch the schedule off.
         // Before doing so, we alert the user that we can't switch the schedule back on
         await confirm({
-          title: "Are you sure you want to stop this schedule?",
+          title: 'Are you sure you want to stop this schedule?',
           description:
-            "The schedule definition for this schedule is not available." +
-            "If you turn off this schedule, you will not be able to turn it back on from " +
-            "this currently loaded workspace."
+            'The schedule definition for this schedule is not available.' +
+            'If you turn off this schedule, you will not be able to turn it back on from ' +
+            'this currently loaded workspace.',
         });
         stopSchedule({
-          variables: { scheduleOriginId }
+          variables: {scheduleOriginId},
         });
       }
       return;
@@ -505,16 +519,16 @@ export const ScheduleStateRow: React.FunctionComponent<{
 
     if (status === ScheduleStatus.RUNNING) {
       stopSchedule({
-        variables: { scheduleOriginId }
+        variables: {scheduleOriginId},
       });
     } else {
       const scheduleSelector = scheduleSelectorWithRepository(
         scheduleName,
-        repositorySelectorFromDagsterRepoOption(dagsterRepoOption)
+        repositorySelectorFromDagsterRepoOption(dagsterRepoOption),
       );
 
       startSchedule({
-        variables: { scheduleSelector }
+        variables: {scheduleSelector},
       });
     }
   };
@@ -522,7 +536,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
   return (
     <RowContainer key={scheduleName}>
       {showStatus && (
-        <RowColumn style={{ maxWidth: 60, paddingLeft: 0, textAlign: "center" }}>
+        <RowColumn style={{maxWidth: 60, paddingLeft: 0, textAlign: 'center'}}>
           <Switch
             checked={status === ScheduleStatus.RUNNING}
             large={true}
@@ -537,34 +551,44 @@ export const ScheduleStateRow: React.FunctionComponent<{
           />
         </RowColumn>
       )}
-      <RowColumn style={{ flex: 1.4 }}>
-        <div>{scheduleName}</div>
-        {dagsterRepoOption && (
-          <div style={{ marginTop: 10 }}>
-            <Button onClick={goToRepositorySchedules} small={true}>
-              Go to repository schedules
-            </Button>{" "}
-            <Button onClick={goToSchedule} small={true}>
-              Go to schedule page
-            </Button>
+
+      {dagsterRepoOption ? (
+        <RowColumn style={{flex: 1.4}}>
+          <ButtonLink onClick={goToSchedule}>{scheduleName}</ButtonLink>
+        </RowColumn>
+      ) : (
+        <ScrollingRowColumn style={{flex: 3}}>
+          <div style={{display: 'flex', alignItems: 'base'}}>
+            <div>{scheduleName}</div>
+            <ButtonLink onClick={() => setShowRepositoryOrigin(!showRepositoryOrigin)}>
+              show info{' '}
+              <Icon
+                icon={showRepositoryOrigin ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_RIGHT}
+              />
+            </ButtonLink>
           </div>
-        )}
-      </RowColumn>
+          {showRepositoryOrigin && (
+            <Callout style={{marginTop: 10}}>
+              <RepositoryOriginInformation origin={repositoryOrigin} />
+            </Callout>
+          )}
+        </ScrollingRowColumn>
+      )}
       <RowColumn
         style={{
-          maxWidth: 150
+          maxWidth: 150,
         }}
       >
         <div
           style={{
-            position: "relative",
-            width: "100%",
-            whiteSpace: "pre-wrap",
-            display: "block"
+            position: 'relative',
+            width: '100%',
+            whiteSpace: 'pre-wrap',
+            display: 'block',
           }}
         >
           {cronSchedule ? (
-            <Tooltip position={"bottom"} content={cronSchedule}>
+            <Tooltip position={'bottom'} content={cronSchedule}>
               {getNaturalLanguageCronString(cronSchedule)}
             </Tooltip>
           ) : (
@@ -572,7 +596,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
           )}
         </div>
       </RowColumn>
-      <RowColumn style={{ flex: 1 }}>
+      <RowColumn style={{flex: 1}}>
         {latestTick ? (
           <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
         ) : null}
@@ -580,25 +604,25 @@ export const ScheduleStateRow: React.FunctionComponent<{
       <RowColumn
         style={{
           flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between"
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
         <div>
-          {runs.map(run => {
+          {runs.map((run) => {
             return (
               <div
                 style={{
-                  display: "inline-block",
-                  cursor: "pointer",
-                  marginRight: 5
+                  display: 'inline-block',
+                  cursor: 'pointer',
+                  marginRight: 5,
                 }}
                 key={run.runId}
               >
                 <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
                   <Tooltip
-                    position={"top"}
+                    position={'top'}
                     content={titleForRun(run)}
                     wrapperTagName="div"
                     targetTagName="div"
@@ -613,9 +637,9 @@ export const ScheduleStateRow: React.FunctionComponent<{
           {runsCount > NUM_RUNS_TO_DISPLAY && (
             <Link
               to={`/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${scheduleName}`)}`}
-              style={{ verticalAlign: "top" }}
+              style={{verticalAlign: 'top'}}
             >
-              {" "}
+              {' '}
               +{runsCount - NUM_RUNS_TO_DISPLAY} more
             </Link>
           )}
@@ -628,7 +652,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
 export const TickTag: React.FunctionComponent<{
   status: ScheduleTickStatus;
   eventSpecificData: TickSpecificData;
-}> = ({ status, eventSpecificData }) => {
+}> = ({status, eventSpecificData}) => {
   switch (status) {
     case ScheduleTickStatus.STARTED:
       return (
@@ -637,7 +661,7 @@ export const TickTag: React.FunctionComponent<{
         </Tag>
       );
     case ScheduleTickStatus.SUCCESS:
-      if (!eventSpecificData || eventSpecificData.__typename !== "ScheduleTickSuccessData") {
+      if (!eventSpecificData || eventSpecificData.__typename !== 'ScheduleTickSuccessData') {
         return (
           <Tag minimal={true} intent={Intent.SUCCESS}>
             Success
@@ -647,7 +671,7 @@ export const TickTag: React.FunctionComponent<{
         return (
           <a
             href={`/pipeline/${eventSpecificData.run?.pipelineName}/runs/${eventSpecificData.run?.runId}`}
-            style={{ textDecoration: "none" }}
+            style={{textDecoration: 'none'}}
           >
             <Tag minimal={true} intent={Intent.SUCCESS} interactive={true}>
               Success
@@ -662,7 +686,7 @@ export const TickTag: React.FunctionComponent<{
         </Tag>
       );
     case ScheduleTickStatus.FAILURE:
-      if (!eventSpecificData || eventSpecificData.__typename !== "ScheduleTickFailureData") {
+      if (!eventSpecificData || eventSpecificData.__typename !== 'ScheduleTickFailureData') {
         return (
           <Tag minimal={true} intent={Intent.DANGER}>
             Failure
@@ -673,8 +697,8 @@ export const TickTag: React.FunctionComponent<{
           <LinkButton
             onClick={() =>
               showCustomAlert({
-                title: "Schedule Response",
-                body: <PythonErrorInfo error={eventSpecificData.error} />
+                title: 'Schedule Response',
+                body: <PythonErrorInfo error={eventSpecificData.error} />,
               })
             }
           >

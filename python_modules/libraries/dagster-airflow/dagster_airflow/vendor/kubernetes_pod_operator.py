@@ -94,7 +94,7 @@ class KubernetesPodOperator(BaseOperator):
     :type configmaps: list[str]
     """
 
-    template_fields = ('cmds', 'arguments', 'env_vars', 'config_file')
+    template_fields = ("cmds", "arguments", "env_vars", "config_file")
 
     def execute(self, context):
         try:
@@ -143,11 +143,11 @@ class KubernetesPodOperator(BaseOperator):
                     launcher.delete_pod(pod)
 
             if final_state != State.SUCCESS:
-                raise AirflowException('Pod returned a failure: {state}'.format(state=final_state))
+                raise AirflowException("Pod returned a failure: {state}".format(state=final_state))
             if self.xcom_push:
                 return result
         except AirflowException as ex:
-            raise AirflowException('Pod Launching failed: {error}'.format(error=ex))
+            raise AirflowException("Pod Launching failed: {error}".format(error=ex))
 
     @apply_defaults
     def __init__(  # pylint: disable=keyword-arg-before-vararg
@@ -166,7 +166,7 @@ class KubernetesPodOperator(BaseOperator):
         labels=None,
         startup_timeout_seconds=120,
         get_logs=True,
-        image_pull_policy='IfNotPresent',
+        image_pull_policy="IfNotPresent",
         annotations=None,
         resources=None,
         affinity=None,

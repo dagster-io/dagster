@@ -4,7 +4,7 @@ from dagster import Field, resource
 
 
 class PagerDutyService(object):
-    '''Integrates with PagerDuty via the pypd library.
+    """Integrates with PagerDuty via the pypd library.
 
     See:
         https://v2.developer.pagerduty.com/docs/events-api-v2
@@ -13,7 +13,7 @@ class PagerDutyService(object):
         https://github.com/PagerDuty/pagerduty-api-python-client
 
     for documentation and more information.
-    '''
+    """
 
     def __init__(self, routing_key):
         self.routing_key = routing_key
@@ -23,7 +23,7 @@ class PagerDutyService(object):
         summary,
         source,
         severity,
-        event_action='trigger',
+        event_action="trigger",
         dedup_key=None,
         timestamp=None,
         component=None,
@@ -31,7 +31,7 @@ class PagerDutyService(object):
         event_class=None,
         custom_details=None,
     ):
-        '''Events API v2 enables you to add PagerDuty's advanced event and incident management
+        """Events API v2 enables you to add PagerDuty's advanced event and incident management
         functionality to any system that can make an outbound HTTP connection.
 
         Arguments:
@@ -119,48 +119,48 @@ class PagerDutyService(object):
 
                                                Example:
                                                {"ping time": "1500ms", "load avg": 0.75 }
-        '''
+        """
 
         data = {
-            'routing_key': self.routing_key,
-            'event_action': event_action,
-            'payload': {'summary': summary, 'source': source, 'severity': severity},
+            "routing_key": self.routing_key,
+            "event_action": event_action,
+            "payload": {"summary": summary, "source": source, "severity": severity},
         }
 
         if dedup_key is not None:
-            data['dedup_key'] = dedup_key
+            data["dedup_key"] = dedup_key
 
         if timestamp is not None:
-            data['payload']['timestamp'] = timestamp
+            data["payload"]["timestamp"] = timestamp
 
         if component is not None:
-            data['payload']['component'] = component
+            data["payload"]["component"] = component
 
         if group is not None:
-            data['payload']['group'] = group
+            data["payload"]["group"] = group
 
         if event_class is not None:
-            data['payload']['class'] = event_class
+            data["payload"]["class"] = event_class
 
         if custom_details is not None:
-            data['payload']['custom_details'] = custom_details
+            data["payload"]["custom_details"] = custom_details
 
         return pypd.EventV2.create(data=data)
 
 
 @resource(
     {
-        'routing_key': Field(
+        "routing_key": Field(
             str,
-            description='''The routing key provisions access to your PagerDuty service. You
+            description="""The routing key provisions access to your PagerDuty service. You
                     will need to include the integration key for your new integration, as a
-                    routing_key in the event payload.''',
+                    routing_key in the event payload.""",
         )
     },
-    description='''This resource is for posting events to PagerDuty.''',
+    description="""This resource is for posting events to PagerDuty.""",
 )
 def pagerduty_resource(context):
-    '''A resource for posting events (alerts) to PagerDuty.
+    """A resource for posting events (alerts) to PagerDuty.
 
     Example:
 
@@ -189,5 +189,5 @@ def pagerduty_resource(context):
                 }
             },
         )
-    '''
-    return PagerDutyService(context.resource_config.get('routing_key'))
+    """
+    return PagerDutyService(context.resource_config.get("routing_key"))

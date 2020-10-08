@@ -5,7 +5,7 @@ from dagster.utils import merge_dicts
 
 
 def build_config_schema_snapshot(pipeline_def):
-    check.inst_param(pipeline_def, 'pipeline_def', PipelineDefinition)
+    check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     all_config_snaps_by_key = {}
     for mode in pipeline_def.available_modes:
         run_config_schema = pipeline_def.get_run_config_schema(mode)

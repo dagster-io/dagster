@@ -16,7 +16,7 @@ def test_naked_system_storage():
 
     @system_storage(required_resource_keys=set())
     def no_config_storage(init_context):
-        called['called'] = True
+        called["called"] = True
         return create_mem_system_storage_data(init_context)
 
     @pipeline(mode_defs=[ModeDefinition(system_storage_defs=[no_config_storage])])
@@ -24,35 +24,35 @@ def test_naked_system_storage():
         pass
 
     assert execute_pipeline(
-        pass_pipeline, run_config={'storage': {'no_config_storage': {}}}
+        pass_pipeline, run_config={"storage": {"no_config_storage": {}}}
     ).success
 
-    assert called['called']
+    assert called["called"]
 
     # This also works with None because storage is a selector and you can indicate your
     # "selection" by the presence of the key
     assert execute_pipeline(
-        pass_pipeline, run_config={'storage': {'no_config_storage': None}}
+        pass_pipeline, run_config={"storage": {"no_config_storage": None}}
     ).success
 
 
 def test_resource_requirements_pass():
     called = {}
 
-    @system_storage(required_resource_keys={'yup'})
+    @system_storage(required_resource_keys={"yup"})
     def storage_with_req(init_context):
-        assert hasattr(init_context.resources, 'yup')
-        assert not hasattr(init_context.resources, 'not_required')
-        assert not hasattr(init_context.resources, 'kjdkfjdkfje')
-        called['called'] = True
+        assert hasattr(init_context.resources, "yup")
+        assert not hasattr(init_context.resources, "not_required")
+        assert not hasattr(init_context.resources, "kjdkfjdkfje")
+        called["called"] = True
         return create_mem_system_storage_data(init_context)
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 resource_defs={
-                    'yup': ResourceDefinition.none_resource(),
-                    'not_required': ResourceDefinition.none_resource(),
+                    "yup": ResourceDefinition.none_resource(),
+                    "not_required": ResourceDefinition.none_resource(),
                 },
                 system_storage_defs=[storage_with_req],
             )
@@ -62,20 +62,20 @@ def test_resource_requirements_pass():
         pass
 
     assert execute_pipeline(
-        resource_req_pass_pipeline, run_config={'storage': {'storage_with_req': {}}}
+        resource_req_pass_pipeline, run_config={"storage": {"storage_with_req": {}}}
     ).success
 
-    assert called['called']
+    assert called["called"]
 
     # This also works with None because storage is a selector and you can indicate your
     # "selection" by the presence of the key
     assert execute_pipeline(
-        resource_req_pass_pipeline, run_config={'storage': {'storage_with_req': None}}
+        resource_req_pass_pipeline, run_config={"storage": {"storage_with_req": None}}
     ).success
 
 
 def test_resource_requirements_fail():
-    @system_storage(required_resource_keys={'yup'})
+    @system_storage(required_resource_keys={"yup"})
     def storage_with_req(init_context):
         return create_mem_system_storage_data(init_context)
 
@@ -84,7 +84,7 @@ def test_resource_requirements_fail():
         @pipeline(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={'nope': ResourceDefinition.none_resource()},
+                    resource_defs={"nope": ResourceDefinition.none_resource()},
                     system_storage_defs=[storage_with_req],
                 )
             ]
@@ -93,6 +93,6 @@ def test_resource_requirements_fail():
             pass
 
     assert str(exc_info.value) == (
-        'Resource \'yup\' is required by system storage \'storage_with_req\', but '
-        'is not provided by mode \'default\'.'
+        "Resource 'yup' is required by system storage 'storage_with_req', but "
+        "is not provided by mode 'default'."
     )

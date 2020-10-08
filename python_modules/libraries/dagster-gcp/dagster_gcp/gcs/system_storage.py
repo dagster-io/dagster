@@ -13,22 +13,22 @@ from .object_store import GCSObjectStore
 
 
 @intermediate_storage(
-    name='gcs',
+    name="gcs",
     is_persistent=True,
     config_schema={
-        'gcs_bucket': Field(StringSource),
-        'gcs_prefix': Field(StringSource, is_required=False, default_value='dagster'),
+        "gcs_bucket": Field(StringSource),
+        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
     },
-    required_resource_keys={'gcs'},
+    required_resource_keys={"gcs"},
 )
 def gcs_intermediate_storage(init_context):
     client = init_context.resources.gcs
-    gcs_bucket = init_context.intermediate_storage_config['gcs_bucket']
-    gcs_prefix = init_context.intermediate_storage_config['gcs_prefix']
+    gcs_bucket = init_context.intermediate_storage_config["gcs_bucket"]
+    gcs_prefix = init_context.intermediate_storage_config["gcs_prefix"]
     object_store = GCSObjectStore(gcs_bucket, client=client)
 
     def root_for_run_id(r_id):
-        return object_store.key_for_paths([gcs_prefix, 'storage', r_id])
+        return object_store.key_for_paths([gcs_prefix, "storage", r_id])
 
     return build_intermediate_storage_from_object_store(
         object_store, init_context, root_for_run_id=root_for_run_id
@@ -36,30 +36,30 @@ def gcs_intermediate_storage(init_context):
 
 
 @system_storage(
-    name='gcs',
+    name="gcs",
     is_persistent=True,
     config_schema={
-        'gcs_bucket': Field(StringSource),
-        'gcs_prefix': Field(StringSource, is_required=False, default_value='dagster'),
+        "gcs_bucket": Field(StringSource),
+        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
     },
-    required_resource_keys={'gcs'},
+    required_resource_keys={"gcs"},
 )
 def gcs_system_storage(init_context):
     client = init_context.resources.gcs
-    gcs_key = '{prefix}/storage/{run_id}/files'.format(
-        prefix=init_context.system_storage_config['gcs_prefix'],
+    gcs_key = "{prefix}/storage/{run_id}/files".format(
+        prefix=init_context.system_storage_config["gcs_prefix"],
         run_id=init_context.pipeline_run.run_id,
     )
     return SystemStorageData(
         file_manager=GCSFileManager(
             client=client,
-            gcs_bucket=init_context.system_storage_config['gcs_bucket'],
+            gcs_bucket=init_context.system_storage_config["gcs_bucket"],
             gcs_base_key=gcs_key,
         ),
         intermediate_storage=GCSIntermediateStorage(
             client=client,
-            gcs_bucket=init_context.system_storage_config['gcs_bucket'],
-            gcs_prefix=init_context.system_storage_config['gcs_prefix'],
+            gcs_bucket=init_context.system_storage_config["gcs_bucket"],
+            gcs_prefix=init_context.system_storage_config["gcs_prefix"],
             run_id=init_context.pipeline_run.run_id,
             type_storage_plugin_registry=init_context.type_storage_plugin_registry,
         ),

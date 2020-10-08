@@ -7,22 +7,22 @@ from dagster import OutputDefinition, pipeline, solid
 from dagster.utils import script_relative_path
 
 ShapeConstrainedTripDataFrame = create_dagster_pandas_dataframe_type(
-    name='ShapeConstrainedTripDataFrame', dataframe_constraints=[RowCountConstraint(4)]
+    name="ShapeConstrainedTripDataFrame", dataframe_constraints=[RowCountConstraint(4)]
 )
 
 
 @solid(
     output_defs=[
         OutputDefinition(
-            name='shape_constrained_trip_dataframe', dagster_type=ShapeConstrainedTripDataFrame
+            name="shape_constrained_trip_dataframe", dagster_type=ShapeConstrainedTripDataFrame
         )
     ]
 )
 def load_shape_constrained_trip_dataframe(_) -> DataFrame:
     return read_csv(
-        script_relative_path('./ebike_trips.csv'),
-        parse_dates=['start_time', 'end_time'],
-        date_parser=lambda x: datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f'),
+        script_relative_path("./ebike_trips.csv"),
+        parse_dates=["start_time", "end_time"],
+        date_parser=lambda x: datetime.strptime(x, "%Y-%m-%d %H:%M:%S.%f"),
     )
 
 

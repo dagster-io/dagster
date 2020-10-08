@@ -16,11 +16,11 @@ NUM_POLL_ATTEMPTS = 5
 
 @solid
 def hello_cloudwatch(context):
-    context.log.info('Hello, Cloudwatch!')
-    context.log.error('This is an error')
+    context.log.info("Hello, Cloudwatch!")
+    context.log.error("This is an error")
 
 
-@pipeline(mode_defs=[ModeDefinition(logger_defs={'cloudwatch': cloudwatch_logger})])
+@pipeline(mode_defs=[ModeDefinition(logger_defs={"cloudwatch": cloudwatch_logger})])
 def hello_cloudwatch_pipeline():
     hello_cloudwatch()
 
@@ -28,17 +28,17 @@ def hello_cloudwatch_pipeline():
 def test_cloudwatch_logging_bad_log_group_name():
     with pytest.raises(
         Exception,
-        match='Failed to initialize Cloudwatch logger: Could not find log group with name foo',
+        match="Failed to initialize Cloudwatch logger: Could not find log group with name foo",
     ):
         execute_pipeline(
             hello_cloudwatch_pipeline,
             {
-                'loggers': {
-                    'cloudwatch': {
-                        'config': {
-                            'log_group_name': 'foo',
-                            'log_stream_name': 'bar',
-                            'aws_region': 'us-east-1',  # different region
+                "loggers": {
+                    "cloudwatch": {
+                        "config": {
+                            "log_group_name": "foo",
+                            "log_stream_name": "bar",
+                            "aws_region": "us-east-1",  # different region
                         }
                     }
                 }
@@ -49,17 +49,17 @@ def test_cloudwatch_logging_bad_log_group_name():
 def test_cloudwatch_logging_bad_log_stream_name():
     with pytest.raises(
         Exception,
-        match='Failed to initialize Cloudwatch logger: Could not find log stream with name bar',
+        match="Failed to initialize Cloudwatch logger: Could not find log stream with name bar",
     ):
         execute_pipeline(
             hello_cloudwatch_pipeline,
             {
-                'loggers': {
-                    'cloudwatch': {
-                        'config': {
-                            'log_group_name': TEST_CLOUDWATCH_LOG_GROUP_NAME,
-                            'log_stream_name': 'bar',
-                            'aws_region': AWS_REGION,
+                "loggers": {
+                    "cloudwatch": {
+                        "config": {
+                            "log_group_name": TEST_CLOUDWATCH_LOG_GROUP_NAME,
+                            "log_stream_name": "bar",
+                            "aws_region": AWS_REGION,
                         }
                     }
                 }
@@ -74,12 +74,12 @@ def test_cloudwatch_logging(cloudwatch_client):
     res = execute_pipeline(
         hello_cloudwatch_pipeline,
         {
-            'loggers': {
-                'cloudwatch': {
-                    'config': {
-                        'log_group_name': TEST_CLOUDWATCH_LOG_GROUP_NAME,
-                        'log_stream_name': TEST_CLOUDWATCH_LOG_STREAM_NAME,
-                        'aws_region': AWS_REGION,
+            "loggers": {
+                "cloudwatch": {
+                    "config": {
+                        "log_group_name": TEST_CLOUDWATCH_LOG_GROUP_NAME,
+                        "log_stream_name": TEST_CLOUDWATCH_LOG_STREAM_NAME,
+                        "aws_region": AWS_REGION,
                     }
                 }
             }
@@ -103,11 +103,11 @@ def test_cloudwatch_logging(cloudwatch_client):
             logGroupName=TEST_CLOUDWATCH_LOG_GROUP_NAME,
             logStreamName=TEST_CLOUDWATCH_LOG_STREAM_NAME,
             limit=100,
-        )['events']
+        )["events"]
 
-        for parsed_msg in (json.loads(event['message']) for event in events):
-            if parsed_msg['dagster_meta']['run_id'] == res.run_id:
-                if parsed_msg['dagster_meta']['orig_message'] == 'Hello, Cloudwatch!':
+        for parsed_msg in (json.loads(event["message"]) for event in events):
+            if parsed_msg["dagster_meta"]["run_id"] == res.run_id:
+                if parsed_msg["dagster_meta"]["orig_message"] == "Hello, Cloudwatch!":
                     found_orig_message = True
                     break
 

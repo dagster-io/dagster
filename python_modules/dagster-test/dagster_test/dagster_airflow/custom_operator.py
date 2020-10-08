@@ -12,9 +12,9 @@ class CustomOperator(PythonOperator):
         def python_callable(ts, dag_run, **kwargs):  # pylint: disable=unused-argument
 
             # Add custom logic here
-            logger = logging.getLogger('CustomOperatorLogger')
+            logger = logging.getLogger("CustomOperatorLogger")
             logger.setLevel(logging.INFO)
-            logger.info('CustomOperator is called')
+            logger.info("CustomOperator is called")
 
             return invoke_steps_within_python_operator(
                 dagster_operator_parameters.invocation_args, ts, dag_run, **kwargs

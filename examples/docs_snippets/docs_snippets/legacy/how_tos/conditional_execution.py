@@ -5,7 +5,7 @@ from dagster import Failure, InputDefinition, Output, OutputDefinition, pipeline
 conditional = True
 
 
-@solid(output_defs=[OutputDefinition(int, 'a', is_required=False)])
+@solid(output_defs=[OutputDefinition(int, "a", is_required=False)])
 def my_solid(context):
     if conditional:
         yield Output(1, "a")
@@ -13,8 +13,8 @@ def my_solid(context):
 
 @solid(
     output_defs=[
-        OutputDefinition(int, 'a', is_required=False),
-        OutputDefinition(int, 'b', is_required=False),
+        OutputDefinition(int, "a", is_required=False),
+        OutputDefinition(int, "b", is_required=False),
     ]
 )
 def branching_solid(context):
@@ -24,12 +24,12 @@ def branching_solid(context):
         yield Output(2, "b")
 
 
-@solid(input_defs=[InputDefinition('inp', int)])
+@solid(input_defs=[InputDefinition("inp", int)])
 def path_1(context, inp):
     pass
 
 
-@solid(input_defs=[InputDefinition('inp', int)])
+@solid(input_defs=[InputDefinition("inp", int)])
 def path_2(context, inp):
     pass
 

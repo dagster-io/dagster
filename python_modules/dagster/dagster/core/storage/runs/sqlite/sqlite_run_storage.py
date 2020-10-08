@@ -24,7 +24,7 @@ from ..sql_run_storage import SqlRunStorage
 
 
 class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
-    '''SQLite-backed run storage.
+    """SQLite-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
@@ -44,12 +44,12 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             base_dir: /path/to/dir
 
     The ``base_dir`` param tells the run storage where on disk to store the database.
-    '''
+    """
 
     def __init__(self, conn_string, inst_data=None):
-        check.str_param(conn_string, 'conn_string')
+        check.str_param(conn_string, "conn_string")
         self._conn_string = conn_string
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
     def inst_data(self):
@@ -57,7 +57,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {'base_dir': str}
+        return {"base_dir": str}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -65,11 +65,11 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     @staticmethod
     def from_local(base_dir, inst_data=None):
-        check.str_param(base_dir, 'base_dir')
+        check.str_param(base_dir, "base_dir")
         mkdir_p(base_dir)
-        conn_string = create_db_conn_string(base_dir, 'runs')
+        conn_string = create_db_conn_string(base_dir, "runs")
         engine = create_engine(conn_string, poolclass=NullPool)
-        engine.execute('PRAGMA journal_mode=WAL;')
+        engine.execute("PRAGMA journal_mode=WAL;")
         RunStorageSqlMetadata.create_all(engine)
         alembic_config = get_alembic_config(__file__)
         connection = engine.connect()
@@ -85,18 +85,18 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         conn = engine.connect()
         try:
             with handle_schema_errors(
-                conn, get_alembic_config(__file__), msg='Sqlite run storage requires migration',
+                conn, get_alembic_config(__file__), msg="Sqlite run storage requires migration",
             ):
                 yield conn
         finally:
             conn.close()
 
-    def _alembic_upgrade(self, rev='head'):
+    def _alembic_upgrade(self, rev="head"):
         alembic_config = get_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_upgrade(alembic_config, conn, rev=rev)
 
-    def _alembic_downgrade(self, rev='head'):
+    def _alembic_downgrade(self, rev="head"):
         alembic_config = get_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_downgrade(alembic_config, conn, rev=rev)
@@ -109,12 +109,12 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     # to move from the root of DAGSTER_HOME/runs.db to DAGSTER_HOME/history/runs.bd
     # This function checks for that condition and does the move
     def _check_for_version_066_migration_and_perform(self):
-        old_conn_string = 'sqlite://' + urljoin(urlparse(self._conn_string).path, '../runs.db')
+        old_conn_string = "sqlite://" + urljoin(urlparse(self._conn_string).path, "../runs.db")
         path_to_old_db = urlparse(old_conn_string).path
         # sqlite URLs look like `sqlite:///foo/bar/baz on Unix/Mac` but on Windows they look like
         # `sqlite:///D:/foo/bar/baz` (or `sqlite:///D:\foo\bar\baz`)
-        if os.name == 'nt':
-            path_to_old_db = path_to_old_db.lstrip('/')
+        if os.name == "nt":
+            path_to_old_db = path_to_old_db.lstrip("/")
         if os.path.exists(path_to_old_db):
             old_storage = SqliteRunStorage(old_conn_string)
             old_runs = old_storage.get_runs()
@@ -123,9 +123,9 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
             os.unlink(path_to_old_db)
 
     def delete_run(self, run_id):
-        ''' Override the default sql delete run implementation until we can get full
-        support on cascading deletes '''
-        check.str_param(run_id, 'run_id')
+        """ Override the default sql delete run implementation until we can get full
+        support on cascading deletes """
+        check.str_param(run_id, "run_id")
         remove_tags = db.delete(RunTagsTable).where(RunTagsTable.c.run_id == run_id)
         remove_run = db.delete(RunsTable).where(RunsTable.c.run_id == run_id)
         with self.connect() as conn:

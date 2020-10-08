@@ -1,4 +1,4 @@
-'''
+"""
 A target that errors on load.
-'''
-raise ValueError('User did something bad')
+"""
+raise ValueError("User did something bad")

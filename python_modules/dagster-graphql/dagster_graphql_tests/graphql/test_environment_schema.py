@@ -6,7 +6,7 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config
 
-RUN_CONFIG_SCHEMA_QUERY = '''
+RUN_CONFIG_SCHEMA_QUERY = """
 query($selector: PipelineSelector! $mode: String!)
 {
   runConfigSchemaOrError(selector: $selector, mode: $mode){
@@ -21,9 +21,9 @@ query($selector: PipelineSelector! $mode: String!)
     }
   }
 }
-'''
+"""
 
-RUN_CONFIG_SCHEMA_CONFIG_TYPE_QUERY = '''
+RUN_CONFIG_SCHEMA_CONFIG_TYPE_QUERY = """
 query($selector: PipelineSelector! $mode: String! $configTypeName: String!)
 {
   runConfigSchemaOrError(selector: $selector, mode: $mode){
@@ -44,10 +44,10 @@ query($selector: PipelineSelector! $mode: String! $configTypeName: String!)
     }
   }
 }
-'''
+"""
 
 
-RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY = '''
+RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY = """
 query PipelineQuery(
     $runConfigData: RunConfigData,
     $selector: PipelineSelector!,
@@ -104,85 +104,85 @@ query PipelineQuery(
     }
   }
 }
-'''
+"""
 
 
 class TestEnvironmentSchema(ReadonlyGraphQLContextTestMatrix):
     def test_successful_run_config_schema(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, 'multi_mode_with_resources')
+        selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
-            variables={'selector': selector, 'mode': 'add_mode',},
+            variables={"selector": selector, "mode": "add_mode",},
         )
-        assert result.data['runConfigSchemaOrError']['__typename'] == 'RunConfigSchema'
+        assert result.data["runConfigSchemaOrError"]["__typename"] == "RunConfigSchema"
 
     def test_run_config_schema_pipeline_not_found(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, 'jkdjfkdjfd')
+        selector = infer_pipeline_selector(graphql_context, "jkdjfkdjfd")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
-            variables={'selector': selector, 'mode': 'add_mode'},
+            variables={"selector": selector, "mode": "add_mode"},
         )
-        assert result.data['runConfigSchemaOrError']['__typename'] == 'PipelineNotFoundError'
+        assert result.data["runConfigSchemaOrError"]["__typename"] == "PipelineNotFoundError"
 
     def test_run_config_schema_solid_not_found(self, graphql_context):
         selector = infer_pipeline_selector(
-            graphql_context, 'multi_mode_with_resources', ['kdjfkdj']
+            graphql_context, "multi_mode_with_resources", ["kdjfkdj"]
         )
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
-            variables={'selector': selector, 'mode': 'add_mode',},
+            variables={"selector": selector, "mode": "add_mode",},
         )
-        assert result.data['runConfigSchemaOrError']['__typename'] == 'InvalidSubsetError'
+        assert result.data["runConfigSchemaOrError"]["__typename"] == "InvalidSubsetError"
 
     def test_run_config_schema_mode_not_found(self, graphql_context):
-        selector = infer_pipeline_selector(graphql_context, 'multi_mode_with_resources')
+        selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_QUERY,
-            variables={'selector': selector, 'mode': 'kdjfdk'},
+            variables={"selector": selector, "mode": "kdjfdk"},
         )
-        assert result.data['runConfigSchemaOrError']['__typename'] == 'ModeNotFoundError'
+        assert result.data["runConfigSchemaOrError"]["__typename"] == "ModeNotFoundError"
 
     def test_basic_valid_config_on_run_config_schema(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY,
             variables={
-                'selector': selector,
-                'mode': 'default',
-                'runConfigData': csv_hello_world_solids_config(),
+                "selector": selector,
+                "mode": "default",
+                "runConfigData": csv_hello_world_solids_config(),
             },
         )
 
         assert not result.errors
         assert result.data
         assert (
-            result.data['runConfigSchemaOrError']['isRunConfigValid']['__typename']
-            == 'PipelineConfigValidationValid'
+            result.data["runConfigSchemaOrError"]["isRunConfigValid"]["__typename"]
+            == "PipelineConfigValidationValid"
         )
         snapshot.assert_match(result.data)
 
     @pytest.mark.skipif(sys.version_info < (3,), reason="Snapshot not working correctly on py2")
     def test_basic_invalid_config_on_run_config_schema(self, graphql_context, snapshot):
-        selector = infer_pipeline_selector(graphql_context, 'csv_hello_world')
+        selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
         result = execute_dagster_graphql(
             graphql_context,
             RUN_CONFIG_SCHEMA_CONFIG_VALIDATION_QUERY,
             variables={
-                'selector': selector,
-                'mode': 'default',
-                'runConfigData': {'nope': 'kdjfd'},
+                "selector": selector,
+                "mode": "default",
+                "runConfigData": {"nope": "kdjfd"},
             },
         )
 
         assert not result.errors
         assert result.data
         assert (
-            result.data['runConfigSchemaOrError']['isRunConfigValid']['__typename']
-            == 'PipelineConfigValidationInvalid'
+            result.data["runConfigSchemaOrError"]["isRunConfigValid"]["__typename"]
+            == "PipelineConfigValidationInvalid"
         )
         snapshot.assert_match(result.data)

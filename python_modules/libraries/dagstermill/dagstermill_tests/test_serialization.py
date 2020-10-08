@@ -12,9 +12,9 @@ def test_scalar():
         assert (
             read_value(
                 resolve_dagster_type(String),
-                write_value(resolve_dagster_type(String), 'foo', tempfile_path),
+                write_value(resolve_dagster_type(String), "foo", tempfile_path),
             )
-            == 'foo'
+            == "foo"
         )
 
 
@@ -23,9 +23,9 @@ def test_scalar_any():
         assert (
             read_value(
                 resolve_dagster_type(Any),
-                write_value(resolve_dagster_type(Any), 'foo', tempfile_path),
+                write_value(resolve_dagster_type(Any), "foo", tempfile_path),
             )
-            == 'foo'
+            == "foo"
         )
 
 
@@ -48,7 +48,7 @@ def test_custom_dagster_type():
 
 
 def test_read_bad_value():
-    with pytest.raises(CheckError, match='Malformed value'):
-        read_value(resolve_dagster_type(Any), {'value': 'foo', 'file': 'bar'})
-    with pytest.raises(CheckError, match='Malformed value'):
-        read_value(resolve_dagster_type(Any), {'quux': 'buzz'})
+    with pytest.raises(CheckError, match="Malformed value"):
+        read_value(resolve_dagster_type(Any), {"value": "foo", "file": "bar"})
+    with pytest.raises(CheckError, match="Malformed value"):
+        read_value(resolve_dagster_type(Any), {"quux": "buzz"})

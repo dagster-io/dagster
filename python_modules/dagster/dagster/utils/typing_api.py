@@ -1,5 +1,5 @@
-'''This file contains the typing api that should exist in python in
-order to do metaprogramming and reflection on the built-in typing module'''
+"""This file contains the typing api that should exist in python in
+order to do metaprogramming and reflection on the built-in typing module"""
 
 import typing
 
@@ -7,7 +7,7 @@ from dagster import check
 
 
 def _get_origin(ttype):
-    return getattr(ttype, '__origin__', None)
+    return getattr(ttype, "__origin__", None)
 
 
 def is_closed_python_optional_type(ttype):
@@ -32,7 +32,7 @@ def is_closed_python_list_type(ttype):
         return False
     if ttype is typing.List:
         return False
-    if not hasattr(ttype, '__args__'):
+    if not hasattr(ttype, "__args__"):
         return False
     if ttype.__args__ is None or len(ttype.__args__) != 1:
         return False
@@ -42,7 +42,7 @@ def is_closed_python_list_type(ttype):
 
 
 def is_closed_python_dict_type(ttype):
-    '''
+    """
 
     A "closed" generic type has all of its type parameters parameterized
     by other closed or concrete types.
@@ -50,12 +50,12 @@ def is_closed_python_dict_type(ttype):
     e.g.
 
     Returns true for typing.Dict[int, str] but not for typing.Dict
-    '''
+    """
     if ttype is None:
         return False
     if ttype is typing.Dict:
         return False
-    if not hasattr(ttype, '__args__'):
+    if not hasattr(ttype, "__args__"):
         return False
     if ttype.__args__ is None or len(ttype.__args__) != 2:
         return False
@@ -73,19 +73,19 @@ def is_closed_python_dict_type(ttype):
 
 
 def is_closed_python_tuple_type(ttype):
-    '''
+    """
     A "closed" generic type has all of its type parameters parameterized
     by other closed or concrete types.
 
     e.g.
 
     Returns true for Tuple[int] or Tuple[str, int] but false for Tuple or tuple
-    '''
+    """
     if ttype is None:
         return False
     if ttype is typing.Tuple:
         return False
-    if not hasattr(ttype, '__args__'):
+    if not hasattr(ttype, "__args__"):
         return False
     if ttype.__args__ is None:
         return False
@@ -95,19 +95,19 @@ def is_closed_python_tuple_type(ttype):
 
 
 def is_closed_python_set_type(ttype):
-    '''
+    """
     A "closed" generic type has all of its type parameters parameterized
     by other closed or concrete types.
 
     e.g.
 
     Returns true for Set[string] but false for Set or set
-    '''
+    """
     if ttype is None:
         return False
     if ttype is typing.Set:
         return False
-    if not hasattr(ttype, '__args__'):
+    if not hasattr(ttype, "__args__"):
         return False
     if ttype.__args__ is None or len(ttype.__args__) != 1:
         return False
@@ -120,29 +120,29 @@ def is_closed_python_set_type(ttype):
 
 def get_optional_inner_type(ttype):
     check.invariant(
-        is_closed_python_optional_type(ttype), 'type must pass is_closed_python_optional_type check'
+        is_closed_python_optional_type(ttype), "type must pass is_closed_python_optional_type check"
     )
 
     return ttype.__args__[0]
 
 
 def get_list_inner_type(ttype):
-    check.param_invariant(is_closed_python_list_type(ttype), 'ttype')
+    check.param_invariant(is_closed_python_list_type(ttype), "ttype")
     return ttype.__args__[0]
 
 
 def get_set_inner_type(ttype):
-    check.param_invariant(is_closed_python_set_type(ttype), 'ttype')
+    check.param_invariant(is_closed_python_set_type(ttype), "ttype")
     return ttype.__args__[0]
 
 
 def get_tuple_type_params(ttype):
-    check.param_invariant(is_closed_python_tuple_type(ttype), 'ttype')
+    check.param_invariant(is_closed_python_tuple_type(ttype), "ttype")
     return ttype.__args__
 
 
 def get_dict_key_value_types(ttype):
-    check.param_invariant(is_closed_python_dict_type(ttype), 'ttype')
+    check.param_invariant(is_closed_python_dict_type(ttype), "ttype")
     return (ttype.__args__[0], ttype.__args__[1])
 
 

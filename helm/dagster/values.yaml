@@ -1,0 +1,401 @@
+nameOverride: ""
+fullnameOverride: ""
+rbacEnabled: true
+# The DAGSTER_HOME env var is set by default on all nodes from this value
+dagster_home: "/opt/dagster/dagster_home"
+
+# README:
+# - If using a fixed tag for images, changing the image pull policy to anything other than "Always"
+#   will use a cached/stale image.
+# - We recommend using unique tags for user code images, as this will guarantee that the docker
+#   image will be consistent for the pipeline's entire execution.
+
+####################################################################################################
+# Dagit: Configuration for the Dagit webserver
+####################################################################################################
+dagit:
+  replicaCount: 1
+  # REQUIRED: Dagit image repository and tag to deploy
+  image:
+    repository: "dagster/k8s-dagit"
+    tag: "latest"
+    pullPolicy: Always
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  # Additional environment variables to set on the dagit container.
+  # A Kubernetes ConfigMap will be created with these environment variables.
+  env:
+    YOUR_ENV_VAR: ""
+  # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
+  # list here
+  env_config_maps:
+    - ""
+  # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
+  # as a list here
+  env_secrets:
+    - ""
+  # Support Node, affinity and tolerations for Dagit pod assignment. See:
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # Liveness probe detects when to restart dagit.
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
+  livenessProbe:
+    tcpSocket:
+      port: "http"
+    # initialDelaySeconds: 60
+    periodSeconds: 20
+    failureThreshold: 3
+  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+  # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
+  # on workspace load times.
+  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
+  # `initialDelaySeconds: 60` under `livenessProbe`
+  startupProbe:
+    tcpSocket:
+      port: "http"
+    periodSeconds: 10
+    failureThreshold: 12
+
+####################################################################################################
+# User Code Deployments: Configuration for user code containers to be loaded via GRPC server. For
+# each item in the "deployments" list, a K8s Deployment and K8s Service will be created to run the
+# GRPC server that Dagit/Dagster communicates with to get repository information and the current
+# image information. These deployments can be updated independently of Dagit, and Dagit/Dagster
+# will pull the current image for all execution. When using a distributed executor (such as
+# Celery-K8s) for pipeline run, the current image will be queried once and used for all
+# solid executions for that pipeline run. In order to guarantee that all solid executions within a
+# pipeline execution use the same image, we recommend using a unique tag (ie not "latest").
+#
+# All user code will be invoked within the images.
+####################################################################################################
+userDeployments:
+  # Whether launching user deployments is enabled.
+  enabled: false
+  # List of unique deployments
+  deployments:
+    - name: "k8s-example-user-code-1"
+      image:
+        repository: "dagster/k8s-example"
+        tag: latest
+        # Change with caution! If you're using a fixed tag for pipeline run images, changing the image
+        # pull policy to anything other than "Always" will use a cached/stale image, which is almost
+        # certainly not what you want.
+        pullPolicy: Always
+      # Arguments to `dagster api grpc`.
+      # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
+      # would translate to:
+      # dagsterApiGrpcArgs:
+      #   - "-m"
+      #   - "dagster_test.test_project.test_pipelines.repo"
+      #   - "-a"
+      #   - "define_demo_execution_repo"
+      dagsterApiGrpcArgs:
+        - ""
+      port: 3030
+      env:
+        YOUR_ENV_VAR: ""
+      env_config_maps:
+        - ""
+      env_secrets:
+        - ""
+      nodeSelector: {}
+      affinity: {}
+      tolerations: []
+      podSecurityContext: {}
+      securityContext: {}
+      resources: {}
+      replicaCount: 1
+
+####################################################################################################
+# Pipeline Run: Configuration for user code containers.
+#
+# Note: This should only be configured when userDeployments are not enabled.
+#
+# `DAGSTER_K8S_PIPELINE_RUN_IMAGE` environment variable will point to the image specified below.
+# The run config for the celery executor can set `job_image` to fetch from environment variable
+# `DAGSTER_K8S_PIPELINE_RUN_IMAGE`, so that celery workers will launch k8s jobs with said image.
+#
+####################################################################################################
+pipeline_run:
+  image:
+    repository: "dagster/k8s-example"
+    tag: "latest"
+    pullPolicy: Always
+  # Additional environment variables to set on the celery/job containers
+  # A Kubernetes ConfigMap will be created with these environment variables.
+  env:
+    YOUR_ENV_VAR: ""
+
+####################################################################################################
+# Scheduler: Configuration for scheduler
+####################################################################################################
+scheduler:
+  # If k8sEnabled is true, then use K8sScheduler; else, use CronScheduler
+  k8sEnabled: false
+  # (K8sScheduler only) Image for K8s CronJob(s) to launch K8s Job(s). This image does
+  # need access to dagster code (to call `dagster api launch_scheduled_execution`) and instance yaml
+  # but does not need access to user code.
+  image:
+    repository: "dagster/k8s-dagster"
+    tag: "latest"
+    pullPolicy: Always
+  # (K8sScheduler only) K8s Namespace for K8s CronJob(s) and launched K8s Job(s)
+  schedulerNamespace: ""
+  # (K8sScheduler only) Set to true to load kubeconfig from within cluster
+  loadInclusterConfig: true
+  # (K8sScheduler only) File to load kubeconfig from. Only set this if loadInclusterConfig is false.
+  kubeconfigFile: ""
+  # (K8sScheduler only) Additional (secret) environment variables can be retrieved and set from
+  # the Secrets enumerated as a list here
+  env_secrets:
+    - ""
+
+####################################################################################################
+# PostgreSQL: Configuration values for postgresql
+#
+# https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
+#
+# A PostgreSQL database is required to run Dagster on Kubernetes. If postgresql.enabled is marked as
+# false, the PG credentials specified here will still be used, and should point to an external PG
+# database that is accessible from this chart.
+####################################################################################################
+postgresql:
+  # Used by init container to check that db is running. (Even if enabled:false)
+  image:
+    repository: "postgres"
+    tag: "9.6.16"
+    pullPolicy: IfNotPresent
+  # set postgresql.enabled to be false to disable deploy of a PostgreSQL database and use an
+  # existing external PostgreSQL database
+  enabled: true
+  # set this PostgreSQL hostname when using an external PostgreSQL database
+  postgresqlHost: ""
+  postgresqlUsername: test
+  # Note when changing this password (e.g. in test) that credentials will
+  # persist as long as the PVCs do -- see:
+  # https://github.com/helm/charts/issues/12836#issuecomment-524552358
+  postgresqlPassword: test
+  postgresqlDatabase: test
+  service:
+    port: 5432
+
+####################################################################################################
+# Celery
+####################################################################################################
+celery:
+  # The Celery workers can be deployed with a fixed image (no user code included)
+  image:
+    repository: "dagster/k8s-celery-worker"
+    tag: "latest"
+    pullPolicy: Always
+
+  enabled: true
+  # support overriding the name of Celery workers
+  workers:
+    nameOverride: ""
+  # Number of replicas for the default Celery queue
+  replicaCount: 2
+  # additional config options for Celery, applied to all queues. See:
+  # https://docs.celeryproject.org/en/stable/userguide/configuration.html for available options
+  configSource:
+  # additional Celery worker queues can be configured here. Off by default.
+  extraWorkerQueues:
+    # Each additional queue specified will be provisioned as an additional deployment alongside the
+    # default Celery worker deployment.
+    # Example:
+    # - name: "redshift"
+    #   replicaCount: "3"
+  # Additional environment variables to set on the celery/job containers
+  # A Kubernetes ConfigMap will be created with these environment variables.
+  env:
+    YOUR_ENV_VAR: ""
+  # Additional environment variables can be retrieved and set from the ConfigMaps enumerated as a
+  # list here
+  env_config_maps:
+    - ""
+  # Additional (secret) environment variables can be retrieved and set from the Secrets enumerated
+  # as a list here
+  env_secrets:
+    - ""
+  # Support Node, affinity and tolerations for Celery pod assignment. See:
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  livenessProbe:
+    # If `livenessProbe` does not contain `exec` field, then we will default to using:
+    # exec:
+    #   command:
+    #     - /bin/sh
+    #     - -c
+    #     - celery status -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 10
+    successThreshold: 1
+    failureThreshold: 3
+
+####################################################################################################
+# RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.
+####################################################################################################
+rabbitmq:
+  enabled: true
+  rabbitmq:
+    username: test
+    password: test
+  service:
+    port: 5672
+  # https://github.com/helm/charts/issues/17250#issuecomment-533444837
+  volumePermissions:
+    enabled: true
+
+####################################################################################################
+# Redis: Configuration values for Redis. Can be used instead of RabbitMQ.
+####################################################################################################
+redis:
+  # if enabled, external redis will be used instead of rabbitmq
+  enabled: false
+  # Redis host URL
+  host: ""
+  # Redis port
+  port: 6379
+  # Set DB number for Redis broker DB (default 0)
+  brokerDbNumber:
+  # Set DB number for Redis backend DB (default 0)
+  backendDbNumber:
+
+####################################################################################################
+# Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers
+####################################################################################################
+flower:
+  enabled: false
+  service:
+    annotations:
+    port:
+  # Support Node, affinity and tolerations for Flower pod assignment. See:
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+  # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+  # If you want to specify resources, uncomment the following lines, adjust them as necessary,
+  # and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # Liveness probe detects when to restart flower.
+  # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
+  livenessProbe:
+    tcpSocket:
+      port: "flower"
+    # initialDelaySeconds: 60
+    periodSeconds: 20
+    failureThreshold: 3
+  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+  # then liveness probe takes over.
+  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
+  # `initialDelaySeconds: 60` under `livenessProbe`
+  startupProbe:
+    tcpSocket:
+      port: "flower"
+    periodSeconds: 10
+    failureThreshold: 6
+
+####################################################################################################
+# Ingress: (Optional) Create ingresses for Dagit and Flower
+####################################################################################################
+ingress:
+  enabled: false
+  annotations: {}
+  dagit:
+    # Ingress hostname for Dagit e.g. dagit.mycompany.com
+    # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit
+    # See: https://github.com/dagster-io/dagster/issues/2073
+    host: ""
+    precedingPaths:
+      # Different http paths to add to the ingress before the default dagit path
+      # Example:
+      # - path: "/*"
+      #   serviceName: "ssl-redirect"
+      #   servicePort: "use-annotation"
+    succeedingPaths:
+      # Different http paths to add to the ingress after the default dagit path
+      # Example:
+      # - path: "/*"
+      #   serviceName: "ssl-redirect"
+      #   servicePort: "use-annotation"
+  flower:
+    # Ingress hostname for Dagit e.g. flower.mycompany.com
+    host: ""
+    # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
+    # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
+    path: ""
+    precedingPaths:
+      # Different http paths to add to the ingress before the default flower path
+      # Example:
+      # - path: "/*"
+      #   serviceName: "ssl-redirect"
+      #   servicePort: "use-annotation"
+    succeedingPaths:
+      # Different http paths to add to the ingress after the default flower path
+      # Example:
+      # - path: "/*"
+      #   serviceName: "ssl-redirect"
+      #   servicePort: "use-annotation"
+
+####################################################################################################
+# Extra Manifests: (Optional) Create additional k8s resources within this chart
+####################################################################################################
+extraManifests:
+##
+## Example:
+##  - apiVersion: cloud.google.com/v1beta1
+##    kind: BackendConfig
+##    metadata:
+##      name: "{{ .Release.Name }}-backend-config"
+##      labels:
+##      {{- include "dagster.labels" . | nindent 6 }}
+##    spec:
+##      securityPolicy:
+##        name: "gcp-cloud-armor-policy-test"
+
+serviceAccount:
+  create: true

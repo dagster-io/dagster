@@ -16,14 +16,14 @@ from dagster.core.storage.root import LocalArtifactStorage
 def simple():
     @solid
     def easy(context):
-        context.log.info('easy')
-        return 'easy'
+        context.log.info("easy")
+        return "easy"
 
     easy()
 
 
 @pytest.mark.skipif(
-    bool(os.getenv('BUILDKITE')), reason='Strange Docker networking issues on Buildkite'
+    bool(os.getenv("BUILDKITE")), reason="Strange Docker networking issues on Buildkite"
 )
 def test_postgres_instance(multi_postgres):
     run_storage_conn_string, event_log_storage_conn_string = multi_postgres

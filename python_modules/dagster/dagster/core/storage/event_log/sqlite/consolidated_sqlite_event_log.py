@@ -23,11 +23,11 @@ from dagster.utils import mkdir_p
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import AssetAwareSqlEventLogStorage
 
-SQLITE_EVENT_LOG_FILENAME = 'event_log'
+SQLITE_EVENT_LOG_FILENAME = "event_log"
 
 
 class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
-    '''SQLite-backed consolidated event log storage intended for test cases only.
+    """SQLite-backed consolidated event log storage intended for test cases only.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
@@ -45,12 +45,12 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
             base_dir: /path/to/dir
 
     The ``base_dir`` param tells the event log storage where on disk to store the database.
-    '''
+    """
 
     def __init__(self, base_dir, inst_data=None):
-        self._base_dir = check.str_param(base_dir, 'base_dir')
+        self._base_dir = check.str_param(base_dir, "base_dir")
         self._conn_string = create_db_conn_string(base_dir, SQLITE_EVENT_LOG_FILENAME)
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._watchdog = None
         self._watchers = defaultdict(dict)
         self._obs = Observer()
@@ -65,7 +65,7 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
 
     @classmethod
     def config_type(cls):
-        return {'base_dir': str}
+        return {"base_dir": str}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -75,7 +75,7 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
         mkdir_p(self._base_dir)
         engine = create_engine(self._conn_string, poolclass=NullPool)
         SqlEventLogStorageMetadata.create_all(engine)
-        engine.execute('PRAGMA journal_mode=WAL;')
+        engine.execute("PRAGMA journal_mode=WAL;")
         alembic_config = get_alembic_config(__file__)
         connection = engine.connect()
         db_revision, head_revision = check_alembic_revision(alembic_config, connection)
@@ -90,14 +90,14 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
             with handle_schema_errors(
                 conn,
                 get_alembic_config(__file__),
-                msg='ConsolidatedSqliteEventLogStorage requires migration',
+                msg="ConsolidatedSqliteEventLogStorage requires migration",
             ):
                 yield conn
         finally:
             conn.close()
 
     def get_db_path(self):
-        return os.path.join(self._base_dir, '{}.db'.format(SQLITE_EVENT_LOG_FILENAME))
+        return os.path.join(self._base_dir, "{}.db".format(SQLITE_EVENT_LOG_FILENAME))
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
@@ -142,7 +142,7 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
 class ConsolidatedSqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
     def __init__(self, event_log_storage, **kwargs):
         self._event_log_storage = check.inst_param(
-            event_log_storage, 'event_log_storage', ConsolidatedSqliteEventLogStorage
+            event_log_storage, "event_log_storage", ConsolidatedSqliteEventLogStorage
         )
         self._log_path = event_log_storage.get_db_path()
         super(ConsolidatedSqliteEventLogStorageWatchdog, self).__init__(

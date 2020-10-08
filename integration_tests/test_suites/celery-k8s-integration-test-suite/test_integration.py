@@ -258,17 +258,36 @@ def _test_termination(dagster_instance, run_config):
         step_failures_count = 0
         resource_tear_down_count = 0
         resource_init_count = 0
+        termination_request_count = 0
+        termination_success_count = 0
         event_records = dagster_instance.all_logs(run.run_id)
         for event_record in event_records:
             if event_record.dagster_event:
                 if event_record.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
                     step_failures_count += 1
+                elif event_record.dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
+                    if (
+                        event_record.dagster_event.message
+                        == '[CeleryK8sRunLauncher] Received pipeline termination request.'
+                    ):
+                        termination_request_count += 1
+                    elif (
+                        event_record.dagster_event.message
+                        == '[CeleryK8sRunLauncher] Pipeline was terminated successfully.'
+                    ):
+                        termination_success_count += 1
             elif event_record.message:
                 if 'initializing s3_resource_with_context_manager' in event_record.message:
                     resource_init_count += 1
                 if 'tearing down s3_resource_with_context_manager' in event_record.message:
                     resource_tear_down_count += 1
-        if step_failures_count == 1 and resource_init_count == 1 and resource_tear_down_count == 1:
+        if (
+            step_failures_count == 1
+            and resource_init_count == 1
+            and resource_tear_down_count == 1
+            and termination_request_count == 2
+            and termination_success_count == 1
+        ):
             expected_events_found = True
             break
         time.sleep(5)
@@ -318,3 +337,59 @@ def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=
     )
 
     _test_termination(dagster_instance, run_config)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
+def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-outer-name
+    dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env
+):
+    run_config = merge_dicts(
+        merge_dicts(
+            merge_yamls([os.path.join(test_project_environments_path(), 'env_s3.yaml'),]),
+            get_celery_engine_config(
+                dagster_docker_image=dagster_docker_image,
+                job_namespace={'env': 'DAGSTER_K8S_PIPELINE_RUN_NAMESPACE'},
+            ),
+        ),
+        {'solids': {'hard_fail_or_0': {'config': {'fail': True}}}},
+    )
+
+    pipeline_name = 'hard_failer'
+    run = create_run_for_test(
+        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode='default',
+    )
+
+    dagster_instance.launch_run(
+        run.run_id,
+        ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
+    )
+    assert isinstance(dagster_instance.run_launcher, CeleryK8sRunLauncher)
+
+    # Check that pipeline run is marked as failed
+    pipeline_run_status_failure = False
+    start_time = datetime.datetime.now()
+    timeout = datetime.timedelta(0, 120)
+
+    while datetime.datetime.now() < start_time + timeout:
+        pipeline_run = dagster_instance.get_run_by_id(run.run_id)
+        if pipeline_run.status == PipelineRunStatus.FAILURE:
+            pipeline_run_status_failure = True
+            break
+        time.sleep(5)
+    assert pipeline_run_status_failure
+
+    # Check for step failure for hard_fail_or_0.compute
+    start_time = datetime.datetime.now()
+    step_failure_found = False
+    while datetime.datetime.now() < start_time + timeout:
+        event_records = dagster_instance.all_logs(run.run_id)
+        for event_record in event_records:
+            if event_record.dagster_event:
+                if (
+                    event_record.dagster_event.event_type == DagsterEventType.STEP_FAILURE
+                    and event_record.dagster_event.step_key == 'hard_fail_or_0.compute'
+                ):
+                    step_failure_found = True
+                    break
+        time.sleep(5)
+    assert step_failure_found

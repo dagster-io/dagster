@@ -1,98 +1,105 @@
-import * as React from "react";
+import {NonIdealState} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {RouteComponentProps} from 'react-router';
+import styled from 'styled-components/macro';
 
-import Loading from "./Loading";
-import { RouteComponentProps } from "react-router";
-import { RunTable } from "./runs/RunTable";
+import {CursorPaginationControls} from 'src/CursorPaginationControls';
+import {ScrollContainer} from 'src/ListComponents';
+import {Loading} from 'src/Loading';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {RunTable} from 'src/runs/RunTable';
+import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
+import {
+  RunFilterTokenType,
+  RunsFilter,
+  runsFilterForSearchTokens,
+  useRunFiltering,
+} from 'src/runs/RunsFilter';
+import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {
   PipelineRunsRootQuery,
-  PipelineRunsRootQueryVariables
-} from "./types/PipelineRunsRootQuery";
-import {
-  RunsFilter,
-  RunFilterTokenType,
-  useRunFiltering,
-  runsFilterForSearchTokens
-} from "./runs/RunsFilter";
-
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { IconNames } from "@blueprintjs/icons";
-import { NonIdealState } from "@blueprintjs/core";
-import { ScrollContainer, Header } from "./ListComponents";
-import { RunsQueryRefetchContext } from "./runs/RunUtils";
-import { useCursorPaginatedQuery } from "./runs/useCursorPaginatedQuery";
-import { CursorPaginationControls } from "./CursorPaginationControls";
+  PipelineRunsRootQueryVariables,
+} from 'src/types/PipelineRunsRootQuery';
 
 const PAGE_SIZE = 25;
-const ENABLED_FILTERS: RunFilterTokenType[] = ["id", "status", "tag"];
+const ENABLED_FILTERS: RunFilterTokenType[] = ['id', 'status', 'tag'];
 
 export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
-}>> = ({ match }) => {
-  const pipelineName = match.params.pipelinePath.split(":")[0];
+}>> = ({match}) => {
+  const pipelineName = match.params.pipelinePath.split(':')[0];
+  useDocumentTitle(`Pipeline: ${pipelineName}`);
+
   const [filterTokens, setFilterTokens] = useRunFiltering(ENABLED_FILTERS);
 
-  const { queryResult, paginationProps } = useCursorPaginatedQuery<
+  const {queryResult, paginationProps} = useCursorPaginatedQuery<
     PipelineRunsRootQuery,
     PipelineRunsRootQueryVariables
   >({
     query: PIPELINE_RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
     variables: {
-      filter: { ...runsFilterForSearchTokens(filterTokens), pipelineName }
+      filter: {...runsFilterForSearchTokens(filterTokens), pipelineName},
     },
-    nextCursorForResult: runs => {
-      if (runs.pipelineRunsOrError.__typename !== "PipelineRuns") return undefined;
+    nextCursorForResult: (runs) => {
+      if (runs.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+        return undefined;
+      }
       return runs.pipelineRunsOrError.results[PAGE_SIZE]?.runId;
     },
-    getResultArray: data => {
-      if (!data || data.pipelineRunsOrError.__typename !== "PipelineRuns") return [];
+    getResultArray: (data) => {
+      if (!data || data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+        return [];
+      }
       return data.pipelineRunsOrError.results;
-    }
+    },
   });
 
   return (
-    <RunsQueryRefetchContext.Provider value={{ refetch: queryResult.refetch }}>
+    <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <ScrollContainer>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between"
-          }}
-        >
-          <Header>{`Runs`}</Header>
-          <Filters>
-            <RunsFilter
-              enabledFilters={ENABLED_FILTERS}
-              tokens={[{ token: "pipeline", value: pipelineName }, ...filterTokens]}
-              onChange={setFilterTokens}
-              loading={queryResult.loading}
-            />
-          </Filters>
-        </div>
+        <div style={{padding: '16px'}}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Filters>
+              <RunsFilter
+                enabledFilters={ENABLED_FILTERS}
+                tokens={[{token: 'pipeline', value: pipelineName}, ...filterTokens]}
+                onChange={setFilterTokens}
+                loading={queryResult.loading}
+              />
+            </Filters>
+          </div>
 
-        <Loading queryResult={queryResult} allowStaleData={true}>
-          {({ pipelineRunsOrError }) => {
-            if (pipelineRunsOrError.__typename !== "PipelineRuns") {
+          <Loading queryResult={queryResult} allowStaleData={true}>
+            {({pipelineRunsOrError}) => {
+              if (pipelineRunsOrError.__typename !== 'PipelineRuns') {
+                return (
+                  <NonIdealState
+                    icon={IconNames.ERROR}
+                    title="Query Error"
+                    description={pipelineRunsOrError.message}
+                  />
+                );
+              }
+              const runs = pipelineRunsOrError.results;
+              const displayed = runs.slice(0, PAGE_SIZE);
               return (
-                <NonIdealState
-                  icon={IconNames.ERROR}
-                  title="Query Error"
-                  description={pipelineRunsOrError.message}
-                />
+                <>
+                  <RunTable runs={displayed} onSetFilter={setFilterTokens} />
+                  <CursorPaginationControls {...paginationProps} />
+                </>
               );
-            }
-            const runs = pipelineRunsOrError.results;
-            const displayed = runs.slice(0, PAGE_SIZE);
-            return (
-              <>
-                <RunTable runs={displayed} onSetFilter={setFilterTokens} />
-                <CursorPaginationControls {...paginationProps} />
-              </>
-            );
-          }}
-        </Loading>
+            }}
+          </Loading>
+        </div>
       </ScrollContainer>
     </RunsQueryRefetchContext.Provider>
   );

@@ -14,7 +14,7 @@ DEFAULT_ITER_TIME_SEC = 5
 
 
 class DataprocResource(object):
-    '''Builds a client to the dataproc API.'''
+    """Builds a client to the dataproc API."""
 
     def __init__(self, config):
         # Use Application Default Credentials to check the
@@ -24,12 +24,12 @@ class DataprocResource(object):
 
         # See https://github.com/googleapis/google-api-python-client/issues/299 for the
         # cache_discovery=False configuration below
-        self.dataproc = build('dataproc', 'v1', credentials=credentials, cache_discovery=False)
+        self.dataproc = build("dataproc", "v1", credentials=credentials, cache_discovery=False)
 
         self.config = config
 
         (self.project_id, self.region, self.cluster_name, self.cluster_config) = (
-            self.config.get(k) for k in ('projectId', 'region', 'clusterName', 'cluster_config')
+            self.config.get(k) for k in ("projectId", "region", "clusterName", "cluster_config")
         )
 
     @property
@@ -58,9 +58,9 @@ class DataprocResource(object):
                 projectId=self.project_id,
                 region=self.region,
                 body={
-                    'projectId': self.project_id,
-                    'clusterName': self.cluster_name,
-                    'config': self.cluster_config,
+                    "projectId": self.project_id,
+                    "clusterName": self.cluster_name,
+                    "config": self.cluster_config,
                 },
             ).execute()
         )
@@ -69,13 +69,13 @@ class DataprocResource(object):
             # TODO: Add logging
             # See: https://bit.ly/2UW5JaN
             cluster = self.get_cluster()
-            return cluster['status']['state'] in {'RUNNING', 'UPDATING'}
+            return cluster["status"]["state"] in {"RUNNING", "UPDATING"}
 
         done = DataprocResource._iter_and_sleep_until_ready(iter_fn)
         if not done:
             cluster = self.get_cluster()
             raise DataprocError(
-                'Could not provision cluster -- status: %s' % str(cluster['status'])
+                "Could not provision cluster -- status: %s" % str(cluster["status"])
             )
 
     def get_cluster(self):
@@ -99,18 +99,18 @@ class DataprocResource(object):
         ).execute()
 
     def wait_for_job(self, job_id):
-        '''This method polls job status every 5 seconds
-        '''
+        """This method polls job status every 5 seconds
+        """
         # TODO: Add logging here print('Waiting for job ID {} to finish...'.format(job_id))
         def iter_fn():
             # See: https://bit.ly/2Lg2tHr
             result = self.get_job(job_id)
 
             # Handle exceptions
-            if result['status']['state'] in {'CANCELLED', 'ERROR'}:
-                raise DataprocError('Job error: %s' % str(result['status']))
+            if result["status"]["state"] in {"CANCELLED", "ERROR"}:
+                raise DataprocError("Job error: %s" % str(result["status"]))
 
-            if result['status']['state'] == 'DONE':
+            if result["status"]["state"] == "DONE":
                 return True
 
             return False
@@ -118,14 +118,14 @@ class DataprocResource(object):
         done = DataprocResource._iter_and_sleep_until_ready(iter_fn)
         if not done:
             job = self.get_job(job_id)
-            raise DataprocError('Job run timed out: %s' % str(job['status']))
+            raise DataprocError("Job run timed out: %s" % str(job["status"]))
 
     @staticmethod
     def _iter_and_sleep_until_ready(
         callable_fn, max_wait_time_sec=TWENTY_MINUTES, iter_time=DEFAULT_ITER_TIME_SEC
     ):
-        '''Iterates and sleeps until callable_fn returns true
-        '''
+        """Iterates and sleeps until callable_fn returns true
+        """
         # Wait for cluster ready state
         ready, curr_iter = False, 0
         max_iter = max_wait_time_sec / iter_time
@@ -139,11 +139,11 @@ class DataprocResource(object):
 
     @contextmanager
     def cluster_context_manager(self):
-        '''This context manager gives syntactic sugar so you can run:
+        """This context manager gives syntactic sugar so you can run:
 
         with context.resources.dataproc.cluster as cluster:
             # do stuff...
-        '''
+        """
         self.create_cluster()
         try:
             yield self
@@ -153,7 +153,7 @@ class DataprocResource(object):
 
 @resource(
     config_schema=define_dataproc_create_cluster_config(),
-    description='Manage a Dataproc cluster resource',
+    description="Manage a Dataproc cluster resource",
 )
 def dataproc_resource(context):
     return DataprocResource(context.resource_config)

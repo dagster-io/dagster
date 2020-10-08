@@ -1,10 +1,11 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { Colors, MenuItem, Menu, Popover, InputGroup, Button, Intent } from "@blueprintjs/core";
-import { GraphQueryItem } from "./GraphQueryImpl";
-import { IconNames } from "@blueprintjs/icons";
-import gql from "graphql-tag";
-import { isEqual } from "lodash";
+import {Button, Colors, InputGroup, Intent, Menu, MenuItem, Popover} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import gql from 'graphql-tag';
+import {isEqual} from 'lodash';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {GraphQueryItem} from 'src/GraphQueryImpl';
 
 interface GraphQueryInputProps {
   items: GraphQueryItem[];
@@ -12,8 +13,9 @@ interface GraphQueryInputProps {
   value: string;
   placeholder: string;
   autoFocus?: boolean;
-  presets?: { name: string; value: string }[];
+  presets?: {name: string; value: string}[];
   width?: string | number;
+  small?: boolean;
   className?: string;
 
   onChange: (value: string) => void;
@@ -36,16 +38,18 @@ const placeholderTextForItems = (base: string, items: GraphQueryItem[]) => {
   const seed = items.length % 3;
 
   let placeholder = base;
-  if (items.length === 0) return placeholder;
+  if (items.length === 0) {
+    return placeholder;
+  }
 
   const ranked = items.map<{
     incount: number;
     outcount: number;
     name: string;
-  }>(s => ({
+  }>((s) => ({
     incount: s.inputs.reduce((sum, o) => sum + o.dependsOn.length, 0),
     outcount: s.outputs.reduce((sum, o) => sum + o.dependedBy.length, 0),
-    name: s.name
+    name: s.name,
   }));
 
   if (seed === 0) {
@@ -78,22 +82,23 @@ export const GraphQueryInput = React.memo(
     let menu: JSX.Element | undefined = undefined;
 
     const [, prefix, lastElementName, suffix] = lastClause || [];
-    const suggestions =
-      lastElementName && !suffix
+    const suggestions = React.useMemo(() => {
+      return lastElementName && !suffix
         ? props.items
-            .map(s => s.name)
-            .filter(n => n.startsWith(lastElementName) && n !== lastElementName)
+            .map((s) => s.name)
+            .filter((n) => n.startsWith(lastElementName) && n !== lastElementName)
         : [];
+    }, [lastElementName, props.items, suffix]);
 
     const onConfirmSuggestion = (suggestion: string) => {
-      const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : "";
+      const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : '';
       setPendingValue(preceding + prefix + suggestion + suffix);
     };
 
     if (suggestions.length && focused) {
       menu = (
-        <Menu style={{ width: props.width || "30vw" }}>
-          {suggestions.slice(0, 15).map(suggestion => (
+        <Menu style={{width: props.width || '30vw'}}>
+          {suggestions.slice(0, 15).map((suggestion) => (
             <StyledMenuItem
               key={suggestion}
               text={suggestion}
@@ -111,14 +116,14 @@ export const GraphQueryInput = React.memo(
 
     React.useEffect(() => {
       if (!active && suggestions.length) {
-        setActive({ text: suggestions[0], idx: 0 });
+        setActive({text: suggestions[0], idx: 0});
         return;
       }
       if (!active) {
         return;
       }
       // Relocate the currently active item in the latest suggestions list
-      const pos = suggestions.findIndex(a => a === active.text);
+      const pos = suggestions.findIndex((a) => a === active.text);
 
       // The new index is the index of the active item, or whatever item
       // is now at it's location if it's gone, bounded to the array.
@@ -127,12 +132,12 @@ export const GraphQueryInput = React.memo(
       const nextText = suggestions[nextIdx];
 
       if (nextIdx !== active.idx || nextText !== active.text) {
-        setActive({ text: nextText, idx: nextIdx });
+        setActive({text: nextText, idx: nextIdx});
       }
     }, [active, suggestions]);
 
     const onKeyDown = (e: React.KeyboardEvent<any>) => {
-      if (e.key === "Enter" || e.key === "Return" || e.key === "Tab") {
+      if (e.key === 'Enter' || e.key === 'Return' || e.key === 'Tab') {
         if (active && active.text) {
           onConfirmSuggestion(active.text);
           e.preventDefault();
@@ -142,12 +147,12 @@ export const GraphQueryInput = React.memo(
 
       // The up/down arrow keys shift selection in the dropdown.
       // Note: The first down arrow press activates the first item.
-      const shift = { ArrowDown: 1, ArrowUp: -1 }[e.key];
+      const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
       if (shift && suggestions.length > 0) {
         e.preventDefault();
         let idx = (active ? active.idx : -1) + shift;
         idx = Math.max(0, Math.min(idx, suggestions.length - 1));
-        setActive({ text: suggestions[idx], idx });
+        setActive({text: suggestions[idx], idx});
       }
 
       props.onKeyDown?.(e);
@@ -155,13 +160,13 @@ export const GraphQueryInput = React.memo(
 
     const onKeyUp = (e: React.KeyboardEvent<any>) => {
       if (
-        e.key === "Enter" ||
-        e.key === "Return" ||
-        e.key === "Tab" ||
-        e.key === "+" ||
-        e.key === " " ||
-        (e.key === "*" && pendingValue.length > 1) ||
-        (e.key === "Backspace" && pendingValue.length)
+        e.key === 'Enter' ||
+        e.key === 'Return' ||
+        e.key === 'Tab' ||
+        e.key === '+' ||
+        e.key === ' ' ||
+        (e.key === '*' && pendingValue.length > 1) ||
+        (e.key === 'Backspace' && pendingValue.length)
       ) {
         props.onChange(pendingValue);
       }
@@ -169,13 +174,14 @@ export const GraphQueryInput = React.memo(
 
     return (
       <>
-        <Popover minimal={true} isOpen={menu !== undefined} position={"bottom"} content={menu}>
+        <Popover minimal={true} isOpen={menu !== undefined} position={'bottom'} content={menu}>
           <GraphQueryInputField
+            small={props.small}
             intent={props.intent}
             title="graph-query-input"
             type="text"
             value={pendingValue}
-            leftIcon={"send-to-graph"}
+            leftIcon={'send-to-graph'}
             autoFocus={props.autoFocus}
             placeholder={placeholderTextForItems(props.placeholder, props.items)}
             onChange={(e: React.ChangeEvent<any>) => setPendingValue(e.target.value)}
@@ -190,25 +196,25 @@ export const GraphQueryInput = React.memo(
             }}
             onKeyDown={onKeyDown}
             onKeyUp={onKeyUp}
-            style={{ width: props.width || "30vw" }}
+            style={{width: props.width || '30vw'}}
             className={props.className}
           />
         </Popover>
         {props.presets &&
-          (props.presets.find(p => p.value === pendingValue) ? (
+          (props.presets.find((p) => p.value === pendingValue) ? (
             <Button
-              style={{ marginLeft: 5 }}
+              style={{marginLeft: 5}}
               icon={IconNames.LAYERS}
               rightIcon={IconNames.CROSS}
               onClick={() => {
-                props.onChange("*");
+                props.onChange('*');
               }}
             />
           ) : (
             <Popover
               content={
                 <Menu>
-                  {props.presets.map(preset => (
+                  {props.presets.map((preset) => (
                     <MenuItem
                       key={preset.name}
                       text={preset.name}
@@ -223,7 +229,7 @@ export const GraphQueryInput = React.memo(
               }
             >
               <Button
-                style={{ marginLeft: 5 }}
+                style={{marginLeft: 5}}
                 icon={IconNames.LAYERS}
                 rightIcon={IconNames.CARET_UP}
               />
@@ -237,7 +243,7 @@ export const GraphQueryInput = React.memo(
     prevProps.items === nextProps.items &&
     prevProps.width === nextProps.width &&
     prevProps.value === nextProps.value &&
-    isEqual(prevProps.presets, nextProps.presets)
+    isEqual(prevProps.presets, nextProps.presets),
 );
 
 (GraphQueryInput as any).fragments = {
@@ -259,7 +265,7 @@ export const GraphQueryInput = React.memo(
         }
       }
     }
-  `
+  `,
 };
 
 const GraphQueryInputField = styled(InputGroup)`

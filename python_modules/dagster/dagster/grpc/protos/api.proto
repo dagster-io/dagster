@@ -13,9 +13,11 @@ service DagsterApi {
   rpc ExternalPartitionNames (ExternalPartitionNamesRequest) returns (ExternalPartitionNamesReply) {}
   rpc ExternalPartitionConfig (ExternalPartitionConfigRequest) returns (ExternalPartitionConfigReply) {}
   rpc ExternalPartitionTags (ExternalPartitionTagsRequest) returns (ExternalPartitionTagsReply) {}
+  rpc ExternalPartitionSetExecutionParams (ExternalPartitionSetExecutionParamsRequest) returns (ExternalPartitionSetExecutionParamsReply) {}
   rpc ExternalPipelineSubsetSnapshot (ExternalPipelineSubsetSnapshotRequest) returns (ExternalPipelineSubsetSnapshotReply) {}
   rpc ExternalRepository (ExternalRepositoryRequest) returns (ExternalRepositoryReply) {}
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
+  rpc ExternalExecutableParams (ExternalExecutableParamsRequest) returns (ExternalExecutableParamsReply) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc ExecuteRun (ExecuteRunRequest) returns (stream ExecuteRunEvent) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
@@ -76,6 +78,14 @@ message ExternalPartitionTagsReply {
   string serialized_external_partition_tags_or_external_partition_execution_error = 1;
 }
 
+message ExternalPartitionSetExecutionParamsRequest {
+  string serialized_partition_set_execution_param_args = 1;
+}
+
+message ExternalPartitionSetExecutionParamsReply {
+  string serialized_external_partition_set_execution_param_data_or_external_partition_execution_error = 1;
+}
+
 message ListRepositoriesRequest {
 }
 
@@ -105,6 +115,14 @@ message ExternalScheduleExecutionRequest {
 
 message ExternalScheduleExecutionReply {
   string serialized_external_schedule_execution_data_or_external_schedule_execution_error = 1;
+}
+
+message ExternalExecutableParamsRequest {
+  string serialized_external_executable_args = 1;
+}
+
+message ExternalExecutableParamsReply {
+  string serialized_external_execution_params_or_external_execution_params_error_data = 1;
 }
 
 message ExecuteRunRequest {

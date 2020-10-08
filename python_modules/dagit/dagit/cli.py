@@ -10,6 +10,7 @@ from geventwebsocket.handler import WebSocketHandler
 
 from dagster import check, seven
 from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
+from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action, log_repo_stats, upload_logs
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
@@ -22,60 +23,59 @@ def create_dagit_cli():
     return ui  # pylint: disable=no-value-for-parameter
 
 
-REPO_TARGET_WARNING = 'Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m.'
-
-DEFAULT_DAGIT_HOST = '127.0.0.1'
+DEFAULT_DAGIT_HOST = "127.0.0.1"
 DEFAULT_DAGIT_PORT = 3000
 
 
 @click.command(
-    name='ui',
+    name="ui",
     help=(
-        'Run dagit. Loads a repository or pipeline.\n\n{warning}'.format(
-            warning=REPO_TARGET_WARNING
+        "Run dagit. Loads a repository or pipeline.\n\n{warning}".format(
+            warning=WORKSPACE_TARGET_WARNING
         )
         + (
-            '\n\n Examples:'
-            '\n\n1. dagit (works if .{default_filename} exists)'
-            '\n\n2. dagit -w path/to/{default_filename}'
-            '\n\n3. dagit -f path/to/file.py'
-            '\n\n4. dagit -m some_module'
-            '\n\n5. dagit -f path/to/file.py -a define_repo'
-            '\n\n6. dagit -m some_module -a define_repo'
-            '\n\n7. dagit -p 3333'
-            '\n\nOptions Can also provide arguments via environment variables prefixed with DAGIT_'
-            '\n\n    DAGIT_PORT=3333 dagit'
+            "\n\n Examples:"
+            "\n\n1. dagit (works if .{default_filename} exists)"
+            "\n\n2. dagit -w path/to/{default_filename}"
+            "\n\n3. dagit -f path/to/file.py"
+            "\n\n4. dagit -f path/to/file.py -d path/to/working_directory"
+            "\n\n5. dagit -m some_module"
+            "\n\n6. dagit -f path/to/file.py -a define_repo"
+            "\n\n7. dagit -m some_module -a define_repo"
+            "\n\n8. dagit -p 3333"
+            "\n\nOptions Can also provide arguments via environment variables prefixed with DAGIT_"
+            "\n\n    DAGIT_PORT=3333 dagit"
         ).format(default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
     ),
 )
 @workspace_target_argument
 @click.option(
-    '--host',
-    '-h',
+    "--host",
+    "-h",
     type=click.STRING,
     default=DEFAULT_DAGIT_HOST,
     help="Host to run server on, default is {default_host}".format(default_host=DEFAULT_DAGIT_HOST),
 )
 @click.option(
-    '--port',
-    '-p',
+    "--port",
+    "-p",
     type=click.INT,
     help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
 )
 @click.option(
-    '--path-prefix',
-    '-l',
+    "--path-prefix",
+    "-l",
     type=click.STRING,
-    default='',
+    default="",
     help="The path prefix where Dagit will be hosted (eg: /dagit), default is ''",
 )
 @click.option(
-    '--storage-fallback',
+    "--storage-fallback",
     help="Base directory for dagster storage if $DAGSTER_HOME is not set",
     default=None,
     type=click.Path(),
 )
-@click.version_option(version=__version__, prog_name='dagit')
+@click.version_option(version=__version__, prog_name="dagit")
 def ui(host, port, path_prefix, storage_fallback, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
@@ -94,19 +94,17 @@ def ui(host, port, path_prefix, storage_fallback, **kwargs):
 
 
 def host_dagit_ui(host, port, path_prefix, storage_fallback, port_lookup=True, **kwargs):
+    with DagsterInstance.get(storage_fallback) as instance:
+        with get_workspace_from_kwargs(kwargs, instance) as workspace:
+            if not workspace:
+                raise Exception("Unable to load workspace with cli_args: {}".format(kwargs))
 
-    instance = DagsterInstance.get(storage_fallback)
-
-    workspace = get_workspace_from_kwargs(kwargs, instance)
-    if not workspace:
-        raise Exception('Unable to load workspace with cli_args: {}'.format(kwargs))
-
-    return host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup)
+            host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup)
 
 
 def host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup=True):
-    check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(workspace, 'workspace', Workspace)
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(workspace, "workspace", Workspace)
 
     if len(workspace.repository_location_handles) == 1:
         repository_location_handle = workspace.repository_location_handles[0]
@@ -114,7 +112,7 @@ def host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, p
         # Telemetry logic needs to be updated to support multi-repo / gRPC repo locations
         # See https://github.com/dagster-io/dagster/issues/2752
         if (
-            hasattr(repository_location_handle, 'repository_code_pointer_dict')
+            hasattr(repository_location_handle, "repository_code_pointer_dict")
             and len(repository_location_handle.repository_code_pointer_dict) == 1
         ):
             pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
@@ -122,7 +120,7 @@ def host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, p
 
             recon_repo = ReconstructableRepository(pointer)
 
-            log_repo_stats(instance=instance, repo=recon_repo, source='dagit')
+            log_repo_stats(instance=instance, repo=recon_repo, source="dagit")
 
     app = create_app_from_workspace(workspace, instance, path_prefix)
 
@@ -145,7 +143,7 @@ def start_server(instance, host, port, path_prefix, app, port_lookup, port_looku
     server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
 
     print(  # pylint: disable=print-call
-        'Serving on http://{host}:{port}{path_prefix} in process {pid}'.format(
+        "Serving on http://{host}:{port}{path_prefix} in process {pid}".format(
             host=host, port=port, path_prefix=path_prefix, pid=os.getpid()
         )
     )
@@ -155,13 +153,13 @@ def start_server(instance, host, port, path_prefix, app, port_lookup, port_looku
         try:
             server.serve_forever()
         except OSError as os_error:
-            if 'Address already in use' in str(os_error):
+            if "Address already in use" in str(os_error):
                 if port_lookup and (
                     port_lookup_attempts > 0
                     or click.confirm(
                         (
-                            'Another process on your machine is already listening on port {port}. '
-                            'Would you like to run the app at another port instead?'
+                            "Another process on your machine is already listening on port {port}. "
+                            "Would you like to run the app at another port instead?"
                         ).format(port=port)
                     )
                 ):
@@ -179,11 +177,11 @@ def start_server(instance, host, port, path_prefix, app, port_lookup, port_looku
                     six.raise_from(
                         Exception(
                             (
-                                'Another process on your machine is already listening on port {port}. '
-                                'It is possible that you have another instance of dagit '
-                                'running somewhere using the same port. Or it could be another '
-                                'random process. Either kill that process or use the -p option to '
-                                'select another port.'
+                                "Another process on your machine is already listening on port {port}. "
+                                "It is possible that you have another instance of dagit "
+                                "running somewhere using the same port. Or it could be another "
+                                "random process. Either kill that process or use the -p option to "
+                                "select another port."
                             ).format(port=port)
                         ),
                         os_error,
@@ -197,4 +195,4 @@ cli = create_dagit_cli()
 
 def main():
     # click magic
-    cli(auto_envvar_prefix='DAGIT')  # pylint:disable=E1120
+    cli(auto_envvar_prefix="DAGIT")  # pylint:disable=E1120

@@ -1,10 +1,10 @@
-import * as React from "react";
-import { Dialog, Classes, Button, Intent } from "@blueprintjs/core";
+import {Button, Classes, Dialog, Intent} from '@blueprintjs/core';
+import * as React from 'react';
 
 export interface ConfirmationOptions {
   catchOnCancel?: boolean;
   title?: string;
-  description?: string;
+  description?: JSX.Element | string;
 }
 
 interface ConfirmationDialogProps extends ConfirmationOptions {
@@ -18,7 +18,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   title,
   description,
   onSubmit,
-  onClose
+  onClose,
 }) => {
   return (
     <Dialog icon="info-sign" onClose={onClose} title={title} isOpen={open}>
@@ -43,9 +43,9 @@ const CustomConfirmationContext = React.createContext<
 
 export const useConfirmation = () => React.useContext(CustomConfirmationContext);
 
-export const CustomConfirmationProvider: React.FunctionComponent = ({ children }) => {
+export const CustomConfirmationProvider: React.FunctionComponent = ({children}) => {
   const [confirmationState, setConfirmationState] = React.useState<ConfirmationOptions | null>(
-    null
+    null,
   );
 
   const awaitingPromiseRef = React.useRef<{
@@ -56,7 +56,7 @@ export const CustomConfirmationProvider: React.FunctionComponent = ({ children }
   const openConfirmation = (options: ConfirmationOptions) => {
     setConfirmationState(options);
     return new Promise<void>((resolve, reject) => {
-      awaitingPromiseRef.current = { resolve, reject };
+      awaitingPromiseRef.current = {resolve, reject};
     });
   };
 

@@ -2,6 +2,7 @@ from .config import ConfigMapping
 from .decorators import (
     composite_solid,
     daily_schedule,
+    executable,
     failure_hook,
     hook,
     hourly_schedule,
@@ -40,7 +41,7 @@ from .events import (
     TypeCheck,
     UrlMetadataEntryData,
 )
-from .executable import ExecutablePipeline
+from .executable import ExecutableContext, ExecutableDefinition
 from .executor import (
     ExecutorDefinition,
     default_executors,
@@ -56,8 +57,13 @@ from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping
 from .partition import Partition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
+from .pipeline_base import IPipeline
 from .preset import PresetDefinition
-from .reconstructable import ReconstructablePipeline, reconstructable
+from .reconstructable import (
+    ReconstructablePipeline,
+    build_reconstructable_pipeline,
+    reconstructable,
+)
 from .repository import RepositoryDefinition
 from .resource import ResourceDefinition, resource
 from .run_config_schema import RunConfigSchema, create_environment_type, create_run_config_schema

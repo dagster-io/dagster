@@ -1,36 +1,37 @@
-import * as React from "react";
-import gql from "graphql-tag";
 import {
   Button,
-  Menu,
-  Spinner,
-  MenuItem,
-  Intent,
+  HTMLInputProps,
+  Icon,
   IInputGroupProps,
-  HTMLInputProps
-} from "@blueprintjs/core";
-import { Select, Suggest } from "@blueprintjs/select";
-import styled from "styled-components";
-import * as ReactDOM from "react-dom";
-import { isEqual } from "apollo-utilities";
-import { useQuery, withApollo, WithApolloClient } from "react-apollo";
+  Intent,
+  Menu,
+  MenuItem,
+  Spinner,
+} from '@blueprintjs/core';
+import {Select, Suggest} from '@blueprintjs/select';
+import {isEqual} from 'apollo-utilities';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {WithApolloClient, useQuery, withApollo} from 'react-apollo';
+import * as ReactDOM from 'react-dom';
+import styled from 'styled-components';
 
-import { showCustomAlert } from "../CustomAlertProvider";
-import {
-  ConfigPartitionsQuery,
-  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results
-} from "./types/ConfigPartitionsQuery";
-import { IExecutionSession } from "../LocalStorage";
-import { ShortcutHandler } from "../ShortcutHandler";
-import { useRepositorySelector } from "../DagsterRepositoryContext";
-import { RepositorySelector } from "../types/globalTypes";
-import { ConfigEditorGeneratorPartitionSetsFragment_results } from "./types/ConfigEditorGeneratorPartitionSetsFragment";
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {useRepositorySelector} from 'src/DagsterRepositoryContext';
+import {IExecutionSession} from 'src/LocalStorage';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {ShortcutHandler} from 'src/ShortcutHandler';
+import {ConfigEditorGeneratorPartitionSetsFragment_results} from 'src/execute/types/ConfigEditorGeneratorPartitionSetsFragment';
 import {
   ConfigEditorGeneratorPipelineFragment,
-  ConfigEditorGeneratorPipelineFragment_presets
-} from "./types/ConfigEditorGeneratorPipelineFragment";
-import PythonErrorInfo from "../PythonErrorInfo";
-import { PythonErrorFragment } from "../types/PythonErrorFragment";
+  ConfigEditorGeneratorPipelineFragment_presets,
+} from 'src/execute/types/ConfigEditorGeneratorPipelineFragment';
+import {
+  ConfigPartitionsQuery,
+  ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
+} from 'src/execute/types/ConfigPartitionsQuery';
+import {PythonErrorFragment} from 'src/types/PythonErrorFragment';
+import {RepositorySelector} from 'src/types/globalTypes';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorGeneratorPipelineFragment_presets;
@@ -39,7 +40,7 @@ type Partition = ConfigPartitionsQuery_partitionSetOrError_PartitionSet_partitio
 type ConfigGenerator = Preset | PartitionSet;
 
 interface ConfigEditorConfigPickerProps {
-  base: IExecutionSession["base"];
+  base: IExecutionSession['base'];
   pipeline: Pipeline;
   partitionSets: PartitionSet[];
   solidSelection: string[] | null;
@@ -58,75 +59,75 @@ class ConfigEditorConfigPickerInternal extends React.Component<
     this.props.onSaveSession({
       base: {
         partitionsSetName: partitionSet.name,
-        partitionName: null
-      }
+        partitionName: null,
+      },
     });
   };
 
   onSelectPreset = (preset: Preset, pipeline?: Pipeline) => {
     if (!pipeline) {
-      console.error("Could not load pipeline tags");
+      console.error('Could not load pipeline tags');
     }
 
-    const tagsDict: { [key: string]: string } = [...(pipeline?.tags || []), ...preset.tags].reduce(
+    const tagsDict: {[key: string]: string} = [...(pipeline?.tags || []), ...preset.tags].reduce(
       (tags, kv) => {
         tags[kv.key] = kv.value;
         return tags;
       },
-      {}
+      {},
     );
 
     this.onCommit({
-      base: { presetName: preset.name },
+      base: {presetName: preset.name},
       name: preset.name,
-      runConfigYaml: preset.runConfigYaml || "",
+      runConfigYaml: preset.runConfigYaml || '',
       solidSelection: preset.solidSelection,
-      solidSelectionQuery: preset.solidSelection === null ? "*" : preset.solidSelection.join(","),
+      solidSelectionQuery: preset.solidSelection === null ? '*' : preset.solidSelection.join(','),
       mode: preset.mode,
       tags: Object.entries(tagsDict).map(([key, value]) => {
-        return { key, value };
-      })
+        return {key, value};
+      }),
     });
   };
 
   onSelectPartition = async (
     repositorySelector: RepositorySelector,
     partitionSetName: string,
-    partitionName: string
+    partitionName: string,
   ) => {
     this.props.onLoading();
     try {
-      const { data } = await this.props.client.query({
+      const {data} = await this.props.client.query({
         query: CONFIG_PARTITION_SELECTION_QUERY,
-        variables: { repositorySelector, partitionSetName, partitionName }
+        variables: {repositorySelector, partitionSetName, partitionName},
       });
 
       if (
         !data ||
         !data.partitionSetOrError ||
-        data.partitionSetOrError.__typename !== "PartitionSet"
+        data.partitionSetOrError.__typename !== 'PartitionSet'
       ) {
         this.props.onLoaded();
         return;
       }
 
-      const { partition } = data.partitionSetOrError;
+      const {partition} = data.partitionSetOrError;
 
       let tags;
-      if (partition.tagsOrError.__typename === "PythonError") {
+      if (partition.tagsOrError.__typename === 'PythonError') {
         tags = (this.props.pipeline?.tags || []).slice();
         showCustomAlert({
-          body: <PythonErrorInfo error={partition.tagsOrError} />
+          body: <PythonErrorInfo error={partition.tagsOrError} />,
         });
       } else {
         tags = [...(this.props.pipeline?.tags || []), ...partition.tagsOrError.results];
       }
 
       let runConfigYaml;
-      if (partition.runConfigOrError.__typename === "PythonError") {
-        runConfigYaml = "";
+      if (partition.runConfigOrError.__typename === 'PythonError') {
+        runConfigYaml = '';
         showCustomAlert({
-          body: <PythonErrorInfo error={partition.runConfigOrError} />
+          body: <PythonErrorInfo error={partition.runConfigOrError} />,
         });
       } else {
         runConfigYaml = partition.runConfigOrError.yaml;
@@ -135,14 +136,14 @@ class ConfigEditorConfigPickerInternal extends React.Component<
       this.onCommit({
         name: partition.name,
         base: Object.assign({}, this.props.base, {
-          partitionName: partition.name
+          partitionName: partition.name,
         }),
         runConfigYaml,
         solidSelection: partition.solidSelection,
         solidSelectionQuery:
-          partition.solidSelection === null ? "*" : partition.solidSelection.join(","),
+          partition.solidSelection === null ? '*' : partition.solidSelection.join(','),
         mode: partition.mode,
-        tags
+        tags,
       });
     } catch {}
     this.props.onLoaded();
@@ -153,7 +154,7 @@ class ConfigEditorConfigPickerInternal extends React.Component<
   };
 
   render() {
-    const { pipeline, solidSelection, base, partitionSets } = this.props;
+    const {pipeline, solidSelection, base, partitionSets} = this.props;
 
     return (
       <PickerContainer>
@@ -166,9 +167,9 @@ class ConfigEditorConfigPickerInternal extends React.Component<
           onSelectPreset={this.onSelectPreset}
           onSelectPartitionSet={this.onSelectPartitionSet}
         />
-        {base && "partitionsSetName" in base && (
+        {base && 'partitionsSetName' in base && (
           <>
-            <div style={{ width: 5 }} />
+            <div style={{width: 5}} />
             <ConfigEditorPartitionPicker
               key={base.partitionsSetName}
               pipeline={pipeline}
@@ -184,7 +185,7 @@ class ConfigEditorConfigPickerInternal extends React.Component<
 }
 
 export const ConfigEditorConfigPicker = withApollo<ConfigEditorConfigPickerProps>(
-  ConfigEditorConfigPickerInternal
+  ConfigEditorConfigPickerInternal,
 );
 
 interface ConfigEditorPartitionPickerProps {
@@ -194,37 +195,54 @@ interface ConfigEditorPartitionPickerProps {
   onSelect: (
     repositorySelector: RepositorySelector,
     partitionSetName: string,
-    partitionName: string
+    partitionName: string,
   ) => void;
 }
 
 export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPartitionPickerProps> = React.memo(
-  props => {
-    const { partitionSetName, value, onSelect } = props;
+  (props) => {
+    const {partitionSetName, value, onSelect} = props;
     const repositorySelector = useRepositorySelector();
-    const { data, loading } = useQuery<ConfigPartitionsQuery>(CONFIG_PARTITIONS_QUERY, {
-      variables: { repositorySelector, partitionSetName },
-      fetchPolicy: "network-only"
+    const {data, loading} = useQuery<ConfigPartitionsQuery>(CONFIG_PARTITIONS_QUERY, {
+      variables: {repositorySelector, partitionSetName},
+      fetchPolicy: 'network-only',
     });
 
-    const partitions: Partition[] =
-      data?.partitionSetOrError.__typename === "PartitionSet" &&
-      data?.partitionSetOrError.partitionsOrError.__typename === "Partitions"
-        ? data.partitionSetOrError.partitionsOrError.results
-        : [];
+    const [sortOrder, setSortOrder] = React.useState('asc');
+
+    const partitions: Partition[] = React.useMemo(() => {
+      const retrieved =
+        data?.partitionSetOrError.__typename === 'PartitionSet' &&
+        data?.partitionSetOrError.partitionsOrError.__typename === 'Partitions'
+          ? data.partitionSetOrError.partitionsOrError.results
+          : [];
+      return sortOrder === 'asc' ? retrieved : [...retrieved].reverse();
+    }, [data, sortOrder]);
 
     const error: PythonErrorFragment | null =
-      data?.partitionSetOrError.__typename === "PartitionSet" &&
-      data?.partitionSetOrError.partitionsOrError.__typename !== "Partitions"
+      data?.partitionSetOrError.__typename === 'PartitionSet' &&
+      data?.partitionSetOrError.partitionsOrError.__typename !== 'Partitions'
         ? data.partitionSetOrError.partitionsOrError
         : null;
 
-    const selected = partitions.find(p => p.name === value);
+    const selected = partitions.find((p) => p.name === value);
+
+    const onClickSort = React.useCallback((event) => {
+      event.preventDefault();
+      setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'));
+    }, []);
+
+    const rightElement = partitions.length ? (
+      <Button text={undefined} minimal onMouseDown={onClickSort}>
+        <Icon icon={sortOrder === 'asc' ? 'sort-alphabetical' : 'sort-alphabetical-desc'} />
+      </Button>
+    ) : undefined;
 
     const inputProps: IInputGroupProps & HTMLInputProps = {
-      placeholder: "Partition",
-      style: { width: 180 },
-      intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER
+      placeholder: 'Partition',
+      style: {width: 180},
+      intent: (loading ? !!value : !!selected) ? Intent.NONE : Intent.DANGER,
+      rightElement,
     };
 
     // If we are loading the partitions and do NOT have any cached data to display,
@@ -236,12 +254,12 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
           key="loading"
           inputProps={{
             ...inputProps,
-            rightElement: !value ? <Spinner size={17} /> : undefined
+            rightElement: !value ? <Spinner size={17} /> : undefined,
           }}
           items={[]}
           itemRenderer={() => null}
           noResults={<Menu.Item disabled={true} text="Loading..." />}
-          inputValueRenderer={str => str}
+          inputValueRenderer={(str) => str}
           selectedItem={value}
         />
       );
@@ -249,7 +267,7 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
 
     if (error) {
       showCustomAlert({
-        body: <PythonErrorInfo error={error} />
+        body: <PythonErrorInfo error={error} />,
       });
     }
 
@@ -259,11 +277,11 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
     // and ensure it is re-applied to the internal state when it changes (via `key` below).
     return (
       <Suggest<Partition>
-        key={selected ? selected.name : "none"}
+        key={selected ? selected.name : 'none'}
         defaultSelectedItem={selected}
         items={partitions}
         inputProps={inputProps}
-        inputValueRenderer={partition => partition.name}
+        inputValueRenderer={(partition) => partition.name}
         itemPredicate={(query, partition) => query.length === 0 || partition.name.includes(query)}
         itemRenderer={(partition, props) => (
           <Menu.Item
@@ -274,13 +292,13 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
           />
         )}
         noResults={<Menu.Item disabled={true} text="No presets." />}
-        onItemSelect={item => {
+        onItemSelect={(item) => {
           onSelect(repositorySelector, partitionSetName, item.name);
         }}
       />
     );
   },
-  isEqual
+  isEqual,
 );
 
 interface ConfigEditorConfigGeneratorPickerProps {
@@ -288,23 +306,23 @@ interface ConfigEditorConfigGeneratorPickerProps {
   presets: Preset[];
   partitionSets: PartitionSet[];
   solidSelection: string[] | null;
-  value: IExecutionSession["base"];
+  value: IExecutionSession['base'];
   onSelectPreset: (preset: Preset, pipeline?: Pipeline) => void;
   onSelectPartitionSet: (partitionSet: PartitionSet, pipeline?: Pipeline) => void;
 }
 
 export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorConfigGeneratorPickerProps> = React.memo(
-  props => {
-    const { pipeline, presets, partitionSets, onSelectPreset, onSelectPartitionSet, value } = props;
+  (props) => {
+    const {pipeline, presets, partitionSets, onSelectPreset, onSelectPartitionSet, value} = props;
 
-    const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
+    const byName = (a: {name: string}, b: {name: string}) => a.name.localeCompare(b.name);
 
     const configGenerators: ConfigGenerator[] = [...presets, ...partitionSets].sort(byName);
 
     const empty = configGenerators.length === 0;
     const select: React.RefObject<Select<ConfigGenerator>> = React.createRef();
     const onSelect = (item: ConfigGenerator) => {
-      if (item.__typename === "PartitionSet") {
+      if (item.__typename === 'PartitionSet') {
         onSelectPartitionSet(item, pipeline);
       } else {
         onSelectPreset(item, pipeline);
@@ -320,15 +338,15 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
 
     const label = !value
       ? emptyLabel
-      : "presetName" in value
+      : 'presetName' in value
       ? `Preset: ${value.presetName}`
       : `Partition Set: ${value.partitionsSetName}`;
 
     return (
       <div>
         <ShortcutHandler
-          shortcutLabel={"⌥E"}
-          shortcutFilter={e => e.keyCode === 69 && e.altKey}
+          shortcutLabel={'⌥E'}
+          shortcutFilter={(e) => e.keyCode === 69 && e.altKey}
           onShortcut={() => activateSelect(select.current)}
         >
           <Select<ConfigGenerator>
@@ -338,14 +356,14 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
             itemPredicate={(query, configGenerator) =>
               query.length === 0 || configGenerator.name.includes(query)
             }
-            itemListRenderer={({ itemsParentRef, renderItem, filteredItems }) => {
+            itemListRenderer={({itemsParentRef, renderItem, filteredItems}) => {
               const renderedPresetItems = filteredItems
-                .filter(item => item.__typename === "PipelinePreset")
+                .filter((item) => item.__typename === 'PipelinePreset')
                 .map(renderItem)
                 .filter(Boolean);
 
               const renderedPartitionSetItems = filteredItems
-                .filter(item => item.__typename === "PartitionSet")
+                .filter((item) => item.__typename === 'PartitionSet')
                 .map(renderItem)
                 .filter(Boolean);
 
@@ -370,15 +388,15 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
                 text={
                   <div>
                     {item.name}
-                    <div style={{ opacity: 0.4, fontSize: "0.75rem" }}>
+                    <div style={{opacity: 0.4, fontSize: '0.75rem'}}>
                       {[
                         item.solidSelection
                           ? item.solidSelection.length === 1
                             ? `Solids: ${item.solidSelection[0]}`
                             : `Solids: ${item.solidSelection.length}`
                           : `Solids: All`,
-                        `Mode: ${item.mode}`
-                      ].join(" - ")}
+                        `Mode: ${item.mode}`,
+                      ].join(' - ')}
                     </div>
                   </div>
                 }
@@ -399,14 +417,16 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
       </div>
     );
   },
-  isEqual
+  isEqual,
 );
 
 function activateSelect(select: Select<any> | null) {
-  if (!select) return;
+  if (!select) {
+    return;
+  }
   // eslint-disable-next-line react/no-find-dom-node
   const selectEl = ReactDOM.findDOMNode(select) as HTMLElement;
-  const btnEl = selectEl.querySelector("button");
+  const btnEl = selectEl.querySelector('button');
   if (btnEl) {
     btnEl.click();
   }

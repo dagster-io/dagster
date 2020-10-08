@@ -23,23 +23,23 @@ def define_inty_pipeline():
     def return_one():
         return 1
 
-    @lambda_solid(input_defs=[InputDefinition('num', Int)], output_def=OutputDefinition(Int))
+    @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
     def add_one(num):
         return num + 1
 
     @lambda_solid
     def user_throw_exception():
-        raise Exception('whoops')
+        raise Exception("whoops")
 
     pipeline = PipelineDefinition(
-        name='basic_external_plan_execution',
+        name="basic_external_plan_execution",
         solid_defs=[return_one, add_one, user_throw_exception],
-        dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+        dependencies={"add_one": {"num": DependencyDefinition("return_one")}},
     )
     return pipeline
 
 
-def get_step_output(step_events, step_key, output_name='result'):
+def get_step_output(step_events, step_key, output_name="result"):
     for step_event in step_events:
         if (
             step_event.event_type == DagsterEventType.STEP_OUTPUT
@@ -53,18 +53,18 @@ def get_step_output(step_events, step_key, output_name='result'):
 def test_using_file_system_for_subplan():
     pipeline = define_inty_pipeline()
 
-    run_config = {'storage': {'filesystem': {}}}
+    run_config = {"storage": {"filesystem": {}}}
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, run_config=run_config,)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
-    assert execution_plan.get_step_by_key('return_one.compute')
+    assert execution_plan.get_step_by_key("return_one.compute")
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['return_one.compute']),
+            execution_plan.build_subset_plan(["return_one.compute"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -74,26 +74,26 @@ def test_using_file_system_for_subplan():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, pipeline_run.run_id
     )
-    assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert get_step_output(return_one_step_events, "return_one.compute")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('return_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one.compute")).obj
         == 1
     )
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['add_one.compute']),
+            execution_plan.build_subset_plan(["add_one.compute"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
         )
     )
 
-    assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle('add_one.compute'))
+    assert get_step_output(add_one_step_events, "add_one.compute")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one.compute"))
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
         == 2
     )
 
@@ -101,7 +101,7 @@ def test_using_file_system_for_subplan():
 def test_using_intermediates_file_system_is_persistent():
     pipeline = define_inty_pipeline()
 
-    run_config = {'intermediate_storage': {'filesystem': {}}}
+    run_config = {"intermediate_storage": {"filesystem": {}}}
     execution_plan = create_execution_plan(pipeline, run_config=run_config,)
 
     assert execution_plan.artifacts_persisted
@@ -110,18 +110,18 @@ def test_using_intermediates_file_system_is_persistent():
 def test_using_intermediates_file_system_for_subplan():
     pipeline = define_inty_pipeline()
 
-    run_config = {'intermediate_storage': {'filesystem': {}}}
+    run_config = {"intermediate_storage": {"filesystem": {}}}
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, run_config=run_config,)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
-    assert execution_plan.get_step_by_key('return_one.compute')
+    assert execution_plan.get_step_by_key("return_one.compute")
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['return_one.compute']),
+            execution_plan.build_subset_plan(["return_one.compute"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -131,26 +131,26 @@ def test_using_intermediates_file_system_for_subplan():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, pipeline_run.run_id
     )
-    assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert get_step_output(return_one_step_events, "return_one.compute")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('return_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one.compute")).obj
         == 1
     )
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['add_one.compute']),
+            execution_plan.build_subset_plan(["add_one.compute"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
         )
     )
 
-    assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle('add_one.compute'))
+    assert get_step_output(add_one_step_events, "add_one.compute")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one.compute"))
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
         == 2
     )
 
@@ -158,18 +158,18 @@ def test_using_intermediates_file_system_for_subplan():
 def test_using_intermediates_to_override():
     pipeline = define_inty_pipeline()
 
-    run_config = {'storage': {'filesystem': {}}, 'intermediate_storage': {'in_memory': {}}}
+    run_config = {"storage": {"filesystem": {}}, "intermediate_storage": {"in_memory": {}}}
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, run_config=run_config,)
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
-    assert execution_plan.get_step_by_key('return_one.compute')
+    assert execution_plan.get_step_by_key("return_one.compute")
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['return_one.compute']),
+            execution_plan.build_subset_plan(["return_one.compute"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -179,13 +179,13 @@ def test_using_intermediates_to_override():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, pipeline_run.run_id
     )
-    assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert not intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert get_step_output(return_one_step_events, "return_one.compute")
+    assert not intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
 
 
 def test_using_file_system_for_subplan_multiprocessing():
 
-    run_config = {'storage': {'filesystem': {}}}
+    run_config = {"storage": {"filesystem": {}}}
     instance = DagsterInstance.local_temp()
 
     pipeline = reconstructable(define_inty_pipeline)
@@ -195,13 +195,13 @@ def test_using_file_system_for_subplan_multiprocessing():
         pipeline_def=pipeline.get_definition(), execution_plan=execution_plan
     )
 
-    assert execution_plan.get_step_by_key('return_one.compute')
+    assert execution_plan.get_step_by_key("return_one.compute")
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['return_one.compute']),
+            execution_plan.build_subset_plan(["return_one.compute"]),
             instance,
-            run_config=dict(run_config, execution={'multiprocess': {}}),
+            run_config=dict(run_config, execution={"multiprocess": {}}),
             pipeline_run=pipeline_run,
         )
     )
@@ -210,33 +210,33 @@ def test_using_file_system_for_subplan_multiprocessing():
         instance.intermediates_directory, pipeline_run.run_id
     )
 
-    assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert get_step_output(return_one_step_events, "return_one.compute")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('return_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one.compute")).obj
         == 1
     )
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['add_one.compute']),
+            execution_plan.build_subset_plan(["add_one.compute"]),
             instance,
-            run_config=dict(run_config, execution={'multiprocess': {}}),
+            run_config=dict(run_config, execution={"multiprocess": {}}),
             pipeline_run=pipeline_run,
         )
     )
 
-    assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle('add_one.compute'))
+    assert get_step_output(add_one_step_events, "add_one.compute")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one.compute"))
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
         == 2
     )
 
 
 def test_using_intermediate_file_system_for_subplan_multiprocessing():
 
-    run_config = {'intermediate_storage': {'filesystem': {}}}
+    run_config = {"intermediate_storage": {"filesystem": {}}}
     instance = DagsterInstance.local_temp()
 
     pipeline = reconstructable(define_inty_pipeline)
@@ -246,13 +246,13 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
         pipeline_def=pipeline.get_definition(), execution_plan=execution_plan
     )
 
-    assert execution_plan.get_step_by_key('return_one.compute')
+    assert execution_plan.get_step_by_key("return_one.compute")
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['return_one.compute']),
+            execution_plan.build_subset_plan(["return_one.compute"]),
             instance,
-            run_config=dict(run_config, execution={'multiprocess': {}}),
+            run_config=dict(run_config, execution={"multiprocess": {}}),
             pipeline_run=pipeline_run,
         )
     )
@@ -261,26 +261,26 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
         instance.intermediates_directory, pipeline_run.run_id
     )
 
-    assert get_step_output(return_one_step_events, 'return_one.compute')
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle('return_one.compute'))
+    assert get_step_output(return_one_step_events, "return_one.compute")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('return_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one.compute")).obj
         == 1
     )
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(['add_one.compute']),
+            execution_plan.build_subset_plan(["add_one.compute"]),
             instance,
-            run_config=dict(run_config, execution={'multiprocess': {}}),
+            run_config=dict(run_config, execution={"multiprocess": {}}),
             pipeline_run=pipeline_run,
         )
     )
 
-    assert get_step_output(add_one_step_events, 'add_one.compute')
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle('add_one.compute'))
+    assert get_step_output(add_one_step_events, "add_one.compute")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one.compute"))
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle('add_one.compute')).obj
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
         == 2
     )
 
@@ -296,28 +296,28 @@ def test_execute_step_wrong_step_key():
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
-            execution_plan.build_subset_plan(['nope']), instance, pipeline_run=pipeline_run
+            execution_plan.build_subset_plan(["nope"]), instance, pipeline_run=pipeline_run
         )
 
-    assert exc_info.value.step_keys == ['nope']
+    assert exc_info.value.step_keys == ["nope"]
 
-    assert str(exc_info.value) == 'Execution plan does not contain step: nope'
+    assert str(exc_info.value) == "Execution plan does not contain step: nope"
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
-            execution_plan.build_subset_plan(['nope', 'nuh_uh']),
+            execution_plan.build_subset_plan(["nope", "nuh_uh"]),
             instance,
             pipeline_run=pipeline_run,
         )
 
-    assert exc_info.value.step_keys == ['nope', 'nuh_uh']
+    assert exc_info.value.step_keys == ["nope", "nuh_uh"]
 
-    assert str(exc_info.value) == 'Execution plan does not contain steps: nope, nuh_uh'
+    assert str(exc_info.value) == "Execution plan does not contain steps: nope, nuh_uh"
 
 
 def test_using_file_system_for_subplan_missing_input():
     pipeline = define_inty_pipeline()
-    run_config = {'storage': {'filesystem': {}}}
+    run_config = {"storage": {"filesystem": {}}}
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, run_config=run_config)
@@ -327,7 +327,7 @@ def test_using_file_system_for_subplan_missing_input():
 
     with pytest.raises(DagsterStepOutputNotFoundError):
         execute_plan(
-            execution_plan.build_subset_plan(['add_one.compute']),
+            execution_plan.build_subset_plan(["add_one.compute"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -337,7 +337,7 @@ def test_using_file_system_for_subplan_missing_input():
 def test_using_file_system_for_subplan_invalid_step():
     pipeline = define_inty_pipeline()
 
-    run_config = {'storage': {'filesystem': {}}}
+    run_config = {"storage": {"filesystem": {}}}
 
     instance = DagsterInstance.ephemeral()
     execution_plan = create_execution_plan(pipeline, run_config=run_config)
@@ -347,7 +347,7 @@ def test_using_file_system_for_subplan_invalid_step():
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_plan(
-            execution_plan.build_subset_plan(['nope']),
+            execution_plan.build_subset_plan(["nope"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,

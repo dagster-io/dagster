@@ -32,14 +32,14 @@ class CloudwatchLogsHandler(logging.Handler):
         aws_access_key_id=None,
     ):
         self.client = boto3.client(
-            'logs',
+            "logs",
             region_name=aws_region,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
         )
-        self.log_group_name = check.str_param(log_group_name, 'log_group_name')
+        self.log_group_name = check.str_param(log_group_name, "log_group_name")
         # Maybe we should make this optional, and default to the run_id
-        self.log_stream_name = check.str_param(log_stream_name, 'log_stream_name')
+        self.log_stream_name = check.str_param(log_stream_name, "log_stream_name")
         self.overhead = OVERHEAD
         self.maximum_batch_size = MAXIMUM_BATCH_SIZE
         self.sequence_token = None
@@ -54,23 +54,23 @@ class CloudwatchLogsHandler(logging.Handler):
         log_group_exists = False
         next_token = None
         while not log_group_exists:
-            describe_log_group_kwargs = {'logGroupNamePrefix': self.log_group_name}
+            describe_log_group_kwargs = {"logGroupNamePrefix": self.log_group_name}
             if next_token is not None:
-                describe_log_group_kwargs['nextToken'] = next_token
+                describe_log_group_kwargs["nextToken"] = next_token
 
             res = self.client.describe_log_groups(**describe_log_group_kwargs)
-            if self.log_group_name in (log_group['logGroupName'] for log_group in res['logGroups']):
+            if self.log_group_name in (log_group["logGroupName"] for log_group in res["logGroups"]):
                 log_group_exists = True
                 break
             else:
-                next_token = res.get('nextToken')
+                next_token = res.get("nextToken")
                 if next_token is None:
                     break
 
         if not log_group_exists:
             raise Exception(
-                'Failed to initialize Cloudwatch logger: Could not find log group with name '
-                '{log_group_name}'.format(log_group_name=self.log_group_name)
+                "Failed to initialize Cloudwatch logger: Could not find log group with name "
+                "{log_group_name}".format(log_group_name=self.log_group_name)
             )
 
     def check_log_stream(self):
@@ -79,34 +79,34 @@ class CloudwatchLogsHandler(logging.Handler):
         next_token = None
         while not log_stream_exists:
             describe_log_stream_kwargs = {
-                'logGroupName': self.log_group_name,
-                'logStreamNamePrefix': self.log_stream_name,
+                "logGroupName": self.log_group_name,
+                "logStreamNamePrefix": self.log_stream_name,
             }
             if next_token is not None:
-                describe_log_stream_kwargs['nextToken'] = next_token
+                describe_log_stream_kwargs["nextToken"] = next_token
 
             res = self.client.describe_log_streams(**describe_log_stream_kwargs)
-            for log_stream in res['logStreams']:
-                if self.log_stream_name == log_stream['logStreamName']:
+            for log_stream in res["logStreams"]:
+                if self.log_stream_name == log_stream["logStreamName"]:
                     log_stream_exists = True
-                    self.sequence_token = log_stream.get('uploadSequenceToken')
+                    self.sequence_token = log_stream.get("uploadSequenceToken")
                 break
             else:
-                next_token = res.get('nextToken')
+                next_token = res.get("nextToken")
                 if next_token is None:
                     break
 
         if not log_stream_exists:
             raise Exception(
-                'Failed to initialize Cloudwatch logger: Could not find log stream with name '
-                '{log_stream_name}'.format(log_stream_name=self.log_stream_name)
+                "Failed to initialize Cloudwatch logger: Could not find log stream with name "
+                "{log_stream_name}".format(log_stream_name=self.log_stream_name)
             )
 
     def log_error(self, record, exc):
-        logging.critical('Error while logging!')
+        logging.critical("Error while logging!")
         try:
             logging.error(
-                'Attempted to log: {record}'.format(record=seven.json.dumps(record.__dict__))
+                "Attempted to log: {record}".format(record=seven.json.dumps(record.__dict__))
             )
         except Exception:  # pylint: disable=broad-except
             pass
@@ -121,22 +121,22 @@ class CloudwatchLogsHandler(logging.Handler):
     def _emit(self, record, retry=False):
         message = seven.json.dumps(record.__dict__)
         timestamp = millisecond_timestamp(
-            datetime.datetime.strptime(record.dagster_meta['log_timestamp'], '%Y-%m-%dT%H:%M:%S.%f')
+            datetime.datetime.strptime(record.dagster_meta["log_timestamp"], "%Y-%m-%dT%H:%M:%S.%f")
         )
         params = {
-            'logGroupName': self.log_group_name,
-            'logStreamName': self.log_stream_name,
-            'logEvents': [{'timestamp': timestamp, 'message': message}],
+            "logGroupName": self.log_group_name,
+            "logStreamName": self.log_stream_name,
+            "logEvents": [{"timestamp": timestamp, "message": message}],
         }
         if self.sequence_token is not None:
-            params['sequenceToken'] = self.sequence_token
+            params["sequenceToken"] = self.sequence_token
 
         try:
             res = self.client.put_log_events(**params)
-            self.sequence_token = res['nextSequenceToken']
-            log_events_rejected = res.get('rejectedLogEventsInfo')
+            self.sequence_token = res["nextSequenceToken"]
+            log_events_rejected = res.get("rejectedLogEventsInfo")
             if log_events_rejected is not None:
-                logging.error('Cloudwatch logger: log events rejected: {res}'.format(res=res))
+                logging.error("Cloudwatch logger: log events rejected: {res}".format(res=res))
         except self.client.exceptions.InvalidSequenceTokenException as exc:
             if not retry:
                 self.check_log_stream()
@@ -144,52 +144,52 @@ class CloudwatchLogsHandler(logging.Handler):
             else:
                 self.log_error(record, exc)
         except self.client.exceptions.DataAlreadyAcceptedException as exc:
-            logging.error('Cloudwatch logger: log events already accepted: {res}'.format(res=res))
+            logging.error("Cloudwatch logger: log events already accepted: {res}".format(res=res))
         except self.client.exceptions.InvalidParameterException as exc:
             logging.error(
-                'Cloudwatch logger: Invalid parameter exception while logging: {res}'.format(
+                "Cloudwatch logger: Invalid parameter exception while logging: {res}".format(
                     res=res
                 )
             )
         except self.client.exceptions.ResourceNotFoundException as exc:
             logging.error(
-                'Cloudwatch logger: Resource not found. Check that the log stream or log group '
-                'was not deleted: {res}'.format(res=res)
+                "Cloudwatch logger: Resource not found. Check that the log stream or log group "
+                "was not deleted: {res}".format(res=res)
             )
         except self.client.exceptions.ServiceUnavailableException as exc:
             if not retry:
                 self.retry(record)
             else:
-                logging.error('Cloudwatch logger: Service unavailable: {res}'.format(res=res))
+                logging.error("Cloudwatch logger: Service unavailable: {res}".format(res=res))
         except self.client.exceptions.ServiceUnavailableException as exc:
             if not retry:
                 self.retry(record)
             else:
                 logging.error(
-                    'Cloudwatch logger: Unrecognized client. Check your AWS access key id and '
-                    'secret key: {res}'.format(res=res)
+                    "Cloudwatch logger: Unrecognized client. Check your AWS access key id and "
+                    "secret key: {res}".format(res=res)
                 )
 
 
 @logger(
     {
-        'log_level': Field(str, is_required=False, default_value='INFO'),
-        'name': Field(str, is_required=False, default_value='dagster'),
-        'log_group_name': Field(str, description='The name of the log group'),
-        'log_stream_name': Field(str, description='The name of the log stream'),
-        'aws_region': Field(
+        "log_level": Field(str, is_required=False, default_value="INFO"),
+        "name": Field(str, is_required=False, default_value="dagster"),
+        "log_group_name": Field(str, description="The name of the log group"),
+        "log_stream_name": Field(str, description="The name of the log stream"),
+        "aws_region": Field(
             StringSource,
             is_required=False,
-            description='Specifies a custom region for the S3 session. Default is chosen through '
-            'the ordinary boto3 credential chain.',
+            description="Specifies a custom region for the S3 session. Default is chosen through "
+            "the ordinary boto3 credential chain.",
         ),
-        'aws_secret_access_key': Field(StringSource, is_required=False),
-        'aws_access_key_id': Field(StringSource, is_required=False),
+        "aws_secret_access_key": Field(StringSource, is_required=False),
+        "aws_access_key_id": Field(StringSource, is_required=False),
     },
-    description='The default colored console logger.',
+    description="The default colored console logger.",
 )
 def cloudwatch_logger(init_context):
-    '''This logger provides support for sending Dagster logs to AWS CloudWatch.
+    """This logger provides support for sending Dagster logs to AWS CloudWatch.
 
     Example:
 
@@ -221,20 +221,20 @@ def cloudwatch_logger(init_context):
                     }
                 },
             )
-    '''
-    level = coerce_valid_log_level(init_context.logger_config['log_level'])
-    name = init_context.logger_config['name']
+    """
+    level = coerce_valid_log_level(init_context.logger_config["log_level"])
+    name = init_context.logger_config["name"]
 
     klass = logging.getLoggerClass()
     logger_ = klass(name, level=level)
 
     logger_.addHandler(
         CloudwatchLogsHandler(
-            init_context.logger_config['log_group_name'],
-            init_context.logger_config['log_stream_name'],
-            aws_region=init_context.logger_config.get('aws_region'),
-            aws_secret_access_key=init_context.logger_config.get('aws_secret_access_key'),
-            aws_access_key_id=init_context.logger_config.get('aws_access_key_id'),
+            init_context.logger_config["log_group_name"],
+            init_context.logger_config["log_stream_name"],
+            aws_region=init_context.logger_config.get("aws_region"),
+            aws_secret_access_key=init_context.logger_config.get("aws_secret_access_key"),
+            aws_access_key_id=init_context.logger_config.get("aws_access_key_id"),
         )
     )
     return logger_

@@ -29,7 +29,7 @@ from ..sql_event_log import SqlEventLogStorage
 
 
 class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
-    '''SQLite-backed event log storage.
+    """SQLite-backed event log storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
@@ -51,23 +51,23 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     The ``base_dir`` param tells the event log storage where on disk to store the databases. To
     improve concurrent performance, event logs are stored in a separate SQLite database for each
     run.
-    '''
+    """
 
     def __init__(self, base_dir, inst_data=None):
-        '''Note that idempotent initialization of the SQLite database is done on a per-run_id
-        basis in the body of connect, since each run is stored in a separate database.'''
-        self._base_dir = os.path.abspath(check.str_param(base_dir, 'base_dir'))
+        """Note that idempotent initialization of the SQLite database is done on a per-run_id
+        basis in the body of connect, since each run is stored in a separate database."""
+        self._base_dir = os.path.abspath(check.str_param(base_dir, "base_dir"))
         mkdir_p(self._base_dir)
 
         self._watchers = defaultdict(dict)
         self._obs = Observer()
         self._obs.start()
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     def upgrade(self):
         all_run_ids = self.get_all_run_ids()
         print(  # pylint: disable=print-call
-            'Updating event log storage for {n_runs} runs on disk...'.format(
+            "Updating event log storage for {n_runs} runs on disk...".format(
                 n_runs=len(all_run_ids)
             )
         )
@@ -82,21 +82,21 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {'base_dir': str}
+        return {"base_dir": str}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
         return SqliteEventLogStorage(inst_data=inst_data, **config_value)
 
     def get_all_run_ids(self):
-        all_filenames = glob.glob(os.path.join(self._base_dir, '*.db'))
+        all_filenames = glob.glob(os.path.join(self._base_dir, "*.db"))
         return [os.path.splitext(os.path.basename(filename))[0] for filename in all_filenames]
 
     def path_for_run_id(self, run_id):
-        return os.path.join(self._base_dir, '{run_id}.db'.format(run_id=run_id))
+        return os.path.join(self._base_dir, "{run_id}.db".format(run_id=run_id))
 
     def conn_string_for_run_id(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
         return create_db_conn_string(self._base_dir, run_id)
 
     def _initdb(self, engine):
@@ -105,7 +105,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         try:
             SqlEventLogStorageMetadata.create_all(engine)
-            engine.execute('PRAGMA journal_mode=WAL;')
+            engine.execute("PRAGMA journal_mode=WAL;")
             stamp_alembic_rev(alembic_config, engine)
         except (db.exc.DatabaseError, sqlite3.DatabaseError, sqlite3.OperationalError) as exc:
             # This is SQLite-specific handling for concurrency issues that can arise when, e.g.,
@@ -114,21 +114,21 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             # errors, we know that another process is on the case and it's safe to continue:
             err_msg = str(exc)
             if not (
-                'table event_logs already exists' in err_msg
-                or 'database is locked' in err_msg
-                or 'table alembic_version already exists' in err_msg
-                or 'UNIQUE constraint failed: alembic_version.version_num' in err_msg
+                "table event_logs already exists" in err_msg
+                or "database is locked" in err_msg
+                or "table alembic_version already exists" in err_msg
+                or "UNIQUE constraint failed: alembic_version.version_num" in err_msg
             ):
                 raise
             else:
                 logging.info(
-                    'SqliteEventLogStorage._initdb: Encountered apparent concurrent init, '
-                    'swallowing {str_exc}'.format(str_exc=err_msg)
+                    "SqliteEventLogStorage._initdb: Encountered apparent concurrent init, "
+                    "swallowing {str_exc}".format(str_exc=err_msg)
                 )
 
     @contextmanager
     def connect(self, run_id=None):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         conn_string = self.conn_string_for_run_id(run_id)
         engine = create_engine(conn_string, poolclass=NullPool)
@@ -141,7 +141,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             with handle_schema_errors(
                 conn,
                 get_alembic_config(__file__),
-                msg='SqliteEventLogStorage for run {run_id}'.format(run_id=run_id),
+                msg="SqliteEventLogStorage for run {run_id}".format(run_id=run_id),
             ):
                 yield conn
         finally:
@@ -150,9 +150,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     def wipe(self):
         for filename in (
-            glob.glob(os.path.join(self._base_dir, '*.db'))
-            + glob.glob(os.path.join(self._base_dir, '*.db-wal'))
-            + glob.glob(os.path.join(self._base_dir, '*.db-shm'))
+            glob.glob(os.path.join(self._base_dir, "*.db"))
+            + glob.glob(os.path.join(self._base_dir, "*.db-wal"))
+            + glob.glob(os.path.join(self._base_dir, "*.db-shm"))
         ):
             os.unlink(filename)
 
@@ -173,10 +173,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
     def __init__(self, event_log_storage, run_id, callback, start_cursor, **kwargs):
         self._event_log_storage = check.inst_param(
-            event_log_storage, 'event_log_storage', SqliteEventLogStorage
+            event_log_storage, "event_log_storage", SqliteEventLogStorage
         )
-        self._run_id = check.str_param(run_id, 'run_id')
-        self._cb = check.callable_param(callback, 'callback')
+        self._run_id = check.str_param(run_id, "run_id")
+        self._cb = check.callable_param(callback, "callback")
         self._log_path = event_log_storage.path_for_run_id(run_id)
         self._cursor = start_cursor if start_cursor is not None else -1
         super(SqliteEventLogStorageWatchdog, self).__init__(patterns=[self._log_path], **kwargs)

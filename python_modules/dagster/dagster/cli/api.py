@@ -13,6 +13,7 @@ from dagster import check, seven
 from dagster.cli.workspace.cli_target import (
     get_repository_location_from_kwargs,
     get_repository_origin_from_kwargs,
+    get_working_directory_from_kwargs,
     python_origin_target_argument,
     repository_target_argument,
 )
@@ -28,9 +29,12 @@ from dagster.core.execution.retries import Retries
 from dagster.core.host_representation import external_repository_data_from_def
 from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.host_representation.external_data import (
+    ExternalExecutionParamsData,
+    ExternalExecutionParamsErrorData,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,
+    ExternalPartitionSetExecutionParamData,
     ExternalPartitionTagsData,
     ExternalPipelineSubsetResult,
     ExternalRepositoryData,
@@ -52,26 +56,31 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
 )
 from dagster.core.storage.tags import check_tags
+from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcServer
 from dagster.grpc.impl import (
+    get_external_executable_params,
     get_external_execution_plan_snapshot,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
     get_partition_config,
     get_partition_names,
+    get_partition_set_execution_param_data,
     get_partition_tags,
 )
 from dagster.grpc.types import (
     ExecuteRunArgs,
     ExecuteStepArgs,
     ExecutionPlanSnapshotArgs,
+    ExternalExecutableArgs,
     ExternalScheduleExecutionArgs,
     ListRepositoriesInput,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
     PartitionArgs,
     PartitionNamesArgs,
+    PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
     ScheduleExecutionDataMode,
 )
@@ -81,12 +90,8 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.serdes.ipc import (
-    ipc_write_stream,
-    ipc_write_unary_response,
-    read_unary_input,
-    setup_interrupt_support,
-)
+from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, read_unary_input
+from dagster.utils import delay_interrupts, setup_windows_interrupt_support
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import (
     recon_pipeline_from_origin,
@@ -98,19 +103,19 @@ from dagster.utils.merger import merge_dicts
 
 
 def unary_api_cli_command(name, help_str, input_cls, output_cls):
-    '''
+    """
     Use this to decorate synchronous api cli commands that take
     one object and return one object.
-    '''
-    check.str_param(name, 'name')
-    check.str_param(help_str, 'help_str')
-    check.type_param(input_cls, 'input_cls')
-    check.inst_param(output_cls, 'output_cls', (tuple, check.type_types))
+    """
+    check.str_param(name, "name")
+    check.str_param(help_str, "help_str")
+    check.type_param(input_cls, "input_cls")
+    check.inst_param(output_cls, "output_cls", (tuple, check.type_types))
 
     def wrap(fn):
         @click.command(name=name, help=help_str)
-        @click.argument('input_file', type=click.Path())
-        @click.argument('output_file', type=click.Path())
+        @click.argument("input_file", type=click.Path())
+        @click.argument("output_file", type=click.Path())
         def command(input_file, output_file):
             args = check.inst(read_unary_input(input_file), input_cls)
             output = check.inst(fn(args), output_cls)
@@ -122,16 +127,16 @@ def unary_api_cli_command(name, help_str, input_cls, output_cls):
 
 
 @unary_api_cli_command(
-    name='list_repositories',
+    name="list_repositories",
     help_str=(
-        '[INTERNAL] Return the snapshot for the given repository. This is an internal utility. '
-        'Users should generally not invoke this command interactively.'
+        "[INTERNAL] Return the snapshot for the given repository. This is an internal utility. "
+        "Users should generally not invoke this command interactively."
     ),
     input_cls=ListRepositoriesInput,
     output_cls=(ListRepositoriesResponse, SerializableErrorInfo),
 )
 def list_repositories_command(args):
-    check.inst_param(args, 'args', ListRepositoriesInput)
+    check.inst_param(args, "args", ListRepositoriesInput)
     python_file, module_name, working_directory, attribute = (
         args.python_file,
         args.module_name,
@@ -156,11 +161,11 @@ def list_repositories_command(args):
 
 
 @unary_api_cli_command(
-    name='repository',
+    name="repository",
     help_str=(
-        '[INTERNAL] Return all repository symbols in a given python_file or module name. '
-        'Used to bootstrap workspace creation process. This is an internal utility. Users should '
-        'generally not invoke this command interactively.'
+        "[INTERNAL] Return all repository symbols in a given python_file or module name. "
+        "Used to bootstrap workspace creation process. This is an internal utility. Users should "
+        "generally not invoke this command interactively."
     ),
     input_cls=RepositoryPythonOrigin,
     output_cls=ExternalRepositoryData,
@@ -172,10 +177,10 @@ def repository_snapshot_command(repository_python_origin):
 
 
 @unary_api_cli_command(
-    name='pipeline_subset',
+    name="pipeline_subset",
     help_str=(
-        '[INTERNAL] Return ExternalPipelineSubsetResult for the given pipeline. This is an '
-        'internal utility. Users should generally not invoke this command interactively.'
+        "[INTERNAL] Return ExternalPipelineSubsetResult for the given pipeline. This is an "
+        "internal utility. Users should generally not invoke this command interactively."
     ),
     input_cls=PipelineSubsetSnapshotArgs,
     output_cls=ExternalPipelineSubsetResult,
@@ -187,40 +192,40 @@ def pipeline_subset_snapshot_command(args):
 
 
 @unary_api_cli_command(
-    name='execution_plan',
+    name="execution_plan",
     help_str=(
-        '[INTERNAL] Create an execution plan and return its snapshot. This is an internal utility. '
-        'Users should generally not invoke this command interactively.'
+        "[INTERNAL] Create an execution plan and return its snapshot. This is an internal utility. "
+        "Users should generally not invoke this command interactively."
     ),
     input_cls=ExecutionPlanSnapshotArgs,
     output_cls=(ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),
 )
 def execution_plan_snapshot_command(args):
-    check.inst_param(args, 'args', ExecutionPlanSnapshotArgs)
+    check.inst_param(args, "args", ExecutionPlanSnapshotArgs)
 
     recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
     return get_external_execution_plan_snapshot(recon_pipeline, args)
 
 
 @unary_api_cli_command(
-    name='partition_config',
+    name="partition_config",
     help_str=(
-        '[INTERNAL] Return the config for a partition. This is an internal utility. Users should '
-        'generally not invoke this command interactively.'
+        "[INTERNAL] Return the config for a partition. This is an internal utility. Users should "
+        "generally not invoke this command interactively."
     ),
     input_cls=PartitionArgs,
     output_cls=(ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
 )
 def partition_config_command(args):
-    check.inst_param(args, 'args', PartitionArgs)
+    check.inst_param(args, "args", PartitionArgs)
     return get_partition_config(args)
 
 
 @unary_api_cli_command(
-    name='partition_tags',
+    name="partition_tags",
     help_str=(
-        '[INTERNAL] Return the tags for a partition. This is an internal utility. Users should '
-        'generally not invoke this command interactively.'
+        "[INTERNAL] Return the tags for a partition. This is an internal utility. Users should "
+        "generally not invoke this command interactively."
     ),
     input_cls=PartitionArgs,
     output_cls=(ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
@@ -230,10 +235,10 @@ def partition_tags_command(args):
 
 
 @unary_api_cli_command(
-    name='partition_names',
+    name="partition_names",
     help_str=(
-        '[INTERNAL] Return the partition names for a partition set . This is an internal utility. '
-        'Users should generally not invoke this command interactively.'
+        "[INTERNAL] Return the partition names for a partition set . This is an internal utility. "
+        "Users should generally not invoke this command interactively."
     ),
     input_cls=PartitionNamesArgs,
     output_cls=(ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
@@ -243,10 +248,23 @@ def partition_names_command(args):
 
 
 @unary_api_cli_command(
-    name='schedule_config',
+    name="partition_set_execution_param_data",
     help_str=(
-        '[INTERNAL] Return the config for a schedule. This is an internal utility. Users should '
-        'generally not invoke this command interactively.'
+        "[INTERNAL] Return the args for launching a partition backfill. This is an internal "
+        "utility. Users should generally not invoke this command interactively."
+    ),
+    input_cls=PartitionSetExecutionParamArgs,
+    output_cls=(ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData),
+)
+def partition_set_execution_param_command(args):
+    return get_partition_set_execution_param_data(args)
+
+
+@unary_api_cli_command(
+    name="schedule_config",
+    help_str=(
+        "[INTERNAL] Return the config for a schedule. This is an internal utility. Users should "
+        "generally not invoke this command interactively."
     ),
     input_cls=ExternalScheduleExecutionArgs,
     output_cls=(ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
@@ -256,62 +274,77 @@ def schedule_execution_data_command(args):
     return get_external_schedule_execution(recon_repo, args)
 
 
+@unary_api_cli_command(
+    name="executable_params",
+    help_str=(
+        "[INTERNAL] Return the execution params for a triggered execution. This is an internal "
+        "utility. Users should generally not invoke this command interactively."
+    ),
+    input_cls=ExternalExecutableArgs,
+    output_cls=(ExternalExecutionParamsData, ExternalExecutionParamsErrorData),
+)
+def executable_params_command(args):
+    recon_repo = recon_repository_from_origin(args.repository_origin)
+    return get_external_executable_params(recon_repo, args)
+
+
 @whitelist_for_serdes
-class ExecuteRunArgsLoadComplete(namedtuple('_ExecuteRunArgsLoadComplete', '')):
+class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
     pass
 
 
 @click.command(
-    name='execute_run',
+    name="execute_run",
     help=(
-        '[INTERNAL] This is an internal utility. Users should generally not invoke this command '
-        'interactively.'
+        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
+        "interactively."
     ),
 )
-@click.argument('input_file', type=click.Path())
-@click.argument('output_file', type=click.Path())
+@click.argument("input_file", type=click.Path())
+@click.argument("output_file", type=click.Path())
 def execute_run_command(input_file, output_file):
-    args = check.inst(read_unary_input(input_file), ExecuteRunArgs)
-    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
-    instance = DagsterInstance.from_ref(args.instance_ref)
+    # Ensure that interrupts from the run launcher only happen inside user code or specially
+    # designated checkpoints
+    with delay_interrupts():
+        args = check.inst(read_unary_input(input_file), ExecuteRunArgs)
+        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+        with DagsterInstance.from_ref(args.instance_ref) as instance:
+            with ipc_write_stream(output_file) as ipc_stream:
 
-    with ipc_write_stream(output_file) as ipc_stream:
+                def send_to_stream(event):
+                    ipc_stream.send(event)
 
-        def send_to_stream(event):
-            ipc_stream.send(event)
-
-        return _execute_run_command_body(
-            recon_pipeline, args.pipeline_run_id, instance, send_to_stream
-        )
+                return _execute_run_command_body(
+                    recon_pipeline, args.pipeline_run_id, instance, send_to_stream
+                )
 
 
 @click.command(
-    name='execute_run_with_structured_logs',
+    name="execute_run_with_structured_logs",
     help=(
-        '[INTERNAL] This is an internal utility. Users should generally not invoke this command '
-        'interactively.'
+        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
+        "interactively."
     ),
 )
-@click.argument('input_json', type=click.STRING)
+@click.argument("input_json", type=click.STRING)
 def execute_run_with_structured_logs_command(input_json):
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteRunArgs)
     recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
-    instance = (
+    with (
         DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else DagsterInstance.get()
-    )
+    ) as instance:
+        buffer = []
 
-    buffer = []
+        def send_to_buffer(event):
+            buffer.append(serialize_dagster_namedtuple(event))
 
-    def send_to_buffer(event):
-        buffer.append(serialize_dagster_namedtuple(event))
+        _execute_run_command_body(recon_pipeline, args.pipeline_run_id, instance, send_to_buffer)
 
-    _execute_run_command_body(recon_pipeline, args.pipeline_run_id, instance, send_to_buffer)
-
-    for line in buffer:
-        click.echo(line)
+        for line in buffer:
+            click.echo(line)
 
 
 def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
@@ -324,77 +357,83 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
 
     pid = os.getpid()
     instance.report_engine_event(
-        'Started process for pipeline (pid: {pid}).'.format(pid=pid),
+        "Started process for pipeline (pid: {pid}).".format(pid=pid),
         pipeline_run,
-        EngineEventData.in_process(pid, marker_end='cli_api_subprocess_init'),
+        EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
     )
 
     # Perform setup so that termination of the execution will unwind and report to the
     # instance correctly
-    setup_interrupt_support()
+    setup_windows_interrupt_support()
 
     try:
         for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
             write_stream_fn(event)
+    except KeyboardInterrupt:
+        instance.report_engine_event(
+            message="Pipeline execution terminated by interrupt", pipeline_run=pipeline_run,
+        )
     except DagsterSubprocessError as err:
         if not all(
-            [err_info.cls_name == 'KeyboardInterrupt' for err_info in err.subprocess_error_infos]
+            [err_info.cls_name == "KeyboardInterrupt" for err_info in err.subprocess_error_infos]
         ):
             instance.report_engine_event(
-                'An exception was thrown during execution that is likely a framework error, '
-                'rather than an error in user code.',
+                "An exception was thrown during execution that is likely a framework error, "
+                "rather than an error in user code.",
                 pipeline_run,
                 EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             )
     except Exception:  # pylint: disable=broad-except
         instance.report_engine_event(
-            'An exception was thrown during execution that is likely a framework error, '
-            'rather than an error in user code.',
+            "An exception was thrown during execution that is likely a framework error, "
+            "rather than an error in user code.",
             pipeline_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
     finally:
         instance.report_engine_event(
-            'Process for pipeline exited (pid: {pid}).'.format(pid=pid), pipeline_run,
+            "Process for pipeline exited (pid: {pid}).".format(pid=pid), pipeline_run,
         )
 
 
 @click.command(
-    name='execute_step_with_structured_logs',
+    name="execute_step_with_structured_logs",
     help=(
-        '[INTERNAL] This is an internal utility. Users should generally not invoke this command '
-        'interactively.'
+        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
+        "interactively."
     ),
 )
-@click.argument('input_json', type=click.STRING)
+@click.argument("input_json", type=click.STRING)
 def execute_step_with_structured_logs_command(input_json):
     signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
 
     args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteStepArgs)
 
-    instance = (
+    with (
         DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else DagsterInstance.get()
-    )
-    pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
-    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
+    ) as instance:
+        pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
+        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
-    execution_plan = create_execution_plan(
-        recon_pipeline.subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute),
-        run_config=args.run_config,
-        step_keys_to_execute=args.step_keys_to_execute,
-        mode=args.mode,
-    )
+        execution_plan = create_execution_plan(
+            recon_pipeline.subset_for_execution_from_existing_pipeline(
+                pipeline_run.solids_to_execute
+            ),
+            run_config=args.run_config,
+            step_keys_to_execute=args.step_keys_to_execute,
+            mode=args.mode,
+        )
 
-    retries = Retries.from_config(args.retries_dict)
+        retries = Retries.from_config(args.retries_dict)
 
-    buff = []
-    for event in execute_plan_iterator(
-        execution_plan, pipeline_run, instance, run_config=args.run_config, retries=retries,
-    ):
-        buff.append(serialize_dagster_namedtuple(event))
+        buff = []
+        for event in execute_plan_iterator(
+            execution_plan, pipeline_run, instance, run_config=args.run_config, retries=retries,
+        ):
+            buff.append(serialize_dagster_namedtuple(event))
 
-    for line in buff:
-        click.echo(line)
+        for line in buff:
+            click.echo(line)
 
 
 class _ScheduleTickHolder:
@@ -424,77 +463,87 @@ def _schedule_tick_state(instance, stream, tick_data):
         holder.write()
 
 
-@click.command(name='grpc', help='Serve the Dagster inter-process API over GRPC')
+@click.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
 @click.option(
-    '--port',
-    '-p',
+    "--port",
+    "-p",
     type=click.INT,
     required=False,
-    help='Port over which to serve. You must pass one and only one of --port/-p or --socket/-f.',
+    help="Port over which to serve. You must pass one and only one of --port/-p or --socket/-s.",
 )
 @click.option(
-    '--socket',
-    '-s',
+    "--socket",
+    "-s",
     type=click.Path(),
     required=False,
-    help='Serve over a UDS socket. You must pass one and only one of --port/-p or --socket/-f.',
+    help="Serve over a UDS socket. You must pass one and only one of --port/-p or --socket/-s.",
 )
 @click.option(
-    '--host',
-    '-h',
+    "--host",
+    "-h",
     type=click.STRING,
     required=False,
-    default='localhost',
-    help='Hostname at which to serve. Default is localhost.',
+    default="localhost",
+    help="Hostname at which to serve. Default is localhost.",
 )
 @click.option(
-    '--max_workers',
-    '-n',
+    "--max_workers",
+    "-n",
     type=click.INT,
     required=False,
     default=1,
-    help='Maximum number of (threaded) workers to use in the GRPC server',
+    help="Maximum number of (threaded) workers to use in the GRPC server",
 )
 @click.option(
-    '--heartbeat',
+    "--heartbeat",
     is_flag=True,
     help=(
-        'If set, the GRPC server will shut itself down when it fails to receive a heartbeat '
-        'after a timeout configurable with --heartbeat-timeout.'
+        "If set, the GRPC server will shut itself down when it fails to receive a heartbeat "
+        "after a timeout configurable with --heartbeat-timeout."
     ),
 )
 @click.option(
-    '--heartbeat-timeout',
+    "--heartbeat-timeout",
     type=click.INT,
     required=False,
     default=30,
-    help='Timout after which to shutdown if --heartbeat is set and a heartbeat is not received',
+    help="Timeout after which to shutdown if --heartbeat is set and a heartbeat is not received",
+)
+@click.option(
+    "--lazy-load-user-code",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Wait until the first LoadRepositories call to actually load the repositories, instead of "
+    "waiting to load them when the server is launched. Useful for surfacing errors when the server "
+    "is managed directly from Dagit",
 )
 @python_origin_target_argument
 def grpc_command(
     port=None,
     socket=None,
-    host='localhost',
+    host="localhost",
     max_workers=1,
     heartbeat=False,
     heartbeat_timeout=30,
+    lazy_load_user_code=False,
     **kwargs
 ):
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
-            'You must pass a valid --port/-p on Windows: --socket/-f not supported.'
+            "You must pass a valid --port/-p on Windows: --socket/-s not supported."
         )
     if not (port or socket and not (port and socket)):
-        raise click.UsageError('You must pass one and only one of --port/-p or --socket/-f.')
+        raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
     loadable_target_origin = None
-    if any(kwargs[key] for key in ['attribute', 'working_directory', 'module_name', 'python_file']):
+    if any(kwargs[key] for key in ["attribute", "working_directory", "module_name", "python_file"]):
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
-            attribute=kwargs['attribute'],
-            working_directory=kwargs['working_directory'],
-            module_name=kwargs['module_name'],
-            python_file=kwargs['python_file'],
+            attribute=kwargs["attribute"],
+            working_directory=get_working_directory_from_kwargs(kwargs),
+            module_name=kwargs["module_name"],
+            python_file=kwargs["python_file"],
         )
 
     server = DagsterGrpcServer(
@@ -505,6 +554,7 @@ def grpc_command(
         max_workers=max_workers,
         heartbeat=heartbeat,
         heartbeat_timeout=heartbeat_timeout,
+        lazy_load_user_code=lazy_load_user_code,
     )
 
     server.serve()
@@ -514,57 +564,61 @@ def grpc_command(
 # WARNING: these cli args are encoded in cron, so are not safely changed without migration
 ###################################################################################################
 @click.command(
-    name='launch_scheduled_execution',
+    name="launch_scheduled_execution",
     help=(
-        '[INTERNAL] This is an internal utility. Users should generally not invoke this command '
-        'interactively.'
+        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
+        "interactively."
     ),
 )
-@click.argument('output_file', type=click.Path())
+@click.argument("output_file", type=click.Path())
 @repository_target_argument
-@click.option('--schedule_name')
+@click.option("--schedule_name")
 def launch_scheduled_execution(output_file, schedule_name, **kwargs):
     with ipc_write_stream(output_file) as stream:
-        instance = DagsterInstance.get()
-        repository_origin = get_repository_origin_from_kwargs(kwargs)
-        schedule_origin = repository_origin.get_schedule_origin(schedule_name)
+        with DagsterInstance.get() as instance:
+            repository_origin = get_repository_origin_from_kwargs(kwargs)
+            schedule_origin = repository_origin.get_schedule_origin(schedule_name)
 
-        # open the tick scope before we load any external artifacts so that
-        # load errors are stored in DB
-        with _schedule_tick_state(
-            instance,
-            stream,
-            ScheduleTickData(
-                schedule_origin_id=schedule_origin.get_id(),
-                schedule_name=schedule_name,
-                timestamp=time.time(),
-                cron_schedule=None,  # not yet loaded
-                status=ScheduleTickStatus.STARTED,
-            ),
-        ) as tick:
-            repo_location = get_repository_location_from_kwargs(kwargs, instance)
-            repo_dict = repo_location.get_repositories()
-            check.invariant(
-                repo_dict and len(repo_dict) == 1,
-                'Passed in arguments should reference exactly one repository, instead there are {num_repos}'.format(
-                    num_repos=len(repo_dict)
+            # open the tick scope before we load any external artifacts so that
+            # load errors are stored in DB
+            with _schedule_tick_state(
+                instance,
+                stream,
+                ScheduleTickData(
+                    schedule_origin_id=schedule_origin.get_id(),
+                    schedule_name=schedule_name,
+                    timestamp=time.time(),
+                    cron_schedule=None,  # not yet loaded
+                    status=ScheduleTickStatus.STARTED,
                 ),
-            )
-            external_repo = next(iter(repo_dict.values()))
-            check.invariant(
-                schedule_name
-                in [schedule.name for schedule in external_repo.get_external_schedules()],
-                'Could not find schedule named {schedule_name}'.format(schedule_name=schedule_name),
-            )
-            external_schedule = external_repo.get_external_schedule(schedule_name)
-            tick.update_with_status(
-                status=ScheduleTickStatus.STARTED, cron_schedule=external_schedule.cron_schedule,
-            )
-            _launch_scheduled_execution(
-                instance, repo_location, external_repo, external_schedule, tick, stream
-            )
+            ) as tick:
+                with get_repository_location_from_kwargs(kwargs, instance) as repo_location:
+                    repo_dict = repo_location.get_repositories()
+                    check.invariant(
+                        repo_dict and len(repo_dict) == 1,
+                        "Passed in arguments should reference exactly one repository, instead there are {num_repos}".format(
+                            num_repos=len(repo_dict)
+                        ),
+                    )
+                    external_repo = next(iter(repo_dict.values()))
+                    check.invariant(
+                        schedule_name
+                        in [schedule.name for schedule in external_repo.get_external_schedules()],
+                        "Could not find schedule named {schedule_name}".format(
+                            schedule_name=schedule_name
+                        ),
+                    )
+                    external_schedule = external_repo.get_external_schedule(schedule_name)
+                    tick.update_with_status(
+                        status=ScheduleTickStatus.STARTED,
+                        cron_schedule=external_schedule.cron_schedule,
+                    )
+                    _launch_scheduled_execution(
+                        instance, repo_location, external_repo, external_schedule, tick, stream
+                    )
 
 
+@telemetry_wrapper
 def _launch_scheduled_execution(
     instance, repo_location, external_repo, external_schedule, tick, stream
 ):
@@ -585,6 +639,7 @@ def _launch_scheduled_execution(
         repository_handle=external_repo.handle,
         schedule_name=external_schedule.name,
         schedule_execution_data_mode=ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
+        scheduled_execution_datetime_utc=None,  # No way to know this in general for this scheduler
     )
 
     run_config = {}
@@ -616,7 +671,7 @@ def _launch_scheduled_execution(
             errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
 
     pipeline_tags = external_pipeline.tags or {}
-    check_tags(pipeline_tags, 'pipeline_tags')
+    check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(pipeline_tags, schedule_tags)
 
     # Enter the run in the DB with the information we have
@@ -670,10 +725,10 @@ def _launch_scheduled_execution(
 
 def create_api_cli_group():
     group = click.Group(
-        name='api',
+        name="api",
         help=(
-            '[INTERNAL] These commands are intended to support internal use cases. Users should '
-            'generally not invoke these commands interactively.'
+            "[INTERNAL] These commands are intended to support internal use cases. Users should "
+            "generally not invoke these commands interactively."
         ),
     )
 
@@ -687,7 +742,9 @@ def create_api_cli_group():
     group.add_command(partition_config_command)
     group.add_command(partition_tags_command)
     group.add_command(partition_names_command)
+    group.add_command(partition_set_execution_param_command)
     group.add_command(schedule_execution_data_command)
+    group.add_command(executable_params_command)
     group.add_command(launch_scheduled_execution)
     group.add_command(grpc_command)
     return group

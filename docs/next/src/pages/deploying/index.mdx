@@ -2,11 +2,12 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags
   title="Deploying Dagster | Dagster"
-  description="Dagster is a system for building modern data applications."
+  description="Dagster is flexible. It is designed to deploy to the cloud and run on the executor of your choice."
 />
 
 # Deploying Dagster
 
 Deploying Dagster usually means:
+
 - Setting up a [Dagster instance](/overview/instances/dagster-instance), which is responsible for launching runs, storing logs and metadata from runs, and serving the Dagit UI.
 - Optionally, setting up an [executor](/overview/run-launchers-executors/executor), e.g. [Celery](/deploying/celery) or [Dask](/deploying/dask), for executing solids within runs.

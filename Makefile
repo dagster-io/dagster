@@ -5,12 +5,12 @@ update_doc_snapshot:
 	pytest docs --snapshot-update
 
 black:
-	black examples python_modules .buildkite --line-length 100 --target-version py27 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/|intro_tutorial/"
-	black examples/docs_snippets/docs_snippets/intro_tutorial --line-length 78 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
+	black examples python_modules .buildkite --line-length 100 --target-version py27 --target-version py36 --target-version py37 --target-version py38 --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/|intro_tutorial/"
+	black examples/docs_snippets/docs_snippets/intro_tutorial --line-length 78 --target-version py36 --target-version py37 --target-version py38 --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
 
 check_black:
-	black examples python_modules .buildkite --check --line-length 100 --target-version py27 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/|intro_tutorial/"
-	black examples/docs_snippets/docs_snippets/intro_tutorial --check --line-length 78 --target-version py27 --target-version py36 --target-version py37 --target-version py38 -S --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
+	black examples python_modules .buildkite --check --line-length 100 --target-version py27 --target-version py36 --target-version py37 --target-version py38 --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/|intro_tutorial/"
+	black examples/docs_snippets/docs_snippets/intro_tutorial --check --line-length 78 --target-version py27 --target-version py36 --target-version py37 --target-version py38 --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
 
 isort:
 	isort `git ls-files '*.py' ':!:examples/docs_snippets/docs_snippets/intro_tutorial'`
@@ -27,7 +27,7 @@ install_dev_python_modules:
 
 # On machines with less memory, pyspark install will fail... see:
 # https://stackoverflow.com/a/31526029/11295366
-	pip --no-cache-dir install pyspark>=3.0.0 $(QUIET)
+	pip --no-cache-dir install pyspark\>=3.0.0 $(QUIET)
 
 # Need to manually install Airflow because we no longer explicitly depend on it
 # dagster-pandas must come before dasgtermill because of dependency
@@ -42,6 +42,7 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-pandas \
 				-e python_modules/libraries/dagster-aws \
 				-e python_modules/libraries/dagster-celery \
+				-e python_modules/libraries/dagster-celery-docker \
 				-e python_modules/libraries/dagster-cron \
 				-e python_modules/libraries/dagster-datadog \
 				-e python_modules/libraries/dagster-gcp \
@@ -87,6 +88,7 @@ install_dev_python_modules:
 	-pip install -e "python_modules/libraries/dagster-dask[yarn,pbs,kube]" $(QUIET)
 	-pip install -r docs-requirements.txt $(QUIET)
 	-pip install -r python_modules/dagster/dev-requirements.txt $(QUIET)
+	-pip install -e python_modules/libraries/dagster-dbt $(QUIET)
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules

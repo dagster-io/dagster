@@ -16,24 +16,24 @@ from dagster.utils import file_relative_path
 
 @solid
 def collect_df(_, df):
-    '''The pyspark Spark context will be stopped on pipeline termination, so we need to collect
+    """The pyspark Spark context will be stopped on pipeline termination, so we need to collect
     the pyspark DataFrame before pipeline completion.
-    '''
+    """
     return df.collect()
 
 
 def test_ingest_csv_file_handle_to_spark(spark_config):
     @solid
     def emit_num_csv_local_file(_):
-        return LocalFileHandle(file_relative_path(__file__, '../num.csv'))
+        return LocalFileHandle(file_relative_path(__file__, "../num.csv"))
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 resource_defs={
-                    'pyspark': pyspark_resource,
-                    'pyspark_step_launcher': no_step_launcher,
-                    'file_manager': local_file_manager,
+                    "pyspark": pyspark_resource,
+                    "pyspark_step_launcher": no_step_launcher,
+                    "file_manager": local_file_manager,
                 }
             )
         ]
@@ -43,26 +43,26 @@ def test_ingest_csv_file_handle_to_spark(spark_config):
 
     result = execute_pipeline(
         ingest_csv_file_test,
-        run_config={'resources': {'pyspark': {'config': {'spark_conf': spark_config}}}},
+        run_config={"resources": {"pyspark": {"config": {"spark_conf": spark_config}}}},
     )
     assert result.success
 
-    df = result.result_for_solid('collect_df').output_value()
-    assert df == [Row(num1='1', num2='2')]
+    df = result.result_for_solid("collect_df").output_value()
+    assert df == [Row(num1="1", num2="2")]
 
 
 def test_ingest_csv_file_with_special_handle_to_spark(spark_config):
     @solid
     def emit_num_special_csv_local_file(_):
-        return LocalFileHandle(file_relative_path(__file__, '../num_with_special_chars.csv'))
+        return LocalFileHandle(file_relative_path(__file__, "../num_with_special_chars.csv"))
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
                 resource_defs={
-                    'pyspark': pyspark_resource,
-                    'pyspark_step_launcher': no_step_launcher,
-                    'file_manager': local_file_manager,
+                    "pyspark": pyspark_resource,
+                    "pyspark_step_launcher": no_step_launcher,
+                    "file_manager": local_file_manager,
                 }
             )
         ]
@@ -72,10 +72,10 @@ def test_ingest_csv_file_with_special_handle_to_spark(spark_config):
 
     result = execute_pipeline(
         ingest_csv_file_test,
-        run_config={'resources': {'pyspark': {'config': {'spark_conf': spark_config}}}},
+        run_config={"resources": {"pyspark": {"config": {"spark_conf": spark_config}}}},
     )
     assert result.success
 
-    df = result.result_for_solid('collect_df').output_value()
+    df = result.result_for_solid("collect_df").output_value()
 
-    assert df == [Row(num1='1', num2='2')]
+    assert df == [Row(num1="1", num2="2")]

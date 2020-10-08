@@ -9,14 +9,14 @@ from dagster import execute_pipeline, seven
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 
-BUILDKITE = os.getenv('BUILDKITE')
+BUILDKITE = os.getenv("BUILDKITE")
 
 skip_ci = pytest.mark.skipif(
     bool(BUILDKITE),
-    reason='Tests hang forever on buildkite for reasons we don\'t currently understand',
+    reason="Tests hang forever on buildkite for reasons we don't currently understand",
 )
 
-REPO_FILE = os.path.join(os.path.dirname(__file__), 'repo.py')
+REPO_FILE = os.path.join(os.path.dirname(__file__), "repo.py")
 
 
 @contextmanager
@@ -39,8 +39,8 @@ def execute_pipeline_on_celery(
         ).subset_for_execution(subset)
         instance = instance or DagsterInstance.local_temp(tempdir=tempdir)
         run_config = run_config or {
-            'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
-            'execution': {'celery': {}},
+            "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+            "execution": {"celery": {}},
         }
         result = execute_pipeline(
             pipeline_def, run_config=run_config, instance=instance, tags=tags,
@@ -52,8 +52,8 @@ def execute_pipeline_on_celery(
 def execute_eagerly_on_celery(pipeline_name, instance=None, tempdir=None, tags=None, subset=None):
     with seven.TemporaryDirectory() as tempdir:
         run_config = {
-            'storage': {'filesystem': {'config': {'base_dir': tempdir}}},
-            'execution': {'celery': {'config': {'config_source': {'task_always_eager': True}}}},
+            "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+            "execution": {"celery": {"config": {"config_source": {"task_always_eager": True}}}},
         }
 
         with execute_pipeline_on_celery(
@@ -75,15 +75,15 @@ def execute_on_thread(pipeline_name, done, tempdir=None, tags=None):
 @contextmanager
 def start_celery_worker(queue=None):
     runner = CliRunner()
-    runargs = ['worker', 'start', '-d']
+    runargs = ["worker", "start", "-d"]
     if queue:
-        runargs += ['-q', queue]
+        runargs += ["-q", queue]
     result = runner.invoke(main, runargs)
     assert result.exit_code == 0, str(result.exception)
     try:
         yield
     finally:
-        result = runner.invoke(main, ['worker', 'terminate'])
+        result = runner.invoke(main, ["worker", "terminate"])
         assert result.exit_code == 0, str(result.exception)
 
 

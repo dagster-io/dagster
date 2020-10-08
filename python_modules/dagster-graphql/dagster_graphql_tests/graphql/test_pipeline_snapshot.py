@@ -10,7 +10,7 @@ from dagster.seven import json, mock
 
 from .setup import main_repo_location_name, main_repo_name, noop_pipeline
 
-SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID = '''
+SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID = """
 query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {
     pipelineSnapshotOrError(snapshotId: $snapshotId) {
         __typename
@@ -29,9 +29,9 @@ query PipelineSnapshotQueryBySnapshotID($snapshotId: String!) {
         }
     }
 }
-'''
+"""
 
-SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME = '''
+SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME = """
 query PipelineSnapshotQueryByActivePipelineName($activePipelineSelector: PipelineSelector!) {
     pipelineSnapshotOrError(activePipelineSelector: $activePipelineSelector) {
         __typename
@@ -50,11 +50,11 @@ query PipelineSnapshotQueryByActivePipelineName($activePipelineSelector: Pipelin
         }
     }
 }
-'''
+"""
 
 # makes snapshot tests much easier to debug
 def pretty_dump(data):
-    return json.dumps(data, indent=2, separators=(',', ': '))
+    return json.dumps(data, indent=2, separators=(",", ": "))
 
 
 def test_fetch_snapshot_or_error_by_snapshot_id_success(graphql_context, snapshot):
@@ -67,25 +67,25 @@ def test_fetch_snapshot_or_error_by_snapshot_id_success(graphql_context, snapsho
     result = execute_dagster_graphql(
         graphql_context,
         SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID,
-        {'snapshotId': run.pipeline_snapshot_id},
+        {"snapshotId": run.pipeline_snapshot_id},
     )
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineSnapshotOrError']['__typename'] == 'PipelineSnapshot'
+    assert result.data["pipelineSnapshotOrError"]["__typename"] == "PipelineSnapshot"
 
     snapshot.assert_match(pretty_dump(result.data))
 
 
 def test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found(graphql_context, snapshot):
     result = execute_dagster_graphql(
-        graphql_context, SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID, {'snapshotId': 'notthere'},
+        graphql_context, SNAPSHOT_OR_ERROR_QUERY_BY_SNAPSHOT_ID, {"snapshotId": "notthere"},
     )
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineSnapshotOrError']['__typename'] == 'PipelineSnapshotNotFoundError'
-    assert result.data['pipelineSnapshotOrError']['snapshotId'] == 'notthere'
+    assert result.data["pipelineSnapshotOrError"]["__typename"] == "PipelineSnapshotNotFoundError"
+    assert result.data["pipelineSnapshotOrError"]["snapshotId"] == "notthere"
     snapshot.assert_match(pretty_dump(result.data))
 
 
@@ -94,18 +94,18 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_success(graphql_context
         graphql_context,
         SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME,
         {
-            'activePipelineSelector': {
-                'pipelineName': 'csv_hello_world',
-                'repositoryName': main_repo_name(),
-                'repositoryLocationName': main_repo_location_name(),
+            "activePipelineSelector": {
+                "pipelineName": "csv_hello_world",
+                "repositoryName": main_repo_name(),
+                "repositoryLocationName": main_repo_location_name(),
             }
         },
     )
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineSnapshotOrError']['__typename'] == 'PipelineSnapshot'
-    assert result.data['pipelineSnapshotOrError']['name'] == 'csv_hello_world'
+    assert result.data["pipelineSnapshotOrError"]["__typename"] == "PipelineSnapshot"
+    assert result.data["pipelineSnapshotOrError"]["name"] == "csv_hello_world"
 
     snapshot.assert_match(pretty_dump(result.data))
 
@@ -115,17 +115,17 @@ def test_fetch_snapshot_or_error_by_active_pipeline_name_not_found(graphql_conte
         graphql_context,
         SNAPSHOT_OR_ERROR_QUERY_BY_PIPELINE_NAME,
         {
-            'activePipelineSelector': {
-                'pipelineName': 'jkdjfkdj',
-                'repositoryName': main_repo_name(),
-                'repositoryLocationName': main_repo_location_name(),
+            "activePipelineSelector": {
+                "pipelineName": "jkdjfkdj",
+                "repositoryName": main_repo_name(),
+                "repositoryLocationName": main_repo_location_name(),
             }
         },
     )
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineSnapshotOrError']['__typename'] == 'PipelineNotFoundError'
+    assert result.data["pipelineSnapshotOrError"]["__typename"] == "PipelineNotFoundError"
 
     snapshot.assert_match(pretty_dump(result.data))
 
@@ -137,4 +137,4 @@ def test_temporary_error_or_deletion_after_instance_check():
     instance.get_historical_pipeline.return_value = None
 
     with pytest.raises(UserFacingGraphQLError):
-        _get_dauphin_pipeline_snapshot_from_instance(instance, 'kjdkfjd')
+        _get_dauphin_pipeline_snapshot_from_instance(instance, "kjdkfjd")

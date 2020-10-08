@@ -1,22 +1,15 @@
-from contextlib import contextmanager
-
 import sqlalchemy as db
 
 from dagster import check
 from dagster.core.storage.runs import RunStorageSqlMetadata, SqlRunStorage
-from dagster.core.storage.sql import (
-    create_engine,
-    get_alembic_config,
-    handle_schema_errors,
-    run_alembic_upgrade,
-)
+from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
-from ..utils import pg_config, pg_url_from_config
+from ..utils import create_pg_connection, pg_config, pg_url_from_config
 
 
 class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
-    '''Postgres-backed run storage.
+    """Postgres-backed run storage.
 
     Users should not directly instantiate this class; it is instantiated by internal machinery when
     ``dagit`` and ``dagster-graphql`` load, based on the values in the ``dagster.yaml`` file in
@@ -32,15 +25,17 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
     Note that the fields in this config are :py:class:`~dagster.StringSource` and
     :py:class:`~dagster.IntSource` and can be configured from environment variables.
-    '''
+    """
 
     def __init__(self, postgres_url, inst_data=None):
         self.postgres_url = postgres_url
         self._engine = create_engine(
-            self.postgres_url, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
+            self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
-        RunStorageSqlMetadata.create_all(self._engine)
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+
+        with self.connect() as conn:
+            RunStorageSqlMetadata.create_all(conn)
 
     @property
     def inst_data(self):
@@ -59,7 +54,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     @staticmethod
     def create_clean_storage(postgres_url):
         engine = create_engine(
-            postgres_url, isolation_level='AUTOCOMMIT', poolclass=db.pool.NullPool
+            postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
         try:
             RunStorageSqlMetadata.drop_all(engine)
@@ -67,18 +62,8 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             engine.dispose()
         return PostgresRunStorage(postgres_url)
 
-    @contextmanager
-    def connect(self, _run_id=None):  # pylint: disable=arguments-differ
-        conn = None
-        try:
-            conn = self._engine.connect()
-            with handle_schema_errors(
-                conn, get_alembic_config(__file__), msg='Postgres run storage requires migration',
-            ):
-                yield self._engine
-        finally:
-            if conn:
-                conn.close()
+    def connect(self, run_id=None):  # pylint: disable=arguments-differ, unused-argument
+        return create_pg_connection(self._engine, __file__, "run")
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)

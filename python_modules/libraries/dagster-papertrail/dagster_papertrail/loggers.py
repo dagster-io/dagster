@@ -14,15 +14,15 @@ class ContextFilter(logging.Filter):
 
 @logger(
     {
-        'log_level': Field(StringSource, is_required=False, default_value='INFO'),
-        'name': Field(StringSource, is_required=False, default_value='dagster_papertrail'),
-        'papertrail_address': Field(StringSource, description='Papertrail URL', is_required=True),
-        'papertrail_port': Field(IntSource, description='Papertrail port', is_required=True),
+        "log_level": Field(StringSource, is_required=False, default_value="INFO"),
+        "name": Field(StringSource, is_required=False, default_value="dagster_papertrail"),
+        "papertrail_address": Field(StringSource, description="Papertrail URL", is_required=True),
+        "papertrail_port": Field(IntSource, description="Papertrail port", is_required=True),
     },
-    description='A JSON-formatted console logger',
+    description="A JSON-formatted console logger",
 )
 def papertrail_logger(init_context):
-    '''Use this logger to configure your Dagster pipeline to log to Papertrail. You'll need an
+    """Use this logger to configure your Dagster pipeline to log to Papertrail. You'll need an
     active Papertrail account with URL and port.
 
     Example:
@@ -52,18 +52,18 @@ def papertrail_logger(init_context):
                 }
             },
         )
-    '''
+    """
     level, name, papertrail_address, papertrail_port = (
         init_context.logger_config.get(k)
-        for k in ('log_level', 'name', 'papertrail_address', 'papertrail_port')
+        for k in ("log_level", "name", "papertrail_address", "papertrail_port")
     )
 
     klass = logging.getLoggerClass()
     logger_ = klass(name, level=level)
 
-    log_format = '%(asctime)s %(hostname)s ' + name + ': %(message)s'
+    log_format = "%(asctime)s %(hostname)s " + name + ": %(message)s"
 
-    formatter = logging.Formatter(log_format, datefmt='%b %d %H:%M:%S')
+    formatter = logging.Formatter(log_format, datefmt="%b %d %H:%M:%S")
     handler = logging.handlers.SysLogHandler(address=(papertrail_address, papertrail_port))
     handler.addFilter(ContextFilter())
     handler.setFormatter(formatter)

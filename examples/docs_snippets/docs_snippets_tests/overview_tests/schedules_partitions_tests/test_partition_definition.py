@@ -6,7 +6,7 @@ from dagster import execute_pipeline
 
 def test_pipeline():
     result = execute_pipeline(
-        my_pipeline, {'solids': {'process_data_for_day': {'config': {'day_of_week': "M"}}}},
+        my_pipeline, {"solids": {"process_data_for_day": {"config": {"day_of_week": "M"}}}},
     )
     assert result.success
 

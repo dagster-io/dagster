@@ -7,24 +7,24 @@ def pytest_addoption(parser):
 
     # Use kind or some other cluster provider?
     try:
-        parser.addoption('--cluster-provider', action='store', default='kind')
+        parser.addoption("--cluster-provider", action="store", default="kind")
     except ValueError:
         pass
 
     # Specify an existing kind cluster name to use
     try:
-        parser.addoption('--kind-cluster', action='store')
+        parser.addoption("--kind-cluster", action="store")
     except ValueError:
         pass
 
     # Keep resources around after tests are done
     try:
-        parser.addoption('--no-cleanup', action='store_true', default=False)
+        parser.addoption("--no-cleanup", action="store_true", default=False)
     except ValueError:
         pass
 
     # Use existing Helm chart/namespace
     try:
-        parser.addoption('--existing-helm-namespace', action='store')
+        parser.addoption("--existing-helm-namespace", action="store")
     except ValueError:
         pass

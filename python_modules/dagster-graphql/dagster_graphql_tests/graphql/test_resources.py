@@ -1,6 +1,6 @@
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
-RESOURCE_QUERY = '''
+RESOURCE_QUERY = """
 query ResourceQuery($selector: PipelineSelector!) {
   pipelineOrError(params: $selector) {
     __typename
@@ -28,9 +28,9 @@ query ResourceQuery($selector: PipelineSelector!) {
     }
   }
 }
-'''
+"""
 
-REQUIRED_RESOURCE_QUERY = '''
+REQUIRED_RESOURCE_QUERY = """
 query RequiredResourceQuery($selector: PipelineSelector!) {
   pipelineOrError(params: $selector) {
     ... on Pipeline {
@@ -45,19 +45,19 @@ query RequiredResourceQuery($selector: PipelineSelector!) {
     }
   }
 }
-'''
+"""
 
 
 def test_mode_fetch_resources(graphql_context, snapshot):
     selector = infer_pipeline_selector(graphql_context, "multi_mode_with_resources")
-    result = execute_dagster_graphql(graphql_context, RESOURCE_QUERY, {'selector': selector},)
+    result = execute_dagster_graphql(graphql_context, RESOURCE_QUERY, {"selector": selector},)
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineOrError']
-    assert result.data['pipelineOrError']['modes']
-    for mode_data in result.data['pipelineOrError']['modes']:
-        assert mode_data['resources']
+    assert result.data["pipelineOrError"]
+    assert result.data["pipelineOrError"]["modes"]
+    for mode_data in result.data["pipelineOrError"]["modes"]:
+        assert mode_data["resources"]
 
     snapshot.assert_match(result.data)
 
@@ -67,15 +67,15 @@ def test_mode_fetch_resources(graphql_context, snapshot):
 def test_required_resources(graphql_context, snapshot):
     selector = infer_pipeline_selector(graphql_context, "required_resource_pipeline")
     result = execute_dagster_graphql(
-        graphql_context, REQUIRED_RESOURCE_QUERY, {'selector': selector},
+        graphql_context, REQUIRED_RESOURCE_QUERY, {"selector": selector},
     )
 
     assert not result.errors
     assert result.data
-    assert result.data['pipelineOrError']['solids']
-    [solid] = result.data['pipelineOrError']['solids']
+    assert result.data["pipelineOrError"]["solids"]
+    [solid] = result.data["pipelineOrError"]["solids"]
     assert solid
-    assert solid['definition']['requiredResources']
-    assert solid['definition']['requiredResources'] == [{'resourceKey': 'R1'}]
+    assert solid["definition"]["requiredResources"]
+    assert solid["definition"]["requiredResources"] == [{"resourceKey": "R1"}]
 
     snapshot.assert_match(result.data)

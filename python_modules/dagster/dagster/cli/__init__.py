@@ -7,6 +7,7 @@ from ..core.instance import DagsterInstance
 from ..version import __version__
 from .api import api_cli
 from .asset import asset_cli
+from .debug import debug_cli
 from .instance import instance_cli
 from .pipeline import pipeline_cli
 from .run import run_cli
@@ -15,18 +16,19 @@ from .schedule import schedule_cli
 
 def create_dagster_cli():
     commands = {
-        'api': api_cli,
-        'pipeline': pipeline_cli,
-        'run': run_cli,
-        'instance': instance_cli,
-        'schedule': schedule_cli,
-        'asset': asset_cli,
+        "api": api_cli,
+        "pipeline": pipeline_cli,
+        "run": run_cli,
+        "instance": instance_cli,
+        "schedule": schedule_cli,
+        "asset": asset_cli,
+        "debug": debug_cli,
     }
 
     @click.group(commands=commands)
     @click.version_option(version=__version__)
     def group():
-        'CLI tools for working with dagster.'
+        "CLI tools for working with dagster."
 
     return group
 

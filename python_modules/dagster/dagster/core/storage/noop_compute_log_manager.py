@@ -6,7 +6,7 @@ from .compute_log_manager import MAX_BYTES_FILE_READ, ComputeLogFileData, Comput
 
 class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
     def __init__(self, inst_data=None):
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
     def inst_data(self):
@@ -40,7 +40,7 @@ class NoOpComputeLogManager(ComputeLogManager, ConfigurableClass):
 
     def read_logs_file(self, run_id, key, io_type, cursor=0, max_bytes=MAX_BYTES_FILE_READ):
         return ComputeLogFileData(
-            path='{}.{}'.format(key, io_type), data=None, cursor=0, size=0, download_url=None
+            path="{}.{}".format(key, io_type), data=None, cursor=0, size=0, download_url=None
         )
 
     def on_subscribe(self, subscription):

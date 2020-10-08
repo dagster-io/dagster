@@ -9,31 +9,31 @@ from dagster import pipeline, solid
 
 @solid
 def load_cereals(_):
-    path_to_csv = os.path.join(os.path.dirname(__file__), 'data/cereal.csv')
+    path_to_csv = os.path.join(os.path.dirname(__file__), "data/cereal.csv")
     return pandas.read_csv(path_to_csv)
 
 
 @solid
 def add_sugar_per_cup(_, cereals):
-    df = cereals[['name']]
-    df['sugar_per_cup'] = cereals['sugars'] / cereals['cups']
+    df = cereals[["name"]]
+    df["sugar_per_cup"] = cereals["sugars"] / cereals["cups"]
     return df
 
 
 @solid
 def compute_cutoff(_, cereals):
-    return cereals['sugar_per_cup'].quantile(0.75)
+    return cereals["sugar_per_cup"].quantile(0.75)
 
 
 @solid
 def filter_below_cutoff(_, cereals, cutoff):
-    foo = cereals[cereals['sugar_per_cup'] > cutoff]
+    foo = cereals[cereals["sugar_per_cup"] > cutoff]
     return foo
 
 
 @solid
 def write_sugariest(_, cereals):
-    cereals.to_csv('/tmp/top_quartile.csv')
+    cereals.to_csv("/tmp/top_quartile.csv")
 
 
 @pipeline

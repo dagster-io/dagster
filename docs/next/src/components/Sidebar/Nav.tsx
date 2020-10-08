@@ -11,6 +11,20 @@ export type TreeElement = {
   isAbsolutePath?: boolean;
 };
 
+type ItemLinkProps = {
+  children: any;
+  href: string;
+  isExternal?: boolean;
+};
+
+const ItemLink: React.FC<ItemLinkProps> = ({ children, href, isExternal }) => {
+  return isExternal ? (
+    children
+  ) : (
+    <VersionedLink href={href}>{children}</VersionedLink>
+  );
+};
+
 type MainItemProps = {
   name: string;
   path: string;
@@ -21,7 +35,7 @@ const MainItem: React.FC<MainItemProps> = ({ name, path }) => {
   const router = useRouter();
   const selected = router.pathname.includes(path);
   return (
-    <VersionedLink href={path}>
+    <ItemLink href={path}>
       <a
         className={cx(
           'group flex justify-between items-center px-2 py-2 text-sm font-medium leading-5 text-gray-900 rounded-md',
@@ -41,7 +55,7 @@ const MainItem: React.FC<MainItemProps> = ({ name, path }) => {
           )}
         ></div>
       </a>
-    </VersionedLink>
+    </ItemLink>
   );
 };
 
@@ -110,7 +124,7 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
 
               return (
                 <div key={`${c.path}-${c.name}`}>
-                  <VersionedLink href={c.path}>
+                  <ItemLink href={c.path} isExternal={c.isExternal}>
                     <a
                       className={cx(
                         `group flex justify-between items-center px-3 py-2 text-sm leading-5 font-medium text-gray-600 rounded-md focus:outline-none transition ease-in-out duration-150`,
@@ -120,6 +134,7 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                           'hover:font-semibold': !subSelected,
                         },
                       )}
+                      href={c.path}
                     >
                       <div className="truncate">{c.name}</div>
                       <div>
@@ -164,7 +179,7 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                         </div>
                       )}
                     </a>
-                  </VersionedLink>
+                  </ItemLink>
                   {(subSelected ||
                     subChildSelected ||
                     // always expand selections in 'API Docs'
@@ -180,7 +195,7 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                           className="ml-4 border-l"
                           key={`${child.path}-${child.name}`}
                         >
-                          <VersionedLink href={child.path}>
+                          <ItemLink href={child.path} isExternal={c.isExternal}>
                             <a
                               className={cx(
                                 `group flex justify-between items-center px-3 py-2 text-sm leading-5 ml-1 font-medium text-gray-600 rounded-md focus:outline-none transition ease-in-out duration-150`,
@@ -189,6 +204,7 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                                   'hover:font-semibold': !childSelected,
                                 },
                               )}
+                              href={child.path}
                             >
                               <div className="truncate">{child.name}</div>
                               <div>
@@ -204,7 +220,7 @@ const Nav: React.FC<NavProps> = ({ className, isMobile }) => {
                                 )}
                               </div>
                             </a>
-                          </VersionedLink>
+                          </ItemLink>
                         </div>
                       );
                     })}

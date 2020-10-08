@@ -9,7 +9,7 @@ from dagster.core.storage.file_manager import LocalFileHandle
 
 
 def _unlink_swallow_errors(path):
-    check.str_param(path, 'path')
+    check.str_param(path, "path")
     try:
         os.unlink(path)
     except Exception:  # pylint: disable=broad-except
@@ -25,7 +25,7 @@ def get_temp_file_handle_with_data(data):
 @contextmanager
 def get_temp_file_name_with_data(data):
     with get_temp_file_name() as temp_file:
-        with open(temp_file, 'wb') as ff:
+        with open(temp_file, "wb") as ff:
             ff.write(data)
 
         yield temp_file
@@ -49,7 +49,7 @@ def get_temp_file_name():
 
 @contextmanager
 def get_temp_file_names(number):
-    check.int_param(number, 'number')
+    check.int_param(number, "number")
 
     temp_file_names = list()
     for _ in itertools.repeat(None, number):

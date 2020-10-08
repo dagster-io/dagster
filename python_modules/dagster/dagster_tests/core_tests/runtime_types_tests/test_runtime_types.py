@@ -35,13 +35,13 @@ def test_inner_types():
     assert resolve_dagster_type(Int).inner_types == []
 
     list_int_runtime = resolve_dagster_type(List[Int])
-    assert inner_type_key_set(list_int_runtime) == set(['Int'])
+    assert inner_type_key_set(list_int_runtime) == set(["Int"])
 
     list_list_int_runtime = resolve_dagster_type(List[List[Int]])
-    assert inner_type_key_set(list_list_int_runtime) == set(['Int', 'List.Int'])
+    assert inner_type_key_set(list_list_int_runtime) == set(["Int", "List.Int"])
 
     list_nullable_int_runtime = resolve_dagster_type(List[Optional[Int]])
-    assert inner_type_key_set(list_nullable_int_runtime) == set(['Int', 'Optional.Int'])
+    assert inner_type_key_set(list_nullable_int_runtime) == set(["Int", "Optional.Int"])
     assert not list_nullable_int_runtime.kind == DagsterTypeKind.SCALAR
 
 
@@ -53,17 +53,17 @@ def test_is_any():
 def test_display_name():
 
     int_runtime = resolve_dagster_type(Int)
-    assert int_runtime.display_name == 'Int'
+    assert int_runtime.display_name == "Int"
     list_int_runtime = resolve_dagster_type(List[Int])
-    assert list_int_runtime.display_name == '[Int]'
+    assert list_int_runtime.display_name == "[Int]"
     list_list_int_runtime = resolve_dagster_type(List[List[Int]])
-    assert list_list_int_runtime.display_name == '[[Int]]'
+    assert list_list_int_runtime.display_name == "[[Int]]"
     list_nullable_int_runtime = resolve_dagster_type(List[Optional[Int]])
-    assert list_nullable_int_runtime.display_name == '[Int?]'
+    assert list_nullable_int_runtime.display_name == "[Int?]"
 
 
 def test_builtins_available():
-    pipeline_def = PipelineDefinition(name='test_builting_available', solid_defs=[])
+    pipeline_def = PipelineDefinition(name="test_builting_available", solid_defs=[])
     for builtin_type in ALL_RUNTIME_BUILTINS:
         assert pipeline_def.has_dagster_type(builtin_type.name)
         assert pipeline_def.dagster_type_named(builtin_type.name).is_builtin
@@ -71,19 +71,19 @@ def test_builtins_available():
 
 def test_python_mapping():
     runtime = resolve_dagster_type(int)
-    assert runtime.name == 'Int'
+    assert runtime.name == "Int"
     runtime = resolve_dagster_type(str)
-    assert runtime.name == 'String'
+    assert runtime.name == "String"
     runtime = resolve_dagster_type(bool)
-    assert runtime.name == 'Bool'
+    assert runtime.name == "Bool"
     runtime = resolve_dagster_type(float)
-    assert runtime.name == 'Float'
+    assert runtime.name == "Float"
 
-    @lambda_solid(input_defs=[InputDefinition('num', int)])
+    @lambda_solid(input_defs=[InputDefinition("num", int)])
     def add_one(num):
         return num + 1
 
-    assert add_one.input_defs[0].dagster_type.name == 'Int'
+    assert add_one.input_defs[0].dagster_type.name == "Int"
 
     runtime = resolve_dagster_type(float)
     runtime.type_check(None, 1.0)
@@ -98,15 +98,15 @@ def test_python_mapping():
 
 def test_double_dagster_type():
 
-    AlwaysSucceedsFoo = DagsterType(name='Foo', type_check_fn=lambda _, _val: True)
-    AlwaysFailsFoo = DagsterType(name='Foo', type_check_fn=lambda _, _val: False)
+    AlwaysSucceedsFoo = DagsterType(name="Foo", type_check_fn=lambda _, _val: True)
+    AlwaysFailsFoo = DagsterType(name="Foo", type_check_fn=lambda _, _val: False)
 
     @lambda_solid
     def return_a_thing():
         return 1
 
     @lambda_solid(
-        input_defs=[InputDefinition('succeeds', AlwaysSucceedsFoo)],
+        input_defs=[InputDefinition("succeeds", AlwaysSucceedsFoo)],
         output_def=OutputDefinition(AlwaysFailsFoo),
     )
     def yup(succeeds):
@@ -120,7 +120,7 @@ def test_double_dagster_type():
 
     assert str(exc_info.value) == (
         'You have created two dagster types with the same name "Foo". '
-        'Dagster types have must have unique names.'
+        "Dagster types have must have unique names."
     )
 
 

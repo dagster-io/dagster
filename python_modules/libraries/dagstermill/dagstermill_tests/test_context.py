@@ -10,8 +10,8 @@ BARE_OUT_OF_PIPELINE_CONTEXT = MANAGER_FOR_NOTEBOOK_INSTANCE.get_context()
 def test_tags():
     context = BARE_OUT_OF_PIPELINE_CONTEXT
 
-    assert not context.has_tag('foo')
-    assert context.get_tag('foo') is None
+    assert not context.has_tag("foo")
+    assert context.get_tag("foo") is None
 
 
 def test_run_id():
@@ -20,11 +20,11 @@ def test_run_id():
 
 
 def test_run_config():
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.run_config == {'loggers': {'dagstermill': {}}}
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.run_config == {"loggers": {"dagstermill": {}}}
 
 
 def test_logging_tags():
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.logging_tags['pipeline'] == 'ephemeral_dagstermill_pipeline'
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.logging_tags["pipeline"] == "ephemeral_dagstermill_pipeline"
 
 
 def test_environment_config():
@@ -32,9 +32,9 @@ def test_environment_config():
 
 
 def test_pipeline_def():
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.name == 'ephemeral_dagstermill_pipeline'
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.name == "ephemeral_dagstermill_pipeline"
     assert len(BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids) == 1
-    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids[0].name == 'this_solid'
+    assert BARE_OUT_OF_PIPELINE_CONTEXT.pipeline_def.solids[0].name == "this_solid"
 
 
 def test_resources():
@@ -50,5 +50,5 @@ def test_solid():
 
 
 def test_log(capsys):
-    BARE_OUT_OF_PIPELINE_CONTEXT.log.info('Ho ho!')
-    assert 'Ho ho!' in capsys.readouterr().err
+    BARE_OUT_OF_PIPELINE_CONTEXT.log.info("Ho ho!")
+    assert "Ho ho!" in capsys.readouterr().err

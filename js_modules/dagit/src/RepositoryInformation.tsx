@@ -1,23 +1,28 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import { RepositoryInfoFragment } from "./types/RepositoryInfoFragment";
+import gql from 'graphql-tag';
+import * as React from 'react';
+
+import {RepositoryInfoFragment} from 'src/types/RepositoryInfoFragment';
+import {RepositoryOriginFragment} from 'src/types/RepositoryOriginFragment';
 
 export const RepositoryInformationFragment = gql`
+  fragment RepositoryOriginFragment on RepositoryOrigin {
+    ... on PythonRepositoryOrigin {
+      codePointer {
+        metadata {
+          key
+          value
+        }
+      }
+      executablePath
+    }
+    ... on GrpcRepositoryOrigin {
+      grpcUrl
+    }
+  }
   fragment RepositoryInfoFragment on Repository {
     name
     origin {
-      ... on PythonRepositoryOrigin {
-        codePointer {
-          metadata {
-            key
-            value
-          }
-        }
-        executablePath
-      }
-      ... on GrpcRepositoryOrigin {
-        grpcUrl
-      }
+      ...RepositoryOriginFragment
     }
     location {
       name
@@ -25,40 +30,49 @@ export const RepositoryInformationFragment = gql`
   }
 `;
 
-export const RepositoryInformation: React.FunctionComponent<{
-  repository: RepositoryInfoFragment;
+export const RepositoryOriginInformation: React.FunctionComponent<{
+  origin: RepositoryOriginFragment;
   dagitExecutablePath?: string;
-}> = ({ repository, dagitExecutablePath }) => {
-  let originInfo;
-  if (repository.origin.__typename === "PythonRepositoryOrigin") {
-    originInfo = (
+}> = ({origin, dagitExecutablePath}) => {
+  if (origin.__typename === 'PythonRepositoryOrigin') {
+    return (
       <>
-        {repository.origin.codePointer.metadata.map((metadata, idx) => (
+        {origin.codePointer.metadata.map((metadata, idx) => (
           <div key={idx}>
-            <span style={{ marginRight: 5 }}>{metadata.key}:</span>
-            <span style={{ opacity: 0.5 }}>{metadata.value}</span>
+            <span style={{marginRight: 5}}>{metadata.key}:</span>
+            <span style={{opacity: 0.5}}>{metadata.value}</span>
           </div>
         ))}
-        {dagitExecutablePath && dagitExecutablePath === repository.origin.executablePath ? null : (
+        {dagitExecutablePath && dagitExecutablePath === origin.executablePath ? null : (
           <div>
-            <span style={{ marginRight: 5 }}>executable:</span>
-            <span style={{ opacity: 0.5 }}>{repository.origin.executablePath}</span>
+            <span style={{marginRight: 5}}>executable:</span>
+            <span style={{opacity: 0.5}}>{origin.executablePath}</span>
           </div>
         )}
       </>
     );
   } else {
-    originInfo = <div>{repository.origin.grpcUrl}</div>;
+    return <div>{origin.grpcUrl}</div>;
   }
+};
 
+export const RepositoryInformation: React.FunctionComponent<{
+  repository: RepositoryInfoFragment;
+  dagitExecutablePath?: string;
+}> = ({repository, dagitExecutablePath}) => {
   return (
     <div>
       <div>
         {repository.name}
-        <span style={{ marginRight: 5, marginLeft: 5 }}>&middot;</span>
-        <span style={{ opacity: 0.5 }}>{repository.location.name}</span>
+        <span style={{marginRight: 5, marginLeft: 5}}>&middot;</span>
+        <span style={{opacity: 0.5}}>{repository.location.name}</span>
       </div>
-      <div style={{ fontSize: 11, marginTop: 5 }}>{originInfo}</div>
+      <div style={{fontSize: 11, marginTop: 5}}>
+        <RepositoryOriginInformation
+          origin={repository.origin}
+          dagitExecutablePath={dagitExecutablePath}
+        />
+      </div>
     </div>
   );
 };

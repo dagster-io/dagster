@@ -10,20 +10,20 @@ from dagster import check
 
 
 def wait_for_job_ready(job_name, namespace):
-    '''Wait for a dagster-k8s job to be ready
-    '''
-    check.str_param(job_name, 'job_name')
-    check.str_param(namespace, 'namespace')
+    """Wait for a dagster-k8s job to be ready
+    """
+    check.str_param(job_name, "job_name")
+    check.str_param(namespace, "namespace")
 
     wait_for_job(job_name=job_name, namespace=namespace)
 
 
 def wait_for_job_and_get_logs(job_name, namespace):
-    '''Wait for a dagster-k8s job to complete, ensure it launched only one pod,
+    """Wait for a dagster-k8s job to complete, ensure it launched only one pod,
     and then grab the logs from the pod it launched.
-    '''
-    check.str_param(job_name, 'job_name')
-    check.str_param(namespace, 'namespace')
+    """
+    check.str_param(job_name, "job_name")
+    check.str_param(namespace, "namespace")
 
     wait_for_job_success(job_name, namespace=namespace)
 
@@ -34,15 +34,15 @@ def wait_for_job_and_get_logs(job_name, namespace):
     pod_name = pod_names[0]
 
     raw_logs = retrieve_pod_logs(pod_name, namespace=namespace)
-    return parse_raw_log_lines(raw_logs.split('\n'))
+    return parse_raw_log_lines(raw_logs.split("\n"))
 
 
 def wait_for_job_and_get_raw_logs(job_name, namespace):
-    '''Wait for a dagster-k8s job to complete, ensure it launched only one pod,
+    """Wait for a dagster-k8s job to complete, ensure it launched only one pod,
     and then grab the logs from the pod it launched.
-    '''
-    check.str_param(job_name, 'job_name')
-    check.str_param(namespace, 'namespace')
+    """
+    check.str_param(job_name, "job_name")
+    check.str_param(namespace, "namespace")
 
     wait_for_job_success(job_name, namespace=namespace)
 

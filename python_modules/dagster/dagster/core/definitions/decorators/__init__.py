@@ -1,4 +1,5 @@
 from .composite_solid import composite_solid
+from .executable import executable
 from .hook import failure_hook, success_hook
 from .lambda_solid import lambda_solid
 from .pipeline import pipeline

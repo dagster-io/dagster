@@ -23,87 +23,97 @@ class DagsterApiStub(object):
             channel: A grpc.Channel.
         """
         self.Ping = channel.unary_unary(
-            '/api.DagsterApi/Ping',
+            "/api.DagsterApi/Ping",
             request_serializer=api__pb2.PingRequest.SerializeToString,
             response_deserializer=api__pb2.PingReply.FromString,
         )
         self.Heartbeat = channel.unary_unary(
-            '/api.DagsterApi/Heartbeat',
+            "/api.DagsterApi/Heartbeat",
             request_serializer=api__pb2.PingRequest.SerializeToString,
             response_deserializer=api__pb2.PingReply.FromString,
         )
         self.StreamingPing = channel.unary_stream(
-            '/api.DagsterApi/StreamingPing',
+            "/api.DagsterApi/StreamingPing",
             request_serializer=api__pb2.StreamingPingRequest.SerializeToString,
             response_deserializer=api__pb2.StreamingPingEvent.FromString,
         )
         self.ExecutionPlanSnapshot = channel.unary_unary(
-            '/api.DagsterApi/ExecutionPlanSnapshot',
+            "/api.DagsterApi/ExecutionPlanSnapshot",
             request_serializer=api__pb2.ExecutionPlanSnapshotRequest.SerializeToString,
             response_deserializer=api__pb2.ExecutionPlanSnapshotReply.FromString,
         )
         self.ListRepositories = channel.unary_unary(
-            '/api.DagsterApi/ListRepositories',
+            "/api.DagsterApi/ListRepositories",
             request_serializer=api__pb2.ListRepositoriesRequest.SerializeToString,
             response_deserializer=api__pb2.ListRepositoriesReply.FromString,
         )
         self.ExternalPartitionNames = channel.unary_unary(
-            '/api.DagsterApi/ExternalPartitionNames',
+            "/api.DagsterApi/ExternalPartitionNames",
             request_serializer=api__pb2.ExternalPartitionNamesRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalPartitionNamesReply.FromString,
         )
         self.ExternalPartitionConfig = channel.unary_unary(
-            '/api.DagsterApi/ExternalPartitionConfig',
+            "/api.DagsterApi/ExternalPartitionConfig",
             request_serializer=api__pb2.ExternalPartitionConfigRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalPartitionConfigReply.FromString,
         )
         self.ExternalPartitionTags = channel.unary_unary(
-            '/api.DagsterApi/ExternalPartitionTags',
+            "/api.DagsterApi/ExternalPartitionTags",
             request_serializer=api__pb2.ExternalPartitionTagsRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalPartitionTagsReply.FromString,
         )
+        self.ExternalPartitionSetExecutionParams = channel.unary_unary(
+            "/api.DagsterApi/ExternalPartitionSetExecutionParams",
+            request_serializer=api__pb2.ExternalPartitionSetExecutionParamsRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalPartitionSetExecutionParamsReply.FromString,
+        )
         self.ExternalPipelineSubsetSnapshot = channel.unary_unary(
-            '/api.DagsterApi/ExternalPipelineSubsetSnapshot',
+            "/api.DagsterApi/ExternalPipelineSubsetSnapshot",
             request_serializer=api__pb2.ExternalPipelineSubsetSnapshotRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalPipelineSubsetSnapshotReply.FromString,
         )
         self.ExternalRepository = channel.unary_unary(
-            '/api.DagsterApi/ExternalRepository',
+            "/api.DagsterApi/ExternalRepository",
             request_serializer=api__pb2.ExternalRepositoryRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalRepositoryReply.FromString,
         )
         self.ExternalScheduleExecution = channel.unary_unary(
-            '/api.DagsterApi/ExternalScheduleExecution',
+            "/api.DagsterApi/ExternalScheduleExecution",
             request_serializer=api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalScheduleExecutionReply.FromString,
         )
+        self.ExternalExecutableParams = channel.unary_unary(
+            "/api.DagsterApi/ExternalExecutableParams",
+            request_serializer=api__pb2.ExternalExecutableParamsRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalExecutableParamsReply.FromString,
+        )
         self.ShutdownServer = channel.unary_unary(
-            '/api.DagsterApi/ShutdownServer',
+            "/api.DagsterApi/ShutdownServer",
             request_serializer=api__pb2.Empty.SerializeToString,
             response_deserializer=api__pb2.ShutdownServerReply.FromString,
         )
         self.ExecuteRun = channel.unary_stream(
-            '/api.DagsterApi/ExecuteRun',
+            "/api.DagsterApi/ExecuteRun",
             request_serializer=api__pb2.ExecuteRunRequest.SerializeToString,
             response_deserializer=api__pb2.ExecuteRunEvent.FromString,
         )
         self.CancelExecution = channel.unary_unary(
-            '/api.DagsterApi/CancelExecution',
+            "/api.DagsterApi/CancelExecution",
             request_serializer=api__pb2.CancelExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.CancelExecutionReply.FromString,
         )
         self.CanCancelExecution = channel.unary_unary(
-            '/api.DagsterApi/CanCancelExecution',
+            "/api.DagsterApi/CanCancelExecution",
             request_serializer=api__pb2.CanCancelExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.CanCancelExecutionReply.FromString,
         )
         self.StartRun = channel.unary_unary(
-            '/api.DagsterApi/StartRun',
+            "/api.DagsterApi/StartRun",
             request_serializer=api__pb2.StartRunRequest.SerializeToString,
             response_deserializer=api__pb2.StartRunReply.FromString,
         )
         self.GetCurrentImage = channel.unary_unary(
-            '/api.DagsterApi/GetCurrentImage',
+            "/api.DagsterApi/GetCurrentImage",
             request_serializer=api__pb2.Empty.SerializeToString,
             response_deserializer=api__pb2.GetCurrentImageReply.FromString,
         )
@@ -115,195 +125,217 @@ class DagsterApiServicer(object):
     def Ping(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def Heartbeat(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def StreamingPing(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ExecutionPlanSnapshot(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ListRepositories(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ExternalPartitionNames(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ExternalPartitionConfig(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ExternalPartitionTags(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def ExternalPartitionSetExecutionParams(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ExternalPipelineSubsetSnapshot(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ExternalRepository(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ExternalScheduleExecution(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
+    def ExternalExecutableParams(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ShutdownServer(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def ExecuteRun(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def CancelExecution(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def CanCancelExecution(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def StartRun(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
     def GetCurrentImage(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
 
 
 def add_DagsterApiServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        'Ping': grpc.unary_unary_rpc_method_handler(
+        "Ping": grpc.unary_unary_rpc_method_handler(
             servicer.Ping,
             request_deserializer=api__pb2.PingRequest.FromString,
             response_serializer=api__pb2.PingReply.SerializeToString,
         ),
-        'Heartbeat': grpc.unary_unary_rpc_method_handler(
+        "Heartbeat": grpc.unary_unary_rpc_method_handler(
             servicer.Heartbeat,
             request_deserializer=api__pb2.PingRequest.FromString,
             response_serializer=api__pb2.PingReply.SerializeToString,
         ),
-        'StreamingPing': grpc.unary_stream_rpc_method_handler(
+        "StreamingPing": grpc.unary_stream_rpc_method_handler(
             servicer.StreamingPing,
             request_deserializer=api__pb2.StreamingPingRequest.FromString,
             response_serializer=api__pb2.StreamingPingEvent.SerializeToString,
         ),
-        'ExecutionPlanSnapshot': grpc.unary_unary_rpc_method_handler(
+        "ExecutionPlanSnapshot": grpc.unary_unary_rpc_method_handler(
             servicer.ExecutionPlanSnapshot,
             request_deserializer=api__pb2.ExecutionPlanSnapshotRequest.FromString,
             response_serializer=api__pb2.ExecutionPlanSnapshotReply.SerializeToString,
         ),
-        'ListRepositories': grpc.unary_unary_rpc_method_handler(
+        "ListRepositories": grpc.unary_unary_rpc_method_handler(
             servicer.ListRepositories,
             request_deserializer=api__pb2.ListRepositoriesRequest.FromString,
             response_serializer=api__pb2.ListRepositoriesReply.SerializeToString,
         ),
-        'ExternalPartitionNames': grpc.unary_unary_rpc_method_handler(
+        "ExternalPartitionNames": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalPartitionNames,
             request_deserializer=api__pb2.ExternalPartitionNamesRequest.FromString,
             response_serializer=api__pb2.ExternalPartitionNamesReply.SerializeToString,
         ),
-        'ExternalPartitionConfig': grpc.unary_unary_rpc_method_handler(
+        "ExternalPartitionConfig": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalPartitionConfig,
             request_deserializer=api__pb2.ExternalPartitionConfigRequest.FromString,
             response_serializer=api__pb2.ExternalPartitionConfigReply.SerializeToString,
         ),
-        'ExternalPartitionTags': grpc.unary_unary_rpc_method_handler(
+        "ExternalPartitionTags": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalPartitionTags,
             request_deserializer=api__pb2.ExternalPartitionTagsRequest.FromString,
             response_serializer=api__pb2.ExternalPartitionTagsReply.SerializeToString,
         ),
-        'ExternalPipelineSubsetSnapshot': grpc.unary_unary_rpc_method_handler(
+        "ExternalPartitionSetExecutionParams": grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalPartitionSetExecutionParams,
+            request_deserializer=api__pb2.ExternalPartitionSetExecutionParamsRequest.FromString,
+            response_serializer=api__pb2.ExternalPartitionSetExecutionParamsReply.SerializeToString,
+        ),
+        "ExternalPipelineSubsetSnapshot": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalPipelineSubsetSnapshot,
             request_deserializer=api__pb2.ExternalPipelineSubsetSnapshotRequest.FromString,
             response_serializer=api__pb2.ExternalPipelineSubsetSnapshotReply.SerializeToString,
         ),
-        'ExternalRepository': grpc.unary_unary_rpc_method_handler(
+        "ExternalRepository": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalRepository,
             request_deserializer=api__pb2.ExternalRepositoryRequest.FromString,
             response_serializer=api__pb2.ExternalRepositoryReply.SerializeToString,
         ),
-        'ExternalScheduleExecution': grpc.unary_unary_rpc_method_handler(
+        "ExternalScheduleExecution": grpc.unary_unary_rpc_method_handler(
             servicer.ExternalScheduleExecution,
             request_deserializer=api__pb2.ExternalScheduleExecutionRequest.FromString,
             response_serializer=api__pb2.ExternalScheduleExecutionReply.SerializeToString,
         ),
-        'ShutdownServer': grpc.unary_unary_rpc_method_handler(
+        "ExternalExecutableParams": grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalExecutableParams,
+            request_deserializer=api__pb2.ExternalExecutableParamsRequest.FromString,
+            response_serializer=api__pb2.ExternalExecutableParamsReply.SerializeToString,
+        ),
+        "ShutdownServer": grpc.unary_unary_rpc_method_handler(
             servicer.ShutdownServer,
             request_deserializer=api__pb2.Empty.FromString,
             response_serializer=api__pb2.ShutdownServerReply.SerializeToString,
         ),
-        'ExecuteRun': grpc.unary_stream_rpc_method_handler(
+        "ExecuteRun": grpc.unary_stream_rpc_method_handler(
             servicer.ExecuteRun,
             request_deserializer=api__pb2.ExecuteRunRequest.FromString,
             response_serializer=api__pb2.ExecuteRunEvent.SerializeToString,
         ),
-        'CancelExecution': grpc.unary_unary_rpc_method_handler(
+        "CancelExecution": grpc.unary_unary_rpc_method_handler(
             servicer.CancelExecution,
             request_deserializer=api__pb2.CancelExecutionRequest.FromString,
             response_serializer=api__pb2.CancelExecutionReply.SerializeToString,
         ),
-        'CanCancelExecution': grpc.unary_unary_rpc_method_handler(
+        "CanCancelExecution": grpc.unary_unary_rpc_method_handler(
             servicer.CanCancelExecution,
             request_deserializer=api__pb2.CanCancelExecutionRequest.FromString,
             response_serializer=api__pb2.CanCancelExecutionReply.SerializeToString,
         ),
-        'StartRun': grpc.unary_unary_rpc_method_handler(
+        "StartRun": grpc.unary_unary_rpc_method_handler(
             servicer.StartRun,
             request_deserializer=api__pb2.StartRunRequest.FromString,
             response_serializer=api__pb2.StartRunReply.SerializeToString,
         ),
-        'GetCurrentImage': grpc.unary_unary_rpc_method_handler(
+        "GetCurrentImage": grpc.unary_unary_rpc_method_handler(
             servicer.GetCurrentImage,
             request_deserializer=api__pb2.Empty.FromString,
             response_serializer=api__pb2.GetCurrentImageReply.SerializeToString,
         ),
     }
-    generic_handler = grpc.method_handlers_generic_handler('api.DagsterApi', rpc_method_handlers)
+    generic_handler = grpc.method_handlers_generic_handler("api.DagsterApi", rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
@@ -326,7 +358,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/Ping',
+            "/api.DagsterApi/Ping",
             api__pb2.PingRequest.SerializeToString,
             api__pb2.PingReply.FromString,
             options,
@@ -353,7 +385,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/Heartbeat',
+            "/api.DagsterApi/Heartbeat",
             api__pb2.PingRequest.SerializeToString,
             api__pb2.PingReply.FromString,
             options,
@@ -380,7 +412,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/api.DagsterApi/StreamingPing',
+            "/api.DagsterApi/StreamingPing",
             api__pb2.StreamingPingRequest.SerializeToString,
             api__pb2.StreamingPingEvent.FromString,
             options,
@@ -407,7 +439,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/ExecutionPlanSnapshot',
+            "/api.DagsterApi/ExecutionPlanSnapshot",
             api__pb2.ExecutionPlanSnapshotRequest.SerializeToString,
             api__pb2.ExecutionPlanSnapshotReply.FromString,
             options,
@@ -434,7 +466,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/ListRepositories',
+            "/api.DagsterApi/ListRepositories",
             api__pb2.ListRepositoriesRequest.SerializeToString,
             api__pb2.ListRepositoriesReply.FromString,
             options,
@@ -461,7 +493,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/ExternalPartitionNames',
+            "/api.DagsterApi/ExternalPartitionNames",
             api__pb2.ExternalPartitionNamesRequest.SerializeToString,
             api__pb2.ExternalPartitionNamesReply.FromString,
             options,
@@ -488,7 +520,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/ExternalPartitionConfig',
+            "/api.DagsterApi/ExternalPartitionConfig",
             api__pb2.ExternalPartitionConfigRequest.SerializeToString,
             api__pb2.ExternalPartitionConfigReply.FromString,
             options,
@@ -515,9 +547,36 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/ExternalPartitionTags',
+            "/api.DagsterApi/ExternalPartitionTags",
             api__pb2.ExternalPartitionTagsRequest.SerializeToString,
             api__pb2.ExternalPartitionTagsReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExternalPartitionSetExecutionParams(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/ExternalPartitionSetExecutionParams",
+            api__pb2.ExternalPartitionSetExecutionParamsRequest.SerializeToString,
+            api__pb2.ExternalPartitionSetExecutionParamsReply.FromString,
             options,
             channel_credentials,
             call_credentials,
@@ -542,7 +601,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/ExternalPipelineSubsetSnapshot',
+            "/api.DagsterApi/ExternalPipelineSubsetSnapshot",
             api__pb2.ExternalPipelineSubsetSnapshotRequest.SerializeToString,
             api__pb2.ExternalPipelineSubsetSnapshotReply.FromString,
             options,
@@ -569,7 +628,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/ExternalRepository',
+            "/api.DagsterApi/ExternalRepository",
             api__pb2.ExternalRepositoryRequest.SerializeToString,
             api__pb2.ExternalRepositoryReply.FromString,
             options,
@@ -596,9 +655,36 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/ExternalScheduleExecution',
+            "/api.DagsterApi/ExternalScheduleExecution",
             api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             api__pb2.ExternalScheduleExecutionReply.FromString,
+            options,
+            channel_credentials,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExternalExecutableParams(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/ExternalExecutableParams",
+            api__pb2.ExternalExecutableParamsRequest.SerializeToString,
+            api__pb2.ExternalExecutableParamsReply.FromString,
             options,
             channel_credentials,
             call_credentials,
@@ -623,7 +709,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/ShutdownServer',
+            "/api.DagsterApi/ShutdownServer",
             api__pb2.Empty.SerializeToString,
             api__pb2.ShutdownServerReply.FromString,
             options,
@@ -650,7 +736,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/api.DagsterApi/ExecuteRun',
+            "/api.DagsterApi/ExecuteRun",
             api__pb2.ExecuteRunRequest.SerializeToString,
             api__pb2.ExecuteRunEvent.FromString,
             options,
@@ -677,7 +763,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/CancelExecution',
+            "/api.DagsterApi/CancelExecution",
             api__pb2.CancelExecutionRequest.SerializeToString,
             api__pb2.CancelExecutionReply.FromString,
             options,
@@ -704,7 +790,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/CanCancelExecution',
+            "/api.DagsterApi/CanCancelExecution",
             api__pb2.CanCancelExecutionRequest.SerializeToString,
             api__pb2.CanCancelExecutionReply.FromString,
             options,
@@ -731,7 +817,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/StartRun',
+            "/api.DagsterApi/StartRun",
             api__pb2.StartRunRequest.SerializeToString,
             api__pb2.StartRunReply.FromString,
             options,
@@ -758,7 +844,7 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/api.DagsterApi/GetCurrentImage',
+            "/api.DagsterApi/GetCurrentImage",
             api__pb2.Empty.SerializeToString,
             api__pb2.GetCurrentImageReply.FromString,
             options,

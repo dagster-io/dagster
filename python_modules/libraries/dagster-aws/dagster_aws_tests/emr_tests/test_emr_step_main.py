@@ -9,8 +9,8 @@ from dagster.core.events import EngineEventData
 
 def make_event(event_id):
     return DagsterEvent(
-        event_type_value='ENGINE_EVENT',
-        pipeline_name='some_pipeline',
+        event_type_value="ENGINE_EVENT",
+        pipeline_name="some_pipeline",
         event_specific_data=EngineEventData(),
         message=str(event_id),
     )
@@ -20,9 +20,9 @@ EVENTS = [make_event(i) for i in range(3)]
 
 
 def start_event_writing_thread(events_queue):
-    '''Returns the thread and a queue with an entry for each list of events written, so that the
+    """Returns the thread and a queue with an entry for each list of events written, so that the
     caller can inspect what was written.
-    '''
+    """
     written_events = Queue()
 
     def put_events_in_queue(events):

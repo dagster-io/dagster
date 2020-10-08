@@ -18,17 +18,17 @@ def execute_tasks_in_dag(dag, tasks, run_id, execution_date):
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(logging.Formatter(LOG_FORMAT))
-    root = logging.getLogger('airflow.task.operators')
+    root = logging.getLogger("airflow.task.operators")
     root.setLevel(logging.DEBUG)
     root.addHandler(handler)
 
-    dag_run = dag.create_dagrun(run_id=run_id, state='success', execution_date=execution_date)
+    dag_run = dag.create_dagrun(run_id=run_id, state="success", execution_date=execution_date)
 
     results = {}
     for task in tasks:
         ti = TaskInstance(task=task, execution_date=execution_date)
         context = ti.get_template_context()
-        context['dag_run'] = dag_run
+        context["dag_run"] = dag_run
 
         try:
             results[ti] = task.execute(context)
@@ -38,9 +38,9 @@ def execute_tasks_in_dag(dag, tasks, run_id, execution_date):
     return results
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def dagster_airflow_python_operator_pipeline():
-    '''This is a test fixture for running Dagster pipelines as Airflow DAGs.
+    """This is a test fixture for running Dagster pipelines as Airflow DAGs.
 
     Usage:
         from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
@@ -52,7 +52,7 @@ def dagster_airflow_python_operator_pipeline():
                 environment_yaml=['environments/test_*.yaml']
             )
             assert len(results) == 3
-    '''
+    """
     from .factory import make_airflow_dag_for_recon_repo
     from .vendor.python_operator import PythonOperator
 
@@ -83,9 +83,9 @@ def dagster_airflow_python_operator_pipeline():
     return _pipeline_fn
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def dagster_airflow_custom_operator_pipeline():
-    '''This is a test fixture for running Dagster pipelines with custom operators as Airflow DAGs.
+    """This is a test fixture for running Dagster pipelines with custom operators as Airflow DAGs.
 
     Usage:
         from dagster_airflow.test_fixtures import dagster_airflow_custom_operator_pipeline
@@ -98,7 +98,7 @@ def dagster_airflow_custom_operator_pipeline():
                 environment_yaml=['environments/test_*.yaml']
             )
             assert len(results) == 3
-    '''
+    """
     from .factory import make_airflow_dag_for_operator
     from .vendor.python_operator import PythonOperator
 
@@ -130,9 +130,9 @@ def dagster_airflow_custom_operator_pipeline():
     return _pipeline_fn
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def dagster_airflow_docker_operator_pipeline():
-    '''This is a test fixture for running Dagster pipelines as containerized Airflow DAGs.
+    """This is a test fixture for running Dagster pipelines as containerized Airflow DAGs.
 
     Usage:
         from dagster_airflow.test_fixtures import dagster_airflow_docker_operator_pipeline
@@ -145,7 +145,7 @@ def dagster_airflow_docker_operator_pipeline():
                 image='myimage:latest'
             )
             assert len(results) == 3
-    '''
+    """
     from .factory import make_airflow_dag_containerized_for_recon_repo
     from .operators.docker_operator import DagsterDockerOperator
 
@@ -182,9 +182,9 @@ def dagster_airflow_docker_operator_pipeline():
     return _pipeline_fn
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def dagster_airflow_k8s_operator_pipeline():
-    '''This is a test fixture for running Dagster pipelines on Airflow + K8s.
+    """This is a test fixture for running Dagster pipelines on Airflow + K8s.
 
     Usage:
         from dagster_airflow.test_fixtures import dagster_airflow_k8s_operator_pipeline
@@ -197,7 +197,7 @@ def dagster_airflow_k8s_operator_pipeline():
                 image='myimage:latest'
             )
             assert len(results) == 3
-    '''
+    """
     from .factory import make_airflow_dag_kubernetized_for_recon_repo
     from .operators.kubernetes_operator import DagsterKubernetesPodOperator
 
@@ -209,7 +209,7 @@ def dagster_airflow_k8s_operator_pipeline():
         environment_yaml=None,
         op_kwargs=None,
         mode=None,
-        namespace='default',
+        namespace="default",
         execution_date=timezone.utcnow(),
     ):
         if run_config is None and environment_yaml is not None:
@@ -219,7 +219,7 @@ def dagster_airflow_k8s_operator_pipeline():
 
         # In this test, sometimes we are pulling the integration image for the first
         # time on a BK node, which can take a long time.
-        op_kwargs['startup_timeout_seconds'] = 300
+        op_kwargs["startup_timeout_seconds"] = 300
 
         dag, tasks = make_airflow_dag_kubernetized_for_recon_repo(
             recon_repo=recon_repo,

@@ -8,14 +8,14 @@ from dagster.utils.partitions import date_partition_range
 
 def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
     # query runs db for this partition set
-    filters = PipelineRunsFilter(tags={'dagster/partition_set': partition_set_def.name})
+    filters = PipelineRunsFilter(tags={"dagster/partition_set": partition_set_def.name})
     partition_set_runs = instance.get_runs(filters)
 
     runs_by_partition = defaultdict(list)
 
     for run in partition_set_runs:
         if not status_filters or run.status in status_filters:
-            runs_by_partition[run.tags['dagster/partition']].append(run)
+            runs_by_partition[run.tags["dagster/partition"]].append(run)
 
     return runs_by_partition
 
@@ -62,17 +62,17 @@ def backfill_should_execute(context, partition_set_def, retry_failed=False):
 
 
 def backfill_test_schedule():
-    schedule_name = 'backfill_unreliable_weekly'
+    schedule_name = "backfill_unreliable_weekly"
     # create weekly partition set
     partition_set = PartitionSetDefinition(
-        name='unreliable_weekly',
-        pipeline_name='unreliable_pipeline',
+        name="unreliable_weekly",
+        pipeline_name="unreliable_pipeline",
         partition_fn=date_partition_range(
             # first sunday of the year
             start=datetime.datetime(2020, 1, 5),
             delta=datetime.timedelta(weeks=1),
         ),
-        run_config_fn_for_partition=lambda _: {'storage': {'filesystem': {}}},
+        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
     )
 
     def _should_execute(context):
@@ -88,12 +88,12 @@ def backfill_test_schedule():
 
 def materialization_schedule():
     # create weekly partition set
-    schedule_name = 'many_events_partitioned'
+    schedule_name = "many_events_partitioned"
     partition_set = PartitionSetDefinition(
-        name='many_events_minutely',
-        pipeline_name='many_events',
+        name="many_events_minutely",
+        pipeline_name="many_events",
         partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
-        run_config_fn_for_partition=lambda _: {'storage': {'filesystem': {}}},
+        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
     )
 
     def _should_execute(context):
@@ -110,11 +110,11 @@ def materialization_schedule():
 def longitudinal_schedule():
     from .longitudinal import longitudinal_config
 
-    schedule_name = 'longitudinal_demo'
+    schedule_name = "longitudinal_demo"
 
     partition_set = PartitionSetDefinition(
-        name='ingest_and_train',
-        pipeline_name='longitudinal_pipeline',
+        name="ingest_and_train",
+        pipeline_name="longitudinal_pipeline",
         partition_fn=date_partition_range(start=datetime.datetime(2020, 1, 1)),
         run_config_fn_for_partition=longitudinal_config,
     )
@@ -143,7 +143,7 @@ def get_toys_schedules():
         ScheduleDefinition(
             name="many_events_every_min",
             cron_schedule="* * * * *",
-            pipeline_name='many_events',
+            pipeline_name="many_events",
             run_config_fn=lambda _: {"storage": {"filesystem": {}}},
         ),
         ScheduleDefinition(
@@ -151,23 +151,23 @@ def get_toys_schedules():
             cron_schedule="0 * * * *",
             pipeline_name="pandas_hello_world_pipeline",
             run_config_fn=lambda _: {
-                'solids': {
-                    'mult_solid': {
-                        'inputs': {
-                            'num_df': {
-                                'csv': {
-                                    'path': file_relative_path(
+                "solids": {
+                    "mult_solid": {
+                        "inputs": {
+                            "num_df": {
+                                "csv": {
+                                    "path": file_relative_path(
                                         __file__, "pandas_hello_world/data/num.csv"
                                     )
                                 }
                             }
                         }
                     },
-                    'sum_solid': {
-                        'inputs': {
-                            'num_df': {
-                                'csv': {
-                                    'path': file_relative_path(
+                    "sum_solid": {
+                        "inputs": {
+                            "num_df": {
+                                "csv": {
+                                    "path": file_relative_path(
                                         __file__, "pandas_hello_world/data/num.csv"
                                     )
                                 }

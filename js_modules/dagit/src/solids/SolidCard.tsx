@@ -1,9 +1,10 @@
-import React from "react";
-import gql from "graphql-tag";
-import { SolidCardSolidDefinitionFragment } from "./types/SolidCardSolidDefinitionFragment";
-import { layoutSolid } from "../graph/getFullSolidLayout";
-import SolidNode from "../graph/SolidNode";
-import styled from "styled-components/macro";
+import gql from 'graphql-tag';
+import React from 'react';
+import styled from 'styled-components/macro';
+
+import {SolidNode} from 'src/graph/SolidNode';
+import {layoutSolid} from 'src/graph/getFullSolidLayout';
+import {SolidCardSolidDefinitionFragment} from 'src/solids/types/SolidCardSolidDefinitionFragment';
 
 interface SolidCardProps {
   definition: SolidCardSolidDefinitionFragment;
@@ -30,24 +31,24 @@ export class SolidCard extends React.Component<SolidCardProps> {
       }
 
       ${SolidNode.fragments.SolidNodeDefinitionFragment}
-    `
+    `,
   };
 
   render() {
-    const { name, inputDefinitions, outputDefinitions } = this.props.definition;
+    const {name, inputDefinitions, outputDefinitions} = this.props.definition;
     const layout = layoutSolid(
       {
         name: name,
-        inputs: inputDefinitions.map(d => ({
+        inputs: inputDefinitions.map((d) => ({
           definition: d,
-          dependsOn: []
+          dependsOn: [],
         })),
-        outputs: outputDefinitions.map(d => ({
+        outputs: outputDefinitions.map((d) => ({
           definition: d,
-          dependedBy: []
-        }))
+          dependedBy: [],
+        })),
       },
-      { x: 0, y: 0 }
+      {x: 0, y: 0},
     );
 
     return (

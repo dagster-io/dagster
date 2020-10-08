@@ -14,11 +14,11 @@ from dagster import check
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.utils import file_relative_path
 
-IS_BUILDKITE = os.getenv('BUILDKITE') is not None
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 HARDCODED_PORT = 8090
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def dagster_docker_image():
     docker_image = test_project_docker_image()
 
@@ -59,10 +59,10 @@ def wait_for_connection(host, port):
 
 @contextmanager
 def docker_service_up(docker_compose_file, service_name):
-    check.str_param(service_name, 'service_name')
-    check.str_param(docker_compose_file, 'docker_compose_file')
+    check.str_param(service_name, "service_name")
+    check.str_param(docker_compose_file, "docker_compose_file")
     check.invariant(
-        os.path.isfile(docker_compose_file), 'docker_compose_file must specify a valid file'
+        os.path.isfile(docker_compose_file), "docker_compose_file must specify a valid file"
     )
 
     if not IS_BUILDKITE:
@@ -71,42 +71,42 @@ def docker_service_up(docker_compose_file, service_name):
 
         try:
             subprocess.check_output(
-                ['docker-compose', '-f', docker_compose_file, 'stop', service_name], env=env,
+                ["docker-compose", "-f", docker_compose_file, "stop", service_name], env=env,
             )
             subprocess.check_output(
-                ['docker-compose', '-f', docker_compose_file, 'rm', '-f', service_name], env=env,
+                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name], env=env,
             )
         except Exception:  # pylint: disable=broad-except
             pass
 
         subprocess.check_output(
-            ['docker-compose', '-f', docker_compose_file, 'up', '-d', service_name], env=env,
+            ["docker-compose", "-f", docker_compose_file, "up", "-d", service_name], env=env,
         )
 
     yield
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def grpc_host():
     # In buildkite we get the ip address from this variable (see buildkite code for commentary)
     # Otherwise assume local development and assume localhost
-    env_name = 'GRPC_SERVER_HOST'
+    env_name = "GRPC_SERVER_HOST"
     if env_name not in os.environ:
-        os.environ[env_name] = 'localhost'
+        os.environ[env_name] = "localhost"
     return os.environ[env_name]
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def grpc_port():
     yield HARDCODED_PORT
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def docker_grpc_client(
     dagster_docker_image, grpc_host, grpc_port
 ):  # pylint: disable=redefined-outer-name, unused-argument
     if not IS_BUILDKITE:
-        docker_service_up(file_relative_path(__file__, 'docker-compose.yml'), 'dagster-grpc-server')
+        docker_service_up(file_relative_path(__file__, "docker-compose.yml"), "dagster-grpc-server")
 
     wait_for_connection(grpc_host, grpc_port)
     yield DagsterGrpcClient(port=grpc_port, host=grpc_host)

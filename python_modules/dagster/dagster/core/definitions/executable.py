@@ -1,78 +1,100 @@
-from abc import ABCMeta, abstractmethod
-
-import six
+from collections import namedtuple
 
 from dagster import check
-from dagster.core.errors import DagsterInvalidSubsetError
-from dagster.core.selector import parse_solid_selection
+from dagster.core.instance import DagsterInstance
+from dagster.utils.backcompat import experimental_class_warning
+
+from .mode import DEFAULT_MODE_NAME
 
 
-class ExecutablePipeline(six.with_metaclass(ABCMeta)):
-    @abstractmethod
-    def get_definition(self):
-        pass
+class ExecutableContext(namedtuple("ExecutableContext", "instance")):
+    """Context for generating the execution parameters for an ExecutableDefinition at runtime.
 
-    @abstractmethod
-    def subset_for_execution(self, solid_selection):
-        pass
+    An instance of this class is made available as the first argument to the ExecutableDefinition
+    functions: run_config_fn, tags_fn
 
+    Attributes:
+        instance (DagsterInstance): The instance configured to launch the executable
+    """
 
-class InMemoryExecutablePipeline(ExecutablePipeline, object):
-    def __init__(self, pipeline_def, solid_selection=None, solids_to_execute=None):
-        self._pipeline_def = pipeline_def
-        self._solid_selection = solid_selection
-        self._solids_to_execute = solids_to_execute
-
-    def get_definition(self):
-        return self._pipeline_def
-
-    def _resolve_solid_selection(self, solid_selection):
-        # resolve a list of solid selection queries to a frozenset of qualified solid names
-        # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-        check.list_param(solid_selection, 'solid_selection', of_type=str)
-        solids_to_execute = parse_solid_selection(self.get_definition(), solid_selection)
-        if len(solids_to_execute) == 0:
-            raise DagsterInvalidSubsetError(
-                'No qualified solids to execute found for solid_selection={requested}'.format(
-                    requested=solid_selection
-                )
-            )
-        return solids_to_execute
-
-    def _subset_for_execution(self, solids_to_execute, solid_selection=None):
-        if self._pipeline_def.is_subset_pipeline:
-            return InMemoryExecutablePipeline(
-                self._pipeline_def.parent_pipeline_def.get_pipeline_subset_def(solids_to_execute),
-                solid_selection=solid_selection,
-                solids_to_execute=solids_to_execute,
-            )
-
-        return InMemoryExecutablePipeline(
-            self._pipeline_def.get_pipeline_subset_def(solids_to_execute),
-            solid_selection=solid_selection,
-            solids_to_execute=solids_to_execute,
+    def __new__(
+        cls, instance,
+    ):
+        experimental_class_warning("ExecutableContext")
+        return super(ExecutableContext, cls).__new__(
+            cls, check.inst_param(instance, "instance", DagsterInstance),
         )
 
-    def subset_for_execution(self, solid_selection):
-        # take a list of solid queries and resolve the queries to names of solids to execute
-        check.list_param(solid_selection, 'solid_selection', of_type=str)
 
-        solids_to_execute = self._resolve_solid_selection(solid_selection)
-        return self._subset_for_execution(solids_to_execute, solid_selection)
+class ExecutableDefinition(object):
+    """Define an executable, a named set of pipeline execution parameters that can be dynamically
+    configured at runtime.
 
-    def subset_for_execution_from_existing_pipeline(self, solids_to_execute):
-        # take a frozenset of resolved solid names from an existing pipeline run
-        # so there's no need to parse the selection
-        check.set_param(solids_to_execute, 'solids_to_execute', of_type=str)
+    Args:
+        name (str): The name of this executable.
+        pipeline_name (str): The name of the pipeline to execute.
+        run_config_fn (Callable[[ExecutableContext], [Dict]]): A function that takes a
+            ExecutableContext object and returns the environment configuration that
+            parameterizes this execution, as a dict.
+        tags_fn (Optional[Callable[[ExecutableContext], Optional[Dict[str, str]]]]): A
+            function that generates tags to attach to the execution. Takes a
+            :py:class:`~dagster.ExecutableContext` and returns a dictionary of tags (string
+            key-value pairs).
+        mode (Optional[str]): The mode to apply when executing this pipeline. (default: 'default')
+        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+            solid names) to execute. e.g. ``['*some_solid+', 'other_solid']``
+    """
 
-        return self._subset_for_execution(solids_to_execute)
+    __slots__ = [
+        "_name",
+        "_pipeline_name",
+        "_tags_fn",
+        "_run_config_fn",
+        "_mode",
+        "_solid_selection",
+    ]
+
+    def __init__(
+        self,
+        name,
+        pipeline_name,
+        run_config_fn=None,
+        tags_fn=None,
+        mode="default",
+        solid_selection=None,
+    ):
+        experimental_class_warning("ExecutableDefinition")
+        self._name = check.str_param(name, "name")
+        self._pipeline_name = check.str_param(pipeline_name, "pipeline_name")
+        self._run_config_fn = check.opt_callable_param(
+            run_config_fn, "run_config_fn", lambda _context: {}
+        )
+        self._tags_fn = check.opt_callable_param(tags_fn, "tags_fn", lambda _context: {})
+        self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+        self._solid_selection = check.opt_nullable_list_param(
+            solid_selection, "solid_selection", of_type=str
+        )
+
+    @property
+    def pipeline_name(self):
+        return self._pipeline_name
 
     @property
     def solid_selection(self):
-        # a list of solid queries provided by the user
-        return self._solid_selection  # List[str]
+        return self._solid_selection
 
     @property
-    def solids_to_execute(self):
-        # a frozenset which contains the names of the solids to execute
-        return self._solids_to_execute  # FrozenSet[str]
+    def name(self):
+        return self._name
+
+    @property
+    def mode(self):
+        return self._mode
+
+    def get_run_config(self, context):
+        check.inst_param(context, "context", ExecutableContext)
+        return self._run_config_fn(context)
+
+    def get_tags(self, context):
+        check.inst_param(context, "context", ExecutableContext)
+        return self._tags_fn(context)

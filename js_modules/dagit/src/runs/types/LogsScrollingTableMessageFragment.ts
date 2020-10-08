@@ -10,7 +10,7 @@ import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
 // ====================================================
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineFailureEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "PipelineStartEvent" | "PipelineSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -111,6 +111,28 @@ export interface LogsScrollingTableMessageFragment_PipelineInitFailureEvent {
   level: LogLevel;
   stepKey: string | null;
   error: LogsScrollingTableMessageFragment_PipelineInitFailureEvent_error;
+}
+
+export interface LogsScrollingTableMessageFragment_PipelineFailureEvent_pipelineFailureError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface LogsScrollingTableMessageFragment_PipelineFailureEvent_pipelineFailureError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: LogsScrollingTableMessageFragment_PipelineFailureEvent_pipelineFailureError_cause | null;
+}
+
+export interface LogsScrollingTableMessageFragment_PipelineFailureEvent {
+  __typename: "PipelineFailureEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  pipelineFailureError: LogsScrollingTableMessageFragment_PipelineFailureEvent_pipelineFailureError | null;
 }
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_cause {
@@ -566,4 +588,4 @@ export interface LogsScrollingTableMessageFragment_HookErroredEvent {
   error: LogsScrollingTableMessageFragment_HookErroredEvent_error;
 }
 
-export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_StepMaterializationEvent | LogsScrollingTableMessageFragment_PipelineInitFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent | LogsScrollingTableMessageFragment_EngineEvent | LogsScrollingTableMessageFragment_HookErroredEvent;
+export type LogsScrollingTableMessageFragment = LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent | LogsScrollingTableMessageFragment_StepMaterializationEvent | LogsScrollingTableMessageFragment_PipelineInitFailureEvent | LogsScrollingTableMessageFragment_PipelineFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent | LogsScrollingTableMessageFragment_ExecutionStepInputEvent | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent | LogsScrollingTableMessageFragment_StepExpectationResultEvent | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent | LogsScrollingTableMessageFragment_EngineEvent | LogsScrollingTableMessageFragment_HookErroredEvent;

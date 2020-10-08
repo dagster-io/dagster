@@ -4,32 +4,32 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 
 
 def test_mode_snap(snapshot):
-    @resource(config_schema={'foo': str})
+    @resource(config_schema={"foo": str})
     def a_resource(_):
         pass
 
-    @resource(description='resource_description')
+    @resource(description="resource_description")
     def no_config_resource(_):
         pass
 
-    @logger(config_schema={'bar': str})
+    @logger(config_schema={"bar": str})
     def a_logger(_):
         pass
 
-    @logger(description='logger_description')
+    @logger(description="logger_description")
     def no_config_logger(_):
         pass
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                name='a_mode',
-                description='a_desc',
+                name="a_mode",
+                description="a_desc",
                 resource_defs={
-                    'some_resource': a_resource,
-                    'no_config_resource': no_config_resource,
+                    "some_resource": a_resource,
+                    "no_config_resource": no_config_resource,
                 },
-                logger_defs={'some_logger': a_logger, 'no_config_logger': no_config_logger},
+                logger_defs={"some_logger": a_logger, "no_config_logger": no_config_logger},
             )
         ]
     )

@@ -61,12 +61,12 @@ class PythonOperator(BaseOperator):
     :type templates_exts: list[str]
     """
 
-    template_fields = ('templates_dict', 'op_args', 'op_kwargs')
-    ui_color = '#ffefeb'
+    template_fields = ("templates_dict", "op_args", "op_kwargs")
+    ui_color = "#ffefeb"
 
     # since we won't mutate the arguments, we should just do the shallow copy
     # there are some cases we can't deepcopy the objects(e.g protobuf).
-    shallow_copy_attrs = ('python_callable', 'op_kwargs')
+    shallow_copy_attrs = ("python_callable", "op_kwargs")
 
     @apply_defaults
     def __init__(  # pylint: disable=keyword-arg-before-vararg
@@ -82,7 +82,7 @@ class PythonOperator(BaseOperator):
     ):
         super(PythonOperator, self).__init__(*args, **kwargs)
         if not callable(python_callable):
-            raise AirflowException('`python_callable` param must be callable')
+            raise AirflowException("`python_callable` param must be callable")
         self.python_callable = python_callable
         self.op_args = op_args or []
         self.op_kwargs = op_kwargs or {}
@@ -96,13 +96,13 @@ class PythonOperator(BaseOperator):
         airflow_context_vars = context_to_airflow_vars(context, in_env_var_format=True)
         self.log.info(
             "Exporting the following env vars:\n%s",
-            '\n'.join(["{}={}".format(k, v) for k, v in airflow_context_vars.items()]),
+            "\n".join(["{}={}".format(k, v) for k, v in airflow_context_vars.items()]),
         )
         os.environ.update(airflow_context_vars)
 
         if self.provide_context:
             context.update(self.op_kwargs)
-            context['templates_dict'] = self.templates_dict
+            context["templates_dict"] = self.templates_dict
             self.op_kwargs = context
 
         return_value = self.execute_callable()

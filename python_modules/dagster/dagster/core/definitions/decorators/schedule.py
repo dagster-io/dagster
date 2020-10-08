@@ -4,7 +4,10 @@ import warnings
 from dateutil.relativedelta import relativedelta
 
 from dagster import check
-from dagster.core.definitions.partition import PartitionSetDefinition
+from dagster.core.definitions.partition import (
+    PartitionSetDefinition,
+    create_default_partition_selector_fn,
+)
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.partitions import date_partition_range
 
@@ -26,7 +29,7 @@ def schedule(
     should_execute=None,
     environment_vars=None,
 ):
-    '''Create a schedule.
+    """Create a schedule.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
@@ -54,10 +57,10 @@ def schedule(
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
-    '''
+    """
 
     def inner(fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
@@ -90,7 +93,7 @@ def monthly_schedule(
     environment_vars=None,
     end_date=None,
 ):
-    '''Create a schedule that runs monthly.
+    """Create a schedule that runs monthly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
@@ -119,35 +122,40 @@ def monthly_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-    '''
-    check.opt_str_param(name, 'name')
-    check.inst_param(start_date, 'start_date', datetime.datetime)
-    check.opt_inst_param(end_date, 'end_date', datetime.datetime)
-    check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
-    check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
-    mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
-    check.opt_callable_param(should_execute, 'should_execute')
-    check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.int_param(execution_day_of_month, 'execution_day')
-    check.inst_param(execution_time, 'execution_time', datetime.time)
+    """
+    check.opt_str_param(name, "name")
+    check.inst_param(start_date, "start_date", datetime.datetime)
+    check.opt_inst_param(end_date, "end_date", datetime.datetime)
+    check.opt_callable_param(tags_fn_for_date, "tags_fn_for_date")
+    check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
+    mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+    check.opt_callable_param(should_execute, "should_execute")
+    check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
+    check.str_param(pipeline_name, "pipeline_name")
+    check.int_param(execution_day_of_month, "execution_day")
+    check.inst_param(execution_time, "execution_time", datetime.time)
 
     if execution_day_of_month <= 0 or execution_day_of_month > 31:
         raise DagsterInvalidDefinitionError(
-            '`execution_day_of_month={}` is not valid for monthly schedule. Execution day must be '
-            'between 1 and 31'.format(execution_day_of_month)
+            "`execution_day_of_month={}` is not valid for monthly schedule. Execution day must be "
+            "between 1 and 31".format(execution_day_of_month)
         )
 
-    cron_schedule = '{minute} {hour} {day} * *'.format(
+    cron_schedule = "{minute} {hour} {day} * *".format(
         minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_month
     )
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta=relativedelta(months=1), fmt="%Y-%m"
+    fmt = "%Y-%m"
+    delta = relativedelta(months=1)
+
+    execution_offset = relativedelta(
+        days=execution_day_of_month - 1, hours=execution_time.hour, minutes=execution_time.minute,
     )
 
+    partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
+
     def inner(fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
@@ -156,7 +164,7 @@ def monthly_schedule(
             tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
         partition_set = PartitionSetDefinition(
-            name='{}_partitions'.format(schedule_name),
+            name="{}_partitions".format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             run_config_fn_for_partition=lambda partition: fn(partition.value),
@@ -170,6 +178,7 @@ def monthly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            partition_selector=create_default_partition_selector_fn(delta + execution_offset, fmt),
         )
 
     return inner
@@ -188,7 +197,7 @@ def weekly_schedule(
     environment_vars=None,
     end_date=None,
 ):
-    '''Create a schedule that runs weekly.
+    """Create a schedule that runs weekly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
@@ -217,35 +226,42 @@ def weekly_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-    '''
-    check.opt_str_param(name, 'name')
-    check.inst_param(start_date, 'start_date', datetime.datetime)
-    check.opt_inst_param(end_date, 'end_date', datetime.datetime)
-    check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
-    check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
-    mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
-    check.opt_callable_param(should_execute, 'should_execute')
-    check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.int_param(execution_day_of_week, 'execution_day_of_week')
-    check.inst_param(execution_time, 'execution_time', datetime.time)
+    """
+    check.opt_str_param(name, "name")
+    check.inst_param(start_date, "start_date", datetime.datetime)
+    check.opt_inst_param(end_date, "end_date", datetime.datetime)
+    check.opt_callable_param(tags_fn_for_date, "tags_fn_for_date")
+    check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
+    mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+    check.opt_callable_param(should_execute, "should_execute")
+    check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
+    check.str_param(pipeline_name, "pipeline_name")
+    check.int_param(execution_day_of_week, "execution_day_of_week")
+    check.inst_param(execution_time, "execution_time", datetime.time)
 
     if execution_day_of_week < 0 or execution_day_of_week >= 7:
         raise DagsterInvalidDefinitionError(
-            '`execution_day_of_week={}` is not valid for weekly schedule. Execution day must be '
-            'between 0 [Sunday] and 6 [Saturday]'.format(execution_day_of_week)
+            "`execution_day_of_week={}` is not valid for weekly schedule. Execution day must be "
+            "between 0 [Sunday] and 6 [Saturday]".format(execution_day_of_week)
         )
 
-    cron_schedule = '{minute} {hour} * * {day}'.format(
+    cron_schedule = "{minute} {hour} * * {day}".format(
         minute=execution_time.minute, hour=execution_time.hour, day=execution_day_of_week
     )
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta=relativedelta(weeks=1), fmt="%Y-%m-%d"
+    fmt = "%Y-%m-%d"
+    delta = relativedelta(weeks=1)
+
+    day_difference = (execution_day_of_week - start_date.weekday()) % 7
+
+    execution_offset = relativedelta(
+        days=day_difference, hours=execution_time.hour, minutes=execution_time.minute
     )
 
+    partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
+
     def inner(fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
@@ -254,7 +270,7 @@ def weekly_schedule(
             tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
         partition_set = PartitionSetDefinition(
-            name='{}_partitions'.format(schedule_name),
+            name="{}_partitions".format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             run_config_fn_for_partition=lambda partition: fn(partition.value),
@@ -268,6 +284,7 @@ def weekly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            partition_selector=create_default_partition_selector_fn(delta + execution_offset, fmt),
         )
 
     return inner
@@ -285,7 +302,7 @@ def daily_schedule(
     environment_vars=None,
     end_date=None,
 ):
-    '''Create a schedule that runs daily.
+    """Create a schedule that runs daily.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
@@ -312,26 +329,30 @@ def daily_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-    '''
-    check.opt_str_param(name, 'name')
-    check.inst_param(start_date, 'start_date', datetime.datetime)
-    check.opt_inst_param(end_date, 'end_date', datetime.datetime)
-    check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
-    check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
-    mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
-    check.opt_callable_param(should_execute, 'should_execute')
-    check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.inst_param(execution_time, 'execution_time', datetime.time)
+    """
+    check.opt_str_param(name, "name")
+    check.inst_param(start_date, "start_date", datetime.datetime)
+    check.opt_inst_param(end_date, "end_date", datetime.datetime)
+    check.opt_callable_param(tags_fn_for_date, "tags_fn_for_date")
+    check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
+    mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+    check.opt_callable_param(should_execute, "should_execute")
+    check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
+    check.str_param(pipeline_name, "pipeline_name")
+    check.inst_param(execution_time, "execution_time", datetime.time)
 
-    cron_schedule = '{minute} {hour} * * *'.format(
+    cron_schedule = "{minute} {hour} * * *".format(
         minute=execution_time.minute, hour=execution_time.hour
     )
 
-    partition_fn = date_partition_range(start_date, end=end_date)
+    delta = datetime.timedelta(days=1)
+
+    partition_fn = date_partition_range(start_date, end=end_date, delta=delta)
+
+    execution_offset = datetime.timedelta(hours=execution_time.hour, minutes=execution_time.minute)
 
     def inner(fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
@@ -340,7 +361,7 @@ def daily_schedule(
             tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
         partition_set = PartitionSetDefinition(
-            name='{}_partitions'.format(schedule_name),
+            name="{}_partitions".format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             run_config_fn_for_partition=lambda partition: fn(partition.value),
@@ -354,6 +375,7 @@ def daily_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            partition_selector=create_default_partition_selector_fn(delta + execution_offset),
         )
 
     return inner
@@ -371,7 +393,7 @@ def hourly_schedule(
     environment_vars=None,
     end_date=None,
 ):
-    '''Create a schedule that runs hourly.
+    """Create a schedule that runs hourly.
 
     The decorated function will be called as the ``run_config_fn`` of the underlying
     :py:class:`~dagster.ScheduleDefinition` and should take a
@@ -400,17 +422,17 @@ def hourly_schedule(
             the schedule.
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
-    '''
-    check.opt_str_param(name, 'name')
-    check.inst_param(start_date, 'start_date', datetime.datetime)
-    check.opt_inst_param(end_date, 'end_date', datetime.datetime)
-    check.opt_callable_param(tags_fn_for_date, 'tags_fn_for_date')
-    check.opt_nullable_list_param(solid_selection, 'solid_selection', of_type=str)
-    mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
-    check.opt_callable_param(should_execute, 'should_execute')
-    check.opt_dict_param(environment_vars, 'environment_vars', key_type=str, value_type=str)
-    check.str_param(pipeline_name, 'pipeline_name')
-    check.inst_param(execution_time, 'execution_time', datetime.time)
+    """
+    check.opt_str_param(name, "name")
+    check.inst_param(start_date, "start_date", datetime.datetime)
+    check.opt_inst_param(end_date, "end_date", datetime.datetime)
+    check.opt_callable_param(tags_fn_for_date, "tags_fn_for_date")
+    check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
+    mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+    check.opt_callable_param(should_execute, "should_execute")
+    check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
+    check.str_param(pipeline_name, "pipeline_name")
+    check.inst_param(execution_time, "execution_time", datetime.time)
 
     if execution_time.hour != 0:
         warnings.warn(
@@ -422,14 +444,17 @@ def hourly_schedule(
             "datetime.time(minute={minute}, ...) to fix this warning."
         )
 
-    cron_schedule = '{minute} * * * *'.format(minute=execution_time.minute)
+    cron_schedule = "{minute} * * * *".format(minute=execution_time.minute)
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta=datetime.timedelta(hours=1), fmt="%Y-%m-%d-%H:%M"
-    )
+    fmt = "%Y-%m-%d-%H:%M"
+    delta = datetime.timedelta(hours=1)
+
+    execution_offset = datetime.timedelta(minutes=(execution_time.minute - start_date.minute) % 60)
+
+    partition_fn = date_partition_range(start_date, end=end_date, delta=delta, fmt=fmt)
 
     def inner(fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         schedule_name = name or fn.__name__
 
@@ -438,7 +463,7 @@ def hourly_schedule(
             tags_fn_for_partition_value = lambda partition: tags_fn_for_date(partition.value)
 
         partition_set = PartitionSetDefinition(
-            name='{}_partitions'.format(schedule_name),
+            name="{}_partitions".format(schedule_name),
             pipeline_name=pipeline_name,
             partition_fn=partition_fn,
             run_config_fn_for_partition=lambda partition: fn(partition.value),
@@ -452,6 +477,7 @@ def hourly_schedule(
             cron_schedule,
             should_execute=should_execute,
             environment_vars=environment_vars,
+            partition_selector=create_default_partition_selector_fn(delta + execution_offset, fmt),
         )
 
     return inner

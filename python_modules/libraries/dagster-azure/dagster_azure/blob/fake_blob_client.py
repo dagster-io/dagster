@@ -9,12 +9,12 @@ from .utils import ResourceNotFoundError
 
 
 class FakeBlobServiceClient(object):
-    '''Stateful mock of an Blob service client for testing.
+    """Stateful mock of an Blob service client for testing.
 
     Wraps a ``mock.MagicMock``. Containers are implemented using an in-memory dict.
-    '''
+    """
 
-    def __init__(self, account_name, credential='fake-creds'):
+    def __init__(self, account_name, credential="fake-creds"):
 
         self._account_name = account_name
         self._credential = mock.MagicMock()
@@ -43,7 +43,7 @@ class FakeBlobServiceClient(object):
 
 
 class FakeBlobContainerClient(object):
-    '''Stateful mock of an Blob container client for testing.'''
+    """Stateful mock of an Blob container client for testing."""
 
     def __init__(self, account_name, container_name):
         self._container = defaultdict(FakeBlobClient)
@@ -77,10 +77,10 @@ class FakeBlobContainerClient(object):
         for k, v in self._container.items():
             if name_starts_with is None or k.startswith(name_starts_with):
                 yield {
-                    'name': k,
+                    "name": k,
                     # This clearly isn't actually the URL but we need a way of copying contents
                     # across blobs and this allows us to do it
-                    'url': v.contents,
+                    "url": v.contents,
                 }
 
     def delete_blob(self, blob):
@@ -91,7 +91,7 @@ class FakeBlobContainerClient(object):
 
 
 class FakeBlobClient(object):
-    '''Stateful mock of an Blob blob client for testing.'''
+    """Stateful mock of an Blob blob client for testing."""
 
     def __init__(self):
         self.contents = None
@@ -111,22 +111,22 @@ class FakeBlobClient(object):
                 raise Exception("Invalid lease!")
         if self.contents is None or overwrite is True:
             if isinstance(contents, str):
-                self.contents = contents.encode('utf8')
+                self.contents = contents.encode("utf8")
             elif isinstance(contents, io.TextIOBase):
-                self.contents = contents.read().encode('utf8')
+                self.contents = contents.read().encode("utf8")
             elif isinstance(contents, io.IOBase):
                 self.contents = contents.read()
             elif isinstance(contents, bytes):
                 self.contents = contents
             # Python 2 compatibility - no base class for `file` type
-            elif hasattr(contents, 'read'):
+            elif hasattr(contents, "read"):
                 self.contents = contents.read()
             else:
                 self.contents = contents
 
     @property
     def url(self):
-        return ':memory:'
+        return ":memory:"
 
     @contextmanager
     def acquire_lease(self, lease_duration=-1):  # pylint: disable=unused-argument
@@ -146,7 +146,7 @@ class FakeBlobClient(object):
 
 
 class FakeBlobDownloader(object):
-    '''Mock of a Blob file downloader for testing.'''
+    """Mock of a Blob file downloader for testing."""
 
     def __init__(self, contents):
         self.contents = contents

@@ -17,8 +17,8 @@ class StorageBackendSpec extends FlatSpec with Matchers {
 
   "S3StorageBackend parse" should "match" in {
     val s3be = S3StorageBackend("bucket", "prefix", date)
-    assert(s3be.inputKey === "prefix/raw/2019/01/01")
-    assert(s3be.outputKey === "prefix/output/2019/01/01")
+    assert(s3be.inputPath === "prefix/raw/2019/01/01")
+    assert(s3be.outputPath === "prefix/output/2019/01/01")
     assert(s3be.outputURI === "s3a://bucket/prefix/output/2019/01/01")
   }
 

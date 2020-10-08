@@ -54,7 +54,7 @@ def _core_resource_initialization_event_generator(
             resource_context = InitResourceContext(
                 pipeline_def=pipeline_def,
                 resource_def=resource_def,
-                resource_config=environment_config.resources.get(resource_name, {}).get('config'),
+                resource_config=environment_config.resources.get(resource_name, {}).get("config"),
                 run_id=pipeline_run.run_id,
                 # Add tags with information about the resource
                 log_manager=resource_log_manager.with_tags(
@@ -91,11 +91,11 @@ def _core_resource_initialization_event_generator(
 def resource_initialization_event_generator(
     execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init
 ):
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
-    check.inst_param(environment_config, 'environment_config', EnvironmentConfig)
-    check.inst_param(pipeline_run, 'pipeline_run', PipelineRun)
-    check.inst_param(log_manager, 'log_manager', DagsterLogManager)
-    check.set_param(resource_keys_to_init, 'resource_keys_to_init', of_type=str)
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(environment_config, "environment_config", EnvironmentConfig)
+    check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+    check.inst_param(log_manager, "log_manager", DagsterLogManager)
+    check.set_param(resource_keys_to_init, "resource_keys_to_init", of_type=str)
 
     if execution_plan.step_key_for_single_step_plans():
         step = execution_plan.get_step_by_key(execution_plan.step_key_for_single_step_plans())
@@ -141,10 +141,10 @@ def resource_initialization_event_generator(
 
 
 class InitializedResource(object):
-    ''' Utility class to wrap the untyped resource object emitted from the user-supplied
+    """ Utility class to wrap the untyped resource object emitted from the user-supplied
     resource function.  Used for distinguishing from the framework-yielded events in an
     `EventGenerationManager`-wrapped event stream.
-    '''
+    """
 
     def __init__(self, obj, duration):
         self.resource = obj
@@ -158,7 +158,7 @@ def single_resource_generation_manager(context, resource_name, resource_def):
 
 def single_resource_event_generator(context, resource_name, resource_def):
     try:
-        msg_fn = lambda: 'Error executing resource_fn on ResourceDefinition {name}'.format(
+        msg_fn = lambda: "Error executing resource_fn on ResourceDefinition {name}".format(
             name=resource_name
         )
         with user_code_error_boundary(DagsterResourceFunctionError, msg_fn):
@@ -170,7 +170,7 @@ def single_resource_event_generator(context, resource_name, resource_def):
                 yield InitializedResource(resource, format_duration(timer_result.millis))
             except StopIteration:
                 check.failed(
-                    'Resource generator {name} must yield one item.'.format(name=resource_name)
+                    "Resource generator {name} must yield one item.".format(name=resource_name)
                 )
     except DagsterUserCodeExecutionError as dagster_user_error:
         raise dagster_user_error
@@ -182,7 +182,7 @@ def single_resource_event_generator(context, resource_name, resource_def):
             pass
         else:
             check.failed(
-                'Resource generator {name} yielded more than one item.'.format(name=resource_name)
+                "Resource generator {name} yielded more than one item.".format(name=resource_name)
             )
 
 

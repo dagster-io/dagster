@@ -20,82 +20,83 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 
 
 def inner_plan_execution_iterator(pipeline_context, execution_plan):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
     retries = pipeline_context.retries
 
     for event in copy_required_intermediates_for_execution(pipeline_context, execution_plan):
         yield event
 
-    # It would be good to implement a reference tracking algorithm here to
-    # garbage collect results that are no longer needed by any steps
-    # https://github.com/dagster-io/dagster/issues/811
-    active_execution = execution_plan.start(retries=retries)
-    while not active_execution.is_complete:
-        step = active_execution.get_next_step()
-        step_context = pipeline_context.for_step(step)
-        step_event_list = []
+    with execution_plan.start(retries=retries) as active_execution:
 
-        missing_resources = [
-            resource_key
-            for resource_key in step_context.required_resource_keys
-            if not hasattr(step_context.resources, resource_key)
-        ]
-        check.invariant(
-            len(missing_resources) == 0,
-            (
-                'Expected step context for solid {solid_name} to have all required resources, but '
-                'missing {missing_resources}.'
-            ).format(solid_name=step_context.solid.name, missing_resources=missing_resources),
-        )
+        # It would be good to implement a reference tracking algorithm here to
+        # garbage collect results that are no longer needed by any steps
+        # https://github.com/dagster-io/dagster/issues/811
+        while not active_execution.is_complete:
+            step = active_execution.get_next_step()
+            step_context = pipeline_context.for_step(step)
+            step_event_list = []
 
-        with pipeline_context.instance.compute_log_manager.watch(
-            step_context.pipeline_run, step_context.step.key
-        ):
-            # capture all of the logs for this step
-            uncovered_inputs = pipeline_context.intermediate_storage.uncovered_inputs(
-                step_context, step
+            missing_resources = [
+                resource_key
+                for resource_key in step_context.required_resource_keys
+                if not hasattr(step_context.resources, resource_key)
+            ]
+            check.invariant(
+                len(missing_resources) == 0,
+                (
+                    "Expected step context for solid {solid_name} to have all required resources, but "
+                    "missing {missing_resources}."
+                ).format(solid_name=step_context.solid.name, missing_resources=missing_resources),
             )
-            if uncovered_inputs:
-                # In partial pipeline execution, we may end up here without having validated the
-                # missing dependent outputs were optional
-                _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step.key)
 
-                step_context.log.info(
-                    (
-                        'Not all inputs covered for {step}. Not executing. Output missing for '
-                        'inputs: {uncovered_inputs}'
-                    ).format(uncovered_inputs=uncovered_inputs, step=step.key)
+            with pipeline_context.instance.compute_log_manager.watch(
+                step_context.pipeline_run, step_context.step.key
+            ):
+                # capture all of the logs for this step
+                uncovered_inputs = pipeline_context.intermediate_storage.uncovered_inputs(
+                    step_context, step
                 )
-                step_event = DagsterEvent.step_skipped_event(step_context)
-                step_event_list.append(step_event)
-                yield step_event
-                active_execution.mark_skipped(step.key)
-            else:
-                for step_event in check.generator(
-                    _dagster_event_sequence_for_step(step_context, retries)
-                ):
-                    check.inst(step_event, DagsterEvent)
+                if uncovered_inputs:
+                    # In partial pipeline execution, we may end up here without having validated the
+                    # missing dependent outputs were optional
+                    _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step.key)
+
+                    step_context.log.info(
+                        (
+                            "Not all inputs covered for {step}. Not executing. Output missing for "
+                            "inputs: {uncovered_inputs}"
+                        ).format(uncovered_inputs=uncovered_inputs, step=step.key)
+                    )
+                    step_event = DagsterEvent.step_skipped_event(step_context)
                     step_event_list.append(step_event)
                     yield step_event
-                    active_execution.handle_event(step_event)
+                    active_execution.mark_skipped(step.key)
+                else:
+                    for step_event in check.generator(
+                        _dagster_event_sequence_for_step(step_context, retries)
+                    ):
+                        check.inst(step_event, DagsterEvent)
+                        step_event_list.append(step_event)
+                        yield step_event
+                        active_execution.handle_event(step_event)
 
-            active_execution.verify_complete(pipeline_context, step.key)
+                active_execution.verify_complete(pipeline_context, step.key)
 
-        # process skips from failures or uncovered inputs
-        for event in active_execution.skipped_step_events_iterator(pipeline_context):
-            step_event_list.append(event)
-            yield event
+            # process skips from failures or uncovered inputs
+            for event in active_execution.plan_events_iterator(pipeline_context):
+                step_event_list.append(event)
+                yield event
 
-        # pass a list of step events to hooks
-        for hook_event in _trigger_hook(step_context, step_event_list):
-            yield hook_event
+            # pass a list of step events to hooks
+            for hook_event in _trigger_hook(step_context, step_event_list):
+                yield hook_event
 
 
 def _trigger_hook(step_context, step_event_list):
-    '''Trigger hooks and record hook's operatonal events'''
-    hook_defs = step_context.solid.hook_defs
+    """Trigger hooks and record hook's operatonal events"""
+    hook_defs = step_context.pipeline_def.get_all_hooks_for_handle(step_context.solid_handle)
     # when the solid doesn't have a hook configured
     if hook_defs is None:
         return
@@ -108,7 +109,7 @@ def _trigger_hook(step_context, step_event_list):
         try:
             with user_code_error_boundary(
                 HookExecutionError,
-                lambda: 'Error occurred during the execution of hook_fn triggered for solid '
+                lambda: "Error occurred during the execution of hook_fn triggered for solid "
                 '"{solid_name}"'.format(solid_name=step_context.solid.name),
             ):
                 hook_execution_result = hook_def.hook_fn(hook_context, step_event_list)
@@ -122,8 +123,8 @@ def _trigger_hook(step_context, step_event_list):
         check.invariant(
             isinstance(hook_execution_result, HookExecutionResult),
             (
-                'Error in hook {hook_name}: hook unexpectedly returned result {result} of '
-                'type {type_}. Should be a HookExecutionResult'
+                "Error in hook {hook_name}: hook unexpectedly returned result {result} of "
+                "type {type_}. Should be a HookExecutionResult"
             ).format(
                 hook_name=hook_def.name,
                 result=hook_execution_result,
@@ -147,8 +148,8 @@ def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
     if nonoptionals:
         raise DagsterStepOutputNotFoundError(
             (
-                'When executing {step} discovered required outputs missing '
-                'from previous step: {nonoptionals}'
+                "When executing {step} discovered required outputs missing "
+                "from previous step: {nonoptionals}"
             ).format(nonoptionals=nonoptionals, step=step_key),
             step_key=nonoptionals[0].step_key,
             output_name=nonoptionals[0].output_name,
@@ -156,7 +157,7 @@ def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
 
 
 def _dagster_event_sequence_for_step(step_context, retries):
-    '''
+    """
     Yield a sequence of dagster events for the given step with the step context.
 
     This function also processes errors. It handles a few error cases:
@@ -196,10 +197,11 @@ def _dagster_event_sequence_for_step(step_context, retries):
 
     For tools, however, this option should be false, and a sensible error message
     signaled to the user within that tool.
-    '''
+    """
 
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.inst_param(retries, 'retries', Retries)
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(retries, "retries", Retries)
+
     try:
         prior_attempt_count = retries.get_attempt_count(step_context.step.key)
         if step_context.step_launcher:
@@ -216,7 +218,7 @@ def _dagster_event_sequence_for_step(step_context, retries):
 
         if retries.disabled:
             fail_err = SerializableErrorInfo(
-                message='RetryRequested but retries are disabled',
+                message="RetryRequested but retries are disabled",
                 stack=retry_err_info.stack,
                 cls_name=retry_err_info.cls_name,
                 cause=retry_err_info.cause,
@@ -229,7 +231,7 @@ def _dagster_event_sequence_for_step(step_context, retries):
             prev_attempts = retries.get_attempt_count(step_context.step.key)
             if prev_attempts >= retry_request.max_retries:
                 fail_err = SerializableErrorInfo(
-                    message='Exceeded max_retries of {}'.format(retry_request.max_retries),
+                    message="Exceeded max_retries of {}".format(retry_request.max_retries),
                     stack=retry_err_info.stack,
                     cls_name=retry_err_info.cls_name,
                     cause=retry_err_info.cause,
@@ -252,7 +254,7 @@ def _dagster_event_sequence_for_step(step_context, retries):
             step_context,
             sys.exc_info(),
             UserFailureData(
-                label='intentional-failure',
+                label="intentional-failure",
                 description=failure.description,
                 metadata_entries=failure.metadata_entries,
             ),
@@ -279,7 +281,6 @@ def _dagster_event_sequence_for_step(step_context, retries):
     # case (5) in top comment
     except (Exception, KeyboardInterrupt) as unexpected_exception:  # pylint: disable=broad-except
         yield _step_failure_event_from_exc_info(step_context, sys.exc_info())
-
         raise unexpected_exception
 
 

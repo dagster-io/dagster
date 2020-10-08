@@ -40,7 +40,7 @@ GCS
   :annotation: SystemStorageDefinition
 
 
-.. autodata:: gcs_intermediate_storage
+.. autodata:: dagster_gcp.gcs.gcs_intermediate_storage
   :annotation: IntermediateStorageDefinition
 
 .. autodata:: gcs_resource

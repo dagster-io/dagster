@@ -1,10 +1,18 @@
 from collections import OrderedDict
 
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository_selector
+from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    execute_dagster_graphql_and_finish_runs,
+    infer_repository_selector,
+)
 
-from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
+from .graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+    ReadonlyGraphQLContextTestMatrix,
+)
 
-GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
+GET_PARTITION_SETS_FOR_PIPELINE_QUERY = """
     query PartitionSetsQuery($repositorySelector: RepositorySelector!, $pipelineName: String!) {
         partitionSetsOrError(repositorySelector: $repositorySelector, pipelineName: $pipelineName) {
             __typename
@@ -25,9 +33,9 @@ GET_PARTITION_SETS_FOR_PIPELINE_QUERY = '''
             }
         }
     }
-'''
+"""
 
-GET_PARTITION_SET_QUERY = '''
+GET_PARTITION_SET_QUERY = """
     query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
         partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
             __typename
@@ -58,9 +66,9 @@ GET_PARTITION_SET_QUERY = '''
             }
         }
     }
-'''
+"""
 
-GET_PARTITION_SET_TAGS_QUERY = '''
+GET_PARTITION_SET_TAGS_QUERY = """
     query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
         partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
             ...on PartitionSet {
@@ -81,7 +89,26 @@ GET_PARTITION_SET_TAGS_QUERY = '''
             }
         }
     }
-'''
+"""
+
+GET_PARTITION_SET_RUNS_QUERY = """
+    query PartitionSetQuery($repositorySelector: RepositorySelector!, $partitionSetName: String!) {
+        partitionSetOrError(repositorySelector: $repositorySelector, partitionSetName: $partitionSetName) {
+            ...on PartitionSet {
+                partitionsOrError {
+                    ... on Partitions {
+                        results {
+                            name
+                            runs {
+                                runId
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
 
 
 class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
@@ -90,7 +117,7 @@ class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-            variables={'repositorySelector': selector, 'pipelineName': 'no_config_pipeline'},
+            variables={"repositorySelector": selector, "pipelineName": "no_config_pipeline"},
         )
 
         assert result.data
@@ -99,7 +126,7 @@ class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
         invalid_pipeline_result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SETS_FOR_PIPELINE_QUERY,
-            variables={'repositorySelector': selector, 'pipelineName': 'invalid_pipeline'},
+            variables={"repositorySelector": selector, "pipelineName": "invalid_pipeline"},
         )
 
         assert invalid_pipeline_result.data
@@ -110,7 +137,7 @@ class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SET_QUERY,
-            variables={'partitionSetName': 'integer_partition', 'repositorySelector': selector},
+            variables={"partitionSetName": "integer_partition", "repositorySelector": selector},
         )
 
         assert result.data
@@ -119,12 +146,12 @@ class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
         invalid_partition_set_result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SET_QUERY,
-            variables={'partitionSetName': 'invalid_partition', 'repositorySelector': selector},
+            variables={"partitionSetName": "invalid_partition", "repositorySelector": selector},
         )
 
         assert (
-            invalid_partition_set_result.data['partitionSetOrError']['__typename']
-            == 'PartitionSetNotFoundError'
+            invalid_partition_set_result.data["partitionSetOrError"]["__typename"]
+            == "PartitionSetNotFoundError"
         )
         assert invalid_partition_set_result.data
 
@@ -135,17 +162,58 @@ class TestPartitionSets(ReadonlyGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_PARTITION_SET_TAGS_QUERY,
-            variables={'partitionSetName': 'integer_partition', 'repositorySelector': selector},
+            variables={"partitionSetName": "integer_partition", "repositorySelector": selector},
         )
 
         assert not result.errors
         assert result.data
-        partitions = result.data['partitionSetOrError']['partitionsOrError']['results']
+        partitions = result.data["partitionSetOrError"]["partitionsOrError"]["results"]
         assert len(partitions) == 1
-        sorted_items = sorted(partitions[0]['tagsOrError']['results'], key=lambda item: item['key'])
-        tags = OrderedDict({item['key']: item['value'] for item in sorted_items})
+        sorted_items = sorted(partitions[0]["tagsOrError"]["results"], key=lambda item: item["key"])
+        tags = OrderedDict({item["key"]: item["value"] for item in sorted_items})
         assert tags == {
-            'foo': '0',
-            'dagster/partition': '0',
-            'dagster/partition_set': 'integer_partition',
+            "foo": "0",
+            "dagster/partition": "0",
+            "dagster/partition_set": "integer_partition",
         }
+
+
+class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
+    def test_get_partition_runs(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql_and_finish_runs(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integer_partition",
+                    },
+                    "partitionNames": ["2", "3"],
+                }
+            },
+        )
+        assert not result.errors
+        assert result.data["launchPartitionBackfill"]["__typename"] == "PartitionBackfillSuccess"
+        assert len(result.data["launchPartitionBackfill"]["launchedRunIds"]) == 2
+        run_ids = result.data["launchPartitionBackfill"]["launchedRunIds"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            query=GET_PARTITION_SET_RUNS_QUERY,
+            variables={
+                "partitionSetName": "integer_partition",
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        assert result.data
+        partitions = result.data["partitionSetOrError"]["partitionsOrError"]["results"]
+        assert len(partitions) == 10
+        for partition in partitions:
+            if partition["name"] not in ("2", "3"):
+                assert len(partition["runs"]) == 0
+            else:
+                assert len(partition["runs"]) == 1
+                assert partition["runs"][0]["runId"] in run_ids

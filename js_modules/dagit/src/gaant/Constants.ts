@@ -1,5 +1,5 @@
-import { GraphQueryItem } from "../GraphQueryImpl";
-import { IStepState } from "../RunMetadataProvider";
+import {GraphQueryItem} from 'src/GraphQueryImpl';
+import {IStepState} from 'src/RunMetadataProvider';
 
 export type IGaantNode = GraphQueryItem;
 
@@ -42,14 +42,15 @@ export interface GaantChartLayoutOptions {
 }
 
 export enum GaantChartMode {
-  FLAT = "flat",
-  WATERFALL = "waterfall",
-  WATERFALL_TIMED = "waterfall-timed"
+  FLAT = 'flat',
+  WATERFALL = 'waterfall',
+  WATERFALL_TIMED = 'waterfall-timed',
 }
 
 export const MIN_SCALE = 0.0002;
 export const MAX_SCALE = 0.5;
 export const LEFT_INSET = 5;
+export const FLAT_INSET_FROM_PARENT = 15;
 export const BOX_HEIGHT = 30;
 export const BOX_MARGIN_Y = 5;
 export const BOX_SPACING_X = 20;
@@ -67,5 +68,5 @@ export const DEFAULT_OPTIONS: GaantChartLayoutOptions = {
   hideWaiting: false,
   hideTimedMode: false,
   zoom: 1,
-  hideUnselectedSteps: false
+  hideUnselectedSteps: false,
 };

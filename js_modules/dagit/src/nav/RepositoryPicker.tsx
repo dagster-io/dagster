@@ -1,25 +1,28 @@
-import React from "react";
-import { Colors, Icon, Popover, Menu, MenuItem, Spinner } from "@blueprintjs/core";
+import {Colors, Icon, Menu, MenuItem, Popover, Spinner} from '@blueprintjs/core';
+import React from 'react';
+import {useHistory} from 'react-router';
+import styled from 'styled-components/macro';
+
 import {
   DagsterRepoOption,
   isRepositoryOptionEqual,
-  useDagitExecutablePath
-} from "../DagsterRepositoryContext";
-import styled from "styled-components/macro";
-import { useHistory } from "react-router";
-import { ReloadRepositoryLocationButton } from "./ReloadRepositoryLocationButton";
-import { RepositoryInformation } from "../RepositoryInformation";
+  useDagitExecutablePath,
+} from 'src/DagsterRepositoryContext';
+import {RepositoryInformation} from 'src/RepositoryInformation';
+import {ReloadRepositoryLocationButton} from 'src/nav/ReloadRepositoryLocationButton';
 
 interface RepositoryPickerProps {
+  loading: boolean;
   options: DagsterRepoOption[];
   repo: DagsterRepoOption | null;
   setRepo: (repo: DagsterRepoOption) => void;
 }
 
 export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = ({
+  loading,
   repo,
   setRepo,
-  options
+  options,
 }) => {
   const history = useHistory();
   const [open, setOpen] = React.useState(false);
@@ -27,7 +30,24 @@ export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = 
 
   const selectOption = (repo: DagsterRepoOption) => {
     setRepo(repo);
-    history.push("/");
+    history.push('/');
+  };
+
+  const titleContents = () => {
+    if (repo) {
+      return (
+        <>
+          {repo.repository.name}
+          <Icon icon="caret-down" style={{opacity: 0.9, marginLeft: 3}} />
+        </>
+      );
+    }
+
+    if (loading) {
+      return <Spinner size={16} />;
+    }
+
+    return <NoReposFound>No repositories found</NoReposFound>;
   };
 
   return (
@@ -36,15 +56,15 @@ export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = 
       isOpen={open}
       onInteraction={setOpen}
       minimal
-      position={"bottom-left"}
+      position={'bottom-left'}
       content={
-        <Menu style={{ minWidth: 280 }}>
+        <Menu style={{minWidth: 280}}>
           {options.map((option, idx) => (
             <MenuItem
               key={idx}
               onClick={() => selectOption(option)}
               active={repo ? isRepositoryOptionEqual(repo, option) : false}
-              icon={"git-repo"}
+              icon={'git-repo'}
               text={
                 <RepositoryInformation
                   repository={option.repository}
@@ -57,18 +77,9 @@ export const RepositoryPicker: React.FunctionComponent<RepositoryPickerProps> = 
       }
     >
       <RepositoryPickerFlexContainer>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 10.5, color: Colors.GRAY1, userSelect: "none" }}>REPOSITORY</div>
-          <RepoTitle>
-            {repo ? (
-              <>
-                {repo.repository.name}
-                <Icon icon="caret-down" style={{ opacity: 0.9, marginLeft: 3 }} />
-              </>
-            ) : (
-              <Spinner size={16} />
-            )}
-          </RepoTitle>
+        <div style={{flex: 1, minWidth: 0}}>
+          <div style={{fontSize: 10.5, color: Colors.GRAY1, userSelect: 'none'}}>REPOSITORY</div>
+          <RepoTitle>{titleContents()}</RepoTitle>
         </div>
         {repo?.repositoryLocation.isReloadSupported && (
           <ReloadRepositoryLocationButton location={repo.repositoryLocation.name} />
@@ -96,4 +107,10 @@ const RepositoryPickerFlexContainer = styled.div`
   &:hover {
     background: ${Colors.BLACK};
   }
+`;
+
+const NoReposFound = styled.div`
+  color: ${Colors.GRAY3};
+  font-size: 12px;
+  margin-top: 8px;
 `;

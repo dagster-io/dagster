@@ -1,21 +1,22 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import PythonErrorInfo from "../PythonErrorInfo";
-import styled from "styled-components/macro";
-import { useQuery } from "react-apollo";
-import { Link } from "react-router-dom";
-import { RunStatsQuery, RunStatsQueryVariables } from "./types/RunStatsQuery";
-import { Spinner } from "@blueprintjs/core";
+import {Spinner} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-export const RunStats = ({ runId }: { runId: string }) => {
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {RunStatsQuery, RunStatsQueryVariables} from 'src/runs/types/RunStatsQuery';
+
+export const RunStats = ({runId}: {runId: string}) => {
   const stats = useQuery<RunStatsQuery, RunStatsQueryVariables>(RUN_STATS_QUERY, {
-    variables: { runId }
+    variables: {runId},
   });
 
   if (stats.loading || !stats.data) {
     return (
       <RunStatsDetailsContainer>
-        <div style={{ padding: 25, textAlign: "center" }}>
+        <div style={{padding: 25, textAlign: 'center'}}>
           <Spinner size={22} />
         </div>
       </RunStatsDetailsContainer>
@@ -24,10 +25,10 @@ export const RunStats = ({ runId }: { runId: string }) => {
 
   const result = stats.data.pipelineRunOrError;
 
-  if (result.__typename !== "PipelineRun") {
+  if (result.__typename !== 'PipelineRun') {
     return <PythonErrorInfo error={result} />;
   }
-  if (result.stats.__typename !== "PipelineRunStatsSnapshot") {
+  if (result.stats.__typename !== 'PipelineRunStatsSnapshot') {
     return <PythonErrorInfo error={result.stats} />;
   }
 

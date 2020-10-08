@@ -4,47 +4,15 @@ import time
 
 from dagster import Field, Int, Materialization, pipeline, repository, solid
 from dagster.core.origin import PipelineGrpcServerOrigin, RepositoryGrpcServerOrigin
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs
 
 
-def poll_for_run(instance, run_id, timeout=5):
-    total_time = 0
-    backoff = 0.01
-
-    while True:
-        run = instance.get_run_by_id(run_id)
-        if run.is_finished:
-            return run
-        else:
-            time.sleep(backoff)
-            total_time += backoff
-            backoff = backoff * 2
-            if total_time > timeout:
-                raise Exception('Timed out')
-
-
-def poll_for_step_start(instance, run_id, timeout=15):
-    total_time = 0
-    backoff = 0.01
-
-    while True:
-        logs = instance.all_logs(run_id)
-        if 'STEP_START' in (log_record.dagster_event.event_type_value for log_record in logs):
-            return
-        else:
-            time.sleep(backoff)
-            total_time += backoff
-            backoff = backoff * 2
-            if total_time > timeout:
-                raise Exception('Timed out')
-
-
-@solid(config_schema={'length': Field(Int)}, output_defs=[])
+@solid(config_schema={"length": Field(Int)}, output_defs=[])
 def streamer(context):
-    for i in range(context.solid_config['length']):
+    for i in range(context.solid_config["length"]):
         yield Materialization(label=str(i))
         time.sleep(0.1)
 
@@ -77,16 +45,16 @@ def test_cancel_run():
             streaming_results = []
 
             pipeline_run = instance.create_run_for_pipeline(
-                streaming_pipeline, run_config={'solids': {'streamer': {'config': {'length': 20}}}},
+                streaming_pipeline, run_config={"solids": {"streamer": {"config": {"length": 20}}}},
             )
             execute_run_args = ExecuteRunArgs(
                 pipeline_origin=PipelineGrpcServerOrigin(
-                    pipeline_name='streaming_pipeline',
+                    pipeline_name="streaming_pipeline",
                     repository_origin=RepositoryGrpcServerOrigin(
-                        host='localhost',
+                        host="localhost",
                         socket=api_client.socket,
                         port=api_client.port,
-                        repository_name='test_repository',
+                        repository_name="test_repository",
                     ),
                 ),
                 pipeline_run_id=pipeline_run.run_id,
@@ -104,7 +72,7 @@ def test_cancel_run():
             )
             assert res.success is True
 
-            poll_for_run(instance, pipeline_run.run_id)
+            poll_for_finished_run(instance, pipeline_run.run_id)
 
             logs = instance.all_logs(pipeline_run.run_id)
             assert (
@@ -112,13 +80,13 @@ def test_cancel_run():
                     [
                         ev
                         for ev in logs
-                        if ev.dagster_event.event_type_value == 'STEP_MATERIALIZATION'
+                        if ev.dagster_event.event_type_value == "STEP_MATERIALIZATION"
                     ]
                 )
                 < 20
             )
 
             # soft termination
-            assert [ev for ev in logs if ev.dagster_event.event_type_value == 'STEP_FAILURE']
+            assert [ev for ev in logs if ev.dagster_event.event_type_value == "STEP_FAILURE"]
 
         server_process.wait()

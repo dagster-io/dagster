@@ -15,16 +15,17 @@ def return_two():
     return 2
 
 
-@lambda_solid(input_defs=[InputDefinition('left'), InputDefinition('right')])
+@lambda_solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
 def add(left, right):
     return left + right
 
 
-@lambda_solid(input_defs=[InputDefinition('left'), InputDefinition('right')])
+@lambda_solid(input_defs=[InputDefinition("left"), InputDefinition("right")])
 def subtract(left, right):
     return left - right
 
 
+# start_repository_definition_marker_0
 @pipeline
 def addition_pipeline():
     return add(return_one(), return_two())
@@ -36,7 +37,7 @@ def subtraction_pipeline():
 
 
 @daily_schedule(
-    pipeline_name='addition_pipeline', start_date=datetime.datetime(2020, 1, 1),
+    pipeline_name="addition_pipeline", start_date=datetime.datetime(2020, 1, 1),
 )
 def daily_addition_schedule(date):
     return {}
@@ -45,3 +46,6 @@ def daily_addition_schedule(date):
 @repository
 def my_repository():
     return [addition_pipeline, subtraction_pipeline, daily_addition_schedule]
+
+
+# end_repository_definition_marker_0

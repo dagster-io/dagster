@@ -2,7 +2,7 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags
   title="Running Dagit as a service | Dagster"
-  description="Dagster is a system for building modern data applications."
+  description="Dagit serves a user interface and offers a GraphQL API to Dagster. Here's how to run it."
 />
 
 # Running Dagit as a service
@@ -34,8 +34,6 @@ you'll likely want to package Dagit using a Docker image.
 
 A minimal skeleton `Dockerfile` and entrypoint shell script that will run Dagit and the cron
 scheduler are shown below:
-
-file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
 
 ```dockerfile literalinclude caption=Dockerfile
 file:/docs_snippets/docs_snippets/deploying/docker/Dockerfile
@@ -81,4 +79,4 @@ file:/docs_snippets/docs_snippets/deploying/systemd/dagit.service
 ```
 
 Note that this assumes you've got a virtualenv for Dagster at `/opt/dagster/venv` and that your
-pipeline code and `repository.yaml` are located under `/opt/dagster/app`.
+pipeline code and `workspace.yaml` are located under `/opt/dagster/app`.

@@ -7,9 +7,9 @@ from dagster.utils.log import define_json_file_logger
 from dagster.utils.test import create_test_pipeline_execution_context, get_temp_file_name
 
 
-def setup_json_file_logger(tf_name, name='foo', level=logging.DEBUG):
+def setup_json_file_logger(tf_name, name="foo", level=logging.DEBUG):
     logger_def = define_json_file_logger(name, tf_name, level)
-    init_logger_context = InitLoggerContext({}, PipelineDefinition([]), logger_def, '')
+    init_logger_context = InitLoggerContext({}, PipelineDefinition([]), logger_def, "")
 
     return logger_def.logger_fn(init_logger_context)
 
@@ -17,13 +17,13 @@ def setup_json_file_logger(tf_name, name='foo', level=logging.DEBUG):
 def test_basic_logging():
     with get_temp_file_name() as tf_name:
         logger = setup_json_file_logger(tf_name)
-        logger.debug('bar')
+        logger.debug("bar")
 
         data = list(parse_json_lines(tf_name))
 
     assert len(data) == 1
-    assert data[0]['name'] == 'foo'
-    assert data[0]['msg'] == 'bar'
+    assert data[0]["name"] == "foo"
+    assert data[0]["msg"] == "bar"
 
 
 def parse_json_lines(tf_name):
@@ -35,17 +35,17 @@ def parse_json_lines(tf_name):
 def test_no_double_write_diff_names():
     with get_temp_file_name() as tf_name:
         foo_logger = setup_json_file_logger(tf_name)
-        baaz_logger = setup_json_file_logger(tf_name, 'baaz')
-        foo_logger.debug('foo message')
-        baaz_logger.debug('baaz message')
+        baaz_logger = setup_json_file_logger(tf_name, "baaz")
+        foo_logger.debug("foo message")
+        baaz_logger.debug("baaz message")
 
         data = list(parse_json_lines(tf_name))
 
         assert len(data) == 2
-        assert data[0]['name'] == 'foo'
-        assert data[0]['msg'] == 'foo message'
-        assert data[1]['name'] == 'baaz'
-        assert data[1]['msg'] == 'baaz message'
+        assert data[0]["name"] == "foo"
+        assert data[0]["msg"] == "foo message"
+        assert data[1]["name"] == "baaz"
+        assert data[1]["msg"] == "baaz message"
 
 
 # This demonstrates different, less global, behavior than the typical
@@ -55,14 +55,14 @@ def test_no_double_write_diff_names():
 def test_no_double_write_same_names():
     with get_temp_file_name() as tf_name:
         foo_logger_one = setup_json_file_logger(tf_name)
-        foo_logger_two = setup_json_file_logger(tf_name, 'foo', logging.INFO)
-        foo_logger_one.debug('logger one message')
-        foo_logger_two.debug('logger two message')
+        foo_logger_two = setup_json_file_logger(tf_name, "foo", logging.INFO)
+        foo_logger_one.debug("logger one message")
+        foo_logger_two.debug("logger two message")
 
         data = list(parse_json_lines(tf_name))
         assert len(data) == 1
-        assert data[0]['name'] == 'foo'
-        assert data[0]['msg'] == 'logger one message'
+        assert data[0]["name"] == "foo"
+        assert data[0]["msg"] == "logger one message"
 
 
 # This test ensures the behavior that the clarify project relies upon
@@ -70,11 +70,11 @@ def test_no_double_write_same_names():
 def test_write_dagster_meta():
     with get_temp_file_name() as tf_name:
         execution_context = create_test_pipeline_execution_context(
-            logger_defs={'json': define_json_file_logger('foo', tf_name, logging.DEBUG)}
+            logger_defs={"json": define_json_file_logger("foo", tf_name, logging.DEBUG)}
         )
-        execution_context.log.debug('some_debug_message', context_key='context_value')
+        execution_context.log.debug("some_debug_message", context_key="context_value")
         data = list(parse_json_lines(tf_name))
         assert len(data) == 1
-        assert data[0]['name'] == 'foo'
-        assert data[0]['orig_message'] == 'some_debug_message'
-        assert data[0]['context_key'] == 'context_value'
+        assert data[0]["name"] == "foo"
+        assert data[0]["orig_message"] == "some_debug_message"
+        assert data[0]["context_key"] == "context_value"

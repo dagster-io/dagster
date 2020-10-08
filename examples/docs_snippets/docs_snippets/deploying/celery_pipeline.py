@@ -13,4 +13,4 @@ def not_much(_):
 @pipeline(mode_defs=celery_mode_defs)
 def parallel_pipeline():
     for i in range(50):
-        not_much.alias('not_much_' + str(i))()
+        not_much.alias("not_much_" + str(i))()

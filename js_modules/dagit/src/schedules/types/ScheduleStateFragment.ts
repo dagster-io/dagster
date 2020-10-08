@@ -9,6 +9,30 @@ import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../t
 // GraphQL fragment: ScheduleStateFragment
 // ====================================================
 
+export interface ScheduleStateFragment_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
+  __typename: "CodePointerMetadata";
+  key: string;
+  value: string;
+}
+
+export interface ScheduleStateFragment_repositoryOrigin_PythonRepositoryOrigin_codePointer {
+  __typename: "CodePointer";
+  metadata: ScheduleStateFragment_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
+}
+
+export interface ScheduleStateFragment_repositoryOrigin_PythonRepositoryOrigin {
+  __typename: "PythonRepositoryOrigin";
+  codePointer: ScheduleStateFragment_repositoryOrigin_PythonRepositoryOrigin_codePointer;
+  executablePath: string;
+}
+
+export interface ScheduleStateFragment_repositoryOrigin_GrpcRepositoryOrigin {
+  __typename: "GrpcRepositoryOrigin";
+  grpcUrl: string;
+}
+
+export type ScheduleStateFragment_repositoryOrigin = ScheduleStateFragment_repositoryOrigin_PythonRepositoryOrigin | ScheduleStateFragment_repositoryOrigin_GrpcRepositoryOrigin;
+
 export interface ScheduleStateFragment_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
   pipelineName: string;
@@ -67,6 +91,7 @@ export interface ScheduleStateFragment {
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  repositoryOrigin: ScheduleStateFragment_repositoryOrigin;
   repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;

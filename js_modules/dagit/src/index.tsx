@@ -1,22 +1,23 @@
-import * as React from "react";
-import * as ReactDOM from "react-dom";
-import { createGlobalStyle } from "styled-components/macro";
-import ApolloClient from "apollo-client";
-import { ApolloLink } from "apollo-link";
-import { ApolloProvider } from "react-apollo";
-import { SubscriptionClient } from "subscriptions-transport-ws";
-import { WebSocketLink } from "apollo-link-ws";
-import { WebsocketStatusProvider } from "./WebsocketStatus";
-import { App } from "./App";
-import AppCache from "./AppCache";
+import '@blueprintjs/core/lib/css/blueprint.css';
+import '@blueprintjs/icons/lib/css/blueprint-icons.css';
+import '@blueprintjs/select/lib/css/blueprint-select.css';
+import '@blueprintjs/table/lib/css/table.css';
 
-import "@blueprintjs/core/lib/css/blueprint.css";
-import "@blueprintjs/table/lib/css/table.css";
-import "@blueprintjs/icons/lib/css/blueprint-icons.css";
-import "@blueprintjs/select/lib/css/blueprint-select.css";
-import { patchCopyToRemoveZeroWidthUnderscores } from "./Util";
-import { WEBSOCKET_URI } from "./DomUtils";
-import { AppErrorLink } from "./AppError";
+import ApolloClient from 'apollo-client';
+import {ApolloLink} from 'apollo-link';
+import {WebSocketLink} from 'apollo-link-ws';
+import * as React from 'react';
+import {ApolloProvider} from 'react-apollo';
+import * as ReactDOM from 'react-dom';
+import {createGlobalStyle} from 'styled-components/macro';
+import {SubscriptionClient} from 'subscriptions-transport-ws';
+
+import {App} from 'src/App';
+import {AppCache} from 'src/AppCache';
+import {AppErrorLink} from 'src/AppError';
+import {WEBSOCKET_URI} from 'src/DomUtils';
+import {patchCopyToRemoveZeroWidthUnderscores} from 'src/Util';
+import {WebsocketStatusProvider} from 'src/WebsocketStatus';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -51,12 +52,12 @@ const GlobalStyle = createGlobalStyle`
 
 const websocketClient = new SubscriptionClient(WEBSOCKET_URI, {
   reconnect: true,
-  lazy: true
+  lazy: true,
 });
 
 const client = new ApolloClient({
   cache: AppCache,
-  link: ApolloLink.from([AppErrorLink(), new WebSocketLink(websocketClient)])
+  link: ApolloLink.from([AppErrorLink(), new WebSocketLink(websocketClient)]),
 });
 
 ReactDOM.render(
@@ -66,5 +67,5 @@ ReactDOM.render(
       <App />
     </ApolloProvider>
   </WebsocketStatusProvider>,
-  document.getElementById("root") as HTMLElement
+  document.getElementById('root') as HTMLElement,
 );

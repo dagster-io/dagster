@@ -17,20 +17,9 @@ export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes_key {
   path: string[];
 }
 
-export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations_materializationEvent {
-  __typename: "StepMaterializationEvent";
-  timestamp: string;
-}
-
-export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations {
-  __typename: "AssetMaterialization";
-  materializationEvent: AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations_materializationEvent;
-}
-
 export interface AssetsRootQuery_assetsOrError_AssetConnection_nodes {
   __typename: "Asset";
   key: AssetsRootQuery_assetsOrError_AssetConnection_nodes_key;
-  assetMaterializations: AssetsRootQuery_assetsOrError_AssetConnection_nodes_assetMaterializations[];
 }
 
 export interface AssetsRootQuery_assetsOrError_AssetConnection {

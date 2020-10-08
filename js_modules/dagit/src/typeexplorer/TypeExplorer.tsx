@@ -1,17 +1,17 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import { Link } from "react-router-dom";
-import { ConfigTypeSchema } from "../ConfigTypeSchema";
-import { TypeExplorerFragment } from "./types/TypeExplorerFragment";
-import { SidebarSubhead, SidebarSection, SidebarTitle, SectionInner } from "../SidebarComponents";
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {Link} from 'react-router-dom';
 
-import Description from "../Description";
+import {ConfigTypeSchema} from 'src/ConfigTypeSchema';
+import {Description} from 'src/Description';
+import {SectionInner, SidebarSection, SidebarSubhead, SidebarTitle} from 'src/SidebarComponents';
+import {TypeExplorerFragment} from 'src/typeexplorer/types/TypeExplorerFragment';
 
 interface ITypeExplorerProps {
   type: TypeExplorerFragment;
 }
 
-export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
+export class TypeExplorer extends React.Component<ITypeExplorerProps> {
   static fragments = {
     TypeExplorerFragment: gql`
       fragment TypeExplorerFragment on DagsterType {
@@ -32,25 +32,25 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
       }
 
       ${ConfigTypeSchema.fragments.ConfigTypeSchemaFragment}
-    `
+    `,
   };
 
   render() {
-    const { name, inputSchemaType, outputSchemaType, description } = this.props.type;
+    const {name, inputSchemaType, outputSchemaType, description} = this.props.type;
 
     return (
       <div>
         <SidebarSubhead />
         <SectionInner>
           <SidebarTitle>
-            <Link to="?types=true">Pipeline Types</Link> {">"} {name}
+            <Link to="?types=true">Pipeline Types</Link> {'>'} {name}
           </SidebarTitle>
         </SectionInner>
-        <SidebarSection title={"Description"}>
-          <Description description={description || "No Description Provided"} />
+        <SidebarSection title={'Description'}>
+          <Description description={description || 'No Description Provided'} />
         </SidebarSection>
         {inputSchemaType && (
-          <SidebarSection title={"Input"}>
+          <SidebarSection title={'Input'}>
             <ConfigTypeSchema
               type={inputSchemaType}
               typesInScope={inputSchemaType.recursiveConfigTypes}
@@ -58,7 +58,7 @@ export default class TypeExplorer extends React.Component<ITypeExplorerProps> {
           </SidebarSection>
         )}
         {outputSchemaType && (
-          <SidebarSection title={"Output"}>
+          <SidebarSection title={'Output'}>
             <ConfigTypeSchema
               type={outputSchemaType}
               typesInScope={outputSchemaType.recursiveConfigTypes}

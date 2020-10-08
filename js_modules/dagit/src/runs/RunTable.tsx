@@ -1,19 +1,22 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import { Legend, LegendColumn, RowColumn, RowContainer } from "../ListComponents";
-import { RunTag } from "./RunTag";
-import { RunTableRunFragment, RunTableRunFragment_tags } from "./types/RunTableRunFragment";
-import { TokenizingFieldValue } from "../TokenizingField";
-import PythonErrorInfo from "../PythonErrorInfo";
-import { NonIdealState, Icon, Checkbox } from "@blueprintjs/core";
-import { Link } from "react-router-dom";
-import { titleForRun, RunTime, RunElapsed, RunComponentFragments } from "./RunUtils";
-import { RunActionsMenu, RunBulkActionsMenu } from "./RunActionsMenu";
-import { RunStatusWithStats } from "./RunStatusDots";
+import {Checkbox, NonIdealState, Tag} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {Link} from 'react-router-dom';
+
+import {useActivePipelineForName} from 'src/DagsterRepositoryContext';
+import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {TokenizingFieldValue} from 'src/TokenizingField';
+import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
+import {RunStatusWithStats} from 'src/runs/RunStatusDots';
+import {RunTag} from 'src/runs/RunTag';
+import {RunComponentFragments, RunElapsed, RunTime, titleForRun} from 'src/runs/RunUtils';
+import {RunTableRunFragment, RunTableRunFragment_tags} from 'src/runs/types/RunTableRunFragment';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
   onSetFilter: (search: TokenizingFieldValue[]) => void;
+  nonIdealState?: React.ReactNode;
 }
 
 interface RunTableState {
@@ -43,16 +46,16 @@ export class RunTable extends React.Component<RunTableProps, RunTableState> {
 
       ${PythonErrorInfo.fragments.PythonErrorFragment}
       ${RunComponentFragments.RUN_TIME_FRAGMENT}
-    `
+    `,
   };
 
   state: RunTableState = {
-    checked: []
+    checked: [],
   };
 
   render() {
-    const { runs, onSetFilter } = this.props;
-    const { checked } = this.state;
+    const {runs, onSetFilter, nonIdealState} = this.props;
+    const {checked} = this.state;
 
     // This is slightly complicated because we want to be able to select runs on a
     // page of results, click "Next" and continue to select more runs. Some of the data
@@ -63,47 +66,50 @@ export class RunTable extends React.Component<RunTableProps, RunTableState> {
     // Clicking the "all" checkbox adds the current page if not every run is in the
     // checked set, or empties the set completely if toggling from checked => unchecked.
     //
-    const checkedIds = new Set(checked.map(c => c.runId));
-    const checkedOnPage = runs.filter(r => checkedIds.has(r.runId));
-    const checkedOffPage = checked.filter(c => !runs.some(r => r.runId === c.runId));
+    const checkedIds = new Set(checked.map((c) => c.runId));
+    const checkedOnPage = runs.filter((r) => checkedIds.has(r.runId));
+    const checkedOffPage = checked.filter((c) => !runs.some((r) => r.runId === c.runId));
     const checkedRuns = [...checkedOnPage, ...checkedOffPage];
 
     if (runs.length === 0) {
       return (
-        <div style={{ marginTop: 100 }}>
-          <NonIdealState
-            icon="history"
-            title="Pipeline Runs"
-            description="No runs to display. Use the Playground to launch a pipeline."
-          />
+        <div style={{marginTop: 100, marginBottom: 100}}>
+          {nonIdealState || (
+            <NonIdealState
+              icon="history"
+              title="Pipeline Runs"
+              description="No runs to display. Use the Playground to launch a pipeline."
+            />
+          )}
         </div>
       );
     }
     return (
       <div>
         <Legend>
-          <LegendColumn style={{ padding: "0 3px", display: "flex", alignItems: "center" }}>
+          <LegendColumn style={{paddingLeft: '3px', display: 'flex', alignItems: 'center'}}>
             <Checkbox
-              style={{ marginBottom: 0, marginTop: 1 }}
+              style={{marginBottom: 0, marginTop: 1}}
               indeterminate={checkedRuns.length > 0 && checkedOnPage.length < runs.length}
               checked={checkedOnPage.length === runs.length}
               onClick={() =>
                 this.setState({
-                  checked: checkedOnPage.length < runs.length ? [...checkedOffPage, ...runs] : []
+                  checked: checkedOnPage.length < runs.length ? [...checkedOffPage, ...runs] : [],
                 })
               }
             />
             <RunBulkActionsMenu
               selected={checkedRuns}
-              onChangeSelection={checked => this.setState({ checked })}
+              onChangeSelection={(checked) => this.setState({checked})}
             />
           </LegendColumn>
-          <LegendColumn style={{ flex: 5 }}></LegendColumn>
-          <LegendColumn style={{ flex: 1 }}>Execution Params</LegendColumn>
-          <LegendColumn style={{ maxWidth: 140 }}>Timing</LegendColumn>
-          <LegendColumn style={{ maxWidth: 50 }}></LegendColumn>
+          <LegendColumn style={{flex: 5}}></LegendColumn>
+          <LegendColumn style={{maxWidth: '90px'}}>Pipeline Snapshot</LegendColumn>
+          <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
+          <LegendColumn style={{maxWidth: 150}}>Timing</LegendColumn>
+          <LegendColumn style={{maxWidth: 50}}></LegendColumn>
         </Legend>
-        {runs.map(run => (
+        {runs.map((run) => (
           <RunRow
             run={run}
             key={run.runId}
@@ -112,8 +118,8 @@ export class RunTable extends React.Component<RunTableProps, RunTableState> {
             onToggleChecked={() =>
               this.setState({
                 checked: checkedRuns.includes(run)
-                  ? checkedRuns.filter(c => c !== run)
-                  : [...checkedRuns, run]
+                  ? checkedRuns.filter((c) => c !== run)
+                  : [...checkedRuns, run],
               })
             }
           />
@@ -128,47 +134,57 @@ const RunRow: React.FunctionComponent<{
   onSetFilter: (search: TokenizingFieldValue[]) => void;
   checked?: boolean;
   onToggleChecked?: () => void;
-}> = ({ run, onSetFilter, checked, onToggleChecked }) => {
+}> = ({run, onSetFilter, checked, onToggleChecked}) => {
   const pipelineLink = `/pipeline/${run.pipelineName}@${run.pipelineSnapshotId}/`;
+  const activePipeline = useActivePipelineForName(run.pipelineName);
+  const isHistorical = activePipeline?.pipelineSnapshotId !== run.pipelineSnapshotId;
 
   return (
-    <RowContainer key={run.runId} style={{ paddingRight: 3 }}>
+    <RowContainer key={run.runId} style={{paddingRight: 3}}>
       <RowColumn
-        onClick={e => {
+        onClick={(e) => {
           e.preventDefault();
           onToggleChecked?.();
         }}
         style={{
           maxWidth: 30,
           paddingLeft: 2,
-          display: "flex",
-          flexDirection: "column"
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {onToggleChecked && <Checkbox checked={checked} />}
         <RunStatusWithStats status={run.status} runId={run.runId} size={14} />
       </RowColumn>
-      <RowColumn style={{ maxWidth: 90, fontFamily: "monospace" }}>
+      <RowColumn style={{maxWidth: 90, fontFamily: 'monospace'}}>
         <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</Link>
       </RowColumn>
-      <RowColumn style={{ flex: 5 }}>
-        <div style={{ display: "flex" }}>
-          <Link to={pipelineLink}>
-            <Icon icon="diagram-tree" /> {run.pipelineName}
-          </Link>
-        </div>
+      <RowColumn style={{flex: 5}}>
+        {run.pipelineName}
         <RunTags tags={run.tags} onSetFilter={onSetFilter} />
+      </RowColumn>
+      <RowColumn style={{maxWidth: '90px'}}>
+        <div>
+          <div style={{fontFamily: 'monospace', marginBottom: '4px'}}>
+            <Link to={pipelineLink}>{run.pipelineSnapshotId?.slice(0, 8)}</Link>
+          </div>
+          {isHistorical ? (
+            <Tag minimal intent="warning">
+              Historical
+            </Tag>
+          ) : null}
+        </div>
       </RowColumn>
       <RowColumn>
         <div>
           <div>{`Mode: ${run.mode}`}</div>
         </div>
       </RowColumn>
-      <RowColumn style={{ maxWidth: 140, borderRight: 0 }}>
+      <RowColumn style={{maxWidth: 150, borderRight: 0}}>
         <RunTime run={run} />
         <RunElapsed run={run} />
       </RowColumn>
-      <RowColumn style={{ maxWidth: 50 }}>
+      <RowColumn style={{maxWidth: 50}}>
         <RunActionsMenu run={run} />
       </RowColumn>
     </RowContainer>
@@ -178,23 +194,23 @@ const RunRow: React.FunctionComponent<{
 const RunTags: React.FunctionComponent<{
   tags: RunTableRunFragment_tags[];
   onSetFilter: (search: TokenizingFieldValue[]) => void;
-}> = React.memo(({ tags, onSetFilter }) => {
+}> = React.memo(({tags, onSetFilter}) => {
   if (!tags.length) {
     return null;
   }
   const onClick = (tag: RunTableRunFragment_tags) => {
-    onSetFilter([{ token: "tag", value: `${tag.key}=${tag.value}` }]);
+    onSetFilter([{token: 'tag', value: `${tag.key}=${tag.value}`}]);
   };
 
   return (
     <div
       style={{
-        display: "flex",
-        flexWrap: "wrap",
-        width: "100%",
-        position: "relative",
-        overflow: "hidden",
-        paddingTop: 7
+        display: 'flex',
+        flexWrap: 'wrap',
+        width: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        paddingTop: 7,
       }}
     >
       {tags.map((tag, idx) => (

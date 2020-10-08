@@ -15,27 +15,27 @@ from dagster.utils.log import quieten
 create_engine = db.create_engine  # exported
 
 
-def get_alembic_config(dunder_file, config_path='alembic/alembic.ini', script_path='alembic/'):
+def get_alembic_config(dunder_file, config_path="alembic/alembic.ini", script_path="alembic/"):
     alembic_config = Config(file_relative_path(dunder_file, config_path))
-    alembic_config.set_main_option('script_location', file_relative_path(dunder_file, script_path))
+    alembic_config.set_main_option("script_location", file_relative_path(dunder_file, script_path))
     return alembic_config
 
 
-def run_alembic_upgrade(alembic_config, conn, run_id=None, rev='head'):
-    alembic_config.attributes['connection'] = conn
-    alembic_config.attributes['run_id'] = run_id
+def run_alembic_upgrade(alembic_config, conn, run_id=None, rev="head"):
+    alembic_config.attributes["connection"] = conn
+    alembic_config.attributes["run_id"] = run_id
     upgrade(alembic_config, rev)
 
 
 def run_alembic_downgrade(alembic_config, conn, rev, run_id=None):
-    alembic_config.attributes['connection'] = conn
-    alembic_config.attributes['run_id'] = run_id
+    alembic_config.attributes["connection"] = conn
+    alembic_config.attributes["run_id"] = run_id
     downgrade(alembic_config, rev)
 
 
-def stamp_alembic_rev(alembic_config, conn, rev='head', quiet=True):
+def stamp_alembic_rev(alembic_config, conn, rev="head", quiet=True):
     with quieten(quiet):
-        alembic_config.attributes['connection'] = conn
+        alembic_config.attributes["connection"] = conn
         stamp(alembic_config, rev)
 
 
@@ -86,12 +86,12 @@ def run_migrations_offline(context, config, target_metadata):
     script output.
 
     """
-    connectable = config.attributes.get('connection', None)
+    connectable = config.attributes.get("connection", None)
 
     if connectable is None:
         raise Exception(
-            'No connection set in alembic config. If you are trying to run this script from the '
-            'command line, STOP and read the README.'
+            "No connection set in alembic config. If you are trying to run this script from the "
+            "command line, STOP and read the README."
         )
 
     context.configure(
@@ -112,12 +112,12 @@ def run_migrations_online(context, config, target_metadata):
     and associate a connection with the context.
 
     """
-    connectable = config.attributes.get('connection', None)
+    connectable = config.attributes.get("connection", None)
 
     if connectable is None:
         raise Exception(
-            'No connection set in alembic config. If you are trying to run this script from the '
-            'command line, STOP and read the README.'
+            "No connection set in alembic config. If you are trying to run this script from the "
+            "command line, STOP and read the README."
         )
 
     with connectable.connect() as connection:

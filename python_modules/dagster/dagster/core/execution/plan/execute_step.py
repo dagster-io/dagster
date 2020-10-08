@@ -27,8 +27,10 @@ from dagster.core.execution.plan.objects import (
     StepSuccessData,
     TypeCheckData,
 )
+from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.storage.object_store import ObjectStoreOperation
 from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.utils import iterate_with_context, raise_interrupts_immediately
 from dagster.utils.timing import time_execution_scope
 
 
@@ -37,14 +39,14 @@ class MultipleStepOutputsListWrapper(list):
 
 
 def _step_output_error_checked_user_event_sequence(step_context, user_event_sequence):
-    '''
+    """
     Process the event sequence to check for invariant violations in the event
     sequence related to Output events emitted from the compute_fn.
 
     This consumes and emits an event sequence.
-    '''
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.generator_param(user_event_sequence, 'user_event_sequence')
+    """
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.generator_param(user_event_sequence, "user_event_sequence")
 
     step = step_context.step
     output_names = list([output_def.name for output_def in step.step_outputs])
@@ -61,7 +63,7 @@ def _step_output_error_checked_user_event_sequence(step_context, user_event_sequ
             raise DagsterInvariantViolationError(
                 'Core compute for solid "{handle}" returned an output '
                 '"{output.output_name}" that does not exist. The available '
-                'outputs are {output_names}'.format(
+                "outputs are {output_names}".format(
                     handle=str(step.solid_handle), output=output, output_names=output_names
                 )
             )
@@ -103,8 +105,8 @@ def _do_type_check(context, dagster_type, value):
         return TypeCheck(
             success=False,
             description=(
-                'Type checks must return TypeCheck. Type check for type {type_name} returned '
-                'value of type {return_type} when checking runtime value of type {dagster_type}.'
+                "Type checks must return TypeCheck. Type check for type {type_name} returned "
+                "value of type {return_type} when checking runtime value of type {dagster_type}."
             ).format(
                 type_name=dagster_type.name, return_type=type(type_check), dagster_type=type(value)
             ),
@@ -128,17 +130,17 @@ def _create_step_input_event(step_context, input_name, type_check, success):
 
 
 def _type_checked_event_sequence_for_input(step_context, input_name, input_value):
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.str_param(input_name, 'input_name')
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.str_param(input_name, "input_name")
 
     step_input = step_context.step.step_input_named(input_name)
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
             'In solid "{handle}" the input "{input_name}" received '
-            'value {input_value} of Python type {input_type} which '
-            'does not pass the typecheck for Dagster type '
-            '{dagster_type_name}. Step {step_key}.'
+            "value {input_value} of Python type {input_type} which "
+            "does not pass the typecheck for Dagster type "
+            "{dagster_type_name}. Step {step_key}."
         ).format(
             handle=str(step_context.step.solid_handle),
             input_name=input_name,
@@ -158,7 +160,7 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
 
         if not type_check.success:
             raise DagsterTypeCheckDidNotPass(
-                description='Type check failed for step input {input_name} of type {dagster_type}.'.format(
+                description="Type check failed for step input {input_name} of type {dagster_type}.".format(
                     input_name=input_name, dagster_type=step_input.dagster_type.name,
                 ),
                 metadata_entries=type_check.metadata_entries,
@@ -166,7 +168,7 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
             )
 
 
-def _create_step_output_event(step_context, output, type_check, success):
+def _create_step_output_event(step_context, output, type_check, success, version):
     return DagsterEvent.step_output_event(
         step_context=step_context,
         step_output_data=StepOutputData(
@@ -179,22 +181,29 @@ def _create_step_output_event(step_context, output, type_check, success):
                 description=type_check.description if type_check else None,
                 metadata_entries=type_check.metadata_entries if type_check else [],
             ),
+            address=output.address,
+            version=version,
         ),
     )
 
 
 def _type_checked_step_output_event_sequence(step_context, output):
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.inst_param(output, 'output', Output)
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(output, "output", Output)
 
     step_output = step_context.step.step_output_named(output.output_name)
+
+    version = resolve_step_output_versions(
+        step_context.execution_plan, step_context.environment_config, step_context.mode_def,
+    )[StepOutputHandle(step_context.step.key, output.output_name)]
+
     with user_code_error_boundary(
         DagsterTypeCheckError,
         lambda: (
             'In solid "{handle}" the output "{output_name}" received '
-            'value {output_value} of Python type {output_type} which '
-            'does not pass the typecheck for Dagster type '
-            '{dagster_type_name}. Step {step_key}.'
+            "value {output_value} of Python type {output_type} which "
+            "does not pass the typecheck for Dagster type "
+            "{dagster_type_name}. Step {step_key}."
         ).format(
             handle=str(step_context.step.solid_handle),
             output_name=output.output_name,
@@ -209,12 +218,16 @@ def _type_checked_step_output_event_sequence(step_context, output):
         )
 
         yield _create_step_output_event(
-            step_context, output, type_check=type_check, success=type_check.success
+            step_context,
+            output,
+            type_check=type_check,
+            success=type_check.success,
+            version=version,
         )
 
         if not type_check.success:
             raise DagsterTypeCheckDidNotPass(
-                description='Type check failed for step output {output_name} of type {dagster_type}.'.format(
+                description="Type check failed for step output {output_name} of type {dagster_type}.".format(
                     output_name=output.output_name, dagster_type=step_output.dagster_type.name,
                 ),
                 metadata_entries=type_check.metadata_entries,
@@ -223,14 +236,14 @@ def _type_checked_step_output_event_sequence(step_context, output):
 
 
 def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
-    '''
+    """
     Execute the step within the step_context argument given the in-memory
     events. This function yields a sequence of DagsterEvents, but without
     catching any exceptions that have bubbled up during the computation
     of the step.
-    '''
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.int_param(prior_attempt_count, 'prior_attempt_count')
+    """
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.int_param(prior_attempt_count, "prior_attempt_count")
     if prior_attempt_count > 0:
         yield DagsterEvent.step_restarted_event(step_context, prior_attempt_count)
     else:
@@ -278,7 +291,7 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:
                 check.failed(
-                    'Unexpected event {event}, should have been caught earlier'.format(
+                    "Unexpected event {event}, should have been caught earlier".format(
                         event=user_event
                     )
                 )
@@ -289,8 +302,8 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
 
 
 def _create_step_events_for_output(step_context, output):
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.inst_param(output, 'output', Output)
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.inst_param(output, "output", Output)
 
     step = step_context.step
     step_output = step.step_output_named(output.output_name)
@@ -339,12 +352,12 @@ def _create_output_materializations(step_context, output_name, value):
                 step_output = step.step_output_named(output_name)
                 with user_code_error_boundary(
                     DagsterTypeMaterializationError,
-                    msg_fn=lambda: '''Error occurred during output materialization:
+                    msg_fn=lambda: """Error occurred during output materialization:
                     output name: "{output_name}"
                     step key: "{key}"
                     solid invocation: "{solid}"
                     solid definition: "{solid_def}"
-                    '''.format(
+                    """.format(
                         output_name=output_name,
                         key=step_context.step.key,
                         solid_def=step_context.solid_def.name,
@@ -359,9 +372,9 @@ def _create_output_materializations(step_context, output_name, value):
                     if not isinstance(materialization, (AssetMaterialization, Materialization)):
                         raise DagsterInvariantViolationError(
                             (
-                                'materialize_runtime_values on type {type_name} has returned '
-                                'value {value} of type {python_type}. You must return an '
-                                'AssetMaterialization.'
+                                "materialize_runtime_values on type {type_name} has returned "
+                                "value {value} of type {python_type}. You must return an "
+                                "AssetMaterialization."
                             ).format(
                                 type_name=step_output.dagster_type.name,
                                 value=repr(materialization),
@@ -373,17 +386,17 @@ def _create_output_materializations(step_context, output_name, value):
 
 
 def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
-    check.inst_param(step_context, 'step_context', SystemStepExecutionContext)
-    check.dict_param(evaluated_inputs, 'evaluated_inputs', key_type=str)
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.dict_param(evaluated_inputs, "evaluated_inputs", key_type=str)
 
     with user_code_error_boundary(
         DagsterExecutionStepExecutionError,
         control_flow_exceptions=[Failure, RetryRequested],
-        msg_fn=lambda: '''Error occurred during the execution of step:
+        msg_fn=lambda: """Error occurred during the execution of step:
         step key: "{key}"
         solid invocation: "{solid}"
         solid definition: "{solid_def}"
-        '''.format(
+        """.format(
             key=step_context.step.key,
             solid_def=step_context.solid_def.name,
             solid=step_context.solid.name,
@@ -392,21 +405,22 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
         solid_def_name=step_context.solid_def.name,
         solid_name=step_context.solid.name,
     ):
-
         gen = check.opt_generator(step_context.step.compute_fn(step_context, evaluated_inputs))
+        if not gen:
+            return
 
-        if gen is not None:
-            for event in gen:
-                yield event
+        # Allow interrupts again during each step of the execution
+        for event in iterate_with_context(raise_interrupts_immediately, gen):
+            yield event
 
 
 def _generate_error_boundary_msg_for_step_input(context, input_):
-    return lambda: '''Error occurred during input loading:
+    return lambda: """Error occurred during input loading:
     input name: "{input_}"
     step key: "{key}"
     solid invocation: "{solid}"
     solid definition: "{solid_def}"
-    '''.format(
+    """.format(
         input_=input_.name,
         key=context.step.key,
         solid_def=context.solid_def.name,
@@ -430,16 +444,32 @@ def _input_values_from_intermediate_storage(step_context):
             else:  # This is the case where the fan-in is typed Any
                 dagster_type = step_input.dagster_type
 
-            input_value = [
-                step_context.intermediate_storage.get_intermediate(
-                    context=step_context,
-                    step_output_handle=source_handle,
-                    dagster_type=dagster_type,
-                )
-                for source_handle in step_input.source_handles
-                # Filter out missing intermediates from skipped upstream outputs
-                if step_context.intermediate_storage.has_intermediate(step_context, source_handle)
-            ]
+            input_value = []
+            for source_handle in step_input.source_handles:
+                if (
+                    source_handle in step_input.addresses
+                    and step_context.intermediate_storage.has_intermediate_at_address(
+                        step_input.addresses[source_handle]
+                    )
+                ):
+                    input_value.append(
+                        step_context.intermediate_storage.get_intermediate_from_address(
+                            step_context,
+                            dagster_type=dagster_type,
+                            step_output_handle=source_handle,
+                            address=step_input.addresses[source_handle],
+                        )
+                    )
+                elif step_context.intermediate_storage.has_intermediate(
+                    step_context, source_handle
+                ):
+                    input_value.append(
+                        step_context.intermediate_storage.get_intermediate(
+                            context=step_context,
+                            step_output_handle=source_handle,
+                            dagster_type=dagster_type,
+                        )
+                    )
 
             # When we're using an object store-backed intermediate store, we wrap the
             # ObjectStoreOperation[] representing the fan-in values in a MultipleStepOutputsListWrapper
@@ -448,11 +478,20 @@ def _input_values_from_intermediate_storage(step_context):
                 input_value = MultipleStepOutputsListWrapper(input_value)
 
         elif step_input.is_from_single_output:
-            input_value = step_context.intermediate_storage.get_intermediate(
-                context=step_context,
-                step_output_handle=step_input.source_handles[0],
-                dagster_type=step_input.dagster_type,
-            )
+            source_handle = step_input.source_handles[0]
+            if source_handle in step_input.addresses:
+                input_value = step_context.intermediate_storage.get_intermediate_from_address(
+                    step_context,
+                    dagster_type=step_input.dagster_type,
+                    step_output_handle=source_handle,
+                    address=step_input.addresses[source_handle],
+                )
+            else:
+                input_value = step_context.intermediate_storage.get_intermediate(
+                    context=step_context,
+                    step_output_handle=step_input.source_handles[0],
+                    dagster_type=step_input.dagster_type,
+                )
 
         elif step_input.is_from_config:
             with user_code_error_boundary(
@@ -467,6 +506,6 @@ def _input_values_from_intermediate_storage(step_context):
             input_value = step_input.config_data
 
         else:
-            check.failed('Unhandled step_input type!')
+            check.failed("Unhandled step_input type!")
 
         yield step_input.name, input_value

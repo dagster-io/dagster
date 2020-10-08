@@ -57,6 +57,12 @@ export enum ScheduleTickStatus {
   SUCCESS = "SUCCESS",
 }
 
+export enum StepEventStatus {
+  FAILURE = "FAILURE",
+  SKIPPED = "SKIPPED",
+  SUCCESS = "SUCCESS",
+}
+
 export enum StepKind {
   COMPUTE = "COMPUTE",
 }
@@ -86,11 +92,25 @@ export interface ExecutionTag {
   value: string;
 }
 
+export interface PartitionBackfillParams {
+  selector: PartitionSetSelector;
+  partitionNames: string[];
+  reexecutionSteps?: string[] | null;
+  fromFailure?: boolean | null;
+  tags?: ExecutionTag[] | null;
+}
+
+export interface PartitionSetSelector {
+  partitionSetName: string;
+  repositorySelector: RepositorySelector;
+}
+
 export interface PipelineRunsFilter {
   runId?: string | null;
   pipelineName?: string | null;
   tags?: ExecutionTag[] | null;
   status?: PipelineRunStatus | null;
+  snapshotId?: string | null;
 }
 
 export interface PipelineSelector {

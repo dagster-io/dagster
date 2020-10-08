@@ -16,3 +16,7 @@ your data warehouse.
 
 .. autodata:: snowflake_resource
   :annotation: ResourceDefinition
+
+.. autoclass:: SnowflakeConnection
+  :members:
+  :undoc-members:

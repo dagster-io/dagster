@@ -12,18 +12,18 @@ def _dict_input(_context, value):
 
 PythonDict = PythonObjectDagsterType(
     dict,
-    'PythonDict',
+    "PythonDict",
     loader=_dict_input,
-    description='''Represents a python dictionary to pass between solids''',
+    description="""Represents a python dictionary to pass between solids""",
 )
 
 
 class _TypedPythonDict(DagsterType):
     def __init__(self, key_type, value_type):
-        self.key_type = check.inst_param(key_type, 'key_type', DagsterType)
-        self.value_type = check.inst_param(value_type, 'value_type', DagsterType)
+        self.key_type = check.inst_param(key_type, "key_type", DagsterType)
+        self.value_type = check.inst_param(value_type, "value_type", DagsterType)
         super(_TypedPythonDict, self).__init__(
-            key='TypedPythonDict.{}.{}'.format(key_type.key, value_type.key),
+            key="TypedPythonDict.{}.{}".format(key_type.key, value_type.key),
             name=None,
             type_check_fn=self.type_check_method,
         )
@@ -34,7 +34,7 @@ class _TypedPythonDict(DagsterType):
         if not isinstance(value, dict):
             return TypeCheck(
                 success=False,
-                description='Value should be a dict, got a {value_type}'.format(
+                description="Value should be a dict, got a {value_type}".format(
                     value_type=type(value)
                 ),
             )
@@ -51,7 +51,7 @@ class _TypedPythonDict(DagsterType):
 
     @property
     def display_name(self):
-        return 'Dict[{key},{value}]'.format(
+        return "Dict[{key},{value}]".format(
             key=self.key_type.display_name, value=self.value_type.display_name
         )
 
@@ -73,7 +73,7 @@ def create_typed_runtime_dict(key_dagster_type, value_dagster_type):
 
 class DagsterDictApi(object):
     def __getitem__(self, *args):
-        check.param_invariant(len(args[0]) == 2, 'args', 'Must be two parameters')
+        check.param_invariant(len(args[0]) == 2, "args", "Must be two parameters")
         return create_typed_runtime_dict(args[0][0], args[0][1])
 
 

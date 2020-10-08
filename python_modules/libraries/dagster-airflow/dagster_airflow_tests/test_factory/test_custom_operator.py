@@ -15,8 +15,8 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 def test_my_custom_operator(
     dagster_airflow_custom_operator_pipeline, caplog,
 ):  # pylint: disable=redefined-outer-name
-    caplog.set_level(logging.INFO, logger='CustomOperatorLogger')
-    pipeline_name = 'demo_pipeline'
+    caplog.set_level(logging.INFO, logger="CustomOperatorLogger")
+    pipeline_name = "demo_pipeline"
     operator = CustomOperator
 
     environments_path = test_project_environments_path()
@@ -24,20 +24,20 @@ def test_my_custom_operator(
     results = dagster_airflow_custom_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
-            'dagster_test.test_project.test_pipelines.repo', pipeline_name
+            "dagster_test.test_project.test_pipelines.repo", pipeline_name
         ),
         operator=operator,
         environment_yaml=[
-            os.path.join(environments_path, 'env.yaml'),
-            os.path.join(environments_path, 'env_filesystem_no_explicit_base_dir.yaml'),
+            os.path.join(environments_path, "env.yaml"),
+            os.path.join(environments_path, "env_filesystem_no_explicit_base_dir.yaml"),
         ],
     )
     validate_pipeline_execution(results)
 
     log_lines = 0
     for record in caplog.records:
-        if record.name == 'CustomOperatorLogger':
+        if record.name == "CustomOperatorLogger":
             log_lines += 1
-            assert record.message == 'CustomOperator is called'
+            assert record.message == "CustomOperator is called"
 
     assert log_lines == 2

@@ -60,7 +60,7 @@ def quote_table_name(name):
 
 def start_listening(connection, channels):
     names = (quote_table_name(each) for each in channels)
-    listens = '; '.join(['LISTEN {}'.format(n) for n in names])
+    listens = "; ".join(["LISTEN {}".format(n) for n in names])
 
     with connection.cursor() as curs:
         curs.execute(listens)
@@ -88,10 +88,10 @@ def await_pg_notifications(
     interrupt.
     """
 
-    check.str_param(conn_string, 'conn_string')
-    channels = None if channels is None else check.list_param(channels, 'channels', of_type=str)
-    check.float_param(timeout, 'timeout')
-    check.bool_param(yield_on_timeout, 'yield_on_timeout')
+    check.str_param(conn_string, "conn_string")
+    channels = None if channels is None else check.list_param(channels, "channels", of_type=str)
+    check.float_param(timeout, "timeout")
+    check.bool_param(yield_on_timeout, "yield_on_timeout")
 
     conn = get_conn(conn_string)
 

@@ -8,12 +8,12 @@ def test_adls2_file_cache_file_not_present(storage_account, file_system, credent
     file_store = ADLS2FileCache(
         storage_account=storage_account,
         file_system=file_system,
-        prefix='some-prefix',
+        prefix="some-prefix",
         client=fake_client,
         overwrite=False,
     )
 
-    assert not file_store.has_file_object('foo')
+    assert not file_store.has_file_object("foo")
 
 
 def test_adls2_file_cache_file_present(storage_account, file_system, credential):
@@ -21,16 +21,16 @@ def test_adls2_file_cache_file_present(storage_account, file_system, credential)
     file_store = ADLS2FileCache(
         storage_account=storage_account,
         file_system=file_system,
-        prefix='some-prefix',
+        prefix="some-prefix",
         client=fake_client,
         overwrite=False,
     )
 
-    assert not file_store.has_file_object('foo')
+    assert not file_store.has_file_object("foo")
 
-    file_store.write_binary_data('foo', 'bar'.encode())
+    file_store.write_binary_data("foo", "bar".encode())
 
-    assert file_store.has_file_object('foo')
+    assert file_store.has_file_object("foo")
 
 
 def test_adls2_file_cache_correct_handle(storage_account, file_system, credential):
@@ -38,12 +38,12 @@ def test_adls2_file_cache_correct_handle(storage_account, file_system, credentia
     file_store = ADLS2FileCache(
         storage_account=storage_account,
         file_system=file_system,
-        prefix='some-prefix',
+        prefix="some-prefix",
         client=fake_client,
         overwrite=False,
     )
 
-    assert isinstance(file_store.get_file_handle('foo'), ADLS2FileHandle)
+    assert isinstance(file_store.get_file_handle("foo"), ADLS2FileHandle)
 
 
 def test_adls2_file_cache_write_file_object(storage_account, file_system, credential):
@@ -51,10 +51,10 @@ def test_adls2_file_cache_write_file_object(storage_account, file_system, creden
     file_store = ADLS2FileCache(
         storage_account=storage_account,
         file_system=file_system,
-        prefix='some-prefix',
+        prefix="some-prefix",
         client=fake_client,
         overwrite=False,
     )
 
-    stream = io.BytesIO('content'.encode())
-    file_store.write_file_object('foo', stream)
+    stream = io.BytesIO("content".encode())
+    file_store.write_file_object("foo", stream)

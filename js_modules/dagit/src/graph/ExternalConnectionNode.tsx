@@ -1,16 +1,17 @@
-import * as React from "react";
-import { SVGMonospaceText } from "./SVGComponents";
-import { LinkVertical as Link } from "@vx/shape";
-import { IPoint } from "./getFullSolidLayout";
-import { Edge } from "./SolidLinks";
-import { isHighlighted } from "./highlighting";
-import { Colors } from "@blueprintjs/core";
-import styled from "styled-components/macro";
+import {Colors} from '@blueprintjs/core';
+import {LinkVertical as Link} from '@vx/shape';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {SVGMonospaceText} from 'src/graph/SVGComponents';
+import {Edge} from 'src/graph/SolidLinks';
+import {IPoint} from 'src/graph/getFullSolidLayout';
+import {isHighlighted} from 'src/graph/highlighting';
 
 interface ExternalConnectionNodeProps {
   layout: IPoint;
   target: IPoint;
-  labelAttachment: "top" | "bottom";
+  labelAttachment: 'top' | 'bottom';
   label: string;
   minified: boolean;
 
@@ -30,12 +31,12 @@ export const ExternalConnectionNode: React.FunctionComponent<ExternalConnectionN
   minified,
   highlightedEdges,
   onHighlightEdges,
-  onDoubleClickLabel
+  onDoubleClickLabel,
 }) => {
-  const textProps = { width: 0, size: minified ? 24 : 12, text: label };
+  const textProps = {width: 0, size: minified ? 24 : 12, text: label};
   const textSize = SVGMonospaceText.intrinsicSizeForProps(textProps);
-  const highlighted = edges.some(e => isHighlighted(highlightedEdges, e));
-  const color = highlighted ? "#555" : "#C7CBCD";
+  const highlighted = edges.some((e) => isHighlighted(highlightedEdges, e));
+  const color = highlighted ? '#555' : '#C7CBCD';
 
   // https://github.com/dagster-io/dagster/issues/1504
   if (!layout) {
@@ -44,7 +45,7 @@ export const ExternalConnectionNode: React.FunctionComponent<ExternalConnectionN
 
   const textOrigin = {
     x: layout.x - textSize.width / 2,
-    y: layout.y + (labelAttachment === "top" ? -10 - textSize.height : 10)
+    y: layout.y + (labelAttachment === 'top' ? -10 - textSize.height : 10),
   };
 
   return (
@@ -52,23 +53,20 @@ export const ExternalConnectionNode: React.FunctionComponent<ExternalConnectionN
       <BackingRect
         {...textSize}
         {...textOrigin}
-        onClick={e => e.stopPropagation()}
-        onDoubleClick={e => {
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => {
           e.stopPropagation();
           onDoubleClickLabel();
         }}
       />
       <ellipse cx={layout.x} cy={layout.y} rx={7} ry={7} fill={color} />
       <SVGMonospaceText {...textProps} {...textSize} {...textOrigin} />
-      <Link
-        style={{ stroke: color, strokeWidth: 6, fill: "none" }}
-        data={{ source: layout, target }}
-      />
+      <Link style={{stroke: color, strokeWidth: 6, fill: 'none'}} data={{source: layout, target}} />
     </g>
   );
 };
 
-const BackingRect = styled("rect")`
+const BackingRect = styled('rect')`
   stroke-width: 10px;
   fill: ${Colors.LIGHT_GRAY3};
   stroke: ${Colors.LIGHT_GRAY3};

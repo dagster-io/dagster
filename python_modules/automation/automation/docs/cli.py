@@ -6,9 +6,9 @@ import click
 from .check_library_docs import validate_library_readmes
 from .repo import DagsterDocsRepo, DagsterRepo
 
-CLI_HELP = '''This CLI is used for validating and updating Dagster docs.
-'''
-DEFAULT_DOCS_DIR = '/tmp/dagster-docs'
+CLI_HELP = """This CLI is used for validating and updating Dagster docs.
+"""
+DEFAULT_DOCS_DIR = "/tmp/dagster-docs"
 
 
 @click.group(help=CLI_HELP)
@@ -17,8 +17,8 @@ def cli():
 
 
 @cli.command()
-@click.option('-v', '--docs-version', type=click.STRING, required=True)
-@click.option('-d', '--docs-dir', type=click.STRING, required=False, default=DEFAULT_DOCS_DIR)
+@click.option("-v", "--docs-version", type=click.STRING, required=True)
+@click.option("-d", "--docs-dir", type=click.STRING, required=False, default=DEFAULT_DOCS_DIR)
 def build(docs_version, docs_dir):
     ddr = DagsterDocsRepo(docs_dir)
     dr = DagsterRepo()
@@ -40,7 +40,7 @@ def validate_libraries():
 
 
 def copytree(src, dst):
-    '''https://stackoverflow.com/a/12514470/11295366'''
+    """https://stackoverflow.com/a/12514470/11295366"""
     for item in os.listdir(src):
         s = os.path.join(src, item)
         d = os.path.join(dst, item)
@@ -55,5 +55,5 @@ def main():
     click_cli()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

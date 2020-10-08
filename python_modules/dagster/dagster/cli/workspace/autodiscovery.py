@@ -4,7 +4,7 @@ from collections import namedtuple
 from dagster import DagsterInvariantViolationError, PipelineDefinition, RepositoryDefinition
 from dagster.core.code_pointer import load_python_file, load_python_module
 
-LoadableTarget = namedtuple('LoadableTarget', 'attribute target_definition')
+LoadableTarget = namedtuple("LoadableTarget", "attribute target_definition")
 
 
 def loadable_targets_from_python_file(python_file, working_directory=None):
@@ -40,9 +40,9 @@ def loadable_targets_from_loaded_module(module):
         raise DagsterInvariantViolationError(
             (
                 'No repository and more than one pipeline found in "{module_name}". If you load '
-                'a file or module directly it must either have one repository or one '
-                'pipeline in scope. Found pipelines defined in variables or decorated '
-                'functions: {pipeline_symbols}.'
+                "a file or module directly it must either have one repository or one "
+                "pipeline in scope. Found pipelines defined in variables or decorated "
+                "functions: {pipeline_symbols}."
             ).format(
                 module_name=module.__name__,
                 pipeline_symbols=repr([p.attribute for p in loadable_pipelines]),

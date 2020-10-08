@@ -1,4 +1,5 @@
 from collections import namedtuple
+from datetime import datetime
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -8,10 +9,13 @@ from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
+from .utils import check_for_invalid_name_and_warn
 
 
-class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance')):
-    '''Schedule-specific execution context.
+class ScheduleExecutionContext(
+    namedtuple("ScheduleExecutionContext", "instance scheduled_execution_time_utc")
+):
+    """Schedule-specific execution context.
 
     An instance of this class is made available as the first argument to various ScheduleDefinition
     functions. It is passed as the first argument to ``run_config_fn``, ``tags_fn``,
@@ -19,19 +23,26 @@ class ScheduleExecutionContext(namedtuple('ScheduleExecutionContext', 'instance'
 
     Attributes:
         instance (DagsterInstance): The instance configured to run the schedule
-    '''
+        scheduled_execution_time_utc (datetime):
+            The time in UTC in which the execution was scheduled to happen. May differ slightly
+            from both the actual execution time and the time at which the run config is computed.
+    """
 
     def __new__(
-        cls, instance,
+        cls, instance, scheduled_execution_time_utc,
     ):
 
         return super(ScheduleExecutionContext, cls).__new__(
-            cls, check.inst_param(instance, 'instance', DagsterInstance),
+            cls,
+            check.inst_param(instance, "instance", DagsterInstance),
+            check.opt_inst_param(
+                scheduled_execution_time_utc, "scheduled_execution_time_utc", datetime
+            ),
         )
 
 
 class ScheduleDefinition(object):
-    '''Define a schedule that targets a pipeline
+    """Define a schedule that targets a pipeline
 
     Args:
         name (str): The name of the schedule to create.
@@ -59,21 +70,21 @@ class ScheduleDefinition(object):
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[dict[str, str]]): The environment variables to set for the
             schedule
-    '''
+    """
 
     __slots__ = [
-        '_name',
-        '_cron_schedule',
-        '_execution_params',
-        '_run_config_fn',
-        '_run_config',
-        '_tags',
-        '_mode',
-        '_pipeline_name',
-        '_solid_selection',
-        '_tags_fn',
-        '_should_execute',
-        '_environment_vars',
+        "_name",
+        "_cron_schedule",
+        "_execution_params",
+        "_run_config_fn",
+        "_run_config",
+        "_tags",
+        "_mode",
+        "_pipeline_name",
+        "_solid_selection",
+        "_tags_fn",
+        "_should_execute",
+        "_environment_vars",
     ]
 
     def __init__(
@@ -91,26 +102,26 @@ class ScheduleDefinition(object):
         environment_vars=None,
     ):
 
-        self._name = check.str_param(name, 'name')
-        self._cron_schedule = check.str_param(cron_schedule, 'cron_schedule')
-        self._pipeline_name = check.str_param(pipeline_name, 'pipeline_name')
-        self._run_config = check.opt_dict_param(run_config, 'run_config')
-        self._tags = check.opt_dict_param(tags, 'tags', key_type=str, value_type=str)
+        self._name = check_for_invalid_name_and_warn(name)
+        self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
+        self._pipeline_name = check.str_param(pipeline_name, "pipeline_name")
+        self._run_config = check.opt_dict_param(run_config, "run_config")
+        self._tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
 
-        check.opt_callable_param(tags_fn, 'tags_fn')
+        check.opt_callable_param(tags_fn, "tags_fn")
         self._solid_selection = check.opt_nullable_list_param(
-            solid_selection, 'solid_selection', of_type=str
+            solid_selection, "solid_selection", of_type=str
         )
-        self._mode = check.opt_str_param(mode, 'mode', DEFAULT_MODE_NAME)
-        check.opt_callable_param(should_execute, 'should_execute')
+        self._mode = check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME)
+        check.opt_callable_param(should_execute, "should_execute")
         self._environment_vars = check.opt_dict_param(
-            environment_vars, 'environment_vars', key_type=str, value_type=str
+            environment_vars, "environment_vars", key_type=str, value_type=str
         )
 
         if run_config_fn and run_config:
             raise DagsterInvalidDefinitionError(
-                'Attempted to provide both run_config_fn and run_config as arguments'
-                ' to ScheduleDefinition. Must provide only one of the two.'
+                "Attempted to provide both run_config_fn and run_config as arguments"
+                " to ScheduleDefinition. Must provide only one of the two."
             )
 
         if not run_config and not run_config_fn:
@@ -119,8 +130,8 @@ class ScheduleDefinition(object):
 
         if tags_fn and tags:
             raise DagsterInvalidDefinitionError(
-                'Attempted to provide both tags_fn and tags as arguments'
-                ' to ScheduleDefinition. Must provide only one of the two.'
+                "Attempted to provide both tags_fn and tags as arguments"
+                " to ScheduleDefinition. Must provide only one of the two."
             )
 
         if not tags and not tags_fn:
@@ -148,16 +159,16 @@ class ScheduleDefinition(object):
         return self._mode
 
     def get_run_config(self, context):
-        check.inst_param(context, 'context', ScheduleExecutionContext)
+        check.inst_param(context, "context", ScheduleExecutionContext)
         if self._run_config:
             return self._run_config
         return self._run_config_fn(context)
 
     def get_tags(self, context):
-        check.inst_param(context, 'context', ScheduleExecutionContext)
+        check.inst_param(context, "context", ScheduleExecutionContext)
         if self._tags:
             tags = self._tags
-            check_tags(tags, 'tags')
+            check_tags(tags, "tags")
         else:
             tags = self._tags_fn(context)
             # These tags are checked in _tags_fn_wrapper
@@ -167,7 +178,7 @@ class ScheduleDefinition(object):
         return tags
 
     def should_execute(self, context):
-        check.inst_param(context, 'context', ScheduleExecutionContext)
+        check.inst_param(context, "context", ScheduleExecutionContext)
         return self._should_execute(context)
 
     @property

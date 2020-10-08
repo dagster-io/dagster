@@ -17,7 +17,7 @@ def test_event_callback_logging():
             events[record.dagster_event.event_type].append(record)
 
     pipeline = ReconstructablePipeline.for_module(
-        'dagstermill.examples.repository', 'define_hello_logging_pipeline',
+        "dagstermill.examples.repository", "define_hello_logging_pipeline",
     )
     pipeline_def = pipeline.get_definition()
     instance = DagsterInstance.local_temp()

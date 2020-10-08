@@ -165,6 +165,7 @@ exports[`renders execution 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -238,6 +239,7 @@ exports[`renders execution 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -253,6 +255,7 @@ exports[`renders execution 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -345,7 +348,7 @@ exports[`renders execution 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -458,6 +461,61 @@ exports[`renders execution 1`] = `
         </div>
       </div>
     </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
+    </div>
   </div>
   <div
     style={
@@ -471,140 +529,151 @@ exports[`renders execution 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
+        className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
       >
-        airline_demo_ingest_pipeline
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-dashboard"
-          icon="dashboard"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <ul
+          className="bp3-overflow-list bp3-breadcrumbs"
         >
-          <svg
-            data-icon="dashboard"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              dashboard
-            </desc>
-            <path
-              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Overview
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__SmallerBreadcrumb-uwq7ub-0 fnzTgI"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Pipelines
+            </span>
+          </li>
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__CurrentBreadcrumb-uwq7ub-1 ekDsuW"
+            >
+              airline_demo_ingest_pipeline
+            </span>
+          </li>
+          <div
+            className="bp3-overflow-list-spacer"
+          />
+        </ul>
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
+        className="bp3-tabs"
       >
-        <span
-          className="bp3-icon bp3-icon-diagram-tree"
-          icon="diagram-tree"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <div
+          className="bp3-tab-list"
+          onKeyDown={[Function]}
+          onKeyPress={[Function]}
+          role="tablist"
         >
-          <svg
-            data-icon="diagram-tree"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              diagram-tree
-            </desc>
-            <path
-              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-manually-entered-data"
-          icon="manually-entered-data"
-          style={
-            Object {
-              "paddingRight": 8,
+          <div
+            className="bp3-tab-indicator-wrapper"
+            style={
+              Object {
+                "display": "none",
+              }
             }
-          }
-        >
-          <svg
-            data-icon="manually-entered-data"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
           >
-            <desc>
-              manually-entered-data
-            </desc>
-            <path
-              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-              fillRule="evenodd"
+            <div
+              className="bp3-tab-indicator"
             />
-          </svg>
-        </span>
-        Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-history"
-          icon="history"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
-        >
-          <svg
-            data-icon="history"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Overview"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Overview"
+            id="bp3-tab-title_undefined_Overview"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
           >
-            <desc>
-              history
-            </desc>
-            <path
-              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Runs
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/overview"
+              onClick={[Function]}
+            >
+              Overview
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Definition"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Definition"
+            id="bp3-tab-title_undefined_Definition"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              Definition
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Playground"
+            aria-disabled={false}
+            aria-expanded={true}
+            aria-selected={true}
+            className="bp3-tab"
+            data-tab-id="Playground"
+            id="bp3-tab-title_undefined_Playground"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/playground"
+              onClick={[Function]}
+            >
+              Playground
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Runs"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Runs"
+            id="bp3-tab-title_undefined_Runs"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/runs"
+              onClick={[Function]}
+            >
+              Runs
+            </a>
+          </div>
+        </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
     <div
       className="ExecutionTabs__ExecutionTabsContainer-sc-1e2gc9p-0 ijLiyT"
@@ -625,7 +694,7 @@ exports[`renders execution 1`] = `
       </div>
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 iGxzwI"
+      className="SplitPanelContainer__Container-wb7tmo-4 ktljQg"
       id="split-panel-container"
     >
       <div
@@ -894,6 +963,7 @@ exports[`renders pipeline page 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -967,6 +1037,7 @@ exports[`renders pipeline page 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -982,6 +1053,7 @@ exports[`renders pipeline page 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -1074,7 +1146,7 @@ exports[`renders pipeline page 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -1187,6 +1259,61 @@ exports[`renders pipeline page 1`] = `
         </div>
       </div>
     </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
+    </div>
   </div>
   <div
     style={
@@ -1200,143 +1327,154 @@ exports[`renders pipeline page 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
+        className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
       >
-        airline_demo_ingest_pipeline
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-dashboard"
-          icon="dashboard"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <ul
+          className="bp3-overflow-list bp3-breadcrumbs"
         >
-          <svg
-            data-icon="dashboard"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              dashboard
-            </desc>
-            <path
-              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Overview
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__SmallerBreadcrumb-uwq7ub-0 fnzTgI"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Pipelines
+            </span>
+          </li>
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__CurrentBreadcrumb-uwq7ub-1 ekDsuW"
+            >
+              airline_demo_ingest_pipeline
+            </span>
+          </li>
+          <div
+            className="bp3-overflow-list-spacer"
+          />
+        </ul>
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
-        onClick={[Function]}
+        className="bp3-tabs"
       >
-        <span
-          className="bp3-icon bp3-icon-diagram-tree"
-          icon="diagram-tree"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <div
+          className="bp3-tab-list"
+          onKeyDown={[Function]}
+          onKeyPress={[Function]}
+          role="tablist"
         >
-          <svg
-            data-icon="diagram-tree"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              diagram-tree
-            </desc>
-            <path
-              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-manually-entered-data"
-          icon="manually-entered-data"
-          style={
-            Object {
-              "paddingRight": 8,
+          <div
+            className="bp3-tab-indicator-wrapper"
+            style={
+              Object {
+                "display": "none",
+              }
             }
-          }
-        >
-          <svg
-            data-icon="manually-entered-data"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
           >
-            <desc>
-              manually-entered-data
-            </desc>
-            <path
-              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-              fillRule="evenodd"
+            <div
+              className="bp3-tab-indicator"
             />
-          </svg>
-        </span>
-        Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-history"
-          icon="history"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
-        >
-          <svg
-            data-icon="history"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Overview"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Overview"
+            id="bp3-tab-title_undefined_Overview"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
           >
-            <desc>
-              history
-            </desc>
-            <path
-              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Runs
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/overview"
+              onClick={[Function]}
+            >
+              Overview
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Definition"
+            aria-disabled={false}
+            aria-expanded={true}
+            aria-selected={true}
+            className="bp3-tab"
+            data-tab-id="Definition"
+            id="bp3-tab-title_undefined_Definition"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              Definition
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Playground"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Playground"
+            id="bp3-tab-title_undefined_Playground"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/playground"
+              onClick={[Function]}
+            >
+              Playground
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Runs"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Runs"
+            id="bp3-tab-title_undefined_Runs"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/runs"
+              onClick={[Function]}
+            >
+              Runs
+            </a>
+          </div>
+        </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div
@@ -1357,51 +1495,60 @@ exports[`renders pipeline page 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
@@ -5294,7 +5441,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -5573,6 +5720,7 @@ exports[`renders pipeline solid page 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -5646,6 +5794,7 @@ exports[`renders pipeline solid page 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -5661,6 +5810,7 @@ exports[`renders pipeline solid page 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -5753,7 +5903,7 @@ exports[`renders pipeline solid page 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -5866,6 +6016,61 @@ exports[`renders pipeline solid page 1`] = `
         </div>
       </div>
     </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
+    </div>
   </div>
   <div
     style={
@@ -5879,143 +6084,154 @@ exports[`renders pipeline solid page 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
+        className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
       >
-        airline_demo_ingest_pipeline
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-dashboard"
-          icon="dashboard"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <ul
+          className="bp3-overflow-list bp3-breadcrumbs"
         >
-          <svg
-            data-icon="dashboard"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              dashboard
-            </desc>
-            <path
-              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Overview
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__SmallerBreadcrumb-uwq7ub-0 fnzTgI"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Pipelines
+            </span>
+          </li>
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__CurrentBreadcrumb-uwq7ub-1 ekDsuW"
+            >
+              airline_demo_ingest_pipeline
+            </span>
+          </li>
+          <div
+            className="bp3-overflow-list-spacer"
+          />
+        </ul>
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
-        onClick={[Function]}
+        className="bp3-tabs"
       >
-        <span
-          className="bp3-icon bp3-icon-diagram-tree"
-          icon="diagram-tree"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <div
+          className="bp3-tab-list"
+          onKeyDown={[Function]}
+          onKeyPress={[Function]}
+          role="tablist"
         >
-          <svg
-            data-icon="diagram-tree"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              diagram-tree
-            </desc>
-            <path
-              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-manually-entered-data"
-          icon="manually-entered-data"
-          style={
-            Object {
-              "paddingRight": 8,
+          <div
+            className="bp3-tab-indicator-wrapper"
+            style={
+              Object {
+                "display": "none",
+              }
             }
-          }
-        >
-          <svg
-            data-icon="manually-entered-data"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
           >
-            <desc>
-              manually-entered-data
-            </desc>
-            <path
-              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-              fillRule="evenodd"
+            <div
+              className="bp3-tab-indicator"
             />
-          </svg>
-        </span>
-        Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-history"
-          icon="history"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
-        >
-          <svg
-            data-icon="history"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Overview"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Overview"
+            id="bp3-tab-title_undefined_Overview"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
           >
-            <desc>
-              history
-            </desc>
-            <path
-              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Runs
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/overview"
+              onClick={[Function]}
+            >
+              Overview
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Definition"
+            aria-disabled={false}
+            aria-expanded={true}
+            aria-selected={true}
+            className="bp3-tab"
+            data-tab-id="Definition"
+            id="bp3-tab-title_undefined_Definition"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              Definition
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Playground"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Playground"
+            id="bp3-tab-title_undefined_Playground"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/playground"
+              onClick={[Function]}
+            >
+              Playground
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Runs"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Runs"
+            id="bp3-tab-title_undefined_Runs"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/runs"
+              onClick={[Function]}
+            >
+              Runs
+            </a>
+          </div>
+        </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div
@@ -6036,51 +6252,60 @@ exports[`renders pipeline solid page 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
@@ -9973,7 +10198,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -10252,6 +10477,7 @@ exports[`renders solids explorer 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -10325,6 +10551,7 @@ exports[`renders solids explorer 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -10340,6 +10567,7 @@ exports[`renders solids explorer 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -10432,7 +10660,7 @@ exports[`renders solids explorer 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf  "
@@ -10545,9 +10773,64 @@ exports[`renders solids explorer 1`] = `
         </div>
       </div>
     </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
+    </div>
   </div>
   <div
-    className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+    className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
     id="split-panel-container"
   >
     <div
@@ -11019,7 +11302,7 @@ exports[`renders solids explorer 1`] = `
                     Composite Solid
                   </div>
                   <h3
-                    className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                    className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
                   >
                     s3_​to_​df
                   </h3>
@@ -11230,7 +11513,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       file_cache
                     </h4>
@@ -11259,7 +11542,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       file_manager
                     </h4>
@@ -11288,7 +11571,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       pyspark
                     </h4>
@@ -11317,7 +11600,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       pyspark_step_launcher
                     </h4>
@@ -11346,7 +11629,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iGTnMN"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
                     >
                       s3
                     </h4>
@@ -11408,7 +11691,7 @@ more detail.
                     className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
                   >
                     <h4
-                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 kELHFM"
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 eJEHjb"
                     >
                       s3_​coordinate
                     </h4>
@@ -11431,7 +11714,7 @@ more detail.
                     className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
                   >
                     <h4
-                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 kELHFM"
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 eJEHjb"
                     >
                       archive_​member
                     </h4>
@@ -11507,7 +11790,7 @@ more detail.
                     className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
                   >
                     <h4
-                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 kELHFM"
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 eJEHjb"
                     >
                       result
                     </h4>
@@ -12057,6 +12340,7 @@ exports[`renders type page 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -12130,6 +12414,7 @@ exports[`renders type page 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -12145,6 +12430,7 @@ exports[`renders type page 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -12237,7 +12523,7 @@ exports[`renders type page 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -12350,6 +12636,61 @@ exports[`renders type page 1`] = `
         </div>
       </div>
     </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
+    </div>
   </div>
   <div
     style={
@@ -12363,143 +12704,154 @@ exports[`renders type page 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
+        className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
       >
-        airline_demo_ingest_pipeline
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-dashboard"
-          icon="dashboard"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <ul
+          className="bp3-overflow-list bp3-breadcrumbs"
         >
-          <svg
-            data-icon="dashboard"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              dashboard
-            </desc>
-            <path
-              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Overview
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__SmallerBreadcrumb-uwq7ub-0 fnzTgI"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Pipelines
+            </span>
+          </li>
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__CurrentBreadcrumb-uwq7ub-1 ekDsuW"
+            >
+              airline_demo_ingest_pipeline
+            </span>
+          </li>
+          <div
+            className="bp3-overflow-list-spacer"
+          />
+        </ul>
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
-        onClick={[Function]}
+        className="bp3-tabs"
       >
-        <span
-          className="bp3-icon bp3-icon-diagram-tree"
-          icon="diagram-tree"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <div
+          className="bp3-tab-list"
+          onKeyDown={[Function]}
+          onKeyPress={[Function]}
+          role="tablist"
         >
-          <svg
-            data-icon="diagram-tree"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              diagram-tree
-            </desc>
-            <path
-              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-manually-entered-data"
-          icon="manually-entered-data"
-          style={
-            Object {
-              "paddingRight": 8,
+          <div
+            className="bp3-tab-indicator-wrapper"
+            style={
+              Object {
+                "display": "none",
+              }
             }
-          }
-        >
-          <svg
-            data-icon="manually-entered-data"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
           >
-            <desc>
-              manually-entered-data
-            </desc>
-            <path
-              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-              fillRule="evenodd"
+            <div
+              className="bp3-tab-indicator"
             />
-          </svg>
-        </span>
-        Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-history"
-          icon="history"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
-        >
-          <svg
-            data-icon="history"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Overview"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Overview"
+            id="bp3-tab-title_undefined_Overview"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
           >
-            <desc>
-              history
-            </desc>
-            <path
-              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Runs
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/overview"
+              onClick={[Function]}
+            >
+              Overview
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Definition"
+            aria-disabled={false}
+            aria-expanded={true}
+            aria-selected={true}
+            className="bp3-tab"
+            data-tab-id="Definition"
+            id="bp3-tab-title_undefined_Definition"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              Definition
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Playground"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Playground"
+            id="bp3-tab-title_undefined_Playground"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/playground"
+              onClick={[Function]}
+            >
+              Playground
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Runs"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Runs"
+            id="bp3-tab-title_undefined_Runs"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/runs"
+              onClick={[Function]}
+            >
+              Runs
+            </a>
+          </div>
+        </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div
@@ -12520,51 +12872,60 @@ exports[`renders type page 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
@@ -16457,7 +16818,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -16736,6 +17097,7 @@ exports[`renders type page 2`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -16809,6 +17171,7 @@ exports[`renders type page 2`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -16824,6 +17187,7 @@ exports[`renders type page 2`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -16916,7 +17280,7 @@ exports[`renders type page 2`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -17029,6 +17393,61 @@ exports[`renders type page 2`] = `
         </div>
       </div>
     </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
+    </div>
   </div>
   <div
     style={
@@ -17042,143 +17461,154 @@ exports[`renders type page 2`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
+        className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
       >
-        airline_demo_ingest_pipeline
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-dashboard"
-          icon="dashboard"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <ul
+          className="bp3-overflow-list bp3-breadcrumbs"
         >
-          <svg
-            data-icon="dashboard"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              dashboard
-            </desc>
-            <path
-              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Overview
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__SmallerBreadcrumb-uwq7ub-0 fnzTgI"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Pipelines
+            </span>
+          </li>
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__CurrentBreadcrumb-uwq7ub-1 ekDsuW"
+            >
+              airline_demo_ingest_pipeline
+            </span>
+          </li>
+          <div
+            className="bp3-overflow-list-spacer"
+          />
+        </ul>
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
-        onClick={[Function]}
+        className="bp3-tabs"
       >
-        <span
-          className="bp3-icon bp3-icon-diagram-tree"
-          icon="diagram-tree"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <div
+          className="bp3-tab-list"
+          onKeyDown={[Function]}
+          onKeyPress={[Function]}
+          role="tablist"
         >
-          <svg
-            data-icon="diagram-tree"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              diagram-tree
-            </desc>
-            <path
-              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-manually-entered-data"
-          icon="manually-entered-data"
-          style={
-            Object {
-              "paddingRight": 8,
+          <div
+            className="bp3-tab-indicator-wrapper"
+            style={
+              Object {
+                "display": "none",
+              }
             }
-          }
-        >
-          <svg
-            data-icon="manually-entered-data"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
           >
-            <desc>
-              manually-entered-data
-            </desc>
-            <path
-              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-              fillRule="evenodd"
+            <div
+              className="bp3-tab-indicator"
             />
-          </svg>
-        </span>
-        Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-history"
-          icon="history"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
-        >
-          <svg
-            data-icon="history"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Overview"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Overview"
+            id="bp3-tab-title_undefined_Overview"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
           >
-            <desc>
-              history
-            </desc>
-            <path
-              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Runs
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/overview"
+              onClick={[Function]}
+            >
+              Overview
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Definition"
+            aria-disabled={false}
+            aria-expanded={true}
+            aria-selected={true}
+            className="bp3-tab"
+            data-tab-id="Definition"
+            id="bp3-tab-title_undefined_Definition"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              Definition
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Playground"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Playground"
+            id="bp3-tab-title_undefined_Playground"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/playground"
+              onClick={[Function]}
+            >
+              Playground
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Runs"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Runs"
+            id="bp3-tab-title_undefined_Runs"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/runs"
+              onClick={[Function]}
+            >
+              Runs
+            </a>
+          </div>
+        </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div
@@ -17199,51 +17629,60 @@ exports[`renders type page 2`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
@@ -21136,7 +21575,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -21415,6 +21854,7 @@ exports[`renders without error 1`] = `
           "display": "flex",
           "flex": 1,
           "flexDirection": "column",
+          "minHeight": 0,
           "overflow": "none",
         }
       }
@@ -21488,6 +21928,7 @@ exports[`renders without error 1`] = `
             "display": "flex",
             "flex": 1,
             "flexDirection": "column",
+            "minHeight": 0,
           }
         }
       >
@@ -21503,6 +21944,7 @@ exports[`renders without error 1`] = `
               "display": "flex",
               "flex": 1,
               "flexDirection": "column",
+              "minHeight": 0,
             }
           }
         >
@@ -21595,7 +22037,7 @@ exports[`renders without error 1`] = `
             </div>
           </div>
           <div
-            className="RepositoryContentList__Items-sc-91axco-1 gDwLRe"
+            className="RepositoryContentList__Items-sc-91axco-1 hTPIY"
           >
             <a
               className="RepositoryContentList__Item-sc-91axco-2 fWmLHf selected "
@@ -21708,6 +22150,61 @@ exports[`renders without error 1`] = `
         </div>
       </div>
     </div>
+    <div
+      className="bp3-dark"
+      style={
+        Object {
+          "flexShrink": 0,
+          "padding": 5,
+        }
+      }
+    >
+      <span
+        className="bp3-popover-wrapper"
+      >
+        <span
+          className="bp3-popover-target"
+          onClick={[Function]}
+        >
+          <div
+            className=""
+            onKeyDown={[Function]}
+          >
+            <button
+              className="bp3-button bp3-small"
+              onKeyDown={[Function]}
+              onKeyUp={[Function]}
+              type="button"
+            >
+              <span
+                className="bp3-icon bp3-icon-time"
+                icon="time"
+              >
+                <svg
+                  data-icon="time"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    time
+                  </desc>
+                  <path
+                    d="M8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-6.41V4c0-.55-.45-1-1-1s-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              <span
+                className="bp3-button-text"
+              >
+                Automatic
+              </span>
+            </button>
+          </div>
+        </span>
+      </span>
+    </div>
   </div>
   <div
     style={
@@ -21721,143 +22218,154 @@ exports[`renders without error 1`] = `
     }
   >
     <div
-      className="PipelineNav__PipelineTabBarContainer-sc-17q1pb-0 eaqLPa"
+      className="TopNav__PipelineTabBarContainer-uwq7ub-3 igQCby"
     >
       <div
-        className="PipelineNav__PipelineName-sc-17q1pb-1 bWDACz"
+        className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
       >
-        airline_demo_ingest_pipeline
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-dashboard"
-          icon="dashboard"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <ul
+          className="bp3-overflow-list bp3-breadcrumbs"
         >
-          <svg
-            data-icon="dashboard"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              dashboard
-            </desc>
-            <path
-              d="M5 4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zM4 7c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm4-2c.55 0 1-.45 1-1s-.45-1-1-1-1 .45-1 1 .45 1 1 1zm-2 6c0 1.1.9 2 2 2s2-.9 2-2c0-.53-2-5-2-5s-2 4.47-2 5zM8 0C3.58 0 0 3.58 0 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm4-9c0-.55-.45-1-1-1s-1 .45-1 1 .45 1 1 1 1-.45 1-1zm0 2c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Overview
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__SmallerBreadcrumb-uwq7ub-0 fnzTgI"
+            >
+              <span
+                className="bp3-icon bp3-icon-diagram-tree"
+                icon="diagram-tree"
+              >
+                <svg
+                  data-icon="diagram-tree"
+                  height={16}
+                  viewBox="0 0 16 16"
+                  width={16}
+                >
+                  <desc>
+                    diagram-tree
+                  </desc>
+                  <path
+                    d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
+                    fillRule="evenodd"
+                  />
+                </svg>
+              </span>
+              Pipelines
+            </span>
+          </li>
+          <li>
+            <span
+              className="bp3-breadcrumb TopNav__CurrentBreadcrumb-uwq7ub-1 ekDsuW"
+            >
+              airline_demo_ingest_pipeline
+            </span>
+          </li>
+          <div
+            className="bp3-overflow-list-spacer"
+          />
+        </ul>
       </div>
       <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 fCNJbt"
-        onClick={[Function]}
+        className="bp3-tabs"
       >
-        <span
-          className="bp3-icon bp3-icon-diagram-tree"
-          icon="diagram-tree"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
+        <div
+          className="bp3-tab-list"
+          onKeyDown={[Function]}
+          onKeyPress={[Function]}
+          role="tablist"
         >
-          <svg
-            data-icon="diagram-tree"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
-          >
-            <desc>
-              diagram-tree
-            </desc>
-            <path
-              d="M15 8v3h-2V9H9v2H7V9H3v2H1V8a1 1 0 011-1h5V5h2v2h5a1 1 0 011 1zM1 12h2a1 1 0 011 1v2a1 1 0 01-1 1H1a1 1 0 01-1-1v-2a1 1 0 011-1zm12 0h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2a1 1 0 011-1zm-6 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1v-2a1 1 0 011-1zM7 0h2a1 1 0 011 1v2a1 1 0 01-1 1H7a1 1 0 01-1-1V1a1 1 0 011-1z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Definition
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-manually-entered-data"
-          icon="manually-entered-data"
-          style={
-            Object {
-              "paddingRight": 8,
+          <div
+            className="bp3-tab-indicator-wrapper"
+            style={
+              Object {
+                "display": "none",
+              }
             }
-          }
-        >
-          <svg
-            data-icon="manually-entered-data"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
           >
-            <desc>
-              manually-entered-data
-            </desc>
-            <path
-              d="M1 8h3.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm14.49-4.01c.31-.32.51-.76.51-1.24C16 1.78 15.22 1 14.25 1c-.48 0-.92.2-1.24.51l-1.44 1.44 2.47 2.47 1.45-1.43zM1 4h7.76l2-2H1c-.55 0-1 .45-1 1s.45 1 1 1zm0 6c-.55 0-1 .45-1 1 0 .48.35.86.8.96L2.76 10H1zm9.95-6.43l-6.69 6.69 2.47 2.47 6.69-6.69-2.47-2.47zm4.25 2.47L13.24 8H15c.55 0 1-.45 1-1 0-.48-.35-.86-.8-.96zM2 15l3.86-1.39-2.46-2.44L2 15zm13-5h-3.76l-2 2H15c.55 0 1-.45 1-1s-.45-1-1-1z"
-              fillRule="evenodd"
+            <div
+              className="bp3-tab-indicator"
             />
-          </svg>
-        </span>
-        Playground
-      </div>
-      <div
-        className="PipelineNav__PipelineTabContainer-sc-17q1pb-2 dVGOJK"
-        onClick={[Function]}
-      >
-        <span
-          className="bp3-icon bp3-icon-history"
-          icon="history"
-          style={
-            Object {
-              "paddingRight": 8,
-            }
-          }
-        >
-          <svg
-            data-icon="history"
-            height={16}
-            viewBox="0 0 16 16"
-            width={16}
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Overview"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Overview"
+            id="bp3-tab-title_undefined_Overview"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
           >
-            <desc>
-              history
-            </desc>
-            <path
-              d="M8 3c-.55 0-1 .45-1 1v4c0 .28.11.53.29.71l2 2a1.003 1.003 0 001.42-1.42L9 7.59V4c0-.55-.45-1-1-1zm0-3a7.95 7.95 0 00-6 2.74V1c0-.55-.45-1-1-1S0 .45 0 1v4c0 .55.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1H3.54C4.64 2.78 6.23 2 8 2c3.31 0 6 2.69 6 6 0 2.61-1.67 4.81-4 5.63v-.01c-.63.23-1.29.38-2 .38-3.31 0-6-2.69-6-6 0-.55-.45-1-1-1s-1 .45-1 1c0 4.42 3.58 8 8 8 .34 0 .67-.03 1-.07.02 0 .04-.01.06-.01C12.98 15.4 16 12.06 16 8c0-4.42-3.58-8-8-8z"
-              fillRule="evenodd"
-            />
-          </svg>
-        </span>
-        Runs
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/overview"
+              onClick={[Function]}
+            >
+              Overview
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Definition"
+            aria-disabled={false}
+            aria-expanded={true}
+            aria-selected={true}
+            className="bp3-tab"
+            data-tab-id="Definition"
+            id="bp3-tab-title_undefined_Definition"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/"
+              onClick={[Function]}
+            >
+              Definition
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Playground"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Playground"
+            id="bp3-tab-title_undefined_Playground"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/playground"
+              onClick={[Function]}
+            >
+              Playground
+            </a>
+          </div>
+          <div
+            aria-controls="bp3-tab-panel_undefined_Runs"
+            aria-disabled={false}
+            aria-expanded={false}
+            aria-selected={false}
+            className="bp3-tab"
+            data-tab-id="Runs"
+            id="bp3-tab-title_undefined_Runs"
+            onClick={[Function]}
+            role="tab"
+            tabIndex={0}
+          >
+            <a
+              href="/pipeline/airline_demo_ingest_pipeline/runs"
+              onClick={[Function]}
+            >
+              Runs
+            </a>
+          </div>
+        </div>
       </div>
-      <div
-        style={
-          Object {
-            "flex": 1,
-          }
-        }
-      />
     </div>
     <div
-      className="SplitPanelContainer__Container-wb7tmo-4 NIhjH"
+      className="SplitPanelContainer__Container-wb7tmo-4 dWYQVO"
       id="split-panel-container"
     >
       <div
@@ -21878,51 +22386,60 @@ exports[`renders without error 1`] = `
             }
           }
         >
-          <span
-            className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 bzRNkJ"
+          <ul
+            className="bp3-overflow-list bp3-breadcrumbs"
           >
-            <span
-              className="bp3-popover-target"
-              onClick={[Function]}
-            >
-              <div
-                className=""
-                onKeyDown={[Function]}
+            <li>
+              <span
+                className="bp3-popover-wrapper PipelineJumpComponents__StringSelectNoIntrinsicWidth-sc-1t8t6j9-0 dqhTZz"
               >
-                <button
-                  className="bp3-button"
-                  onKeyDown={[Function]}
-                  onKeyUp={[Function]}
-                  type="button"
+                <span
+                  className="bp3-popover-target"
+                  onClick={[Function]}
                 >
-                  <span
-                    className="bp3-button-text"
+                  <div
+                    className=""
+                    onKeyDown={[Function]}
                   >
-                    Select a Solid...
-                  </span>
-                  <span
-                    className="bp3-icon bp3-icon-double-caret-vertical"
-                    icon="double-caret-vertical"
-                  >
-                    <svg
-                      data-icon="double-caret-vertical"
-                      height={16}
-                      viewBox="0 0 16 16"
-                      width={16}
+                    <button
+                      className="bp3-button"
+                      onKeyDown={[Function]}
+                      onKeyUp={[Function]}
+                      type="button"
                     >
-                      <desc>
-                        double-caret-vertical
-                      </desc>
-                      <path
-                        d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
-                        fillRule="evenodd"
-                      />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-            </span>
-          </span>
+                      <span
+                        className="bp3-button-text"
+                      >
+                        Select a Solid...
+                      </span>
+                      <span
+                        className="bp3-icon bp3-icon-double-caret-vertical"
+                        icon="double-caret-vertical"
+                      >
+                        <svg
+                          data-icon="double-caret-vertical"
+                          height={16}
+                          viewBox="0 0 16 16"
+                          width={16}
+                        >
+                          <desc>
+                            double-caret-vertical
+                          </desc>
+                          <path
+                            d="M5 7h6a1.003 1.003 0 00.71-1.71l-3-3C8.53 2.11 8.28 2 8 2s-.53.11-.71.29l-3 3A1.003 1.003 0 005 7zm6 2H5a1.003 1.003 0 00-.71 1.71l3 3c.18.18.43.29.71.29s.53-.11.71-.29l3-3A1.003 1.003 0 0011 9z"
+                            fillRule="evenodd"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
+                </span>
+              </span>
+            </li>
+            <div
+              className="bp3-overflow-list-spacer"
+            />
+          </ul>
         </div>
         <div
           className="PipelineExplorer__PipelineGraphQueryInputContainer-sc-188h86i-7 jtPUxr"
@@ -25815,7 +26332,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 eXOfSb"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>

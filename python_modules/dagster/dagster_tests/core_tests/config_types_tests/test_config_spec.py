@@ -13,55 +13,55 @@ from dagster import (
 def test_kitchen_sink():
     @solid(
         config_schema={
-            'str_field': str,
-            'int_field': int,
-            'list_int': [int],
-            'list_list_int': [[int]],
-            'dict_field': {'a_string': str},
-            'list_dict_field': [{'an_int': int}],
-            'selector_of_things': Selector(
-                {'select_list_dict_field': [{'an_int': int}], 'select_int': int}
+            "str_field": str,
+            "int_field": int,
+            "list_int": [int],
+            "list_list_int": [[int]],
+            "dict_field": {"a_string": str},
+            "list_dict_field": [{"an_int": int}],
+            "selector_of_things": Selector(
+                {"select_list_dict_field": [{"an_int": int}], "select_int": int}
             ),
             # this is a good argument to use () instead of [] for type parameterization in
             # the config system
-            'optional_list_of_optional_string': Noneable([Noneable(str)]),
+            "optional_list_of_optional_string": Noneable([Noneable(str)]),
         }
     )
     def kitchen_sink(context):
         return context.solid_config
 
     solid_config_one = {
-        'str_field': 'kjf',
-        'int_field': 2,
-        'list_int': [3],
-        'list_list_int': [[1], [2, 3]],
-        'dict_field': {'a_string': 'kdjfkd'},
-        'list_dict_field': [{'an_int': 2}, {'an_int': 4}],
-        'selector_of_things': {'select_int': 3},
-        'optional_list_of_optional_string': ['foo', None],
+        "str_field": "kjf",
+        "int_field": 2,
+        "list_int": [3],
+        "list_list_int": [[1], [2, 3]],
+        "dict_field": {"a_string": "kdjfkd"},
+        "list_dict_field": [{"an_int": 2}, {"an_int": 4}],
+        "selector_of_things": {"select_int": 3},
+        "optional_list_of_optional_string": ["foo", None],
     }
 
     assert (
         execute_solid(
-            kitchen_sink, run_config={'solids': {'kitchen_sink': {'config': solid_config_one}}},
+            kitchen_sink, run_config={"solids": {"kitchen_sink": {"config": solid_config_one}}},
         ).output_value()
         == solid_config_one
     )
 
     solid_config_two = {
-        'str_field': 'kjf',
-        'int_field': 2,
-        'list_int': [3],
-        'list_list_int': [[1], [2, 3]],
-        'dict_field': {'a_string': 'kdjfkd'},
-        'list_dict_field': [{'an_int': 2}, {'an_int': 4}],
-        'selector_of_things': {'select_list_dict_field': [{'an_int': 5}]},
-        'optional_list_of_optional_string': None,
+        "str_field": "kjf",
+        "int_field": 2,
+        "list_int": [3],
+        "list_list_int": [[1], [2, 3]],
+        "dict_field": {"a_string": "kdjfkd"},
+        "list_dict_field": [{"an_int": 2}, {"an_int": 4}],
+        "selector_of_things": {"select_list_dict_field": [{"an_int": 5}]},
+        "optional_list_of_optional_string": None,
     }
 
     assert (
         execute_solid(
-            kitchen_sink, run_config={'solids': {'kitchen_sink': {'config': solid_config_two}}},
+            kitchen_sink, run_config={"solids": {"kitchen_sink": {"config": solid_config_two}}},
         ).output_value()
         == solid_config_two
     )
@@ -72,22 +72,22 @@ def test_builtin_dict():
 
     @solid(config_schema=dict)
     def builtin_dict_solid(context):
-        executed['yup'] = True
+        executed["yup"] = True
         return context.solid_config
 
     assert isinstance(builtin_dict_solid.config_schema.config_type, Permissive)
 
     assert execute_solid(
-        builtin_dict_solid, run_config={'solids': {'builtin_dict_solid': {'config': {'a': 'b'}}}}
-    ).output_value() == {'a': 'b'}
+        builtin_dict_solid, run_config={"solids": {"builtin_dict_solid": {"config": {"a": "b"}}}}
+    ).output_value() == {"a": "b"}
 
-    assert executed['yup']
+    assert executed["yup"]
 
 
 def test_bad_solid_config_argument():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config_schema='dkjfkd')
+        @solid(config_schema="dkjfkd")
         def _bad_config(_):
             pass
 
@@ -99,7 +99,7 @@ def test_bad_solid_config_argument():
 def test_bad_solid_config_argument_nested():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config_schema={'field': 'kdjkfjd'})
+        @solid(config_schema={"field": "kdjkfjd"})
         def _bad_config(_):
             pass
 
@@ -112,7 +112,7 @@ def test_bad_solid_config_argument_nested():
 def test_bad_solid_config_argument_list_wrong_length():
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config_schema={'bad_list': []})
+        @solid(config_schema={"bad_list": []})
         def _bad_list_config(_):
             pass
 
@@ -127,7 +127,7 @@ def test_bad_solid_config_argument_list_bad_item():
 
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config_schema={'bad_list': ['kdjfkd']})
+        @solid(config_schema={"bad_list": ["kdjfkd"]})
         def _bad_list_config(_):
             pass
 
@@ -143,7 +143,7 @@ def test_bad_solid_config_argument_list_bad_nested_item():
 
     with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
 
-        @solid(config_schema={'bad_nested_list': [{'bad_field': 'kjdkfd'}]})
+        @solid(config_schema={"bad_nested_list": [{"bad_field": "kjdkfd"}]})
         def _bad_list_config(_):
             pass
 

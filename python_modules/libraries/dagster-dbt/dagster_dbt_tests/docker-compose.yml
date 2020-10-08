@@ -1,0 +1,19 @@
+version: "3.7"
+
+services:
+  test-postgres-db-dbt:
+    image: postgres:11
+    container_name: test-postgres-db-dbt
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: "test"
+      POSTGRES_USER: "test"
+      POSTGRES_DB: "test"
+    networks:
+      - postgres
+
+networks:
+  postgres:
+    driver: bridge
+    name: postgres

@@ -8,7 +8,7 @@ from .format_error import format_error_with_stack_trace
 
 
 class DagsterSubscriptionServer(GeventSubscriptionServer):
-    '''Subscription server that is able to handle non-subscription commands'''
+    """Subscription server that is able to handle non-subscription commands"""
 
     format_error = staticmethod(format_error_with_stack_trace)
 
@@ -18,8 +18,8 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
 
     def execute(self, request_context, params):
         # https://github.com/graphql-python/graphql-ws/issues/7
-        params['context_value'] = request_context
-        params['middleware'] = self.middleware
+        params["context_value"] = request_context
+        params["middleware"] = self.middleware
         return super(DagsterSubscriptionServer, self).execute(request_context, params)
 
     def send_execution_result(self, connection_context, op_id, execution_result):
@@ -71,7 +71,7 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
             if not operation:
                 # there is no operation, we are just using the connection context for bookkeeping
                 pass
-            elif callable(getattr(operation, 'dispose', None)):
+            elif callable(getattr(operation, "dispose", None)):
                 # handle the generic async iterator case
                 operation.dispose()
             connection_context.remove_operation(op_id)
@@ -83,7 +83,7 @@ class DagsterSubscriptionServer(GeventSubscriptionServer):
     def execution_result_to_dict(self, execution_result):
         result = OrderedDict()
         if execution_result.data:
-            result['data'] = execution_result.data
+            result["data"] = execution_result.data
         if execution_result.errors:
-            result['errors'] = [self.format_error(error) for error in execution_result.errors]
+            result["errors"] = [self.format_error(error) for error in execution_result.errors]
         return result

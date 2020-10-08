@@ -69,7 +69,7 @@ def wait_for_pod(
 
 
 def filter_dagster_events_from_pod_logs(log_lines):
-    '''
+    """
     Filters the raw log lines from a dagster-cli invocation to return only the lines containing json.
 
      - Log lines don't necessarily come back in order
@@ -78,24 +78,24 @@ def filter_dagster_events_from_pod_logs(log_lines):
 
      TODO: replace with reading event logs from the DB
 
-    '''
-    check.list_param(log_lines, 'log_lines', str)
+    """
+    check.list_param(log_lines, "log_lines", str)
 
     coalesced_lines = []
     buffer = []
     in_split_line = False
     for line in log_lines:
         line = line.strip()
-        if not in_split_line and line.startswith('{'):
-            if line.endswith('}'):
+        if not in_split_line and line.startswith("{"):
+            if line.endswith("}"):
                 coalesced_lines.append(line)
             else:
                 buffer.append(line)
                 in_split_line = True
         elif in_split_line:
             buffer.append(line)
-            if line.endswith('}'):  # Note: hack, this may not have been the end of the full object
-                coalesced_lines.append(''.join(buffer))
+            if line.endswith("}"):  # Note: hack, this may not have been the end of the full object
+                coalesced_lines.append("".join(buffer))
                 buffer = []
                 in_split_line = False
 

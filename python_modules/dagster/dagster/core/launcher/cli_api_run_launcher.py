@@ -1,9 +1,8 @@
 import os
 import threading
-import time
 import weakref
 
-from dagster import check
+from dagster import check, seven
 from dagster.api.execute_run import cli_api_launch_run
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
@@ -22,7 +21,7 @@ def _is_alive(popen):
 
 
 class CliApiRunLauncher(RunLauncher, ConfigurableClass):
-    '''
+    """
     This run launcher launches a new process by invoking the command `dagster api execute_run`.
 
     This run launcher, the associated CLI, and the homegrown IPC mechanism used to communicate with
@@ -31,15 +30,15 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
     Instead, use the :py:class:`dagster.DefaultRunLauncher`, which is aware of instance- and
     repository-level options governing whether repositories should be loaded over the CLI or over
     GRPC, and able to switch between both.
-    '''
+    """
 
     def __init__(self, inst_data=None):
         self._instance_ref = None
         self._living_process_by_run_id = {}
         self._output_files_by_run_id = {}
         self._processes_lock = threading.Lock()
-        self._stopping = False
-        self._thread = None
+        self._cleanup_stop_event = None
+        self._cleanup_thread = None
         self._inst_data = inst_data
 
     @property
@@ -59,18 +58,14 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         return self._instance_ref() if self._instance_ref else None
 
     def initialize(self, instance):
-        check.inst_param(instance, 'instance', DagsterInstance)
-        check.invariant(self._instance is None, 'Must only call initialize once')
+        check.inst_param(instance, "instance", DagsterInstance)
+        check.invariant(self._instance is None, "Must only call initialize once")
 
         # Store a weakref to avoid a circular reference / enable GC
         self._instance_ref = weakref.ref(instance)
 
-        self._thread = threading.Thread(target=self._clock, args=())
-        self._thread.daemon = True
-        self._thread.start()
-
     def _generate_synthetic_error_from_crash(self, run):
-        message = 'Pipeline execution process for {run_id} unexpectedly exited.'.format(
+        message = "Pipeline execution process for {run_id} unexpectedly exited.".format(
             run_id=run.run_id
         )
         self._instance.report_engine_event(message, run, cls=self.__class__)
@@ -81,23 +76,24 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
             return {run_id: process for run_id, process in self._living_process_by_run_id.items()}
 
     def _clock(self):
-        '''
+        """
         This function polls the instance to synchronize it with the state of processes managed
         by this manager instance. On every tick (every 0.5 seconds currently) it checks for zombie
         processes
-        '''
-        while not self._stopping:
+        """
+        while True:
+            self._cleanup_stop_event.wait(SUBPROCESS_TICK)
+            if self._cleanup_stop_event.is_set():
+                break
             self._check_for_zombies()
 
-            time.sleep(SUBPROCESS_TICK)
-
     def _check_for_zombies(self):
-        '''
+        """
         Checks the current index of run_id => process and sees if any of them are dead. If they are,
         it queries the instance to see if the runs are in a proper terminal state (success or
         failure). If not, then we can assume that the underlying process died unexpected and clean
         everything. In either case, the dead process is removed from the run_id => process index.
-        '''
+        """
         runs_to_clear = []
 
         living_process_snapshot = self._living_process_snapshot()
@@ -132,13 +128,19 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
             del self._output_files_by_run_id[run_id]
 
     def launch_run(self, instance, run, external_pipeline):
-        '''Subclasses must implement this method.'''
+        """Subclasses must implement this method."""
 
-        check.inst_param(run, 'run', PipelineRun)
-        check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
+        if not self._cleanup_thread:
+            self._cleanup_stop_event = threading.Event()
+            self._cleanup_thread = threading.Thread(target=self._clock, args=())
+            self._cleanup_thread.daemon = True
+            self._cleanup_thread.start()
+
+        check.inst_param(run, "run", PipelineRun)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
         output_file = os.path.join(
-            get_system_temp_directory(), 'cli-api-execute-run-{}'.format(run.run_id)
+            get_system_temp_directory(), "cli-api-execute-run-{}".format(run.run_id)
         )
 
         process = cli_api_launch_run(
@@ -154,20 +156,26 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
 
         return run
 
-    def join(self):
-        # If this hasn't been initialize at all, we can just do a noop
+    def dispose(self):
+        # Stop the watcher thread
+        if self._cleanup_thread:
+            self._cleanup_stop_event.set()
+            self._cleanup_thread.join()
+            self._cleanup_thread = None
+            self._cleanup_stop_event = None
+
+    def join(self, timeout=15):
+        self.dispose()
+
+        # If this hasn't been initialized at all, we can just do a noop
         if not self._instance:
             return
-
-        # Stop the watcher tread
-        self._stopping = True
-        self._thread.join()
 
         # Wrap up all open executions
         with self._processes_lock:
             for run_id, process in self._living_process_by_run_id.items():
                 if _is_alive(process):
-                    _stdout, _std_error = process.communicate()
+                    seven.wait_for_process(process, timeout=timeout)
 
                 run = self._instance.get_run_by_id(run_id)
 
@@ -186,12 +194,12 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
             return self._living_process_by_run_id.get(run_id)
 
     def is_process_running(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
         process = self._get_process(run_id)
         return _is_alive(process) if process else False
 
     def can_terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         process = self._get_process(run_id)
 
@@ -204,20 +212,41 @@ class CliApiRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
     def terminate(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
+        if not self._instance:
+            return False
+
+        run = self._instance.get_run_by_id(run_id)
+        if not run:
+            return False
+
+        self._instance.report_engine_event(
+            message="Received pipeline termination request.", pipeline_run=run, cls=self.__class__
+        )
 
         process = self._get_process(run_id)
 
         if not process:
+            self._instance.report_engine_event(
+                message="Pipeline was not terminated since process is not found.",
+                pipeline_run=run,
+                cls=self.__class__,
+            )
             return False
 
         if not _is_alive(process):
+            self._instance.report_engine_event(
+                message="Pipeline was not terminated since process is not alive.",
+                pipeline_run=run,
+                cls=self.__class__,
+            )
             return False
 
         # Pipeline execution machinery is set up to gracefully
         # terminate and report to instance on KeyboardInterrupt
         interrupt_ipc_subprocess(process)
-        process.wait()
+        seven.wait_for_process(process, timeout=30)
+
         return True
 
     def get_active_run_count(self):

@@ -1,15 +1,15 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import PipelineColorScale from "./PipelineColorScale";
-import { IFullSolidLayout } from "./getFullSolidLayout";
-import { SolidNodeInvocationFragment } from "./types/SolidNodeInvocationFragment";
-import { SolidNodeDefinitionFragment } from "./types/SolidNodeDefinitionFragment";
-import { SVGFlowLayoutRect, SVGMonospaceText } from "./SVGComponents";
+import gql from 'graphql-tag';
+import * as React from 'react';
 
-import SolidTags, { ISolidTag } from "./SolidTags";
-import { SolidConfigPort } from "./SolidConfigPort";
-import { SolidIOBox, metadataForIO } from "./SolidIOBox";
-import { Edge } from "./highlighting";
+import {PipelineColorScale} from 'src/graph/PipelineColorScale';
+import {SVGFlowLayoutRect, SVGMonospaceText} from 'src/graph/SVGComponents';
+import {SolidConfigPort} from 'src/graph/SolidConfigPort';
+import {SolidIOBox, metadataForIO} from 'src/graph/SolidIOBox';
+import {SolidTags, ISolidTag} from 'src/graph/SolidTags';
+import {IFullSolidLayout} from 'src/graph/getFullSolidLayout';
+import {Edge} from 'src/graph/highlighting';
+import {SolidNodeDefinitionFragment} from 'src/graph/types/SolidNodeDefinitionFragment';
+import {SolidNodeInvocationFragment} from 'src/graph/types/SolidNodeInvocationFragment';
 
 interface ISolidNodeProps {
   layout: IFullSolidLayout;
@@ -27,21 +27,21 @@ interface ISolidNodeProps {
 }
 
 const SELECTED_STYLE = {
-  stroke: "rgba(255, 69, 0, 1)",
-  fill: "rgba(255, 69, 0, 0.2)",
-  dashed: true
+  stroke: 'rgba(255, 69, 0, 1)',
+  fill: 'rgba(255, 69, 0, 0.2)',
+  dashed: true,
 };
 const FOCUSED_STYLE = {
-  stroke: "rgba(59, 141, 227, 1)",
-  fill: "rgba(59, 141, 227, 0.2)",
-  dashed: false
+  stroke: 'rgba(59, 141, 227, 1)',
+  fill: 'rgba(59, 141, 227, 0.2)',
+  dashed: false,
 };
 const TOOLTIP_STYLE = JSON.stringify({
   top: -20,
-  left: 5
+  left: 5,
 });
 
-export default class SolidNode extends React.Component<ISolidNodeProps> {
+export class SolidNode extends React.Component<ISolidNodeProps> {
   static fragments = {
     SolidNodeInvocationFragment: gql`
       fragment SolidNodeInvocationFragment on Solid {
@@ -137,21 +137,34 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           }
         }
       }
-    `
+    `,
   };
 
   shouldComponentUpdate(prevProps: ISolidNodeProps) {
-    if (prevProps.dim !== this.props.dim) return true;
-    if (prevProps.selected !== this.props.selected) return true;
-    if (prevProps.focused !== this.props.focused) return true;
-    if (prevProps.minified !== this.props.minified) return true;
-    if (prevProps.highlightedEdges !== this.props.highlightedEdges) return true;
-    if (prevProps.layout !== this.props.layout) return true;
+    if (prevProps.dim !== this.props.dim) {
+      return true;
+    }
+    if (prevProps.selected !== this.props.selected) {
+      return true;
+    }
+    if (prevProps.focused !== this.props.focused) {
+      return true;
+    }
+    if (prevProps.minified !== this.props.minified) {
+      return true;
+    }
+    if (prevProps.highlightedEdges !== this.props.highlightedEdges) {
+      return true;
+    }
+    if (prevProps.layout !== this.props.layout) {
+      return true;
+    }
     if (
       (prevProps.invocation && prevProps.invocation.name) !==
       (this.props.invocation && this.props.invocation.name)
-    )
+    ) {
       return true;
+    }
     return false;
   }
 
@@ -175,11 +188,11 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
 
   handleKindClicked = (e: React.MouseEvent) => {
     this.handleClick(e);
-    window.requestAnimationFrame(() => document.dispatchEvent(new Event("show-kind-info")));
+    window.requestAnimationFrame(() => document.dispatchEvent(new Event('show-kind-info')));
   };
 
-  renderSurroundingBox(style: { stroke: string; fill: string; dashed: boolean }) {
-    const { x, y, width, height } = this.props.layout.boundingBox;
+  renderSurroundingBox(style: {stroke: string; fill: string; dashed: boolean}) {
+    const {x, y, width, height} = this.props.layout.boundingBox;
     return (
       <rect
         x={x - 10}
@@ -195,18 +208,18 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   renderSolid() {
-    const { invocation, definition, layout, minified } = this.props;
-    const composite = definition.__typename === "CompositeSolidDefinition";
+    const {invocation, definition, layout, minified} = this.props;
+    const composite = definition.__typename === 'CompositeSolidDefinition';
 
     return (
       <SVGFlowLayoutRect
         {...layout.solid}
         fill={PipelineColorScale(
           composite
-            ? "solidComposite"
-            : invocation?.name.includes(".")
-            ? "solidCompositeChild"
-            : "solid"
+            ? 'solidComposite'
+            : invocation?.name.includes('.')
+            ? 'solidCompositeChild'
+            : 'solid',
         )}
         stroke="#979797"
         strokeWidth={1}
@@ -217,14 +230,14 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           size={minified ? 30 : 16}
           allowTwoLines={!minified}
           text={invocation ? invocation.name : definition.name}
-          fill={"#222"}
+          fill={'#222'}
         />
       </SVGFlowLayoutRect>
     );
   }
 
   public renderSolidCompositeIndicator() {
-    const { x, y, width, height } = this.props.layout.solid;
+    const {x, y, width, height} = this.props.layout.solid;
     return (
       <>
         <rect
@@ -232,7 +245,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           y={y - 6}
           width={width + 12}
           height={height + 12}
-          fill={PipelineColorScale("solidComposite")}
+          fill={PipelineColorScale('solidComposite')}
           stroke="#979797"
           strokeWidth={1}
         />
@@ -241,7 +254,7 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
           y={y - 3}
           width={width + 6}
           height={height + 6}
-          fill={PipelineColorScale("solidComposite")}
+          fill={PipelineColorScale('solidComposite')}
           stroke="#979797"
           strokeWidth={1}
         />
@@ -250,25 +263,25 @@ export default class SolidNode extends React.Component<ISolidNodeProps> {
   }
 
   public render() {
-    const { definition, invocation, layout, dim, focused, selected, minified } = this.props;
-    const { metadata } = definition;
-    const { x, y, width, height } = layout.solid;
+    const {definition, invocation, layout, dim, focused, selected, minified} = this.props;
+    const {metadata} = definition;
+    const {x, y, width, height} = layout.solid;
 
     let configField = null;
-    if (definition.__typename === "SolidDefinition") {
+    if (definition.__typename === 'SolidDefinition') {
       configField = definition.configField;
     }
 
     const tags: ISolidTag[] = [];
 
-    const kind = metadata.find(m => m.key === "kind");
-    const composite = definition.__typename === "CompositeSolidDefinition";
+    const kind = metadata.find((m) => m.key === 'kind');
+    const composite = definition.__typename === 'CompositeSolidDefinition';
 
     if (kind) {
-      tags.push({ label: kind.value, onClick: this.handleKindClicked });
+      tags.push({label: kind.value, onClick: this.handleKindClicked});
     }
     if (composite) {
-      tags.push({ label: "Expand", onClick: this.handleEnterComposite });
+      tags.push({label: 'Expand', onClick: this.handleEnterComposite});
     }
 
     return (

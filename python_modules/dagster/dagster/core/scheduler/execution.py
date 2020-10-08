@@ -11,28 +11,28 @@ class ScheduledExecutionResult:
 
 @whitelist_for_serdes
 class ScheduledExecutionSkipped(
-    namedtuple('_ScheduledExecutionSkipped', ''), ScheduledExecutionResult
+    namedtuple("_ScheduledExecutionSkipped", ""), ScheduledExecutionResult
 ):
     pass
 
 
 @whitelist_for_serdes
 class ScheduledExecutionFailed(
-    namedtuple('_ScheduledExecutionFailed', 'run_id errors'), ScheduledExecutionResult
+    namedtuple("_ScheduledExecutionFailed", "run_id errors"), ScheduledExecutionResult
 ):
     def __new__(cls, run_id, errors):
         return super(ScheduledExecutionFailed, cls).__new__(
             cls,
-            run_id=check.opt_str_param(run_id, 'run_id'),
-            errors=check.list_param(errors, 'errors', of_type=SerializableErrorInfo),
+            run_id=check.opt_str_param(run_id, "run_id"),
+            errors=check.list_param(errors, "errors", of_type=SerializableErrorInfo),
         )
 
 
 @whitelist_for_serdes
 class ScheduledExecutionSuccess(
-    namedtuple('_ScheduledExecutionSuccess', 'run_id'), ScheduledExecutionResult
+    namedtuple("_ScheduledExecutionSuccess", "run_id"), ScheduledExecutionResult
 ):
     def __new__(cls, run_id):
         return super(ScheduledExecutionSuccess, cls).__new__(
-            cls, run_id=check.str_param(run_id, 'run_id')
+            cls, run_id=check.str_param(run_id, "run_id")
         )

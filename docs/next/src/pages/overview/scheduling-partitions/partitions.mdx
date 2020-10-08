@@ -1,13 +1,27 @@
 import { DynamicMetaTags } from 'components/MetaTags';
 import PyObject from 'components/PyObject';
 
-<DynamicMetaTags title="Schedules | Dagster" />
+<DynamicMetaTags
+  title="Schedules - Partition Sets | Dagster"
+  description="Dagster provides the _partition set_ abstraction for pipelines where each run deals with
+    a subset of data."
+/>
 
 # Partition Sets
 
-Dagster provides the _partition set_ abstraction to make it easy to partition config for a pipeline.
-The most common dimension pipelines are partitioned by is time. Other examples of partitions could be
-countries, users, IDs, etc.
+Dagster provides the _partition set_ abstraction for pipelines where each run deals with
+a subset of data.
+
+Users define a set of logical "partitions", usually time windows, along with a scheme for building
+pipeline config from a partition name.  With this, they can kick off a pipeline run or set of
+pipeline runs by simply selecting a partition or set of partitions.
+
+Partitions have two main uses:
+- Scheduling - e.g. a pipeline runs each day and processes the data that arrived during the
+  previous day as a single partition.
+- Backfills - all at once, kick off a pipeline run per partition, e.g. to reprocess the data that
+  arrived for each day in the history.
+
 
 ## Defining a Partition Set
 
@@ -26,7 +40,8 @@ For example, we have a pipeline that computes metrics data for a given day of th
 ```python literalinclude caption=pipeline.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/pipeline.py
 lineno-start:
-lines:4-12
+startAfter:start_pipeline_marker_0
+endBefore:end_pipeline_marker_0
 ```
 
 The solid `process_data_for_day` takes, as config, a string `day_of_week`. This piece of config will
@@ -43,7 +58,8 @@ partitions and how to define the run config for a given partition.
 ```python literalinclude caption=partition_definition.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/partition_definition.py
 lineno-start:
-lines:4-26
+startAfter:start_partition_definition_marker_0
+endBefore:end_partition_definition_marker_0
 ```
 
 ## Using Partitions in Dagit

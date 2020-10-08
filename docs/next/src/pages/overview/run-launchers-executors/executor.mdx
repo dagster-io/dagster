@@ -1,14 +1,16 @@
 import PyObject from 'components/PyObject';
 
-# Executor
+# Executors
 
 Executors are responsible for executing steps within a pipeline run. Once a run has launched
 and the run coordinator has been allocated and started, the executor assumes responsibility
-for execution.
+for execution. Executors can range from single-process serial executors all the way to managing
+per-step computational resources with a sophisticated control plane.
 
 What executor is used is determined by two things. First, modes provide the _possible_ set of
-executors one can use. In order to set this use the `executor_defs` property on <PyObject module="dagster" object="ModeDefinition" />
-Second, the `execution` config section of the run config determines the actual executor.
+executors one can use. In order to set this use the `executor_defs` property on <PyObject module="dagster" object="ModeDefinition" />.
+Second, the `execution` config section of the
+run config determines the actual executor.
 
 Example executors include:
 
@@ -21,6 +23,8 @@ Example executors include:
   within a dask task.
 - <PyObject module="dagster_celery" object="celery_executor" />: Executes each
   step within a celery task.
+- <PyObject module="dagster_celery_docker" object="celery_docker_executor" />:
+  Executes each step within a Docker container.
 - <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />:
   Executes each step within a ephemeral kubernetes pod, using celery as a
   control plane for prioritization, queuing, and so forth.

@@ -64,11 +64,11 @@ class TestDagsterChecker(pylint.testutils.CheckerTestCase):
         ):
             self.checker.visit_yield(yield_node)
 
-    @pytest.mark.parametrize('statement', ['print(abc)', 'def afunc():\n    print(abc)'])
+    @pytest.mark.parametrize("statement", ["print(abc)", "def afunc():\n    print(abc)"])
     def test_print_call(self, statement):
         node = astroid.extract_node(statement)
         self.walk(node)
-        assert [msg.msg_id for msg in self.linter.release_messages()] == ['print-call']
+        assert [msg.msg_id for msg in self.linter.release_messages()] == ["print-call"]
 
     def test_daemon_thread(self):
         daemon_thread_node = astroid.extract_node(

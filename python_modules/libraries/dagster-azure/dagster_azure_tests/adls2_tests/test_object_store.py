@@ -10,18 +10,18 @@ def test_adls2_object_store(
     adls2_fake_client = FakeADLS2ServiceClient(storage_account, credential)
     blob_fake_client = FakeBlobServiceClient(storage_account, credential)
 
-    key = 'foo'
+    key = "foo"
     # Uses mock ADLS2 client
     adls2_obj_store = ADLS2ObjectStore(
         file_system, adls2_client=adls2_fake_client, blob_client=blob_fake_client
     )
     res = adls2_obj_store.set_object(key, True, DEFAULT_SERIALIZATION_STRATEGY)
-    assert res.key == 'abfss://{fs}@{account}.dfs.core.windows.net/{key}'.format(
+    assert res.key == "abfss://{fs}@{account}.dfs.core.windows.net/{key}".format(
         fs=file_system, account=storage_account, key=key
     )
 
     adls2_obj_store.set_object(key, True, DEFAULT_SERIALIZATION_STRATEGY)
-    assert 'Removing existing ADLS2 key' in caplog.text
+    assert "Removing existing ADLS2 key" in caplog.text
 
     assert adls2_obj_store.has_object(key)
     assert adls2_obj_store.get_object(key, DEFAULT_SERIALIZATION_STRATEGY).obj is True
@@ -36,6 +36,6 @@ def test_adls2_object_store(
 
     assert adls2_obj_store.uri_for_key(
         key
-    ) == 'abfss://{fs}@{account}.dfs.core.windows.net/{key}'.format(
+    ) == "abfss://{fs}@{account}.dfs.core.windows.net/{key}".format(
         fs=file_system, account=storage_account, key=key
     )

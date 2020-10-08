@@ -32,11 +32,11 @@ from dagster.utils.test import get_temp_dir
 
 
 def test_composite_basic_execution():
-    a_source = define_stub_solid('A_source', [input_set('A_input')])
-    node_a = create_root_solid('A')
-    node_b = create_solid_with_deps('B', node_a)
-    node_c = create_solid_with_deps('C', node_a)
-    node_d = create_solid_with_deps('D', node_b, node_c)
+    a_source = define_stub_solid("A_source", [input_set("A_input")])
+    node_a = create_root_solid("A")
+    node_b = create_solid_with_deps("B", node_a)
+    node_c = create_solid_with_deps("C", node_a)
+    node_d = create_solid_with_deps("D", node_b, node_c)
 
     @composite_solid
     def diamond_composite():
@@ -48,8 +48,8 @@ def test_composite_basic_execution():
 
     @pipeline
     def test_pipeline_double():
-        diamond_composite.alias('D1')()
-        diamond_composite.alias('D2')()
+        diamond_composite.alias("D1")()
+        diamond_composite.alias("D2")()
 
     result = execute_pipeline(test_pipeline_double)
     assert result.success
@@ -88,8 +88,8 @@ def test_composite_config():
 
     @solid(config_schema=Field(String))
     def configured(context):
-        called['configured'] = True
-        assert context.solid_config == 'yes'
+        called["configured"] = True
+        assert context.solid_config == "yes"
 
     @composite_solid
     def inner():
@@ -105,18 +105,18 @@ def test_composite_config():
 
     result = execute_pipeline(
         composites_pipeline,
-        {'solids': {'outer': {'solids': {'inner': {'solids': {'configured': {'config': 'yes'}}}}}}},
+        {"solids": {"outer": {"solids": {"inner": {"solids": {"configured": {"config": "yes"}}}}}}},
     )
     assert result.success
-    assert called['configured']
+    assert called["configured"]
 
 
 def test_composite_config_input():
     called = {}
 
-    @solid(input_defs=[InputDefinition('one')])
+    @solid(input_defs=[InputDefinition("one")])
     def node_a(_context, one):
-        called['node_a'] = True
+        called["node_a"] = True
         assert one == 1
 
     @composite_solid
@@ -134,23 +134,23 @@ def test_composite_config_input():
     result = execute_pipeline(
         composites_pipeline,
         {
-            'solids': {
-                'outer': {
-                    'solids': {'inner': {'solids': {'node_a': {'inputs': {'one': {'value': 1}}}}}}
+            "solids": {
+                "outer": {
+                    "solids": {"inner": {"solids": {"node_a": {"inputs": {"one": {"value": 1}}}}}}
                 }
             }
         },
     )
     assert result.success
-    assert called['node_a']
+    assert called["node_a"]
 
 
 def test_mapped_composite_config_input():
     called = {}
 
-    @solid(input_defs=[InputDefinition('one')])
+    @solid(input_defs=[InputDefinition("one")])
     def node_a(_context, one):
-        called['node_a'] = True
+        called["node_a"] = True
         assert one == 1
 
     @composite_solid
@@ -158,53 +158,53 @@ def test_mapped_composite_config_input():
         node_a(inner_one)
 
     outer = CompositeSolidDefinition(
-        name='outer',
+        name="outer",
         solid_defs=[inner],
-        input_mappings=[InputDefinition('outer_one').mapping_to('inner', 'inner_one')],
+        input_mappings=[InputDefinition("outer_one").mapping_to("inner", "inner_one")],
     )
-    pipe = PipelineDefinition(name='composites_pipeline', solid_defs=[outer])
+    pipe = PipelineDefinition(name="composites_pipeline", solid_defs=[outer])
 
-    result = execute_pipeline(pipe, {'solids': {'outer': {'inputs': {'outer_one': {'value': 1}}}}})
+    result = execute_pipeline(pipe, {"solids": {"outer": {"inputs": {"outer_one": {"value": 1}}}}})
     assert result.success
-    assert called['node_a']
+    assert called["node_a"]
 
 
 def test_composite_io_mapping():
-    a_source = define_stub_solid('A_source', [input_set('A_input')])
-    node_a = create_root_solid('A')
+    a_source = define_stub_solid("A_source", [input_set("A_input")])
+    node_a = create_root_solid("A")
 
-    node_b = create_solid_with_deps('B', node_a)
-    node_c = create_solid_with_deps('C', node_b)
+    node_b = create_solid_with_deps("B", node_a)
+    node_c = create_solid_with_deps("C", node_b)
 
     comp_a_inner = CompositeSolidDefinition(
-        name='comp_a_inner',
+        name="comp_a_inner",
         solid_defs=[a_source, node_a],
-        dependencies={'A': {'A_input': DependencyDefinition('A_source')}},
-        output_mappings=[OutputDefinition().mapping_from('A')],
+        dependencies={"A": {"A_input": DependencyDefinition("A_source")}},
+        output_mappings=[OutputDefinition().mapping_from("A")],
     )
 
     comp_a_outer = CompositeSolidDefinition(
-        name='comp_a_outer',
+        name="comp_a_outer",
         solid_defs=[comp_a_inner],
-        output_mappings=[OutputDefinition().mapping_from('comp_a_inner')],
+        output_mappings=[OutputDefinition().mapping_from("comp_a_inner")],
     )
 
     comp_bc_inner = CompositeSolidDefinition(
-        name='comp_bc_inner',
+        name="comp_bc_inner",
         solid_defs=[node_b, node_c],
-        dependencies={'C': {'B': DependencyDefinition('B')}},
+        dependencies={"C": {"B": DependencyDefinition("B")}},
         input_mappings=[
-            InputDefinition(name='inner_B_in').mapping_to(solid_name='B', input_name='A')
+            InputDefinition(name="inner_B_in").mapping_to(solid_name="B", input_name="A")
         ],
     )
 
     comp_bc_outer = CompositeSolidDefinition(
-        name='comp_bc_outer',
+        name="comp_bc_outer",
         solid_defs=[comp_bc_inner],
         dependencies={},
         input_mappings=[
-            InputDefinition(name='outer_B_in').mapping_to(
-                solid_name='comp_bc_inner', input_name='inner_B_in'
+            InputDefinition(name="outer_B_in").mapping_to(
+                solid_name="comp_bc_inner", input_name="inner_B_in"
             )
         ],
     )
@@ -218,14 +218,14 @@ def test_composite_io_mapping():
 
 
 def test_io_error_is_decent():
-    with pytest.raises(DagsterInvalidDefinitionError, match='mapping_to'):
+    with pytest.raises(DagsterInvalidDefinitionError, match="mapping_to"):
         CompositeSolidDefinition(
-            name='comp_a_outer', solid_defs=[], input_mappings=[InputDefinition('should_be_mapped')]
+            name="comp_a_outer", solid_defs=[], input_mappings=[InputDefinition("should_be_mapped")]
         )
 
-    with pytest.raises(DagsterInvalidDefinitionError, match='mapping_from'):
+    with pytest.raises(DagsterInvalidDefinitionError, match="mapping_from"):
         CompositeSolidDefinition(
-            name='comp_a_outer', solid_defs=[], output_mappings=[OutputDefinition()]
+            name="comp_a_outer", solid_defs=[], output_mappings=[OutputDefinition()]
         )
 
 
@@ -250,7 +250,7 @@ def test_types_descent():
     def layered_types():
         outer_solid()
 
-    assert layered_types.has_dagster_type('Foo')
+    assert layered_types.has_dagster_type("Foo")
 
 
 def test_deep_mapping():
@@ -260,17 +260,17 @@ def test_deep_mapping():
 
     @lambda_solid(output_def=OutputDefinition(String))
     def emit_foo():
-        return 'foo'
+        return "foo"
 
-    @composite_solid(output_defs=[OutputDefinition(String, 'z')])
+    @composite_solid(output_defs=[OutputDefinition(String, "z")])
     def az(a):
         return echo(a)
 
-    @composite_solid(output_defs=[OutputDefinition(String, 'y')])
+    @composite_solid(output_defs=[OutputDefinition(String, "y")])
     def by(b):
         return az(b)
 
-    @composite_solid(output_defs=[OutputDefinition(String, 'x')])
+    @composite_solid(output_defs=[OutputDefinition(String, "x")])
     def cx(c):
         return by(c)
 
@@ -279,7 +279,7 @@ def test_deep_mapping():
         echo(cx(emit_foo()))
 
     result = execute_pipeline(nested)
-    assert result.result_for_solid('echo').output_value() == 'foo'
+    assert result.result_for_solid("echo").output_value() == "foo"
 
 
 def test_mapping_parrallel_composite():
@@ -293,8 +293,8 @@ def test_mapping_parrallel_composite():
 
     @lambda_solid(
         input_defs=[
-            InputDefinition(dagster_type=int, name='a'),
-            InputDefinition(dagster_type=int, name='b'),
+            InputDefinition(dagster_type=int, name="a"),
+            InputDefinition(dagster_type=int, name="b"),
         ],
         output_def=OutputDefinition(int),
     )
@@ -303,21 +303,21 @@ def test_mapping_parrallel_composite():
 
     @composite_solid(
         output_defs=[
-            OutputDefinition(dagster_type=int, name='two'),
-            OutputDefinition(dagster_type=int, name='four'),
+            OutputDefinition(dagster_type=int, name="two"),
+            OutputDefinition(dagster_type=int, name="four"),
         ]
     )
     def composite_adder():
         result_one = one()
         result_two = two()
 
-        calc_two = adder.alias('calc_two')
-        calc_four = adder.alias('calc_four')
+        calc_two = adder.alias("calc_two")
+        calc_four = adder.alias("calc_four")
 
         calc_result_two = calc_two(result_one, result_one)
         calc_result_four = calc_four(result_two, result_two)
 
-        return {'two': calc_result_two, 'four': calc_result_four}
+        return {"two": calc_result_two, "four": calc_result_four}
 
     @lambda_solid
     def assert_four(val):
@@ -351,12 +351,12 @@ def test_composite_config_driven_materialization():
         wrap_one()
 
     with get_temp_dir() as write_directory:
-        write_location = os.path.join(write_directory, 'wrap_one.json')
+        write_location = os.path.join(write_directory, "wrap_one.json")
         execute_pipeline(
             composite_config_driven_materialization_pipeline,
             run_config={
-                'solids': {
-                    'wrap_one': {'outputs': [{'result': {'json': {'path': write_location}}}]}
+                "solids": {
+                    "wrap_one": {"outputs": [{"result": {"json": {"path": write_location}}}]}
                 }
             },
         )
@@ -373,16 +373,16 @@ def test_mapping_errors():
         DagsterInvalidDefinitionError, match="references solid 'inner' which it does not contain"
     ):
         CompositeSolidDefinition(
-            name='bad',
+            name="bad",
             solid_defs=[echo],
-            input_mappings=[InputDefinition('mismatch').mapping_to('inner', 'foo')],
+            input_mappings=[InputDefinition("mismatch").mapping_to("inner", "foo")],
         )
 
     with pytest.raises(DagsterInvalidDefinitionError, match="no input named 'bar'"):
         CompositeSolidDefinition(
-            name='bad',
+            name="bad",
             solid_defs=[echo],
-            input_mappings=[InputDefinition('mismatch').mapping_to('echo', 'bar')],
+            input_mappings=[InputDefinition("mismatch").mapping_to("echo", "bar")],
         )
 
     with pytest.raises(
@@ -390,9 +390,9 @@ def test_mapping_errors():
         match="InputMapping source and destination must have the same type",
     ):
         CompositeSolidDefinition(
-            name='bad',
+            name="bad",
             solid_defs=[echo],
-            input_mappings=[InputDefinition('mismatch', str).mapping_to('echo', 'foo')],
+            input_mappings=[InputDefinition("mismatch", str).mapping_to("echo", "foo")],
         )
 
     with pytest.raises(
@@ -400,11 +400,11 @@ def test_mapping_errors():
         match="mappings with same definition name but different definitions",
     ):
         CompositeSolidDefinition(
-            name='bad',
+            name="bad",
             solid_defs=[echo],
             input_mappings=[
-                InputDefinition('mismatch').mapping_to('echo', 'foo'),
-                InputDefinition('mismatch').mapping_to('echo_2', 'foo'),
+                InputDefinition("mismatch").mapping_to("echo", "foo"),
+                InputDefinition("mismatch").mapping_to("echo_2", "foo"),
             ],
         )
 
@@ -412,16 +412,16 @@ def test_mapping_errors():
         DagsterInvalidDefinitionError, match="references solid 'inner' which it does not contain"
     ):
         CompositeSolidDefinition(
-            name='bad',
+            name="bad",
             solid_defs=[echo],
-            output_mappings=[OutputDefinition().mapping_from('inner', 'result')],
+            output_mappings=[OutputDefinition().mapping_from("inner", "result")],
         )
 
     with pytest.raises(DagsterInvalidDefinitionError, match="no output named 'return'"):
         CompositeSolidDefinition(
-            name='bad',
+            name="bad",
             solid_defs=[echo],
-            output_mappings=[OutputDefinition().mapping_from('echo', 'return')],
+            output_mappings=[OutputDefinition().mapping_from("echo", "return")],
         )
 
     with pytest.raises(
@@ -429,9 +429,9 @@ def test_mapping_errors():
         match="OutputMapping source and destination must have the same type",
     ):
         CompositeSolidDefinition(
-            name='bad',
+            name="bad",
             solid_defs=[echo],
-            output_mappings=[OutputDefinition(str).mapping_from('echo', 'result')],
+            output_mappings=[OutputDefinition(str).mapping_from("echo", "result")],
         )
 
 
@@ -447,7 +447,7 @@ def test_composite_skippable_output_result():
     @solid(output_defs=[OutputDefinition(Optional[float], name="foo_output", is_required=False)])
     def foo_solid(_, condition=False):
         if condition:
-            yield Output(1.0, 'foo_output')
+            yield Output(1.0, "foo_output")
 
     @composite_solid(
         output_defs=[

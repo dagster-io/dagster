@@ -2,14 +2,15 @@ import { DynamicMetaTags } from 'components/MetaTags';
 
 <DynamicMetaTags
   title="Deploying to AWS | Dagster"
-  description="Dagster is a system for building modern data applications."
+  description="To deploy Dagster to AWS, EC2 or ECS can host Dagit, RDS can store runs and events,
+  and S3 can act as intermediate storage."
 />
 
 # Deploying to AWS
 
 ## Hosting Dagit on EC2 or ECS
 
-To host dagit on a bare VM or in Docker on ECS, see [Running Dagit as a
+To host Dagit on a bare VM or in Docker on ECS, see [Running Dagit as a
 service](/deploying/local).
 
 ## Using RDS for run and event log storage
@@ -63,6 +64,10 @@ intermediate_storage:
     config:
       s3_bucket: your-s3-bucket-name
 ```
+
+The resource uses `boto` under the hood, so if you are accessing your private buckets you will
+need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables
+or follow one of the other boto authentication methods.
 
 With this in place, your pipeline runs will store intermediates on S3 in
 the location

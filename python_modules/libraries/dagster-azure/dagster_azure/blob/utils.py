@@ -33,4 +33,4 @@ def create_blob_client(storage_account, credential):
     return BlobServiceClient(account_url, credential)
 
 
-__all__ = ['create_blob_client', 'generate_blob_sas', 'BlobServiceClient', 'ResourceNotFoundError']
+__all__ = ["create_blob_client", "generate_blob_sas", "BlobServiceClient", "ResourceNotFoundError"]

@@ -6,12 +6,12 @@ def return_one(_):
     return 1
 
 
-@solid(input_defs=[InputDefinition('num', int)])
+@solid(input_defs=[InputDefinition("num", int)])
 def add_one_fan(_, num):
     return num + 1
 
 
-@solid(input_defs=[InputDefinition('nums', List[int])])
+@solid(input_defs=[InputDefinition("nums", List[int])])
 def sum_fan_in(_, nums):
     return sum(nums)
 
@@ -19,9 +19,9 @@ def sum_fan_in(_, nums):
 def construct_fan_in_level(source, level, fanout):
     fan_outs = []
     for i in range(0, fanout):
-        fan_outs.append(add_one_fan.alias('add_one_fan_{}_{}'.format(level, i))(source))
+        fan_outs.append(add_one_fan.alias("add_one_fan_{}_{}".format(level, i))(source))
 
-    return sum_fan_in.alias('sum_{}'.format(level))(fan_outs)
+    return sum_fan_in.alias("sum_{}".format(level))(fan_outs)
 
 
 def construct_level_pipeline(name, levels, fanout):
@@ -36,4 +36,4 @@ def construct_level_pipeline(name, levels, fanout):
     return _pipe
 
 
-fan_in_fan_out_pipeline = construct_level_pipeline('fan_in_fan_out_pipeline', levels=10, fanout=50)
+fan_in_fan_out_pipeline = construct_level_pipeline("fan_in_fan_out_pipeline", levels=10, fanout=50)

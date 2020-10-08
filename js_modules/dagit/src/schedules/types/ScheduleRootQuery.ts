@@ -14,6 +14,30 @@ export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_
   name: string;
 }
 
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
+  __typename: "CodePointerMetadata";
+  key: string;
+  value: string;
+}
+
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer {
+  __typename: "CodePointer";
+  metadata: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
+}
+
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin {
+  __typename: "PythonRepositoryOrigin";
+  codePointer: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer;
+  executablePath: string;
+}
+
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_GrpcRepositoryOrigin {
+  __typename: "GrpcRepositoryOrigin";
+  grpcUrl: string;
+}
+
+export type ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin = ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin | ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_GrpcRepositoryOrigin;
+
 export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
   pipelineName: string;
@@ -72,6 +96,7 @@ export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  repositoryOrigin: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin;
   repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;

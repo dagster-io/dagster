@@ -4,14 +4,14 @@ from dagster import Field, execute_pipeline, pipeline, solid
 @solid(
     config_schema={
         # can just use the expected type as short hand
-        'iterations': int,
+        "iterations": int,
         # otherwise use Field for optionality, defaults, and descriptions
-        'word': Field(str, is_required=False, default_value='hello'),
+        "word": Field(str, is_required=False, default_value="hello"),
     }
 )
 def config_example_solid(context):
-    for _ in range(context.solid_config['iterations']):
-        context.log.info(context.solid_config['word'])
+    for _ in range(context.solid_config["iterations"]):
+        context.log.info(context.solid_config["word"])
 
 
 @pipeline
@@ -28,12 +28,12 @@ def run_other_bad_example():
     # This will also fail to start since iterations is the wrong type
     execute_pipeline(
         config_example_pipeline,
-        run_config={'solids': {'config_example_solid': {'config': {'iterations': 'banana'}}}},
+        run_config={"solids": {"config_example_solid": {"config": {"iterations": "banana"}}}},
     )
 
 
 def run_good_example():
     return execute_pipeline(
         config_example_pipeline,
-        run_config={'solids': {'config_example_solid': {'config': {'iterations': 1}}}},
+        run_config={"solids": {"config_example_solid": {"config": {"iterations": 1}}}},
     )

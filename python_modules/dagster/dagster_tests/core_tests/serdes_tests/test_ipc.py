@@ -21,7 +21,7 @@ def wait_for_file(path, timeout=5):
         time.sleep(interval)
         total_time += interval
     if total_time >= timeout:
-        raise Exception('wait_for_file: timeout')
+        raise Exception("wait_for_file: timeout")
     time.sleep(interval)
 
 
@@ -32,24 +32,24 @@ def wait_for_process(pid, timeout=5):
         time.sleep(interval)
         total_time += interval
     if total_time >= timeout:
-        raise Exception('wait_for_process: timeout')
+        raise Exception("wait_for_process: timeout")
     # The following line can be removed to reliably provoke failures on Windows -- hypothesis
     # is that there's a race in psutil.Process which tells us a process is gone before it stops
     # contending for files
     time.sleep(interval)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def windows_legacy_stdio_env():
-    old_env_value = os.getenv('PYTHONLEGACYWINDOWSSTDIO')
+    old_env_value = os.getenv("PYTHONLEGACYWINDOWSSTDIO")
     try:
-        os.environ['PYTHONLEGACYWINDOWSSTDIO'] = '1'
+        os.environ["PYTHONLEGACYWINDOWSSTDIO"] = "1"
         yield
     finally:
         if old_env_value is not None:
-            os.environ['PYTHONLEGACYWINDOWSSTDIO'] = old_env_value
+            os.environ["PYTHONLEGACYWINDOWSSTDIO"] = old_env_value
         else:
-            del os.environ['PYTHONLEGACYWINDOWSSTDIO']
+            del os.environ["PYTHONLEGACYWINDOWSSTDIO"]
 
 
 def test_interrupt_ipc_subprocess():
@@ -58,7 +58,7 @@ def test_interrupt_ipc_subprocess():
             sleepy_process = open_ipc_subprocess(
                 [
                     sys.executable,
-                    file_relative_path(__file__, 'subprocess_with_interrupt_support.py'),
+                    file_relative_path(__file__, "subprocess_with_interrupt_support.py"),
                     started_sentinel,
                     interrupt_sentinel,
                 ]
@@ -66,8 +66,8 @@ def test_interrupt_ipc_subprocess():
             wait_for_file(started_sentinel)
             interrupt_ipc_subprocess(sleepy_process)
             wait_for_file(interrupt_sentinel)
-            with open(interrupt_sentinel, 'r') as fd:
-                assert fd.read().startswith('received_keyboard_interrupt')
+            with open(interrupt_sentinel, "r") as fd:
+                assert fd.read().startswith("received_keyboard_interrupt")
 
 
 def test_interrupt_ipc_subprocess_by_pid():
@@ -76,7 +76,7 @@ def test_interrupt_ipc_subprocess_by_pid():
             sleepy_process = open_ipc_subprocess(
                 [
                     sys.executable,
-                    file_relative_path(__file__, 'subprocess_with_interrupt_support.py'),
+                    file_relative_path(__file__, "subprocess_with_interrupt_support.py"),
                     started_sentinel,
                     interrupt_sentinel,
                 ]
@@ -84,8 +84,8 @@ def test_interrupt_ipc_subprocess_by_pid():
             wait_for_file(started_sentinel)
             interrupt_ipc_subprocess_pid(sleepy_process.pid)
             wait_for_file(interrupt_sentinel)
-            with open(interrupt_sentinel, 'r') as fd:
-                assert fd.read().startswith('received_keyboard_interrupt')
+            with open(interrupt_sentinel, "r") as fd:
+                assert fd.read().startswith("received_keyboard_interrupt")
 
 
 def test_interrupt_ipc_subprocess_grandchild():
@@ -99,7 +99,7 @@ def test_interrupt_ipc_subprocess_grandchild():
         child_process = open_ipc_subprocess(
             [
                 sys.executable,
-                file_relative_path(__file__, 'parent_subprocess_with_interrupt_support.py'),
+                file_relative_path(__file__, "parent_subprocess_with_interrupt_support.py"),
                 child_opened_sentinel,
                 parent_interrupt_sentinel,
                 child_started_sentinel,
@@ -110,11 +110,11 @@ def test_interrupt_ipc_subprocess_grandchild():
         wait_for_file(child_started_sentinel)
         interrupt_ipc_subprocess(child_process)
         wait_for_file(child_interrupt_sentinel)
-        with open(child_interrupt_sentinel, 'r') as fd:
-            assert fd.read().startswith('received_keyboard_interrupt')
+        with open(child_interrupt_sentinel, "r") as fd:
+            assert fd.read().startswith("received_keyboard_interrupt")
         wait_for_file(parent_interrupt_sentinel)
-        with open(parent_interrupt_sentinel, 'r') as fd:
-            assert fd.read().startswith('parent_received_keyboard_interrupt')
+        with open(parent_interrupt_sentinel, "r") as fd:
+            assert fd.read().startswith("parent_received_keyboard_interrupt")
 
 
 def test_interrupt_compute_log_tail_child(
@@ -128,7 +128,7 @@ def test_interrupt_compute_log_tail_child(
         child_process = open_ipc_subprocess(
             [
                 sys.executable,
-                file_relative_path(__file__, 'compute_log_subprocess.py'),
+                file_relative_path(__file__, "compute_log_subprocess.py"),
                 stdout_pids_file,
                 stderr_pids_file,
                 opened_sentinel,
@@ -139,26 +139,26 @@ def test_interrupt_compute_log_tail_child(
         wait_for_file(stdout_pids_file)
         wait_for_file(stderr_pids_file)
 
-        with open(opened_sentinel, 'r') as opened_sentinel_fd:
-            assert opened_sentinel_fd.read().startswith('opened_compute_log_subprocess')
+        with open(opened_sentinel, "r") as opened_sentinel_fd:
+            assert opened_sentinel_fd.read().startswith("opened_compute_log_subprocess")
 
-        with open(stdout_pids_file, 'r') as stdout_pids_fd:
+        with open(stdout_pids_file, "r") as stdout_pids_fd:
             stdout_pids_str = stdout_pids_fd.read()
-            assert stdout_pids_str.startswith('stdout pids:')
+            assert stdout_pids_str.startswith("stdout pids:")
             stdout_pids = list(
                 map(
-                    lambda x: int(x) if x != 'None' else None,
-                    [x.strip('(),') for x in stdout_pids_str.split(' ')[2:]],
+                    lambda x: int(x) if x != "None" else None,
+                    [x.strip("(),") for x in stdout_pids_str.split(" ")[2:]],
                 )
             )
 
-        with open(stderr_pids_file, 'r') as stderr_pids_fd:
+        with open(stderr_pids_file, "r") as stderr_pids_fd:
             stderr_pids_str = stderr_pids_fd.read()
-            assert stderr_pids_str.startswith('stderr pids:')
+            assert stderr_pids_str.startswith("stderr pids:")
             stderr_pids = list(
                 map(
-                    lambda x: int(x) if x != 'None' else None,
-                    [x.strip('(),') for x in stderr_pids_str.split(' ')[2:]],
+                    lambda x: int(x) if x != "None" else None,
+                    [x.strip("(),") for x in stderr_pids_str.split(" ")[2:]],
                 )
             )
 
@@ -174,8 +174,8 @@ def test_interrupt_compute_log_tail_child(
 
         wait_for_file(interrupt_sentinel)
 
-        with open(interrupt_sentinel, 'r') as fd:
-            assert fd.read().startswith('compute_log_subprocess_interrupt')
+        with open(interrupt_sentinel, "r") as fd:
+            assert fd.read().startswith("compute_log_subprocess_interrupt")
 
 
 def test_segfault_compute_log_tail(
@@ -186,7 +186,7 @@ def test_segfault_compute_log_tail(
             child_process = open_ipc_subprocess(
                 [
                     sys.executable,
-                    file_relative_path(__file__, 'compute_log_subprocess_segfault.py'),
+                    file_relative_path(__file__, "compute_log_subprocess_segfault.py"),
                     stdout_pids_file,
                     stderr_pids_file,
                 ]
@@ -195,24 +195,24 @@ def test_segfault_compute_log_tail(
             child_process.wait()
 
             wait_for_file(stdout_pids_file)
-            with open(stdout_pids_file, 'r') as stdout_pids_fd:
+            with open(stdout_pids_file, "r") as stdout_pids_fd:
                 stdout_pids_str = stdout_pids_fd.read()
-                assert stdout_pids_str.startswith('stdout pids:')
+                assert stdout_pids_str.startswith("stdout pids:")
                 stdout_pids = list(
                     map(
-                        lambda x: int(x) if x != 'None' else None,
-                        stdout_pids_str.split(' ')[-1].strip('()').split(','),
+                        lambda x: int(x) if x != "None" else None,
+                        stdout_pids_str.split(" ")[-1].strip("()").split(","),
                     )
                 )
 
             wait_for_file(stderr_pids_file)
-            with open(stderr_pids_file, 'r') as stderr_pids_fd:
+            with open(stderr_pids_file, "r") as stderr_pids_fd:
                 stderr_pids_str = stderr_pids_fd.read()
-                assert stderr_pids_str.startswith('stderr pids:')
+                assert stderr_pids_str.startswith("stderr pids:")
                 stderr_pids = list(
                     map(
-                        lambda x: int(x) if x != 'None' else None,
-                        stderr_pids_str.split(' ')[-1].strip('()').split(','),
+                        lambda x: int(x) if x != "None" else None,
+                        stderr_pids_str.split(" ")[-1].strip("()").split(","),
                     )
                 )
 
@@ -241,7 +241,7 @@ def test_interrupt_compute_log_tail_grandchild(
         parent_process = open_ipc_subprocess(
             [
                 sys.executable,
-                file_relative_path(__file__, 'parent_compute_log_subprocess.py'),
+                file_relative_path(__file__, "parent_compute_log_subprocess.py"),
                 child_opened_sentinel,
                 parent_interrupt_sentinel,
                 child_started_sentinel,
@@ -255,36 +255,36 @@ def test_interrupt_compute_log_tail_grandchild(
         wait_for_file(child_started_sentinel)
 
         wait_for_file(stdout_pids_file)
-        with open(stdout_pids_file, 'r') as stdout_pids_fd:
+        with open(stdout_pids_file, "r") as stdout_pids_fd:
             stdout_pids_str = stdout_pids_fd.read()
-            assert stdout_pids_str.startswith('stdout pids:')
+            assert stdout_pids_str.startswith("stdout pids:")
             stdout_pids = list(
                 map(
-                    lambda x: int(x) if x != 'None' else None,
-                    [x.strip('(),') for x in stdout_pids_str.split(' ')[2:]],
+                    lambda x: int(x) if x != "None" else None,
+                    [x.strip("(),") for x in stdout_pids_str.split(" ")[2:]],
                 )
             )
 
         wait_for_file(stderr_pids_file)
-        with open(stderr_pids_file, 'r') as stderr_pids_fd:
+        with open(stderr_pids_file, "r") as stderr_pids_fd:
             stderr_pids_str = stderr_pids_fd.read()
-            assert stderr_pids_str.startswith('stderr pids:')
+            assert stderr_pids_str.startswith("stderr pids:")
             stderr_pids = list(
                 map(
-                    lambda x: int(x) if x != 'None' else None,
-                    [x.strip('(),') for x in stderr_pids_str.split(' ')[2:]],
+                    lambda x: int(x) if x != "None" else None,
+                    [x.strip("(),") for x in stderr_pids_str.split(" ")[2:]],
                 )
             )
 
         interrupt_ipc_subprocess(parent_process)
 
         wait_for_file(child_interrupt_sentinel)
-        with open(child_interrupt_sentinel, 'r') as fd:
-            assert fd.read().startswith('compute_log_subprocess_interrupt')
+        with open(child_interrupt_sentinel, "r") as fd:
+            assert fd.read().startswith("compute_log_subprocess_interrupt")
 
         wait_for_file(parent_interrupt_sentinel)
-        with open(parent_interrupt_sentinel, 'r') as fd:
-            assert fd.read().startswith('parent_received_keyboard_interrupt')
+        with open(parent_interrupt_sentinel, "r") as fd:
+            assert fd.read().startswith("parent_received_keyboard_interrupt")
 
         for stdout_pid in stdout_pids:
             if stdout_pid is not None:

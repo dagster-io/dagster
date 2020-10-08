@@ -11,7 +11,8 @@ A <PyObject module="dagster" object="success_hook" displayText="@success_hook" /
 
 ```python literalinclude caption=repo.py showLines startLine=20 emphasize-lines=1,7
 file:/hooks/repo.py
-lines:20-29
+startAfter:start_repo_marker_0
+endBefore:end_repo_marker_0
 ```
 
 ## Apply a hook on a pipeline
@@ -22,7 +23,8 @@ You can simply use the hook created "slack_on_failure" above to decorate the pip
 
 ```python literalinclude caption=repo.py showLines startLine=55 emphasize-lines=1
 file:/hooks/repo.py
-lines:55-60
+startAfter:start_repo_marker_1
+endBefore:end_repo_marker_1
 ```
 
 ## Apply a hook on a solid
@@ -31,7 +33,8 @@ However, sometimes a pipeline is a shared responsibility or you only want to be 
 
 ```python literalinclude caption=repo.py showLines startLine=63 emphasize-lines=4
 file:/hooks/repo.py
-lines:63-68
+startAfter:start_repo_marker_2
+endBefore:end_repo_marker_2
 ```
 
 In this case, solid "b" won't trigger any hooks, while when solid "a" fails or succeeds it will send a slack message.
@@ -42,6 +45,7 @@ As you may have noticed, the hook function takes one argument, which is an insta
 
 - `context.log`: loggers
 - `context.solid`: the solid associated with the hook.
+- `context.solid_config`: The config specific to the associated solid.
 - `context.step`: the execution step that triggers the hook.
 - `context.resources`: the resources the hook can use.
 
@@ -49,7 +53,7 @@ Hooks use resource keys to access resources. After including the resource key in
 
 ```python literalinclude caption=repo.py showLines startLine=26 emphasize-lines=1,4
 file:/hooks/repo.py
-lines:26-29
+lines:27-30
 ```
 
 It also enables you to switch resource values in different modes so that, for example, you can send slack messages only when you are in "prod" mode and mock the slack resource when you are in "dev" mode.
@@ -58,7 +62,8 @@ In this case, we can mock the `slack_resource` in the "dev" mode using a helper 
 
 ```python literalinclude caption=repo.py showLines startLine=42 emphasize-lines=5-6
 file:/hooks/repo.py
-lines:42-52
+startAfter:start_repo_marker_3
+endBefore:end_repo_marker_3
 ```
 
 When we switch to "prod" mode, we can provide the real slack token in the `run_config` and therefore enable sending messages to a certain slack channel when a hook is triggered.
@@ -71,7 +76,7 @@ Then, we can execute a pipeline with the config through Python API, CLI, or the 
 
 ```python literalinclude caption=repo.py showLines startLine=77 emphasize-lines=3
 file:/hooks/repo.py
-lines:77-79
+lines:89-91
 ```
 
 ## Open in a playground

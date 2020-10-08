@@ -1,6 +1,6 @@
 # TODO - figure out how to use files as templates
 
-TEMPLATE = '''<!DOCTYPE html>
+TEMPLATE = """<!DOCTYPE html>
 
 <html>
 
@@ -534,9 +534,12 @@ TEMPLATE = '''<!DOCTYPE html>
       root.classList.add('playgroundIn');
 
       GraphQLPlayground.init(root, {
-        subscriptionEndpoint: 'ws://' + document.location.host + document.location.pathname
+        subscriptionEndpoint: 'ws://' + document.location.host + document.location.pathname,
+        settings: {
+          'schema.polling.enable': false,
+        }
       })
     })
   </script>
 </body>
-</html>'''
+</html>"""

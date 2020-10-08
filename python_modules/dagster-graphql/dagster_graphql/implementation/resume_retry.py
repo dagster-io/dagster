@@ -11,9 +11,9 @@ from .utils import ExecutionParams
 
 
 def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id):
-    check.inst_param(instance, 'instance', DagsterInstance)
-    check.inst_param(execution_plan, 'execution_plan', ExternalExecutionPlan)
-    check.opt_str_param(parent_run_id, 'parent_run_id')
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.inst_param(execution_plan, "execution_plan", ExternalExecutionPlan)
+    check.opt_str_param(parent_run_id, "parent_run_id")
 
     if not parent_run_id:
         return execution_plan.step_keys_in_plan
@@ -71,9 +71,9 @@ def get_retry_steps_from_execution_plan(instance, execution_plan, parent_run_id)
 
 
 def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_params):
-    check.inst_param(graphene_info, 'graphene_info', ResolveInfo)
-    check.inst_param(external_pipeline, 'external_pipeline', ExternalPipeline)
-    check.inst_param(execution_params, 'execution_params', ExecutionParams)
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+    check.inst_param(execution_params, "execution_params", ExecutionParams)
 
     instance = graphene_info.context.instance
 
@@ -94,5 +94,5 @@ def compute_step_keys_to_execute(graphene_info, external_pipeline, execution_par
 
 
 def is_resume_retry(execution_params):
-    check.inst_param(execution_params, 'execution_params', ExecutionParams)
-    return execution_params.execution_metadata.tags.get(RESUME_RETRY_TAG) == 'true'
+    check.inst_param(execution_params, "execution_params", ExecutionParams)
+    return execution_params.execution_metadata.tags.get(RESUME_RETRY_TAG) == "true"

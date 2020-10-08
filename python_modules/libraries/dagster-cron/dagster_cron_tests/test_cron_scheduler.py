@@ -6,13 +6,14 @@ import sys
 import pytest
 import yaml
 from dagster_cron import SystemCronScheduler
+from freezegun import freeze_time
 
 from dagster import ScheduleDefinition
 from dagster.core.definitions import lambda_solid, pipeline, repository
 from dagster.core.host_representation import PythonEnvRepositoryLocation, RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.scheduler import ScheduleStatus
+from dagster.core.scheduler import ScheduleState, ScheduleStatus
 from dagster.core.scheduler.scheduler import (
     DagsterScheduleDoesNotExist,
     DagsterScheduleReconciliationError,
@@ -26,16 +27,20 @@ from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.core.test_utils import environ
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.seven import TemporaryDirectory
+from dagster.seven import (
+    TemporaryDirectory,
+    get_current_datetime_in_utc,
+    get_timestamp_from_utc_datetime,
+)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def restore_cron_tab():
     with TemporaryDirectory() as tempdir:
         crontab_backup = os.path.join(tempdir, "crontab_backup.txt")
-        with open(crontab_backup, 'wb+') as f:
+        with open(crontab_backup, "wb+") as f:
             try:
-                output = subprocess.check_output(['crontab', '-l'])
+                output = subprocess.check_output(["crontab", "-l"])
                 f.write(output)
             except subprocess.CalledProcessError:
                 # If a crontab hasn't been created yet, the command fails with a
@@ -43,7 +48,7 @@ def restore_cron_tab():
                 pass
 
         try:
-            subprocess.check_output(['crontab', '-r'])
+            subprocess.check_output(["crontab", "-r"])
         except subprocess.CalledProcessError:
             # If a crontab hasn't been created yet, the command fails with a
             # non-zero error code
@@ -51,42 +56,42 @@ def restore_cron_tab():
 
         yield
 
-        subprocess.check_output(['crontab', crontab_backup])
+        subprocess.check_output(["crontab", crontab_backup])
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def unset_dagster_home():
-    old_env = os.getenv('DAGSTER_HOME')
+    old_env = os.getenv("DAGSTER_HOME")
     if old_env is not None:
-        del os.environ['DAGSTER_HOME']
+        del os.environ["DAGSTER_HOME"]
     yield
     if old_env is not None:
-        os.environ['DAGSTER_HOME'] = old_env
+        os.environ["DAGSTER_HOME"] = old_env
 
 
 @pipeline
 def no_config_pipeline():
     @lambda_solid
     def return_hello():
-        return 'Hello'
+        return "Hello"
 
     return return_hello()
 
 
 schedules_dict = {
-    'no_config_pipeline_daily_schedule': ScheduleDefinition(
+    "no_config_pipeline_daily_schedule": ScheduleDefinition(
         name="no_config_pipeline_daily_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
         run_config={"storage": {"filesystem": None}},
     ),
-    'no_config_pipeline_every_min_schedule': ScheduleDefinition(
+    "no_config_pipeline_every_min_schedule": ScheduleDefinition(
         name="no_config_pipeline_every_min_schedule",
         cron_schedule="* * * * *",
         pipeline_name="no_config_pipeline",
         run_config={"storage": {"filesystem": None}},
     ),
-    'default_config_pipeline_every_min_schedule': ScheduleDefinition(
+    "default_config_pipeline_every_min_schedule": ScheduleDefinition(
         name="default_config_pipeline_every_min_schedule",
         cron_schedule="* * * * *",
         pipeline_name="no_config_pipeline",
@@ -100,7 +105,7 @@ def define_schedules():
 
 @repository
 def test_repository():
-    if os.getenv('DAGSTER_TEST_SMALL_REPO'):
+    if os.getenv("DAGSTER_TEST_SMALL_REPO"):
         return [no_config_pipeline] + list(
             filter(
                 lambda x: not x.name == "default_config_pipeline_every_min_schedule",
@@ -115,21 +120,21 @@ def get_test_external_repo():
     return PythonEnvRepositoryLocation(
         RepositoryLocationHandle.create_python_env_location(
             loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable, python_file=__file__, attribute='test_repository',
+                executable_path=sys.executable, python_file=__file__, attribute="test_repository",
             ),
-            location_name='test_location',
+            location_name="test_location",
         )
-    ).get_repository('test_repository')
+    ).get_repository("test_repository")
 
 
 def get_smaller_external_repo():
-    with environ({'DAGSTER_TEST_SMALL_REPO': '1'}):
+    with environ({"DAGSTER_TEST_SMALL_REPO": "1"}):
         return get_test_external_repo()
 
 
 def get_cron_jobs():
-    output = subprocess.check_output(['crontab', '-l'])
-    return list(filter(None, output.decode('utf-8').strip().split("\n")))
+    output = subprocess.check_output(["crontab", "-l"])
+    return list(filter(None, output.decode("utf-8").strip().split("\n")))
 
 
 def define_scheduler_instance(tempdir):
@@ -139,7 +144,7 @@ def define_scheduler_instance(tempdir):
         run_storage=InMemoryRunStorage(),
         event_storage=InMemoryEventLogStorage(),
         compute_log_manager=NoOpComputeLogManager(),
-        schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, 'schedules')),
+        schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, "schedules")),
         scheduler=SystemCronScheduler(),
         run_launcher=SyncInMemoryRunLauncher(),
     )
@@ -153,15 +158,18 @@ def test_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-out
         instance.reconcile_scheduler_state(external_repository)
 
         # Check schedules are saved to disk
-        assert 'schedules' in os.listdir(tempdir)
+        assert "schedules" in os.listdir(tempdir)
 
         assert instance.all_stored_schedule_state()
 
 
+@freeze_time("2019-02-27")
 def test_re_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-outer-name
     with TemporaryDirectory() as tempdir:
         instance = define_scheduler_instance(tempdir)
         external_repo = get_test_external_repo()
+
+        now = get_current_datetime_in_utc()
 
         # Initialize scheduler
         instance.reconcile_scheduler_state(external_repo)
@@ -171,11 +179,13 @@ def test_re_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-
             external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
         )
 
+        assert schedule_state.start_timestamp == get_timestamp_from_utc_datetime(now)
+
         # Re-initialize scheduler
         instance.reconcile_scheduler_state(external_repo)
 
         # Check schedules are saved to disk
-        assert 'schedules' in os.listdir(tempdir)
+        assert "schedules" in os.listdir(tempdir)
 
         schedule_states = instance.all_stored_schedule_state()
 
@@ -199,16 +209,16 @@ def test_start_and_stop_schedule(
 
         instance.start_schedule_and_update_storage_state(schedule)
 
-        assert 'schedules' in os.listdir(tempdir)
+        assert "schedules" in os.listdir(tempdir)
 
         assert "{}.sh".format(schedule_origin_id) in os.listdir(
-            os.path.join(tempdir, 'schedules', 'scripts')
+            os.path.join(tempdir, "schedules", "scripts")
         )
 
         instance.stop_schedule_and_update_storage_state(schedule_origin_id)
 
         assert "{}.sh".format(schedule_origin_id) not in os.listdir(
-            os.path.join(tempdir, 'schedules', 'scripts')
+            os.path.join(tempdir, "schedules", "scripts")
         )
 
 
@@ -425,16 +435,16 @@ def test_script_execution(
     with TemporaryDirectory() as tempdir:
         os.environ["DAGSTER_HOME"] = tempdir
         config = {
-            'scheduler': {'module': 'dagster_cron', 'class': 'SystemCronScheduler', 'config': {}},
+            "scheduler": {"module": "dagster_cron", "class": "SystemCronScheduler", "config": {}},
             # This needs to synchronously execute to completion when
             # the generated bash script is invoked
-            'run_launcher': {
-                'module': 'dagster.core.launcher.sync_in_memory_run_launcher',
-                'class': 'SyncInMemoryRunLauncher',
+            "run_launcher": {
+                "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                "class": "SyncInMemoryRunLauncher",
             },
         }
 
-        with open(os.path.join(tempdir, 'dagster.yaml'), 'w+') as f:
+        with open(os.path.join(tempdir, "dagster.yaml"), "w+") as f:
             f.write(yaml.dump(config))
 
         instance = DagsterInstance.get()
@@ -471,10 +481,10 @@ def test_start_schedule_fails(
         instance.reconcile_scheduler_state(external_repo)
 
         def raises(*args, **kwargs):
-            raise Exception('Patch')
+            raise Exception("Patch")
 
         instance._scheduler._start_cron_job = raises  # pylint: disable=protected-access
-        with pytest.raises(Exception, match='Patch'):
+        with pytest.raises(Exception, match="Patch"):
             instance.start_schedule_and_update_storage_state(
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
             )
@@ -620,20 +630,20 @@ def test_stop_schedule_fails(
         schedule_origin_id = external_schedule.get_origin_id()
 
         def raises(*args, **kwargs):
-            raise Exception('Patch')
+            raise Exception("Patch")
 
         instance._scheduler._end_cron_job = raises  # pylint: disable=protected-access
 
         instance.start_schedule_and_update_storage_state(external_schedule)
 
-        assert 'schedules' in os.listdir(tempdir)
+        assert "schedules" in os.listdir(tempdir)
 
         assert "{}.sh".format(schedule_origin_id) in os.listdir(
-            os.path.join(tempdir, 'schedules', 'scripts')
+            os.path.join(tempdir, "schedules", "scripts")
         )
 
         # End schedule
-        with pytest.raises(Exception, match='Patch'):
+        with pytest.raises(Exception, match="Patch"):
             instance.stop_schedule_and_update_storage_state(schedule_origin_id)
 
         schedule = instance.get_schedule_state(schedule_origin_id)
@@ -748,6 +758,32 @@ def test_reconcile_failure(restore_cron_tab):  # pylint:disable=unused-argument,
             match="Error 1: Failed to stop\n    Error 2: Failed to stop\n    Error 3: Failed to stop",
         ):
             instance.reconcile_scheduler_state(external_repo)
+
+
+@freeze_time("2019-02-27")
+def test_reconcile_schedule_without_start_time():
+    with TemporaryDirectory() as tempdir:
+        instance = define_scheduler_instance(tempdir)
+        external_repo = get_test_external_repo()
+        external_schedule = external_repo.get_external_schedule("no_config_pipeline_daily_schedule")
+
+        legacy_schedule_state = ScheduleState(
+            external_schedule.get_origin(),
+            ScheduleStatus.RUNNING,
+            external_schedule.cron_schedule,
+            None,
+        )
+
+        instance.add_schedule_state(legacy_schedule_state)
+
+        instance.reconcile_scheduler_state(external_repository=external_repo)
+
+        reconciled_schedule_state = instance.get_schedule_state(external_schedule.get_origin_id())
+
+        assert reconciled_schedule_state.status == ScheduleStatus.RUNNING
+        assert reconciled_schedule_state.start_timestamp == get_timestamp_from_utc_datetime(
+            get_current_datetime_in_utc()
+        )
 
 
 def test_reconcile_failure_when_deleting_schedule_def(

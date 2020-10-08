@@ -32,7 +32,7 @@ class Spy(object):
 def test_pipeline_run_creation_race():
     with seven.TemporaryDirectory() as tempdir:
         instance = DagsterInstance.local_temp(tempdir)
-        run_id = 'run_id'
+        run_id = "run_id"
 
         # Spy on the result of add_run
         add_run_spy = Spy(instance._run_storage.add_run)  # pylint: disable=protected-access
@@ -50,8 +50,8 @@ def test_pipeline_run_creation_race():
         assert len(add_run_spy.return_values) == 1
 
         # (*) Simulate a race where second invocation receives has_run() is False
-        fetched_pipeline_run = ''
-        with mock.patch.object(instance, 'has_run', mock.MagicMock(return_value=False)):
+        fetched_pipeline_run = ""
+        with mock.patch.object(instance, "has_run", mock.MagicMock(return_value=False)):
             fetched_pipeline_run = register_managed_run_for_test(instance, run_id=run_id)
 
         # Check that add_run received DagsterRunAlreadyExists exception and did not return value

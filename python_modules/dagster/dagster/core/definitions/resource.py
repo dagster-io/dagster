@@ -6,13 +6,13 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.config_mappable import IConfigMappable
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
-from dagster.utils.backcompat import rename_warning
+from dagster.utils.backcompat import experimental_arg_warning, rename_warning
 
 from ..decorator_utils import split_function_parameters, validate_decorated_fn_positionals
 
 
 class ResourceDefinition(IConfigMappable):
-    '''Core class for defining resources.
+    """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
     solids during pipeline execution and to clean up after execution resolves.
@@ -34,7 +34,10 @@ class ResourceDefinition(IConfigMappable):
         description (Optional[str]): A human-readable description of the resource.
         _configured_config_mapping_fn: This argument is for internal use only. Users should not
             specify this field. To preconfigure a resource, use the :py:func:`configured` API.
-    '''
+        version (Optional[str]): (Experimental) The version of the resource's definition fn. Two
+            wrapped resource functions should only have the same version if they produce the same
+            resource definition when provided with the same inputs.
+    """
 
     def __init__(
         self,
@@ -42,8 +45,9 @@ class ResourceDefinition(IConfigMappable):
         config_schema=None,
         description=None,
         _configured_config_mapping_fn=None,
+        version=None,
     ):
-        EXPECTED_POSITIONALS = ['*']
+        EXPECTED_POSITIONALS = ["*"]
         fn_positionals, _ = split_function_parameters(resource_fn, EXPECTED_POSITIONALS)
         missing_positional = validate_decorated_fn_positionals(fn_positionals, EXPECTED_POSITIONALS)
 
@@ -56,12 +60,15 @@ class ResourceDefinition(IConfigMappable):
                 )
             )
 
-        self._resource_fn = check.opt_callable_param(resource_fn, 'resource_fn')
-        self._config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
-        self._description = check.opt_str_param(description, 'description')
+        self._resource_fn = check.opt_callable_param(resource_fn, "resource_fn")
+        self._config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
+        self._description = check.opt_str_param(description, "description")
         self.__configured_config_mapping_fn = check.opt_callable_param(
-            _configured_config_mapping_fn, 'config_mapping_fn'
+            _configured_config_mapping_fn, "config_mapping_fn"
         )
+        self._version = check.opt_str_param(version, "version")
+        if version:
+            experimental_arg_warning("version", "ResourceDefinition.__init__")
 
     @property
     def resource_fn(self):
@@ -69,7 +76,7 @@ class ResourceDefinition(IConfigMappable):
 
     @property
     def config_field(self):
-        rename_warning('config_schema', 'config_field', '0.9.0')
+        rename_warning("config_schema", "config_field", "0.9.0")
         return self._config_schema
 
     @property
@@ -80,21 +87,25 @@ class ResourceDefinition(IConfigMappable):
     def description(self):
         return self._description
 
+    @property
+    def version(self):
+        return self._version
+
     @staticmethod
     def none_resource(description=None):
-        '''A helper function that returns a none resource.
+        """A helper function that returns a none resource.
 
         Args:
             description ([Optional[str]]): The description of the resource. Defaults to None.
 
         Returns:
             [ResourceDefinition]: A resource that does nothing.
-        '''
+        """
         return ResourceDefinition.hardcoded_resource(value=None, description=description)
 
     @staticmethod
     def hardcoded_resource(value, description=None):
-        '''A helper function that creates a ``ResourceDefinition`` with a hardcoded object.
+        """A helper function that creates a ``ResourceDefinition`` with a hardcoded object.
 
         Args:
             value (Any): A hardcoded object which helps mock the resource.
@@ -102,12 +113,12 @@ class ResourceDefinition(IConfigMappable):
 
         Returns:
             [ResourceDefinition]: A hardcoded resource.
-        '''
+        """
         return ResourceDefinition(resource_fn=lambda _init_context: value, description=description)
 
     @staticmethod
     def mock_resource(description=None):
-        '''A helper function that creates a ``ResourceDefinition`` which wraps a ``mock.MagicMock``.
+        """A helper function that creates a ``ResourceDefinition`` which wraps a ``mock.MagicMock``.
 
         Args:
             description ([Optional[str]]): The description of the resource. Defaults to None.
@@ -115,7 +126,7 @@ class ResourceDefinition(IConfigMappable):
         Returns:
             [ResourceDefinition]: A resource that creates the magic methods automatically and helps
                 you mock existing resources.
-        '''
+        """
         return ResourceDefinition.hardcoded_resource(
             value=seven.mock.MagicMock(), description=description
         )
@@ -139,22 +150,26 @@ class ResourceDefinition(IConfigMappable):
 
         return ResourceDefinition(
             config_schema=config_schema,
-            description=kwargs.get('description', self.description),
+            description=kwargs.get("description", self.description),
             resource_fn=self.resource_fn,
             _configured_config_mapping_fn=wrapped_config_mapping_fn,
         )
 
 
 class _ResourceDecoratorCallable(object):
-    def __init__(self, config_schema=None, description=None):
-        self.config_schema = check_user_facing_opt_config_param(config_schema, 'config_schema')
-        self.description = check.opt_str_param(description, 'description')
+    def __init__(self, config_schema=None, description=None, version=None):
+        self.config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
+        self.description = check.opt_str_param(description, "description")
+        self.version = check.opt_str_param(version, "version")
 
     def __call__(self, fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         resource_def = ResourceDefinition(
-            resource_fn=fn, config_schema=self.config_schema, description=self.description,
+            resource_fn=fn,
+            config_schema=self.config_schema,
+            description=self.description,
+            version=self.version,
         )
 
         update_wrapper(resource_def, wrapped=fn)
@@ -162,8 +177,8 @@ class _ResourceDecoratorCallable(object):
         return resource_def
 
 
-def resource(config_schema=None, description=None):
-    '''Define a resource.
+def resource(config_schema=None, description=None, version=None):
+    """Define a resource.
 
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
     the resource. This function will become the ``resource_fn`` of an underlying
@@ -178,7 +193,10 @@ def resource(config_schema=None, description=None):
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.resource_config`.
         description(Optional[str]): A human-readable description of the resource.
-    '''
+        version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
+            resource functions should only have the same version if they produce the same resource
+            definition when provided with the same inputs.
+    """
 
     # This case is for when decorator is used bare, without arguments.
     # E.g. @resource versus @resource()
@@ -186,30 +204,30 @@ def resource(config_schema=None, description=None):
         return _ResourceDecoratorCallable()(config_schema)
 
     def _wrap(resource_fn):
-        return _ResourceDecoratorCallable(config_schema=config_schema, description=description,)(
-            resource_fn
-        )
+        return _ResourceDecoratorCallable(
+            config_schema=config_schema, description=description, version=version,
+        )(resource_fn)
 
     return _wrap
 
 
-class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_instance_dict')):
-    '''There are concepts in the codebase (e.g. solids, system storage) that receive
+class ScopedResourcesBuilder(namedtuple("ScopedResourcesBuilder", "resource_instance_dict")):
+    """There are concepts in the codebase (e.g. solids, system storage) that receive
     only the resources that they have specified in required_resource_keys.
     ScopedResourcesBuilder is responsible for dynamically building a class with
-    only those required resources and returning an instance of that class.'''
+    only those required resources and returning an instance of that class."""
 
     def __new__(cls, resource_instance_dict=None):
         return super(ScopedResourcesBuilder, cls).__new__(
             cls,
             resource_instance_dict=check.opt_dict_param(
-                resource_instance_dict, 'resource_instance_dict', key_type=str
+                resource_instance_dict, "resource_instance_dict", key_type=str
             ),
         )
 
     def build(self, required_resource_keys):
 
-        '''We dynamically create a type that has the resource keys as properties, to enable dotting into
+        """We dynamically create a type that has the resource keys as properties, to enable dotting into
         the resources from a context.
 
         For example, given:
@@ -220,9 +238,9 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
 
         and then binds the specified resources into an instance of this object, which can be consumed
         as, e.g., context.resources.foo.
-        '''
+        """
         required_resource_keys = check.opt_set_param(
-            required_resource_keys, 'required_resource_keys', of_type=str
+            required_resource_keys, "required_resource_keys", of_type=str
         )
         # it is possible that the surrounding context does NOT have the required resource keys
         # because we are building a context for steps that we are not going to execute (e.g. in the
@@ -233,7 +251,7 @@ class ScopedResourcesBuilder(namedtuple('ScopedResourcesBuilder', 'resource_inst
             if key in self.resource_instance_dict
         }
 
-        class ScopedResources(namedtuple('Resources', list(resource_instance_dict.keys()))):
+        class ScopedResources(namedtuple("Resources", list(resource_instance_dict.keys()))):
             def __getattr__(self, attr):
                 raise DagsterUnknownResourceError(attr)
 

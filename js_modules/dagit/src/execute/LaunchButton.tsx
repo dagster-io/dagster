@@ -1,35 +1,37 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { WebsocketStatusContext } from "../WebsocketStatus";
-import { ShortcutHandler } from "../ShortcutHandler";
 import {
   Button,
   Icon,
-  Intent,
-  Spinner,
   IconName,
-  Tooltip,
-  Position,
-  Popover,
+  Intent,
   Menu,
-  MenuItem
-} from "@blueprintjs/core";
+  MenuItem,
+  Popover,
+  Position,
+  Spinner,
+  Tooltip,
+} from '@blueprintjs/core';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {ShortcutHandler} from 'src/ShortcutHandler';
+import {WebsocketStatusContext} from 'src/WebsocketStatus';
 
 export interface LaunchButtonConfiguration {
   title: string;
   disabled: boolean;
+  scope?: string;
   onClick: () => void;
-  icon?: IconName | JSX.Element | "dagster-spinner";
+  icon?: IconName | JSX.Element | 'dagster-spinner';
   tooltip?: string | JSX.Element;
 }
 
 export enum LaunchButtonStatus {
-  Ready = "ready",
-  Starting = "starting",
-  Disabled = "disabled"
+  Ready = 'ready',
+  Starting = 'starting',
+  Disabled = 'disabled',
 }
 
-function useLaunchButtonCommonState({ disabled }: { disabled: boolean }) {
+function useLaunchButtonCommonState({disabled}: {disabled: boolean}) {
   const websocketStatus = React.useContext(WebsocketStatusContext);
   const [starting, setStarting] = React.useState(false);
 
@@ -47,26 +49,26 @@ function useLaunchButtonCommonState({ disabled }: { disabled: boolean }) {
   if (websocketStatus !== WebSocket.OPEN) {
     status = LaunchButtonStatus.Disabled;
     forced = {
-      tooltip: "The Dagit server is offline",
+      tooltip: 'The Dagit server is offline',
       disabled: true,
-      icon: "offline"
+      icon: 'offline',
     };
   }
 
   if (starting) {
     status = LaunchButtonStatus.Starting;
     forced = {
-      title: "Launching…",
-      tooltip: "Pipeline execution is in progress…",
+      title: 'Launching…',
+      tooltip: 'Pipeline execution is in progress…',
       disabled: true,
-      icon: "dagster-spinner"
+      icon: 'dagster-spinner',
     };
   }
 
   return {
     forced,
     status,
-    onConfigSelected
+    onConfigSelected,
   };
 }
 
@@ -75,9 +77,9 @@ interface LaunchButtonProps {
   config: LaunchButtonConfiguration;
 }
 
-export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({ config, small }) => {
-  const { forced, status, onConfigSelected } = useLaunchButtonCommonState({
-    disabled: config.disabled
+export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({config, small}) => {
+  const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
+    disabled: config.disabled,
   });
   const onClick = () => {
     status === LaunchButtonStatus.Ready && onConfigSelected(config);
@@ -86,7 +88,7 @@ export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({ confi
     <ShortcutHandler
       onShortcut={onClick}
       shortcutLabel={`⌥L`}
-      shortcutFilter={e => e.keyCode === 76 && e.altKey}
+      shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
     >
       <ButtonWithConfiguration
         status={status}
@@ -102,6 +104,7 @@ export const LaunchButton: React.FunctionComponent<LaunchButtonProps> = ({ confi
 interface LaunchButtonDropdownProps {
   title: string;
   small?: boolean;
+  primary: LaunchButtonConfiguration;
   options: LaunchButtonConfiguration[];
   disabled?: boolean;
   tooltip?: string;
@@ -111,27 +114,38 @@ interface LaunchButtonDropdownProps {
 export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownProps> = ({
   title,
   small,
+  primary,
   options,
   disabled,
+  icon,
   tooltip,
-  icon
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const { forced, status, onConfigSelected } = useLaunchButtonCommonState({
-    disabled: disabled || options.every(d => d.disabled)
+  const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
+    disabled: disabled || options.every((d) => d.disabled),
   });
 
   return (
     <ShortcutHandler
-      onShortcut={() => setIsOpen(true)}
+      onShortcut={() => onConfigSelected(primary)}
       shortcutLabel={`⌥L`}
-      shortcutFilter={e => e.keyCode === 76 && e.altKey}
+      shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
     >
+      <ButtonWithConfiguration
+        status={status}
+        small={small}
+        title={title}
+        joined="right"
+        icon={icon}
+        tooltip={tooltip}
+        onClick={() => onConfigSelected(primary)}
+        {...forced}
+      />
       <Popover
         isOpen={isOpen}
-        onInteraction={nextOpen => setIsOpen(nextOpen)}
+        onInteraction={(nextOpen) => setIsOpen(nextOpen)}
         disabled={status === LaunchButtonStatus.Disabled}
-        position={"bottom"}
+        position="bottom-right"
         content={
           <Menu>
             {options.map((option, idx) => (
@@ -147,19 +161,20 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
                   text={option.title}
                   disabled={option.disabled}
                   onClick={() => onConfigSelected(option)}
-                  icon={option.icon === "dagster-spinner" ? "blank" : option.icon}
+                  icon={option.icon === 'dagster-spinner' ? 'blank' : option.icon}
                 />
               </Tooltip>
             ))}
           </Menu>
         }
       >
-        <ButtonWithConfiguration
+        <ButtonContainer
+          role="button"
           status={status}
           small={small}
-          title={title}
-          rightIcon={"caret-down"}
-          {...{ tooltip, icon, ...forced }}
+          style={{minWidth: 'initial', padding: '0 15px'}}
+          icon={'caret-down'}
+          joined={'left'}
         />
       </Popover>
     </ShortcutHandler>
@@ -169,8 +184,9 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
 interface ButtonWithConfigurationProps {
   title: string;
   status: LaunchButtonStatus;
-  icon?: IconName | JSX.Element | "dagster-spinner";
-  rightIcon?: IconName;
+  style?: React.CSSProperties;
+  icon?: IconName | JSX.Element | 'dagster-spinner';
+  joined?: 'left' | 'right';
   tooltip?: string | JSX.Element;
   small?: boolean;
   onClick?: () => void;
@@ -184,74 +200,82 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
   title,
   small,
   status,
+  style,
   onClick,
-  rightIcon
-}) => (
-  <Tooltip
-    hoverOpenDelay={300}
-    position={Position.LEFT}
-    openOnTargetFocus={false}
-    targetTagName="div"
-    content={tooltip}
-  >
-    <ButtonContainer
-      role="button"
-      style={small ? { height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15 } : {}}
-      status={status}
-      onClick={onClick}
-      rightIcon={rightIcon}
+  joined,
+}) => {
+  const sizeStyles = small ? {height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15} : {};
+
+  return (
+    <Tooltip
+      hoverOpenDelay={300}
+      position={Position.LEFT}
+      openOnTargetFocus={false}
+      targetTagName="div"
+      content={tooltip}
     >
-      {icon === "dagster-spinner" ? (
-        <span style={{ paddingRight: 6 }}>
-          <Spinner intent={Intent.NONE} size={small ? 12 : 17} />
-        </span>
-      ) : (
-        <Icon
-          icon={icon}
-          iconSize={small ? 12 : 17}
-          style={{ textAlign: "center", marginRight: 5 }}
-        />
-      )}
-      <ButtonText>{title}</ButtonText>
-    </ButtonContainer>
-  </Tooltip>
-);
+      <ButtonContainer
+        role="button"
+        style={{...sizeStyles, ...style}}
+        status={status}
+        onClick={onClick}
+        joined={joined}
+      >
+        {icon === 'dagster-spinner' ? (
+          <span style={{paddingRight: 6}}>
+            <Spinner intent={Intent.NONE} size={small ? 12 : 17} />
+          </span>
+        ) : (
+          <Icon
+            icon={icon}
+            iconSize={small ? 12 : 17}
+            style={{textAlign: 'center', marginRight: 5}}
+          />
+        )}
+        <ButtonText>{title}</ButtonText>
+      </ButtonContainer>
+    </Tooltip>
+  );
+};
 
 const ButtonContainer = styled(Button)<{
   status: LaunchButtonStatus;
   small?: boolean;
+  joined?: 'right' | 'left';
 }>`
   &&& {
-    height: ${({ small }) => (small ? "24" : "30")}px;
-    border-radius: 3px;
+    height: ${({small}) => (small ? '24' : '30')}px;
     flex-shrink: 0;
-    background: ${({ status }) =>
+    background: ${({status}) =>
       ({
-        disabled: "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
-        ready: "linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);",
-        starting: "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
+        disabled: 'linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);',
+        ready: 'linear-gradient(to bottom, rgb(36, 145, 235) 30%, rgb(27, 112, 187) 100%);',
+        starting: 'linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);',
       }[status])};
     border-top: 1px solid rgba(255, 255, 255, 0.25);
     border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+    border-top-${({joined}) => joined}-radius: 0;
+    border-bottom-${({joined}) => joined}-radius: 0;
     transition: background 200ms linear;
     justify-content: center;
     align-items: center;
     display: inline-flex;
-    color: ${({ status }) => (status === "disabled" ? "rgba(255,255,255,0.5)" : "white")};
-    cursor: ${({ status }) => (status !== "ready" ? "normal" : "pointer")};
+    color: ${({status}) => (status === 'disabled' ? 'rgba(255,255,255,0.5)' : 'white')};
+    cursor: ${({status}) => (status !== 'ready' ? 'normal' : 'pointer')};
     z-index: 2;
     min-width: 150px;
-    margin-left: 6px;
+    margin-left: ${({joined}) => (joined ? '0' : '6px')};
     padding: 0 25px;
     min-height: 0;
 
     &:hover,
     &.bp3-active {
-      background: ${({ status }) =>
+      background: ${({status}) =>
         ({
-          disabled: "linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);",
-          ready: "linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);",
-          starting: "linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);"
+          disabled: 'linear-gradient(to bottom, rgb(145, 145, 145) 30%, rgb(130, 130, 130) 100%);',
+          ready: 'linear-gradient(to bottom, rgb(27, 112, 187) 30%, rgb(21, 89, 150) 100%);',
+          starting: 'linear-gradient(to bottom, rgb(21, 89, 150) 30%, rgb(21, 89, 150) 100%);',
         }[status])};
     }
 
@@ -260,7 +284,7 @@ const ButtonContainer = styled(Button)<{
     }
 
     .bp3-icon {
-      color: ${({ status }) => (status === "disabled" ? "rgba(255,255,255,0.5)" : "white")};
+      color: ${({status}) => (status === 'disabled' ? 'rgba(255,255,255,0.5)' : 'white')};
     }
     .bp3-button-text {
       display: flex;
@@ -273,7 +297,7 @@ const ButtonText = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 300px;
+  max-width: 350px;
 `;
 
 const LaunchMenuItem = styled(MenuItem)`

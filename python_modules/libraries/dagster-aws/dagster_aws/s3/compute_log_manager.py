@@ -16,7 +16,7 @@ from dagster.utils import ensure_dir, ensure_file
 
 
 class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
-    '''Logs solid compute function stdout and stderr to S3.
+    """Logs solid compute function stdout and stderr to S3.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
     such as the following:
@@ -47,14 +47,14 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         endpoint_url (Optional[str]): Override for the S3 endpoint url.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
-    '''
+    """
 
     def __init__(
         self,
         bucket,
         local_dir=None,
         inst_data=None,
-        prefix='dagster',
+        prefix="dagster",
         use_ssl=True,
         verify=True,
         verify_cert_path=None,
@@ -62,10 +62,10 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     ):
         _verify = False if not verify else verify_cert_path
         self._s3_session = boto3.resource(
-            's3', use_ssl=use_ssl, verify=_verify, endpoint_url=endpoint_url
+            "s3", use_ssl=use_ssl, verify=_verify, endpoint_url=endpoint_url
         ).meta.client
-        self._s3_bucket = check.str_param(bucket, 'bucket')
-        self._s3_prefix = check.str_param(prefix, 'prefix')
+        self._s3_bucket = check.str_param(bucket, "bucket")
+        self._s3_prefix = check.str_param(prefix, "prefix")
         self._download_urls = {}
 
         # proxy calls to local compute log manager (for subscriptions, etc)
@@ -73,7 +73,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             local_dir = seven.get_system_temp_directory()
 
         self.local_manager = LocalComputeLogManager(local_dir)
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @contextmanager
     def _watch_logs(self, pipeline_run, step_key=None):
@@ -90,13 +90,13 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return {
-            'bucket': StringSource,
-            'local_dir': Field(StringSource, is_required=False),
-            'prefix': Field(StringSource, is_required=False, default_value='dagster'),
-            'use_ssl': Field(bool, is_required=False, default_value=True),
-            'verify': Field(bool, is_required=False, default_value=True),
-            'verify_cert_path': Field(StringSource, is_required=False),
-            'endpoint_url': Field(StringSource, is_required=False),
+            "bucket": StringSource,
+            "local_dir": Field(StringSource, is_required=False),
+            "prefix": Field(StringSource, is_required=False, default_value="dagster"),
+            "use_ssl": Field(bool, is_required=False, default_value=True),
+            "verify": Field(bool, is_required=False, default_value=True),
+            "verify_cert_path": Field(StringSource, is_required=False),
+            "endpoint_url": Field(StringSource, is_required=False),
         }
 
     @staticmethod
@@ -125,7 +125,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         if key in self._download_urls:
             return self._download_urls[key]
         url = self._s3_session.generate_presigned_url(
-            ClientMethod='get_object', Params={'Bucket': self._s3_bucket, 'Key': key}
+            ClientMethod="get_object", Params={"Bucket": self._s3_bucket, "Key": key}
         )
         self._download_urls[key] = url
         return url
@@ -151,7 +151,7 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def _from_local_file_data(self, run_id, key, io_type, local_file_data):
         is_complete = self.is_watch_completed(run_id, key)
         path = (
-            's3://{}/{}'.format(self._s3_bucket, self._bucket_key(run_id, key, io_type))
+            "s3://{}/{}".format(self._s3_bucket, self._bucket_key(run_id, key, io_type))
             if is_complete
             else local_file_data.path
         )
@@ -168,25 +168,25 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         path = self.get_local_path(run_id, key, io_type)
         ensure_file(path)
         key = self._bucket_key(run_id, key, io_type)
-        with open(path, 'rb') as data:
+        with open(path, "rb") as data:
             self._s3_session.upload_fileobj(data, self._s3_bucket, key)
 
     def _download_to_local(self, run_id, key, io_type):
         path = self.get_local_path(run_id, key, io_type)
         ensure_dir(os.path.dirname(path))
-        with open(path, 'wb') as fileobj:
+        with open(path, "wb") as fileobj:
             self._s3_session.download_fileobj(
                 self._s3_bucket, self._bucket_key(run_id, key, io_type), fileobj
             )
 
     def _bucket_key(self, run_id, key, io_type):
-        check.inst_param(io_type, 'io_type', ComputeIOType)
+        check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
         paths = [
             self._s3_prefix,
-            'storage',
+            "storage",
             run_id,
-            'compute_logs',
-            '{}.{}'.format(key, extension),
+            "compute_logs",
+            "{}.{}".format(key, extension),
         ]
-        return '/'.join(paths)  # s3 path delimiter
+        return "/".join(paths)  # s3 path delimiter

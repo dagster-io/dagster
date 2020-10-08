@@ -11,8 +11,8 @@ def test_single_input():
 
     assert add_one
     assert len(add_one.input_defs) == 1
-    assert add_one.input_defs[0].name == 'num'
-    assert add_one.input_defs[0].dagster_type.name == 'Any'
+    assert add_one.input_defs[0].name == "num"
+    assert add_one.input_defs[0].dagster_type.name == "Any"
 
 
 def test_double_input():
@@ -22,11 +22,11 @@ def test_double_input():
 
     assert subtract
     assert len(subtract.input_defs) == 2
-    assert subtract.input_defs[0].name == 'num_one'
-    assert subtract.input_defs[0].dagster_type.name == 'Any'
+    assert subtract.input_defs[0].name == "num_one"
+    assert subtract.input_defs[0].dagster_type.name == "Any"
 
-    assert subtract.input_defs[1].name == 'num_two'
-    assert subtract.input_defs[1].dagster_type.name == 'Any'
+    assert subtract.input_defs[1].name == "num_two"
+    assert subtract.input_defs[1].dagster_type.name == "Any"
 
 
 def test_solid_arg_fails():
@@ -66,6 +66,6 @@ def test_one_arg_lambda_solid():
 
     assert one_arg
     assert len(one_arg.input_defs) == 1
-    assert one_arg.input_defs[0].name == 'num'
-    assert one_arg.input_defs[0].dagster_type.name == 'Any'
+    assert one_arg.input_defs[0].name == "num"
+    assert one_arg.input_defs[0].dagster_type.name == "Any"
     assert len(one_arg.output_defs) == 1

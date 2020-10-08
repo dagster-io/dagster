@@ -7,7 +7,7 @@ from dagster.serdes import ConfigurableClass, ConfigurableClassData
 class LocalArtifactStorage(ConfigurableClass):
     def __init__(self, base_dir, inst_data=None):
         self._base_dir = base_dir
-        self._inst_data = check.opt_inst_param(inst_data, 'inst_data', ConfigurableClassData)
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
     @property
     def inst_data(self):
@@ -18,15 +18,15 @@ class LocalArtifactStorage(ConfigurableClass):
         return self._base_dir
 
     def file_manager_dir(self, run_id):
-        check.str_param(run_id, 'run_id')
-        return os.path.join(self.base_dir, 'storage', run_id, 'files')
+        check.str_param(run_id, "run_id")
+        return os.path.join(self.base_dir, "storage", run_id, "files")
 
     def intermediates_dir(self, run_id):
-        return os.path.join(self.base_dir, 'storage', run_id, '')
+        return os.path.join(self.base_dir, "storage", run_id, "")
 
     @property
     def schedules_dir(self):
-        return os.path.join(self.base_dir, 'schedules')
+        return os.path.join(self.base_dir, "schedules")
 
     @staticmethod
     def from_config_value(inst_data, config_value):
@@ -34,4 +34,4 @@ class LocalArtifactStorage(ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {'base_dir': str}
+        return {"base_dir": str}

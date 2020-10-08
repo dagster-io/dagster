@@ -1,14 +1,15 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import Loading from "../Loading";
-import { useQuery } from "react-apollo";
-import TypeExplorer from "./TypeExplorer";
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
+
+import {usePipelineSelector} from 'src/DagsterRepositoryContext';
+import {Loading} from 'src/Loading';
+import {PipelineExplorerPath} from 'src/PipelinePathUtils';
+import {TypeExplorer} from 'src/typeexplorer/TypeExplorer';
 import {
   TypeExplorerContainerQuery,
-  TypeExplorerContainerQueryVariables
-} from "./types/TypeExplorerContainerQuery";
-import { PipelineExplorerPath } from "../PipelinePathUtils";
-import { usePipelineSelector } from "../DagsterRepositoryContext";
+  TypeExplorerContainerQueryVariables,
+} from 'src/typeexplorer/types/TypeExplorerContainerQuery';
 
 interface ITypeExplorerContainerProps {
   explorerPath: PipelineExplorerPath;
@@ -17,27 +18,27 @@ interface ITypeExplorerContainerProps {
 
 export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContainerProps> = ({
   explorerPath,
-  typeName
+  typeName,
 }) => {
   const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
   const queryResult = useQuery<TypeExplorerContainerQuery, TypeExplorerContainerQueryVariables>(
     TYPE_EXPLORER_CONTAINER_QUERY,
     {
-      fetchPolicy: "cache-and-network",
+      fetchPolicy: 'cache-and-network',
       variables: {
         pipelineSelector,
-        dagsterTypeName: typeName
-      }
-    }
+        dagsterTypeName: typeName,
+      },
+    },
   );
   return (
     <Loading queryResult={queryResult}>
-      {data => {
+      {(data) => {
         if (
           data.pipelineOrError &&
-          data.pipelineOrError.__typename === "Pipeline" &&
+          data.pipelineOrError.__typename === 'Pipeline' &&
           data.pipelineOrError.dagsterTypeOrError &&
-          data.pipelineOrError.dagsterTypeOrError.__typename === "RegularDagsterType"
+          data.pipelineOrError.dagsterTypeOrError.__typename === 'RegularDagsterType'
         ) {
           return <TypeExplorer type={data.pipelineOrError.dagsterTypeOrError} />;
         } else {

@@ -4,7 +4,8 @@ import { ExampleReferenceLink } from 'components/ExampleReference';
 
 <DynamicMetaTags
   title="Data Science with Dagstermill | Dagster"
-  description="Dagster is a system for building modern data applications."
+  description="The Dagstermill package lets you run notebooks using the Dagster tools and integrate
+  them into data pipelines with heterogeneous solids."
 />
 
 # Data Science with Notebooks
@@ -73,7 +74,7 @@ file:/docs_snippets/docs_snippets/legacy/data_science/iris_pipeline.py
 
 This is the simplest form of notebook integration -- we don't actually
 have to make any changes in the notebook itself to run it using the
-dagster tooling. Just run:
+Dagster tooling. Just run:
 
 ```bash
 dagit -f iris_pipeline.py
@@ -146,7 +147,7 @@ iris = pd.read_csv(
 We need to make one more change to our notebook so that the `path`
 parameter is injected by the Dagstermill machinery at runtime.
 
-Dagstermill is built on Papermill ([3](#3)), which uses Jupyter cell tags to identify the cell into
+Dagstermill is built on Papermill ([3](#references)), which uses Jupyter cell tags to identify the cell into
 which it should inject parameters at runtime. You will need to be
 running Jupyter 5.0 or later and may need to turn the display of cell
 tags on (select _View \> Cell Toolbar \> Tags_ from the Jupyter menu).
@@ -183,7 +184,7 @@ new `injected-parameters` cell.
 
 The execution log contains the path to the output notebook so that you
 can access it after execution to examine and potentially debug the
-output. This path is also displayed in dagit.
+output. This path is also displayed in Dagit.
 
 ## The notebook context
 
@@ -238,7 +239,7 @@ no-op, so you don't need to change anything when moving from
 interactive exploration and development to production.
 
 You can also yield custom <PyObject module="dagster" object="AssetMaterialization" /> objects
-(for instance, to tell dagit where you've saved a plot) by calling `dagstermill.yield_event`.
+(for instance, to tell Dagit where you've saved a plot) by calling `dagstermill.yield_event`.
 
 ## References
 

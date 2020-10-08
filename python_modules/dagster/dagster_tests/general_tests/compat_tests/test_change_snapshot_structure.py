@@ -12,14 +12,14 @@ from dagster.utils.test import restore_directory
 # a change of schema in the snapshot hierarchy caused hashes to be different
 # when snapshots reloaded
 def test_run_created_in_0_7_9_snapshot_id_change():
-    test_dir = file_relative_path(__file__, 'snapshot_0_7_9_shapshot_id_creation_change/sqlite')
+    test_dir = file_relative_path(__file__, "snapshot_0_7_9_shapshot_id_creation_change/sqlite")
     with restore_directory(test_dir):
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         # run_id = 'e297fa70-49e8-43f8-abfe-1634f02644f6'
 
-        old_pipeline_snapshot_id = '88528edde2ed64da3c39cca0da8ba2f7586c1a5d'
-        old_execution_plan_snapshot_id = '2246f8e5a10d21e15fbfa3773d7b2d0bc1fa9d3d'
+        old_pipeline_snapshot_id = "88528edde2ed64da3c39cca0da8ba2f7586c1a5d"
+        old_execution_plan_snapshot_id = "2246f8e5a10d21e15fbfa3773d7b2d0bc1fa9d3d"
         with pytest.warns(
             UserWarning,
             match=re.escape(

@@ -1,31 +1,306 @@
 # Changelog
 
+## 0.9.13
+
+**Bugfixes**
+
+- Fixes an issue using `build_reconstructable_pipeline`.
+- Improved loading times for the asset catalog in Dagit.
+
+**Documentations**
+
+- Improved error messages when invoking dagit from the CLI with bad arguments.
+
+## 0.9.12
+
+**Breaking Changes**
+
+- Dagster now warns when a solid, pipeline, or other definition is created with an invalid name (for example, a Python keyword). This warning will become an error in the 0.9.13 release.
+
+**Community Contributions**
+
+- Added an int type to `EventMetadataEntry` (Thanks @[ChocoletMousse](https://github.com/ChocoletMousse)!)
+- Added a `build_composite_solid_definition` method to Lakehouse (Thanks @[sd2k](https://github.com/sd2k)!)
+- Improved broken link detection in Dagster docs (Thanks @[keyz](https://github.com/keyz)!)
+
+**New**
+
+- Improvements to log filtering on Run view in Dagit
+- Improvements to instance level scheduler page
+- Log engine events when pipeline termination is initiated
+
+**Bugfixes**
+
+- Syntax errors in user code now display the file and line number with the error in Dagit
+- Dask executor no longer fails when using intermediate_storage
+- In the Celery K8s executor, we now mark the step as failed when the step job fails
+- Changed the `DagsterInvalidAssetKey` error so that it no longer fails upon being thrown
+
+**Documentation**
+
+- Added API docs for dagster-dbt experimental library
+- Fixed some cosmetic issues with docs.dagster.io
+- Added code snippets from Solids examples to test path, and fixed some inconsistencies regarding parameter ordering
+- Changed to using markers instead of exact line numbers to mark out code snippets
+
+## 0.9.10
+
+**Breaking Changes**
+
+- [dagster-dask] Removed the `compute` option from Dask DataFrame materialization configs for all output types. Setting this option to `False` (default `True`) would result in a future that is never computed, leading to missing materializations
+
+**Community Contributions**
+
+- Added a Dask resource (Thanks @[kinghuang](https://github.com/kinghuang)!)
+
+**New**
+
+- Console log messages are now streamlined to live on a single line per message
+- Added better messaging around `$DAGSTER_HOME` if it is not set or improperly setup when starting up a Dagster instance
+- Tools for exporting a file for debugging a run have been added:
+  - `dagster debug export` - a new CLI entry added for exporting a run by id to a file
+  - `dagit-debug` - a new CLI added for loading dagit with a run to debug
+  - `dagit` now has a button to download the debug file for a run via the action menu on the runs page
+- The `dagster api grpc` command now defaults to the current working directory if none is specified
+- Added retries to dagster-postgres connections
+- Fixed faulty warning message when invoking the same solid multiple times in the same context
+- Added ability to specify custom liveness probe for celery workers in kubernetes deployment
+
+**Bugfixes**
+
+- Fixed a bug where Dagster types like List/Set/Tuple/Dict/Optional were not displaying properly on dagit logs
+- Fixed endless spinners on `dagit --empty-workspace`
+- Fixed incorrect snapshot banner on pipeline view
+- Fixed visual overlapping of overflowing dagit logs
+- Fixed a bug where hanging runs when executing against a gRPC server could cause the Runs page to be unable to load
+- Fixed a bug in celery integration where celery tasks could return `None` when an iterable is expected, causing errors in the celery execution loop.
+
+**Experimental**
+
+- [lakehouse] Each time a Lakehouse solid updates an asset, it automatically generates an AssetMaterialization event
+- [lakehouse] Lakehouse computed_assets now accept a version argument that describes the version of the computation
+- Setting the “dagster/is_memoized_run” tag to true will cause the run to skip any steps whose versions match the versions of outputs produced in prior runs.
+- [dagster-dbt] Solids for running dbt CLI commands
+- Added extensive documentation to illuminate how versions are computed
+- Added versions for step inputs from config, default values, and from other step outputs
+
+## 0.9.9
+
+**New**
+
+- [Databricks] solids created with create_databricks_job_solid now log a URL for accessing the job in the Databricks UI.
+- The pipeline execute command now defaults to using your current directory if you don’t specify a working directory.
+
+**Bugfixes**
+
+- [Celery-K8s] Surface errors to Dagit that previously were not caught in the Celery workers.
+- Fix issues with calling add_run_tags on tags that already exist.
+- Add “Unknown” step state in Dagit’s pipeline run logs view for when pipeline has completed but step has not emitted a completion event
+
+**Experimental**
+
+- Version tags for resources and external inputs.
+
+**Documentation**
+
+- Fix rendering of example solid config in “Basics of Solids” tutorial.
+
+## 0.9.8
+
+**New**
+
+- Support for the Dagster step selection DSL: `reexecute_pipeline` now takes `step_selection`, which accepts queries like `*solid_a.compute++` (i.e., `solid_a.compute`, all of its ancestors, its immediate descendants, and their immediate descendants). `steps_to_execute` is deprecated and will be removed in 0.10.0.
+
+**Community contributions**
+
+- [dagster-databricks] Improved setup of Databricks environment (Thanks @[sd2k](https://github.com/sd2k)!)
+- Enabled frozenlist pickling (Thanks @[kinghuang](https://github.com/kinghuang)!)
+
+**Bugfixes**
+
+- Fixed a bug that pipeline-level hooks were not correctly applied on a pipeline subset.
+- Improved error messages when execute command can't load a code pointer.
+- Fixed a bug that prevented serializing Spark intermediates with configured intermediate storages.
+
+**Dagit**
+
+- Enabled subset reexecution via Dagit when part of the pipeline is still running.
+- Made `Schedules` clickable and link to View All page in the schedule section.
+- Various Dagit UI improvements.
+
+**Experimental**
+
+- [lakehouse] Added CLI command for building and executing a pipeline that updates a given set of assets: `house update --module package.module —assets my_asset*`
+
+**Documentation**
+
+- Fixes and improvements.
+
+## 0.9.7
+
+**Bugfixes**
+
+- Fixed an issue in the dagstermill library that caused solid config fetch to be non-deterministic.
+- Fixed an issue in the K8sScheduler where multiple pipeline runs were kicked off for each scheduled
+  execution.
+
+## 0.9.6
+
+**New**
+
+- Added ADLS2 storage plugin for Spark DataFrame (Thanks @sd2k!)
+- Added feature in the Dagit Playground to automatically remove extra configuration that does not conform to a pipeline’s config schema.
+- [Dagster-Celery/Celery-K8s/Celery-Docker] Added Celery worker names and pods to the logs for each step execution
+
+**Community contributions**
+
+- Re-enabled dagster-azure integration tests in dagster-databricks tests (Thanks @sd2k!)
+- Moved dict_without_keys from dagster-pandas into dagster.utils (Thanks @DavidKatz-il)
+- Moved Dask DataFrame read/to options under read/to keys (Thanks @kinghuang)
+
+**Bugfixes**
+
+- Fixed helper for importing data from GCS paths into Bigquery (Thanks @grabangomb (https://github.com/grabangomb)!)
+- Postgres event storage now waits to open a thread to watch runs until it is needed
+
+**Experimental**
+
+- Added version computation function for DagsterTypeLoader. (Actual versioning will be supported in 0.10.0)
+- Added version attribute to solid and SolidDefinition. (Actual versioning will be supported in 0.10.0)
+
+## 0.9.5
+
+**New**
+
+- UI improvements to the backfill partition selector
+- Enabled sorting of steps by failure in the partition run matrix in Dagit
+
+**Bugfixes**
+
+- [dagstermill] fixes an issue with output notebooks and s3 storage
+- [dagster_celery] bug fixed in pythonpath calculation (thanks @enima2648!)
+- [dagster_pandas] marked create_structured_dataframe_type and ConstraintWithMetadata as experimental APIs
+- [dagster_k8s] reduced default job backoff limit to 0
+
+**Docs**
+
+- Various docs site improvements
+
+## 0.9.4
+
+**Breaking Changes**
+
+- When using the `configured` API on a solid or composite solid, a new solid name must be provided.
+- The image used by the K8sScheduler to launch scheduled executions is now specified under the “scheduler” section of the Helm chart (previously under “pipeline_run” section).
+
+**New**
+
+- Added an experimental mode that speeds up interactions in dagit by launching a gRPC server on startup for each repository location in your workspace. To enable it, add the following to your `dagster.yaml`:
+
+```yaml
+opt_in:
+  local_servers: true
+```
+
+- Intermediate Storage and System Storage now default to the first provided storage definition when no configuration is provided. Previously, it would be necessary to provide a run config for storage whenever providing custom storage definitions, even if that storage required no run configuration. Now, if the first provided storage definition requires no run configuration, the system will default to using it.
+- Added a timezone picker to Dagit, and made all timestamps timezone-aware
+- Added solid_config to hook context which provides the access to the config schema variable of the corresponding solid.
+- Hooks can be directly set on `PipelineDefinition` or `@pipeline`, e.g. `@pipeline(hook_defs={hook_a})`. It will apply the hooks on every single solid instance within the pipeline.
+- Added Partitions tab for partitioned pipelines, with new backfill selector.
+
+## 0.9.3
+
+**Breaking Changes**
+
+- Removed deprecated `--env` flag from CLI
+- The `--host` CLI param has been renamed to `--grpc_host` to avoid conflict with the dagit `--host` param.
+
+**New**
+
+- Descriptions for solid inputs and outputs will now be inferred from doc blocks if available (thanks [@AndersonReyes](https://github.com/dagster-io/dagster/commits?author=AndersonReyes) !)
+- Various documentation improvements (thanks [@jeriscc](https://github.com/dagster-io/dagster/commits?author=jeriscc) !)
+- Load inputs from pyspark dataframes (thanks [@davidkatz-il](https://github.com/dagster-io/dagster/commits?author=davidkatz-il) !)
+- Added step-level run history for partitioned schedules on the schedule view
+- Added great_expectations integration, through the `dagster_ge` library. Example usage is under a new example, called `ge_example`, and documentation for the library can be found under the libraries section of the api docs.
+- `PythonObjectDagsterType` can now take a tuple of types as well as a single type, more closely mirroring `isinstance` and allowing Union types to be represented in Dagster.
+- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://docs.dagster.io/overview/configuration).
+- Updated Helm chart to include auto-generated user code configmap in user code deployment by default
+
+**Bugfixes**
+
+- Databricks now checks intermediate storage instead of system storage
+- Fixes a bug where applying hooks on a pipeline with composite solids would flatten the top-level solids. Now applying hooks on pipelines or composite solids means attaching hooks to every single solid instance within the pipeline or the composite solid.
+- Fixes the GraphQL playground hosted by dagit
+- Fixes a bug where K8s CronJobs were stopped unnecessarily during schedule reconciliation
+
+**Experimental**
+
+- New `dagster-k8s/config` tag that lets users pass in custom configuration to the Kubernetes `Job`, `Job` metadata, `JobSpec`, `PodSpec`, and `PodTemplateSpec` metadata.
+  - This allows users to specify settings like eviction policy annotations and node affinities.
+  - Example:
+  ```python
+    @solid(
+      tags = {
+        'dagster-k8s/config': {
+          'container_config': {
+            'resources': {
+              'requests': { 'cpu': '250m', 'memory': '64Mi' },
+              'limits': { 'cpu': '500m', 'memory': '2560Mi' },
+            }
+          },
+          'pod_template_spec_metadata': {
+            'annotations': { "cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
+          },
+          'pod_spec_config': {
+            'affinity': {
+              'nodeAffinity': {
+                'requiredDuringSchedulingIgnoredDuringExecution': {
+                  'nodeSelectorTerms': [{
+                    'matchExpressions': [{
+                      'key': 'beta.kubernetes.io/os', 'operator': 'In', 'values': ['windows', 'linux'],
+                    }]
+                  }]
+                }
+              }
+            }
+          },
+        },
+      },
+    )
+    def my_solid(context):
+      context.log.info('running')
+  ```
+
 ## 0.9.2
 
 **Breaking Changes**
 
-* The `--env` flag no longer works for the `pipeline launch` or `pipeline execute` commands. Use `--config` instead.
-* The `pipeline execute` command no longer accepts the `--workspace` argument.
-To execute pipelines in a workspace, use `pipeline launch` instead.
+- The `--env` flag no longer works for the `pipeline launch` or `pipeline execute` commands. Use `--config` instead.
+- The `pipeline execute` command no longer accepts the `--workspace` argument.
+  To execute pipelines in a workspace, use `pipeline launch` instead.
 
 **New**
 
-* Added `ResourceDefinition.mock_resource` helper for magic mocking resources. Example usage can be found [here](https://git.io/JJ7tz)
-* Remove the `row_count` metadata entry from the Dask DataFrame type check (thanks [@kinghuang](https://github.com/kinghuang)!)
-* Add [`orient`](https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.to_json) to the config options when materializing a Dask DataFrame to `json` (thanks [@kinghuang](https://github.com/kinghuang)!)
+- Added `ResourceDefinition.mock_resource` helper for magic mocking resources. Example usage can be found [here](https://git.io/JJ7tz)
+- Remove the `row_count` metadata entry from the Dask DataFrame type check (thanks [@kinghuang](https://github.com/kinghuang)!)
+- Add [`orient`](https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.to_json) to the config options when materializing a Dask DataFrame to `json` (thanks [@kinghuang](https://github.com/kinghuang)!)
 
 **Bugfixes**
 
-* Fixed a bug where applying `configured` to a solid definition would overwrite inputs from run config.
-* Fixed a bug where pipeline tags would not apply to solid subsets.
-* Improved error messages for repository-loading errors in CLI commands.
-* Fixed a bug where pipeline execution error messages were not being surfaced in Dagit.
+- Fixed a bug where applying `configured` to a solid definition would overwrite inputs from run config.
+- Fixed a bug where pipeline tags would not apply to solid subsets.
+- Improved error messages for repository-loading errors in CLI commands.
+- Fixed a bug where pipeline execution error messages were not being surfaced in Dagit.
 
 ## 0.9.1
 
 **Bugfixes**
 
 - Fixes an issue in the `dagster-k8s-celery` executor when executing solid subsets
+
+**Breaking Changes**
+
+- Deprecated the `IntermediateStore` API. `IntermediateStorage` now wraps an ObjectStore, and `TypeStoragePlugin` now accepts an `IntermediateStorage` instance instead of an `IntermediateStore` instance. (Noe that `IntermediateStore` and `IntermediateStorage` are both internal APIs that are used in some non-core libraries).
 
 ## 0.9.0
 
@@ -37,9 +312,10 @@ To execute pipelines in a workspace, use `pipeline launch` instead.
 - We have removed the `config` argument to the `ConfigMapping`, `@composite_solid`, `@solid`, `SolidDefinition`, `@executor`, `ExecutorDefinition`, `@logger`, `LoggerDefinition`, `@resource`, and `ResourceDefinition` APIs, which we deprecated in 0.8.0. Use `config_schema` instead.
 
 **New**
+
 - Python 3.8 is now fully supported.
 - `-d` or `--working-directory` can be used to specify a working directory in any command that
-takes in a `-f` or `--python_file` argument.
+  takes in a `-f` or `--python_file` argument.
 - Removed the deprecation of `create_dagster_pandas_dataframe_type`. This is the currently
   supported API for custom pandas data frame type creation.
 - Removed gevent dependency from dagster
@@ -55,7 +331,6 @@ takes in a `-f` or `--python_file` argument.
 - `AssetMaterializations` no longer accepts a `dagster_type` argument. This reverts the change
   billed as "`AssetMaterializations` can now have type information attached as metadata." in the
   previous release.
-
 
 ## 0.8.10
 
@@ -116,11 +391,11 @@ takes in a `-f` or `--python_file` argument.
     As before, the default includes an in-memory intermediate and a local filesystem intermediate
     storage.
   - We have deprecated `system_storage_defs` argument to `ModeDefinition` in favor of
-    `intermediate_storage_defs`.  `system_storage_defs` will be removed in 0.10.0 at the earliest.
+    `intermediate_storage_defs`. `system_storage_defs` will be removed in 0.10.0 at the earliest.
   - We have added an `@intermediate_storage` decorator, which makes it easy to define intermediate
     storages.
   - We have added `s3_file_manager` and `local_file_manager` resources to replace the file managers
-    that previously lived inside system storages.  The airline demo has been updated to include
+    that previously lived inside system storages. The airline demo has been updated to include
     an example of how to do this:
     https://github.com/dagster-io/dagster/blob/0.8.8/examples/airline_demo/airline_demo/solids.py#L171.
 - The help panel in the dagit config editor can now be resized and toggled open or closed, to

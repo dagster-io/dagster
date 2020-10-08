@@ -14,6 +14,30 @@ export interface ScheduleDefinitionFragment_partitionSet {
   name: string;
 }
 
+export interface ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
+  __typename: "CodePointerMetadata";
+  key: string;
+  value: string;
+}
+
+export interface ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer {
+  __typename: "CodePointer";
+  metadata: ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
+}
+
+export interface ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin {
+  __typename: "PythonRepositoryOrigin";
+  codePointer: ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer;
+  executablePath: string;
+}
+
+export interface ScheduleDefinitionFragment_scheduleState_repositoryOrigin_GrpcRepositoryOrigin {
+  __typename: "GrpcRepositoryOrigin";
+  grpcUrl: string;
+}
+
+export type ScheduleDefinitionFragment_scheduleState_repositoryOrigin = ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin | ScheduleDefinitionFragment_scheduleState_repositoryOrigin_GrpcRepositoryOrigin;
+
 export interface ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
   pipelineName: string;
@@ -72,6 +96,7 @@ export interface ScheduleDefinitionFragment_scheduleState {
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
+  repositoryOrigin: ScheduleDefinitionFragment_scheduleState_repositoryOrigin;
   repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;

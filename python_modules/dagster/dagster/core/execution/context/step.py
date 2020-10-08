@@ -4,12 +4,12 @@ from .system import SystemStepExecutionContext
 
 
 class StepExecutionContext(object):
-    __slots__ = ['_system_step_execution_context']
+    __slots__ = ["_system_step_execution_context"]
 
     def __init__(self, system_step_execution_context):
         self._system_step_execution_context = check.inst_param(
             system_step_execution_context,
-            'system_step_execution_context',
+            "system_step_execution_context",
             SystemStepExecutionContext,
         )
 
@@ -66,8 +66,8 @@ class StepExecutionContext(object):
         return self._system_step_execution_context.get_tag(key)
 
     def get_system_context(self):
-        '''
+        """
         This allows advanced users (e.g. framework authors) to punch through
         to the underlying system context.
-        '''
+        """
         return self._system_step_execution_context

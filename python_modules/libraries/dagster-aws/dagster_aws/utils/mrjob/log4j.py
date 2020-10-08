@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''Parse the log4j syslog format used by Hadoop.'''
+"""Parse the log4j syslog format used by Hadoop."""
 import re
 from collections import namedtuple
 
@@ -21,32 +21,32 @@ import six
 
 # log line format output by hadoop jar command
 _HADOOP_LOG4J_LINE_RE = re.compile(
-    r'^\s*(?P<timestamp>\d\d\/\d\d\/\d\d \d\d\:\d\d\:\d\d)'
-    r'\s+(?P<level>[A-Z]+)'
-    r'\s+(?P<logger>\S+)'
-    r'(\s+\((?P<thread>.*?)\))?'
-    r'( - ?|: ?)'
-    r'(?P<message>.*?)$'
+    r"^\s*(?P<timestamp>\d\d\/\d\d\/\d\d \d\d\:\d\d\:\d\d)"
+    r"\s+(?P<level>[A-Z]+)"
+    r"\s+(?P<logger>\S+)"
+    r"(\s+\((?P<thread>.*?)\))?"
+    r"( - ?|: ?)"
+    r"(?P<message>.*?)$"
 )
 
 # log line format output to Hadoop syslog
 _HADOOP_LOG4J_LINE_ALTERNATE_RE = re.compile(
-    r'^\s*(?P<timestamp>\d\d\/\d\d\/\d\d \d\d\:\d\d\:\d\d)'
-    r'\s+(?P<level>[A-Z]+)'
-    r'(\s+\[(?P<thread>.*?)\])'
-    r'\s+(?P<logger>\S+)'
-    r'(\s+\((?P<caller_location>\S+)\))?'
-    r'( - ?|: ?)'
-    r'(?P<message>.*?)$'
+    r"^\s*(?P<timestamp>\d\d\/\d\d\/\d\d \d\d\:\d\d\:\d\d)"
+    r"\s+(?P<level>[A-Z]+)"
+    r"(\s+\[(?P<thread>.*?)\])"
+    r"\s+(?P<logger>\S+)"
+    r"(\s+\((?P<caller_location>\S+)\))?"
+    r"( - ?|: ?)"
+    r"(?P<message>.*?)$"
 )
 
 
 class Log4jRecord(
     namedtuple(
-        '_Log4jRecord', 'caller_location level logger message num_lines start_line thread timestamp'
+        "_Log4jRecord", "caller_location level logger message num_lines start_line thread timestamp"
     )
 ):
-    '''Represents a Log4J log record.
+    """Represents a Log4J log record.
 
     caller_location -- e.g. 'YarnClientImpl.java:submitApplication(251)'
     level -- e.g. 'INFO'
@@ -57,7 +57,7 @@ class Log4jRecord(
     start_line -- which line the message started on (0-indexed)
     thread -- e.g. 'main'. Defaults to ''
     timestamp -- unparsed timestamp, e.g. '15/12/07 20:49:28'
-    '''
+    """
 
     def __new__(
         cls, caller_location, level, logger, message, num_lines, start_line, thread, timestamp
@@ -68,23 +68,23 @@ class Log4jRecord(
 
     @staticmethod
     def fake_record(line, line_num):
-        '''Used to represent a leading Log4J line that doesn't conform to the regular expressions we
+        """Used to represent a leading Log4J line that doesn't conform to the regular expressions we
         expect.
-        '''
+        """
         return Log4jRecord(
-            caller_location='',
-            level='',
-            logger='',
+            caller_location="",
+            level="",
+            logger="",
             message=line,
             num_lines=1,
             start_line=line_num,
-            thread='',
-            timestamp='',
+            thread="",
+            timestamp="",
         )
 
 
 def parse_hadoop_log4j_records(lines):
-    '''Parse lines from a hadoop log into log4j records.
+    """Parse lines from a hadoop log into log4j records.
 
     Yield Log4jRecords.
 
@@ -93,13 +93,13 @@ def parse_hadoop_log4j_records(lines):
 
     Also yields fake records for leading non-log4j lines (trailing non-log4j
     lines are assumed to be part of a multiline message if not pre-filtered).
-    '''
+    """
     last_record = None
     line_num = 0
 
-    for line_num, line in enumerate(lines.split('\n')):
+    for line_num, line in enumerate(lines.split("\n")):
         # convert from bytes to unicode, if needed, and strip trailing newlines
-        line = six.ensure_str(line).rstrip('\r\n')
+        line = six.ensure_str(line).rstrip("\r\n")
 
         m = _HADOOP_LOG4J_LINE_RE.match(line) or _HADOOP_LOG4J_LINE_ALTERNATE_RE.match(line)
 
@@ -111,19 +111,19 @@ def parse_hadoop_log4j_records(lines):
             matches = m.groupdict()
 
             last_record = Log4jRecord(
-                caller_location=matches.get('caller_location', ''),
-                level=matches['level'],
-                logger=matches['logger'],
-                message=matches['message'],
+                caller_location=matches.get("caller_location", ""),
+                level=matches["level"],
+                logger=matches["logger"],
+                message=matches["message"],
                 num_lines=1,
                 start_line=line_num,
-                thread=matches.get('thread', ''),
-                timestamp=matches['timestamp'],
+                thread=matches.get("thread", ""),
+                timestamp=matches["timestamp"],
             )
         else:
             # add on to previous record
             if last_record:
-                last_record = last_record._replace(message=last_record.message + '\n' + line)
+                last_record = last_record._replace(message=last_record.message + "\n" + line)
             else:
                 yield Log4jRecord.fake_record(line, line_num)
 

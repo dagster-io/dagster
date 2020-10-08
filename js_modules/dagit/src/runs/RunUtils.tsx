@@ -1,89 +1,87 @@
-import * as React from "react";
-import * as yaml from "yaml";
+import {Icon, Popover} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import * as yaml from 'yaml';
 
-import { LaunchPipelineExecution } from "./types/LaunchPipelineExecution";
-import { LaunchPipelineReexecution } from "./types/LaunchPipelineReexecution";
-import gql from "graphql-tag";
-import { showCustomAlert } from "../CustomAlertProvider";
-import { RunTableRunFragment } from "./types/RunTableRunFragment";
-import { RunFragment } from "./types/RunFragment";
-import { RunActionMenuFragment } from "./types/RunActionMenuFragment";
-import { RunTimeFragment } from "./types/RunTimeFragment";
-import { unixTimestampToString } from "../Util";
-import PythonErrorInfo from "../PythonErrorInfo";
+import {showCustomAlert} from 'src/CustomAlertProvider';
+import {APP_PATH_PREFIX} from 'src/DomUtils';
+import {filterByQuery} from 'src/GraphQueryImpl';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {Timestamp, TimezoneContext, timestampToString} from 'src/TimeComponents';
+import {formatElapsedTime} from 'src/Util';
+import {toGraphQueryItems} from 'src/gaant/toGraphQueryItems';
+import {StepSelection} from 'src/runs/StepSelection';
+import {LaunchPipelineExecution} from 'src/runs/types/LaunchPipelineExecution';
+import {LaunchPipelineReexecution} from 'src/runs/types/LaunchPipelineReexecution';
+import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
+import {RunFragment} from 'src/runs/types/RunFragment';
+import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
+import {RunTimeFragment} from 'src/runs/types/RunTimeFragment';
+import {ExecutionParams} from 'src/types/globalTypes';
 
-import { Popover, Icon } from "@blueprintjs/core";
-import { formatElapsedTime } from "../Util";
-import { APP_PATH_PREFIX } from "../DomUtils";
-
-export function subsetTitleForRun(run: { tags: { key: string; value: string }[] }) {
-  const stepsTag = run.tags.find(t => t.key === "dagster/step_selection");
-  return stepsTag ? stepsTag.value : "Full Pipeline";
+export function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
+  const stepsTag = run.tags.find((t) => t.key === 'dagster/step_selection');
+  return stepsTag ? stepsTag.value : 'Full Pipeline';
 }
 
-export function titleForRun(run: { runId: string }) {
-  return run.runId.split("-").shift();
+export function titleForRun(run: {runId: string}) {
+  return run.runId.split('-').shift();
 }
 
 export const RunsQueryRefetchContext = React.createContext<{
   refetch: () => void;
-}>({ refetch: () => {} });
+}>({refetch: () => {}});
 
 export function handleLaunchResult(
   pipelineName: string,
-  result: void | { data?: LaunchPipelineExecution | LaunchPipelineReexecution },
-  opts: { openInNewWindow: boolean }
+  result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution},
+  opts: {openInNewWindow: boolean},
 ) {
   const obj =
-    result && result.data && "launchPipelineExecution" in result.data
+    result && result.data && 'launchPipelineExecution' in result.data
       ? result.data.launchPipelineExecution
-      : result && result.data && "launchPipelineReexecution" in result.data
+      : result && result.data && 'launchPipelineReexecution' in result.data
       ? result.data.launchPipelineReexecution
       : null;
 
   if (!obj) {
-    showCustomAlert({ body: `No data was returned. Did Dagit crash?` });
+    showCustomAlert({body: `No data was returned. Did Dagit crash?`});
     return;
   }
 
-  if (obj.__typename === "LaunchPipelineRunSuccess") {
+  if (obj.__typename === 'LaunchPipelineRunSuccess') {
     openRunInBrowser(obj.run, opts);
-  } else if (obj.__typename === "PythonError") {
+  } else if (obj.__typename === 'PythonError') {
     showCustomAlert({
-      title: "Error",
-      body: <PythonErrorInfo error={obj} />
+      title: 'Error',
+      body: <PythonErrorInfo error={obj} />,
     });
   } else {
     let message = `${pipelineName} cannot be executed with the provided config.`;
 
-    if ("errors" in obj) {
+    if ('errors' in obj) {
       message += ` Please fix the following errors:\n\n${obj.errors
-        .map(error => error.message)
-        .join("\n\n")}`;
+        .map((error) => error.message)
+        .join('\n\n')}`;
     }
 
-    showCustomAlert({ body: message });
+    showCustomAlert({body: message});
   }
 }
 
 export function openRunInBrowser(
-  run: { runId: string; pipelineName: string },
-  opts: { openInNewWindow: boolean }
+  run: {runId: string; pipelineName: string},
+  opts: {openInNewWindow: boolean},
 ) {
   const url = `${APP_PATH_PREFIX}/pipeline/${run.pipelineName}/runs/${run.runId}`;
   if (opts.openInNewWindow) {
-    window.open(url, "_blank");
+    window.open(url, '_blank');
   } else {
     window.location.href = url;
   }
 }
 
-function getExecutionMetadata(
-  run: RunFragment | RunTableRunFragment | RunActionMenuFragment,
-  resumeRetry = false,
-  stepKeys: string[] = [],
-  stepQuery = ""
-) {
+function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunActionMenuFragment) {
   return {
     parentRunId: run.runId,
     rootRunId: run.rootRunId ? run.rootRunId : run.runId,
@@ -91,114 +89,85 @@ function getExecutionMetadata(
       // Clean up tags related to run grouping once we decide its persistence
       // https://github.com/dagster-io/dagster/issues/2495
       ...run.tags
-        .filter(tag => !["dagster/is_resume_retry", "dagster/step_selection"].includes(tag.key))
-        .map(tag => ({
+        .filter((tag) => !['dagster/is_resume_retry', 'dagster/step_selection'].includes(tag.key))
+        .map((tag) => ({
           key: tag.key,
-          value: tag.value
+          value: tag.value,
         })),
       // pass resume/retry indicator via tags
-      {
-        key: "dagster/is_resume_retry",
-        value: resumeRetry.toString()
-      },
       // pass run group info via tags
       {
-        key: "dagster/parent_run_id",
-        value: run.runId
+        key: 'dagster/parent_run_id',
+        value: run.runId,
       },
       {
-        key: "dagster/root_run_id",
-        value: run.rootRunId ? run.rootRunId : run.runId
+        key: 'dagster/root_run_id',
+        value: run.rootRunId ? run.rootRunId : run.runId,
       },
-      // pass step selection query via tags
-      ...(stepKeys.length > 0 && stepQuery
-        ? [
-            {
-              key: "dagster/step_selection",
-              value: stepQuery
-            }
-          ]
-        : [])
-    ]
+    ],
   };
 }
 
-function isRunFragment(
-  run: RunFragment | RunTableRunFragment | RunActionMenuFragment
-): run is RunFragment {
-  return (run as RunFragment).runConfigYaml !== undefined;
-}
+export type ReExecutionStyle =
+  | {type: 'all'}
+  | {type: 'from-failure'}
+  | {type: 'selection'; selection: StepSelection}
+  | {type: 'from-selected'; selection: StepSelection};
 
 export function getReexecutionVariables(input: {
-  run: RunFragment | RunTableRunFragment | RunActionMenuFragment;
-  envYaml?: string;
-  stepKeys?: string[];
-  stepQuery?: string;
-  resumeRetry?: boolean;
+  run: (RunFragment | RunTableRunFragment | RunActionMenuFragment) & {runConfigYaml: string};
+  style: ReExecutionStyle;
   repositoryLocationName: string;
   repositoryName: string;
 }) {
-  const {
-    run,
-    envYaml,
-    stepKeys,
-    resumeRetry,
-    stepQuery,
-    repositoryLocationName,
-    repositoryName
-  } = input;
+  const {run, style, repositoryLocationName, repositoryName} = input;
 
-  if (isRunFragment(run)) {
-    if (!run || run.pipeline.__typename === "UnknownPipeline") {
-      return undefined;
-    }
-
-    const executionParams = {
-      mode: run.mode,
-      runConfigData: yaml.parse(run.runConfigYaml),
-      selector: {
-        repositoryLocationName,
-        repositoryName,
-        pipelineName: run.pipeline.name,
-        solidSelection: run.pipeline.solidSelection
-      }
-    };
-
-    // subset re-execution
-    const { executionPlan } = run;
-    if (stepKeys && stepKeys.length > 0 && executionPlan) {
-      const step = executionPlan.steps.find(s => stepKeys.includes(s.key));
-      if (!step) return;
-      executionParams["stepKeys"] = stepKeys;
-    }
-
-    executionParams["executionMetadata"] = getExecutionMetadata(
-      run,
-      resumeRetry,
-      stepKeys,
-      stepQuery
-    );
-
-    return { executionParams };
-  } else {
-    if (!envYaml) {
-      return undefined;
-    }
-
-    return {
-      executionParams: {
-        mode: run.mode,
-        runConfigData: yaml.parse(envYaml),
-        selector: {
-          repositoryLocationName,
-          repositoryName,
-          pipelineName: run.pipelineName,
-          solidSelection: run.solidSelection
-        },
-        executionMetadata: getExecutionMetadata(run)
-      }
-    };
+  if (!run || ('pipeline' in run && run.pipeline.__typename === 'UnknownPipeline')) {
+    return undefined;
   }
+
+  const executionParams: ExecutionParams = {
+    mode: run.mode,
+    runConfigData: yaml.parse(run.runConfigYaml),
+    executionMetadata: getBaseExecutionMetadata(run),
+    selector: {
+      repositoryLocationName,
+      repositoryName,
+      pipelineName: 'pipelineName' in run ? run.pipelineName : run.pipeline.name,
+      solidSelection: 'solidSelection' in run ? run.solidSelection : run.pipeline.solidSelection,
+    },
+  };
+
+  if (style.type === 'from-failure') {
+    executionParams.executionMetadata?.tags?.push({
+      key: 'dagster/is_resume_retry',
+      value: 'true',
+    });
+  }
+  if (style.type === 'selection') {
+    executionParams.stepKeys = style.selection.keys;
+    executionParams.executionMetadata?.tags?.push({
+      key: 'dagster/step_selection',
+      value: style.selection.query,
+    });
+  }
+  if (style.type === 'from-selected') {
+    if (!('executionPlan' in run) || !run.executionPlan) {
+      console.warn('Run execution plan must be present to launch from-selected execution');
+      return undefined;
+    }
+    const selectionAndDownstreamQuery = style.selection.keys.map((k) => `${k}*`).join(',');
+    const graph = toGraphQueryItems(run.executionPlan);
+    const graphFiltered = filterByQuery(graph, selectionAndDownstreamQuery);
+
+    executionParams.stepKeys = graphFiltered.all.map((node) => node.name);
+    executionParams.executionMetadata?.tags?.push({
+      key: 'dagster/step_selection',
+      value: selectionAndDownstreamQuery,
+    });
+  }
+
+  return {executionParams};
 }
 
 export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
@@ -257,6 +226,9 @@ export const CANCEL_MUTATION = gql`
           canTerminate
         }
       }
+      ... on PythonError {
+        message
+      }
     }
   }
 `;
@@ -291,10 +263,12 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
 
 interface RunTimeProps {
   run: RunTimeFragment;
-  size?: "standard" | "minimal";
+  size?: 'standard' | 'minimal';
 }
-export const RunTime: React.FunctionComponent<RunTimeProps> = ({ run, size }) => {
-  if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
+export const RunTime: React.FunctionComponent<RunTimeProps> = ({run, size}) => {
+  const [timezone] = React.useContext(TimezoneContext);
+
+  if (run.stats.__typename !== 'PipelineRunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
         <div>
@@ -304,20 +278,18 @@ export const RunTime: React.FunctionComponent<RunTimeProps> = ({ run, size }) =>
     );
   }
 
-  let format = "MMM DD, H:mm A";
-  if (
-    size === "minimal" &&
-    unixTimestampToString(run.stats.startTime, "MMM DD") ===
-      unixTimestampToString(Date.now() / 1000, "MMM DD")
-  ) {
-    format = "H:mm A";
-  }
+  const useSameDayFormat =
+    size === 'minimal' &&
+    timezone !== 'UTC' &&
+    run.stats.startTime &&
+    timestampToString({unix: run.stats.startTime, format: 'MMM DD'}, timezone) ===
+      timestampToString({ms: Date.now(), format: 'MMM DD'}, timezone);
 
   return (
     <div>
       {run.stats.startTime ? (
-        unixTimestampToString(run.stats.startTime, format)
-      ) : run.status === "FAILURE" ? (
+        <Timestamp unix={run.stats.startTime} format={useSameDayFormat ? 'h:mm A' : undefined} />
+      ) : run.status === 'FAILURE' ? (
         <>Failed to start</>
       ) : (
         <>Starting...</>
@@ -326,8 +298,8 @@ export const RunTime: React.FunctionComponent<RunTimeProps> = ({ run, size }) =>
   );
 };
 
-export const RunElapsed: React.FunctionComponent<RunTimeProps> = ({ run }) => {
-  if (run.stats.__typename !== "PipelineRunStatsSnapshot") {
+export const RunElapsed: React.FunctionComponent<RunTimeProps> = ({run}) => {
+  if (run.stats.__typename !== 'PipelineRunStatsSnapshot') {
     return (
       <Popover content={<PythonErrorInfo error={run.stats} />}>
         <div>
@@ -348,7 +320,9 @@ export class TimeElapsed extends React.Component<{
   _timeout?: NodeJS.Timer;
 
   componentDidMount() {
-    if (this.props.endUnix) return;
+    if (this.props.endUnix) {
+      return;
+    }
 
     // align to the next second and then update every second so the elapsed
     // time "ticks" up. Our render method uses Date.now(), so all we need to
@@ -361,8 +335,12 @@ export class TimeElapsed extends React.Component<{
   }
 
   componentWillUnmount() {
-    if (this._timeout) clearInterval(this._timeout);
-    if (this._interval) clearInterval(this._interval);
+    if (this._timeout) {
+      clearInterval(this._timeout);
+    }
+    if (this._interval) {
+      clearInterval(this._interval);
+    }
   }
 
   render() {
@@ -371,8 +349,8 @@ export class TimeElapsed extends React.Component<{
 
     return (
       <div>
-        <Icon icon="time" iconSize={13} style={{ paddingBottom: 1 }} />{" "}
-        {start ? formatElapsedTime(end - start) : ""}
+        <Icon icon="time" iconSize={13} style={{paddingBottom: 1}} />{' '}
+        {start ? formatElapsedTime(end - start) : ''}
       </div>
     );
   }
@@ -408,5 +386,5 @@ export const RunComponentFragments = {
         value
       }
     }
-  `
+  `,
 };

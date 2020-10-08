@@ -1,16 +1,17 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import styled from "styled-components/macro";
-import { Code, Colors } from "@blueprintjs/core";
-import TypeWithTooltip from "./TypeWithTooltip";
-import { SolidTypeSignatureFragment } from "./types/SolidTypeSignatureFragment";
-import { breakOnUnderscores } from "./Util";
+import {Code, Colors} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {TypeWithTooltip} from 'src/TypeWithTooltip';
+import {breakOnUnderscores} from 'src/Util';
+import {SolidTypeSignatureFragment} from 'src/types/SolidTypeSignatureFragment';
 
 interface ISolidTypeSignature {
   definition: SolidTypeSignatureFragment;
 }
 
-export default class SolidTypeSignature extends React.Component<ISolidTypeSignature> {
+export class SolidTypeSignature extends React.Component<ISolidTypeSignature> {
   static fragments = {
     SolidTypeSignatureFragment: gql`
       fragment SolidTypeSignatureFragment on ISolidDefinition {
@@ -29,22 +30,22 @@ export default class SolidTypeSignature extends React.Component<ISolidTypeSignat
       }
 
       ${TypeWithTooltip.fragments.DagsterTypeWithTooltipFragment}
-    `
+    `,
   };
 
   render() {
-    const { inputDefinitions, outputDefinitions } = this.props.definition;
+    const {inputDefinitions, outputDefinitions} = this.props.definition;
 
     const inputSide = inputDefinitions.map((input, i) => (
       <span key={i}>
         {breakOnUnderscores(input.name)}: <TypeWithTooltip type={input.type} />
-        {i < inputDefinitions.length - 1 ? ", " : ""}
+        {i < inputDefinitions.length - 1 ? ', ' : ''}
       </span>
     ));
     const outputSide = outputDefinitions.map((output, i) => (
       <span key={i}>
         {breakOnUnderscores(output.name)}: <TypeWithTooltip type={output.type} />
-        {i < outputDefinitions.length - 1 ? ", " : ""}
+        {i < outputDefinitions.length - 1 ? ', ' : ''}
       </span>
     ));
     return (

@@ -1,15 +1,17 @@
-import * as React from "react";
-import styled from "styled-components/macro";
-import { IRunMetadataDict, IStepState } from "../RunMetadataProvider";
-import { Spinner, Colors } from "@blueprintjs/core";
-import { GaantChartMode } from "./Constants";
-import { boxStyleFor } from "./GaantChartLayout";
-import { formatElapsedTime } from "../Util";
-import { RunGroupPanel } from "./RunGroupPanel";
+import {Colors, Spinner, Tooltip, Position} from '@blueprintjs/core';
+import * as React from 'react';
+import styled from 'styled-components/macro';
+
+import {IRunMetadataDict, IStepState} from 'src/RunMetadataProvider';
+import {formatElapsedTime} from 'src/Util';
+import {GaantChartMode} from 'src/gaant/Constants';
+import {boxStyleFor} from 'src/gaant/GaantChartLayout';
+import {RunGroupPanel} from 'src/gaant/RunGroupPanel';
+import {StepSelection} from 'src/runs/StepSelection';
 
 interface GaantStatusPanelProps {
   metadata: IRunMetadataDict;
-  selectedSteps: string[];
+  selection: StepSelection;
   runId: string;
   nowMs: number;
 
@@ -22,19 +24,19 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
   runId,
   nowMs,
   metadata,
-  selectedSteps,
+  selection,
   onClickStep,
   onDoubleClickStep,
-  onHighlightStep
+  onHighlightStep,
 }) => {
   const preparing = Object.keys(metadata.steps).filter(
-    key => metadata.steps[key].state === IStepState.PREPARING
+    (key) => metadata.steps[key].state === IStepState.PREPARING,
   );
-  const executing = Object.keys(metadata.steps).filter(
-    key => metadata.steps[key].state === IStepState.RUNNING
+  const executing = Object.keys(metadata.steps).filter((key) =>
+    [IStepState.RUNNING, IStepState.UNKNOWN].includes(metadata.steps[key].state),
   );
   const errored = Object.keys(metadata.steps).filter(
-    key => metadata.steps[key].state === IStepState.FAILED
+    (key) => metadata.steps[key].state === IStepState.FAILED,
   );
   const renderStepItem = (stepName: string) => (
     <StepItem
@@ -42,7 +44,7 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
       name={stepName}
       key={stepName}
       metadata={metadata}
-      selected={selectedSteps.includes(stepName)}
+      selected={selection.keys.includes(stepName)}
       onClick={onClickStep}
       onDoubleClick={onDoubleClickStep}
       onHover={onHighlightStep}
@@ -50,7 +52,7 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: 0 }}>
+    <div style={{display: 'flex', flexDirection: 'column', minHeight: 0}}>
       <RunGroupPanel runId={runId} />
       <SectionHeader>Preparing</SectionHeader>
       <Section>{preparing.map(renderStepItem)}</Section>
@@ -72,7 +74,7 @@ const StepItem: React.FunctionComponent<{
   onClick?: (step: string, evt: React.MouseEvent<any>) => void;
   onHover?: (name: string | null) => void;
   onDoubleClick?: (name: string) => void;
-}> = ({ nowMs, name, selected, metadata, onClick, onHover, onDoubleClick }) => {
+}> = ({nowMs, name, selected, metadata, onClick, onHover, onDoubleClick}) => {
   const step = metadata.steps[name];
   const end = step.end ?? nowMs;
   return (
@@ -86,13 +88,27 @@ const StepItem: React.FunctionComponent<{
     >
       {step.state === IStepState.RUNNING ? (
         <Spinner size={15} />
+      ) : step.state === IStepState.UNKNOWN ? (
+        <Tooltip
+          // Modifiers are to prevent flickering: https://github.com/palantir/blueprint/issues/4019
+          modifiers={{
+            preventOverflow: {enabled: false},
+            flip: {enabled: false},
+          }}
+          position={Position.BOTTOM}
+          content={
+            'Unknown step state. Pipeline execution completed without step execution completion.'
+          }
+        >
+          {'?'}
+        </Tooltip>
       ) : (
         <StepStatusDot
           style={{
             ...boxStyleFor(metadata.steps[name]?.state, {
               metadata,
-              options: { mode: GaantChartMode.WATERFALL_TIMED }
-            })
+              options: {mode: GaantChartMode.WATERFALL_TIMED},
+            }),
           }}
         />
       )}
@@ -123,7 +139,7 @@ const StepLabel = styled.div`
   flex: 1;
 `;
 
-const StepItemContainer = styled.div<{ selected: boolean }>`
+const StepItemContainer = styled.div<{selected: boolean}>`
   display: flex;
   line-height: 28px;
   height: 28px;
@@ -131,7 +147,7 @@ const StepItemContainer = styled.div<{ selected: boolean }>`
   align-items: center;
   border-bottom: 1px solid ${Colors.LIGHT_GRAY1};
   font-size: 13px;
-  ${({ selected }) => selected && `background: ${Colors.LIGHT_GRAY4};`}
+  ${({selected}) => selected && `background: ${Colors.LIGHT_GRAY4};`}
 
   &:hover {
     background: ${Colors.LIGHT_GRAY3};

@@ -9,7 +9,7 @@ POLLING_INTERVAL = 0.1
 
 def current_process_is_orphaned(parent_pid):
     parent_pid = int(parent_pid)
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         import psutil  # pylint: disable=import-error
 
         try:
@@ -23,15 +23,15 @@ def current_process_is_orphaned(parent_pid):
 
 
 def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
-    '''
+    """
     Tails a file and outputs the content to the specified stream via polling.
     The pid of the parent process (if provided) is checked to see if the tail process should be
     terminated, in case the parent is hard-killed / segfaults
-    '''
-    with open(filepath, 'r') as file:
+    """
+    with open(filepath, "r") as file:
         for block in iter(lambda: file.read(1024), None):
             if block:
-                print(block, end='', file=stream)  # pylint: disable=print-call
+                print(block, end="", file=stream)  # pylint: disable=print-call
             else:
                 if parent_pid and current_process_is_orphaned(parent_pid):
                     sys.exit()
@@ -48,5 +48,5 @@ def execute_polling(args):
     tail_polling(filepath, sys.stdout, parent_pid)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     execute_polling(sys.argv[1:])

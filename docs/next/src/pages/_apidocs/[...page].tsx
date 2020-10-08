@@ -7,7 +7,12 @@ const API: NextPage<{ body: string; title: string }> = (props) => {
   const markup = { __html: props.body };
   return (
     <>
-      <DynamicMetaTags title={`API Docs - ${props.title} | Dagster`} />
+      <DynamicMetaTags
+        title={`API Docs - ${props.title} | Dagster`}
+        // TODO https://github.com/dagster-io/dagster/issues/2835
+        // meaningful description for each API page
+        description="Dagster API Documentation"
+      />
       <div dangerouslySetInnerHTML={markup} />
     </>
   );

@@ -28,6 +28,7 @@ input AssetKeyInput {
 type AssetMaterialization {
   materializationEvent: StepMaterializationEvent!
   runOrError: PipelineRunOrError!
+  partition: String
 }
 
 union AssetOrError = Asset | AssetsNotSupportedError
@@ -480,7 +481,6 @@ type InputMapping {
 type Instance {
   info: String!
   runLauncher: RunLauncher
-  disableRunStart: Boolean!
   assetsSupported: Boolean!
   executablePath: String!
 }
@@ -633,8 +633,10 @@ type Mutation {
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
+  launchPartitionBackfill(backfillParams: PartitionBackfillParams!): PartitionBackfillResult!
   executePlan(executionParams: ExecutionParams!, retries: Retries): ExecutePlanResult!
   executeRunInProcess(repositoryLocationName: String!, repositoryName: String!, runId: String!): ExecuteRunInProcessResult!
+  triggerExecution(triggerSelector: TriggerSelector!): TriggerMutationResult!
 }
 
 type NullableConfigType implements ConfigType & WrappingConfigType {
@@ -718,7 +720,22 @@ type Partition {
   mode: String!
   runConfigOrError: PartitionRunConfigOrError!
   tagsOrError: PartitionTagsOrError!
-  runs: [PipelineRun!]!
+  runs(filter: PipelineRunsFilter, cursor: String, limit: Int): [PipelineRun!]!
+}
+
+input PartitionBackfillParams {
+  selector: PartitionSetSelector!
+  partitionNames: [String!]!
+  reexecutionSteps: [String!]
+  fromFailure: Boolean
+  tags: [ExecutionTag!]
+}
+
+union PartitionBackfillResult = PartitionBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+
+type PartitionBackfillSuccess {
+  backfillId: String!
+  launchedRunIds: [String!]!
 }
 
 type PartitionRunConfig {
@@ -749,6 +766,11 @@ union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonErr
 
 type PartitionSets {
   results: [PartitionSet!]!
+}
+
+input PartitionSetSelector {
+  partitionSetName: String!
+  repositorySelector: RepositorySelector!
 }
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
@@ -808,6 +830,7 @@ type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   stepKey: String
   solidHandleID: String
   pipelineName: String!
+  error: PythonError
 }
 
 type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
@@ -898,6 +921,7 @@ input PipelineRunsFilter {
   pipelineName: String
   tags: [ExecutionTag!]
   status: PipelineRunStatus
+  snapshotId: String
 }
 
 union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | PythonError
@@ -925,7 +949,7 @@ enum PipelineRunStatus {
 type PipelineRunStepStats {
   runId: String!
   stepKey: String!
-  status: StepEventStatus!
+  status: StepEventStatus
   startTime: Float
   endTime: Float
   materializations: [Materialization!]!
@@ -1079,6 +1103,7 @@ type Repository {
   usedSolids: [UsedSolid!]!
   usedSolid(name: String!): UsedSolid
   origin: RepositoryOrigin!
+  partitionSets: [PartitionSet!]!
 }
 
 type RepositoryConnection {
@@ -1246,6 +1271,7 @@ type ScheduleState {
   stats: ScheduleTickStatsSnapshot!
   logsPath: String!
   runningScheduleCount: Int!
+  repositoryOrigin: RepositoryOrigin!
   repositoryOriginId: String!
   id: ID!
 }
@@ -1391,6 +1417,18 @@ union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | Ter
 
 type TerminatePipelineExecutionSuccess {
   run: PipelineRun!
+}
+
+type TriggerExecutionSuccess {
+  launchedRunIds: [String!]!
+}
+
+union TriggerMutationResult = TriggerExecutionSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+
+input TriggerSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  executableName: String!
 }
 
 type TypeCheck implements DisplayableEvent {

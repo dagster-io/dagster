@@ -4,7 +4,7 @@ from dagster import DagsterInstance, execute_pipeline, lambda_solid, pipeline, r
 def define_pipeline():
     @lambda_solid
     def ping():
-        return 'ping'
+        return "ping"
 
     @pipeline
     def simple():
@@ -18,7 +18,7 @@ def test_multiproc_markers():
     result = execute_pipeline(
         reconstructable(define_pipeline),
         instance=instance,
-        run_config={'execution': {'multiprocess': {}}, 'storage': {'filesystem': {}}},
+        run_config={"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
     )
     assert result.success
     events = instance.all_logs(result.run_id)
@@ -28,12 +28,12 @@ def test_multiproc_markers():
         dagster_event = event.dagster_event
         if dagster_event.is_engine_event:
             if dagster_event.engine_event_data.marker_start:
-                key = '{step}.{marker}'.format(
+                key = "{step}.{marker}".format(
                     step=event.step_key, marker=dagster_event.engine_event_data.marker_start
                 )
                 start_markers[key] = event.timestamp
             if dagster_event.engine_event_data.marker_end:
-                key = '{step}.{marker}'.format(
+                key = "{step}.{marker}".format(
                     step=event.step_key, marker=dagster_event.engine_event_data.marker_end
                 )
                 end_markers[key] = event.timestamp
@@ -44,4 +44,4 @@ def test_multiproc_markers():
         assert end_markers[key] - start_markers[key] > 0
         seen.add(key)
 
-    assert 'ping.compute.multiprocess_subprocess_init' in end_markers
+    assert "ping.compute.multiprocess_subprocess_init" in end_markers

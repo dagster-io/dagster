@@ -1,6 +1,7 @@
 import logging
 from abc import abstractmethod
 from collections import defaultdict
+from datetime import datetime
 
 import six
 import sqlalchemy as db
@@ -10,6 +11,7 @@ from dagster.core.definitions.events import AssetKey, Materialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
+from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
@@ -17,34 +19,35 @@ from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import AssetAwareEventLogStorage, EventLogStorage
 from .schema import SqlEventLogStorageTable
+from .version_addresses import get_addresses_for_step_output_versions_helper
 
 
 class SqlEventLogStorage(EventLogStorage):
-    '''Base class for SQL backed event log storages.
-    '''
+    """Base class for SQL backed event log storages.
+    """
 
     @abstractmethod
     def connect(self, run_id=None):
-        '''Context manager yielding a connection.
+        """Context manager yielding a connection.
 
         Args:
             run_id (Optional[str]): Enables those storages which shard based on run_id, e.g.,
                 SqliteEventLogStorage, to connect appropriately.
-        '''
+        """
 
     @abstractmethod
     def upgrade(self):
-        '''This method should perform any schema or data migrations necessary to bring an
+        """This method should perform any schema or data migrations necessary to bring an
         out-of-date instance of the storage up to date.
-        '''
+        """
 
     def prepare_insert_statement(self, event):
-        ''' Helper method for preparing the event log SQL insertion statement.  Abstracted away to
+        """ Helper method for preparing the event log SQL insertion statement.  Abstracted away to
         have a single place for the logical table representation of the event, while having a way
         for SQL backends to implement different execution implementations for `store_event`. See
         the `dagster-postgres` implementation which overrides the generic SQL implementation of
         `store_event`.
-        '''
+        """
 
         dagster_event_type = None
         asset_key_str = None
@@ -54,7 +57,7 @@ class SqlEventLogStorage(EventLogStorage):
             dagster_event_type = event.dagster_event.event_type_value
             step_key = event.dagster_event.step_key
             if event.dagster_event.asset_key:
-                check.inst_param(event.dagster_event.asset_key, 'asset_key', AssetKey)
+                check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
                 asset_key_str = event.dagster_event.asset_key.to_string()
 
         # https://stackoverflow.com/a/54386260/324449
@@ -68,12 +71,12 @@ class SqlEventLogStorage(EventLogStorage):
         )
 
     def store_event(self, event):
-        '''Store an event corresponding to a pipeline run.
+        """Store an event corresponding to a pipeline run.
 
         Args:
             event (EventRecord): The event to store.
-        '''
-        check.inst_param(event, 'event', EventRecord)
+        """
+        check.inst_param(event, "event", EventRecord)
         sql_statement = self.prepare_insert_statement(event)
         run_id = event.run_id
 
@@ -81,11 +84,11 @@ class SqlEventLogStorage(EventLogStorage):
             conn.execute(sql_statement)
 
     def get_logs_for_run_by_log_id(self, run_id, cursor=-1):
-        check.str_param(run_id, 'run_id')
-        check.int_param(cursor, 'cursor')
+        check.str_param(run_id, "run_id")
+        check.int_param(cursor, "cursor")
         check.invariant(
             cursor >= -1,
-            'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
+            "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
 
         # cursor starts at 0 & auto-increment column starts at 1 so adjust
@@ -105,7 +108,7 @@ class SqlEventLogStorage(EventLogStorage):
         try:
             for (record_id, json_str,) in results:
                 events[record_id] = check.inst_param(
-                    deserialize_json_to_dagster_namedtuple(json_str), 'event', EventRecord
+                    deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
                 )
         except (seven.JSONDecodeError, check.CheckError) as err:
             six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
@@ -113,36 +116,36 @@ class SqlEventLogStorage(EventLogStorage):
         return events
 
     def get_logs_for_run(self, run_id, cursor=-1):
-        '''Get all of the logs corresponding to a run.
+        """Get all of the logs corresponding to a run.
 
         Args:
             run_id (str): The id of the run for which to fetch logs.
             cursor (Optional[int]): Zero-indexed logs will be returned starting from cursor + 1,
                 i.e., if cursor is -1, all logs will be returned. (default: -1)
-        '''
-        check.str_param(run_id, 'run_id')
-        check.int_param(cursor, 'cursor')
+        """
+        check.str_param(run_id, "run_id")
+        check.int_param(cursor, "cursor")
         check.invariant(
             cursor >= -1,
-            'Don\'t know what to do with negative cursor {cursor}'.format(cursor=cursor),
+            "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
 
         events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor)
         return [event for id, event in sorted(events_by_id.items(), key=lambda x: x[0])]
 
     def get_stats_for_run(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         query = (
             db.select(
                 [
                     SqlEventLogStorageTable.c.dagster_event_type,
-                    db.func.count().label('n_events_of_type'),
-                    db.func.max(SqlEventLogStorageTable.c.timestamp).label('last_event_timestamp'),
+                    db.func.count().label("n_events_of_type"),
+                    db.func.max(SqlEventLogStorageTable.c.timestamp).label("last_event_timestamp"),
                 ]
             )
             .where(SqlEventLogStorageTable.c.run_id == run_id)
-            .group_by('dagster_event_type')
+            .group_by("dagster_event_type")
         )
 
         with self.connect(run_id) as conn:
@@ -176,7 +179,7 @@ class SqlEventLogStorage(EventLogStorage):
             six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
 
     def get_step_stats_for_run(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         STEP_STATS_EVENT_TYPES = [
             DagsterEventType.STEP_START.value,
@@ -190,7 +193,7 @@ class SqlEventLogStorage(EventLogStorage):
                 [
                     SqlEventLogStorageTable.c.step_key,
                     SqlEventLogStorageTable.c.dagster_event_type,
-                    db.func.max(SqlEventLogStorageTable.c.timestamp).label('timestamp'),
+                    db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
                 ]
             )
             .where(SqlEventLogStorageTable.c.run_id == run_id)
@@ -208,24 +211,24 @@ class SqlEventLogStorage(EventLogStorage):
         for result in results:
             step_key = result.step_key
             if result.dagster_event_type == DagsterEventType.STEP_START.value:
-                by_step_key[step_key]['start_time'] = (
+                by_step_key[step_key]["start_time"] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
                 )
             if result.dagster_event_type == DagsterEventType.STEP_FAILURE.value:
-                by_step_key[step_key]['end_time'] = (
+                by_step_key[step_key]["end_time"] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
                 )
-                by_step_key[step_key]['status'] = StepEventStatus.FAILURE
+                by_step_key[step_key]["status"] = StepEventStatus.FAILURE
             if result.dagster_event_type == DagsterEventType.STEP_SUCCESS.value:
-                by_step_key[step_key]['end_time'] = (
+                by_step_key[step_key]["end_time"] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
                 )
-                by_step_key[step_key]['status'] = StepEventStatus.SUCCESS
+                by_step_key[step_key]["status"] = StepEventStatus.SUCCESS
             if result.dagster_event_type == DagsterEventType.STEP_SKIPPED.value:
-                by_step_key[step_key]['end_time'] = (
+                by_step_key[step_key]["end_time"] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
                 )
-                by_step_key[step_key]['status'] = StepEventStatus.SKIPPED
+                by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
 
         materializations = defaultdict(list)
         expectation_results = defaultdict(list)
@@ -250,7 +253,7 @@ class SqlEventLogStorage(EventLogStorage):
         try:
             for (json_str,) in results:
                 event = check.inst_param(
-                    deserialize_json_to_dagster_namedtuple(json_str), 'event', EventRecord
+                    deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
                 )
                 if event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
                     materializations[event.step_key].append(
@@ -267,9 +270,9 @@ class SqlEventLogStorage(EventLogStorage):
             RunStepKeyStatsSnapshot(
                 run_id=run_id,
                 step_key=step_key,
-                status=value.get('status'),
-                start_time=value.get('start_time'),
-                end_time=value.get('end_time'),
+                status=value.get("status"),
+                start_time=value.get("start_time"),
+                end_time=value.get("end_time"),
                 materializations=materializations.get(step_key),
                 expectation_results=expectation_results.get(step_key),
             )
@@ -277,7 +280,7 @@ class SqlEventLogStorage(EventLogStorage):
         ]
 
     def wipe(self):
-        '''Clears the event log storage.'''
+        """Clears the event log storage."""
         # Should be overridden by SqliteEventLogStorage and other storages that shard based on
         # run_id
         # https://stackoverflow.com/a/54386260/324449
@@ -285,7 +288,7 @@ class SqlEventLogStorage(EventLogStorage):
             conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
 
     def delete_events(self, run_id):
-        check.str_param(run_id, 'run_id')
+        check.str_param(run_id, "run_id")
 
         statement = SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
             SqlEventLogStorageTable.c.run_id == run_id
@@ -299,15 +302,15 @@ class SqlEventLogStorage(EventLogStorage):
         return True
 
     def update_event_log_record(self, record_id, event):
-        ''' Utility method for migration scripts to update SQL representation of event records. '''
-        check.int_param(record_id, 'record_id')
-        check.inst_param(event, 'event', EventRecord)
+        """ Utility method for migration scripts to update SQL representation of event records. """
+        check.int_param(record_id, "record_id")
+        check.inst_param(event, "event", EventRecord)
         dagster_event_type = None
         asset_key_str = None
         if event.is_dagster_event:
             dagster_event_type = event.dagster_event.event_type_value
             if event.dagster_event.asset_key:
-                check.inst_param(event.dagster_event.asset_key, 'asset_key', AssetKey)
+                check.inst_param(event.dagster_event.asset_key, "asset_key", AssetKey)
                 asset_key_str = event.dagster_event.asset_key.to_string()
 
         with self.connect(run_id=event.run_id) as conn:
@@ -324,10 +327,10 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     def get_event_log_table_data(self, run_id, record_id):
-        ''' Utility method to test representation of the record in the SQL table.  Returns all of
+        """ Utility method to test representation of the record in the SQL table.  Returns all of
         the columns stored in the event log storage (as opposed to the deserialized `EventRecord`).
         This allows checking that certain fields are extracted to support performant lookups (e.g.
-        extracting `step_key` for fast filtering)'''
+        extracting `step_key` for fast filtering)"""
         with self.connect(run_id=run_id) as conn:
             query = (
                 db.select([SqlEventLogStorageTable])
@@ -335,6 +338,42 @@ class SqlEventLogStorage(EventLogStorage):
                 .order_by(SqlEventLogStorageTable.c.id.asc())
             )
             return conn.execute(query).fetchone()
+
+    def get_addresses_for_step_output_versions(self, step_output_versions):
+        """
+        For each given step output, finds whether an output exists with the given
+        version, and returns its address if it does.
+
+        Args:
+            step_output_versions (Dict[(str, StepOutputHandle), str]):
+                (pipeline name, step output handle) -> version.
+
+        Returns:
+            Dict[(str, StepOutputHandle), str]: (pipeline name, step output handle) -> address.
+                For each step output, an address if there is one and None otherwise.
+        """
+        check.dict_param(step_output_versions, "step_output_versions", value_type=str)
+        for pipeline_name, step_output_handle in step_output_versions.keys():
+            check.str_param(pipeline_name, "step_output_versions key[0]")
+            check.inst_param(step_output_handle, "step_output_versions key[1]", StepOutputHandle)
+
+        c = SqlEventLogStorageTable.c
+        output_events_query = db.select([c.id, c.timestamp, c.event]).where(
+            c.dagster_event_type == DagsterEventType.STEP_OUTPUT.value
+        )
+        with self.connect() as conn:
+            step_output_records = conn.execute(output_events_query).fetchall()
+
+        return get_addresses_for_step_output_versions_helper(
+            step_output_versions,
+            [
+                (
+                    (record.timestamp - datetime(1970, 1, 1)).total_seconds(),
+                    deserialize_json_to_dagster_namedtuple(record.event).dagster_event,
+                )
+                for record in step_output_records
+            ],
+        )
 
 
 class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage):
@@ -347,7 +386,7 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         pass
 
     def _add_cursor_limit_to_query(self, query, cursor, limit):
-        ''' Helper function to deal with cursor/limit pagination args '''
+        """ Helper function to deal with cursor/limit pagination args """
 
         if cursor:
             cursor_query = db.select([SqlEventLogStorageTable.c.id]).where(
@@ -369,7 +408,7 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         return [AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key]
 
     def get_asset_events(self, asset_key, cursor=None, limit=None):
-        check.inst_param(asset_key, 'asset_key', AssetKey)
+        check.inst_param(asset_key, "asset_key", AssetKey)
         asset_key_str = asset_key.to_string()
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
             SqlEventLogStorageTable.c.asset_key == asset_key_str
@@ -384,18 +423,18 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
                 event_record = deserialize_json_to_dagster_namedtuple(json_str)
                 if not isinstance(event_record, EventRecord):
                     logging.warning(
-                        'Could not resolve asset event record as EventRecord for id `{}`.'.format(
+                        "Could not resolve asset event record as EventRecord for id `{}`.".format(
                             row_id
                         )
                     )
                     continue
                 events.append(event_record)
             except seven.JSONDecodeError:
-                logging.warning('Could not parse asset event record id `{}`.'.format(row_id))
+                logging.warning("Could not parse asset event record id `{}`.".format(row_id))
         return events
 
     def get_asset_run_ids(self, asset_key):
-        check.inst_param(asset_key, 'asset_key', AssetKey)
+        check.inst_param(asset_key, "asset_key", AssetKey)
         asset_key_str = asset_key.to_string()
         query = (
             db.select(
@@ -412,7 +451,7 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         return [run_id for (run_id, _timestamp) in results]
 
     def wipe_asset(self, asset_key):
-        check.inst_param(asset_key, 'asset_key', AssetKey)
+        check.inst_param(asset_key, "asset_key", AssetKey)
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
             SqlEventLogStorageTable.c.asset_key == asset_key.to_string()
         )
@@ -449,4 +488,4 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
                 self.update_event_log_record(row_id, updated_record)
 
             except seven.JSONDecodeError:
-                logging.warning('Could not parse asset event record id `{}`.'.format(row_id))
+                logging.warning("Could not parse asset event record id `{}`.".format(row_id))

@@ -7,22 +7,22 @@ from .file_manager import ADLS2FileManager
 from .utils import create_adls2_client
 
 ADLS2_CLIENT_CONFIG = {
-    'storage_account': Field(StringSource, description='The storage account name.'),
-    'credential': Field(
+    "storage_account": Field(StringSource, description="The storage account name."),
+    "credential": Field(
         Selector(
             {
-                'sas': Field(StringSource, description='SAS token for the account.'),
-                'key': Field(StringSource, description='Shared Access Key for the account'),
+                "sas": Field(StringSource, description="SAS token for the account."),
+                "key": Field(StringSource, description="Shared Access Key for the account"),
             }
         ),
-        description='The credentials with which to authenticate.',
+        description="The credentials with which to authenticate.",
     ),
 }
 
 
 @resource(ADLS2_CLIENT_CONFIG)
 def adls2_resource(context):
-    '''Resource that gives solids access to Azure Data Lake Storage Gen2.
+    """Resource that gives solids access to Azure Data Lake Storage Gen2.
 
     The underlying client is a :py:class:`~azure.storage.filedatalake.DataLakeServiceClient`.
 
@@ -74,7 +74,7 @@ def adls2_resource(context):
                 key:
                   env: AZURE_DATA_LAKE_STORAGE_KEY
                 # str: The shared access key for the account.
-    '''
+    """
     return _adls2_resource_from_config(context.resource_config)
 
 
@@ -82,8 +82,8 @@ def adls2_resource(context):
     merge_dicts(
         ADLS2_CLIENT_CONFIG,
         {
-            'adls2_file_system': Field(StringSource, description='ADLS Gen2 file system name'),
-            'adls2_prefix': Field(StringSource, is_required=False, default_value='dagster'),
+            "adls2_file_system": Field(StringSource, description="ADLS Gen2 file system name"),
+            "adls2_prefix": Field(StringSource, is_required=False, default_value="dagster"),
         },
     )
 )
@@ -92,17 +92,17 @@ def adls2_file_manager(context):
 
     return ADLS2FileManager(
         adls2_client=adls2_client,
-        file_system=context.resource_config['adls2_file_system'],
-        prefix=context.resource_config['adls2_prefix'],
+        file_system=context.resource_config["adls2_file_system"],
+        prefix=context.resource_config["adls2_prefix"],
     )
 
 
 class ADLS2Resource(object):
-    '''Resource containing clients to access Azure Data Lake Storage Gen2.
+    """Resource containing clients to access Azure Data Lake Storage Gen2.
 
     Contains a client for both the Data Lake and Blob APIs, to work around the limitations
     of each.
-    '''
+    """
 
     def __init__(self, storage_account, credential):
         self._adls2_client = create_adls2_client(storage_account, credential)
@@ -118,12 +118,12 @@ class ADLS2Resource(object):
 
 
 def _adls2_resource_from_config(config):
-    '''
+    """
     Args:
         config: A configuration containing the fields in ADLS2_CLIENT_CONFIG.
 
     Returns: An adls2 client.
-    '''
-    storage_account = config['storage_account']
+    """
+    storage_account = config["storage_account"]
     credential = config["credential"].copy().popitem()[1]
     return ADLS2Resource(storage_account, credential)

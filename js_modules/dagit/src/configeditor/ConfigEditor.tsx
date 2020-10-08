@@ -1,39 +1,41 @@
-import * as React from "react";
-import { createGlobalStyle } from "styled-components/macro";
-import * as yaml from "yaml";
-import "codemirror";
-import "codemirror/lib/codemirror.css";
-import "codemirror/theme/material.css";
-import "codemirror/addon/hint/show-hint";
-import "codemirror/addon/hint/show-hint.css";
-import "codemirror/addon/comment/comment";
-import "codemirror/addon/fold/foldgutter";
-import "codemirror/addon/fold/foldgutter.css";
-import "codemirror/addon/fold/indent-fold";
-import "codemirror/addon/search/search";
-import "codemirror/addon/search/searchcursor";
-import "codemirror/addon/search/jump-to-line";
-import "codemirror/addon/dialog/dialog";
-import "./codemirror-yaml/lint"; // Patch lint
-import "codemirror/addon/lint/lint.css";
-import "codemirror/keymap/sublime";
-import { Controlled as CodeMirrorReact } from "react-codemirror2";
-import { Editor } from "codemirror";
-import {
-  ConfigEditorRunConfigSchemaFragment,
-  ConfigEditorRunConfigSchemaFragment_allConfigTypes
-} from "./types/ConfigEditorRunConfigSchemaFragment";
-import "./codemirror-yaml/mode";
+import 'codemirror';
+import 'codemirror/addon/comment/comment';
+import 'codemirror/addon/dialog/dialog';
+import 'codemirror/addon/fold/foldgutter';
+import 'codemirror/addon/fold/foldgutter.css';
+import 'codemirror/addon/fold/indent-fold';
+import 'codemirror/addon/hint/show-hint';
+import 'codemirror/addon/hint/show-hint.css';
+import 'codemirror/addon/lint/lint.css';
+import 'codemirror/addon/search/jump-to-line';
+import 'codemirror/addon/search/search';
+import 'codemirror/addon/search/searchcursor';
+import 'codemirror/keymap/sublime';
+import 'codemirror/lib/codemirror.css';
+import 'codemirror/theme/material.css';
+import 'src/configeditor/codemirror-yaml/lint'; // Patch lint
+import 'src/configeditor/codemirror-yaml/mode';
+
+import {Editor} from 'codemirror';
+import * as React from 'react';
+import {Controlled as CodeMirrorReact} from 'react-codemirror2';
+import {createGlobalStyle} from 'styled-components/macro';
+import * as yaml from 'yaml';
+
+import {debounce} from 'src/Util';
 import {
   YamlModeValidateFunction,
   expandAutocompletionContextAtCursor,
-  findRangeInDocumentFromPath
-} from "./codemirror-yaml/mode";
-import { debounce } from "../Util";
+  findRangeInDocumentFromPath,
+} from 'src/configeditor/codemirror-yaml/mode';
+import {
+  ConfigEditorRunConfigSchemaFragment,
+  ConfigEditorRunConfigSchemaFragment_allConfigTypes,
+} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
 
 export function isHelpContextEqual(
   prev: ConfigEditorHelpContext | null,
-  next: ConfigEditorHelpContext | null
+  next: ConfigEditorHelpContext | null,
 ) {
   return (prev && prev.type.key) === (next && next.type.key);
 }
@@ -92,8 +94,12 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
   _editor?: Editor;
 
   componentDidUpdate(prevProps: ConfigEditorProps) {
-    if (!this._editor) return;
-    if (prevProps.runConfigSchema === this.props.runConfigSchema) return;
+    if (!this._editor) {
+      return;
+    }
+    if (prevProps.runConfigSchema === this.props.runConfigSchema) {
+      return;
+    }
     this.performInitialPass();
   }
 
@@ -112,27 +118,33 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
   // Public API
 
   moveCursor = (line: number, ch: number) => {
-    if (!this._editor) return;
-    this._editor.setCursor(line, ch, { scroll: false });
-    const { clientHeight } = this._editor.getScrollInfo();
-    const { left, top } = this._editor.cursorCoords(true, "local");
+    if (!this._editor) {
+      return;
+    }
+    this._editor.setCursor(line, ch, {scroll: false});
+    const {clientHeight} = this._editor.getScrollInfo();
+    const {left, top} = this._editor.cursorCoords(true, 'local');
     const offsetFromTop = 20;
 
     this._editor?.scrollIntoView({
       left: left,
       right: left,
       top: top - offsetFromTop,
-      bottom: top + (clientHeight - offsetFromTop)
+      bottom: top + (clientHeight - offsetFromTop),
     });
     this._editor.focus();
   };
 
   moveCursorToPath = (path: string[]) => {
-    if (!this._editor) return;
+    if (!this._editor) {
+      return;
+    }
     const codeMirrorDoc = this._editor.getDoc();
     const yamlDoc = yaml.parseDocument(this.props.configCode);
-    const range = findRangeInDocumentFromPath(yamlDoc, path, "key");
-    if (!range) return;
+    const range = findRangeInDocumentFromPath(yamlDoc, path, 'key');
+    if (!range) {
+      return;
+    }
     const from = codeMirrorDoc.posFromIndex(range ? range.start : 0) as CodeMirror.Position;
     this.moveCursor(from.line, from.ch);
   };
@@ -144,28 +156,28 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
     performLint(this._editor);
 
     // update the contextual help based on the runConfigSchema and content
-    const { context } = expandAutocompletionContextAtCursor(this._editor);
-    this.props.onHelpContextChange(context ? { type: context.closestCompositeType } : null);
+    const {context} = expandAutocompletionContextAtCursor(this._editor);
+    this.props.onHelpContextChange(context ? {type: context.closestCompositeType} : null);
   }
 
   render() {
     // Unfortunately, CodeMirror is too intense to be simulated in the JSDOM "virtual" DOM.
     // Until we run tests against something like selenium, trying to render the editor in
     // tests have to stop here.
-    if (process.env.NODE_ENV === "test") {
+    if (process.env.NODE_ENV === 'test') {
       return <span />;
     }
 
     return (
-      <div style={{ flex: 1, position: "relative" }}>
+      <div style={{flex: 1, position: 'relative'}}>
         <CodeMirrorShimStyle />
         {this.props.showWhitespace ? <CodeMirrorWhitespaceStyle /> : null}
         <CodeMirrorReact
           value={this.props.configCode}
           options={
             {
-              mode: "yaml",
-              theme: "default",
+              mode: 'yaml',
+              theme: 'default',
               lineNumbers: true,
               readOnly: this.props.readOnly,
               indentUnit: 2,
@@ -175,44 +187,44 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               lint: {
                 checkConfig: this.props.checkConfig,
                 lintOnChange: false,
-                onUpdateLinting: false
+                onUpdateLinting: false,
               },
               hintOptions: {
                 completeSingle: false,
                 closeOnUnfocus: false,
-                schema: this.props.runConfigSchema
+                schema: this.props.runConfigSchema,
               },
-              keyMap: "sublime",
+              keyMap: 'sublime',
               extraKeys: {
-                "Cmd-Space": (editor: any) =>
+                'Cmd-Space': (editor: any) =>
                   editor.showHint({
-                    completeSingle: true
+                    completeSingle: true,
                   }),
-                "Ctrl-Space": (editor: any) =>
+                'Ctrl-Space': (editor: any) =>
                   editor.showHint({
-                    completeSingle: true
+                    completeSingle: true,
                   }),
-                "Alt-Space": (editor: any) =>
+                'Alt-Space': (editor: any) =>
                   editor.showHint({
-                    completeSingle: true
+                    completeSingle: true,
                   }),
-                "Shift-Tab": (editor: any) => editor.execCommand("indentLess"),
-                Tab: (editor: any) => editor.execCommand("indentMore"),
+                'Shift-Tab': (editor: any) => editor.execCommand('indentLess'),
+                Tab: (editor: any) => editor.execCommand('indentMore'),
                 // Persistent search box in Query Editor
-                "Cmd-F": "findPersistent",
-                "Ctrl-F": "findPersistent",
-                "Cmd-Z": (editor: any) => editor.undo(),
-                "Cmd-Y": (editor: any) => editor.redo()
+                'Cmd-F': 'findPersistent',
+                'Ctrl-F': 'findPersistent',
+                'Cmd-Z': (editor: any) => editor.undo(),
+                'Cmd-Y': (editor: any) => editor.redo(),
               },
               gutters: [
-                "CodeMirror-foldgutter",
-                "CodeMirror-lint-markers",
-                "CodeMirror-linenumbers"
+                'CodeMirror-foldgutter',
+                'CodeMirror-lint-markers',
+                'CodeMirror-linenumbers',
               ],
-              foldGutter: true
+              foldGutter: true,
             } as any
           }
-          editorDidMount={editor => {
+          editorDidMount={(editor) => {
             this._editor = editor;
             this.performInitialPass();
           }}
@@ -223,10 +235,8 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
             if (editor.getSelection().length) {
               this.props.onHelpContextChange(null);
             } else {
-              const { context } = expandAutocompletionContextAtCursor(editor);
-              this.props.onHelpContextChange(
-                context ? { type: context.closestCompositeType } : null
-              );
+              const {context} = expandAutocompletionContextAtCursor(editor);
+              this.props.onHelpContextChange(context ? {type: context.closestCompositeType} : null);
             }
           }}
           onChange={(editor: any) => {
@@ -237,7 +247,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
           }}
           onKeyUp={(editor, event: KeyboardEvent) => {
             if (AUTO_COMPLETE_AFTER_KEY.test(event.key)) {
-              editor.execCommand("autocomplete");
+              editor.execCommand('autocomplete');
             }
           }}
         />

@@ -1,3 +1,5 @@
+import hashlib
+
 from dagster import check
 from dagster.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.decorator_utils import (
@@ -6,20 +8,31 @@ from dagster.core.decorator_utils import (
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import ensure_gen, ensure_single_item
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import (
+    canonicalize_backcompat_args,
+    experimental_arg_warning,
+    rename_warning,
+)
 
 
 class DagsterTypeLoader(object):
     @property
     def schema_type(self):
         check.not_implemented(
-            'Must override schema_type in {klass}'.format(klass=type(self).__name__)
+            "Must override schema_type in {klass}".format(klass=type(self).__name__)
         )
 
+    @property
+    def loader_version(self):
+        return None
+
+    def compute_loaded_input_version(self, _config_value):
+        return None
+
     def construct_from_config_value(self, _context, config_value):
-        '''
+        """
         How to create a runtime value from config data.
-        '''
+        """
         return config_value
 
     def required_resource_keys(self):
@@ -28,7 +41,7 @@ class DagsterTypeLoader(object):
 
 class InputHydrationConfig(DagsterTypeLoader):
     def __init__(self):
-        rename_warning('DagsterTypeLoader', 'InputHydrationConfig', '0.10.0')
+        rename_warning("DagsterTypeLoader", "InputHydrationConfig", "0.10.0")
         super(InputHydrationConfig, self).__init__()
 
 
@@ -36,14 +49,14 @@ class DagsterTypeMaterializer(object):
     @property
     def schema_type(self):
         check.not_implemented(
-            'Must override schema_type in {klass}'.format(klass=type(self).__name__)
+            "Must override schema_type in {klass}".format(klass=type(self).__name__)
         )
 
     def materialize_runtime_values(self, _context, _config_value, _runtime_value):
-        '''
+        """
         How to materialize a runtime value given configuration.
-        '''
-        check.not_implemented('Must implement')
+        """
+        check.not_implemented("Must implement")
 
     def required_resource_keys(self):
         return frozenset()
@@ -51,21 +64,64 @@ class DagsterTypeMaterializer(object):
 
 class OutputMaterializationConfig(DagsterTypeMaterializer):
     def __init__(self):
-        rename_warning('DagsterTypeMaterializer', 'OutputMaterializationConfig', '0.10.0')
+        rename_warning("DagsterTypeMaterializer", "OutputMaterializationConfig", "0.10.0")
         super(OutputMaterializationConfig, self).__init__()
 
 
 class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
-    def __init__(self, config_type, func, required_resource_keys):
-        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
-        self._func = check.callable_param(func, 'func')
+    def __init__(
+        self,
+        config_type,
+        func,
+        required_resource_keys,
+        loader_version=None,
+        external_version_fn=None,
+    ):
+        self._config_type = check.inst_param(config_type, "config_type", ConfigType)
+        self._func = check.callable_param(func, "func")
         self._required_resource_keys = check.opt_set_param(
-            required_resource_keys, 'required_resource_keys', of_type=str
+            required_resource_keys, "required_resource_keys", of_type=str
         )
+        self._loader_version = check.opt_str_param(loader_version, "loader_version")
+        if self._loader_version:
+            experimental_arg_warning("loader_version", "DagsterTypeLoaderFromDecorator.__init__")
+        self._external_version_fn = check.opt_callable_param(
+            external_version_fn, "external_version_fn"
+        )
+        if self._external_version_fn:
+            experimental_arg_warning(
+                "external_version_fn", "DagsterTypeLoaderFromDecorator.__init__"
+            )
 
     @property
     def schema_type(self):
         return self._config_type
+
+    @property
+    def loader_version(self):
+        return self._loader_version
+
+    def compute_loaded_input_version(self, config_value):
+        """Compute the type-loaded input from a given config_value.
+
+        Args:
+            config_value (Union[Any, Dict]): Config value to be ingested by the external version
+                loading function.
+        Returns:
+            Optional[str]: Hash of concatenated loader version and external input version if both
+                are provided, else None.
+        """
+        version = ""
+        if self.loader_version:
+            version += str(self.loader_version)
+        if self._external_version_fn:
+            ext_version = self._external_version_fn(config_value)
+            version += str(ext_version)
+
+        if version == "":
+            return None  # Sentinel value for no version provided.
+        else:
+            return hashlib.sha1(version.encode("utf-8")).hexdigest()
 
     def construct_from_config_value(self, context, config_value):
         return self._func(context, config_value)
@@ -74,21 +130,27 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         return frozenset(self._required_resource_keys)
 
 
-def _create_type_loader_for_decorator(config_type, func, required_resource_keys):
-    return DagsterTypeLoaderFromDecorator(config_type, func, required_resource_keys)
+def _create_type_loader_for_decorator(
+    config_type, func, required_resource_keys, loader_version=None, external_version_fn=None,
+):
+    return DagsterTypeLoaderFromDecorator(
+        config_type, func, required_resource_keys, loader_version, external_version_fn
+    )
 
 
 def input_hydration_config(config_schema=None, required_resource_keys=None, config_cls=None):
-    '''Deprecated in favor of dagster_type_loader'''
-    rename_warning('dagster_type_loader', 'input_hydration_config', '0.10.0')
+    """Deprecated in favor of dagster_type_loader"""
+    rename_warning("dagster_type_loader", "input_hydration_config", "0.10.0")
     config_schema = canonicalize_backcompat_args(
-        config_schema, 'config_schema', config_cls, 'config_cls', '0.10.0',
+        config_schema, "config_schema", config_cls, "config_cls", "0.10.0",
     )
     return dagster_type_loader(config_schema, required_resource_keys)
 
 
-def dagster_type_loader(config_schema, required_resource_keys=None):
-    '''Create an dagster type loader that maps config data to a runtime value.
+def dagster_type_loader(
+    config_schema, required_resource_keys=None, loader_version=None, external_version_fn=None,
+):
+    """Create an dagster type loader that maps config data to a runtime value.
 
     The decorated function should take the execution context and parsed config value and return the
     appropriate runtime value.
@@ -96,6 +158,13 @@ def dagster_type_loader(config_schema, required_resource_keys=None):
     Args:
         config_schema (ConfigSchema): The schema for the config that's passed to the decorated
             function.
+        loader_version (str): (Experimental) The version of the decorated compute function. Two
+            loading functions should have the same version if and only if they deterministically
+            produce the same outputs when provided the same inputs.
+        external_version_fn (Callable): (Experimental) A function that takes in the same parameters as the loader
+            function (config_value) and returns a representation of the version of the external
+            asset (str). Two external assets with identical versions are treated as identical to one
+            another.
 
     Examples:
 
@@ -104,11 +173,11 @@ def dagster_type_loader(config_schema, required_resource_keys=None):
         @dagster_type_loader(Permissive())
         def load_dict(_context, value):
             return value
-    '''
+    """
     from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
-    EXPECTED_POSITIONALS = ['context', '*']
+    EXPECTED_POSITIONALS = ["context", "*"]
 
     def wrapper(func):
         fn_positionals, _ = split_function_parameters(func, EXPECTED_POSITIONALS)
@@ -121,13 +190,15 @@ def dagster_type_loader(config_schema, required_resource_keys=None):
                     solid_name=func.__name__, missing_param=missing_positional
                 )
             )
-        return _create_type_loader_for_decorator(config_type, func, required_resource_keys)
+        return _create_type_loader_for_decorator(
+            config_type, func, required_resource_keys, loader_version, external_version_fn
+        )
 
     return wrapper
 
 
 def input_selector_schema(config_cls, required_resource_keys=None):
-    '''
+    """
     Deprecated in favor of dagster_type_loader.
 
     A decorator for annotating a function that can take the selected properties
@@ -135,12 +206,12 @@ def input_selector_schema(config_cls, required_resource_keys=None):
 
     Args:
         config_cls (Selector)
-    '''
-    rename_warning('dagster_type_loader', 'input_selector_schema', '0.10.0')
+    """
+    rename_warning("dagster_type_loader", "input_selector_schema", "0.10.0")
     from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_cls)
-    check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, 'config_cls')
+    check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, "config_cls")
 
     def _wrap(func):
         def _selector(context, config_value):
@@ -154,10 +225,10 @@ def input_selector_schema(config_cls, required_resource_keys=None):
 
 class DagsterTypeMaterializerForDecorator(DagsterTypeMaterializer):
     def __init__(self, config_type, func, required_resource_keys):
-        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
-        self._func = check.callable_param(func, 'func')
+        self._config_type = check.inst_param(config_type, "config_type", ConfigType)
+        self._func = check.callable_param(func, "func")
         self._required_resource_keys = check.opt_set_param(
-            required_resource_keys, 'required_resource_keys', of_type=str
+            required_resource_keys, "required_resource_keys", of_type=str
         )
 
     @property
@@ -176,16 +247,16 @@ def _create_output_materializer_for_decorator(config_type, func, required_resour
 
 
 def output_materialization_config(config_schema=None, required_resource_keys=None, config_cls=None):
-    '''Deprecated in favor of dagster_type_materializer'''
-    rename_warning('dagster_type_materializer', 'output_materialization_config', '0.10.0')
+    """Deprecated in favor of dagster_type_materializer"""
+    rename_warning("dagster_type_materializer", "output_materialization_config", "0.10.0")
     config_schema = canonicalize_backcompat_args(
-        config_schema, 'config_schema', config_cls, 'config_cls', '0.10.0',
+        config_schema, "config_schema", config_cls, "config_cls", "0.10.0",
     )
     return dagster_type_materializer(config_schema, required_resource_keys)
 
 
 def dagster_type_materializer(config_schema, required_resource_keys=None):
-    '''Create an output materialization hydration config that configurably materializes a runtime
+    """Create an output materialization hydration config that configurably materializes a runtime
     value.
 
     The decorated function should take the execution context, the parsed config value, and the
@@ -201,7 +272,7 @@ def dagster_type_materializer(config_schema, required_resource_keys=None):
 
         # Takes a list of dicts such as might be read in using csv.DictReader, as well as a config
         value, and writes
-        @dagster_type_materializer(Path)
+        @dagster_type_materializer(str)
         def materialize_df(_context, path, value):
             with open(path, 'w') as fd:
                 writer = csv.DictWriter(fd, fieldnames=value[0].keys())
@@ -210,7 +281,7 @@ def dagster_type_materializer(config_schema, required_resource_keys=None):
 
             return AssetMaterialization.file(path)
 
-    '''
+    """
     from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
@@ -220,7 +291,7 @@ def dagster_type_materializer(config_schema, required_resource_keys=None):
 
 
 def output_selector_schema(config_cls, required_resource_keys=None):
-    '''
+    """
     Deprecated in favor of dagster_type_materializer.
 
     A decorator for a annotating a function that can take the selected properties
@@ -228,12 +299,12 @@ def output_selector_schema(config_cls, required_resource_keys=None):
 
     Args:
         config_cls (Selector):
-    '''
-    rename_warning('dagster_type_materializer', 'output_selector_schema', '0.10.0')
+    """
+    rename_warning("dagster_type_materializer", "output_selector_schema", "0.10.0")
     from dagster.config.field import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_cls)
-    check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, 'config_cls')
+    check.param_invariant(config_type.kind == ConfigTypeKind.SELECTOR, "config_cls")
 
     def _wrap(func):
         def _selector(context, config_value, runtime_value):

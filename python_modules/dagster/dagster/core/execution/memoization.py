@@ -11,18 +11,18 @@ from dagster.core.storage.object_store import ObjectStoreOperation, ObjectStoreO
 
 
 def validate_reexecution_memoization(pipeline_context, execution_plan):
-    check.inst_param(pipeline_context, 'pipeline_context', SystemExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
 
     parent_run_id = pipeline_context.pipeline_run.parent_run_id
-    check.opt_str_param(parent_run_id, 'parent_run_id')
+    check.opt_str_param(parent_run_id, "parent_run_id")
 
     if parent_run_id is None:
         return
 
     if not pipeline_context.instance.has_run(parent_run_id):
         raise DagsterRunNotFoundError(
-            'Run id {} set as parent run id was not found in instance'.format(parent_run_id),
+            "Run id {} set as parent run id was not found in instance".format(parent_run_id),
             invalid_run_id=parent_run_id,
         )
 
@@ -32,19 +32,19 @@ def validate_reexecution_memoization(pipeline_context, execution_plan):
 
     if not pipeline_context.intermediate_storage.is_persistent:
         raise DagsterInvariantViolationError(
-            'Cannot perform reexecution with non persistent intermediates manager `{}`.'.format(
+            "Cannot perform reexecution with non persistent intermediates manager `{}`.".format(
                 pipeline_context.intermediate_storage.__class__.__name__
             )
         )
 
 
 def copy_required_intermediates_for_execution(pipeline_context, execution_plan):
-    '''
+    """
     Uses the intermediates manager to copy intermediates from the previous run that apply to the
     current execution plan, and yields the corresponding events
-    '''
-    check.inst_param(pipeline_context, 'pipeline_context', SystemExecutionContext)
-    check.inst_param(execution_plan, 'execution_plan', ExecutionPlan)
+    """
+    check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
     parent_run_id = pipeline_context.pipeline_run.parent_run_id
 
     if not parent_run_id:
@@ -78,7 +78,7 @@ def copy_required_intermediates_for_execution(pipeline_context, execution_plan):
 
 
 def is_intermediate_storage_write_event(record):
-    check.inst_param(record, 'record', EventRecord)
+    check.inst_param(record, "record", EventRecord)
     if not record.is_dagster_event:
         return False
 
@@ -122,6 +122,9 @@ def output_handles_from_execution_plan(execution_plan):
     for step_level in execution_plan.execution_step_levels():
         for step in step_level:
             for step_input in step.step_inputs:
-                if step_input.source_handles:
-                    output_handles_for_current_run.update(step_input.source_handles)
+                for step_output_handle in step_input.source_handles or []:
+                    # Only include handles that won't be satisfied by steps included in this
+                    # execution.
+                    if step_output_handle.step_key not in execution_plan.step_keys_to_execute:
+                        output_handles_for_current_run.add(step_output_handle)
     return output_handles_for_current_run

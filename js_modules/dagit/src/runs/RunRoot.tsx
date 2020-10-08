@@ -1,40 +1,43 @@
-import * as React from "react";
+import {NonIdealState} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {useApolloClient, useQuery} from 'react-apollo';
+import {RouteComponentProps} from 'react-router';
 
-import { RouteComponentProps } from "react-router";
-import { useApolloClient, useQuery } from "react-apollo";
-
-import { IconNames } from "@blueprintjs/icons";
-import { NonIdealState } from "@blueprintjs/core";
-import { Run } from "./Run";
-import { RunRootQuery } from "./types/RunRootQuery";
-import gql from "graphql-tag";
-import { AssetsSupported } from "../AssetsSupported";
+import {AssetsSupported} from 'src/AssetsSupported';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {Run} from 'src/runs/Run';
+import {RunFragments} from 'src/runs/RunFragments';
+import {RunRootQuery} from 'src/runs/types/RunRootQuery';
 
 export const RunRoot: React.FunctionComponent<RouteComponentProps<{
   runId: string;
   pipelineName?: string;
-}>> = props => <RunById runId={props.match.params.runId} />;
+}>> = (props) => <RunById runId={props.match.params.runId} />;
 
 export const RunById: React.FunctionComponent<{
   runId: string;
-}> = ({ runId }) => {
+}> = ({runId}) => {
+  useDocumentTitle(`Run: ${runId}`);
+
   const client = useApolloClient();
-  const { data } = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
-    fetchPolicy: "cache-and-network",
+  const {data} = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
+    fetchPolicy: 'cache-and-network',
     partialRefetch: true,
-    variables: { runId }
+    variables: {runId},
   });
 
   if (!data || !data.pipelineRunOrError) {
     return <Run client={client} run={undefined} runId={runId} />;
   }
 
-  if (data.pipelineRunOrError.__typename !== "PipelineRun") {
+  if (data.pipelineRunOrError.__typename !== 'PipelineRun') {
     return (
       <NonIdealState
         icon={IconNames.SEND_TO_GRAPH}
         title="No Run"
-        description={"The run with this ID does not exist or has been cleaned up."}
+        description={'The run with this ID does not exist or has been cleaned up.'}
       />
     );
   }
@@ -66,5 +69,5 @@ export const RUN_ROOT_QUERY = gql`
     }
   }
 
-  ${Run.fragments.RunFragment}
+  ${RunFragments.RunFragment}
 `;

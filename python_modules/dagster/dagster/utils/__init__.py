@@ -19,12 +19,12 @@ import six
 import yaml
 from six.moves import configparser
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS, TemporaryDirectory, multiprocessing, thread
 from dagster.seven.abc import Mapping
-from dagster.utils.merger import merge_dicts
 
+from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
 if sys.version_info > (3,):
@@ -38,12 +38,12 @@ EPOCH = datetime.datetime.utcfromtimestamp(0)
 PICKLE_PROTOCOL = 2
 
 
-DEFAULT_REPOSITORY_YAML_FILENAME = 'repository.yaml'
-DEFAULT_WORKSPACE_YAML_FILENAME = 'workspace.yaml'
+DEFAULT_REPOSITORY_YAML_FILENAME = "repository.yaml"
+DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
 
 
 def file_relative_path(dunderfile, relative_path):
-    '''
+    """
     This function is useful when one needs to load a file that is
     relative to the position of the current file. (Such as when
     you encode a configuration file path in source file and want
@@ -53,16 +53,16 @@ def file_relative_path(dunderfile, relative_path):
 
     file_relative_path(__file__, 'path/relative/to/file')
 
-    '''
+    """
 
-    check.str_param(dunderfile, 'dunderfile')
-    check.str_param(relative_path, 'relative_path')
+    check.str_param(dunderfile, "dunderfile")
+    check.str_param(relative_path, "relative_path")
 
     return os.path.join(os.path.dirname(dunderfile), relative_path)
 
 
 def script_relative_path(file_path):
-    '''
+    """
     Useful for testing with local files. Use a path relative to where the
     test resides and this function will return the absolute path
     of that file. Otherwise it will be relative to script that
@@ -73,29 +73,29 @@ def script_relative_path(file_path):
     insensitive contexts. Prefer file_relative_path for anything with
     performance constraints.
 
-    '''
+    """
     # from http://bit.ly/2snyC6s
 
-    check.str_param(file_path, 'file_path')
+    check.str_param(file_path, "file_path")
     scriptdir = inspect.stack()[1][1]
     return os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(scriptdir)), file_path))
 
 
 # Adapted from https://github.com/okunishinishi/python-stringcase/blob/master/stringcase.py
 def camelcase(string):
-    check.str_param(string, 'string')
+    check.str_param(string, "string")
 
-    string = re.sub(r'^[\-_\.]', '', str(string))
+    string = re.sub(r"^[\-_\.]", "", str(string))
     if not string:
         return string
     return str(string[0]).upper() + re.sub(
-        r'[\-_\.\s]([a-z])', lambda matched: str(matched.group(1)).upper(), string[1:]
+        r"[\-_\.\s]([a-z])", lambda matched: str(matched.group(1)).upper(), string[1:]
     )
 
 
 def ensure_single_item(ddict):
-    check.dict_param(ddict, 'ddict')
-    check.param_invariant(len(ddict) == 1, 'ddict', 'Expected dict with single item')
+    check.dict_param(ddict, "ddict")
+    check.param_invariant(len(ddict) == 1, "ddict", "Expected dict with single item")
     return list(ddict.items())[0]
 
 
@@ -110,14 +110,14 @@ def pushd(path):
 
 
 def safe_isfile(path):
-    '''"Backport of Python 3.8 os.path.isfile behavior.
+    """"Backport of Python 3.8 os.path.isfile behavior.
 
     This is intended to backport https://docs.python.org/dev/whatsnew/3.8.html#os-path. I'm not
     sure that there are other ways to provoke this behavior on Unix other than the null byte,
     but there are certainly other ways to do it on Windows. Afaict, we won't mask other
     ValueErrors, and the behavior in the status quo ante is rough because we risk throwing an
     unexpected, uncaught ValueError from very deep in our logic.
-    '''
+    """
     try:
         return os.path.isfile(path)
     except ValueError:
@@ -166,6 +166,18 @@ class frozenlist(list):
     def __readonly__(self, *args, **kwargs):
         raise RuntimeError("Cannot modify ReadOnlyList")
 
+    # https://docs.python.org/3/library/pickle.html#object.__reduce__
+    #
+    # Like frozendict, implement __reduce__ and __setstate__ to handle pickling.
+    # Otherwise, __setstate__ will be called to restore the frozenlist, causing
+    # a RuntimeError because frozenlist is not mutable.
+
+    def __reduce__(self):
+        return (frozenlist, (), list(self))
+
+    def __setstate__(self, state):
+        self.__init__(state)
+
     __setitem__ = __readonly__
     __delitem__ = __readonly__
     append = __readonly__
@@ -176,6 +188,9 @@ class frozenlist(list):
     remove = __readonly__
     reverse = __readonly__
     sort = __readonly__
+
+    def __hash__(self):
+        return hash(tuple(self))
 
 
 def make_readonly_value(value):
@@ -221,18 +236,18 @@ def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
     with instance_for_test():
         cli_cmd = [
             sys.executable,
-            '-m',
-            'dagster',
-            'pipeline',
-            'execute',
-            '-f',
+            "-m",
+            "dagster",
+            "pipeline",
+            "execute",
+            "-f",
             path,
-            '-a',
+            "-a",
             pipeline_fn_name,
         ]
 
         if env_file:
-            cli_cmd.append('-c')
+            cli_cmd.append("-c")
             cli_cmd.append(env_file)
 
         try:
@@ -294,12 +309,16 @@ def ensure_file(path):
 
 def touch_file(path):
     ensure_dir(os.path.dirname(path))
-    with open(path, 'a'):
+    with open(path, "a"):
         os.utime(path, None)
 
 
 def _kill_on_event(termination_event):
     termination_event.wait()
+    send_interrupt()
+
+
+def send_interrupt():
     if IS_WINDOWS:
         # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
         # interrupt things like sleep()
@@ -318,17 +337,119 @@ def _kill_on_event(termination_event):
 #  * https://stackoverflow.com/questions/35772001/how-to-handle-the-signal-in-python-on-windows-machine
 #  * https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
 def start_termination_thread(termination_event):
-    check.inst_param(termination_event, 'termination_event', ttype=type(multiprocessing.Event()))
+    check.inst_param(termination_event, "termination_event", ttype=type(multiprocessing.Event()))
 
     int_thread = threading.Thread(
-        target=_kill_on_event, args=(termination_event,), name='kill-on-event'
+        target=_kill_on_event, args=(termination_event,), name="kill-on-event"
     )
     int_thread.daemon = True
     int_thread.start()
 
 
+_received_interrupt = {"received": False}
+
+
+def setup_windows_interrupt_support():
+    """ Set SIGBREAK handler to SIGINT on Windows """
+    if sys.platform == "win32":
+        signal.signal(signal.SIGBREAK, signal.getsignal(signal.SIGINT))  # pylint: disable=no-member
+
+
+def _replace_interrupt_signal(new_signal_handler):
+    signal.signal(signal.SIGINT, new_signal_handler)
+    # Update the windows interrupt signal as well if needed
+    setup_windows_interrupt_support()
+
+
+# Wraps code that we don't want a SIGINT to interrupt (but throw a KeyboardInterrupt if a
+# SIGINT was received while it ran). You can also call raise_delayed_interrupts within this
+# context when you reach a checkpoint where it's safe to raise a KeyboardInterrupt, or open a
+# `raise_interrupts_immediately` context during a period in which it's once again safe to raise
+# interrupts.
+@contextlib.contextmanager
+def delay_interrupts():
+    original_signal_handler = signal.getsignal(signal.SIGINT)
+
+    def _new_signal_handler(_signo, _):
+        _received_interrupt["received"] = True
+
+    signal_replaced = False
+
+    try:
+        try:
+            _replace_interrupt_signal(_new_signal_handler)
+            signal_replaced = True
+        except ValueError:
+            # Can't replace signal handlers when not on the main thread, ignore
+            pass
+        yield
+    finally:
+        if signal_replaced:
+            _replace_interrupt_signal(original_signal_handler)
+            raise_delayed_interrupts()
+
+
+# Restores the default SIGINT handler behavior within this context. Typically this would be a no-op,
+# but can be used within a delay_interrupts context to temporarily restore normal interrupt handling
+# behavior. Will also immediately raise an interrupt if called inside a `delay_interrupts` context
+# where an interrupt was received.
+@contextlib.contextmanager
+def raise_interrupts_immediately():
+    raise_delayed_interrupts()
+    original_signal_handler = signal.getsignal(signal.SIGINT)
+
+    def _new_signal_handler(signo, _):
+        raise KeyboardInterrupt
+
+    signal_replaced = False
+
+    try:
+        try:
+            _replace_interrupt_signal(_new_signal_handler)
+            signal_replaced = True
+        except ValueError:
+            # Can't replace signal handlers when not on the main thread, ignore
+            pass
+        yield
+    finally:
+        if signal_replaced:
+            _replace_interrupt_signal(original_signal_handler)
+
+
+# Call within a `delay_interrupts` context whenever you reach a checkpoint where it's safe to
+# raise any interrupts that were received inside the context.
+def raise_delayed_interrupts():
+    if _received_interrupt["received"]:
+        _received_interrupt["received"] = False
+        raise KeyboardInterrupt
+
+
+def check_received_delayed_interrupt():
+    return _received_interrupt["received"]
+
+
+def pop_delayed_interrupts():
+    ret = _received_interrupt["received"]
+    _received_interrupt["received"] = False
+    return ret
+
+
+# Executes the next() function within an instance of the supplied context manager class
+# (leaving the context before yielding each result)
+def iterate_with_context(context_manager_class, iterator):
+    while True:
+        # Allow interrupts during user code so that we can terminate slow/hanging steps
+        with context_manager_class():
+            try:
+                next_output = next(iterator)
+            except StopIteration:
+                return
+
+        yield next_output
+
+
 def datetime_as_float(dt):
-    check.inst_param(dt, 'dt', datetime.datetime)
+    check.inst_param(dt, "dt", datetime.datetime)
     return float((dt - EPOCH).total_seconds())
 
 
@@ -336,13 +457,13 @@ def datetime_as_float(dt):
 class frozentags(frozendict):
     def __init__(self, *args, **kwargs):
         super(frozentags, self).__init__(*args, **kwargs)
-        check.dict_param(self, 'self', key_type=str, value_type=str)
+        check.dict_param(self, "self", key_type=str, value_type=str)
 
     def __hash__(self):
         return hash(tuple(sorted(self.items())))
 
     def updated_with(self, new_tags):
-        check.dict_param(new_tags, 'new_tags', key_type=str, value_type=str)
+        check.dict_param(new_tags, "new_tags", key_type=str, value_type=str)
         updated = dict(self)
         for key, value in new_tags.items():
             updated[key] = value
@@ -351,7 +472,7 @@ class frozentags(frozendict):
 
 
 class EventGenerationManager(object):
-    ''' Utility class that wraps an event generator function, that also yields a single instance of
+    """ Utility class that wraps an event generator function, that also yields a single instance of
     a typed object.  All events yielded before the typed object are yielded through the method
     `generate_setup_events` and all events yielded after the typed object are yielded through the
     method `generate_teardown_events`.
@@ -362,12 +483,12 @@ class EventGenerationManager(object):
 
     This does require calling `generate_setup_events` AND `generate_teardown_events` in order to
     get the typed object.
-    '''
+    """
 
     def __init__(self, generator, object_cls, require_object=True):
         self.generator = check.generator(generator)
-        self.object_cls = check.type_param(object_cls, 'object_cls')
-        self.require_object = check.bool_param(require_object, 'require_object')
+        self.object_cls = check.type_param(object_cls, "object_cls")
+        self.require_object = check.bool_param(require_object, "require_object")
         self.object = None
         self.did_setup = False
         self.did_teardown = False
@@ -385,14 +506,14 @@ class EventGenerationManager(object):
             if self.require_object:
                 check.inst_param(
                     self.object,
-                    'self.object',
+                    "self.object",
                     self.object_cls,
-                    'generator never yielded object of type {}'.format(self.object_cls.__name__),
+                    "generator never yielded object of type {}".format(self.object_cls.__name__),
                 )
 
     def get_object(self):
         if not self.did_setup:
-            check.failed('Called `get_object` before `generate_setup_events`')
+            check.failed("Called `get_object` before `generate_setup_events`")
         return self.object
 
     def generate_teardown_events(self):
@@ -425,14 +546,14 @@ def is_enum_value(value):
 
 
 def git_repository_root():
-    return six.ensure_str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).strip())
+    return six.ensure_str(subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).strip())
 
 
 def segfault():
-    '''Reliable cross-Python version segfault.
+    """Reliable cross-Python version segfault.
 
     https://bugs.python.org/issue1215#msg143236
-    '''
+    """
     import ctypes
 
     ctypes.string_at(0)
@@ -440,7 +561,7 @@ def segfault():
 
 def find_free_port():
     with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
+        s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
 
@@ -482,7 +603,7 @@ def process_is_alive(pid):
         return psutil.pid_exists(pid=pid)
     else:
         try:
-            subprocess.check_output(['ps', str(pid)])
+            subprocess.check_output(["ps", str(pid)])
         except subprocess.CalledProcessError as exc:
             assert exc.returncode == 1
             return False
@@ -490,9 +611,13 @@ def process_is_alive(pid):
 
 
 def compose(*args):
-    '''
+    """
     Compose python functions args such that compose(f, g)(x) is equivalent to f(g(x)).
-    '''
+    """
     # reduce using functional composition over all the arguments, with the identity function as
     # initializer
     return functools.reduce(lambda f, g: lambda x: f(g(x)), args, lambda x: x)
+
+
+def dict_without_keys(ddict, *keys):
+    return {key: value for key, value in ddict.items() if key not in set(keys)}

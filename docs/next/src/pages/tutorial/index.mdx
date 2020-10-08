@@ -1,14 +1,13 @@
 import { DynamicMetaTags } from 'components/MetaTags';
 import { VersionedGithubLink } from 'components/VersionedComponents';
+import AnchorHeading from 'components/AnchorHeading';
 
 <DynamicMetaTags
   title="Tutorial | Dagster"
-  description="Dagster is a system for building modern data applications."
+  description="Getting familiar with Dagster's feature set and tooling through a hands-on tutorial"
 />
 
-import AnchorHeading from 'components/AnchorHeading';
-
-# Tutorial
+# Before We Start
 
 If you're new to Dagster, we recommend working through this tutorial to become
 familiar with Dagster's feature set and tooling, using small examples that are
@@ -53,7 +52,7 @@ These sections will introduce some advanced features and give you deeper insight
 
 We'll build examples around a simple but scary CSV dataset, `cereal.csv`, which contains nutritional
 facts about 80 breakfast cereals. You can find this dataset on <VersionedGithubLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv" word="Github" />.
-Or, if you've cloned the dagster git repository, you'll find this dataset at
+Or, if you've cloned the Dagster git repository, you'll find this dataset at
 `dagster/examples/docs_snippets/docs_snippets/intro_tutorial/cereal.csv`
 
 To get the flavor of this dataset, let's look at the header and the first five
@@ -65,4 +64,4 @@ lines:1-6
 ```
 
 You can find all of the <VersionedGithubLink filePath="examples/docs_snippets/docs_snippets/intro_tutorial" word="tutorial code" />
-checked into the dagster repository.
+checked into the Dagster repository.

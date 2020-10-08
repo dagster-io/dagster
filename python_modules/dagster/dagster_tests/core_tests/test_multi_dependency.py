@@ -20,7 +20,7 @@ from dagster import (
 
 
 def test_simple_values():
-    @solid(input_defs=[InputDefinition('numbers', List[Int])])
+    @solid(input_defs=[InputDefinition("numbers", List[Int])])
     def sum_num(_context, numbers):
         # cant guarantee order
         assert set(numbers) == set([1, 2, 3])
@@ -40,15 +40,15 @@ def test_simple_values():
 
     result = execute_pipeline(
         PipelineDefinition(
-            name='input_test',
+            name="input_test",
             solid_defs=[emit_1, emit_2, emit_3, sum_num],
             dependencies={
-                'sum_num': {
-                    'numbers': MultiDependencyDefinition(
+                "sum_num": {
+                    "numbers": MultiDependencyDefinition(
                         [
-                            DependencyDefinition('emit_1'),
-                            DependencyDefinition('emit_2'),
-                            DependencyDefinition('emit_3'),
+                            DependencyDefinition("emit_1"),
+                            DependencyDefinition("emit_2"),
+                            DependencyDefinition("emit_3"),
                         ]
                     )
                 }
@@ -56,12 +56,12 @@ def test_simple_values():
         )
     )
     assert result.success
-    assert result.result_for_solid('sum_num').output_value() == 6
+    assert result.result_for_solid("sum_num").output_value() == 6
 
 
-@solid(input_defs=[InputDefinition('stuff', List[Any])])
+@solid(input_defs=[InputDefinition("stuff", List[Any])])
 def collect(_context, stuff):
-    assert set(stuff) == set([1, None, 'one'])
+    assert set(stuff) == set([1, None, "one"])
     return stuff
 
 
@@ -77,7 +77,7 @@ def emit_none():
 
 @lambda_solid
 def emit_str():
-    return 'one'
+    return "one"
 
 
 @lambda_solid(output_def=OutputDefinition(Nothing))
@@ -88,15 +88,15 @@ def emit_nothing():
 def test_interleaved_values():
     result = execute_pipeline(
         PipelineDefinition(
-            name='input_test',
+            name="input_test",
             solid_defs=[emit_num, emit_none, emit_str, collect],
             dependencies={
-                'collect': {
-                    'stuff': MultiDependencyDefinition(
+                "collect": {
+                    "stuff": MultiDependencyDefinition(
                         [
-                            DependencyDefinition('emit_num'),
-                            DependencyDefinition('emit_none'),
-                            DependencyDefinition('emit_str'),
+                            DependencyDefinition("emit_num"),
+                            DependencyDefinition("emit_none"),
+                            DependencyDefinition("emit_str"),
                         ]
                     )
                 }
@@ -119,7 +119,7 @@ def test_dsl():
 def test_collect_one():
     @lambda_solid
     def collect_one(list_arg):
-        assert list_arg == ['one']
+        assert list_arg == ["one"]
 
     @pipeline
     def multi_one():
@@ -130,7 +130,7 @@ def test_collect_one():
 
 def test_bad_dsl():
 
-    with pytest.raises(DagsterInvalidDefinitionError, match='list containing invalid types'):
+    with pytest.raises(DagsterInvalidDefinitionError, match="list containing invalid types"):
 
         @composite_solid
         def _composed_collect(str_in, none_in):
@@ -146,15 +146,15 @@ def test_nothing_deps():
         '"result" returns type Nothing',
     ):
         PipelineDefinition(
-            name='input_test',
+            name="input_test",
             solid_defs=[emit_num, emit_nothing, emit_str, collect],
             dependencies={
-                'collect': {
-                    'stuff': MultiDependencyDefinition(
+                "collect": {
+                    "stuff": MultiDependencyDefinition(
                         [
-                            DependencyDefinition('emit_num'),
-                            DependencyDefinition('emit_nothing'),
-                            DependencyDefinition('emit_str'),
+                            DependencyDefinition("emit_num"),
+                            DependencyDefinition("emit_nothing"),
+                            DependencyDefinition("emit_str"),
                         ]
                     )
                 }

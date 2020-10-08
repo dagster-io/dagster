@@ -1,18 +1,19 @@
-import * as React from "react";
-import { GaantChartMode } from "./Constants";
-import { ButtonGroup, Button } from "@blueprintjs/core";
+import {Button, ButtonGroup} from '@blueprintjs/core';
+import * as React from 'react';
+
+import {GaantChartMode} from 'src/gaant/Constants';
 
 export const GaantChartModeControl: React.FunctionComponent<{
   value: GaantChartMode;
   hideTimedMode: boolean;
   onChange: (mode: GaantChartMode) => void;
-}> = React.memo(({ value, onChange, hideTimedMode }) => (
-  <ButtonGroup style={{ flexShrink: 0 }}>
+}> = React.memo(({value, onChange, hideTimedMode}) => (
+  <ButtonGroup style={{flexShrink: 0}}>
     <Button
       key={GaantChartMode.FLAT}
       small={true}
       icon="column-layout"
-      title={"Flat"}
+      title={'Flat'}
       active={value === GaantChartMode.FLAT}
       onClick={() => onChange(GaantChartMode.FLAT)}
     />
@@ -20,7 +21,7 @@ export const GaantChartModeControl: React.FunctionComponent<{
       key={GaantChartMode.WATERFALL}
       small={true}
       icon="gantt-chart"
-      title={"Waterfall"}
+      title={'Waterfall'}
       active={value === GaantChartMode.WATERFALL}
       onClick={() => onChange(GaantChartMode.WATERFALL)}
     />
@@ -30,7 +31,7 @@ export const GaantChartModeControl: React.FunctionComponent<{
         small={true}
         icon="time"
         rightIcon="gantt-chart"
-        title={"Waterfall with Execution Timing"}
+        title={'Waterfall with Execution Timing'}
         active={value === GaantChartMode.WATERFALL_TIMED}
         onClick={() => onChange(GaantChartMode.WATERFALL_TIMED)}
       />

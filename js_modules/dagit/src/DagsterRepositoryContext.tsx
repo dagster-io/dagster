@@ -1,15 +1,16 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import { useQuery } from "react-apollo";
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
+
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {RepositoryInformationFragment} from 'src/RepositoryInformation';
+import {InstanceExecutableQuery} from 'src/types/InstanceExecutableQuery';
 import {
   RootRepositoriesQuery,
   RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes,
-  RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location
-} from "./types/RootRepositoriesQuery";
-import { InstanceExecutableQuery } from "./types/InstanceExecutableQuery";
-import PythonErrorInfo from "./PythonErrorInfo";
-import { RepositoryInformationFragment } from "./RepositoryInformation";
-import { RepositorySelector } from "./types/globalTypes";
+  RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location,
+} from 'src/types/RootRepositoriesQuery';
+import {RepositorySelector} from 'src/types/globalTypes';
 
 export type Repository = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes;
 export type RepositoryLocation = RootRepositoriesQuery_repositoriesOrError_RepositoryConnection_nodes_location;
@@ -20,20 +21,20 @@ export interface DagsterRepoOption {
 }
 
 export const repositorySelectorFromDagsterRepoOption = (
-  dagsterRepoOption: DagsterRepoOption
+  dagsterRepoOption: DagsterRepoOption,
 ): RepositorySelector => {
-  const { repository } = dagsterRepoOption;
+  const {repository} = dagsterRepoOption;
 
   return {
     repositoryLocationName: repository.location.name,
-    repositoryName: repository.name
+    repositoryName: repository.name,
   };
 };
 
-const LAST_REPO_KEY = "dagit.last-repo";
+const LAST_REPO_KEY = 'dagit.last-repo';
 
-export const DagsterRepositoryContext = React.createContext<DagsterRepoOption>(
-  new Error("DagsterRepositoryContext should never be uninitialized") as any
+export const DagsterRepositoryContext = React.createContext<DagsterRepoOption | null>(
+  new Error('DagsterRepositoryContext should never be uninitialized') as any,
 );
 
 export const ROOT_REPOSITORIES_QUERY = gql`
@@ -47,6 +48,9 @@ export const ROOT_REPOSITORIES_QUERY = gql`
           pipelines {
             name
             pipelineSnapshotId
+          }
+          partitionSets {
+            pipelineName
           }
           location {
             name
@@ -74,24 +78,24 @@ export const isRepositoryOptionEqual = (a: DagsterRepoOption, b: DagsterRepoOpti
  * and coercing the response to the DagsterRepoOption[] type.
  */
 export const useRepositoryOptions = () => {
-  const { data } = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
-    fetchPolicy: "cache-and-network"
+  const {data, loading} = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
+    fetchPolicy: 'cache-and-network',
   });
 
   let options: DagsterRepoOption[] = [];
   if (!data || !data.repositoriesOrError) {
-    return { options, error: null };
+    return {options, loading, error: null};
   }
-  if (data.repositoriesOrError.__typename === "PythonError") {
-    return { options, error: data.repositoriesOrError };
+  if (data.repositoriesOrError.__typename === 'PythonError') {
+    return {options, loading, error: data.repositoriesOrError};
   }
 
-  options = data.repositoriesOrError.nodes.map(repository => ({
+  options = data.repositoriesOrError.nodes.map((repository) => ({
     repository,
-    repositoryLocation: repository.location
+    repositoryLocation: repository.location,
   }));
 
-  return { error: null, options };
+  return {error: null, loading, options};
 };
 
 /**
@@ -113,9 +117,12 @@ export const useCurrentRepositoryState = (options: DagsterRepoOption[]) => {
     if (!options.length) {
       return;
     }
-    if (!repo || !options.some(o => getRepositoryOptionHash(o) === getRepositoryOptionHash(repo))) {
+    if (
+      !repo ||
+      !options.some((o) => getRepositoryOptionHash(o) === getRepositoryOptionHash(repo))
+    ) {
       const lastHash = window.localStorage.getItem(LAST_REPO_KEY);
-      const last = lastHash && options.find(o => getRepositoryOptionHash(o) === lastHash);
+      const last = lastHash && options.find((o) => getRepositoryOptionHash(o) === lastHash);
       setRepo(last || options[0]);
     }
   }, [repo, options]);
@@ -126,20 +133,19 @@ export const useCurrentRepositoryState = (options: DagsterRepoOption[]) => {
 export const useRepositorySelector = (): RepositorySelector => {
   const repository = useRepository();
   return {
-    repositoryLocationName: repository.location.name,
-    repositoryName: repository.name
+    repositoryLocationName: repository?.location.name || '',
+    repositoryName: repository?.name || '',
   };
 };
 
 export const useRepository = () => {
-  const { repository, repositoryLocation } = React.useContext(DagsterRepositoryContext);
+  const repoContext = React.useContext(DagsterRepositoryContext);
+  return repoContext?.repository;
+};
 
-  if (!repository || !repositoryLocation) {
-    // use legacy fields
-    throw Error("no legacy repository");
-  }
-
-  return repository;
+export const useActivePipelineForName = (pipelineName: string) => {
+  const repository = useRepository();
+  return repository?.pipelines.find((pipeline) => pipeline.name === pipelineName) || null;
 };
 
 export const usePipelineSelector = (pipelineName: string, solidSelection?: string[]) => {
@@ -147,7 +153,7 @@ export const usePipelineSelector = (pipelineName: string, solidSelection?: strin
   return {
     ...repositorySelector,
     pipelineName,
-    solidSelection
+    solidSelection,
   };
 };
 
@@ -155,7 +161,7 @@ export const useScheduleSelector = (scheduleName: string) => {
   const repositorySelector = useRepositorySelector();
   return {
     ...repositorySelector,
-    scheduleName
+    scheduleName,
   };
 };
 
@@ -167,8 +173,8 @@ export const INSTANCE_EXECUTABLE_QUERY = gql`
   }
 `;
 export const useDagitExecutablePath = () => {
-  const { data } = useQuery<InstanceExecutableQuery>(INSTANCE_EXECUTABLE_QUERY, {
-    fetchPolicy: "cache-and-network"
+  const {data} = useQuery<InstanceExecutableQuery>(INSTANCE_EXECUTABLE_QUERY, {
+    fetchPolicy: 'cache-and-network',
   });
 
   return data?.instance.executablePath;
@@ -176,10 +182,10 @@ export const useDagitExecutablePath = () => {
 
 export const scheduleSelectorWithRepository = (
   scheduleName: string,
-  repositorySelector?: RepositorySelector
+  repositorySelector?: RepositorySelector,
 ) => {
   return {
     ...repositorySelector,
-    scheduleName
+    scheduleName,
   };
 };

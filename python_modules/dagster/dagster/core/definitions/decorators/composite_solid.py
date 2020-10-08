@@ -31,19 +31,19 @@ class _CompositeSolid(object):
         config_schema=None,
         config_fn=None,
     ):
-        self.name = check.opt_str_param(name, 'name')
-        self.input_defs = check.opt_nullable_list_param(input_defs, 'input_defs', InputDefinition)
-        self.output_defs = check.opt_nullable_list_param(output_defs, 'output', OutputDefinition)
-        self.description = check.opt_str_param(description, 'description')
+        self.name = check.opt_str_param(name, "name")
+        self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)
+        self.output_defs = check.opt_nullable_list_param(output_defs, "output", OutputDefinition)
+        self.description = check.opt_str_param(description, "description")
 
         check.opt_dict_param(
-            config_schema, 'config_schema'
+            config_schema, "config_schema"
         )  # don't want to assign dict below if config is None
         self.config_schema = config_schema
-        self.config_fn = check.opt_callable_param(config_fn, 'config_fn')
+        self.config_fn = check.opt_callable_param(config_fn, "config_fn")
 
     def __call__(self, fn):
-        check.callable_param(fn, 'fn')
+        check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
@@ -60,17 +60,17 @@ class _CompositeSolid(object):
             output_defs = self.output_defs
         else:
             explicit_outputs = has_explicit_return_type(fn)
-            output_defs = infer_output_definitions('@composite_solid', self.name, fn)
+            output_defs = infer_output_definitions("@composite_solid", self.name, fn)
 
         positional_inputs = validate_solid_fn(
-            '@composite_solid', self.name, fn, input_defs, exclude_nothing=False
+            "@composite_solid", self.name, fn, input_defs, exclude_nothing=False
         )
 
         kwargs = {input_def.name: InputMappingNode(input_def) for input_def in input_defs}
 
         output = None
         mapping = None
-        enter_composition(self.name, '@composite_solid')
+        enter_composition(self.name, "@composite_solid")
         try:
             output = fn(**kwargs)
             mapping = composite_mapping_from_output(output, output_defs, self.name)
@@ -79,7 +79,7 @@ class _CompositeSolid(object):
 
         check.invariant(
             context.name == self.name,
-            'Composition context stack desync: received context for '
+            "Composition context stack desync: received context for "
             '"{context.name}" expected "{self.name}"'.format(context=context, self=self),
         )
 
@@ -137,8 +137,8 @@ class _CompositeSolid(object):
 
 
 def _get_validated_config_mapping(name, config_schema, config_fn):
-    '''Config mapping must set composite config_schema and config_fn or neither.
-    '''
+    """Config mapping must set composite config_schema and config_fn or neither.
+    """
 
     if config_fn is None and config_schema is None:
         return None
@@ -147,9 +147,9 @@ def _get_validated_config_mapping(name, config_schema, config_fn):
     else:
         if config_fn is not None:
             raise DagsterInvalidDefinitionError(
-                '@composite_solid \'{solid_name}\' defines a configuration function {config_fn} '
-                'but does not define a configuration schema. If you intend this composite to take '
-                'no config_schema, you must explicitly specify config_schema={{}}.'.format(
+                "@composite_solid '{solid_name}' defines a configuration function {config_fn} "
+                "but does not define a configuration schema. If you intend this composite to take "
+                "no config_schema, you must explicitly specify config_schema={{}}.".format(
                     solid_name=name, config_fn=config_fn.__name__
                 )
             )
@@ -168,7 +168,7 @@ def composite_solid(
     config_schema=None,
     config_fn=None,
 ):
-    '''Create a composite solid with the specified parameters from the decorated composition
+    """Create a composite solid with the specified parameters from the decorated composition
     function.
 
     Using this decorator allows you to build up the dependency graph of the composite by writing a
@@ -222,7 +222,7 @@ def composite_solid(
 
                 return adder_2(adder_1(num))
 
-    '''
+    """
     if callable(name):
         check.invariant(input_defs is None)
         check.invariant(output_defs is None)

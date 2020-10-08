@@ -10,24 +10,24 @@ from .stack import EvaluationStack
 
 
 class TraversalType(Enum):
-    VALIDATE = 'VALIDATE'
-    RESOLVE_DEFAULTS = 'RESOLVE_DEFAULTS'
-    RESOLVE_DEFAULTS_AND_POSTPROCESS = 'RESOLVE_DEFAULTS_AND_POSTPROCESS'
+    VALIDATE = "VALIDATE"
+    RESOLVE_DEFAULTS = "RESOLVE_DEFAULTS"
+    RESOLVE_DEFAULTS_AND_POSTPROCESS = "RESOLVE_DEFAULTS_AND_POSTPROCESS"
 
 
 class ContextData(object):
-    __slots__ = ['_config_schema_snapshot', '_config_type_snap', '_stack']
+    __slots__ = ["_config_schema_snapshot", "_config_type_snap", "_stack"]
 
     def __init__(self, config_schema_snapshot, config_type_snap, stack):
         self._config_schema_snapshot = check.opt_inst_param(
-            config_schema_snapshot, 'config_schema_snapshot', ConfigSchemaSnapshot
+            config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
 
         self._config_type_snap = check.opt_inst_param(
-            config_type_snap, 'config_type_snap', ConfigTypeSnap
+            config_type_snap, "config_type_snap", ConfigTypeSnap
         )
 
-        self._stack = check.inst_param(stack, 'stack', EvaluationStack)
+        self._stack = check.inst_param(stack, "stack", EvaluationStack)
 
     @property
     def config_schema_snapshot(self):
@@ -48,7 +48,7 @@ class ContextData(object):
 
 class ValidationContext(ContextData):
     def for_field_snap(self, field_snap):
-        check.inst_param(field_snap, 'field_snap', ConfigFieldSnap)
+        check.inst_param(field_snap, "field_snap", ConfigFieldSnap)
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
             config_type_snap=self.config_schema_snapshot.get_config_snap(field_snap.type_key),
@@ -56,7 +56,7 @@ class ValidationContext(ContextData):
         )
 
     def for_array(self, index):
-        check.int_param(index, 'index')
+        check.int_param(index, "index")
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
             config_type_snap=self.config_schema_snapshot.get_config_snap(
@@ -66,7 +66,7 @@ class ValidationContext(ContextData):
         )
 
     def for_new_config_type_key(self, config_type_key):
-        check.str_param(config_type_key, 'config_type_key')
+        check.str_param(config_type_key, "config_type_key")
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
             config_type_snap=self.config_schema_snapshot.get_config_snap(config_type_key),
@@ -84,7 +84,7 @@ class ValidationContext(ContextData):
 
 
 class TraversalContext(ContextData):
-    __slots__ = ['_config_type', '_traversal_type', '_all_config_types']
+    __slots__ = ["_config_type", "_traversal_type", "_all_config_types"]
 
     def __init__(
         self,
@@ -100,9 +100,9 @@ class TraversalContext(ContextData):
             config_type_snap=config_type_snap,
             stack=stack,
         )
-        self._config_type = check.inst_param(config_type, 'config_type', ConfigType)
-        self._traversal_type = check.inst_param(traversal_type, 'traversal_type', TraversalType)
-        self._all_config_types = check.dict_param(all_config_types, 'all_config_types')
+        self._config_type = check.inst_param(config_type, "config_type", ConfigType)
+        self._traversal_type = check.inst_param(traversal_type, "traversal_type", TraversalType)
+        self._all_config_types = check.dict_param(all_config_types, "all_config_types")
 
     @staticmethod
     def from_config_type(config_type, stack, traversal_type):
@@ -134,7 +134,7 @@ class TraversalContext(ContextData):
         return self.traversal_type == TraversalType.RESOLVE_DEFAULTS_AND_POSTPROCESS
 
     def for_array(self, index):
-        check.int_param(index, 'index')
+        check.int_param(index, "index")
         return TraversalContext(
             config_schema_snapshot=self.config_schema_snapshot,
             config_type_snap=self.config_schema_snapshot.get_config_snap(
@@ -147,8 +147,8 @@ class TraversalContext(ContextData):
         )
 
     def for_field(self, field_def, field_name):
-        check.inst_param(field_def, 'field_def', Field)
-        check.str_param(field_name, 'field_name')
+        check.inst_param(field_def, "field_def", Field)
+        check.str_param(field_name, "field_name")
         return TraversalContext(
             config_schema_snapshot=self.config_schema_snapshot,
             config_type_snap=self.config_schema_snapshot.get_config_snap(field_def.config_type.key),

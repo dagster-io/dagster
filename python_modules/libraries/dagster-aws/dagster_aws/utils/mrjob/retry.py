@@ -82,11 +82,11 @@ class RetryWrapper(object):
 
         self.__backoff = backoff
         if self.__backoff <= 0:
-            raise ValueError('backoff must be positive')
+            raise ValueError("backoff must be positive")
 
         self.__multiplier = multiplier
         if self.__multiplier < 1:
-            raise ValueError('multiplier must be at least one!')
+            raise ValueError("multiplier must be at least one!")
 
         self.__max_tries = max_tries
 
@@ -101,7 +101,7 @@ class RetryWrapper(object):
 
         if name in self.__unwrap_methods:
             return partial(x.__func__, self)
-        elif hasattr(x, '__call__'):
+        elif hasattr(x, "__call__"):
             return self.__wrap_method_with_call_and_maybe_retry(x)
         else:
             return x
@@ -120,8 +120,8 @@ class RetryWrapper(object):
                     if self.__retry_if(ex) and (
                         tries < self.__max_tries - 1 or not self.__max_tries
                     ):
-                        log.info('Got retriable error: %r' % ex)
-                        log.info('Backing off for %.1f seconds' % backoff)
+                        log.info("Got retriable error: %r" % ex)
+                        log.info("Backing off for %.1f seconds" % backoff)
                         time.sleep(backoff)
                         tries += 1
                         backoff *= self.__multiplier
@@ -132,7 +132,7 @@ class RetryWrapper(object):
         # pretend to be the original function
         call_and_maybe_retry.__doc__ = f.__doc__
 
-        if hasattr(f, '__name__'):
+        if hasattr(f, "__name__"):
             call_and_maybe_retry.__name__ = f.__name__
 
         return call_and_maybe_retry

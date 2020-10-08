@@ -27,10 +27,10 @@ LOG_RETRIEVAL_WAITS_BETWEEN_ATTEMPTS_SEC = 5
 
 
 class DagsterKubernetesPodOperator(KubernetesPodOperator):
-    '''Dagster operator for Apache Airflow.
+    """Dagster operator for Apache Airflow.
 
     Wraps a modified KubernetesPodOperator.
-    '''
+    """
 
     # py2 compat
     # pylint: disable=keyword-arg-before-vararg
@@ -40,10 +40,10 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
         self.pipeline_snapshot = operator_parameters.pipeline_snapshot
         self.execution_plan_snapshot = operator_parameters.execution_plan_snapshot
         self.parent_pipeline_snapshot = operator_parameters.parent_pipeline_snapshot
-        kwargs['name'] = 'dagster.{pipeline_name}.{task_id}'.format(
+        kwargs["name"] = "dagster.{pipeline_name}.{task_id}".format(
             pipeline_name=self.pipeline_name, task_id=operator_parameters.task_id
         ).replace(
-            '_', '-'  # underscores are not permissible DNS names
+            "_", "-"  # underscores are not permissible DNS names
         )
 
         self.run_config = operator_parameters.run_config
@@ -60,26 +60,26 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
         )
 
         # Add AWS creds
-        self.env_vars = kwargs.get('env_vars', {})
+        self.env_vars = kwargs.get("env_vars", {})
         for k, v in get_aws_environment().items():
             self.env_vars.setdefault(k, v)
 
-        kwargs.setdefault('labels', {})
-        kwargs['labels'].setdefault('dagster_pipeline', self.pipeline_name)
-        kwargs['labels'].setdefault('app.kubernetes.io/name', 'dagster')
-        kwargs['labels'].setdefault('app.kubernetes.io/instance', self.pipeline_name)
-        kwargs['labels'].setdefault('app.kubernetes.io/version', dagster_version)
-        kwargs['labels'].setdefault('app.kubernetes.io/component', 'pipeline-execution')
-        kwargs['labels'].setdefault('app.kubernetes.io/part-of', 'dagster-airflow')
-        kwargs['labels'].setdefault('app.kubernetes.io/managed-by', 'dagster-airflow')
+        kwargs.setdefault("labels", {})
+        kwargs["labels"].setdefault("dagster_pipeline", self.pipeline_name)
+        kwargs["labels"].setdefault("app.kubernetes.io/name", "dagster")
+        kwargs["labels"].setdefault("app.kubernetes.io/instance", self.pipeline_name)
+        kwargs["labels"].setdefault("app.kubernetes.io/version", dagster_version)
+        kwargs["labels"].setdefault("app.kubernetes.io/component", "pipeline-execution")
+        kwargs["labels"].setdefault("app.kubernetes.io/part-of", "dagster-airflow")
+        kwargs["labels"].setdefault("app.kubernetes.io/managed-by", "dagster-airflow")
 
         # The xcom mechanism for the pod operator is very unlike that of the Docker operator, so
         # we disable it
-        if 'xcom_push' in kwargs:
+        if "xcom_push" in kwargs:
             self.log.warning(
-                'xcom_push cannot be enabled with the DagsterKubernetesPodOperator, disabling'
+                "xcom_push cannot be enabled with the DagsterKubernetesPodOperator, disabling"
             )
-        kwargs['xcom_push'] = False
+        kwargs["xcom_push"] = False
 
         super(DagsterKubernetesPodOperator, self).__init__(
             task_id=operator_parameters.task_id, dag=operator_parameters.dag, *args, **kwargs
@@ -87,10 +87,10 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
 
     @property
     def run_id(self):
-        return getattr(self, '_run_id', '')
+        return getattr(self, "_run_id", "")
 
     def query(self, airflow_ts):
-        check.opt_str_param(airflow_ts, 'airflow_ts')
+        check.opt_str_param(airflow_ts, "airflow_ts")
 
         variables = construct_execute_plan_variables(
             self.recon_repo,
@@ -101,20 +101,20 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             self.step_keys,
         )
         tags = airflow_tags_for_ts(airflow_ts)
-        variables['executionParams']['executionMetadata']['tags'] = tags
+        variables["executionParams"]["executionMetadata"]["tags"] = tags
 
         self.log.info(
-            'Executing GraphQL query: {query}\n'.format(query=RAW_EXECUTE_PLAN_MUTATION)
-            + 'with variables:\n'
+            "Executing GraphQL query: {query}\n".format(query=RAW_EXECUTE_PLAN_MUTATION)
+            + "with variables:\n"
             + seven.json.dumps(variables, indent=2)
         )
 
         return [
-            'dagster-graphql',
-            '-v',
-            '{}'.format(seven.json.dumps(variables)),
-            '-t',
-            '{}'.format(RAW_EXECUTE_PLAN_MUTATION),
+            "dagster-graphql",
+            "-v",
+            "{}".format(seven.json.dumps(variables)),
+            "-t",
+            "{}".format(RAW_EXECUTE_PLAN_MUTATION),
         ]
 
     def execute(self, context):
@@ -127,14 +127,14 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
 
         except ImportError:
             raise AirflowException(
-                'To use the DagsterKubernetesPodOperator, dagster and dagster_graphql must be'
-                ' installed in your Airflow environment.'
+                "To use the DagsterKubernetesPodOperator, dagster and dagster_graphql must be"
+                " installed in your Airflow environment."
             )
 
-        if 'run_id' in self.params:
-            self._run_id = self.params['run_id']
-        elif 'dag_run' in context and context['dag_run'] is not None:
-            self._run_id = context['dag_run'].run_id
+        if "run_id" in self.params:
+            self._run_id = self.params["run_id"]
+        elif "dag_run" in context and context["dag_run"] is not None:
+            self._run_id = context["dag_run"].run_id
 
         # return to original execute code:
         try:
@@ -155,7 +155,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                 image=self.image,
                 pod_id=self.name,
                 cmds=self.cmds,
-                arguments=self.query(context.get('ts')),
+                arguments=self.query(context.get("ts")),
                 labels=self.labels,
             )
 
@@ -177,7 +177,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
             try:
                 if self.instance:
                     tags = (
-                        {AIRFLOW_EXECUTION_DATE_STR: context.get('ts')} if 'ts' in context else {}
+                        {AIRFLOW_EXECUTION_DATE_STR: context.get("ts")} if "ts" in context else {}
                     )
 
                     run = self.instance.register_managed_run(
@@ -207,14 +207,14 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                 num_attempts = 0
                 while not res and num_attempts < LOG_RETRIEVAL_MAX_ATTEMPTS:
                     raw_res = client.read_namespaced_pod_log(
-                        name=pod.name, namespace=pod.namespace, container='base'
+                        name=pod.name, namespace=pod.namespace, container="base"
                     )
-                    res = parse_raw_log_lines(raw_res.split('\n'))
+                    res = parse_raw_log_lines(raw_res.split("\n"))
                     time.sleep(LOG_RETRIEVAL_WAITS_BETWEEN_ATTEMPTS_SEC)
                     num_attempts += 1
 
                 try:
-                    handle_execution_errors(res, 'executePlan')
+                    handle_execution_errors(res, "executePlan")
                 except DagsterGraphQLClientError as err:
                     self.instance.report_engine_event(
                         str(err),
@@ -244,7 +244,7 @@ class DagsterKubernetesPodOperator(KubernetesPodOperator):
                     launcher.delete_pod(pod)
 
             if final_state != State.SUCCESS:
-                raise AirflowException('Pod returned a failure: {state}'.format(state=final_state))
+                raise AirflowException("Pod returned a failure: {state}".format(state=final_state))
             # note the lack of returning the default xcom
         except AirflowException as ex:
-            raise AirflowException('Pod Launching failed: {error}'.format(error=ex))
+            raise AirflowException("Pod Launching failed: {error}".format(error=ex))

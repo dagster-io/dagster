@@ -5,26 +5,50 @@ import six
 
 from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.seven import funcsigs
+from dagster.seven import funcsigs, is_module_available
 
 from .input import InputDefinition
 from .output import OutputDefinition
 
 
+def _infer_input_description_from_docstring(fn):
+    if not is_module_available("docstring_parser"):
+        return {}
+
+    from docstring_parser import parse
+
+    docstring = parse(fn.__doc__)
+    return {p.arg_name: p.description for p in docstring.params}
+
+
+def _infer_output_description_from_docstring(fn):
+    if not is_module_available("docstring_parser"):
+        return
+    from docstring_parser import parse
+
+    docstring = parse(fn.__doc__)
+    if docstring.returns is None:
+        return
+
+    return docstring.returns.description
+
+
 def infer_output_definitions(decorator_name, solid_name, fn):
     signature = funcsigs.signature(fn)
     try:
+        description = _infer_output_description_from_docstring(fn)
         return [
             OutputDefinition()
             if signature.return_annotation is funcsigs.Signature.empty
-            else OutputDefinition(signature.return_annotation)
+            else OutputDefinition(signature.return_annotation, description=description)
         ]
+
     except CheckError as type_error:
         six.raise_from(
             DagsterInvalidDefinitionError(
-                'Error inferring Dagster type for return type '
+                "Error inferring Dagster type for return type "
                 '"{type_annotation}" from {decorator} "{solid}". '
-                'Correct the issue or explicitly pass definitions to {decorator}.'.format(
+                "Correct the issue or explicitly pass definitions to {decorator}.".format(
                     decorator=decorator_name,
                     solid=solid_name,
                     type_annotation=signature.return_annotation,
@@ -48,29 +72,38 @@ def _input_param_type(type_annotation):
 def infer_input_definitions_for_lambda_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
+    descriptions = _infer_input_description_from_docstring(fn)
+    defs = _infer_inputs_from_params(params, "@lambda_solid", solid_name, descriptions=descriptions)
+    return defs
 
-    return _infer_inputs_from_params(params, '@lambda_solid', solid_name)
 
-
-def _infer_inputs_from_params(params, decorator_name, solid_name):
+def _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=None):
+    descriptions = descriptions or {}
     input_defs = []
     for param in params:
         try:
             if param.default is not funcsigs.Parameter.empty:
                 input_def = InputDefinition(
-                    param.name, _input_param_type(param.annotation), default_value=param.default
+                    param.name,
+                    _input_param_type(param.annotation),
+                    default_value=param.default,
+                    description=descriptions.get(param.name),
                 )
             else:
-                input_def = InputDefinition(param.name, _input_param_type(param.annotation))
+                input_def = InputDefinition(
+                    param.name,
+                    _input_param_type(param.annotation),
+                    description=descriptions.get(param.name),
+                )
 
             input_defs.append(input_def)
 
         except CheckError as type_error:
             six.raise_from(
                 DagsterInvalidDefinitionError(
-                    'Error inferring Dagster type for input name {param} typed as '
+                    "Error inferring Dagster type for input name {param} typed as "
                     '"{type_annotation}" from {decorator} "{solid}". '
-                    'Correct the issue or explicitly pass definitions to {decorator}.'.format(
+                    "Correct the issue or explicitly pass definitions to {decorator}.".format(
                         decorator=decorator_name,
                         solid=solid_name,
                         param=param.name,
@@ -86,12 +119,16 @@ def _infer_inputs_from_params(params, decorator_name, solid_name):
 def infer_input_definitions_for_composite_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
-
-    return _infer_inputs_from_params(params, '@composite_solid', solid_name)
+    descriptions = _infer_input_description_from_docstring(fn)
+    defs = _infer_inputs_from_params(
+        params, "@composite_solid", solid_name, descriptions=descriptions
+    )
+    return defs
 
 
 def infer_input_definitions_for_solid(solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
-
-    return _infer_inputs_from_params(params[1:], '@solid', solid_name)
+    descriptions = _infer_input_description_from_docstring(fn)
+    defs = _infer_inputs_from_params(params[1:], "@solid", solid_name, descriptions=descriptions)
+    return defs

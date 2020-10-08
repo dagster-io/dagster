@@ -13,7 +13,7 @@ def load_yaml_from_globs(*globs):
 
 
 def load_yaml_from_glob_list(glob_list):
-    check.list_param(glob_list, 'glob_list', of_type=str)
+    check.list_param(glob_list, "glob_list", of_type=str)
 
     all_files_list = []
 
@@ -24,7 +24,7 @@ def load_yaml_from_glob_list(glob_list):
 
 
 def merge_yamls(file_list):
-    '''Combine a list of YAML files into a dictionary.
+    """Combine a list of YAML files into a dictionary.
 
     Args:
         file_list (List[str]): List of YAML filenames
@@ -34,8 +34,8 @@ def merge_yamls(file_list):
 
     Raises:
         yaml.YAMLError: When one of the YAML documents is invalid and has a parse error.
-    '''
-    check.list_param(file_list, 'file_list', of_type=str)
+    """
+    check.list_param(file_list, "file_list", of_type=str)
 
     merged = {}
 
@@ -45,7 +45,7 @@ def merge_yamls(file_list):
         check.invariant(
             isinstance(yaml_dict, dict),
             (
-                'Expected YAML from file {yaml_file} to parse to dictionary, '
+                "Expected YAML from file {yaml_file} to parse to dictionary, "
                 'instead got: "{yaml_dict}"'
             ).format(yaml_file=yaml_file, yaml_dict=yaml_dict),
         )
@@ -55,7 +55,7 @@ def merge_yamls(file_list):
 
 
 def merge_yaml_strings(yaml_strs):
-    '''Combine a list of YAML strings into a dictionary.  Right-most overrides left-most.
+    """Combine a list of YAML strings into a dictionary.  Right-most overrides left-most.
 
     Args:
         yaml_strs (List[str]): List of YAML strings
@@ -65,8 +65,8 @@ def merge_yaml_strings(yaml_strs):
 
     Raises:
         yaml.YAMLError: When one of the YAML documents is invalid and has a parse error.
-    '''
-    check.list_param(yaml_strs, 'yaml_strs', of_type=str)
+    """
+    check.list_param(yaml_strs, "yaml_strs", of_type=str)
 
     # Read YAML strings.
     yaml_dicts = list([yaml.safe_load(y) for y in yaml_strs])
@@ -81,6 +81,6 @@ def merge_yaml_strings(yaml_strs):
 
 
 def load_yaml_from_path(path):
-    check.str_param(path, 'path')
-    with open(path, 'r') as ff:
+    check.str_param(path, "path")
+    with open(path, "r") as ff:
         return yaml.safe_load(ff)

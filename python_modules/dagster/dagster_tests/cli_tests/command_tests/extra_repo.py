@@ -6,7 +6,7 @@ def do_something():
     return 1
 
 
-@pipeline(name='extra')
+@pipeline(name="extra")
 def extra_pipeline():
     do_something()
 
@@ -14,5 +14,5 @@ def extra_pipeline():
 @repository
 def extra():
     return {
-        'pipelines': {'extra': extra_pipeline},
+        "pipelines": {"extra": extra_pipeline},
     }

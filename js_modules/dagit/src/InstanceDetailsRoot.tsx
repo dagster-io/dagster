@@ -1,11 +1,15 @@
-import * as React from "react";
-import gql from "graphql-tag";
-import { useQuery } from "react-apollo";
-import { Spinner } from "@blueprintjs/core";
-import { InstanceDetailsQuery } from "./types/InstanceDetailsQuery";
-import { ScrollContainer, Header } from "./ListComponents";
-import { UnControlled as CodeMirrorReact } from "react-codemirror2";
-import { createGlobalStyle } from "styled-components/macro";
+import {Spinner} from '@blueprintjs/core';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import {useQuery} from 'react-apollo';
+import {UnControlled as CodeMirrorReact} from 'react-codemirror2';
+import styled from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components/macro';
+
+import {Header} from 'src/ListComponents';
+import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {TopNav} from 'src/nav/TopNav';
+import {InstanceDetailsQuery} from 'src/types/InstanceDetailsQuery';
 
 const CodeMirrorShimStyle = createGlobalStyle`
   .react-codemirror2 {
@@ -24,26 +28,36 @@ const CodeMirrorShimStyle = createGlobalStyle`
 `;
 
 export const InstanceDetailsRoot: React.FunctionComponent = () => {
-  const { data } = useQuery<InstanceDetailsQuery>(INSTANCE_DETAILS_QUERY, {
-    fetchPolicy: "cache-and-network"
+  useDocumentTitle('Instance Details');
+  const {data} = useQuery<InstanceDetailsQuery>(INSTANCE_DETAILS_QUERY, {
+    fetchPolicy: 'cache-and-network',
   });
 
   return data ? (
-    <ScrollContainer>
-      <Header>{`Dagster ${data.version}`}</Header>
-      <CodeMirrorShimStyle />
-      <CodeMirrorReact
-        value={data?.instance.info}
-        options={{
-          mode: "yaml",
-          readOnly: true
-        }}
-      />
-    </ScrollContainer>
+    <Container>
+      <TopNav breadcrumbs={[{text: 'Instance Details', icon: 'database'}]} />
+      <div style={{flexGrow: 1, padding: '16px 16px 32px'}}>
+        <Header>{`Dagster ${data.version}`}</Header>
+        <CodeMirrorShimStyle />
+        <CodeMirrorReact
+          value={data?.instance.info}
+          options={{
+            mode: 'yaml',
+            readOnly: true,
+          }}
+        />
+      </div>
+    </Container>
   ) : (
     <Spinner size={35} />
   );
 };
+
+const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+`;
 
 export const INSTANCE_DETAILS_QUERY = gql`
   query InstanceDetailsQuery {

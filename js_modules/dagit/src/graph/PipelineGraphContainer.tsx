@@ -1,11 +1,12 @@
-import * as React from "react";
-import { ProgressBar } from "@blueprintjs/core";
-import PipelineGraph from "./PipelineGraph";
-import { SolidNameOrPath } from "../PipelineExplorer";
-import { PipelineGraphSolidFragment } from "./types/PipelineGraphSolidFragment";
-import { PipelineExplorerSolidHandleFragment } from "../types/PipelineExplorerSolidHandleFragment";
-import { getDagrePipelineLayout, asyncDagrePipelineLayout } from "./getFullSolidLayout";
-import { IFullPipelineLayout } from "./layout";
+import {ProgressBar} from '@blueprintjs/core';
+import * as React from 'react';
+
+import {PipelineGraph} from 'src/graph/PipelineGraph';
+import {asyncDagrePipelineLayout, getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
+import {IFullPipelineLayout} from 'src/graph/layout';
+import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';
+import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
+import {PipelineExplorerSolidHandleFragment} from 'src/types/PipelineExplorerSolidHandleFragment';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
@@ -35,13 +36,13 @@ export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
     onClickSolid,
     onEnterCompositeSolid,
     onLeaveCompositeSolid,
-    onClickBackground
+    onClickBackground,
   } = props;
   const parentSolid = parentHandle && parentHandle.solid;
   const [loading, setLoading] = React.useState(false);
-  const [layoutSolidKey, setLayoutSolidKey] = React.useState("");
+  const [layoutSolidKey, setLayoutSolidKey] = React.useState('');
   const [layout, setLayout] = React.useState<IFullPipelineLayout | undefined>();
-  const solidKey = solids.map(x => x.name).join("|");
+  const solidKey = solids.map((x) => x.name).join('|');
   const parentSolidKey = parentSolid && parentSolid.name;
 
   React.useEffect(() => {
@@ -86,22 +87,22 @@ export function PipelineGraphContainer(props: IPipelineGraphContainerProps) {
   );
 }
 
-function PipelineGraphLoading({ backgroundColor }: { backgroundColor: string }) {
+function PipelineGraphLoading({backgroundColor}: {backgroundColor: string}) {
   return (
     <div
       style={{
         backgroundColor,
-        position: "absolute",
+        position: 'absolute',
         top: 0,
         bottom: 0,
         left: 0,
         right: 0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
-      <div style={{ maxWidth: 600, width: "75%" }}>
+      <div style={{maxWidth: 600, width: '75%'}}>
         <ProgressBar />
       </div>
     </div>

@@ -12,7 +12,7 @@ def sync_list_repositories(executable_path, python_file, module_name, working_di
     result = check.inst(
         execute_unary_api_cli_command(
             executable_path,
-            'list_repositories',
+            "list_repositories",
             ListRepositoriesInput(
                 module_name=module_name,
                 python_file=python_file,
@@ -34,7 +34,7 @@ def sync_list_repositories_grpc(api_client):
     from dagster.grpc.client import DagsterGrpcClient
     from dagster.grpc.types import ListRepositoriesResponse
 
-    check.inst_param(api_client, 'api_client', DagsterGrpcClient)
+    check.inst_param(api_client, "api_client", DagsterGrpcClient)
     result = check.inst(
         api_client.list_repositories(), (ListRepositoriesResponse, SerializableErrorInfo)
     )
@@ -51,10 +51,10 @@ def sync_list_repositories_ephemeral_grpc(
 ):
     from dagster.grpc.client import ephemeral_grpc_api_client
 
-    check.str_param(executable_path, 'executable_path')
-    check.opt_str_param(python_file, 'python_file')
-    check.opt_str_param(module_name, 'module_name')
-    check.opt_str_param(working_directory, 'working_directory')
+    check.str_param(executable_path, "executable_path")
+    check.opt_str_param(python_file, "python_file")
+    check.opt_str_param(module_name, "module_name")
+    check.opt_str_param(working_directory, "working_directory")
 
     with ephemeral_grpc_api_client(
         loadable_target_origin=LoadableTargetOrigin(

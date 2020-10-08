@@ -7,10 +7,10 @@ import pkg_resources
 # master (05-05-2020): https://github.com/apache/airflow/blob/master/airflow/example_dags/example_complex.py#L136s
 def patch_airflow_example_dag(dag_bag):
     airflow_version = pkg_resources.get_distribution("apache-airflow").version
-    if airflow_version not in ['1.10.8', '1.10.9', '1.10.10']:
+    if airflow_version not in ["1.10.8", "1.10.9", "1.10.10"]:
         return
 
-    dag = dag_bag.dags.get('example_complex')
-    task = dag.get_task('search_catalog')
-    task.op_args = ['dummy']
+    dag = dag_bag.dags.get("example_complex")
+    task = dag.get_task("search_catalog")
+    task.op_args = ["dummy"]
     return

@@ -10,17 +10,20 @@ from dagster.grpc.types import ScheduleExecutionDataMode
 
 
 class DagsterGraphQLContext:
-    def __init__(self, instance, locations, version=None):
-        self._instance = check.inst_param(instance, 'instance', DagsterInstance)
+    def __init__(self, instance, workspace, version=None):
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
+        self._workspace = workspace
         self._repository_locations = {}
-        for loc in check.list_param(locations, 'locations', RepositoryLocation):
+        for handle in self._workspace.repository_location_handles:
             check.invariant(
-                self._repository_locations.get(loc.name) is None,
+                self._repository_locations.get(handle.location_name) is None,
                 'Can not have multiple locations with the same name, got multiple "{name}"'.format(
-                    name=loc.name
+                    name=handle.location_name,
                 ),
             )
-            self._repository_locations[loc.name] = loc
+            self._repository_locations[handle.location_name] = RepositoryLocation.from_handle(
+                handle
+            )
         self.version = version
 
     @property
@@ -38,13 +41,14 @@ class DagsterGraphQLContext:
         return name in self._repository_locations
 
     def reload_repository_location(self, name):
-        new_location = self._repository_locations[name].create_reloaded_repository_location()
+        new_handle = self._workspace.reload_repository_location(name)
+        new_location = RepositoryLocation.from_handle(new_handle)
         check.invariant(new_location.name == name)
         self._repository_locations[name] = new_location
         return new_location
 
     def get_subset_external_pipeline(self, selector):
-        check.inst_param(selector, 'selector', PipelineSelector)
+        check.inst_param(selector, "selector", PipelineSelector)
         # We have to grab the pipeline from the location instead of the repository directly
         # since we may have to request a subset we don't have in memory yet
 
@@ -71,7 +75,7 @@ class DagsterGraphQLContext:
         )
 
     def has_external_pipeline(self, selector):
-        check.inst_param(selector, 'selector', PipelineSelector)
+        check.inst_param(selector, "selector", PipelineSelector)
         if selector.location_name in self._repository_locations:
             loc = self._repository_locations[selector.location_name]
             if loc.has_repository(selector.repository_name):
@@ -125,7 +129,23 @@ class DagsterGraphQLContext:
         return self._repository_locations[
             repository_handle.repository_location_handle.location_name
         ].get_external_schedule_execution_data(
-            self.instance, repository_handle, schedule_name, ScheduleExecutionDataMode.PREVIEW,
+            self.instance, repository_handle, schedule_name, ScheduleExecutionDataMode.PREVIEW, None
+        )
+
+    def get_external_executable_param_data(self, repository_handle, executable_name):
+        return self._repository_locations[
+            repository_handle.repository_location_handle.location_name
+        ].get_external_executable_params(self.instance, repository_handle, executable_name)
+
+    def get_external_partition_set_execution_param_data(
+        self, repository_handle, partition_set_name, partition_names
+    ):
+        return self._repository_locations[
+            repository_handle.repository_location_handle.location_name
+        ].get_external_partition_set_execution_param_data(
+            repository_handle=repository_handle,
+            partition_set_name=partition_set_name,
+            partition_names=partition_names,
         )
 
     def execute_plan(
@@ -144,12 +164,3 @@ class DagsterGraphQLContext:
         return self._repository_locations[external_pipeline.handle.location_name].execute_pipeline(
             instance=self.instance, external_pipeline=external_pipeline, pipeline_run=pipeline_run
         )
-
-    def drain_outstanding_executions(self):
-        '''
-        This ensures that any outstanding executions of runs are waited on.
-        Useful for tests contexts when you want to ensure a started run
-        has ended in order to verify its results.
-        '''
-        if self.instance.run_launcher:
-            self.instance.run_launcher.join()

@@ -1,3 +1,4 @@
+import hashlib
 import re
 
 import pytest
@@ -61,3 +62,29 @@ def test_output_materialization_config_backcompat_args():
         @output_materialization_config(config_cls=String)
         def _foo(_, _a, _b):
             pass
+
+
+def test_dagster_type_loader_default_version():
+    @dagster_type_loader(String)
+    def _foo(_, hello):
+        return hello
+
+    assert _foo.loader_version == None
+    assert _foo.compute_loaded_input_version({}) == None
+
+
+def test_dagster_type_loader_provided_version():
+    def _get_ext_version(dict_param):
+        return dict_param["version"]
+
+    @dagster_type_loader(String, loader_version="5", external_version_fn=_get_ext_version)
+    def _foo(_, hello):
+        return hello
+
+    dict_param = {"version": "42"}
+
+    assert _foo.loader_version == "5"
+    assert (
+        _foo.compute_loaded_input_version(dict_param)
+        == hashlib.sha1("542".encode("utf-8")).hexdigest()
+    )

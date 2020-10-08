@@ -1,4 +1,5 @@
 import os
+import time
 from contextlib import contextmanager
 
 import yaml
@@ -7,14 +8,17 @@ from dagster import (
     DagsterInvariantViolationError,
     Output,
     SolidDefinition,
+    check,
     composite_solid,
     pipeline,
     seven,
     solid,
 )
 from dagster.core.instance import DagsterInstance
+from dagster.core.launcher import RunLauncher
 from dagster.core.launcher.default_run_launcher import DefaultRunLauncher
 from dagster.core.launcher.grpc_run_launcher import GrpcRunLauncher
+from dagster.serdes import ConfigurableClass
 from dagster.utils import merge_dicts
 
 
@@ -25,7 +29,7 @@ def step_output_event_filter(pipe_iterator):
 
 
 def single_output_solid(name, input_defs, compute_fn, output_def, description=None):
-    '''It is commmon to want a Solid that has only inputs, a single output (with the default
+    """It is commmon to want a Solid that has only inputs, a single output (with the default
     name), and no config. So this is a helper function to do that. This compute function
     must return the naked return value (as opposed to a Output object).
 
@@ -52,14 +56,14 @@ def single_output_solid(name, input_defs, compute_fn, output_def, description=No
                 compute_fn=lambda context, inputs: inputs['num'] + 1
             )
 
-    '''
+    """
 
     def _new_compute_fn(context, input_defs):
         value = compute_fn(context, input_defs)
         if isinstance(value, Output):
             raise DagsterInvariantViolationError(
-                '''Single output compute Solid {name} returned a Output. Just return
-                value directly without wrapping it in Output'''
+                """Single output compute Solid {name} returned a Output. Just return
+                value directly without wrapping it in Output"""
             )
         yield Output(value=value)
 
@@ -73,11 +77,11 @@ def single_output_solid(name, input_defs, compute_fn, output_def, description=No
 
 
 def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
-    '''Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
+    """Creates a pipeline of nested composite solids up to "depth" layers, with a fan-out of
     num_children at each layer.
 
     Total number of solids will be num_children ^ depth
-    '''
+    """
 
     @solid
     def leaf_node(_):
@@ -87,19 +91,19 @@ def nesting_composite_pipeline(depth, num_children, *args, **kwargs):
         @composite_solid(name=name)
         def wrap():
             for i in range(num_children):
-                solid_alias = '%s_node_%d' % (name, i)
+                solid_alias = "%s_node_%d" % (name, i)
                 inner.alias(solid_alias)()
 
         return wrap
 
     @pipeline(*args, **kwargs)
     def nested_pipeline():
-        comp_solid = create_wrap(leaf_node, 'layer_%d' % depth)
+        comp_solid = create_wrap(leaf_node, "layer_%d" % depth)
 
         for i in range(depth):
-            comp_solid = create_wrap(comp_solid, 'layer_%d' % (depth - (i + 1)))
+            comp_solid = create_wrap(comp_solid, "layer_%d" % (depth - (i + 1)))
 
-        comp_solid.alias('outer')()
+        comp_solid.alias("outer")()
 
     return nested_pipeline
 
@@ -132,16 +136,15 @@ def instance_for_test(overrides=None, enable_telemetry=False):
 def instance_for_test_tempdir(temp_dir, overrides=None, enable_telemetry=False):
     # Disable telemetry by default to avoid writing to the tempdir while cleaning it up
     overrides = merge_dicts(
-        overrides if overrides else {}, {'telemetry': {'enabled': enable_telemetry}}
+        overrides if overrides else {}, {"telemetry": {"enabled": enable_telemetry}}
     )
-    with seven.TemporaryDirectory() as temp_dir:
-        # Write any overrides to disk and set DAGSTER_HOME so that they will still apply when
-        # DagsterInstance.get() is called from a different process
-        with environ({'DAGSTER_HOME': temp_dir}):
-            with open(os.path.join(temp_dir, 'dagster.yaml'), 'w') as fd:
-                yaml.dump(overrides, fd, default_flow_style=False)
+    # Write any overrides to disk and set DAGSTER_HOME so that they will still apply when
+    # DagsterInstance.get() is called from a different process
+    with environ({"DAGSTER_HOME": temp_dir}):
+        with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
+            yaml.dump(overrides, fd, default_flow_style=False)
+        with DagsterInstance.get() as instance:
             try:
-                instance = DagsterInstance.get()
                 yield instance
             finally:
                 # To avoid filesystem contention when we close the temporary directory, wait for
@@ -214,3 +217,86 @@ def register_managed_run_for_test(
         execution_plan_snapshot,
         parent_pipeline_snapshot,
     )
+
+
+def poll_for_finished_run(instance, run_id, timeout=20):
+    total_time = 0
+    interval = 0.01
+
+    while True:
+        run = instance.get_run_by_id(run_id)
+        if run.is_finished:
+            return run
+        else:
+            time.sleep(interval)
+            total_time += interval
+            if total_time > timeout:
+                raise Exception("Timed out")
+
+
+def poll_for_step_start(instance, run_id, timeout=10):
+    poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
+
+
+def poll_for_event(instance, run_id, event_type, message, timeout=10):
+    total_time = 0
+    backoff = 0.01
+
+    while True:
+        time.sleep(backoff)
+        logs = instance.all_logs(run_id)
+        matching_events = [
+            log_record.dagster_event
+            for log_record in logs
+            if log_record.dagster_event.event_type_value == event_type
+        ]
+        if matching_events:
+            if message is None:
+                return
+            for matching_message in (event.message for event in matching_events):
+                if message in matching_message:
+                    return
+
+        total_time += backoff
+        backoff = backoff * 2
+        if total_time > timeout:
+            raise Exception("Timed out")
+
+
+@contextmanager
+def new_cwd(path):
+    old = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(old)
+
+
+class ExplodingRunLauncher(RunLauncher, ConfigurableClass):
+    def __init__(self, inst_data=None):
+        self._inst_data = inst_data
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {}
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return ExplodingRunLauncher(inst_data=inst_data)
+
+    def launch_run(self, instance, run, external_pipeline):
+        raise NotImplementedError("The entire purpose of this is to throw on launch")
+
+    def join(self, timeout=30):
+        """Nothing to join on since all executions are synchronous."""
+
+    def can_terminate(self, run_id):
+        return False
+
+    def terminate(self, run_id):
+        check.not_implemented("Termination not supported")

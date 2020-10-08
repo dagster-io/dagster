@@ -46,7 +46,7 @@ class DagsterFlyteCompiler:
         self.outputs = defaultdict(dict)
         self.source_handles = defaultdict(dict)
 
-    def __call__(self, module='__main__'):
+    def __call__(self, module="__main__"):
         """
         Creates an SdkWorkflow from a dagster pipeline. Then, adds the nodes as attrs within the module
         that this function is invoked from. User will need to manually provide the module name.
@@ -142,10 +142,10 @@ class DagsterFlyteCompiler:
         pipeline_run,
         step_key,
         task_type=constants.SdkTaskType.PYTHON_TASK,
-        cache_version='',
+        cache_version="",
         retries=0,
         interruptible=False,
-        deprecated='',
+        deprecated="",
         storage_request=None,
         cpu_request=None,
         gpu_request=None,
@@ -180,7 +180,7 @@ class DagsterFlyteCompiler:
 
         # This will take the wrapper definition and re-create it with explicit parameters as keyword argumentss
         wrapper = forge.sign(
-            forge.arg('wf_params'),
+            forge.arg("wf_params"),
             *map(forge.arg, flyte_inputs.keys()),
             *map(forge.arg, flyte_outputs.keys())
         )(wrapper)
@@ -297,7 +297,7 @@ class DagsterFlyteCompiler:
             step_input = step_inputs[k]
             if step_input.is_from_config:
                 self.inputs[solid_name][k] = Input(
-                    v, default=step_input.config_data.get('value', None)
+                    v, default=step_input.config_data.get("value", None)
                 )
             elif step_input.is_from_output:
                 self.source_handles[solid_name][k] = step_input.source_handles

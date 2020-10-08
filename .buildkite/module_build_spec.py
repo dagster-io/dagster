@@ -11,12 +11,12 @@ from step_builder import StepBuilder  # isort:skip
 
 class ModuleBuildSpec(
     namedtuple(
-        '_ModuleBuildSpec',
-        'directory env_vars supported_pythons extra_cmds_fn depends_on_fn tox_file '
-        'tox_env_suffixes buildkite_label retries upload_coverage',
+        "_ModuleBuildSpec",
+        "directory env_vars supported_pythons extra_cmds_fn depends_on_fn tox_file "
+        "tox_env_suffixes buildkite_label retries upload_coverage",
     )
 ):
-    '''Main spec for testing Dagster Python modules using tox.
+    """Main spec for testing Dagster Python modules using tox.
 
     Args:
         directory (str): Python directory to test, relative to the repository root. Should contain a
@@ -51,7 +51,7 @@ class ModuleBuildSpec(
 
     Returns:
         List[dict]: List of test steps
-    '''
+    """
 
     def __new__(
         cls,
@@ -84,7 +84,7 @@ class ModuleBuildSpec(
         package = self.buildkite_label or self.directory.split("/")[-1]
         tests = []
 
-        tox_env_suffixes = self.tox_env_suffixes or ['']
+        tox_env_suffixes = self.tox_env_suffixes or [""]
 
         for version in self.supported_pythons:
             for tox_env_suffix in tox_env_suffixes:
@@ -93,24 +93,24 @@ class ModuleBuildSpec(
                 extra_cmds = self.extra_cmds_fn(version) if self.extra_cmds_fn else []
 
                 # See: https://github.com/dagster-io/dagster/issues/2512
-                tox_file = '-c %s ' % self.tox_file if self.tox_file else ''
-                tox_cmd = 'tox -vv {tox_file}-e {ver}{tox_env_suffix}'.format(
+                tox_file = "-c %s " % self.tox_file if self.tox_file else ""
+                tox_cmd = "tox -vv {tox_file}-e {ver}{tox_env_suffix}".format(
                     tox_file=tox_file, tox_env_suffix=tox_env_suffix, ver=TOX_MAP[version]
                 )
 
-                cmds = extra_cmds + ['cd {directory}'.format(directory=self.directory), tox_cmd]
+                cmds = extra_cmds + ["cd {directory}".format(directory=self.directory), tox_cmd]
 
                 if self.upload_coverage:
                     coverage = ".coverage.{label}.{version}.$BUILDKITE_BUILD_ID".format(
                         label=label, version=version
                     )
                     cmds += [
-                        'mv .coverage {file}'.format(file=coverage),
-                        'buildkite-agent artifact upload {file}'.format(file=coverage),
+                        "mv .coverage {file}".format(file=coverage),
+                        "buildkite-agent artifact upload {file}".format(file=coverage),
                     ]
 
                 step = (
-                    StepBuilder('{label} tests ({ver})'.format(label=label, ver=TOX_MAP[version]))
+                    StepBuilder("{label} tests ({ver})".format(label=label, ver=TOX_MAP[version]))
                     .run(*cmds)
                     .on_integration_image(version, self.env_vars or [])
                 )
@@ -126,8 +126,8 @@ class ModuleBuildSpec(
         # We expect the tox file to define a pylint testenv, and we'll construct a separate
         # buildkite build step for the pylint testenv.
         tests.append(
-            StepBuilder('%s pylint' % package)
-            .run('cd {directory}'.format(directory=self.directory), 'tox -vv -e pylint')
+            StepBuilder("%s pylint" % package)
+            .run("cd {directory}".format(directory=self.directory), "tox -vv -e pylint")
             .on_integration_image(SupportedPython.V3_7)
             .build()
         )

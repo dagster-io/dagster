@@ -8,8 +8,8 @@ from dagster.serdes import whitelist_for_serdes
 
 
 def build_mode_def_snap(mode_def, root_config_key):
-    check.inst_param(mode_def, 'mode_def', ModeDefinition)
-    check.str_param(root_config_key, 'root_config_key')
+    check.inst_param(mode_def, "mode_def", ModeDefinition)
+    check.str_param(root_config_key, "root_config_key")
 
     return ModeDefSnap(
         name=mode_def.name,
@@ -29,7 +29,7 @@ def build_mode_def_snap(mode_def, root_config_key):
 @whitelist_for_serdes
 class ModeDefSnap(
     namedtuple(
-        '_ModeDefSnap', 'name description resource_def_snaps logger_def_snaps root_config_key'
+        "_ModeDefSnap", "name description resource_def_snaps logger_def_snaps root_config_key"
     )
 ):
     def __new__(
@@ -43,63 +43,63 @@ class ModeDefSnap(
     ):
         return super(ModeDefSnap, cls).__new__(
             cls,
-            name=check.str_param(name, 'name'),
-            description=check.opt_str_param(description, 'description'),
+            name=check.str_param(name, "name"),
+            description=check.opt_str_param(description, "description"),
             resource_def_snaps=check.list_param(
-                resource_def_snaps, 'resource_def_snaps', of_type=ResourceDefSnap
+                resource_def_snaps, "resource_def_snaps", of_type=ResourceDefSnap
             ),
             logger_def_snaps=check.list_param(
-                logger_def_snaps, 'logger_def_snaps', of_type=LoggerDefSnap
+                logger_def_snaps, "logger_def_snaps", of_type=LoggerDefSnap
             ),
-            root_config_key=check.opt_str_param(root_config_key, 'root_config_key'),
+            root_config_key=check.opt_str_param(root_config_key, "root_config_key"),
         )
 
 
 def build_resource_def_snap(name, resource_def):
-    check.str_param(name, 'name')
-    check.inst_param(resource_def, 'resource_def', ResourceDefinition)
+    check.str_param(name, "name")
+    check.inst_param(resource_def, "resource_def", ResourceDefinition)
     return ResourceDefSnap(
         name=name,
         description=resource_def.description,
-        config_field_snap=snap_from_field('config', resource_def.config_schema)
+        config_field_snap=snap_from_field("config", resource_def.config_schema)
         if resource_def.config_schema
         else None,
     )
 
 
 @whitelist_for_serdes
-class ResourceDefSnap(namedtuple('_ResourceDefSnap', 'name description config_field_snap')):
+class ResourceDefSnap(namedtuple("_ResourceDefSnap", "name description config_field_snap")):
     def __new__(cls, name, description, config_field_snap):
         return super(ResourceDefSnap, cls).__new__(
             cls,
-            name=check.str_param(name, 'name'),
-            description=check.opt_str_param(description, 'description'),
+            name=check.str_param(name, "name"),
+            description=check.opt_str_param(description, "description"),
             config_field_snap=check.opt_inst_param(
-                config_field_snap, 'config_field_snap', ConfigFieldSnap
+                config_field_snap, "config_field_snap", ConfigFieldSnap
             ),
         )
 
 
 def build_logger_def_snap(name, logger_def):
-    check.str_param(name, 'name')
-    check.inst_param(logger_def, 'logger_def', LoggerDefinition)
+    check.str_param(name, "name")
+    check.inst_param(logger_def, "logger_def", LoggerDefinition)
     return LoggerDefSnap(
         name=name,
         description=logger_def.description,
-        config_field_snap=snap_from_field('config', logger_def.config_schema)
+        config_field_snap=snap_from_field("config", logger_def.config_schema)
         if logger_def.config_schema
         else None,
     )
 
 
 @whitelist_for_serdes
-class LoggerDefSnap(namedtuple('_LoggerDefSnap', 'name description config_field_snap')):
+class LoggerDefSnap(namedtuple("_LoggerDefSnap", "name description config_field_snap")):
     def __new__(cls, name, description, config_field_snap):
         return super(LoggerDefSnap, cls).__new__(
             cls,
-            name=check.str_param(name, 'name'),
-            description=check.opt_str_param(description, 'description'),
+            name=check.str_param(name, "name"),
+            description=check.opt_str_param(description, "description"),
             config_field_snap=check.opt_inst_param(
-                config_field_snap, 'config_field_snap', ConfigFieldSnap
+                config_field_snap, "config_field_snap", ConfigFieldSnap
             ),
         )

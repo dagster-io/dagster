@@ -1,6 +1,8 @@
-# This is just here as an example of how to point a user process to specific virtual environment 
+# This is just here as an example of how to point a user process to specific virtual environment
 load_from:
    - python_environment:
       executable_path: "/path/to/other_team/virtualenv/bin/python"
       target:
-        python_module: other_team_module 
+        python_file: "/path/to/other_team/pipelines.py"
+        # or, if you want to load from an explicitly installed Python package:
+        # python_package: other_team_package

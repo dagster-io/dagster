@@ -26,28 +26,28 @@ from dagster.core.instance import DagsterInstance
 executors = pytest.mark.parametrize(
     "environment",
     [
-        {'storage': {'filesystem': {}}},
-        {'storage': {'filesystem': {}}, 'execution': {'multiprocess': {}}},
+        {"storage": {"filesystem": {}}},
+        {"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
     ],
 )
 
 
 def define_run_retry_pipeline():
-    @solid(config_schema={'fail': bool})
+    @solid(config_schema={"fail": bool})
     def can_fail(context, _start_fail):
-        if context.solid_config['fail']:
-            raise Exception('blah')
+        if context.solid_config["fail"]:
+            raise Exception("blah")
 
-        return 'okay perfect'
+        return "okay perfect"
 
     @solid(
         output_defs=[
-            OutputDefinition(bool, 'start_fail', is_required=False),
-            OutputDefinition(bool, 'start_skip', is_required=False),
+            OutputDefinition(bool, "start_fail", is_required=False),
+            OutputDefinition(bool, "start_skip", is_required=False),
         ]
     )
     def two_outputs(_):
-        yield Output(True, 'start_fail')
+        yield Output(True, "start_fail")
         # won't yield start_skip
 
     @solid
@@ -72,37 +72,37 @@ def test_retries(environment):
     instance = DagsterInstance.local_temp()
     pipe = reconstructable(define_run_retry_pipeline)
     fails = dict(environment)
-    fails['solids'] = {'can_fail': {'config': {'fail': True}}}
+    fails["solids"] = {"can_fail": {"config": {"fail": True}}}
 
     result = execute_pipeline(pipe, run_config=fails, instance=instance, raise_on_error=False,)
 
     assert not result.success
 
     passes = dict(environment)
-    passes['solids'] = {'can_fail': {'config': {'fail': False}}}
+    passes["solids"] = {"can_fail": {"config": {"fail": False}}}
 
     second_result = reexecute_pipeline(
         pipe, parent_run_id=result.run_id, run_config=passes, instance=instance,
     )
     assert second_result.success
-    downstream_of_failed = second_result.result_for_solid('downstream_of_failed').output_value()
-    assert downstream_of_failed == 'okay perfect'
+    downstream_of_failed = second_result.result_for_solid("downstream_of_failed").output_value()
+    assert downstream_of_failed == "okay perfect"
 
     will_be_skipped = [
-        e for e in second_result.event_list if 'will_be_skipped' in str(e.solid_handle)
+        e for e in second_result.event_list if "will_be_skipped" in str(e.solid_handle)
     ]
-    assert str(will_be_skipped[0].event_type_value) == 'STEP_SKIPPED'
-    assert str(will_be_skipped[1].event_type_value) == 'STEP_SKIPPED'
+    assert str(will_be_skipped[0].event_type_value) == "STEP_SKIPPED"
+    assert str(will_be_skipped[1].event_type_value) == "STEP_SKIPPED"
 
 
 def define_step_retry_pipeline():
     @solid(config_schema=str)
     def fail_first_time(context):
-        file = os.path.join(context.solid_config, 'i_threw_up')
+        file = os.path.join(context.solid_config, "i_threw_up")
         if os.path.exists(file):
-            return 'okay perfect'
+            return "okay perfect"
         else:
-            open(file, 'a').close()
+            open(file, "a").close()
             raise RetryRequested()
 
     @pipeline
@@ -116,7 +116,7 @@ def define_step_retry_pipeline():
 def test_step_retry(environment):
     with seven.TemporaryDirectory() as tempdir:
         env = dict(environment)
-        env['solids'] = {'fail_first_time': {'config': tempdir}}
+        env["solids"] = {"fail_first_time": {"config": tempdir}}
         result = execute_pipeline(
             reconstructable(define_step_retry_pipeline),
             run_config=env,
@@ -161,7 +161,7 @@ def test_step_retry_limit(environment):
     assert not result.success
 
     events = defaultdict(list)
-    for ev in result.events_by_step_key['default_max.compute']:
+    for ev in result.events_by_step_key["default_max.compute"]:
         events[ev.event_type].append(ev)
 
     assert len(events[DagsterEventType.STEP_START]) == 1
@@ -170,7 +170,7 @@ def test_step_retry_limit(environment):
     assert len(events[DagsterEventType.STEP_FAILURE]) == 1
 
     events = defaultdict(list)
-    for ev in result.events_by_step_key['three_max.compute']:
+    for ev in result.events_by_step_key["three_max.compute"]:
         events[ev.event_type].append(ev)
 
     assert len(events[DagsterEventType.STEP_START]) == 1
@@ -182,7 +182,7 @@ def test_step_retry_limit(environment):
 def test_retry_deferral():
     events = execute_plan(
         create_execution_plan(define_retry_limit_pipeline()),
-        pipeline_run=PipelineRun(pipeline_name='retry_limits', run_id='42'),
+        pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
         retries=Retries(RetryMode.DEFERRED),
         instance=DagsterInstance.local_temp(),
     )
@@ -202,11 +202,11 @@ DELAY = 2
 def define_retry_wait_fixed_pipeline():
     @solid(config_schema=str)
     def fail_first_and_wait(context):
-        file = os.path.join(context.solid_config, 'i_threw_up')
+        file = os.path.join(context.solid_config, "i_threw_up")
         if os.path.exists(file):
-            return 'okay perfect'
+            return "okay perfect"
         else:
-            open(file, 'a').close()
+            open(file, "a").close()
             raise RetryRequested(seconds_to_wait=DELAY)
 
     @pipeline
@@ -220,7 +220,7 @@ def define_retry_wait_fixed_pipeline():
 def test_step_retry_fixed_wait(environment):
     with seven.TemporaryDirectory() as tempdir:
         env = dict(environment)
-        env['solids'] = {'fail_first_and_wait': {'config': tempdir}}
+        env["solids"] = {"fail_first_and_wait": {"config": tempdir}}
 
         event_iter = execute_pipeline_iterator(
             reconstructable(define_retry_wait_fixed_pipeline),
