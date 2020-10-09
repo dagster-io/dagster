@@ -11,7 +11,7 @@ import yaml
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin
-from dagster.utils import frozentags
+from dagster.utils import frozentags, is_str
 from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
@@ -93,7 +93,7 @@ def struct_to_string(name, **kwargs):
 def validate_tags(tags):
     valid_tags = {}
     for key, value in check.opt_dict_param(tags, "tags", key_type=str).items():
-        if not check.is_str(value):
+        if not is_str(value):
             valid = False
             err_reason = 'Could not JSON encode value "{}"'.format(value)
             try:

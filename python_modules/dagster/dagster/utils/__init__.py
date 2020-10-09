@@ -537,6 +537,10 @@ def utc_datetime_from_timestamp(timestamp):
     return datetime.datetime.fromtimestamp(timestamp, tz=tz)
 
 
+def is_str(obj):
+    return isinstance(obj, six.string_types)
+
+
 def is_enum_value(value):
     return False if value is None else issubclass(value.__class__, Enum)
 

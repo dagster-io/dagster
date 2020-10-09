@@ -4,6 +4,8 @@ import sys
 from future.utils import raise_with_traceback
 from six import integer_types, string_types
 
+from .utils import is_str
+
 if sys.version_info[0] >= 3:
     type_types = type
 else:
@@ -248,10 +250,6 @@ def opt_float_param(obj, param_name):
     if obj is not None and not isinstance(obj, float):
         raise_with_traceback(_param_type_mismatch_exception(obj, float, param_name))
     return obj
-
-
-def is_str(obj):
-    return isinstance(obj, string_types)
 
 
 def str_param(obj, param_name):
