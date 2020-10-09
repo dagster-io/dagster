@@ -16,3 +16,5 @@ RUN pip install \
     -e dagster-aws \
     -e dagster-k8s \
     -e dagster-celery-k8s
+
+COPY example_project/ /

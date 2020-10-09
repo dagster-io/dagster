@@ -14,9 +14,9 @@ DAGSTER_REPO = git_repo_root()
 
 
 @contextlib.contextmanager
-def copy_directories(paths, cwd):
+def copy_directories(paths, cwd, special_folder=None):
     check.invariant(os.path.exists(cwd), "Image directory does not exist")
-    build_cache_dir = os.path.join(cwd, "build_cache")
+    build_cache_dir = os.path.join(cwd, special_folder or "build_cache")
 
     paths_to_copy = []
     for path in paths:
@@ -83,11 +83,12 @@ def get_core_k8s_dirs():
 @contextlib.contextmanager
 def k8s_example_editable_cm(cwd):
     with copy_directories(
-        get_core_k8s_dirs()
-        + ["examples/deploy_k8s/example_project", "python_modules/libraries/dagster-aws",],
-        cwd,
+        get_core_k8s_dirs() + ["python_modules/libraries/dagster-aws",], cwd,
     ):
-        yield
+        with copy_directories(
+            ["examples/deploy_k8s/example_project"], cwd, special_folder="example_project"
+        ):
+            yield
 
 
 @contextlib.contextmanager
