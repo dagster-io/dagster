@@ -116,6 +116,11 @@ class Lakehouse:
         input (i.e. those assets without `compute_fn`s, such as those created by `source_asset` or
         `source_table`).
 
+        The composite solid will also return a single output of type `Nothing`. This allows
+        further solids to be scheduled to run _after_ the returned composite solid has run, by
+        passing its return value to those solids (which must expect a `InputDefinition` with type
+        `Nothing`).
+
         Examples:
 
             .. code-block:: python
@@ -162,6 +167,18 @@ class Lakehouse:
                 completed = wait_until_complete(orders=save_orders(), other=other_side_effect())
                 run_lakehouse(completed)
 
+            # Or if you want to run a solid after this composite:
+
+            @lambda_solid(input_defs=[InputDefinition("start", Nothing)])
+            def do_something_after_lakehouse():
+                pass
+
+            @pipeline(mode_defs=[mode_def], preset_defs=[preset_def])
+            def pipeline_downstream_deps():
+                prereqs_completed = wait_until_complete(orders=save_orders())
+                lakehouse_completed = run_lakehouse(prereqs_completed)
+                do_something_after_lakehouse(lakehouse_completed)
+
         """
         solid_defs, solid_deps = self._get_solid_deps_and_defs(
             assets_to_update, include_nothing_input
@@ -184,11 +201,30 @@ class Lakehouse:
         else:
             input_mappings = None
 
+        end_solid = SolidDefinition(
+            name="__lakehouse_end",
+            input_defs=[
+                InputDefinition("{}__end".format("__".join(solid_name)), Nothing)
+                for solid_name in solid_defs
+            ],
+            output_defs=[OutputDefinition(Nothing)],
+            compute_fn=lambda *args: None,
+        )
+        solid_deps[end_solid.name] = {
+            "{}__end".format(solid_def.name): DependencyDefinition(solid_def.name, "end")
+            for solid_def in solid_defs.values()
+        }
+        solid_defs[end_solid.name] = end_solid
+
+        nothing_output = OutputDefinition(Nothing, "end")
+        output_mappings = [nothing_output.mapping_from(end_solid.name)]
+
         return CompositeSolidDefinition(
             name=name,
             solid_defs=list(solid_defs.values()),
             dependencies=solid_deps,
             input_mappings=input_mappings,
+            output_mappings=output_mappings,
         )
 
     def _get_solid_deps_and_defs(self, assets_to_update, include_nothing_input=False):
@@ -219,6 +255,7 @@ class Lakehouse:
     ):
         output_dagster_type = computed_asset.dagster_type
         output_def = OutputDefinition(output_dagster_type)
+        nothing_output_def = OutputDefinition(Nothing, name="end")
         input_defs = []
         deps = computed_asset.computation.deps
         for dep in deps.values():
@@ -250,7 +287,7 @@ class Lakehouse:
             compute_fn=self._create_asset_solid_compute_wrapper(
                 computed_asset, input_defs, output_def
             ),
-            output_defs=[output_def],
+            output_defs=[output_def, nothing_output_def],
             config_schema=None,
             required_resource_keys=required_resource_keys,
             positional_inputs=None,

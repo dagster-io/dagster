@@ -1,7 +1,7 @@
 from lakehouse import computed_asset, source_asset
 
 import dagster
-from dagster import execute_pipeline
+from dagster import InputDefinition, execute_pipeline
 
 
 def _assert_input_defs(solid_def, expected):
@@ -12,7 +12,9 @@ def _assert_input_defs(solid_def, expected):
 
 
 def _assert_output_def(solid_def, expected_dagster_type, expected_name):
-    assert len(solid_def.output_defs) == 1
+    assert (
+        len(solid_def.output_defs) == 2
+    )  # one for the actual output, one for the `Nothing` output
     output_def = solid_def.output_defs[0]
     assert output_def.dagster_type == expected_dagster_type
     assert output_def.name == expected_name
@@ -199,6 +201,48 @@ def test_build_and_execute_composite_solid_deps(basic_lakehouse_and_storages):
     assert ("return_two_asset",) not in storage1.the_dict
     assert storage2.the_dict[("add_asset",)] == 3
     assert ("add_asset",) not in storage1.the_dict
+
+
+def test_build_and_execute_composite_solid_downstream_deps(basic_lakehouse_and_storages):
+    basic_lakehouse, storage1, storage2 = basic_lakehouse_and_storages
+
+    @computed_asset(storage_key="storage1")
+    def return_one_asset() -> int:
+        return 1
+
+    @computed_asset(storage_key="storage2")
+    def return_two_asset() -> int:
+        return 2
+
+    @computed_asset(storage_key="storage2", input_assets=[return_one_asset, return_two_asset])
+    def add_asset(return_one: int, return_two: int) -> int:
+        return return_one + return_two
+
+    @dagster.solid(
+        input_defs=[InputDefinition("start", dagster.Nothing)], required_resource_keys={"storage2"},
+    )
+    def return_final_asset(context) -> int:
+        return context.resources.storage2.the_dict[("add_asset",)]
+
+    composite = basic_lakehouse.build_composite_solid_definition(
+        "some_solid", [return_one_asset, return_two_asset, add_asset], True
+    )
+
+    @dagster.pipeline(
+        mode_defs=basic_lakehouse._mode_defs,  # pylint: disable=protected-access
+        preset_defs=basic_lakehouse._preset_defs,  # pylint: disable=protected-access
+    )
+    def pipeline():
+        return_final_asset(composite())
+
+    results = execute_pipeline(pipeline, mode="dev")
+    assert storage1.the_dict[("return_one_asset",)] == 1
+    assert ("return_one_asset",) not in storage2.the_dict
+    assert storage2.the_dict[("return_two_asset",)] == 2
+    assert ("return_two_asset",) not in storage1.the_dict
+    assert storage2.the_dict[("add_asset",)] == 3
+    assert ("add_asset",) not in storage1.the_dict
+    assert results.output_for_solid("return_final_asset") == 3
 
 
 def test_yields_materialization(basic_lakehouse_single_asset_pipeline):
