@@ -12,38 +12,36 @@ import { DynamicMetaTags } from 'components/MetaTags';
 />
 </p>
 
-<p align="center" className="mt-6 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-8 md:text-xl md:max-w-2xl">
-A data orchestrator for machine learning, analytics, and ETL
-</p>
 
-```python literalinclude
-file:/docs_snippets/docs_snippets/introduction/intro.py
-startAfter: start_intro_0
-endBefore: end_intro_0
-```
+## Welcome to Dagster's documentation!
 
-```bash
-> dagster pipeline execute -c local_development.yaml sugariest_pipeline
-```
+Dagster is a data orchestrator for machine learning, analytics, and ETL
 
-## Dagit
+These are the sections of our docs:
 
-Dagster comes with a rich UI for viewing and executing data pipelines.
+### Install
 
-### Visualize pipeline topology, with data types
+Quick instructions on how to install Dagster.
 
-<p align="center">
-  <img src="/assets/images/intro/dag-with-descrip.png" width="50%" height="50%"/>
-</p>
+### Tutorial
 
-### Execute pipelines and digest what happened as structured logs
+An introduction to Dagster main concepts through a set of examples and accompanying explanation.
+Start here if you're new to Dagster and want to ramp up.
 
-<p align="center">
-  <img src="/assets/images/intro/execution-log.png" width="75%" height="75%"/>
-</p>
+### Examples
 
-### Manage a history of past runs
+Each page is a code example with accompanying explanation.  Come here to learn how to do specific
+things with Dagster, like conditionally execute part of a pipeline or write solids that use PySpark.
 
-<p align="center">
-  <img src="/assets/images/intro/runs.png"/>
-</p>
+### Overviews
+
+Each page in this section is a detailed explanation of a Dagster concept or component. Come here to
+deepen your understanding of the system.
+
+### Deploy
+
+A set of references for how to deploy Dagster.
+
+### Community
+
+Our code of conduct, guidelines for contributing, release policy, and links to our Github and Slack.
