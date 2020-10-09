@@ -1,3 +1,4 @@
-repository:
-  module: demo
-  fn: demo_repo
+load_from:
+  - python_module:
+      module_name: demo
+      attribute: demo_repo

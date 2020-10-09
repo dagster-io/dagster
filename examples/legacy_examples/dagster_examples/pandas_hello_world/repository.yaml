@@ -1,3 +1,4 @@
-repository:
-  file: repo.py
-  fn: define_repo
+load_from:
+  - python_file:
+      relative_path: repo.py
+      attribute: define_repo

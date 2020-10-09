@@ -6,7 +6,6 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import DefaultRunLauncher, file_relative_path, pipeline, repository, seven, solid
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.handle import RepositoryLocationHandle, UserProcessApi
 from dagster.core.host_representation.repository_location import (
     GrpcServerRepositoryLocation,
@@ -95,16 +94,11 @@ def nope():
     return [noop_pipeline, crashy_pipeline, sleepy_pipeline, slow_pipeline, math_diamond]
 
 
-def test_repo_construction():
-    repo_yaml = file_relative_path(__file__, "repo.yaml")
-    assert ReconstructableRepository.from_legacy_repository_yaml(repo_yaml).get_definition()
-
-
 @contextmanager
 def get_external_pipeline_from_grpc_server_repository(pipeline_name):
-    repo_yaml = file_relative_path(__file__, "repo.yaml")
-    recon_repo = ReconstructableRepository.from_legacy_repository_yaml(repo_yaml)
-    loadable_target_origin = recon_repo.get_origin().loadable_target_origin
+    loadable_target_origin = LoadableTargetOrigin(
+        attribute="nope", python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+    )
     server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
 
     try:

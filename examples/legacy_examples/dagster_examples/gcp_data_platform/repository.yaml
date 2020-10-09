@@ -1,3 +1,4 @@
-repository:
-  module: dagster_examples.gcp_data_platform.repo
-  fn: define_repo
+load_from:
+  - python_module:
+      module_name: dagster_examples.gcp_data_platform.repo
+      attribute: define_repo

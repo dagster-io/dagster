@@ -1,3 +1,4 @@
-repository:
-  module: not_a_module
-  fn: define_repository
+load_from:
+  - python_module:
+      module_name: not_a_module
+      attribute: define_repository

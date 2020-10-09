@@ -1,7 +1,7 @@
 import copy
 
 from dagster_graphql.test.utils import (
-    define_context_for_file,
+    define_out_of_process_context,
     execute_dagster_graphql,
     infer_pipeline_selector,
 )
@@ -325,7 +325,7 @@ def test_runs_over_time():
             instance=instance,
         ).run_id
 
-        context_at_time_1 = define_context_for_file(__file__, "get_repo_at_time_1", instance)
+        context_at_time_1 = define_out_of_process_context(__file__, "get_repo_at_time_1", instance)
 
         result = execute_dagster_graphql(context_at_time_1, ALL_RUNS_QUERY)
         assert result.data
@@ -356,7 +356,7 @@ def test_runs_over_time():
             "solidSelection": ["solid_B"],
         }
 
-        context_at_time_2 = define_context_for_file(__file__, "get_repo_at_time_2", instance)
+        context_at_time_2 = define_out_of_process_context(__file__, "get_repo_at_time_2", instance)
 
         result = execute_dagster_graphql(context_at_time_2, ALL_RUNS_QUERY)
         assert result.data
@@ -407,7 +407,7 @@ def test_run_groups_over_time():
             instance=instance,
         ).run_id
 
-        context_at_time_1 = define_context_for_file(__file__, "get_repo_at_time_1", instance)
+        context_at_time_1 = define_out_of_process_context(__file__, "get_repo_at_time_1", instance)
 
         result = execute_dagster_graphql(context_at_time_1, ALL_RUN_GROUPS_QUERY)
         assert result.data
@@ -450,7 +450,7 @@ def test_run_groups_over_time():
             "solidSelection": ["solid_B"],
         }
 
-        context_at_time_2 = define_context_for_file(__file__, "get_repo_at_time_2", instance)
+        context_at_time_2 = define_out_of_process_context(__file__, "get_repo_at_time_2", instance)
 
         result = execute_dagster_graphql(context_at_time_2, ALL_RUN_GROUPS_QUERY)
         assert "runGroupsOrError" in result.data
@@ -514,7 +514,7 @@ def test_filtered_runs():
         _run_id_2 = execute_pipeline(
             repo.get_pipeline("foo_pipeline"), instance=instance, tags={"run": "two"}
         ).run_id
-        context = define_context_for_file(__file__, "get_repo_at_time_1", instance)
+        context = define_out_of_process_context(__file__, "get_repo_at_time_1", instance)
         result = execute_dagster_graphql(
             context, FILTERED_RUN_QUERY, variables={"filter": {"runId": run_id_1}}
         )
@@ -552,7 +552,7 @@ def test_run_group():
             execute_run(InMemoryPipeline(foo_pipeline), run, instance)
             runs.append(run)
 
-        context_at_time_1 = define_context_for_file(__file__, "get_repo_at_time_1", instance)
+        context_at_time_1 = define_out_of_process_context(__file__, "get_repo_at_time_1", instance)
 
         result_one = execute_dagster_graphql(
             context_at_time_1, RUN_GROUP_QUERY, variables={"runId": root_run_id},
@@ -579,7 +579,7 @@ def test_run_group():
 def test_run_group_not_found():
     with seven.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
-        context_at_time_1 = define_context_for_file(__file__, "get_repo_at_time_1", instance)
+        context_at_time_1 = define_out_of_process_context(__file__, "get_repo_at_time_1", instance)
 
         result = execute_dagster_graphql(
             context_at_time_1, RUN_GROUP_QUERY, variables={"runId": "foo"},
@@ -610,7 +610,7 @@ def test_run_groups():
                     instance=instance,
                 )
 
-        context_at_time_1 = define_context_for_file(__file__, "get_repo_at_time_1", instance)
+        context_at_time_1 = define_out_of_process_context(__file__, "get_repo_at_time_1", instance)
         result = execute_dagster_graphql(context_at_time_1, ALL_RUN_GROUPS_QUERY)
 
         assert result.data

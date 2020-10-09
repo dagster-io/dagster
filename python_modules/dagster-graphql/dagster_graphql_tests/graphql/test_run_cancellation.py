@@ -5,10 +5,10 @@ from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from dagster import execute_pipeline
+from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.utils import safe_tempfile_path
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
-from .setup import main_repo_location_name
 
 RUN_CANCELLATION_QUERY = """
 mutation($runId: String!) {
@@ -137,7 +137,7 @@ class TestRunVariantTermination(
     def test_run_finished(self, graphql_context):
         instance = graphql_context.instance
         pipeline = graphql_context.get_repository_location(
-            main_repo_location_name()
+            IN_PROCESS_NAME
         ).get_reconstructable_pipeline("noop_pipeline")
 
         pipeline_result = execute_pipeline(pipeline, instance=instance)

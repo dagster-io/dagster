@@ -1,3 +1,4 @@
-repository:
-  file: ../../dagster/dagster_tests/general_tests/test_repository.py
-  fn: dagster_test_repository
+load_from:
+  - python_file:
+      relative_path: ../../dagster/dagster_tests/general_tests/test_repository.py
+      attribute: dagster_test_repository

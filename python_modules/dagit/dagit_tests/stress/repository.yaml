@@ -1,3 +1,4 @@
-repository:
-  file: megadags.py
-  fn: define_repository
+load_from:
+  - python_file:
+      relative_path: megadags.py
+      attribute: define_repository

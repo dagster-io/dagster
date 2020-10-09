@@ -68,7 +68,7 @@ def get_foo_grpc_pipeline_handle():
 
 def legacy_get_bar_repo_handle():
     recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
-        file_relative_path(__file__, "repository_file.yaml")
+        file_relative_path(__file__, "legacy_repository_file.yaml")
     )
     return InProcessRepositoryLocation(recon_repo).get_repository("bar_repo").handle
 

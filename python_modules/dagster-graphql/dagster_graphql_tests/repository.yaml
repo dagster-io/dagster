@@ -1,3 +1,4 @@
-repository:
-  file: graphql/setup.py
-  fn: test_repo
+load_from:
+  - python_file:
+      relative_path: graphql/setup.py
+      attribute: test_repo

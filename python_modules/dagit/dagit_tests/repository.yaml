@@ -1,3 +1,4 @@
-repository:
-  file: pipeline.py
-  fn: test_repository
+load_from:
+  - python_file:
+      relative_path: pipeline.py
+      attribute: test_repository

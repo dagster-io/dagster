@@ -1,3 +1,4 @@
-repository:
-  module: dagster_test.test_project.test_pipelines.repo
-  fn: define_demo_execution_repo
+load_from:
+  - python_module:
+      module_name: dagster_test.test_project.test_pipelines.repo
+      attribute: define_demo_execution_repo

@@ -1,3 +1,4 @@
-repository:
-  module: docs_snippets.docs_snippets.intro_tutorial.repos
-  fn: define_repo
+load_from:
+  - python_module:
+      module_name: docs_snippets.docs_snippets.intro_tutorial.repos
+      attribute: define_repo

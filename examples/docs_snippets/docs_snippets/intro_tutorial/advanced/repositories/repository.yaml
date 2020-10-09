@@ -1,3 +1,4 @@
-repository:
-  module: docs_snippets.intro_tutorial.advanced.repositories.repos
-  fn: hello_cereal_repository
+load_from:
+  - python_module:
+      module_name: docs_snippets.intro_tutorial.advanced.repositories.repos
+      attribute: hello_cereal_repository

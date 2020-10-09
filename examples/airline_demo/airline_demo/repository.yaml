@@ -1,3 +1,4 @@
-repository:
-  module: airline_demo.repository
-  fn: airline_demo_repo
+load_from:
+  - python_module:
+      module_name: airline_demo.repository
+      attribute: airline_demo_repo

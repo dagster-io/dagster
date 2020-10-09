@@ -1,3 +1,4 @@
-repository:
-  file: test_handle.py
-  fn: define_bar_repo
+load_from:
+  - python_file:
+      relative_path: test_handle.py
+      attribute: define_bar_repo

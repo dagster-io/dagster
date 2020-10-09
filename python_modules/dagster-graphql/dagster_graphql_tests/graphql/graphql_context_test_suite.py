@@ -27,9 +27,7 @@ from dagster.utils.test.postgres_instance import TestPostgresInstance
 
 
 def get_main_recon_repo():
-    return ReconstructableRepository.from_legacy_repository_yaml(
-        file_relative_path(__file__, "repo.yaml")
-    )
+    return ReconstructableRepository.for_file(file_relative_path(__file__, "setup.py"), "test_repo")
 
 
 @contextmanager
@@ -346,10 +344,6 @@ class EnvironmentManagers:
             """Goes out of process but same process as host process"""
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
-            empty_repo = ReconstructableRepository.from_legacy_repository_yaml(
-                file_relative_path(__file__, "empty_repo.yaml")
-            )
-
             with Workspace(
                 [
                     RepositoryLocationHandle.create_python_env_location(
@@ -360,7 +354,6 @@ class EnvironmentManagers:
                         ),
                         location_name="test",
                     ),
-                    RepositoryLocationHandle.create_in_process_location(empty_repo.pointer),
                     RepositoryLocationHandle.create_python_env_location(
                         loadable_target_origin=LoadableTargetOrigin(
                             executable_path=sys.executable,

@@ -1,3 +1,4 @@
-repository:
-  module: dagster_examples
-  fn: define_demo_repo
+load_from:
+  - python_module:
+      module_name: dagster_examples
+      attribute: define_demo_repo

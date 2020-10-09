@@ -7,11 +7,18 @@ from graphql import graphql
 from dagster import check
 from dagster.cli.workspace import Workspace
 from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import RepositoryLocationHandle
 from dagster.core.host_representation.handle import UserProcessApi
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+
+
+def main_repo_location_name():
+    return "test_location"
+
+
+def main_repo_name():
+    return "test_repo"
 
 
 def execute_dagster_graphql(context, query, variables=None):
@@ -41,8 +48,9 @@ def execute_dagster_graphql_and_finish_runs(context, query, variables=None):
     return result
 
 
-def define_context_for_file(python_file, fn_name, instance):
+def define_in_process_context(python_file, fn_name, instance):
     check.inst_param(instance, "instance", DagsterInstance)
+
     return DagsterGraphQLContext(
         workspace=Workspace(
             [
@@ -65,22 +73,8 @@ def define_out_of_process_context(python_file, fn_name, instance):
                     loadable_target_origin=LoadableTargetOrigin(
                         executable_path=sys.executable, python_file=python_file, attribute=fn_name,
                     ),
-                    location_name="test_location",
+                    location_name=main_repo_location_name(),
                     user_process_api=UserProcessApi.CLI,
-                )
-            ]
-        ),
-        instance=instance,
-    )
-
-
-def define_context_for_repository_yaml(path, instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-    return DagsterGraphQLContext(
-        workspace=Workspace(
-            [
-                RepositoryLocationHandle.create_in_process_location(
-                    ReconstructableRepository.from_legacy_repository_yaml(path).pointer
                 )
             ]
         ),

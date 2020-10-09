@@ -6,17 +6,7 @@ from contextlib import contextmanager
 from click.testing import CliRunner
 from dagster_graphql.cli import ui
 
-from dagster import (
-    InputDefinition,
-    Int,
-    OutputDefinition,
-    ScheduleDefinition,
-    lambda_solid,
-    pipeline,
-    repository,
-    seven,
-    solid,
-)
+from dagster import seven
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.utils import file_relative_path
@@ -35,53 +25,6 @@ def dagster_cli_runner():
             },
         ):
             yield CliRunner(env={"DAGSTER_HOME": dagster_home_temp})
-
-
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
-def add_one(num):
-    return num + 1
-
-
-@lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))
-def mult_two(num):
-    return num * 2
-
-
-@pipeline
-def math():
-    mult_two(add_one())
-
-
-@solid(config_schema={"gimme": str})
-def needs_config(context):
-    return context.solid_config["gimme"]
-
-
-@lambda_solid
-def no_config():
-    return "ok"
-
-
-@pipeline
-def subset_test():
-    no_config()
-    needs_config()
-
-
-def define_schedules():
-    math_hourly_schedule = ScheduleDefinition(
-        name="math_hourly_schedule",
-        cron_schedule="0 0 * * *",
-        pipeline_name="math",
-        run_config={"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
-    )
-
-    return [math_hourly_schedule]
-
-
-@repository
-def test():
-    return [math, subset_test] + define_schedules()
 
 
 def test_basic_introspection():
@@ -118,7 +61,7 @@ def test_basic_variables():
         { ... on Pipeline { name } }
     }
     """
-    variables = '{"pipelineName": "math", "repositoryName": "test", "repositoryLocationName": "<<in_process>>"}'
+    variables = '{"pipelineName": "math", "repositoryName": "test", "repositoryLocationName": "test_cli_location"}'
     workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
 
     with dagster_cli_runner() as runner:
@@ -161,7 +104,7 @@ def test_start_execution_text():
         {
             "executionParams": {
                 "selector": {
-                    "repositoryLocationName": "<<in_process>>",
+                    "repositoryLocationName": "test_cli_location",
                     "repositoryName": "test",
                     "pipelineName": "math",
                 },
@@ -196,7 +139,7 @@ def test_start_execution_file():
             "executionParams": {
                 "selector": {
                     "pipelineName": "math",
-                    "repositoryLocationName": "<<in_process>>",
+                    "repositoryLocationName": "test_cli_location",
                     "repositoryName": "test",
                 },
                 "runConfigData": {"solids": {"add_one": {"inputs": {"num": {"value": 123}}}}},
@@ -236,7 +179,7 @@ def test_start_execution_save_output():
         {
             "executionParams": {
                 "selector": {
-                    "repositoryLocationName": "<<in_process>>",
+                    "repositoryLocationName": "test_cli_location",
                     "repositoryName": "test",
                     "pipelineName": "math",
                 },
@@ -283,7 +226,7 @@ def test_start_execution_predefined():
         {
             "executionParams": {
                 "selector": {
-                    "repositoryLocationName": "<<in_process>>",
+                    "repositoryLocationName": "test_cli_location",
                     "repositoryName": "test",
                     "pipelineName": "math",
                 },
@@ -314,7 +257,7 @@ def test_logs_in_start_execution_predefined():
         {
             "executionParams": {
                 "selector": {
-                    "repositoryLocationName": "<<in_process>>",
+                    "repositoryLocationName": "test_cli_location",
                     "repositoryName": "test",
                     "pipelineName": "math",
                 },

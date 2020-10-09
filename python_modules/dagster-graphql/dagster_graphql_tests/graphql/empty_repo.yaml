@@ -1,3 +1,4 @@
-repository:
-  file: setup.py
-  fn: empty_repo
+load_from:
+  - python_file:
+      relative_path: setup.py
+      attribute: empty_repo

@@ -1,3 +1,4 @@
-repository:
-  module: dagstermill.examples.repository
-  fn: define_example_repository
+load_from:
+  - python_module:
+      module_name: dagstermill.examples.repository
+      attribute: define_example_repository
