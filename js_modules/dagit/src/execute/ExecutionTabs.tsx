@@ -3,6 +3,7 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {useConfirmation} from 'src/CustomConfirmationProvider';
 import {
   IStorageData,
   applyChangesToSession,
@@ -12,6 +13,7 @@ import {
 } from 'src/LocalStorage';
 
 interface ExecutationTabProps {
+  canRemove?: boolean;
   title: string;
   active?: boolean;
   onChange?: (title: string) => void;
@@ -24,7 +26,7 @@ interface ExecutationTabState {
 }
 
 const ExecutionTab = (props: ExecutationTabProps) => {
-  const {title, onChange, onClick, onRemove, active} = props;
+  const {canRemove, title, onChange, onClick, onRemove, active} = props;
 
   const input = React.useRef<HTMLInputElement>(null);
   const [editing, setEditing] = React.useState(false);
@@ -73,7 +75,7 @@ const ExecutionTab = (props: ExecutationTabProps) => {
       ) : (
         title
       )}
-      {!editing && onRemove ? (
+      {canRemove && !editing && onRemove ? (
         <RemoveButton onClick={onClickRemove}>
           <Icon icon={IconNames.CROSS} />
         </RemoveButton>
@@ -89,24 +91,39 @@ interface ExecutionTabsProps {
 
 export const ExecutionTabs = (props: ExecutionTabsProps) => {
   const {data, onSave} = props;
+  const {sessions} = data;
+  const sessionKeys = Object.keys(sessions);
+  const sessionCount = sessionKeys.length;
 
-  const onApply = React.useCallback(
-    (mutator: any, ...args: any[]) => {
-      onSave(mutator(data, ...args));
-    },
-    [data, onSave],
-  );
+  const confirm = useConfirmation();
+
+  const onApply = (mutator: any, ...args: any[]) => {
+    onSave(mutator(data, ...args));
+  };
+
+  const onRemove = async (keyToRemove: string) => {
+    if (sessionCount > 1) {
+      await confirm({
+        title: 'Discard tab?',
+        description: `The configuration for ${
+          keyToRemove ? `"${sessions[keyToRemove].name}"` : 'this tab'
+        } will be discarded.`,
+      });
+      onApply(applyRemoveSession, keyToRemove);
+    }
+  };
 
   return (
     <ExecutionTabsContainer>
-      {Object.keys(data.sessions).map((key) => (
+      {sessionKeys.map((key) => (
         <ExecutionTab
+          canRemove={sessionCount > 1}
           key={key}
           active={key === data.current}
-          title={data.sessions[key].name}
+          title={sessions[key].name}
           onClick={() => onApply(applySelectSession, key)}
           onChange={(name) => onApply(applyChangesToSession, key, {name})}
-          onRemove={() => onApply(applyRemoveSession, key)}
+          onRemove={() => onRemove(key)}
         />
       ))}
       <ExecutionTab title="Add..." onClick={() => onApply(applyCreateSession)} />
