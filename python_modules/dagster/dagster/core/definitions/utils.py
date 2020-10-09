@@ -92,7 +92,7 @@ def struct_to_string(name, **kwargs):
 
 def validate_tags(tags):
     valid_tags = {}
-    for key, value in check.opt_dict_param(tags, 'tags', key_type=str).items():
+    for key, value in check.opt_dict_param(tags, "tags", key_type=str).items():
         if not is_str(value):
             valid = False
             err_reason = 'Could not JSON encode value "{}"'.format(value)
