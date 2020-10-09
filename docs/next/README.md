@@ -78,3 +78,30 @@ file:/intro_tutorial/materializations.py
 lines:23-56
 ```
 </pre>
+
+Or, you can use Python comment markers (instead of line numbers) which will prevent future changes from causing line numbers to drift and messing up the rendering of existing literal includes.
+
+<pre>
+```python literalinclude caption=materalizations.py
+file:/intro_tutorial/materializations.py
+startAfter:start_materialization_solids_marker_0
+endBefore:end_materialization_solids_marker_0
+```
+</pre>
+
+Python comment markers would live in your code like this:
+
+```python
+# materializations.py
+
+
+excluded_int = 1
+
+# start_materialization_solids_marker_0
+def included_func():
+   return 1
+# end_materialization_solids_marker_0
+
+excluded_bool = True
+
+```

@@ -24,9 +24,8 @@ def my_simple_solid(context, df):
 
 
 # end_materialization_solids_marker_0
+
 # start_materialization_solids_marker_1
-
-
 @solid
 def my_materialization_solid(context, df):
     do_some_transform(df)
@@ -38,6 +37,7 @@ def my_materialization_solid(context, df):
 # end_materialization_solids_marker_1
 
 
+# start_materialization_solids_marker_2
 @solid
 def my_metadata_materialization_solid(context, df):
     do_some_transform(df)
@@ -55,6 +55,10 @@ def my_metadata_materialization_solid(context, df):
     yield Output(df)
 
 
+# end_materialization_solids_marker_2
+
+
+# start_materialization_solids_marker_3
 @solid
 def my_asset_key_materialization_solid(context, df):
     do_some_transform(df)
@@ -68,3 +72,6 @@ def my_asset_key_materialization_solid(context, df):
         ],
     )
     yield Output(df)
+
+
+# end_materialization_solids_marker_3

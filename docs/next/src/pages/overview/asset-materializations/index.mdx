@@ -21,7 +21,6 @@ This would involve changing the following solid:
 
 ```python literalinclude caption=materialization.py
 file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
-lineno-start:
 startAfter:start_materialization_solids_marker_0
 endBefore:end_materialization_solids_marker_0
 ```
@@ -30,7 +29,6 @@ into something like this:
 
 ```python literalinclude caption=materialization.py
 file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
-lineno-start:
 startAfter:start_materialization_solids_marker_1
 endBefore:end_materialization_solids_marker_1
 ```
@@ -49,8 +47,8 @@ event optionally takes a list of metadata entries that are then displayed in the
 
 ```python literalinclude caption=materialization.py
 file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
-lineno-start:
-lines:33-47
+startAfter:start_materialization_solids_marker_2
+endBefore:end_materialization_solids_marker_2
 ```
 
 Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details
@@ -64,7 +62,8 @@ structured identifier for an Asset.
 
 ```python literalinclude caption=materialization.py
 file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
-lines:50-62
+startAfter:start_materialization_solids_marker_3
+endBefore:end_materialization_solids_marker_3
 ```
 
 As soon as materialization events with asset keys are generated during pipeline execution, those
