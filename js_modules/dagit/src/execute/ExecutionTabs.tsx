@@ -14,7 +14,6 @@ import {
 interface ExecutationTabProps {
   title: string;
   active?: boolean;
-  unsaved?: boolean;
   onChange?: (title: string) => void;
   onRemove?: () => void;
   onClick: () => void;
@@ -24,109 +23,96 @@ interface ExecutationTabState {
   editing: boolean;
 }
 
-class ExecutionTab extends React.Component<ExecutationTabProps, ExecutationTabState> {
-  input = React.createRef<HTMLInputElement>();
+const ExecutionTab = (props: ExecutationTabProps) => {
+  const {title, onChange, onClick, onRemove, active} = props;
 
-  state = {editing: false};
+  const input = React.useRef<HTMLInputElement>(null);
+  const [editing, setEditing] = React.useState(false);
+  const [value, setValue] = React.useState(title);
 
-  onDoubleClick = () => {
-    if (!this.props.onChange) {
-      return;
+  const onDoubleClick = React.useCallback(() => {
+    if (onChange) {
+      setEditing(true);
     }
-    this.setState({editing: true}, () => {
-      const el = this.input.current;
-      if (el) {
-        el.focus();
-        el.select();
-      }
-    });
-  };
+  }, [onChange]);
 
-  render() {
-    const {title, onChange, onClick, onRemove, active, unsaved} = this.props;
-    const {editing} = this.state;
+  const onClickRemove = React.useCallback(
+    (e) => {
+      e.stopPropagation();
+      onRemove && onRemove();
+    },
+    [onRemove],
+  );
 
-    return (
-      <TabContainer active={active || false} onDoubleClick={this.onDoubleClick} onClick={onClick}>
-        {editing ? (
-          <input
-            ref={this.input}
-            type="text"
-            defaultValue={title}
-            onKeyDown={(e) => e.keyCode === 13 && e.currentTarget.blur()}
-            onChange={(e) => onChange && onChange(e.currentTarget.value)}
-            onBlur={() => this.setState({editing: false})}
-          />
-        ) : unsaved ? (
-          `${title}*`
-        ) : (
-          title
-        )}
-        {!editing && onRemove && (
-          <RemoveButton
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-          >
-            <Icon icon={IconNames.CROSS} />
-          </RemoveButton>
-        )}
-      </TabContainer>
-    );
-  }
-}
+  const handleBlur = React.useCallback(() => {
+    setEditing(false);
+    onChange && onChange(value);
+  }, [onChange, value]);
+
+  const handleChange = React.useCallback((e) => setValue(e.target.value), []);
+
+  React.useEffect(() => {
+    const el = input.current;
+    if (el && editing) {
+      el.focus();
+      el.select();
+    }
+  }, [editing]);
+
+  return (
+    <TabContainer active={active || false} onDoubleClick={onDoubleClick} onClick={onClick}>
+      {editing ? (
+        <input
+          ref={input}
+          type="text"
+          onKeyDown={(e) => e.keyCode === 13 && e.currentTarget.blur()}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          value={value}
+        />
+      ) : (
+        title
+      )}
+      {!editing && onRemove ? (
+        <RemoveButton onClick={onClickRemove}>
+          <Icon icon={IconNames.CROSS} />
+        </RemoveButton>
+      ) : null}
+    </TabContainer>
+  );
+};
 
 interface ExecutionTabsProps {
   data: IStorageData;
   onSave: (data: IStorageData) => void;
 }
 
-function sessionNamesAndKeysHash(data: IStorageData) {
-  return Object.values(data.sessions)
-    .map((s) => s.name + s.key)
-    .join(',');
-}
+export const ExecutionTabs = (props: ExecutionTabsProps) => {
+  const {data, onSave} = props;
 
-export class ExecutionTabs extends React.Component<ExecutionTabsProps> {
-  shouldComponentUpdate(prevProps: ExecutionTabsProps) {
-    return (
-      sessionNamesAndKeysHash(prevProps.data) !== sessionNamesAndKeysHash(this.props.data) ||
-      prevProps.data.current !== this.props.data.current
-    );
-  }
+  const onApply = React.useCallback(
+    (mutator: any, ...args: any[]) => {
+      onSave(mutator(data, ...args));
+    },
+    [data, onSave],
+  );
 
-  render() {
-    const {data} = this.props;
-
-    const onApply = (mutator: any, ...args: any[]) => {
-      // note: this function /cannot/ use props bound to local vars above
-      // because this component implements shouldComponentUpdate and data
-      // used during render and captured here may be stale.
-      this.props.onSave(mutator(this.props.data, ...args));
-    };
-
-    return (
-      <ExecutionTabsContainer>
-        {Object.keys(data.sessions).map((key) => (
-          <ExecutionTab
-            key={key}
-            active={key === data.current}
-            title={data.sessions[key].name}
-            onClick={() => onApply(applySelectSession, key)}
-            onChange={(name) => onApply(applyChangesToSession, key, {name})}
-            onRemove={
-              Object.keys(data.sessions).length > 1
-                ? () => onApply(applyRemoveSession, key)
-                : undefined
-            }
-          />
-        ))}
-        <ExecutionTab title="Add..." onClick={() => onApply(applyCreateSession)} />
-      </ExecutionTabsContainer>
-    );
-  }
-}
+  return (
+    <ExecutionTabsContainer>
+      {Object.keys(data.sessions).map((key) => (
+        <ExecutionTab
+          key={key}
+          active={key === data.current}
+          title={data.sessions[key].name}
+          onClick={() => onApply(applySelectSession, key)}
+          onChange={(name) => onApply(applyChangesToSession, key, {name})}
+          onRemove={() => onApply(applyRemoveSession, key)}
+        />
+      ))}
+      <ExecutionTab title="Add..." onClick={() => onApply(applyCreateSession)} />
+    </ExecutionTabsContainer>
+  );
+};
 
 export const ExecutionTabsContainer = styled.div`
   padding-left: 10px;
@@ -166,11 +152,11 @@ const TabContainer = styled.div<{active: boolean}>`
   cursor: ${({active}) => (!active ? 'pointer' : 'inherit')};
 `;
 
-const RemoveButton = styled.div`
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 10px;
+const RemoveButton = styled.button`
+  border: 0;
+  margin-left: 8px;
   opacity: 0.2;
+  padding: 0;
   &:hover {
     opacity: 0.6;
   }
