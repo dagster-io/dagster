@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import DefaultRunLauncher, file_relative_path, pipeline, repository, solid
+from dagster import DefaultRunLauncher, file_relative_path, pipeline, repository, seven, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.host_representation.repository_location import (
@@ -160,7 +160,15 @@ def get_external_pipeline_from_python_location(pipeline_name):
 
 
 def run_configs():
-    return [None, {"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}}]  # None,
+    return [
+        None,
+        pytest.param(
+            {"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
+            marks=pytest.mark.skipif(
+                seven.IS_WINDOWS, reason="multiprocessing tests flaky on windows"
+            ),
+        ),
+    ]
 
 
 def _is_multiprocess(run_config):
