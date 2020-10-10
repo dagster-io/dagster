@@ -37,4 +37,4 @@ cli = create_dagster_cli()
 
 
 def main():
-    cli(obj={})  # pylint:disable=E1123
+    cli(auto_envvar_prefix="DAGSTER")  # pylint:disable=E1123

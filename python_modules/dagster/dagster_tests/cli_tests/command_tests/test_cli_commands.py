@@ -22,6 +22,7 @@ from dagster import (
     solid,
 )
 from dagster.cli.run import run_list_command, run_wipe_command
+from dagster.cli import cli
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -31,6 +32,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.serdes import ConfigurableClass
 from dagster.utils import file_relative_path, merge_dicts
+from dagster.version import __version__
 
 
 def no_print(_):
@@ -562,4 +564,11 @@ def test_run_wipe_incorrect_delete_message():
     runner = CliRunner()
     result = runner.invoke(run_wipe_command, input="WRONG\n")
     assert "Exiting without deleting all run history and event logs" in result.output
+    assert result.exit_code == 0
+
+
+def test_use_env_vars_for_cli_option():
+    runner = CliRunner(env={"DAGSTER_VERSION": "1"})
+    result = runner.invoke(cli, ["debug"], auto_envvar_prefix="DAGSTER")
+    assert __version__ in result.output
     assert result.exit_code == 0
