@@ -7,6 +7,8 @@
 - Eliminated public field `config_field` on definition classes.
 - Eliminated `input_hydration_config` and `output_materialization_config` top-level includes.
 - Eliminated `input_hydration_config` and `output_materialization_config` arguments on type constructors.
+- Replaced `execute_step_with_structured_logs` CLI command with `execute_step`. Changed `ExecuteStepArgs`
+  parameters.
 
 ## 0.9.20
 

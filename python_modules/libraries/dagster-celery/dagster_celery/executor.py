@@ -1,6 +1,8 @@
 from dagster import Executor, Field, Noneable, Permissive, StringSource, check, executor
 from dagster.core.definitions.executor import check_cross_process_constraints
 from dagster.core.execution.retries import Retries, RetryMode, get_retries_config
+from dagster.grpc.types import ExecuteStepArgs
+from dagster.serdes import pack_value
 
 from .config import DEFAULT_CONFIG, dict_wrapper
 from .defaults import broker_url, result_backend
@@ -98,14 +100,18 @@ def celery_executor(init_context):
 def _submit_task(app, pipeline_context, step, queue, priority):
     from .tasks import create_task
 
-    task = create_task(app)
-
-    task_signature = task.si(
-        instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
-        executable_dict=pipeline_context.pipeline.to_dict(),
-        run_id=pipeline_context.pipeline_run.run_id,
-        step_keys=[step.key],
+    execute_step_args = ExecuteStepArgs(
+        pipeline_origin=pipeline_context.pipeline.get_python_origin(),
+        pipeline_run_id=pipeline_context.pipeline_run.run_id,
+        step_keys_to_execute=[step.key],
+        instance_ref=pipeline_context.instance.get_ref(),
         retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
+    )
+
+    task = create_task(app)
+    task_signature = task.si(
+        execute_step_args_packed=pack_value(execute_step_args),
+        executable_dict=pipeline_context.pipeline.to_dict(),
     )
     return task_signature.apply_async(
         priority=priority, queue=queue, routing_key="{queue}.execute_plan".format(queue=queue),

@@ -34,14 +34,14 @@ from .results import PipelineExecutionResult
 # | function name               | operates over      | sync  | supports    | creates new PipelineRun |
 # |                             |                    |       | reexecution | in instance             |
 # | --------------------------- | ------------------ | ----- | ----------- | ----------------------- |
-# | execute_pipeline_iterator   | IPipeline | async | no          | yes                     |
-# | execute_pipeline            | IPipeline | sync  | no          | yes                     |
+# | execute_pipeline_iterator   | IPipeline          | async | no          | yes                     |
+# | execute_pipeline            | IPipeline          | sync  | no          | yes                     |
 # | execute_run_iterator        | PipelineRun        | async | (1)         | no                      |
 # | execute_run                 | PipelineRun        | sync  | (1)         | no                      |
 # | execute_plan_iterator       | ExecutionPlan      | async | (2)         | no                      |
 # | execute_plan                | ExecutionPlan      | sync  | (2)         | no                      |
-# | reexecute_pipeline          | IPipeline | sync  | yes         | yes                     |
-# | reexecute_pipeline_iterator | IPipeline | async | yes         | yes                     |
+# | reexecute_pipeline          | IPipeline          | sync  | yes         | yes                     |
+# | reexecute_pipeline_iterator | IPipeline          | async | yes         | yes                     |
 #
 # Notes on reexecution support:
 # (1) The appropriate bits must be set on the PipelineRun passed to this function. Specifically,

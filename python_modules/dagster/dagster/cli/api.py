@@ -36,6 +36,7 @@ from dagster.core.scheduler import (
     ScheduledExecutionSuccess,
 )
 from dagster.core.scheduler.job import JobTickData, JobTickStatus, JobType
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -210,14 +211,28 @@ def verify_step(instance, pipeline_run, retries, step_keys_to_execute):
     ),
 )
 @click.argument("input_json", type=click.STRING)
-def execute_step_with_structured_logs_command(input_json):
+@click.pass_context
+def execute_step_with_structured_logs_command(ctx, input_json):  # pylint: disable=unused-argument
+    warnings.warn("execute_step_with_structured_logs is deprecated. Use execute_step instead.")
+    ctx.forward(execute_step_command)
+
+
+@click.command(
+    name="execute_step",
+    help=(
+        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
+        "interactively."
+    ),
+)
+@click.argument("input_json", type=click.STRING)
+def execute_step_command(input_json):
     try:
         signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
     except ValueError:
         warnings.warn(
             (
                 "Unexpected error attempting to manage signal handling on thread {thread_name}. "
-                "You should not invoke this API (execute_step_with_structured_logs) from threads "
+                "You should not invoke this API (execute_step) from threads "
                 "other than the main thread."
             ).format(thread_name=threading.current_thread().name)
         )
@@ -228,6 +243,12 @@ def execute_step_with_structured_logs_command(input_json):
         DagsterInstance.from_ref(args.instance_ref) if args.instance_ref else DagsterInstance.get()
     ) as instance:
         pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
+        check.inst(
+            pipeline_run,
+            PipelineRun,
+            "Pipeline run with id '{}' not found for step execution".format(args.pipeline_run_id),
+        )
+
         recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
         retries = Retries.from_config(args.retries_dict)
 
@@ -240,14 +261,18 @@ def execute_step_with_structured_logs_command(input_json):
             recon_pipeline.subset_for_execution_from_existing_pipeline(
                 pipeline_run.solids_to_execute
             ),
-            run_config=args.run_config,
+            run_config=pipeline_run.run_config,
             step_keys_to_execute=args.step_keys_to_execute,
-            mode=args.mode,
+            mode=pipeline_run.mode,
         )
 
         buff = []
         for event in execute_plan_iterator(
-            execution_plan, pipeline_run, instance, run_config=args.run_config, retries=retries,
+            execution_plan,
+            pipeline_run,
+            instance,
+            run_config=pipeline_run.run_config,
+            retries=retries,
         ):
             buff.append(serialize_dagster_namedtuple(event))
 
@@ -629,6 +654,7 @@ def create_api_cli_group():
 
     group.add_command(execute_run_with_structured_logs_command)
     group.add_command(execute_step_with_structured_logs_command)
+    group.add_command(execute_step_command)
     group.add_command(launch_scheduled_execution)
     group.add_command(grpc_command)
     group.add_command(grpc_health_check_command)

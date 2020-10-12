@@ -3,8 +3,8 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.retries import Retries
-from dagster.core.instance import InstanceRef
-from dagster.serdes import serialize_dagster_namedtuple
+from dagster.grpc.types import ExecuteStepArgs
+from dagster.serdes import serialize_dagster_namedtuple, unpack_value
 
 from .core_execution_loop import DELEGATE_MARKER
 from .executor import CeleryExecutor
@@ -12,29 +12,32 @@ from .executor import CeleryExecutor
 
 def create_task(celery_app, **task_kwargs):
     @celery_app.task(bind=True, name="execute_plan", **task_kwargs)
-    def _execute_plan(self, instance_ref_dict, executable_dict, run_id, step_keys, retries_dict):
-        check.dict_param(instance_ref_dict, "instance_ref_dict")
+    def _execute_plan(self, execute_step_args_packed, executable_dict):
+        execute_step_args = unpack_value(
+            check.dict_param(execute_step_args_packed, "execute_step_args_packed",)
+        )
+        check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
+
         check.dict_param(executable_dict, "executable_dict")
-        check.str_param(run_id, "run_id")
-        check.list_param(step_keys, "step_keys", of_type=str)
-        check.dict_param(retries_dict, "retries_dict")
 
-        instance_ref = InstanceRef.from_dict(instance_ref_dict)
-        instance = DagsterInstance.from_ref(instance_ref)
+        instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
+
         pipeline = ReconstructablePipeline.from_dict(executable_dict)
-        retries = Retries.from_config(retries_dict)
+        retries = Retries.from_config(execute_step_args.retries_dict)
 
-        pipeline_run = instance.get_run_by_id(run_id)
-        check.invariant(pipeline_run, "Could not load run {}".format(run_id))
+        pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
+        check.invariant(
+            pipeline_run, "Could not load run {}".format(execute_step_args.pipeline_run_id)
+        )
 
-        step_keys_str = ", ".join(step_keys)
+        step_keys_str = ", ".join(execute_step_args.step_keys_to_execute)
 
         execution_plan = create_execution_plan(
             pipeline,
             pipeline_run.run_config,
             mode=pipeline_run.mode,
-            step_keys_to_execute=pipeline_run.step_keys_to_execute,
-        ).build_subset_plan(step_keys)
+            step_keys_to_execute=execute_step_args.step_keys_to_execute,
+        )
 
         engine_event = instance.report_engine_event(
             "Executing steps {} in celery worker".format(step_keys_str),

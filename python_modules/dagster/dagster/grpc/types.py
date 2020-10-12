@@ -72,17 +72,15 @@ class ExecuteExternalPipelineArgs(
 class ExecuteStepArgs(
     namedtuple(
         "_ExecuteStepArgs",
-        "pipeline_origin pipeline_run_id instance_ref mode step_keys_to_execute run_config retries_dict should_verify_step",
+        "pipeline_origin pipeline_run_id step_keys_to_execute instance_ref retries_dict should_verify_step",
     )
 ):
     def __new__(
         cls,
         pipeline_origin,
         pipeline_run_id,
+        step_keys_to_execute,
         instance_ref=None,
-        mode=None,
-        step_keys_to_execute=None,
-        run_config=None,
         retries_dict=None,
         should_verify_step=None,
     ):
@@ -92,12 +90,10 @@ class ExecuteStepArgs(
                 pipeline_origin, "pipeline_origin", PipelinePythonOrigin
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
-            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
-            mode=check.opt_str_param(mode, "mode"),
             step_keys_to_execute=check.opt_list_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
             ),
-            run_config=check.opt_dict_param(run_config, "run_config"),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
             retries_dict=check.opt_dict_param(retries_dict, "retries_dict"),
             should_verify_step=check.opt_bool_param(
                 should_verify_step, "should_verify_step", False

@@ -19,9 +19,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster.core.execution.retries import Retries
-from dagster.core.instance import InstanceRef
-from dagster.core.origin import PipelinePythonOrigin
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
@@ -212,23 +210,21 @@ class CeleryK8sJobExecutor(Executor):
 def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
     user_defined_k8s_config = get_user_defined_k8s_config(step.tags)
 
+    execute_step_args = ExecuteStepArgs(
+        pipeline_origin=pipeline_context.pipeline.get_python_origin(),
+        pipeline_run_id=pipeline_context.pipeline_run.run_id,
+        step_keys_to_execute=[step.key],
+        instance_ref=pipeline_context.instance.get_ref(),
+        retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
+        should_verify_step=True,
+    )
+
     task = create_k8s_job_task(app)
-
-    recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
-
     task_signature = task.si(
-        instance_ref_dict=pipeline_context.instance.get_ref().to_dict(),
-        step_keys=[step.key],
-        run_config=pipeline_context.pipeline_run.run_config,
-        mode=pipeline_context.pipeline_run.mode,
-        repo_name=recon_repo.get_definition().name,
-        repo_location_name=pipeline_context.executor.repo_location_name,
-        run_id=pipeline_context.pipeline_run.run_id,
+        execute_step_args_packed=pack_value(execute_step_args),
         job_config_dict=pipeline_context.executor.job_config.to_dict(),
         job_namespace=pipeline_context.executor.job_namespace,
         user_defined_k8s_config_dict=user_defined_k8s_config.to_dict(),
-        retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
-        pipeline_origin_packed=pack_value(pipeline_context.pipeline.get_python_origin()),
         load_incluster_config=pipeline_context.executor.load_incluster_config,
         kubeconfig_file=pipeline_context.executor.kubeconfig_file,
     )
@@ -269,34 +265,23 @@ def create_k8s_job_task(celery_app, **task_kwargs):
     @celery_app.task(bind=True, name="execute_step_k8s_job", **task_kwargs)
     def _execute_step_k8s_job(
         self,
-        instance_ref_dict,
-        step_keys,
-        run_config,
-        mode,
-        repo_name,
-        repo_location_name,
-        run_id,
+        execute_step_args_packed,
         job_config_dict,
         job_namespace,
         load_incluster_config,
-        retries_dict,
-        pipeline_origin_packed,
         user_defined_k8s_config_dict=None,
         kubeconfig_file=None,
     ):
         """Run step execution in a K8s job pod.
         """
-
-        check.dict_param(instance_ref_dict, "instance_ref_dict")
-        check.list_param(step_keys, "step_keys", of_type=str)
-        check.invariant(
-            len(step_keys) == 1, "Celery K8s task executor can only execute 1 step at a time"
+        execute_step_args = unpack_value(
+            check.dict_param(execute_step_args_packed, "execute_step_args_packed",)
         )
-        check.dict_param(run_config, "run_config")
-        check.str_param(mode, "mode")
-        check.str_param(repo_name, "repo_name")
-        check.str_param(repo_location_name, "repo_location_name")
-        check.str_param(run_id, "run_id")
+        check.inst_param(execute_step_args, "execute_step_args", ExecuteStepArgs)
+        check.invariant(
+            len(execute_step_args.step_keys_to_execute) == 1,
+            "Celery K8s task executor can only execute 1 step at a time",
+        )
 
         # Celery will serialize this as a list
         job_config = DagsterK8sJobConfig.from_dict(job_config_dict)
@@ -304,14 +289,6 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         check.str_param(job_namespace, "job_namespace")
 
         check.bool_param(load_incluster_config, "load_incluster_config")
-        check.dict_param(retries_dict, "retries_dict")
-
-        pipeline_origin = unpack_value(
-            check.dict_param(
-                pipeline_origin_packed, "pipeline_origin_packed"
-            )  # TODO: make part of args
-        )
-        check.inst(pipeline_origin, PipelinePythonOrigin)
 
         user_defined_k8s_config = UserDefinedDagsterK8sConfig.from_dict(
             user_defined_k8s_config_dict
@@ -327,12 +304,15 @@ def create_k8s_job_task(celery_app, **task_kwargs):
         else:
             kubernetes.config.load_kube_config(kubeconfig_file)
 
-        instance_ref = InstanceRef.from_dict(instance_ref_dict)
-        instance = DagsterInstance.from_ref(instance_ref)
-        pipeline_run = instance.get_run_by_id(run_id)
+        instance = DagsterInstance.from_ref(execute_step_args.instance_ref)
+        pipeline_run = instance.get_run_by_id(execute_step_args.pipeline_run_id)
 
-        check.invariant(pipeline_run, "Could not load run {}".format(run_id))
-        step_key = step_keys[0]
+        check.inst(
+            pipeline_run,
+            PipelineRun,
+            "Could not load run {}".format(execute_step_args.pipeline_run_id),
+        )
+        step_key = execute_step_args.step_keys_to_execute[0]
 
         celery_worker_name = self.request.hostname
         celery_pod_name = os.environ.get("HOSTNAME")
@@ -360,9 +340,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             return []
 
         # Ensure we stay below k8s name length limits
-        k8s_name_key = get_k8s_job_name(run_id, step_key)
+        k8s_name_key = get_k8s_job_name(execute_step_args.pipeline_run_id, step_key)
 
-        retries = Retries.from_config(retries_dict)
+        retries = Retries.from_config(execute_step_args.retries_dict)
 
         if retries.get_attempt_count(step_key):
             attempt_number = retries.get_attempt_count(step_key)
@@ -372,20 +352,9 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             job_name = "dagster-job-%s" % (k8s_name_key)
             pod_name = "dagster-job-%s" % (k8s_name_key)
 
-        input_json = serialize_dagster_namedtuple(
-            ExecuteStepArgs(
-                pipeline_origin=pipeline_origin,
-                pipeline_run_id=run_id,
-                instance_ref=None,
-                mode=mode,
-                step_keys_to_execute=step_keys,
-                run_config=run_config,
-                retries_dict=retries_dict,
-                should_verify_step=True,
-            )
-        )
+        input_json = serialize_dagster_namedtuple(execute_step_args)
         command = ["dagster"]
-        args = ["api", "execute_step_with_structured_logs", input_json]
+        args = ["api", "execute_step", input_json]
 
         job = construct_dagster_k8s_job(
             job_config, command, args, job_name, user_defined_k8s_config, pod_name
@@ -455,7 +424,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         try:
             wait_for_job_success(
-                job_name=job_name, namespace=job_namespace, instance=instance, run_id=run_id,
+                job_name=job_name,
+                namespace=job_namespace,
+                instance=instance,
+                run_id=execute_step_args.pipeline_run_id,
             )
         except (DagsterK8sError, DagsterK8sTimeoutError) as err:
             step_failure_event = construct_step_failure_event_and_handle(
