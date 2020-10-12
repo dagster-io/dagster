@@ -5,7 +5,7 @@ from dagster.core.storage.runs import RunStorageSqlMetadata, SqlRunStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
-from ..utils import create_pg_connection, pg_config, pg_url_from_config
+from ..utils import create_pg_connection, pg_config, pg_statement_timeout, pg_url_from_config
 
 
 class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
@@ -28,14 +28,25 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     """
 
     def __init__(self, postgres_url, inst_data=None):
-        self.postgres_url = postgres_url
-        self._engine = create_engine(
-            self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
-        )
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self.postgres_url = postgres_url
+
+        # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
+        self._engine = create_engine(
+            self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool,
+        )
 
         with self.connect() as conn:
             RunStorageSqlMetadata.create_all(conn)
+
+    def optimize_for_dagit(self, statement_timeout):
+        # When running in dagit, hold 1 open connection and set statement_timeout
+        self._engine = create_engine(
+            self.postgres_url,
+            isolation_level="AUTOCOMMIT",
+            pool_size=1,
+            connect_args={"options": pg_statement_timeout(statement_timeout)},
+        )
 
     @property
     def inst_data(self):

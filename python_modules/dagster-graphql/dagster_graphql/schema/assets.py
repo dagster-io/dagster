@@ -113,7 +113,7 @@ class DauphinAssetNotFoundError(dauphin.ObjectType):
 class DauphinAssetsOrError(dauphin.Union):
     class Meta(object):
         name = "AssetsOrError"
-        types = ("AssetConnection", "AssetsNotSupportedError")
+        types = ("AssetConnection", "AssetsNotSupportedError", "PythonError")
 
 
 class DauphinAssetConnection(dauphin.ObjectType):

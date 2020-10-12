@@ -1,8 +1,11 @@
+from dagster_graphql.implementation.utils import capture_dauphin_error
+
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
 
 
+@capture_dauphin_error
 def get_assets(graphene_info, prefix_path):
     instance = graphene_info.context.instance
     if not instance.is_asset_aware:

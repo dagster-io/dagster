@@ -108,3 +108,8 @@ def create_pg_connection(engine, dunder_file, storage_type_desc=None):
     finally:
         if conn:
             conn.close()
+
+
+def pg_statement_timeout(millis):
+    check.int_param(millis, "millis")
+    return "-c statement_timeout={}".format(millis)

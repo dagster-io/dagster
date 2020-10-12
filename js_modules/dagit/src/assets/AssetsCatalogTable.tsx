@@ -8,6 +8,7 @@ import styled from 'styled-components';
 
 import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsTableQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 
@@ -24,6 +25,13 @@ export const AssetsCatalogTable: React.FunctionComponent<{prefixPath: string[]}>
     <div style={{flexGrow: 1}}>
       <Loading queryResult={queryResult}>
         {({assetsOrError}) => {
+          if (assetsOrError.__typename === 'PythonError') {
+            return (
+              <Wrapper>
+                <PythonErrorInfo error={assetsOrError} />
+              </Wrapper>
+            );
+          }
           if (assetsOrError.__typename === 'AssetsNotSupportedError') {
             return (
               <Wrapper>
@@ -256,6 +264,9 @@ export const ASSETS_TABLE_QUERY = gql`
           }
         }
       }
+      ...PythonErrorFragment
     }
   }
+
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;

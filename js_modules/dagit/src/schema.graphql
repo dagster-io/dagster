@@ -41,7 +41,7 @@ type AssetsNotSupportedError implements Error {
   message: String!
 }
 
-union AssetsOrError = AssetConnection | AssetsNotSupportedError
+union AssetsOrError = AssetConnection | AssetsNotSupportedError | PythonError
 
 type CodePointer {
   description: String!
