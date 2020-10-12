@@ -1,3 +1,4 @@
+# start_config_marker_0
 import csv
 import os
 
@@ -103,6 +104,8 @@ def read_csv(context, csv_path: str):
 def config_pipeline():
     read_csv()
 
+
+# end_config_marker_0
 
 if __name__ == "__main__":
     run_config = {

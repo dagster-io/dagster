@@ -110,7 +110,7 @@ the run being re-executed as the `parent_run_id` argument, and optionally use
 `step_keys_to_execute` to specify a list of step keys that you would like to
 re-execute.
 
-```python literalinclude showLines startLine=39 caption=reexecution.py
+```python literalinclude showLines startLine=40 caption=reexecution.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/reexecution.py
 startAfter:start_reexecution_marker_0
 endBefore:end_reexecution_marker_0
@@ -140,7 +140,7 @@ Our toy `LessSimpleDataFrame` is, of course, pickleable, but
 supposing it was not, let's set a custom **`SerializationStrategy`** on
 it to tell Dagster how to store intermediates of this type.
 
-```python literalinclude showLines startLine=15 caption=serialization_strategy.py
+```python literalinclude showLines startLine=16 caption=serialization_strategy.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/intermediates/serialization_strategy.py
 startAfter:start_serialization_strategy_marker_0
 endBefore:end_serialization_strategy_marker_0

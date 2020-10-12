@@ -99,13 +99,14 @@ def spark_df_local_filesystem_storage(init_context):
 
 # end_lakehouse_def_marker_1
 
-
+# start_lakehouse_def_marker_2
 local_file_system_storage = multi_type_asset_storage(
     local_filesystem_config_schema,
     {SparkDF: spark_df_local_filesystem_storage, PandasDF: pandas_df_local_filesystem_storage},
 )
+# end_lakehouse_def_marker_2
 
-
+# start_lakehouse_def_marker_3
 def make_multi_type_lakehouse():
     dev_mode = ModeDefinition(
         resource_defs={
@@ -118,3 +119,4 @@ def make_multi_type_lakehouse():
 
 
 multi_type_lakehouse = make_multi_type_lakehouse()
+# end_lakehouse_def_marker_3

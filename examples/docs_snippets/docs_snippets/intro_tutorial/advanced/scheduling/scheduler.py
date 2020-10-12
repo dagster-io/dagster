@@ -26,9 +26,8 @@ def hello_cereal_pipeline():
 
 
 # end_scheduler_marker_0
+
 # start_scheduler_marker_1
-
-
 @daily_schedule(
     pipeline_name="hello_cereal_pipeline",
     start_date=datetime(2020, 6, 1),
@@ -46,18 +45,24 @@ def good_morning_schedule(date):
 
 # end_scheduler_marker_1
 
-
+# start_scheduler_marker_2
 @repository
 def hello_cereal_repository():
     return [hello_cereal_pipeline, good_morning_schedule]
 
 
+# end_scheduler_marker_2
+
+# start_scheduler_marker_3
 def weekday_filter():
     weekno = datetime.today().weekday()
     # Returns true if current day is a weekday
     return weekno < 5
 
 
+# end_scheduler_marker_3
+
+# start_scheduler_marker_4
 @daily_schedule(
     pipeline_name="hello_cereal_pipeline",
     start_date=datetime(2020, 6, 1),
@@ -72,3 +77,6 @@ def good_weekday_morning_schedule(date):
             }
         }
     }
+
+
+# end_scheduler_marker_4

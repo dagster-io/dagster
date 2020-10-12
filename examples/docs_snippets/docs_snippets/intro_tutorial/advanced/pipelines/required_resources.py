@@ -54,6 +54,7 @@ def read_csv(context, csv_path):
     return lines
 
 
+# start_required_resources_marker_0
 @solid(required_resource_keys={"warehouse"})
 def normalize_calories(context, cereals):
     columns_to_normalize = [
@@ -78,6 +79,9 @@ def normalize_calories(context, cereals):
             cereal[column] = float(cereal[column]) * reweights[idx]
 
     context.resources.warehouse.update_normalized_cereals(normalized_cereals)
+
+
+# end_required_resources_marker_0
 
 
 @pipeline(

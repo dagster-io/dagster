@@ -74,6 +74,7 @@ class NormalizedCereal(Base):
     rating = sqlalchemy.Column(sqlalchemy.Float)
 
 
+# start_modes_marker_0
 class SqlAlchemyPostgresWarehouse(object):
     def __init__(self, conn_str):
         self._conn_str = conn_str
@@ -84,6 +85,9 @@ class SqlAlchemyPostgresWarehouse(object):
         Base.metadata.drop_all(self._engine)
         Base.metadata.create_all(self._engine)
         NormalizedCereal.__table__.insert().execute(records)
+
+
+# end_modes_marker_0
 
 
 @resource(config_schema={"conn_str": Field(String)})
@@ -127,6 +131,7 @@ def normalize_calories(context, cereals):
     context.resources.warehouse.update_normalized_cereals(normalized_cereals)
 
 
+# start_modes_marker_1
 @pipeline(
     mode_defs=[
         ModeDefinition(
@@ -145,6 +150,9 @@ def modes_pipeline():
     normalize_calories(read_csv())
 
 
+# end_modes_marker_1
+
+
 if __name__ == "__main__":
     # start_modes_main
     run_config = {
@@ -156,5 +164,5 @@ if __name__ == "__main__":
     result = execute_pipeline(
         pipeline=modes_pipeline, mode="unittest", run_config=run_config,
     )
+    # end_modes_main
     assert result.success
-# end_modes_main

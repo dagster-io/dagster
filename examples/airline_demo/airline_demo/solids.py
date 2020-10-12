@@ -57,7 +57,7 @@ def notebook_solid(name, notebook_path, input_defs, output_defs, required_resour
     )
 
 
-# end_solids_3
+# end_solids_marker_3
 
 
 # need a sql context w a sqlalchemy engine
@@ -150,7 +150,7 @@ def sql_solid(name, select_statement, materialization_strategy, table_name=None,
         context.resources.db_info.engine.execute(text(sql_statement))
         yield Output(value=table_name, output_name="result")
 
-    # end_solids_1
+    # end_solids_marker_1
     return _sql_solid
 
 
@@ -242,7 +242,7 @@ def load_data_to_database_from_spark(context, data_frame: DataFrame):
     yield Output(value=table_name, output_name="table_name")
 
 
-# end_solids_0
+# end_solids_marker_0
 
 
 @solid(
@@ -458,7 +458,7 @@ westbound_delays = sql_solid(
     "table",
     table_name="westbound_delays",
 )
-# end_solids_2
+# end_solids_marker_2
 
 # start_solids_marker_4
 delays_by_geography = notebook_solid(
@@ -485,7 +485,7 @@ delays_by_geography = notebook_solid(
     ],
     required_resource_keys={"db_info"},
 )
-# end_solids_4
+# end_solids_marker_4
 
 delays_vs_fares_nb = notebook_solid(
     "fares_vs_delays",

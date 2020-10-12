@@ -129,6 +129,7 @@ def normalize_calories(context, cereals):
     context.resources.warehouse.update_normalized_cereals(normalized_cereals)
 
 
+# start_presets_marker_0
 @pipeline(
     mode_defs=[
         ModeDefinition(
@@ -171,6 +172,11 @@ def presets_pipeline():
     normalize_calories(read_csv())
 
 
+# end_presets_marker_0
+
+
 if __name__ == "__main__":
+    # start_presets_main
     result = execute_pipeline(presets_pipeline, preset="unittest")
+    # end_presets_main
     assert result.success

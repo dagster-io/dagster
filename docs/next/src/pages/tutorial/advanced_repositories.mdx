@@ -29,7 +29,7 @@ Dagster provides the concept of a repository, a collection of pipelines (and oth
 the Dagster tools can target as a whole. Repositories are declared using the <PyObject
 module="dagster" object="RepositoryDefinition" /> API as follows:
 
-```python literalinclude showLines startLine=14 caption=repos.py
+```python literalinclude showLines startLine=15 caption=repos.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/repos.py
 startAfter:start_repos_marker_0
 endBefore:end_repos_marker_0
@@ -44,7 +44,7 @@ pipeline construction time can be large. In these cases, it may behoove you to o
 on demand. For that, you can also return a dictionary of function references, which are constructed
 on demand:
 
-```python literalinclude showLines startLine=14 caption=repos.py
+```python literalinclude showLines startLine=15 caption=repos.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/repositories/lazy_repos.py
 startAfter:start_lazy_repos_marker_0
 endBefore:end_lazy_repos_marker_0

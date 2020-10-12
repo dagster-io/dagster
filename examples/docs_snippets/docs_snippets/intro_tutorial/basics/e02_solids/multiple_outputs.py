@@ -25,6 +25,7 @@ def read_csv(context, csv_path):
     return lines
 
 
+# start_split_cereals
 @solid(
     config_schema={
         "process_hot": Field(Bool, is_required=False, default_value=True),
@@ -43,6 +44,8 @@ def split_cereals(context, cereals):
         cold_cereals = [cereal for cereal in cereals if cereal["type"] == "C"]
         yield Output(cold_cereals, "cold_cereals")
 
+
+# end_split_cereals
 
 # start-sort-and-pipeline
 @solid

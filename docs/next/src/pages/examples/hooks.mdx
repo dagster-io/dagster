@@ -9,7 +9,7 @@ This pipeline demonstrates how to create success and failure handling policies o
 
 A <PyObject module="dagster" object="success_hook" displayText="@success_hook" /> or <PyObject module="dagster" object="failure_hook" displayText="@failure_hook" /> decorated function is called a hook.
 
-```python literalinclude caption=repo.py showLines startLine=20 emphasize-lines=1,7
+```python literalinclude caption=repo.py showLines startLine=21 emphasize-lines=1,7
 file:/hooks/repo.py
 startAfter:start_repo_marker_0
 endBefore:end_repo_marker_0
@@ -21,7 +21,7 @@ There are a few ways to apply hooks. For example, you want to send a slack messa
 
 You can simply use the hook created "slack_on_failure" above to decorate the pipeline "notif_all". Then, slack messages will be sent when any solid in the pipeline fails.
 
-```python literalinclude caption=repo.py showLines startLine=55 emphasize-lines=1
+```python literalinclude caption=repo.py showLines startLine=61 emphasize-lines=1
 file:/hooks/repo.py
 startAfter:start_repo_marker_1
 endBefore:end_repo_marker_1
@@ -31,7 +31,7 @@ endBefore:end_repo_marker_1
 
 However, sometimes a pipeline is a shared responsibility or you only want to be alerted on high-priority solid executions. So we also provide a way to set up hooks on solid instances which enables you to apply policies on a per-solid basis.
 
-```python literalinclude caption=repo.py showLines startLine=63 emphasize-lines=4
+```python literalinclude caption=repo.py showLines startLine=72 emphasize-lines=4
 file:/hooks/repo.py
 startAfter:start_repo_marker_2
 endBefore:end_repo_marker_2
@@ -51,7 +51,7 @@ As you may have noticed, the hook function takes one argument, which is an insta
 
 Hooks use resource keys to access resources. After including the resource key in its set of `required_resource_keys`, the body of the hook can access the corresponding resource via the `resources` attribute of its context object.
 
-```python literalinclude caption=repo.py showLines startLine=26 emphasize-lines=1,4
+```python literalinclude caption=repo.py showLines startLine=27 emphasize-lines=1,4
 file:/hooks/repo.py
 lines:27-30
 ```
@@ -74,9 +74,10 @@ file:/hooks/prod.yaml
 
 Then, we can execute a pipeline with the config through Python API, CLI, or the Dagit UI.
 
-```python literalinclude caption=repo.py showLines startLine=77 emphasize-lines=3
+```python literalinclude caption=repo.py showLines startLine=90 emphasize-lines=3
 file:/hooks/repo.py
-lines:89-91
+startAfter:start_repo_main
+endBefore:end_repo_main
 ```
 
 ## Open in a playground

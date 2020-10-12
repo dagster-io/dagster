@@ -64,7 +64,7 @@ decorator, which runs a schedule once a day at a specified time.
 The decorated function should return the `run_config` needed to run the schedule at execution time.
 The function is passed the date for which the schedule is running.
 
-```python literalinclude showLines startLine=27 caption=scheduler.py
+```python literalinclude showLines startLine=31 caption=scheduler.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
 startAfter:start_scheduler_marker_1
 endBefore:end_scheduler_marker_1
@@ -73,9 +73,10 @@ endBefore:end_scheduler_marker_1
 To complete the picture, we'll need to add the schedule definition to the list of definitions returned
 from our repository.
 
-```python literalinclude showLines startLine=42 caption=scheduler.py
+```python literalinclude showLines startLine=49 caption=scheduler.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
-lines:42-44
+startAfter:start_scheduler_marker_2
+endBefore:end_scheduler_marker_2
 ```
 
 ## Starting schedules
@@ -125,16 +126,18 @@ If you need to define a more specific schedule than cron allows, you can pass a 
 
 For example, we can define a filter that only returns _`True`_ on weekdays:
 
-```python literalinclude showLines startLine=47 caption=scheduler.py
+```python literalinclude showLines startLine=57 caption=scheduler.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
-lines:47-50
+startAfter:start_scheduler_marker_3
+endBefore:end_scheduler_marker_3
 ```
 
 If we combine this `should_execute` filter with a
 schedule that runs at 6:45am every day, then we'll
 have a schedule that runs at 6:45am only on weekdays.
 
-```python literalinclude showLines startLine=53 caption=scheduler.py
+```python literalinclude showLines startLine=66 caption=scheduler.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/scheduling/scheduler.py
-lines:53-58
+startAfter:start_scheduler_marker_4
+endBefore:end_scheduler_marker_4
 ```

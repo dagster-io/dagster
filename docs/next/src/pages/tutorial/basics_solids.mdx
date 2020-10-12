@@ -29,8 +29,7 @@ reusable. Consider the following more generic solid:
 
 ```python literalinclude showLines startLine=7 caption=inputs.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
-startAfter:start_inputs_marker_0
-endBefore:end_inputs_marker_0
+lines:8-15
 ```
 
 Here, rather than hard-coding the value of `dataset_path`, we use an input, `csv_path`. It's easy to
@@ -40,9 +39,10 @@ we can use the output of another upstream solid to determine which file to load.
 
 Let's rebuild a pipeline we've seen before, but this time using our newly parameterized solid.
 
-```python literalinclude showLines startLine=1 emphasize-lines=38 caption=inputs.py
+```python literalinclude showLines startLine=2 emphasize-lines=38 caption=inputs.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
-lines:1-38
+startAfter:start_inputs_marker_0
+endBefore:end_inputs_marker_0
 ```
 
 <br />
@@ -70,10 +70,10 @@ This dict contains all of the user-provided configuration with which to execute 
 it can have [a lot of sections](/_apidocs/execution), but we'll only use one of
 them here: per-solid configuration, which is specified under the key `solids`:
 
-```python literalinclude showLines startLine=41 caption=inputs.py
+```python literalinclude showLines startLine=46 caption=inputs.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
-startAfter:start_inputs_main
-endBefore:end_inputs_main
+startAfter:start_inputs_marker_1
+endBefore:end_inputs_marker_1
 dedent:4
 ```
 
@@ -84,9 +84,10 @@ specify the value of the input `csv_path`.
 Now you can pass this run config to <PyObject module="dagster" object="execute_pipeline"
 displayText="execute_pipeline()" />:
 
-```python literalinclude showLines startLine=49 caption=inputs.py
+```python literalinclude showLines startLine=53 caption=inputs.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/inputs.py
-lines:47-49
+startAfter:start_inputs_marker_2
+endBefore:end_inputs_marker_2
 dedent:4
 ```
 
@@ -169,9 +170,10 @@ Solids often depend in predictable ways on features of the external world or the
 they're invoked. For example, consider an extended version of our CSV-reading solid that implements
 more of the options available in the underlying Python API:
 
-```python literalinclude showLines startLine=7 emphasize-lines=9-15 caption=config_bad_1.py
+```python literalinclude showLines startLine=8 emphasize-lines=9-15 caption=config_bad_1.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_bad_1.py
-lines:7-29
+startAfter:start_config_bad_1_marker_0
+endBefore:end_config_bad_1_marker_0
 ```
 
 We obviously don't want to have to write a separate solid for each permutation of these parameters
@@ -183,9 +185,10 @@ we might have dozens or hundreds of parameters like these.
 But hoisting all of these parameters into the signature of the solid function as inputs isn't the
 right answer either:
 
-```python literalinclude showLines startLine=7 emphasize-lines=5-11 caption=config_bad_2.py
+```python literalinclude showLines startLine=8 emphasize-lines=5-11 caption=config_bad_2.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_bad_2.py
-lines:7-39
+startAfter:start_config_bad_2_marker_0
+endBefore:end_config_bad_2_marker_0
 ```
 
 Defaults are often sufficient for configuration values like these, and sets of parameters are often
@@ -200,9 +203,10 @@ values.
 
 The solution is to define a config schema for our solid:
 
-```python literalinclude showLines startLine=1 emphasize-lines=16,34-42,89 caption=config.py
+```python literalinclude showLines startLine=2 emphasize-lines=17,35-43,90 caption=config.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config.py
-lines:1-104
+startAfter:start_config_marker_0
+endBefore:end_config_marker_0
 ```
 
 First, we pass the `config` argument to the <PyObject module="dagster" object="solid"
@@ -263,7 +267,8 @@ them separately, based on config.
 
 ```python literalinclude showLines caption=multiple_outputs.py
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/multiple_outputs.py
-lines:28-44
+startAfter:start_split_cereals
+endBefore:end_split_cereals
 ```
 
 Solids that yield multiple outputs must declare, and name, their outputs (passing `output_defs` to

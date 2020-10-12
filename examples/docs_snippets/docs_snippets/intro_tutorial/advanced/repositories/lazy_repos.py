@@ -11,8 +11,8 @@ from hello_cereal import hello_cereal_pipeline
 from complex_pipeline import complex_pipeline
 
 
-@repository
 # start_lazy_repos_marker_0
+@repository
 def hello_cereal_repository():
     # Note that we can pass a dict of functions, rather than a list of
     # pipeline definitions. This allows us to construct pipelines lazily,

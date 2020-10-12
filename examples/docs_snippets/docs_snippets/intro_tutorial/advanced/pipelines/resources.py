@@ -89,7 +89,7 @@ def normalize_calories(context, cereals):
 
 # end_resources_marker_1
 
-
+# start_resources_marker_2
 @pipeline(
     mode_defs=[
         ModeDefinition(
@@ -99,6 +99,9 @@ def normalize_calories(context, cereals):
 )
 def resources_pipeline():
     normalize_calories(read_csv())
+
+
+# end_resources_marker_2
 
 
 if __name__ == "__main__":

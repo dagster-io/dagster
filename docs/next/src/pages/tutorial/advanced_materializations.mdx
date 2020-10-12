@@ -38,7 +38,7 @@ We've taken the basic precaution of ensuring that the saved csv file has a
 different filename for each run of the pipeline. But there's no way for Dagit
 to know about this persistent artifact. So we'll add the following lines:
 
-```python literalinclude showLines startLine=24 emphasize-lines=25-33 caption=materializations.py
+```python literalinclude showLines startLine=25 emphasize-lines=25-33 caption=materializations.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/materializations.py
 startAfter:start_materializations_marker_0
 endBefore:end_materializations_marker_0
@@ -66,16 +66,18 @@ both as a pickle and as a .csv. (This is a reasonable idea, since .csv files
 are human-readable and manipulable by a wide variety of third party tools,
 while pickle is a binary format.)
 
-```python literalinclude showLines startLine=31 caption=output_materialization.py
+```python literalinclude showLines startLine=32 caption=output_materialization.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/output_materialization.py
-lines:31-70
+startAfter:start_output_materialization_marker_0
+endBefore:end_output_materialization_marker_0
 ```
 
 We set the output materialization config on the type:
 
-```python literalinclude showLines startLine=93 emphasize-lines=5 caption=output_materialization.py
+```python literalinclude showLines startLine=97 emphasize-lines=5 caption=output_materialization.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/materializations/output_materialization.py
-lines:93-98
+startAfter:start_output_materialization_marker_1
+endBefore:end_output_materialization_marker_1
 ```
 
 Now we can tell Dagster to materialize intermediate outputs of this type by

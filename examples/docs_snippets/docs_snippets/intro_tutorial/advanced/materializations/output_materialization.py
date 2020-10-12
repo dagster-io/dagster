@@ -28,6 +28,7 @@ def less_simple_data_frame_loader(context, selector):
     return LessSimpleDataFrame(lines)
 
 
+# start_output_materialization_marker_0
 @dagster_type_materializer(
     {
         "csv": Field(
@@ -90,6 +91,9 @@ def less_simple_data_frame_materializer(context, config, value):
     )
 
 
+# end_output_materialization_marker_0
+
+# start_output_materialization_marker_1
 @usable_as_dagster_type(
     name="LessSimpleDataFrame",
     description="A more sophisticated data frame that type checks its structure.",
@@ -98,6 +102,9 @@ def less_simple_data_frame_materializer(context, config, value):
 )
 class LessSimpleDataFrame(list):
     pass
+
+
+# end_output_materialization_marker_1
 
 
 @solid

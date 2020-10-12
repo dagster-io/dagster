@@ -39,7 +39,7 @@ This grossly understates the nutritional difference between our different cereal
 
 Let's transform our dataset and then store it in a normalized table in the warehouse:
 
-```python literalinclude showLines startLine=59 emphasize-lines=18 caption=resources.py
+```python literalinclude showLines startLine=64 emphasize-lines=18 caption=resources.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.py
 startAfter:start_resources_marker_1
 endBefore:end_resources_marker_1
@@ -61,7 +61,7 @@ which gives access to resource-specific config. (Unlike the contexts we've seen 
 instances of <PyObject module="dagster" object="SystemComputeExecutionContext" />, this context is
 an instance of <PyObject module="dagster" object="InitResourceContext" />.)
 
-```python literalinclude showLines startLine=17 emphasize-lines=28-30 caption=resources.py
+```python literalinclude showLines startLine=18 emphasize-lines=28-30 caption=resources.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.py
 startAfter:start_resources_marker_0
 endBefore:end_resources_marker_0
@@ -71,9 +71,10 @@ The last thing we need to do is to attach the resource to our pipeline, so that 
 initialized when the pipeline run begins and made available to our solid logic as
 `context.resources.warehouse`.
 
-```python literalinclude showLines startLine=85 emphasize-lines=2-6 caption=resources.py
+```python literalinclude showLines startLine=93 emphasize-lines=1 caption=resources.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/resources.py
-lines:85-94
+startAfter: start_resources_marker_2
+endBefore: end_resources_marker_2
 ```
 
 All resources are associated with a <PyObject module="dagster" object="ModeDefinition" /> So far,
@@ -100,9 +101,10 @@ pipeline's dependency on this resource. Dagster also provides a way for solids t
 resource requirements, to make it easier to keep track of which resources need to be provided for a
 pipeline.
 
-```python literalinclude showLines startLine=57 emphasize-lines=1 caption=required_resources.py
+```python literalinclude showLines startLine=58 emphasize-lines=1 caption=required_resources.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/required_resources.py
-lines:57-80
+startAfter:start_required_resources_marker_0
+endBefore:end_required_resources_marker_0
 ```
 
 Now, the Dagster machinery knows that this solid requires a resource called `warehouse` to be
@@ -122,18 +124,20 @@ APIs of the resources agree, and the fundamental operations they expose are test
 environment, we can test business logic independent of environments that may be very costly or
 difficult to test against.
 
-```python literalinclude showLines startLine=77 caption=modes.py
+```python literalinclude showLines startLine=78 caption=modes.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/modes.py
-lines:77-86
+startAfter:start_modes_marker_0
+endBefore:end_modes_marker_0
 ```
 
 Even if you're not familiar with SQLAlchemy, it's enough to note that this is a very different
 implementation of the `warehouse` resource. To make this implementation available to Dagster, we
 attach it to a <PyObject module="dagster" object="ModeDefinition" />.
 
-```python literalinclude showLines startLine=130 caption=modes.py
+```python literalinclude showLines startLine=135 caption=modes.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/modes.py
-lines:130-145
+startAfter:start_modes_marker_1
+endBefore:end_modes_marker_1
 ```
 
 Each of the ways we can invoke a Dagster pipeline lets us select which mode we'd like to run it in.
@@ -146,7 +150,7 @@ dagster pipeline execute -f modes.py -e resources.yaml -d unittest
 
 Or, from the Python API:
 
-```python literalinclude showLines startLine=149 emphasize-lines=12 caption=modes.py
+```python literalinclude showLines startLine=158 emphasize-lines=5 caption=modes.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/modes.py
 startAfter:start_modes_main
 endBefore:end_modes_main
@@ -172,9 +176,10 @@ variables.
 
 Dagster calls this a config preset:
 
-```python literalinclude showLines startLine=131 emphasize-lines=14-40 caption=presets.py
+```python literalinclude showLines startLine=133 emphasize-lines=10-27 caption=presets.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/presets.py
-lines:131-172
+startAfter:start_presets_marker_0
+endBefore:end_presets_marker_0
 ```
 
 The config above illustrates two ways of defining a preset.
@@ -196,9 +201,10 @@ dagster pipeline execute -f presets.py --preset unittest
 
 From Python, you can use <PyObject module="dagster" object="execute_pipeline" />
 
-```python literalinclude showLines startLine=177 caption=presets.py
+```python literalinclude showLines startLine=180 caption=presets.py
 file:/docs_snippets/docs_snippets/intro_tutorial/advanced/pipelines/presets.py
-lines:177
+startAfter:start_presets_main
+endBefore:end_presets_main
 dedent:4
 ```
 

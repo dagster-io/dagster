@@ -76,10 +76,11 @@ Dagster heavily emphasizes building reusable, composable pipelines, and we rely 
 
 Let's start by looking at the pipeline definition (in `airline_demo/pipelines.py`); you'll notice that we use solid aliasing to reuse the `s3_to_df` solid for several ingest steps:
 
-```python literalinclude caption=pipelines.py showLines startLine=117
+```python literalinclude caption=pipelines.py showLines startLine=123
 file:/airline_demo/airline_demo/pipelines.py
 startAfter:start_airline_demo_ingest_pipeline
 endBefore:end_airline_demo_ingest_pipeline
+dedent:4
 ```
 
 In general, you won't want every data science user in your organization to have to roll their own implementation of common functionality like downloading and unzipping files. Instead, you'll want to abstract common functionality into reusable solids, separating task-specific parameters out into declarative config, and building up a library of building blocks for new data pipelines. Here, that's been accomplished by implementing the shared functionality in a `s3_to_df` solid and then re-using that for ingesting several datasets.
@@ -123,7 +124,7 @@ Dagster decouples the instantiation of external resources like these from the bu
 
 Let's look at how we make configurable resources available to our pipelines with modes. In `airline_demo/pipelines.py`, you'll find that we define multiple modes within which our pipelines may run:
 
-```python literalinclude caption=pipelines.py showLines startLine=84 emphasize-lines=3
+```python literalinclude caption=pipelines.py showLines startLine=88 emphasize-lines=3
 file:/airline_demo/airline_demo/pipelines.py
 startAfter:start_pipelines_marker_0
 endBefore:end_pipelines_marker_0
@@ -141,7 +142,7 @@ Here we've defined a `db_info` resource that exposes a unified API to our solid 
 
 First, we define the `db_info` resource itself:
 
-```python literalinclude caption=resources.py showLines startLine=7
+```python literalinclude caption=resources.py showLines startLine=8
 file:/airline_demo/airline_demo/resources.py
 startAfter: start_resources_marker_0
 endBefore: end_resources_0
@@ -151,7 +152,7 @@ This resource exposes a SQLAlchemy engine, the URL of the database (in two forms
 
 Next, we define the config required to instantiate our resource:
 
-```python literalinclude caption=resources.py showLines startLine=98
+```python literalinclude caption=resources.py showLines startLine=101
 file:/airline_demo/airline_demo/resources.py
 lines:101-107
 ```
@@ -160,10 +161,10 @@ Obviously, this config will differ for Redshift, as it might if we had to reach 
 
 Finally, we bring it all together in the `postgres_db_info_resource`:
 
-```python literalinclude caption=resources.py showLines startLine=97
+```python literalinclude caption=resources.py showLines startLine=100
 file:/airline_demo/airline_demo/resources.py
 startAfter: start_resources_marker_1
-endBefore: end_resources_1
+endBefore: end_resources_marker_1
 ```
 
 By providing strongly typed configuration fields to the `@resource` decorator, we now have typeahead support in Dagit and rich error messages for the configuration of our external resources. This can be extremely valuable in the case of notoriously complex configuration formats, such as Spark's.
@@ -186,10 +187,10 @@ The transformation solids that follow all use the `DataFrame` for their intermed
 
 The terminal nodes of this pipeline are all aliased instances of `load_data_to_database_from_spark`:
 
-```python literalinclude caption=solids.py showLines startLine=216
+```python literalinclude caption=solids.py showLines startLine=223
 file:/airline_demo/airline_demo/solids.py
 startAfter: start_solids_marker_0
-endBefore: end_solids_0
+endBefore: end_solids_marker_0
 ```
 
 which abstracts the operation of loading a Spark data frame to a database---either our production Redshift cluster or our local Postgres in test.
@@ -208,20 +209,21 @@ How do we actually package the SQL for execution and display with Dagster and Da
 
 Fundamentally, all this is doing is invoking `execute` on the `db_info.engine` provided by the context:
 
-```python literalinclude caption=solids.py showLines startLine=118 emphasize-lines=28
+```python literalinclude caption=solids.py showLines startLine=123 emphasize-lines=28
 file:/airline_demo/airline_demo/solids.py
 startAfter:start_solids_marker_1
-endBefore:end_solids_1
+endBefore:end_solids_marker_1
+dedent:4
 ```
 
 ![sql-solid.png](/assets/images/examples/airline_demo/sql-solid.png)
 
 Also, note how straightforward the interface to `sql_solid` is. To define a new solid executing a relatively complex computation against the data warehouse, an analyst only needs to supply light metadata along with their SQL query:
 
-```python literalinclude caption=solids.py showLines startLine=423
+```python literalinclude caption=solids.py showLines startLine=434
 file:/airline_demo/airline_demo/solids.py
 startAfter:start_solids_marker_2
-endBefore:end_solids_2
+endBefore:end_solids_marker_2
 ```
 
 This kind of interface can supercharge the work of analysts who are highly skilled in SQL, but for whom fully general-purpose programming in Python may be uncomfortable. Analysts need only master a very constrained interface in order to define their SQL statements' data dependencies and outputs in a way that allows them to be orchestrated and explored in heterogeneous DAGs containing other forms of computation, and must make only minimal changes to code (in some cases, no changes) in order to take advantage of centralized infrastructure work.
@@ -239,18 +241,18 @@ Notebook solids can be identified by the small red `ipynb` tag in Dagit. As with
 
 Let's start with the definition of our `notebook_solid` helper:
 
-```python literalinclude caption=solids.py showLines startLine=49
+```python literalinclude caption=solids.py showLines startLine=50
 file:/airline_demo/airline_demo/solids.py
 startAfter:start_solids_marker_3
-endBefore:end_solids_3
+endBefore:end_solids_marker_3
 ```
 
 This is just a wrapper around Dagstermill's <PyObject module="dagstermill" object="define_dagstermill_solid" /> which tells Dagstermill where to look for the notebooks. We define a new solid by using this function and referencing a notebook file:
 
-```python literalinclude caption=solids.py showLines startLine=451
+```python literalinclude caption=solids.py showLines startLine=464
 file:/airline_demo/airline_demo/solids.py
 startAfter:start_solids_marker_4
-endBefore:end_solids_4
+endBefore:end_solids_marker_4
 ```
 
 As usual, we define the inputs and outputs of the new solid. Within the notebook itself, we only need to add a single line as the first cell:

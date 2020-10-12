@@ -1,10 +1,10 @@
+# start_inputs_marker_0
 import csv
 import os
 
 from dagster import execute_pipeline, pipeline, solid
 
 
-# start_inputs_marker_0
 @solid
 def read_csv(context, csv_path):
     csv_path = os.path.join(os.path.dirname(__file__), csv_path)
@@ -13,9 +13,6 @@ def read_csv(context, csv_path):
 
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))
     return lines
-
-
-# end_inputs_marker_0
 
 
 @solid
@@ -42,13 +39,17 @@ def inputs_pipeline():
     sort_by_calories(read_csv())
 
 
+# end_inputs_marker_0
+
 if __name__ == "__main__":
-    # start_inputs_main
+    # start_inputs_marker_1
     run_config = {
         "solids": {
             "read_csv": {"inputs": {"csv_path": {"value": "cereal.csv"}}}
         }
     }
-    # end_inputs_main
+    # end_inputs_marker_1
+    # start_inputs_marker_2
     result = execute_pipeline(inputs_pipeline, run_config=run_config)
+    # end_inputs_marker_2
     assert result.success
