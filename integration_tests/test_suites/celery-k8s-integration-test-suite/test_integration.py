@@ -9,8 +9,8 @@ import boto3
 import pytest
 from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
-from dagster_k8s_test_infra.integration_utils import ReOriginatedExternalPipelineForTest
 from dagster_test.test_project import (
+    ReOriginatedExternalPipelineForTest,
     get_test_project_external_pipeline,
     test_project_environments_path,
 )

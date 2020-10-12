@@ -4,6 +4,7 @@
 import base64
 import os
 import sys
+from contextlib import contextmanager
 
 import boto3
 import docker
@@ -15,11 +16,48 @@ from dagster_test.test_project import (
     test_project_environments_path,
 )
 
-from dagster import DagsterInstance, execute_pipeline, seven
+from dagster import execute_pipeline, file_relative_path, seven
+from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.utils import merge_dicts
+from dagster.utils.test.postgres_instance import TestPostgresInstance
 from dagster.utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+
+
+@contextmanager
+def postgres_instance(overrides=None):
+    with seven.TemporaryDirectory() as temp_dir:
+        with TestPostgresInstance.docker_service_up_or_skip(
+            file_relative_path(__file__, "docker-compose.yml"), "test-postgres-db-celery-docker",
+        ) as pg_conn_string:
+            TestPostgresInstance.clean_run_storage(pg_conn_string)
+            TestPostgresInstance.clean_event_log_storage(pg_conn_string)
+            TestPostgresInstance.clean_schedule_storage(pg_conn_string)
+            with instance_for_test_tempdir(
+                temp_dir,
+                overrides=merge_dicts(
+                    {
+                        "run_storage": {
+                            "module": "dagster_postgres.run_storage.run_storage",
+                            "class": "PostgresRunStorage",
+                            "config": {"postgres_url": pg_conn_string},
+                        },
+                        "event_log_storage": {
+                            "module": "dagster_postgres.event_log.event_log",
+                            "class": "PostgresEventLogStorage",
+                            "config": {"postgres_url": pg_conn_string},
+                        },
+                        "schedule_storage": {
+                            "module": "dagster_postgres.schedule_storage.schedule_storage",
+                            "class": "PostgresScheduleStorage",
+                            "config": {"postgres_url": pg_conn_string},
+                        },
+                    },
+                    overrides if overrides else {},
+                ),
+            ) as instance:
+                yield instance
 
 
 @pytest.mark.integration
@@ -28,7 +66,8 @@ def test_execute_celery_docker():
     docker_image = test_project_docker_image()
     docker_config = {
         "image": docker_image,
-        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
+        "network": "container:test-postgres-db-celery-docker",
     }
 
     if IS_BUILDKITE:
@@ -58,8 +97,6 @@ def test_execute_celery_docker():
         except docker.errors.ImageNotFound:
             build_and_tag_test_image(docker_image)
 
-    with seven.TemporaryDirectory() as temp_dir:
-
         run_config = merge_dicts(
             merge_yamls(
                 [
@@ -79,9 +116,11 @@ def test_execute_celery_docker():
             },
         )
 
-        result = execute_pipeline(
-            get_test_project_recon_pipeline("docker_celery_pipeline"),
-            run_config=run_config,
-            instance=DagsterInstance.local_temp(temp_dir),
-        )
-        assert result.success
+        with postgres_instance() as instance:
+
+            result = execute_pipeline(
+                get_test_project_recon_pipeline("docker_celery_pipeline"),
+                run_config=run_config,
+                instance=instance,
+            )
+            assert result.success
