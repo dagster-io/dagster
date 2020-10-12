@@ -58,6 +58,16 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
         """Remove events for a given run id"""
 
     @abstractmethod
+    def upgrade(self):
+        """This method should perform any schema migrations necessary to bring an
+        out-of-date instance of the storage up to date.
+        """
+
+    @abstractmethod
+    def reindex(self, print_fn=lambda _: None, force=False):
+        """Call this method to run any data migrations, reindexing to build summary tables."""
+
+    @abstractmethod
     def wipe(self):
         """Clear the log storage."""
 

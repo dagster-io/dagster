@@ -8,6 +8,7 @@ from dagster import check
 from dagster.core.events.log import EventRecord
 from dagster.core.storage.event_log import (
     AssetAwareSqlEventLogStorage,
+    AssetKeyTable,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
@@ -99,10 +100,10 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
             event (EventRecord): The event to store.
         """
         check.inst_param(event, "event", EventRecord)
-        sql_statement = self.prepare_insert_statement(event)  # from SqlEventLogStorage.py
+        insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self.connect() as conn:
             result_proxy = conn.execute(
-                sql_statement.returning(
+                insert_event_statement.returning(
                     SqlEventLogStorageTable.c.run_id, SqlEventLogStorageTable.c.id
                 )
             )
@@ -112,6 +113,19 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
                 """NOTIFY {channel}, %s; """.format(channel=CHANNEL_NAME),
                 (res[0] + "_" + str(res[1]),),
             )
+            if event.is_dagster_event and event.dagster_event.asset_key:
+                self.store_asset_key(conn, event)
+
+    def store_asset_key(self, conn, event):
+        check.inst_param(event, "event", EventRecord)
+        if not event.is_dagster_event or not event.dagster_event.asset_key:
+            return
+
+        conn.execute(
+            db.dialects.postgresql.insert(AssetKeyTable)
+            .values(asset_key=event.dagster_event.asset_key.to_string())
+            .on_conflict_do_nothing(index_elements=[AssetKeyTable.c.asset_key])
+        )
 
     def connect(self, run_id=None):
         return create_pg_connection(self._engine, __file__, "event log")

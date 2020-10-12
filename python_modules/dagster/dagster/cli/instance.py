@@ -10,6 +10,7 @@ def create_instance_cli_group():
     group = click.Group(name="instance")
     group.add_command(info_command)
     group.add_command(migrate_command)
+    group.add_command(reindex_command)
     return group
 
 
@@ -49,6 +50,24 @@ def migrate_command():
         instance.upgrade(click.echo)
 
         click.echo(instance.info_str())
+
+
+@click.command(name="reindex", help="Rebuild index over historical runs for performance.")
+def reindex_command():
+    with DagsterInstance.get() as instance:
+        home = os.environ.get("DAGSTER_HOME")
+
+        if instance.is_ephemeral:
+            click.echo(
+                "$DAGSTER_HOME is not set; ephemeral instances cannot be reindexed.  If you "
+                "intended to migrate a persistent instance, please ensure that $DAGSTER_HOME is "
+                "set accordingly."
+            )
+            return
+
+        click.echo("$DAGSTER_HOME: {}\n".format(home))
+
+        instance.reindex(click.echo)
 
 
 instance_cli = create_instance_cli_group()

@@ -18,8 +18,15 @@ from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import AssetAwareEventLogStorage, EventLogStorage
-from .schema import SecondaryIndexMigrationTable, SqlEventLogStorageTable
+from .migration import migrate_asset_key_data
+from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
 from .version_addresses import get_addresses_for_step_output_versions_helper
+
+SECONDARY_INDEX_ASSET_KEY = "asset_key_table"
+
+REINDEX_DATA_MIGRATIONS = {
+    SECONDARY_INDEX_ASSET_KEY: migrate_asset_key_data,
+}
 
 
 class SqlEventLogStorage(EventLogStorage):
@@ -37,11 +44,23 @@ class SqlEventLogStorage(EventLogStorage):
 
     @abstractmethod
     def upgrade(self):
-        """This method should perform any schema or data migrations necessary to bring an
+        """This method should perform any schema migrations necessary to bring an
         out-of-date instance of the storage up to date.
         """
 
-    def prepare_insert_statement(self, event):
+    def reindex(self, print_fn=lambda _: None, force=False):
+        """Call this method to run any data migrations, reindexing to build summary tables."""
+        for migration_name, migration_fn in REINDEX_DATA_MIGRATIONS.items():
+            if self.has_secondary_index(migration_name):
+                if not force:
+                    print_fn("Skipping already reindexed summary: {}".format(migration_name))
+                    continue
+            print_fn("Starting reindex: {}".format(migration_name))
+            migration_fn(self, print_fn)
+            self.enable_secondary_index(migration_name)
+            print_fn("Finished reindexing: {}".format(migration_name))
+
+    def prepare_insert_event(self, event):
         """ Helper method for preparing the event log SQL insertion statement.  Abstracted away to
         have a single place for the logical table representation of the event, while having a way
         for SQL backends to implement different execution implementations for `store_event`. See
@@ -70,6 +89,20 @@ class SqlEventLogStorage(EventLogStorage):
             asset_key=asset_key_str,
         )
 
+    def store_asset_key(self, conn, event):
+        check.inst_param(event, "event", EventRecord)
+        if not event.is_dagster_event or not event.dagster_event.asset_key:
+            return
+
+        try:
+            conn.execute(
+                AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    asset_key=event.dagster_event.asset_key.to_string()
+                )
+            )
+        except db.exc.IntegrityError:
+            pass
+
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
 
@@ -77,11 +110,13 @@ class SqlEventLogStorage(EventLogStorage):
             event (EventRecord): The event to store.
         """
         check.inst_param(event, "event", EventRecord)
-        sql_statement = self.prepare_insert_statement(event)
+        insert_event_statement = self.prepare_insert_event(event)
         run_id = event.run_id
 
         with self.connect(run_id) as conn:
-            conn.execute(sql_statement)
+            conn.execute(insert_event_statement)
+            if event.is_dagster_event and event.dagster_event.asset_key:
+                self.store_asset_key(conn, event)
 
     def get_logs_for_run_by_log_id(self, run_id, cursor=-1):
         check.str_param(run_id, "run_id")
@@ -286,16 +321,42 @@ class SqlEventLogStorage(EventLogStorage):
         # https://stackoverflow.com/a/54386260/324449
         with self.connect() as conn:
             conn.execute(SqlEventLogStorageTable.delete())  # pylint: disable=no-value-for-parameter
+            conn.execute(AssetKeyTable.delete())  # pylint: disable=no-value-for-parameter
 
     def delete_events(self, run_id):
         check.str_param(run_id, "run_id")
 
-        statement = SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
+        delete_statement = SqlEventLogStorageTable.delete().where(  # pylint: disable=no-value-for-parameter
             SqlEventLogStorageTable.c.run_id == run_id
+        )
+        removed_asset_key_query = (
+            db.select([SqlEventLogStorageTable.c.asset_key])
+            .where(SqlEventLogStorageTable.c.run_id == run_id)
+            .where(SqlEventLogStorageTable.c.asset_key != None)
+            .group_by(SqlEventLogStorageTable.c.asset_key)
         )
 
         with self.connect(run_id) as conn:
-            conn.execute(statement)
+            removed_asset_keys = [
+                row[0] for row in conn.execute(removed_asset_key_query).fetchall()
+            ]
+            conn.execute(delete_statement)
+            if len(removed_asset_keys) > 0:
+                remaining_asset_keys = [
+                    row[0]
+                    for row in conn.execute(
+                        db.select([SqlEventLogStorageTable.c.asset_key])
+                        .where(SqlEventLogStorageTable.c.asset_key.in_(removed_asset_keys))
+                        .group_by(SqlEventLogStorageTable.c.asset_key)
+                    )
+                ]
+                to_remove = set(removed_asset_keys) - set(remaining_asset_keys)
+                if to_remove:
+                    conn.execute(
+                        AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
+                            AssetKeyTable.c.asset_key.in_(to_remove)
+                        )
+                    )
 
     @property
     def is_persistent(self):
@@ -436,28 +497,45 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
     def has_asset_key(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         asset_key_str = asset_key.to_string()
-        query = db.select([1]).where(SqlEventLogStorageTable.c.asset_key == asset_key_str).limit(1)
+        if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
+            query = db.select([1]).where(AssetKeyTable.c.asset_key == asset_key_str).limit(1)
+        else:
+            query = (
+                db.select([1]).where(SqlEventLogStorageTable.c.asset_key == asset_key_str).limit(1)
+            )
         with self.connect() as conn:
             results = conn.execute(query).fetchall()
         return len(results) > 0
 
     def get_all_asset_keys(self, prefix_path=None):
         if not prefix_path:
-            query = db.select([SqlEventLogStorageTable.c.asset_key]).distinct()
-        else:
-            query = (
-                db.select([SqlEventLogStorageTable.c.asset_key])
-                .where(
-                    SqlEventLogStorageTable.c.asset_key.startswith(
-                        AssetKey.get_db_prefix(prefix_path)
-                    )
+            if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
+                query = db.select([AssetKeyTable.c.asset_key])
+            else:
+                query = (
+                    db.select([SqlEventLogStorageTable.c.asset_key])
+                    .where(SqlEventLogStorageTable.c.asset_key != None)
+                    .distinct()
                 )
-                .distinct()
-            )
+        else:
+            if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
+                query = db.select([AssetKeyTable.c.asset_key]).where(
+                    AssetKeyTable.c.asset_key.startswith(AssetKey.get_db_prefix(prefix_path))
+                )
+            else:
+                query = (
+                    db.select([SqlEventLogStorageTable.c.asset_key])
+                    .where(SqlEventLogStorageTable.c.asset_key != None)
+                    .where(
+                        SqlEventLogStorageTable.c.asset_key.startswith(
+                            AssetKey.get_db_prefix(prefix_path)
+                        )
+                    )
+                    .distinct()
+                )
 
         with self.connect() as conn:
             results = conn.execute(query).fetchall()
-
         return [AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key]
 
     def get_asset_events(self, asset_key, cursor=None, limit=None):
@@ -505,11 +583,16 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
 
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
-        query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
-            SqlEventLogStorageTable.c.asset_key == asset_key.to_string()
+        event_query = db.select(
+            [SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]
+        ).where(SqlEventLogStorageTable.c.asset_key == asset_key.to_string())
+        asset_key_delete = AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
+            AssetKeyTable.c.asset_key == asset_key.to_string()
         )
+
         with self.connect() as conn:
-            results = conn.execute(query).fetchall()
+            conn.execute(asset_key_delete)
+            results = conn.execute(event_query).fetchall()
 
         for row_id, json_str in results:
             try:

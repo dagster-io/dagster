@@ -25,6 +25,7 @@ from dagster.core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     InMemoryEventLogStorage,
 )
+from dagster.core.storage.event_log.migration import migrate_asset_key_data
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
@@ -202,3 +203,26 @@ def test_asset_wipe(asset_aware_context):
         instance.wipe_assets([AssetKey(["path", "to", "asset_3"])])
         asset_keys = event_log_storage.get_all_asset_keys()
         assert len(asset_keys) == 2
+
+
+@asset_test
+def test_asset_secondary_index(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        execute_pipeline(pipeline_one, instance=instance)
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 1
+        migrate_asset_key_data(event_log_storage)
+        two = execute_pipeline(pipeline_two, instance=instance)
+        two_two = execute_pipeline(pipeline_two, instance=instance)
+
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 3
+
+        event_log_storage.delete_events(two.run_id)
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 3
+
+        event_log_storage.delete_events(two_two.run_id)
+        asset_keys = event_log_storage.get_all_asset_keys()
+        assert len(asset_keys) == 1

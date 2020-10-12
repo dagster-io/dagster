@@ -22,6 +22,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.execution.api import execute_run
 from dagster.core.instance import DagsterInstance
+from dagster.core.storage.event_log.migration import migrate_asset_key_data
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
@@ -593,3 +594,45 @@ def test_asset_events_error_parsing(conn_string):
             assert len(events) == 0
             assert len(_logs) == 1
             assert re.match("Could not parse asset event record id", _logs[0])
+
+
+def test_secondary_index_asset_keys(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
+
+    asset_key_one = AssetKey(["one"])
+    asset_key_two = AssetKey(["two"])
+
+    @solid
+    def materialize_one(_):
+        yield AssetMaterialization(asset_key=asset_key_one)
+        yield Output(1)
+
+    @solid
+    def materialize_two(_):
+        yield AssetMaterialization(asset_key=asset_key_two)
+        yield Output(1)
+
+    def _one():
+        materialize_one()
+
+    def _two():
+        materialize_two()
+
+    events_one, _ = synthesize_events(_one)
+    for event in events_one:
+        event_log_storage.store_event(event)
+
+    asset_keys = event_log_storage.get_all_asset_keys()
+    assert len(asset_keys) == 1
+    assert asset_key_one in set(asset_keys)
+    migrate_asset_key_data(event_log_storage)
+    asset_keys = event_log_storage.get_all_asset_keys()
+    assert len(asset_keys) == 1
+    assert asset_key_one in set(asset_keys)
+    events_two, _ = synthesize_events(_two)
+    for event in events_two:
+        event_log_storage.store_event(event)
+    asset_keys = event_log_storage.get_all_asset_keys()
+    assert len(asset_keys) == 2
+    assert asset_key_one in set(asset_keys)
+    assert asset_key_two in set(asset_keys)

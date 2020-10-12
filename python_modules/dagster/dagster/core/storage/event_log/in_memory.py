@@ -58,6 +58,12 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
     def delete_events(self, run_id):
         del self._logs[run_id]
 
+    def upgrade(self):
+        pass
+
+    def reindex(self, print_fn=lambda _: None, force=False):
+        pass
+
     def wipe(self):
         self._logs = defaultdict(EventLogSequence)
 
