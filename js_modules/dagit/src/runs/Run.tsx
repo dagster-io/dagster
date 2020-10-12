@@ -10,8 +10,8 @@ import {DagsterRepositoryContext} from 'src/DagsterRepositoryContext';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {IStepState, RunMetadataProvider} from 'src/RunMetadataProvider';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
-import {GaantChart, GaantChartMode} from 'src/gaant/GaantChart';
-import {GetDefaultLogFilter, LogFilter, LogsProvider} from 'src/runs/LogsProvider';
+import {GaantChart, GaantChartMode, queryStringToSelection} from 'src/gaant/GaantChart';
+import {LogFilter, LogsProvider} from 'src/runs/LogsProvider';
 import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
 import {LogsToolbar} from 'src/runs/LogsToolbar';
 import {RunActionButtons} from 'src/runs/RunActionButtons';
@@ -24,6 +24,7 @@ import {
   ReExecutionStyle,
 } from 'src/runs/RunUtils';
 import {StepSelection} from 'src/runs/StepSelection';
+import {getRunPageFilters} from 'src/runs/getRunPageFilters';
 import {
   LaunchPipelineReexecution,
   LaunchPipelineReexecutionVariables,
@@ -45,16 +46,21 @@ interface RunState {
   selection: StepSelection;
 }
 
-export class Run extends React.Component<RunProps, RunState> {
-  state: RunState = {
-    logsFilter: GetDefaultLogFilter(),
-    selection: {
-      query: '*',
-      keys: [],
-    },
-  };
+export const Run = (props: RunProps) => {
+  const {client, run, runId} = props;
+  const [logsFilter, setLogsFilter] = React.useState<LogFilter>(() =>
+    getRunPageFilters(document.location.search),
+  );
 
-  onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
+  const [selection, setSelection] = React.useState<StepSelection>(() => {
+    const {stepQuery} = logsFilter;
+    if (!stepQuery || !run?.executionPlan) {
+      return {query: '*', keys: []};
+    }
+    return {query: stepQuery, keys: queryStringToSelection(run.executionPlan, stepQuery)};
+  });
+
+  const onShowStateDetails = (stepKey: string, logs: RunPipelineRunEventFragment[]) => {
     const errorNode = logs.find(
       (node) => node.__typename === 'ExecutionStepFailureEvent' && node.stepKey === stepKey,
     ) as RunPipelineRunEventFragment_ExecutionStepFailureEvent;
@@ -66,59 +72,61 @@ export class Run extends React.Component<RunProps, RunState> {
     }
   };
 
-  onSetLogsFilter = (logsFilter: LogFilter) => {
-    this.setState({logsFilter});
+  const onSetLogsFilter = (logsFilter: LogFilter) => {
+    setLogsFilter(logsFilter);
   };
 
-  onSetSelection = (selection: StepSelection) => {
-    this.setState({selection});
-
-    // filter the log following the DSL step selection
-    this.setState((prevState) => {
-      return {
-        logsFilter: {
-          ...prevState.logsFilter,
-          values: selection.query !== '*' ? [{token: 'query', value: selection.query}] : [],
-        },
-      };
-    });
+  const onSetSelection = (selection: StepSelection) => {
+    setSelection(selection);
+    setLogsFilter((previous) => ({
+      ...previous,
+      logQuery: selection.query !== '*' ? [{token: 'query', value: selection.query}] : [],
+    }));
   };
 
-  render() {
-    const {client, run, runId} = this.props;
-    const {logsFilter, selection} = this.state;
+  const executionPlan = run?.executionPlan;
+  const {logQuery} = logsFilter;
+  const selectedKeysForFilter = React.useMemo(() => {
+    if (executionPlan) {
+      return logQuery
+        .filter((v) => v.token && v.token === 'query')
+        .reduce((accum, v) => {
+          return [...accum, ...queryStringToSelection(executionPlan, v.value)];
+        }, []);
+    }
+    return [];
+  }, [executionPlan, logQuery]);
 
-    return (
-      <RunContext.Provider value={run}>
-        {run && <RunStatusToPageAttributes run={run} />}
+  return (
+    <RunContext.Provider value={run}>
+      {run && <RunStatusToPageAttributes run={run} />}
 
-        <LogsProvider
-          key={runId}
-          client={client}
-          runId={runId}
-          filter={logsFilter}
-          selectedSteps={selection.keys}
-        >
-          {({filteredNodes, hasTextFilter, textMatchNodes, loaded}) => (
-            <RunWithData
-              run={run}
-              runId={runId}
-              filteredNodes={filteredNodes}
-              hasTextFilter={hasTextFilter}
-              textMatchNodes={textMatchNodes}
-              logsLoading={!loaded}
-              logsFilter={logsFilter}
-              selection={selection}
-              onSetLogsFilter={this.onSetLogsFilter}
-              onSetSelection={this.onSetSelection}
-              onShowStateDetails={this.onShowStateDetails}
-            />
-          )}
-        </LogsProvider>
-      </RunContext.Provider>
-    );
-  }
-}
+      <LogsProvider
+        key={runId}
+        client={client}
+        runId={runId}
+        filter={logsFilter}
+        selectedSteps={selectedKeysForFilter}
+      >
+        {({filteredNodes, hasTextFilter, textMatchNodes, loaded}) => (
+          <RunWithData
+            run={run}
+            runId={runId}
+            filteredNodes={filteredNodes}
+            hasTextFilter={hasTextFilter}
+            textMatchNodes={textMatchNodes}
+            logsLoading={!loaded}
+            logsFilter={logsFilter}
+            selection={selection}
+            onSetLogsFilter={onSetLogsFilter}
+            onSetSelection={onSetSelection}
+            onShowStateDetails={onShowStateDetails}
+          />
+        )}
+      </LogsProvider>
+    </RunContext.Provider>
+  );
+};
 
 interface RunWithDataProps {
   run?: RunFragment;
@@ -251,6 +259,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
                 hideNonMatches={hideNonMatches}
                 onHideNonMatches={onHideNonMatches}
                 onSetFilter={onSetLogsFilter}
+                selection={selection}
                 steps={Object.keys(metadata.steps)}
                 metadata={metadata}
               />

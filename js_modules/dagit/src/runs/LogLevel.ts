@@ -6,3 +6,5 @@ export enum LogLevel {
   CRITICAL = 'CRITICAL',
   EVENT = 'EVENT', // structured events
 }
+
+export const DefaultLogLevels = ['INFO', 'WARNING', 'ERROR', 'CRITICAL', 'EVENT'];

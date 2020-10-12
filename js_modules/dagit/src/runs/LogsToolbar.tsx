@@ -1,4 +1,4 @@
-import {Button, Checkbox, Colors, Tag} from '@blueprintjs/core';
+import {Button, Checkbox, Colors, IconName, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -8,13 +8,16 @@ import {IRunMetadataDict} from 'src/RunMetadataProvider';
 import {SuggestionProvider, TokenizingField, TokenizingFieldValue} from 'src/TokenizingField';
 import {ComputeLogLink} from 'src/runs/ComputeLogModal';
 import {LogLevel} from 'src/runs/LogLevel';
-import {GetFilterProviders, LogFilter, LogFilterValue} from 'src/runs/LogsProvider';
+import {LogFilter, LogFilterValue} from 'src/runs/LogsProvider';
+import {StepSelection} from 'src/runs/StepSelection';
+import {getRunFilterProviders} from 'src/runs/getRunFilterProviders';
 
 interface ILogsToolbarProps {
   steps: string[];
   filter: LogFilter;
   hideNonMatches: boolean;
   metadata: IRunMetadataDict;
+  selection: StepSelection;
 
   onHideNonMatches: (checked: boolean) => void;
   onSetFilter: (filter: LogFilter) => void;
@@ -35,13 +38,14 @@ const suggestionProvidersFilter = (
 };
 
 export const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) => {
-  const {steps, filter, hideNonMatches, metadata, onHideNonMatches, onSetFilter} = props;
+  const {steps, filter, hideNonMatches, metadata, onHideNonMatches, onSetFilter, selection} = props;
 
-  const selectedStep = filter.values.find((v) => v.token === 'step')?.value || null;
+  const [copyIcon, setCopyIcon] = React.useState<IconName>(IconNames.CLIPBOARD);
+  const selectedStep = filter.logQuery.find((v) => v.token === 'step')?.value || null;
   const selectedStepState =
     (selectedStep && metadata.steps[selectedStep]?.state) || IStepState.PREPARING;
 
-  const filterText = filter.values.reduce((accum, value) => accum + value.value, '');
+  const filterText = filter.logQuery.reduce((accum, value) => accum + value.value, '');
 
   const handleCheckboxChange = React.useCallback(
     (event) => {
@@ -50,14 +54,57 @@ export const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) =
     [onHideNonMatches],
   );
 
+  const handleCopy = React.useCallback(() => {
+    const logQueryTokenStrings = filter.logQuery.map((v) =>
+      v.token ? `${v.token}:${v.value}` : v.value,
+    );
+    const levelStrings = Object.keys(filter.levels).filter((key) => !!filter.levels[key]);
+
+    const params = new URLSearchParams();
+    if (selection.query && selection.query !== '*') {
+      params.append('steps', selection.query);
+    }
+
+    if (logQueryTokenStrings.length) {
+      logQueryTokenStrings.forEach((tokenString) => {
+        params.append('logs', tokenString);
+      });
+    }
+
+    if (levelStrings.length) {
+      levelStrings.forEach((levelString) => {
+        params.append('levels', levelString.toLowerCase());
+      });
+    }
+
+    const url = new URL(document.URL);
+    url.search = params.toString();
+    navigator.clipboard.writeText(url.href);
+
+    setCopyIcon(IconNames.SAVED);
+  }, [filter.levels, filter.logQuery, selection]);
+
+  // Restore the clipboard icon after a delay.
+  React.useEffect(() => {
+    let token: any;
+    if (copyIcon === IconNames.SAVED) {
+      token = setTimeout(() => {
+        setCopyIcon(IconNames.CLIPBOARD);
+      }, 2000);
+    }
+    return () => {
+      token && clearTimeout(token);
+    };
+  }, [copyIcon]);
+
   return (
     <LogsToolbarContainer>
       <TokenizingField
         small
-        values={filter.values}
+        values={filter.logQuery}
         onChangeBeforeCommit
-        onChange={(values: LogFilterValue[]) => onSetFilter({...filter, values})}
-        suggestionProviders={GetFilterProviders(steps)}
+        onChange={(logQuery: LogFilterValue[]) => onSetFilter({...filter, logQuery})}
+        suggestionProviders={getRunFilterProviders(steps)}
         suggestionProvidersFilter={suggestionProvidersFilter}
         loading={false}
       />
@@ -99,6 +146,9 @@ export const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) =
         </ComputeLogLink>
       )}
       <div style={{minWidth: 15, flex: 1}} />
+      <div style={{marginRight: '8px'}}>
+        <Button text="Copy URL" small={true} icon={copyIcon} onClick={handleCopy} />
+      </div>
       <Button
         text={'Clear'}
         small={true}
