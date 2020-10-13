@@ -6,7 +6,6 @@ from dagster import (
     DagsterType,
     Failure,
     Field,
-    Selector,
     String,
     check_dagster_type,
     dagster_type_loader,
@@ -45,9 +44,9 @@ def less_simple_data_frame_type_check(_, value):
     return True
 
 
-@dagster_type_loader(Selector({"csv": Field(String)}))
-def less_simple_data_frame_loader(context, selector):
-    csv_path = os.path.join(os.path.dirname(__file__), selector["csv"])
+@dagster_type_loader({"csv_path": Field(String)})
+def less_simple_data_frame_loader(context, config):
+    csv_path = os.path.join(os.path.dirname(__file__), config["csv_path"])
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
@@ -92,7 +91,7 @@ if __name__ == "__main__":
         {
             "solids": {
                 "sort_by_calories": {
-                    "inputs": {"cereals": {"csv": "cereal.csv"}}
+                    "inputs": {"cereals": {"csv_path": "cereal.csv"}}
                 }
             }
         },

@@ -174,10 +174,6 @@ take the context object, as usual, and a parameter
 representing the parsed config field. The schema for this field is
 defined by the argument to the <PyObject module="dagster" object="dagster_type_loader" displayText="@dagster_type_loader" /> decorator.
 
-Here, we introduce the <PyObject module="dagster" object="Selector" /> type, which lets you specify
-mutually exclusive options in config schemas. Here, there's only one option, `csv`, but you can
-imagine a more sophisticated data frame type that might also know how to load its inputs from
-other formats and sources, and might have a selector with fields like `parquet`, `xlsx`, `sql`, etc.
 
 Then insert this into the original declaration:
 

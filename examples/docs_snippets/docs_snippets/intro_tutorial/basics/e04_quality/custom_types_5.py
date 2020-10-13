@@ -7,7 +7,6 @@ from dagster import (
     ExpectationResult,
     Field,
     Output,
-    Selector,
     String,
     TypeCheck,
     dagster_type_loader,
@@ -73,10 +72,10 @@ def less_simple_data_frame_type_check(_, value):
 
 
 # start_custom_types_5_marker_0
-@dagster_type_loader(Selector({"csv": Field(String)}))
-def less_simple_data_frame_loader(context, selector):
+@dagster_type_loader({"csv_path": Field(String)})
+def less_simple_data_frame_loader(context, config):
     lines = []
-    csv_path = os.path.join(os.path.dirname(__file__), selector["csv"])
+    csv_path = os.path.join(os.path.dirname(__file__), config["csv_path"])
     with open(csv_path, "r") as fd:
         for row in csv.DictReader(fd):
             row["calories"] = int(row["calories"])
@@ -153,7 +152,7 @@ if __name__ == "__main__":
         {
             "solids": {
                 "sort_by_calories": {
-                    "inputs": {"cereals": {"csv": "cereal.csv"}}
+                    "inputs": {"cereals": {"csv_path": "cereal.csv"}}
                 }
             }
         },

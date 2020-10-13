@@ -2,7 +2,7 @@ solids:
   sort_by_calories:
     inputs:
       cereals:
-        csv: "cereal.csv"
+        csv_path: "cereal.csv"
     outputs:
       - result:
           csv:
