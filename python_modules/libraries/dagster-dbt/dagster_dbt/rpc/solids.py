@@ -25,20 +25,22 @@ from dagster import (
     check,
     solid,
 )
+from dagster.core.execution.context.compute import SolidExecutionContext
 
-from ..errors import DagsterDbtUnexpectedRpcPollOutput
-from .types import DbtRpcPollResult
+from ..errors import DagsterDbtRpcUnexpectedPollOutputError
+from .types import DbtRpcOutput
 from .utils import log_rpc, raise_for_rpc_error
 
 
-def generate_materializations(rpc_poll_result: DbtRpcPollResult) -> Iterator[AssetMaterialization]:
-    for node_result in rpc_poll_result.results:
+def _generate_materializations(dro: DbtRpcOutput) -> Iterator[AssetMaterialization]:
+    """Yields ``AssetMaterializations`` for metadata in the dbt RPC ``DbtRpcOutput``."""
+    for node_result in dro.result.results:
         if node_result.node["resource_type"] in ["model", "snapshot"]:
             success = not node_result.fail and not node_result.skip and not node_result.error
             if success:
                 entries = [
                     EventMetadataEntry.json(data=node_result.node, label="Node"),
-                    EventMetadataEntry.text(text=node_result.status, label="Status"),
+                    EventMetadataEntry.text(text=str(node_result.status), label="Status"),
                     EventMetadataEntry.text(
                         text=str(node_result.execution_time), label="Execution Time"
                     ),
@@ -53,34 +55,34 @@ def generate_materializations(rpc_poll_result: DbtRpcPollResult) -> Iterator[Ass
                         text=node_result.node["description"], label="Description"
                     ),
                 ]
-                for node_timing in node_result.timing:
-                    if node_timing.name == "execute":
+                for step_timing in node_result.step_timings:
+                    if step_timing.name == "execute":
                         execution_entries = [
                             EventMetadataEntry.text(
-                                text=node_timing.started_at.isoformat(timespec="seconds"),
+                                text=step_timing.started_at.isoformat(timespec="seconds"),
                                 label="Execution Started At",
                             ),
                             EventMetadataEntry.text(
-                                text=node_timing.completed_at.isoformat(timespec="seconds"),
+                                text=step_timing.completed_at.isoformat(timespec="seconds"),
                                 label="Execution Completed At",
                             ),
                             EventMetadataEntry.text(
-                                text=str(node_timing.duration), label="Execution Duration"
+                                text=str(step_timing.duration), label="Execution Duration"
                             ),
                         ]
                         entries.extend(execution_entries)
-                    if node_timing.name == "compile":
+                    if step_timing.name == "compile":
                         execution_entries = [
                             EventMetadataEntry.text(
-                                text=node_timing.started_at.isoformat(timespec="seconds"),
+                                text=step_timing.started_at.isoformat(timespec="seconds"),
                                 label="Compilation Started At",
                             ),
                             EventMetadataEntry.text(
-                                text=node_timing.completed_at.isoformat(timespec="seconds"),
+                                text=step_timing.completed_at.isoformat(timespec="seconds"),
                                 label="Compilation Completed At",
                             ),
                             EventMetadataEntry.text(
-                                text=str(node_timing.duration), label="Compilation Duration"
+                                text=str(step_timing.duration), label="Compilation Duration"
                             ),
                         ]
                         entries.extend(execution_entries)
@@ -92,84 +94,77 @@ def generate_materializations(rpc_poll_result: DbtRpcPollResult) -> Iterator[Ass
                 )
 
 
-def dbt_rpc_poll(
-    context, request_token: str, should_yield_materializations: bool = True
-) -> DbtRpcPollResult:
-
-    resp = context.resources.dbt_rpc.poll(
-        request_token=request_token, logs=context.solid_config["logs"]
-    )
-    raise_for_rpc_error(context, resp)
-
-    interval = context.solid_config["interval"]
+def _poll_rpc(
+    context: SolidExecutionContext, request_token: str, should_yield_materializations: bool = True
+) -> DbtRpcOutput:
+    """Polls the dbt RPC server for the status of a request until the state is ``success``."""
     logs_start = 0
-    while resp.json().get("result").get("state") == "running":
-        context.log.debug(
-            f"Request {request_token} currently in state '{resp.json().get('result').get('state')}' (elapsed time {resp.json().get('result').get('elapsed', 0)} seconds). Sleeping for {interval}s.."
+    while True:
+        # Poll for the dbt RPC request.
+        context.log.debug(f"RequestToken: {request_token}")
+        resp = context.resources.dbt_rpc.poll(
+            request_token=request_token, logs=context.solid_config["logs"], logs_start=logs_start
         )
+        raise_for_rpc_error(context, resp)
 
+        # Pass dbt RPC logs into the Dagster/Dagit logger.
         if context.solid_config["logs"]:
             logs = resp.json().get("result").get("logs")
             if len(logs) > 0:
                 log_rpc(context, logs)
             logs_start += len(logs)
 
-        time.sleep(interval)
-        resp = context.resources.dbt_rpc.poll(
-            request_token=request_token, logs=context.solid_config["logs"], logs_start=logs_start
+        # Stop polling if request's state is no longer "running".
+        if resp.json().get("result").get("state") != "running":
+            break
+
+        # Sleep for the configured time intervale before polling again.
+        context.log.debug(
+            f"Request {request_token} currently in state '{resp.json().get('result').get('state')}' (elapsed time {resp.json().get('result').get('elapsed', 0)} seconds). Sleeping for {context.solid_config.get('interval')}s.."
         )
-        raise_for_rpc_error(context, resp)
+        time.sleep(context.solid_config["interval"])
 
     if resp.json().get("result").get("state") != "success":
-        if context.solid_config["logs"]:
-            logs = resp.json().get("result").get("logs")
-            if len(logs) > 0:
-                log_rpc(context, logs)
-
         raise Failure(
             description=f"Request {request_token} finished with state '{resp.json().get('result').get('state')}' in {resp.json().get('result').get('elapsed')} seconds",
         )
 
-    else:
-        context.log.info(
-            f"Request {request_token} finished with state '{resp.json().get('result').get('state')}' in {resp.json().get('result').get('elapsed')} seconds"
-        )
-
-    if context.solid_config["logs"]:
-        logs = resp.json().get("result").get("logs")
-        if len(logs) > 0:
-            log_rpc(context, logs)
-
+    context.log.info(
+        f"Request {request_token} finished with state '{resp.json().get('result').get('state')}' in {resp.json().get('result').get('elapsed')} seconds"
+    )
     context.log.debug(json.dumps(resp.json().get("result"), indent=2))
-    rpc_poll_result = DbtRpcPollResult.from_results(resp.json().get("result"))
+
+    polled_run_results = DbtRpcOutput.from_dict(resp.json().get("result"))
+
     if should_yield_materializations:
-        for materialization in generate_materializations(rpc_poll_result=rpc_poll_result):
+        for materialization in _generate_materializations(polled_run_results):
             yield materialization
-    yield Output(value=rpc_poll_result, output_name="result")
+
+    yield Output(polled_run_results)
 
 
-def unwrap_result(dbt_rpc_poll_generator) -> DbtRpcPollResult:
-    """A helper function that extracts the `DbtRpcPollResult` value from a generator.
+def unwrap_result(poll_rpc_generator) -> DbtRpcOutput:
+    """A helper function that extracts the `DbtRpcOutput` value from a generator.
 
-    The parameter `dbt_rpc_poll_generator` is expected to be an invocation of `dbt_rpc_poll`.
+    The parameter `poll_rpc_generator` is expected to be an invocation of `_poll_rpc`.
     """
     output = None
-    for x in dbt_rpc_poll_generator:
+    for x in poll_rpc_generator:
         output = x
 
     if output is None:
-        raise DagsterDbtUnexpectedRpcPollOutput(
-            description="dbt_rpc_poll yielded None as its last value. Expected value of type Output containing DbtRpcPollResult.",
+        raise DagsterDbtRpcUnexpectedPollOutputError(
+            description="poll_rpc yielded None as its last value. Expected value of type Output containing DbtRpcOutput.",
         )
 
     if not isinstance(output, Output):
-        raise DagsterDbtUnexpectedRpcPollOutput(
-            description=f"dbt_rpc_poll yielded value of type {type(output)} as its last value. Expected value of type Output containing DbtRpcPollResult.",
+        raise DagsterDbtRpcUnexpectedPollOutputError(
+            description=f"poll_rpc yielded value of type {type(output)} as its last value. Expected value of type Output containing DbtRpcOutput.",
         )
 
-    if not isinstance(output.value, DbtRpcPollResult):
-        raise DagsterDbtUnexpectedRpcPollOutput(
-            description=f"dbt_rpc_poll yielded Output containing {type(output.value)}. Expected DbtRpcPollResult.",
+    if not isinstance(output.value, DbtRpcOutput):
+        raise DagsterDbtRpcUnexpectedPollOutputError(
+            description=f"poll_rpc yielded Output containing {type(output.value)}. Expected DbtRpcOutput.",
         )
 
     return output.value
@@ -202,7 +197,7 @@ def unwrap_result(dbt_rpc_poll_generator) -> DbtRpcPollResult:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_run(context) -> String:
+def dbt_rpc_run(context: SolidExecutionContext) -> String:
     """This solid sends the ``dbt run`` command to a dbt RPC server and returns the request token.
 
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
@@ -219,7 +214,7 @@ def dbt_rpc_run(context) -> String:
 @solid(
     description="A solid to invoke dbt run over RPC and poll the resulting RPC process until it's complete.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcPollResult)],
+    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
     config_schema={
         "models": Field(
             config=Noneable(Array(String)),
@@ -270,7 +265,7 @@ def dbt_rpc_run(context) -> String:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_run_and_wait(context) -> DbtRpcPollResult:
+def dbt_rpc_run_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     """This solid sends the ``dbt run`` command to a dbt RPC server and returns the result of the
     executed dbt process.
 
@@ -315,7 +310,7 @@ def dbt_rpc_run_and_wait(context) -> DbtRpcPollResult:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return dbt_rpc_poll(context, request_token)
+    return _poll_rpc(context, request_token)
 
 
 @solid(
@@ -357,7 +352,7 @@ def dbt_rpc_run_and_wait(context) -> DbtRpcPollResult:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_test(context) -> String:
+def dbt_rpc_test(context: SolidExecutionContext) -> String:
     """This solid sends the ``dbt test`` command to a dbt RPC server and returns the request token.
 
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
@@ -377,7 +372,7 @@ def dbt_rpc_test(context) -> String:
 @solid(
     description="A solid to invoke dbt test over RPC and poll the resulting RPC process until it's complete.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcPollResult)],
+    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
     config_schema={
         "models": Field(
             config=Noneable(Array(String)),
@@ -419,7 +414,7 @@ def dbt_rpc_test(context) -> String:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_test_and_wait(context) -> DbtRpcPollResult:
+def dbt_rpc_test_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     """This solid sends the ``dbt test`` command to a dbt RPC server and returns the result of the
     executed dbt process.
 
@@ -435,7 +430,7 @@ def dbt_rpc_test_and_wait(context) -> DbtRpcPollResult:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return dbt_rpc_poll(context, request_token)
+    return _poll_rpc(context, request_token)
 
 
 @solid(
@@ -464,7 +459,7 @@ def dbt_rpc_test_and_wait(context) -> DbtRpcPollResult:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_run_operation(context) -> String:
+def dbt_rpc_run_operation(context: SolidExecutionContext) -> String:
     """This solid sends the ``dbt run-operation`` command to a dbt RPC server and returns the
     request token.
 
@@ -482,7 +477,7 @@ def dbt_rpc_run_operation(context) -> String:
 @solid(
     description="A solid to invoke a dbt run operation over RPC and poll the resulting RPC process until it's complete.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcPollResult)],
+    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
     config_schema={
         "macro": Field(
             config=String,
@@ -511,7 +506,7 @@ def dbt_rpc_run_operation(context) -> String:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_run_operation_and_wait(context) -> DbtRpcPollResult:
+def dbt_rpc_run_operation_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     """This solid sends the ``dbt run-operation`` command to a dbt RPC server and returns the result of the
     executed dbt process.
 
@@ -524,7 +519,7 @@ def dbt_rpc_run_operation_and_wait(context) -> DbtRpcPollResult:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return dbt_rpc_poll(context, request_token)
+    return _poll_rpc(context, request_token)
 
 
 @solid(
@@ -554,7 +549,7 @@ def dbt_rpc_run_operation_and_wait(context) -> DbtRpcPollResult:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_snapshot(context) -> String:
+def dbt_rpc_snapshot(context: SolidExecutionContext) -> String:
     """This solid sends the ``dbt snapshot`` command to a dbt RPC server and returns the
     request token.
 
@@ -572,7 +567,7 @@ def dbt_rpc_snapshot(context) -> String:
 @solid(
     description="A solid to invoke a dbt snapshot over RPC and poll the resulting RPC process until it's complete.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcPollResult)],
+    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
     config_schema={
         "select": Field(
             config=Noneable(Array(String)),
@@ -605,7 +600,7 @@ def dbt_rpc_snapshot(context) -> String:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_snapshot_and_wait(context) -> DbtRpcPollResult:
+def dbt_rpc_snapshot_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     """This solid sends the ``dbt snapshot`` command to a dbt RPC server and returns the result of
     the executed dbt process.
 
@@ -630,7 +625,7 @@ def dbt_rpc_snapshot_and_wait(context) -> DbtRpcPollResult:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return dbt_rpc_poll(context, request_token)
+    return _poll_rpc(context, request_token)
 
 
 @solid(
@@ -660,7 +655,7 @@ def dbt_rpc_snapshot_and_wait(context) -> DbtRpcPollResult:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_snapshot_freshness(context) -> String:
+def dbt_rpc_snapshot_freshness(context: SolidExecutionContext) -> String:
     """This solid sends the ``dbt source snapshot-freshness`` command to a dbt RPC server and
     returns the request token.
 
@@ -688,7 +683,7 @@ def dbt_rpc_snapshot_freshness(context) -> String:
 @solid(
     description="A solid to invoke dbt source snapshot-freshness over RPC and poll the resulting RPC process until it's complete.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcPollResult)],
+    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
     config_schema={
         "select": Field(
             config=Noneable(Array(String)),
@@ -718,7 +713,7 @@ def dbt_rpc_snapshot_freshness(context) -> String:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_snapshot_freshness_and_wait(context) -> DbtRpcPollResult:
+def dbt_rpc_snapshot_freshness_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     """This solid sends the ``dbt source snapshot`` command to a dbt RPC server and returns the
     result of the executed dbt process.
 
@@ -741,7 +736,7 @@ def dbt_rpc_snapshot_freshness_and_wait(context) -> DbtRpcPollResult:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return dbt_rpc_poll(context, request_token)
+    return _poll_rpc(context, request_token)
 
 
 @solid(
@@ -773,7 +768,7 @@ def dbt_rpc_snapshot_freshness_and_wait(context) -> DbtRpcPollResult:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_compile_sql(context, sql: String) -> String:
+def dbt_rpc_compile_sql(context: SolidExecutionContext, sql: String) -> String:
     """This solid sends the ``dbt compile`` command to a dbt RPC server and returns the request
     token.
 
@@ -784,7 +779,7 @@ def dbt_rpc_compile_sql(context, sql: String) -> String:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    result = unwrap_result(dbt_rpc_poll(context, request_token))
+    result = unwrap_result(_poll_rpc(context, request_token))
     return result.results[0].node["compiled_sql"]
 
 
@@ -862,12 +857,12 @@ def create_dbt_rpc_run_sql_solid(
         tags={"kind": "dbt"},
         **kwargs,
     )
-    def _dbt_rpc_run_sql(context, sql: String) -> DataFrame:
+    def _dbt_rpc_run_sql(context: SolidExecutionContext, sql: String) -> DataFrame:
         resp = context.resources.dbt_rpc.run_sql(sql=sql, name=context.solid_config["name"])
         context.log.debug(resp.text)
         raise_for_rpc_error(context, resp)
         request_token = resp.json().get("result").get("request_token")
-        result = unwrap_result(dbt_rpc_poll(context, request_token))
+        result = unwrap_result(_poll_rpc(context, request_token))
         table = result.results[0].table
         return pd.DataFrame.from_records(data=table["rows"], columns=table["column_names"])
 

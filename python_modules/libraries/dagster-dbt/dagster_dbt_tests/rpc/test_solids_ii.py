@@ -1,6 +1,6 @@
 import responses
 from dagster_dbt import (
-    DbtRpcPollResult,
+    DbtRpcOutput,
     dbt_rpc_resource,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,
@@ -166,7 +166,7 @@ def test_dbt_rpc_run_and_wait(rsps, non_terminal_poll_result, terminal_poll_resu
     )
 
     assert result.success
-    assert isinstance(result.output_value("result"), DbtRpcPollResult)
+    assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
 def test_dbt_rpc_snapshot_and_wait(rsps, non_terminal_poll_result, terminal_poll_result):
@@ -205,7 +205,7 @@ def test_dbt_rpc_snapshot_and_wait(rsps, non_terminal_poll_result, terminal_poll
     )
 
     assert result.success
-    assert isinstance(result.output_value("result"), DbtRpcPollResult)
+    assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
 def test_dbt_rpc_snapshot_freshness_and_wait(rsps, non_terminal_poll_result, terminal_poll_result):
@@ -244,7 +244,7 @@ def test_dbt_rpc_snapshot_freshness_and_wait(rsps, non_terminal_poll_result, ter
     )
 
     assert result.success
-    assert isinstance(result.output_value("result"), DbtRpcPollResult)
+    assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
 def test_dbt_rpc_run_operation_and_wait(rsps, non_terminal_poll_result, terminal_poll_result):
@@ -285,7 +285,7 @@ def test_dbt_rpc_run_operation_and_wait(rsps, non_terminal_poll_result, terminal
     )
 
     assert result.success
-    assert isinstance(result.output_value("result"), DbtRpcPollResult)
+    assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
 def test_dbt_rpc_test_and_wait(rsps, non_terminal_poll_result, terminal_poll_result):
@@ -324,4 +324,4 @@ def test_dbt_rpc_test_and_wait(rsps, non_terminal_poll_result, terminal_poll_res
     )
 
     assert result.success
-    assert isinstance(result.output_value("result"), DbtRpcPollResult)
+    assert isinstance(result.output_value("result"), DbtRpcOutput)

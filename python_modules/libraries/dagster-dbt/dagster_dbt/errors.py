@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import List
+from typing import Any, Dict, List
 
 from dagster import EventMetadataEntry, Failure, check
 
@@ -8,7 +8,7 @@ class DagsterDbtError(Failure, metaclass=ABCMeta):
     """The base exception of the ``dagster-dbt`` library."""
 
 
-class DagsterDbtUnexpectedCliOutputError(DagsterDbtError):
+class DagsterDbtCliUnexpectedOutputError(DagsterDbtError):
     """Represents an error when parsing the output of a dbt CLI command."""
 
     invalid_line_nos: List[int]
@@ -29,11 +29,11 @@ class DagsterDbtUnexpectedCliOutputError(DagsterDbtError):
 class DagsterDbtCliRuntimeError(DagsterDbtError, metaclass=ABCMeta):
     """Represents an error while executing a dbt CLI command."""
 
-    def __init__(self, description: str, parsed_output: List[dict], raw_output: str):
+    def __init__(self, description: str, logs: List[Dict[str, Any]], raw_output: str):
         metadata_entries = [
-            EventMetadataEntry.json({"logs": parsed_output}, label="Parsed CLI Output (JSON)",),
+            EventMetadataEntry.json({"logs": logs}, label="Parsed CLI Output (JSON)",),
             EventMetadataEntry.text(
-                DagsterDbtCliRuntimeError.stitch_messages(parsed_output),
+                DagsterDbtCliRuntimeError.stitch_messages(logs),
                 label="Parsed CLI Output (JSON) Message Attributes",
             ),
             EventMetadataEntry.text(raw_output, label="Raw CLI Output",),
@@ -41,27 +41,39 @@ class DagsterDbtCliRuntimeError(DagsterDbtError, metaclass=ABCMeta):
         super().__init__(description, metadata_entries)
 
     @staticmethod
-    def stitch_messages(parsed_output: List[dict]) -> str:
+    def stitch_messages(logs: List[dict]) -> str:
         return "\n".join(
             log["message"].strip("\n")
-            for log in parsed_output
+            for log in logs
             if isinstance(log.get("message"), str)  # defensive
         )
 
 
-class DagsterDbtHandledCliRuntimeError(DagsterDbtCliRuntimeError):
+class DagsterDbtCliHandledRuntimeError(DagsterDbtCliRuntimeError):
     """Represents a model error reported by the dbt CLI at runtime (return code 1)."""
 
-    def __init__(self, parsed_output: List[dict], raw_output: str):
-        super().__init__("Handled error in the dbt CLI (return code 1)", parsed_output, raw_output)
+    def __init__(self, logs: List[Dict[str, Any]], raw_output: str):
+        super().__init__("Handled error in the dbt CLI (return code 1)", logs, raw_output)
 
 
-class DagsterDbtFatalCliRuntimeError(DagsterDbtCliRuntimeError):
+class DagsterDbtCliFatalRuntimeError(DagsterDbtCliRuntimeError):
     """Represents a fatal error in the dbt CLI (return code 2)."""
 
-    def __init__(self, parsed_output: List[dict], raw_output: str):
-        super().__init__("Fatal error in the dbt CLI (return code 2)", parsed_output, raw_output)
+    def __init__(self, logs: List[Dict[str, Any]], raw_output: str):
+        super().__init__("Fatal error in the dbt CLI (return code 2)", logs, raw_output)
 
 
-class DagsterDbtUnexpectedRpcPollOutput(DagsterDbtError):
+class DagsterDbtRpcUnexpectedPollOutputError(DagsterDbtError):
     """Represents an unexpected response when polling the dbt RPC server."""
+
+
+class DagsterDbtCliOutputsNotFoundError(DagsterDbtError):
+    """Represents a problem in finding the ``target/run_results.json`` artifact when executing a dbt
+    CLI command.
+
+    For more details on ``target/run_results.json``, see
+    https://docs.getdbt.com/reference/dbt-artifacts#run_resultsjson.
+    """
+
+    def __init__(self, path: str):
+        super().__init__("Expected to find file at path {}".format(path))

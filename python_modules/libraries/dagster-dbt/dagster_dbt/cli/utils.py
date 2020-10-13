@@ -1,97 +1,129 @@
 import json
 import os
 import re
-import signal
 import subprocess
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from dagster import check
 
-from ..errors import DagsterDbtFatalCliRuntimeError, DagsterDbtHandledCliRuntimeError
+from ..errors import (
+    DagsterDbtCliFatalRuntimeError,
+    DagsterDbtCliHandledRuntimeError,
+    DagsterDbtCliOutputsNotFoundError,
+)
 
 
-def pre_exec():
-    # Restore default signal disposition and invoke setsid
-    for sig in ("SIGPIPE", "SIGXFZ", "SIGXFSZ"):
-        if hasattr(signal, sig):
-            signal.signal(getattr(signal, sig), signal.SIG_DFL)
-    os.setsid()
-
-
-def execute_dbt(
-    executable, command, flags_dict, log, warn_error, ignore_handled_error
-) -> Tuple[List[dict], str, int]:
+def execute_cli(
+    executable: str,
+    command: Tuple[str, ...],
+    flags_dict: Dict[str, Any],
+    log: Any,
+    warn_error: bool,
+    ignore_handled_error: bool,
+) -> Dict[str, Any]:
+    """Executes a command on the dbt CLI in a subprocess."""
+    check.str_param(executable, "executable")
     check.tuple_param(command, "command", of_type=str)
     check.dict_param(flags_dict, "flags_dict", key_type=str)
     check.bool_param(warn_error, "warn_error")
     check.bool_param(ignore_handled_error, "ignore_handled_error")
 
+    # Format the dbt CLI flags in the command..
     warn_error = ["--warn-error"] if warn_error else []
     command_list = [executable, "--log-format", "json", *warn_error, *command]
+
     for flag, value in flags_dict.items():
         if not value:
             continue
+
         command_list.append(f"--{flag}")
 
-        if isinstance(value, bool):  # if a bool flag (and is True), the flag itself is enough
+        if isinstance(value, bool):
+            # If a bool flag (and is True), the presence of the flag itself is enough.
             continue
-        elif isinstance(value, list):
+
+        if isinstance(value, list):
             check.list_param(value, f"config.{flag}", of_type=str)
             command_list += value
-        elif isinstance(value, dict):
-            command_list.append(json.dumps(value))
-        else:
-            command_list.append(str(value))
+            continue
 
-    log.info(f"Executing command: $ {' '.join(command_list)}")
+        if isinstance(value, dict):
+            command_list.append(json.dumps(value))
+            continue
+
+        command_list.append(str(value))
+
+    # Execute the dbt CLI command in a subprocess.
+    command = " ".join(command_list)
+    log.info(f"Executing command: $ {command}")
 
     return_code = 0
     try:
-        proc_out = subprocess.check_output(
-            command_list, preexec_fn=pre_exec, stderr=subprocess.STDOUT
-        )
+        proc_out = subprocess.check_output(args=command_list, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as exc:
         return_code = exc.returncode
         proc_out = exc.output
 
-    parsed_output = []
+    # Parse the JSON logs from the dbt process.
+    logs = []
     for raw_line in proc_out.strip().split(b"\n"):
         line = raw_line.decode()
         log.info(line.rstrip())
         try:
             json_line = json.loads(line)
-            parsed_output.append(json_line)
         except json.JSONDecodeError:
             pass
+        else:
+            logs.append(json_line)
 
-    log.info("dbt exited with return code {retcode}".format(retcode=return_code))
+    log.info("dbt exited with return code {return_code}".format(return_code=return_code))
 
     if return_code == 2:
-        raise DagsterDbtFatalCliRuntimeError(
-            parsed_output=parsed_output, raw_output=proc_out.decode()
-        )
+        raise DagsterDbtCliFatalRuntimeError(logs=logs, raw_output=proc_out.decode())
 
     if return_code == 1 and not ignore_handled_error:
-        raise DagsterDbtHandledCliRuntimeError(
-            parsed_output=parsed_output, raw_output=proc_out.decode()
-        )
+        raise DagsterDbtCliHandledRuntimeError(logs=logs, raw_output=proc_out.decode())
 
-    return parsed_output, proc_out.decode(), return_code
+    return {
+        "command": command,
+        "return_code": return_code,
+        "logs": logs,
+        "raw_output": proc_out.decode(),
+        "summary": extract_summary(logs),
+    }
 
 
-RESULT_STATS_RE = re.compile(r"PASS=(\d+) WARN=(\d+) ERROR=(\d+) SKIP=(\d+) TOTAL=(\d+)")
-RESULT_STATS_LABELS = ("n_pass", "n_warn", "n_error", "n_skip", "n_total")
+SUMMARY_RE = re.compile(r"PASS=(\d+) WARN=(\d+) ERROR=(\d+) SKIP=(\d+) TOTAL=(\d+)")
+SUMMARY_LABELS = ("num_pass", "num_warn", "num_error", "num_skip", "num_total")
 
 
-def get_run_results(parsed_output):
-    check.list_param(parsed_output, "parsed_output", dict)
+def extract_summary(logs: List[Dict[str, str]]):
+    """Extracts the summary statistics from dbt CLI output."""
+    check.list_param(logs, "logs", dict)
 
-    last_line = parsed_output[-1]
-    message = last_line["message"].strip()
+    summary = [None] * 5
 
+    if len(logs) > 0:
+        # Attempt to extract summary results from the last log's message.
+        last_line = logs[-1]
+        message = last_line["message"].strip()
+
+        try:
+            summary = next(SUMMARY_RE.finditer(message)).groups()
+        except StopIteration:
+            # Failed to match regex.
+            pass
+        else:
+            summary = map(int, summary)
+
+    return dict(zip(SUMMARY_LABELS, summary))
+
+
+def parse_run_results(path: str) -> Dict[str, Any]:
+    """Parses the `target/run_results.json` artifact that is produced by a dbt process."""
+    run_results_path = os.path.join(path, "target", "run_results.json")
     try:
-        matches = next(RESULT_STATS_RE.finditer(message)).groups()
-    except StopIteration:
-        matches = [None] * 5  # anticipating a regex problem
-
-    return dict(zip(RESULT_STATS_LABELS, matches))
+        with open(run_results_path) as file:
+            return json.load(file)
+    except FileNotFoundError:
+        raise DagsterDbtCliOutputsNotFoundError(path=run_results_path)

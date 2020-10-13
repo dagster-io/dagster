@@ -21,10 +21,7 @@ CLI
 
 .. autofunction:: dbt_cli_test
 
-.. autoclass:: DbtCliResult
-    :members:
-
-.. autoclass:: DbtCliStatsResult
+.. autoclass:: DbtCliOutput
     :members:
 
 
@@ -55,20 +52,29 @@ RPC
 
 .. autofunction:: dbt_rpc_test_and_wait
 
-.. autofunction:: dbt_rpc_resource
+.. autodata:: dbt_rpc_resource
+    :annotation: ResourceDefinition
 
-.. autofunction:: local_dbt_rpc_resource
+.. autodata:: local_dbt_rpc_resource
+    :annotation: ResourceDefinition
 
 .. autoclass:: DbtRpcClient
     :members:
 
-.. autoclass:: DbtRpcPollResult
+.. autoclass:: DbtRpcOutput
+    :members:
+
+
+Types
+~~~~~
+
+.. autoclass:: DbtResult
     :members:
 
 .. autoclass:: NodeResult
     :members:
 
-.. autoclass:: NodeTiming
+.. autoclass:: StepTiming
     :members:
 
 
@@ -79,10 +85,12 @@ Errors
 
 .. autoexception:: DagsterDbtCliRuntimeError
 
-.. autoexception:: DagsterDbtFatalCliRuntimeError
+.. autoexception:: DagsterDbtCliFatalRuntimeError
 
-.. autoexception:: DagsterDbtHandledCliRuntimeError
+.. autoexception:: DagsterDbtCliHandledRuntimeError
 
-.. autoexception:: DagsterDbtUnexpectedCliOutputError
+.. autoexception:: DagsterDbtCliOutputsNotFoundError
 
-.. autoexception:: DagsterDbtUnexpectedRpcPollOutput
+.. autoexception:: DagsterDbtCliUnexpectedOutputError
+
+.. autoexception:: DagsterRpcDbtUnexpectedPollOutputError

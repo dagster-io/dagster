@@ -1,41 +1,85 @@
-from typing import List
+from collections import namedtuple
+from typing import Any, Dict, Optional
 
-import attr
+from dagster import check, usable_as_dagster_type
 
-from dagster import usable_as_dagster_type
-
-
-@usable_as_dagster_type
-@attr.s
-class DbtCliResult:
-    """The result of executing a dbt CLI command.
-
-    Args:
-        logs (List[dict]): The JSON logs from the dbt CLI command execution.
-        return_code (int): The return code from the process.
-        raw_output (str): The raw output of the process.
-    """
-
-    logs: List[dict] = attr.ib()
-    return_code: int = attr.ib()  # https://docs.getdbt.com/reference/exit-codes/
-    raw_output: str = attr.ib()
+from ..types import DbtResult
 
 
 @usable_as_dagster_type
-@attr.s
-class DbtCliStatsResult(DbtCliResult):
-    """The summary of results of executing a dbt CLI command.
+class DbtCliOutput(
+    namedtuple(
+        "_DbtCliOutput",
+        "result command return_code raw_output num_pass num_warn num_error num_skip num_total",
+    ),
+):
+    """The results of executing a dbt command, along with additional metadata about the dbt CLI
+    process that was run.
 
-    Args:
-        n_pass (int): The number of dbt nodes (models) that passed.
-        n_warn (int): The number of dbt nodes (models) that emitted warnings.
-        n_error (int): The number of dbt nodes (models) that emitted errors.
-        n_skip (int): The number of dbt nodes (models) that were skipped.
-        n_total (int): The total number of dbt nodes (models) that were processed.
+    Note that users should not construct instances of this class directly. This class is intended to be
+    constructed from the JSON output of dbt commands.
+
+    If the executed dbt command is either ``run`` or ``test``, then the ``.num_*`` attributes will
+    contain non-``None`` integer values. Otherwise, they will be ``None``.
+
+    Attributes:
+        command (str): The full shell command that was executed.
+        return_code (int): The return code of the dbt CLI process.
+        raw_output (str): The raw output (``stdout``) of the dbt CLI process.
+        num_pass (Optional[int]): The number of dbt nodes (models) that passed.
+        num_warn (Optional[int]): The number of dbt nodes (models) that emitted warnings.
+        num_error (Optional[int]): The number of dbt nodes (models) that emitted errors.
+        num_skip (Optional[int]): The number of dbt nodes (models) that were skipped.
+        num_total (Optional[int]): The total number of dbt nodes (models) that were processed.
     """
 
-    n_pass: int = attr.ib(default=None, converter=attr.converters.optional(int))
-    n_warn: int = attr.ib(default=None, converter=attr.converters.optional(int))
-    n_error: int = attr.ib(default=None, converter=attr.converters.optional(int))
-    n_skip: int = attr.ib(default=None, converter=attr.converters.optional(int))
-    n_total: int = attr.ib(default=None, converter=attr.converters.optional(int))
+    def __new__(
+        cls,
+        *,
+        result: DbtResult,
+        command: str,
+        return_code: int,
+        raw_output: str,
+        num_pass: Optional[int] = None,
+        num_warn: Optional[int] = None,
+        num_error: Optional[int] = None,
+        num_skip: Optional[int] = None,
+        num_total: Optional[int] = None,
+        **_,
+    ):
+        return super().__new__(
+            cls,
+            result,
+            check.str_param(command, "command"),
+            check.int_param(return_code, "return_code"),
+            check.str_param(raw_output, "raw_output"),
+            check.opt_int_param(num_pass, "num_pass"),
+            check.opt_int_param(num_warn, "num_warn"),
+            check.opt_int_param(num_error, "num_error"),
+            check.opt_int_param(num_skip, "num_skip"),
+            check.opt_int_param(num_total, "num_total"),
+        )
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "DbtCliOutput":
+        """Constructs an instance of :class:`DbtCliOutput <dagster_dbt.DbtCliOutput>` from a
+        dictionary.
+
+        Args:
+            d (Dict[str, Any]): A dictionary with key-values to construct a :class:`DbtCliOutput
+                <dagster_dbt.DbtCliOutput>`.
+
+        Returns:
+            DbtCliOutput: An instance of :class:`DbtCliOutput <dagster_dbt.DbtCliOutput>`.
+        """
+        check.int_elem(d, "return_code")
+        check.str_elem(d, "raw_output")
+        check.opt_int_elem(d, "num_pass")
+        check.opt_int_elem(d, "num_warn")
+        check.opt_int_elem(d, "num_error")
+        check.opt_int_elem(d, "num_skip")
+        check.opt_int_elem(d, "num_total")
+
+        d["result"] = DbtResult.from_dict(d)
+
+        return cls(**d)

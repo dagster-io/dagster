@@ -5,37 +5,46 @@ import uuid
 from base64 import standard_b64encode as b64
 from typing import Any, Dict, List, Optional
 
-import attr
 import requests
 
-from dagster import Field, IntSource, RetryRequested, StringSource, resource
+from dagster import Field, IntSource, RetryRequested, StringSource, check, resource
 
 from .utils import is_fatal_code
 
 
-@attr.s
-class DbtRpcClient(object):
+class DbtRpcClient:
     """A client for a dbt RPC server.
 
     If you are need a dbt RPC server as a Dagster resource, we recommend that you use
     :func:`dbt_rpc_resource <dagster_dbt.dbt_rpc_resource>`.
-
-    Args:
-        host (str): The IP address of the host of the dbt RPC server.
-        port (int): The port of the dbt RPC server.
-        jsonrpc_version (str): The JSON-RPC version to send in RPC requests.
-        logger: A property for injecting a logger dependency.
     """
 
-    host: str = attr.ib(default="0.0.0.0")
-    port: int = attr.ib(validator=attr.validators.instance_of(int), default=8580)
-    jsonrpc_version: str = attr.ib(validator=attr.validators.instance_of(str), default="2.0")
-    logger = attr.ib(default=None)
-    url: str = attr.ib(init=False)
+    def __init__(
+        self,
+        host: str = "0.0.0.0",
+        port: int = 8580,
+        jsonrpc_version: str = "2.0",
+        logger: Optional[Any] = None,
+        **_,
+    ):
+        """Constructor
 
-    def __attrs_post_init__(self):
-        """The `post-init hook <https://www.attrs.org/en/stable/init.html#post-init-hook>`_."""
-        self.url = f"http://{self.host}:{self.port}/jsonrpc"
+        Args:
+            host (str): The IP address of the host of the dbt RPC server. Default is ``"0.0.0.0"``.
+            port (int): The port of the dbt RPC server. Default is ``8580``.
+            jsonrpc_version (str): The JSON-RPC version to send in RPC requests.
+                Default is ``"2.0"``.
+            logger (Optional[Any]): A property for injecting a logger dependency.
+                Default is ``None``.
+        """
+        check.str_param(host, "host")
+        check.int_param(port, "port")
+        check.str_param(jsonrpc_version, "jsonrpc_version")
+
+        self._host = host
+        self._port = port
+        self._jsonrpc_version = jsonrpc_version
+        self._logger = logger
 
     @staticmethod
     def _construct_user_agent() -> str:
@@ -65,7 +74,7 @@ class DbtRpcClient(object):
         headers["Accept"] = "application/json"
         return headers
 
-    def _post(self, data: str = None):
+    def _post(self, data: str = None) -> requests.Response:
         """Constructs and sends a POST request to the dbt RPC server.
 
         Returns:
@@ -82,7 +91,7 @@ class DbtRpcClient(object):
                 raise RetryRequested(max_retries=5, seconds_to_wait=30)
         return response
 
-    def _default_request(self, method: str):
+    def _default_request(self, method: str) -> Dict[str, Any]:
         """Constructs a standard HTTP request body, to be sent to a dbt RPC server.
 
         Args:
@@ -101,7 +110,7 @@ class DbtRpcClient(object):
 
     def _selection(
         self, *, models: List[str] = None, select: List[str] = None, exclude: List[str] = None
-    ) -> Dict:
+    ) -> Dict[str, str]:
         params = {}
         if models is not None:
             params["models"] = " ".join(set(models))
@@ -111,6 +120,31 @@ class DbtRpcClient(object):
             params["exclude"] = " ".join(set(exclude))
 
         return params
+
+    @property
+    def host(self) -> str:
+        """str: The IP address of the host of the dbt RPC server."""
+        return self._host
+
+    @property
+    def port(self) -> int:
+        """int: The port of the dbt RPC server."""
+        return self._port
+
+    @property
+    def jsonrpc_version(self) -> str:
+        """str: The JSON-RPC version to send in RPC requests."""
+        return self._jsonrpc_version
+
+    @property
+    def logger(self) -> Optional[Any]:
+        """Optional[Any]: A property for injecting a logger dependency."""
+        return self._logger
+
+    @property
+    def url(self) -> str:
+        """str: The URL for sending dbt RPC requests."""
+        return f"http://{self.host}:{self.port}/jsonrpc"
 
     def status(self):
         """Sends a request with the method ``status`` to the dbt RPC server, and returns the
@@ -446,14 +480,6 @@ def dbt_rpc_resource(context) -> DbtRpcClient:
     return DbtRpcClient(host=context.resource_config["host"], port=context.resource_config["port"])
 
 
-@resource(
-    description="A resource representing a dbt RPC client that is configured for 0.0.0.0:8580",
-)
-def local_dbt_rpc_resource(_context) -> DbtRpcClient:
-    """This resource defines a dbt RPC client that is configured for ``0.0.0.0:8580``.
-
-    Returns:
-        ResourceDefinition: A Dagster resource that defines a dbt RPC client that is configured
-            for dbt RPC server at ``0.0.0.0:8580``.
-    """
-    return DbtRpcClient(host="0.0.0.0", port=8580)
+local_dbt_rpc_resource = dbt_rpc_resource.configured({"host": "0.0.0.0", "port": 8580})
+local_dbt_rpc_resource.__doc__ = """This resource defines a dbt RPC client for an RPC server running
+on 0.0.0.0:8580."""

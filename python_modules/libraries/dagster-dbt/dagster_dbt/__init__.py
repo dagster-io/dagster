@@ -1,6 +1,7 @@
 from dagster.core.utils import check_dagster_package_version
 
-from .cli.solids import (
+from .cli import (
+    DbtCliOutput,
     dbt_cli_compile,
     dbt_cli_run,
     dbt_cli_run_operation,
@@ -8,19 +9,21 @@ from .cli.solids import (
     dbt_cli_snapshot_freshness,
     dbt_cli_test,
 )
-from .cli.types import DbtCliResult, DbtCliStatsResult
 from .errors import (
+    DagsterDbtCliFatalRuntimeError,
+    DagsterDbtCliHandledRuntimeError,
+    DagsterDbtCliOutputsNotFoundError,
     DagsterDbtCliRuntimeError,
+    DagsterDbtCliUnexpectedOutputError,
     DagsterDbtError,
-    DagsterDbtFatalCliRuntimeError,
-    DagsterDbtHandledCliRuntimeError,
-    DagsterDbtUnexpectedCliOutputError,
-    DagsterDbtUnexpectedRpcPollOutput,
+    DagsterDbtRpcUnexpectedPollOutputError,
 )
-from .rpc.resources import DbtRpcClient, dbt_rpc_resource, local_dbt_rpc_resource
-from .rpc.solids import (
+from .rpc import (
+    DbtRpcClient,
+    DbtRpcOutput,
     create_dbt_rpc_run_sql_solid,
     dbt_rpc_compile_sql,
+    dbt_rpc_resource,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,
     dbt_rpc_run_operation,
@@ -31,21 +34,27 @@ from .rpc.solids import (
     dbt_rpc_snapshot_freshness_and_wait,
     dbt_rpc_test,
     dbt_rpc_test_and_wait,
+    local_dbt_rpc_resource,
 )
-from .rpc.types import DbtRpcPollResult, NodeResult, NodeTiming
+from .types import DbtResult, NodeResult, StepTiming
 from .version import __version__
 
 check_dagster_package_version("dagster-dbt", __version__)
 
 __all__ = [
     "DagsterDbtCliRuntimeError",
+    "DagsterDbtCliFatalRuntimeError",
+    "DagsterDbtCliHandledRuntimeError",
+    "DagsterDbtCliOutputsNotFoundError",
+    "DagsterDbtCliUnexpectedOutputError",
     "DagsterDbtError",
-    "DagsterDbtFatalCliRuntimeError",
-    "DagsterDbtHandledCliRuntimeError",
-    "DbtCliResult",
-    "DbtCliStatsResult",
+    "DagsterDbtRpcUnexpectedPollOutputError",
+    "DbtCliOutput",
+    "DbtResult",
     "DbtRpcClient",
-    "DbtRpcPollResult",
+    "DbtRpcOutput",
+    "NodeResult",
+    "StepTiming",
     "create_dbt_rpc_run_sql_solid",
     "dbt_cli_compile",
     "dbt_cli_run",

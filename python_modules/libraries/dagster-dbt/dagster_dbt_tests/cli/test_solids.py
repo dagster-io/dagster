@@ -7,7 +7,7 @@ from dagster_dbt import (
     dbt_cli_snapshot_freshness,
     dbt_cli_test,
 )
-from dagster_dbt.errors import DagsterDbtFatalCliRuntimeError
+from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 
 from dagster import configured, execute_solid
 
@@ -21,10 +21,10 @@ class TestDbtCliSolids:
         test_solid = configured(dbt_cli_run, name="test_solid")(
             {"project-dir": test_project_dir, "profiles-dir": dbt_config_dir}
         )
-        with pytest.raises(DagsterDbtFatalCliRuntimeError) as exc:
+        with pytest.raises(DagsterDbtCliFatalRuntimeError) as exc:
             execute_solid(test_solid)
 
-        failure: DagsterDbtFatalCliRuntimeError = exc.value
+        failure: DagsterDbtCliFatalRuntimeError = exc.value
         assert "Env var required but not provided:" in failure.metadata_entries[1].entry_data.text
 
     def test_dbt_cli_run(
@@ -36,13 +36,6 @@ class TestDbtCliSolids:
 
         result = execute_solid(test_solid)
         assert result.success
-
-        output = result.output_value()
-        assert output.n_pass == 4
-        assert output.n_warn == 0
-        assert output.n_error == 0
-        assert output.n_skip == 0
-        assert output.n_total == 4
 
     def test_dbt_cli_run_with_extra_config(
         self, dbt_seed, test_project_dir, dbt_config_dir
@@ -59,13 +52,6 @@ class TestDbtCliSolids:
 
         result = execute_solid(test_solid)
         assert result.success
-
-        output = result.output_value()
-        assert output.n_pass == 1
-        assert output.n_warn == 0
-        assert output.n_error == 0
-        assert output.n_skip == 0
-        assert output.n_total == 1
 
     def test_dbt_cli_test(
         self, dbt_seed, test_project_dir, dbt_config_dir
@@ -102,7 +88,8 @@ class TestDbtCliSolids:
         result = execute_solid(test_solid)
         assert result.success
         assert any(
-            "Log macro: <<test succeded!>>" in log["message"] for log in result.output_value().logs
+            "Log macro: <<test succeded!>>" in log["message"]
+            for log in result.output_value()["logs"]
         )
 
     def test_dbt_cli_snapshot_freshness(

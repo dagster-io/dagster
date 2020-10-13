@@ -13,4 +13,4 @@ from .solids import (
     dbt_rpc_test,
     dbt_rpc_test_and_wait,
 )
-from .types import DbtRpcPollResult
+from .types import DbtRpcOutput

@@ -4,7 +4,7 @@ from typing import Any, Dict, Tuple
 import pytest
 from dagster_dbt import (
     DbtRpcClient,
-    DbtRpcPollResult,
+    DbtRpcOutput,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,
     dbt_rpc_test,
@@ -27,13 +27,13 @@ from dagster import (
 
 def output_for_solid_executed_with_rpc_resource(
     a_solid, rpc_resource=local_dbt_rpc_resource
-) -> Tuple[SolidExecutionResult, DbtRpcPollResult]:
+) -> Tuple[SolidExecutionResult, DbtRpcOutput]:
     mode_def = ModeDefinition(resource_defs={"dbt_rpc": rpc_resource})  # use config defaults
     solid_result = execute_solid(a_solid, mode_def)
 
     assert solid_result.success
     output = solid_result.output_value()
-    assert isinstance(output, DbtRpcPollResult)
+    assert isinstance(output, DbtRpcOutput)
     return solid_result, output
 
 
@@ -51,9 +51,9 @@ class TestDBTRunAndWaitSolid:
             {"interval": 2}
         )
 
-        dagster_result, dbt_result = output_for_solid_executed_with_rpc_resource(run_all_fast_poll)
+        dagster_result, dbt_output = output_for_solid_executed_with_rpc_resource(run_all_fast_poll)
 
-        executed_model_from_result = set(res.node["unique_id"] for res in dbt_result.results)
+        executed_model_from_result = set(res.node["unique_id"] for res in dbt_output.result.results)
         assert executed_model_from_result == TestDBTRunAndWaitSolid.ALL_MODELS_KEY_SET
 
         materialization_asset_keys = set(
@@ -68,11 +68,11 @@ class TestDBTRunAndWaitSolid:
             {"interval": 2, "models": ["least_caloric"]}
         )
 
-        dagster_result, dbt_result = output_for_solid_executed_with_rpc_resource(
+        dagster_result, dbt_output = output_for_solid_executed_with_rpc_resource(
             run_single_fast_poll
         )
 
-        executed_model_from_result = set(res.node["unique_id"] for res in dbt_result.results)
+        executed_model_from_result = set(res.node["unique_id"] for res in dbt_output.result.results)
         assert executed_model_from_result == TestDBTRunAndWaitSolid.SINGLE_MODEL_KEY_SET
 
         materialization_asset_keys = set(
