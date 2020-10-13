@@ -245,10 +245,10 @@ def test_dataframe_table_from_inputs():
 def test_dataframe_pickle_from_inputs():
     called = {}
 
-    @solid(input_defs=[InputDefinition('df', DataFrame)])
+    @solid(input_defs=[InputDefinition("df", DataFrame)])
     def df_as_config(_context, df):
-        assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
-        called['yup'] = True
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
+        called["yup"] = True
 
     @pipeline
     def test_pipeline():
@@ -257,10 +257,10 @@ def test_dataframe_pickle_from_inputs():
     result = execute_pipeline(
         test_pipeline,
         {
-            'solids': {
-                'df_as_config': {
-                    'inputs': {
-                        'df': {'pickle': {'path': file_relative_path(__file__, 'num.pickle')}}
+            "solids": {
+                "df_as_config": {
+                    "inputs": {
+                        "df": {"pickle": {"path": file_relative_path(__file__, "num.pickle")}}
                     }
                 }
             }
@@ -268,7 +268,7 @@ def test_dataframe_pickle_from_inputs():
     )
 
     assert result.success
-    assert called['yup']
+    assert called["yup"]
 
 
 def test_dataframe_csv_materialization():
@@ -340,20 +340,20 @@ def test_dataframe_table_materialization():
 def test_dataframe_pickle_materialization():
     @solid(output_defs=[OutputDefinition(DataFrame)])
     def return_df(_context):
-        return pd.DataFrame({'num1': [1, 3], 'num2': [2, 4]})
+        return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
 
     @pipeline
     def return_df_pipeline():
         return_df()
 
     with get_temp_file_name() as filename:
-        filename = '/tmp/num.pickle'
+        filename = "/tmp/num.pickle"
         result = execute_pipeline(
             return_df_pipeline,
-            {'solids': {'return_df': {'outputs': [{'result': {'pickle': {'path': filename}}}]}}},
+            {"solids": {"return_df": {"outputs": [{"result": {"pickle": {"path": filename}}}]}}},
         )
 
         assert result.success
 
         df = pd.read_pickle(filename)
-        assert df.to_dict('list') == {'num1': [1, 3], 'num2': [2, 4]}
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
