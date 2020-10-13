@@ -155,9 +155,7 @@ def test_address_operation_using_intermediates_file_system():
             == output_value
         )
 
-        with pytest.raises(
-            DagsterAddressIOError, match="No such file or directory",
-        ):
+        with pytest.raises(DagsterAddressIOError):
             intermediate_storage.set_intermediate_to_address(
                 context=None,
                 dagster_type=Int,
@@ -166,9 +164,7 @@ def test_address_operation_using_intermediates_file_system():
                 address="invalid_address",
             )
 
-        with pytest.raises(
-            DagsterAddressIOError, match="No such file or directory",
-        ):
+        with pytest.raises(DagsterAddressIOError):
             intermediate_storage.get_intermediate_from_address(
                 context=None,
                 dagster_type=Int,
