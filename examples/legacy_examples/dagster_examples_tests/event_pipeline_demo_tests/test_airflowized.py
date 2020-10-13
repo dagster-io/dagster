@@ -1,7 +1,7 @@
 # pylint: disable=unused-import
 
 import pytest
-from dagster_airflow.test_fixtures import dagster_airflow_python_operator_pipeline
+from dagster_airflow_tests.test_fixtures import dagster_airflow_python_operator_pipeline
 from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository

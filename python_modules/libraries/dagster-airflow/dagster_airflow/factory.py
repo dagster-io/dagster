@@ -459,6 +459,7 @@ def make_airflow_dag_containerized_for_recon_repo(
     dag_description=None,
     dag_kwargs=None,
     op_kwargs=None,
+    instance=None,
 ):
     check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
     check.str_param(pipeline_name, "pipeline_name")
@@ -481,6 +482,7 @@ def make_airflow_dag_containerized_for_recon_repo(
         dag_kwargs=dag_kwargs,
         op_kwargs=op_kwargs,
         operator=DagsterDockerOperator,
+        instance=instance,
     )
 
 

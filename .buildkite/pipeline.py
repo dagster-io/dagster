@@ -117,6 +117,13 @@ def airflow_extra_cmds_fn(version):
         r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
         + GCP_CREDS_LOCAL_FILE,
         "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
+        "pushd python_modules/libraries/dagster-airflow/dagster_airflow_tests/",
+        "docker-compose up -d --remove-orphans",
+        network_buildkite_container("postgres"),
+        connect_sibling_docker_container(
+            "postgres", "test-postgres-db-airflow", "POSTGRES_TEST_DB_HOST",
+        ),
+        "popd",
     ]
 
 
@@ -148,6 +155,18 @@ def celery_extra_cmds_fn(version):
         # between these sibling containers, so pass along the ip.
         network_buildkite_container("rabbitmq"),
         connect_sibling_docker_container("rabbitmq", "test-rabbitmq", "DAGSTER_CELERY_BROKER_HOST"),
+        "popd",
+    ]
+
+
+def celery_docker_extra_cmds_fn(version):
+    return celery_extra_cmds_fn(version) + [
+        "pushd python_modules/libraries/dagster-celery-docker/dagster_celery_docker_tests/",
+        "docker-compose up -d --remove-orphans",
+        network_buildkite_container("postgres"),
+        connect_sibling_docker_container(
+            "postgres", "test-postgres-db-celery-docker", "POSTGRES_TEST_DB_HOST",
+        ),
         "popd",
     ]
 
@@ -380,7 +399,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         "python_modules/libraries/dagster-celery-docker",
         env_vars=["AWS_ACCOUNT_ID", "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
-        extra_cmds_fn=celery_extra_cmds_fn,
+        extra_cmds_fn=celery_docker_extra_cmds_fn,
         depends_on_fn=test_image_depends_fn,
     ),
     ModuleBuildSpec(

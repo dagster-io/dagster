@@ -6,12 +6,12 @@ import pytest
 from airflow.exceptions import AirflowException
 from airflow.utils import timezone
 from dagster_airflow.factory import make_airflow_dag_kubernetized_for_recon_repo
-from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
+from dagster_airflow_tests.marks import nettest
+from dagster_airflow_tests.test_factory.utils import validate_pipeline_execution
+from dagster_airflow_tests.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_k8s_operator_pipeline,
     execute_tasks_in_dag,
 )
-from dagster_airflow_tests.marks import nettest
-from dagster_airflow_tests.test_factory.utils import validate_pipeline_execution
 from dagster_test.test_project import test_project_environments_path
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository

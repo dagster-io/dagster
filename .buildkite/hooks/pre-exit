@@ -25,6 +25,16 @@ docker-compose stop
 docker-compose rm -f
 popd
 
+pushd python_modules/libraries/dagster-celery-docker/dagster_celery_docker_tests/
+docker-compose stop
+docker-compose rm -f
+popd
+
+pushd python_modules/libraries/dagster-airflow/dagster_airflow_tests/
+docker-compose stop
+docker-compose rm -f
+popd
+
 pushd python_modules/libraries/dagster-postgres/dagster_postgres_tests/
 docker-compose stop
 docker-compose rm -f

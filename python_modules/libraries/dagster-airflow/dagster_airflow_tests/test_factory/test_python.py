@@ -10,11 +10,11 @@ from dagster_airflow.factory import (
     _rename_for_airflow,
     make_airflow_dag_for_recon_repo,
 )
-from dagster_airflow.test_fixtures import (  # pylint: disable=unused-import
+from dagster_airflow_tests.marks import nettest, requires_airflow_db
+from dagster_airflow_tests.test_fixtures import (  # pylint: disable=unused-import
     dagster_airflow_python_operator_pipeline,
     execute_tasks_in_dag,
 )
-from dagster_airflow_tests.marks import nettest, requires_airflow_db
 from dagster_test.test_project import test_project_environments_path
 
 from dagster.core.definitions.reconstructable import ReconstructableRepository
