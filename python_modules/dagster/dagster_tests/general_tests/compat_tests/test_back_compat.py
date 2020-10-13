@@ -2,14 +2,17 @@
 import os
 import re
 import sqlite3
+from gzip import GzipFile
 
 import pytest
 
-from dagster import execute_pipeline, file_relative_path, pipeline, solid
+from dagster import check, execute_pipeline, file_relative_path, pipeline, solid
+from dagster.cli.debug import DebugRunPayload
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
+from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.test import restore_directory
 
 
@@ -314,3 +317,23 @@ def test_0_8_0_scheduler_migration():
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
         instance.all_stored_schedule_state()
+
+
+def instance_from_debug_payloads(payload_files):
+    debug_payloads = []
+    for input_file in payload_files:
+        with GzipFile(input_file, "rb") as file:
+            blob = file.read().decode()
+            debug_payload = deserialize_json_to_dagster_namedtuple(blob)
+
+            check.invariant(isinstance(debug_payload, DebugRunPayload))
+
+            debug_payloads.append(debug_payload)
+
+    return DagsterInstance.ephemeral(preload=debug_payloads)
+
+
+def test_object_store_operation_result_data_new_fields():
+    """We added address and version fields to ObjectStoreOperationResultData.
+    Make sure we can still deserialize old ObjectStoreOperationResultData without those fields."""
+    instance_from_debug_payloads([file_relative_path(__file__, "0_9_12_nothing_fs_storage.gz")])

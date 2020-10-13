@@ -896,7 +896,15 @@ class StepExpectationResultData(namedtuple("_StepExpectationResultData", "expect
 class ObjectStoreOperationResultData(
     namedtuple("_ObjectStoreOperationResultData", "op value_name metadata_entries address version")
 ):
-    pass
+    def __new__(cls, op, value_name, metadata_entries, address=None, version=None):
+        return super(ObjectStoreOperationResultData, cls).__new__(
+            cls,
+            op=check.opt_str_param(op, "op"),
+            value_name=check.opt_str_param(value_name, "value_name"),
+            metadata_entries=check.opt_list_param(metadata_entries, "metadata_entries"),
+            address=check.opt_str_param(address, "address"),
+            version=check.opt_str_param(version, "version"),
+        )
 
 
 @whitelist_for_serdes
