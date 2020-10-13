@@ -11,13 +11,13 @@ def get_version():
 
 if __name__ == "__main__":
     setup(
-        name="dagster-pagerduty",
+        name="dagster-tqdm",
         version=get_version(),
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        description="Package for pagerduty Dagster framework components.",
-        url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-pagerduty",
+        description="Package for Dagster tqdm progress-bars.",
+        url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tqdm",
         classifiers=[
             "Programming Language :: Python :: 2.7",
             "Programming Language :: Python :: 3.6",
@@ -26,6 +26,6 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["dagster", "pypd"],
+        install_requires=["dagster", "tqdm"],
         zip_safe=False,
     )
