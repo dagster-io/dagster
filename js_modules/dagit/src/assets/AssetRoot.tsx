@@ -127,7 +127,13 @@ const AssetValueGraph = (props: any) => {
       if (entry.__typename === 'EventFloatMetadataEntry') {
         dataByLabel[entry.label] = [
           ...(dataByLabel[entry.label] || []),
-          {x: parseInt(timestamp, 10), y: entry.value},
+          {x: parseInt(timestamp, 10), y: entry.floatValue},
+        ];
+      }
+      if (entry.__typename === 'EventIntMetadataEntry') {
+        dataByLabel[entry.label] = [
+          ...(dataByLabel[entry.label] || []),
+          {x: parseInt(timestamp, 10), y: entry.intValue},
         ];
       }
     });

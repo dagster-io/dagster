@@ -24,7 +24,10 @@ fragment metadataEntryFragment on EventMetadataEntry {
   label
   description
   ... on EventFloatMetadataEntry {
-    value
+    floatValue
+  }
+  ... on EventIntMetadataEntry {
+    intValue
   }
   ... on EventJsonMetadataEntry {
     jsonString

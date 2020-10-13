@@ -12,6 +12,7 @@ from dagster import PipelineRun, check, seven
 from dagster.core.definitions.events import (
     EventMetadataEntry,
     FloatMetadataEntryData,
+    IntMetadataEntryData,
     JsonMetadataEntryData,
     MarkdownMetadataEntryData,
     PathMetadataEntryData,
@@ -475,7 +476,15 @@ class DauphinEventFloatMetadataEntry(dauphin.ObjectType):
         name = "EventFloatMetadataEntry"
         interfaces = (DauphinEventMetadataEntry,)
 
-    value = dauphin.NonNull(dauphin.Float)
+    floatValue = dauphin.NonNull(dauphin.Float)
+
+
+class DauphinEventIntMetadataEntry(dauphin.ObjectType):
+    class Meta(object):
+        name = "EventIntMetadataEntry"
+        interfaces = (DauphinEventMetadataEntry,)
+
+    intValue = dauphin.NonNull(dauphin.Int)
 
 
 def iterate_metadata_entries(metadata_entries):
@@ -522,7 +531,13 @@ def iterate_metadata_entries(metadata_entries):
             yield DauphinEventFloatMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
-                value=metadata_entry.entry_data.value,
+                floatValue=metadata_entry.entry_data.value,
+            )
+        elif isinstance(metadata_entry.entry_data, IntMetadataEntryData):
+            yield DauphinEventIntMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                intValue=metadata_entry.entry_data.value,
             )
         else:
             # skip rest for now

@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface TempMetadataEntryFragment_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+  __typename: "EventFloatMetadataEntry" | "EventIntMetadataEntry";
   label: string;
   description: string | null;
 }

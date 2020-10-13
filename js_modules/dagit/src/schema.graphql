@@ -211,7 +211,13 @@ type EvaluationStackPathEntry {
 type EventFloatMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String
-  value: Float!
+  floatValue: Float!
+}
+
+type EventIntMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  intValue: Int!
 }
 
 type EventJsonMetadataEntry implements EventMetadataEntry {
