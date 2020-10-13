@@ -164,7 +164,7 @@ const RunRow: React.FunctionComponent<{
         <RunStatusWithStats status={run.status} runId={run.runId} size={14} />
       </RowColumn>
       <RowColumn style={{maxWidth: 90, fontFamily: 'monospace'}}>
-        <Link to={`${pipelineLink}/runs/${run.runId}`}>{titleForRun(run)}</Link>
+        <Link to={`${pipelineLink}runs/${run.runId}`}>{titleForRun(run)}</Link>
       </RowColumn>
       <RowColumn style={{flex: 5}}>
         {run.pipelineName}
