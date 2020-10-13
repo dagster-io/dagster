@@ -50,13 +50,13 @@ export const GaantStatusPanel: React.FunctionComponent<GaantStatusPanelProps> = 
       onHover={onHighlightStep}
     />
   );
-
+  const isFinished = metadata?.exitedAt && metadata.exitedAt > 0;
   return (
     <div style={{display: 'flex', flexDirection: 'column', minHeight: 0}}>
       <RunGroupPanel runId={runId} />
-      <SectionHeader>Preparing</SectionHeader>
+      <SectionHeader>{isFinished ? 'Not Executed' : 'Preparing'}</SectionHeader>
       <Section>{preparing.map(renderStepItem)}</Section>
-      {preparing.length === 0 && <EmptyNotice>No steps are preparing to execute</EmptyNotice>}
+      {preparing.length === 0 && <EmptyNotice>No steps are waiting to execute</EmptyNotice>}
       <SectionHeader>Executing</SectionHeader>
       <Section>{executing.map(renderStepItem)}</Section>
       {executing.length === 0 && <EmptyNotice>No steps are executing</EmptyNotice>}
