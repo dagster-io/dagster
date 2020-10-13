@@ -26,7 +26,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import create_run_for_test
 from dagster.utils import load_yaml_from_path
 
-EXPECTED_JOB_SPEC = '''
+EXPECTED_JOB_SPEC = """
 api_version: batch/v1
 kind: Job
 metadata:
@@ -88,9 +88,9 @@ spec:
           name: dagster-instance
         name: dagster-instance
   ttl_seconds_after_finished: 86400
-'''
+"""
 
-EXPECTED_CONFIGURED_JOB_SPEC = '''
+EXPECTED_CONFIGURED_JOB_SPEC = """
 api_version: batch/v1
 kind: Job
 metadata:
@@ -154,25 +154,25 @@ spec:
           name: dagster-instance
         name: dagster-instance
   ttl_seconds_after_finished: 86400
-'''
+"""
 
 
 def test_valid_job_format(run_launcher):
     docker_image = test_project_docker_image()
 
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), 'env.yaml'))
-    pipeline_name = 'demo_pipeline'
+    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    pipeline_name = "demo_pipeline"
     run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
-    job_name = 'dagster-run-%s' % run.run_id
-    pod_name = 'dagster-run-%s' % run.run_id
+    job_name = "dagster-run-%s" % run.run_id
+    pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
-        command=['dagster-graphql'],
-        args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id}),],
+        command=["dagster-graphql"],
+        args=["-p", "executeRunInProcess", "-v", seven.json.dumps({"runId": run.run_id}),],
         job_name=job_name,
         pod_name=pod_name,
-        component='run_coordinator',
+        component="run_coordinator",
     )
 
     assert (
@@ -182,7 +182,7 @@ def test_valid_job_format(run_launcher):
             job_image=docker_image,
             image_pull_policy=image_pull_policy(),
             dagster_version=dagster_version,
-            resources='',
+            resources="",
         ).strip()
     )
 
@@ -190,31 +190,31 @@ def test_valid_job_format(run_launcher):
 def test_valid_job_format_with_backcompat_resources(run_launcher):
     docker_image = test_project_docker_image()
 
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), 'env.yaml'))
-    pipeline_name = 'demo_pipeline'
+    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    pipeline_name = "demo_pipeline"
     run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
     tags = validate_tags(
         {
             K8S_RESOURCE_REQUIREMENTS_KEY: (
                 {
-                    'requests': {'cpu': '250m', 'memory': '64Mi'},
-                    'limits': {'cpu': '500m', 'memory': '2560Mi'},
+                    "requests": {"cpu": "250m", "memory": "64Mi"},
+                    "limits": {"cpu": "500m", "memory": "2560Mi"},
                 }
             )
         }
     )
     user_defined_k8s_config = get_user_defined_k8s_config(tags)
-    job_name = 'dagster-run-%s' % run.run_id
-    pod_name = 'dagster-run-%s' % run.run_id
+    job_name = "dagster-run-%s" % run.run_id
+    pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
-        command=['dagster-graphql'],
-        args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id}),],
+        command=["dagster-graphql"],
+        args=["-p", "executeRunInProcess", "-v", seven.json.dumps({"runId": run.run_id}),],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
         pod_name=pod_name,
-        component='run_coordinator',
+        component="run_coordinator",
     )
 
     assert (
@@ -224,14 +224,14 @@ def test_valid_job_format_with_backcompat_resources(run_launcher):
             job_image=docker_image,
             image_pull_policy=image_pull_policy(),
             dagster_version=dagster_version,
-            resources='''
+            resources="""
         resources:
           limits:
             cpu: 500m
             memory: 2560Mi
           requests:
             cpu: 250m
-            memory: 64Mi''',
+            memory: 64Mi""",
         ).strip()
     )
 
@@ -239,34 +239,34 @@ def test_valid_job_format_with_backcompat_resources(run_launcher):
 def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
     docker_image = test_project_docker_image()
 
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), 'env.yaml'))
-    pipeline_name = 'demo_pipeline'
+    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    pipeline_name = "demo_pipeline"
     run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
     tags = validate_tags(
         {
             USER_DEFINED_K8S_CONFIG_KEY: (
                 {
-                    'container_config': {
-                        'resources': {
-                            'requests': {'cpu': '250m', 'memory': '64Mi'},
-                            'limits': {'cpu': '500m', 'memory': '2560Mi'},
+                    "container_config": {
+                        "resources": {
+                            "requests": {"cpu": "250m", "memory": "64Mi"},
+                            "limits": {"cpu": "500m", "memory": "2560Mi"},
                         }
                     },
-                    'pod_template_spec_metadata': {
-                        'annotations': {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
+                    "pod_template_spec_metadata": {
+                        "annotations": {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
                     },
-                    'pod_spec_config': {
-                        'affinity': {
-                            'nodeAffinity': {
-                                'requiredDuringSchedulingIgnoredDuringExecution': {
-                                    'nodeSelectorTerms': [
+                    "pod_spec_config": {
+                        "affinity": {
+                            "nodeAffinity": {
+                                "requiredDuringSchedulingIgnoredDuringExecution": {
+                                    "nodeSelectorTerms": [
                                         {
-                                            'matchExpressions': [
+                                            "matchExpressions": [
                                                 {
-                                                    'key': 'kubernetes.io/e2e-az-name',
-                                                    'operator': 'In',
-                                                    'values': ['e2e-az1', 'e2e-az2'],
+                                                    "key": "kubernetes.io/e2e-az-name",
+                                                    "operator": "In",
+                                                    "values": ["e2e-az1", "e2e-az2"],
                                                 }
                                             ]
                                         }
@@ -280,16 +280,16 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
         }
     )
     user_defined_k8s_config = get_user_defined_k8s_config(tags)
-    job_name = 'dagster-run-%s' % run.run_id
-    pod_name = 'dagster-run-%s' % run.run_id
+    job_name = "dagster-run-%s" % run.run_id
+    pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
-        command=['dagster-graphql'],
-        args=['-p', 'executeRunInProcess', '-v', seven.json.dumps({'runId': run.run_id}),],
+        command=["dagster-graphql"],
+        args=["-p", "executeRunInProcess", "-v", seven.json.dumps({"runId": run.run_id}),],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
         pod_name=pod_name,
-        component='run_coordinator',
+        component="run_coordinator",
     )
 
     assert (
@@ -299,17 +299,17 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
             job_image=docker_image,
             image_pull_policy=image_pull_policy(),
             dagster_version=dagster_version,
-            resources='''
+            resources="""
         resources:
           limits:
             cpu: 500m
             memory: 2560Mi
           requests:
             cpu: 250m
-            memory: 64Mi''',
-            annotations='''annotations:
-        cluster-autoscaler.kubernetes.io/safe-to-evict: \'true\'''',
-            affinity='''affinity:
+            memory: 64Mi""",
+            annotations="""annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: \'true\'""",
+            affinity="""affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
@@ -318,16 +318,16 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
                 operator: In
                 values:
                 - e2e-az1
-                - e2e-az2''',
+                - e2e-az2""",
         ).strip()
     )
 
 
 def test_k8s_run_launcher(dagster_instance, helm_namespace):
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), 'env.yaml'))
-    pipeline_name = 'demo_pipeline'
+    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    pipeline_name = "demo_pipeline"
     run = create_run_for_test(
-        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode='default',
+        dagster_instance, pipeline_name=pipeline_name, run_config=run_config, mode="default",
     )
 
     dagster_instance.launch_run(
@@ -335,25 +335,25 @@ def test_k8s_run_launcher(dagster_instance, helm_namespace):
         ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
     )
     result = wait_for_job_and_get_raw_logs(
-        job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
+        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace
     )
 
-    assert 'PIPELINE_SUCCESS' in result, 'no match, result: {}'.format(result)
+    assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
 
 
 def test_failing_k8s_run_launcher(dagster_instance, helm_namespace):
-    run_config = {'blah blah this is wrong': {}}
-    pipeline_name = 'demo_pipeline'
+    run_config = {"blah blah this is wrong": {}}
+    pipeline_name = "demo_pipeline"
     run = create_run_for_test(dagster_instance, pipeline_name=pipeline_name, run_config=run_config)
     dagster_instance.launch_run(
         run.run_id,
         ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
     )
     result = wait_for_job_and_get_raw_logs(
-        job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace
+        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace
     )
 
-    assert 'PIPELINE_SUCCESS' not in result, 'no match, result: {}'.format(result)
+    assert "PIPELINE_SUCCESS" not in result, "no match, result: {}".format(result)
 
     event_records = dagster_instance.all_logs(run.run_id)
 

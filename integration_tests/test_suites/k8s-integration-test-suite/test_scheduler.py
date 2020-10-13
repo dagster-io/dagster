@@ -20,39 +20,39 @@ from dagster.core.test_utils import environ
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def unset_dagster_home():
-    old_env = os.getenv('DAGSTER_HOME')
+    old_env = os.getenv("DAGSTER_HOME")
     if old_env is not None:
-        del os.environ['DAGSTER_HOME']
+        del os.environ["DAGSTER_HOME"]
     yield
     if old_env is not None:
-        os.environ['DAGSTER_HOME'] = old_env
+        os.environ["DAGSTER_HOME"] = old_env
 
 
 @pipeline
 def no_config_pipeline():
     @lambda_solid
     def return_hello():
-        return 'Hello'
+        return "Hello"
 
     return return_hello()
 
 
 schedules_dict = {
-    'no_config_pipeline_daily_schedule': ScheduleDefinition(
+    "no_config_pipeline_daily_schedule": ScheduleDefinition(
         name="no_config_pipeline_daily_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
         run_config={"storage": {"filesystem": None}},
     ),
-    'no_config_pipeline_every_min_schedule': ScheduleDefinition(
+    "no_config_pipeline_every_min_schedule": ScheduleDefinition(
         name="no_config_pipeline_every_min_schedule",
         cron_schedule="* * * * *",
         pipeline_name="no_config_pipeline",
         run_config={"storage": {"filesystem": None}},
     ),
-    'default_config_pipeline_every_min_schedule': ScheduleDefinition(
+    "default_config_pipeline_every_min_schedule": ScheduleDefinition(
         name="default_config_pipeline_every_min_schedule",
         cron_schedule="* * * * *",
         pipeline_name="no_config_pipeline",
@@ -66,7 +66,7 @@ def define_schedules():
 
 @repository
 def test_repository():
-    if os.getenv('DAGSTER_TEST_SMALL_REPO'):
+    if os.getenv("DAGSTER_TEST_SMALL_REPO"):
         return [no_config_pipeline] + list(
             filter(
                 lambda x: not x.name == "default_config_pipeline_every_min_schedule",
@@ -81,15 +81,15 @@ def get_test_external_repo():
     return PythonEnvRepositoryLocation(
         RepositoryLocationHandle.create_python_env_location(
             loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable, python_file=__file__, attribute='test_repository',
+                executable_path=sys.executable, python_file=__file__, attribute="test_repository",
             ),
-            location_name='test_location',
+            location_name="test_location",
         )
-    ).get_repository('test_repository')
+    ).get_repository("test_repository")
 
 
 def get_smaller_external_repo():
-    with environ({'DAGSTER_TEST_SMALL_REPO': '1'}):
+    with environ({"DAGSTER_TEST_SMALL_REPO": "1"}):
         return get_test_external_repo()
 
 
@@ -105,7 +105,7 @@ def test_init(
     instance.reconcile_scheduler_state(external_repository)
 
     # Check schedules are saved to disk
-    assert 'schedules' in os.listdir(schedule_tempdir)
+    assert "schedules" in os.listdir(schedule_tempdir)
 
     assert len(instance.all_stored_schedule_state()) == 3
 
@@ -133,7 +133,7 @@ def test_re_init(
     instance.reconcile_scheduler_state(external_repo)
 
     # Check schedules are saved to disk
-    assert 'schedules' in os.listdir(schedule_tempdir)
+    assert "schedules" in os.listdir(schedule_tempdir)
 
     schedule_states = instance.all_stored_schedule_state()
 
@@ -159,7 +159,7 @@ def test_start_and_stop_schedule(
 
     instance.start_schedule_and_update_storage_state(external_schedule=schedule)
 
-    assert 'schedules' in os.listdir(schedule_tempdir)
+    assert "schedules" in os.listdir(schedule_tempdir)
 
     assert instance.scheduler.get_cron_job(schedule_origin_id=schedule_origin_id)
 
@@ -215,12 +215,12 @@ def test_start_schedule_cron_job(
 
         schedule_def = external_schedules_dict[schedule_origin_id]
         assert cron_schedule == schedule_def.cron_schedule
-        assert command == ['dagster']
+        assert command == ["dagster"]
         assert args[:4] == [
-            'api',
-            'launch_scheduled_execution',
-            '/tmp/launch_scheduled_execution_output',
-            '--schedule_name',
+            "api",
+            "launch_scheduled_execution",
+            "/tmp/launch_scheduled_execution_output",
+            "--schedule_name",
         ]
 
 
@@ -376,7 +376,7 @@ def test_script_execution(
     dagster_instance_with_k8s_scheduler, unset_dagster_home, helm_namespace, restore_k8s_cron_tab,
 ):  # pylint:disable=unused-argument,redefined-outer-name
     with seven.TemporaryDirectory() as tempdir:
-        with environ({'DAGSTER_HOME': tempdir}):
+        with environ({"DAGSTER_HOME": tempdir}):
             local_instance = DagsterInstance.get()
 
             external_repo = get_test_external_repo()
@@ -398,7 +398,7 @@ def test_script_execution(
             container = cron_job.spec.job_template.spec.template.spec.containers[0]
             command = container.command
             args = container.args
-            cli_cmd = [sys.executable, '-m'] + command + args
+            cli_cmd = [sys.executable, "-m"] + command + args
 
             p = subprocess.Popen(
                 cli_cmd,
@@ -407,13 +407,13 @@ def test_script_execution(
                 stderr=subprocess.PIPE,
                 env={
                     "DAGSTER_HOME": tempdir,
-                    'LC_ALL': 'C.UTF-8',
-                    'LANG': 'C.UTF-8',
+                    "LC_ALL": "C.UTF-8",
+                    "LANG": "C.UTF-8",
                 },  # https://stackoverflow.com/questions/36651680/click-will-abort-further-execution-because-python-3-was-configured-to-use-ascii
             )
             stdout, stderr = p.communicate()
-            print('Command completed with stdout: ', stdout)  # pylint: disable=print-call
-            print('Command completed with stderr: ', stderr)  # pylint: disable=print-call
+            print("Command completed with stdout: ", stdout)  # pylint: disable=print-call
+            print("Command completed with stderr: ", stderr)  # pylint: disable=print-call
             assert p.returncode == 0
 
             local_runs = local_instance.get_runs()
@@ -437,10 +437,10 @@ def test_start_schedule_fails(
     instance.reconcile_scheduler_state(external_repo)
 
     def raises(*args, **kwargs):
-        raise Exception('Patch')
+        raise Exception("Patch")
 
     instance._scheduler._api.create_namespaced_cron_job = raises  # pylint: disable=protected-access
-    with pytest.raises(Exception, match='Patch'):
+    with pytest.raises(Exception, match="Patch"):
         instance.start_schedule_and_update_storage_state(
             external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
         )
@@ -472,8 +472,8 @@ def test_start_schedule_unsuccessful(
     # Start schedule
     with pytest.raises(
         DagsterSchedulerError,
-        match='Attempted to add K8s CronJob for schedule no_config_pipeline_every_min_schedule, '
-        'but failed. The schedule no_config_pipeline_every_min_schedule is not running.',
+        match="Attempted to add K8s CronJob for schedule no_config_pipeline_every_min_schedule, "
+        "but failed. The schedule no_config_pipeline_every_min_schedule is not running.",
     ):
         instance.start_schedule_and_update_storage_state(
             external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
@@ -552,16 +552,16 @@ def test_stop_schedule_fails(
     schedule_origin_id = external_schedule.get_origin_id()
 
     def raises(*args, **kwargs):
-        raise Exception('Patch')
+        raise Exception("Patch")
 
     instance._scheduler._end_cron_job = raises  # pylint: disable=protected-access
 
     instance.start_schedule_and_update_storage_state(external_schedule)
 
-    assert 'schedules' in os.listdir(schedule_tempdir)
+    assert "schedules" in os.listdir(schedule_tempdir)
 
     # End schedule
-    with pytest.raises(Exception, match='Patch'):
+    with pytest.raises(Exception, match="Patch"):
         instance.stop_schedule_and_update_storage_state(schedule_origin_id)
 
     schedule = instance.get_schedule_state(schedule_origin_id)
@@ -591,8 +591,8 @@ def test_stop_schedule_unsuccessful(
     # End schedule
     with pytest.raises(
         DagsterSchedulerError,
-        match='Attempted to remove existing K8s CronJob for schedule '
-        'no_config_pipeline_every_min_schedule, but failed. Schedule is still running.',
+        match="Attempted to remove existing K8s CronJob for schedule "
+        "no_config_pipeline_every_min_schedule, but failed. Schedule is still running.",
     ):
         instance.stop_schedule_and_update_storage_state(
             external_repo.get_external_schedule(

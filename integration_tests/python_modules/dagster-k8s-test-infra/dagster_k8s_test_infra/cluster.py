@@ -26,38 +26,38 @@ from .integration_utils import IS_BUILDKITE, check_output
 PG_PORT_FORWARDING_TIMEOUT = 60  # 1 minute
 
 
-class ClusterConfig(namedtuple('_ClusterConfig', 'name kubeconfig_file')):
-    '''Used to represent a cluster, returned by the cluster_provider fixture below.
-    '''
+class ClusterConfig(namedtuple("_ClusterConfig", "name kubeconfig_file")):
+    """Used to represent a cluster, returned by the cluster_provider fixture below.
+    """
 
     def __new__(cls, name, kubeconfig_file):
         return super(ClusterConfig, cls).__new__(
             cls,
-            name=check.str_param(name, 'name'),
-            kubeconfig_file=check.str_param(kubeconfig_file, 'kubeconfig_file'),
+            name=check.str_param(name, "name"),
+            kubeconfig_file=check.str_param(kubeconfig_file, "kubeconfig_file"),
         )
 
 
 def define_cluster_provider_fixture(additional_kind_images=None):
-    @pytest.fixture(scope='session')
+    @pytest.fixture(scope="session")
     def _cluster_provider(request):
         from .kind import kind_cluster_exists, kind_cluster, kind_load_images
 
         if IS_BUILDKITE:
-            print('Installing ECR credentials...')
-            check_output('aws ecr get-login --no-include-email --region us-west-1 | sh', shell=True)
+            print("Installing ECR credentials...")
+            check_output("aws ecr get-login --no-include-email --region us-west-1 | sh", shell=True)
 
-        provider = request.config.getoption('--cluster-provider')
+        provider = request.config.getoption("--cluster-provider")
 
         # Use a kind cluster
-        if provider == 'kind':
-            cluster_name = request.config.getoption('--kind-cluster')
+        if provider == "kind":
+            cluster_name = request.config.getoption("--kind-cluster")
 
             # Cluster will be deleted afterwards unless this is set.
             # This is to allow users to reuse an existing cluster in local test by running
             # `pytest --kind-cluster my-cluster --no-cleanup` -- this avoids the per-test run
             # overhead of cluster setup and teardown
-            should_cleanup = True if IS_BUILDKITE else not request.config.getoption('--no-cleanup')
+            should_cleanup = True if IS_BUILDKITE else not request.config.getoption("--no-cleanup")
 
             existing_cluster = kind_cluster_exists(cluster_name)
 
@@ -73,35 +73,35 @@ def define_cluster_provider_fixture(additional_kind_images=None):
                 yield cluster_config
 
         # Use cluster from kubeconfig
-        elif provider == 'kubeconfig':
-            kubeconfig_file = os.getenv('KUBECONFIG', os.path.expandvars('${HOME}/.kube/config'))
+        elif provider == "kubeconfig":
+            kubeconfig_file = os.getenv("KUBECONFIG", os.path.expandvars("${HOME}/.kube/config"))
             kubernetes.config.load_kube_config(config_file=kubeconfig_file)
-            yield ClusterConfig(name='from_system_kubeconfig', kubeconfig_file=kubeconfig_file)
+            yield ClusterConfig(name="from_system_kubeconfig", kubeconfig_file=kubeconfig_file)
 
         else:
-            raise Exception('unknown cluster provider %s' % provider)
+            raise Exception("unknown cluster provider %s" % provider)
 
     return _cluster_provider
 
 
 @contextmanager
 def local_port_forward_postgres(namespace):
-    print('Port-forwarding postgres')
+    print("Port-forwarding postgres")
     postgres_pod_name = (
         check_output(
             [
-                'kubectl',
-                'get',
-                'pods',
-                '--namespace',
+                "kubectl",
+                "get",
+                "pods",
+                "--namespace",
                 namespace,
-                '-l',
-                'app=postgresql,release=dagster',
-                '-o',
+                "-l",
+                "app=postgresql,release=dagster",
+                "-o",
                 'jsonpath="{.items[0].metadata.name}"',
             ]
         )
-        .decode('utf-8')
+        .decode("utf-8")
         .strip('"')
     )
     forward_port = find_free_port()
@@ -111,12 +111,12 @@ def local_port_forward_postgres(namespace):
     try:
         p = subprocess.Popen(
             [
-                'kubectl',
-                'port-forward',
-                '--namespace',
+                "kubectl",
+                "port-forward",
+                "--namespace",
                 namespace,
                 postgres_pod_name,
-                '{forward_port}:5432'.format(forward_port=forward_port),
+                "{forward_port}:5432".format(forward_port=forward_port),
             ]
         )
 
@@ -125,18 +125,18 @@ def local_port_forward_postgres(namespace):
 
         while True:
             if time.time() - start > PG_PORT_FORWARDING_TIMEOUT:
-                raise Exception('Timed out while waiting for postgres port forwarding')
+                raise Exception("Timed out while waiting for postgres port forwarding")
 
             print(
-                'Waiting for port forwarding from k8s pod %s:5432 to localhost:%d to be'
-                ' available...' % (postgres_pod_name, forward_port)
+                "Waiting for port forwarding from k8s pod %s:5432 to localhost:%d to be"
+                " available..." % (postgres_pod_name, forward_port)
             )
             try:
                 conn = psycopg2.connect(
-                    database='test',
-                    user='test',
-                    password='test',
-                    host='localhost',
+                    database="test",
+                    user="test",
+                    password="test",
+                    host="localhost",
                     port=forward_port,
                 )
                 conn.close()
@@ -148,7 +148,7 @@ def local_port_forward_postgres(namespace):
         yield forward_port
 
     finally:
-        print('Terminating port-forwarding')
+        print("Terminating port-forwarding")
         p.terminate()
 
 
@@ -157,27 +157,27 @@ def dagster_instance_with_k8s_scheduler(
     helm_namespace, run_launcher, k8s_scheduler, schedule_tempdir
 ):
     with local_port_forward_postgres(namespace=helm_namespace) as local_forward_port:
-        postgres_url = 'postgresql://test:test@localhost:{local_forward_port}/test'.format(
+        postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
             local_forward_port=local_forward_port
         )
-        print('Local Postgres forwarding URL: ', postgres_url)
+        print("Local Postgres forwarding URL: ", postgres_url)
 
         instance = DagsterInstance(
             instance_type=InstanceType.EPHEMERAL,
             local_artifact_storage=LocalArtifactStorage(schedule_tempdir),
-            run_storage=SqliteRunStorage.from_local(os.path.join(schedule_tempdir, 'runs')),
+            run_storage=SqliteRunStorage.from_local(os.path.join(schedule_tempdir, "runs")),
             event_storage=PostgresEventLogStorage(postgres_url),
             compute_log_manager=NoOpComputeLogManager(),
             run_launcher=run_launcher,
             schedule_storage=SqliteScheduleStorage.from_local(
-                os.path.join(schedule_tempdir, 'schedules')
+                os.path.join(schedule_tempdir, "schedules")
             ),
             scheduler=k8s_scheduler,
         )
         yield instance
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def dagster_instance_for_user_deployments(
     helm_namespace_for_user_deployments, run_launcher
 ):  # pylint: disable=redefined-outer-name
@@ -186,10 +186,10 @@ def dagster_instance_for_user_deployments(
     with local_port_forward_postgres(
         namespace=helm_namespace_for_user_deployments
     ) as local_forward_port:
-        postgres_url = 'postgresql://test:test@localhost:{local_forward_port}/test'.format(
+        postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
             local_forward_port=local_forward_port
         )
-        print('Local Postgres forwarding URL: ', postgres_url)
+        print("Local Postgres forwarding URL: ", postgres_url)
 
         instance = DagsterInstance(
             instance_type=InstanceType.EPHEMERAL,
@@ -202,15 +202,15 @@ def dagster_instance_for_user_deployments(
         yield instance
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def dagster_instance(helm_namespace, run_launcher):  # pylint: disable=redefined-outer-name
     tempdir = DagsterInstance.temp_storage()
 
     with local_port_forward_postgres(namespace=helm_namespace) as local_forward_port:
-        postgres_url = 'postgresql://test:test@localhost:{local_forward_port}/test'.format(
+        postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
             local_forward_port=local_forward_port
         )
-        print('Local Postgres forwarding URL: ', postgres_url)
+        print("Local Postgres forwarding URL: ", postgres_url)
 
         instance = DagsterInstance(
             instance_type=InstanceType.EPHEMERAL,

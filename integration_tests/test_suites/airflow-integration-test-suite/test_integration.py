@@ -24,22 +24,22 @@ def test_s3_storage(dagster_airflow_k8s_operator_pipeline, dagster_docker_image,
     _check_aws_creds_available()
     environments_path = test_project_environments_path()
 
-    pipeline_name = 'demo_pipeline'
+    pipeline_name = "demo_pipeline"
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
-            'dagster_test.test_project.test_pipelines.repo', 'define_demo_execution_repo',
+            "dagster_test.test_project.test_pipelines.repo", "define_demo_execution_repo",
         ),
         environment_yaml=[
-            os.path.join(environments_path, 'env.yaml'),
-            os.path.join(environments_path, 'env_s3.yaml'),
+            os.path.join(environments_path, "env.yaml"),
+            os.path.join(environments_path, "env_s3.yaml"),
         ],
         image=dagster_docker_image,
         op_kwargs={
-            'config_file': os.environ['KUBECONFIG'],
-            'env_vars': {
-                'AWS_ACCESS_KEY_ID': os.environ['AWS_ACCESS_KEY_ID'],
-                'AWS_SECRET_ACCESS_KEY': os.environ['AWS_SECRET_ACCESS_KEY'],
+            "config_file": os.environ["KUBECONFIG"],
+            "env_vars": {
+                "AWS_ACCESS_KEY_ID": os.environ["AWS_ACCESS_KEY_ID"],
+                "AWS_SECRET_ACCESS_KEY": os.environ["AWS_SECRET_ACCESS_KEY"],
             },
         },
     )
@@ -52,18 +52,18 @@ def test_gcs_storage(
 ):
     environments_path = test_project_environments_path()
 
-    pipeline_name = 'demo_pipeline_gcs'
+    pipeline_name = "demo_pipeline_gcs"
     results = dagster_airflow_k8s_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
-            'dagster_test.test_project.test_pipelines.repo', 'define_demo_execution_repo',
+            "dagster_test.test_project.test_pipelines.repo", "define_demo_execution_repo",
         ),
         environment_yaml=[
-            os.path.join(environments_path, 'env.yaml'),
-            os.path.join(environments_path, 'env_gcs.yaml'),
+            os.path.join(environments_path, "env.yaml"),
+            os.path.join(environments_path, "env_gcs.yaml"),
         ],
         image=dagster_docker_image,
-        op_kwargs={'config_file': os.environ['KUBECONFIG']},
+        op_kwargs={"config_file": os.environ["KUBECONFIG"]},
     )
     validate_pipeline_execution(results)
 
@@ -71,13 +71,13 @@ def test_gcs_storage(
 def test_error_dag_k8s(dagster_docker_image, cluster_provider):
     _check_aws_creds_available()
 
-    pipeline_name = 'demo_error_pipeline'
+    pipeline_name = "demo_error_pipeline"
     recon_repo = ReconstructableRepository.for_module(
-        'dagster_test.test_project.test_pipelines.repo', 'define_demo_execution_repo'
+        "dagster_test.test_project.test_pipelines.repo", "define_demo_execution_repo"
     )
     environments_path = test_project_environments_path()
     environment_yaml = [
-        os.path.join(environments_path, 'env_s3.yaml'),
+        os.path.join(environments_path, "env_s3.yaml"),
     ]
     run_config = load_yaml_from_glob_list(environment_yaml)
 
@@ -88,13 +88,13 @@ def test_error_dag_k8s(dagster_docker_image, cluster_provider):
         recon_repo=recon_repo,
         pipeline_name=pipeline_name,
         image=dagster_docker_image,
-        namespace='default',
+        namespace="default",
         run_config=run_config,
         op_kwargs={
-            'config_file': os.environ['KUBECONFIG'],
-            'env_vars': {
-                'AWS_ACCESS_KEY_ID': os.environ['AWS_ACCESS_KEY_ID'],
-                'AWS_SECRET_ACCESS_KEY': os.environ['AWS_SECRET_ACCESS_KEY'],
+            "config_file": os.environ["KUBECONFIG"],
+            "env_vars": {
+                "AWS_ACCESS_KEY_ID": os.environ["AWS_ACCESS_KEY_ID"],
+                "AWS_SECRET_ACCESS_KEY": os.environ["AWS_SECRET_ACCESS_KEY"],
             },
         },
     )
@@ -102,19 +102,19 @@ def test_error_dag_k8s(dagster_docker_image, cluster_provider):
     with pytest.raises(AirflowException) as exc_info:
         execute_tasks_in_dag(dag, tasks, run_id, execution_date)
 
-    assert 'Exception: Unusual error' in str(exc_info.value)
+    assert "Exception: Unusual error" in str(exc_info.value)
 
 
 def test_airflow_execution_date_tags_k8s(dagster_docker_image, cluster_provider):
     _check_aws_creds_available()
 
-    pipeline_name = 'demo_airflow_execution_date_pipeline'
+    pipeline_name = "demo_airflow_execution_date_pipeline"
     recon_repo = ReconstructableRepository.for_module(
-        'dagster_test.test_project.test_pipelines.repo', 'define_demo_execution_repo'
+        "dagster_test.test_project.test_pipelines.repo", "define_demo_execution_repo"
     )
     environments_path = test_project_environments_path()
     environment_yaml = [
-        os.path.join(environments_path, 'env_s3.yaml'),
+        os.path.join(environments_path, "env_s3.yaml"),
     ]
     run_config = load_yaml_from_glob_list(environment_yaml)
 
@@ -124,13 +124,13 @@ def test_airflow_execution_date_tags_k8s(dagster_docker_image, cluster_provider)
         recon_repo=recon_repo,
         pipeline_name=pipeline_name,
         image=dagster_docker_image,
-        namespace='default',
+        namespace="default",
         run_config=run_config,
         op_kwargs={
-            'config_file': os.environ['KUBECONFIG'],
-            'env_vars': {
-                'AWS_ACCESS_KEY_ID': os.environ['AWS_ACCESS_KEY_ID'],
-                'AWS_SECRET_ACCESS_KEY': os.environ['AWS_SECRET_ACCESS_KEY'],
+            "config_file": os.environ["KUBECONFIG"],
+            "env_vars": {
+                "AWS_ACCESS_KEY_ID": os.environ["AWS_ACCESS_KEY_ID"],
+                "AWS_SECRET_ACCESS_KEY": os.environ["AWS_SECRET_ACCESS_KEY"],
             },
         },
     )
@@ -142,7 +142,7 @@ def test_airflow_execution_date_tags_k8s(dagster_docker_image, cluster_provider)
     materialized_airflow_execution_date = None
     for result in results.values():
         for event in result:
-            if event.event_type_value == 'STEP_MATERIALIZATION':
+            if event.event_type_value == "STEP_MATERIALIZATION":
                 materialization = event.event_specific_data.materialization
                 materialization_entry = materialization.metadata_entries[0]
                 materialized_airflow_execution_date = materialization_entry.entry_data.text
@@ -151,11 +151,11 @@ def test_airflow_execution_date_tags_k8s(dagster_docker_image, cluster_provider)
 
 
 def _check_aws_creds_available():
-    for expected_env_var in ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']:
+    for expected_env_var in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]:
         if expected_env_var not in os.environ:
             raise Exception(
-                'Could not find %s in environment; AWS credentials AWS_ACCESS_KEY_ID and '
-                'AWS_SECRET_ACCESS_KEY must be set in environment for dagster-airflow k8s tests to '
-                'run, as credentials are needed to access S3 from within the Docker container '
-                'running on kind.' % expected_env_var
+                "Could not find %s in environment; AWS credentials AWS_ACCESS_KEY_ID and "
+                "AWS_SECRET_ACCESS_KEY must be set in environment for dagster-airflow k8s tests to "
+                "run, as credentials are needed to access S3 from within the Docker container "
+                "running on kind." % expected_env_var
             )
