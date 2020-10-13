@@ -5,6 +5,8 @@ import pytest
 from dagster_aws.ecs import client
 from moto import mock_ecs, mock_logs
 
+from dagster import DagsterInstance
+
 
 @mock_ecs
 @mock_logs
@@ -158,3 +160,11 @@ def test_one_run():
     testclient.run_task(networkConfiguration=networkConfiguration)
     testclient.spin_all()
     assert testclient.logs_messages == {0: ["start"]}
+
+
+def test_ecs_run_launcher_inits():
+    DagsterInstance.local_temp(
+        overrides={
+            "run_launcher": {"module": "dagster_aws.ecs.launcher", "class": "ECSRunLauncher"}
+        }
+    )

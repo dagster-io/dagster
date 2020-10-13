@@ -1,7 +1,8 @@
-from dagster import Array, Bool, Field, Noneable, StringSource, check
+from dagster import Bool, Field, Noneable, StringSource, check
+from dagster.cli.api import ExecuteRunArgs
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 
 from .client import ECSClient
 
@@ -13,8 +14,6 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
     Args:
         key_id (Optional[str]): the AWS access key ID to use
         access_key (Optional[str]): the AWS access key going with that key_id
-        command (List[str]): Command to run on container
-        entrypoint (Optional[str]): Entrypoint for container
         family (Optional[str]): what task family you want this task revising
         containername (Optional[str]):  what you want the container the task is on to be called
         imagename (Optional[str]): the URI for the docker image
@@ -31,24 +30,20 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
 
     def __init__(
         self,
+        inst_data,
         key_id,
         access_key,
-        command,
-        entrypoint=None,
-        family="dagstertask",
-        containername="dagstercontainer",
-        imagename="httpd:2.4",
-        memory="512",
-        cpu="256",
-        inst_data=None,
-        region_name="us-east-2",
-        launch_type="FARGATE",
-        grab_logs=True,
+        family,
+        containername,
+        imagename,
+        memory,
+        cpu,
+        region_name,
+        launch_type,
+        grab_logs,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.run_id_to_task_offset = dict()
-        if entrypoint is None:
-            entrypoint = ["/bin/bash", "-c"]
         self.client = ECSClient(
             region_name=region_name,
             key_id=key_id,
@@ -57,8 +52,8 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
             grab_logs=grab_logs,
         )
         self.client.set_and_register_task(
-            command,
-            entrypoint,
+            [],
+            ["dagster"],
             family=family,
             containername=containername,
             imagename=imagename,
@@ -80,17 +75,6 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
                 is_required=False,
                 default_value=None,
                 description="the AWS access key to use, overriding environment vars",
-            ),
-            "command": Field(
-                Array(StringSource),
-                is_required=True,
-                description="what commands to run on the container",
-            ),
-            "entrypoint": Field(
-                Array(StringSource),
-                is_required=False,
-                default_value=["/bin/bash", "-c"],
-                description="what entrypoint the commands run from",
             ),
             "family": Field(
                 StringSource,
@@ -137,7 +121,7 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
             "grab_logs": Field(
                 Bool,
                 is_required=False,
-                default_value="FARGATE",
+                default_value=True,
                 description="whether to pull down ECS logs for completed tasks",
             ),
         }
@@ -150,16 +134,21 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    def launch_run(self, instance, run, external_pipeline=None):
-        # currently ignoring external pipeline
-        if external_pipeline is None:
-            pass
+    def launch_run(self, instance, run, external_pipeline):
         check.inst_param(run, "run", PipelineRun)
-
+        input_json = serialize_dagster_namedtuple(
+            ExecuteRunArgs(
+                pipeline_origin=external_pipeline.get_origin(),
+                pipeline_run_id=run.run_id,
+                instance_ref=instance.get_ref(),
+            )
+        )
         # this maps run configuration to task overrides
         # this way we can pass in parameters from the dagit configuration that user has entered in the UI
         overrides = self.generate_task_overrides(run)
-        self.client.run_task(overrides=overrides)
+        self.client.run_task(
+            command=["api", "execute_run_with_structured_logs", input_json], overrides=overrides,
+        )
         self.run_id_to_task_offset[run.run_id] = self.client.offset
 
     def generate_task_overrides(self, run):

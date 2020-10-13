@@ -33,9 +33,9 @@ class ECSClient:
         starter_log_client=None,
         grab_logs=True,
     ):
-        self.key_id = check.str_param(key_id, "key_id")
+        self.key_id = check.opt_str_param(key_id, "key_id", "")
         self.region_name = check.str_param(region_name, "region_name")
-        self.access_key = check.str_param(access_key, "access_key")
+        self.access_key = check.opt_str_param(access_key, "access_key")
         self.launch_type = check.str_param(launch_type, "launch_type")
         self.account_id = "123412341234"
         self.grab_logs = check.bool_param(grab_logs, "grab_logs")
