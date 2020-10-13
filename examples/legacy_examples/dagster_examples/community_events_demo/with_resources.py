@@ -5,10 +5,21 @@ import boto3
 import requests
 from slack import WebClient  # pylint:disable=import-error
 
-from dagster import Array, ModeDefinition, ResourceDefinition, pipeline, repository, resource, solid
+from dagster import (
+    Array,
+    ModeDefinition,
+    PresetDefinition,
+    ResourceDefinition,
+    StringSource,
+    pipeline,
+    repository,
+    resource,
+    solid,
+)
+from dagster.utils import merge_dicts
 
 
-@resource(config_schema={"slack_token": str})
+@resource(config_schema={"slack_token": StringSource})
 def slack_resource(context):
     slack_token = context.resource_config["slack_token"]
     client = WebClient(token=slack_token)
@@ -82,8 +93,30 @@ production_mode = ModeDefinition(
     name="production_mode", resource_defs={"slack": slack_resource, "s3": s3_resource}
 )
 
+solid_config = {
+    "solids": {"query_stock_market_data": {"config": {"portfolio": ["AAPL"]}}},
+}
 
-@pipeline(mode_defs=[local_mode, production_mode])
+
+@pipeline(
+    mode_defs=[local_mode, production_mode],
+    preset_defs=[
+        PresetDefinition(name="local", mode="local_mode", run_config=solid_config),
+        PresetDefinition(
+            name="production",
+            mode="production_mode",
+            run_config=merge_dicts(
+                {
+                    "resources": {
+                        "slack": {"config": {"slack_token": {"env": "DEMO_SLACK_TOKEN"}}}
+                    },
+                    "solids": {"query_stock_market_data": {"config": {"portfolio": ["AAPL"]}}},
+                },
+                solid_config,
+            ),
+        ),
+    ],
+)
 def my_daily_portfolio_update():
     data = query_stock_market_data()
     send_summary_to_slack(compute_summary_message(data))
