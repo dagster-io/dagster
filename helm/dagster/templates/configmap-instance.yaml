@@ -70,9 +70,9 @@ data:
         broker:  "{{ template "dagster.celery.broker_url" . }}"
         backend: "{{ template "dagster.celery.backend_url" . }}"
         config_source:
-          {{- if .Values.celery.configSource }}
-          {{ toYaml .Values.celery.configSource | indent 10 }}
-          {{- end }}
+        {{- if .Values.celery.configSource }}
+        {{- toYaml .Values.celery.configSource | nindent 10 }}
+        {{- end }}
 
     run_storage:
       module: dagster_postgres.run_storage

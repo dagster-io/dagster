@@ -333,6 +333,10 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
                 "successThreshold": 1,
                 "failureThreshold": 3,
             },
+            "configSource": {
+                "broker_transport_options": {"priority_steps": [9]},
+                "worker_concurrency": 1,
+            },
         },
         "scheduler": {"k8sEnabled": "true", "schedulerNamespace": namespace},
         "serviceAccount": {"name": "dagit-admin"},
