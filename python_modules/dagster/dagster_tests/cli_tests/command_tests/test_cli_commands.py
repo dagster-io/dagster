@@ -32,7 +32,6 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.serdes import ConfigurableClass
 from dagster.utils import file_relative_path, merge_dicts
-from dagster.version import __version__
 
 
 def no_print(_):
