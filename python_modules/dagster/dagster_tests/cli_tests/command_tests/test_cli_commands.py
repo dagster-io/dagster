@@ -26,7 +26,7 @@ from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.serdes import ConfigurableClass
@@ -546,20 +546,23 @@ def valid_external_pipeline_target_cli_args_with_preset():
 
 
 def test_run_list():
-    runner = CliRunner()
-    result = runner.invoke(run_list_command)
-    assert result.exit_code == 0
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_list_command)
+        assert result.exit_code == 0
 
 
 def test_run_wipe_correct_delete_message():
-    runner = CliRunner()
-    result = runner.invoke(run_wipe_command, input="DELETE\n")
-    assert "Deleted all run history and event logs" in result.output
-    assert result.exit_code == 0
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_wipe_command, input="DELETE\n")
+        assert "Deleted all run history and event logs" in result.output
+        assert result.exit_code == 0
 
 
 def test_run_wipe_incorrect_delete_message():
-    runner = CliRunner()
-    result = runner.invoke(run_wipe_command, input="WRONG\n")
-    assert "Exiting without deleting all run history and event logs" in result.output
-    assert result.exit_code == 0
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_wipe_command, input="WRONG\n")
+        assert "Exiting without deleting all run history and event logs" in result.output
+        assert result.exit_code == 0
