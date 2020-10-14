@@ -1,9 +1,8 @@
-import {Checkbox, NonIdealState, Tag} from '@blueprintjs/core';
+import {Checkbox, NonIdealState} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {useActivePipelineForName} from 'src/DagsterRepositoryContext';
 import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
 import {explorerPathToString} from 'src/PipelinePathUtils';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
@@ -105,7 +104,7 @@ export class RunTable extends React.Component<RunTableProps, RunTableState> {
             />
           </LegendColumn>
           <LegendColumn style={{flex: 5}}></LegendColumn>
-          <LegendColumn style={{maxWidth: '90px'}}>Pipeline Snapshot</LegendColumn>
+          <LegendColumn style={{maxWidth: '90px'}}>Pipeline Definition</LegendColumn>
           <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
           <LegendColumn style={{maxWidth: 150}}>Timing</LegendColumn>
           <LegendColumn style={{maxWidth: 50}}></LegendColumn>
@@ -143,9 +142,6 @@ const RunRow: React.FunctionComponent<{
     pathSolids: [],
   })}`;
 
-  const activePipeline = useActivePipelineForName(run.pipelineName);
-  const isHistorical = activePipeline?.pipelineSnapshotId !== run.pipelineSnapshotId;
-
   return (
     <RowContainer key={run.runId} style={{paddingRight: 3}}>
       <RowColumn
@@ -171,15 +167,8 @@ const RunRow: React.FunctionComponent<{
         <RunTags tags={run.tags} onSetFilter={onSetFilter} />
       </RowColumn>
       <RowColumn style={{maxWidth: '90px'}}>
-        <div>
-          <div style={{fontFamily: 'monospace', marginBottom: '4px'}}>
-            <Link to={pipelineLink}>{run.pipelineSnapshotId?.slice(0, 8)}</Link>
-          </div>
-          {isHistorical ? (
-            <Tag minimal intent="warning">
-              Historical
-            </Tag>
-          ) : null}
+        <div style={{fontFamily: 'monospace'}}>
+          <Link to={pipelineLink}>{run.pipelineSnapshotId?.slice(0, 8)}</Link>
         </div>
       </RowColumn>
       <RowColumn>
