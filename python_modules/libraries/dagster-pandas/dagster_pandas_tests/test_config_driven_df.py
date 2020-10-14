@@ -1,9 +1,9 @@
 from __future__ import unicode_literals
 
+import os
+
 import pandas as pd
 import pytest
-from dagster_pandas import DataFrame
-
 from dagster import (
     DagsterInvalidConfigError,
     InputDefinition,
@@ -14,6 +14,7 @@ from dagster import (
 )
 from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
+from dagster_pandas import DataFrame
 
 
 def check_parquet_support():
@@ -243,6 +244,11 @@ def test_dataframe_table_from_inputs():
 
 
 def test_dataframe_pickle_from_inputs():
+    # python2.7 doesn't like DataFrame pickles created from python3.x and vice versa. So we create them on-the-go
+    pickle_path = file_relative_path(__file__, "num.pickle")
+    df = pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
+    df.to_pickle(pickle_path)
+
     called = {}
 
     @solid(input_defs=[InputDefinition("df", DataFrame)])
@@ -256,19 +262,13 @@ def test_dataframe_pickle_from_inputs():
 
     result = execute_pipeline(
         test_pipeline,
-        {
-            "solids": {
-                "df_as_config": {
-                    "inputs": {
-                        "df": {"pickle": {"path": file_relative_path(__file__, "num.pickle")}}
-                    }
-                }
-            }
-        },
+        {"solids": {"df_as_config": {"inputs": {"df": {"pickle": {"path": pickle_path}}}}}},
     )
 
     assert result.success
     assert called["yup"]
+
+    os.remove(pickle_path)
 
 
 def test_dataframe_csv_materialization():
