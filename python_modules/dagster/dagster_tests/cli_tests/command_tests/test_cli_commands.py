@@ -21,7 +21,7 @@ from dagster import (
     seven,
     solid,
 )
-from dagster.cli import cli
+from dagster.cli import cli, ENV_PREFIX
 from dagster.cli.run import run_list_command, run_wipe_command
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
@@ -568,7 +568,7 @@ def test_run_wipe_incorrect_delete_message():
 
 
 def test_use_env_vars_for_cli_option():
-    runner = CliRunner(env={"DAGSTER_VERSION": "1"})
-    result = runner.invoke(cli, ["debug"], auto_envvar_prefix="DAGSTER")
-    assert __version__ in result.output
+    runner = CliRunner(env={"DAGSTER_CLI_ASSET_WIPE_ALL": "1"})
+    result = runner.invoke(cli, ["asset", "wipe"], auto_envvar_prefix=ENV_PREFIX, input="DELETE\n")
+    assert "Removed asset indexes from event logs" in result.output
     assert result.exit_code == 0
