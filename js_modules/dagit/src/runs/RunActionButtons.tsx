@@ -161,7 +161,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
         title={primary.scope === '*' ? `Re-execute All (*)` : `Re-execute (${primary.scope})`}
         tooltip={pipelineError?.tooltip}
         icon={pipelineError?.icon}
-        disabled={!!pipelineError}
+        disabled={pipelineError?.disabled}
       />
       {run?.canTerminate && (
         <>
@@ -175,7 +175,7 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
 
 function usePipelineAvailabilityErrorForRun(
   run?: RunActionButtonsRun,
-): null | {tooltip?: string; icon?: IconName} {
+): null | {tooltip?: string; icon?: IconName; disabled: boolean} {
   const currentRepository = useRepository();
   const {options: repositoryOptions} = useRepositoryOptions();
 
@@ -205,6 +205,7 @@ function usePipelineAvailabilityErrorForRun(
         (otherReposWithSnapshot.length
           ? ` It is available in the following repositories: ${otherReposWithSnapshot.join(', ')}.`
           : ''),
+      disabled: true,
     };
   }
   if (currentRepositorySnapshots[run.pipeline.name] !== run.pipelineSnapshotId) {
@@ -213,11 +214,12 @@ function usePipelineAvailabilityErrorForRun(
       tooltip:
         `The pipeline "${run.pipeline.name}" in the current repository is` +
         ` a different version than the original pipeline run.`,
+      disabled: false,
     };
   }
 
   if (run?.pipeline.__typename === 'UnknownPipeline') {
-    return {icon: IconNames.ERROR, tooltip: `"${run.pipeline.name}" is unknown.`};
+    return {icon: IconNames.ERROR, tooltip: `"${run.pipeline.name}" is unknown.`, disabled: true};
   }
 
   return null;
