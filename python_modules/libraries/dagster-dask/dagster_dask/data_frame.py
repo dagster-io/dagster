@@ -499,7 +499,8 @@ def dataframe_materializer(_context, config, dask_df):
         to_kwargs = to_options
         
         # Specifically for to_sql, attempt to convert dtype values into SQLAlchemy types
-        if to_type == "sql" and dtype := to_options.get("dtype", None):
+        if to_type == "sql" and "dtype" in to_options:
+            dtype = to_options["dtype"]
             import sqlalchemy.types as st
                 
             if isinstance(dtype, str):
