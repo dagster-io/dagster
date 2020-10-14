@@ -497,6 +497,20 @@ def dataframe_materializer(_context, config, dask_df):
         to_path = to_options.pop("path") if to_meta.get("is_path_based", False) else None
         to_args = [to_path] if to_path else []
         to_kwargs = to_options
+        
+        # Specifically for to_sql, attempt to convert dtype values into SQLAlchemy types
+        if to_type == "sql" and dtype := to_options.get("dtype", None):
+            import sqlalchemy.types as st
+                
+            if isinstance(dtype, str):
+                dtype = getattr(st, dtype, dtype)
+            elif isinstance(dtype, dict):
+                dtype = {
+                    col_name: getattr(st, col_dtype, col_dtype)
+                    for col_name, col_dtype in dtype.items()
+                }
+            
+            to_options["dtype"] = dtype
 
         # Get the Dask client from the dask resource, if available.
         client_context = (
