@@ -28,6 +28,7 @@ def _base_config():
         "materialization_path": Field(str, is_required=False),
         "materialization_json": Field(Permissive(), is_required=False),
         "materialization_value": Field(float, is_required=False),
+        "partition": Field(str, is_required=False),
     }
 
 
