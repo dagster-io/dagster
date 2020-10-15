@@ -444,7 +444,7 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
 
             context_without_time = ScheduleExecutionContext(instance, None)
 
-            start_date = datetime(year=2019, month=1, day=1, minute=1)
+            start_date = datetime(year=2019, month=1, day=1)
 
             @hourly_schedule(
                 pipeline_name="foo_pipeline",
@@ -464,7 +464,7 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
 
             assert hourly_foo_schedule.get_run_config(context_without_time) == {
                 "hourly_time": pendulum.create(
-                    year=2019, month=2, day=26, hour=23, minute=1, tz="US/Central"
+                    year=2019, month=2, day=26, hour=23, tz="US/Central"
                 ).isoformat()
             }
             assert hourly_foo_schedule.should_execute(context_without_time)
@@ -491,7 +491,7 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
 
             assert hourly_foo_schedule.get_run_config(context_with_valid_time) == {
                 "hourly_time": pendulum.create(
-                    year=2019, month=1, day=27, hour=0, minute=1, tz="US/Central"
+                    year=2019, month=1, day=27, hour=0, tz="US/Central"
                 ).isoformat()
             }
 
@@ -501,7 +501,7 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
 def test_partitions_for_hourly_schedule_decorators_with_timezone():
     with instance_for_test() as instance:
         with pendulum.test(pendulum.create(2019, 2, 27, 0, 1, 1, tz="US/Central")):
-            start_date = datetime(year=2019, month=1, day=1, minute=1)
+            start_date = datetime(year=2019, month=1, day=1)
 
             # You can specify a start date with no timezone and it will be assumed to be
             # in the execution timezone
@@ -532,7 +532,7 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone():
 
             assert hourly_central_schedule.get_run_config(context_with_valid_time) == {
                 "hourly_time": pendulum.create(
-                    year=2019, month=1, day=27, hour=0, minute=1, tz="US/Central"
+                    year=2019, month=1, day=27, hour=0, tz="US/Central"
                 ).isoformat()
             }
 
@@ -540,7 +540,7 @@ def test_partitions_for_hourly_schedule_decorators_with_timezone():
 
             # You can specify a start date in a different timezone and it will be transformed into the
             # execution timezone
-            start_date_with_different_timezone = pendulum.create(2019, 1, 1, 0, 1, tz="US/Pacific")
+            start_date_with_different_timezone = pendulum.create(2019, 1, 1, 0, tz="US/Pacific")
 
             @hourly_schedule(
                 pipeline_name="foo_pipeline",
@@ -816,6 +816,21 @@ def test_schedule_decorators_bad():
         def monthly_foo_schedule_over():
             return {}
 
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "`start_date` must be at the beginning of the first day of the month for a monthly schedule."
+        ),
+    ):
+
+        @monthly_schedule(
+            pipeline_name="foo_pipeline",
+            execution_day_of_month=7,
+            start_date=datetime(year=2019, month=1, day=5),
+        )
+        def monthly_foo_schedule_later_in_month():
+            return {}
+
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @monthly_schedule(
@@ -834,6 +849,44 @@ def test_schedule_decorators_bad():
             start_date=datetime(year=2019, month=1, day=1),
         )
         def weekly_foo_schedule_over():
+            return {}
+
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("`start_date` must be at the beginning of a day for a weekly schedule."),
+    ):
+
+        @weekly_schedule(
+            pipeline_name="foo_pipeline",
+            execution_day_of_week=3,
+            start_date=datetime(year=2019, month=1, day=1, hour=2),
+        )
+        def weekly_foo_schedule_start_later_in_day():
+            return {}
+
+    with pytest.warns(
+        UserWarning,
+        match=re.escape("`start_date` must be at the beginning of a day for a daily schedule."),
+    ):
+
+        @daily_schedule(
+            pipeline_name="foo_pipeline", start_date=datetime(year=2019, month=1, day=1, hour=2),
+        )
+        def daily_foo_schedule_start_later_in_day():
+            return {}
+
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "`start_date` must be at the beginning of the hour for an hourly schedule."
+        ),
+    ):
+
+        @hourly_schedule(
+            pipeline_name="foo_pipeline",
+            start_date=datetime(year=2019, month=1, day=1, hour=2, minute=30),
+        )
+        def hourly_foo_schedule_start_later_in_hour():
             return {}
 
 

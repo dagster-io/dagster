@@ -61,6 +61,7 @@ from dagster.core.host_representation import RepositoryLocation
 from dagster.core.host_representation.handle import python_user_process_api_from_instance
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
+from dagster.core.test_utils import today_at_midnight
 from dagster.utils import file_relative_path, segfault
 
 
@@ -859,7 +860,7 @@ def define_schedules():
 
     @daily_schedule(
         pipeline_name="no_config_pipeline",
-        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        start_date=today_at_midnight() - datetime.timedelta(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
     )
     def partition_based_decorator(_date):
@@ -867,7 +868,7 @@ def define_schedules():
 
     @daily_schedule(
         pipeline_name="multi_mode_with_loggers",
-        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        start_date=today_at_midnight() - datetime.timedelta(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
         mode="foo_mode",
     )
@@ -876,7 +877,7 @@ def define_schedules():
 
     @hourly_schedule(
         pipeline_name="no_config_chain_pipeline",
-        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        start_date=today_at_midnight() - datetime.timedelta(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
         solid_selection=["return_foo"],
     )
@@ -885,7 +886,7 @@ def define_schedules():
 
     @daily_schedule(
         pipeline_name="no_config_chain_pipeline",
-        start_date=datetime.datetime.now() - datetime.timedelta(days=2),
+        start_date=today_at_midnight() - datetime.timedelta(days=2),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=3)).time(),
         solid_selection=["return_foo"],
     )
@@ -894,7 +895,7 @@ def define_schedules():
 
     @monthly_schedule(
         pipeline_name="no_config_chain_pipeline",
-        start_date=datetime.datetime.now() - datetime.timedelta(days=100),
+        start_date=(today_at_midnight() - datetime.timedelta(days=100)).replace(day=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=4)).time(),
         solid_selection=["return_foo"],
     )
@@ -903,7 +904,7 @@ def define_schedules():
 
     @weekly_schedule(
         pipeline_name="no_config_chain_pipeline",
-        start_date=datetime.datetime.now() - datetime.timedelta(days=50),
+        start_date=today_at_midnight() - datetime.timedelta(days=50),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=5)).time(),
         solid_selection=["return_foo"],
     )
@@ -913,7 +914,7 @@ def define_schedules():
     # Schedules for testing the user error boundary
     @daily_schedule(
         pipeline_name="no_config_pipeline",
-        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        start_date=today_at_midnight() - datetime.timedelta(days=1),
         should_execute=lambda _: asdf,  # pylint: disable=undefined-variable
     )
     def should_execute_error_schedule(_date):
@@ -921,7 +922,7 @@ def define_schedules():
 
     @daily_schedule(
         pipeline_name="no_config_pipeline",
-        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        start_date=today_at_midnight() - datetime.timedelta(days=1),
         tags_fn_for_date=lambda _: asdf,  # pylint: disable=undefined-variable
     )
     def tags_error_schedule(_date):
@@ -929,7 +930,7 @@ def define_schedules():
 
     @daily_schedule(
         pipeline_name="no_config_pipeline",
-        start_date=datetime.datetime.now() - datetime.timedelta(days=1),
+        start_date=today_at_midnight() - datetime.timedelta(days=1),
     )
     def run_config_error_schedule(_date):
         return asdf  # pylint: disable=undefined-variable

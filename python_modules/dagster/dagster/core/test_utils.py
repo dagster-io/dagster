@@ -1,3 +1,4 @@
+import datetime
 import os
 import time
 from contextlib import contextmanager
@@ -276,6 +277,10 @@ def new_cwd(path):
         yield
     finally:
         os.chdir(old)
+
+
+def today_at_midnight():
+    return datetime.datetime.combine(datetime.date.today(), datetime.time())
 
 
 class ExplodingRunLauncher(RunLauncher, ConfigurableClass):

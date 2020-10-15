@@ -149,6 +149,28 @@ def monthly_schedule(
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
 
+    if (
+        start_date.day != 1
+        or start_date.hour != 0
+        or start_date.minute != 0
+        or start_date.second != 0
+    ):
+        warnings.warn(
+            "`start_date` must be at the beginning of the first day of the month for a monthly "
+            "schedule. Use `execution_day_of_month` and `execution_time` to execute the schedule "
+            "at a specific time within the month. For example, to run the schedule at 3AM on the "
+            "23rd of each month starting in October, your schedule definition would look like:"
+            """
+@monthly_schedule(
+    start_date=datetime.datetime(2020, 10, 1),
+    execution_day_of_month=23,
+    execution_time=datetime.time(3, 0)
+):
+def my_schedule_definition(_):
+    ...
+"""
+        )
+
     if execution_day_of_month <= 0 or execution_day_of_month > 31:
         raise DagsterInvalidDefinitionError(
             "`execution_day_of_month={}` is not valid for monthly schedule. Execution day must be "
@@ -257,6 +279,23 @@ def weekly_schedule(
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
 
+    if start_date.hour != 0 or start_date.minute != 0 or start_date.second != 0:
+        warnings.warn(
+            "`start_date` must be at the beginning of a day for a weekly schedule. "
+            "Use `execution_time` to execute the schedule at a specific time of day. For example, "
+            "to run the schedule at 3AM each Tuesday starting on 10/20/2020, your schedule "
+            "definition would look like:"
+            """
+@weekly_schedule(
+    start_date=datetime.datetime(2020, 10, 20),
+    execution_day_of_week=1,
+    execution_time=datetime.time(3, 0)
+):
+def my_schedule_definition(_):
+    ...
+"""
+        )
+
     if execution_day_of_week < 0 or execution_day_of_week >= 7:
         raise DagsterInvalidDefinitionError(
             "`execution_day_of_week={}` is not valid for weekly schedule. Execution day must be "
@@ -364,6 +403,22 @@ def daily_schedule(
     check.opt_dict_param(environment_vars, "environment_vars", key_type=str, value_type=str)
     check.opt_str_param(execution_timezone, "execution_timezone")
 
+    if start_date.hour != 0 or start_date.minute != 0 or start_date.second != 0:
+        warnings.warn(
+            "`start_date` must be at the beginning of a day for a daily schedule. "
+            "Use `execution_time` to execute the schedule at a specific time of day. For example, "
+            "to run the schedule at 3AM each day starting on 10/20/2020, your schedule "
+            "definition would look like:"
+            """
+@daily_schedule(
+    start_date=datetime.datetime(2020, 10, 20),
+    execution_time=datetime.time(3, 0)
+):
+def my_schedule_definition(_):
+    ...
+"""
+        )
+
     cron_schedule = "{minute} {hour} * * *".format(
         minute=execution_time.minute, hour=execution_time.hour
     )
@@ -464,11 +519,27 @@ def hourly_schedule(
     check.inst_param(execution_time, "execution_time", datetime.time)
     check.opt_str_param(execution_timezone, "execution_timezone")
 
+    if start_date.minute != 0 or start_date.second != 0:
+        warnings.warn(
+            "`start_date` must be at the beginning of the hour for an hourly schedule. "
+            "Use `execution_time` to execute the schedule at a specific time within the hour. For "
+            "example, to run the schedule each hour at 15 minutes past the hour starting at 3AM "
+            "on 10/20/2020, your schedule definition would look like:"
+            """
+@hourly_schedule(
+    start_date=datetime.datetime(2020, 10, 20, 3),
+    execution_time=datetime.time(0, 15)
+):
+def my_schedule_definition(_):
+    ...
+"""
+        )
+
     if execution_time.hour != 0:
         warnings.warn(
             "Hourly schedule {schedule_name} created with:\n"
             "\tschedule_time=datetime.time(hour={hour}, minute={minute}, ...)."
-            "Since this is a hourly schedule, the hour parameter will be ignored and the schedule "
+            "Since this is an hourly schedule, the hour parameter will be ignored and the schedule "
             "will run on the {minute} mark for the previous hour interval. Replace "
             "datetime.time(hour={hour}, minute={minute}, ...) with "
             "datetime.time(minute={minute}, ...) to fix this warning."
