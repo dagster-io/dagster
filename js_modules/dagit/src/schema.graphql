@@ -799,6 +799,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   tags: [PipelineTag!]!
   runs: [PipelineRun!]!
   schedules: [ScheduleDefinition!]!
+  parentSnapshotId: String
   id: ID!
   presets: [PipelinePreset!]!
 }
@@ -980,6 +981,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   solidSelection: [String!]
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [ScheduleDefinition!]!
+  parentSnapshotId: String
 }
 
 type PipelineSnapshotNotFoundError implements Error {
