@@ -2,6 +2,8 @@ import contextlib
 import warnings
 
 import dask.dataframe as dd
+from dask.distributed import Client, wait
+
 from dagster import (
     Any,
     AssetMaterialization,
@@ -476,6 +478,8 @@ def dataframe_materializer(_context, config, dask_df):
     dask_df = dask_df.persist()
 
     # Materialize to specified types
+    futures = []
+    assets = []
     for to_type, to_options in to_specs.items():
         if not to_type in DataFrameToTypes:
             check.failed("Unsupported to_type {to_type}".format(to_type=to_type))
@@ -492,17 +496,31 @@ def dataframe_materializer(_context, config, dask_df):
         to_args = [to_path] if to_path else []
         to_kwargs = to_options
 
-        # Get the Dask client from the dask resource, if available.
-        client_context = (
-            _context.resources.dask.client.as_current()
-            if hasattr(_context.resources, "dask")
-            else contextlib.suppress()
-        )
-        with client_context:
-            to_function(dask_df, *to_args, **to_kwargs)
+        # Set compute=False to disable the implicit compute when calling
+        # DataFrame to_* functions. The futures for all the types will be
+        # gathered and then computed in a single compute call.
+        to_kwargs["compute"] = False
 
+        # Get a future for the materialization and add it to futures
+        # for later computation. Also generate and store the assets
+        # representing the future output.
+        futures.append(to_function(dask_df, *to_args, **to_kwargs))
         if to_path:
-            yield AssetMaterialization.file(to_path)
+            assets.append(AssetMaterialization.file(to_path))
+
+    # Get the Dask client from the dask resource, if available. Then, gather
+    # the results from the accumulated materialization futures.
+    client_context = (
+        _context.resources.dask.client.as_current()
+        if hasattr(_context.resources, "dask")
+        else contextlib.suppress()
+    )
+    with client_context:
+        results = Client.current().compute(futures)
+        wait(results)
+
+    for asset in assets:
+        yield asset
 
 
 def df_type_check(_, value):
