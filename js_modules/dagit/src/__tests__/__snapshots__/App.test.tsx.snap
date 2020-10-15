@@ -529,7 +529,7 @@ exports[`renders execution 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
+      className="TopNav__Container-uwq7ub-3 UcuNS"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -1327,7 +1327,7 @@ exports[`renders pipeline page 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
+      className="TopNav__Container-uwq7ub-3 UcuNS"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -6084,7 +6084,7 @@ exports[`renders pipeline solid page 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
+      className="TopNav__Container-uwq7ub-3 UcuNS"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -12704,7 +12704,7 @@ exports[`renders type page 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
+      className="TopNav__Container-uwq7ub-3 UcuNS"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -17461,7 +17461,7 @@ exports[`renders type page 2`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
+      className="TopNav__Container-uwq7ub-3 UcuNS"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
@@ -22218,7 +22218,7 @@ exports[`renders without error 1`] = `
     }
   >
     <div
-      className="TopNav__PipelineTabBarContainer-uwq7ub-3 fbpxdY"
+      className="TopNav__Container-uwq7ub-3 UcuNS"
     >
       <div
         className="TopNav__BreadcrumbContainer-uwq7ub-2 bQinae"
