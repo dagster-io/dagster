@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import os
+
 import pandas as pd
 import pytest
 from dagster_pandas import DataFrame
@@ -242,6 +244,34 @@ def test_dataframe_table_from_inputs():
     assert called["yup"]
 
 
+def test_dataframe_pickle_from_inputs():
+    # python2.7 doesn't like DataFrame pickles created from python3.x and vice versa. So we create them on-the-go
+    pickle_path = file_relative_path(__file__, "num.pickle")
+    df = pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
+    df.to_pickle(pickle_path)
+
+    called = {}
+
+    @solid(input_defs=[InputDefinition("df", DataFrame)])
+    def df_as_config(_context, df):
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
+        called["yup"] = True
+
+    @pipeline
+    def test_pipeline():
+        df_as_config()
+
+    result = execute_pipeline(
+        test_pipeline,
+        {"solids": {"df_as_config": {"inputs": {"df": {"pickle": {"path": pickle_path}}}}}},
+    )
+
+    assert result.success
+    assert called["yup"]
+
+    os.remove(pickle_path)
+
+
 def test_dataframe_csv_materialization():
     @solid(output_defs=[OutputDefinition(DataFrame)])
     def return_df(_context):
@@ -305,4 +335,26 @@ def test_dataframe_table_materialization():
         assert result.success
 
         df = pd.read_csv(filename, sep="\t")
+        assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
+
+
+def test_dataframe_pickle_materialization():
+    @solid(output_defs=[OutputDefinition(DataFrame)])
+    def return_df(_context):
+        return pd.DataFrame({"num1": [1, 3], "num2": [2, 4]})
+
+    @pipeline
+    def return_df_pipeline():
+        return_df()
+
+    with get_temp_file_name() as filename:
+        filename = "/tmp/num.pickle"
+        result = execute_pipeline(
+            return_df_pipeline,
+            {"solids": {"return_df": {"outputs": [{"result": {"pickle": {"path": filename}}}]}}},
+        )
+
+        assert result.success
+
+        df = pd.read_pickle(filename)
         assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}

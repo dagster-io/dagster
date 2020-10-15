@@ -34,6 +34,7 @@ CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
             },
             "parquet": {"path": StringSource},
             "table": {"path": StringSource},
+            "pickle": {"path": StringSource},
         },
     )
 )
@@ -48,6 +49,8 @@ def dataframe_materializer(_context, config, pandas_df):
         pandas_df.to_parquet(file_options["path"])
     elif file_type == "table":
         pandas_df.to_csv(file_options["path"], sep="\t", index=False)
+    elif file_type == "pickle":
+        pandas_df.to_pickle(file_options["path"])
     else:
         check.failed("Unsupported file_type {file_type}".format(file_type=file_type))
 
@@ -63,6 +66,7 @@ def dataframe_materializer(_context, config, pandas_df):
             },
             "parquet": {"path": StringSource},
             "table": {"path": StringSource},
+            "pickle": {"path": StringSource},
         },
     )
 )
@@ -76,6 +80,8 @@ def dataframe_loader(_context, config):
         return pd.read_parquet(file_options["path"])
     elif file_type == "table":
         return pd.read_csv(file_options["path"], sep="\t")
+    elif file_type == "pickle":
+        return pd.read_pickle(file_options["path"])
     else:
         raise DagsterInvariantViolationError(
             "Unsupported file_type {file_type}".format(file_type=file_type)
