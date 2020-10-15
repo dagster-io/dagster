@@ -23,6 +23,7 @@ import {ScheduleRoot} from 'src/schedules/ScheduleRoot';
 import {SchedulesRoot} from 'src/schedules/SchedulesRoot';
 import {SolidDetailsRoot} from 'src/solids/SolidDetailsRoot';
 import {SolidsRoot} from 'src/solids/SolidsRoot';
+import {WorkspaceRoot} from 'src/workspace/WorkspaceRoot';
 
 const AppRoutes = () => (
   <Switch>
@@ -33,6 +34,7 @@ const AppRoutes = () => (
     <Route path="/schedules" component={SchedulesRoot} />
     <Route path="/pipeline/(.*)" component={PipelineRoot} />
     <Route path="/instance" component={InstanceRoot} />
+    <Route path="/workspace" component={WorkspaceRoot} />
     <Route path="*" component={FallthroughRoot} />
   </Switch>
 );

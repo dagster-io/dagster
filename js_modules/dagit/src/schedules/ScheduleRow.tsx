@@ -16,7 +16,6 @@ import {
   Tooltip,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import cronstrue from 'cronstrue';
 import gql from 'graphql-tag';
 import * as qs from 'query-string';
 import * as React from 'react';
@@ -44,6 +43,7 @@ import {assertUnreachable} from 'src/Util';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {titleForRun} from 'src/runs/RunUtils';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
+import {humanCronString} from 'src/schedules/humanCronString';
 import {
   ScheduleDefinitionFragment,
   ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData,
@@ -62,14 +62,6 @@ import {ScheduleStatus, ScheduleTickStatus} from 'src/types/globalTypes';
 type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 
 const NUM_RUNS_TO_DISPLAY = 10;
-
-const getNaturalLanguageCronString = (cronSchedule: string) => {
-  try {
-    return cronstrue.toString(cronSchedule);
-  } catch {
-    return 'Invalid cron string';
-  }
-};
 
 const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
   if (status === ScheduleStatus.STOPPED && runningScheduleCount === 0) {
@@ -216,7 +208,7 @@ export const ScheduleRow: React.FunctionComponent<{
           >
             {cronSchedule ? (
               <Tooltip position={'bottom'} content={cronSchedule}>
-                {getNaturalLanguageCronString(cronSchedule)}
+                {humanCronString(cronSchedule)}
               </Tooltip>
             ) : (
               <div>-</div>
@@ -287,7 +279,7 @@ export const ScheduleRow: React.FunctionComponent<{
         >
           {cronSchedule ? (
             <Tooltip position={'bottom'} content={cronSchedule}>
-              {getNaturalLanguageCronString(cronSchedule)}
+              {humanCronString(cronSchedule)}
             </Tooltip>
           ) : (
             <div>-</div>
@@ -589,7 +581,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
         >
           {cronSchedule ? (
             <Tooltip position={'bottom'} content={cronSchedule}>
-              {getNaturalLanguageCronString(cronSchedule)}
+              {humanCronString(cronSchedule)}
             </Tooltip>
           ) : (
             <div>-</div>
