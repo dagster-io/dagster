@@ -9,16 +9,16 @@ def normalize_column_names(df: dd.DataFrame, enabled) -> dd.DataFrame:
         df.columns = map(normalize_name, df.columns)
 
     return df
-    
-    
+
+
 def normalize_index_names(df: dd.DataFrame, enabled) -> dd.DataFrame:
     if enabled:
         df.index = df.index.rename(normalize_name(df.index.name))
-        
+
     return df
 
 
-# Based on https://stackoverflow.com/a/1176023   
+# Based on https://stackoverflow.com/a/1176023
 _camel_to_snake1 = re.compile("(.)([A-Z][a-z]+)")
 _camel_to_snake2 = re.compile("([a-z0-9])([A-Z])")
 

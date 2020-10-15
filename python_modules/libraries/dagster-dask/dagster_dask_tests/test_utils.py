@@ -119,20 +119,20 @@ def test_normalize_column_names():
     result = execute_solid(passthrough, run_config=run_config)
     output_df = result.output_value()
     assert all(col in output_df.columns for col in ("id", "province_or_territory", "country"))
-    
-    
+
+
 def test_normalize_index_names():
     path = file_relative_path(__file__, "canada.csv")
-    
+
     input_df = dd.read_csv(path)
     input_df = input_df.set_index("provinceOrTerritory")
-    
+
     # Set normalize_index_names=False to not modify the index names
     run_config = generate_config(path, normalize_index_names=False)
     result = execute_solid(passthrough, run_config=run_config)
     output_df = result.output_value()
     assert output_df.index.name == "provinceOrTerritory"
-    
+
     # Set normalize_index_names=True to modify the index names
     run_config = generate_config(path, normalize_index_names=True)
     result = execute_solid(passthrough, run_config=run_config)
