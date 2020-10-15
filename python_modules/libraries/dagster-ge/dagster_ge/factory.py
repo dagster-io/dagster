@@ -30,6 +30,7 @@ def ge_data_context(context):
 
 
 def ge_validation_solid_factory(
+    name,
     datasource_name,
     suite_name,
     validation_operator_name=None,
@@ -40,6 +41,7 @@ def ge_validation_solid_factory(
         Generates solids for interacting with GE.
 
     Args:
+        name (str): the name of the solid
         datasource_name (str): the name of your DataSource, see your great_expectations.yml
         suite_name (str): the name of your expectation suite, see your great_expectations.yml
         validation_operator_name (Optional[str]): what validation operator to run  -- defaults to None,
@@ -65,6 +67,7 @@ def ge_validation_solid_factory(
     batch_kwargs = check.opt_dict_param(batch_kwargs, "batch_kwargs")
 
     @solid(
+        name=name,
         input_defs=[InputDefinition("dataset", input_dagster_type)],
         output_defs=[
             OutputDefinition(
