@@ -9,6 +9,13 @@ def normalize_column_names(df: dd.DataFrame, enabled) -> dd.DataFrame:
         df.columns = map(normalize_name, df.columns)
 
     return df
+    
+    
+def normalize_index_names(df: dd.DataFrame, enabled) -> dd.DataFrame:
+    if enabled:
+        df.index = df.index.rename(normalize_name(df.index.name))
+        
+    return df
 
 
 # Based on https://stackoverflow.com/a/1176023   
@@ -170,6 +177,14 @@ DataFrameUtilities = {
             Bool,
             is_required=False,
             description="Lowercase and convert CamelCase to snake_case on column names.",
+        ),
+    },
+    "normalize_index_names": {
+        "function": normalize_index_names,
+        "options": Field(
+            Bool,
+            is_required=False,
+            description="Lowercase and convert CamelCase to snake_case on index names.",
         ),
     },
 }
