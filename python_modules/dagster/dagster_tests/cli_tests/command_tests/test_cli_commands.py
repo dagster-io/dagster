@@ -27,7 +27,7 @@ from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.serdes import ConfigurableClass
@@ -567,7 +567,8 @@ def test_run_wipe_incorrect_delete_message():
 
 
 def test_use_env_vars_for_cli_option():
-    runner = CliRunner(env={"DAGSTER_CLI_ASSET_WIPE_ALL": "1"})
-    result = runner.invoke(cli, ["asset", "wipe"], auto_envvar_prefix=ENV_PREFIX, input="DELETE\n")
-    assert "Removed asset indexes from event logs" in result.output
-    assert result.exit_code == 0
+    with instance_for_test():
+        runner = CliRunner(env={"DAGSTER_CLI_ASSET_WIPE_ALL": "1"})
+        result = runner.invoke(cli, ["asset", "wipe"], auto_envvar_prefix=ENV_PREFIX, input="DELETE\n")
+        assert "Removed asset indexes from event logs" in result.output
+        assert result.exit_code == 0
