@@ -3,14 +3,14 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
 
 
-def get_assets(graphene_info):
+def get_assets(graphene_info, prefix_path):
     instance = graphene_info.context.instance
     if not instance.is_asset_aware:
         return graphene_info.schema.type_named("AssetsNotSupportedError")(
             message="The configured event log storage is not asset aware."
         )
 
-    asset_keys = instance.all_asset_keys()
+    asset_keys = instance.all_asset_keys(prefix_path=prefix_path)
     return graphene_info.schema.type_named("AssetConnection")(
         nodes=[graphene_info.schema.type_named("Asset")(key=asset_key) for asset_key in asset_keys]
     )
@@ -23,6 +23,9 @@ def get_asset(graphene_info, asset_key):
         return graphene_info.schema.type_named("AssetsNotSupportedError")(
             message="The configured event log storage is not asset aware."
         )
+
+    if not instance.has_asset_key(asset_key):
+        return graphene_info.schema.type_named("AssetNotFoundError")(asset_key=asset_key)
 
     return graphene_info.schema.type_named("Asset")(key=asset_key)
 

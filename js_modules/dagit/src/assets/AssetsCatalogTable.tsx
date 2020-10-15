@@ -1,113 +1,89 @@
-import {
-  IBreadcrumbProps,
-  InputGroup,
-  Menu,
-  MenuItem,
-  NonIdealState,
-  Popover,
-} from '@blueprintjs/core';
+import {InputGroup, Menu, MenuItem, NonIdealState, Popover} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
 import {useHistory} from 'react-router';
-import {Link, RouteComponentProps} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
-import {AssetRoot} from 'src/assets/AssetRoot';
-import {AssetsRootQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsRootQuery';
+import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsTableQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {TopNav} from 'src/nav/TopNav';
 
-type Asset = AssetsRootQuery_assetsOrError_AssetConnection_nodes;
+type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
 
-export const AssetsRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {
-  const urlPathString = match.params['0'];
-  const queryResult = useQuery(ASSETS_ROOT_QUERY);
-
-  const currentPath = (urlPathString || '').split('/').filter((x: string) => x);
-
-  const breadcrumbs: IBreadcrumbProps[] = [{icon: 'panel-table', text: 'Assets', href: '/assets'}];
-  if (currentPath.length) {
-    currentPath.reduce((accum: string, elem: string) => {
-      const href = `${accum}/${elem}`;
-      breadcrumbs.push({text: elem, href});
-      return href;
-    }, '/assets');
-  }
+export const AssetsCatalogTable: React.FunctionComponent<{prefixPath: string[]}> = ({
+  prefixPath,
+}) => {
+  const queryResult = useQuery(ASSETS_TABLE_QUERY, {
+    variables: {prefixPath},
+  });
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', width: '100%', overflow: 'auto'}}>
-      <TopNav breadcrumbs={breadcrumbs} />
-      <div style={{flexGrow: 1}}>
-        <Loading queryResult={queryResult}>
-          {({assetsOrError}) => {
-            if (assetsOrError.__typename === 'AssetsNotSupportedError') {
-              return (
-                <Wrapper>
-                  <NonIdealState
-                    icon="panel-table"
-                    title="Assets"
-                    description={
-                      <p>
-                        An asset-aware event storage (e.g. <code>PostgresEventLogStorage</code>)
-                        must be configured in order to use any Asset-based features. You can
-                        configure this on your instance through <code>dagster.yaml</code>. See the{' '}
-                        <a href="https://docs.dagster.io/overview/instances/dagster-instance">
-                          instance documentation
-                        </a>{' '}
-                        for more information.
-                      </p>
-                    }
-                  />
-                </Wrapper>
-              );
-            }
-
-            const [exactMatchingAsset] = assetsOrError.nodes.filter(
-              (asset: Asset) => asset.key.path.join('/') === urlPathString,
-            );
-            const prefixMatchingAssets = assetsOrError.nodes.filter(
-              (asset: Asset) =>
-                currentPath.length < asset.key.path.length &&
-                currentPath.every((part: string, i: number) => part === asset.key.path[i]),
-            );
-
-            if (!prefixMatchingAssets.length && !exactMatchingAsset) {
-              return (
-                <Wrapper>
-                  <NonIdealState
-                    icon="panel-table"
-                    title="Assets"
-                    description={
-                      <p>
-                        There are no {urlPathString ? 'matching ' : 'known '}
-                        materialized assets with {urlPathString ? 'the ' : 'a '}
-                        specified asset key. Any asset keys that have been specified with a{' '}
-                        <code>Materialization</code> during a pipeline run will appear here. See the{' '}
-                        <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
-                          Materialization documentation
-                        </a>{' '}
-                        for more information.
-                      </p>
-                    }
-                  />
-                </Wrapper>
-              );
-            }
-
+    <div style={{flexGrow: 1}}>
+      <Loading queryResult={queryResult}>
+        {({assetsOrError}) => {
+          if (assetsOrError.__typename === 'AssetsNotSupportedError') {
             return (
               <Wrapper>
-                {prefixMatchingAssets.length ? (
-                  <AssetsTable assets={prefixMatchingAssets} currentPath={currentPath} />
-                ) : null}
-                {exactMatchingAsset ? <AssetRoot assetKey={exactMatchingAsset.key} /> : null}
+                <NonIdealState
+                  icon="panel-table"
+                  title="Assets"
+                  description={
+                    <p>
+                      An asset-aware event storage (e.g. <code>PostgresEventLogStorage</code>) must
+                      be configured in order to use any Asset-based features. You can configure this
+                      on your instance through <code>dagster.yaml</code>. See the{' '}
+                      <a href="https://docs.dagster.io/overview/instances/dagster-instance">
+                        instance documentation
+                      </a>{' '}
+                      for more information.
+                    </p>
+                  }
+                />
               </Wrapper>
             );
-          }}
-        </Loading>
-      </div>
+          }
+
+          const prefixMatchingAssets = assetsOrError.nodes.filter(
+            (asset: Asset) =>
+              prefixPath.length < asset.key.path.length &&
+              prefixPath.every((part: string, i: number) => part === asset.key.path[i]),
+          );
+
+          if (!prefixMatchingAssets.length) {
+            return (
+              <Wrapper>
+                <NonIdealState
+                  icon="panel-table"
+                  title="Assets"
+                  description={
+                    <p>
+                      There are no {prefixPath.length ? 'matching ' : 'known '}
+                      materialized assets with {prefixPath.length ? 'the ' : 'a '}
+                      specified asset key. Any asset keys that have been specified with a{' '}
+                      <code>Materialization</code> during a pipeline run will appear here. See the{' '}
+                      <a href="https://docs.dagster.io/_apidocs/solids#dagster.AssetMaterialization">
+                        Materialization documentation
+                      </a>{' '}
+                      for more information.
+                    </p>
+                  }
+                />
+              </Wrapper>
+            );
+          }
+
+          return (
+            <Wrapper>
+              {prefixMatchingAssets.length ? (
+                <AssetsTable assets={prefixMatchingAssets} currentPath={prefixPath} />
+              ) : null}
+            </Wrapper>
+          );
+        }}
+      </Loading>
     </div>
   );
 };
@@ -124,7 +100,6 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
 
   const selectOption = (asset: Asset) => {
-    console.log('wtf', asset);
     history.push(`/assets/${asset.key.path.join('/')}`);
   };
 
@@ -267,9 +242,9 @@ const Wrapper = styled.div`
   overflow: auto;
 `;
 
-export const ASSETS_ROOT_QUERY = gql`
-  query AssetsRootQuery {
-    assetsOrError {
+export const ASSETS_TABLE_QUERY = gql`
+  query AssetsTableQuery($prefixPath: [String!]) {
+    assetsOrError(prefixPath: $prefixPath) {
       __typename
       ... on AssetsNotSupportedError {
         message

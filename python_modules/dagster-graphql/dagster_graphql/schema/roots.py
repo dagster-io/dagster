@@ -179,7 +179,10 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     instance = dauphin.NonNull("Instance")
-    assetsOrError = dauphin.Field(dauphin.NonNull("AssetsOrError"))
+    assetsOrError = dauphin.Field(
+        dauphin.NonNull("AssetsOrError"),
+        prefixPath=dauphin.Argument(dauphin.List(dauphin.NonNull(dauphin.String))),
+    )
     assetOrError = dauphin.Field(
         dauphin.NonNull("AssetOrError"),
         assetKey=dauphin.Argument(dauphin.NonNull("AssetKeyInput")),
@@ -314,8 +317,8 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_instance(self, graphene_info):
         return graphene_info.schema.type_named("Instance")(graphene_info.context.instance)
 
-    def resolve_assetsOrError(self, graphene_info):
-        return get_assets(graphene_info)
+    def resolve_assetsOrError(self, graphene_info, **kwargs):
+        return get_assets(graphene_info, kwargs.get("prefixPath"))
 
     def resolve_assetOrError(self, graphene_info, **kwargs):
         return get_asset(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))

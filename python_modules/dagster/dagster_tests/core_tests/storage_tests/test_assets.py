@@ -127,6 +127,18 @@ def test_asset_keys(asset_aware_context):
         assert set([asset_key.to_string() for asset_key in asset_keys]) == set(
             ["asset_1", "asset_2", "path.to.asset_3"]
         )
+        prefixed_keys = event_log_storage.get_all_asset_keys(prefix_path=["asset"])
+        assert len(prefixed_keys) == 2
+
+
+@asset_test
+def test_has_asset_key(asset_aware_context):
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        execute_pipeline(pipeline_one, instance=instance)
+        execute_pipeline(pipeline_two, instance=instance)
+        assert event_log_storage.has_asset_key(AssetKey(["path", "to", "asset_3"]))
+        assert not event_log_storage.has_asset_key(AssetKey(["path", "to", "bogus", "asset"]))
 
 
 @asset_test

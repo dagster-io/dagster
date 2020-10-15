@@ -4,18 +4,18 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
 GET_ASSET_KEY_QUERY = """
-{
-    assetsOrError {
-        __typename
-        ...on AssetConnection {
-            nodes {
-                key {
-                    path
+    query AssetKeyQuery($prefixPath: [String!]) {
+        assetsOrError(prefixPath: $prefixPath) {
+            __typename
+            ...on AssetConnection {
+                nodes {
+                    key {
+                        path
+                    }
                 }
             }
         }
     }
-}
 """
 
 GET_ASSET_MATERIALIZATION = """
@@ -29,6 +29,9 @@ GET_ASSET_MATERIALIZATION = """
                         }
                     }
                 }
+            }
+            ... on AssetNotFoundError {
+                __typename
             }
         }
     }
@@ -82,7 +85,30 @@ class TestAssetAwareEventLog(
         )
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
 
-        result = execute_dagster_graphql(graphql_context, GET_ASSET_KEY_QUERY)
+        result = execute_dagster_graphql(
+            graphql_context, GET_ASSET_KEY_QUERY, variables={"prefixPath": None}
+        )
+        assert result.data
+        assert result.data["assetsOrError"]
+        assert result.data["assetsOrError"]["nodes"]
+
+        # sort by materialization asset key to keep list order is consistent for snapshot
+        result.data["assetsOrError"]["nodes"].sort(key=lambda e: e["key"]["path"][0])
+
+        snapshot.assert_match(result.data)
+
+    def test_get_prefixed_asset_keys(self, graphql_context, snapshot):
+        selector = infer_pipeline_selector(graphql_context, "multi_asset_pipeline")
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={"executionParams": {"selector": selector, "mode": "default"}},
+        )
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+
+        result = execute_dagster_graphql(
+            graphql_context, GET_ASSET_KEY_QUERY, variables={"prefixPath": ["a"]}
+        )
         assert result.data
         assert result.data["assetsOrError"]
         assert result.data["assetsOrError"]["nodes"]
@@ -102,6 +128,22 @@ class TestAssetAwareEventLog(
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
         result = execute_dagster_graphql(
             graphql_context, GET_ASSET_MATERIALIZATION, variables={"assetKey": {"path": ["a"]}}
+        )
+        assert result.data
+        snapshot.assert_match(result.data)
+
+    def test_get_asset_key_not_found(self, graphql_context, snapshot):
+        selector = infer_pipeline_selector(graphql_context, "single_asset_pipeline")
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PIPELINE_EXECUTION_MUTATION,
+            variables={"executionParams": {"selector": selector, "mode": "default"}},
+        )
+        assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION,
+            variables={"assetKey": {"path": ["bogus", "asset"]}},
         )
         assert result.data
         snapshot.assert_match(result.data)

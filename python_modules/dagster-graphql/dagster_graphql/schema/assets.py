@@ -4,6 +4,7 @@ from dagster_graphql.implementation.fetch_runs import get_run_by_id
 from dagster_graphql.schema.runs import construct_basic_params
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.events import StepMaterializationData
 from dagster.core.events.log import EventRecord
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
@@ -99,6 +100,16 @@ class DauphinAssetsNotSupportedError(dauphin.ObjectType):
         interfaces = (DauphinError,)
 
 
+class DauphinAssetNotFoundError(dauphin.ObjectType):
+    class Meta(object):
+        name = "AssetNotFoundError"
+        interfaces = (DauphinError,)
+
+    def __init__(self, asset_key):
+        self.asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+        self.message = "Asset key {asset_key} not found.".format(asset_key=asset_key.to_string())
+
+
 class DauphinAssetsOrError(dauphin.Union):
     class Meta(object):
         name = "AssetsOrError"
@@ -115,4 +126,4 @@ class DauphinAssetConnection(dauphin.ObjectType):
 class DauphinAssetOrError(dauphin.Union):
     class Meta(object):
         name = "AssetOrError"
-        types = ("Asset", "AssetsNotSupportedError")
+        types = ("Asset", "AssetsNotSupportedError", "AssetNotFoundError")

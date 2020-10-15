@@ -31,7 +31,11 @@ type AssetMaterialization {
   partition: String
 }
 
-union AssetOrError = Asset | AssetsNotSupportedError
+type AssetNotFoundError implements Error {
+  message: String!
+}
+
+union AssetOrError = Asset | AssetsNotSupportedError | AssetNotFoundError
 
 type AssetsNotSupportedError implements Error {
   message: String!
@@ -1053,7 +1057,7 @@ type Query {
   executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
-  assetsOrError: AssetsOrError!
+  assetsOrError(prefixPath: [String!]): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
 }
 
