@@ -427,33 +427,27 @@ def dataframe_loader(_context, config):
 
 def _dataframe_materializer_config():
     to_fields = {
-        write_to: Permissive(
+        write_to: Field(Permissive(
             {
                 option_name: Field(
                     option_args[0], is_required=option_args[1], description=option_args[2]
                 )
                 for option_name, option_args in to_opts["options"].items()
             }
-        )
+        ), is_required=False)
         for write_to, to_opts in DataFrameToTypes.items()
     }
 
     return Shape(
         {
-            "to": Field(
-                Selector(to_fields),
-                is_required=False,
-            ),
+            "to": Field(Permissive(to_fields), is_required=False),
             **{
                 util_name: util_spec["options"]
                 for util_name, util_spec in DataFrameUtilities.items()
             },
             # https://github.com/dagster-io/dagster/issues/2872
             **{
-                field_name: Field(
-                    field_config,
-                    is_required=False,
-                )
+                field_name: field_config
                 for field_name, field_config in to_fields.items()
             },
         }
