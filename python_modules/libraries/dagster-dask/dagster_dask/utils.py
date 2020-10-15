@@ -6,23 +6,21 @@ from dagster import Any, Bool, Field, Float, Int, Permissive, Shape, String
 
 def normalize_column_names(df: dd.DataFrame, enabled) -> dd.DataFrame:
     if enabled:
-        df.columns = normalize_names(df.columns)
+        df.columns = map(normalize_name, df.columns)
 
     return df
 
 
-def normalize_names(names):
-    # Based on https://stackoverflow.com/a/1176023
-    camel_to_snake1 = re.compile("(.)([A-Z][a-z]+)")
-    camel_to_snake2 = re.compile("([a-z0-9])([A-Z])")
+# Based on https://stackoverflow.com/a/1176023   
+_camel_to_snake1 = re.compile("(.)([A-Z][a-z]+)")
+_camel_to_snake2 = re.compile("([a-z0-9])([A-Z])")
 
-    def normalize(name):
-        if not name:
-            return name
-        name = camel_to_snake1.sub(r"\1_\2", name)
-        return camel_to_snake2.sub(r"\1_\2", name).lower()
 
-    return map(normalize, names)
+def normalize_name(name):
+    if not name:
+        return name
+    name = _camel_to_snake1.sub(r"\1_\2", name)
+    return _camel_to_snake2.sub(r"\1_\2", name).lower()
 
 
 DataFrameUtilities = {
