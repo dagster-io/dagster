@@ -1,41 +1,53 @@
-from slackclient import SlackClient
+import sys
 
-from dagster import Field, StringSource, resource, seven
+from dagster import Field, StringSource, resource
 
 
 class SlackConnection:
+    DAGSTER_ICON_URL = "https://user-images.githubusercontent.com/609349/57993619-9ff2ee00-7a6e-11e9-9184-b3414e3eeb30.png"
+    DAGSTER_SLACK_USERNAME = "dagsterbot"
+
     def __init__(self, token):
-        self.token = token
-        self.sc = SlackClient(self.token)
+        # Conditional import of slack, since sdk was rewritten for py3
+        # pylint:disable=import-error
+        if sys.version_info.major >= 3:
+            from slack import WebClient
+        else:
+            from slackclient import SlackClient as WebClient
+
+        self._token = token
+        self.sc = WebClient(self._token)
 
         class _Chat:
             @classmethod
-            def post_message(
-                cls,
-                channel="#noise",
-                username="dagsterbot",
-                text="Hello from Dagster!",
-                # pylint: disable=line-too-long
-                icon_url="https://user-images.githubusercontent.com/609349/57993619-9ff2ee00-7a6e-11e9-9184-b3414e3eeb30.png",
-                attachments=None,
-            ):
+            def post_message(cls, channel, text, **kwargs):
                 """slack_resource.chat.post_message() : chat.postMessage
 
                 See https://api.slack.com/methods/chat.postMessage
                 """
                 api_params = {
                     "channel": channel,
-                    "username": username,
                     "text": text,
-                    "icon_url": icon_url,
-                    "attachments": seven.json.dumps(attachments),
+                    "icon_url": SlackConnection.DAGSTER_ICON_URL,
+                    "username": SlackConnection.DAGSTER_SLACK_USERNAME,
                 }
-                return self.sc.api_call("chat.postMessage", **api_params)
+                if sys.version_info.major >= 3:
+                    api_params.update(kwargs)
+                    return self.sc.chat_postMessage(**api_params)
+                else:
+                    return self.sc.api_call("chat.postMessage", **api_params)
 
         self.chat = _Chat
 
-    def api_call(self, method, timeout=None, **kwargs):
-        return self.sc.api_call(method, timeout, **kwargs)
+    def api_call(self, api_method, **kwargs):
+        """ slack_resource.api_call()
+
+        See https://slack.dev/python-slackclient/basic_usage.html#calling-any-api-methods
+        """
+        if sys.version_info.major >= 3:
+            return self.sc.api_call(api_method, json=kwargs)
+        else:
+            return self.sc.api_call(api_method, **kwargs)
 
 
 @resource(

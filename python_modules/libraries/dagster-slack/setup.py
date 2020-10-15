@@ -28,9 +28,8 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["test"]),
         install_requires=[
             "dagster",
-            # Slack 2.x does not support Python 2
-            # https://github.com/slackapi/python-slackclient/wiki/Migrating-to-2.x#minimum-python-versions
-            "slackclient<2.0.0",
+            'slackclient>=2,<3; python_version>="3"',
+            'slackclient<2.0.0; python_version<"3"',
         ],
         zip_safe=False,
     )

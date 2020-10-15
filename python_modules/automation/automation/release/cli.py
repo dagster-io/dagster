@@ -17,7 +17,6 @@ import urllib
 import click
 import packaging.version
 import requests
-import slackclient
 import virtualenv
 from automation.git import (
     get_git_repo_branch,
@@ -26,7 +25,6 @@ from automation.git import (
     git_commit_updates,
     git_push,
     git_repo_root,
-    git_user,
     set_git_tag,
 )
 from automation.utils import which_
@@ -35,7 +33,7 @@ from dagster import check
 
 from .dagster_module_publisher import DagsterModulePublisher
 from .pypirc import ConfigFileError, RCParser
-from .utils import format_module_versions
+from .utils import format_module_versions, post_to_dagster_slack
 
 CLI_HELP = """Tools to help tag and publish releases of the Dagster projects.
 
@@ -115,14 +113,7 @@ def publish(autoclean, dry_run):
 
     parsed_version = packaging.version.parse(checked_version)
     if not parsed_version.is_prerelease and not dry_run:
-        slack_client = slackclient.SlackClient(os.environ["SLACK_RELEASE_BOT_TOKEN"])
-        slack_client.api_call(
-            "chat.postMessage",
-            channel="#general",
-            text=("{git_user} just published a new version: {version}.").format(
-                git_user=git_user(), version=checked_version
-            ),
-        )
+        post_to_dagster_slack(checked_version)
 
 
 @cli.command()
