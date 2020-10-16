@@ -11,9 +11,10 @@ def create_run_cli_group():
 
 
 @click.command(name="list", help="List the runs in this dagster installation.")
-def run_list_command():
+@click.option("--limit", help="Only list a specified number of runs", default=None, type=int)
+def run_list_command(limit):
     with DagsterInstance.get() as instance:
-        for run in instance.get_runs():
+        for run in instance.get_runs(limit=limit):
             click.echo("Run: {}".format(run.run_id))
             click.echo("     Pipeline: {}".format(run.pipeline_name))
 
