@@ -12,6 +12,7 @@ import {
   PipelineExplorerPath,
 } from 'src/PipelinePathUtils';
 import {TopNav} from 'src/nav/TopNav';
+import {FontFamily} from 'src/ui/styles';
 
 interface Tab {
   title: string;
@@ -179,7 +180,7 @@ export const PipelineNav: React.FunctionComponent<{}> = () => {
 };
 
 const Mono = styled.div`
-  font-family: monospace;
+  font-family: ${FontFamily.monospace};
   font-size: 14px;
   margin-right: 12px;
 `;

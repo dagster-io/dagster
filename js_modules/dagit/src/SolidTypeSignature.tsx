@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 import {TypeWithTooltip} from 'src/TypeWithTooltip';
 import {breakOnUnderscores} from 'src/Util';
 import {SolidTypeSignatureFragment} from 'src/types/SolidTypeSignatureFragment';
+import {FontFamily} from 'src/ui/styles';
 
 interface ISolidTypeSignature {
   definition: SolidTypeSignatureFragment;
@@ -59,6 +60,7 @@ export class SolidTypeSignature extends React.Component<ISolidTypeSignature> {
 const TypeSignature = styled(Code)`
   && {
     background: ${Colors.LIGHT_GRAY5};
+    font-family: ${FontFamily.monospace};
     font-size: 12px;
     padding: 4px 10px;
     box-shadow: none;

@@ -4,6 +4,7 @@ import {GraphQLError} from 'graphql';
 import * as React from 'react';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
+import {FontFamily} from 'src/ui/styles';
 
 export interface DagsterGraphQLError extends GraphQLError {
   stack_trace: string[];
@@ -73,7 +74,7 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
   const instructions = (
     <div
       style={{
-        fontFamily: 'Open Sans, sans-serif',
+        fontFamily: FontFamily.default,
         fontSize: 16,
         marginBottom: 30,
       }}
@@ -117,7 +118,7 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
           padding: '1em 2em',
           overflow: 'auto',
           color: 'rgb(41, 50, 56)',
-          fontFamily: 'Consolas, Menlo, monospace',
+          fontFamily: FontFamily.monospace,
           fontSize: '0.85em',
           whiteSpace: 'pre',
           overflowX: 'auto',

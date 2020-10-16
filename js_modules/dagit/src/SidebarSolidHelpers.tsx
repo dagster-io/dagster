@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 import {SectionHeader} from 'src/SidebarComponents';
 import {titleOfIO} from 'src/Util';
 import {SolidColumn} from 'src/runs/LogsRowComponents';
+import {FontFamily} from 'src/ui/styles';
 
 export type SolidLinkInfo = {
   solid: {name: string};
@@ -38,6 +39,7 @@ export const SolidLink = (props: SolidLinkInfo) => (
   <Link to={`./${props.solid.name}`}>
     <Code
       style={{
+        fontFamily: FontFamily.monospace,
         display: 'inline-block',
         verticalAlign: 'middle',
         textOverflow: 'ellipsis',
@@ -150,7 +152,7 @@ export const ResourceContainer = styled.div`
 `;
 
 export const DependencyLocalIOName = styled.div`
-  font-family: monospace;
+  font-family: ${FontFamily.monospace};
   font-size: smaller;
   font-weight: 500;
   color: ${Colors.BLACK};
@@ -176,5 +178,5 @@ export const InvocationContainer = styled.div`
   &:hover {
     background: ${Colors.LIGHT_GRAY5};
   }
-  font-family: monospace;
+  font-family: ${FontFamily.monospace};
 `;

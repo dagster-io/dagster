@@ -12,6 +12,7 @@ import {RunStatusWithStats} from 'src/runs/RunStatusDots';
 import {RunTag} from 'src/runs/RunTag';
 import {RunComponentFragments, RunElapsed, RunTime, titleForRun} from 'src/runs/RunUtils';
 import {RunTableRunFragment, RunTableRunFragment_tags} from 'src/runs/types/RunTableRunFragment';
+import {FontFamily} from 'src/ui/styles';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
@@ -159,7 +160,7 @@ const RunRow: React.FunctionComponent<{
         {onToggleChecked && <Checkbox checked={checked} />}
         <RunStatusWithStats status={run.status} runId={run.runId} size={14} />
       </RowColumn>
-      <RowColumn style={{maxWidth: 90, fontFamily: 'monospace'}}>
+      <RowColumn style={{maxWidth: 90, fontFamily: FontFamily.monospace}}>
         <Link to={`${pipelineLink}runs/${run.runId}`}>{titleForRun(run)}</Link>
       </RowColumn>
       <RowColumn style={{flex: 5}}>
@@ -167,7 +168,7 @@ const RunRow: React.FunctionComponent<{
         <RunTags tags={run.tags} onSetFilter={onSetFilter} />
       </RowColumn>
       <RowColumn style={{maxWidth: '90px'}}>
-        <div style={{fontFamily: 'monospace'}}>
+        <div style={{fontFamily: FontFamily.monospace}}>
           <Link to={pipelineLink}>{run.pipelineSnapshotId?.slice(0, 8)}</Link>
         </div>
       </RowColumn>
