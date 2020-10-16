@@ -566,3 +566,10 @@ def test_run_wipe_incorrect_delete_message():
         result = runner.invoke(run_wipe_command, input="WRONG\n")
         assert "Exiting without deleting all run history and event logs" in result.output
         assert result.exit_code == 0
+
+
+def test_run_list_limit():
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_list_command, args="--limit 20")
+        assert result.exit_code == 0
