@@ -1,4 +1,4 @@
 dagster
 dagit
-dagster-aws
+dagster-aws-pyspark
 dagster-pyspark

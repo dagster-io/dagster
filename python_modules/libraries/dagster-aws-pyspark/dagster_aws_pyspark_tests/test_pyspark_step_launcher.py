@@ -4,8 +4,11 @@ import sys
 
 import pytest
 from dagster_aws.emr import EmrError, EmrJobRunner
-from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher, emr_pyspark_step_launcher
 from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
+from dagster_aws_pyspark.pyspark_step_launcher import (
+    EmrPySparkStepLauncher,
+    emr_pyspark_step_launcher,
+)
 from dagster_pyspark import DataFrame, pyspark_resource
 from moto import mock_emr
 from pyspark.sql import Row
@@ -109,7 +112,7 @@ def test_local():
 
 
 @mock_emr
-@mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.read_events")
+@mock.patch("dagster_aws_pyspark.pyspark_step_launcher.EmrPySparkStepLauncher.read_events")
 @mock.patch("dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete")
 def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events):
     mock_read_events.return_value = execute_pipeline(
@@ -225,8 +228,8 @@ def test_do_it_live_emr():
 
 
 @mock.patch("boto3.resource")
-@mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.wait_for_completion")
-@mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher._log_logs_from_s3")
+@mock.patch("dagster_aws_pyspark.pyspark_step_launcher.EmrPySparkStepLauncher.wait_for_completion")
+@mock.patch("dagster_aws_pyspark.pyspark_step_launcher.EmrPySparkStepLauncher._log_logs_from_s3")
 @mock.patch("dagster.core.events.log_step_event")
 def test_fetch_logs_on_fail(
     _mock_log_step_event, mock_log_logs, mock_wait_for_completion, _mock_boto3_resource
@@ -251,3 +254,31 @@ def test_fetch_logs_on_fail(
             pass
 
     assert mock_log_logs.call_count == 1
+
+
+EVENTS = [object(), object(), object()]
+
+
+@mock.patch(
+    "dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete", side_effect=[False, False, True]
+)
+@mock.patch(
+    "dagster_aws_pyspark.pyspark_step_launcher.EmrPySparkStepLauncher.read_events",
+    side_effect=[EVENTS[0:1], [], EVENTS[0:3]],
+)
+def test_wait_for_completion(_mock_is_emr_step_complete, _mock_read_events):
+    launcher = EmrPySparkStepLauncher(
+        region_name="",
+        staging_bucket="",
+        staging_prefix="",
+        wait_for_logs=False,
+        action_on_failure="",
+        cluster_id="",
+        spark_config={},
+        local_pipeline_package_path="",
+        deploy_local_pipeline_package=False,
+    )
+    yielded_events = list(
+        launcher.wait_for_completion(mock.MagicMock(), None, None, None, None, check_interval=0)
+    )
+    assert yielded_events == EVENTS

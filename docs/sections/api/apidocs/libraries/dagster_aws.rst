@@ -61,9 +61,6 @@ Testing
 EMR
 ---
 
-.. autodata:: dagster_aws.emr.emr_pyspark_step_launcher
-  :annotation: ResourceDefinition
-
 .. autoclass:: dagster_aws.emr.EmrJobRunner
 
 .. autoclass:: dagster_aws.emr.EmrError

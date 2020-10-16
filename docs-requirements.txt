@@ -6,6 +6,7 @@ sphinx-autobuild==0.7.1
 -e ./python_modules/libraries/dagstermill
 -e ./python_modules/libraries/dagster-airflow
 -e ./python_modules/libraries/dagster-aws
+-e ./python_modules/libraries/dagster-aws-pyspark
 -e ./python_modules/libraries/dagster-celery
 -e ./python_modules/libraries/dagster-celery-docker
 -e ./python_modules/libraries/dagster-cron
