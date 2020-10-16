@@ -77,6 +77,39 @@ spec:
               subPath: celery.yaml
           resources:
             {{- toYaml $.Values.celery.resources | nindent 12 }}
+      {{- if $.Values.celery.livenessProbe }}
+        {{- if not $.Values.celery.livenessProbe.exec }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - celery -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" $ }} status | grep "${HOSTNAME}:.*OK"
+            {{- if hasKey $.Values.celery.livenessProbe "initialDelaySeconds" }}
+            initialDelaySeconds:
+              {{- toYaml $.Values.celery.livenessProbe.initialDelaySeconds | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $.Values.celery.livenessProbe "periodSeconds" }}
+            periodSeconds:
+              {{- toYaml $.Values.celery.livenessProbe.periodSeconds | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $.Values.celery.livenessProbe "timeoutSeconds" }}
+            timeoutSeconds:
+              {{- toYaml $.Values.celery.livenessProbe.timeoutSeconds | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $.Values.celery.livenessProbe "successThreshold" }}
+            successThreshold:
+              {{- toYaml $.Values.celery.livenessProbe.successThreshold | nindent 14 }}
+            {{- end }}
+            {{- if hasKey $.Values.celery.livenessProbe "failureThreshold" }}
+            failureThreshold:
+              {{- toYaml $.Values.celery.livenessProbe.failureThreshold | nindent 14 }}
+            {{- end }}
+        {{- else}}
+          livenessProbe:
+          {{- toYaml $.Values.celery.livenessProbe | nindent 12 }}
+        {{- end }}
+      {{- end }}
       {{- with $.Values.celery.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
