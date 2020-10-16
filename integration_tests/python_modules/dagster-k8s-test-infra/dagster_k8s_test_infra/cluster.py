@@ -5,6 +5,7 @@ import time
 from collections import namedtuple
 from contextlib import contextmanager
 
+import docker
 import kubernetes
 import psycopg2
 import pytest
@@ -64,7 +65,15 @@ def define_cluster_provider_fixture(additional_kind_images=None):
             with kind_cluster(cluster_name, should_cleanup=should_cleanup) as cluster_config:
                 if not IS_BUILDKITE and not existing_cluster:
                     docker_image = test_project_docker_image()
-                    build_and_tag_test_image(docker_image)
+                    try:
+                        client = docker.from_env()
+                        client.images.get(docker_image)
+                        print(  # pylint: disable=print-call
+                            "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
+                            "docker rmi {image}".format(image=docker_image)
+                        )
+                    except docker.errors.ImageNotFound:
+                        build_and_tag_test_image(docker_image)
                     kind_load_images(
                         cluster_name=cluster_config.name,
                         local_dagster_test_image=docker_image,
