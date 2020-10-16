@@ -18,7 +18,7 @@ from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import AssetAwareEventLogStorage, EventLogStorage
-from .schema import SqlEventLogStorageTable
+from .schema import SecondaryIndexMigrationTable, SqlEventLogStorageTable
 from .version_addresses import get_addresses_for_step_output_versions_helper
 
 
@@ -338,6 +338,39 @@ class SqlEventLogStorage(EventLogStorage):
                 .order_by(SqlEventLogStorageTable.c.id.asc())
             )
             return conn.execute(query).fetchone()
+
+    def has_secondary_index(self, name, run_id=None):
+        """This method uses a checkpoint migration table to see if summary data has been constructed
+        in a secondary index table.  Can be used to checkpoint event_log data migrations.
+        """
+        query = (
+            db.select([1])
+            .where(SecondaryIndexMigrationTable.c.name == name)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .limit(1)
+        )
+        with self.connect(run_id) as conn:
+            results = conn.execute(query).fetchall()
+
+        return len(results) > 0
+
+    def enable_secondary_index(self, name, run_id=None):
+        """This method marks an event_log data migration as complete, to indicate that a summary
+        data migration is complete.
+        """
+        query = SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
+            name=name, migration_completed=datetime.now(),
+        )
+        try:
+            with self.connect(run_id) as conn:
+                conn.execute(query)
+        except db.exc.IntegrityError:
+            with self.connect(run_id) as conn:
+                conn.execute(
+                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(SecondaryIndexMigrationTable.c.name == name)
+                    .values(migration_completed=datetime.now())
+                )
 
     def get_addresses_for_step_output_versions(self, step_output_versions):
         """

@@ -55,6 +55,7 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
         self._engine = create_engine(
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
+        self._secondary_index_cache = {}
 
         with self.connect() as conn:
             SqlEventLogStorageMetadata.create_all(conn)
@@ -114,6 +115,18 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
 
     def connect(self, run_id=None):
         return create_pg_connection(self._engine, __file__, "event log")
+
+    def has_secondary_index(self, name, run_id=None):
+        if name not in self._secondary_index_cache:
+            self._secondary_index_cache[name] = super(
+                PostgresEventLogStorage, self
+            ).has_secondary_index(name, run_id)
+        return self._secondary_index_cache[name]
+
+    def enable_secondary_index(self, name, run_id=None):
+        super(PostgresEventLogStorage, self).enable_secondary_index(name)
+        if name in self._secondary_index_cache:
+            del self._secondary_index_cache[name]
 
     def watch(self, run_id, start_cursor, callback):
         self._event_watcher.watch_run(run_id, start_cursor, callback)

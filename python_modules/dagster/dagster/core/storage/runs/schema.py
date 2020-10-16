@@ -19,6 +19,17 @@ RunsTable = db.Table(
     db.Column("update_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
 )
 
+# Secondary Index migration table, used to track data migrations, both for event_logs and runs.
+# This schema should match the schema in the event_log storage schema
+SecondaryIndexMigrationTable = db.Table(
+    "secondary_indexes",
+    RunStorageSqlMetadata,
+    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column("name", db.String, unique=True),
+    db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+    db.Column("migration_completed", db.DateTime),
+)
+
 RunTagsTable = db.Table(
     "run_tags",
     RunStorageSqlMetadata,

@@ -165,6 +165,12 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
                     updated_records.append(updated_record)
             self._logs[run_id] = updated_records
 
+    def has_secondary_index(self, name, run_id=None):
+        return False
+
+    def enable_secondary_index(self, name, run_id=None):
+        pass
+
     def get_addresses_for_step_output_versions(self, step_output_versions):
         """
         For each given step output, finds whether an output exists with the given

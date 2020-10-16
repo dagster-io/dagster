@@ -50,6 +50,7 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
     def __init__(self, base_dir, inst_data=None):
         self._base_dir = check.str_param(base_dir, "base_dir")
         self._conn_string = create_db_conn_string(base_dir, SQLITE_EVENT_LOG_FILENAME)
+        self._secondary_index_cache = {}
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._watchdog = None
         self._watchers = defaultdict(dict)
@@ -103,6 +104,18 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
         alembic_config = get_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
+
+    def has_secondary_index(self, name, run_id=None):
+        if name not in self._secondary_index_cache:
+            self._secondary_index_cache[name] = super(
+                ConsolidatedSqliteEventLogStorage, self
+            ).has_secondary_index(name, run_id)
+        return self._secondary_index_cache[name]
+
+    def enable_secondary_index(self, name, run_id=None):
+        super(ConsolidatedSqliteEventLogStorage, self).enable_secondary_index(name)
+        if name in self._secondary_index_cache:
+            del self._secondary_index_cache[name]
 
     def watch(self, run_id, start_cursor, callback):
         if not self._watchdog:

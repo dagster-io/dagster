@@ -206,8 +206,6 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         # Make sure the schema is migrated
         instance.upgrade()
 
-        assert get_current_alembic_version(db_path) == "c63a27054f08"
-
         assert "snapshots" in get_sqlite3_tables(db_path)
         assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
             get_sqlite3_columns(db_path, "snapshots")
@@ -252,8 +250,6 @@ def test_downgrade_and_upgrade():
         # Make sure the schema is migrated
         instance.upgrade()
 
-        assert get_current_alembic_version(db_path) == "c63a27054f08"
-
         assert "snapshots" in get_sqlite3_tables(db_path)
         assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(
             get_sqlite3_columns(db_path, "snapshots")
@@ -272,8 +268,6 @@ def test_downgrade_and_upgrade():
         assert len(instance.get_runs()) == 1
 
         instance.upgrade()
-
-        assert get_current_alembic_version(db_path) == "c63a27054f08"
 
         assert "snapshots" in get_sqlite3_tables(db_path)
         assert {"id", "snapshot_id", "snapshot_body", "snapshot_type"} == set(

@@ -431,3 +431,26 @@ def _event_record(run_id, step_key, timestamp, event_type, event_specific_data=N
             event_specific_data=event_specific_data,
         ),
     )
+
+
+def test_secondary_index():
+    with create_consolidated_sqlite_run_event_log_storage() as storage:
+        # Only consolidated_sqlite, postgres storage support secondary indexes
+        assert not storage.has_secondary_index("A")
+        assert not storage.has_secondary_index("B")
+        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
+        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
+        storage.enable_secondary_index("A")
+        assert "A" not in storage._secondary_index_cache  # pylint: disable=protected-access
+        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
+        assert storage.has_secondary_index("A")
+        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
+        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
+        assert not storage.has_secondary_index("B")
+        storage.enable_secondary_index("B")
+        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
+        assert "B" not in storage._secondary_index_cache  # pylint: disable=protected-access
+        assert storage.has_secondary_index("A")
+        assert storage.has_secondary_index("B")
+        assert "A" in storage._secondary_index_cache  # pylint: disable=protected-access
+        assert "B" in storage._secondary_index_cache  # pylint: disable=protected-access
