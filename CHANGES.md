@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.9.15
+
+**Breaking Changes**
+
+- CeleryDockerExecutor no longer requires a repo_location_name config field.
+
+**New**
+
+- Dagit: Warn on tab removal in playground
+- Display versions CLI: Added a new CLI that displays version information for a memoized run. Called via dagster pipeline list_versions.
+- CeleryDockerExecutor accepts a network field to configure the network settings for the Docker container it connects to for execution.
+- Dagit will now set a statement timeout on supported instance DBs. Defaults to 5s and can be controlled with the --db-statement-timeout flag
+
+**Community Contributions**
+
+- dagster grpc requirements are now more friendly for users (thanks @jmo-qap!)
+- dagster.utils now has is_str (thanks @monicayao!)
+- dagster-pandas can now load dataframes from pickle (thanks @mrdrprofuroboros!)
+- dagster-ge validation solid factory now accepts name (thanks @haydarai!)
+
+**Bugfixes**
+
+- Dagit bugfixes and improvements
+- Fixed an issue where dagster could fail to load large pipelines.
+- Fixed a bug where experimental arg warning would be thrown even when not using versioned dagster type loaders.
+- Fixed a bug where CeleryDockerExecutor was failing to execute pipelines unless they used a legacy workspace config.
+- Fixed a bug where pipeline runs using IntMetadataEntryData could not be visualized in dagit.
+
+**Experimental**
+
+- Improve the output structure of dagster-dbt solids.
+- Version-based memoization over outputs stored in the intermediate store now works
+
+**Documentation**
+
+- Fix a code snippet rendering issue in Overview: Assets & Materializations
+- Fixed all python code snippets alignment across docs examples
+
 ## 0.9.14
 
 **New**

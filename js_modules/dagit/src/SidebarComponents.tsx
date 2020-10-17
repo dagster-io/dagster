@@ -3,6 +3,8 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {FontFamily} from 'src/ui/styles';
+
 interface ISidebarSectionProps {
   title: string;
   collapsedByDefault?: boolean;
@@ -57,7 +59,7 @@ export const DisclosureIcon = styled(Icon)`
 `;
 
 export const SidebarTitle = styled.h3`
-  font-family: 'Source Code Pro', monospace;
+  font-family: ${FontFamily.monospace};
   margin: 0;
   margin-bottom: 14px;
   overflow: hidden;
@@ -65,13 +67,13 @@ export const SidebarTitle = styled.h3`
 `;
 
 export const SectionHeader = styled.h4`
-  font-family: 'Source Code Pro', monospace;
+  font-family: ${FontFamily.monospace};
   font-size: 15px;
   margin: 6px 0;
 `;
 
 export const SectionSmallHeader = styled.h4`
-  font-family: 'Source Code Pro', monospace;
+  font-family: ${FontFamily.monospace};
   font-size: 14px;
   font-weight: 500;
   margin: 6px 0;

@@ -10,6 +10,7 @@ import {ROOT_SERVER_URI} from 'src/DomUtils';
 import {IStepState} from 'src/RunMetadataProvider';
 import {ExecutionStateDot} from 'src/runs/ExecutionStateDot';
 import {ComputeLogContentFileFragment} from 'src/runs/types/ComputeLogContentFileFragment';
+import {FontFamily} from 'src/ui/styles';
 
 interface IComputeLogContentProps {
   runState: IStepState;
@@ -504,7 +505,7 @@ const RelativeContainer = styled.div`
 `;
 const LogContent = styled(ScrollContainer)`
   color: #eeeeee;
-  font-family: Consolas, Menlo, monospace;
+  font-family: ${FontFamily.monospace};
   white-space: pre;
   overflow: auto;
   position: absolute;

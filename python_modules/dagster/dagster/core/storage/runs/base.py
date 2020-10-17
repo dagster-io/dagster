@@ -240,3 +240,6 @@ class RunStorage(six.with_metaclass(ABCMeta)):
 
     def dispose(self):
         """Explicit lifecycle management."""
+
+    def optimize_for_dagit(self, statement_timeout):
+        """Allows for optimizing database connection / use in the context of a long lived dagit process"""

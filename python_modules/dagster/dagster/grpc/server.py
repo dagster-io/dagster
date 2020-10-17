@@ -1,3 +1,4 @@
+import math
 import os
 import queue
 import subprocess
@@ -70,6 +71,8 @@ from .utils import get_loadable_targets
 EVENT_QUEUE_POLL_INTERVAL = 0.1
 
 CLEANUP_TICK = 0.5
+
+STREAMING_EXTERNAL_REPOSITORY_CHUNK_SIZE = 4000000
 
 
 class CouldNotBindGrpcServerToAddress(Exception):
@@ -517,19 +520,46 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def ExternalRepository(self, request, _context):
+    def _get_serialized_external_repository_data(self, request):
         repository_origin = deserialize_json_to_dagster_namedtuple(
             request.serialized_repository_python_origin
         )
 
         check.inst_param(repository_origin, "repository_origin", RepositoryOrigin)
-
         recon_repo = self._recon_repository_from_origin(repository_origin)
+        return serialize_dagster_namedtuple(
+            external_repository_data_from_def(recon_repo.get_definition())
+        )
+
+    def ExternalRepository(self, request, _context):
+        serialized_external_repository_data = self._get_serialized_external_repository_data(request)
         return api_pb2.ExternalRepositoryReply(
-            serialized_external_repository_data=serialize_dagster_namedtuple(
-                external_repository_data_from_def(recon_repo.get_definition())
+            serialized_external_repository_data=serialized_external_repository_data,
+        )
+
+    def StreamingExternalRepository(self, request, _context):
+        serialized_external_repository_data = self._get_serialized_external_repository_data(request)
+
+        num_chunks = int(
+            math.ceil(
+                float(len(serialized_external_repository_data))
+                / STREAMING_EXTERNAL_REPOSITORY_CHUNK_SIZE
             )
         )
+
+        for i in range(num_chunks):
+            start_index = i * STREAMING_EXTERNAL_REPOSITORY_CHUNK_SIZE
+            end_index = min(
+                (i + 1) * STREAMING_EXTERNAL_REPOSITORY_CHUNK_SIZE,
+                len(serialized_external_repository_data),
+            )
+
+            yield api_pb2.StreamingExternalRepositoryEvent(
+                sequence_number=i,
+                serialized_external_repository_chunk=serialized_external_repository_data[
+                    start_index:end_index
+                ],
+            )
 
     def ExternalScheduleExecution(self, request, _context):
         external_schedule_execution_args = deserialize_json_to_dagster_namedtuple(

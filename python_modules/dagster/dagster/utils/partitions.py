@@ -1,15 +1,18 @@
 import datetime
 
-from dateutil.relativedelta import relativedelta
+import pendulum
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 
+DEFAULT_MONTHLY_FORMAT = "%Y-%m"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
+DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE = "%Y-%m-%d-%H:%M"
+DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE = DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE + "%z"
 
 
 def date_partition_range(
-    start, end=None, delta=datetime.timedelta(days=1), fmt=None, inclusive=False
+    start, end=None, delta_range="days", fmt=None, inclusive=False, timezone=None,
 ):
     """ Utility function that returns a partition generating function to be used in creating a
     `PartitionSet` definition.
@@ -19,7 +22,8 @@ def date_partition_range(
         end  (Optional(datetime)): Datetime capturing the end of the partition.  By default, the
                                    current time is used.  The range is not inclusive of the end
                                    value.
-        delta (Optional(timedelta)): Timedelta representing the time duration of each partition.
+        delta_range (Optional(timedelta)): string representing the time duration of each partition.
+            Must be a valid argument to pendulum.period.range.
         fmt (Optional(str)): Format string to represent each partition by its start time
         inclusive (Optional(bool)): By default, the partition set only contains date interval
             partitions for which the end time of the interval is less than current time. In other
@@ -27,7 +31,7 @@ def date_partition_range(
             past. If inclusive is set to True, then the partition set will include all date
             interval partitions for which the start time of the interval is less than the
             current time.
-
+        timezone (Optional(str)): Timezone in which the partition values should be expressed.
     Returns:
         Callable[[], List[Partition]]
     """
@@ -35,25 +39,37 @@ def date_partition_range(
 
     check.inst_param(start, "start", datetime.datetime)
     check.opt_inst_param(end, "end", datetime.datetime)
-    check.inst_param(delta, "timedelta", (datetime.timedelta, relativedelta))
+    check.str_param(delta_range, "delta_range")
     fmt = check.opt_str_param(fmt, "fmt", default=DEFAULT_DATE_FORMAT)
+    check.opt_str_param(timezone, "timezone")
 
     if end and start > end:
         raise DagsterInvariantViolationError(
             'Selected date range start "{start}" is after date range end "{end}'.format(
-                start=start.strftime(fmt), end=end.strftime(fmt)
+                start=start.strftime(fmt), end=end.strftime(fmt),
             )
         )
 
     def get_date_range_partitions():
-        current = start
+        tz = timezone if timezone else pendulum.now().timezone.name
+        _start = (
+            start.in_tz(tz)
+            if isinstance(start, pendulum.Pendulum)
+            else pendulum.instance(start, tz=tz)
+        )
 
-        _end = end or datetime.datetime.now()
+        if not end:
+            _end = pendulum.now(tz)
+        elif isinstance(end, pendulum.Pendulum):
+            _end = end.in_tz(tz)
+        else:
+            _end = pendulum.instance(end, tz=tz)
 
-        date_names = []
-        while current <= _end:
-            date_names.append(Partition(value=current, name=current.strftime(fmt)))
-            current = current + delta
+        period = pendulum.period(_start, _end)
+        date_names = [
+            Partition(value=current, name=current.strftime(fmt))
+            for current in period.range(delta_range)
+        ]
 
         # We don't include the last element here by default since we only want
         # fully completed intervals, and the _end time is in the middle of the interval

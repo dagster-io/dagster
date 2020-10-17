@@ -6,6 +6,7 @@ import {Timestamp} from 'src/TimeComponents';
 import {formatStepKey} from 'src/Util';
 import {LogLevel} from 'src/runs/LogLevel';
 import {ColumnWidthsContext} from 'src/runs/LogsScrollingTableHeader';
+import {FontFamily} from 'src/ui/styles';
 
 const bgcolorForLevel = (level: LogLevel) =>
   ({
@@ -24,7 +25,7 @@ export const Row = styled.div<{level: LogLevel; textMatch: boolean}>`
   padding: 4px 8px;
   word-break: break-word;
   white-space: pre-wrap;
-  font-family: monospace;
+  font-family: ${FontFamily.monospace};
   display: flex;
   flex-direction: row;
   align-items: baseline;
@@ -55,7 +56,7 @@ export const StructuredContent = styled.div`
   padding: 4px;
   word-break: break-word;
   white-space: pre-wrap;
-  font-family: monospace;
+  font-family: ${FontFamily.monospace};
   flex: 1;
   align-self: stretch;
   display: flex;
@@ -104,7 +105,7 @@ const SolidColumnContainer = styled.div`
 
 const SolidColumnTooltipStyle = JSON.stringify({
   fontSize: '0.75em',
-  fontFamily: 'monospace',
+  fontFamily: FontFamily.monospace,
   color: Colors.BLACK,
   background: Colors.WHITE,
   border: `1px solid ${Colors.LIGHT_GRAY3}`,

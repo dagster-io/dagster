@@ -3,8 +3,14 @@ import subprocess
 import sys
 
 from dagster import check
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import InProcessRepositoryLocation
+from dagster.core.code_pointer import FileCodePointer
+from dagster.core.definitions.reconstructable import (
+    ReconstructablePipeline,
+    ReconstructableRepository,
+)
+from dagster.core.host_representation import ExternalPipeline, InProcessRepositoryLocation
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.serdes import whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -30,9 +36,71 @@ def build_and_tag_test_image(tag):
 
 
 def get_test_project_recon_pipeline(pipeline_name):
-    return ReconstructableRepository.for_file(
-        file_relative_path(__file__, "test_pipelines/repo.py"), "define_demo_execution_repo",
-    ).get_reconstructable_pipeline(pipeline_name)
+    return ReOriginatedReconstructablePipelineForTest(
+        ReconstructableRepository.for_file(
+            file_relative_path(__file__, "test_pipelines/repo.py"), "define_demo_execution_repo",
+        ).get_reconstructable_pipeline(pipeline_name)
+    )
+
+
+class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
+    def __new__(  # pylint: disable=signature-differs
+        cls, reconstructable_pipeline,
+    ):
+        return super(ReOriginatedReconstructablePipelineForTest, cls).__new__(
+            cls,
+            reconstructable_pipeline.repository,
+            reconstructable_pipeline.pipeline_name,
+            reconstructable_pipeline.solid_selection_str,
+            reconstructable_pipeline.solids_to_execute,
+        )
+
+    def get_origin(self):
+        """
+        Hack! Inject origin that the docker-celery images will use. The BK image uses a different
+        directory structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than
+        the test that creates the ReconstructablePipeline. As a result the normal origin won't
+        work, we need to inject this one.
+        """
+
+        return PipelinePythonOrigin(
+            self.pipeline_name,
+            RepositoryPythonOrigin(
+                executable_path="python",
+                code_pointer=FileCodePointer(
+                    "/dagster_test/test_project/test_pipelines/repo.py",
+                    "define_demo_execution_repo",
+                ),
+            ),
+        )
+
+
+class ReOriginatedExternalPipelineForTest(ExternalPipeline):
+    def __init__(
+        self, external_pipeline,
+    ):
+        super(ReOriginatedExternalPipelineForTest, self).__init__(
+            external_pipeline.external_pipeline_data, external_pipeline.repository_handle,
+        )
+
+    def get_origin(self):
+        """
+        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
+        structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
+        inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
+        work, we need to inject this one.
+        """
+
+        return PipelinePythonOrigin(
+            self._pipeline_index.name,
+            RepositoryPythonOrigin(
+                executable_path="python",
+                code_pointer=FileCodePointer(
+                    "/dagster_test/test_project/test_pipelines/repo.py",
+                    "define_demo_execution_repo",
+                ),
+            ),
+        )
 
 
 def get_test_project_external_pipeline(pipeline_name):

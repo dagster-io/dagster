@@ -16,6 +16,7 @@ service DagsterApi {
   rpc ExternalPartitionSetExecutionParams (ExternalPartitionSetExecutionParamsRequest) returns (ExternalPartitionSetExecutionParamsReply) {}
   rpc ExternalPipelineSubsetSnapshot (ExternalPipelineSubsetSnapshotRequest) returns (ExternalPipelineSubsetSnapshotReply) {}
   rpc ExternalRepository (ExternalRepositoryRequest) returns (ExternalRepositoryReply) {}
+  rpc StreamingExternalRepository (ExternalRepositoryRequest) returns (stream StreamingExternalRepositoryEvent) {}
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
   rpc ExternalExecutableParams (ExternalExecutableParamsRequest) returns (ExternalExecutableParamsReply) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
@@ -107,6 +108,11 @@ message ExternalRepositoryRequest {
 
 message ExternalRepositoryReply {
   string serialized_external_repository_data = 1;
+}
+
+message StreamingExternalRepositoryEvent {
+  int32 sequence_number = 1;
+  string serialized_external_repository_chunk = 2;
 }
 
 message ExternalScheduleExecutionRequest {

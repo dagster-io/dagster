@@ -15,7 +15,8 @@ import {FeatureFlagsRoot} from 'src/FeatureFlagsRoot';
 import {InstanceDetailsRoot} from 'src/InstanceDetailsRoot';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TimezoneProvider} from 'src/TimeComponents';
-import {AssetsRoot} from 'src/assets/AssetsRoot';
+import {AssetEntryRoot} from 'src/assets/AssetEntryRoot';
+import {AssetsCatalogRoot} from 'src/assets/AssetsCatalogRoot';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {LeftNav} from 'src/nav/LeftNav';
 import {PipelineRoot} from 'src/pipelines/PipelineRoot';
@@ -35,8 +36,8 @@ const AppRoutes = () => (
     <Route path="/scheduler" component={SchedulerRoot} exact={true} />
     <Route path="/schedules/:scheduleName" component={ScheduleRoot} />
     <Route path="/schedules" component={SchedulesRoot} />
-    <Route path="/assets" component={AssetsRoot} exact={true} />
-    <Route path="/assets/(/?.*)" component={AssetsRoot} />
+    <Route path="/assets" component={AssetsCatalogRoot} exact={true} />
+    <Route path="/assets/(/?.*)" component={AssetEntryRoot} />
     <Route path="/instance" component={InstanceDetailsRoot} />
     <Route path="/pipeline/(.*)" component={PipelineRoot} />
 

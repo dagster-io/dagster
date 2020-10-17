@@ -97,6 +97,11 @@ class AssetKey(namedtuple("_AssetKey", "path"), Persistable):
         return AssetKey(parse_asset_key_string(asset_key_string))
 
     @staticmethod
+    def get_db_prefix(path):
+        check.list_param(path, "path", of_type=str)
+        return ASSET_KEY_STRUCTURED_DELIMITER.join(path)
+
+    @staticmethod
     def from_graphql_input(asset_key):
         if asset_key and asset_key.get("path"):
             return AssetKey(asset_key.get("path"))

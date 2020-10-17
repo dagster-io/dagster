@@ -70,7 +70,7 @@ def backfill_test_schedule():
         partition_fn=date_partition_range(
             # first sunday of the year
             start=datetime.datetime(2020, 1, 5),
-            delta=datetime.timedelta(weeks=1),
+            delta_range="weeks",
         ),
         run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
     )

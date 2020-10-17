@@ -3,6 +3,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {copyValue} from 'src/DomUtils';
+import {FontFamily} from 'src/ui/styles';
 
 const CURRENT_ALERT_CHANGED = 'alert-changed';
 
@@ -70,7 +71,7 @@ export class CustomAlertProvider extends React.Component<{}, {alert: ICustomAler
 
 const Body = styled.div`
   white-space: pre-line;
-  font-family: Consolas, Menlo, monospace;
+  font-family: ${FontFamily.monospace};
   font-size: 13px;
   overflow: scroll;
   background: ${Colors.WHITE};

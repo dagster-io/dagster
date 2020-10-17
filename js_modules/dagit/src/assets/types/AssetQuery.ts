@@ -10,7 +10,7 @@ import { AssetKeyInput, PipelineRunStatus } from "./../../types/globalTypes";
 // ====================================================
 
 export interface AssetQuery_assetOrError_AssetsNotSupportedError {
-  __typename: "AssetsNotSupportedError";
+  __typename: "AssetsNotSupportedError" | "AssetNotFoundError";
 }
 
 export interface AssetQuery_assetOrError_Asset_key {

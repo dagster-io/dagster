@@ -23,7 +23,7 @@ def postprocess_payroll(_, numrows, expectation):
         raise ValueError
 
 
-payroll_expectations = ge_validation_solid_factory("getest", "basic.warning")
+payroll_expectations = ge_validation_solid_factory("ge_validation_solid", "getest", "basic.warning")
 
 
 @pipeline(

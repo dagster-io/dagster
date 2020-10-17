@@ -25,7 +25,7 @@ def postprocess_payroll(_, numrows, expectation):
 
 
 payroll_expectations = ge_validation_solid_factory(
-    datasource_name="getest", suite_name="basic.warning"
+    name="ge_validation_solid", datasource_name="getest", suite_name="basic.warning"
 )
 
 

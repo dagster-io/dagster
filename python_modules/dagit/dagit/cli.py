@@ -26,6 +26,8 @@ def create_dagit_cli():
 DEFAULT_DAGIT_HOST = "127.0.0.1"
 DEFAULT_DAGIT_PORT = 3000
 
+DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
+
 
 @click.command(
     name="ui",
@@ -54,7 +56,8 @@ DEFAULT_DAGIT_PORT = 3000
     "-h",
     type=click.STRING,
     default=DEFAULT_DAGIT_HOST,
-    help="Host to run server on, default is {default_host}".format(default_host=DEFAULT_DAGIT_HOST),
+    help="Host to run server on",
+    show_default=True,
 )
 @click.option(
     "--port",
@@ -67,7 +70,8 @@ DEFAULT_DAGIT_PORT = 3000
     "-l",
     type=click.STRING,
     default="",
-    help="The path prefix where Dagit will be hosted (eg: /dagit), default is ''",
+    help="The path prefix where Dagit will be hosted (eg: /dagit)",
+    show_default=True,
 )
 @click.option(
     "--storage-fallback",
@@ -75,8 +79,16 @@ DEFAULT_DAGIT_PORT = 3000
     default=None,
     type=click.Path(),
 )
+@click.option(
+    "--db-statement-timeout",
+    help="The timeout in milliseconds to set on database statements sent "
+    "to the DagsterInstance. Not respected in all configurations.",
+    default=DEFAULT_DB_STATEMENT_TIMEOUT,
+    type=click.INT,
+    show_default=True,
+)
 @click.version_option(version=__version__, prog_name="dagit")
-def ui(host, port, path_prefix, storage_fallback, **kwargs):
+def ui(host, port, path_prefix, storage_fallback, db_statement_timeout, **kwargs):
     # add the path for the cwd so imports in dynamically loaded code work correctly
     sys.path.append(os.getcwd())
 
@@ -88,13 +100,28 @@ def ui(host, port, path_prefix, storage_fallback, **kwargs):
 
     if storage_fallback is None:
         with seven.TemporaryDirectory() as storage_fallback:
-            host_dagit_ui(host, port, path_prefix, storage_fallback, port_lookup, **kwargs)
+            host_dagit_ui(
+                host,
+                port,
+                path_prefix,
+                storage_fallback,
+                db_statement_timeout,
+                port_lookup,
+                **kwargs
+            )
     else:
-        host_dagit_ui(host, port, path_prefix, storage_fallback, port_lookup, **kwargs)
+        host_dagit_ui(
+            host, port, path_prefix, storage_fallback, db_statement_timeout, port_lookup, **kwargs
+        )
 
 
-def host_dagit_ui(host, port, path_prefix, storage_fallback, port_lookup=True, **kwargs):
+def host_dagit_ui(
+    host, port, path_prefix, storage_fallback, db_statement_timeout, port_lookup=True, **kwargs
+):
     with DagsterInstance.get(storage_fallback) as instance:
+        # Allow the instance components to change behavior in the context of a long running server process
+        instance.optimize_for_dagit(db_statement_timeout)
+
         with get_workspace_from_kwargs(kwargs, instance) as workspace:
             if not workspace:
                 raise Exception("Unable to load workspace with cli_args: {}".format(kwargs))

@@ -8,12 +8,9 @@ from dagster_k8s.job import (
     get_user_defined_k8s_config,
 )
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
-from dagster_k8s_test_infra.integration_utils import (
-    ReOriginatedExternalPipelineForTest,
-    image_pull_policy,
-    remove_none_recursively,
-)
+from dagster_k8s_test_infra.integration_utils import image_pull_policy, remove_none_recursively
 from dagster_test.test_project import (
+    ReOriginatedExternalPipelineForTest,
     get_test_project_external_pipeline,
     test_project_docker_image,
     test_project_environments_path,
@@ -109,6 +106,7 @@ spec:
         app.kubernetes.io/name: dagster
         app.kubernetes.io/part-of: dagster
         app.kubernetes.io/version: {dagster_version}
+        {labels}
       name: dagster-run-{run_id}
     spec:
       {affinity}
@@ -249,7 +247,8 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
                         }
                     },
                     "pod_template_spec_metadata": {
-                        "annotations": {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"}
+                        "annotations": {"cluster-autoscaler.kubernetes.io/safe-to-evict": "true"},
+                        "labels": {"spotinst.io/restrict-scale-down": "true"},
                     },
                     "pod_spec_config": {
                         "affinity": {
@@ -294,6 +293,7 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
             job_image=docker_image,
             image_pull_policy=image_pull_policy(),
             dagster_version=dagster_version,
+            labels="spotinst.io/restrict-scale-down: 'true'",
             resources="""
         resources:
           limits:

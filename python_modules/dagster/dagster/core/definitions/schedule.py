@@ -1,6 +1,8 @@
 from collections import namedtuple
 from datetime import datetime
 
+import pendulum
+
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.instance import DagsterInstance
@@ -13,7 +15,7 @@ from .utils import check_for_invalid_name_and_warn
 
 
 class ScheduleExecutionContext(
-    namedtuple("ScheduleExecutionContext", "instance scheduled_execution_time_utc")
+    namedtuple("ScheduleExecutionContext", "instance scheduled_execution_time")
 ):
     """Schedule-specific execution context.
 
@@ -23,21 +25,19 @@ class ScheduleExecutionContext(
 
     Attributes:
         instance (DagsterInstance): The instance configured to run the schedule
-        scheduled_execution_time_utc (datetime):
-            The time in UTC in which the execution was scheduled to happen. May differ slightly
+        scheduled_execution_time (datetime):
+            The time in which the execution was scheduled to happen. May differ slightly
             from both the actual execution time and the time at which the run config is computed.
     """
 
     def __new__(
-        cls, instance, scheduled_execution_time_utc,
+        cls, instance, scheduled_execution_time,
     ):
 
         return super(ScheduleExecutionContext, cls).__new__(
             cls,
             check.inst_param(instance, "instance", DagsterInstance),
-            check.opt_inst_param(
-                scheduled_execution_time_utc, "scheduled_execution_time_utc", datetime
-            ),
+            check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", datetime),
         )
 
 
@@ -70,6 +70,8 @@ class ScheduleDefinition(object):
             schedule should execute). Defaults to a function that always returns ``True``.
         environment_vars (Optional[dict[str, str]]): The environment variables to set for the
             schedule
+        execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
+            with DagsterCommandLineScheduler, and must be set when using that scheduler.
     """
 
     __slots__ = [
@@ -85,6 +87,7 @@ class ScheduleDefinition(object):
         "_tags_fn",
         "_should_execute",
         "_environment_vars",
+        "_execution_timezone",
     ]
 
     def __init__(
@@ -100,6 +103,7 @@ class ScheduleDefinition(object):
         mode="default",
         should_execute=None,
         environment_vars=None,
+        execution_timezone=None,
     ):
 
         self._name = check_for_invalid_name_and_warn(name)
@@ -141,6 +145,18 @@ class ScheduleDefinition(object):
         if not should_execute:
             should_execute = lambda _context: True
         self._should_execute = should_execute
+
+        self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")
+        if self._execution_timezone:
+            try:
+                # Verify that the timezone can be loaded
+                pendulum.timezone(self._execution_timezone)
+            except ValueError:
+                raise DagsterInvalidDefinitionError(
+                    "Invalid execution timezone {timezone} for {schedule_name}".format(
+                        schedule_name=name, timezone=self._execution_timezone
+                    )
+                )
 
     @property
     def name(self):
@@ -188,3 +204,7 @@ class ScheduleDefinition(object):
     @property
     def solid_selection(self):
         return self._solid_selection
+
+    @property
+    def execution_timezone(self):
+        return self._execution_timezone

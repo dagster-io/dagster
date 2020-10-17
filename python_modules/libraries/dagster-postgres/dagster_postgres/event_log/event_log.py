@@ -19,7 +19,7 @@ from dagster.serdes import (
 )
 
 from ..pynotify import await_pg_notifications
-from ..utils import create_pg_connection, pg_config, pg_url_from_config
+from ..utils import create_pg_connection, pg_config, pg_statement_timeout, pg_url_from_config
 
 CHANNEL_NAME = "run_events"
 
@@ -45,16 +45,28 @@ class PostgresEventLogStorage(AssetAwareSqlEventLogStorage, ConfigurableClass):
     """
 
     def __init__(self, postgres_url, inst_data=None):
-        self.postgres_url = check.str_param(postgres_url, "postgres_url")
-        self._event_watcher = PostgresEventWatcher(self.postgres_url)
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+        self.postgres_url = check.str_param(postgres_url, "postgres_url")
+        self._disposed = False
+
+        self._event_watcher = PostgresEventWatcher(self.postgres_url)
+
+        # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
-        self._disposed = False
 
         with self.connect() as conn:
             SqlEventLogStorageMetadata.create_all(conn)
+
+    def optimize_for_dagit(self, statement_timeout):
+        # When running in dagit, hold an open connection and set statement_timeout
+        self._engine = create_engine(
+            self.postgres_url,
+            isolation_level="AUTOCOMMIT",
+            pool_size=1,
+            connect_args={"options": pg_statement_timeout(statement_timeout)},
+        )
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)

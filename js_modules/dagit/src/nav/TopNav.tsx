@@ -12,7 +12,7 @@ export interface TopNavProps {
 export const TopNav = (props: TopNavProps) => {
   const {activeTab, breadcrumbs, tabs} = props;
   return (
-    <PipelineTabBarContainer>
+    <Container>
       <BreadcrumbContainer>
         <Breadcrumbs
           breadcrumbRenderer={(props) => <SmallerBreadcrumb {...props} />}
@@ -28,7 +28,7 @@ export const TopNav = (props: TopNavProps) => {
           })}
         </Tabs>
       ) : null}
-    </PipelineTabBarContainer>
+    </Container>
   );
 };
 
@@ -45,10 +45,11 @@ const BreadcrumbContainer = styled.div`
   margin-right: 40px;
 `;
 
-const PipelineTabBarContainer = styled.div`
+const Container = styled.div`
   background: ${Colors.LIGHT_GRAY4};
   border-bottom: 1px solid ${Colors.GRAY5};
   display: flex;
+  flex: 0 0 auto;
   flex-wrap: wrap;
   padding: 2px 16px 0;
 `;

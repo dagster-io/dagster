@@ -1,50 +1,22 @@
 import {ApolloClient} from 'apollo-client';
 import gql from 'graphql-tag';
-import * as querystring from 'query-string';
 import * as React from 'react';
 
 import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
-import {TokenizingFieldValue, tokenizedValuesFromString} from 'src/TokenizingField';
-import {LogLevel} from 'src/runs/LogLevel';
+import {TokenizingFieldValue} from 'src/TokenizingField';
 import {RunFragments} from 'src/runs/RunFragments';
 import {PipelineRunLogsSubscription} from 'src/runs/types/PipelineRunLogsSubscription';
 import {PipelineRunLogsSubscriptionStatusFragment} from 'src/runs/types/PipelineRunLogsSubscriptionStatusFragment';
 import {RunPipelineRunEventFragment} from 'src/runs/types/RunPipelineRunEventFragment';
 import {PipelineRunStatus} from 'src/types/globalTypes';
 
-export function GetFilterProviders(stepNames: string[] = []) {
-  return [
-    {
-      token: 'step',
-      values: () => stepNames,
-    },
-    {
-      token: 'type',
-      values: () => ['expectation', 'materialization', 'engine', 'input', 'output', 'pipeline'],
-    },
-  ];
-}
-
-export const GetDefaultLogFilter = () => {
-  const query = querystring.parse(window.location.search);
-  const q = typeof query.q === 'string' ? query.q : '';
-
-  return {
-    since: 0,
-    values: tokenizedValuesFromString(q, GetFilterProviders()),
-    levels: Object.assign(
-      Object.keys(LogLevel).reduce((dict, key) => ({...dict, [key]: true}), {}),
-      {[LogLevel.DEBUG]: false},
-    ),
-  } as LogFilter;
-};
-
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
 }
 
 export interface LogFilter {
-  values: LogFilterValue[];
+  stepQuery: string;
+  logQuery: LogFilterValue[];
   levels: {[key: string]: boolean};
   since: number;
 }
@@ -203,13 +175,13 @@ export class LogsProvider extends React.Component<
       return true;
     });
 
-    const hasTextFilter = !!(filter.values.length && filter.values[0].value !== '');
+    const hasTextFilter = !!(filter.logQuery.length && filter.logQuery[0].value !== '');
 
     const textMatchNodes = hasTextFilter
       ? filteredNodes.filter((node) => {
           return (
-            filter.values.length > 0 &&
-            filter.values.every((f) => {
+            filter.logQuery.length > 0 &&
+            filter.logQuery.every((f) => {
               if (f.token === 'query') {
                 return node.stepKey && selectedSteps.includes(node.stepKey);
               }

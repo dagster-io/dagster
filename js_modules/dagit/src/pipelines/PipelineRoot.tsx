@@ -1,9 +1,7 @@
 import * as React from 'react';
 import {Route, Switch} from 'react-router-dom';
 
-import {useActivePipelineForName} from 'src/DagsterRepositoryContext';
 import {PipelineExplorerRoot} from 'src/PipelineExplorerRoot';
-import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {PipelineRunsRoot} from 'src/PipelineRunsRoot';
 import {PipelineExecutionRoot} from 'src/execute/PipelineExecutionRoot';
 import {PipelineExecutionSetupRoot} from 'src/execute/PipelineExecutionSetupRoot';
@@ -12,15 +10,7 @@ import {PipelinePartitionsRoot} from 'src/partitions/PipelinePartitionsRoot';
 import {PipelineOverviewRoot} from 'src/pipelines/PipelineOverviewRoot';
 import {RunRoot} from 'src/runs/RunRoot';
 
-export const PipelineRoot: React.FunctionComponent<any> = (props: any) => {
-  const {params} = props.match;
-  const path = params['0'];
-  const {pipelineName, snapshotId} = explorerPathFromString(path);
-  const currentPipelineState = useActivePipelineForName(pipelineName);
-
-  const isSnapshot = !!snapshotId;
-  const isHistorical = isSnapshot && currentPipelineState?.pipelineSnapshotId !== snapshotId;
-
+export const PipelineRoot: React.FunctionComponent<{}> = () => {
   return (
     <div
       style={{
@@ -31,7 +21,7 @@ export const PipelineRoot: React.FunctionComponent<any> = (props: any) => {
         height: '100%',
       }}
     >
-      <PipelineNav isHistorical={isHistorical} isSnapshot={isSnapshot} />
+      <PipelineNav />
       <Switch>
         <Route path="/pipeline/:pipelinePath/overview" component={PipelineOverviewRoot} />
         <Route

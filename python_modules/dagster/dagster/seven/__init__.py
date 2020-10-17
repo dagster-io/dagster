@@ -12,6 +12,8 @@ import threading
 import time
 from types import MethodType
 
+import pendulum
+
 from .json import JSONDecodeError, dump, dumps
 from .temp_dir import get_system_temp_directory
 
@@ -272,10 +274,13 @@ def get_utc_timezone():
 
 
 def get_current_datetime_in_utc():
-    return datetime.datetime.now(tz=get_utc_timezone())
+    return pendulum.now("UTC")
 
 
 def get_timestamp_from_utc_datetime(utc_datetime):
+    if isinstance(utc_datetime, pendulum.Pendulum):
+        return utc_datetime.timestamp()
+
     if utc_datetime.tzinfo != get_utc_timezone():
         raise Exception("Must pass in a UTC timezone to compute UNIX timestamp")
 

@@ -547,28 +547,23 @@ def valid_external_pipeline_target_cli_args_with_preset():
 
 
 def test_run_list():
-    runner = CliRunner()
-    result = runner.invoke(run_list_command)
-    assert result.exit_code == 0
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_list_command)
+        assert result.exit_code == 0
 
 
 def test_run_wipe_correct_delete_message():
-    runner = CliRunner()
-    result = runner.invoke(run_wipe_command, input="DELETE\n")
-    assert "Deleted all run history and event logs" in result.output
-    assert result.exit_code == 0
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_wipe_command, input="DELETE\n")
+        assert "Deleted all run history and event logs" in result.output
+        assert result.exit_code == 0
 
 
 def test_run_wipe_incorrect_delete_message():
-    runner = CliRunner()
-    result = runner.invoke(run_wipe_command, input="WRONG\n")
-    assert "Exiting without deleting all run history and event logs" in result.output
-    assert result.exit_code == 0
-
-
-def test_use_env_vars_for_cli_option():
     with instance_for_test():
-        runner = CliRunner(env={"DAGSTER_CLI_ASSET_WIPE_ALL": "1"})
-        result = runner.invoke(cli, ["asset", "wipe"], auto_envvar_prefix=ENV_PREFIX, input="DELETE\n")
-        assert "Removed asset indexes from event logs" in result.output
+        runner = CliRunner()
+        result = runner.invoke(run_wipe_command, input="WRONG\n")
+        assert "Exiting without deleting all run history and event logs" in result.output
         assert result.exit_code == 0

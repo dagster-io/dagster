@@ -5,8 +5,8 @@ import time
 import pytest
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s.utils import wait_for_job
-from dagster_k8s_test_infra.integration_utils import ReOriginatedExternalPipelineForTest
 from dagster_test.test_project import (
+    ReOriginatedExternalPipelineForTest,
     get_test_project_external_pipeline,
     test_project_environments_path,
 )

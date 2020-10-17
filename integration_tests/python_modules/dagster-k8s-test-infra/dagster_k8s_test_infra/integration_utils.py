@@ -4,10 +4,6 @@ import subprocess
 
 import six
 
-from dagster.core.code_pointer import FileCodePointer
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
-
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
@@ -71,31 +67,3 @@ def remove_none_recursively(obj):
         )
     else:
         return obj
-
-
-class ReOriginatedExternalPipelineForTest(ExternalPipeline):
-    def __init__(
-        self, external_pipeline,
-    ):
-        super(ReOriginatedExternalPipelineForTest, self).__init__(
-            external_pipeline.external_pipeline_data, external_pipeline.repository_handle,
-        )
-
-    def get_origin(self):
-        """
-        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
-        structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
-        inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
-        work, we need to inject this one.
-        """
-
-        return PipelinePythonOrigin(
-            self._pipeline_index.name,
-            RepositoryPythonOrigin(
-                executable_path="python",
-                code_pointer=FileCodePointer(
-                    "/dagster_test/test_project/test_pipelines/repo.py",
-                    "define_demo_execution_repo",
-                ),
-            ),
-        )

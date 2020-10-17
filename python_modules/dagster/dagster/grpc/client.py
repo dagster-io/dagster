@@ -220,6 +220,19 @@ class DagsterGrpcClient(object):
 
         return deserialize_json_to_dagster_namedtuple(res.serialized_external_repository_data)
 
+    def streaming_external_repository(self, repository_grpc_server_origin):
+        for res in self._streaming_query(
+            "StreamingExternalRepository",
+            api_pb2.ExternalRepositoryRequest,
+            serialized_repository_python_origin=serialize_dagster_namedtuple(
+                repository_grpc_server_origin
+            ),
+        ):
+            yield {
+                "sequence_number": res.sequence_number,
+                "serialized_external_repository_chunk": res.serialized_external_repository_chunk,
+            }
+
     def external_schedule_execution(self, external_schedule_execution_args):
         check.inst_param(
             external_schedule_execution_args,

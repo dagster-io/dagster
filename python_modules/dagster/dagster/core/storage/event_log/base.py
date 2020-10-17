@@ -95,10 +95,17 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
                 For each step output, an address if there is one and None otherwise.
         """
 
+    def optimize_for_dagit(self, statement_timeout):
+        """Allows for optimizing database connection / use in the context of a long lived dagit process"""
+
 
 class AssetAwareEventLogStorage(six.with_metaclass(ABCMeta)):
     @abstractmethod
-    def get_all_asset_keys(self):
+    def has_asset_key(self, asset_key):
+        pass
+
+    @abstractmethod
+    def get_all_asset_keys(self, prefix_path=None):
         pass
 
     @abstractmethod

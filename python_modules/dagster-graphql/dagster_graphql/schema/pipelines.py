@@ -77,6 +77,7 @@ class DauphinIPipelineSnapshotMixin(object):
         dauphin.non_null_list("PipelineRun"), cursor=dauphin.String(), limit=dauphin.Int(),
     )
     schedules = dauphin.non_null_list("ScheduleDefinition")
+    parent_snapshot_id = dauphin.String()
 
     def resolve_pipeline_snapshot_id(self, _):
         return self.get_represented_pipeline().identifying_pipeline_snapshot_id
@@ -174,6 +175,13 @@ class DauphinIPipelineSnapshotMixin(object):
         pipeline_selector = represented_pipeline.handle.to_selector()
         schedules = get_schedule_definitions_for_pipeline(graphene_info, pipeline_selector)
         return schedules
+
+    def resolve_parent_snapshot_id(self, _graphene_info):
+        lineage_snapshot = self.get_represented_pipeline().pipeline_snapshot.lineage_snapshot
+        if lineage_snapshot:
+            return lineage_snapshot.parent_snapshot_id
+        else:
+            return None
 
 
 class DauphinIPipelineSnapshot(dauphin.Interface):

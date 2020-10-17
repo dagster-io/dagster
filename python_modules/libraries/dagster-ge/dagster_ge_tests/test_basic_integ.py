@@ -37,7 +37,11 @@ def reyielder(_context, res):
 
 @pipeline(mode_defs=[ModeDefinition("basic", resource_defs={"ge_data_context": ge_data_context})],)
 def hello_world_pandas_pipeline():
-    return reyielder(ge_validation_solid_factory("getest", "basic.warning")(pandas_yielder()))
+    return reyielder(
+        ge_validation_solid_factory("ge_validation_solid", "getest", "basic.warning")(
+            pandas_yielder()
+        )
+    )
 
 
 @pipeline(
@@ -49,7 +53,10 @@ def hello_world_pandas_pipeline():
 )
 def hello_world_pyspark_pipeline():
     validate = ge_validation_solid_factory(
-        "getestspark", "basic.warning", input_dagster_type=DagsterPySparkDataFrame
+        "ge_validation_solid",
+        "getestspark",
+        "basic.warning",
+        input_dagster_type=DagsterPySparkDataFrame,
     )
     return reyielder(validate(pyspark_yielder()))
 

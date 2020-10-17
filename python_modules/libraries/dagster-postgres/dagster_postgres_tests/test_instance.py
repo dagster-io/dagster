@@ -1,55 +1,81 @@
-import os
-
 import pytest
-from dagster_postgres.event_log import PostgresEventLogStorage
-from dagster_postgres.run_storage import PostgresRunStorage
+import sqlalchemy as db
+import yaml
+from dagster_postgres.utils import get_conn
 
-from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
-from dagster.core.instance import DagsterInstance, InstanceType
-from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.root import LocalArtifactStorage
+from dagster.core.instance import DagsterInstance
 
 
-@pipeline
-def simple():
-    @solid
-    def easy(context):
-        context.log.info("easy")
-        return "easy"
+def full_pg_config(hostname):
+    return """
+      run_storage:
+        module: dagster_postgres.run_storage
+        class: PostgresRunStorage
+        config:
+          postgres_db:
+            username: test
+            password: test
+            hostname: {hostname}
+            db_name: test
 
-    easy()
+      event_log_storage:
+        module: dagster_postgres.event_log
+        class: PostgresEventLogStorage
+        config:
+            postgres_db:
+              username: test
+              password: test
+              hostname: {hostname}
+              db_name: test
+
+      schedule_storage:
+        module: dagster_postgres.schedule_storage
+        class: PostgresScheduleStorage
+        config:
+            postgres_db:
+              username: test
+              password: test
+              hostname: {hostname}
+              db_name: test
+    """.format(
+        hostname=hostname
+    )
 
 
-@pytest.mark.skipif(
-    bool(os.getenv("BUILDKITE")), reason="Strange Docker networking issues on Buildkite"
-)
-def test_postgres_instance(multi_postgres):
-    run_storage_conn_string, event_log_storage_conn_string = multi_postgres
+def test_connection_leak(hostname, conn_string):
+    num_instances = 20
 
-    run_storage = PostgresRunStorage.create_clean_storage(run_storage_conn_string)
-    event_storage = PostgresEventLogStorage.create_clean_storage(event_log_storage_conn_string)
-
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance(
-            instance_type=InstanceType.PERSISTENT,
-            local_artifact_storage=LocalArtifactStorage(temp_dir),
-            run_storage=run_storage,
-            event_storage=event_storage,
-            compute_log_manager=LocalComputeLogManager(temp_dir),
-            run_launcher=SyncInMemoryRunLauncher(),
+    copies = []
+    for _ in range(num_instances):
+        copies.append(
+            DagsterInstance.local_temp(overrides=yaml.safe_load(full_pg_config(hostname)))
         )
 
-        result = execute_pipeline(simple, instance=instance)
+    with get_conn(conn_string).cursor() as curs:
+        # count open connections
+        curs.execute("SELECT count(*) from pg_stat_activity")
+        res = curs.fetchall()
 
-        assert run_storage.has_run(result.run_id)
-        assert run_storage.get_run_by_id(result.run_id).status == PipelineRunStatus.SUCCESS
-        assert DagsterEventType.PIPELINE_SUCCESS in [
-            event.dagster_event.event_type
-            for event in event_storage.get_logs_for_run(result.run_id)
-            if event.is_dagster_event
-        ]
-        stats = event_storage.get_stats_for_run(result.run_id)
-        assert stats.steps_succeeded == 1
-        assert stats.end_time is not None
+    # This includes a number of internal connections, so just ensure it did not scale
+    # with number of instances
+    assert res[0][0] < num_instances
+
+
+def test_statement_timeouts(hostname):
+    with DagsterInstance.local_temp(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
+        instance.optimize_for_dagit(statement_timeout=500)  # 500ms
+
+        # ensure migration error is not raised by being up to date
+        instance.upgrade()
+
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
+            with instance._run_storage.connect() as conn:  # pylint: disable=protected-access
+                conn.execute("select pg_sleep(1)").fetchone()
+
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
+            with instance._event_storage.connect() as conn:  # pylint: disable=protected-access
+                conn.execute("select pg_sleep(1)").fetchone()
+
+        with pytest.raises(db.exc.OperationalError, match="QueryCanceled"):
+            with instance._schedule_storage.connect() as conn:  # pylint: disable=protected-access
+                conn.execute("select pg_sleep(1)").fetchone()

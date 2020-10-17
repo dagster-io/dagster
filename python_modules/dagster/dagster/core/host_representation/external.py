@@ -341,6 +341,10 @@ class ExternalSchedule:
         return self._external_schedule_data.cron_schedule
 
     @property
+    def execution_timezone(self):
+        return self._external_schedule_data.execution_timezone
+
+    @property
     def solid_selection(self):
         return self._external_schedule_data.solid_selection
 
