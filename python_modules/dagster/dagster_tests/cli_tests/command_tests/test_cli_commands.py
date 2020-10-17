@@ -574,6 +574,7 @@ def test_use_env_vars_for_cli_option():
     env_key = "{}_VERSION".format(ENV_PREFIX)
     runner = CliRunner(env={env_key: "1"})
     # use `debug` subcommand to trigger the cli group option flag `--version`
+    # see issue: https://github.com/pallets/click/issues/1694
     result = runner.invoke(cli, ["debug"], auto_envvar_prefix=ENV_PREFIX)
     assert __version__ in result.output
     assert result.exit_code == 0
