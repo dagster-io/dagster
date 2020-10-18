@@ -3,11 +3,25 @@
 import datetime
 
 from dagster import (
+    Any,
+    Array,
+    Enum,
+    EnumValue,
+    Field,
+    IntSource,
+    ModeDefinition,
+    Noneable,
+    Permissive,
     PresetDefinition,
+    Selector,
+    Shape,
+    String,
+    StringSource,
     daily_schedule,
     hourly_schedule,
     pipeline,
     repository,
+    resource,
     schedule,
     solid,
 )
@@ -108,12 +122,63 @@ def rollup_pipeline():
     rollup_data()
 
 
-@solid
+@resource(
+    config_schema={
+        "string": str,
+        "string_source": StringSource,
+        "int_source": IntSource,
+        "number": int,
+        "boolean": bool,
+        "not_required": Field(bool, is_required=False),
+        "default_value": Field(str, default_value="default_value"),
+        "enum": Enum("CowboyType", [EnumValue("good"), EnumValue("bad"), EnumValue("ugly")]),
+        "array": Array(String),
+        "selector": Selector({"a": str, "b": str, "c": str,}),
+        "noneable_array": Noneable(Array(String)),
+        "noneable_string": Noneable(String),
+    }
+)
+def my_resource(_):
+    return None
+
+
+@solid(
+    required_resource_keys={"my_resource"},
+    config_schema={
+        "any": Any,
+        "string": str,
+        "string_source": StringSource,
+        "int_source": IntSource,
+        "number": int,
+        "boolean": bool,
+        "not_required": Field(bool, is_required=False),
+        "default_value": Field(str, default_value="default_value"),
+        "enum": Enum("CowboyType", [EnumValue("good"), EnumValue("bad"), EnumValue("ugly")]),
+        "array": Array(String),
+        "selector": Selector({"a": str, "b": str, "c": str,}),
+        "noneable_array": Noneable(Array(String)),
+        "noneable_string": Noneable(String),
+        "complex_shape": Shape(
+            fields={"inner_shape_array": Array(str), "inner_shape_string": String}
+        ),
+        "permissive_complex_shape": Permissive(
+            fields={"inner_shape_array": Array(str), "inner_shape_string": String}
+        ),
+        "noneable_complex_shape": Noneable(
+            Shape(
+                fields={
+                    "inner_noneable_shape_array": Array(str),
+                    "inner_noneable_shape_string": String,
+                }
+            )
+        ),
+    },
+)
 def test_solid(_):
     return 1
 
 
-@pipeline
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"my_resource": my_resource})])
 def test_pipeline():
     test_solid()
 
