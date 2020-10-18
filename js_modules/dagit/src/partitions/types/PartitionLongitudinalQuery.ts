@@ -118,7 +118,7 @@ export interface PartitionLongitudinalQuery {
 export interface PartitionLongitudinalQueryVariables {
   partitionSetName: string;
   repositorySelector: RepositorySelector;
-  partitionsLimit?: number | null;
-  partitionsCursor?: string | null;
+  limit?: number | null;
+  cursor?: string | null;
   reverse?: boolean | null;
 }

@@ -5,7 +5,7 @@ import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components/macro';
 
-import {CursorPaginationControls} from 'src/CursorPaginationControls';
+import {CursorPaginationControls} from 'src/CursorControls';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';

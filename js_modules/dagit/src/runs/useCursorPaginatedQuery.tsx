@@ -4,13 +4,7 @@ import * as React from 'react';
 import {useQuery} from 'react-apollo';
 import {__RouterContext as RouterContext} from 'react-router';
 
-export interface CursorPaginationProps {
-  hasPrevPage: boolean;
-  hasNextPage: boolean;
-  onPrevPage: () => void;
-  onNextPage: () => void;
-  onReset: () => void;
-}
+import {CursorPaginationProps} from 'src/CursorControls';
 
 interface CursorPaginationQueryVariables {
   cursor?: string | null;
@@ -61,14 +55,14 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
 
   const resultArray = options.getResultArray(queryResult.data);
   const paginationProps: CursorPaginationProps = {
-    hasPrevPage: !!cursor,
-    hasNextPage: resultArray.length === options.pageSize + 1,
-    onPrevPage: () => {
+    hasPrevCursor: !!cursor,
+    hasNextCursor: resultArray.length === options.pageSize + 1,
+    popCursor: () => {
       const nextStack = [...cursorStack];
       setCursor(nextStack.pop());
       setCursorStack(nextStack);
     },
-    onNextPage: () => {
+    advanceCursor: () => {
       if (cursor) {
         setCursorStack([...cursorStack, cursor]);
       }
@@ -78,7 +72,7 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
       }
       setCursor(nextCursor);
     },
-    onReset: () => {
+    reset: () => {
       setCursorStack([]);
       setCursor(undefined);
     },
