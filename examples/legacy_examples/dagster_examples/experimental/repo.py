@@ -62,7 +62,7 @@ def define_schedules():
     return [daily_ingest_schedule, daily_rollup_schedule, test_schedule]
 
 
-@solid
+@solid(config_schema={"abc": str, "bcd": str})
 def save_metrics(context, data_path):
     context.log.info("Saving metrics to path {data_path}".format(data_path=data_path))
 

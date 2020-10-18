@@ -291,7 +291,10 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
             .map((e) => e.error);
 
           const isPresent = pathExistsInObject(path, document);
-          const isInvalid = pathErrors.length;
+          const containsMissing = missingNodes.some((missingNode) =>
+            missingNode.includes(path.join('.')),
+          );
+          const isInvalid = pathErrors.length || containsMissing;
           const isMissing = path.some((_, idx) =>
             missingNodes.includes(path.slice(0, idx + 1).join('.')),
           );
