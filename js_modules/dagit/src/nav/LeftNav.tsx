@@ -19,19 +19,19 @@ const KEYCODE_FOR_1 = 49;
 
 const INSTANCE_TABS = [
   {
-    to: `/runs`,
+    to: `/instance/runs`,
     tab: `runs`,
     icon: <Icon icon="history" iconSize={18} />,
     label: 'Runs',
   },
   {
-    to: `/assets`,
+    to: `/instance/assets`,
     tab: `assets`,
     icon: <Icon icon="panel-table" iconSize={18} />,
     label: 'Assets',
   },
   {
-    to: `/scheduler`,
+    to: `/instance/scheduler`,
     tab: `scheduler`,
     icon: <Icon icon="time" iconSize={18} />,
     label: 'Scheduler',

@@ -294,7 +294,7 @@ const MaterializationContent: React.FunctionComponent<{
   const assetDashboardLink = assetsSupported ? (
     <span style={{marginLeft: 10}}>
       [
-      <MetadataEntryLink href={`/assets/${materialization.assetKey.path.join('/')}`}>
+      <MetadataEntryLink href={`/instance/assets/${materialization.assetKey.path.join('/')}`}>
         View Asset Dashboard
       </MetadataEntryLink>
       ]

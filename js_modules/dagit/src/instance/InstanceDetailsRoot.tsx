@@ -3,13 +3,13 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
 import {UnControlled as CodeMirrorReact} from 'react-codemirror2';
-import styled from 'styled-components/macro';
 import {createGlobalStyle} from 'styled-components/macro';
 
 import {Header} from 'src/ListComponents';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {InstanceDetailsQuery} from 'src/instance/types/InstanceDetailsQuery';
 import {TopNav} from 'src/nav/TopNav';
-import {InstanceDetailsQuery} from 'src/types/InstanceDetailsQuery';
+import {Page} from 'src/ui/Page';
 import {FontFamily} from 'src/ui/styles';
 
 const CodeMirrorShimStyle = createGlobalStyle`
@@ -36,9 +36,9 @@ export const InstanceDetailsRoot: React.FunctionComponent = () => {
   });
 
   return data ? (
-    <Container>
+    <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
       <TopNav breadcrumbs={[{text: 'Instance Details', icon: 'database'}]} />
-      <div style={{flexGrow: 1, padding: '16px 16px 32px'}}>
+      <Page style={{flexGrow: 1}}>
         <Header>{`Dagster ${data.version}`}</Header>
         <CodeMirrorShimStyle />
         <CodeMirrorReact
@@ -48,18 +48,12 @@ export const InstanceDetailsRoot: React.FunctionComponent = () => {
             readOnly: true,
           }}
         />
-      </div>
-    </Container>
+      </Page>
+    </div>
   ) : (
     <Spinner size={35} />
   );
 };
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-`;
 
 export const INSTANCE_DETAILS_QUERY = gql`
   query InstanceDetailsQuery {

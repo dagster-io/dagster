@@ -16,14 +16,16 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
     variables: {assetKey: {path: currentPath}},
   });
 
-  const breadcrumbs: IBreadcrumbProps[] = [{icon: 'panel-table', text: 'Assets', href: '/assets'}];
+  const breadcrumbs: IBreadcrumbProps[] = [
+    {icon: 'panel-table', text: 'Assets', href: '/instance/assets'},
+  ];
 
   if (currentPath.length) {
     currentPath.reduce((accum: string, elem: string) => {
       const href = `${accum}/${elem}`;
       breadcrumbs.push({text: elem, href});
       return href;
-    }, '/assets');
+    }, '/instance/assets');
   }
 
   return (

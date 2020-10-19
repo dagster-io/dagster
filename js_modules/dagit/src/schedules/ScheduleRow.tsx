@@ -345,7 +345,7 @@ export const ScheduleRow: React.FunctionComponent<{
 
           {runsCount > NUM_RUNS_TO_DISPLAY && (
             <Link
-              to={`/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${name}`)}`}
+              to={`/instance/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${name}`)}`}
               style={{verticalAlign: 'top'}}
             >
               {' '}
@@ -636,7 +636,9 @@ export const ScheduleStateRow: React.FunctionComponent<{
 
           {runsCount > NUM_RUNS_TO_DISPLAY && (
             <Link
-              to={`/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${scheduleName}`)}`}
+              to={`/instance/runs/?q=${encodeURIComponent(
+                `tag:dagster/schedule_name=${scheduleName}`,
+              )}`}
               style={{verticalAlign: 'top'}}
             >
               {' '}

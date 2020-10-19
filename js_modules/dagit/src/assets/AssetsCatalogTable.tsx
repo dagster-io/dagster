@@ -108,7 +108,7 @@ const AssetSearch = ({assets}: {assets: Asset[]}) => {
   const [active, setActive] = React.useState<ActiveSuggestionInfo | null>(null);
 
   const selectOption = (asset: Asset) => {
-    history.push(`/assets/${asset.key.path.join('/')}`);
+    history.push(`/instance/assets/${asset.key.path.join('/')}`);
   };
 
   const matching = assets.filter((asset) => !q || matches(asset.key.path.join('.'), q));
@@ -225,7 +225,7 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
         <LegendColumn>Asset Key</LegendColumn>
       </Legend>
       {pathKeys.map((pathKey: string, idx: number) => {
-        const linkUrl = `/assets/${
+        const linkUrl = `/instance/assets/${
           currentPath.length ? currentPath.join('/') + `/${pathKey}` : pathKey
         }`;
         return (

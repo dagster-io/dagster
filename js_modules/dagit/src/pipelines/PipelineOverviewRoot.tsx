@@ -163,7 +163,7 @@ const OverviewAssets = ({runs}: {runs: Run[]}) => {
       {assetKeys.length
         ? assetKeys.map((assetKey) => (
             <RowContainer key={assetKey} style={{padding: 10, paddingBottom: 30}}>
-              <Link to={`/assets/${assetKey}`}>{assetKey}</Link>
+              <Link to={`/instance/assets/${assetKey}`}>{assetKey}</Link>
             </RowContainer>
           ))
         : 'No recent assets'}
