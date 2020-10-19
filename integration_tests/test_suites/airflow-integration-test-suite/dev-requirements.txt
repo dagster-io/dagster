@@ -1,4 +1,0 @@
-apache-airflow==1.10.10
-typing_extensions #https://issues.apache.org/jira/browse/AIRFLOW-6854
-boto3==1.9.*
-kubernetes==10.0.1

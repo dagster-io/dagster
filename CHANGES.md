@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.16 (Upcoming)
+
+**Breaking Changes**
+
+- Removed `DagsterKubernetesPodOperator` in `dagster-airflow`.
+
 ## 0.9.15
 
 **Breaking Changes**
