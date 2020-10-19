@@ -1,3 +1,5 @@
+import pickle
+
 from dagster_dbt import DbtRpcOutput
 
 from ..test_types import DBT_RESULT_DICT
@@ -15,3 +17,7 @@ class TestDbtRpcOutput:
     def test_from_dict(self):
         dro = DbtRpcOutput.from_dict(DBT_RPC_RESULT_DICT)
         assert len(dro.result) == len(DBT_RPC_RESULT_DICT["results"])
+
+    def test_pickle_roundtrip(self):  # pylint: disable=unused-argument
+        dco = DbtRpcOutput.from_dict(DBT_RPC_RESULT_DICT)
+        assert pickle.loads(pickle.dumps(dco)) == dco

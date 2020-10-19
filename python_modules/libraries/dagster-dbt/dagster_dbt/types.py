@@ -1,5 +1,5 @@
 from collections import namedtuple
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
 from dateutil import parser
@@ -20,12 +20,12 @@ class StepTiming(namedtuple("_StepTiming", "name started_at completed_at")):
             execution.
     """
 
-    def __new__(cls, *, name: str, started_at: str, completed_at: str, **_):
+    def __new__(cls, name: str, started_at: datetime, completed_at: datetime):
         return super().__new__(
             cls,
             check.str_param(name, "name"),
-            parser.isoparse(started_at),
-            parser.isoparse(completed_at),
+            check.inst_param(started_at, "started_at", datetime),
+            check.inst_param(completed_at, "completed_at", datetime),
         )
 
     @property
@@ -63,22 +63,18 @@ class NodeResult(
 
     def __new__(
         cls,
-        *,
         node: Dict[str, Any],
         error: Optional[str] = None,
         status: Optional[Union[str, int]] = None,
         execution_time: Optional[float] = None,
         thread_id: Optional[str] = None,
-        step_timings: List[Dict[str, Any]],
+        step_timings: List[StepTiming] = None,
         table: Optional[Dict[str, Any]] = None,
         fail: Optional[Any] = None,
         warn: Optional[Any] = None,
         skip: Optional[Any] = None,
-        **_,
     ):
-        step_timings = [
-            StepTiming(**d) for d in check.list_param(step_timings, "step_timings", of_type=Dict)
-        ]
+        step_timings = check.list_param(step_timings, "step_timings", of_type=StepTiming)
         return super().__new__(
             cls,
             check.dict_param(node, "node", key_type=str),
@@ -87,7 +83,7 @@ class NodeResult(
             check.opt_float_param(execution_time, "execution_time"),
             check.opt_str_param(thread_id, "thread_id"),
             step_timings,
-            check.opt_list_param(table, "table", of_type=Dict[str, Any]),
+            check.opt_dict_param(table, "table"),
             fail,
             warn,
             skip,
@@ -104,15 +100,29 @@ class NodeResult(
         Returns:
             NodeResult: An instance of :class:`NodeResult <dagster_dbt.NodeResult>`.
         """
-        check.dict_elem(d, "node")
-        check.opt_str_elem(d, "error")
-        check.float_elem(d, "execution_time")
-        check.opt_str_elem(d, "thread_id")
+        node = check.dict_elem(d, "node")
+        error = check.opt_str_elem(d, "error")
+        execution_time = check.float_elem(d, "execution_time")
+        thread_id = check.opt_str_elem(d, "thread_id")
         check.list_elem(d, "timing")
-        check.is_list(d["timing"], of_type=Dict)
-        check.opt_dict_elem(d, "table")
+        step_timings = [
+            StepTiming(
+                name=d["name"],
+                started_at=parser.isoparse(d["started_at"]),
+                completed_at=parser.isoparse(d["completed_at"]),
+            )
+            for d in check.is_list(d["timing"], of_type=Dict)
+        ]
+        table = check.opt_dict_elem(d, "table")
 
-        return cls(step_timings=d.get("timing"), **d)
+        return cls(
+            step_timings=step_timings,
+            node=node,
+            error=error,
+            execution_time=execution_time,
+            thread_id=thread_id,
+            table=table,
+        )
 
 
 class DbtResult(namedtuple("_DbtResult", "logs results generated_at elapsed_time")):
@@ -130,16 +140,11 @@ class DbtResult(namedtuple("_DbtResult", "logs results generated_at elapsed_time
 
     def __new__(
         cls,
-        *,
         logs: List[Dict[str, Any]],
-        results: List[Dict[str, Any]],
+        results: List[NodeResult],
         generated_at: str,
         elapsed_time: Optional[float] = None,
-        **_,
     ):
-        results = [
-            NodeResult.from_dict(d) for d in check.list_param(results, "results", of_type=Dict)
-        ]
         return super().__new__(
             cls,
             check.list_param(logs, "logs", of_type=Dict),
@@ -160,13 +165,15 @@ class DbtResult(namedtuple("_DbtResult", "logs results generated_at elapsed_time
             DbtResult: An instance of :class:`DbtResult <dagster_dbt.DbtResult>`.
         """
         check.list_elem(d, "logs")
-        check.is_list(d["logs"], of_type=Dict)
+        logs = check.is_list(d["logs"], of_type=Dict)
         check.list_elem(d, "results")
-        check.is_list(d["results"], of_type=Dict)
-        check.str_elem(d, "generated_at")
-        check.float_elem(d, "elapsed_time")
+        results = [NodeResult.from_dict(d) for d in check.is_list(d["results"], of_type=Dict)]
+        generated_at = check.str_elem(d, "generated_at")
+        elapsed_time = check.float_elem(d, "elapsed_time")
 
-        return cls(**d)
+        return cls(
+            logs=logs, results=results, generated_at=generated_at, elapsed_time=elapsed_time,
+        )
 
     def __len__(self) -> int:
         return len(self.results)

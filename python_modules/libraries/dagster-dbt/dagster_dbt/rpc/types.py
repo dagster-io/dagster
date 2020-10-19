@@ -22,7 +22,7 @@ class DbtRpcOutput(namedtuple("_DbtRpcOutput", "result state start end elapsed")
     """
 
     def __new__(
-        cls, *, result: DbtResult, state: str, start: str, end: str, elapsed: float, **_,
+        cls, result: DbtResult, state: str, start: str, end: str, elapsed: float,
     ):
         return super().__new__(
             cls,
@@ -45,11 +45,11 @@ class DbtRpcOutput(namedtuple("_DbtRpcOutput", "result state start end elapsed")
         Returns:
             DbtRpcOutput: An instance of :class:`DbtRpcOutput <dagster_dbt.DbtRpcOutput>`.
         """
-        check.str_elem(d, "state")
-        check.str_elem(d, "start")
-        check.str_elem(d, "end")
-        check.float_elem(d, "elapsed")
+        state = check.str_elem(d, "state")
+        start = check.str_elem(d, "start")
+        end = check.str_elem(d, "end")
+        elapsed = check.float_elem(d, "elapsed")
 
-        d["result"] = DbtResult.from_dict(d)
+        result = DbtResult.from_dict(d)
 
-        return cls(**d)
+        return cls(result=result, state=state, start=start, end=end, elapsed=elapsed)

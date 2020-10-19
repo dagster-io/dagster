@@ -35,7 +35,6 @@ class DbtCliOutput(
 
     def __new__(
         cls,
-        *,
         result: DbtResult,
         command: str,
         return_code: int,
@@ -45,7 +44,6 @@ class DbtCliOutput(
         num_error: Optional[int] = None,
         num_skip: Optional[int] = None,
         num_total: Optional[int] = None,
-        **_,
     ):
         return super().__new__(
             cls,
@@ -72,14 +70,23 @@ class DbtCliOutput(
         Returns:
             DbtCliOutput: An instance of :class:`DbtCliOutput <dagster_dbt.DbtCliOutput>`.
         """
-        check.int_elem(d, "return_code")
-        check.str_elem(d, "raw_output")
-        check.opt_int_elem(d, "num_pass")
-        check.opt_int_elem(d, "num_warn")
-        check.opt_int_elem(d, "num_error")
-        check.opt_int_elem(d, "num_skip")
-        check.opt_int_elem(d, "num_total")
+        return_code = check.int_elem(d, "return_code")
+        raw_output = check.str_elem(d, "raw_output")
+        num_pass = check.opt_int_elem(d, "num_pass")
+        num_warn = check.opt_int_elem(d, "num_warn")
+        num_error = check.opt_int_elem(d, "num_error")
+        num_skip = check.opt_int_elem(d, "num_skip")
+        num_total = check.opt_int_elem(d, "num_total")
+        command = check.str_elem(d, "command")
 
-        d["result"] = DbtResult.from_dict(d)
-
-        return cls(**d)
+        return cls(
+            result=DbtResult.from_dict(d),
+            return_code=return_code,
+            raw_output=raw_output,
+            num_pass=num_pass,
+            num_warn=num_warn,
+            num_error=num_error,
+            num_skip=num_skip,
+            num_total=num_total,
+            command=command,
+        )
