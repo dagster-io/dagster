@@ -40,7 +40,7 @@ def test_load_with_error(capfd):
         process.terminate()
 
 
-def test_load_with_empty_working_directory():
+def test_load_with_empty_working_directory(capfd):
     port = find_free_port()
     # File that will fail if working directory isn't set to default
     python_file = file_relative_path(__file__, "grpc_repo_with_local_import.py")
@@ -53,6 +53,28 @@ def test_load_with_empty_working_directory():
         try:
             assert wait_for_grpc_server(process)
             assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
+        finally:
+            process.terminate()
+
+        # indicating the working directory is empty fails
+
+        process = subprocess.Popen(
+            [
+                "dagster",
+                "api",
+                "grpc",
+                "--port",
+                str(port),
+                "--python-file",
+                python_file,
+                "--empty-working-directory",
+            ],
+            stdout=subprocess.PIPE,
+        )
+        try:
+            assert not wait_for_grpc_server(process)
+            _, err = capfd.readouterr()
+            assert "No module named" in err
         finally:
             process.terminate()
 

@@ -476,6 +476,8 @@ def _get_code_pointer_dict_from_kwargs(kwargs):
 
 
 def get_working_directory_from_kwargs(kwargs):
+    if kwargs.get("empty_working_directory"):
+        return None
     return kwargs.get("working_directory") if kwargs.get("working_directory") else os.getcwd()
 
 

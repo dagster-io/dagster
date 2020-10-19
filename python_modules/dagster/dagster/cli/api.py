@@ -465,6 +465,14 @@ def _schedule_tick_state(instance, stream, tick_data):
 
 @click.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
 @click.option(
+    "--empty-working-directory",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Indicates that the working directory should be empty and should not set to the current "
+    "directory as a default",
+)
+@click.option(
     "--port",
     "-p",
     type=click.INT,
@@ -537,7 +545,16 @@ def grpc_command(
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
     loadable_target_origin = None
-    if any(kwargs[key] for key in ["attribute", "working_directory", "module_name", "python_file"]):
+    if any(
+        kwargs[key]
+        for key in [
+            "attribute",
+            "working_directory",
+            "module_name",
+            "python_file",
+            "empty_working_directory",
+        ]
+    ):
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute=kwargs["attribute"],
