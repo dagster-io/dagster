@@ -236,6 +236,8 @@ def get_required_resource_keys_for_step(
             resource_keys = resource_keys.union(
                 step_output.dagster_type.materializer.required_resource_keys()
             )
+        if step_output.asset_store_handle:
+            resource_keys = resource_keys.union({step_output.asset_store_handle.asset_store_key})
 
     # add all the storage-compatible plugin resource keys
     for dagster_type in solid_def.all_dagster_types():

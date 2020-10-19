@@ -6,7 +6,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidAssetKey
-from dagster.serdes import Persistable, whitelist_for_persistence
+from dagster.serdes import Persistable, whitelist_for_persistence, whitelist_for_serdes
 from dagster.utils import is_str
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -626,6 +626,37 @@ class RetryRequested(Exception):  # base exception instead?
         super(RetryRequested, self).__init__()
         self.max_retries = check.int_param(max_retries, "max_retries")
         self.seconds_to_wait = check.opt_int_param(seconds_to_wait, "seconds_to_wait")
+
+
+@whitelist_for_serdes
+class AssetStoreOperationType(Enum):
+    SET_ASSET = "SET_ASSET"
+    GET_ASSET = "GET_ASSET"
+
+
+@whitelist_for_serdes
+class AssetStoreOperation(
+    namedtuple("_AssetStoreOperation", "op step_output_handle asset_store_handle obj",)
+):
+    """
+    Event related AssetStore
+    """
+
+    def __new__(cls, op, step_output_handle, asset_store_handle, obj=None):
+        from dagster.core.execution.plan.objects import StepOutputHandle
+        from dagster.core.storage.asset_store import AssetStoreHandle
+
+        return super(AssetStoreOperation, cls).__new__(
+            cls,
+            op=op,
+            step_output_handle=check.inst_param(
+                step_output_handle, "step_output_handle", StepOutputHandle
+            ),
+            asset_store_handle=check.inst_param(
+                asset_store_handle, "asset_store_handle", AssetStoreHandle
+            ),
+            obj=obj,
+        )
 
 
 class ObjectStoreOperationType(Enum):

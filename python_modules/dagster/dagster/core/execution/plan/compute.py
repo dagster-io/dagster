@@ -39,6 +39,7 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
                 dagster_type=output_def.dagster_type,
                 optional=output_def.optional,
                 should_materialize=name in config_output_names,
+                asset_store_handle=output_def.asset_store_handle,
             )
             for name, output_def in solid.definition.output_dict.items()
         ],

@@ -197,16 +197,28 @@ class StepInput(
         return {handle.step_key for handle in self.source_handles}
 
 
-class StepOutput(namedtuple("_StepOutput", "name dagster_type optional should_materialize")):
+class StepOutput(
+    namedtuple("_StepOutput", "name dagster_type optional should_materialize asset_store_handle")
+):
     def __new__(
-        cls, name, dagster_type=None, optional=None, should_materialize=None,
+        cls,
+        name,
+        dagster_type=None,
+        optional=None,
+        should_materialize=None,
+        asset_store_handle=None,
     ):
+        from dagster.core.storage.asset_store import AssetStoreHandle
+
         return super(StepOutput, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             optional=check.bool_param(optional, "optional"),
             should_materialize=check.bool_param(should_materialize, "should_materialize"),
             dagster_type=check.inst_param(dagster_type, "dagster_type", DagsterType),
+            asset_store_handle=check.opt_inst_param(
+                asset_store_handle, "asset_store_handle", AssetStoreHandle
+            ),
         )
 
 

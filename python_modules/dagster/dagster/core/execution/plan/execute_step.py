@@ -8,7 +8,11 @@ from dagster.core.definitions import (
     RetryRequested,
     TypeCheck,
 )
-from dagster.core.definitions.events import ObjectStoreOperation
+from dagster.core.definitions.events import (
+    AssetStoreOperation,
+    AssetStoreOperationType,
+    ObjectStoreOperation,
+)
 from dagster.core.errors import (
     DagsterExecutionStepExecutionError,
     DagsterInvariantViolationError,
@@ -29,6 +33,7 @@ from dagster.core.execution.plan.objects import (
     TypeCheckData,
 )
 from dagster.core.execution.resolve_versions import resolve_step_output_versions
+from dagster.core.storage.asset_store import AssetStoreHandle
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.utils import iterate_with_context, raise_interrupts_immediately
 from dagster.utils.timing import time_execution_scope
@@ -252,10 +257,16 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
             inputs[input_name] = input_value.obj
         elif isinstance(input_value, MultipleStepOutputsListWrapper):
             for op in input_value:
-                yield DagsterEvent.object_store_operation(
-                    step_context, ObjectStoreOperation.serializable(op, value_name=input_name)
-                )
+                if isinstance(input_value, ObjectStoreOperation):
+                    yield DagsterEvent.object_store_operation(
+                        step_context, ObjectStoreOperation.serializable(op, value_name=input_name)
+                    )
+                elif isinstance(input_value, AssetStoreOperation):
+                    yield DagsterEvent.asset_store_operation(step_context, input_value)
             inputs[input_name] = [op.obj for op in input_value]
+        elif isinstance(input_value, AssetStoreOperation):
+            yield DagsterEvent.asset_store_operation(step_context, input_value)
+            inputs[input_name] = input_value.obj
         else:
             inputs[input_name] = input_value
 
@@ -318,19 +329,50 @@ def _create_step_events_for_output(step_context, output):
         yield evt
 
 
-def _set_intermediates(step_context, step_output, step_output_handle, output, version):
-    res = step_context.intermediate_storage.set_intermediate(
-        context=step_context,
-        dagster_type=step_output.dagster_type,
-        step_output_handle=step_output_handle,
-        value=output.value,
-        version=version,
+def _get_addressable_asset(context, step_output_handle, asset_store_handle):
+    check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
+
+    asset_store = context.get_asset_store(asset_store_handle.asset_store_key)
+    obj = asset_store.get_asset(context, step_output_handle, asset_store_handle.asset_metadata)
+
+    return AssetStoreOperation(
+        AssetStoreOperationType.GET_ASSET, step_output_handle, asset_store_handle, obj=obj,
     )
 
-    if isinstance(res, ObjectStoreOperation):
-        yield DagsterEvent.object_store_operation(
-            step_context, ObjectStoreOperation.serializable(res, value_name=output.output_name),
+
+def _set_addressable_asset(context, step_output_handle, asset_store_handle, value):
+    check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
+
+    asset_store = context.get_asset_store(asset_store_handle.asset_store_key)
+    asset_store.set_asset(context, step_output_handle, value, asset_store_handle.asset_metadata)
+
+    return AssetStoreOperation(
+        AssetStoreOperationType.SET_ASSET, step_output_handle, asset_store_handle
+    )
+
+
+def _set_intermediates(step_context, step_output, step_output_handle, output, version):
+    if step_output.asset_store_handle:
+        # use asset_store if it's configured on provided by the user
+        res = _set_addressable_asset(
+            step_context, step_output_handle, step_output.asset_store_handle, output.value
         )
+
+        if isinstance(res, AssetStoreOperation):
+            yield DagsterEvent.asset_store_operation(step_context, res)
+    else:
+        res = step_context.intermediate_storage.set_intermediate(
+            context=step_context,
+            dagster_type=step_output.dagster_type,
+            step_output_handle=step_output_handle,
+            value=output.value,
+            version=version,
+        )
+
+        if isinstance(res, ObjectStoreOperation):
+            yield DagsterEvent.object_store_operation(
+                step_context, ObjectStoreOperation.serializable(res, value_name=output.output_name),
+            )
 
 
 def _create_output_materializations(step_context, output_name, value):
@@ -446,7 +488,14 @@ def _input_values_from_intermediate_storage(step_context):
 
             input_value = []
             for source_handle in step_input.source_handles:
-                if (
+                source_asset_store_handle = step_context.execution_plan.get_asset_store_handle(
+                    source_handle
+                )
+                if source_asset_store_handle:
+                    input_value = _get_addressable_asset(
+                        step_context, source_handle, source_asset_store_handle
+                    )
+                elif (
                     source_handle in step_input.addresses
                     and step_context.intermediate_storage.has_intermediate_at_address(
                         step_input.addresses[source_handle]
@@ -479,7 +528,14 @@ def _input_values_from_intermediate_storage(step_context):
 
         elif step_input.is_from_single_output:
             source_handle = step_input.source_handles[0]
-            if source_handle in step_input.addresses:
+            source_asset_store_handle = step_context.execution_plan.get_asset_store_handle(
+                source_handle
+            )
+            if source_asset_store_handle:
+                input_value = _get_addressable_asset(
+                    step_context, source_handle, source_asset_store_handle
+                )
+            elif source_handle in step_input.addresses:
                 input_value = step_context.intermediate_storage.get_intermediate_from_address(
                     step_context,
                     dagster_type=step_input.dagster_type,

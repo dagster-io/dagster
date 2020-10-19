@@ -323,6 +323,11 @@ class ExecutionPlan(
         step = self.get_step_by_key(step_output_handle.step_key)
         return step.step_output_named(step_output_handle.output_name)
 
+    def get_asset_store_handle(self, step_output_handle):
+        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
+        step_output = self.get_step_output(step_output_handle)
+        return step_output.asset_store_handle
+
     def has_step(self, key):
         check.str_param(key, "key")
         return key in self.step_dict

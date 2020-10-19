@@ -49,6 +49,7 @@ class DagsterEventType(Enum):
     PIPELINE_FAILURE = "PIPELINE_FAILURE"
 
     OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION"
+    ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION"
 
     ENGINE_EVENT = "ENGINE_EVENT"
 
@@ -354,6 +355,10 @@ class DagsterEvent(
     @property
     def is_engine_event(self):
         return self.event_type == DagsterEventType.ENGINE_EVENT
+
+    @property
+    def is_asset_store_operation(self):
+        return self.event_type == DagsterEventType.ASSET_STORE_OPERATION
 
     @property
     def asset_key(self):
@@ -795,6 +800,25 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def asset_store_operation(step_context, asset_store_operation):
+        from dagster.core.definitions.events import AssetStoreOperation
+
+        check.inst_param(asset_store_operation, "asset_store_operation", AssetStoreOperation)
+        return DagsterEvent.from_step(
+            event_type=DagsterEventType.ASSET_STORE_OPERATION,
+            step_context=step_context,
+            event_specific_data=AssetStoreOperationData(
+                asset_store_operation.op,
+                asset_store_operation.step_output_handle,
+                asset_store_operation.asset_store_handle,
+            ),
+            message='addressable asset operation: {op} for output "{output_name}".'.format(
+                op=asset_store_operation.op.value,
+                output_name=asset_store_operation.step_output_handle.output_name,
+            ),
+        )
+
+    @staticmethod
     def hook_completed(hook_context, hook_def):
         event_type = DagsterEventType.HOOK_COMPLETED
         check.inst_param(hook_context, "hook_context", HookContext)
@@ -889,6 +913,13 @@ class StepMaterializationData(namedtuple("_StepMaterializationData", "materializ
 
 @whitelist_for_serdes
 class StepExpectationResultData(namedtuple("_StepExpectationResultData", "expectation_result")):
+    pass
+
+
+@whitelist_for_serdes
+class AssetStoreOperationData(
+    namedtuple("_AssetStoreOperationData", "op step_output_handle asset_store")
+):
     pass
 
 
