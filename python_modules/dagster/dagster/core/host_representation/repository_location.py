@@ -30,11 +30,10 @@ from dagster.api.snapshot_schedule import (
     sync_get_external_schedule_execution_data_grpc,
 )
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
+from dagster.core.execution.api import create_execution_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
     ExternalPipeline,
-    ExternalPipelineExecutionResult,
     GrpcServerRepositoryLocationHandle,
     InProcessRepositoryLocationHandle,
     ManagedGrpcPythonEnvRepositoryLocationHandle,
@@ -48,7 +47,6 @@ from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
 )
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.impl import (
     get_external_executable_params,
     get_external_schedule_execution,
@@ -116,24 +114,6 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def get_external_execution_plan(
         self, external_pipeline, run_config, mode, step_keys_to_execute
-    ):
-        pass
-
-    @abstractmethod
-    def execute_plan(
-        self,
-        instance,
-        external_pipeline,
-        run_config,
-        pipeline_run,
-        step_keys_to_execute,
-        retries=None,
-    ):
-        pass
-
-    @abstractmethod
-    def execute_pipeline(
-        self, instance, external_pipeline, pipeline_run,
     ):
         pass
 
@@ -280,53 +260,6 @@ class InProcessRepositoryLocation(RepositoryLocation):
             ),
             represented_pipeline=external_pipeline,
         )
-
-    def execute_plan(
-        self,
-        instance,
-        external_pipeline,
-        run_config,
-        pipeline_run,
-        step_keys_to_execute,
-        retries=None,
-    ):
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.dict_param(run_config, "run_config")
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-
-        execution_plan = create_execution_plan(
-            pipeline=self.get_reconstructable_pipeline(
-                external_pipeline.name
-            ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute),
-            run_config=run_config,
-            mode=pipeline_run.mode,
-            step_keys_to_execute=step_keys_to_execute,
-        )
-
-        execute_plan(
-            execution_plan=execution_plan,
-            instance=instance,
-            pipeline_run=pipeline_run,
-            run_config=run_config,
-            retries=retries,
-        )
-
-    def execute_pipeline(
-        self, instance, external_pipeline, pipeline_run,
-    ):
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-
-        pipeline = self.get_reconstructable_pipeline(
-            external_pipeline.name
-        ).subset_for_execution_from_existing_pipeline(external_pipeline.solids_to_execute)
-
-        execution_result = execute_run(pipeline, pipeline_run, instance)
-
-        return ExternalPipelineExecutionResult(event_list=execution_result.event_list)
 
     def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
@@ -486,32 +419,6 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             represented_pipeline=external_pipeline,
         )
 
-    def execute_plan(
-        self,
-        instance,
-        external_pipeline,
-        run_config,
-        pipeline_run,
-        step_keys_to_execute,
-        retries=None,
-    ):
-        raise NotImplementedError(
-            "execute_plan is not supported for out-of-process repository locations."
-        )
-
-    def execute_pipeline(
-        self, instance, external_pipeline, pipeline_run,
-    ):
-        from dagster.api.execute_run import sync_execute_run_grpc
-
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        event_list = sync_execute_run_grpc(
-            self._handle.client, instance.get_ref(), external_pipeline.get_origin(), pipeline_run
-        )
-        return ExternalPipelineExecutionResult(event_list=event_list)
-
     def get_subset_external_pipeline_result(self, selector):
         check.inst_param(selector, "selector", PipelineSelector)
         check.invariant(
@@ -659,36 +566,6 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
             execution_plan_snapshot=execution_plan_snapshot_or_error,
             represented_pipeline=external_pipeline,
         )
-
-    def execute_plan(
-        self,
-        instance,
-        external_pipeline,
-        run_config,
-        pipeline_run,
-        step_keys_to_execute,
-        retries=None,
-    ):
-        raise NotImplementedError(
-            "execute_plan is not supported for out-of-process repository locations."
-        )
-
-    def execute_pipeline(
-        self, instance, external_pipeline, pipeline_run,
-    ):
-        from dagster.api.execute_run import cli_api_execute_run
-
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-
-        event_list = cli_api_execute_run(
-            instance=instance,
-            pipeline_origin=external_pipeline.get_origin(),
-            pipeline_run=pipeline_run,
-        )
-
-        return ExternalPipelineExecutionResult(event_list=event_list)
 
     def get_subset_external_pipeline_result(self, selector):
         from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset

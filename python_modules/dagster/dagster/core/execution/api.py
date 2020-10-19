@@ -318,9 +318,6 @@ def execute_pipeline(
       :py:class:`PipelineExecutionResult`: The result of pipeline execution.
 
     For the asynchronous version, see :py:func:`execute_pipeline_iterator`.
-
-    This is the entrypoint for dagster CLI execution. For the dagster-graphql entrypoint, see
-    ``dagster.core.execution.api.execute_plan()``.
     """
 
     with _ephemeral_instance_if_missing(instance) as execute_instance:

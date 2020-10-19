@@ -10,7 +10,6 @@ from .external import (
     ExternalExecutionPlan,
     ExternalPartitionSet,
     ExternalPipeline,
-    ExternalPipelineExecutionResult,
     ExternalRepository,
     ExternalSchedule,
 )

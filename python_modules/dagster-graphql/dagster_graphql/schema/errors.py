@@ -19,7 +19,6 @@ from dagster.utils.error import SerializableErrorInfo
 
 from ..implementation.utils import PipelineSelector
 from .config_types import DauphinConfigTypeField
-from .runs import DauphinStepEvent
 
 
 class DauphinError(dauphin.Interface):
@@ -517,28 +516,6 @@ class DauphinLaunchPipelineExecutionResult(dauphin.Union):
     class Meta(object):
         name = "LaunchPipelineExecutionResult"
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
-
-
-class DauphinExecutePlanSuccess(dauphin.ObjectType):
-    class Meta(object):
-        name = "ExecutePlanSuccess"
-
-    pipeline = dauphin.Field(dauphin.NonNull("Pipeline"))
-    has_failures = dauphin.Field(dauphin.NonNull(dauphin.Boolean))
-    step_events = dauphin.non_null_list(DauphinStepEvent)
-    raw_event_records = dauphin.non_null_list(dauphin.String)
-
-
-class DauphinExecutePlanResult(dauphin.Union):
-    class Meta(object):
-        name = "ExecutePlanResult"
-        types = (
-            DauphinExecutePlanSuccess,
-            DauphinPipelineConfigValidationInvalid,
-            DauphinPipelineNotFoundError,
-            DauphinInvalidStepError,
-            DauphinPythonError,
-        )
 
 
 class DauphinLaunchPipelineReexecutionResult(dauphin.Union):

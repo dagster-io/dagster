@@ -361,34 +361,3 @@ def test_logs_in_start_execution_predefined():
 
 def _is_done(instance, run_id):
     return instance.has_run(run_id) and instance.get_run_by_id(run_id).is_finished
-
-
-def test_solid_selection():
-    variables = seven.json.dumps(
-        {
-            "executionParams": {
-                "mode": "default",
-                "runConfigData": {},
-                "selector": {
-                    "repositoryLocationName": "<<in_process>>",
-                    "repositoryName": "test",
-                    "pipelineName": "subset_test",
-                    "solidSelection": ["no_config"],
-                },
-                "executionMetadata": {"runId": "1234"},
-                "stepKeys": ["no_config.compute"],
-            },
-        }
-    )
-    workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
-
-    with dagster_cli_runner() as runner:
-        result = runner.invoke(ui, ["-w", workspace_path, "-v", variables, "-p", "executePlan"])
-
-        assert result.exit_code == 0
-
-        try:
-            result_data = json.loads(result.output.strip("\n").split("\n")[-1])
-            assert result_data["data"]["executePlan"]["__typename"] == "ExecutePlanSuccess"
-        except Exception as e:
-            raise Exception("Failed with {} Exception: {}".format(result.output, e))

@@ -5,7 +5,6 @@ from dagster_graphql.implementation.execution import (
     ExecutionParams,
     create_and_launch_partition_backfill,
     delete_pipeline_run,
-    do_execute_plan,
     get_compute_log_observable,
     get_pipeline_run_observable,
     launch_pipeline_execution,
@@ -622,17 +621,6 @@ def create_execution_metadata(graphql_execution_metadata):
     )
 
 
-@capture_dauphin_error
-def create_execution_params_and_do_exec_plan(graphene_info, execution_params_dict, retries_dict):
-    # refactored into a helper function here in order to wrap with @capture_dauphin_error,
-    # because create_execution_params may raise
-    return do_execute_plan(
-        graphene_info,
-        execution_params=create_execution_params(graphene_info, execution_params_dict),
-        retries=create_retries_params(retries_dict),
-    )
-
-
 class DauphinRetriesPreviousAttempts(dauphin.InputObjectType):
     class Meta(object):
         name = "RetriesPreviousAttempts"
@@ -651,24 +639,6 @@ class DauphinRetries(dauphin.InputObjectType):
 
 def create_retries_params(retries_config):
     return Retries.from_graphql_input(retries_config)
-
-
-class DauphinExecutePlan(dauphin.Mutation):
-    class Meta(object):
-        name = "ExecutePlan"
-
-    class Arguments(object):
-        executionParams = dauphin.NonNull("ExecutionParams")
-        retries = dauphin.Argument("Retries")
-
-    Output = dauphin.NonNull("ExecutePlanResult")
-
-    def mutate(self, graphene_info, **kwargs):
-        return create_execution_params_and_do_exec_plan(
-            graphene_info,
-            execution_params_dict=kwargs["executionParams"],
-            retries_dict=kwargs["retries"] if "retries" in kwargs else None,
-        )
 
 
 class DauphinTriggerExecution(dauphin.Mutation):
@@ -700,15 +670,6 @@ class DauphinMutation(dauphin.ObjectType):
     reload_repository_location = DauphinReloadRepositoryLocationMutation.Field()
     launch_partition_backfill = DauphinLaunchPartitionBackfillMutation.Field()
     trigger_execution = DauphinTriggerExecution.Field()
-
-    # These below are never invoked by tools such as a dagit. They are in the
-    # graphql layer because it was a convenient, pre-existing IPC layer.
-    # so that components like run launchers and integrations with systems
-    # like airflow could invoke runs and subplans across a process boundary.
-    # They will eventually move to our "cli api" or its successor (possibly
-    # grpc).
-
-    execute_plan = DauphinExecutePlan.Field()
 
 
 DauphinComputeIOType = dauphin.Enum.from_enum(ComputeIOType)

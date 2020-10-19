@@ -10,14 +10,12 @@ to be the case.
 """
 
 from dagster import check
-from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import ExternalPipeline, ExternalRepository
 from dagster.core.host_representation.external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.origin import PipelinePythonOrigin, RepositoryOrigin
 
 
@@ -50,12 +48,3 @@ def external_pipeline_from_recon_pipeline(recon_pipeline, solid_selection, repos
     return ExternalPipeline(
         external_pipeline_data_from_def(pipeline_def), repository_handle=repository_handle,
     )
-
-
-def create_in_process_ephemeral_workspace(pointer):
-    from dagster.cli.workspace.workspace import Workspace
-
-    check.inst_param(pointer, "pointer", CodePointer)
-    repository_location_handles = [RepositoryLocationHandle.create_in_process_location(pointer)]
-    workspace = Workspace(repository_location_handles=repository_location_handles)
-    return workspace

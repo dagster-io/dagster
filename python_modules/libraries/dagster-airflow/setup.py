@@ -30,7 +30,6 @@ if __name__ == "__main__":
         install_requires=[
             "six",
             "dagster=={ver}".format(ver=ver),
-            "dagster-graphql=={ver}".format(ver=ver),
             "docker",
             "python-dateutil>=2.8.0",
             "lazy_object_proxy",

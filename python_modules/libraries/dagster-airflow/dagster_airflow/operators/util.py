@@ -1,16 +1,12 @@
-import logging
 import os
 
 import dateutil.parser
 from airflow.exceptions import AirflowException, AirflowSkipException
-from dagster_graphql.client.mutations import execute_execute_plan_mutation
-from dagster_graphql.client.query import EXECUTE_PLAN_MUTATION
-from dagster_graphql.client.util import construct_execute_plan_variables
 
-from dagster import DagsterEventType, check, seven
+from dagster import DagsterEventType, check
 from dagster.core.events import DagsterEvent
+from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
-from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
 
 def check_events_for_failures(events):
@@ -113,38 +109,40 @@ def invoke_steps_within_python_operator(
 
     run_id = dag_run.run_id
 
-    variables = construct_execute_plan_variables(
-        recon_repo, mode, run_config, pipeline_name, run_id, step_keys
-    )
-
-    logging.info(
-        "Executing GraphQL query: {query}\n".format(query=EXECUTE_PLAN_MUTATION)
-        + "with variables:\n"
-        + seven.json.dumps(variables, indent=2)
-    )
     instance = DagsterInstance.from_ref(instance_ref) if instance_ref else None
     if instance:
-        tags = {AIRFLOW_EXECUTION_DATE_STR: ts} if ts else {}
-        instance.register_managed_run(
-            pipeline_name=pipeline_name,
-            run_id=run_id,
-            run_config=run_config,
-            mode=mode,
-            solids_to_execute=None,
-            step_keys_to_execute=None,
-            tags=tags,
-            root_run_id=None,
-            parent_run_id=None,
-            pipeline_snapshot=pipeline_snapshot,
-            execution_plan_snapshot=execution_plan_snapshot,
-            parent_pipeline_snapshot=parent_pipeline_snapshot,
-        )
+        with instance:
+            tags = {AIRFLOW_EXECUTION_DATE_STR: ts} if ts else {}
+            pipeline_run = instance.register_managed_run(
+                pipeline_name=pipeline_name,
+                run_id=run_id,
+                run_config=run_config,
+                mode=mode,
+                solids_to_execute=None,
+                step_keys_to_execute=None,
+                tags=tags,
+                root_run_id=None,
+                parent_run_id=None,
+                pipeline_snapshot=pipeline_snapshot,
+                execution_plan_snapshot=execution_plan_snapshot,
+                parent_pipeline_snapshot=parent_pipeline_snapshot,
+            )
 
-        workspace = create_in_process_ephemeral_workspace(pointer=recon_repo.pointer)
-        events = execute_execute_plan_mutation(workspace, variables, instance_ref=instance_ref,)
-        check_events_for_failures(events)
-        check_events_for_skips(events)
-        return events
+            recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_name)
+
+            execution_plan = create_execution_plan(
+                recon_pipeline.subset_for_execution_from_existing_pipeline(
+                    pipeline_run.solids_to_execute
+                ),
+                run_config=run_config,
+                step_keys_to_execute=step_keys,
+                mode=mode,
+            )
+
+            events = execute_plan(execution_plan, instance, pipeline_run, run_config=run_config)
+            check_events_for_failures(events)
+            check_events_for_skips(events)
+            return events
 
 
 def airflow_tags_for_ts(ts):

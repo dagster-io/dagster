@@ -5,6 +5,7 @@
 **Breaking Changes**
 
 - Removed `DagsterKubernetesPodOperator` in `dagster-airflow`.
+- Removed the `execute_plan` mutation from `dagster-graphql`.
 
 ## 0.9.15
 

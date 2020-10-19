@@ -6,7 +6,6 @@ from dagster.core.definitions import (
     SolidHandle,
 )
 from dagster.core.definitions.events import PythonArtifactMetadataEntryData
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
@@ -209,75 +208,3 @@ def dagster_event_from_dict(event_dict, pipeline_name):
         logging_tags=None,
         event_specific_data=event_specific_data,
     )
-
-
-def construct_execute_plan_variables(
-    recon_repo, mode, run_config, pipeline_name, run_id, step_keys
-):
-    check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-    check.str_param(mode, "mode")
-    check.dict_param(run_config, "run_config")
-    check.str_param(pipeline_name, "pipeline_name")
-    check.str_param(run_id, "run_id")
-    check.list_param(step_keys, "step_keys", of_type=str)
-
-    variables = {
-        "executionParams": {
-            "runConfigData": run_config,
-            "mode": mode,
-            "selector": {
-                "repositoryLocationName": "<<in_process>>",
-                "repositoryName": recon_repo.get_definition().name,
-                "pipelineName": pipeline_name,
-            },
-            "executionMetadata": {"runId": run_id},
-            "stepKeys": step_keys,
-        },
-    }
-
-    return variables
-
-
-def parse_raw_log_lines(log_lines):
-    """Parses the raw log lines response from a dagster-graphql CLI invocation, typically from a
-    Docker or Kubernetes container.
-
-     - Log lines don't necessarily come back in order
-     - Something else might log JSON
-     - Docker appears to silently split very long log lines -- this is undocumented behavior
-
-    Args:
-        log_lines (List[str]): Log lines containing response JSON
-
-    Returns:
-        Dict: Parsed JSON response
-    """
-    res = None
-    lines = []
-    coalesced = []
-    in_split_line = False
-    for line in log_lines:
-        if not in_split_line and line.startswith("{"):
-            if line.endswith("}"):
-                lines.append(line)
-                continue
-            else:
-                coalesced.append(line)
-                in_split_line = True
-                continue
-        if in_split_line:
-            coalesced.append(line)
-            if line.endswith("}"):
-                lines.append("".join(coalesced))
-                coalesced = []
-                in_split_line = False
-
-    for line in reversed(lines):
-        try:
-            res = seven.json.loads(line)
-            break
-        # If we don't get a GraphQL response, check the next line
-        except seven.JSONDecodeError:
-            continue
-
-    return res

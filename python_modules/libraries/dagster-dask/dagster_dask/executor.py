@@ -1,16 +1,16 @@
 import dask
 import dask.distributed
-from dagster_graphql.client.mutations import execute_execute_plan_mutation
 
 # Dask resource requirements are specified under this key
 from dagster import Executor, Field, Permissive, Selector, check, seven
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 from dagster.core.events import DagsterEvent
+from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
+from dagster.core.instance import DagsterInstance
 from dagster.utils import frozentags, iterate_with_context, raise_interrupts_immediately
-from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
 
@@ -102,12 +102,23 @@ def dask_executor(init_context):
 
 
 def query_on_dask_worker(
-    workspace, variables, dependencies, instance_ref=None
+    dependencies, recon_pipeline, pipeline_run, run_config, step_keys, mode, instance_ref,
 ):  # pylint: disable=unused-argument
     """Note that we need to pass "dependencies" to ensure Dask sequences futures during task
     scheduling, even though we do not use this argument within the function.
     """
-    return execute_execute_plan_mutation(workspace, variables, instance_ref=instance_ref)
+
+    with DagsterInstance.from_ref(instance_ref) as instance:
+        execution_plan = create_execution_plan(
+            recon_pipeline.subset_for_execution_from_existing_pipeline(
+                pipeline_run.solids_to_execute
+            ),
+            run_config=run_config,
+            step_keys_to_execute=step_keys,
+            mode=mode,
+        )
+
+        return execute_plan(execution_plan, instance, pipeline_run, run_config=run_config)
 
 
 def get_dask_resource_requirements(tags):
@@ -211,31 +222,19 @@ class DaskExecutor(Executor):
 
                     run_config = dict(pipeline_context.run_config, execution={"in_process": {}})
                     recon_repo = pipeline_context.pipeline.get_reconstructable_repository()
-                    variables = {
-                        "executionParams": {
-                            "selector": {
-                                "pipelineName": pipeline_name,
-                                "repositoryName": recon_repo.get_definition().name,
-                                "repositoryLocationName": "<<in_process>>",
-                            },
-                            "runConfigData": run_config,
-                            "mode": pipeline_context.mode_def.name,
-                            "executionMetadata": {"runId": pipeline_context.pipeline_run.run_id},
-                            "stepKeys": [step.key],
-                        }
-                    }
 
                     dask_task_name = "%s.%s" % (pipeline_name, step.key)
 
-                    workspace = create_in_process_ephemeral_workspace(
-                        pointer=pipeline_context.pipeline.get_reconstructable_repository().pointer
-                    )
+                    recon_pipeline = recon_repo.get_reconstructable_pipeline(pipeline_name)
 
                     future = client.submit(
                         query_on_dask_worker,
-                        workspace,
-                        variables,
                         dependencies,
+                        recon_pipeline,
+                        pipeline_context.pipeline_run,
+                        run_config,
+                        [step.key],
+                        pipeline_context.mode_def.name,
                         instance.get_ref(),
                         key=dask_task_name,
                         resources=get_dask_resource_requirements(step.tags),
