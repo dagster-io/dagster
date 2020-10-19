@@ -55,40 +55,46 @@ def execute_cli(
 
     # Execute the dbt CLI command in a subprocess.
     command = " ".join(command_list)
-    log.info(f"Executing command: $ {command}")
+    log.info(f"Executing command: {command}")
 
     return_code = 0
-    try:
-        proc_out = subprocess.check_output(args=command_list, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as exc:
-        return_code = exc.returncode
-        proc_out = exc.output
-
-    # Parse the JSON logs from the dbt process.
+    process = subprocess.Popen(command_list, stdout=subprocess.PIPE)
     logs = []
-    for raw_line in proc_out.strip().split(b"\n"):
+
+    output = []
+    for raw_line in process.stdout:
         line = raw_line.decode()
-        log.info(line.rstrip())
+        output.append(line)
         try:
             json_line = json.loads(line)
         except json.JSONDecodeError:
-            pass
+            log.info(line.rstrip())
         else:
             logs.append(json_line)
+            level = json_line.get("levelname", "").lower()
+            if hasattr(log, level):
+                getattr(log, level)(json_line.get("message", ""))
+            else:
+                log.info(line.rstrip())
+
+    process.wait()
+    return_code = process.returncode
 
     log.info("dbt exited with return code {return_code}".format(return_code=return_code))
 
+    raw_output = "\n".join(output)
+
     if return_code == 2:
-        raise DagsterDbtCliFatalRuntimeError(logs=logs, raw_output=proc_out.decode())
+        raise DagsterDbtCliFatalRuntimeError(logs=logs, raw_output=raw_output)
 
     if return_code == 1 and not ignore_handled_error:
-        raise DagsterDbtCliHandledRuntimeError(logs=logs, raw_output=proc_out.decode())
+        raise DagsterDbtCliHandledRuntimeError(logs=logs, raw_output=raw_output)
 
     return {
         "command": command,
         "return_code": return_code,
         "logs": logs,
-        "raw_output": proc_out.decode(),
+        "raw_output": raw_output,
         "summary": extract_summary(logs),
     }
 
