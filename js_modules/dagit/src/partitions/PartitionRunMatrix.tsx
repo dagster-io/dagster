@@ -317,7 +317,7 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
   return (
     <PartitionRunMatrixContainer>
       <OptionsContainer>
-        <strong>Partition Run Matrix</strong>
+        <strong>Run Matrix</strong>
         <div style={{width: 20}} />
         <Checkbox
           label="Show Previous Run States"

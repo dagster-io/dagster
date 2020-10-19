@@ -1,12 +1,4 @@
-import {
-  Callout,
-  Checkbox,
-  Divider,
-  Icon,
-  Intent,
-  NonIdealState,
-  ProgressBar,
-} from '@blueprintjs/core';
+import {Callout, Checkbox, Intent, NonIdealState, ProgressBar, TextArea} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import * as React from 'react';
@@ -17,10 +9,8 @@ import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {SharedToaster} from 'src/DomUtils';
 import {filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
-import {Header} from 'src/ListComponents';
 import {PipelineRunTag} from 'src/LocalStorage';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {OptionsDivider} from 'src/VizComponents';
 import {LaunchButton} from 'src/execute/LaunchButton';
 import {TagContainer, TagEditor} from 'src/execute/TagEditor';
 import {GaantChartMode} from 'src/gaant/GaantChart';
@@ -43,45 +33,72 @@ interface BackfillOptions {
   fromFailure: boolean;
 }
 
-export const PartitionsBackfill: React.FunctionComponent<{
-  partitionSetName: string;
-  pipelineName: string;
-  onLaunch?: (backfillId: string) => void;
-}> = ({partitionSetName, pipelineName, onLaunch}) => {
-  const [isOpen, setOpen] = React.useState<boolean>(false);
-  return (
-    <div
-      style={{
-        marginTop: 30,
-        marginBottom: 30,
-        paddingBottom: 10,
-      }}
-    >
-      <Header>Launch Partition Backfill</Header>
-      <Divider />
-      {isOpen ? (
-        <PartitionsBackfillPartitionSelector
-          partitionSetName={partitionSetName}
-          pipelineName={pipelineName}
-          onLaunch={(backfillId: string) => {
-            onLaunch?.(backfillId);
-            setOpen(false);
-          }}
-        />
-      ) : (
-        <ButtonLink onClick={() => setOpen(true)} style={{margin: 10}}>
-          <Icon icon={IconNames.ADD} style={{marginRight: 10}} />
-          Launch a partition backfill
-        </ButtonLink>
-      )}
-    </div>
-  );
-};
-
 type SelectionRange = {
   start: string;
   end: string;
 };
+
+function placeholderForPartitions(names: string[]) {
+  if (names.length < 4) {
+    return `ex: ${names[0]}, ${names[1]}`;
+  }
+  return `ex: ${names[0]}, ${names[1]}, [${names[2]}...${names[names.length - 1]}]`;
+}
+
+function partitionsToText(selected: string[], all: string[]) {
+  const remaining = [...selected].sort((a, b) => all.indexOf(a) - all.indexOf(b));
+
+  let str = '';
+  while (remaining.length) {
+    const start = remaining.shift()!;
+    const startIdx = all.indexOf(start);
+    let endIdx = startIdx;
+    let endIdxInSelected = -1;
+    while (
+      endIdx < all.length - 1 &&
+      (endIdxInSelected = remaining.indexOf(all[endIdx + 1])) !== -1
+    ) {
+      endIdx++;
+      remaining.splice(endIdxInSelected, 1);
+    }
+    if (endIdx !== startIdx) {
+      str += `[${start}...${all[endIdx]}], `;
+    } else {
+      str += `${start}, `;
+    }
+  }
+  return str.replace(/, $/, '');
+}
+
+function textToPartitions(selected: string, all: string[]) {
+  const terms = selected.split(',').map((s) => s.trim());
+  const result = [];
+  for (const term of terms) {
+    if (term.length === 0) {
+      continue;
+    }
+    const rangeMatch = /^\[(.*)\.\.\.(.*)\]$/g.exec(term);
+    if (rangeMatch) {
+      const [, start, end] = rangeMatch;
+      const allStartIdx = all.indexOf(start);
+      const allEndIdx = all.indexOf(end);
+      if (allStartIdx === -1 || allEndIdx === -1) {
+        throw new Error(`Could not find partitions for provided range: ${start}...${end}`);
+      }
+      result.push(...all.slice(allStartIdx, allEndIdx + 1));
+    } else if (term.includes('*')) {
+      const [prefix, suffix] = term.split('*');
+      result.push(...all.filter((p) => p.startsWith(prefix) && p.endsWith(suffix)));
+    } else {
+      const idx = all.indexOf(term);
+      if (idx === -1) {
+        throw new Error(`Could not find partition: ${term}`);
+      }
+      result.push(term);
+    }
+  }
+  return result.sort((a, b) => all.indexOf(a) - all.indexOf(b));
+}
 
 export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
   partitionSetName: string;
@@ -129,12 +146,7 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
 
   if (!data || loading) {
     return (
-      <div
-        style={{
-          maxWidth: 600,
-          margin: '40px auto',
-        }}
-      >
+      <div style={{maxWidth: 600, margin: '40px auto'}}>
         <ProgressBar />
       </div>
     );
@@ -241,9 +253,11 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
     setCurrentSelectionRange({start, end: name});
   };
 
+  const selectedString = partitionsToText(selected, partitionNames);
+
   return (
-    <div style={{marginTop: 20}}>
-      {usingDefaultRunLauncher ? (
+    <div style={{marginBottom: 20, padding: 10, border: '5px solid antiquewhite'}}>
+      {usingDefaultRunLauncher && (
         <div style={{marginBottom: 10}}>
           <Callout intent={Intent.WARNING}>
             Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for launching
@@ -252,98 +266,99 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
             appropriate for launching a large number of jobs.
           </Callout>
         </div>
-      ) : null}
-      <div style={{display: 'flex', marginBottom: 10}}>
-        <strong>Partition Backfill Selector</strong>
-        <div style={{width: 20}} />
+      )}
+
+      <h3>Launch Partition Backfill</h3>
+      <div style={{display: 'flex', alignItems: 'center', marginBottom: 4}}>
+        <strong style={{display: 'block'}}>Partitions</strong>
         <Checkbox
-          label="Select All Partitions"
+          label="Select All"
           disabled={!selectablePartitions.length}
-          style={{marginBottom: 0, marginTop: 1}}
+          style={{marginBottom: 0, marginLeft: 10}}
           checked={selected.length === selectablePartitions.length}
           onClick={() =>
             setSelected(selected.length === selectablePartitions.length ? [] : selectablePartitions)
           }
         />
-        <div style={{width: 10}} />
-        {partitionsWithLastRunSuccess.length || partitionsWithLastRunFailure.length ? (
-          <OptionsDivider />
-        ) : null}
-        {partitionsWithLastRunSuccess.length ? (
-          <>
-            <div style={{width: 10}} />
+      </div>
+      <TextArea
+        growVertically
+        small
+        fill
+        placeholder={placeholderForPartitions(partitionNames)}
+        key={selectedString}
+        defaultValue={selectedString}
+        onBlur={(e) => {
+          try {
+            setSelected(textToPartitions(e.target.value, partitionNames));
+          } catch (err) {
+            e.preventDefault();
+            alert(err.message);
+          }
+        }}
+      />
+      <div style={{display: 'flex', marginTop: 10}}>
+        <div>
+          <strong style={{display: 'block', marginBottom: 4}}>Options</strong>
+          <div style={{display: 'flex'}}>
             <Checkbox
               label="Re-execute From Last Run"
+              disabled={partitionsWithLastRunSuccess.length === 0}
               checked={options.reexecute}
               onChange={() => {
                 setSelected([]);
-                setOptions({...options, reexecute: !options.reexecute});
+                setQuery('');
+                setOptions(
+                  options.reexecute
+                    ? {...options, reexecute: false, fromFailure: false}
+                    : {...options, reexecute: true},
+                );
               }}
             />
-          </>
-        ) : null}
-        {partitionsWithLastRunFailure.length ? (
-          <>
             <div style={{width: 20}} />
             <Checkbox
               label="Re-execute From Failure"
-              checked={
-                (options.reexecute || !partitionsWithLastRunSuccess.length) && options.fromFailure
-              }
-              disabled={!!partitionsWithLastRunSuccess.length && !options.reexecute}
+              checked={options.fromFailure}
+              disabled={partitionsWithLastRunFailure.length === 0 || !options.reexecute}
               onChange={() => {
                 setSelected([]);
-                setOptions({...options, fromFailure: !options.fromFailure});
+                setQuery('');
+                setOptions({...options, reexecute: true, fromFailure: !options.fromFailure});
               }}
             />
-          </>
-        ) : null}
+          </div>
+        </div>
+        <div style={{marginLeft: 20}}>
+          <strong style={{display: 'block', marginBottom: 4}}>Step Subset</strong>
+          <GraphQueryInput
+            small
+            disabled={options.fromFailure}
+            width={260}
+            items={solids}
+            value={query}
+            placeholder="Type a Step Subset"
+            onChange={setQuery}
+          />
+        </div>
       </div>
 
-      <TagEditor
-        tags={tags}
-        onChange={setTags}
-        open={tagEditorOpen}
-        onRequestClose={() => setTagEditorOpen(false)}
-      />
-      {tags.length ? (
-        <div style={{border: '1px solid #ececec', borderBottom: 'none'}}>
-          <TagContainer tags={tags} onRequestEdit={() => setTagEditorOpen(true)} />
-        </div>
-      ) : (
-        <ButtonLink onClick={() => setTagEditorOpen(true)} style={{margin: '0 10px 10px'}}>
-          + Add tags to backfill runs
-        </ButtonLink>
-      )}
+      <div style={{display: 'flex', marginTop: 10, justifyContent: 'space-between'}}>
+        <strong style={{display: 'block', marginBottom: 4}}>Preview</strong>
+        <div style={{opacity: 0.5}}>Click or drag to edit selected partitions</div>
+      </div>
       <div style={{display: 'flex'}}>
-        <GridFloatingContainer floating={true}>
-          <GridColumn disabled>
-            {options.reexecute && !options.fromFailure ? (
-              <>
-                <TopLabel>
-                  <GraphQueryInput
-                    small
-                    width={260}
-                    items={solids}
-                    value={query}
-                    placeholder="Type a Step Subset"
-                    onChange={setQuery}
-                  />
-                </TopLabel>
-                {stepRows.map((step) => (
-                  <LeftLabel style={{paddingLeft: step.x}} key={step.name}>
-                    {step.name}
-                  </LeftLabel>
-                ))}
-              </>
-            ) : (
-              <>
-                <TopLabel></TopLabel>
-                <LeftLabel>{pipelineSnapshot.name}</LeftLabel>
-              </>
-            )}
-          </GridColumn>
-        </GridFloatingContainer>
+        {query && (
+          <GridFloatingContainer floating={true}>
+            <GridColumn disabled>
+              <TopLabel></TopLabel>
+              {stepRows.map((step) => (
+                <LeftLabel style={{paddingLeft: step.x}} key={step.name}>
+                  {step.name}
+                </LeftLabel>
+              ))}
+            </GridColumn>
+          </GridFloatingContainer>
+        )}
 
         <GridScrollContainer>
           <div style={{display: 'flex', paddingLeft: 10}}>
@@ -388,23 +403,36 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
           </div>
         </GridScrollContainer>
       </div>
-
       {stepRows.length === 0 && (
         <div style={{padding: 20, textAlign: 'center'}}>No data to display.</div>
       )}
-
-      <LaunchBackfillButton
-        partitionNames={selected}
-        partitionSetName={partitionSet.name}
-        reexecutionSteps={
-          options.reexecute && !options.fromFailure
-            ? stepRows.map((step) => `${step.name}.compute`)
-            : undefined
-        }
-        fromFailure={options.reexecute && options.fromFailure}
-        tags={tags}
-        onSuccess={onSuccess}
-      />
+      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
+        <TagEditor
+          tags={tags}
+          onChange={setTags}
+          open={tagEditorOpen}
+          onRequestClose={() => setTagEditorOpen(false)}
+        />
+        {tags.length ? (
+          <div style={{border: '1px solid #ececec', borderBottom: 'none'}}>
+            <TagContainer tags={tags} onRequestEdit={() => setTagEditorOpen(true)} />
+          </div>
+        ) : (
+          <ButtonLink onClick={() => setTagEditorOpen(true)} style={{margin: '9px  9px 0 9px'}}>
+            + Add tags to backfill runs
+          </ButtonLink>
+        )}
+        <LaunchBackfillButton
+          partitionNames={selected}
+          partitionSetName={partitionSet.name}
+          reexecutionSteps={
+            !options.fromFailure ? stepRows.map((step) => `${step.name}.compute`) : undefined
+          }
+          fromFailure={options.fromFailure}
+          tags={tags}
+          onSuccess={onSuccess}
+        />
+      </div>
     </div>
   );
 };
@@ -478,7 +506,7 @@ const LaunchBackfillButton: React.FunctionComponent<{
         display: 'flex',
         justifyContent: 'flex-end',
         alignItems: 'center',
-        margin: '20px 0',
+        marginTop: 10,
       }}
     >
       <LaunchButton

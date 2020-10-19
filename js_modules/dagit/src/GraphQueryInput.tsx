@@ -17,6 +17,7 @@ interface GraphQueryInputProps {
   width?: string | number;
   small?: boolean;
   className?: string;
+  disabled?: boolean;
 
   onChange: (value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<any>) => void;
@@ -177,6 +178,7 @@ export const GraphQueryInput = React.memo(
         <Popover minimal={true} isOpen={menu !== undefined} position={'bottom'} content={menu}>
           <GraphQueryInputField
             small={props.small}
+            disabled={props.disabled}
             intent={props.intent}
             title="graph-query-input"
             type="text"

@@ -49,7 +49,7 @@ export const CursorHistoryControls: React.FunctionComponent<CursorPaginationProp
   advanceCursor,
 }) => {
   return (
-    <div style={{textAlign: 'center', marginBottom: 10}}>
+    <div style={{textAlign: 'center'}}>
       <Button
         style={{marginRight: 4}}
         disabled={!hasNextCursor}

@@ -1,38 +1,47 @@
-import {Divider, Spinner} from '@blueprintjs/core';
+import {Spinner, Button} from '@blueprintjs/core';
 import {Colors} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Header} from 'src/ListComponents';
+import {CursorHistoryControls} from 'src/CursorControls';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {colorHash} from 'src/Util';
 import {PIPELINE_LABEL, PartitionGraph} from 'src/partitions/PartitionGraph';
-import {PartitionPageControls} from 'src/partitions/PartitionPageControls';
+import {PartitionPageSizeSelector} from 'src/partitions/PartitionPageSizeSelector';
 import {PartitionRunMatrix} from 'src/partitions/PartitionRunMatrix';
+import {PartitionSetSelector} from 'src/partitions/PartitionSetSelector';
+import {PartitionsBackfillPartitionSelector} from 'src/partitions/PartitionsBackfill';
 import {
   PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
   PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs,
 } from 'src/partitions/types/PartitionLongitudinalQuery';
+import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from 'src/partitions/types/PipelinePartitionsRootQuery';
 import {useChunkedPartitionsQuery} from 'src/partitions/useChunkedPartitionsQuery';
 import {RunsFilter} from 'src/runs/RunsFilter';
 
+type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
 type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 
 interface PartitionViewProps {
   pipelineName: string;
-  partitionSetName: string;
-  runTags?: {[key: string]: string};
+  partitionSet: PartitionSet;
+  partitionSets: PartitionSet[];
+  onChangePartitionSet: (set: PartitionSet) => void;
 }
 
 export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   pipelineName,
-  partitionSetName,
-  runTags,
+  partitionSet,
+  partitionSets,
+  onChangePartitionSet,
 }) => {
-  const [pageSize, setPageSize] = React.useState(30);
+  const [pageSize, setPageSize] = React.useState<number | 'all'>(30);
+  const [runTags, setRunTags] = React.useState<{[key: string]: string}>({});
+  const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const {loading, partitions, paginationProps} = useChunkedPartitionsQuery(
-    partitionSetName,
+    partitionSet.name,
     pageSize,
   );
 
@@ -49,17 +58,31 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   });
 
   return (
-    <div style={{marginTop: 30}}>
-      <Header>Longitudinal History</Header>
-      <Divider />
-      <PartitionPageControls
-        paginationProps={paginationProps}
-        pageSize={pageSize}
-        setPageSize={(next: number) => {
-          setPageSize(next);
-          paginationProps.reset();
-        }}
-      >
+    <div>
+      {showBackfillSetup && (
+        <PartitionsBackfillPartitionSelector
+          partitionSetName={partitionSet.name}
+          pipelineName={pipelineName}
+          onLaunch={(backfillId: string) => {
+            setRunTags({'dagster/backfill': backfillId});
+            setShowBackfillSetup(false);
+          }}
+        />
+      )}
+      <PartitionPagerContainer>
+        <PartitionSetSelector
+          selected={partitionSet}
+          partitionSets={partitionSets}
+          onSelect={onChangePartitionSet}
+        />
+        <div style={{width: 10}} />
+        <PartitionPageSizeSelector
+          value={paginationProps.hasPrevCursor ? undefined : pageSize}
+          onChange={(value) => {
+            setPageSize(value);
+            paginationProps.reset();
+          }}
+        />
         {loading && (
           <div style={{marginLeft: 15, display: 'flex', alignItems: 'center'}}>
             <Spinner size={19} />
@@ -67,7 +90,17 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
             Loading Partitions...
           </div>
         )}
-      </PartitionPageControls>
+        <div style={{flex: 1}} />
+        <Button
+          onClick={() => setShowBackfillSetup(!showBackfillSetup)}
+          icon={IconNames.ADD}
+          active={showBackfillSetup}
+        >
+          Launch a partition backfill
+        </Button>
+        <div style={{width: 10}} />
+        <CursorHistoryControls {...paginationProps} />
+      </PartitionPagerContainer>
       <div style={{position: 'relative'}}>
         <PartitionRunMatrix pipelineName={pipelineName} partitions={partitions} runTags={runTags} />
         <PartitionContent partitions={partitions} allStepKeys={Object.keys(allStepKeys)} />
@@ -75,6 +108,13 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
     </div>
   );
 };
+
+const PartitionPagerContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+`;
 
 const PartitionContent = ({
   partitions,

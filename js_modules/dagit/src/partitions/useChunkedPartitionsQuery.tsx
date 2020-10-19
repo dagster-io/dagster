@@ -26,7 +26,7 @@ const InitialDataState: DataState = {results: [], cursor: null, cursorStack: [],
  * This React hook mirrors `useCursorPaginatedQuery` but collects each page of partitions
  * in slices that are smaller than pageSize and cause the results to load incrementally.
  */
-export function useChunkedPartitionsQuery(partitionSetName: string, pageSize: number) {
+export function useChunkedPartitionsQuery(partitionSetName: string, pageSize: number | 'all') {
   const {repositoryName, repositoryLocationName} = useRepositorySelector();
   const client = useApolloClient();
 
@@ -54,7 +54,7 @@ export function useChunkedPartitionsQuery(partitionSetName: string, pageSize: nu
           repositorySelector: {repositoryName, repositoryLocationName},
           reverse: true,
           cursor: c,
-          limit: Math.min(2, pageSize - accumulated.length),
+          limit: pageSize === 'all' ? 2 : Math.min(2, pageSize - accumulated.length),
         },
       });
       if (version.current !== v) {
@@ -62,7 +62,7 @@ export function useChunkedPartitionsQuery(partitionSetName: string, pageSize: nu
       }
       const fetched = partitionsFromResult(result.data);
       accumulated = [...fetched, ...accumulated];
-      const more = accumulated.length < pageSize && fetched.length > 0;
+      const more = fetched.length > 0 && (pageSize === 'all' || accumulated.length < pageSize);
 
       setDataState((dataState) => ({...dataState, results: accumulated, loading: more}));
 
@@ -79,7 +79,10 @@ export function useChunkedPartitionsQuery(partitionSetName: string, pageSize: nu
 
   return {
     loading,
-    partitions: [...buildEmptyPartitions(pageSize - results.length), ...results],
+    partitions:
+      pageSize === 'all'
+        ? results
+        : [...buildEmptyPartitions(pageSize - results.length), ...results],
     paginationProps: {
       hasPrevCursor: cursor !== null,
       hasNextCursor: results.length >= pageSize,
