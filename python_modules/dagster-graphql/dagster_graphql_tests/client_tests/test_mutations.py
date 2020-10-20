@@ -13,7 +13,10 @@ from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     get_ephemeral_repository_name,
 )
-from dagster.core.host_representation.handle import IN_PROCESS_NAME
+from dagster.core.host_representation.handle import (
+    IN_PROCESS_NAME,
+    get_default_repository_location_name,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.utils.hosted_user_process import create_in_process_ephemeral_workspace
 
@@ -77,7 +80,9 @@ def test_execute_execute_plan_mutation_out_of_process_fails():
             "runConfigData": {},
             "mode": "default",
             "selector": {
-                "repositoryLocationName": get_ephemeral_repository_name(pipeline_name),
+                "repositoryLocationName": get_default_repository_location_name(
+                    get_ephemeral_repository_name(pipeline_name)
+                ),
                 "repositoryName": get_ephemeral_repository_name(pipeline_name),
                 "pipelineName": pipeline_name,
             },

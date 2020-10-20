@@ -22,7 +22,10 @@ def test_load_in_process_location_handle_hello_world_nested_no_def(python_user_p
     ) as workspace:
         assert isinstance(workspace, Workspace)
         assert len(workspace.repository_location_handles) == 1
-        assert workspace.repository_location_handles[0].location_name == "hello_world_repository"
+        assert (
+            workspace.repository_location_handles[0].location_name
+            == "hello_world_repository_location"
+        )
 
 
 @pytest.mark.parametrize(
@@ -35,7 +38,10 @@ def test_load_in_process_location_handle_hello_world_nested_with_def(python_user
     ) as workspace:
         assert isinstance(workspace, Workspace)
         assert len(workspace.repository_location_handles) == 1
-        assert workspace.repository_location_handles[0].location_name == "hello_world_repository"
+        assert (
+            workspace.repository_location_handles[0].location_name
+            == "hello_world_repository_location"
+        )
 
 
 @pytest.mark.parametrize(
@@ -47,7 +53,10 @@ def test_load_in_process_location_handle_hello_world_terse(python_user_process_a
     ) as workspace:
         assert isinstance(workspace, Workspace)
         assert len(workspace.repository_location_handles) == 1
-        assert workspace.repository_location_handles[0].location_name == "hello_world_repository"
+        assert (
+            workspace.repository_location_handles[0].location_name
+            == "hello_world_repository_location"
+        )
 
 
 @pytest.mark.parametrize(

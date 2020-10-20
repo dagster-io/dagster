@@ -35,6 +35,11 @@ def _assign_grpc_location_name(port, socket, host):
     )
 
 
+def get_default_repository_location_name(repo_name):
+    check.str_param(repo_name, "repo_name")
+    return repo_name + "_location"
+
+
 def _assign_python_env_location_name(repository_code_pointer_dict):
     check.dict_param(
         repository_code_pointer_dict,
@@ -47,7 +52,7 @@ def _assign_python_env_location_name(repository_code_pointer_dict):
             "If there is one than more repository you must provide a location name"
         )
 
-    return next(iter(repository_code_pointer_dict.keys()))
+    return get_default_repository_location_name(next(iter(repository_code_pointer_dict.keys())))
 
 
 # Which API the host process should use to communicate with the process
