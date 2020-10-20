@@ -99,6 +99,11 @@ def _poll_rpc(
 ) -> DbtRpcOutput:
     """Polls the dbt RPC server for the status of a request until the state is ``success``."""
     logs_start = 0
+    interval = context.solid_config.get("interval")
+
+    elapsed_time = -1
+    current_state = None
+
     while True:
         # Poll for the dbt RPC request.
         context.log.debug(f"RequestToken: {request_token}")
@@ -107,34 +112,43 @@ def _poll_rpc(
         )
         raise_for_rpc_error(context, resp)
 
+        resp_json = resp.json()
+        resp_result = resp_json.get("result", {})
+
         # Pass dbt RPC logs into the Dagster/Dagit logger.
         if context.solid_config["logs"]:
-            logs = resp.json().get("result").get("logs")
+            logs = resp_result.get("logs", [])
             if len(logs) > 0:
                 log_rpc(context, logs)
             logs_start += len(logs)
 
+        current_state = resp_result.get("state")
         # Stop polling if request's state is no longer "running".
-        if resp.json().get("result").get("state") != "running":
+        if current_state != "running":
             break
 
-        # Sleep for the configured time intervale before polling again.
+        elapsed_time = resp_result.get("elapsed", 0)
+        # Sleep for the configured time interval before polling again.
         context.log.debug(
-            f"Request {request_token} currently in state '{resp.json().get('result').get('state')}' (elapsed time {resp.json().get('result').get('elapsed', 0)} seconds). Sleeping for {context.solid_config.get('interval')}s.."
+            f"Request {request_token} currently in state '{current_state}' (elapsed time "
+            f"{elapsed_time} seconds). Sleeping for {interval}s..."
         )
-        time.sleep(context.solid_config["interval"])
+        time.sleep(interval)
 
-    if resp.json().get("result").get("state") != "success":
+    if current_state != "success":
         raise Failure(
-            description=f"Request {request_token} finished with state '{resp.json().get('result').get('state')}' in {resp.json().get('result').get('elapsed')} seconds",
+            description=(
+                f"Request {request_token} finished with state '{current_state}' in "
+                f"{elapsed_time} seconds"
+            ),
         )
 
     context.log.info(
-        f"Request {request_token} finished with state '{resp.json().get('result').get('state')}' in {resp.json().get('result').get('elapsed')} seconds"
+        f"Request {request_token} finished with state '{current_state}' in {elapsed_time} seconds"
     )
-    context.log.debug(json.dumps(resp.json().get("result"), indent=2))
+    context.log.debug(json.dumps(resp_result, indent=2))
 
-    polled_run_results = DbtRpcOutput.from_dict(resp.json().get("result"))
+    polled_run_results = DbtRpcOutput.from_dict(resp_result)
 
     if should_yield_materializations:
         for materialization in _generate_materializations(polled_run_results):
@@ -370,7 +384,10 @@ def dbt_rpc_test(context: SolidExecutionContext) -> String:
 
 
 @solid(
-    description="A solid to invoke dbt test over RPC and poll the resulting RPC process until it's complete.",
+    description=(
+        "A solid to invoke dbt test over RPC and poll the resulting RPC process until it's "
+        "complete."
+    ),
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
     output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
     config_schema={
@@ -475,7 +492,10 @@ def dbt_rpc_run_operation(context: SolidExecutionContext) -> String:
 
 
 @solid(
-    description="A solid to invoke a dbt run operation over RPC and poll the resulting RPC process until it's complete.",
+    description=(
+        "A solid to invoke a dbt run operation over RPC and poll the resulting RPC process until "
+        "it's complete."
+    ),
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
     output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
     config_schema={
@@ -507,8 +527,8 @@ def dbt_rpc_run_operation(context: SolidExecutionContext) -> String:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_run_operation_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
-    """This solid sends the ``dbt run-operation`` command to a dbt RPC server and returns the result of the
-    executed dbt process.
+    """This solid sends the ``dbt run-operation`` command to a dbt RPC server and returns the
+    result of the executed dbt process.
 
     This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
     process is completed.
@@ -565,7 +585,10 @@ def dbt_rpc_snapshot(context: SolidExecutionContext) -> String:
 
 
 @solid(
-    description="A solid to invoke a dbt snapshot over RPC and poll the resulting RPC process until it's complete.",
+    description=(
+        "A solid to invoke a dbt snapshot over RPC and poll the resulting RPC process until "
+        "it's complete."
+    ),
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
     output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
     config_schema={
@@ -681,7 +704,10 @@ def dbt_rpc_snapshot_freshness(context: SolidExecutionContext) -> String:
 
 
 @solid(
-    description="A solid to invoke dbt source snapshot-freshness over RPC and poll the resulting RPC process until it's complete.",
+    description=(
+        "A solid to invoke dbt source snapshot-freshness over RPC and poll the resulting "
+        "RPC process until it's complete."
+    ),
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
     output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
     config_schema={
@@ -824,7 +850,8 @@ def create_dbt_rpc_run_sql_solid(
         name=name,
         description=kwargs.pop(
             "description",
-            "A solid to run a SQL query in context of a dbt project over RPC and return the results in a pandas DataFrame.",
+            "A solid to run a SQL query in context of a dbt project over RPC and return the "
+            "results in a pandas DataFrame.",
         ),
         input_defs=[
             InputDefinition(name="start_after", dagster_type=Nothing),

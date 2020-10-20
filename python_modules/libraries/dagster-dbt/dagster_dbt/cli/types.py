@@ -16,8 +16,8 @@ class DbtCliOutput(
     """The results of executing a dbt command, along with additional metadata about the dbt CLI
     process that was run.
 
-    Note that users should not construct instances of this class directly. This class is intended to be
-    constructed from the JSON output of dbt commands.
+    Note that users should not construct instances of this class directly. This class is intended
+    to be constructed from the JSON output of dbt commands.
 
     If the executed dbt command is either ``run`` or ``test``, then the ``.num_*`` attributes will
     contain non-``None`` integer values. Otherwise, they will be ``None``.

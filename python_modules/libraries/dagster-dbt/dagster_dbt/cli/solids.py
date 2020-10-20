@@ -27,12 +27,18 @@ CLI_COMMON_FLAGS_CONFIG_SCHEMA = {
     "project-dir": Field(
         config=StringSource,
         is_required=False,
-        description="Which directory to look in for the dbt_project.yml file. Default is the current working directory and its parents.",
+        description=(
+            "Which directory to look in for the dbt_project.yml file. Default is the current "
+            "working directory and its parents."
+        ),
     ),
     "profiles-dir": Field(
         config=StringSource,
         is_required=False,
-        description="Which directory to look in for the profiles.yml file. Default = $DBT_PROFILES_DIR or $HOME/.dbt",
+        description=(
+            "Which directory to look in for the profiles.yml file. Default = $DBT_PROFILES_DIR or "
+            "$HOME/.dbt"
+        ),
     ),
     "profile": Field(
         config=StringSource,
@@ -47,7 +53,11 @@ CLI_COMMON_FLAGS_CONFIG_SCHEMA = {
     "vars": Field(
         config=Permissive({}),
         is_required=False,
-        description="Supply variables to the project. This argument overrides variables defined in your dbt_project.yml file. This argument should be a dictionary, eg. {'my_variable': 'my_value'}",
+        description=(
+            "Supply variables to the project. This argument overrides variables defined in your "
+            "dbt_project.yml file. This argument should be a dictionary, eg. "
+            "{'my_variable': 'my_value'}"
+        ),
     ),
     "bypass-cache": Field(
         config=bool,
@@ -63,7 +73,11 @@ CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
     "warn-error": Field(
         config=bool,
         is_required=False,
-        description="If dbt would normally warn, instead raise an exception. Examples include --models that selects nothing, deprecations, configurations with no associated models, invalid test configurations, and missing sources/refs in tests.",
+        description=(
+            "If dbt would normally warn, instead raise an exception. Examples include --models "
+            "that selects nothing, deprecations, configurations with no associated models, "
+            "invalid test configurations, and missing sources/refs in tests."
+        ),
         default_value=False,
     ),
     "dbt_executable": Field(
@@ -75,7 +89,10 @@ CLI_COMMON_OPTIONS_CONFIG_SCHEMA = {
     "ignore_handled_error": Field(
         config=bool,
         is_required=False,
-        description="When True, will not raise an exception when the dbt CLI returns error code 1. Default is False.",
+        description=(
+            "When True, will not raise an exception when the dbt CLI returns error code 1. "
+            "Default is False."
+        ),
         default_value=False,
     ),
 }
@@ -103,7 +120,10 @@ def passthrough_flags_only(solid_config, additional_flags):
             config=Noneable(int),
             default_value=None,
             is_required=False,
-            description="Specify number of threads to use while executing models. Overrides settings in profiles.yml.",
+            description=(
+                "Specify number of threads to use while executing models. Overrides settings "
+                "in profiles.yml."
+            ),
         ),
         "models": Field(
             config=Noneable([str]),
@@ -119,7 +139,10 @@ def passthrough_flags_only(solid_config, additional_flags):
         ),
         "full-refresh": Field(
             config=bool,
-            description="If specified, DBT will drop incremental models and fully-recalculate the incremental table from the model definition. (--full-refresh)",
+            description=(
+                "If specified, DBT will drop incremental models and fully-recalculate the "
+                "incremental table from the model definition. (--full-refresh)"
+            ),
             is_required=False,
             default_value=False,
         ),
@@ -185,7 +208,10 @@ def dbt_cli_run(context) -> DbtCliOutput:
             config=Noneable(int),
             default_value=None,
             is_required=False,
-            description="Specify number of threads to use while executing models. Overrides settings in profiles.yml.",
+            description=(
+                "Specify number of threads to use while executing models. Overrides settings "
+                "in profiles.yml."
+            ),
         ),
         "models": Field(
             config=Noneable([str]),
@@ -237,7 +263,10 @@ def dbt_cli_test(context) -> DbtCliOutput:
             config=Noneable(int),
             default_value=None,
             is_required=False,
-            description="Specify number of threads to use while executing models. Overrides settings in profiles.yml.",
+            description=(
+                "Specify number of threads to use while executing models. Overrides settings in "
+                "profiles.yml."
+            ),
         ),
         "models": Field(
             config=Noneable([str]),
@@ -283,12 +312,19 @@ def dbt_cli_snapshot(context) -> Dict:
         **CLI_CONFIG_SCHEMA,
         "macro": Field(
             config=StringSource,
-            description="Specify the macro to invoke. dbt will call this macro with the supplied arguments and then exit.",
+            description=(
+                "Specify the macro to invoke. dbt will call this macro with the supplied "
+                "arguments and then exit."
+            ),
         ),
         "args": Field(
             config=Permissive({}),
             is_required=False,
-            description="Supply arguments to the macro. This dictionary will be mapped to the keyword arguments defined in the selected macro. This argument should be a dictionary, eg. {'my_variable': 'my_value'}",
+            description=(
+                "Supply arguments to the macro. This dictionary will be mapped to the keyword "
+                "arguments defined in the selected macro. This argument should be a dictionary, "
+                "eg. {'my_variable': 'my_value'}"
+            ),
         ),
     },
     tags={"kind": "dbt"},
@@ -329,13 +365,19 @@ def dbt_cli_run_operation(context) -> Dict:
         "output": Field(
             config=StringSource,
             is_required=False,
-            description="Specify the output path for the json report. By default, outputs to target/sources.json",
+            description=(
+                "Specify the output path for the json report. By default, outputs to "
+                "target/sources.json"
+            ),
         ),
         "threads": Field(
             config=Noneable(int),
             default_value=None,
             is_required=False,
-            description="Specify number of threads to use while executing models. Overrides settings in profiles.yml.",
+            description=(
+                "Specify number of threads to use while executing models. Overrides "
+                "settings in profiles.yml."
+            ),
         ),
     },
     tags={"kind": "dbt"},
@@ -372,11 +414,17 @@ def dbt_cli_snapshot_freshness(context) -> Dict:
             config=Noneable(int),
             default_value=None,
             is_required=False,
-            description="Specify number of threads to use while executing models. Overrides settings in profiles.yml.",
+            description=(
+                "Specify number of threads to use while executing models. Overrides settings "
+                "in profiles.yml."
+            ),
         ),
         "no-version-check": Field(
             config=bool,
-            description="Skip the check that dbt's version matches the one specified in the dbt_project.yml file ('require-dbt-version')",
+            description=(
+                "Skip the check that dbt's version matches the one specified in the "
+                "dbt_project.yml file ('require-dbt-version')"
+            ),
             is_required=False,
             default_value=False,
         ),
@@ -402,11 +450,17 @@ def dbt_cli_snapshot_freshness(context) -> Dict:
             config=Noneable([str]),
             default_value=None,
             is_required=False,
-            description="If set, use the given directory as the source for json files to compare with this project.",
+            description=(
+                "If set, use the given directory as the source for json files to compare with "
+                "this project."
+            ),
         ),
         "full-refresh": Field(
             config=bool,
-            description="If specified, DBT will drop incremental models and fully-recalculate the incremental table from the model definition. (--full-refresh)",
+            description=(
+                "If specified, DBT will drop incremental models and fully-recalculate "
+                "the incremental table from the model definition. (--full-refresh)"
+            ),
             is_required=False,
             default_value=False,
         ),
