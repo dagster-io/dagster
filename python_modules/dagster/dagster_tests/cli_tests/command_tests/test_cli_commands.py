@@ -21,7 +21,7 @@ from dagster import (
     seven,
     solid,
 )
-from dagster.cli import cli, ENV_PREFIX
+from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.run import run_list_command, run_wipe_command
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
