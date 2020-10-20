@@ -83,6 +83,7 @@ class ExternalRepository:
         return ExternalPipeline(
             self.external_repository_data.get_external_pipeline_data(pipeline_name),
             repository_handle=self.handle,
+            pipeline_index=self.get_pipeline_index(pipeline_name),
         )
 
     def get_all_external_pipelines(self):
@@ -116,16 +117,18 @@ class ExternalPipeline(RepresentedPipeline):
     objects such as these to interact with user-defined artifacts.
     """
 
-    def __init__(self, external_pipeline_data, repository_handle):
+    def __init__(self, external_pipeline_data, repository_handle, pipeline_index=None):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.inst_param(external_pipeline_data, "external_pipeline_data", ExternalPipelineData)
+        check.opt_inst_param(pipeline_index, "pipeline_index", PipelineIndex)
 
-        super(ExternalPipeline, self).__init__(
-            pipeline_index=PipelineIndex(
+        if pipeline_index is None:
+            pipeline_index = PipelineIndex(
                 external_pipeline_data.pipeline_snapshot,
                 external_pipeline_data.parent_pipeline_snapshot,
             )
-        )
+
+        super(ExternalPipeline, self).__init__(pipeline_index=pipeline_index)
         self._external_pipeline_data = external_pipeline_data
         self._repository_handle = repository_handle
         self._active_preset_dict = {ap.name: ap for ap in external_pipeline_data.active_presets}
