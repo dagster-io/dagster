@@ -21,6 +21,8 @@ from dagster import (
     seven,
     solid,
 )
+
+from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.run import run_list_command, run_wipe_command
 from dagster.core.host_representation import ExternalPipeline
@@ -570,6 +572,73 @@ def test_run_wipe_incorrect_delete_message():
         assert result.exit_code == 0
 
 
+def test_run_list_limit():
+    with instance_for_test():
+        runner = CliRunner()
+
+        runner_pipeline_execute(
+            runner,
+            [
+                "-f",
+                file_relative_path(__file__, "../../general_tests/test_repository.py"),
+                "-a",
+                "dagster_test_repository",
+                "--preset",
+                "add",
+                "-p",
+                "multi_mode_with_resources",  # pipeline name
+            ],
+        )
+
+        runner_pipeline_execute(
+            runner,
+            [
+                "-f",
+                file_relative_path(__file__, "../../general_tests/test_repository.py"),
+                "-a",
+                "dagster_test_repository",
+                "--preset",
+                "add",
+                "-p",
+                "multi_mode_with_resources",  # pipeline name
+            ],
+        )
+
+        # Should only shows one run because of the limit argument
+        result = runner.invoke(run_list_command, args="--limit 1")
+        assert result.exit_code == 0
+        assert result.output.count("Run: ") == 1
+        assert result.output.count("Pipeline: multi_mode_with_resources") == 1
+
+        # Shows two runs because of the limit argument is now 2
+        two_results = runner.invoke(run_list_command, args="--limit 2")
+        assert two_results.exit_code == 0
+        assert two_results.output.count("Run: ") == 2
+        assert two_results.output.count("Pipeline: multi_mode_with_resources") == 2
+
+        # Should only shows two runs although the limit argument is 3 because there are only 2 runs
+        shows_two_results = runner.invoke(run_list_command, args="--limit 3")
+        assert shows_two_results.exit_code == 0
+        assert shows_two_results.output.count("Run: ") == 2
+        assert shows_two_results.output.count("Pipeline: multi_mode_with_resources") == 2
+
+
+def runner_pipeline_execute(runner, cli_args):
+    result = runner.invoke(pipeline_execute_command, cli_args)
+    if result.exit_code != 0:
+        # CliRunner captures stdout so printing it out here
+        raise Exception(
+            (
+                "dagster pipeline execute commands with cli_args {cli_args} "
+                'returned exit_code {exit_code} with stdout:\n"{stdout}" and '
+                '\nresult as string: "{result}"'
+            ).format(
+                cli_args=cli_args, exit_code=result.exit_code, stdout=result.stdout, result=result
+            )
+        )
+    return result
+
+  
 def test_use_env_vars_for_cli_option():
     env_key = "{}_VERSION".format(ENV_PREFIX)
     runner = CliRunner(env={env_key: "1"})
