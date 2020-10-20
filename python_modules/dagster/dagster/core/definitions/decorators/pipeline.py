@@ -1,11 +1,12 @@
-import warnings
 from functools import update_wrapper
 
 from dagster import check
+from dagster.utils.backcompat import experimental_arg_warning
 
-from ..composition import enter_composition, exit_composition
 from ..hook import HookDefinition
+from ..input import InputDefinition
 from ..mode import ModeDefinition
+from ..output import OutputDefinition
 from ..pipeline import PipelineDefinition
 from ..preset import PresetDefinition
 
@@ -19,6 +20,10 @@ class _Pipeline(object):
         description=None,
         tags=None,
         hook_defs=None,
+        input_defs=None,
+        output_defs=None,
+        config_schema=None,
+        config_fn=None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.mode_definitions = check.opt_list_param(mode_defs, "mode_defs", ModeDefinition)
@@ -26,6 +31,15 @@ class _Pipeline(object):
         self.description = check.opt_str_param(description, "description")
         self.tags = check.opt_dict_param(tags, "tags")
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
+        self.input_defs = check.opt_nullable_list_param(
+            input_defs, "input_defs", of_type=InputDefinition
+        )
+        self.did_pass_outputs = output_defs is not None
+        self.output_defs = check.opt_nullable_list_param(
+            output_defs, "output_defs", of_type=OutputDefinition
+        )
+        self.config_schema = config_schema
+        self.config_fn = check.opt_callable_param(config_fn, "config_fn")
 
     def __call__(self, fn):
         check.callable_param(fn, "fn")
@@ -33,39 +47,55 @@ class _Pipeline(object):
         if not self.name:
             self.name = fn.__name__
 
-        enter_composition(self.name, "@pipeline")
-        try:
-            output = fn()
-            if output is not None:
-                warnings.warn(
-                    "You have returned a value out of a @pipeline-decorated function. "
-                    "This currently has no effect on behavior, but will after 0.10.0 is "
-                    "released. In order to preserve existing behavior to do not return "
-                    "anything out of this function. Pipelines (and its successor, graphs) "
-                    "will have meaningful outputs just like composite solids do today, "
-                    "and the return value will be meaningful.",
-                    stacklevel=2,
-                )
+        from dagster.core.definitions.decorators.composite_solid import do_composition
 
-        finally:
-            context = exit_composition()
+        (
+            input_mappings,
+            output_mappings,
+            dependencies,
+            solid_defs,
+            config_mapping,
+            positional_inputs,
+        ) = do_composition(
+            "@pipeline",
+            self.name,
+            fn,
+            self.input_defs,
+            self.output_defs,
+            self.config_schema,
+            self.config_fn,
+            ignore_output_from_composition_fn=not self.did_pass_outputs,
+        )
 
         pipeline_def = PipelineDefinition(
             name=self.name,
-            dependencies=context.dependencies,
-            solid_defs=context.solid_defs,
+            dependencies=dependencies,
+            solid_defs=solid_defs,
             mode_defs=self.mode_definitions,
             preset_defs=self.preset_definitions,
             description=self.description,
             tags=self.tags,
             hook_defs=self.hook_defs,
+            input_mappings=input_mappings,
+            output_mappings=output_mappings,
+            config_mapping=config_mapping,
+            positional_inputs=positional_inputs,
         )
         update_wrapper(pipeline_def, fn)
         return pipeline_def
 
 
 def pipeline(
-    name=None, description=None, mode_defs=None, preset_defs=None, tags=None, hook_defs=None
+    name=None,
+    description=None,
+    mode_defs=None,
+    preset_defs=None,
+    tags=None,
+    hook_defs=None,
+    input_defs=None,
+    output_defs=None,
+    config_schema=None,
+    config_fn=None,
 ):
     """Create a pipeline with the specified parameters from the decorated composition function.
 
@@ -119,6 +149,19 @@ def pipeline(
                 add_one(two)
                 mult_two(four)
     """
+
+    if input_defs is not None:
+        experimental_arg_warning("input_defs", "pipeline")
+
+    if output_defs is not None:
+        experimental_arg_warning("output_defs", "pipeline")
+
+    if config_schema is not None:
+        experimental_arg_warning("config_schema", "pipeline")
+
+    if config_fn is not None:
+        experimental_arg_warning("config_fn", "pipeline")
+
     if callable(name):
         check.invariant(description is None)
         return _Pipeline()(name)
@@ -130,4 +173,8 @@ def pipeline(
         description=description,
         tags=tags,
         hook_defs=hook_defs,
+        input_defs=input_defs,
+        output_defs=output_defs,
+        config_schema=config_schema,
+        config_fn=config_fn,
     )

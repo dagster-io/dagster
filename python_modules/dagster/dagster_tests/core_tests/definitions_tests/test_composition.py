@@ -653,6 +653,7 @@ def test_with_hooks_not_invoked():
 
         execute_pipeline(_my_pipeline)
 
+    # Note not returning out of the pipe causes warning count to go up to 2
     assert len(record) == 1  # We should only raise one warning because solids have same name.
 
     with pytest.warns(

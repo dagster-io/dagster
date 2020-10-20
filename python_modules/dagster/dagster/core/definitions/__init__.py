@@ -48,6 +48,7 @@ from .executor import (
     in_process_executor,
     multiprocess_executor,
 )
+from .graph import GraphDefinition
 from .hook import HookDefinition
 from .input import InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage

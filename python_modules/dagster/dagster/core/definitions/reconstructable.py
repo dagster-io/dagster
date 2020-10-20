@@ -424,7 +424,10 @@ def load_def_in_python_file(python_file, attribute, working_directory):
 def def_from_pointer(pointer):
     target = pointer.load_target()
 
-    if not callable(target):
+    from .pipeline import PipelineDefinition
+    from .repository import RepositoryDefinition
+
+    if isinstance(target, (PipelineDefinition, RepositoryDefinition)) or not callable(target):
         return _check_is_loadable(target)
 
     # if its a function invoke it - otherwise we are pointing to a

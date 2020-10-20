@@ -4,6 +4,7 @@ import warnings
 import six
 
 from dagster import check
+from dagster.core.definitions.solid import ISolidDefinition
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidSubsetError,
@@ -11,6 +12,7 @@ from dagster.core.errors import (
 )
 from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_type_dictionary
 from dagster.core.utils import str_format_set
+from dagster.utils.backcompat import experimental_arg_warning
 
 from .dependency import (
     DependencyDefinition,
@@ -18,46 +20,19 @@ from .dependency import (
     SolidHandle,
     SolidInvocation,
 )
+from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
 from .preset import PresetDefinition
 from .solid import ISolidDefinition
-from .solid_container import IContainSolids, create_execution_structure, validate_dependency_dict
-from .utils import check_valid_name, validate_tags
-
-
-def _check_solids_arg(pipeline_name, solid_defs):
-    if not isinstance(solid_defs, list):
-        raise DagsterInvalidDefinitionError(
-            '"solids" arg to pipeline "{name}" is not a list. Got {val}.'.format(
-                name=pipeline_name, val=repr(solid_defs)
-            )
-        )
-    for solid_def in solid_defs:
-        if isinstance(solid_def, ISolidDefinition):
-            continue
-        elif callable(solid_def):
-            raise DagsterInvalidDefinitionError(
-                """You have passed a lambda or function {func} into pipeline {name} that is
-                not a solid. You have likely forgetten to annotate this function with
-                an @solid or @lambda_solid decorator.'
-                """.format(
-                    name=pipeline_name, func=solid_def.__name__
-                )
-            )
-        else:
-            raise DagsterInvalidDefinitionError(
-                "Invalid item in solid list: {item}".format(item=repr(solid_def))
-            )
-
-    return solid_defs
+from .utils import validate_tags
 
 
 def _anonymous_pipeline_name():
     return "__pipeline__" + str(uuid.uuid4()).replace("-", "")
 
 
-class PipelineDefinition(IContainSolids):
+class PipelineDefinition(GraphDefinition):
     """Defines a Dagster pipeline.
 
     A pipeline is made up of
@@ -153,16 +128,51 @@ class PipelineDefinition(IContainSolids):
         preset_defs=None,
         tags=None,
         hook_defs=None,
+        input_mappings=None,
+        output_mappings=None,
+        config_mapping=None,
+        positional_inputs=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
+        _configured_config_mapping_fn=None,
+        _configured_config_schema=None,
     ):
         if not name:
             warnings.warn(
                 "Pipeline must have a name. Names will be required starting in 0.10.0 or later."
             )
+            name = _anonymous_pipeline_name()
 
-        self._name = check_valid_name(name) if name else _anonymous_pipeline_name()
+        # For these warnings they check truthiness because they get changed to [] higher
+        # in the stack for the decorator case
 
-        self._description = check.opt_str_param(description, "description")
+        if input_mappings:
+            experimental_arg_warning("input_mappings", "PipelineDefinition")
+
+        if output_mappings:
+            experimental_arg_warning("output_mappings", "PipelineDefinition")
+
+        if config_mapping is not None:
+            experimental_arg_warning("config_mapping", "PipelineDefinition")
+
+        if positional_inputs:
+            experimental_arg_warning("positional_inputs", "PipelineDefinition")
+
+        super(PipelineDefinition, self).__init__(
+            name=name,
+            description=description,
+            dependencies=dependencies,
+            solid_defs=solid_defs,
+            tags=check.opt_dict_param(tags, "tags", key_type=str),
+            positional_inputs=positional_inputs,
+            input_mappings=input_mappings,
+            output_mappings=output_mappings,
+            config_mapping=config_mapping,
+            _configured_config_mapping_fn=_configured_config_mapping_fn,
+            _configured_config_schema=_configured_config_schema,
+        )
+
+        self._current_level_solid_defs = solid_defs
+        self._tags = validate_tags(tags)
 
         mode_definitions = check.opt_list_param(mode_defs, "mode_defs", of_type=ModeDefinition)
 
@@ -170,11 +180,6 @@ class PipelineDefinition(IContainSolids):
             mode_definitions = [ModeDefinition()]
 
         self._mode_definitions = mode_definitions
-
-        self._current_level_solid_defs = check.list_param(
-            _check_solids_arg(self._name, solid_defs), "solid_defs", of_type=ISolidDefinition
-        )
-        self._tags = validate_tags(tags)
 
         seen_modes = set()
         for mode_def in mode_definitions:
@@ -186,18 +191,6 @@ class PipelineDefinition(IContainSolids):
                     ).format(mode_name=mode_def.name, pipeline_name=self._name)
                 )
             seen_modes.add(mode_def.name)
-
-        self._dependencies = validate_dependency_dict(dependencies)
-
-        dependency_structure, solid_dict = create_execution_structure(
-            self._current_level_solid_defs, self._dependencies, container_definition=None
-        )
-
-        self._solid_dict = solid_dict
-        self._dependency_structure = dependency_structure
-
-        # eager toposort solids to detect cycles
-        self.solids_in_topological_order = self._solids_in_topological_order()
 
         self._dagster_type_dict = construct_dagster_type_dictionary(self._current_level_solid_defs)
 
@@ -240,6 +233,30 @@ class PipelineDefinition(IContainSolids):
         self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
 
+    def construct_configured_copy(
+        self,
+        new_name,
+        new_description,
+        new_configured_config_schema,
+        new_configured_config_mapping_fn,
+    ):
+        return PipelineDefinition(
+            solid_defs=self._solid_defs,
+            name=new_name,
+            description=new_description,
+            dependencies=self._dependencies,
+            mode_defs=self._mode_definitions,
+            preset_defs=self.preset_defs,
+            hook_defs=self.hook_defs,
+            input_mappings=self._input_mappings,
+            output_mappings=self._output_mappings,
+            config_mapping=self._config_mapping,
+            positional_inputs=self.positional_inputs,
+            _parent_pipeline_def=self._parent_pipeline_def,
+            _configured_config_schema=new_configured_config_schema,
+            _configured_config_mapping_fn=new_configured_config_mapping_fn,
+        )
+
     def get_run_config_schema(self, mode=None):
         check.str_param(mode, "mode")
 
@@ -252,20 +269,8 @@ class PipelineDefinition(IContainSolids):
         return self._cached_run_config_schemas[mode_def.name]
 
     @property
-    def name(self):
-        return self._name
-
-    @property
-    def description(self):
-        return self._description
-
-    @property
     def mode_definitions(self):
         return self._mode_definitions
-
-    @property
-    def dependencies(self):
-        return self._dependencies
 
     @property
     def preset_defs(self):
@@ -328,72 +333,6 @@ class PipelineDefinition(IContainSolids):
     @property
     def tags(self):
         return self._tags
-
-    @property
-    def solids(self):
-        """List[Solid]: Top-level solids in the pipeline.
-        """
-        return list(set(self._solid_dict.values()))
-
-    def has_solid_named(self, name):
-        """Return whether or not there is a top level solid with this name in the pipeline
-
-        Args:
-            name (str): Name of solid
-
-        Returns:
-            bool: True if the solid is in the pipeline
-        """
-        check.str_param(name, "name")
-        return name in self._solid_dict
-
-    def solid_named(self, name):
-        """Return the top level solid named "name". Throws if it does not exist.
-
-        Args:
-            name (str): Name of solid
-
-        Returns:
-            Solid:
-        """
-        check.str_param(name, "name")
-        check.invariant(
-            name in self._solid_dict,
-            "Pipeline {pipeline_name} has no solid named {name}.".format(
-                pipeline_name=self._name, name=name
-            ),
-        )
-
-        return self._solid_dict[name]
-
-    def get_solid(self, handle):
-        """Return the solid contained anywhere within the pipeline via its handle.
-
-        Args:
-            handle (SolidHandle): The solid's handle
-
-        Returns:
-            Solid:
-
-        """
-        check.inst_param(handle, "handle", SolidHandle)
-        current = handle
-        lineage = []
-        while current:
-            lineage.append(current.name)
-            current = current.parent
-
-        name = lineage.pop()
-        solid = self.solid_named(name)
-        while lineage:
-            name = lineage.pop()
-            solid = solid.definition.solid_named(name)
-
-        return solid
-
-    @property
-    def dependency_structure(self):
-        return self._dependency_structure
 
     def has_dagster_type(self, name):
         check.str_param(name, "name")

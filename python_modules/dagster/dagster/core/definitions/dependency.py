@@ -75,12 +75,13 @@ class Solid(object):
     """
 
     def __init__(self, name, definition, container_definition=None, tags=None, hook_defs=None):
-        from .solid import ISolidDefinition, CompositeSolidDefinition
+        from .graph import GraphDefinition
+        from .solid import ISolidDefinition
 
         self.name = check.str_param(name, "name")
         self.definition = check.inst_param(definition, "definition", ISolidDefinition)
         self.container_definition = check.opt_inst_param(
-            container_definition, "container_definition", CompositeSolidDefinition
+            container_definition, "container_definition", GraphDefinition,
         )
         self._additional_tags = validate_tags(tags)
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
@@ -125,9 +126,9 @@ class Solid(object):
 
     @property
     def is_composite(self):
-        from .solid import CompositeSolidDefinition
+        from .graph import GraphDefinition
 
-        return isinstance(self.definition, CompositeSolidDefinition)
+        return isinstance(self.definition, GraphDefinition)
 
     @property
     def input_dict(self):

@@ -5,8 +5,9 @@ from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.validate import process_config
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.definitions.environment_configs import define_solid_dictionary_cls
+from dagster.core.definitions.graph import GraphDefinition
 from dagster.core.definitions.pipeline import PipelineDefinition
-from dagster.core.definitions.solid import CompositeSolidDefinition
+from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -96,7 +97,7 @@ def _composite_descent(parent_stack, solids_config_dict):
         current_solid_config = solids_config_dict.get(solid.name, {})
 
         # the base case
-        if not isinstance(solid.definition, CompositeSolidDefinition):
+        if isinstance(solid.definition, SolidDefinition):
             config_mapped_solid_config = solid.definition.apply_config_mapping(
                 {"config": current_solid_config.get("config")}
             )
@@ -113,7 +114,7 @@ def _composite_descent(parent_stack, solids_config_dict):
             yield SolidConfigEntry(current_handle, SolidConfig.from_dict(complete_config_object))
             continue
 
-        composite_def = check.inst(solid.definition, CompositeSolidDefinition)
+        graph_def = check.inst(solid.definition, GraphDefinition)
 
         yield SolidConfigEntry(
             current_handle,
@@ -128,8 +129,8 @@ def _composite_descent(parent_stack, solids_config_dict):
         # If there is a config mapping, invoke it and get the descendent solids
         # config that way. Else just grabs the solids entry of the current config
         solids_dict = (
-            _get_mapped_solids_dict(solid, composite_def, current_stack, current_solid_config)
-            if composite_def.config_mapping
+            _get_mapped_solids_dict(solid, graph_def, current_stack, current_solid_config)
+            if graph_def.config_mapping
             else current_solid_config.get("solids", {})
         )
 
@@ -137,7 +138,7 @@ def _composite_descent(parent_stack, solids_config_dict):
             yield sce
 
 
-def _get_mapped_solids_dict(composite, composite_def, current_stack, current_solid_config):
+def _get_mapped_solids_dict(composite, graph_def, current_stack, current_solid_config):
     # the spec of the config mapping function is that it takes the dictionary at:
     # solid_name:
     #    config: {dict_passed_to_user}
@@ -151,7 +152,7 @@ def _get_mapped_solids_dict(composite, composite_def, current_stack, current_sol
 
     # apply @configured config mapping to the composite's incoming config before we get to the
     # composite's own config mapping process
-    config_mapped_solid_config = composite_def.apply_config_mapping(current_solid_config)
+    config_mapped_solid_config = graph_def.apply_config_mapping(current_solid_config)
     if not config_mapped_solid_config.success:
         raise DagsterInvalidConfigError(
             "Error in config for composite solid {}".format(composite.name),
@@ -162,7 +163,7 @@ def _get_mapped_solids_dict(composite, composite_def, current_stack, current_sol
     with user_code_error_boundary(
         DagsterConfigMappingFunctionError, _get_error_lambda(current_stack)
     ):
-        mapped_solids_config = composite_def.config_mapping.config_fn(
+        mapped_solids_config = graph_def.config_mapping.config_fn(
             config_mapped_solid_config.value.get("config", {})
         )
 
@@ -170,7 +171,7 @@ def _get_mapped_solids_dict(composite, composite_def, current_stack, current_sol
     # be evaluated against
 
     type_to_evaluate_against = define_solid_dictionary_cls(
-        composite_def.solids, composite_def.dependency_structure, current_stack.handle
+        graph_def.solids, graph_def.dependency_structure, current_stack.handle
     )
 
     # process against that new type

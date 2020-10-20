@@ -30,7 +30,7 @@ def scheduler_info_solid(context):
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"dask": dask_resource})])
 def scheduler_info_pipeline():
-    return scheduler_info_solid()
+    scheduler_info_solid()
 
 
 def test_single_local_cluster():

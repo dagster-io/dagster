@@ -15,7 +15,7 @@ def emit_one():
 
 
 @pipeline
-def test_pipe():
+def pipe_test():
     emit_one()
     emit_one()
 
@@ -23,7 +23,7 @@ def test_pipe():
 def test_roundtrip(monkeypatch):
     runner = CliRunner()
     with instance_for_test() as instance:
-        run_result = execute_pipeline(test_pipe, instance=instance)
+        run_result = execute_pipeline(pipe_test, instance=instance)
         assert run_result.success
         file_path = path.join(instance.root_directory, ".temp.dump")
         export_result = runner.invoke(export_command, [run_result.run_id, file_path])

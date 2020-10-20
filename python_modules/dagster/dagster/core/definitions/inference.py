@@ -116,13 +116,11 @@ def _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=N
     return input_defs
 
 
-def infer_input_definitions_for_composite_solid(solid_name, fn):
+def infer_input_definitions_for_graph(decorator_name, solid_name, fn):
     signature = funcsigs.signature(fn)
     params = list(signature.parameters.values())
     descriptions = _infer_input_description_from_docstring(fn)
-    defs = _infer_inputs_from_params(
-        params, "@composite_solid", solid_name, descriptions=descriptions
-    )
+    defs = _infer_inputs_from_params(params, decorator_name, solid_name, descriptions=descriptions)
     return defs
 
 

@@ -2,7 +2,7 @@ from collections import OrderedDict, namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
-    CompositeSolidDefinition,
+    GraphDefinition,
     IPipeline,
     InputDefinition,
     Solid,
@@ -160,8 +160,8 @@ class _PlanBuilder(object):
                 self.add_step(solid_compute_step)
 
             ### 2b. RECURSE
-            # Recurse over the solids contained in an instance of CompositeSolidDefinition
-            elif isinstance(solid.definition, CompositeSolidDefinition):
+            # Recurse over the solids contained in an instance of GraphDefinition
+            elif isinstance(solid.definition, GraphDefinition):
                 self._build_from_sorted_solids(
                     solid.definition.solids_in_topological_order,
                     solid.definition.dependency_structure,

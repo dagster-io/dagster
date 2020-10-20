@@ -14,10 +14,11 @@ from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dags
 from dagster.utils import check, ensure_single_item
 
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
+from .graph import GraphDefinition
 from .logger import LoggerDefinition
 from .mode import ModeDefinition
 from .resource import ResourceDefinition
-from .solid import CompositeSolidDefinition, ISolidDefinition, SolidDefinition
+from .solid import ISolidDefinition, SolidDefinition
 
 
 def _is_selector_field_optional(config_type):
@@ -283,9 +284,9 @@ def define_isolid_field(solid, handle, dependency_structure):
             solid, handle, dependency_structure, solid.definition.config_schema
         )
 
-    composite_def = check.inst(solid.definition, CompositeSolidDefinition)
+    graph_def = check.inst(solid.definition, GraphDefinition)
 
-    if composite_def.has_config_mapping:
+    if graph_def.has_config_mapping:
         # has_config_mapping covers cases 2 & 4 from above (only config mapped composite solids can
         # be `configured`)...
         return construct_leaf_solid_config(
@@ -293,7 +294,7 @@ def define_isolid_field(solid, handle, dependency_structure):
             handle,
             dependency_structure,
             # ...and in both cases, the correct schema for 'config' key is exposed by this property:
-            composite_def.config_schema,
+            graph_def.config_schema,
         )
         # This case omits a 'solids' key, thus if a composite solid is `configured` or has a field
         # mapping, the user cannot stub any config, inputs, or outputs for inner (child) solids.
@@ -304,7 +305,7 @@ def define_isolid_field(solid, handle, dependency_structure):
                 "outputs": get_outputs_field(solid, handle),
                 "solids": Field(
                     define_solid_dictionary_cls(
-                        composite_def.solids, composite_def.dependency_structure, handle,
+                        graph_def.solids, graph_def.dependency_structure, handle,
                     )
                 ),
             }
@@ -332,7 +333,7 @@ def iterate_solid_def_config_types(solid_def):
         if solid_def.config_schema:
             for config_type in iterate_config_types(solid_def.config_schema.config_type):
                 yield config_type
-    elif isinstance(solid_def, CompositeSolidDefinition):
+    elif isinstance(solid_def, GraphDefinition):
         for solid in solid_def.solids:
             for config_type in iterate_solid_def_config_types(solid.definition):
                 yield config_type
