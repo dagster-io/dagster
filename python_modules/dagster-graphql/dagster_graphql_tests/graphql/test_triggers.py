@@ -14,7 +14,7 @@ class TestTriggerRuns(OutOfProcessExecutingGraphQLContextTestMatrix):
                 "triggerSelector": {
                     "repositoryName": repository_selector["repositoryName"],
                     "repositoryLocationName": repository_selector["repositoryLocationName"],
-                    "executableName": "executable_no_config",
+                    "jobName": "job_no_config",
                 }
             },
         )

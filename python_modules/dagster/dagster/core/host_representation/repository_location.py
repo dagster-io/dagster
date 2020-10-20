@@ -5,11 +5,8 @@ import pendulum
 import six
 
 from dagster import check
-from dagster.api.snapshot_executable import (
-    sync_get_external_executable_params,
-    sync_get_external_executable_params_grpc,
-)
 from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
+from dagster.api.snapshot_job import sync_get_external_job_params, sync_get_external_job_params_grpc
 from dagster.api.snapshot_partition import (
     sync_get_external_partition_config,
     sync_get_external_partition_config_grpc,
@@ -48,7 +45,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     snapshot_from_execution_plan,
 )
 from dagster.grpc.impl import (
-    get_external_executable_params,
+    get_external_job_params,
     get_external_schedule_execution,
     get_partition_config,
     get_partition_names,
@@ -56,7 +53,7 @@ from dagster.grpc.impl import (
     get_partition_tags,
 )
 from dagster.grpc.types import (
-    ExternalExecutableArgs,
+    ExternalJobArgs,
     ExternalScheduleExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
@@ -151,7 +148,7 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         pass
 
     @abstractmethod
-    def get_external_executable_params(self, instance, repository_handle, name):
+    def get_external_job_params(self, instance, repository_handle, name):
         pass
 
     @abstractproperty
@@ -328,17 +325,17 @@ class InProcessRepositoryLocation(RepositoryLocation):
         recon_repo = recon_repository_from_origin(repo_origin)
         return get_external_schedule_execution(recon_repo, args)
 
-    def get_external_executable_params(self, instance, repository_handle, name):
+    def get_external_job_params(self, instance, repository_handle, name):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(name, "name")
 
         repo_origin = repository_handle.get_origin()
         recon_repo = recon_repository_from_origin(repo_origin)
-        args = ExternalExecutableArgs(
+        args = ExternalJobArgs(
             instance_ref=instance.get_ref(), repository_origin=repo_origin, name=name,
         )
-        return get_external_executable_params(recon_repo, args)
+        return get_external_job_params(recon_repo, args)
 
     def get_external_partition_set_execution_param_data(
         self, repository_handle, partition_set_name, partition_names
@@ -487,11 +484,11 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             scheduled_execution_time,
         )
 
-    def get_external_executable_params(self, instance, repository_handle, name):
+    def get_external_job_params(self, instance, repository_handle, name):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(name, "name")
-        return sync_get_external_executable_params_grpc(
+        return sync_get_external_job_params_grpc(
             self._handle.client, instance, repository_handle, name
         )
 
@@ -634,11 +631,11 @@ class PythonEnvRepositoryLocation(RepositoryLocation):
             scheduled_execution_time,
         )
 
-    def get_external_executable_params(self, instance, repository_handle, name):
+    def get_external_job_params(self, instance, repository_handle, name):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(name, "name")
-        return sync_get_external_executable_params(instance, repository_handle, name)
+        return sync_get_external_job_params(instance, repository_handle, name)
 
     def get_external_partition_set_execution_param_data(
         self, repository_handle, partition_set_name, partition_names

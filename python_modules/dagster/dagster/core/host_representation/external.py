@@ -5,7 +5,7 @@ from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
 
 from .external_data import (
-    ExternalExecutableData,
+    ExternalJobData,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalRepositoryData,
@@ -89,10 +89,10 @@ class ExternalRepository:
     def get_all_external_pipelines(self):
         return [self.get_full_external_pipeline(pn) for pn in self._pipeline_index_map]
 
-    def get_external_executables(self):
+    def get_external_jobs(self):
         return [
-            ExternalExecutable(external_executable_data, self._handle)
-            for external_executable_data in self.external_repository_data.external_executable_datas
+            ExternalJob(external_job_data, self._handle)
+            for external_job_data in self.external_repository_data.external_job_datas
         ]
 
     @property
@@ -403,25 +403,25 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.pipeline_name
 
 
-class ExternalExecutable:
-    def __init__(self, external_executable_data, handle):
-        self._external_executable_data = check.inst_param(
-            external_executable_data, "external_executable_data", ExternalExecutableData,
+class ExternalJob:
+    def __init__(self, external_job_data, handle):
+        self._external_job_data = check.inst_param(
+            external_job_data, "external_job_data", ExternalJobData,
         )
         self._handle = check.inst_param(handle, "handle", RepositoryHandle)
 
     @property
     def name(self):
-        return self._external_executable_data.name
+        return self._external_job_data.name
 
     @property
     def pipeline_name(self):
-        return self._external_executable_data.pipeline_name
+        return self._external_job_data.pipeline_name
 
     @property
     def solid_selection(self):
-        return self._external_executable_data.solid_selection
+        return self._external_job_data.solid_selection
 
     @property
     def mode(self):
-        return self._external_executable_data.mode
+        return self._external_job_data.mode

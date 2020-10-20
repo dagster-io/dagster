@@ -87,10 +87,10 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalScheduleExecutionReply.FromString,
         )
-        self.ExternalExecutableParams = channel.unary_unary(
-            "/api.DagsterApi/ExternalExecutableParams",
-            request_serializer=api__pb2.ExternalExecutableParamsRequest.SerializeToString,
-            response_deserializer=api__pb2.ExternalExecutableParamsReply.FromString,
+        self.ExternalJobParams = channel.unary_unary(
+            "/api.DagsterApi/ExternalJobParams",
+            request_serializer=api__pb2.ExternalJobParamsRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalJobParamsReply.FromString,
         )
         self.ShutdownServer = channel.unary_unary(
             "/api.DagsterApi/ShutdownServer",
@@ -205,7 +205,7 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
-    def ExternalExecutableParams(self, request, context):
+    def ExternalJobParams(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details("Method not implemented!")
@@ -315,10 +315,10 @@ def add_DagsterApiServicer_to_server(servicer, server):
             request_deserializer=api__pb2.ExternalScheduleExecutionRequest.FromString,
             response_serializer=api__pb2.ExternalScheduleExecutionReply.SerializeToString,
         ),
-        "ExternalExecutableParams": grpc.unary_unary_rpc_method_handler(
-            servicer.ExternalExecutableParams,
-            request_deserializer=api__pb2.ExternalExecutableParamsRequest.FromString,
-            response_serializer=api__pb2.ExternalExecutableParamsReply.SerializeToString,
+        "ExternalJobParams": grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalJobParams,
+            request_deserializer=api__pb2.ExternalJobParamsRequest.FromString,
+            response_serializer=api__pb2.ExternalJobParamsReply.SerializeToString,
         ),
         "ShutdownServer": grpc.unary_unary_rpc_method_handler(
             servicer.ShutdownServer,
@@ -737,7 +737,7 @@ class DagsterApi(object):
         )
 
     @staticmethod
-    def ExternalExecutableParams(
+    def ExternalJobParams(
         request,
         target,
         options=(),
@@ -752,9 +752,9 @@ class DagsterApi(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            "/api.DagsterApi/ExternalExecutableParams",
-            api__pb2.ExternalExecutableParamsRequest.SerializeToString,
-            api__pb2.ExternalExecutableParamsReply.FromString,
+            "/api.DagsterApi/ExternalJobParams",
+            api__pb2.ExternalJobParamsRequest.SerializeToString,
+            api__pb2.ExternalJobParamsReply.FromString,
             options,
             channel_credentials,
             insecure,

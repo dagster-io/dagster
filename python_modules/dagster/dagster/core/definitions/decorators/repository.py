@@ -3,7 +3,7 @@ from functools import update_wrapper
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
-from ..executable import ExecutableDefinition
+from ..job import JobDefinition
 from ..partition import PartitionSetDefinition
 from ..pipeline import PipelineDefinition
 from ..repository import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryData, RepositoryDefinition
@@ -41,14 +41,14 @@ class _Repository(object):
                     isinstance(definition, PipelineDefinition)
                     or isinstance(definition, PartitionSetDefinition)
                     or isinstance(definition, ScheduleDefinition)
-                    or isinstance(definition, ExecutableDefinition)
+                    or isinstance(definition, JobDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type PipelineDefinition, PartitionSetDefinition, "
-                    "ScheduleDefinition, or ExecutableDefinition. Got {bad_definitions_formatted}.".format(
+                    "ScheduleDefinition, or JobDefinition. Got {bad_definitions_formatted}.".format(
                         bad_definitions_formatted=", ".join(
                             [
                                 "value of type {type_} at index {i}".format(type_=type_, i=i)
@@ -63,7 +63,7 @@ class _Repository(object):
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: dict must not contain "
-                    "keys other than {{'pipelines', 'partition_sets', 'schedules', 'executables'}}: found "
+                    "keys other than {{'pipelines', 'partition_sets', 'schedules', 'jobs'}}: found "
                     "{bad_keys}".format(
                         bad_keys=", ".join(
                             [

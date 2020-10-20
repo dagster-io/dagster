@@ -12,7 +12,7 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
-from dagster.core.definitions.decorators import executable
+from dagster.core.definitions.decorators import job
 
 
 @lambda_solid
@@ -132,13 +132,13 @@ def define_baz_partitions():
     }
 
 
-@executable(pipeline_name="foo_pipeline")
-def executable_foo(_):
+@job(pipeline_name="foo_pipeline")
+def job_foo(_):
     return {"foo": "FOO"}
 
 
-@executable(pipeline_name="baz_pipeline")
-def executable_error(_):
+@job(pipeline_name="baz_pipeline")
+def job_error(_):
     raise Exception("womp womp")
 
 
@@ -152,8 +152,5 @@ def bar_repo():
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),
-        "executables": {
-            "executable_foo": executable_foo,
-            "executable_error": lambda: executable_error,
-        },
+        "jobs": {"job_foo": job_foo, "job_error": lambda: job_error,},
     }

@@ -6,7 +6,7 @@ import sys
 import pendulum
 
 from dagster import check
-from dagster.core.definitions import ExecutableContext, ScheduleExecutionContext
+from dagster.core.definitions import JobContext, ScheduleExecutionContext
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
@@ -15,7 +15,7 @@ from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterRunNotFoundError,
     DagsterSubprocessError,
-    ExecutableError,
+    JobError,
     PartitionExecutionError,
     ScheduleExecutionError,
     user_code_error_boundary,
@@ -44,7 +44,7 @@ from dagster.core.snap.execution_plan_snapshot import (
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import (
     ExecutionPlanSnapshotArgs,
-    ExternalExecutableArgs,
+    ExternalJobArgs,
     ExternalScheduleExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
@@ -283,33 +283,33 @@ def get_external_schedule_execution(recon_repo, external_schedule_execution_args
             )
 
 
-def get_external_executable_params(recon_repo, external_executable_args):
+def get_external_job_params(recon_repo, external_job_args):
     check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
     check.inst_param(
-        external_executable_args, "external_executable_args", ExternalExecutableArgs,
+        external_job_args, "external_job_args", ExternalJobArgs,
     )
     definition = recon_repo.get_definition()
-    executable_def = definition.get_executable_def(external_executable_args.name)
-    with DagsterInstance.from_ref(external_executable_args.instance_ref) as instance:
-        context = ExecutableContext(instance)
+    job_def = definition.get_job_def(external_job_args.name)
+    with DagsterInstance.from_ref(external_job_args.instance_ref) as instance:
+        context = JobContext(instance)
 
         try:
             with user_code_error_boundary(
-                ExecutableError,
+                JobError,
                 lambda: "Error occured during the execution of run_config_fn for triggered "
-                "execution {name}".format(name=executable_def.name),
+                "execution {name}".format(name=job_def.name),
             ):
-                run_config = executable_def.get_run_config(context)
+                run_config = job_def.get_run_config(context)
 
             with user_code_error_boundary(
-                ExecutableError,
+                JobError,
                 lambda: "Error occured during the execution of tags_fn for triggered "
-                "execution {name}".format(name=executable_def.name),
+                "execution {name}".format(name=job_def.name),
             ):
-                tags = executable_def.get_tags(context)
+                tags = job_def.get_tags(context)
 
             return ExternalExecutionParamsData(run_config=run_config, tags=tags)
-        except ExecutableError:
+        except JobError:
             return ExternalExecutionParamsErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())
             )

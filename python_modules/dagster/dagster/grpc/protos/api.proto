@@ -18,7 +18,7 @@ service DagsterApi {
   rpc ExternalRepository (ExternalRepositoryRequest) returns (ExternalRepositoryReply) {}
   rpc StreamingExternalRepository (ExternalRepositoryRequest) returns (stream StreamingExternalRepositoryEvent) {}
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
-  rpc ExternalExecutableParams (ExternalExecutableParamsRequest) returns (ExternalExecutableParamsReply) {}
+  rpc ExternalJobParams (ExternalJobParamsRequest) returns (ExternalJobParamsReply) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc ExecuteRun (ExecuteRunRequest) returns (stream ExecuteRunEvent) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
@@ -123,12 +123,12 @@ message ExternalScheduleExecutionReply {
   string serialized_external_schedule_execution_data_or_external_schedule_execution_error = 1;
 }
 
-message ExternalExecutableParamsRequest {
-  string serialized_external_executable_args = 1;
+message ExternalJobParamsRequest {
+  string serialized_external_job_args = 1;
 }
 
-message ExternalExecutableParamsReply {
-  string serialized_external_execution_params_or_external_execution_params_error_data = 1;
+message ExternalJobParamsReply {
+  string serialized_external_job_params_or_external_job_params_error_data = 1;
 }
 
 message ExecuteRunRequest {

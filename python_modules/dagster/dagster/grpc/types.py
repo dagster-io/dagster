@@ -243,11 +243,9 @@ class ExternalScheduleExecutionArgs(
 
 
 @whitelist_for_serdes
-class ExternalExecutableArgs(
-    namedtuple("_ExternalExecutableArgs", "repository_origin instance_ref name",)
-):
+class ExternalJobArgs(namedtuple("_ExternalJobArgs", "repository_origin instance_ref name",)):
     def __new__(cls, repository_origin, instance_ref, name):
-        return super(ExternalExecutableArgs, cls).__new__(
+        return super(ExternalJobArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
                 repository_origin, "repository_origin", RepositoryOrigin

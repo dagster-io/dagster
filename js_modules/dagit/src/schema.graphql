@@ -1413,7 +1413,7 @@ union TriggerMutationResult = TriggerExecutionSuccess | InvalidStepError | Inval
 input TriggerSelector {
   repositoryName: String!
   repositoryLocationName: String!
-  executableName: String!
+  jobName: String!
 }
 
 type TypeCheck implements DisplayableEvent {

@@ -1,28 +1,28 @@
 from dagster import check
-from dagster.core.definitions.executable import ExecutableDefinition
+from dagster.core.definitions.job import JobDefinition
 from dagster.utils.backcompat import experimental
 
 
 @experimental
-def executable(
+def job(
     pipeline_name, name=None, mode="default", solid_selection=None, tags_fn=None,
 ):
     """
     The decorated function will be called as the ``run_config_fn`` of the underlying
-    :py:class:`~dagster.ExecutableDefinition` and should take a
-    :py:class:`~dagster.ExecutableContext` as its only argument, returning the run config dict for
+    :py:class:`~dagster.JobDefinition` and should take a
+    :py:class:`~dagster.JobContext` as its only argument, returning the run config dict for
     the pipeline execution.
 
     Args:
         pipeline_name (str): The name of the pipeline to execute.
-        name (Optional[str]): The name of this executable.
+        name (Optional[str]): The name of this job.
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) for the pipeline execution e.g. ``['*some_solid+', 'other_solid']``
         mode (Optional[str]): The pipeline mode to apply for the pipeline execution
             (Default: 'default')
-        tags_fn (Optional[Callable[[ExecutableContext], Optional[Dict[str, str]]]]): A
+        tags_fn (Optional[Callable[[JobContext], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the pipeline execution. Takes a
-            :py:class:`~dagster.ExecutableContext` and returns a dictionary of tags (string
+            :py:class:`~dagster.JobContext` and returns a dictionary of tags (string
             key-value pairs).
     """
 
@@ -34,10 +34,10 @@ def executable(
 
     def inner(fn):
         check.callable_param(fn, "fn")
-        executable_name = name or fn.__name__
+        job_name = name or fn.__name__
 
-        return ExecutableDefinition(
-            name=executable_name,
+        return JobDefinition(
+            name=job_name,
             pipeline_name=pipeline_name,
             run_config_fn=fn,
             tags_fn=tags_fn,

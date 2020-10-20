@@ -2,10 +2,10 @@ from .config import ConfigMapping
 from .decorators import (
     composite_solid,
     daily_schedule,
-    executable,
     failure_hook,
     hook,
     hourly_schedule,
+    job,
     lambda_solid,
     monthly_schedule,
     pipeline,
@@ -41,7 +41,6 @@ from .events import (
     TypeCheck,
     UrlMetadataEntryData,
 )
-from .executable import ExecutableContext, ExecutableDefinition
 from .executor import (
     ExecutorDefinition,
     default_executors,
@@ -52,6 +51,7 @@ from .executor import (
 from .hook import HookDefinition
 from .input import InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
+from .job import JobContext, JobDefinition
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping

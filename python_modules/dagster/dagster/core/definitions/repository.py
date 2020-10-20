@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
-from .executable import ExecutableDefinition
+from .job import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -12,7 +12,7 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
     "pipelines",
     "partition_sets",
     "schedules",
-    "executables",
+    "jobs",
 }
 
 
@@ -125,7 +125,7 @@ class RepositoryData(object):
     of repository members.
     """
 
-    def __init__(self, pipelines, partition_sets, schedules, executables):
+    def __init__(self, pipelines, partition_sets, schedules, jobs):
         """Constructs a new RepositoryData object.
 
         You may pass pipeline, partition_set, and schedule definitions directly, or you may pass
@@ -144,14 +144,14 @@ class RepositoryData(object):
                 The partition sets belonging to the repository.
             schedules (Dict[str, Union[ScheduleDefinition, Callable[[], ScheduleDefinition]]]):
                 The schedules belonging to the repository.
-            executables (Dict[str, Union[ExecutableDefinition, Callable[[], ExecutableDefinition]]]):
-                The predefined executables for a repository.
+            jobs (Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]]):
+                The predefined jobs for a repository.
 
         """
         check.dict_param(pipelines, "pipelines", key_type=str)
         check.dict_param(partition_sets, "partition_sets", key_type=str)
         check.dict_param(schedules, "schedules", key_type=str)
-        check.dict_param(executables, "executables", key_type=str)
+        check.dict_param(jobs, "jobs", key_type=str)
 
         self._pipelines = _CacheingDefinitionIndex(
             PipelineDefinition, "PipelineDefinition", "pipeline", pipelines
@@ -173,9 +173,7 @@ class RepositoryData(object):
                 partition_sets,
             ),
         )
-        self._executables = _CacheingDefinitionIndex(
-            ExecutableDefinition, "ExecutableDefinition", "executable", executables,
-        )
+        self._jobs = _CacheingDefinitionIndex(JobDefinition, "JobDefinition", "job", jobs,)
         self._all_pipelines = None
         self._solids = None
         self._all_solids = None
@@ -232,7 +230,7 @@ class RepositoryData(object):
         pipelines = {}
         partition_sets = {}
         schedules = {}
-        executables = {}
+        jobs = {}
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if definition.name in pipelines:
@@ -268,20 +266,15 @@ class RepositoryData(object):
                             "{partition_set_name}".format(partition_set_name=partition_set_def.name)
                         )
                     partition_sets[partition_set_def.name] = partition_set_def
-            elif isinstance(definition, ExecutableDefinition):
-                if definition.name in executables:
+            elif isinstance(definition, JobDefinition):
+                if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
-                        "Duplicate executable definition found for executable {name}".format(
-                            name=definition.name
-                        )
+                        "Duplicate job definition found for job {name}".format(name=definition.name)
                     )
-                executables[definition.name] = definition
+                jobs[definition.name] = definition
 
         return RepositoryData(
-            pipelines=pipelines,
-            partition_sets=partition_sets,
-            schedules=schedules,
-            executables=executables,
+            pipelines=pipelines, partition_sets=partition_sets, schedules=schedules, jobs=jobs,
         )
 
     def get_pipeline_names(self):
@@ -423,16 +416,16 @@ class RepositoryData(object):
 
         return self._schedules.has_definition(schedule_name)
 
-    def get_all_executables(self):
-        return self._executables.get_all_definitions()
+    def get_all_jobs(self):
+        return self._jobs.get_all_definitions()
 
-    def get_executable(self, name):
+    def get_job(self, name):
         check.str_param(name, "name")
-        return self._executables.get_definition(name)
+        return self._jobs.get_definition(name)
 
-    def has_executable(self, name):
+    def has_job(self, name):
         check.str_param(name, "name")
-        return self._executables.has_definition(name)
+        return self._jobs.has_definition(name)
 
     def get_all_solid_defs(self):
         if self._all_solids is not None:
@@ -603,11 +596,11 @@ class RepositoryDefinition(object):
         return self._repository_data.has_schedule(name)
 
     @property
-    def executable_defs(self):
-        return self._repository_data.get_all_executables()
+    def job_defs(self):
+        return self._repository_data.get_all_jobs()
 
-    def get_executable_def(self, name):
-        return self._repository_data.get_executable(name)
+    def get_job_def(self, name):
+        return self._repository_data.get_job(name)
 
-    def has_executable_def(self, name):
-        return self._repository_data.has_executable(name)
+    def has_job_def(self, name):
+        return self._repository_data.has_job(name)

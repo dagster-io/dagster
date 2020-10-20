@@ -21,7 +21,7 @@ from .types import (
     CancelExecutionRequest,
     ExecuteRunArgs,
     ExecutionPlanSnapshotArgs,
-    ExternalExecutableArgs,
+    ExternalJobArgs,
     ExternalScheduleExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
@@ -252,21 +252,19 @@ class DagsterGrpcClient(object):
             res.serialized_external_schedule_execution_data_or_external_schedule_execution_error
         )
 
-    def external_executable_params(self, external_executable_args):
+    def external_job_params(self, external_job_args):
         check.inst_param(
-            external_executable_args, "external_executable_args", ExternalExecutableArgs,
+            external_job_args, "external_job_args", ExternalJobArgs,
         )
 
         res = self._query(
-            "ExternalExecutableParams",
-            api_pb2.ExternalExecutableParamsRequest,
-            serialized_external_executable_args=serialize_dagster_namedtuple(
-                external_executable_args
-            ),
+            "ExternalJobParams",
+            api_pb2.ExternalJobParamsRequest,
+            serialized_external_job_args=serialize_dagster_namedtuple(external_job_args),
         )
 
         return deserialize_json_to_dagster_namedtuple(
-            res.serialized_external_execution_params_or_external_execution_params_error_data
+            res.serialized_external_job_params_or_external_job_params_error_data
         )
 
     def execute_run(self, execute_run_args):

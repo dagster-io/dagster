@@ -7,38 +7,38 @@ from dagster.utils.backcompat import experimental_class_warning
 from .mode import DEFAULT_MODE_NAME
 
 
-class ExecutableContext(namedtuple("ExecutableContext", "instance")):
-    """Context for generating the execution parameters for an ExecutableDefinition at runtime.
+class JobContext(namedtuple("JobContext", "instance")):
+    """Context for generating the execution parameters for an JobDefinition at runtime.
 
-    An instance of this class is made available as the first argument to the ExecutableDefinition
+    An instance of this class is made available as the first argument to the JobDefinition
     functions: run_config_fn, tags_fn
 
     Attributes:
-        instance (DagsterInstance): The instance configured to launch the executable
+        instance (DagsterInstance): The instance configured to launch the job
     """
 
     def __new__(
         cls, instance,
     ):
-        experimental_class_warning("ExecutableContext")
-        return super(ExecutableContext, cls).__new__(
+        experimental_class_warning("JobContext")
+        return super(JobContext, cls).__new__(
             cls, check.inst_param(instance, "instance", DagsterInstance),
         )
 
 
-class ExecutableDefinition(object):
-    """Define an executable, a named set of pipeline execution parameters that can be dynamically
+class JobDefinition(object):
+    """Define a job, a named set of pipeline execution parameters that can be dynamically
     configured at runtime.
 
     Args:
-        name (str): The name of this executable.
+        name (str): The name of this job.
         pipeline_name (str): The name of the pipeline to execute.
-        run_config_fn (Callable[[ExecutableContext], [Dict]]): A function that takes a
-            ExecutableContext object and returns the environment configuration that
+        run_config_fn (Callable[[JobContext], [Dict]]): A function that takes a
+            JobContext object and returns the environment configuration that
             parameterizes this execution, as a dict.
-        tags_fn (Optional[Callable[[ExecutableContext], Optional[Dict[str, str]]]]): A
+        tags_fn (Optional[Callable[[JobContext], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the execution. Takes a
-            :py:class:`~dagster.ExecutableContext` and returns a dictionary of tags (string
+            :py:class:`~dagster.JobContext` and returns a dictionary of tags (string
             key-value pairs).
         mode (Optional[str]): The mode to apply when executing this pipeline. (default: 'default')
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
@@ -63,7 +63,7 @@ class ExecutableDefinition(object):
         mode="default",
         solid_selection=None,
     ):
-        experimental_class_warning("ExecutableDefinition")
+        experimental_class_warning("JobDefinition")
         self._name = check.str_param(name, "name")
         self._pipeline_name = check.str_param(pipeline_name, "pipeline_name")
         self._run_config_fn = check.opt_callable_param(
@@ -92,9 +92,9 @@ class ExecutableDefinition(object):
         return self._mode
 
     def get_run_config(self, context):
-        check.inst_param(context, "context", ExecutableContext)
+        check.inst_param(context, "context", JobContext)
         return self._run_config_fn(context)
 
     def get_tags(self, context):
-        check.inst_param(context, "context", ExecutableContext)
+        check.inst_param(context, "context", JobContext)
         return self._tags_fn(context)

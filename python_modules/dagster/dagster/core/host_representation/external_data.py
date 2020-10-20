@@ -9,7 +9,7 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.definitions import (
-    ExecutableDefinition,
+    JobDefinition,
     PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
@@ -26,7 +26,7 @@ from dagster.utils.error import SerializableErrorInfo
 class ExternalRepositoryData(
     namedtuple(
         "_ExternalRepositoryData",
-        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_executable_datas",
+        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_executable_datas external_job_datas",
     )
 ):
     def __new__(
@@ -35,7 +35,8 @@ class ExternalRepositoryData(
         external_pipeline_datas,
         external_schedule_datas,
         external_partition_set_datas,
-        external_executable_datas,
+        external_executable_datas=None,
+        external_job_datas=None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -51,10 +52,11 @@ class ExternalRepositoryData(
                 "external_partition_set_datas",
                 of_type=ExternalPartitionSetData,
             ),
-            external_executable_datas=check.list_param(
-                external_executable_datas,
-                "external_executable_datas",
-                of_type=ExternalExecutableData,
+            external_executable_datas=check.opt_list_param(
+                external_executable_datas, "external_executable_datas"
+            ),
+            external_job_datas=check.opt_list_param(
+                external_job_datas, "external_job_datas", of_type=ExternalJobData,
             ),
         )
 
@@ -94,12 +96,12 @@ class ExternalRepositoryData(
 
         check.failed("Could not find external partition set data named " + name)
 
-    def get_external_executable_data(self, name):
+    def get_external_job_data(self, name):
         check.str_param(name, "name")
 
-        for external_executable_data in self.external_executable_datas:
-            if external_executable_data.name == name:
-                return external_executable_data
+        for external_job_data in self.external_job_datas:
+            if external_job_data.name == name:
+                return external_job_data
 
         check.failed("Could not find external triggered execution data named " + name)
 
@@ -213,13 +215,11 @@ class ExternalScheduleExecutionErrorData(
 
 
 @whitelist_for_serdes
-class ExternalExecutableData(
-    namedtuple("_ExternalExecutableData", "name pipeline_name solid_selection mode")
-):
+class ExternalJobData(namedtuple("_ExternalJobData", "name pipeline_name solid_selection mode")):
     def __new__(
         cls, name, pipeline_name, solid_selection, mode,
     ):
-        return super(ExternalExecutableData, cls).__new__(
+        return super(ExternalJobData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
@@ -339,9 +339,8 @@ def external_repository_data_from_def(repository_def):
             list(map(external_partition_set_data_from_def, repository_def.partition_set_defs)),
             key=lambda psd: psd.name,
         ),
-        external_executable_datas=sorted(
-            list(map(external_executable_from_def, repository_def.executable_defs)),
-            key=lambda ted: ted.name,
+        external_job_datas=sorted(
+            list(map(external_job_from_def, repository_def.job_defs)), key=lambda ted: ted.name,
         ),
     )
 
@@ -385,13 +384,13 @@ def external_partition_set_data_from_def(partition_set_def):
     )
 
 
-def external_executable_from_def(executable_def):
-    check.inst_param(executable_def, "executable_def", ExecutableDefinition)
-    return ExternalExecutableData(
-        name=executable_def.name,
-        pipeline_name=executable_def.pipeline_name,
-        solid_selection=executable_def.solid_selection,
-        mode=executable_def.mode,
+def external_job_from_def(job_def):
+    check.inst_param(job_def, "job_def", JobDefinition)
+    return ExternalJobData(
+        name=job_def.name,
+        pipeline_name=job_def.pipeline_name,
+        solid_selection=job_def.solid_selection,
+        mode=job_def.mode,
     )
 
 

@@ -21,17 +21,13 @@ def trigger_execution(graphene_info, trigger_selector):
     repository = location.get_repository(trigger_selector.repository_name)
 
     matches = [
-        executable
-        for executable in repository.get_external_executables()
-        if executable.name == trigger_selector.executable_name
+        job for job in repository.get_external_jobs() if job.name == trigger_selector.job_name
     ]
 
     launched_run_ids = []
-    for executable in matches:
-        external_pipeline = repository.get_full_external_pipeline(executable.pipeline_name)
-        result = graphene_info.context.get_external_executable_param_data(
-            repository.handle, executable.name
-        )
+    for job in matches:
+        external_pipeline = repository.get_full_external_pipeline(job.pipeline_name)
+        result = graphene_info.context.get_external_job_param_data(repository.handle, job.name)
         if isinstance(result, ExternalExecutionParamsErrorData):
             continue
 
@@ -41,12 +37,12 @@ def trigger_execution(graphene_info, trigger_selector):
             location_name=location.name,
             repository_name=repository.name,
             pipeline_name=external_pipeline.name,
-            solid_selection=executable.solid_selection,
+            solid_selection=job.solid_selection,
         )
         execution_params = ExecutionParams(
             selector=pipeline_selector,
             run_config=result.run_config,
-            mode=executable.mode,
+            mode=job.mode,
             execution_metadata=ExecutionMetadata(run_id=None, tags=result.tags),
             step_keys=None,
         )

@@ -60,8 +60,8 @@ from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcServer
 from dagster.grpc.impl import (
-    get_external_executable_params,
     get_external_execution_plan_snapshot,
+    get_external_job_params,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
     get_partition_config,
@@ -73,7 +73,7 @@ from dagster.grpc.types import (
     ExecuteRunArgs,
     ExecuteStepArgs,
     ExecutionPlanSnapshotArgs,
-    ExternalExecutableArgs,
+    ExternalJobArgs,
     ExternalScheduleExecutionArgs,
     ListRepositoriesInput,
     ListRepositoriesResponse,
@@ -275,17 +275,17 @@ def schedule_execution_data_command(args):
 
 
 @unary_api_cli_command(
-    name="executable_params",
+    name="job_params",
     help_str=(
         "[INTERNAL] Return the execution params for a triggered execution. This is an internal "
         "utility. Users should generally not invoke this command interactively."
     ),
-    input_cls=ExternalExecutableArgs,
+    input_cls=ExternalJobArgs,
     output_cls=(ExternalExecutionParamsData, ExternalExecutionParamsErrorData),
 )
-def executable_params_command(args):
+def job_params_command(args):
     recon_repo = recon_repository_from_origin(args.repository_origin)
-    return get_external_executable_params(recon_repo, args)
+    return get_external_job_params(recon_repo, args)
 
 
 @whitelist_for_serdes
@@ -761,7 +761,7 @@ def create_api_cli_group():
     group.add_command(partition_names_command)
     group.add_command(partition_set_execution_param_command)
     group.add_command(schedule_execution_data_command)
-    group.add_command(executable_params_command)
+    group.add_command(job_params_command)
     group.add_command(launch_scheduled_execution)
     group.add_command(grpc_command)
     return group
