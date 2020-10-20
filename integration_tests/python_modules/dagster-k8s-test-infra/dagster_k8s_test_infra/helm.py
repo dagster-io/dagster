@@ -321,6 +321,7 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
             },
         },
         "celery": {"enabled": False},
+        "k8sRunLauncher": {"enabled": True, "jobNamespace": namespace},
         "scheduler": {"k8sEnabled": "true", "schedulerNamespace": namespace},
         "serviceAccount": {"name": "dagit-admin"},
         "postgresqlPassword": "test",

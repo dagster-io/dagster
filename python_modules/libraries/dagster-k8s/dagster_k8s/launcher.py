@@ -58,9 +58,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     Args:
         service_account_name (str): The name of the Kubernetes service account under which to run
             the Job.
-        job_image (str): The ``name`` of the image to use for the Job's Dagster container. This
-            image will be run with the command
-            ``dagster-graphql -p startPipelineExecution -v {executionParams}``.
+        job_image (Optional[str]): The ``name`` of the image to use for the Job's Dagster container.
+            This image will be run with the command
+            ``dagster api execute_run_with_structured_logs``.
+            When using user code deployments, the image should not be specified.
         instance_config_map (str): The ``name`` of an existing Volume to mount into the pod in
             order to provide a ConfigMap for the Dagster instance. This Volume should contain a
             ``dagster.yaml`` with appropriate values for run storage, event log storage, etc.

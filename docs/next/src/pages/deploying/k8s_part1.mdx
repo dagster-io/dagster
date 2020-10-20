@@ -103,7 +103,7 @@ pipeline and its associated step executions in a single Kubernetes Job. We can u
 with the following command:
 
 ```shell
-helm install dagster dagster/dagster -f /path/to/values.yaml --set celery.enabled=false
+helm install dagster dagster/dagster -f /path/to/values.yaml --set celery.enabled=false --set k8sRunLauncher.enabled=true
 ```
 
 _**Note:** It is also possible to deploy with a custom Run Launcher.

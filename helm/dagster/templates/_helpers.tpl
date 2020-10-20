@@ -31,6 +31,23 @@ If release name contains chart name it will be used as a full name.
 {{- required "Dagit image tag .Values.dagit.image.tag is required" .Values.dagit.image.tag }}
 {{- end -}}
 
+# Dagster Run Launcher
+{{- define "dagster.validate_one_run_launcher_enabled" -}}
+{{- if or (and .Values.celery.enabled .Values.k8sRunLauncher.enabled) (not (or .Values.celery.enabled .Values.k8sRunLauncher.enabled)) -}}
+{{- fail "One of `celery.enabled` and `k8sRunLauncher.enabled` should be true." -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "dagster.celery_k8s_run_launcher_enabled" -}}
+{{- include "dagster.validate_one_run_launcher_enabled" . -}}
+{{- required "CeleryK8sRunLauncher .Values.celery.enabled is required" .Values.celery.enabled -}}
+{{- end -}}
+
+{{- define "dagster.k8s_run_launcher_enabled" -}}
+{{- include "dagster.validate_one_run_launcher_enabled" . -}}
+{{- required "K8sRunLauncher .Values.k8sRunLauncher.enabled is required" .Values.k8sRunLauncher.enabled -}}
+{{- end -}}
+
 # Dagster Celery worker image e.g. repo/foo:bar
 {{- define "dagster.celery_image" -}}
 {{ required "Celery worker image repository .Values.celery.image.repository is required" .Values.celery.image.repository -}}

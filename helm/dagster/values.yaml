@@ -198,7 +198,8 @@ postgresql:
     port: 5432
 
 ####################################################################################################
-# Celery
+# Celery: Configuration for the CeleryK8sRunLauncher and Celery workers.
+# If celery.enabled is true, k8sRunLauncher.enabled should be false.
 ####################################################################################################
 celery:
   # The Celery workers can be deployed with a fixed image (no user code included)
@@ -207,7 +208,6 @@ celery:
     tag: "latest"
     pullPolicy: Always
 
-  # If disabled, the k8s run launcher will be used, which launches pipeline runs as single K8s Jobs.
   enabled: true
   # support overriding the name of Celery workers
   workers:
@@ -266,6 +266,32 @@ celery:
     timeoutSeconds: 10
     successThreshold: 1
     failureThreshold: 3
+
+####################################################################################################
+# K8s Run Launcher: configuration values for the K8sRunLauncher.
+# If k8sRunLauncher.enabled is true, celery.enabled should be false.
+####################################################################################################
+k8sRunLauncher:
+  enabled: false
+  ## The image to use for the launched Job's Dagster container. Note that when loading a pipeline
+  ## from a gRPC server, the image should not be specified.
+  # image:
+  #   repository: ""
+  #   tag: ""
+  #   pullPolicy: Always
+
+  # The K8s namespace where new jobs will be launched.
+  jobNamespace: "default"
+  # Set to true to load kubeconfig from within cluster.
+  loadInclusterConfig: true
+  # File to load kubeconfig from. Only set this if loadInclusterConfig is false.
+  kubeconfigFile: ""
+  # A list of custom ConfigMapEnvSource names from which to draw environment variables for the Job.
+  envConfigMaps:
+    - ""
+  # A list of custom Secret names from which to draw environment variables for the Job.
+  envSecrets:
+    - ""
 
 ####################################################################################################
 # RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.

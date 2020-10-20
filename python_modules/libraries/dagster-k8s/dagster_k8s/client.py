@@ -282,8 +282,9 @@ class DagsterKubernetesClient:
             # status.failed represents the number of pods which reached phase Failed.
             if status.failed and status.failed > 0:
                 raise DagsterK8sError(
-                    "Encountered failed job pods for job {job_name} with status: {status}".format(
-                        job_name=job_name, status=status
+                    "Encountered failed job pods for job {job_name} with status: {status}, "
+                    "in namespace {namespace}".format(
+                        job_name=job_name, status=status, namespace=namespace
                     )
                 )
 

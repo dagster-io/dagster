@@ -58,7 +58,7 @@ data:
           port: {{ .Values.postgresql.service.port }}
 
     run_launcher:
-      {{- if .Values.celery.enabled }}
+      {{- if eq (include "dagster.celery_k8s_run_launcher_enabled" .) "true" }}
       module: dagster_celery_k8s
       class: CeleryK8sRunLauncher
       config:
@@ -74,11 +74,18 @@ data:
         {{- if .Values.celery.configSource }}
         {{- toYaml .Values.celery.configSource | nindent 10 }}
         {{- end }}
-      {{- else }}
+      {{- else if eq (include "dagster.k8s_run_launcher_enabled" .) "true" }}
       module: dagster_k8s
       class: K8sRunLauncher
       config:
+        load_incluster_config: {{ .Values.k8sRunLauncher.loadInclusterConfig }}
+        kubeconfig_file: {{ .Values.k8sRunLauncher.kubeconfigFile }}
+        job_namespace: {{ .Values.k8sRunLauncher.jobNamespace }}
         service_account_name: {{ include "dagster.serviceAccountName" . }}
+        {{- if .Values.k8sRunLauncher.image }}
+        job_image: "{{- .Values.k8sRunLauncher.image.repository -}}:{{- .Values.k8sRunLauncher.image.tag -}}"
+        image_pull_policy: {{- .Values.k8sRunLauncher.image.pull_policy -}}
+        {{- end }}
         dagster_home:
           env: DAGSTER_HOME
         instance_config_map:
@@ -87,6 +94,17 @@ data:
           env: DAGSTER_K8S_PG_PASSWORD_SECRET
         env_config_maps:
           - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
+          {{- range $name := $.Values.k8sRunLauncher.envConfigMaps }}
+          {{- if $name }}
+          - {{ $name }}
+          {{- end }}
+          {{- end }}
+        env_secrets:
+          {{- range $name := $.Values.k8sRunLauncher.envSecrets }}
+          {{- if $name }}
+          - {{ $name }}
+          {{- end }}
+          {{- end }}
       {{- end }}
 
     run_storage:
