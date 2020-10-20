@@ -6,14 +6,14 @@ from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id
 from dagster.utils import file_relative_path
-from dagster.utils.test import restore_directory
+from dagster.utils.test import copy_directory
 
 
 # a change of schema in the snapshot hierarchy caused hashes to be different
 # when snapshots reloaded
 def test_run_created_in_0_7_9_snapshot_id_change():
-    test_dir = file_relative_path(__file__, "snapshot_0_7_9_shapshot_id_creation_change/sqlite")
-    with restore_directory(test_dir):
+    src_dir = file_relative_path(__file__, "snapshot_0_7_9_shapshot_id_creation_change/sqlite")
+    with copy_directory(src_dir) as test_dir:
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         # run_id = 'e297fa70-49e8-43f8-abfe-1634f02644f6'

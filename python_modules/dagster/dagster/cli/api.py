@@ -3,7 +3,9 @@ from __future__ import print_function
 import os
 import signal
 import sys
+import threading
 import time
+import warnings
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -328,7 +330,16 @@ def execute_run_command(input_file, output_file):
 )
 @click.argument("input_json", type=click.STRING)
 def execute_run_with_structured_logs_command(input_json):
-    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+    try:
+        signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+    except ValueError:
+        warnings.warn(
+            (
+                "Unexpected error attempting to manage signal handling on thread {thread_name}. "
+                "You should not invoke this API (execute_run_with_structured_logs) from threads "
+                "other than the main thread."
+            ).format(thread_name=threading.current_thread().name)
+        )
 
     args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteRunArgs)
     recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
@@ -405,7 +416,16 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
 )
 @click.argument("input_json", type=click.STRING)
 def execute_step_with_structured_logs_command(input_json):
-    signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+    try:
+        signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+    except ValueError:
+        warnings.warn(
+            (
+                "Unexpected error attempting to manage signal handling on thread {thread_name}. "
+                "You should not invoke this API (execute_step_with_structured_logs) from threads "
+                "other than the main thread."
+            ).format(thread_name=threading.current_thread().name)
+        )
 
     args = check.inst(deserialize_json_to_dagster_namedtuple(input_json), ExecuteStepArgs)
 

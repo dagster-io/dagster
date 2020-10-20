@@ -576,7 +576,7 @@ def coverage_step():
             "coveralls",  # add '--merge=coverage.js.json' to report JS coverage
         )
         .on_python_image(
-            "coverage-image:v1",
+            "coverage-image:py3.7.8-2020-10-22T213422",
             [
                 "COVERALLS_REPO_TOKEN",  # exported by /env in ManagedSecretsBucket
                 "CI_NAME",

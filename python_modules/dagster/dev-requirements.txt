@@ -1,19 +1,23 @@
 astroid>=2.3.3; python_version >= '3.6'
 black==19.10b0; python_version >= '3.6'
-coverage==4.5.4 # 5.0 release on 12/19 broke everything
+coverage==5.3
 flake8>=3.7.8
 freezegun>=0.3.15
 grpcio-tools==1.32.0
-protobuf==3.13.0 # without this, pip will install the most up-to-date protobuf
 isort<5,>=4.3.21
 mock==3.0.5
-pytest-mock==2.0.0
 nbsphinx==0.4.2
+protobuf==3.13.0 # without this, pip will install the most up-to-date protobuf
 pylint==2.6.0; python_version >= '3.6'
-pytest-cov==2.8.1
-pytest-dependency==0.4.0
+pytest-cov==2.10.1
+pytest-dependency==0.5.1
+pytest-mock==2.0.0; python_version < '3.6'
+pytest-mock==3.3.1; python_version >= '3.6'
 pytest-runner==5.2
-pytest==4.6.7
+pytest-xdist==1.34.0; python_version < '3.6'
+pytest-xdist==2.1.0; python_version >= '3.6'
+pytest==4.6.11; python_version < '3.6'
+pytest==6.1.1; python_version >= '3.6'
 recommonmark==0.4.0
 snapshottest==0.5.1
 tox==3.14.2

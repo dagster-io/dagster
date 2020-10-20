@@ -3,6 +3,8 @@ from future.standard_library import install_aliases  # isort:skip
 install_aliases()  # isort:skip
 
 import signal
+import threading
+import warnings
 
 import click
 import requests
@@ -197,7 +199,16 @@ def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwarg
         )
 
     if remap_sigterm:
-        signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+        try:
+            signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
+        except ValueError:
+            warnings.warn(
+                (
+                    "Unexpected error attempting to manage signal handling on thread {thread_name}. "
+                    "You should not invoke this API (execute_run_with_structured_logs) from threads "
+                    "other than the main thread."
+                ).format(thread_name=threading.current_thread().name)
+            )
 
     if remote:
         res = execute_query_against_remote(remote, query, variables)

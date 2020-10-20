@@ -13,7 +13,7 @@ from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils.test import restore_directory
+from dagster.utils.test import copy_directory
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):
@@ -52,8 +52,8 @@ def _event_log_migration_regex(run_id, current_revision, expected_revision=None)
 
 # test that we can load runs and events from an old instance
 def test_0_6_4():
-    test_dir = file_relative_path(__file__, "snapshot_0_6_4")
-    with restore_directory(test_dir):
+    src_dir = file_relative_path(__file__, "snapshot_0_6_4")
+    with copy_directory(src_dir) as test_dir:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
         runs = instance.get_runs()
@@ -68,8 +68,8 @@ def test_0_6_4():
 
 
 def test_0_6_6_sqlite_exc():
-    test_dir = file_relative_path(__file__, "snapshot_0_6_6/sqlite")
-    with restore_directory(test_dir):
+    src_dir = file_relative_path(__file__, "snapshot_0_6_6/sqlite")
+    with copy_directory(src_dir) as test_dir:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         runs = instance.get_runs()
         # Note that this is a deliberate choice -- old runs are simply invisible, and their
@@ -92,11 +92,11 @@ def test_0_6_6_sqlite_exc():
 
 
 def test_0_6_6_sqlite_migrate():
-    test_dir = file_relative_path(__file__, "snapshot_0_6_6/sqlite")
+    src_dir = file_relative_path(__file__, "snapshot_0_6_6/sqlite")
     assert os.path.exists(file_relative_path(__file__, "snapshot_0_6_6/sqlite/runs.db"))
     assert not os.path.exists(file_relative_path(__file__, "snapshot_0_6_6/sqlite/history/runs.db"))
 
-    with restore_directory(test_dir):
+    with copy_directory(src_dir) as test_dir:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         instance.upgrade()
 
@@ -108,13 +108,13 @@ def test_0_6_6_sqlite_migrate():
 
         instance._event_storage.get_logs_for_run("89296095-892d-4a15-aa0d-9018d1580945")
 
-        assert not os.path.exists(file_relative_path(__file__, "snapshot_0_6_6/sqlite/runs.db"))
-        assert os.path.exists(file_relative_path(__file__, "snapshot_0_6_6/sqlite/history/runs.db"))
+        assert not os.path.exists(os.path.join(test_dir, "runs.db"))
+        assert os.path.exists(os.path.join(test_dir, "history/runs.db"))
 
 
 def test_event_log_step_key_migration():
-    test_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_event_log_migration/sqlite")
-    with restore_directory(test_dir):
+    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_event_log_migration/sqlite")
+    with copy_directory(src_dir) as test_dir:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
         # Make sure the schema is migrated
@@ -175,8 +175,8 @@ def get_sqlite3_columns(db_path, table_name):
 
 def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
     run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
-    test_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
-    with restore_directory(test_dir):
+    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
+    with copy_directory(src_dir) as test_dir:
         # invariant check to make sure migration has not been run yet
 
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -233,8 +233,8 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
 
 def test_downgrade_and_upgrade():
-    test_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
-    with restore_directory(test_dir):
+    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
+    with copy_directory(src_dir) as test_dir:
         # invariant check to make sure migration has not been run yet
 
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -278,8 +278,8 @@ def test_downgrade_and_upgrade():
 
 
 def test_event_log_asset_key_migration():
-    test_dir = file_relative_path(__file__, "snapshot_0_7_8_pre_asset_key_migration/sqlite")
-    with restore_directory(test_dir):
+    src_dir = file_relative_path(__file__, "snapshot_0_7_8_pre_asset_key_migration/sqlite")
+    with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(
             test_dir, "history", "runs", "722183e4-119f-4a00-853f-e1257be82ddb.db"
         )
@@ -294,8 +294,8 @@ def test_event_log_asset_key_migration():
 
 
 def test_0_8_0_scheduler_migration():
-    test_dir = file_relative_path(__file__, "snapshot_0_8_0_scheduler_change")
-    with restore_directory(test_dir):
+    src_dir = file_relative_path(__file__, "snapshot_0_8_0_scheduler_change")
+    with copy_directory(src_dir) as test_dir:
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         with pytest.raises(

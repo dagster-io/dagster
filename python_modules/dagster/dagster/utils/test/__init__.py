@@ -373,15 +373,11 @@ def check_dagster_type(dagster_type, value):
 
 
 @contextmanager
-def restore_directory(src):
+def copy_directory(src):
     with seven.TemporaryDirectory() as temp_dir:
         dst = os.path.join(temp_dir, os.path.basename(src))
         shutil.copytree(src, dst)
-        try:
-            yield
-        finally:
-            shutil.rmtree(src)
-            shutil.copytree(dst, src)
+        yield dst
 
 
 class FilesystemTestScheduler(Scheduler, ConfigurableClass):
