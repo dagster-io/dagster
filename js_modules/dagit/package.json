@@ -32,6 +32,7 @@
     "cronstrue": "^1.84.0",
     "d3-hierarchy": "^1.1.6",
     "dagre": "^0.8.2",
+    "fuse.js": "^6.4.2",
     "graphql": "^14.5.8",
     "graphql-playground-react": "^1.7.20",
     "graphql-tag": "^2.10.1",
