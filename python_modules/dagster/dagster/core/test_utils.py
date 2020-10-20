@@ -147,12 +147,17 @@ def instance_for_test_tempdir(temp_dir, overrides=None, enable_telemetry=False):
             try:
                 yield instance
             finally:
-                # To avoid filesystem contention when we close the temporary directory, wait for
-                # all runs to reach a terminal state, and close any subprocesses or threads
-                # that might be accessing the run history DB.
-                instance.run_launcher.join()
-                if isinstance(instance.run_launcher, (DefaultRunLauncher, GrpcRunLauncher)):
-                    instance.run_launcher.cleanup_managed_grpc_servers()
+                cleanup_test_instance(instance)
+
+
+def cleanup_test_instance(instance):
+    check.inst_param(instance, "instance", DagsterInstance)
+    # To avoid filesystem contention when we close the temporary directory, wait for
+    # all runs to reach a terminal state, and close any subprocesses or threads
+    # that might be accessing the run history DB.
+    instance.run_launcher.join()
+    if isinstance(instance.run_launcher, (DefaultRunLauncher, GrpcRunLauncher)):
+        instance.run_launcher.cleanup_managed_grpc_servers()
 
 
 def create_run_for_test(

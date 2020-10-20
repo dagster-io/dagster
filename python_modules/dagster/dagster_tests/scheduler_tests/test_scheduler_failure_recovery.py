@@ -7,6 +7,7 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
+from dagster.core.test_utils import cleanup_test_instance
 from dagster.scheduler.scheduler import get_default_scheduler_logger, launch_scheduled_runs
 from dagster.seven import multiprocessing
 
@@ -21,13 +22,16 @@ from .test_scheduler_run import (
 
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
-        with pendulum.test(execution_datetime):
-            launch_scheduled_runs(
-                instance,
-                get_default_scheduler_logger(),
-                pendulum.now("UTC"),
-                debug_crash_flags=debug_crash_flags,
-            )
+        try:
+            with pendulum.test(execution_datetime):
+                launch_scheduled_runs(
+                    instance,
+                    get_default_scheduler_logger(),
+                    pendulum.now("UTC"),
+                    debug_crash_flags=debug_crash_flags,
+                )
+        finally:
+            cleanup_test_instance(instance)
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
