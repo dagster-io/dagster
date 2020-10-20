@@ -11,7 +11,6 @@ from dagster import DagsterEventType, daily_schedule, hourly_schedule, pipeline,
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
-from dagster.core.host_representation.handle import UserProcessApi
 from dagster.core.scheduler import ScheduleState, ScheduleStatus, ScheduleTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
@@ -213,7 +212,7 @@ def instance_with_schedules(external_repo_context, overrides=None):
 
 
 @contextmanager
-def default_repo(user_process_api):
+def default_repo():
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         python_file=__file__,
@@ -222,23 +221,13 @@ def default_repo(user_process_api):
     )
 
     with RepositoryLocationHandle.create_python_env_location(
-        loadable_target_origin=loadable_target_origin,
-        location_name="test_location",
-        user_process_api=user_process_api,
+        loadable_target_origin=loadable_target_origin, location_name="test_location",
     ) as handle:
         yield RepositoryLocation.from_handle(handle).get_repository("the_repo")
 
 
-def cli_api_repo():
-    return default_repo(UserProcessApi.CLI)
-
-
-def grpc_repo():
-    return default_repo(UserProcessApi.GRPC)
-
-
 def repos():
-    return [cli_api_repo, grpc_repo]
+    return [default_repo]
 
 
 def validate_tick(
@@ -952,7 +941,7 @@ def test_max_catchup_runs(capfd):
     initial_datetime = pendulum.datetime(
         year=2019, month=2, day=27, hour=23, minute=59, second=59
     ).in_tz("US/Central")
-    with instance_with_schedules(grpc_repo) as (instance, external_repo):
+    with instance_with_schedules(default_repo) as (instance, external_repo):
         with pendulum.test(initial_datetime):
             external_schedule = external_repo.get_external_schedule("simple_schedule")
             schedule_origin = external_schedule.get_origin()
