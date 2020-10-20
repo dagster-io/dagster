@@ -9,12 +9,14 @@ from alembic.migration import MigrationContext  # pylint: disable=import-error
 from alembic.script import ScriptDirectory
 
 from dagster.core.errors import DagsterInstanceMigrationRequired
+from dagster.seven import lru_cache
 from dagster.utils import file_relative_path
 from dagster.utils.log import quieten
 
 create_engine = db.create_engine  # exported
 
 
+@lru_cache(maxsize=3)  # run, event, and schedule storages
 def get_alembic_config(dunder_file, config_path="alembic/alembic.ini", script_path="alembic/"):
     alembic_config = Config(file_relative_path(dunder_file, config_path))
     alembic_config.set_main_option("script_location", file_relative_path(dunder_file, script_path))
