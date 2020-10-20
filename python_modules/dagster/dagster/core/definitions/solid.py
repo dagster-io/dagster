@@ -531,15 +531,6 @@ class CompositeSolidDefinition(ISolidDefinition, IContainSolids):
         return self._config_mapping is not None
 
     @property
-    def has_descendant_config_mapping(self):
-        return any(
-            (
-                isinstance(solid, CompositeSolidDefinition) and solid.has_config_mapping
-                for solid in self.iterate_solid_defs()
-            )
-        )
-
-    @property
     def has_config_entry(self):
         has_child_solid_config = any([solid.definition.has_config_entry for solid in self.solids])
         return (
