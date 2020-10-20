@@ -4,7 +4,6 @@ import re
 
 import pytest
 from click.testing import CliRunner
-
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.test_utils import new_cwd

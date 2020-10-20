@@ -4,7 +4,6 @@ from contextlib import contextmanager
 
 import grpc
 import pytest
-
 from dagster import lambda_solid, pipeline, repository
 from dagster.api.snapshot_repository import (
     sync_get_external_repositories,

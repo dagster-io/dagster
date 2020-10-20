@@ -11,8 +11,6 @@ from airflow.models.baseoperator import BaseOperator
 from airflow.models.dag import DAG
 from airflow.models.dagbag import DagBag
 from airflow.settings import LOG_FORMAT
-from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
-
 from dagster import (
     DagsterInvariantViolationError,
     DependencyDefinition,
@@ -28,6 +26,7 @@ from dagster import (
 )
 from dagster.core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
+from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
 
 
 class DagsterAirflowError(Exception):

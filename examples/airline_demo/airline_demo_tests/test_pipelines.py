@@ -2,7 +2,6 @@ import os
 
 # pylint: disable=unused-argument
 import pytest
-
 from dagster import execute_pipeline, file_relative_path
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance

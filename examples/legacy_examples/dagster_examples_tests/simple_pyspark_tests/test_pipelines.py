@@ -1,6 +1,5 @@
-from dagster_examples.simple_pyspark.pipelines import simple_pyspark_sfo_weather_pipeline
-
 from dagster import execute_pipeline
+from dagster_examples.simple_pyspark.pipelines import simple_pyspark_sfo_weather_pipeline
 
 
 def test_simple_pyspark_sfo_weather_pipeline_success():

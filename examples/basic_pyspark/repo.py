@@ -1,9 +1,4 @@
 # start_repo_marker_0
-from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from dagster_pyspark import pyspark_resource
-from pyspark.sql import DataFrame, Row
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
-
 from dagster import (
     ModeDefinition,
     make_python_type_usable_as_dagster_type,
@@ -11,6 +6,10 @@ from dagster import (
     repository,
     solid,
 )
+from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
+from dagster_pyspark import pyspark_resource
+from pyspark.sql import DataFrame, Row
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 # Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
 make_python_type_usable_as_dagster_type(python_type=DataFrame, dagster_type=DagsterPySparkDataFrame)

@@ -1,13 +1,12 @@
-from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_assets import get_asset_events, get_asset_run_ids
-from dagster_graphql.implementation.fetch_runs import get_run_by_id
-from dagster_graphql.schema.runs import construct_basic_params
-
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import StepMaterializationData
 from dagster.core.events.log import EventRecord
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_assets import get_asset_events, get_asset_run_ids
+from dagster_graphql.implementation.fetch_runs import get_run_by_id
+from dagster_graphql.schema.runs import construct_basic_params
 
 from .errors import DauphinError
 

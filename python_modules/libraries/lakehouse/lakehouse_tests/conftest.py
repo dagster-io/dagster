@@ -1,7 +1,6 @@
 import pytest
-from lakehouse import AssetStorage, Lakehouse, computed_asset
-
 from dagster import ModeDefinition, PresetDefinition, resource
+from lakehouse import AssetStorage, Lakehouse, computed_asset
 
 
 class DictStorage(AssetStorage):

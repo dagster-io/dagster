@@ -4,12 +4,6 @@ import time
 
 import boto3
 from botocore.exceptions import ClientError
-from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
-from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
-from dagster_pyspark.utils import build_pyspark_zip
-from dagster_spark.configs_spark import spark_config as get_spark_config
-from dagster_spark.utils import flatten_dict, format_for_cli
-
 from dagster import Field, StringSource, check, resource, seven
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.events import log_step_event
@@ -19,6 +13,11 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
 )
 from dagster.utils import raise_interrupts_immediately
+from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
+from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
+from dagster_pyspark.utils import build_pyspark_zip
+from dagster_spark.configs_spark import spark_config as get_spark_config
+from dagster_spark.utils import flatten_dict, format_for_cli
 
 # On EMR, Spark is installed here
 EMR_SPARK_HOME = "/usr/lib/spark/"

@@ -2,7 +2,6 @@ from abc import ABCMeta
 from typing import List, Tuple, Union
 
 import six
-
 from dagster import AssetKey, DagsterType, check
 
 from .computation import Computation

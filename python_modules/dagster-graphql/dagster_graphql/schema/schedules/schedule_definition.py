@@ -1,3 +1,5 @@
+from dagster import check
+from dagster.core.host_representation import ExternalSchedule
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_schedules import get_schedule_config
 from dagster_graphql.schema.errors import (
@@ -5,9 +7,6 @@ from dagster_graphql.schema.errors import (
     DauphinRepositoryNotFoundError,
     DauphinScheduleDefinitionNotFoundError,
 )
-
-from dagster import check
-from dagster.core.host_representation import ExternalSchedule
 
 
 class DapuphinScheduleDefinitionOrError(dauphin.Union):

@@ -3,7 +3,6 @@
 import os
 
 import pandas
-
 from dagster import pipeline, solid
 
 

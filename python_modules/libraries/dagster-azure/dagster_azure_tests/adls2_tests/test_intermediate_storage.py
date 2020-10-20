@@ -3,14 +3,6 @@ import os
 from collections import OrderedDict
 
 import pytest
-from dagster_azure.adls2 import (
-    ADLS2IntermediateStorage,
-    adls2_plus_default_storage_defs,
-    adls2_resource,
-    create_adls2_client,
-)
-from dagster_azure.blob import create_blob_client
-
 from dagster import (
     Bool,
     InputDefinition,
@@ -37,6 +29,13 @@ from dagster.core.types.dagster_type import String as RuntimeString
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
 from dagster.core.utils import make_new_run_id
 from dagster.utils.test import yield_empty_pipeline_context
+from dagster_azure.adls2 import (
+    ADLS2IntermediateStorage,
+    adls2_plus_default_storage_defs,
+    adls2_resource,
+    create_adls2_client,
+)
+from dagster_azure.blob import create_blob_client
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init

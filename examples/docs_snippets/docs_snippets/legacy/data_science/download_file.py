@@ -1,7 +1,6 @@
-from six.moves.urllib.request import urlretrieve
-
 from dagster import Field, OutputDefinition, String, solid
 from dagster.utils import script_relative_path
+from six.moves.urllib.request import urlretrieve
 
 
 @solid(

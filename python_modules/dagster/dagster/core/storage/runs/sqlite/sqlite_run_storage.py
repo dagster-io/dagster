@@ -2,8 +2,6 @@ import os
 from contextlib import contextmanager
 
 import sqlalchemy as db
-from sqlalchemy.pool import NullPool
-
 from dagster import StringSource, check
 from dagster.core.storage.sql import (
     check_alembic_revision,
@@ -18,6 +16,7 @@ from dagster.core.storage.sqlite import create_db_conn_string
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.seven import urljoin, urlparse
 from dagster.utils import mkdir_p
+from sqlalchemy.pool import NullPool
 
 from ..schema import RunStorageSqlMetadata, RunTagsTable, RunsTable
 from ..sql_run_storage import SqlRunStorage

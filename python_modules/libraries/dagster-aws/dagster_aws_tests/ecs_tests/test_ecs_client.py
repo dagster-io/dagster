@@ -2,10 +2,9 @@ import os
 
 import boto3
 import pytest
+from dagster import DagsterInstance
 from dagster_aws.ecs import client
 from moto import mock_ecs, mock_logs
-
-from dagster import DagsterInstance
 
 
 @mock_ecs

@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from dagster import Bool, Int, List, Optional, String, check
 from dagster.core.definitions.events import ObjectStoreOperationType
 from dagster.core.execution.plan.objects import StepOutputHandle

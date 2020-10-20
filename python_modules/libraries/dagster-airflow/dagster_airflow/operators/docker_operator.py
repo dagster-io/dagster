@@ -4,13 +4,12 @@ import warnings
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException
-from dagster_airflow.vendor.docker_operator import DockerOperator
-from docker import APIClient, from_env
-
 from dagster import check, seven
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 from dagster.grpc.types import ExecuteStepArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster_airflow.vendor.docker_operator import DockerOperator
+from docker import APIClient, from_env
 
 from .util import check_events_for_failures, check_events_for_skips, get_aws_environment
 

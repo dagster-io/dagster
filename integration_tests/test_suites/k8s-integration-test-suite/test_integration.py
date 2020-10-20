@@ -3,6 +3,10 @@ import os
 import time
 
 import pytest
+from dagster import check
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.test_utils import create_run_for_test
+from dagster.utils import load_yaml_from_path
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.launcher import K8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
@@ -12,11 +16,6 @@ from dagster_test.test_project import (
     get_test_project_external_pipeline,
     test_project_environments_path,
 )
-
-from dagster import check
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import create_run_for_test
-from dagster.utils import load_yaml_from_path
 
 
 @pytest.mark.integration

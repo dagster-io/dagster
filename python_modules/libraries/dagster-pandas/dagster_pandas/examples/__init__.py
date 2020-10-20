@@ -3,7 +3,6 @@ import sys
 import dagstermill
 import pandas as pd
 import pytest
-
 from dagster import (
     DependencyDefinition,
     InputDefinition,

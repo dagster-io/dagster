@@ -1,11 +1,4 @@
 import pandas as pd
-from dagster_pandas.constraints import (
-    ColumnDTypeFnConstraint,
-    ColumnDTypeInSetConstraint,
-    ConstraintViolationException,
-)
-from dagster_pandas.validation import PandasColumn, validate_constraints
-
 from dagster import (
     AssetMaterialization,
     DagsterInvariantViolationError,
@@ -21,6 +14,12 @@ from dagster import (
 from dagster.config.field_utils import Selector
 from dagster.utils import dict_without_keys
 from dagster.utils.backcompat import canonicalize_backcompat_args, experimental
+from dagster_pandas.constraints import (
+    ColumnDTypeFnConstraint,
+    ColumnDTypeInSetConstraint,
+    ConstraintViolationException,
+)
+from dagster_pandas.validation import PandasColumn, validate_constraints
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
 

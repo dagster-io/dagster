@@ -2,7 +2,6 @@ import os
 from collections import namedtuple
 
 import yaml
-
 from dagster import check
 from dagster.serdes import ConfigurableClassData, whitelist_for_serdes
 

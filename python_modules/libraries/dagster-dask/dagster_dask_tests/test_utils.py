@@ -1,7 +1,6 @@
 import dask.dataframe as dd
-from dagster_dask import DataFrame
-
 from dagster import InputDefinition, execute_solid, file_relative_path, solid
+from dagster_dask import DataFrame
 
 
 @solid(input_defs=[InputDefinition(dagster_type=DataFrame, name="input_df")])

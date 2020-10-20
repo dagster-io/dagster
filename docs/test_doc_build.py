@@ -4,7 +4,6 @@ import subprocess
 
 import pytest
 import six
-
 from dagster import check
 from dagster.utils import file_relative_path
 

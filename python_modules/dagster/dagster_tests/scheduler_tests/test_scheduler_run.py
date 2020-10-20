@@ -6,7 +6,6 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-
 from dagster import DagsterEventType, daily_schedule, hourly_schedule, pipeline, repository, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError

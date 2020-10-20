@@ -2,14 +2,6 @@ import os
 import uuid
 
 import boto3
-from dagster_aws.s3 import (
-    S3FileHandle,
-    S3FileManager,
-    s3_file_manager,
-    s3_plus_default_storage_defs,
-)
-from moto import mock_s3
-
 from dagster import (
     InputDefinition,
     Int,
@@ -22,6 +14,13 @@ from dagster import (
     solid,
 )
 from dagster.seven import mock
+from dagster_aws.s3 import (
+    S3FileHandle,
+    S3FileManager,
+    s3_file_manager,
+    s3_plus_default_storage_defs,
+)
+from moto import mock_s3
 
 
 def test_s3_file_manager_write():

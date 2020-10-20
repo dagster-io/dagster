@@ -8,7 +8,6 @@ from airflow.exceptions import AirflowSkipException
 from airflow.models import TaskInstance
 from airflow.settings import LOG_FORMAT
 from airflow.utils import timezone
-
 from dagster import file_relative_path, seven
 from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.core.utils import make_new_run_id

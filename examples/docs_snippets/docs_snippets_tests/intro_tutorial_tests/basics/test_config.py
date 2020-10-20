@@ -1,9 +1,8 @@
 from collections import OrderedDict
 
-from docs_snippets.intro_tutorial.basics.e02_solids.config import config_pipeline
-
 from dagster import execute_pipeline
 from dagster.utils import pushd, script_relative_path
+from docs_snippets.intro_tutorial.basics.e02_solids.config import config_pipeline
 
 
 def test_tutorial_config_schema():

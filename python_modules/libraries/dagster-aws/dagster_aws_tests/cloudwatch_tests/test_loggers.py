@@ -3,10 +3,9 @@ import json
 import time
 
 import pytest
+from dagster import ModeDefinition, execute_pipeline, pipeline, solid
 from dagster_aws.cloudwatch import cloudwatch_logger
 from dagster_aws.cloudwatch.loggers import millisecond_timestamp
-
-from dagster import ModeDefinition, execute_pipeline, pipeline, solid
 
 from .conftest import AWS_REGION, TEST_CLOUDWATCH_LOG_GROUP_NAME, TEST_CLOUDWATCH_LOG_STREAM_NAME
 

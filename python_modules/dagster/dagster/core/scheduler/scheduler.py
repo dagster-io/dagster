@@ -5,7 +5,6 @@ from datetime import datetime
 from enum import Enum
 
 import six
-
 from dagster import check
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule

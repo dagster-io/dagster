@@ -4,11 +4,10 @@ import time
 from contextlib import contextmanager
 
 from click.testing import CliRunner
-from dagster_celery.cli import main
-
 from dagster import check
 from dagster.seven import mock
 from dagster.utils import file_relative_path
+from dagster_celery.cli import main
 
 from .utils import skip_ci
 

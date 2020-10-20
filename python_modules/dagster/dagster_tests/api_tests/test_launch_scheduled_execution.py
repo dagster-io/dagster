@@ -5,7 +5,6 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import daily_schedule, pipeline, repository, solid
 from dagster.api.launch_scheduled_execution import sync_launch_scheduled_execution
 from dagster.core.definitions.reconstructable import ReconstructableRepository

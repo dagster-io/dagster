@@ -1,9 +1,8 @@
 import pytest
-from dagster_postgres.run_storage import PostgresRunStorage
-from dagster_postgres.schedule_storage.schedule_storage import PostgresScheduleStorage
-
 from dagster.utils import file_relative_path
 from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster_postgres.run_storage import PostgresRunStorage
+from dagster_postgres.schedule_storage.schedule_storage import PostgresScheduleStorage
 
 
 @pytest.fixture(scope="function")

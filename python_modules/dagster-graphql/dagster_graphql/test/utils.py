@@ -1,9 +1,5 @@
 import sys
 
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-from dagster_graphql.schema import create_schema
-from graphql import graphql
-
 from dagster import check
 from dagster.cli.workspace import Workspace
 from dagster.core.code_pointer import CodePointer
@@ -11,6 +7,9 @@ from dagster.core.host_representation import RepositoryLocationHandle
 from dagster.core.host_representation.handle import UserProcessApi
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster_graphql.implementation.context import DagsterGraphQLContext
+from dagster_graphql.schema import create_schema
+from graphql import graphql
 
 
 def main_repo_location_name():

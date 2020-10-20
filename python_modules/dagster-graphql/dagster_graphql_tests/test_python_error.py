@@ -1,8 +1,7 @@
 import sys
 
-from dagster_graphql.schema.errors import DauphinPythonError
-
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster_graphql.schema.errors import DauphinPythonError
 
 
 def test_python_error():

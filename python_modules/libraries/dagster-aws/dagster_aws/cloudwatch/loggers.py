@@ -2,7 +2,6 @@ import datetime
 import logging
 
 import boto3
-
 from dagster import Field, StringSource, check, logger, seven
 from dagster.core.log_manager import coerce_valid_log_level
 

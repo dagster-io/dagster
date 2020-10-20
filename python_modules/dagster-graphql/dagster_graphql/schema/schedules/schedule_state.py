@@ -1,14 +1,13 @@
+from dagster import check
+from dagster.core.origin import RepositoryGrpcServerOrigin
+from dagster.core.scheduler import ScheduleState
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster_graphql import dauphin
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
     DauphinRepositoryNotFoundError,
     DauphinScheduleStateNotFoundError,
 )
-
-from dagster import check
-from dagster.core.origin import RepositoryGrpcServerOrigin
-from dagster.core.scheduler import ScheduleState
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 from .ticks import tick_specific_data_from_dagster_tick
 

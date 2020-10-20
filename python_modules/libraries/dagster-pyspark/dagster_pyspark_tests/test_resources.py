@@ -1,6 +1,5 @@
-from dagster_pyspark.resources import pyspark_resource
-
 from dagster import ModeDefinition, PipelineDefinition, execute_pipeline, solid
+from dagster_pyspark.resources import pyspark_resource
 
 
 def assert_pipeline_runs_with_resource(resource_def):

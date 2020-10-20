@@ -6,10 +6,6 @@ import uuid
 import nbformat
 import papermill
 import six
-from papermill.engines import papermill_engines
-from papermill.iorw import load_notebook_node, write_ipynb
-from papermill.parameterize import _find_first_tagged_cell_index
-
 from dagster import (
     AssetMaterialization,
     EventMetadataEntry,
@@ -28,6 +24,9 @@ from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.utils import mkdir_p, safe_tempfile_path
+from papermill.engines import papermill_engines
+from papermill.iorw import load_notebook_node, write_ipynb
+from papermill.parameterize import _find_first_tagged_cell_index
 
 from .engine import DagstermillNBConvertEngine
 from .errors import DagstermillError, DagstermillExecutionError

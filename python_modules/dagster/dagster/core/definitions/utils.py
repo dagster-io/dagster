@@ -6,7 +6,6 @@ from glob import glob
 import pkg_resources
 import six
 import yaml
-
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.seven import FileNotFoundError, ModuleNotFoundError  # pylint:disable=redefined-builtin

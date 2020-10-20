@@ -6,6 +6,13 @@ import os
 import uuid
 
 import nbformat
+from dagster import __version__ as dagster_version
+from dagster import check, seven
+from dagster.cli.workspace import Workspace
+from dagster.core.debug import DebugRunPayload
+from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
+from dagster.core.instance import DagsterInstance
+from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster_graphql.implementation.context import DagsterGraphQLContext
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
@@ -15,14 +22,6 @@ from flask_graphql import GraphQLView
 from flask_sockets import Sockets
 from graphql.execution.executors.gevent import GeventExecutor as Executor
 from nbconvert import HTMLExporter
-
-from dagster import __version__ as dagster_version
-from dagster import check, seven
-from dagster.cli.workspace import Workspace
-from dagster.core.debug import DebugRunPayload
-from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.compute_log_manager import ComputeIOType
 
 from .format_error import format_error_with_stack_trace
 from .subscription_server import DagsterSubscriptionServer

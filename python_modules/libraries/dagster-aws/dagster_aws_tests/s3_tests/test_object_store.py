@@ -1,8 +1,7 @@
 import boto3
+from dagster.core.storage.object_store import DEFAULT_SERIALIZATION_STRATEGY
 from dagster_aws.s3 import S3ObjectStore
 from moto import mock_s3
-
-from dagster.core.storage.object_store import DEFAULT_SERIALIZATION_STRATEGY
 
 
 @mock_s3

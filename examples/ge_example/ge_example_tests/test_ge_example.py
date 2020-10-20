@@ -1,6 +1,5 @@
-from ge_example.ge_demo import payroll_data_pipeline
-
 from dagster import execute_pipeline
+from ge_example.ge_demo import payroll_data_pipeline
 
 
 def test_pipeline_success():

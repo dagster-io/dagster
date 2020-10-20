@@ -2,7 +2,6 @@ import os
 import sys
 
 import click
-
 from dagster import __version__
 from dagster.scheduler.scheduler import scheduler_run_command
 

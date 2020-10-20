@@ -1,13 +1,5 @@
 import uuid
 
-from dagster_azure.adls2 import (
-    ADLS2FileHandle,
-    ADLS2FileManager,
-    FakeADLS2Resource,
-    adls2_file_manager,
-    adls2_plus_default_storage_defs,
-)
-
 from dagster import (
     InputDefinition,
     Int,
@@ -20,6 +12,13 @@ from dagster import (
     solid,
 )
 from dagster.seven import mock
+from dagster_azure.adls2 import (
+    ADLS2FileHandle,
+    ADLS2FileManager,
+    FakeADLS2Resource,
+    adls2_file_manager,
+    adls2_plus_default_storage_defs,
+)
 
 # For deps
 

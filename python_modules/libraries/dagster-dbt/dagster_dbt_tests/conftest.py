@@ -3,7 +3,6 @@ import subprocess
 from distutils import spawn
 
 import pytest
-
 from dagster.utils import file_relative_path, pushd
 from dagster.utils.test.postgres_instance import TestPostgresInstance
 

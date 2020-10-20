@@ -2,9 +2,8 @@ import subprocess
 
 from click.testing import CliRunner
 from dagit.cli import ui
-from gevent import pywsgi
-
 from dagster.utils import file_relative_path
+from gevent import pywsgi
 
 
 def test_invoke_ui():

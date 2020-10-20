@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import seven
 from dagster.api.snapshot_schedule import (
     sync_get_external_schedule_execution_data,

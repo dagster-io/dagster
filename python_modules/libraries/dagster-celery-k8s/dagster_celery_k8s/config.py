@@ -1,9 +1,8 @@
-from dagster_celery.executor import CELERY_CONFIG
-from dagster_k8s import DagsterK8sJobConfig
-
 from dagster import Field, Noneable, StringSource
 from dagster.core.host_representation.handle import IN_PROCESS_NAME
 from dagster.utils import merge_dicts
+from dagster_celery.executor import CELERY_CONFIG
+from dagster_k8s import DagsterK8sJobConfig
 
 CELERY_K8S_CONFIG_KEY = "celery-k8s"
 

@@ -4,7 +4,6 @@
 from logging.config import fileConfig
 
 from alembic import context
-
 from dagster.core.storage.runs import RunStorageSqlMetadata
 
 config = context.config

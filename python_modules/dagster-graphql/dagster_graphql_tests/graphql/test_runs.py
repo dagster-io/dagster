@@ -1,5 +1,10 @@
 import copy
 
+from dagster import execute_pipeline, lambda_solid, pipeline, repository, seven
+from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.execution.api import execute_run
+from dagster.core.instance import DagsterInstance
+from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
     execute_dagster_graphql,
@@ -8,12 +13,6 @@ from dagster_graphql.test.utils import (
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
-
-from dagster import execute_pipeline, lambda_solid, pipeline, repository, seven
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.execution.api import execute_run
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 
 RUNS_QUERY = """
 query PipelineRunsRootQuery($selector: PipelineSelector!) {

@@ -1,3 +1,4 @@
+from dagster import DagsterType, Output, OutputDefinition, execute_pipeline, pipeline, solid
 from dagster_pandas.constraints import (
     ColumnWithMetadataException,
     ConstraintWithMetadataException,
@@ -12,8 +13,6 @@ from dagster_pandas.constraints import (
 from dagster_pandas.data_frame import create_structured_dataframe_type
 from numpy import float64, int64
 from pandas import DataFrame
-
-from dagster import DagsterType, Output, OutputDefinition, execute_pipeline, pipeline, solid
 
 dtype_is_num_validator = nonnull(dtype_in_set_validation_factory((int, float, int64, float64)))
 

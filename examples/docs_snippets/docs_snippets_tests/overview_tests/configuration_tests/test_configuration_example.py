@@ -1,4 +1,5 @@
 import pytest
+from dagster import DagsterInvalidConfigError, ModeDefinition, execute_pipeline, pipeline, solid
 from docs_snippets.overview.configuration.config_map_example import unsigned_s3_session
 from docs_snippets.overview.configuration.configured_example import east_unsigned_s3_session
 from docs_snippets.overview.configuration.example import (
@@ -6,8 +7,6 @@ from docs_snippets.overview.configuration.example import (
     run_good_example,
     run_other_bad_example,
 )
-
-from dagster import DagsterInvalidConfigError, ModeDefinition, execute_pipeline, pipeline, solid
 
 
 def test_config_example():

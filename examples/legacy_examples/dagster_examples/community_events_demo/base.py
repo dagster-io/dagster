@@ -3,9 +3,8 @@ import os
 
 import boto3
 import requests
-from slack import WebClient  # pylint:disable=import-error
-
 from dagster import Array, pipeline, repository, solid
+from slack import WebClient  # pylint:disable=import-error
 
 
 @solid(config_schema={"portfolio": Array(str)})

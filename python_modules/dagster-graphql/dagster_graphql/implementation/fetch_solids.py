@@ -1,14 +1,13 @@
 from collections import OrderedDict, defaultdict
 
+from dagster import check
+from dagster.core.host_representation import ExternalRepository
 from dagster_graphql.schema.pipelines import DauphinPipeline
 from dagster_graphql.schema.solids import (
     DauphinSolidInvocationSite,
     DauphinUsedSolid,
     build_dauphin_solid_handles,
 )
-
-from dagster import check
-from dagster.core.host_representation import ExternalRepository
 
 
 def get_solid(repo, name):

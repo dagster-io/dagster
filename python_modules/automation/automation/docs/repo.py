@@ -6,7 +6,6 @@ import subprocess
 import sys
 
 from automation.git import git_commit_updates, git_repo_root
-
 from dagster.utils import mkdir_p
 
 

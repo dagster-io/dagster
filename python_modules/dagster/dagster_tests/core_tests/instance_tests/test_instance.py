@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan

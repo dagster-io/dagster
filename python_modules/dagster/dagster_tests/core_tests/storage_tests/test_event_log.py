@@ -6,7 +6,6 @@ from contextlib import contextmanager
 
 import pytest
 import sqlalchemy
-
 from dagster import seven
 from dagster.core.definitions import AssetMaterialization, ExpectationResult
 from dagster.core.errors import DagsterEventLogInvalidForRun

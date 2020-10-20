@@ -1,6 +1,4 @@
 import yaml
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.core.host_representation import (
     ExternalSchedule,
@@ -9,6 +7,7 @@ from dagster.core.host_representation import (
     RepositorySelector,
     ScheduleSelector,
 )
+from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 

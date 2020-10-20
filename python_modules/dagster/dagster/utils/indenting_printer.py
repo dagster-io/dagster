@@ -3,9 +3,8 @@ from __future__ import print_function
 from contextlib import contextmanager
 from textwrap import TextWrapper
 
-from six import StringIO
-
 from dagster import check
+from six import StringIO
 
 LINE_LENGTH = 100
 

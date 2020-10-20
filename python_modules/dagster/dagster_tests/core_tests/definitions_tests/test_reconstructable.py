@@ -4,7 +4,6 @@ import sys
 import types
 
 import pytest
-
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
 from dagster.core.definitions.reconstructable import ReconstructableRepository, reconstructable
 from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id

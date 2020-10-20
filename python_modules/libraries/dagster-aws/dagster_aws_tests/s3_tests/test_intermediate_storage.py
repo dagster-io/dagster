@@ -3,12 +3,6 @@ import os
 from collections import OrderedDict
 
 import pytest
-from dagster_aws.s3 import (
-    S3IntermediateStorage,
-    s3_plus_default_intermediate_storage_defs,
-    s3_resource,
-)
-
 from dagster import (
     Bool,
     InputDefinition,
@@ -35,6 +29,11 @@ from dagster.core.types.dagster_type import String as RuntimeString
 from dagster.core.types.dagster_type import create_any_type, resolve_dagster_type
 from dagster.core.utils import make_new_run_id
 from dagster.utils.test import yield_empty_pipeline_context
+from dagster_aws.s3 import (
+    S3IntermediateStorage,
+    s3_plus_default_intermediate_storage_defs,
+    s3_resource,
+)
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init

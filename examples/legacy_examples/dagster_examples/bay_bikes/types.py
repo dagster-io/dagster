@@ -1,9 +1,8 @@
+from dagster import DagsterType, EventMetadataEntry, TypeCheck
 from dagster_pandas.data_frame import create_dagster_pandas_dataframe_type
 from dagster_pandas.validation import PandasColumn
 from numpy import mean, median, ndarray
 from pandas import Timestamp
-
-from dagster import DagsterType, EventMetadataEntry, TypeCheck
 
 
 def compute_trip_dataframe_event_metadata(dataframe):

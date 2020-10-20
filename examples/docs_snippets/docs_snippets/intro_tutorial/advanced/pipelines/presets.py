@@ -8,7 +8,6 @@ from typing import Any
 
 import sqlalchemy
 import sqlalchemy.ext.declarative
-
 from dagster import (
     Field,
     ModeDefinition,

@@ -1,8 +1,6 @@
 import shutil
 import time
 
-from dagster_celery import celery_executor
-
 from dagster import (
     InputDefinition,
     Int,
@@ -16,6 +14,7 @@ from dagster import (
     solid,
 )
 from dagster.core.test_utils import nesting_composite_pipeline
+from dagster_celery import celery_executor
 
 celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_executor])]
 

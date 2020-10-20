@@ -19,9 +19,8 @@ import sys
 import traceback
 from contextlib import contextmanager
 
-from future.utils import raise_from
-
 from dagster import check
+from future.utils import raise_from
 
 
 class DagsterError(Exception):

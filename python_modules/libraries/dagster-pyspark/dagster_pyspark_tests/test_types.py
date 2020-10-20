@@ -1,12 +1,6 @@
 import shutil
 
 import pytest
-from dagster_aws.s3 import s3_intermediate_storage
-from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from dagster_pyspark import pyspark_resource
-from dagster_pyspark.types import SparkDataFrameS3StoragePlugin
-from pyspark.sql import Row, SparkSession
-
 from dagster import (
     InputDefinition,
     ModeDefinition,
@@ -18,6 +12,11 @@ from dagster import (
 )
 from dagster.utils import dict_without_keys
 from dagster.utils.test import get_temp_dir
+from dagster_aws.s3 import s3_intermediate_storage
+from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
+from dagster_pyspark import pyspark_resource
+from dagster_pyspark.types import SparkDataFrameS3StoragePlugin
+from pyspark.sql import Row, SparkSession
 
 spark = SparkSession.builder.getOrCreate()
 

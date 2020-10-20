@@ -22,7 +22,6 @@ from enum import Enum
 
 import six
 import yaml
-
 from dagster import check, seven
 from dagster.utils import compose
 

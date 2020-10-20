@@ -1,3 +1,4 @@
+from dagster import execute_pipeline
 from docs_snippets.overview.repositories_workspaces.lazy_repository_definition import (
     my_lazy_repository,
 )
@@ -6,8 +7,6 @@ from docs_snippets.overview.repositories_workspaces.repository_definition import
     my_repository,
     subtraction_pipeline,
 )
-
-from dagster import execute_pipeline
 
 
 def test_pipelines():

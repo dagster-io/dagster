@@ -5,7 +5,6 @@ from collections import namedtuple
 from enum import Enum
 
 import six
-
 from dagster import check
 from dagster.api.list_repositories import sync_list_repositories, sync_list_repositories_grpc
 from dagster.core.code_pointer import CodePointer

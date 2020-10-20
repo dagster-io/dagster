@@ -30,7 +30,6 @@ from automation.git import (
     set_git_tag,
 )
 from automation.utils import which_
-
 from dagster import check
 
 from .dagster_module_publisher import DagsterModulePublisher

@@ -1,9 +1,8 @@
+from dagster.utils.test import execute_solid
 from docs_snippets.overview.configuration.configured_solid_example import (
     another_configured_example,
     configured_example,
 )
-
-from dagster.utils.test import execute_solid
 
 
 def test_new_solid(capsys):

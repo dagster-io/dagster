@@ -4,7 +4,6 @@ import uuid
 from threading import Thread
 
 import pytest
-
 from dagster import (
     Field,
     ModeDefinition,

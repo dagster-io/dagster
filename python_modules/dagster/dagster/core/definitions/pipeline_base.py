@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
 import six
-
 from dagster import check
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector import parse_solid_selection

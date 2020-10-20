@@ -7,7 +7,6 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
 import six
-
 from dagster import check
 from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin

@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from dagster.api.snapshot_execution_plan import (
     sync_get_external_execution_plan,
     sync_get_external_execution_plan_grpc,

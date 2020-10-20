@@ -1,9 +1,8 @@
 import os
 
 import pytest
-from dagster_shell import create_shell_command_solid, create_shell_script_solid, shell_solid
-
 from dagster import Failure, OutputDefinition, composite_solid, execute_solid
+from dagster_shell import create_shell_command_solid, create_shell_script_solid, shell_solid
 
 
 def test_shell_command_solid():

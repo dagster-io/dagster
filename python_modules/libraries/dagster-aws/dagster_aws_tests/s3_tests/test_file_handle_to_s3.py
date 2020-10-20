@@ -1,9 +1,8 @@
 import boto3
-from dagster_aws.s3 import file_handle_to_s3
-from moto import mock_s3
-
 from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, solid
 from dagster.utils.test import get_temp_file_handle_with_data
+from dagster_aws.s3 import file_handle_to_s3
+from moto import mock_s3
 
 
 def create_file_handle_pipeline(temp_file_handle, s3_resource):

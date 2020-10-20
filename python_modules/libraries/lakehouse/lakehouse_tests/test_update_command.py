@@ -1,8 +1,7 @@
 from click.testing import CliRunner
+from dagster.core.test_utils import instance_for_test
 from lakehouse.cli import update_cli
 from lakehouse.errors import LakehouseLoadingError
-
-from dagster.core.test_utils import instance_for_test
 
 
 def test_module_with_no_lakehouse():

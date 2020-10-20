@@ -1,3 +1,7 @@
+from dagster import check
+from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.utils import merge_dicts
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
@@ -11,11 +15,6 @@ from dagster_graphql.schema.errors import (
     DauphinPipelineNotFoundError,
     DauphinPythonError,
 )
-
-from dagster import check
-from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.utils import merge_dicts
 
 
 class DauphinPartition(dauphin.ObjectType):

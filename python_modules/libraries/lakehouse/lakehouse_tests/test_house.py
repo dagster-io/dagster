@@ -1,7 +1,6 @@
-from lakehouse import computed_asset, source_asset
-
 import dagster
 from dagster import execute_pipeline
+from lakehouse import computed_asset, source_asset
 
 
 def _assert_input_defs(solid_def, expected):

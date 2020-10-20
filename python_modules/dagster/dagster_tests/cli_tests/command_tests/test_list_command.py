@@ -6,7 +6,6 @@ import re
 import pytest
 from click import UsageError
 from click.testing import CliRunner
-
 from dagster import seven
 from dagster.cli.pipeline import execute_list_command, pipeline_list_command
 from dagster.core.instance import DagsterInstance

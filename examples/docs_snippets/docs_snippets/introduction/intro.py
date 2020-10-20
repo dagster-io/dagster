@@ -1,6 +1,3 @@
-from dagster_pandas import DataFrame as DagsterPandasDataFrame
-from pandas import DataFrame
-
 from dagster import (
     execute_pipeline,
     make_python_type_usable_as_dagster_type,
@@ -8,6 +5,8 @@ from dagster import (
     repository,
     solid,
 )
+from dagster_pandas import DataFrame as DagsterPandasDataFrame
+from pandas import DataFrame
 
 make_python_type_usable_as_dagster_type(python_type=DataFrame, dagster_type=DagsterPandasDataFrame)
 

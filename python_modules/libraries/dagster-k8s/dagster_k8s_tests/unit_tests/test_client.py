@@ -3,6 +3,7 @@ from collections import namedtuple
 
 import kubernetes
 import pytest
+from dagster.seven import mock
 from dagster_k8s.client import (
     DagsterK8sAPIRetryLimitExceeded,
     DagsterK8sError,
@@ -25,8 +26,6 @@ from kubernetes.client.models import (
     V1PodList,
     V1PodStatus,
 )
-
-from dagster.seven import mock
 
 
 def create_mocked_client(batch_api=None, core_api=None, logger=None, sleeper=None, timer=None):

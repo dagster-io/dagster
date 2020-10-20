@@ -1,5 +1,4 @@
 import pytest
-
 from dagster.check import CheckError
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.seven import json

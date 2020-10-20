@@ -1,11 +1,10 @@
 import pytest
+from dagster import ModeDefinition, execute_pipeline, pipeline
+from dagster.seven import mock
 from dagster_databricks import create_databricks_job_solid, databricks_client
 from dagster_databricks.databricks import DatabricksRunState
 from dagster_databricks.solids import create_ui_url
 from dagster_databricks.types import DatabricksRunLifeCycleState, DatabricksRunResultState
-
-from dagster import ModeDefinition, execute_pipeline, pipeline
-from dagster.seven import mock
 
 
 @mock.patch("dagster_databricks.databricks.DatabricksClient.get_run_state")

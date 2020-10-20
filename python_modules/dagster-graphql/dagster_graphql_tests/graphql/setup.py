@@ -6,14 +6,6 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
-from dagster_graphql.test.utils import (
-    define_in_process_context,
-    define_out_of_process_context,
-    infer_pipeline_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
-
 from dagster import (
     Any,
     AssetMaterialization,
@@ -63,6 +55,13 @@ from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import today_at_midnight
 from dagster.utils import file_relative_path, segfault
+from dagster_graphql.test.utils import (
+    define_in_process_context,
+    define_out_of_process_context,
+    infer_pipeline_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
 
 
 @dagster_type_loader(String)

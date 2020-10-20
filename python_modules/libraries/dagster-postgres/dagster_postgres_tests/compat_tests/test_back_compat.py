@@ -5,14 +5,13 @@ import re
 import subprocess
 
 import pytest
-from sqlalchemy import create_engine
-
 from dagster import execute_pipeline, pipeline, seven, solid
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.utils import file_relative_path
+from sqlalchemy import create_engine
 
 
 def test_0_6_6_postgres(hostname, conn_string):

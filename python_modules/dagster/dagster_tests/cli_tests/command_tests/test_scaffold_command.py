@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import pytest
 from click.testing import CliRunner
-
 from dagster.cli.pipeline import execute_scaffold_command, pipeline_scaffold_command
 
 from .test_cli_commands import (

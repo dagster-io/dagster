@@ -1,6 +1,5 @@
-from simple_lakehouse.pipelines import simple_lakehouse_pipeline
-
 from dagster import repository
+from simple_lakehouse.pipelines import simple_lakehouse_pipeline
 
 
 @repository

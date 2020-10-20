@@ -4,7 +4,6 @@ import shutil
 from abc import ABCMeta, abstractmethod
 
 import six
-
 from dagster import check
 from dagster.config import Field
 from dagster.core.definitions import resource

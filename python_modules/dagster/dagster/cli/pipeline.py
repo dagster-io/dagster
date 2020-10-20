@@ -7,8 +7,6 @@ import textwrap
 
 import click
 import yaml
-from tabulate import tabulate
-
 from dagster import PipelineDefinition, check, execute_pipeline
 from dagster.cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
@@ -60,6 +58,7 @@ from dagster.utils import (
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.indenting_printer import IndentingPrinter
+from tabulate import tabulate
 
 from .config_scaffolder import scaffold_pipeline_config
 

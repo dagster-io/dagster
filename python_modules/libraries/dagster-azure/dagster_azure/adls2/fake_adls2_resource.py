@@ -3,9 +3,8 @@ import random
 from collections import defaultdict
 from contextlib import contextmanager
 
-from dagster_azure.blob import FakeBlobServiceClient
-
 from dagster.seven import mock
+from dagster_azure.blob import FakeBlobServiceClient
 
 from .resources import ADLS2Resource
 from .utils import ResourceNotFoundError

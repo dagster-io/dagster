@@ -5,16 +5,15 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
-from dagstermill import DagstermillError, define_dagstermill_solid
-from jupyter_client.kernelspec import NoSuchKernel
-from nbconvert.preprocessors import ExecutePreprocessor
-from papermill import PapermillExecutionError
-
 from dagster import execute_pipeline, pipeline
 from dagster.core.definitions.events import PathMetadataEntryData
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path, safe_tempfile_path
+from dagstermill import DagstermillError, define_dagstermill_solid
+from jupyter_client.kernelspec import NoSuchKernel
+from nbconvert.preprocessors import ExecutePreprocessor
+from papermill import PapermillExecutionError
 
 try:
     import dagster_pandas as _

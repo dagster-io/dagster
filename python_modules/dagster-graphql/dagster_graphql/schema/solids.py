@@ -1,12 +1,11 @@
 # NOTE: pylint isn't smart enough to figure out what's going on with dauphin
 # pylint: disable=unexpected-keyword-arg, no-value-for-parameter
 
-from dagster_graphql import dauphin
-
 from dagster import check
 from dagster.core.definitions import SolidHandle
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
+from dagster_graphql import dauphin
 
 from .config_types import DauphinConfigTypeField
 from .dagster_types import to_dauphin_dagster_type

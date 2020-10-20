@@ -3,7 +3,6 @@ import re
 import sys
 
 import pytest
-
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster.cli.workspace.autodiscovery import (
     loadable_targets_from_python_file,

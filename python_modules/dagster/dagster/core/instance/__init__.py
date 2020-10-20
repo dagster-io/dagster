@@ -6,7 +6,6 @@ from collections import defaultdict
 from enum import Enum
 
 import yaml
-
 from dagster import check, seven
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline import PipelineDefinition, PipelineSubsetDefinition

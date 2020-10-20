@@ -1,5 +1,4 @@
 import pytest
-
 from dagster.core.definitions.utils import (
     check_valid_name,
     config_from_files,

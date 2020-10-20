@@ -2,7 +2,6 @@ import uuid
 import warnings
 
 import six
-
 from dagster import check
 from dagster.core.definitions.solid import NodeDefinition
 from dagster.core.errors import (

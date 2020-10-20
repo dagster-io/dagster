@@ -2,13 +2,12 @@ import logging
 import sys
 from io import BytesIO, StringIO
 
-from google.api_core.exceptions import TooManyRequests
-from google.cloud import storage
-
 from dagster import check
 from dagster.core.storage.object_store import ObjectStore
 from dagster.core.types.marshal import SerializationStrategy
 from dagster.utils.backoff import backoff
+from google.api_core.exceptions import TooManyRequests
+from google.cloud import storage
 
 
 class GCSObjectStore(ObjectStore):

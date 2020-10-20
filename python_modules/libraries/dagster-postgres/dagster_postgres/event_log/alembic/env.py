@@ -4,7 +4,6 @@
 from logging.config import fileConfig
 
 from alembic import context
-
 from dagster.core.storage.event_log import SqlEventLogStorageMetadata
 
 config = context.config

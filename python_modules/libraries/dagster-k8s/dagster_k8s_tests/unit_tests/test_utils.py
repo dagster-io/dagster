@@ -1,8 +1,7 @@
-from dagster_k8s import utils
-
 from dagster import check
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.objects import StepSuccessData
+from dagster_k8s import utils
 
 
 def test_filter_dagster_events_from_pod_logs():

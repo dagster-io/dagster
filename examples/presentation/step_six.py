@@ -25,8 +25,6 @@ def get_in_repo_preset_definition():
 import os
 import shutil
 
-from dagster_pandas import DataFrame
-
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -39,6 +37,7 @@ from dagster import (
     solid,
 )
 from dagster.utils import mkdir_p
+from dagster_pandas import DataFrame
 
 
 @solid

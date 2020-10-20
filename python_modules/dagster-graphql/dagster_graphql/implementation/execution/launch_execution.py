@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
+from graphql.execution.base import ResolveInfo
 
 from ..external import get_external_pipeline_or_raise
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error

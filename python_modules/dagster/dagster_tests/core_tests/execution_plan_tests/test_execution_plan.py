@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInstance, check, pipeline, solid
 from dagster.core.errors import (
     DagsterIncompleteExecutionPlanError,

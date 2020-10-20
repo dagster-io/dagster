@@ -2,7 +2,6 @@ import datetime
 import warnings
 
 import pendulum
-
 from dagster import check
 from dagster.core.definitions.partition import (
     PartitionSetDefinition,

@@ -6,12 +6,11 @@ import time
 
 import boto3
 import pytest
+from dagster.seven import mock
+from dagster.utils.test import create_test_pipeline_execution_context
 from dagster_aws.emr import EmrClusterState, EmrError, EmrJobRunner
 from dagster_aws.utils.mrjob.utils import _boto3_now
 from moto import mock_emr, mock_s3
-
-from dagster.seven import mock
-from dagster.utils.test import create_test_pipeline_execution_context
 
 REGION = "us-west-1"
 

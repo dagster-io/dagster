@@ -1,5 +1,4 @@
 import click
-
 from dagster.core.definitions.events import AssetKey
 from dagster.core.instance import DagsterInstance
 

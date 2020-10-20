@@ -1,3 +1,5 @@
+from dagster import check
+from dagster.core.storage.pipeline_run import PipelineRun
 from dagster_graphql.implementation.external import (
     get_external_pipeline_or_raise,
     get_full_external_pipeline_or_raise,
@@ -5,9 +7,6 @@ from dagster_graphql.implementation.external import (
 from dagster_graphql.implementation.utils import PipelineSelector
 from dagster_graphql.schema.pipelines import DauphinPipeline, DauphinPipelineSnapshot
 from graphql.execution.base import ResolveInfo
-
-from dagster import check
-from dagster.core.storage.pipeline_run import PipelineRun
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 

@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from dagster import file_relative_path
 from dagster.core.instance.config import dagster_instance_config
 

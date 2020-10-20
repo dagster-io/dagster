@@ -2,7 +2,6 @@ import threading
 import time
 
 import grpc
-
 from dagster.grpc.client import ephemeral_grpc_api_client
 
 

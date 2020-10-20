@@ -1,5 +1,4 @@
 import mock
-
 from dagster import DagsterInstance, seven
 from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.test_utils import register_managed_run_for_test

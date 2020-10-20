@@ -3,7 +3,6 @@ import sys
 from abc import ABCMeta, abstractmethod
 
 import six
-
 from dagster import check
 from dagster.utils import PICKLE_PROTOCOL
 

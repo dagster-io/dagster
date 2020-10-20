@@ -1,7 +1,6 @@
 import logging
 
 import coloredlogs
-
 from dagster import seven
 from dagster.config import Field
 from dagster.core.definitions.logger import logger

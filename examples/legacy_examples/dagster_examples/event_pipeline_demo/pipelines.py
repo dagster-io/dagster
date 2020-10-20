@@ -5,10 +5,6 @@ import os
 import shutil
 
 import six
-from dagster_aws.s3 import S3Callback, s3_resource
-from dagster_snowflake import snowflake_resource
-from dagster_spark import create_spark_solid, spark_resource
-
 from dagster import (
     Bool,
     DagsterType,
@@ -25,6 +21,9 @@ from dagster import (
     solid,
 )
 from dagster.utils import mkdir_p, safe_isfile
+from dagster_aws.s3 import S3Callback, s3_resource
+from dagster_snowflake import snowflake_resource
+from dagster_spark import create_spark_solid, spark_resource
 
 
 def file_exists_at_path_type_check(_, value):

@@ -1,7 +1,6 @@
 import sys
 
 import pytest
-
 from dagster import seven
 from dagster.api.list_repositories import (
     sync_list_repositories,

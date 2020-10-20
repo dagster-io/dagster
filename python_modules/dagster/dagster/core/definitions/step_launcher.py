@@ -2,7 +2,6 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
 import six
-
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.execution.retries import Retries

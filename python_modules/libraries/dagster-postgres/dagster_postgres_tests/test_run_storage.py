@@ -1,6 +1,5 @@
 import pytest
 import yaml
-
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter

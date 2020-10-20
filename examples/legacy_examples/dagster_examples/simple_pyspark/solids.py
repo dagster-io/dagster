@@ -1,10 +1,9 @@
 """Solid definitions for the simple_pyspark example."""
 
 import dagster_pyspark
+from dagster import make_python_type_usable_as_dagster_type, solid
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as f
-
-from dagster import make_python_type_usable_as_dagster_type, solid
 
 # Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
 make_python_type_usable_as_dagster_type(

@@ -3,8 +3,6 @@ import time
 from typing import Callable, Optional
 
 import pandas as pd
-from dagster_pandas import DataFrame
-
 from dagster import (
     Array,
     Bool,
@@ -24,6 +22,7 @@ from dagster import (
     solid,
 )
 from dagster.core.execution.context.compute import SolidExecutionContext
+from dagster_pandas import DataFrame
 
 from ..errors import DagsterDbtRpcUnexpectedPollOutputError
 from .types import DbtRpcOutput

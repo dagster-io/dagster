@@ -3,7 +3,6 @@ import os
 from collections import namedtuple
 
 import yaml
-
 from dagster import __version__ as current_dagster_version
 from dagster import check
 

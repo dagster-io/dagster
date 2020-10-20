@@ -6,11 +6,10 @@ import time
 from collections import OrderedDict
 
 import pytest
-from dagster_celery import celery_executor
-
 from dagster import ModeDefinition, default_executors, seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster_celery import celery_executor
 
 from .utils import (
     execute_eagerly_on_celery,

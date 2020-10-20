@@ -1,8 +1,7 @@
-from docs_snippets.introduction.intro import sugariest_pipeline
-from pandas import DataFrame
-
 from dagster import execute_pipeline
 from dagster.utils import script_relative_path
+from docs_snippets.introduction.intro import sugariest_pipeline
+from pandas import DataFrame
 
 
 def test_intro_pipeline():

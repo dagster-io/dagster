@@ -1,4 +1,11 @@
 import pytest
+from dagster import (
+    DagsterInvariantViolationError,
+    DagsterResourceFunctionError,
+    DagsterTypeCheckDidNotPass,
+    execute_pipeline,
+)
+from dagster.utils.temp_file import get_temp_dir
 from dagster_test.toys.composition import composition
 from dagster_test.toys.error_monster import error_monster
 from dagster_test.toys.fan_in_fan_out import fan_in_fan_out_pipeline
@@ -8,14 +15,6 @@ from dagster_test.toys.many_events import many_events
 from dagster_test.toys.pyspark_assets.pyspark_assets_pipeline import pyspark_assets_pipeline
 from dagster_test.toys.resources import resource_pipeline
 from dagster_test.toys.sleepy import sleepy_pipeline
-
-from dagster import (
-    DagsterInvariantViolationError,
-    DagsterResourceFunctionError,
-    DagsterTypeCheckDidNotPass,
-    execute_pipeline,
-)
-from dagster.utils.temp_file import get_temp_dir
 
 
 def test_many_events_pipeline():

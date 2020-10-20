@@ -1,12 +1,6 @@
 import time
 
 import pytest
-from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
-    math_diamond,
-    sleepy_pipeline,
-    slow_pipeline,
-)
-
 from dagster import file_relative_path, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterLaunchFailedError
@@ -19,6 +13,11 @@ from dagster.core.test_utils import instance_for_test, poll_for_finished_run, po
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import find_free_port, merge_dicts
+from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
+    math_diamond,
+    sleepy_pipeline,
+    slow_pipeline,
+)
 
 
 def grpc_instance():

@@ -1,5 +1,4 @@
 import pendulum
-
 from dagster import check
 from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionData,

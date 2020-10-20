@@ -1,5 +1,4 @@
 import pytest
-
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import GrpcServerProcess

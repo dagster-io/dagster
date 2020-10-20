@@ -1,12 +1,11 @@
 import pytest
 from click.testing import CliRunner
-from dagster_tests.api_tests.utils import get_foo_pipeline_handle
-
 from dagster.cli import api
 from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.serdes import serialize_dagster_namedtuple
+from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
 def runner_execute_run_with_structured_logs(runner, cli_args):

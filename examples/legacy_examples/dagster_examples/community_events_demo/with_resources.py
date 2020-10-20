@@ -3,8 +3,6 @@ import os
 
 import boto3
 import requests
-from slack import WebClient  # pylint:disable=import-error
-
 from dagster import (
     Array,
     ModeDefinition,
@@ -17,6 +15,7 @@ from dagster import (
     solid,
 )
 from dagster.utils import merge_dicts
+from slack import WebClient  # pylint:disable=import-error
 
 
 @resource(config_schema={"slack_token": StringSource})

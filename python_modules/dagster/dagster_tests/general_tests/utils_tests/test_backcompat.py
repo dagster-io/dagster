@@ -1,8 +1,6 @@
 import re
 
 import pytest
-from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
-
 from dagster.check import CheckError
 from dagster.utils.backcompat import (
     EXPERIMENTAL_WARNING_HELP,
@@ -13,6 +11,7 @@ from dagster.utils.backcompat import (
     experimental_class_warning,
     experimental_fn_warning,
 )
+from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
 
 def is_new(old_flag=None, new_flag=None, include_additional_warn_txt=True):

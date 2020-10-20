@@ -1,8 +1,6 @@
 import csv
 from collections import OrderedDict
 
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
-
 from dagster import (
     AssetMaterialization,
     DependencyDefinition,
@@ -15,6 +13,7 @@ from dagster import (
     dagster_type_materializer,
     repository,
 )
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
 from .production_query import PRODUCTION_QUERY
 

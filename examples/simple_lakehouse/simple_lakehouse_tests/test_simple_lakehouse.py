@@ -1,6 +1,5 @@
-from simple_lakehouse.pipelines import simple_lakehouse_pipeline
-
 from dagster import execute_pipeline
+from simple_lakehouse.pipelines import simple_lakehouse_pipeline
 
 
 def test_simple_lakehouse():

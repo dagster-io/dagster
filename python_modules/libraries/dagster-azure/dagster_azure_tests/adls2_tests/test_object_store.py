@@ -1,7 +1,6 @@
+from dagster.core.storage.object_store import DEFAULT_SERIALIZATION_STRATEGY
 from dagster_azure.adls2 import ADLS2ObjectStore, FakeADLS2ServiceClient
 from dagster_azure.blob import FakeBlobServiceClient
-
-from dagster.core.storage.object_store import DEFAULT_SERIALIZATION_STRATEGY
 
 
 def test_adls2_object_store(

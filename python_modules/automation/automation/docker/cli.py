@@ -4,7 +4,6 @@ import sys
 
 import click
 from automation.git import git_repo_root
-
 from dagster import __version__ as current_dagster_version
 from dagster import check
 

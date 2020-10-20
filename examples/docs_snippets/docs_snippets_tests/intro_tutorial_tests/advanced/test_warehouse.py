@@ -1,6 +1,8 @@
 import csv
 import os
 
+from dagster import execute_pipeline
+from dagster.utils import pushd, script_relative_path
 from docs_snippets.intro_tutorial.advanced.pipelines.modes import (
     SqlAlchemyPostgresWarehouse as sapw1,
 )
@@ -9,9 +11,6 @@ from docs_snippets.intro_tutorial.advanced.pipelines.presets import (
     SqlAlchemyPostgresWarehouse as sapw2,
 )
 from docs_snippets.intro_tutorial.advanced.pipelines.presets import presets_pipeline
-
-from dagster import execute_pipeline
-from dagster.utils import pushd, script_relative_path
 
 BUILDKITE = bool(os.getenv("BUILDKITE"))
 

@@ -2,7 +2,6 @@ import sys
 import time
 
 import pytest
-
 from dagster import DagsterInvariantViolationError
 from dagster.core.code_pointer import ModuleCodePointer
 from dagster.core.origin import RepositoryPythonOrigin, SchedulePythonOrigin

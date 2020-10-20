@@ -5,7 +5,6 @@ import sqlite3
 from gzip import GzipFile
 
 import pytest
-
 from dagster import check, execute_pipeline, file_relative_path, pipeline, solid
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.errors import DagsterInstanceMigrationRequired

@@ -1,6 +1,5 @@
-from sqlalchemy import create_engine
-
 from dagster import IntSource, StringSource, resource
+from sqlalchemy import create_engine
 
 
 @resource

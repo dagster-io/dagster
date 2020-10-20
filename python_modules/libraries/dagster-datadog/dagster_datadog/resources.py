@@ -1,6 +1,5 @@
-from datadog import DogStatsd, initialize, statsd
-
 from dagster import Field, StringSource, resource
+from datadog import DogStatsd, initialize, statsd
 
 
 class DataDogResource:

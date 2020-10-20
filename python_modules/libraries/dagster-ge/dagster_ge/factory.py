@@ -1,12 +1,6 @@
 import datetime
 
 import great_expectations as ge
-from dagster_pandas import DataFrame
-from great_expectations.core import convert_to_json_serializable
-from great_expectations.render.page_renderer_util import (
-    render_multiple_validation_result_pages_markdown,
-)
-
 from dagster import (
     EventMetadataEntry,
     ExpectationResult,
@@ -18,6 +12,11 @@ from dagster import (
     check,
     resource,
     solid,
+)
+from dagster_pandas import DataFrame
+from great_expectations.core import convert_to_json_serializable
+from great_expectations.render.page_renderer_util import (
+    render_multiple_validation_result_pages_markdown,
 )
 
 

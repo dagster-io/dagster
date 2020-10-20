@@ -3,7 +3,6 @@ import sys
 import warnings
 
 import six
-
 from dagster import check
 from dagster.core.code_pointer import CodePointer, rebase_file
 from dagster.core.host_representation import RepositoryLocationHandle, UserProcessApi

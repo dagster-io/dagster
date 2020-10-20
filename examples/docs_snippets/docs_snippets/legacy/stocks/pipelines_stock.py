@@ -1,5 +1,4 @@
 import requests
-
 from dagster import InputDefinition, pipeline, solid
 
 API_URL = "https://financialmodelingprep.com/api/v3/historical-price-full"

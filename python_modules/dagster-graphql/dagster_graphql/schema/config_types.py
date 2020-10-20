@@ -1,9 +1,8 @@
-from dagster_graphql import dauphin
-
 from dagster import check
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.snap import get_recursive_type_keys
 from dagster.core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster_graphql import dauphin
 
 
 def to_dauphin_config_type(config_schema_snapshot, config_type_key):

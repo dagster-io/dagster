@@ -7,7 +7,6 @@ Create Date: 2020-04-09 05:57:20.639458
 """
 import sqlalchemy as sa
 from alembic import op
-
 from dagster.core.storage.migration.utils import has_column, has_table
 
 # alembic magic breaks pylint

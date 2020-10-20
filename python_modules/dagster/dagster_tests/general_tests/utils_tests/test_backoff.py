@@ -1,6 +1,5 @@
 import pytest
 import six
-
 from dagster.utils.backoff import backoff, backoff_delay_generator
 
 

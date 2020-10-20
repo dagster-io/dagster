@@ -4,8 +4,6 @@ import sys
 
 import kubernetes
 import pytest
-from marks import mark_scheduler
-
 from dagster import DagsterInstance, ScheduleDefinition, seven
 from dagster.core.definitions import lambda_solid, pipeline, repository
 from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
@@ -19,6 +17,7 @@ from dagster.core.scheduler.scheduler import (
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import environ
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from marks import mark_scheduler
 
 
 @pytest.fixture(scope="function")

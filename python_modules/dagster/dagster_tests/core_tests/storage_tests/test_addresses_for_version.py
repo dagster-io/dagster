@@ -2,7 +2,6 @@ import os
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import Int, execute_pipeline, pipeline, seven, solid
 from dagster.core.errors import DagsterAddressIOError
 from dagster.core.execution.api import create_execution_plan

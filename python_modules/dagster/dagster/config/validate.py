@@ -1,5 +1,4 @@
 import six
-
 from dagster import check
 from dagster.utils import ensure_single_item, frozendict
 

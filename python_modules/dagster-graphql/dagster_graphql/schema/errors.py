@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from dagster_graphql import dauphin
-
 from dagster import check
 from dagster.config.errors import (
     EvaluationError,
@@ -16,6 +14,7 @@ from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPa
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.snap import ConfigSchemaSnapshot
 from dagster.utils.error import SerializableErrorInfo
+from dagster_graphql import dauphin
 
 from ..implementation.utils import PipelineSelector
 from .config_types import DauphinConfigTypeField

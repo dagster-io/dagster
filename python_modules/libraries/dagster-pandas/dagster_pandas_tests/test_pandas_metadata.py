@@ -1,7 +1,6 @@
 import pandas as pd
-from dagster_pandas import DataFrame
-
 from dagster import InputDefinition, execute_pipeline, file_relative_path, lambda_solid, pipeline
+from dagster_pandas import DataFrame
 
 
 def test_basic_pd_df_input_metadata():

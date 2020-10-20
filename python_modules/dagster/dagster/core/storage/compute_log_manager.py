@@ -5,10 +5,9 @@ from contextlib import contextmanager
 from enum import Enum
 
 import six
-from rx import Observable
-
 from dagster import check
 from dagster.core.storage.pipeline_run import PipelineRun
+from rx import Observable
 
 MAX_BYTES_FILE_READ = 33554432  # 32 MB
 MAX_BYTES_CHUNK_READ = 4194304  # 4 MB

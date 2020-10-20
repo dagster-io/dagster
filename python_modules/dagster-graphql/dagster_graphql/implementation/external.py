@@ -1,5 +1,3 @@
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import (
@@ -8,6 +6,7 @@ from dagster.core.host_representation import (
     PipelineSelector,
     RepositorySelector,
 )
+from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
 

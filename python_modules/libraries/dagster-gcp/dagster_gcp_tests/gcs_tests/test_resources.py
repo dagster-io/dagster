@@ -1,6 +1,5 @@
-from dagster_gcp.gcs.resources import gcs_resource
-
 from dagster import ModeDefinition, execute_solid, solid
+from dagster_gcp.gcs.resources import gcs_resource
 
 PROJECT_ID = "test-project1231"
 

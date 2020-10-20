@@ -1,6 +1,5 @@
-from docs_snippets.legacy.how_tos import solids
-
 from dagster import Int, String, execute_pipeline, pipeline, solid
+from docs_snippets.legacy.how_tos import solids
 
 
 @solid

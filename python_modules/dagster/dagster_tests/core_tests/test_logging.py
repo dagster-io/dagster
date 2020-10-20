@@ -4,7 +4,6 @@ import re
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import ModeDefinition, check, execute_solid, pipeline, resource, solid
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent

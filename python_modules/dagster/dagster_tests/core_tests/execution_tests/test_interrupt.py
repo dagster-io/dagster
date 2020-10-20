@@ -4,7 +4,6 @@ import time
 from threading import Thread
 
 import pytest
-
 from dagster import (
     DagsterEventType,
     DagsterSubprocessError,

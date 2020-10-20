@@ -3,8 +3,6 @@ from threading import Thread
 
 import dagster_pandas as dagster_pd
 import pytest
-from dagster_dask import DataFrame, dask_executor
-
 from dagster import (
     DagsterUnmetExecutorRequirementsError,
     InputDefinition,
@@ -23,6 +21,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.utils import send_interrupt
+from dagster_dask import DataFrame, dask_executor
 
 
 @solid

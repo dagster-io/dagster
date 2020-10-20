@@ -4,7 +4,6 @@ import json
 
 import pytest
 from dagit import app
-
 from dagster.cli.workspace import get_workspace_from_kwargs
 from dagster.core.instance import DagsterInstance
 

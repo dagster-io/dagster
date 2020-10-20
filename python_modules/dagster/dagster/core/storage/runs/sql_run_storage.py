@@ -7,7 +7,6 @@ from enum import Enum
 
 import six
 import sqlalchemy as db
-
 from dagster import check
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.events import DagsterEvent, DagsterEventType

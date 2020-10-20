@@ -10,9 +10,8 @@ Create Date: 2019-11-21 09:59:57.028730
 
 import sqlalchemy as sa
 from alembic import context, op
-from sqlalchemy.engine import reflection
-
 from dagster.core.storage.event_log import SqlEventLogStorageTable
+from sqlalchemy.engine import reflection
 
 # revision identifiers, used by Alembic.
 revision = "567bc23fd1ac"

@@ -2,8 +2,6 @@ import json
 import logging
 import os
 
-from dagstermill.examples.repository import define_hello_logging_solid
-
 from dagster import (
     ModeDefinition,
     PipelineDefinition,
@@ -15,6 +13,7 @@ from dagster import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.utils import safe_tempfile_path
+from dagstermill.examples.repository import define_hello_logging_solid
 
 
 class LogTestFileHandler(logging.Handler):

@@ -3,7 +3,6 @@ import sys
 from io import BytesIO
 
 import yaml
-
 from dagster import execute_pipeline, seven
 from dagster.cli.pipeline import execute_list_versions_command
 from dagster.core.instance import DagsterInstance, InstanceType

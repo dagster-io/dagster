@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 import six
-
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.errors import DagsterAddressIOError

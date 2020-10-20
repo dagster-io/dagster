@@ -1,8 +1,5 @@
 from __future__ import absolute_import
 
-from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-
 from dagster import check
 from dagster.core.code_pointer import (
     CodePointer,
@@ -16,6 +13,8 @@ from dagster.core.host_representation import (
     RepositoryLocation,
 )
 from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
+from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 
 
 class DauphinRepository(dauphin.ObjectType):

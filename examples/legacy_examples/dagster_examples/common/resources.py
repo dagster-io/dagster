@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 import sqlalchemy
-
 from dagster import Field, IntSource, StringSource, resource
 
 DbInfo = namedtuple("DbInfo", "engine url jdbc_url dialect load_table host db_name")

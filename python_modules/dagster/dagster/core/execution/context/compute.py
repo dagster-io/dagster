@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 import six
-
 from dagster import check
 from dagster.utils.forked_pdb import ForkedPdb
 

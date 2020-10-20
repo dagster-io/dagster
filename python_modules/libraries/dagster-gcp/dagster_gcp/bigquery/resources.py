@@ -1,6 +1,5 @@
-from google.cloud import bigquery
-
 from dagster import resource
+from google.cloud import bigquery
 
 from .configs import bq_resource_config
 

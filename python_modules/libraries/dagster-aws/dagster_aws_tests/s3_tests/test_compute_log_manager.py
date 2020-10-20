@@ -3,9 +3,6 @@ import sys
 
 import boto3
 import six
-from dagster_aws.s3 import S3ComputeLogManager
-from moto import mock_s3
-
 from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import CliApiRunLauncher
@@ -13,6 +10,8 @@ from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
+from dagster_aws.s3 import S3ComputeLogManager
+from moto import mock_s3
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"

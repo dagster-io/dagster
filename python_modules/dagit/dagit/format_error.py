@@ -1,9 +1,8 @@
 from typing import Any, Dict
 
+from dagster.utils.log import get_stack_trace_array
 from graphql.error.base import GraphQLError
 from six import text_type
-
-from dagster.utils.log import get_stack_trace_array
 
 
 # based on default_format_error copied and pasted from graphql_server 1.1.1

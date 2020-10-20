@@ -5,6 +5,9 @@ import os
 import pytest
 from airflow.exceptions import AirflowException
 from airflow.utils import timezone
+from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.utils import make_new_run_id
+from dagster.utils import load_yaml_from_glob_list
 from dagster_airflow.factory import (
     AIRFLOW_MAX_DAG_NAME_LEN,
     _rename_for_airflow,
@@ -16,10 +19,6 @@ from dagster_airflow_tests.test_fixtures import (  # pylint: disable=unused-impo
     execute_tasks_in_dag,
 )
 from dagster_test.test_project import test_project_environments_path
-
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.utils import make_new_run_id
-from dagster.utils import load_yaml_from_glob_list
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
 

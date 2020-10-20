@@ -3,9 +3,6 @@ import zipfile
 
 import boto3
 from airline_demo.unzip_file_handle import unzip_file_handle
-from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_system_storage
-from moto import mock_s3
-
 from dagster import (
     LocalFileHandle,
     ModeDefinition,
@@ -17,6 +14,8 @@ from dagster import (
     solid,
 )
 from dagster.utils.test import get_temp_file_name
+from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_system_storage
+from moto import mock_s3
 
 # for dep graphs
 

@@ -1,6 +1,3 @@
-from dagster_dask import dask_resource
-from dask.distributed import Client
-
 from dagster import (
     DagsterInstance,
     Dict,
@@ -11,6 +8,8 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster_dask import dask_resource
+from dask.distributed import Client
 
 
 @solid(

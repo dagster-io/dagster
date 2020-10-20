@@ -1,11 +1,10 @@
 from datetime import timedelta
 
 import pytest
+from dagster import check_dagster_type
 from dagster_examples.bay_bikes.types import TrainingSet, TripDataFrame, WeatherDataFrame
 from numpy import array
 from pandas import DataFrame, Timestamp
-
-from dagster import check_dagster_type
 
 
 def valid_trip_dataframe():

@@ -1,10 +1,9 @@
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.core.events import DagsterEventType
 from dagster.core.host_representation import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.tags import RESUME_RETRY_TAG
+from graphql.execution.base import ResolveInfo
 
 from .external import get_external_execution_plan_or_raise
 from .utils import ExecutionParams

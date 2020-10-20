@@ -2,7 +2,6 @@ import inspect
 import sys
 
 import six
-
 from dagster.check import CheckError
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.seven import funcsigs, is_module_available

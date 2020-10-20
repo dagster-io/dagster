@@ -2,7 +2,6 @@ import sys
 import time
 
 import pytest
-
 from dagster import Output, PipelineDefinition, execute_pipeline, solid
 
 

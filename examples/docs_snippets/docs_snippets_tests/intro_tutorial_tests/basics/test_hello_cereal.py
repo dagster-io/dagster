@@ -1,9 +1,8 @@
+from dagster import execute_pipeline
+from dagster.utils import check_cli_execute_file_pipeline, pushd, script_relative_path
 from docs_snippets.intro_tutorial.basics.e01_first_pipeline.hello_cereal import (
     hello_cereal_pipeline,
 )
-
-from dagster import execute_pipeline
-from dagster.utils import check_cli_execute_file_pipeline, pushd, script_relative_path
 
 
 def test_tutorial_intro_tutorial_hello_world():

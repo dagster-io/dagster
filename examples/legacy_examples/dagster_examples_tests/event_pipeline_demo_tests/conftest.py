@@ -3,7 +3,6 @@ import subprocess
 
 import pytest
 import six
-
 from dagster.seven import get_system_temp_directory
 from dagster.utils import mkdir_p
 

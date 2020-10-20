@@ -1,5 +1,4 @@
 from dagit_tests.stress.dag_gen import generate_pipeline
-
 from dagster import repository
 
 

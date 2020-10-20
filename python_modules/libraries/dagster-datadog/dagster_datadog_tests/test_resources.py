@@ -1,7 +1,6 @@
-from dagster_datadog import datadog_resource
-
 from dagster import ModeDefinition, execute_solid, solid
 from dagster.seven import mock
+from dagster_datadog import datadog_resource
 
 
 @mock.patch("datadog.statsd.timing")

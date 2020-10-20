@@ -5,7 +5,6 @@ import runpy
 import pytest
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace
-
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.workspace import get_workspace_from_kwargs
 from dagster.core.instance import DagsterInstance

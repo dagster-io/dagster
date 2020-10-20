@@ -2,7 +2,6 @@ from collections import defaultdict, namedtuple
 from enum import Enum
 
 import six
-
 from dagster import check
 from dagster.core.definitions import AssetMaterialization, ExpectationResult, Materialization
 from dagster.core.events import DagsterEventType, StepExpectationResultData, StepMaterializationData

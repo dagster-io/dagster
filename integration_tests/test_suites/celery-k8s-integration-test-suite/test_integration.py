@@ -7,6 +7,11 @@ import time
 
 import boto3
 import pytest
+from dagster import DagsterEventType
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.test_utils import create_run_for_test
+from dagster.utils import merge_dicts
+from dagster.utils.yaml_utils import merge_yamls
 from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_test.test_project import (
@@ -14,12 +19,6 @@ from dagster_test.test_project import (
     get_test_project_external_pipeline,
     test_project_environments_path,
 )
-
-from dagster import DagsterEventType
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import create_run_for_test
-from dagster.utils import merge_dicts
-from dagster.utils.yaml_utils import merge_yamls
 
 
 def get_celery_engine_config(dagster_docker_image, job_namespace):

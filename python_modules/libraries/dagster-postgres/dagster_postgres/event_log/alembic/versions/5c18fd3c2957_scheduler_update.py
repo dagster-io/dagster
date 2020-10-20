@@ -6,7 +6,6 @@ Create Date: 2020-06-10 10:00:57.793622
 
 """
 from alembic import op
-
 from dagster.core.storage.migration.utils import get_currently_upgrading_instance, has_table
 
 # alembic magic breaks pylint

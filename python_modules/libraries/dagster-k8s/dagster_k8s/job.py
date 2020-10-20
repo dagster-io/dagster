@@ -6,7 +6,6 @@ from collections import namedtuple
 
 import kubernetes
 import six
-
 from dagster import Array, Field, Noneable, StringSource
 from dagster import __version__ as dagster_version
 from dagster import check

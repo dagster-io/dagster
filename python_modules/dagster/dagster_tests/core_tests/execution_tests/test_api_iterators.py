@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, check, resource, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events.log import EventRecord, construct_event_logger

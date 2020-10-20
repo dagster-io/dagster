@@ -2,9 +2,8 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
-from dateutil import parser
-
 from dagster import check
+from dateutil import parser
 
 
 class StepTiming(namedtuple("_StepTiming", "name started_at completed_at")):

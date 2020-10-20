@@ -8,10 +8,6 @@ from collections import defaultdict
 from contextlib import contextmanager
 
 import boto3
-from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
-from dagster_gcp.gcs.resources import gcs_resource
-from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
-
 from dagster import (
     AssetMaterialization,
     Bool,
@@ -35,6 +31,9 @@ from dagster import (
 from dagster.core.definitions.decorators import daily_schedule, schedule
 from dagster.core.test_utils import nesting_composite_pipeline
 from dagster.utils import segfault
+from dagster_aws.s3 import s3_plus_default_storage_defs, s3_resource
+from dagster_gcp.gcs.resources import gcs_resource
+from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
 
 
 def celery_mode_defs(resources=None):

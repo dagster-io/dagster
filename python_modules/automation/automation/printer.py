@@ -1,9 +1,8 @@
 import os
 import sys
 
-from six import StringIO
-
 from dagster.utils.indenting_printer import IndentingPrinter
+from six import StringIO
 
 
 class IndentingBufferPrinter(IndentingPrinter):

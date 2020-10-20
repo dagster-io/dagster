@@ -4,7 +4,6 @@ from contextlib import contextmanager
 import psycopg2
 import psycopg2.extensions
 import six
-
 from dagster import Field, IntSource, StringSource, check, resource
 
 

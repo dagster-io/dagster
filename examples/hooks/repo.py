@@ -1,6 +1,4 @@
 import yaml
-from dagster_slack import slack_resource
-
 from dagster import (
     ModeDefinition,
     ResourceDefinition,
@@ -13,6 +11,7 @@ from dagster import (
     success_hook,
 )
 from dagster.seven import mock
+from dagster_slack import slack_resource
 
 slack_resource_mock = mock.MagicMock()
 

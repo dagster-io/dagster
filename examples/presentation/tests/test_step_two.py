@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import execute_pipeline, seven
 
 from ..step_two import compute_top_quartile_pipeline_step_two

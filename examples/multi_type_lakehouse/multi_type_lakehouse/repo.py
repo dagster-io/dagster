@@ -1,6 +1,5 @@
-from multi_type_lakehouse.pipelines import multi_type_lakehouse_pipeline
-
 from dagster import repository
+from multi_type_lakehouse.pipelines import multi_type_lakehouse_pipeline
 
 
 @repository

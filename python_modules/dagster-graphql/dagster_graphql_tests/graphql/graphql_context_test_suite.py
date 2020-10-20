@@ -4,8 +4,6 @@ from contextlib import contextmanager
 
 import pytest
 import six
-from dagster_graphql.implementation.context import DagsterGraphQLContext
-
 from dagster import check, file_relative_path, seven
 from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -24,6 +22,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
 from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster_graphql.implementation.context import DagsterGraphQLContext
 
 
 def get_main_recon_repo():

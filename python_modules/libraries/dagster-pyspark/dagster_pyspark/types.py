@@ -1,7 +1,5 @@
 import os
 
-from pyspark.sql import DataFrame as NativeSparkDataFrame
-
 from dagster import (
     Any,
     AssetMaterialization,
@@ -22,6 +20,7 @@ from dagster.config.field_utils import Selector
 from dagster.core.storage.system_storage import fs_intermediate_storage, fs_system_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.utils import dict_without_keys
+from pyspark.sql import DataFrame as NativeSparkDataFrame
 
 WriteModeOptions = Enum(
     "WriteMode",

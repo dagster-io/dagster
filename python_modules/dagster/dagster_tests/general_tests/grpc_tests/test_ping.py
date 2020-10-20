@@ -4,7 +4,6 @@ import time
 
 import grpc
 import pytest
-
 from dagster import check, seven
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
 from dagster.grpc.server import GrpcServerProcess, open_server_process

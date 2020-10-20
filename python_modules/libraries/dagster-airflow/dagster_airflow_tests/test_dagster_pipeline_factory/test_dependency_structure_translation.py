@@ -4,10 +4,9 @@ from airflow.models.dag import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.utils.dates import days_ago
 from airflow.utils.helpers import chain
-from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
-
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import serialize_pp
+from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
 default_args = {
     "owner": "dagster",

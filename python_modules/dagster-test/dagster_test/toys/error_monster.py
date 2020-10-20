@@ -1,5 +1,4 @@
 import six
-
 from dagster import (
     EventMetadataEntry,
     Failure,

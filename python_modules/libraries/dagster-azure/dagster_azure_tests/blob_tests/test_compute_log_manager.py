@@ -2,8 +2,6 @@ import os
 import sys
 
 import six
-from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
-
 from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -12,6 +10,7 @@ from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.seven import mock
+from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -36,7 +35,7 @@ def test_compute_log_manager(
         @solid
         def easy(context):
             context.log.info("easy")
-            print(HELLO_WORLD)
+            print(HELLO_WORLD)  # pylint: disable=print-call
             return "easy"
 
         easy()

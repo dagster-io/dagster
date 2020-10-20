@@ -4,6 +4,8 @@ import os
 import docker
 import kubernetes
 import pytest
+from dagster import seven
+from dagster.core.instance import DagsterInstance
 from dagster_k8s.launcher import K8sRunLauncher
 from dagster_k8s.scheduler import K8sScheduler
 from dagster_k8s_test_infra.cluster import (
@@ -14,9 +16,6 @@ from dagster_k8s_test_infra.cluster import (
 from dagster_k8s_test_infra.helm import helm_namespace_for_k8s_run_launcher
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
-
-from dagster import seven
-from dagster.core.instance import DagsterInstance
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

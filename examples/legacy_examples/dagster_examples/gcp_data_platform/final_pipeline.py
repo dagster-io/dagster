@@ -3,15 +3,6 @@
 import datetime
 import os
 
-from dagster_gcp import (
-    bigquery_resource,
-    bq_solid_for_queries,
-    dataproc_resource,
-    dataproc_solid,
-    import_gcs_paths_to_bq,
-)
-from dagster_pandas import DataFrame
-
 from dagster import (
     InputDefinition,
     List,
@@ -25,6 +16,14 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster_gcp import (
+    bigquery_resource,
+    bq_solid_for_queries,
+    dataproc_resource,
+    dataproc_solid,
+    import_gcs_paths_to_bq,
+)
+from dagster_pandas import DataFrame
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 DEPLOY_BUCKET_PREFIX = os.getenv("GCP_DEPLOY_BUCKET_PREFIX")

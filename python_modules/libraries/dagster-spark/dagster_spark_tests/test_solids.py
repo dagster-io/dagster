@@ -2,9 +2,8 @@ import os
 
 import pytest
 import yaml
-from dagster_spark import create_spark_solid, spark_resource
-
 from dagster import ModeDefinition, execute_pipeline, pipeline
+from dagster_spark import create_spark_solid, spark_resource
 
 CONFIG = """
 solids:

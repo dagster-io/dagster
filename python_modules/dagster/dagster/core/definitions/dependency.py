@@ -2,7 +2,6 @@ from abc import ABCMeta, abstractmethod
 from collections import defaultdict, namedtuple
 
 import six
-
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.serdes import whitelist_for_serdes

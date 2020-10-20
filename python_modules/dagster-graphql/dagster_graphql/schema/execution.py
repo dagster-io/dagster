@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from dagster_graphql import dauphin
-
 from dagster import check
 from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.snap import (
@@ -10,6 +8,7 @@ from dagster.core.snap import (
     ExecutionStepSnap,
     PipelineSnapshot,
 )
+from dagster_graphql import dauphin
 
 from .dagster_types import to_dauphin_dagster_type
 

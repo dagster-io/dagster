@@ -3,7 +3,6 @@ import subprocess
 import uuid
 
 import pytest
-
 from dagster.core.test_utils import new_cwd
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import wait_for_grpc_server

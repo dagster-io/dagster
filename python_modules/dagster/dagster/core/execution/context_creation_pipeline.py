@@ -4,7 +4,6 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 import six
-
 from dagster import check
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder

@@ -6,7 +6,6 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from contextlib import contextmanager
 
 import six
-
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource

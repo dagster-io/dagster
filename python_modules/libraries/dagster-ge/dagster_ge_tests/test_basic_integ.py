@@ -1,8 +1,3 @@
-from dagster_ge.factory import ge_data_context, ge_validation_solid_factory
-from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from dagster_pyspark import pyspark_resource
-from pandas import read_csv
-
 from dagster import (
     DagsterInstance,
     InputDefinition,
@@ -14,6 +9,10 @@ from dagster import (
     solid,
 )
 from dagster.utils import file_relative_path
+from dagster_ge.factory import ge_data_context, ge_validation_solid_factory
+from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
+from dagster_pyspark import pyspark_resource
+from pandas import read_csv
 
 
 @solid

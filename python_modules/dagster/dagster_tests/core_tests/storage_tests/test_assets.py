@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import (
     AssetKey,
     AssetMaterialization,

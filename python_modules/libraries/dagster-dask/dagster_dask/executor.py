@@ -1,7 +1,5 @@
 import dask
 import dask.distributed
-
-# Dask resource requirements are specified under this key
 from dagster import Executor, Field, Permissive, Selector, check, seven
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 from dagster.core.events import DagsterEvent
@@ -12,6 +10,7 @@ from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance
 from dagster.utils import frozentags, iterate_with_context, raise_interrupts_immediately
 
+# Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
 
 

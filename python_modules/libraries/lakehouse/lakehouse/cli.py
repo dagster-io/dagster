@@ -1,10 +1,9 @@
 import importlib
 
 import click
+from dagster import execute_pipeline
 from lakehouse.errors import LakehouseLoadingError
 from lakehouse.house import Lakehouse
-
-from dagster import execute_pipeline
 
 
 def load_lakehouses(module_name):

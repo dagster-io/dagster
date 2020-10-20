@@ -3,7 +3,6 @@ import sys
 import time
 
 import pytest
-
 from dagster.serdes.ipc import (
     interrupt_ipc_subprocess,
     interrupt_ipc_subprocess_pid,

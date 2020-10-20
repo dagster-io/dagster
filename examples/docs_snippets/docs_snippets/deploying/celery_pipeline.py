@@ -1,6 +1,5 @@
-from dagster_celery import celery_executor
-
 from dagster import ModeDefinition, default_executors, pipeline, solid
+from dagster_celery import celery_executor
 
 celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_executor])]
 

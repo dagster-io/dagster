@@ -1,6 +1,8 @@
 import csv
 from collections import OrderedDict
 
+from dagster import ExpectationResult, execute_solid
+from dagster.utils import script_relative_path
 from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_2 import (
     less_simple_data_frame_type_check as lsdftc2,
 )
@@ -17,9 +19,6 @@ from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_5 import (
 from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_5 import (
     less_simple_data_frame_type_check as lsdftc5,
 )
-
-from dagster import ExpectationResult, execute_solid
-from dagster.utils import script_relative_path
 
 
 def test_type_check():

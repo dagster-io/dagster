@@ -1,7 +1,6 @@
 from enum import Enum as PythonEnum
 
 import pytest
-
 from dagster import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,

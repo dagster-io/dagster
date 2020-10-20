@@ -19,9 +19,8 @@
 # -- Project information -----------------------------------------------------
 import sys
 
-from recommonmark.parser import CommonMarkParser
-
 from dagster.utils import script_relative_path
+from recommonmark.parser import CommonMarkParser
 
 sys.path.insert(0, script_relative_path('../dagster'))
 

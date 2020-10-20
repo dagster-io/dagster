@@ -7,7 +7,6 @@ from alembic.command import downgrade, stamp, upgrade
 from alembic.config import Config
 from alembic.migration import MigrationContext  # pylint: disable=import-error
 from alembic.script import ScriptDirectory
-
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.seven import lru_cache
 from dagster.utils import file_relative_path

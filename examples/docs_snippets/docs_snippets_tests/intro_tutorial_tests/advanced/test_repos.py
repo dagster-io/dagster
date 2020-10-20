@@ -1,10 +1,9 @@
+from dagster import execute_pipeline
+from dagster.utils import pushd, script_relative_path
 from docs_snippets.intro_tutorial.advanced.repositories.repos import hello_cereal_repository
 from docs_snippets.intro_tutorial.advanced.scheduling.scheduler import (
     hello_cereal_repository as scheduler_repository,
 )
-
-from dagster import execute_pipeline
-from dagster.utils import pushd, script_relative_path
 
 
 def test_define_repo():

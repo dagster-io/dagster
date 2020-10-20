@@ -1,3 +1,4 @@
+from dagster.core.scheduler.scheduler import ScheduleStatus
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -5,8 +6,6 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
-
-from dagster.core.scheduler.scheduler import ScheduleStatus
 
 GET_SCHEDULE_STATES_QUERY = """
 query ScheduleStateQuery($repositorySelector: RepositorySelector!) {

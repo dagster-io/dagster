@@ -4,7 +4,6 @@ import re
 
 import pytest
 from click.testing import CliRunner
-
 from dagster.cli.pipeline import execute_print_command, pipeline_print_command
 from dagster.utils import file_relative_path
 

@@ -2,9 +2,8 @@ import os
 import subprocess
 
 import pytest
-from dagster_postgres.utils import get_conn_string, wait_for_connection
-
 from dagster.utils import pushd, script_relative_path
+from dagster_postgres.utils import get_conn_string, wait_for_connection
 
 BUILDKITE = bool(os.getenv("BUILDKITE"))
 

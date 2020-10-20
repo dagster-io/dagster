@@ -2,10 +2,6 @@ import os
 from collections import defaultdict
 from contextlib import contextmanager
 
-from sqlalchemy.pool import NullPool
-from watchdog.events import PatternMatchingEventHandler
-from watchdog.observers import Observer
-
 from dagster import StringSource, check
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.sql import (
@@ -19,6 +15,9 @@ from dagster.core.storage.sql import (
 from dagster.core.storage.sqlite import create_db_conn_string
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
+from sqlalchemy.pool import NullPool
+from watchdog.events import PatternMatchingEventHandler
+from watchdog.observers import Observer
 
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import AssetAwareSqlEventLogStorage

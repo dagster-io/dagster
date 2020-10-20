@@ -3,7 +3,6 @@ import pickle
 import uuid
 
 import six
-
 from dagster import (
     AssetMaterialization,
     ExpectationResult,

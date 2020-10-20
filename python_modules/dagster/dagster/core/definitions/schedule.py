@@ -2,7 +2,6 @@ from collections import namedtuple
 from datetime import datetime
 
 import pendulum
-
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.instance import DagsterInstance

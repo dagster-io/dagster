@@ -19,7 +19,7 @@ pytest-xdist==2.1.0; python_version >= '3.6'
 pytest==4.6.11; python_version < '3.6'
 pytest==6.1.1; python_version >= '3.6'
 recommonmark==0.4.0
-snapshottest==0.5.1
+snapshottest==0.6.0
 tox==3.14.2
 tqdm==4.48.0 # pylint crash 48.1+
 yamllint

@@ -1,8 +1,6 @@
 import datetime
 
 import pandas as pd
-from dagster_pandas import DataFrame
-
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -14,6 +12,7 @@ from dagster import (
     lambda_solid,
     solid,
 )
+from dagster_pandas import DataFrame
 
 
 def get_solid_result_value(solid_inst):

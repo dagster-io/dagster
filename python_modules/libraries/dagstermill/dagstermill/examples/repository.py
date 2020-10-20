@@ -3,7 +3,6 @@ import pickle
 import uuid
 
 import dagstermill
-
 from dagster import (
     Any,
     DependencyDefinition,

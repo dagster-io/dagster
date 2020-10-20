@@ -4,7 +4,6 @@ import os
 
 import click
 import six
-
 from dagster import DagsterInvariantViolationError, check
 from dagster.cli.workspace.cli_target import (
     get_external_repository_from_kwargs,

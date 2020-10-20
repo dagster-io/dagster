@@ -1,7 +1,6 @@
-from dagster_aws.cloudwatch.loggers import cloudwatch_logger
-
 from dagster import ModeDefinition, pipeline, solid
 from dagster.loggers import colored_console_logger
+from dagster_aws.cloudwatch.loggers import cloudwatch_logger
 
 
 @solid

@@ -9,11 +9,10 @@ import kubernetes
 import pytest
 import six
 import yaml
-from dagster_k8s.utils import wait_for_pod
-from dagster_test.test_project import test_project_docker_image
-
 from dagster import check
 from dagster.utils import git_repository_root
+from dagster_k8s.utils import wait_for_pod
+from dagster_test.test_project import test_project_docker_image
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
 

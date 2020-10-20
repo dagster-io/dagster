@@ -4,7 +4,6 @@ import re
 import string
 
 import pytest
-
 from dagster.cli.pipeline import execute_backfill_command
 from dagster.utils import merge_dicts
 

@@ -2,16 +2,6 @@ import uuid
 from typing import Any, Dict, Tuple
 
 import pytest
-from dagster_dbt import (
-    DbtRpcClient,
-    DbtRpcOutput,
-    dbt_rpc_run,
-    dbt_rpc_run_and_wait,
-    dbt_rpc_test,
-    local_dbt_rpc_resource,
-)
-from mock import MagicMock
-
 from dagster import (
     DagsterInstance,
     ModeDefinition,
@@ -23,6 +13,15 @@ from dagster import (
     execute_solid,
     resource,
 )
+from dagster_dbt import (
+    DbtRpcClient,
+    DbtRpcOutput,
+    dbt_rpc_run,
+    dbt_rpc_run_and_wait,
+    dbt_rpc_test,
+    local_dbt_rpc_resource,
+)
+from mock import MagicMock
 
 
 def output_for_solid_executed_with_rpc_resource(

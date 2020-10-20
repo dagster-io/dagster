@@ -1,12 +1,11 @@
 from collections import OrderedDict
 
 import six
-from toposort import CircularDependencyError, toposort_flatten
-
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
+from toposort import CircularDependencyError, toposort_flatten
 
 from .dependency import DependencyStructure, Solid, SolidHandle
 from .i_solid_definition import NodeDefinition

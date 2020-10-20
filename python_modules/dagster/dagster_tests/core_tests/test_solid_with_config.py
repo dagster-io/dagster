@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInvalidConfigError, Field, String, execute_pipeline, pipeline, solid
 
 

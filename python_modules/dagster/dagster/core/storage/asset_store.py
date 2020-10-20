@@ -4,7 +4,6 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
 import six
-
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource

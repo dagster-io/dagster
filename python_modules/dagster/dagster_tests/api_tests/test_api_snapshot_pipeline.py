@@ -2,7 +2,6 @@ import re
 import sys
 
 import pytest
-
 from dagster.api.snapshot_pipeline import (
     sync_get_external_pipeline_subset,
     sync_get_external_pipeline_subset_grpc,

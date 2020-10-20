@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import seven
 
 from ..step_one import compute_top_quartile

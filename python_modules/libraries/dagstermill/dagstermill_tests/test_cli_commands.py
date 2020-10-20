@@ -8,10 +8,9 @@ import sys
 
 import pytest
 from click.testing import CliRunner
-from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
-
 from dagster.check import CheckError
 from dagster.utils import file_relative_path, pushd
+from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
 
 EXPECTED_OUTPUT = """{{
  "cells": [

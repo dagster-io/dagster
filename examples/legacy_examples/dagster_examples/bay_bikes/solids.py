@@ -10,6 +10,20 @@ from typing import Tuple
 from zipfile import ZipFile
 
 import requests
+from dagster import (
+    Any,
+    AssetMaterialization,
+    DagsterType,
+    EventMetadataEntry,
+    Field,
+    InputDefinition,
+    Output,
+    OutputDefinition,
+    check,
+    composite_solid,
+    solid,
+)
+from dagster.utils import PICKLE_PROTOCOL
 from dagster_examples.bay_bikes.constants import (
     DARK_SKY_BASE_URL,
     FEATURE_COLUMNS,
@@ -34,21 +48,6 @@ from pandas import (
     read_sql_table,
     to_datetime,
 )
-
-from dagster import (
-    Any,
-    AssetMaterialization,
-    DagsterType,
-    EventMetadataEntry,
-    Field,
-    InputDefinition,
-    Output,
-    OutputDefinition,
-    check,
-    composite_solid,
-    solid,
-)
-from dagster.utils import PICKLE_PROTOCOL
 
 if sys.version_info >= (3, 6):
     # this is done because a compatibility issue with json_normalize in python 3.5

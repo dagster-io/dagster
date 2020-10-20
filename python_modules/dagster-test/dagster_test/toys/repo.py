@@ -1,3 +1,4 @@
+from dagster import repository
 from dagster_test.toys.branches import branch_pipeline
 from dagster_test.toys.composition import composition
 from dagster_test.toys.error_monster import error_monster
@@ -9,8 +10,6 @@ from dagster_test.toys.many_events import many_events
 from dagster_test.toys.retries import retry_pipeline
 from dagster_test.toys.sleepy import sleepy_pipeline
 from dagster_test.toys.unreliable import unreliable_pipeline
-
-from dagster import repository
 
 from .schedules import get_toys_schedules
 

@@ -26,7 +26,6 @@ import click
 import requests
 import six
 import yaml
-
 from dagster import check
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstructable import (

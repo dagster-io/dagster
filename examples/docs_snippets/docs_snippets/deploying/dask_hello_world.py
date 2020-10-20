@@ -1,6 +1,5 @@
-from dagster_dask import dask_executor
-
 from dagster import ModeDefinition, default_executors, pipeline, solid
+from dagster_dask import dask_executor
 
 
 @solid

@@ -3,7 +3,6 @@ from collections import namedtuple
 from enum import Enum
 
 import pytest
-
 from dagster.check import CheckError, ParameterCheckError, inst_param, set_param
 from dagster.serdes import (
     Persistable,

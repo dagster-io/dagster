@@ -4,7 +4,6 @@ import uuid
 import warnings
 
 import toposort as toposort_
-
 from dagster.version import __version__
 
 BACKFILL_TAG_LENGTH = 8

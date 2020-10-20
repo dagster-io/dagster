@@ -5,7 +5,6 @@ import stat
 
 import six
 from crontab import CronTab
-
 from dagster import DagsterInstance, check, utils
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.scheduler import DagsterSchedulerError, Scheduler

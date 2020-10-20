@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import (
     InputDefinition,
     ModeDefinition,

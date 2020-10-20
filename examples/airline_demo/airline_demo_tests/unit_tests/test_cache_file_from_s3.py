@@ -2,7 +2,6 @@ import os
 
 import pytest
 from airline_demo.cache_file_from_s3 import cache_file_from_s3
-
 from dagster import (
     DagsterInvalidDefinitionError,
     ModeDefinition,

@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import DagsterInstance, execute_pipeline, file_relative_path
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.utils import pushd

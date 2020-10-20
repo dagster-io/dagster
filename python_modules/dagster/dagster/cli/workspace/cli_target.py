@@ -6,7 +6,6 @@ from contextlib import contextmanager
 
 import click
 from click import UsageError
-
 from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def

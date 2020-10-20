@@ -2,7 +2,6 @@ import os
 from contextlib import contextmanager
 
 import boto3
-
 from dagster import Field, StringSource, check, seven
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,

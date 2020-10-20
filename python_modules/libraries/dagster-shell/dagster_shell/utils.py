@@ -25,7 +25,6 @@ import signal
 from subprocess import PIPE, STDOUT, Popen
 
 import six
-
 from dagster import check
 from dagster.utils import safe_tempfile_path
 

@@ -3,7 +3,6 @@ from collections import defaultdict
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import check
 from dagster.check import (
     CheckError,

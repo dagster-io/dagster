@@ -2,10 +2,9 @@ import os
 import shutil
 import tempfile
 
-from google.cloud import storage
-
 from dagster import check, resource, seven
 from dagster.utils import mkdir_p
+from google.cloud import storage
 
 
 class CredentialsVault(object):

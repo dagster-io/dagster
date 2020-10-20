@@ -3,7 +3,6 @@ from collections import namedtuple
 import pkg_resources
 import six
 import yaml
-
 from dagster import check
 from dagster.core.definitions.utils import config_from_files, config_from_yaml_strings
 from dagster.core.errors import DagsterInvariantViolationError

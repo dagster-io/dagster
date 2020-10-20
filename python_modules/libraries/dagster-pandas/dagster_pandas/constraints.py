@@ -4,10 +4,9 @@ from datetime import datetime
 from functools import wraps
 
 import pandas as pd
-from pandas import DataFrame
-
 from dagster import DagsterType, EventMetadataEntry, TypeCheck, check
 from dagster.utils.backcompat import experimental_class_warning
+from pandas import DataFrame
 
 
 class ConstraintViolationException(Exception):

@@ -1,13 +1,6 @@
 # start-snippet
 from pathlib import Path
 
-from dagster_aws.s3 import s3_intermediate_storage, s3_resource
-from dagster_aws_pyspark import emr_pyspark_step_launcher
-from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from dagster_pyspark import pyspark_resource
-from pyspark.sql import DataFrame, Row
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
-
 from dagster import (
     ModeDefinition,
     make_python_type_usable_as_dagster_type,
@@ -16,6 +9,12 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
+from dagster_aws.s3 import s3_intermediate_storage, s3_resource
+from dagster_aws_pyspark import emr_pyspark_step_launcher
+from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
+from dagster_pyspark import pyspark_resource
+from pyspark.sql import DataFrame, Row
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 # Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
 make_python_type_usable_as_dagster_type(python_type=DataFrame, dagster_type=DagsterPySparkDataFrame)

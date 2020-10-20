@@ -2,9 +2,6 @@ import io
 import os.path
 import pickle
 
-from dagster_databricks import DatabricksJobRunner, databricks_step_main
-from dagster_pyspark.utils import build_pyspark_zip
-
 from dagster import Bool, Field, StringSource, check, resource, seven
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.events import log_step_event
@@ -15,6 +12,8 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.serdes import deserialize_value
 from dagster.utils import raise_interrupts_immediately
+from dagster_databricks import DatabricksJobRunner, databricks_step_main
+from dagster_pyspark.utils import build_pyspark_zip
 
 from .configs import (
     define_databricks_secrets_config,

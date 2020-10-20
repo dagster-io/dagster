@@ -1,9 +1,8 @@
 import json
 
+from dagster import ModeDefinition, execute_solid, solid
 from dagster_slack import slack_resource
 from mock import patch
-
-from dagster import ModeDefinition, execute_solid, solid
 
 
 @patch("slack.web.base_client.BaseClient._perform_urllib_http_request")

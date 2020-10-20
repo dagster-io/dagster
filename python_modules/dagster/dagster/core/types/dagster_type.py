@@ -3,7 +3,6 @@ from enum import Enum as PythonEnum
 from functools import partial
 
 import six
-
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array

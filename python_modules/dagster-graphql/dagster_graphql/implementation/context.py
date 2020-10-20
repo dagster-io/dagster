@@ -1,12 +1,11 @@
-from dagster_graphql.implementation.utils import UserFacingGraphQLError
-from dagster_graphql.schema.errors import DauphinInvalidSubsetError
-from dagster_graphql.schema.pipelines import DauphinPipeline
-
 from dagster import check
 from dagster.core.host_representation import PipelineSelector, RepositoryLocation
 from dagster.core.host_representation.external import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.grpc.types import ScheduleExecutionDataMode
+from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.errors import DauphinInvalidSubsetError
+from dagster_graphql.schema.pipelines import DauphinPipeline
 
 
 class DagsterGraphQLContext:

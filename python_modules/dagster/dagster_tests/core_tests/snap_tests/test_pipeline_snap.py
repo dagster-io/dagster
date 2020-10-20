@@ -1,7 +1,6 @@
 import itertools
 
 import pytest
-
 from dagster import (
     Field,
     InputDefinition,

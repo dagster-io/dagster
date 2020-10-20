@@ -1,5 +1,3 @@
-from dagster_graphql.client.util import HANDLED_EVENTS
-
 from dagster import (
     AssetMaterialization,
     Bool,
@@ -16,6 +14,7 @@ from dagster import (
     solid,
 )
 from dagster.core.events import STEP_EVENTS, DagsterEventType
+from dagster_graphql.client.util import HANDLED_EVENTS
 
 
 def test_can_handle_all_step_events():

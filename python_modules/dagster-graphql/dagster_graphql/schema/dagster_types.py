@@ -1,8 +1,7 @@
-from dagster_graphql import dauphin
-
 from dagster import check
 from dagster.core.snap import PipelineSnapshot
 from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster_graphql import dauphin
 
 from .config_types import DauphinConfigType, to_dauphin_config_type
 

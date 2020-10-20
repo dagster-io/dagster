@@ -3,16 +3,6 @@ from __future__ import absolute_import
 import sys
 import time
 
-from dagster_graphql.implementation.fetch_runs import is_config_valid
-from dagster_graphql.schema.pipelines import DauphinPipeline
-from dagster_graphql.schema.runs import (
-    from_compute_log_file,
-    from_dagster_event_record,
-    from_event_record,
-)
-from graphql.execution.base import ResolveInfo
-from rx import Observable
-
 from dagster import check
 from dagster.core.definitions import IPipeline
 from dagster.core.definitions.schedule import ScheduleExecutionContext
@@ -31,6 +21,15 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import ExecutionConfig
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster_graphql.implementation.fetch_runs import is_config_valid
+from dagster_graphql.schema.pipelines import DauphinPipeline
+from dagster_graphql.schema.runs import (
+    from_compute_log_file,
+    from_dagster_event_record,
+    from_event_record,
+)
+from graphql.execution.base import ResolveInfo
+from rx import Observable
 
 from ..external import (
     ExternalPipeline,

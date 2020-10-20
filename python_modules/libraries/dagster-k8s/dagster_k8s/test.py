@@ -1,11 +1,10 @@
+from dagster import check
 from dagster_k8s.utils import (
     get_pod_names_in_job,
     retrieve_pod_logs,
     wait_for_job,
     wait_for_job_success,
 )
-
-from dagster import check
 
 
 def wait_for_job_ready(job_name, namespace):

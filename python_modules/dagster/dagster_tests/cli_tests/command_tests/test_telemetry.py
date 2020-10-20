@@ -5,7 +5,6 @@ from difflib import SequenceMatcher
 import pytest
 import yaml
 from click.testing import CliRunner
-
 from dagster import seven
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name

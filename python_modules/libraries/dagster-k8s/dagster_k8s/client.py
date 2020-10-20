@@ -5,11 +5,10 @@ from enum import Enum
 
 import kubernetes
 import six
-from six import raise_from
-
 from dagster import DagsterInstance, check
 from dagster.core.errors import _add_inner_exception_for_py2
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from six import raise_from
 
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds

@@ -1,5 +1,4 @@
 import pandas as pd
-
 from dagster import execute_pipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance

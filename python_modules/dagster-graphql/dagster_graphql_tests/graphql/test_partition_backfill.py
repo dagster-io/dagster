@@ -1,11 +1,10 @@
+from dagster.core.test_utils import environ
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
     infer_repository_selector,
 )
-
-from dagster.core.test_utils import environ
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

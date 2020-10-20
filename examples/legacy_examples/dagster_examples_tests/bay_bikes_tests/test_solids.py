@@ -6,6 +6,7 @@ from datetime import date
 from functools import partial
 
 import pytest
+from dagster import ModeDefinition, execute_pipeline, execute_solid, pipeline, seven
 from dagster_examples.bay_bikes.resources import credentials_vault, mount, testing_client
 from dagster_examples.bay_bikes.solids import (
     MultivariateTimeseries,
@@ -24,8 +25,6 @@ from numpy import array, array_equal
 from numpy.testing import assert_array_equal
 from pandas import DataFrame, Timestamp
 from requests import HTTPError
-
-from dagster import ModeDefinition, execute_pipeline, execute_solid, pipeline, seven
 
 START_TIME = 1514793600
 VOLUME_TARGET_DIRECTORY = "/tmp/bar"

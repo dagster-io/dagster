@@ -7,7 +7,6 @@ import time
 import click
 import pendulum
 from croniter import croniter
-
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterSubprocessError
 from dagster.core.events import EngineEventData

@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod
 
 import six
-
 from dagster import check
 
 

@@ -1,5 +1,4 @@
 import pytest
-
 from dagster.cli.workspace import Workspace
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.host_representation.handle import UserProcessApi

@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import ModeDefinition, PipelineDefinition, check, configured, execute_pipeline, solid
 from dagster.core.definitions.executor import executor
 from dagster.core.execution.retries import Retries

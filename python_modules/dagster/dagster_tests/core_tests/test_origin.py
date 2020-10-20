@@ -1,7 +1,6 @@
 import sys
 
 import pytest
-
 from dagster import lambda_solid, pipeline, repository
 from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
 from dagster.core.host_representation.handle import UserProcessApi

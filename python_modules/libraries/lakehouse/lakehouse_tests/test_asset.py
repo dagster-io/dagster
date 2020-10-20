@@ -1,7 +1,6 @@
 import pytest
-from lakehouse.asset import canonicalize_path
-
 from dagster.check import CheckError
+from lakehouse.asset import canonicalize_path
 
 
 @pytest.mark.parametrize(

@@ -3,11 +3,10 @@ import re
 import nbformat
 import psycopg2
 import pytest
-from nbconvert.preprocessors import ExecutePreprocessor
-from nbconvert.preprocessors.execute import CellExecutionError
-
 from dagster import seven
 from dagster.utils import script_relative_path
+from nbconvert.preprocessors import ExecutePreprocessor
+from nbconvert.preprocessors.execute import CellExecutionError
 
 valid_notebook_paths = [
     (

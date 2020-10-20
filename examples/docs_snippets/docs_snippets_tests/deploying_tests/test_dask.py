@@ -1,7 +1,6 @@
-from docs_snippets.deploying.dask_hello_world import dask_pipeline
-
 from dagster import DagsterInstance, execute_pipeline, file_relative_path, reconstructable
 from dagster.utils.yaml_utils import load_yaml_from_globs
+from docs_snippets.deploying.dask_hello_world import dask_pipeline
 
 
 def test_dask_pipeline():

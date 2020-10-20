@@ -1,8 +1,7 @@
 import dagstermill as dm
-from docs_snippets.legacy.data_science.download_file import download_file
-
 from dagster import InputDefinition, pipeline
 from dagster.utils import script_relative_path
+from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_solid(
     "k_means_iris",

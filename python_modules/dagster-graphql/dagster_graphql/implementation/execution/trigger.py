@@ -1,13 +1,12 @@
 from __future__ import absolute_import
 
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.core.host_representation.external_data import (
     ExternalExecutionParamsData,
     ExternalExecutionParamsErrorData,
 )
 from dagster.core.host_representation.selector import PipelineSelector, TriggerSelector
+from graphql.execution.base import ResolveInfo
 
 from ..utils import ExecutionMetadata, ExecutionParams, capture_dauphin_error
 from .run_lifecycle import create_valid_pipeline_run

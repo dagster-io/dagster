@@ -4,7 +4,6 @@ import os
 import time
 
 import pandas
-
 from dagster import Field, pipeline, solid
 
 

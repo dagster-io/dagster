@@ -1,10 +1,9 @@
+from dagster.core.utils import make_new_run_id
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
-
-from dagster.core.utils import make_new_run_id
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config, csv_hello_world_solids_config_fs_storage

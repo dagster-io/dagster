@@ -3,7 +3,6 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 import pendulum
 import six
-
 from dagster import check
 from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
 from dagster.api.snapshot_job import sync_get_external_job_params, sync_get_external_job_params_grpc

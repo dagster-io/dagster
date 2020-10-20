@@ -1,8 +1,7 @@
-from dagstermill.manager import MANAGER_FOR_NOTEBOOK_INSTANCE
-
 from dagster import SolidDefinition
 from dagster.core.definitions.dependency import Solid
 from dagster.core.system_config.objects import EnvironmentConfig
+from dagstermill.manager import MANAGER_FOR_NOTEBOOK_INSTANCE
 
 BARE_OUT_OF_PIPELINE_CONTEXT = MANAGER_FOR_NOTEBOOK_INSTANCE.get_context()
 

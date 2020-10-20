@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import seven
 from dagster.core.instance import DagsterInstance
 

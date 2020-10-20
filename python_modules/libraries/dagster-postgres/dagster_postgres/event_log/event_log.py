@@ -3,7 +3,6 @@ from collections import namedtuple
 
 import psycopg2
 import sqlalchemy as db
-
 from dagster import check
 from dagster.core.events.log import EventRecord
 from dagster.core.storage.event_log import (

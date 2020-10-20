@@ -1,8 +1,7 @@
+from dagster import check, resource
 from dagster_spark.configs_spark import spark_config
 from dagster_spark.utils import flatten_dict
 from pyspark.sql import SparkSession
-
-from dagster import check, resource
 
 
 def spark_session_from_config(spark_conf=None):

@@ -1,8 +1,7 @@
 import pytest
 import responses
-from dagster_dbt import DbtRpcClient, dbt_rpc_resource, local_dbt_rpc_resource
-
 from dagster import ModeDefinition, execute_solid, solid
+from dagster_dbt import DbtRpcClient, dbt_rpc_resource, local_dbt_rpc_resource
 
 
 def test_url(client):

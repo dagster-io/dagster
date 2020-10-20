@@ -1,13 +1,12 @@
 import time
 
 import kubernetes
-from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_k8s_job_name
-
 from dagster import DagsterInstance, Field, Noneable, StringSource, check
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.scheduler import DagsterSchedulerError, Scheduler
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import merge_dicts
+from dagster_k8s.job import DagsterK8sJobConfig, construct_dagster_k8s_job, get_k8s_job_name
 
 
 class K8sScheduler(Scheduler, ConfigurableClass):

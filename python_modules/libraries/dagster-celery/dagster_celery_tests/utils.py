@@ -3,11 +3,10 @@ from contextlib import contextmanager
 
 import pytest
 from click.testing import CliRunner
-from dagster_celery.cli import main
-
 from dagster import execute_pipeline, seven
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.instance import DagsterInstance
+from dagster_celery.cli import main
 
 BUILDKITE = os.getenv("BUILDKITE")
 

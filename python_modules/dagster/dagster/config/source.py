@@ -1,7 +1,6 @@
 import os
 
 import six
-
 from dagster import check
 
 from .config_type import ScalarUnion

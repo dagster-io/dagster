@@ -3,7 +3,6 @@
 import dagster_pandas as dagster_pd
 import pandas as pd
 import pytest
-
 from dagster import (
     DagsterTypeCheckDidNotPass,
     InputDefinition,

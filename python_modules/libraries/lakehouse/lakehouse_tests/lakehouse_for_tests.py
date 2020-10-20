@@ -1,7 +1,6 @@
+from dagster import ModeDefinition, resource
 from lakehouse import Lakehouse, computed_asset
 from lakehouse_tests.conftest import DictStorage
-
-from dagster import ModeDefinition, resource
 
 
 @computed_asset()

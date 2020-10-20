@@ -4,10 +4,9 @@ import uuid
 import boto3
 import psycopg2
 import pytest
-from dagster_aws.redshift import FakeRedshiftResource, fake_redshift_resource, redshift_resource
-
 from dagster import ModeDefinition, execute_solid, solid
 from dagster.seven import mock
+from dagster_aws.redshift import FakeRedshiftResource, fake_redshift_resource, redshift_resource
 
 REDSHIFT_ENV = {
     "resources": {

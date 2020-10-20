@@ -1,11 +1,10 @@
 import pytest
 import yaml
+from dagster import execute_pipeline
+from dagster.utils import file_relative_path
 from docs_snippets.overview.logging.builtin_logger import demo_pipeline
 from docs_snippets.overview.logging.builtin_logger_error import demo_pipeline_error
 from docs_snippets.overview.logging.logging_modes import hello_modes
-
-from dagster import execute_pipeline
-from dagster.utils import file_relative_path
 
 
 def test_demo_pipeline():

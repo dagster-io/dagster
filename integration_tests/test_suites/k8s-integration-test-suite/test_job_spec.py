@@ -1,6 +1,11 @@
 import os
 
 import yaml
+from dagster import __version__ as dagster_version
+from dagster.core.definitions.utils import validate_tags
+from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.test_utils import create_run_for_test
+from dagster.utils import load_yaml_from_path
 from dagster_k8s import construct_dagster_k8s_job
 from dagster_k8s.job import (
     K8S_RESOURCE_REQUIREMENTS_KEY,
@@ -15,12 +20,6 @@ from dagster_test.test_project import (
     test_project_docker_image,
     test_project_environments_path,
 )
-
-from dagster import __version__ as dagster_version
-from dagster.core.definitions.utils import validate_tags
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import create_run_for_test
-from dagster.utils import load_yaml_from_path
 
 EXPECTED_JOB_SPEC = """
 api_version: batch/v1

@@ -1,7 +1,6 @@
 import re
 
 import pytest
-
 from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id

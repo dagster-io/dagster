@@ -1,6 +1,5 @@
-from slack import WebClient
-
 from dagster import Field, StringSource, resource
+from slack import WebClient
 
 
 @resource(

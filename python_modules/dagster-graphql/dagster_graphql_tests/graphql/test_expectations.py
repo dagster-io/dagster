@@ -1,8 +1,7 @@
 import json
 
-from dagster_graphql.test.utils import infer_pipeline_selector
-
 from dagster.utils import file_relative_path
+from dagster_graphql.test.utils import infer_pipeline_selector
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_events

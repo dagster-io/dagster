@@ -1,8 +1,7 @@
-from dagster_ge.factory import ge_data_context, ge_validation_solid_factory
-from pandas import read_csv
-
 from dagster import InputDefinition, ModeDefinition, PresetDefinition, pipeline, solid
 from dagster.utils import file_relative_path
+from dagster_ge.factory import ge_data_context, ge_validation_solid_factory
+from pandas import read_csv
 
 
 @solid

@@ -1,9 +1,8 @@
 from contextlib import contextmanager
 
 from alembic import op
-from sqlalchemy.engine import reflection
-
 from dagster import check
+from sqlalchemy.engine import reflection
 
 
 def get_inspector():

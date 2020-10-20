@@ -1,6 +1,8 @@
 import re
 from enum import Enum as PyEnum
 
+from dagster import Enum, EnumValue
+from dagster.config import ConfigScalar, ConfigScalarKind, PostProcessingError
 from google.cloud.bigquery.job import (
     CreateDisposition,
     Encoding,
@@ -9,9 +11,6 @@ from google.cloud.bigquery.job import (
     SourceFormat,
     WriteDisposition,
 )
-
-from dagster import Enum, EnumValue
-from dagster.config import ConfigScalar, ConfigScalarKind, PostProcessingError
 
 
 class BigQueryLoadSource(PyEnum):

@@ -5,14 +5,13 @@ from contextlib import contextmanager
 
 import grpc
 import pytest
+from dagster import check
+from dagster.grpc.client import DagsterGrpcClient
+from dagster.utils import file_relative_path
 from dagster_test.dagster_core_docker_buildkite import (
     build_and_tag_test_image,
     test_project_docker_image,
 )
-
-from dagster import check
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.utils import file_relative_path
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 HARDCODED_PORT = 8090

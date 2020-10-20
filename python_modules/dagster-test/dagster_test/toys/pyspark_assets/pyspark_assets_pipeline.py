@@ -1,9 +1,5 @@
 import os
 
-from pyspark.sql import SparkSession, Window
-from pyspark.sql.functions import col, concat, lit
-from pyspark.sql.functions import max as pyspark_max
-
 from dagster import (
     Field,
     InputDefinition,
@@ -14,6 +10,9 @@ from dagster import (
     resource,
     solid,
 )
+from pyspark.sql import SparkSession, Window
+from pyspark.sql.functions import col, concat, lit
+from pyspark.sql.functions import max as pyspark_max
 
 
 def create_spark_session():

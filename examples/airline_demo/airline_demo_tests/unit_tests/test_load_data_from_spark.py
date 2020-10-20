@@ -1,11 +1,10 @@
 from airline_demo.resources import DbInfo
 from airline_demo.solids import load_data_to_database_from_spark
-from dagster_pyspark import pyspark_resource
-from pyspark.sql import DataFrame
-
 from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, solid
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.seven import mock
+from dagster_pyspark import pyspark_resource
+from pyspark.sql import DataFrame
 
 
 def test_airline_demo_load_df():

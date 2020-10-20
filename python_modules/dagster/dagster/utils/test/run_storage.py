@@ -1,5 +1,4 @@
 import pytest
-
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
 from dagster.core.snap import create_pipeline_snapshot_id

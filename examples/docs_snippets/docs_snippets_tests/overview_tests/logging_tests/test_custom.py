@@ -1,8 +1,7 @@
 import yaml
-from docs_snippets.overview.logging.custom_logger import demo_pipeline
-
 from dagster import execute_pipeline
 from dagster.utils import file_relative_path
+from docs_snippets.overview.logging.custom_logger import demo_pipeline
 
 
 def test_json_logger():

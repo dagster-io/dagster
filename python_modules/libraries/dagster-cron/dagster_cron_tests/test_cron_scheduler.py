@@ -5,9 +5,6 @@ import sys
 
 import pytest
 import yaml
-from dagster_cron import SystemCronScheduler
-from freezegun import freeze_time
-
 from dagster import ScheduleDefinition
 from dagster.core.definitions import lambda_solid, pipeline, repository
 from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
@@ -33,6 +30,8 @@ from dagster.seven import (
     get_current_datetime_in_utc,
     get_timestamp_from_utc_datetime,
 )
+from dagster_cron import SystemCronScheduler
+from freezegun import freeze_time
 
 
 @pytest.fixture(scope="function")

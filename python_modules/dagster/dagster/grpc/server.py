@@ -9,8 +9,6 @@ from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 
 import grpc
-from grpc_health.v1 import health, health_pb2, health_pb2_grpc
-
 from dagster import check, seven
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import (
@@ -45,6 +43,7 @@ from dagster.seven import get_system_temp_directory, multiprocessing
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_repository_from_origin
+from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server

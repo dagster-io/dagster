@@ -7,7 +7,6 @@ from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
 import six
-
 from dagster import check
 from dagster.seven import multiprocessing
 from dagster.utils import delay_interrupts

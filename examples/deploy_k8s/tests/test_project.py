@@ -1,7 +1,6 @@
 import os
 
 import yaml
-
 from dagster import execute_pipeline
 from dagster.utils import file_relative_path
 

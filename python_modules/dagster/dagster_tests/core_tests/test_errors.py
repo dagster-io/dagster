@@ -1,7 +1,6 @@
 import sys
 
 import pytest
-
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 

@@ -1,6 +1,5 @@
-from dagster_shell import create_shell_script_solid
-
 from dagster import file_relative_path, pipeline
+from dagster_shell import create_shell_script_solid
 
 
 @pipeline

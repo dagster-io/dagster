@@ -1,9 +1,8 @@
 import pytest
 import sqlalchemy as db
 import yaml
-from dagster_postgres.utils import get_conn
-
 from dagster.core.instance import DagsterInstance
+from dagster_postgres.utils import get_conn
 
 
 def full_pg_config(hostname):

@@ -1,7 +1,6 @@
-from dagster_azure.blob.utils import create_blob_client
-
 from dagster import Field, Selector, StringSource, resource
 from dagster.utils.merger import merge_dicts
+from dagster_azure.blob.utils import create_blob_client
 
 from .file_manager import ADLS2FileManager
 from .utils import create_adls2_client

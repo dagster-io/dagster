@@ -3,7 +3,6 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import namedtuple
 
 import six
-
 from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes

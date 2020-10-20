@@ -2,7 +2,6 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 import pyrsistent
 import six
-
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.stats import (
     build_run_stats_from_events,

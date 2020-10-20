@@ -11,9 +11,8 @@ import tempfile
 
 import docker
 import pytest
-from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
-
 from dagster.utils import load_yaml_from_path, mkdir_p
+from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

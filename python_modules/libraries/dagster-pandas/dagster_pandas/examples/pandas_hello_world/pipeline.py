@@ -1,5 +1,4 @@
 import dagster_pandas as dagster_pd
-
 from dagster import (
     InputDefinition,
     OutputDefinition,

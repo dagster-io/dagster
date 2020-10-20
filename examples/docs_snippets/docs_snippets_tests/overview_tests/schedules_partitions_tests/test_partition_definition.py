@@ -1,7 +1,6 @@
+from dagster import execute_pipeline
 from docs_snippets.overview.schedules_partitions.partition_definition import day_partition_set
 from docs_snippets.overview.schedules_partitions.pipeline import my_pipeline
-
-from dagster import execute_pipeline
 
 
 def test_pipeline():

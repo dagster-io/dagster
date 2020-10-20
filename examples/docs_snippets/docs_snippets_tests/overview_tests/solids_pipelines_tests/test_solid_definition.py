@@ -1,6 +1,5 @@
-from docs_snippets.overview.solids_pipelines.solid_definition import my_solid, solid
-
 from dagster import execute_solid
+from docs_snippets.overview.solids_pipelines.solid_definition import my_solid, solid
 
 
 def test_decorator_solid_example():

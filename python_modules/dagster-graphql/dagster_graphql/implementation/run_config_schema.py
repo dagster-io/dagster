@@ -1,8 +1,7 @@
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import RepresentedPipeline
+from graphql.execution.base import ResolveInfo
 
 from .external import get_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_dauphin_error

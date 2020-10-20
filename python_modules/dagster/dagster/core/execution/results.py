@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 import six
-
 from dagster import check
 from dagster.core.definitions import GraphDefinition, PipelineDefinition, Solid, SolidHandle
 from dagster.core.definitions.events import ObjectStoreOperation

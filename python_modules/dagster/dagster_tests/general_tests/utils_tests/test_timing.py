@@ -1,5 +1,4 @@
 import pytest
-
 from dagster.utils.timing import TimerResult, format_duration, time_execution_scope
 
 

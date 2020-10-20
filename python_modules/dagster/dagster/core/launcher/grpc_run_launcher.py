@@ -2,7 +2,6 @@ import time
 import weakref
 
 import grpc
-
 from dagster import check, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation import ExternalPipeline

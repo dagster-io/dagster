@@ -4,7 +4,6 @@ import warnings
 from contextlib import contextmanager
 
 import pytest
-
 from dagster import check
 
 BUILDKITE = bool(os.getenv("BUILDKITE"))

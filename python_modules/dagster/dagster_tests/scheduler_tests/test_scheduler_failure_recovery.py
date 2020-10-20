@@ -2,7 +2,6 @@ import signal
 
 import pendulum
 import pytest
-
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus

@@ -1,7 +1,4 @@
 from airline_demo.solids import ingest_csv_file_handle_to_spark
-from dagster_pyspark import pyspark_resource
-from pyspark.sql import Row
-
 from dagster import (
     LocalFileHandle,
     ModeDefinition,
@@ -12,6 +9,8 @@ from dagster import (
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.utils import file_relative_path
+from dagster_pyspark import pyspark_resource
+from pyspark.sql import Row
 
 
 @solid

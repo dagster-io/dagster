@@ -2,7 +2,6 @@ import sys
 import weakref
 
 import kubernetes
-
 from dagster import (
     DagsterInvariantViolationError,
     EventMetadataEntry,

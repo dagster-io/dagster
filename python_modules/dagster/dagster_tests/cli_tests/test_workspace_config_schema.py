@@ -1,5 +1,4 @@
 import yaml
-
 from dagster.cli.workspace.config_schema import process_workspace_config
 from dagster.core.test_utils import environ
 

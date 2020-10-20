@@ -6,7 +6,6 @@ import yaml
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace
 from dagit.cli import host_dagit_ui_with_workspace, ui
-
 from dagster import seven
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.host_representation.handle import UserProcessApi

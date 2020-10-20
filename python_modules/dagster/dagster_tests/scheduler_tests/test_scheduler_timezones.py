@@ -1,6 +1,5 @@
 import pendulum
 import pytest
-
 from dagster.core.scheduler import ScheduleTickStatus
 from dagster.scheduler.scheduler import get_default_scheduler_logger, launch_scheduled_runs
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE

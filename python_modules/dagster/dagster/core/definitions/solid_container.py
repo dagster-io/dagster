@@ -2,7 +2,6 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import defaultdict
 
 import six
-
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind

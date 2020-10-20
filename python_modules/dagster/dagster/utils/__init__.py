@@ -17,12 +17,11 @@ from warnings import warn
 
 import six
 import yaml
-from six.moves import configparser
-
 from dagster import check, seven
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS, TemporaryDirectory, multiprocessing, thread
 from dagster.seven.abc import Mapping
+from six.moves import configparser
 
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path

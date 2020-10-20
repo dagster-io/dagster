@@ -1,7 +1,6 @@
 import hashlib
 
 import pytest
-
 from dagster import (
     Bool,
     DagsterInstance,

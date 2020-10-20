@@ -5,7 +5,6 @@ from datetime import datetime
 
 import six
 import sqlalchemy as db
-
 from dagster import check, seven
 from dagster.core.definitions.events import AssetKey, Materialization
 from dagster.core.errors import DagsterEventLogInvalidForRun

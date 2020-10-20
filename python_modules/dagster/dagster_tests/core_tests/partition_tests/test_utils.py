@@ -1,10 +1,9 @@
 from datetime import datetime, timedelta
 
 import pytest
-from dateutil.relativedelta import relativedelta
-
 from dagster import DagsterInvariantViolationError, Partition
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE, date_partition_range
+from dateutil.relativedelta import relativedelta
 
 
 def test_date_partition_range_out_of_order():

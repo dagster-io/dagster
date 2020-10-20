@@ -5,9 +5,6 @@ import warnings
 from contextlib import contextmanager
 
 import grpc
-from grpc_health.v1 import health_pb2
-from grpc_health.v1.health_pb2_grpc import HealthStub
-
 from dagster import check, seven
 from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
@@ -15,6 +12,8 @@ from dagster.core.origin import RepositoryGrpcServerOrigin
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
+from grpc_health.v1 import health_pb2
+from grpc_health.v1.health_pb2_grpc import HealthStub
 
 from .__generated__ import DagsterApiStub, api_pb2
 from .server import GrpcServerProcess

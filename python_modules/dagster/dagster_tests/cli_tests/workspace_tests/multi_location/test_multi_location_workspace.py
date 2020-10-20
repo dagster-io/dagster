@@ -2,7 +2,6 @@ import sys
 
 import pytest
 import yaml
-
 from dagster.api.snapshot_repository import sync_get_external_repositories
 from dagster.cli.workspace import Workspace
 from dagster.cli.workspace.load import load_workspace_from_config, load_workspace_from_yaml_paths

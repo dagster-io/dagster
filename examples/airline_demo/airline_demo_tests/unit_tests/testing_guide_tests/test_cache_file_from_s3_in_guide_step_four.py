@@ -1,10 +1,9 @@
 import boto3
-from dagster_aws.s3 import S3Coordinate, S3FileCache
-from moto import mock_s3
-
 from dagster import FileHandle, ModeDefinition, solid
 from dagster.utils.temp_file import get_temp_file_name
 from dagster.utils.test import execute_solid
+from dagster_aws.s3 import S3Coordinate, S3FileCache
+from moto import mock_s3
 
 
 @solid(required_resource_keys={"file_cache", "s3"})

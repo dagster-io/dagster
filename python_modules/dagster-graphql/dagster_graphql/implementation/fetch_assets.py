@@ -1,8 +1,7 @@
-from dagster_graphql.implementation.utils import capture_dauphin_error
-
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events import DagsterEventType
+from dagster_graphql.implementation.utils import capture_dauphin_error
 
 
 @capture_dauphin_error

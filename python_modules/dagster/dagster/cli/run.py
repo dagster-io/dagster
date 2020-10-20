@@ -1,5 +1,4 @@
 import click
-
 from dagster.core.instance import DagsterInstance
 
 

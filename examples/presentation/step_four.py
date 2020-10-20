@@ -22,9 +22,8 @@ def get_in_repo_preset_definition():
     )
 
 
-from dagster_pandas import DataFrame
-
 from dagster import pipeline, solid
+from dagster_pandas import DataFrame
 
 
 @solid

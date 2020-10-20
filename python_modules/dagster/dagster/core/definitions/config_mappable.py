@@ -1,7 +1,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 import six
-
 from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.field_utils import check_user_facing_opt_config_param

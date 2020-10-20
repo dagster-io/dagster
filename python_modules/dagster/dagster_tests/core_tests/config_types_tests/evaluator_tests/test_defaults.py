@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import Any, Enum, EnumValue, Field, Noneable, Permissive, String
 from dagster.check import CheckError, ParameterCheckError
 from dagster.config.config_type import ConfigType, ConfigTypeKind

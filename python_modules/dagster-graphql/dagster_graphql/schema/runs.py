@@ -3,11 +3,6 @@ from __future__ import absolute_import
 import logging
 
 import yaml
-from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_assets import get_assets_for_run_id
-from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
-from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
-
 from dagster import PipelineRun, check, seven
 from dagster.core.definitions.events import (
     EventMetadataEntry,
@@ -28,6 +23,10 @@ from dagster.core.host_representation import ExternalExecutionPlan
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot, PipelineRunStatus
 from dagster.core.storage.tags import TagType, get_tag_type
+from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_assets import get_assets_for_run_id
+from dagster_graphql.implementation.fetch_pipelines import get_pipeline_reference_or_raise
+from dagster_graphql.implementation.fetch_runs import get_stats, get_step_stats
 
 DauphinPipelineRunStatus = dauphin.Enum.from_enum(PipelineRunStatus)
 DauphinStepEventStatus = dauphin.Enum.from_enum(StepEventStatus)

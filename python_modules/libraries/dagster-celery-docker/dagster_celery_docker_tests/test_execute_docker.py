@@ -9,18 +9,17 @@ from contextlib import contextmanager
 import boto3
 import docker
 import pytest
+from dagster import execute_pipeline, file_relative_path, seven
+from dagster.core.test_utils import instance_for_test_tempdir
+from dagster.utils import merge_dicts
+from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster.utils.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     build_and_tag_test_image,
     get_test_project_recon_pipeline,
     test_project_docker_image,
     test_project_environments_path,
 )
-
-from dagster import execute_pipeline, file_relative_path, seven
-from dagster.core.test_utils import instance_for_test_tempdir
-from dagster.utils import merge_dicts
-from dagster.utils.test.postgres_instance import TestPostgresInstance
-from dagster.utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

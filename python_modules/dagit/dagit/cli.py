@@ -5,15 +5,14 @@ from contextlib import contextmanager
 
 import click
 import six
-from gevent import pywsgi
-from geventwebsocket.handler import WebSocketHandler
-
 from dagster import check, seven
 from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action, log_repo_stats, upload_logs
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
+from gevent import pywsgi
+from geventwebsocket.handler import WebSocketHandler
 
 from .app import create_app_from_workspace
 from .version import __version__

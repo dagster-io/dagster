@@ -1,5 +1,4 @@
 import requests
-
 from dagster import InputDefinition, pipeline, repository, solid
 
 from .schedules import define_schedules

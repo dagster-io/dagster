@@ -1,6 +1,4 @@
 import yaml
-from graphql.execution.base import ResolveInfo
-
 from dagster import check
 from dagster.core.host_representation import (
     ExternalPartitionConfigData,
@@ -12,6 +10,7 @@ from dagster.core.host_representation import (
     RepositorySelector,
 )
 from dagster.core.storage.tags import TagType, get_tag_type
+from graphql.execution.base import ResolveInfo
 
 from .utils import capture_dauphin_error
 

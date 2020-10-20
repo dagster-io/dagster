@@ -2,7 +2,6 @@ import re
 import uuid
 
 import pytest
-
 from dagster import (
     DependencyDefinition,
     InputDefinition,

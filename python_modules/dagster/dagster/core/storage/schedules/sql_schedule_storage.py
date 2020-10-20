@@ -2,7 +2,6 @@ from abc import abstractmethod
 
 import six
 import sqlalchemy as db
-
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler import ScheduleState, ScheduleTick

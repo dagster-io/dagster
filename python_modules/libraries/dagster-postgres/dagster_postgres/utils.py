@@ -5,7 +5,6 @@ from contextlib import contextmanager
 import psycopg2
 import six
 import sqlalchemy
-
 from dagster import Field, IntSource, Selector, StringSource, check
 from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
 from dagster.seven import quote_plus as urlquote

@@ -1,5 +1,4 @@
 from click.testing import CliRunner
-
 from dagster.cli.pipeline import pipeline_list_command
 from dagster.utils import script_relative_path
 

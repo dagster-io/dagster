@@ -1,7 +1,6 @@
-from dagster_pandas import DataFrame
-
 from dagster import InputDefinition, OutputDefinition, execute_solid, lambda_solid, solid
 from dagster.utils import file_relative_path
+from dagster_pandas import DataFrame
 
 
 def create_num_csv_environment():

@@ -4,6 +4,26 @@ import sys
 import time
 
 import kubernetes
+from dagster import (
+    DagsterEvent,
+    DagsterEventType,
+    DagsterInstance,
+    EventMetadataEntry,
+    Executor,
+    check,
+    executor,
+)
+from dagster.cli.api import ExecuteStepArgs
+from dagster.core.definitions.executor import check_cross_process_constraints
+from dagster.core.events import EngineEventData
+from dagster.core.events.log import DagsterEventRecord
+from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
+from dagster.core.execution.retries import Retries
+from dagster.core.instance import InstanceRef
+from dagster.core.origin import PipelineOrigin
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
+from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
 from dagster_celery.core_execution_loop import DELEGATE_MARKER
 from dagster_celery.defaults import broker_url, result_backend
@@ -27,27 +47,6 @@ from dagster_k8s.utils import (
     retrieve_pod_logs,
     wait_for_job_success,
 )
-
-from dagster import (
-    DagsterEvent,
-    DagsterEventType,
-    DagsterInstance,
-    EventMetadataEntry,
-    Executor,
-    check,
-    executor,
-)
-from dagster.cli.api import ExecuteStepArgs
-from dagster.core.definitions.executor import check_cross_process_constraints
-from dagster.core.events import EngineEventData
-from dagster.core.events.log import DagsterEventRecord
-from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
-from dagster.core.execution.retries import Retries
-from dagster.core.instance import InstanceRef
-from dagster.core.origin import PipelineOrigin
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
-from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
 from .launcher import CeleryK8sRunLauncher

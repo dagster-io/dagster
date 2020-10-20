@@ -1,5 +1,4 @@
 import pytest
-
 from dagster import seven
 from dagster.api.execute_run import cli_api_execute_run, sync_execute_run_grpc
 from dagster.core.instance import DagsterInstance

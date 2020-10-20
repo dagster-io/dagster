@@ -10,9 +10,8 @@ import os
 from typing import Tuple
 
 import pandas as pd
-from lakehouse import AssetStorage, Lakehouse
-
 from dagster import ModeDefinition, StringSource, resource
+from lakehouse import AssetStorage, Lakehouse
 
 
 class LocalFileSystemStorage(AssetStorage):
