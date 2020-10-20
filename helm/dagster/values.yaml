@@ -222,7 +222,7 @@ celery:
     # default Celery worker deployment.
     # Example:
     # - name: "redshift"
-    #   replicaCount: "3"
+    #   replicaCount: 3
   # Additional environment variables to set on the celery/job containers
   # A Kubernetes ConfigMap will be created with these environment variables.
   env:

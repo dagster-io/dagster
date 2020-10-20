@@ -1,30 +1,18 @@
 import ast
-import sys
+import json
 import warnings
 from contextlib import contextmanager
 
 from airflow.exceptions import AirflowException
 from dagster_airflow.vendor.docker_operator import DockerOperator
-from dagster_graphql.client.mutations import (
-    DagsterGraphQLClientError,
-    handle_execute_plan_result_raw,
-    handle_execution_errors,
-)
-from dagster_graphql.client.query import RAW_EXECUTE_PLAN_MUTATION
-from dagster_graphql.client.util import construct_execute_plan_variables, parse_raw_log_lines
 from docker import APIClient, from_env
 
 from dagster import check, seven
-from dagster.core.events import EngineEventData
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.grpc.types import ExecuteStepArgs
+from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
-from .util import (
-    airflow_tags_for_ts,
-    check_events_for_failures,
-    check_events_for_skips,
-    get_aws_environment,
-)
+from .util import check_events_for_failures, check_events_for_skips, get_aws_environment
 
 DOCKER_TEMPDIR = "/tmp"
 
@@ -100,13 +88,10 @@ class DagsterDockerOperator(DockerOperator):
         self.step_keys = dagster_operator_parameters.step_keys
         self.recon_repo = dagster_operator_parameters.recon_repo
         self._run_id = None
-        # self.instance might be None in, for instance, a unit test setting where the operator
-        # was being directly instantiated without passing through make_airflow_dag
-        self.instance = (
-            DagsterInstance.from_ref(dagster_operator_parameters.instance_ref)
-            if dagster_operator_parameters.instance_ref
-            else None
-        )
+
+        self.instance_ref = dagster_operator_parameters.instance_ref
+        check.invariant(self.instance_ref)
+        self.instance = DagsterInstance.from_ref(self.instance_ref)
 
         # These shenanigans are so we can override DockerOperator.get_hook in order to configure
         # a docker client using docker.from_env, rather than messing with the logic of
@@ -181,7 +166,9 @@ class DagsterDockerOperator(DockerOperator):
 
             res = []
             line = ""
-            for new_line in self.cli.logs(container=self.container["Id"], stream=True):
+            for new_line in self.cli.logs(
+                container=self.container["Id"], stream=True, stdout=True, stderr=False
+            ):
                 line = new_line.strip()
                 if hasattr(line, "decode"):
                     line = line.decode("utf-8")
@@ -217,27 +204,23 @@ class DagsterDockerOperator(DockerOperator):
     def query(self, airflow_ts):
         check.opt_str_param(airflow_ts, "airflow_ts")
 
-        variables = construct_execute_plan_variables(
-            self.recon_repo,
-            self.mode,
-            self.run_config,
-            self.pipeline_name,
-            self.run_id,
-            self.step_keys,
+        recon_pipeline = self.recon_repo.get_reconstructable_pipeline(self.pipeline_name)
+
+        input_json = serialize_dagster_namedtuple(
+            ExecuteStepArgs(
+                pipeline_origin=recon_pipeline.get_origin(),
+                pipeline_run_id=self.run_id,
+                instance_ref=self.instance_ref,
+                mode=self.mode,
+                step_keys_to_execute=self.step_keys,
+                run_config=self.run_config,
+                retries_dict={},
+            )
         )
 
-        tags = airflow_tags_for_ts(airflow_ts)
-        variables["executionParams"]["executionMetadata"]["tags"] = tags
-
-        self.log.info(
-            "Executing GraphQL query: {query}\n".format(query=RAW_EXECUTE_PLAN_MUTATION)
-            + "with variables:\n"
-            + seven.json.dumps(variables, indent=2)
-        )
-
-        return "dagster-graphql -v '{variables}' -t '{query}'".format(
-            variables=seven.json.dumps(variables), query=RAW_EXECUTE_PLAN_MUTATION
-        )
+        command = "dagster api execute_step_with_structured_logs {}".format(json.dumps(input_json))
+        self.log.info("Executing: {command}\n".format(command=command))
+        return command
 
     def get_docker_command(self, airflow_ts):
         """Deliberately renamed from get_command to avoid shadoowing the method of the base class"""
@@ -268,50 +251,36 @@ class DagsterDockerOperator(DockerOperator):
             self._run_id = context["dag_run"].run_id
 
         try:
-            if self.instance:
-                tags = {AIRFLOW_EXECUTION_DATE_STR: context.get("ts")} if "ts" in context else {}
+            tags = {AIRFLOW_EXECUTION_DATE_STR: context.get("ts")} if "ts" in context else {}
 
-                run = self.instance.register_managed_run(
-                    pipeline_name=self.pipeline_name,
-                    run_id=self.run_id,
-                    run_config=self.run_config,
-                    mode=self.mode,
-                    solids_to_execute=None,
-                    step_keys_to_execute=None,
-                    tags=tags,
-                    root_run_id=None,
-                    parent_run_id=None,
-                    pipeline_snapshot=self.pipeline_snapshot,
-                    execution_plan_snapshot=self.execution_plan_snapshot,
-                    parent_pipeline_snapshot=self.parent_pipeline_snapshot,
-                )
+            self.instance.register_managed_run(
+                pipeline_name=self.pipeline_name,
+                run_id=self.run_id,
+                run_config=self.run_config,
+                mode=self.mode,
+                solids_to_execute=None,
+                step_keys_to_execute=None,
+                tags=tags,
+                root_run_id=None,
+                parent_run_id=None,
+                pipeline_snapshot=self.pipeline_snapshot,
+                execution_plan_snapshot=self.execution_plan_snapshot,
+                parent_pipeline_snapshot=self.parent_pipeline_snapshot,
+            )
 
-            raw_res = self.execute_raw(context)
+            res = self.execute_raw(context)
             self.log.info("Finished executing container.")
 
-            res = parse_raw_log_lines(raw_res)
+            if not res:
+                raise AirflowException("Missing query response")
 
             try:
-                handle_execution_errors(res, "executePlan")
-            except DagsterGraphQLClientError as err:
-                if self.instance:
-                    self.instance.report_engine_event(
-                        str(err),
-                        run,
-                        EngineEventData.engine_error(
-                            serializable_error_info_from_exc_info(sys.exc_info())
-                        ),
-                        self.__class__,
-                    )
-                raise
+                events = [deserialize_json_to_dagster_namedtuple(line) for line in res if line]
+            except Exception:  # pylint: disable=broad-except
+                raise AirflowException(
+                    "Could not parse response {response}".format(response=repr(res))
+                )
 
-            events = handle_execute_plan_result_raw(res)
-
-            if self.instance:
-                for event in events:
-                    self.instance.handle_new_event(event)
-
-            events = [e.dagster_event for e in events]
             check_events_for_failures(events)
             check_events_for_skips(events)
 

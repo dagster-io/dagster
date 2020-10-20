@@ -345,10 +345,6 @@
             "path": "/_apidocs/libraries/dagster_dbt"
           },
           {
-            "name": "Flyte (dagster_flyte)",
-            "path": "/_apidocs/libraries/dagster_flyte"
-          },
-          {
             "name": "GCP (dagster_gcp)",
             "path": "/_apidocs/libraries/dagster_gcp"
           },

@@ -5,7 +5,6 @@ from dagster import (
     AssetMaterialization,
     EventMetadataEntry,
     Field,
-    Selector,
     String,
     dagster_type_loader,
     dagster_type_materializer,
@@ -17,9 +16,9 @@ from dagster import (
 )
 
 
-@dagster_type_loader(Selector({"csv": Field(String)}))
-def less_simple_data_frame_loader(context, selector):
-    csv_path = os.path.join(os.path.dirname(__file__), selector["csv"])
+@dagster_type_loader({"csv_path": Field(String)})
+def less_simple_data_frame_loader(context, config):
+    csv_path = os.path.join(os.path.dirname(__file__), config["csv_path"])
 
     with open(csv_path, "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
@@ -138,7 +137,7 @@ if __name__ == "__main__":
         {
             "solids": {
                 "sort_by_calories": {
-                    "inputs": {"cereals": {"csv": "cereal.csv"}},
+                    "inputs": {"cereals": {"csv_path": "cereal.csv"}},
                     "outputs": [
                         {
                             "result": {

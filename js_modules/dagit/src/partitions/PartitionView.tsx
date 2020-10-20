@@ -1,25 +1,19 @@
-import {Button, ButtonGroup, Divider, Spinner} from '@blueprintjs/core';
+import {Divider, Spinner} from '@blueprintjs/core';
 import {Colors} from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {Query, QueryResult} from 'react-apollo';
 import styled from 'styled-components/macro';
 
-import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {Header} from 'src/ListComponents';
-import {Loading} from 'src/Loading';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {colorHash} from 'src/Util';
 import {PIPELINE_LABEL, PartitionGraph} from 'src/partitions/PartitionGraph';
+import {PartitionPageControls} from 'src/partitions/PartitionPageControls';
 import {PartitionRunMatrix} from 'src/partitions/PartitionRunMatrix';
 import {
-  PartitionLongitudinalQuery,
   PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
   PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs,
 } from 'src/partitions/types/PartitionLongitudinalQuery';
-import {RunTable} from 'src/runs/RunTable';
+import {useChunkedPartitionsQuery} from 'src/partitions/useChunkedPartitionsQuery';
 import {RunsFilter} from 'src/runs/RunsFilter';
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
@@ -28,109 +22,57 @@ type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partition
 interface PartitionViewProps {
   pipelineName: string;
   partitionSetName: string;
-  cursor: string | undefined;
-  setCursor: (cursor: string | undefined) => void;
-  onLoaded?: () => void;
   runTags?: {[key: string]: string};
 }
 
 export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   pipelineName,
   partitionSetName,
-  cursor,
-  setCursor,
-  onLoaded,
   runTags,
 }) => {
-  const [cursorStack, setCursorStack] = React.useState<string[]>([]);
-  const [pageSize, setPageSize] = React.useState<number | undefined>(30);
-  const repositorySelector = useRepositorySelector();
-  const popCursor = () => {
-    const nextStack = [...cursorStack];
-    setCursor(nextStack.pop());
-    setCursorStack(nextStack);
-  };
-  const pushCursor = (nextCursor: string) => {
-    if (cursor) {
-      setCursorStack([...cursorStack, cursor]);
-    }
-    setCursor(nextCursor);
-  };
+  const [pageSize, setPageSize] = React.useState(30);
+  const {loading, partitions, paginationProps} = useChunkedPartitionsQuery(
+    partitionSetName,
+    pageSize,
+  );
+
+  const allStepKeys = {};
+  partitions.forEach((partition) => {
+    partition.runs?.forEach((run) => {
+      if (!run) {
+        return;
+      }
+      run.stepStats.forEach((stat) => {
+        allStepKeys[stat.stepKey] = true;
+      });
+    });
+  });
 
   return (
-    <Query
-      query={PARTITION_SET_QUERY}
-      variables={{
-        partitionSetName,
-        repositorySelector,
-        partitionsCursor: cursor,
-        partitionsLimit: pageSize,
-        reverse: true,
-      }}
-      fetchPolicy="cache-and-network"
-      pollInterval={15 * 1000}
-      partialRefetch={true}
-    >
-      {(queryResult: QueryResult<PartitionLongitudinalQuery, any>) => (
-        <Loading queryResult={queryResult} allowStaleData={true}>
-          {({partitionSetOrError}) => {
-            onLoaded?.();
-            if (partitionSetOrError.__typename !== 'PartitionSet') {
-              return null;
-            }
-            const partitionSet = partitionSetOrError;
-            const partitions =
-              partitionSet.partitionsOrError.__typename === 'Partitions'
-                ? partitionSet.partitionsOrError.results
-                : [];
-            const allStepKeys = {};
-            partitions.forEach((partition) => {
-              partition.runs?.forEach((run) => {
-                if (!run) {
-                  return;
-                }
-                run.stepStats.forEach((stat) => {
-                  allStepKeys[stat.stepKey] = true;
-                });
-              });
-            });
-            const showLoading = queryResult.loading && queryResult.networkStatus !== 6;
-            return (
-              <div style={{marginTop: 30}}>
-                <Header>Longitudinal History</Header>
-                <Divider />
-                <PartitionPagerControls
-                  displayed={partitions.slice(0, pageSize)}
-                  pageSize={pageSize}
-                  setPageSize={setPageSize}
-                  hasNextPage={!!cursor}
-                  hasPrevPage={partitions.length === pageSize}
-                  pushCursor={pushCursor}
-                  popCursor={popCursor}
-                  setCursor={setCursor}
-                />
-                <div style={{position: 'relative'}}>
-                  <PartitionRunMatrix
-                    pipelineName={pipelineName}
-                    partitions={partitions}
-                    runTags={runTags}
-                  />
-                  <PartitionContent
-                    partitions={partitions}
-                    allStepKeys={Object.keys(allStepKeys)}
-                  />
-                  {showLoading && (
-                    <Overlay>
-                      <Spinner size={48} />
-                    </Overlay>
-                  )}
-                </div>
-              </div>
-            );
-          }}
-        </Loading>
-      )}
-    </Query>
+    <div style={{marginTop: 30}}>
+      <Header>Longitudinal History</Header>
+      <Divider />
+      <PartitionPageControls
+        paginationProps={paginationProps}
+        pageSize={pageSize}
+        setPageSize={(next: number) => {
+          setPageSize(next);
+          paginationProps.reset();
+        }}
+      >
+        {loading && (
+          <div style={{marginLeft: 15, display: 'flex', alignItems: 'center'}}>
+            <Spinner size={19} />
+            <div style={{width: 5}} />
+            Loading Partitions...
+          </div>
+        )}
+      </PartitionPageControls>
+      <div style={{position: 'relative'}}>
+        <PartitionRunMatrix pipelineName={pipelineName} partitions={partitions} runTags={runTags} />
+        <PartitionContent partitions={partitions} allStepKeys={Object.keys(allStepKeys)} />
+      </div>
+    </div>
   );
 };
 
@@ -228,13 +170,10 @@ const PartitionContent = ({
   );
 };
 
-const StepSelector = ({
-  selected,
-  onChange,
-}: {
+const StepSelector: React.FunctionComponent<{
   selected: {[stepKey: string]: boolean};
   onChange: (selected: {[stepKey: string]: boolean}) => void;
-}) => {
+}> = ({selected, onChange}) => {
   const onStepClick = (stepKey: string) => {
     return (evt: React.MouseEvent) => {
       if (evt.shiftKey) {
@@ -327,20 +266,6 @@ const PartitionContentContainer = styled.div`
   position: relative;
   max-width: 1600px;
   margin: 0 auto;
-`;
-
-const Overlay = styled.div`
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background-color: #ffffff;
-  opacity: 0.8;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
 `;
 
 const getPipelineDurationForRun = (run: Run) => {
@@ -462,138 +387,3 @@ const applyFilter = (filter: TokenizingFieldValue, run: Run) => {
   }
   return true;
 };
-
-interface PartitionPagerProps {
-  displayed: Partition[];
-  pageSize: number | undefined;
-  setPageSize: React.Dispatch<React.SetStateAction<number | undefined>>;
-  hasPrevPage: boolean;
-  hasNextPage: boolean;
-  pushCursor: (nextCursor: string) => void;
-  popCursor: () => void;
-  setCursor: (cursor: string | undefined) => void;
-}
-
-const PartitionPagerControls: React.FunctionComponent<PartitionPagerProps> = ({
-  displayed,
-  pageSize,
-  setPageSize,
-  hasNextPage,
-  hasPrevPage,
-  setCursor,
-  pushCursor,
-  popCursor,
-}) => {
-  return (
-    <PartitionPagerContainer>
-      <ButtonGroup>
-        {[7, 30, 120].map((size) => (
-          <Button
-            key={size}
-            active={!hasNextPage && pageSize === size}
-            onClick={() => {
-              setCursor(undefined);
-              setPageSize(size);
-            }}
-          >
-            Last {size}
-          </Button>
-        ))}
-        <Button
-          active={pageSize === undefined}
-          onClick={() => {
-            setCursor(undefined);
-            setPageSize(undefined);
-          }}
-        >
-          All
-        </Button>
-      </ButtonGroup>
-
-      <ButtonGroup>
-        <Button
-          disabled={!hasPrevPage}
-          icon={IconNames.ARROW_LEFT}
-          onClick={() => displayed && pushCursor(displayed[0].name)}
-        >
-          Back
-        </Button>
-        <Button
-          disabled={!hasNextPage}
-          rightIcon={IconNames.ARROW_RIGHT}
-          onClick={() => popCursor()}
-        >
-          Next
-        </Button>
-      </ButtonGroup>
-    </PartitionPagerContainer>
-  );
-};
-
-const PartitionPagerContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin: 10px 0;
-`;
-
-const PARTITION_SET_QUERY = gql`
-  query PartitionLongitudinalQuery(
-    $partitionSetName: String!
-    $repositorySelector: RepositorySelector!
-    $partitionsLimit: Int
-    $partitionsCursor: String
-    $reverse: Boolean
-  ) {
-    partitionSetOrError(
-      repositorySelector: $repositorySelector
-      partitionSetName: $partitionSetName
-    ) {
-      ... on PartitionSet {
-        name
-        partitionsOrError(cursor: $partitionsCursor, limit: $partitionsLimit, reverse: $reverse) {
-          ... on Partitions {
-            results {
-              name
-              runs {
-                runId
-                pipelineName
-                tags {
-                  key
-                  value
-                }
-                stats {
-                  __typename
-                  ... on PipelineRunStatsSnapshot {
-                    startTime
-                    endTime
-                    materializations
-                  }
-                }
-                status
-                stepStats {
-                  __typename
-                  stepKey
-                  startTime
-                  endTime
-                  status
-                  materializations {
-                    __typename
-                  }
-                  expectationResults {
-                    success
-                  }
-                }
-                ...RunTableRunFragment
-              }
-            }
-          }
-          ... on PythonError {
-            ...PythonErrorFragment
-          }
-        }
-      }
-    }
-  }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
-  ${RunTable.fragments.RunTableRunFragment}
-`;

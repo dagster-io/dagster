@@ -3,7 +3,11 @@ from contextlib import contextmanager
 
 from dagster import file_relative_path
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation.handle import PipelineHandle, RepositoryLocationHandle
+from dagster.core.host_representation.handle import (
+    PipelineHandle,
+    RepositoryLocationHandle,
+    UserProcessApi,
+)
 from dagster.core.host_representation.repository_location import (
     GrpcServerRepositoryLocation,
     InProcessRepositoryLocation,
@@ -12,7 +16,7 @@ from dagster.core.host_representation.repository_location import (
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
-def get_bar_repo_repository_location_handle():
+def get_bar_repo_repository_location_handle(user_process_api=UserProcessApi.CLI):
     return RepositoryLocationHandle.create_python_env_location(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -20,6 +24,7 @@ def get_bar_repo_repository_location_handle():
             attribute="bar_repo",
         ),
         location_name="bar_repo_location",
+        user_process_api=user_process_api,
     )
 
 

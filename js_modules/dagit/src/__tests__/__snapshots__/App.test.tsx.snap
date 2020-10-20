@@ -5441,7 +5441,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 jHvLaV"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -10198,7 +10198,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 jHvLaV"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -11302,12 +11302,12 @@ exports[`renders solids explorer 1`] = `
                     Composite Solid
                   </div>
                   <h3
-                    className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
+                    className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 jHvLaV"
                   >
                     s3_​to_​df
                   </h3>
                   <code
-                    className="bp3-code SolidTypeSignature__TypeSignature-nlrakt-0 fQVmJz"
+                    className="bp3-code SolidTypeSignature__TypeSignature-nlrakt-0 fZaZJg"
                   >
                     (
                     <span>
@@ -11513,7 +11513,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iFpgED"
                     >
                       file_cache
                     </h4>
@@ -11542,7 +11542,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iFpgED"
                     >
                       file_manager
                     </h4>
@@ -11571,7 +11571,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iFpgED"
                     >
                       pyspark
                     </h4>
@@ -11600,7 +11600,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iFpgED"
                     >
                       pyspark_step_launcher
                     </h4>
@@ -11629,7 +11629,7 @@ more detail.
                       </svg>
                     </span>
                     <h4
-                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 juJdTK"
+                      className="SidebarComponents__SectionHeader-sc-1tax5rq-2 SidebarSolidHelpers__ResourceHeader-sc-198d6h6-2 iFpgED"
                     >
                       s3
                     </h4>
@@ -11691,7 +11691,7 @@ more detail.
                     className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
                   >
                     <h4
-                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 eJEHjb"
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 gnXjkd"
                     >
                       s3_​coordinate
                     </h4>
@@ -11714,7 +11714,7 @@ more detail.
                     className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
                   >
                     <h4
-                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 eJEHjb"
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 gnXjkd"
                     >
                       archive_​member
                     </h4>
@@ -11790,7 +11790,7 @@ more detail.
                     className="SidebarComponents__SectionItemContainer-sc-1tax5rq-6 fIZkpn"
                   >
                     <h4
-                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 eJEHjb"
+                      className="SidebarComponents__SectionSmallHeader-sc-1tax5rq-3 gnXjkd"
                     >
                       result
                     </h4>
@@ -11863,7 +11863,7 @@ more detail.
                   className="SidebarComponents__SectionInner-sc-1tax5rq-8 xLsok"
                 >
                   <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 eqrjxe"
                     onClick={[Function]}
                   >
                     <div
@@ -11885,7 +11885,7 @@ more detail.
                     >
                       <div
                         data-tooltip="april_on_time_s3_to_df"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
@@ -11900,7 +11900,7 @@ more detail.
                     </div>
                   </div>
                   <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 eqrjxe"
                     onClick={[Function]}
                   >
                     <div
@@ -11922,7 +11922,7 @@ more detail.
                     >
                       <div
                         data-tooltip="june_on_time_s3_to_df"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
@@ -11937,7 +11937,7 @@ more detail.
                     </div>
                   </div>
                   <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 eqrjxe"
                     onClick={[Function]}
                   >
                     <div
@@ -11959,7 +11959,7 @@ more detail.
                     >
                       <div
                         data-tooltip="master_cord_s3_to_df"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
@@ -11974,7 +11974,7 @@ more detail.
                     </div>
                   </div>
                   <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 eqrjxe"
                     onClick={[Function]}
                   >
                     <div
@@ -11996,7 +11996,7 @@ more detail.
                     >
                       <div
                         data-tooltip="may_on_time_s3_to_df"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
@@ -12011,7 +12011,7 @@ more detail.
                     </div>
                   </div>
                   <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 eqrjxe"
                     onClick={[Function]}
                   >
                     <div
@@ -12033,7 +12033,7 @@ more detail.
                     >
                       <div
                         data-tooltip="process_q2_coupon_data"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 300,
@@ -12047,7 +12047,7 @@ more detail.
                       </div>
                       <div
                         data-tooltip="s3_to_df"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
@@ -12062,7 +12062,7 @@ more detail.
                     </div>
                   </div>
                   <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 eqrjxe"
                     onClick={[Function]}
                   >
                     <div
@@ -12084,7 +12084,7 @@ more detail.
                     >
                       <div
                         data-tooltip="process_q2_market_data"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 300,
@@ -12098,7 +12098,7 @@ more detail.
                       </div>
                       <div
                         data-tooltip="s3_to_df"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
@@ -12113,7 +12113,7 @@ more detail.
                     </div>
                   </div>
                   <div
-                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 dYzAwQ"
+                    className="SidebarSolidHelpers__InvocationContainer-sc-198d6h6-7 eqrjxe"
                     onClick={[Function]}
                   >
                     <div
@@ -12135,7 +12135,7 @@ more detail.
                     >
                       <div
                         data-tooltip="process_q2_ticket_data"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 300,
@@ -12149,7 +12149,7 @@ more detail.
                       </div>
                       <div
                         data-tooltip="s3_to_df"
-                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
+                        data-tooltip-style="{\\"fontSize\\":\\"0.75em\\",\\"fontFamily\\":\\"Source Code Pro, monospace\\",\\"color\\":\\"#10161A\\",\\"background\\":\\"#FFFFFF\\",\\"border\\":\\"1px solid #E1E8ED\\",\\"top\\":-8,\\"left\\":1}"
                         style={
                           Object {
                             "fontWeight": 600,
@@ -16818,7 +16818,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 jHvLaV"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -21575,7 +21575,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 jHvLaV"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>
@@ -26332,7 +26332,7 @@ load_q2_sfo_weather:data_frame
                 Pipeline
               </div>
               <h3
-                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 ckaBsK"
+                className="SidebarComponents__SidebarTitle-sc-1tax5rq-1 jHvLaV"
               >
                 airline_​demo_​ingest_​pipeline
               </h3>

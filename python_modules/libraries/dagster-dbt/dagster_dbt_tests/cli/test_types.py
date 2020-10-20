@@ -1,3 +1,5 @@
+import pickle
+
 from dagster_dbt import DbtCliOutput
 
 from ..test_types import DBT_RESULT_DICT
@@ -36,3 +38,7 @@ class TestDbtCliOutput:
         assert dco.num_error == DBT_CLI_RESULT_WITH_STATS_DICT["num_error"]
         assert dco.num_skip == DBT_CLI_RESULT_WITH_STATS_DICT["num_skip"]
         assert dco.num_total == DBT_CLI_RESULT_WITH_STATS_DICT["num_total"]
+
+    def test_pickle_roundtrip(self):  # pylint: disable=unused-argument
+        dco = DbtCliOutput.from_dict(DBT_CLI_RESULT_DICT)
+        assert pickle.loads(pickle.dumps(dco)) == dco

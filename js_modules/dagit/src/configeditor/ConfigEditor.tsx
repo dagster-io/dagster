@@ -32,6 +32,7 @@ import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes,
 } from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
+import {FontFamily} from 'src/ui/styles';
 
 export function isHelpContextEqual(
   prev: ConfigEditorHelpContext | null,
@@ -69,6 +70,15 @@ const CodeMirrorShimStyle = createGlobalStyle`
     right: 0;
     bottom: 0;
     height: initial;
+    font-family: ${FontFamily.monospace};
+  }
+
+  .CodeMirror-hint,
+  .CodeMirror-lint-marker-error,
+  .CodeMirror-lint-marker-warning,
+  .CodeMirror-lint-message-error,
+  .CodeMirror-lint-message-warning {
+    font-family: ${FontFamily.monospace};
   }
 `;
 const CodeMirrorWhitespaceStyle = createGlobalStyle`

@@ -435,9 +435,7 @@ class DagsterCommandLineScheduler(Scheduler, ConfigurableClass):
     long-lived process.
     """
 
-    def __init__(
-        self, inst_data=None,
-    ):
+    def __init__(self, inst_data=None):
         self._inst_data = inst_data
 
     @property
@@ -450,7 +448,7 @@ class DagsterCommandLineScheduler(Scheduler, ConfigurableClass):
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return DagsterCommandLineScheduler(inst_data=inst_data)
+        return DagsterCommandLineScheduler(inst_data=inst_data,)
 
     def debug_info(self):
         return ""

@@ -5,10 +5,11 @@ import sys
 import time
 
 import click
-from croniter import croniter_range
+import pendulum
+from croniter import croniter
 
 from dagster import check
-from dagster.core.errors import DagsterSubprocessError
+from dagster.core.errors import DagsterInvariantViolationError, DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation import (
     ExternalPipeline,
@@ -19,6 +20,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import (
+    DagsterCommandLineScheduler,
     ScheduleState,
     ScheduleStatus,
     ScheduleTickData,
@@ -27,11 +29,6 @@ from dagster.core.scheduler import (
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.grpc.types import ScheduleExecutionDataMode
-from dagster.seven import (
-    get_current_datetime_in_utc,
-    get_timestamp_from_utc_datetime,
-    get_utc_timezone,
-)
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.log import default_format_string
@@ -89,6 +86,11 @@ def scheduler_run_command(interval, max_catchup_runs):
     execute_scheduler_command(interval, max_catchup_runs)
 
 
+def _mockable_localtime(_):
+    now_time = pendulum.now()
+    return now_time.timetuple()
+
+
 def get_default_scheduler_logger():
     handler = logging.StreamHandler(sys.stdout)
     logger = logging.getLogger("dagster-scheduler")
@@ -97,7 +99,7 @@ def get_default_scheduler_logger():
 
     formatter = logging.Formatter(default_format_string(), "%Y-%m-%d %H:%M:%S")
 
-    formatter.converter = time.localtime
+    formatter.converter = _mockable_localtime
 
     handler.setFormatter(formatter)
     return logger
@@ -107,11 +109,11 @@ def execute_scheduler_command(interval, max_catchup_runs):
     logger = get_default_scheduler_logger()
     while True:
         with DagsterInstance.get() as instance:
-            end_datetime_utc = get_current_datetime_in_utc()
+            end_datetime_utc = pendulum.now("UTC")
 
             launch_scheduled_runs(instance, logger, end_datetime_utc, max_catchup_runs)
 
-            time_left = interval - (get_current_datetime_in_utc() - end_datetime_utc).seconds
+            time_left = interval - (pendulum.now("UTC") - end_datetime_utc).seconds
 
             if time_left > 0:
                 time.sleep(time_left)
@@ -128,6 +130,19 @@ def launch_scheduled_runs(
         s for s in instance.all_stored_schedule_state() if s.status == ScheduleStatus.RUNNING
     ]
 
+    if not isinstance(instance.scheduler, DagsterCommandLineScheduler):
+        raise DagsterInvariantViolationError(
+            """Your dagster.yaml must be configured as follows in order to use dagster-scheduler:
+scheduler:
+  module: dagster.core.scheduler
+  class: DagsterCommandLineScheduler
+        """,
+        )
+
+    if not schedules:
+        logger.info("Not checking for any runs since no schedules have been started.")
+        return
+
     logger.info(
         "Checking for new runs for the following schedules: {schedule_names}".format(
             schedule_names=", ".join([schedule.name for schedule in schedules]),
@@ -135,22 +150,43 @@ def launch_scheduled_runs(
     )
 
     for schedule_state in schedules:
-        launch_scheduled_runs_for_schedule(
-            instance,
-            logger,
-            schedule_state,
-            end_datetime_utc,
-            max_catchup_runs,
-            (debug_crash_flags.get(schedule_state.name) if debug_crash_flags else None),
-        )
+        try:
+            with RepositoryLocationHandle.create_from_repository_origin(
+                schedule_state.origin.repository_origin, instance
+            ) as repo_location_handle:
+                repo_location = RepositoryLocation.from_handle(repo_location_handle)
+
+                launch_scheduled_runs_for_schedule(
+                    instance,
+                    logger,
+                    schedule_state,
+                    repo_location,
+                    end_datetime_utc,
+                    max_catchup_runs,
+                    (debug_crash_flags.get(schedule_state.name) if debug_crash_flags else None),
+                )
+        except Exception:  # pylint: disable=broad-except
+            logger.error(
+                "Scheduler failed for {schedule_name} : {error_info}".format(
+                    schedule_name=schedule_state.name,
+                    error_info=serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
+                )
+            )
 
 
 def launch_scheduled_runs_for_schedule(
-    instance, logger, schedule_state, end_datetime_utc, max_catchup_runs, debug_crash_flags=None
+    instance,
+    logger,
+    schedule_state,
+    repo_location,
+    end_datetime_utc,
+    max_catchup_runs,
+    debug_crash_flags=None,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(schedule_state, "schedule_state", ScheduleState)
     check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
+    check.inst_param(repo_location, "repo_location", RepositoryLocation)
 
     latest_tick = instance.get_latest_tick(schedule_state.schedule_origin_id)
 
@@ -162,20 +198,52 @@ def launch_scheduled_runs_for_schedule(
     else:
         start_timestamp_utc = latest_tick.timestamp + 1
 
-    start_datetime_utc = datetime.datetime.fromtimestamp(start_timestamp_utc, tz=get_utc_timezone())
+    schedule_name = schedule_state.name
 
-    tick_times = list(
-        croniter_range(start_datetime_utc, end_datetime_utc, schedule_state.cron_schedule)
+    repo_dict = repo_location.get_repositories()
+    check.invariant(
+        len(repo_dict) == 1, "Reconstructed repository location should have exactly one repository",
     )
+    external_repo = next(iter(repo_dict.values()))
+
+    external_schedule = external_repo.get_external_schedule(schedule_name)
+
+    timezone_str = external_schedule.execution_timezone
+    if not timezone_str:
+        logger.error(
+            "Scheduler could not run for {schedule_name} as it did not specify "
+            "an execution_timezone in its definition.".format(schedule_name=schedule_name)
+        )
+        return
+
+    end_datetime = end_datetime_utc.in_tz(timezone_str)
+    start_datetime = pendulum.from_timestamp(start_timestamp_utc, tz=timezone_str)
+
+    date_iter = croniter(external_schedule.cron_schedule, start_datetime)
+    tick_times = []
+
+    # Go back one iteration so that the next iteration is the first time that is >= start_datetime
+    # and matches the cron schedule
+    date_iter.get_prev(datetime.datetime)
+
+    while True:
+        next_date = pendulum.instance(date_iter.get_next(datetime.datetime)).in_tz(timezone_str)
+        if next_date.timestamp() > end_datetime.timestamp():
+            break
+
+        # During DST transitions, croniter returns datetimes that don't actually match the
+        # cron schedule, so add a guard here
+        if croniter.match(external_schedule.cron_schedule, next_date):
+            tick_times.append(next_date)
 
     if not tick_times:
-        logger.info("No new runs for {schedule_name}".format(schedule_name=schedule_state.name))
+        logger.info("No new runs for {schedule_name}".format(schedule_name=schedule_name))
         return
 
     if len(tick_times) > max_catchup_runs:
         logger.warn(
             "{schedule_name} has fallen behind, only launching {max_catchup_runs} runs".format(
-                schedule_name=schedule_state.name, max_catchup_runs=max_catchup_runs
+                schedule_name=schedule_name, max_catchup_runs=max_catchup_runs
             )
         )
         tick_times = tick_times[-max_catchup_runs:]
@@ -183,7 +251,7 @@ def launch_scheduled_runs_for_schedule(
     if len(tick_times) == 1:
         logger.info(
             "Launching run for {schedule_name} at {time}".format(
-                schedule_name=schedule_state.name,
+                schedule_name=schedule_name,
                 time=tick_times[0].strftime(_SCHEDULER_DATETIME_FORMAT),
             )
         )
@@ -191,13 +259,15 @@ def launch_scheduled_runs_for_schedule(
         logger.info(
             "Launching {num_runs} runs for {schedule_name} at the following times: {times}".format(
                 num_runs=len(tick_times),
-                schedule_name=schedule_state.name,
+                schedule_name=schedule_name,
                 times=", ".join([time.strftime(_SCHEDULER_DATETIME_FORMAT) for time in tick_times]),
             )
         )
 
-    for schedule_time_utc in tick_times:
-        schedule_timestamp = get_timestamp_from_utc_datetime(schedule_time_utc)
+    for tick_time in tick_times:
+        schedule_time = pendulum.instance(tick_time).in_tz(timezone_str)
+        schedule_timestamp = schedule_time.timestamp()
+
         if latest_tick and latest_tick.timestamp == schedule_timestamp:
             tick = latest_tick
             logger.info("Resuming previously interrupted schedule execution")
@@ -205,10 +275,10 @@ def launch_scheduled_runs_for_schedule(
         else:
             tick = instance.create_schedule_tick(
                 ScheduleTickData(
-                    schedule_origin_id=schedule_state.schedule_origin_id,
-                    schedule_name=schedule_state.name,
+                    schedule_origin_id=external_schedule.get_origin_id(),
+                    schedule_name=schedule_name,
                     timestamp=schedule_timestamp,
-                    cron_schedule=schedule_state.cron_schedule,
+                    cron_schedule=external_schedule.cron_schedule,
                     status=ScheduleTickStatus.STARTED,
                 )
             )
@@ -219,19 +289,16 @@ def launch_scheduled_runs_for_schedule(
 
             _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
 
-            with RepositoryLocationHandle.create_from_repository_origin(
-                schedule_state.origin.repository_origin, instance
-            ) as repo_location_handle:
-                repo_location = RepositoryLocation.from_handle(repo_location_handle)
-                _schedule_run_at_time(
-                    instance,
-                    logger,
-                    repo_location,
-                    schedule_state,
-                    schedule_time_utc,
-                    tick_holder,
-                    debug_crash_flags,
-                )
+            _schedule_run_at_time(
+                instance,
+                logger,
+                repo_location,
+                external_repo,
+                external_schedule,
+                schedule_time,
+                tick_holder,
+                debug_crash_flags,
+            )
 
 
 def _check_for_debug_crash(debug_crash_flags, key):
@@ -251,20 +318,13 @@ def _schedule_run_at_time(
     instance,
     logger,
     repo_location,
-    schedule_state,
-    schedule_time_utc,
+    external_repo,
+    external_schedule,
+    schedule_time,
     tick_holder,
     debug_crash_flags,
 ):
-    schedule_name = schedule_state.name
-
-    repo_dict = repo_location.get_repositories()
-    check.invariant(
-        len(repo_dict) == 1, "Reconstructed repository location should have exactly one repository",
-    )
-    external_repo = next(iter(repo_dict.values()))
-
-    external_schedule = external_repo.get_external_schedule(schedule_name)
+    schedule_name = external_schedule.name
 
     pipeline_selector = PipelineSelector(
         location_name=repo_location.name,
@@ -282,8 +342,8 @@ def _schedule_run_at_time(
     # and launching it
     runs_filter = PipelineRunsFilter(
         tags=merge_dicts(
-            PipelineRun.tags_for_schedule(schedule_state),
-            {SCHEDULED_EXECUTION_TIME_TAG: schedule_time_utc.isoformat()},
+            PipelineRun.tags_for_schedule(external_schedule),
+            {SCHEDULED_EXECUTION_TIME_TAG: schedule_time.in_tz("UTC").isoformat()},
         )
     )
     existing_runs = instance.get_runs(runs_filter)
@@ -302,7 +362,7 @@ def _schedule_run_at_time(
 
             logger.info(
                 "Run {run_id} already completed for this execution of {schedule_name}".format(
-                    run_id=run.run_id, schedule_name=schedule_state.name
+                    run_id=run.run_id, schedule_name=schedule_name
                 )
             )
             tick_holder.update_with_status(ScheduleTickStatus.SUCCESS, run_id=run.run_id)
@@ -311,7 +371,7 @@ def _schedule_run_at_time(
         else:
             logger.info(
                 "Run {run_id} already created for this execution of {schedule_name}".format(
-                    run_id=run.run_id, schedule_name=schedule_state.name
+                    run_id=run.run_id, schedule_name=schedule_name
                 )
             )
             run_to_launch = run
@@ -319,7 +379,7 @@ def _schedule_run_at_time(
         run_to_launch = _create_scheduler_run(
             instance,
             logger,
-            schedule_time_utc,
+            schedule_time,
             repo_location,
             external_repo,
             external_schedule,
@@ -366,7 +426,7 @@ def _schedule_run_at_time(
 def _create_scheduler_run(
     instance,
     logger,
-    schedule_time_utc,
+    schedule_time,
     repo_location,
     external_repo,
     external_schedule,
@@ -378,7 +438,7 @@ def _create_scheduler_run(
         repository_handle=external_repo.handle,
         schedule_name=external_schedule.name,
         schedule_execution_data_mode=ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
-        scheduled_execution_datetime_utc=schedule_time_utc,
+        scheduled_execution_time=schedule_time,
     )
 
     if isinstance(schedule_execution_data, ExternalScheduleExecutionErrorData):
@@ -420,7 +480,7 @@ def _create_scheduler_run(
     check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(pipeline_tags, schedule_tags)
 
-    tags[SCHEDULED_EXECUTION_TIME_TAG] = schedule_time_utc.isoformat()
+    tags[SCHEDULED_EXECUTION_TIME_TAG] = schedule_time.in_tz("UTC").isoformat()
 
     # If the run was scheduled correctly but there was an error creating its
     # run config, enter it into the run DB with a FAILURE status

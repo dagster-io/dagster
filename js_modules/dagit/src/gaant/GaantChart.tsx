@@ -65,6 +65,18 @@ export function setHighlightedGaantChartTime(timestamp: null | string, debounced
   }
 }
 
+export const queryStringToSelection = (
+  plan: GaantChartExecutionPlanFragment,
+  query: string,
+): string[] => {
+  if (query && query !== '*') {
+    const graph = toGraphQueryItems(plan);
+    const graphFiltered = filterByQuery(graph, query);
+    return graphFiltered.all.map((node) => node.name);
+  }
+  return [];
+};
+
 interface GaantChartProps {
   selection: StepSelection;
   runId: string;
@@ -145,18 +157,9 @@ export class GaantChart extends React.Component<GaantChartProps, GaantChartState
   };
 
   onUpdateQuery = (query: string) => {
-    // update selectedSteps
-    let currSelectedSteps: string[] = [];
-    if (query !== '*' && query) {
-      const graph = toGraphQueryItems(this.props.plan);
-      const graphFiltered = filterByQuery(graph, query);
-      currSelectedSteps = graphFiltered.all.map((node) => node.name);
-    }
-
-    // update query
     this.props.onSetSelection({
       query: query || '*',
-      keys: currSelectedSteps,
+      keys: queryStringToSelection(this.props.plan, query),
     });
   };
 

@@ -466,10 +466,16 @@ def construct_dagster_k8s_job(
         config_map=kubernetes.client.V1ConfigMapVolumeSource(name=job_config.instance_config_map),
     )
 
+    # If the user has defined custom labels, remove them from the pod_template_spec_metadata
+    # key and merge them with the dagster labels
+    user_defined_pod_template_labels = user_defined_k8s_config.pod_template_spec_metadata.pop(
+        "labels", {}
+    )
+
     template = kubernetes.client.V1PodTemplateSpec(
         metadata=kubernetes.client.V1ObjectMeta(
             name=pod_name,
-            labels=dagster_labels,
+            labels=merge_dicts(dagster_labels, user_defined_pod_template_labels),
             **user_defined_k8s_config.pod_template_spec_metadata
         ),
         spec=kubernetes.client.V1PodSpec(

@@ -1,7 +1,5 @@
 import datetime
 
-from dateutil.relativedelta import relativedelta
-
 from dagster import Partition, PartitionSetDefinition
 from dagster.utils.partitions import date_partition_range
 
@@ -40,7 +38,7 @@ stock_data_partitions_set = PartitionSetDefinition(
     partition_fn=date_partition_range(
         start=datetime.datetime(2018, 1, 1),
         end=datetime.datetime(2019, 1, 1),
-        delta=relativedelta(months=1),
+        delta_range="months",
     ),
     run_config_fn_for_partition=run_config_fn_for_date,
 )

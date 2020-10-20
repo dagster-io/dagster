@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 import {MetadataEntries} from 'src/runs/MetadataEntry';
 import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
 import {PythonErrorFragment} from 'src/types/PythonErrorFragment';
+import {FontFamily} from 'src/ui/styles';
 
 interface IPythonErrorInfoProps {
   showReload?: boolean;
@@ -81,7 +82,7 @@ const ErrorHeader = styled.h3`
 
 const Trace = styled.div`
   color: rgb(41, 50, 56);
-  font-family: Consolas, Menlo, monospace;
+  font-family: ${FontFamily.monospace};
   font-size: 0.85em;
   white-space: pre;
   padding-bottom: 1em;

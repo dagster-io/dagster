@@ -11,8 +11,8 @@ from dagster.api.snapshot_repository import (
     sync_get_external_repositories_grpc,
     sync_get_streaming_external_repositories_grpc,
 )
-from dagster.core.host_representation import ExternalRepository
-from dagster.core.host_representation.handle import RepositoryLocationHandle
+from dagster.core.host_representation import ExternalRepository, RepositoryLocation
+from dagster.core.host_representation.handle import RepositoryLocationHandle, UserProcessApi
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 from .utils import (
@@ -141,3 +141,17 @@ def test_giant_external_repository_streaming_grpc():
 
         assert isinstance(external_repository, ExternalRepository)
         assert external_repository.name == "giant_repo"
+
+
+def test_repository_origin_unchanged_cli_api_vs_grpc():
+    with get_bar_repo_repository_location_handle(UserProcessApi.CLI) as cli_handle:
+        cli_location = RepositoryLocation.from_handle(cli_handle)
+        external_repo = cli_location.get_repository("bar_repo")
+        cli_origin_id = external_repo.get_origin_id()
+
+    with get_bar_repo_repository_location_handle(UserProcessApi.GRPC) as grpc_handle:
+        grpc_location = RepositoryLocation.from_handle(grpc_handle)
+        external_repo = grpc_location.get_repository("bar_repo")
+        grpc_origin_id = external_repo.get_origin_id()
+
+    assert cli_origin_id == grpc_origin_id

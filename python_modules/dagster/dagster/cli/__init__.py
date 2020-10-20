@@ -33,8 +33,9 @@ def create_dagster_cli():
     return group
 
 
+ENV_PREFIX = "DAGSTER_CLI"
 cli = create_dagster_cli()
 
 
 def main():
-    cli(obj={})  # pylint:disable=E1123
+    cli(auto_envvar_prefix=ENV_PREFIX)  # pylint:disable=E1123

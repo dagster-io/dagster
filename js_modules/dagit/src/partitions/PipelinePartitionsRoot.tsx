@@ -1,9 +1,7 @@
 import {Button, Menu, MenuItem, NonIdealState, Popover} from '@blueprintjs/core';
 import gql from 'graphql-tag';
-import * as querystring from 'query-string';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
-import {__RouterContext as RouterContext} from 'react-router';
 import {Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -22,7 +20,7 @@ type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSe
 
 export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps<{
   pipelinePath: string;
-}>> = ({location, match}) => {
+}>> = ({match}) => {
   const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
 
@@ -32,15 +30,7 @@ export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps
     fetchPolicy: 'network-only',
     skip: !repositorySelector.repositoryLocationName || !repositorySelector.repositoryName,
   });
-  const {history} = React.useContext(RouterContext);
-  const qs = querystring.parse(location.search);
-  const cursor = (qs.cursor as string) || undefined;
-  const setCursor = (cursor: string | undefined) => {
-    history.push({search: `?${querystring.stringify({...qs, cursor})}`});
-  };
-
   const [selected, setSelected] = React.useState<PartitionSet | undefined>();
-  const [showLoader, setShowLoader] = React.useState<boolean>(false);
   const [runTags, setRunTags] = React.useState<{[key: string]: string}>({});
 
   if (snapshotId) {
@@ -93,15 +83,11 @@ export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps
             <PartitionsBackfill
               pipelineName={pipelineName}
               partitionSetName={partitionSet.name}
-              showLoader={showLoader}
               onLaunch={(backfillId: string) => setRunTags({'dagster/backfill': backfillId})}
             />
             <PartitionView
               pipelineName={pipelineName}
               partitionSetName={partitionSet.name}
-              cursor={cursor}
-              setCursor={setCursor}
-              onLoaded={() => setShowLoader(true)}
               runTags={runTags}
             />
           </PartitionRootContainer>

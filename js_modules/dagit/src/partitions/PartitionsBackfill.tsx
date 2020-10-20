@@ -46,9 +46,8 @@ interface BackfillOptions {
 export const PartitionsBackfill: React.FunctionComponent<{
   partitionSetName: string;
   pipelineName: string;
-  showLoader: boolean;
   onLaunch?: (backfillId: string) => void;
-}> = ({partitionSetName, pipelineName, showLoader, onLaunch}) => {
+}> = ({partitionSetName, pipelineName, onLaunch}) => {
   const [isOpen, setOpen] = React.useState<boolean>(false);
   return (
     <div
@@ -64,7 +63,6 @@ export const PartitionsBackfill: React.FunctionComponent<{
         <PartitionsBackfillPartitionSelector
           partitionSetName={partitionSetName}
           pipelineName={pipelineName}
-          showLoader={showLoader}
           onLaunch={(backfillId: string) => {
             onLaunch?.(backfillId);
             setOpen(false);
@@ -88,9 +86,8 @@ type SelectionRange = {
 export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
   partitionSetName: string;
   pipelineName: string;
-  showLoader: boolean;
   onLaunch?: (backfillId: string) => void;
-}> = ({partitionSetName, pipelineName, showLoader, onLaunch}) => {
+}> = ({partitionSetName, pipelineName, onLaunch}) => {
   const repositorySelector = useRepositorySelector();
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined
@@ -130,7 +127,7 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
     },
   );
 
-  if ((!data || loading) && showLoader) {
+  if (!data || loading) {
     return (
       <div
         style={{

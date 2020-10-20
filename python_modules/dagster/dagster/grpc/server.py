@@ -1066,18 +1066,20 @@ def open_server_process(
     if loadable_target_origin:
         subprocess_args += (
             (
-                ["-f", loadable_target_origin.python_file]
+                (
+                    ["-f", loadable_target_origin.python_file,]
+                    + (
+                        ["-d", loadable_target_origin.working_directory]
+                        if loadable_target_origin.working_directory
+                        else ["--empty-working-directory"]
+                    )
+                )
                 if loadable_target_origin.python_file
                 else []
             )
             + (
                 ["-m", loadable_target_origin.module_name]
                 if loadable_target_origin.module_name
-                else []
-            )
-            + (
-                ["-d", loadable_target_origin.working_directory]
-                if loadable_target_origin.working_directory
                 else []
             )
             + (["-a", loadable_target_origin.attribute] if loadable_target_origin.attribute else [])

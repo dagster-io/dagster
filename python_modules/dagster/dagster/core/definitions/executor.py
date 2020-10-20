@@ -184,7 +184,8 @@ def multiprocess_executor(init_context):
 
         execution:
           multiprocess:
-            max_concurrent: 4
+            config:
+              max_concurrent: 4
 
     The ``max_concurrent`` arg is optional and tells the execution engine how many processes may run
     concurrently. By default, or if you set ``max_concurrent`` to be 0, this is the return value of

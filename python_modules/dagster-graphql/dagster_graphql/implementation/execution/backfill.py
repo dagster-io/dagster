@@ -141,9 +141,12 @@ def _build_execution_param_list_for_backfill(
             )
             continue
 
-        # partial reexecution from success
-        if not last_run or last_run.status != PipelineRunStatus.SUCCESS:
-            continue
+        if last_run:
+            root_run_id = last_run.root_run_id or last_run.run_id
+            parent_run_id = last_run.run_id
+        else:
+            root_run_id = None
+            parent_run_id = None
 
         execution_param_list.append(
             ExecutionParams(
@@ -151,10 +154,7 @@ def _build_execution_param_list_for_backfill(
                 run_config=partition_data.run_config,
                 mode=external_partition_set.mode,
                 execution_metadata=ExecutionMetadata(
-                    run_id=None,
-                    tags=tags,
-                    root_run_id=last_run.root_run_id or last_run.run_id,
-                    parent_run_id=last_run.run_id,
+                    run_id=None, tags=tags, root_run_id=root_run_id, parent_run_id=parent_run_id,
                 ),
                 step_keys=backfill_params["reexecutionSteps"],
             )

@@ -21,6 +21,7 @@ TEST_CONFIGMAP_NAME = "test-env-configmap"
 TEST_SECRET_NAME = "test-env-secret"
 
 
+@contextmanager
 def _helm_namespace_helper(helm_chart_fn, request):
     """If an existing Helm chart namespace is specified via pytest CLI with the argument
     --existing-helm-namespace, we will use that chart.
@@ -32,7 +33,7 @@ def _helm_namespace_helper(helm_chart_fn, request):
     existing_helm_namespace = request.config.getoption("--existing-helm-namespace")
 
     if existing_helm_namespace:
-        return existing_helm_namespace
+        yield existing_helm_namespace
 
     else:
         # Never bother cleaning up on Buildkite
@@ -47,21 +48,23 @@ def _helm_namespace_helper(helm_chart_fn, request):
                 docker_image = test_project_docker_image()
                 with helm_chart_fn(namespace, docker_image, should_cleanup):
                     print("Helm chart successfully installed in namespace %s" % namespace)
-                    return namespace
+                    yield namespace
 
 
 @pytest.fixture(scope="session")
 def helm_namespace_for_user_deployments(
     cluster_provider, request
 ):  # pylint: disable=unused-argument, redefined-outer-name
-    yield _helm_namespace_helper(helm_chart_for_user_deployments, request)
+    with _helm_namespace_helper(helm_chart_for_user_deployments, request) as namespace:
+        yield namespace
 
 
 @pytest.fixture(scope="session")
 def helm_namespace(
     cluster_provider, request
 ):  # pylint: disable=unused-argument, redefined-outer-name
-    yield _helm_namespace_helper(helm_chart, request)
+    with _helm_namespace_helper(helm_chart, request) as namespace:
+        yield namespace
 
 
 @contextmanager
@@ -179,6 +182,14 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config):
         print("Waiting for celery workers")
         pods = kubernetes.client.CoreV1Api().list_namespaced_pod(namespace=namespace)
         pod_names = [p.metadata.name for p in pods.items if "celery-workers" in p.metadata.name]
+
+        extra_worker_queues = helm_config.get("celery").get("extraWorkerQueues", [])
+        for queue in extra_worker_queues:
+            num_pods_for_queue = len(
+                [pod_name for pod_name in pod_names if queue.get("name") in pod_name]
+            )
+            assert queue.get("replicaCount") == num_pods_for_queue
+
         for pod_name in pod_names:
             print("Waiting for Celery worker pod %s" % pod_name)
             wait_for_pod(pod_name, namespace=namespace)
@@ -248,8 +259,8 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
         },
         "celery": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-            # https://github.com/dagster-io/dagster/issues/2671
-            # 'extraWorkerQueues': [{'name': 'extra-queue-1', 'replicaCount': 1},],
+            "replicaCount": 1,
+            "extraWorkerQueues": [{"name": "extra-queue-1", "replicaCount": 1},],
             "livenessProbe": {
                 "initialDelaySeconds": 15,
                 "periodSeconds": 10,
@@ -324,8 +335,8 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
         },
         "celery": {
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
-            # https://github.com/dagster-io/dagster/issues/2671
-            # 'extraWorkerQueues': [{'name': 'extra-queue-1', 'replicaCount': 1},],
+            "replicaCount": 1,
+            "extraWorkerQueues": [{"name": "extra-queue-1", "replicaCount": 1},],
             "livenessProbe": {
                 "initialDelaySeconds": 15,
                 "periodSeconds": 10,

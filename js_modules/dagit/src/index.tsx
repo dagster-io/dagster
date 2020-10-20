@@ -18,6 +18,7 @@ import {AppErrorLink} from 'src/AppError';
 import {WEBSOCKET_URI} from 'src/DomUtils';
 import {formatElapsedTime, patchCopyToRemoveZeroWidthUnderscores, debugLog} from 'src/Util';
 import {WebsocketStatusProvider} from 'src/WebsocketStatus';
+import {FontFamily} from 'src/ui/styles';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -44,9 +45,17 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body {
+    font-family: ${FontFamily.default};
     margin: 0;
     padding: 0;
-    font-family: sans-serif;
+  }
+
+  button, input, select, textarea {
+    font-family: ${FontFamily.default};
+  }
+
+  code, pre {
+    font-family: ${FontFamily.monospace};
   }
 `;
 

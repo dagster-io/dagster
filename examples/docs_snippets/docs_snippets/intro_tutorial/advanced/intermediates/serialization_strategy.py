@@ -2,7 +2,6 @@ import csv
 import os
 
 from dagster import (
-    Selector,
     SerializationStrategy,
     dagster_type_loader,
     execute_pipeline,
@@ -30,9 +29,9 @@ class CsvSerializationStrategy(SerializationStrategy):
         return LessSimpleDataFrame([row for row in reader])
 
 
-@dagster_type_loader(Selector({"pickle": str}))
-def less_simple_data_frame_loader(context, selector):
-    with open(selector["pickle"], "r") as fd:
+@dagster_type_loader({"pickle_path": str})
+def less_simple_data_frame_loader(context, config):
+    with open(config["pickle_path"], "r") as fd:
         lines = [row for row in csv.DictReader(fd)]
 
     context.log.info("Read {n_lines} lines".format(n_lines=len(lines)))

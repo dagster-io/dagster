@@ -69,6 +69,7 @@ if __name__ == "__main__":
             "alembic>=1.2.1",
             "croniter>=0.3.34",
             "grpcio>=1.32.0",  # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
+            "pendulum==1.4.4",  # pinned to match airflow, can upgrade to 2.0 once airflow 1.10.13 is released
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "pyrsistent>=0.14.8,<=0.16.0; python_version < '3'",  # 0.17.0 breaks py2 support
             "pyrsistent>=0.14.8; python_version >='3'",

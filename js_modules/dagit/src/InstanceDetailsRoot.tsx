@@ -10,6 +10,7 @@ import {Header} from 'src/ListComponents';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
 import {InstanceDetailsQuery} from 'src/types/InstanceDetailsQuery';
+import {FontFamily} from 'src/ui/styles';
 
 const CodeMirrorShimStyle = createGlobalStyle`
   .react-codemirror2 {
@@ -18,6 +19,7 @@ const CodeMirrorShimStyle = createGlobalStyle`
     position: relative;
   }
   .react-codemirror2 .CodeMirror {
+    font-family: ${FontFamily.monospace};
     position: absolute;
     top: 0;
     left: 0;
