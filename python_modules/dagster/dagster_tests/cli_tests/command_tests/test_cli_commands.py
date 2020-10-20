@@ -21,9 +21,8 @@ from dagster import (
     seven,
     solid,
 )
-
-from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli import ENV_PREFIX, cli
+from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_list_command, run_wipe_command
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
@@ -638,7 +637,7 @@ def runner_pipeline_execute(runner, cli_args):
         )
     return result
 
-  
+
 def test_use_env_vars_for_cli_option():
     env_key = "{}_VERSION".format(ENV_PREFIX)
     runner = CliRunner(env={env_key: "1"})
