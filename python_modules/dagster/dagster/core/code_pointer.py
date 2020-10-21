@@ -84,6 +84,10 @@ def load_python_file(python_file, working_directory):
     Takes a path to a python file and returns a loaded module
     """
     check.str_param(python_file, "python_file")
+
+    # First verify that the file exists
+    os.stat(python_file)
+
     module_name = os.path.splitext(os.path.basename(python_file))[0]
     cwd = sys.path[0]
     if working_directory:

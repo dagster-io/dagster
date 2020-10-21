@@ -76,6 +76,20 @@ def test_load_with_error(capfd):
         process.terminate()
 
 
+def test_load_with_non_existant_file(capfd):
+    port = find_free_port()
+    # File that will fail if working directory isn't set to default
+    python_file = file_relative_path(__file__, "made_up_file_does_not_exist.py")
+
+    with pytest.raises(subprocess.CalledProcessError):
+        subprocess.check_output(
+            ["dagster", "api", "grpc", "--port", str(port), "--python-file", python_file],
+        )
+
+    _, err = capfd.readouterr()
+    assert "No such file or directory" in err
+
+
 def test_load_with_empty_working_directory(capfd):
     port = find_free_port()
     # File that will fail if working directory isn't set to default

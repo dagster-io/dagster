@@ -138,7 +138,9 @@ def ipc_read_event_stream(file_path, timeout=30):
 
     if not os.path.exists(file_path):
         raise DagsterIPCProtocolError(
-            "Timeout: read stream has not received any data in {timeout} seconds"
+            "Timeout: read stream has not received any data in {timeout} seconds".format(
+                timeout=timeout
+            )
         )
 
     with open(os.path.abspath(file_path), "r") as file_pointer:

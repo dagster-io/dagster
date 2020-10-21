@@ -14,6 +14,7 @@ from dagster.core.test_utils import instance_for_test, new_cwd
 from dagster.utils import file_relative_path, merge_dicts
 
 from .test_cli_commands import (
+    non_existant_python_origin_target_args,
     pipeline_python_origin_contexts,
     valid_pipeline_python_origin_target_cli_args,
 )
@@ -255,6 +256,14 @@ def test_invalid_parameters(args):
             execute_execute_command(
                 kwargs=args, instance=instance,
             )
+
+
+def test_execute_non_existant_file():
+    with instance_for_test() as instance:
+        kwargs = non_existant_python_origin_target_args()
+
+        with pytest.raises(OSError):
+            execute_execute_command(kwargs=kwargs, instance=instance)
 
 
 def test_attribute_not_found():

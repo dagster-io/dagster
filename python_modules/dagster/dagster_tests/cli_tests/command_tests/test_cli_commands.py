@@ -336,6 +336,16 @@ def grpc_server_backfill_args():
             yield merge_dicts(args, {"noprompt": True}), False, instance
 
 
+def non_existant_python_origin_target_args():
+    return {
+        "workspace": None,
+        "pipeline": "foo",
+        "python_file": file_relative_path(__file__, "made_up_file.py"),
+        "module_name": None,
+        "attribute": "bar",
+    }
+
+
 def valid_pipeline_python_origin_target_args():
     return [
         {

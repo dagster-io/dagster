@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
+from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.test_utils import new_cwd
 from dagster.utils import file_relative_path
 
@@ -13,6 +14,7 @@ from .test_cli_commands import (
     default_cli_test_instance,
     grpc_server_bar_cli_args,
     launch_command_contexts,
+    non_existant_python_origin_target_args,
     python_bar_cli_args,
     valid_external_pipeline_target_cli_args_with_preset,
 )
@@ -47,6 +49,16 @@ def test_launch_pipeline(gen_pipeline_args):
                 run_launch(cli_args, instance, expected_count=1)
         else:
             run_launch(cli_args, instance, expected_count=1)
+
+
+def test_launch_non_existant_file():
+    with default_cli_test_instance() as instance:
+        kwargs = non_existant_python_origin_target_args()
+
+        with pytest.raises(
+            DagsterUserCodeProcessError, match=re.escape("No such file or directory")
+        ):
+            run_launch(kwargs, instance)
 
 
 @pytest.mark.parametrize("pipeline_cli_args", valid_external_pipeline_target_cli_args_with_preset())
