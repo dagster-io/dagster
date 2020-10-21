@@ -16,6 +16,7 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.definitions.events import RetryRequested
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher import CliApiRunLauncher
@@ -181,7 +182,46 @@ def test_run_step_stats():
         assert step_stats[0].step_key == "should_succeed.compute"
         assert step_stats[0].status == StepEventStatus.SUCCESS
         assert step_stats[0].end_time > step_stats[0].start_time
+        assert step_stats[0].attempts == 1
         assert step_stats[1].step_key == "should_fail.compute"
         assert step_stats[1].status == StepEventStatus.FAILURE
         assert step_stats[1].end_time > step_stats[0].start_time
+        assert step_stats[1].attempts == 1
+        assert not _called
+
+
+def test_run_step_stats_with_retries():
+    _called = None
+
+    @pipeline
+    def simple():
+        @solid
+        def should_succeed(context):
+            context.log.info("succeed")
+            return "yay"
+
+        @solid(input_defs=[InputDefinition("_input", str)], output_defs=[OutputDefinition(str)])
+        def should_retry(context, _input):
+            raise RetryRequested(max_retries=3)
+
+        @solid
+        def should_not_execute(_, x):
+            _called = True
+            return x
+
+        should_not_execute(should_retry(should_succeed()))
+
+    with seven.TemporaryDirectory() as tmpdir_path:
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
+        result = execute_pipeline(simple, instance=instance, raise_on_error=False)
+        step_stats = sorted(instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time)
+        assert len(step_stats) == 2
+        assert step_stats[0].step_key == "should_succeed.compute"
+        assert step_stats[0].status == StepEventStatus.SUCCESS
+        assert step_stats[0].end_time > step_stats[0].start_time
+        assert step_stats[0].attempts == 1
+        assert step_stats[1].step_key == "should_retry.compute"
+        assert step_stats[1].status == StepEventStatus.FAILURE
+        assert step_stats[1].end_time > step_stats[0].start_time
+        assert step_stats[1].attempts == 4
         assert not _called

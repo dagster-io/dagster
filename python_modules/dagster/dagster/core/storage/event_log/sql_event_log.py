@@ -221,6 +221,7 @@ class SqlEventLogStorage(EventLogStorage):
             DagsterEventType.STEP_SUCCESS.value,
             DagsterEventType.STEP_SKIPPED.value,
             DagsterEventType.STEP_FAILURE.value,
+            DagsterEventType.STEP_RESTARTED.value,
         ]
 
         by_step_query = (
@@ -249,6 +250,7 @@ class SqlEventLogStorage(EventLogStorage):
                 by_step_key[step_key]["start_time"] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
                 )
+                by_step_key[step_key]["attempts"] = 1
             if result.dagster_event_type == DagsterEventType.STEP_FAILURE.value:
                 by_step_key[step_key]["end_time"] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
@@ -274,6 +276,7 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
                     [
+                        DagsterEventType.STEP_RESTARTED.value,
                         DagsterEventType.STEP_MATERIALIZATION.value,
                         DagsterEventType.STEP_EXPECTATION_RESULT.value,
                     ]
@@ -290,7 +293,11 @@ class SqlEventLogStorage(EventLogStorage):
                 event = check.inst_param(
                     deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
                 )
-                if event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+                if event.dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
+                    by_step_key[event.step_key]["attempts"] = (
+                        by_step_key[event.step_key].get("attempts") + 1
+                    )
+                elif event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
                     materializations[event.step_key].append(
                         event.dagster_event.event_specific_data.materialization
                     )
@@ -310,6 +317,7 @@ class SqlEventLogStorage(EventLogStorage):
                 end_time=value.get("end_time"),
                 materializations=materializations.get(step_key),
                 expectation_results=expectation_results.get(step_key),
+                attempts=value.get("attempts"),
             )
             for step_key, value in by_step_key.items()
         ]
