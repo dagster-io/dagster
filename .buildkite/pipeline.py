@@ -673,6 +673,22 @@ def dagit_steps():
     ]
 
 
+def helm_steps():
+    base_paths = "'helm/dagster/*.yml' 'helm/dagster/*.yaml'"
+    base_paths_ignored = "':!:helm/dagster/templates/*.yml' ':!:helm/dagster/templates/*.yaml'"
+    return [
+        StepBuilder("yamllint helm")
+        .run(
+            "pip install yamllint",
+            "yamllint -c .yamllint.yaml --strict `git ls-files {base_paths} {base_paths_ignored}`".format(
+                base_paths=base_paths, base_paths_ignored=base_paths_ignored
+            ),
+        )
+        .on_integration_image(SupportedPython.V3_7)
+        .build()
+    ]
+
+
 def python_steps():
     steps = []
     steps += publish_test_images()
@@ -735,7 +751,7 @@ if __name__ == "__main__":
     # If we're in a Phabricator diff and are only making dagit changes, skip the
     # remaining steps since they're not relevant to the diff.
     if not dagit_only:
-        all_steps += python_steps()
+        all_steps += python_steps() + helm_steps()
 
         if DO_COVERAGE:
             all_steps += [wait_step(), coverage_step()]

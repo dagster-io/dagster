@@ -16,6 +16,8 @@ isort:
 	isort `git ls-files '*.py' ':!:examples/docs_snippets/docs_snippets/intro_tutorial'`
 	isort -l 78 `git ls-files 'examples/docs_snippets/docs_snippets/intro_tutorial/*.py'`
 
+yamllint:
+	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/dagster/*.yml' 'helm/dagster/*.yaml' ':!:helm/dagster/templates/*.yml' ':!:helm/dagster/templates/*.yaml'`
 
 QUIET="-qqq"
 

@@ -1,14 +1,14 @@
-nameOverride: ""
-fullnameOverride: ""
-rbacEnabled: true
-# The DAGSTER_HOME env var is set by default on all nodes from this value
-dagster_home: "/opt/dagster/dagster_home"
-
 # README:
 # - If using a fixed tag for images, changing the image pull policy to anything other than "Always"
 #   will use a cached/stale image.
 # - We recommend using unique tags for user code images, as this will guarantee that the docker
 #   image will be consistent for the pipeline's entire execution.
+---
+nameOverride: ""
+fullnameOverride: ""
+rbacEnabled: true
+# The DAGSTER_HOME env var is set by default on all nodes from this value
+dagster_home: "/opt/dagster/dagster_home"
 
 ####################################################################################################
 # Dagit: Configuration for the Dagit webserver
@@ -95,9 +95,9 @@ userDeployments:
       image:
         repository: "dagster/k8s-example"
         tag: latest
-        # Change with caution! If you're using a fixed tag for pipeline run images, changing the image
-        # pull policy to anything other than "Always" will use a cached/stale image, which is almost
-        # certainly not what you want.
+        # Change with caution! If you're using a fixed tag for pipeline run images, changing the
+        # image pull policy to anything other than "Always" will use a cached/stale image, which is
+        # almost certainly not what you want.
         pullPolicy: Always
       # Arguments to `dagster api grpc`.
       # Ex: "dagster api grpc -m dagster_test.test_project.test_pipelines.repo -a define_demo_execution_repo"
@@ -217,13 +217,17 @@ celery:
   # additional config options for Celery, applied to all queues. See:
   # https://docs.celeryproject.org/en/stable/userguide/configuration.html for available options
   configSource:
-  # additional Celery worker queues can be configured here. Off by default.
+
+  # Additional Celery worker queues can be configured here. Off by default.
+  # Each additional queue specified will be provisioned as an additional deployment alongside the
+  # default Celery worker deployment.
+  # Example:
+  #
+  # extraWorkerQueues:
+  #   - name: "redshift"
+  #     replicaCount: 3
   extraWorkerQueues:
-    # Each additional queue specified will be provisioned as an additional deployment alongside the
-    # default Celery worker deployment.
-    # Example:
-    # - name: "redshift"
-    #   replicaCount: 3
+
   # Additional environment variables to set on the celery/job containers
   # A Kubernetes ConfigMap will be created with these environment variables.
   env:
@@ -307,6 +311,7 @@ rabbitmq:
   volumePermissions:
     enabled: true
 
+hello: hi
 ####################################################################################################
 # Redis: Configuration values for Redis. Can be used instead of RabbitMQ.
 ####################################################################################################
@@ -377,36 +382,49 @@ ingress:
     # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
+
+    # Different http paths to add to the ingress before the default dagit path
+    # Example:
+    #
+    # precedingPaths:
+    #   - path: "/*"
+    #     serviceName: "ssl-redirect"
+    #     servicePort: "use-annotation"
     precedingPaths:
-      # Different http paths to add to the ingress before the default dagit path
-      # Example:
-      # - path: "/*"
-      #   serviceName: "ssl-redirect"
-      #   servicePort: "use-annotation"
+
+    # Different http paths to add to the ingress after the default dagit path
+    # Example:
+    #
+    # succeedingPaths:
+    #   - path: "/*"
+    #     serviceName: "ssl-redirect"
+    #     servicePort: "use-annotation"
     succeedingPaths:
-      # Different http paths to add to the ingress after the default dagit path
-      # Example:
-      # - path: "/*"
-      #   serviceName: "ssl-redirect"
-      #   servicePort: "use-annotation"
+
   flower:
-    # Ingress hostname for Dagit e.g. flower.mycompany.com
+    # Ingress hostname for Flower e.g. flower.mycompany.com
     host: ""
     # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     path: ""
+
+    # Different http paths to add to the ingress before the default flower path
+    # Example:
+    #
+    # precedingPaths:
+    #   - path: "/*"
+    #     serviceName: "ssl-redirect"
+    #     servicePort: "use-annotation"
     precedingPaths:
-      # Different http paths to add to the ingress before the default flower path
-      # Example:
-      # - path: "/*"
-      #   serviceName: "ssl-redirect"
-      #   servicePort: "use-annotation"
+
+    # Different http paths to add to the ingress after the default flower path
+    # Example:
+    #
+    # succeedingPaths:
+    #   - path: "/*"
+    #     serviceName: "ssl-redirect"
+    #     servicePort: "use-annotation"
     succeedingPaths:
-      # Different http paths to add to the ingress after the default flower path
-      # Example:
-      # - path: "/*"
-      #   serviceName: "ssl-redirect"
-      #   servicePort: "use-annotation"
 
 ####################################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart

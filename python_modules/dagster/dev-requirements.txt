@@ -18,3 +18,4 @@ recommonmark==0.4.0
 snapshottest==0.5.1
 tox==3.14.2
 tqdm==4.48.0 # pylint crash 48.1+
+yamllint

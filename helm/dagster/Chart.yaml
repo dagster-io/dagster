@@ -1,5 +1,6 @@
 # Per Helm docs: https://helm.sh/docs/topics/charts/ - charts supporting previous Helm versions have
 # an apiVersion set to v1 and are still installable by Helm 3.
+---
 apiVersion: v1
 name: dagster
 description: Dagster is a system for building modern data applications.
