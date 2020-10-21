@@ -58,7 +58,7 @@ from dagster.core.snap.execution_plan_snapshot import (
 from dagster.core.storage.tags import check_tags
 from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.grpc import DagsterGrpcServer
+from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster.grpc.impl import (
     get_external_execution_plan_snapshot,
     get_external_job_params,
@@ -577,6 +577,43 @@ def grpc_command(
     server.serve()
 
 
+@click.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")
+@click.option(
+    "--port",
+    "-p",
+    type=click.INT,
+    required=False,
+    help="Port over which to serve. You must pass one and only one of --port/-p or --socket/-s.",
+)
+@click.option(
+    "--socket",
+    "-s",
+    type=click.Path(),
+    required=False,
+    help="Serve over a UDS socket. You must pass one and only one of --port/-p or --socket/-s.",
+)
+@click.option(
+    "--host",
+    "-h",
+    type=click.STRING,
+    required=False,
+    default="localhost",
+    help="Hostname at which to serve. Default is localhost.",
+)
+def grpc_health_check_command(port=None, socket=None, host="localhost"):
+    if seven.IS_WINDOWS and port is None:
+        raise click.UsageError(
+            "You must pass a valid --port/-p on Windows: --socket/-s not supported."
+        )
+    if not (port or socket and not (port and socket)):
+        raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
+
+    client = DagsterGrpcClient(port=port, socket=socket, host=host)
+    status = client.health_check_query()
+    if status != "SERVING":
+        sys.exit(1)
+
+
 ###################################################################################################
 # WARNING: these cli args are encoded in cron, so are not safely changed without migration
 ###################################################################################################
@@ -764,6 +801,7 @@ def create_api_cli_group():
     group.add_command(job_params_command)
     group.add_command(launch_scheduled_execution)
     group.add_command(grpc_command)
+    group.add_command(grpc_health_check_command)
     return group
 
 

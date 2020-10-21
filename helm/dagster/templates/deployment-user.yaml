@@ -81,6 +81,14 @@ spec:
               subPath: dagster.yaml
           resources:
             {{- toYaml $deployment.resources | nindent 12 }}
+          livenessProbe:
+            exec:
+              command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
+            periodSeconds: 20
+          startupProbe:
+            exec:
+              command: ["dagster", "api", "grpc-health-check", "-p",  "{{ $deployment.port }}"]
+            periodSeconds: 10
       {{- with $deployment.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

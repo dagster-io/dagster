@@ -8,6 +8,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import grpc
+from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 from dagster import check, seven
 from dagster.core.code_pointer import CodePointer
@@ -935,7 +936,7 @@ class DagsterGrpcServer(object):
         self.server = grpc.server(ThreadPoolExecutor(max_workers=max_workers))
         self._server_termination_event = threading.Event()
 
-        self._servicer = DagsterApiServer(
+        self._api_servicer = DagsterApiServer(
             server_termination_event=self._server_termination_event,
             loadable_target_origin=loadable_target_origin,
             heartbeat=heartbeat,
@@ -943,7 +944,11 @@ class DagsterGrpcServer(object):
             lazy_load_user_code=lazy_load_user_code,
         )
 
-        add_DagsterApiServicer_to_server(self._servicer, self.server)
+        # Create a health check servicer
+        self._health_servicer = health.HealthServicer()
+        health_pb2_grpc.add_HealthServicer_to_server(self._health_servicer, self.server)
+
+        add_DagsterApiServicer_to_server(self._api_servicer, self.server)
 
         if port:
             server_address = host + ":" + str(port)
@@ -986,6 +991,11 @@ class DagsterGrpcServer(object):
         # https://github.com/grpc/grpc/issues/23315, and our own tracking issue at
 
         self.server.start()
+
+        # Note: currently this is hardcoded as serving, since both services are cohosted
+        # pylint: disable=no-member
+        self._health_servicer.set("DagsterApi", health_pb2.HealthCheckResponse.SERVING)
+
         print(SERVER_STARTED_TOKEN)  # pylint: disable=print-call
         sys.stdout.flush()
         server_termination_thread = threading.Thread(
@@ -1002,7 +1012,7 @@ class DagsterGrpcServer(object):
 
         server_termination_thread.join()
 
-        self._servicer.cleanup()
+        self._api_servicer.cleanup()
 
 
 class CouldNotStartServerProcess(Exception):

@@ -5,6 +5,8 @@ import warnings
 from contextlib import contextmanager
 
 import grpc
+from grpc_health.v1 import health_pb2
+from grpc_health.v1.health_pb2_grpc import HealthStub
 
 from dagster import check, seven
 from dagster.core.events import EngineEventData
@@ -396,6 +398,20 @@ class DagsterGrpcClient(object):
     def get_current_image(self):
         res = self._query("GetCurrentImage", api_pb2.Empty)
         return deserialize_json_to_dagster_namedtuple(res.serialized_current_image)
+
+    def health_check_query(self):
+        try:
+            with grpc.insecure_channel(self._server_address) as channel:
+                response = HealthStub(channel).Check(
+                    health_pb2.HealthCheckRequest(service="DagsterApi")
+                )
+        except grpc.RpcError as e:
+            print(e)  # pylint: disable=print-call
+            return health_pb2.HealthCheckResponse.UNKNOWN  # pylint: disable=no-member
+
+        status_number = response.status
+        # pylint: disable=no-member
+        return health_pb2.HealthCheckResponse.ServingStatus.Name(status_number)
 
 
 class EphemeralDagsterGrpcClient(DagsterGrpcClient):

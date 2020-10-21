@@ -14,9 +14,11 @@ DAGSTER_REPO = git_repo_root()
 
 
 @contextlib.contextmanager
-def copy_directories(paths, cwd, special_folder=None):
+def copy_directories(paths, cwd, destination="build_cache"):
     check.invariant(os.path.exists(cwd), "Image directory does not exist")
-    build_cache_dir = os.path.join(cwd, special_folder or "build_cache")
+    build_cache_dir = os.path.join(cwd, destination)
+
+    os.mkdir(build_cache_dir)
 
     paths_to_copy = []
     for path in paths:
@@ -31,7 +33,10 @@ def copy_directories(paths, cwd, special_folder=None):
     try:
         for src_path, dest_path in paths_to_copy:
             print("Syncing {} to build dir {}...".format(src_path, dest_path))
-            shutil.copytree(src_path, dest_path)
+            if os.path.isdir(src_path):
+                shutil.copytree(src_path, dest_path)
+            else:
+                shutil.copy(src_path, dest_path)
         yield
 
     finally:
@@ -65,7 +70,9 @@ def buildkite_integration_cm(cwd):
 
 @contextlib.contextmanager
 def k8s_example_cm(cwd):
-    with copy_directories(["examples/deploy_k8s/example_project"], cwd):
+    with copy_directories(
+        ["examples/deploy_k8s/example_project",], cwd,
+    ):
         yield
 
 
@@ -86,7 +93,7 @@ def k8s_example_editable_cm(cwd):
         get_core_k8s_dirs() + ["python_modules/libraries/dagster-aws",], cwd,
     ):
         with copy_directories(
-            ["examples/deploy_k8s/example_project"], cwd, special_folder="example_project"
+            ["examples/deploy_k8s/example_project"], cwd, destination="example_project"
         ):
             yield
 
