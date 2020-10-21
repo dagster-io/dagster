@@ -1,6 +1,9 @@
+import mock
 from click.testing import CliRunner
 from dagster.cli import api
-from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs
+from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
+from dagster.core.execution.retries import Retries
+from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.serdes import serialize_dagster_namedtuple
@@ -102,3 +105,68 @@ def test_execute_step_with_structured_logs():
             result = runner_execute_step_with_structured_logs(runner, [input_json],)
 
         assert "STEP_SUCCESS" in result.stdout
+
+
+def test_execute_step_with_structured_logs_verify_step():
+    with get_foo_pipeline_handle() as pipeline_handle:
+        runner = CliRunner()
+
+        with instance_for_test(
+            overrides={
+                "compute_logs": {
+                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "class": "NoOpComputeLogManager",
+                }
+            }
+        ) as instance:
+            run = create_run_for_test(
+                instance,
+                pipeline_name="foo",
+                run_id="new_run",
+                run_config={"storage": {"filesystem": {}}},
+            )
+
+            input_json = serialize_dagster_namedtuple(
+                ExecuteStepArgs(
+                    pipeline_origin=pipeline_handle.get_origin(),
+                    pipeline_run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            # Check that verify succeeds for step that has hasn't been fun (case 3)
+            retries = Retries.from_config({"enabled": {}})
+            assert verify_step(
+                instance, run, retries, step_keys_to_execute=["do_something.compute"]
+            )
+
+            # Check that verify fails when trying to retry with no original attempt (case 3)
+            retries = Retries.from_config({"enabled": {}})
+            retries.mark_attempt("do_something.compute")
+            assert not verify_step(
+                instance, run, retries, step_keys_to_execute=["do_something.compute"]
+            )
+
+            # Test trying to re-run a retry fails verify_step (case 2)
+            with mock.patch("dagster.cli.api.get_step_stats_by_key") as _step_stats_by_key:
+                _step_stats_by_key.return_value = {
+                    "do_something.compute": RunStepKeyStatsSnapshot(
+                        run_id=run.run_id, step_key="do_something.compute", attempts=2
+                    )
+                }
+
+                retries = Retries.from_config({"enabled": {}})
+                retries.mark_attempt("do_something.compute")
+                assert not verify_step(
+                    instance, run, retries, step_keys_to_execute=["do_something.compute"]
+                )
+
+            runner_execute_step_with_structured_logs(
+                runner, [input_json],
+            )
+
+            # # Check that verify fails for step that has already run (case 1)
+            retries = Retries.from_config({"enabled": {}})
+            assert not verify_step(
+                instance, run, retries, step_keys_to_execute=["do_something.compute"]
+            )

@@ -381,6 +381,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 step_keys_to_execute=step_keys,
                 run_config=run_config,
                 retries_dict=retries_dict,
+                should_verify_step=True,
             )
         )
         command = ["dagster"]
