@@ -22,9 +22,7 @@ from .pipeline_base import IPipeline
 
 def get_ephemeral_repository_name(pipeline_name):
     check.str_param(pipeline_name, "pipeline_name")
-    return "__repository__{pipeline_name}".format(
-        pipeline_name="unnamed" if pipeline_name == "<<unnamed>>" else pipeline_name
-    )
+    return "__repository__{pipeline_name}".format(pipeline_name=pipeline_name)
 
 
 @whitelist_for_serdes

@@ -1,3 +1,4 @@
+import uuid
 import warnings
 
 import six
@@ -22,7 +23,7 @@ from .mode import ModeDefinition
 from .preset import PresetDefinition
 from .solid import ISolidDefinition
 from .solid_container import IContainSolids, create_execution_structure, validate_dependency_dict
-from .utils import check_for_invalid_name_and_warn, is_valid_name, validate_tags
+from .utils import check_valid_name, validate_tags
 
 
 def _check_solids_arg(pipeline_name, solid_defs):
@@ -50,6 +51,10 @@ def _check_solids_arg(pipeline_name, solid_defs):
             )
 
     return solid_defs
+
+
+def _anonymous_pipeline_name():
+    return "__pipeline__" + str(uuid.uuid4()).replace("-", "")
 
 
 class PipelineDefinition(IContainSolids):
@@ -152,13 +157,10 @@ class PipelineDefinition(IContainSolids):
     ):
         if not name:
             warnings.warn(
-                "Pipeline must have a name. Names will be required starting in 0.9.13 or later."
+                "Pipeline must have a name. Names will be required starting in 0.10.0 or later."
             )
-        # name might be <<unnamed>> when constructing pipeline subsets
-        elif name != "<<unnamed>>" and not is_valid_name(name):
-            check_for_invalid_name_and_warn(name)
 
-        self._name = check.opt_str_param(name, "name") or "<<unnamed>>"
+        self._name = check_valid_name(name) if name else _anonymous_pipeline_name()
 
         self._description = check.opt_str_param(description, "description")
 

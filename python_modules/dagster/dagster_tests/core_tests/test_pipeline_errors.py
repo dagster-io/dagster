@@ -274,22 +274,3 @@ def test_explicit_failure():
 
     assert exc_info.value.description == "Always fails."
     assert exc_info.value.metadata_entries == [EventMetadataEntry.text("why", label="always_fails")]
-
-
-@pytest.mark.skipif(sys.version_info.major < 3, reason="Bug in catch_warnings on py2")
-def test_no_name_pipeline_warnings():
-    with warnings.catch_warnings(record=True) as w:
-        _ = PipelineDefinition(solid_defs=[])
-        assert len(w) == 1
-        assert "Pipeline must have a name" in str(w[-1].message)
-
-
-@pytest.mark.skipif(sys.version_info.major < 3, reason="Bug in catch_warnings on py2")
-def test_pipeline_invalid_name_warning():
-    with warnings.catch_warnings(record=True) as w:
-        _ = PipelineDefinition(name="d d", solid_defs=[])
-        assert len(w) == 1
-        assert (
-            'You provided name "d d" which is invalid. '
-            'Name must pass regex "^[A-Za-z0-9_]+$"' in str(w[-1].message)
-        )

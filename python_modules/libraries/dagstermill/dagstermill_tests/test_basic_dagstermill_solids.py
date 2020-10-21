@@ -255,7 +255,7 @@ def test_hello_world_reexecution():
                     "    'hello_world_reexecution', '{output_notebook_path}'\n"
                     ")\n\n"
                     "def define_reexecution_pipeline():\n"
-                    "    return PipelineDefinition(solid_defs=[reexecution_solid])\n"
+                    "    return PipelineDefinition(name='hello_world_pipeline', solid_defs=[reexecution_solid])\n"
                 ).format(output_notebook_path=output_notebook_path)
             )
             reexecution_notebook_file.flush()

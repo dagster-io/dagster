@@ -6,6 +6,7 @@
 
 - Removed `DagsterKubernetesPodOperator` in `dagster-airflow`.
 - Removed the `execute_plan` mutation from `dagster-graphql`.
+- `ModeDefinition`, `PartitionSetDefinition`, `PresetDefinition`, `@repository`, `@pipeline`, and `ScheduleDefinition` names must pass the regular expression `r"^[A-Za-z0-9_]+$"` and not be python keywords or disallowed names. See `DISALLOWED_NAMES` in `dagster.core.definitions.utils` for exhaustive list of illegal names.
 
 ## 0.9.15
 

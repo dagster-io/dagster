@@ -312,5 +312,5 @@ def test_bad_positional_input_use():
 def test_nameless():
     noname = PipelineDefinition([return_one])
 
-    assert noname.name == "<<unnamed>>"
-    assert noname.display_name == "<<unnamed>>"
+    assert noname.name.startswith("__pipeline")
+    assert noname.display_name.startswith("__pipeline")

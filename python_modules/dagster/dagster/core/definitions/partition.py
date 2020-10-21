@@ -8,7 +8,7 @@ from dagster.core.storage.tags import check_tags
 from dagster.utils import merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
-from .utils import check_for_invalid_name_and_warn
+from .utils import check_valid_name
 
 
 def by_name(partition):
@@ -147,7 +147,7 @@ class PartitionSetDefinition(
 
         return super(PartitionSetDefinition, cls).__new__(
             cls,
-            name=check_for_invalid_name_and_warn(name),
+            name=check_valid_name(name),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             partition_fn=lambda: [
                 _wrap(x) for x in check.callable_param(partition_fn, "partition_fn")()
@@ -294,7 +294,7 @@ class PartitionScheduleDefinition(ScheduleDefinition):
         execution_timezone=None,
     ):
         super(PartitionScheduleDefinition, self).__init__(
-            name=check_for_invalid_name_and_warn(name),
+            name=check_valid_name(name),
             cron_schedule=cron_schedule,
             pipeline_name=pipeline_name,
             run_config_fn=run_config_fn,
