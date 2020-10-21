@@ -125,6 +125,9 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
     def on_subscribe(self, subscription):
         self._subscription_manager.add_subscription(subscription)
 
+    def dispose(self):
+        self._subscription_manager.dispose()
+
 
 class LocalComputeLogSubscriptionManager(object):
     def __init__(self, manager):
@@ -176,6 +179,9 @@ class LocalComputeLogSubscriptionManager(object):
         if key in self._watchers:
             self._observer.remove_handler_for_watch(handler, self._watchers[key])
         del self._watchers[key]
+
+    def dispose(self):
+        self._observer.stop()
 
 
 class LocalComputeLogFilesystemEventHandler(PatternMatchingEventHandler):

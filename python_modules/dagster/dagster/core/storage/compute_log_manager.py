@@ -190,6 +190,9 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
         self.on_subscribe(subscription)
         return Observable.create(subscription)  # pylint: disable=E1101
 
+    def dispose(self):
+        pass
+
 
 class ComputeLogSubscription(object):
     """Observable object that generates ComputeLogFileData objects as compute step execution logs
