@@ -2,6 +2,7 @@ from typing import Dict
 
 from dagster import (
     AssetMaterialization,
+    Bool,
     EventMetadataEntry,
     InputDefinition,
     Noneable,
@@ -152,12 +153,23 @@ def passthrough_flags_only(solid_config, additional_flags):
             is_required=False,
             default_value=False,
         ),
+        "yield_materializations": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will "
+                "be yielded when the solid executes. Default: True"
+            ),
+        ),
     },
     tags={"kind": "dbt"},
 )
 @experimental
 def dbt_cli_run(context) -> DbtCliOutput:
     """This solid executes ``dbt run`` via the dbt CLI."""
+    from ..utils import generate_materializations
+
     cli_output = execute_cli(
         context.solid_config["dbt_executable"],
         command=("run",),
@@ -169,15 +181,20 @@ def dbt_cli_run(context) -> DbtCliOutput:
         ignore_handled_error=context.solid_config["ignore_handled_error"],
     )
     run_results = parse_run_results(context.solid_config["project-dir"])
-    cli_output = {**run_results, **cli_output}
+    cli_output_dict = {**run_results, **cli_output}
+    cli_output = DbtCliOutput.from_dict(cli_output_dict)
+
+    if context.solid_config["yield_materializations"]:
+        for materialization in generate_materializations(cli_output):
+            yield materialization
 
     yield AssetMaterialization(
         asset_key="dbt_run_cli_output",
         description="Output from the CLI execution of `dbt run`.",
-        metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
+        metadata_entries=[EventMetadataEntry.json(cli_output_dict, label="CLI Output")],
     )
 
-    yield Output(DbtCliOutput.from_dict(cli_output))
+    yield Output(cli_output)
 
 
 @solid(
@@ -225,6 +242,9 @@ def dbt_cli_run(context) -> DbtCliOutput:
             is_required=False,
             description="The dbt models to exclude.",
         ),
+        "yield_materializations": Field(
+            config=Bool, is_required=False, default_value=True, description="FIXME"
+        ),
     },
     tags={"kind": "dbt"},
 )
@@ -244,11 +264,12 @@ def dbt_cli_test(context) -> DbtCliOutput:
     run_results = parse_run_results(context.solid_config["project-dir"])
     cli_output = {**run_results, **cli_output}
 
-    yield AssetMaterialization(
-        asset_key="dbt_test_cli_output",
-        description="Output from the CLI execution of `dbt test`.",
-        metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-    )
+    if context.solid_config["yield_materializations"]:
+        yield AssetMaterialization(
+            asset_key="dbt_test_cli_output",
+            description="Output from the CLI execution of `dbt test`.",
+            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
+        )
 
     yield Output(DbtCliOutput.from_dict(cli_output))
 
@@ -280,6 +301,9 @@ def dbt_cli_test(context) -> DbtCliOutput:
             is_required=False,
             description="The dbt models to exclude.",
         ),
+        "yield_materializations": Field(
+            config=Bool, is_required=False, default_value=True, description="FIXME"
+        ),
     },
     tags={"kind": "dbt"},
 )
@@ -295,11 +319,12 @@ def dbt_cli_snapshot(context) -> Dict:
         ignore_handled_error=context.solid_config["ignore_handled_error"],
     )
 
-    yield AssetMaterialization(
-        asset_key="dbt_snapshot_cli_output",
-        description="Output from the CLI execution of `dbt snapshot`.",
-        metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-    )
+    if context.solid_config["yield_materializations"]:
+        yield AssetMaterialization(
+            asset_key="dbt_snapshot_cli_output",
+            description="Output from the CLI execution of `dbt snapshot`.",
+            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
+        )
 
     yield Output(cli_output)
 
@@ -326,6 +351,9 @@ def dbt_cli_snapshot(context) -> Dict:
                 "eg. {'my_variable': 'my_value'}"
             ),
         ),
+        "yield_materializations": Field(
+            config=Bool, is_required=False, default_value=True, description="FIXME"
+        ),
     },
     tags={"kind": "dbt"},
 )
@@ -341,11 +369,12 @@ def dbt_cli_run_operation(context) -> Dict:
         ignore_handled_error=context.solid_config["ignore_handled_error"],
     )
 
-    yield AssetMaterialization(
-        asset_key="dbt_run_operation_cli_output",
-        description="Output from the CLI execution of `dbt run-operation`.",
-        metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-    )
+    if context.solid_config["yield_materializations"]:
+        yield AssetMaterialization(
+            asset_key="dbt_run_operation_cli_output",
+            description="Output from the CLI execution of `dbt run-operation`.",
+            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
+        )
 
     yield Output(cli_output)
 
@@ -379,6 +408,9 @@ def dbt_cli_run_operation(context) -> Dict:
                 "settings in profiles.yml."
             ),
         ),
+        "yield_materializations": Field(
+            config=Bool, is_required=False, default_value=True, description="FIXME"
+        ),
     },
     tags={"kind": "dbt"},
 )
@@ -394,11 +426,12 @@ def dbt_cli_snapshot_freshness(context) -> Dict:
         ignore_handled_error=context.solid_config["ignore_handled_error"],
     )
 
-    yield AssetMaterialization(
-        asset_key="dbt_source_snapshot-freshness_cli_output",
-        description="Output from the CLI execution of `dbt source snapshot-freshness`.",
-        metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-    )
+    if context.solid_config["yield_materializations"]:
+        yield AssetMaterialization(
+            asset_key="dbt_source_snapshot-freshness_cli_output",
+            description="Output from the CLI execution of `dbt source snapshot-freshness`.",
+            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
+        )
 
     yield Output(cli_output)
 
@@ -464,6 +497,9 @@ def dbt_cli_snapshot_freshness(context) -> Dict:
             is_required=False,
             default_value=False,
         ),
+        "yield_materializations": Field(
+            config=Bool, is_required=False, default_value=True, description="FIXME"
+        ),
     },
     tags={"kind": "dbt"},
 )
@@ -491,10 +527,11 @@ def dbt_cli_compile(context) -> Dict:
         ignore_handled_error=context.solid_config["ignore_handled_error"],
     )
 
-    yield AssetMaterialization(
-        asset_key="dbt_compile_cli_output",
-        description="Output from the CLI execution of `dbt compile`.",
-        metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
-    )
+    if context.solid_config["yield_materializations"]:
+        yield AssetMaterialization(
+            asset_key="dbt_compile_cli_output",
+            description="Output from the CLI execution of `dbt compile`.",
+            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
+        )
 
     yield Output(cli_output)

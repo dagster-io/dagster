@@ -1,16 +1,14 @@
 import json
 import time
-from typing import Callable, Iterator, Optional
+from typing import Callable, Optional
 
 import pandas as pd
 from dagster_pandas import DataFrame
 
 from dagster import (
     Array,
-    AssetMaterialization,
     Bool,
     DagsterInvalidDefinitionError,
-    EventMetadataEntry,
     Failure,
     Field,
     InputDefinition,
@@ -32,72 +30,12 @@ from .types import DbtRpcOutput
 from .utils import log_rpc, raise_for_rpc_error
 
 
-def _generate_materializations(dro: DbtRpcOutput) -> Iterator[AssetMaterialization]:
-    """Yields ``AssetMaterializations`` for metadata in the dbt RPC ``DbtRpcOutput``."""
-    for node_result in dro.result.results:
-        if node_result.node["resource_type"] in ["model", "snapshot"]:
-            success = not node_result.fail and not node_result.skip and not node_result.error
-            if success:
-                entries = [
-                    EventMetadataEntry.json(data=node_result.node, label="Node"),
-                    EventMetadataEntry.text(text=str(node_result.status), label="Status"),
-                    EventMetadataEntry.text(
-                        text=str(node_result.execution_time), label="Execution Time"
-                    ),
-                    EventMetadataEntry.text(
-                        text=node_result.node["config"]["materialized"],
-                        label="Materialization Strategy",
-                    ),
-                    EventMetadataEntry.text(text=node_result.node["database"], label="Database"),
-                    EventMetadataEntry.text(text=node_result.node["schema"], label="Schema"),
-                    EventMetadataEntry.text(text=node_result.node["alias"], label="Alias"),
-                    EventMetadataEntry.text(
-                        text=node_result.node["description"], label="Description"
-                    ),
-                ]
-                for step_timing in node_result.step_timings:
-                    if step_timing.name == "execute":
-                        execution_entries = [
-                            EventMetadataEntry.text(
-                                text=step_timing.started_at.isoformat(timespec="seconds"),
-                                label="Execution Started At",
-                            ),
-                            EventMetadataEntry.text(
-                                text=step_timing.completed_at.isoformat(timespec="seconds"),
-                                label="Execution Completed At",
-                            ),
-                            EventMetadataEntry.text(
-                                text=str(step_timing.duration), label="Execution Duration"
-                            ),
-                        ]
-                        entries.extend(execution_entries)
-                    if step_timing.name == "compile":
-                        execution_entries = [
-                            EventMetadataEntry.text(
-                                text=step_timing.started_at.isoformat(timespec="seconds"),
-                                label="Compilation Started At",
-                            ),
-                            EventMetadataEntry.text(
-                                text=step_timing.completed_at.isoformat(timespec="seconds"),
-                                label="Compilation Completed At",
-                            ),
-                            EventMetadataEntry.text(
-                                text=str(step_timing.duration), label="Compilation Duration"
-                            ),
-                        ]
-                        entries.extend(execution_entries)
-
-                yield AssetMaterialization(
-                    description="A materialized node within the dbt graph.",
-                    metadata_entries=entries,
-                    asset_key=node_result.node["unique_id"],
-                )
-
-
 def _poll_rpc(
     context: SolidExecutionContext, request_token: str, should_yield_materializations: bool = True
 ) -> DbtRpcOutput:
     """Polls the dbt RPC server for the status of a request until the state is ``success``."""
+    from ..utils import generate_materializations
+
     logs_start = 0
     interval = context.solid_config.get("interval")
 
@@ -151,7 +89,7 @@ def _poll_rpc(
     polled_run_results = DbtRpcOutput.from_dict(resp_result)
 
     if should_yield_materializations:
-        for materialization in _generate_materializations(polled_run_results):
+        for materialization in generate_materializations(polled_run_results):
             yield materialization
 
     yield Output(polled_run_results)
@@ -275,6 +213,15 @@ def dbt_rpc_run(context: SolidExecutionContext) -> String:
         "task_tags": Permissive(),
         "max_retries": Field(config=Int, is_required=False, default_value=5),
         "retry_interval": Field(config=Int, is_required=False, default_value=120),
+        "yield_materializations": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will "
+                "be yielded when the solid executes. Default: True"
+            ),
+        ),
     },
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
@@ -324,7 +271,11 @@ def dbt_rpc_run_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return _poll_rpc(context, request_token)
+    return _poll_rpc(
+        context,
+        request_token,
+        should_yield_materializations=context.solid_config["yield_materializations"],
+    )
 
 
 @solid(
@@ -427,6 +378,15 @@ def dbt_rpc_test(context: SolidExecutionContext) -> String:
             default_value=True,
             description="Whether or not to return logs from the process.",
         ),
+        "yield_materializations": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will "
+                "be yielded when the solid executes. Default: True"
+            ),
+        ),
     },
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
@@ -447,7 +407,11 @@ def dbt_rpc_test_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return _poll_rpc(context, request_token)
+    return _poll_rpc(
+        context,
+        request_token,
+        should_yield_materializations=context.solid_config["yield_materializations"],
+    )
 
 
 @solid(
@@ -522,6 +486,15 @@ def dbt_rpc_run_operation(context: SolidExecutionContext) -> String:
             default_value=True,
             description="Whether or not to return logs from the process.",
         ),
+        "yield_materializations": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will "
+                "be yielded when the solid executes. Default: True"
+            ),
+        ),
     },
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
@@ -539,7 +512,11 @@ def dbt_rpc_run_operation_and_wait(context: SolidExecutionContext) -> DbtRpcOutp
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return _poll_rpc(context, request_token)
+    return _poll_rpc(
+        context,
+        request_token,
+        should_yield_materializations=context.solid_config["yield_materializations"],
+    )
 
 
 @solid(
@@ -619,6 +596,15 @@ def dbt_rpc_snapshot(context: SolidExecutionContext) -> String:
         "task_tags": Permissive(),
         "max_retries": Field(config=Int, is_required=False, default_value=5),
         "retry_interval": Field(config=Int, is_required=False, default_value=120),
+        "yield_materializations": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will "
+                "be yielded when the solid executes. Default: True"
+            ),
+        ),
     },
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
@@ -648,7 +634,11 @@ def dbt_rpc_snapshot_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return _poll_rpc(context, request_token)
+    return _poll_rpc(
+        context,
+        request_token,
+        should_yield_materializations=context.solid_config["yield_materializations"],
+    )
 
 
 @solid(
@@ -735,6 +725,15 @@ def dbt_rpc_snapshot_freshness(context: SolidExecutionContext) -> String:
             default_value=True,
             description="Whether or not to return logs from the process.",
         ),
+        "yield_materializations": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will "
+                "be yielded when the solid executes. Default: True"
+            ),
+        ),
     },
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
@@ -762,7 +761,11 @@ def dbt_rpc_snapshot_freshness_and_wait(context: SolidExecutionContext) -> DbtRp
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    return _poll_rpc(context, request_token)
+    return _poll_rpc(
+        context,
+        request_token,
+        should_yield_materializations=context.solid_config["yield_materializations"],
+    )
 
 
 @solid(
@@ -790,6 +793,15 @@ def dbt_rpc_snapshot_freshness_and_wait(context: SolidExecutionContext) -> DbtRp
             default_value=True,
             description="Whether or not to return logs from the process.",
         ),
+        "yield_materializations": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will "
+                "be yielded when the solid executes. Default: True"
+            ),
+        ),
     },
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
@@ -805,7 +817,13 @@ def dbt_rpc_compile_sql(context: SolidExecutionContext, sql: String) -> String:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     request_token = resp.json().get("result").get("request_token")
-    result = unwrap_result(_poll_rpc(context, request_token))
+    result = unwrap_result(
+        _poll_rpc(
+            context,
+            request_token,
+            should_yield_materializations=context.solid_config["yield_materializations"],
+        )
+    )
     return result.results[0].node["compiled_sql"]
 
 
@@ -879,6 +897,15 @@ def create_dbt_rpc_run_sql_solid(
                 default_value=True,
                 description="Whether or not to return logs from the process.",
             ),
+            "yield_materializations": Field(
+                config=Bool,
+                is_required=False,
+                default_value=True,
+                description=(
+                    "If True, materializations corresponding to the results of the dbt operation "
+                    "will be yielded when the solid executes. Default: True"
+                ),
+            ),
         },
         required_resource_keys={"dbt_rpc"},
         tags={"kind": "dbt"},
@@ -889,7 +916,13 @@ def create_dbt_rpc_run_sql_solid(
         context.log.debug(resp.text)
         raise_for_rpc_error(context, resp)
         request_token = resp.json().get("result").get("request_token")
-        result = unwrap_result(_poll_rpc(context, request_token))
+        result = unwrap_result(
+            _poll_rpc(
+                context,
+                request_token,
+                should_yield_materializations=context.solid_config["yield_materializations"],
+            )
+        )
         table = result.results[0].table
         return pd.DataFrame.from_records(data=table["rows"], columns=table["column_names"])
 
