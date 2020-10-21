@@ -6,11 +6,11 @@ import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsTableQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {Table} from 'src/ui/Table';
 
 type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
 
@@ -217,25 +217,31 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
   return (
     <div style={{margin: '16px'}}>
       {currentPath.length ? null : (
-        <div style={{marginBottom: 30}}>
+        <div style={{marginBottom: '12px'}}>
           <AssetSearch assets={assets} />
         </div>
       )}
-      <Legend>
-        <LegendColumn>Asset Key</LegendColumn>
-      </Legend>
-      {pathKeys.map((pathKey: string, idx: number) => {
-        const linkUrl = `/instance/assets/${
-          currentPath.length ? currentPath.join('/') + `/${pathKey}` : pathKey
-        }`;
-        return (
-          <RowContainer key={idx}>
-            <RowColumn>
-              <Link to={linkUrl}>{pathKey}</Link>
-            </RowColumn>
-          </RowContainer>
-        );
-      })}
+      <Table striped style={{width: '100%'}}>
+        <thead>
+          <tr>
+            <th>Asset Key</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pathKeys.map((pathKey: string, idx: number) => {
+            const linkUrl = `/instance/assets/${
+              currentPath.length ? currentPath.join('/') + `/${pathKey}` : pathKey
+            }`;
+            return (
+              <tr key={idx}>
+                <td>
+                  <Link to={linkUrl}>{pathKey}</Link>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </Table>
     </div>
   );
 };

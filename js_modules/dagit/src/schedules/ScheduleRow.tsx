@@ -3,6 +3,7 @@ import {
   Button,
   Callout,
   Code,
+  Colors,
   Icon,
   Intent,
   Menu,
@@ -35,8 +36,6 @@ import {
   useScheduleSelector,
 } from 'src/DagsterRepositoryContext';
 import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
-import {RowColumn, RowContainer, ScrollingRowColumn} from 'src/ListComponents';
-import {Legend, LegendColumn} from 'src/ListComponents';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryOriginInformation} from 'src/RepositoryInformation';
 import {assertUnreachable} from 'src/Util';
@@ -58,6 +57,7 @@ import {
   StopSchedule_stopRunningSchedule_PythonError,
 } from 'src/schedules/types/StopSchedule';
 import {ScheduleStatus, ScheduleTickStatus} from 'src/types/globalTypes';
+import {FontFamily} from 'src/ui/styles';
 
 type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 
@@ -173,49 +173,41 @@ export const ScheduleRow: React.FunctionComponent<{
     : data?.scheduleDefinitionOrError?.runConfigOrError.yaml;
 
   const displayName = match ? (
-    <ScheduleName>{name}</ScheduleName>
+    <div>{name}</div>
   ) : (
     <>
-      <Link to={`/schedules/${name}`}>
-        <ScheduleName>{name}</ScheduleName>
-      </Link>
-
-      {scheduleId && <span style={{fontSize: 10}}>Schedule ID: {scheduleId}</span>}
+      <div>
+        <Link to={`/schedules/${name}`}>{name}</Link>
+      </div>
+      {scheduleId && (
+        <span style={{fontSize: '12px'}}>
+          Schedule ID: <span style={{fontFamily: FontFamily.monospace}}>{scheduleId}</span>
+        </span>
+      )}
     </>
   );
 
   if (!scheduleState) {
     return (
-      <RowContainer key={name}>
-        <RowColumn style={{flex: 1.4}}>{displayName}</RowColumn>
-        <RowColumn>
-          <Link to={`/pipeline/${pipelineName}/`}>
-            <Icon icon="diagram-tree" /> {pipelineName}
-          </Link>
-        </RowColumn>
-        <RowColumn
+      <tr key={name}>
+        <td>{displayName}</td>
+        <td>
+          <Link to={`/pipeline/${pipelineName}/`}>{pipelineName}</Link>
+        </td>
+        <td
           style={{
             maxWidth: 150,
           }}
         >
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              whiteSpace: 'pre-wrap',
-              display: 'block',
-            }}
-          >
-            {cronSchedule ? (
-              <Tooltip position={'bottom'} content={cronSchedule}>
-                {humanCronString(cronSchedule)}
-              </Tooltip>
-            ) : (
-              <div>-</div>
-            )}
-          </div>
-        </RowColumn>
-        <RowColumn
+          {cronSchedule ? (
+            <Tooltip position={'bottom'} content={cronSchedule}>
+              {humanCronString(cronSchedule)}
+            </Tooltip>
+          ) : (
+            <div>-</div>
+          )}
+        </td>
+        <td
           style={{
             display: 'flex',
             alignItems: 'flex-start',
@@ -225,8 +217,8 @@ export const ScheduleRow: React.FunctionComponent<{
           <div style={{flex: 1}}>
             <div>{`Mode: ${mode}`}</div>
           </div>
-        </RowColumn>
-      </RowContainer>
+        </td>
+      </tr>
     );
   }
 
@@ -235,8 +227,8 @@ export const ScheduleRow: React.FunctionComponent<{
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   return (
-    <RowContainer key={name}>
-      <RowColumn style={{maxWidth: 60, paddingLeft: 0, textAlign: 'center'}}>
+    <tr key={name}>
+      <td style={{maxWidth: '64px'}}>
         <Switch
           checked={status === ScheduleStatus.RUNNING}
           large={true}
@@ -257,49 +249,33 @@ export const ScheduleRow: React.FunctionComponent<{
         />
 
         {errorDisplay(status, runningScheduleCount)}
-      </RowColumn>
-      <RowColumn style={{flex: 1.4}}>{displayName}</RowColumn>
-      <RowColumn>
-        <Link to={`/pipeline/${pipelineName}/`}>
-          <Icon icon="diagram-tree" /> {pipelineName}
-        </Link>
-      </RowColumn>
-      <RowColumn
+      </td>
+      <td>{displayName}</td>
+      <td>
+        <Link to={`/pipeline/${pipelineName}/`}>{pipelineName}</Link>
+      </td>
+      <td
         style={{
           maxWidth: 150,
         }}
       >
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            whiteSpace: 'pre-wrap',
-            display: 'block',
-          }}
-        >
-          {cronSchedule ? (
-            <Tooltip position={'bottom'} content={cronSchedule}>
-              {humanCronString(cronSchedule)}
-            </Tooltip>
-          ) : (
-            <div>-</div>
-          )}
-        </div>
-      </RowColumn>
-      <RowColumn style={{maxWidth: 100}}>
+        {cronSchedule ? (
+          <Tooltip position={'bottom'} content={cronSchedule}>
+            {humanCronString(cronSchedule)}
+          </Tooltip>
+        ) : (
+          <div>-</div>
+        )}
+      </td>
+      <td style={{maxWidth: 100}}>
         {latestTick ? (
           <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
-        ) : null}
-      </RowColumn>
-      <RowColumn
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div>
+        ) : (
+          <span style={{color: Colors.GRAY4}}>None</span>
+        )}
+      </td>
+      <td>
+        <div style={{display: 'flex'}}>
           {runs.map((run) => {
             const [partition] = run.tags
               .filter((tag) => tag.key === 'dagster/partition')
@@ -315,9 +291,8 @@ export const ScheduleRow: React.FunctionComponent<{
             return (
               <div
                 style={{
-                  display: 'inline-block',
                   cursor: 'pointer',
-                  marginRight: 5,
+                  marginRight: '4px',
                 }}
                 key={run.runId}
               >
@@ -334,90 +309,87 @@ export const ScheduleRow: React.FunctionComponent<{
               </div>
             );
           })}
-
-          {runsCount > NUM_RUNS_TO_DISPLAY && (
-            <Link
-              to={`/instance/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${name}`)}`}
-              style={{verticalAlign: 'top'}}
-            >
-              {' '}
-              +{runsCount - NUM_RUNS_TO_DISPLAY} more
-            </Link>
-          )}
         </div>
-      </RowColumn>
-      <RowColumn
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          flex: 1,
-        }}
-      >
-        <div style={{flex: 1}}>
+        {runsCount > NUM_RUNS_TO_DISPLAY && (
+          <Link
+            to={`/instance/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${name}`)}`}
+            style={{verticalAlign: 'top'}}
+          >
+            {' '}
+            +{runsCount - NUM_RUNS_TO_DISPLAY} more
+          </Link>
+        )}
+      </td>
+      <td>
+        <div style={{display: 'flex', alignItems: 'center'}}>
           <div>{`Mode: ${mode}`}</div>
-        </div>
-        <Popover
-          content={
-            yamlLoading ? (
-              <Spinner size={32} />
-            ) : (
-              <Menu>
-                <MenuItem
-                  text="View Configuration..."
-                  icon="share"
-                  onClick={() => {
-                    if (runConfigError) {
-                      showCustomAlert({
-                        body: <PythonErrorInfo error={runConfigError} />,
-                      });
-                    } else {
-                      showCustomAlert({
-                        title: 'Config',
-                        body: (
-                          <HighlightedCodeBlock
-                            value={runConfigYaml || 'Unable to resolve config'}
-                            languages={['yaml']}
-                          />
-                        ),
-                      });
-                    }
-                  }}
-                />
-                <MenuItem
-                  text="Open in Playground..."
-                  icon="edit"
-                  target="_blank"
-                  disabled={!runConfigYaml}
-                  href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify({
-                    mode,
-                    solidSelection,
-                    config: runConfigYaml,
-                  })}`}
-                />
-
-                {schedule.partitionSet?.name ? (
+          <Popover
+            content={
+              yamlLoading ? (
+                <div style={{padding: '16px'}}>
+                  <Spinner size={16} />
+                </div>
+              ) : (
+                <Menu>
                   <MenuItem
-                    text="View Partition History..."
-                    icon="multi-select"
-                    target="_blank"
-                    href={`/pipeline/${pipelineName}/partitions`}
+                    text="View Configuration..."
+                    icon="share"
+                    onClick={() => {
+                      if (runConfigError) {
+                        showCustomAlert({
+                          body: <PythonErrorInfo error={runConfigError} />,
+                        });
+                      } else {
+                        showCustomAlert({
+                          title: 'Config',
+                          body: (
+                            <HighlightedCodeBlock
+                              value={runConfigYaml || 'Unable to resolve config'}
+                              languages={['yaml']}
+                            />
+                          ),
+                        });
+                      }
+                    }}
                   />
-                ) : null}
-              </Menu>
-            )
-          }
-          position={'bottom'}
-        >
-          <Button
-            minimal={true}
-            icon="chevron-down"
-            onClick={() => {
-              setConfigRequested(true);
-            }}
-          />
-        </Popover>
-      </RowColumn>
-    </RowContainer>
+                  <MenuItem
+                    text="Open in Playground..."
+                    icon="edit"
+                    target="_blank"
+                    disabled={!runConfigYaml}
+                    href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify({
+                      mode,
+                      solidSelection,
+                      config: runConfigYaml,
+                    })}`}
+                  />
+
+                  {schedule.partitionSet?.name ? (
+                    <MenuItem
+                      text="View Partition History..."
+                      icon="multi-select"
+                      target="_blank"
+                      href={`/pipeline/${pipelineName}/partitions`}
+                    />
+                  ) : null}
+                </Menu>
+              )
+            }
+            position={'bottom'}
+          >
+            <Button
+              small
+              minimal
+              icon="chevron-down"
+              onClick={() => {
+                setConfigRequested(true);
+              }}
+              style={{marginLeft: '4px'}}
+            />
+          </Popover>
+        </div>
+      </td>
+    </tr>
   );
 };
 
@@ -426,24 +398,24 @@ export const ScheduleRowHeader: React.FunctionComponent<{
 }> = ({schedule}) => {
   if (!schedule.scheduleState) {
     return (
-      <Legend>
-        <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
-        <LegendColumn>Pipeline</LegendColumn>
-        <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
-        <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
-      </Legend>
+      <tr>
+        <th>Schedule Name</th>
+        <th>Pipeline</th>
+        <th>Schedule</th>
+        <th>Execution Params</th>
+      </tr>
     );
   } else {
     return (
-      <Legend>
-        <LegendColumn style={{maxWidth: 60}}></LegendColumn>
-        <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
-        <LegendColumn>Pipeline</LegendColumn>
-        <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
-        <LegendColumn style={{maxWidth: 100}}>Last Tick</LegendColumn>
-        <LegendColumn style={{flex: 1}}>Latest Runs</LegendColumn>
-        <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
-      </Legend>
+      <tr>
+        <th></th>
+        <th>Schedule Name</th>
+        <th>Pipeline</th>
+        <th>Schedule</th>
+        <th>Last Tick</th>
+        <th>Latest Runs</th>
+        <th>Execution Params</th>
+      </tr>
     );
   }
 };
@@ -526,9 +498,9 @@ export const ScheduleStateRow: React.FunctionComponent<{
   };
 
   return (
-    <RowContainer key={scheduleName}>
+    <tr key={scheduleName}>
       {showStatus && (
-        <RowColumn style={{maxWidth: 60, paddingLeft: 0, textAlign: 'center'}}>
+        <td style={{maxWidth: 60, paddingLeft: 0, textAlign: 'center'}}>
           <Switch
             checked={status === ScheduleStatus.RUNNING}
             large={true}
@@ -541,15 +513,15 @@ export const ScheduleStateRow: React.FunctionComponent<{
             innerLabel="off"
             onChange={() => switchScheduleStatus(status, confirm, dagsterRepoOption)}
           />
-        </RowColumn>
+        </td>
       )}
 
       {dagsterRepoOption ? (
-        <RowColumn style={{flex: 1.4}}>
+        <td style={{flex: 1.4}}>
           <ButtonLink onClick={goToSchedule}>{scheduleName}</ButtonLink>
-        </RowColumn>
+        </td>
       ) : (
-        <ScrollingRowColumn style={{flex: 3}}>
+        <td style={{flex: 3}}>
           <div style={{display: 'flex', alignItems: 'base'}}>
             <div>{scheduleName}</div>
             <ButtonLink onClick={() => setShowRepositoryOrigin(!showRepositoryOrigin)}>
@@ -564,9 +536,9 @@ export const ScheduleStateRow: React.FunctionComponent<{
               <RepositoryOriginInformation origin={repositoryOrigin} />
             </Callout>
           )}
-        </ScrollingRowColumn>
+        </td>
       )}
-      <RowColumn
+      <td
         style={{
           maxWidth: 150,
         }}
@@ -587,13 +559,13 @@ export const ScheduleStateRow: React.FunctionComponent<{
             <div>-</div>
           )}
         </div>
-      </RowColumn>
-      <RowColumn style={{flex: 1}}>
+      </td>
+      <td style={{flex: 1}}>
         {latestTick ? (
           <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
         ) : null}
-      </RowColumn>
-      <RowColumn
+      </td>
+      <td
         style={{
           flex: 1,
           display: 'flex',
@@ -601,14 +573,13 @@ export const ScheduleStateRow: React.FunctionComponent<{
           justifyContent: 'space-between',
         }}
       >
-        <div>
+        <div style={{display: 'flex'}}>
           {runs.map((run) => {
             return (
               <div
                 style={{
-                  display: 'inline-block',
                   cursor: 'pointer',
-                  marginRight: 5,
+                  marginRight: '4px',
                 }}
                 key={run.runId}
               >
@@ -625,21 +596,20 @@ export const ScheduleStateRow: React.FunctionComponent<{
               </div>
             );
           })}
-
-          {runsCount > NUM_RUNS_TO_DISPLAY && (
-            <Link
-              to={`/instance/runs/?q=${encodeURIComponent(
-                `tag:dagster/schedule_name=${scheduleName}`,
-              )}`}
-              style={{verticalAlign: 'top'}}
-            >
-              {' '}
-              +{runsCount - NUM_RUNS_TO_DISPLAY} more
-            </Link>
-          )}
         </div>
-      </RowColumn>
-    </RowContainer>
+        {runsCount > NUM_RUNS_TO_DISPLAY && (
+          <Link
+            to={`/instance/runs/?q=${encodeURIComponent(
+              `tag:dagster/schedule_name=${scheduleName}`,
+            )}`}
+            style={{verticalAlign: 'top'}}
+          >
+            {' '}
+            +{runsCount - NUM_RUNS_TO_DISPLAY} more
+          </Link>
+        )}
+      </td>
+    </tr>
   );
 };
 
@@ -706,10 +676,6 @@ export const TickTag: React.FunctionComponent<{
       return assertUnreachable(status);
   }
 };
-
-const ScheduleName = styled.pre`
-  margin: 0;
-`;
 
 const FETCH_SCHEDULE_YAML = gql`
   query FetchScheduleYaml($scheduleSelector: ScheduleSelector!) {

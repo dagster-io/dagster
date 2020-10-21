@@ -14,7 +14,7 @@ import * as React from 'react';
 import {useQuery} from 'react-apollo';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
-import {Header, Legend, LegendColumn, ScrollContainer} from 'src/ListComponents';
+import {Header, ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformation} from 'src/RepositoryInformation';
@@ -30,6 +30,7 @@ import {
   SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results,
   SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results,
 } from 'src/schedules/types/SchedulesRootQuery';
+import {Table} from 'src/ui/Table';
 
 const GetStaleReconcileSection: React.FunctionComponent<{
   scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
@@ -198,19 +199,25 @@ const ScheduleTable: React.FunctionComponent<{
       </div>
 
       {props.schedules.length > 0 && (
-        <Legend>
-          <LegendColumn style={{maxWidth: 60, paddingRight: 2}}></LegendColumn>
-          <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
-          <LegendColumn>Pipeline</LegendColumn>
-          <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
-          <LegendColumn style={{maxWidth: 100}}>Last Tick</LegendColumn>
-          <LegendColumn style={{flex: 1}}>Latest Runs</LegendColumn>
-          <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
-        </Legend>
+        <Table striped style={{width: '100%'}}>
+          <thead>
+            <tr>
+              <th style={{maxWidth: '60px'}}></th>
+              <th>Schedule Name</th>
+              <th>Pipeline</th>
+              <th style={{width: '150px'}}>Schedule</th>
+              <th style={{width: '100px'}}>Last Tick</th>
+              <th>Latest Runs</th>
+              <th>Execution Params</th>
+            </tr>
+          </thead>
+          <tbody>
+            {props.schedules.map((schedule) => (
+              <ScheduleRow schedule={schedule} key={schedule.name} />
+            ))}
+          </tbody>
+        </Table>
       )}
-      {props.schedules.map((schedule) => (
-        <ScheduleRow schedule={schedule} key={schedule.name} />
-      ))}
     </div>
   );
 };
@@ -230,16 +237,22 @@ const ScheduleWithoutStateTable: React.FunctionComponent<{
         storage yet. After reconciliation, these schedules can be turned on.
       </p>
       {props.schedules.length > 0 && (
-        <Legend>
-          <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
-          <LegendColumn>Pipeline</LegendColumn>
-          <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
-          <LegendColumn style={{flex: 1}}>Execution Params</LegendColumn>
-        </Legend>
+        <Table striped style={{width: '100%'}}>
+          <thead>
+            <tr>
+              <th>Schedule Name</th>
+              <th>Pipeline</th>
+              <th>Schedule</th>
+              <th>Execution Params</th>
+            </tr>
+          </thead>
+          <tbody>
+            {props.schedules.map((schedule) => (
+              <ScheduleRow schedule={schedule} key={schedule.name} />
+            ))}
+          </tbody>
+        </Table>
       )}
-      {props.schedules.map((schedule) => (
-        <ScheduleRow schedule={schedule} key={schedule.name} />
-      ))}
     </div>
   );
 };
@@ -264,16 +277,25 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
         After reconciliation, these entries will be deleted.
       </p>
       {props.scheduleStates.length > 0 && (
-        <Legend>
-          <LegendColumn style={{flex: 1.4}}>Schedule Name</LegendColumn>
-          <LegendColumn style={{maxWidth: 150}}>Schedule</LegendColumn>
-          <LegendColumn style={{maxWidth: 100}}>Last Tick</LegendColumn>
-          <LegendColumn style={{flex: 1}}>Latest Runs</LegendColumn>
-        </Legend>
+        <Table>
+          <thead>
+            <tr>
+              <th style={{flex: 1.4}}>Schedule Name</th>
+              <th style={{maxWidth: 150}}>Schedule</th>
+              <th style={{maxWidth: 100}}>Last Tick</th>
+              <th style={{flex: 1}}>Latest Runs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {props.scheduleStates.map((scheduleState) => (
+              <ScheduleStateRow
+                scheduleState={scheduleState}
+                key={scheduleState.scheduleOriginId}
+              />
+            ))}
+          </tbody>
+        </Table>
       )}
-      {props.scheduleStates.map((scheduleState) => (
-        <ScheduleStateRow scheduleState={scheduleState} key={scheduleState.scheduleOriginId} />
-      ))}
     </div>
   );
 };

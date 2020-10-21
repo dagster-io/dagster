@@ -20,9 +20,9 @@ export const CursorPaginationControls: React.FunctionComponent<CursorPaginationP
     <div style={{textAlign: 'center', marginBottom: 10}}>
       <Button
         style={{
-          visibility: hasPrevCursor ? 'initial' : 'hidden',
           marginRight: 4,
         }}
+        disabled={!hasPrevCursor}
         icon={IconNames.ARROW_LEFT}
         onClick={popCursor}
       >
@@ -30,9 +30,9 @@ export const CursorPaginationControls: React.FunctionComponent<CursorPaginationP
       </Button>
       <Button
         style={{
-          visibility: hasNextCursor ? 'initial' : 'hidden',
           marginLeft: 4,
         }}
+        disabled={!hasNextCursor}
         rightIcon={IconNames.ARROW_RIGHT}
         onClick={advanceCursor}
       >

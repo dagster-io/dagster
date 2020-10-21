@@ -8,7 +8,6 @@ import {RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';
-import {RowColumn, RowContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {Timestamp} from 'src/TimeComponents';
@@ -26,6 +25,8 @@ import {RunActionsMenu} from 'src/runs/RunActionsMenu';
 import {RunStatus, RunStatusWithStats} from 'src/runs/RunStatusDots';
 import {RunTime, RunsQueryRefetchContext, titleForRun} from 'src/runs/RunUtils';
 import {RunComponentFragments, RunElapsed} from 'src/runs/RunUtils';
+import {Table} from 'src/ui/Table';
+import {FontFamily} from 'src/ui/styles';
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules;
@@ -123,19 +124,31 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
             </MainContainer>
             <SecondaryContainer>
               <OverviewSection title="Schedule">
-                {schedules.length
-                  ? schedules.map((schedule) => (
-                      <OverviewSchedule schedule={schedule} key={schedule.name} />
-                    ))
-                  : 'No pipeline schedules'}
+                {schedules.length ? (
+                  <Table striped style={{width: '100%'}}>
+                    <tbody>
+                      {schedules.map((schedule) => (
+                        <OverviewSchedule schedule={schedule} key={schedule.name} />
+                      ))}
+                    </tbody>
+                  </Table>
+                ) : (
+                  'No pipeline schedules'
+                )}
               </OverviewSection>
               <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
                 <OverviewSection title="Recent runs">
-                  {pipelineSnapshotOrError.runs.length
-                    ? pipelineSnapshotOrError.runs.map((run) => (
-                        <OverviewRun run={run} key={run.runId} />
-                      ))
-                    : 'No recent runs'}
+                  {pipelineSnapshotOrError.runs.length ? (
+                    <Table striped>
+                      <tbody>
+                        {pipelineSnapshotOrError.runs.map((run) => (
+                          <OverviewRun run={run} key={run.runId} />
+                        ))}
+                      </tbody>
+                    </Table>
+                  ) : (
+                    'No recent runs'
+                  )}
                 </OverviewSection>
               </RunsQueryRefetchContext.Provider>
             </SecondaryContainer>
@@ -160,13 +173,21 @@ const OverviewAssets = ({runs}: {runs: Run[]}) => {
   const assetKeys = Object.keys(assetMap);
   return (
     <OverviewSection title="Related assets">
-      {assetKeys.length
-        ? assetKeys.map((assetKey) => (
-            <RowContainer key={assetKey} style={{padding: 10, paddingBottom: 30}}>
-              <Link to={`/instance/assets/${assetKey}`}>{assetKey}</Link>
-            </RowContainer>
-          ))
-        : 'No recent assets'}
+      {assetKeys.length ? (
+        <Table striped style={{width: '100%'}}>
+          <tbody>
+            {assetKeys.map((assetKey) => (
+              <tr key={assetKey} style={{padding: 10, paddingBottom: 30}}>
+                <td>
+                  <Link to={`/instance/assets/${assetKey}`}>{assetKey}</Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      ) : (
+        'No recent assets'
+      )}
     </OverviewSection>
   );
 };
@@ -177,17 +198,17 @@ const OverviewSchedule = ({schedule}: {schedule: Schedule}) => {
     schedule.scheduleState.lastRuns.length &&
     schedule.scheduleState.lastRuns[0];
   return (
-    <RowContainer style={{paddingRight: 3}}>
-      <RowColumn>
+    <tr>
+      <td>
         <Link to={`/schedules/${schedule.name}`}>{schedule.name}</Link>
         {lastRun && lastRun.stats.__typename === 'PipelineRunStatsSnapshot' ? (
           <div style={{color: Colors.GRAY3, fontSize: 12, marginTop: 2}}>
             Last Run: <Timestamp unix={lastRun.stats.endTime || 0} />
           </div>
         ) : null}
-        <div style={{marginTop: 5}}>
-          {schedule.scheduleState &&
-            schedule.scheduleState.runs.map((run) => {
+        {schedule.scheduleState?.runs && (
+          <div style={{marginTop: '4px'}}>
+            {schedule.scheduleState.runs.map((run) => {
               return (
                 <div
                   style={{
@@ -210,9 +231,10 @@ const OverviewSchedule = ({schedule}: {schedule: Schedule}) => {
                 </div>
               );
             })}
-        </div>
-      </RowColumn>
-    </RowContainer>
+          </div>
+        )}
+      </td>
+    </tr>
   );
 };
 
@@ -222,20 +244,22 @@ const OverviewRun = ({run}: {run: Run}) => {
     run.stats.__typename === 'PipelineRunStatsSnapshot' ? <RunElapsed run={run} /> : null;
 
   return (
-    <RowContainer style={{paddingRight: 3}}>
-      <RowColumn style={{maxWidth: 30, paddingLeft: 0, textAlign: 'center'}}>
+    <tr>
+      <td style={{maxWidth: 30, textAlign: 'center'}}>
         <RunStatusWithStats status={run.status} runId={run.runId} />
-      </RowColumn>
-      <RowColumn style={{flex: 2.4}}>
-        <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</Link>
+      </td>
+      <td style={{width: '100%'}}>
+        <div style={{fontFamily: FontFamily.monospace}}>
+          <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</Link>
+        </div>
         <div style={{marginTop: 5}}>{`Mode: ${run.mode}`}</div>
         {time}
         {elapsed}
-      </RowColumn>
-      <RowColumn style={{maxWidth: 50}}>
+      </td>
+      <td style={{width: '50px'}}>
         <RunActionsMenu run={run} />
-      </RowColumn>
-    </RowContainer>
+      </td>
+    </tr>
   );
 };
 

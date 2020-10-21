@@ -96,10 +96,15 @@ export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
               }
               const runs = pipelineRunsOrError.results;
               const displayed = runs.slice(0, PAGE_SIZE);
+              const {hasNextCursor, hasPrevCursor} = paginationProps;
               return (
                 <>
                   <RunTable runs={displayed} onSetFilter={setFilterTokens} />
-                  <CursorPaginationControls {...paginationProps} />
+                  {hasNextCursor || hasPrevCursor ? (
+                    <div style={{marginTop: '20px'}}>
+                      <CursorPaginationControls {...paginationProps} />
+                    </div>
+                  ) : null}
                 </>
               );
             }}

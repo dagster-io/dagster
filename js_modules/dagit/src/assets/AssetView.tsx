@@ -6,7 +6,7 @@ import {useQuery} from 'react-apollo';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 import styled from 'styled-components';
 
-import {Header, Legend, LegendColumn, RowColumn, RowContainer} from 'src/ListComponents';
+import {Header} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {Timestamp} from 'src/TimeComponents';
 import {colorHash} from 'src/Util';
@@ -23,6 +23,8 @@ import {RunStatus} from 'src/runs/RunStatusDots';
 import {RunTable} from 'src/runs/RunTable';
 import {titleForRun} from 'src/runs/RunUtils';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {Table} from 'src/ui/Table';
+import {FontFamily} from 'src/ui/styles';
 
 interface AssetKey {
   path: string[];
@@ -92,46 +94,49 @@ const AssetLastMaterialization: React.FunctionComponent<{
   return (
     <Section>
       <Header>Last Materialization Event</Header>
-      <div>
-        <Legend>
-          <LegendColumn style={{maxWidth: 30}}></LegendColumn>
-          <LegendColumn style={{maxWidth: 250}}>Run</LegendColumn>
-          <LegendColumn style={{flex: 2}}>Materialization</LegendColumn>
-          <LegendColumn style={{flex: 3}}>Details</LegendColumn>
-          <LegendColumn style={{maxWidth: 300}}>Timestamp</LegendColumn>
-        </Legend>
-
-        <RowContainer>
-          <RowColumn style={{maxWidth: 30, paddingLeft: 0, textAlign: 'center'}}>
-            {run ? (
-              <RunStatus status={run.status} />
-            ) : (
-              <RunStatus status={PipelineRunStatus.NOT_STARTED} />
-            )}
-          </RowColumn>
-          <RowColumn style={{maxWidth: 250}}>
-            {run ? (
-              <a href={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</a>
-            ) : (
-              runId
-            )}
-          </RowColumn>
-          <RowColumn style={{flex: 2}}>
-            {materialization.label}
-            {materialization.description ? (
-              <div style={{fontSize: '0.8rem', marginTop: 10}}>{materialization.description}</div>
-            ) : null}
-          </RowColumn>
-          <RowColumn style={{flex: 3, fontSize: 12}}>
-            {metadataEntries && metadataEntries.length ? (
-              <MetadataEntries entries={metadataEntries} />
-            ) : null}
-          </RowColumn>
-          <RowColumn style={{maxWidth: 300}}>
-            <Timestamp ms={parseInt(timestamp)} />
-          </RowColumn>
-        </RowContainer>
-      </div>
+      <Table striped style={{width: '100%'}}>
+        <thead>
+          <tr>
+            <th style={{width: '32px'}}></th>
+            <th style={{maxWidth: '80px'}}>Run</th>
+            <th style={{width: '20%'}}>Materialization</th>
+            <th style={{width: '100%'}}>Details</th>
+            <th style={{maxWidth: 300}}>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              {run ? (
+                <RunStatus status={run.status} />
+              ) : (
+                <RunStatus status={PipelineRunStatus.NOT_STARTED} />
+              )}
+            </td>
+            <td style={{fontFamily: FontFamily.monospace}}>
+              {run ? (
+                <a href={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</a>
+              ) : (
+                runId
+              )}
+            </td>
+            <td>
+              {materialization.label}
+              {materialization.description ? (
+                <div style={{fontSize: '0.8rem', marginTop: 10}}>{materialization.description}</div>
+              ) : null}
+            </td>
+            <td style={{fontSize: 12}}>
+              {metadataEntries && metadataEntries.length ? (
+                <MetadataEntries entries={metadataEntries} />
+              ) : null}
+            </td>
+            <td>
+              <Timestamp ms={parseInt(timestamp)} />
+            </td>
+          </tr>
+        </tbody>
+      </Table>
     </Section>
   );
 };

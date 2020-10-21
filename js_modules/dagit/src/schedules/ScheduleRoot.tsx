@@ -12,6 +12,8 @@ import {TopNav} from 'src/nav/TopNav';
 import {ScheduleRow, ScheduleRowHeader} from 'src/schedules/ScheduleRow';
 import {SCHEDULE_DEFINITION_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {ScheduleRootQuery} from 'src/schedules/types/ScheduleRootQuery';
+import {Page} from 'src/ui/Page';
+import {Table} from 'src/ui/Table';
 
 export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
   scheduleName: string;
@@ -40,11 +42,17 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
           return (
             <ScrollContainer>
               <TopNav breadcrumbs={breadcrumbs} />
-              <div style={{padding: '16px'}}>
+              <Page>
                 <SchedulerTimezoneNote />
-                <ScheduleRowHeader schedule={scheduleDefinitionOrError} />
-                <ScheduleRow schedule={scheduleDefinitionOrError} />
-              </div>
+                <Table striped style={{width: '100%'}}>
+                  <thead>
+                    <ScheduleRowHeader schedule={scheduleDefinitionOrError} />
+                  </thead>
+                  <tbody>
+                    <ScheduleRow schedule={scheduleDefinitionOrError} />
+                  </tbody>
+                </Table>
+              </Page>
             </ScrollContainer>
           );
         } else {

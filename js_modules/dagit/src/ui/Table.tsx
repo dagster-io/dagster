@@ -6,5 +6,12 @@ export const Table = styled(HTMLTable)`
     color: ${Colors.GRAY3};
     font-size: 12px;
     text-transform: uppercase;
+    vertical-align: bottom;
+  }
+
+  & tr td,
+  tr td div {
+    overflow: hidden;
+    white-space: nowrap;
   }
 `;
