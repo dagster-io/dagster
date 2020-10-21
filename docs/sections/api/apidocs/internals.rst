@@ -79,10 +79,12 @@ Intermediate Storage
 Instance
 --------
 
-.. currentmodule:: dagster.core.instance
+.. currentmodule:: dagster
 
 .. autoclass:: DagsterInstance
    :members:
+
+.. currentmodule:: dagster.core.instance
 
 .. autoclass:: InstanceRef
    :members:

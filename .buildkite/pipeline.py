@@ -633,6 +633,18 @@ def next_docs_build_tests():
         )
         .on_integration_image(SupportedPython.V3_7)
         .build(),
+        StepBuilder("documentation coverage")
+        .run(
+            "make dev_install",
+            "pip install -e python_modules/automation",
+            "pip install -r docs-requirements.txt -qqq",
+            "cd docs",
+            "make updateindex",
+            "pytest -vv test_doc_build.py",
+            "git diff --exit-code",
+        )
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
     ]
 
 
@@ -702,16 +714,6 @@ def python_steps():
         StepBuilder("black")
         # See: https://github.com/dagster-io/dagster/issues/1999
         .run("make check_black").on_integration_image(SupportedPython.V3_7).build(),
-        StepBuilder("docs snapshot test")
-        .run(
-            "pip install -r docs-requirements.txt -qqq",
-            "pip install -r python_modules/dagster/dev-requirements.txt -qqq",
-            "pip install -e python_modules/dagster -qqq",
-            "pip install -e python_modules/libraries/dagstermill -qqq",
-            "pytest -vv docs/test_doc_build.py",
-        )
-        .on_integration_image(SupportedPython.V3_7)
-        .build(),
         StepBuilder("mypy examples")
         .run(
             "pip install mypy",

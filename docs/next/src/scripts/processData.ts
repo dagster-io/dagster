@@ -3,12 +3,11 @@ import path from 'path';
 import { promises as fs } from 'fs';
 import algoliasearch from 'algoliasearch';
 import data from '../data/searchindex.json';
+import assert from 'assert';
 
 // Folder paths
 const DATA_PATH = path.join(__dirname, '../data');
 const MODULE_PATH = path.join(DATA_PATH, '_modules');
-const EXAMPLES_PATH = path.join(__dirname, '../../../../examples');
-const EXAMPLES_FOLDER_PATH = path.join(__dirname, '../pages/examples');
 
 process.on('unhandledRejection', (error) => {
   console.error(error); // This prints error with stack included (as for normal errors)
@@ -97,18 +96,34 @@ async function createModuleIndex() {
     JSON.stringify(index),
   );
 
+  createLocalIndex();
   console.log('✅ Generated list of all list and module files');
 }
 
-const dirs = async (dirPath: string) => {
-  let dirs: string[] = [];
-  for (const file of await fs.readdir(dirPath)) {
-    if ((await fs.stat(path.join(dirPath, file))).isDirectory()) {
-      dirs = [...dirs, file];
+async function createLocalIndex() {
+  const objects: {
+    [key: string]: {
+      [key: string]: (number | string)[];
+    };
+  } = data.objects;
+
+  const byModule: { [key: string]: string[] } = {};
+
+  for (const module in objects) {
+    for (const object in objects[module]) {
+      if (!byModule[module]) {
+        byModule[module] = [object];
+      } else {
+        byModule[module].push(object);
+      }
     }
   }
-  return dirs;
-};
+
+  await fs.writeFile(
+    path.join(DATA_PATH, 'exportindex.json'),
+    JSON.stringify(byModule),
+  );
+}
 
 async function createAlgoliaIndex() {
   const { NEXT_ALGOLIA_APP_ID, NEXT_ALGOLIA_ADMIN_KEY } = process.env;
@@ -181,15 +196,25 @@ async function createAlgoliaIndex() {
   }
 }
 
-const steps = [
-  preProcess,
-  rewriteRelativeLinks,
-  createModuleIndex,
-  createAlgoliaIndex,
-];
+const steps: { [key: string]: any } = {
+  preProcess: preProcess,
+  rewriteRelativeLinks: rewriteRelativeLinks,
+  createModuleIndex: createModuleIndex,
+  createAlgoliaIndex: createAlgoliaIndex,
+};
 
-(async () => {
-  for (const step of steps) {
-    await step();
-  }
-})();
+const args: string[] = process.argv;
+if (args.length > 2) {
+  assert(args[2] == '--local', 'Only valid argument is local');
+  (async () => {
+    steps['preProcess']();
+    steps['rewriteRelativeLinks']();
+    steps['createModuleIndex']();
+  })();
+} else {
+  (async () => {
+    for (const [, fn] of Object.entries(steps)) {
+      await fn();
+    }
+  })();
+}
