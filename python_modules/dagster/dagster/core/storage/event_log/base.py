@@ -40,9 +40,17 @@ class EventLogStorage(six.with_metaclass(ABCMeta)):
         """Get a summary of events that have ocurred in a run."""
         return build_run_stats_from_events(run_id, self.get_logs_for_run(run_id))
 
-    def get_step_stats_for_run(self, run_id):
+    def get_step_stats_for_run(self, run_id, step_keys=None):
         """Get per-step stats for a pipeline run."""
-        return build_run_step_stats_from_events(run_id, self.get_logs_for_run(run_id))
+        logs = self.get_logs_for_run(run_id)
+        if step_keys:
+            logs = [
+                event
+                for event in logs
+                if event.is_dagster_event and event.dagster_event.step_key in step_keys
+            ]
+
+        return build_run_step_stats_from_events(run_id, logs)
 
     @abstractmethod
     def store_event(self, event):

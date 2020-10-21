@@ -486,8 +486,8 @@ class DagsterInstance:
     def get_run_stats(self, run_id):
         return self._event_storage.get_stats_for_run(run_id)
 
-    def get_run_step_stats(self, run_id):
-        return self._event_storage.get_step_stats_for_run(run_id)
+    def get_run_step_stats(self, run_id, step_keys=None):
+        return self._event_storage.get_step_stats_for_run(run_id, step_keys)
 
     def get_run_tags(self):
         return self._run_storage.get_run_tags()

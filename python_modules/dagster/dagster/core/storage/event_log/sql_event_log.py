@@ -213,8 +213,9 @@ class SqlEventLogStorage(EventLogStorage):
         except (seven.JSONDecodeError, check.CheckError) as err:
             six.raise_from(DagsterEventLogInvalidForRun(run_id=run_id), err)
 
-    def get_step_stats_for_run(self, run_id):
+    def get_step_stats_for_run(self, run_id, step_keys=None):
         check.str_param(run_id, "run_id")
+        check.opt_list_param(step_keys, "step_keys", of_type=str)
 
         STEP_STATS_EVENT_TYPES = [
             DagsterEventType.STEP_START.value,
@@ -235,9 +236,13 @@ class SqlEventLogStorage(EventLogStorage):
             .where(SqlEventLogStorageTable.c.run_id == run_id)
             .where(SqlEventLogStorageTable.c.step_key != None)
             .where(SqlEventLogStorageTable.c.dagster_event_type.in_(STEP_STATS_EVENT_TYPES))
-            .group_by(
-                SqlEventLogStorageTable.c.step_key, SqlEventLogStorageTable.c.dagster_event_type,
-            )
+        )
+
+        if step_keys:
+            by_step_query = by_step_query.where(SqlEventLogStorageTable.c.step_key.in_(step_keys))
+
+        by_step_query = by_step_query.group_by(
+            SqlEventLogStorageTable.c.step_key, SqlEventLogStorageTable.c.dagster_event_type,
         )
 
         with self.connect(run_id) as conn:

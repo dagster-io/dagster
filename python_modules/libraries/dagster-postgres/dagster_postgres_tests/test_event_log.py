@@ -11,8 +11,11 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     EventMetadataEntry,
+    InputDefinition,
     ModeDefinition,
     Output,
+    OutputDefinition,
+    RetryRequested,
     pipeline,
     seven,
     solid,
@@ -21,6 +24,7 @@ from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.execution.api import execute_run
+from dagster.core.execution.stats import StepEventStatus
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import migrate_asset_key_data
 from dagster.core.utils import make_new_run_id
@@ -40,7 +44,7 @@ def mode_def(event_callback):
 
 
 # This just exists to create synthetic events to test the store
-def synthesize_events(solids_fn, run_id=None):
+def synthesize_events(solids_fn, run_id=None, check_success=True):
     events = []
 
     def _append_event(event):
@@ -58,7 +62,8 @@ def synthesize_events(solids_fn, run_id=None):
 
     result = execute_run(InMemoryPipeline(a_pipe), pipeline_run, instance)
 
-    assert result.success
+    if check_success:
+        assert result.success
 
     return events, result
 
@@ -636,3 +641,62 @@ def test_secondary_index_asset_keys(conn_string):
     assert len(asset_keys) == 2
     assert asset_key_one in set(asset_keys)
     assert asset_key_two in set(asset_keys)
+
+
+@solid
+def should_succeed(context):
+    context.log.info("succeed")
+    return "yay"
+
+
+def test_run_step_stats(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
+
+    @solid(input_defs=[InputDefinition("_input", str)], output_defs=[OutputDefinition(str)])
+    def should_fail(context, _input):
+        context.log.info("fail")
+        raise Exception("booo")
+
+    def _one():
+        should_fail(should_succeed())
+
+    events, result = synthesize_events(_one, check_success=False)
+    for event in events:
+        event_log_storage.store_event(event)
+
+    step_stats = sorted(
+        event_log_storage.get_step_stats_for_run(result.run_id), key=lambda x: x.end_time
+    )
+    assert len(step_stats) == 2
+    assert step_stats[0].step_key == "should_succeed.compute"
+    assert step_stats[0].status == StepEventStatus.SUCCESS
+    assert step_stats[0].end_time > step_stats[0].start_time
+    assert step_stats[0].attempts == 1
+    assert step_stats[1].step_key == "should_fail.compute"
+    assert step_stats[1].status == StepEventStatus.FAILURE
+    assert step_stats[1].end_time > step_stats[0].start_time
+    assert step_stats[1].attempts == 1
+
+
+def test_run_step_stats_with_retries(conn_string):
+    event_log_storage = PostgresEventLogStorage.create_clean_storage(conn_string)
+
+    @solid(input_defs=[InputDefinition("_input", str)], output_defs=[OutputDefinition(str)])
+    def should_retry(context, _input):
+        raise RetryRequested(max_retries=3)
+
+    def _one():
+        should_retry(should_succeed())
+
+    events, result = synthesize_events(_one, check_success=False)
+    for event in events:
+        event_log_storage.store_event(event)
+
+    step_stats = event_log_storage.get_step_stats_for_run(
+        result.run_id, step_keys=["should_retry.compute"]
+    )
+    assert len(step_stats) == 1
+    assert step_stats[0].step_key == "should_retry.compute"
+    assert step_stats[0].status == StepEventStatus.FAILURE
+    assert step_stats[0].end_time > step_stats[0].start_time
+    assert step_stats[0].attempts == 4
