@@ -640,6 +640,7 @@ class DagsterInstance:
         execution_plan_snapshot,
         parent_pipeline_snapshot,
         solid_selection=None,
+        external_pipeline_origin=None,
     ):
 
         # https://github.com/dagster-io/dagster/issues/2403
@@ -682,6 +683,7 @@ class DagsterInstance:
             parent_run_id=parent_run_id,
             pipeline_snapshot_id=pipeline_snapshot_id,
             execution_plan_snapshot_id=execution_plan_snapshot_id,
+            external_pipeline_origin=external_pipeline_origin,
         )
 
     def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):
@@ -779,6 +781,7 @@ class DagsterInstance:
         execution_plan_snapshot,
         parent_pipeline_snapshot,
         solid_selection=None,
+        external_pipeline_origin=None,
     ):
 
         pipeline_run = self._construct_run_with_snapshots(
@@ -796,6 +799,7 @@ class DagsterInstance:
             pipeline_snapshot=pipeline_snapshot,
             execution_plan_snapshot=execution_plan_snapshot,
             parent_pipeline_snapshot=parent_pipeline_snapshot,
+            external_pipeline_origin=external_pipeline_origin,
         )
         return self._run_storage.add_run(pipeline_run)
 
