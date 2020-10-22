@@ -92,11 +92,14 @@ def _define_shape_key_hash(fields, description):
 
 
 class Shape(_ConfigHasFields):
-    """
-    Schema for configuration data with string keys and typed values via :py:class:`Field` .
+    """Schema for configuration data with string keys and typed values via :py:class:`Field`.
+
+    Unlike :py:class:`Permissive`, unspecified fields are not allowed and will throw a
+    :py:class:`~dagster.DagsterInvalidConfigError`.
 
     Args:
-        fields (Dict[str, Field])
+        fields (Dict[str, Field]):
+            The specification of the config dict.
     """
 
     def __new__(
@@ -134,7 +137,7 @@ class Permissive(_ConfigHasFields):
     Args:
         fields (Dict[str, Field]): The partial specification of the config dict.
 
-    **Examples**
+    **Examples:**
 
     .. code-block:: python
 
@@ -181,7 +184,7 @@ class Selector(_ConfigHasFields):
     Args:
         fields (Dict[str, Field]): The fields from which the user must select.
 
-    Examples:
+    **Examples:**
 
     .. code-block:: python
 

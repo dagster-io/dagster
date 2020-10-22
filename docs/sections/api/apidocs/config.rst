@@ -28,6 +28,8 @@ builtin types above.
 
 .. autoclass:: EnumValue
 
+.. autoclass:: ScalarUnion
+
 .. attribute:: StringSource
 
    Use this type when you want to read a string config value from an environment variable. The value

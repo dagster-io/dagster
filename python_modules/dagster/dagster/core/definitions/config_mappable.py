@@ -149,10 +149,14 @@ def configured(configurable, config_schema=None, **kwargs):
     """
     A decorator that makes it easy to create a function-configured version of an object.
     The following definition types can be configured using this function:
-    :py:class:`ResourceDefinition`, :py:class:`ExecutorDefinition`,
-    :py:class:`CompositeSolidDefinition`, :py:class:`SolidDefinition`, :py:class:`LoggerDefinition`,
-    :py:class:`IntermediateStorageDefinition`, and :py:class:`SystemStorageDefinition`.
 
+    * :py:class:`CompositeSolidDefinition`
+    * :py:class:`ExecutorDefinition`
+    * :py:class:`IntermediateStorageDefinition`
+    * :py:class:`LoggerDefinition`
+    * :py:class:`ResourceDefinition`
+    * :py:class:`SolidDefinition`
+    * :py:class:`SystemStorageDefinition`
 
     If the config that will be supplied to the object is constant, you may alternatively invoke this
     and call the result with a dict of config values to be curried. Examples of both strategies
@@ -165,21 +169,22 @@ def configured(configurable, config_schema=None, **kwargs):
         **kwargs: Arbitrary keyword arguments that will be passed to the initializer of the returned
             object.
 
-    Returns (Callable[[Union[Any, Callable[[Any], Any]]], IConfigMappable])
+    Returns:
+        (Callable[[Union[Any, Callable[[Any], Any]]], IConfigMappable])
 
-    Examples:
+    **Examples:**
 
-        .. code-block:: python
+    .. code-block:: python
 
-            dev_s3 = configured(s3_resource)({'bucket': 'dev'})
+        dev_s3 = configured(s3_resource, name="dev_s3")({'bucket': 'dev'})
 
-            @configured(s3_resource):
-            def dev_s3(_):
-                return {'bucket': 'dev'}
+        @configured(s3_resource):
+        def dev_s3(_):
+            return {'bucket': 'dev'}
 
-            @configured(s3_resource, {'bucket_prefix', str}):
-            def dev_s3(config):
-                return {'bucket': config['bucket_prefix'] + 'dev'}
+        @configured(s3_resource, {'bucket_prefix', str}):
+        def dev_s3(config):
+            return {'bucket': config['bucket_prefix'] + 'dev'}
     """
     _check_configurable_param(configurable)
     config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")

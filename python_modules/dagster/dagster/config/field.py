@@ -161,12 +161,22 @@ class Field(object):
                (:py:class:`~python:int`, :py:class:`~python:float`, :py:class:`~python:bool`,
                :py:class:`~python:str`, or :py:class:`~python:list`).
 
-            2. A Dagster config type: :py:data:`~dagster.Int`, :py:data:`~dagster.Float`,
-               :py:data:`~dagster.Bool`, :py:data:`~dagster.String`,
-               :py:data:`~dagster.StringSource`, :py:data:`~dagster.Path`, :py:data:`~dagster.Any`,
-               :py:class:`~dagster.Array`, :py:data:`~dagster.Noneable`, :py:data:`~dagster.Enum`,
-               :py:class:`~dagster.Selector`, :py:class:`~dagster.Shape`, or
-               :py:class:`~dagster.Permissive`.
+            2. A Dagster config type:
+
+               * :py:data:`~dagster.Any`
+               * :py:class:`~dagster.Array`
+               * :py:data:`~dagster.Bool`
+               * :py:data:`~dagster.Enum`
+               * :py:data:`~dagster.Float`
+               * :py:data:`~dagster.Int`
+               * :py:data:`~dagster.IntSource`
+               * :py:data:`~dagster.Noneable`
+               * :py:class:`~dagster.Permissive`
+               * :py:class:`~dagster.ScalarUnion`
+               * :py:class:`~dagster.Selector`
+               * :py:class:`~dagster.Shape`
+               * :py:data:`~dagster.String`
+               * :py:data:`~dagster.StringSource`
 
             3. A bare python dictionary, which will be automatically wrapped in
                :py:class:`~dagster.Shape`. Values of the dictionary are resolved recursively
@@ -176,30 +186,32 @@ class Field(object):
                Becomes :py:class:`Array` with list element as an argument.
 
         default_value (Any):
-            A default value for this field, conformant to the schema set by the
-            ``dagster_type`` argument. If a default value is provided, ``is_required`` should be
-            ``False``.
+            A default value for this field, conformant to the schema set by the ``dagster_type``
+            argument. If a default value is provided, ``is_required`` should be ``False``.
 
             Note: for config types that do post processing such as Enum, this value must be
-            the pre processed version, ie use ``ExampleEnum.VALUE.name`` instead of ``ExampleEnum.VALUE``
+            the pre processed version, ie use ``ExampleEnum.VALUE.name`` instead of
+            ``ExampleEnum.VALUE``
+
         is_required (bool):
             Whether the presence of this field is required. Defaults to true. If ``is_required``
             is ``True``, no default value should be provided.
+
         description (str):
             A human-readable description of this config field.
 
     Examples:
-        .. code-block::python
 
-            @solid(
-                config_schema={
-                    'word': Field(str, description='I am a word.'),
-                    'repeats': Field(Int, default_value=1, is_required=False),
-                }
-            )
-            def repeat_word(context):
-                return context.solid_config['word'] * context.solid_config['repeats']
+    .. code-block:: python
 
+        @solid(
+            config_schema={
+                'word': Field(str, description='I am a word.'),
+                'repeats': Field(Int, default_value=1, is_required=False),
+            }
+        )
+        def repeat_word(context):
+            return context.solid_config['word'] * context.solid_config['repeats']
     """
 
     def _resolve_config_arg(self, config):
