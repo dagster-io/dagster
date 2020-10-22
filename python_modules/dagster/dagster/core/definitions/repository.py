@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 
-from .job import JobDefinition
+from .job import JobDefinition, JobType
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline import PipelineDefinition
 from .schedule import ScheduleDefinition
@@ -418,6 +418,19 @@ class RepositoryData(object):
 
         return self._schedules.has_definition(schedule_name)
 
+    def get_all_sensors(self):
+        return [
+            definition
+            for definition in self._jobs.get_all_definitions()
+            if definition.job_type == JobType.SENSOR
+        ]
+
+    def get_sensor(self, name):
+        return self._jobs.get_definition(name)
+
+    def has_sensor(self, name):
+        return self._jobs.has_definition(name)
+
     def get_all_jobs(self):
         return self._jobs.get_all_definitions()
 
@@ -596,6 +609,16 @@ class RepositoryDefinition(object):
 
     def has_schedule_def(self, name):
         return self._repository_data.has_schedule(name)
+
+    @property
+    def sensor_defs(self):
+        return self._repository_data.get_all_sensors()
+
+    def get_sensor_def(self, name):
+        return self._repository_data.get_sensor(name)
+
+    def has_sensor_def(self, name):
+        return self._repository_data.has_sensor(name)
 
     @property
     def job_defs(self):

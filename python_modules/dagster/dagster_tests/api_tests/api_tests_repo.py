@@ -12,6 +12,7 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
+from dagster.core.definitions.decorators.sensor import sensor
 
 
 @lambda_solid
@@ -131,6 +132,16 @@ def define_baz_partitions():
     }
 
 
+@sensor(pipeline_name="foo_pipeline", run_config_fn=lambda _: {"foo": "FOO"})
+def sensor_foo(_):
+    return True
+
+
+@sensor(pipeline_name="foo_pipeline")
+def sensor_error(_):
+    raise Exception("womp womp")
+
+
 @repository
 def bar_repo():
     return {
@@ -141,4 +152,5 @@ def bar_repo():
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),
+        "jobs": {"sensor_foo": sensor_foo, "sensor_error": lambda: sensor_error},
     }

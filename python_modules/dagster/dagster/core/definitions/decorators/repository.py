@@ -67,7 +67,7 @@ class _Repository(object):
                     "{bad_keys}".format(
                         bad_keys=", ".join(
                             [
-                                "'{key}'"
+                                "'{key}'".format(key=key)
                                 for key in repository_definitions.keys()
                                 if key not in VALID_REPOSITORY_DATA_DICT_KEYS
                             ]

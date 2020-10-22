@@ -43,6 +43,7 @@ from .impl import (
     get_external_execution_plan_snapshot,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
+    get_external_sensor_execution,
     get_partition_config,
     get_partition_names,
     get_partition_set_execution_param_data,
@@ -64,6 +65,7 @@ from .types import (
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
     PipelineSubsetSnapshotArgs,
+    SensorExecutionArgs,
     ShutdownServerResult,
     StartRunResult,
 )
@@ -498,6 +500,23 @@ class DagsterApiServer(DagsterApiServicer):
                     args.schedule_name,
                     args.scheduled_execution_timestamp,
                     args.scheduled_execution_timezone,
+                )
+            )
+        )
+
+    def ExternalSensorExecution(self, request, _context):
+        args = deserialize_json_to_dagster_namedtuple(
+            request.serialized_external_sensor_execution_args
+        )
+
+        check.inst_param(args, "args", SensorExecutionArgs)
+
+        recon_repo = self._recon_repository_from_origin(args.repository_origin)
+
+        return api_pb2.ExternalSensorExecutionReply(
+            serialized_external_sensor_execution_data_or_external_sensor_execution_error=serialize_dagster_namedtuple(
+                get_external_sensor_execution(
+                    recon_repo, args.instance_ref, args.sensor_name, args.last_evaluation_time
                 )
             )
         )

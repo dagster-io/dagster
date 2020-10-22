@@ -11,6 +11,7 @@ from .utils import check_valid_name
 @whitelist_for_serdes
 class JobType(Enum):
     SCHEDULE = "SCHEDULE"
+    SENSOR = "SENSOR"
 
 
 class JobContext(object):

@@ -450,6 +450,10 @@ class ScheduleExecutionError(DagsterUserCodeExecutionError):
     """Errors raised in a user process during the execution of schedule."""
 
 
+class SensorExecutionError(DagsterUserCodeExecutionError):
+    """Errors raised in a user process during the execution of a sensor (or its job)."""
+
+
 class PartitionExecutionError(DagsterUserCodeExecutionError):
     """Errors raised during the execution of user-provided functions of a partition set schedule."""
 

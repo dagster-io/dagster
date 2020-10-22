@@ -19,6 +19,7 @@ service DagsterApi {
   rpc ExternalRepository (ExternalRepositoryRequest) returns (ExternalRepositoryReply) {}
   rpc StreamingExternalRepository (ExternalRepositoryRequest) returns (stream StreamingExternalRepositoryEvent) {}
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
+  rpc ExternalSensorExecution (ExternalSensorExecutionRequest) returns (ExternalSensorExecutionReply) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
   rpc CanCancelExecution (CanCancelExecutionRequest) returns (CanCancelExecutionReply) {}
@@ -124,6 +125,14 @@ message ExternalScheduleExecutionRequest {
 
 message ExternalScheduleExecutionReply {
   string serialized_external_schedule_execution_data_or_external_schedule_execution_error = 1;
+}
+
+message ExternalSensorExecutionRequest {
+  string serialized_external_sensor_execution_args = 1;
+}
+
+message ExternalSensorExecutionReply {
+  string serialized_external_sensor_execution_data_or_external_sensor_execution_error = 1;
 }
 
 message ShutdownServerReply {

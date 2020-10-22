@@ -14,6 +14,7 @@ from dagster.api.snapshot_partition import (
 from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
 from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_grpc
 from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
+from dagster.api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -32,6 +33,7 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.grpc.impl import (
     get_external_schedule_execution,
+    get_external_sensor_execution,
     get_partition_config,
     get_partition_names,
     get_partition_set_execution_param_data,
@@ -116,6 +118,12 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def get_external_schedule_execution_data(
         self, instance, repository_handle, schedule_name, scheduled_execution_time,
+    ):
+        pass
+
+    @abstractmethod
+    def get_external_sensor_execution_data(
+        self, instance, repository_handle, name, last_evaluation_time
     ):
         pass
 
@@ -274,6 +282,13 @@ class InProcessRepositoryLocation(RepositoryLocation):
             else None,
         )
 
+    def get_external_sensor_execution_data(
+        self, instance, repository_handle, name, last_evaluation_time
+    ):
+        return get_external_sensor_execution(
+            self._recon_repo, instance.get_ref(), name, last_evaluation_time
+        )
+
     def get_external_partition_set_execution_param_data(
         self, repository_handle, partition_set_name, partition_names
     ):
@@ -409,6 +424,13 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             repository_handle,
             schedule_name,
             scheduled_execution_time,
+        )
+
+    def get_external_sensor_execution_data(
+        self, instance, repository_handle, name, last_evaluation_time
+    ):
+        return sync_get_external_sensor_execution_data_grpc(
+            self._handle.client, instance, repository_handle, name, last_evaluation_time
         )
 
     def get_external_partition_set_execution_param_data(
