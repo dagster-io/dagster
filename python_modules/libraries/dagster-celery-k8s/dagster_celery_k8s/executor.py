@@ -424,10 +424,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             kubernetes.client.BatchV1Api().create_namespaced_job(body=job, namespace=job_namespace)
         except kubernetes.client.rest.ApiException as e:
             if e.reason == "Conflict":
-                # There is an existing job with the same name so do not procede.
+                # There is an existing job with the same name so proceed and see if the existing job succeeded
                 instance.report_engine_event(
                     "Did not create Kubernetes job {} for step {} since job name already "
-                    "exists, exiting.".format(job_name, step_key),
+                    "exists, proceeding with existing job.".format(job_name, step_key),
                     pipeline_run,
                     EngineEventData(
                         [
@@ -452,7 +452,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     CeleryK8sJobExecutor,
                     step_key=step_key,
                 )
-            return []
+                return []
 
         try:
             wait_for_job_success(
