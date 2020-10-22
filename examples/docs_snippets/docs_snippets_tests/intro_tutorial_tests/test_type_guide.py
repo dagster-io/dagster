@@ -32,9 +32,14 @@ def test_basic_even_type():
     )
     # end_test_basic_even_type
 
+    # start_test_basic_even_type_with_annotations
     @solid
     def double_even(_, num: EvenDagsterType) -> EvenDagsterType:
+        # These type annotations are a shorthand for constructing InputDefinitions
+        # and OutputDefinitions, and are not mypy compliant
         return num  # at runtime this is a python int
+
+    # end_test_basic_even_type_with_annotations
 
     assert execute_solid(double_even, input_values={"num": 2}).success
 
@@ -69,18 +74,23 @@ def test_basic_even_type_no_annotations():
 
 
 def test_python_object_dagster_type():
+    # start_object_type
     class EvenType:
         def __init__(self, num):
             assert num % 2 is 0
             self.num = num
 
     EvenDagsterType = PythonObjectDagsterType(EvenType, name="EvenDagsterType")
+    # end_object_type
 
+    # start_use_object_type
     @solid
     def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
         # These type annotations are a shorthand for constructing InputDefinitions
         # and OutputDefinitions, and are not mypy compliant
         return EvenType(even_num.num * 2)
+
+    # end_use_object_type
 
     assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
     with pytest.raises(AssertionError):
@@ -88,6 +98,7 @@ def test_python_object_dagster_type():
 
 
 def test_even_type_loader():
+    # start_type_loader
     class EvenType:
         def __init__(self, num):
             assert num % 2 is 0
@@ -98,18 +109,20 @@ def test_even_type_loader():
         return EvenType(cfg)
 
     EvenDagsterType = PythonObjectDagsterType(EvenType, loader=load_even_type)
+    # end_type_loader
 
     @solid
     def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
         return EvenType(even_num.num * 2)
 
+    # start_via_config
     yaml_doc = """
     solids:
         double_even:
             inputs:
                 even_num: 2
     """
-
+    # end_via_config
     assert execute_solid(double_even, run_config=yaml.safe_load(yaml_doc)).success
 
     assert execute_solid(
@@ -162,6 +175,7 @@ solids:
 
 
 def test_mypy_compliance():
+    # start_mypy
     class EvenType:
         def __init__(self, num):
             assert num % 2 is 0
@@ -176,6 +190,7 @@ def test_mypy_compliance():
     def double_even(_, even_num: EvenDagsterType) -> EvenDagsterType:
         return EvenType(even_num.num * 2)
 
+    # end_mypy
     assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success
 
 
@@ -267,12 +282,14 @@ def test_nothing_fanin_empty_body_for_guide():
 
 
 def test_usable_as_dagster_type():
+    # start_usable_as
     @usable_as_dagster_type
     class EvenType:
         def __init__(self, num):
             assert num % 2 is 0
             self.num = num
 
+    # end_usable_as
     @solid
     def double_even(_, even_num: EvenType) -> EvenType:
         return EvenType(even_num.num * 2)
@@ -281,6 +298,7 @@ def test_usable_as_dagster_type():
 
 
 def test_make_usable_as_dagster_type():
+    # start_make_usable
     class EvenType:
         def __init__(self, num):
             assert num % 2 is 0
@@ -294,4 +312,5 @@ def test_make_usable_as_dagster_type():
     def double_even(_, even_num: EvenType) -> EvenType:
         return EvenType(even_num.num * 2)
 
+    # end_make_usable
     assert execute_solid(double_even, input_values={"even_num": EvenType(2)}).success

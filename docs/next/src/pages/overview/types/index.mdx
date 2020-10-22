@@ -42,7 +42,8 @@ expressed as:
 ```python literalinclude caption=type_annotations.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:33-35
+startAfter:start_test_basic_even_type_with_annotations
+endBefore:end_test_basic_even_type_with_annotations
 ```
 
 When raw DagsterTypes are passed, this is not compliant with mypy or
@@ -76,7 +77,8 @@ check. <PyObject module="dagster" object="PythonObjectDagsterType" /> does just 
 ```python literalinclude caption=python_object_dagster_type.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:67-72
+startAfter:start_object_type
+endBefore:end_object_type
 ```
 
 One can now declare the Dagster type as the interface to the solid, and
@@ -85,7 +87,8 @@ use the corresponding python type in business logic.
 ```python literalinclude caption=dagster_type_annotations.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:74-80
+startAfter:start_use_object_type
+endBefore:end_use_object_type
 ```
 
 The type system truly shines once the
@@ -107,7 +110,8 @@ This process is referred to as loading.
 ```python literalinclude
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:86-99
+startAfter:start_type_loader
+endBefore:end_type_loader
 ```
 
 With this the input can be specified via config as below:
@@ -115,7 +119,8 @@ With this the input can be specified via config as below:
 ```python literalinclude
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:101-108
+startAfter:start_via_config
+endBefore:end_via_config
 ```
 
 Output values can also be materialized to a user-controlled location
@@ -166,7 +171,8 @@ to Dagster types.
 ```python literalinclude caption=usable_as_dagster_type.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:267-277
+startAfter:start_usable_as
+endBefore:end_usable_as
 ```
 
 And make_python_type_usable_as_dagster_type
@@ -174,7 +180,8 @@ And make_python_type_usable_as_dagster_type
 ```python literalinclude caption=hello_cereal.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:281-294
+startAfter:start_make_usable
+endBefore:end_make_usable
 ```
 
 This approach does have downsides. Importing these types will causes a
@@ -208,7 +215,8 @@ type during a type checking pass. However there is a way to do this.
 ```python literalinclude caption=type_checking_mypy_compliance.py
 file:/docs_snippets/docs_snippets_tests/intro_tutorial_tests/test_type_guide.py
 lineno-start:1
-lines:162-174
+startAfter:start_mypy
+endBefore:end_mypy
 ```
 
 While not particularly elegant, this does work. We recommend
