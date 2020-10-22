@@ -1,6 +1,7 @@
 from dagster import Field, InputDefinition, Int, List, configured, execute_pipeline, pipeline, solid
 
 
+# start_configured_named
 @solid(
     config_schema={"is_sample": Field(bool, is_required=False, default_value=False),},
     input_defs=[InputDefinition("xs", List[Int])],
@@ -23,6 +24,9 @@ population_variance = configured(variance, name="population_variance")({"is_samp
 def stats_pipeline():
     sample_variance()
     population_variance()
+
+
+# end_configured_named
 
 
 def run_pipeline():

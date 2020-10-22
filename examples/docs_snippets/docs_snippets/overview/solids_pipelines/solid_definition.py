@@ -10,9 +10,8 @@ def my_solid(context):
 
 
 # end_solid_definition_marker_0
+
 # start_solid_definition_marker_1
-
-
 def _return_one(_context, inputs):
     yield Output(1)
 

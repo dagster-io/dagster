@@ -58,7 +58,8 @@ This looks like:
 
 ```python literalinclude caption=shape_constrained_pipeline.py
 file:/docs_snippets/docs_snippets/legacy/dagster_pandas_guide/shape_constrained_pipeline.py
-lines:9-11
+startAfter: start_create_type
+endBefore: end_create_type
 ```
 
 If we rerun the above example with this dataframe, nothing should
@@ -77,7 +78,8 @@ time. Let's illustrate how this works in our example:
 
 ```python literalinclude caption=summary_stats_pipeline.py
 file:/docs_snippets/docs_snippets/legacy/dagster_pandas_guide/summary_stats_pipeline.py
-lines:10-39
+startAfter: start_summary
+endBefore: end_summary
 ```
 
 Now if we run this pipeline in the Dagit playground:
@@ -98,5 +100,6 @@ This would look like the following:
 
 ```python literalinclude emphasize-lines=22-25 caption=custom_column_constraint_pipeline.py
 file:/docs_snippets/docs_snippets/legacy/dagster_pandas_guide/custom_column_constraint_pipeline.py
-lines:15-40
+startAfter: start_custom_col
+endBefore: end_custom_col
 ```

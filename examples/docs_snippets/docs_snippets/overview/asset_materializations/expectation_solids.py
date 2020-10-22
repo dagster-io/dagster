@@ -19,9 +19,8 @@ def my_simple_solid(context, df):
 
 
 # end_expectation_solids_marker_0
+
 # start_expectation_solids_marker_1
-
-
 @solid
 def my_expectation_solid(context, df):
     do_some_transform(df)
@@ -31,7 +30,7 @@ def my_expectation_solid(context, df):
 
 # end_expectation_solids_marker_1
 
-
+# start_metadata
 @solid
 def my_metadata_expectation_solid(context, df):
     do_some_transform(df)
@@ -46,3 +45,6 @@ def my_metadata_expectation_solid(context, df):
         ],
     )
     yield Output(df)
+
+
+# end_metadata

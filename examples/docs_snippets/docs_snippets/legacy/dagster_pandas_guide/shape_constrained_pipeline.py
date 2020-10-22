@@ -6,9 +6,11 @@ from pandas import DataFrame, read_csv
 from dagster import OutputDefinition, pipeline, solid
 from dagster.utils import script_relative_path
 
+# start_create_type
 ShapeConstrainedTripDataFrame = create_dagster_pandas_dataframe_type(
     name="ShapeConstrainedTripDataFrame", dataframe_constraints=[RowCountConstraint(4)]
 )
+# end_create_type
 
 
 @solid(

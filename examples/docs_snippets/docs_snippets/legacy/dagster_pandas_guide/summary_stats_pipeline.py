@@ -7,6 +7,7 @@ from dagster import EventMetadataEntry, OutputDefinition, pipeline, solid
 from dagster.utils import script_relative_path
 
 
+# start_summary
 def compute_trip_dataframe_summary_statistics(dataframe):
     return [
         EventMetadataEntry.text(
@@ -36,6 +37,7 @@ def compute_trip_dataframe_summary_statistics(dataframe):
 SummaryStatsTripDataFrame = create_dagster_pandas_dataframe_type(
     name="SummaryStatsTripDataFrame", event_metadata_fn=compute_trip_dataframe_summary_statistics
 )
+# end_summary
 
 
 @solid(

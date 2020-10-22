@@ -4,8 +4,8 @@ from docs_snippets.overview.schedules_partitions.pipeline import my_pipeline
 from dagster import repository
 
 
-@repository
 # start_repo_marker_0
+@repository
 def my_repository():
     return [
         my_pipeline,

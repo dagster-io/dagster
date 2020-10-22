@@ -12,6 +12,7 @@ from dagster import OutputDefinition, pipeline, solid
 from dagster.utils import script_relative_path
 
 
+# start_custom_col
 class DivisibleByFiveConstraint(ColumnConstraint):
     def __init__(self):
         message = "Value must be divisible by 5"
@@ -39,6 +40,7 @@ CustomTripDataFrame = create_dagster_pandas_dataframe_type(
         )
     ],
 )
+# end_custom_col
 
 
 @solid(

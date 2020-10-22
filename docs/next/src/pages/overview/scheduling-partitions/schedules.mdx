@@ -45,8 +45,8 @@ At every time the schedule should execute, according to the cron string, the fun
 ```python literalinclude caption=schedule_definition.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/schedule_definition.py
 lineno-start:
-startAfter:start_schedule_definition_marker_0
-endBefore:end_schedule_definition_marker_0
+startAfter:start_def
+endBefore:end_def
 ```
 
 ### Partition set based schedule [recommended]
@@ -57,7 +57,8 @@ Each time the schedule executes, it selects the latest valid date partition and 
 ```python literalinclude caption=schedule_definition.py
 file:/docs_snippets/docs_snippets/overview/schedules_partitions/schedule_definition.py
 lineno-start:
-lines:13-39
+startAfter: start_part
+endBefore: end_part
 ```
 
 ### Schedules in Dagit

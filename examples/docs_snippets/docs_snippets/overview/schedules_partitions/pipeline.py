@@ -14,9 +14,8 @@ def my_pipeline():
 
 
 # end_pipeline_marker_0
+
 # start_pipeline_marker_1
-
-
 @solid(config_schema={"date": str})
 def process_data_for_date(context):
     date = context.solid_config["date"]

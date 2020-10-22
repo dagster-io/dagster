@@ -22,9 +22,8 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
     ],
 )
 # end_core_trip_pipeline_marker_0
+
 # start_core_trip_pipeline_marker_1
-
-
 @solid(output_defs=[OutputDefinition(name="trip_dataframe", dagster_type=TripDataFrame)])
 def load_trip_dataframe(_) -> DataFrame:
     return read_csv(
