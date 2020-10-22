@@ -1,7 +1,6 @@
 from dagster_pandas import DataFrame
 
-from dagster import InputDefinition, OutputDefinition, execute_solid, lambda_solid
-from dagster.core.test_utils import single_output_solid
+from dagster import InputDefinition, OutputDefinition, execute_solid, lambda_solid, solid
 from dagster.utils import file_relative_path
 
 
@@ -33,18 +32,11 @@ def run_hello_world(hello_world):
 def create_definition_based_solid():
     table_input = InputDefinition("num_csv", DataFrame)
 
-    def compute_fn(_context, inputs):
-        num_csv = inputs["num_csv"]
+    # supports CSV and PARQUET by default
+    @solid(input_defs=[table_input], output_defs=[OutputDefinition(DataFrame)])
+    def hello_world(_, num_csv):
         num_csv["sum"] = num_csv["num1"] + num_csv["num2"]
         return num_csv
-
-    # supports CSV and PARQUET by default
-    hello_world = single_output_solid(
-        name="hello_world",
-        input_defs=[table_input],
-        compute_fn=compute_fn,
-        output_def=OutputDefinition(DataFrame),
-    )
 
     return hello_world
 

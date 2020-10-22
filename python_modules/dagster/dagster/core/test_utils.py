@@ -5,16 +5,7 @@ from contextlib import contextmanager
 
 import yaml
 
-from dagster import (
-    DagsterInvariantViolationError,
-    Output,
-    SolidDefinition,
-    check,
-    composite_solid,
-    pipeline,
-    seven,
-    solid,
-)
+from dagster import check, composite_solid, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.launcher.default_run_launcher import DefaultRunLauncher
@@ -27,54 +18,6 @@ def step_output_event_filter(pipe_iterator):
     for step_event in pipe_iterator:
         if step_event.is_successful_output:
             yield step_event
-
-
-def single_output_solid(name, input_defs, compute_fn, output_def, description=None):
-    """It is commmon to want a Solid that has only inputs, a single output (with the default
-    name), and no config. So this is a helper function to do that. This compute function
-    must return the naked return value (as opposed to a Output object).
-
-    Args:
-        name (str): Name of the solid.
-        input_defs (List[InputDefinition]): Inputs of solid.
-        compute_fn (callable):
-            Callable with the signature
-            (context: ExecutionContext, inputs: Dict[str, Any]) : Any
-        output_def (OutputDefinition): Output of the solid.
-        description (str): Descripion of the solid.
-
-    Returns:
-        SolidDefinition:
-
-    Examples:
-
-        .. code-block:: python
-
-            single_output_compute(
-                'add_one',
-                input_defs=InputDefinition('num', types.Int),
-                output_def=OutputDefinition(types.Int),
-                compute_fn=lambda context, inputs: inputs['num'] + 1
-            )
-
-    """
-
-    def _new_compute_fn(context, input_defs):
-        value = compute_fn(context, input_defs)
-        if isinstance(value, Output):
-            raise DagsterInvariantViolationError(
-                """Single output compute Solid {name} returned a Output. Just return
-                value directly without wrapping it in Output"""
-            )
-        yield Output(value=value)
-
-    return SolidDefinition(
-        name=name,
-        input_defs=input_defs,
-        compute_fn=_new_compute_fn,
-        output_defs=[output_def],
-        description=description,
-    )
 
 
 def nesting_composite_pipeline(depth, num_children, *args, **kwargs):

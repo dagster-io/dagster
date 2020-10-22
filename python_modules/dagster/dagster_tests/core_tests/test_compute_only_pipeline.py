@@ -1,5 +1,4 @@
-from dagster import InputDefinition, OutputDefinition, execute_pipeline, pipeline
-from dagster.core.test_utils import single_output_solid
+from dagster import execute_pipeline, pipeline, solid
 
 
 def _set_key_value(ddict, key, value):
@@ -10,19 +9,13 @@ def _set_key_value(ddict, key, value):
 def test_execute_solid_with_dep_only_inputs_no_api():
     did_run_dict = {}
 
-    step_one_solid = single_output_solid(
-        name="step_one_solid",
-        input_defs=[],
-        compute_fn=lambda context, args: _set_key_value(did_run_dict, "step_one", True),
-        output_def=OutputDefinition(),
-    )
+    @solid
+    def step_one_solid(_):
+        _set_key_value(did_run_dict, "step_one", True)
 
-    step_two_solid = single_output_solid(
-        name="step_two_solid",
-        input_defs=[InputDefinition("step_one_solid")],
-        compute_fn=lambda context, args: _set_key_value(did_run_dict, "step_two", True),
-        output_def=OutputDefinition(),
-    )
+    @solid
+    def step_two_solid(_, _in):
+        _set_key_value(did_run_dict, "step_two", True)
 
     @pipeline
     def pipe():
@@ -42,19 +35,13 @@ def test_execute_solid_with_dep_only_inputs_no_api():
 def test_execute_solid_with_dep_only_inputs_with_api():
     did_run_dict = {}
 
-    step_one_solid = single_output_solid(
-        name="step_one_solid",
-        input_defs=[],
-        compute_fn=lambda context, args: _set_key_value(did_run_dict, "step_one", True),
-        output_def=OutputDefinition(),
-    )
+    @solid
+    def step_one_solid(_):
+        _set_key_value(did_run_dict, "step_one", True)
 
-    step_two_solid = single_output_solid(
-        name="step_two_solid",
-        compute_fn=lambda context, args: _set_key_value(did_run_dict, "step_two", True),
-        input_defs=[InputDefinition(step_one_solid.name)],
-        output_def=OutputDefinition(),
-    )
+    @solid
+    def step_two_solid(_, _in):
+        _set_key_value(did_run_dict, "step_two", True)
 
     @pipeline
     def pipe():

@@ -1,6 +1,5 @@
 from dagster import (
     Field,
-    InputDefinition,
     Output,
     OutputDefinition,
     String,
@@ -9,7 +8,6 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.test_utils import single_output_solid
 
 
 def define_pass_value_solid(name, description=None):
@@ -30,17 +28,14 @@ def define_pass_value_solid(name, description=None):
 
 
 def test_execute_solid_with_input_same_name():
-    a_thing_solid = single_output_solid(
-        "a_thing",
-        input_defs=[InputDefinition(name="a_thing")],
-        compute_fn=lambda context, inputs: inputs["a_thing"] + inputs["a_thing"],
-        output_def=OutputDefinition(),
-    )
+    @solid(output_defs=[OutputDefinition()])
+    def a_thing(_, a_thing):
+        return a_thing + a_thing
 
     @pipeline
     def pipe():
         pass_value = define_pass_value_solid("pass_value")
-        a_thing_solid(pass_value())
+        a_thing(pass_value())
 
     result = execute_pipeline(
         pipe, run_config={"solids": {"pass_value": {"config": {"value": "foo"}}}}
@@ -50,21 +45,13 @@ def test_execute_solid_with_input_same_name():
 
 
 def test_execute_two_solids_with_same_input_name():
-    input_def = InputDefinition(name="a_thing")
+    @solid
+    def solid_one(_, a_thing):
+        return a_thing + a_thing
 
-    solid_one = single_output_solid(
-        "solid_one",
-        input_defs=[input_def],
-        compute_fn=lambda context, inputs: inputs["a_thing"] + inputs["a_thing"],
-        output_def=OutputDefinition(),
-    )
-
-    solid_two = single_output_solid(
-        "solid_two",
-        input_defs=[input_def],
-        compute_fn=lambda context, inputs: inputs["a_thing"] + inputs["a_thing"],
-        output_def=OutputDefinition(),
-    )
+    @solid
+    def solid_two(_, a_thing):
+        return a_thing + a_thing
 
     @pipeline
     def pipe():
@@ -89,19 +76,13 @@ def test_execute_two_solids_with_same_input_name():
 def test_execute_dep_solid_different_input_name():
     pass_to_first = define_pass_value_solid("pass_to_first")
 
-    first_solid = single_output_solid(
-        "first_solid",
-        input_defs=[InputDefinition(name="a_thing")],
-        compute_fn=lambda context, inputs: inputs["a_thing"] + inputs["a_thing"],
-        output_def=OutputDefinition(),
-    )
+    @solid
+    def first_solid(_, a_thing):
+        return a_thing + a_thing
 
-    second_solid = single_output_solid(
-        "second_solid",
-        input_defs=[InputDefinition(name="an_input")],
-        compute_fn=lambda context, inputs: inputs["an_input"] + inputs["an_input"],
-        output_def=OutputDefinition(),
-    )
+    @solid
+    def second_solid(_, an_input):
+        return an_input + an_input
 
     @pipeline
     def pipe():

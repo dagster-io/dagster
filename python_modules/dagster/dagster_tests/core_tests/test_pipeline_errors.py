@@ -1,6 +1,4 @@
 import re
-import sys
-import warnings
 
 import pytest
 
@@ -21,27 +19,24 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.test_utils import single_output_solid
 
 
 def create_root_success_solid(name):
-    def root_fn(_context, _args):
+    @solid(name=name)
+    def root_solid(_context):
         passed_rows = []
         passed_rows.append({name: "compute_called"})
         return passed_rows
 
-    return single_output_solid(
-        name=name, input_defs=[], compute_fn=root_fn, output_def=OutputDefinition()
-    )
+    return root_solid
 
 
 def create_root_fn_failure_solid(name):
-    def failed_fn(**_kwargs):
+    @solid(name=name)
+    def failed_solid(_):
         raise Exception("Compute failed")
 
-    return single_output_solid(
-        name=name, input_defs=[], compute_fn=failed_fn, output_def=OutputDefinition()
-    )
+    return failed_solid
 
 
 def test_compute_failure_pipeline():
@@ -66,45 +61,30 @@ def test_failure_midstream():
     B
     """
 
-    solid_a = create_root_success_solid("A")
-    solid_b = create_root_success_solid("B")
+    solid_a = create_root_success_solid("solid_a")
+    solid_b = create_root_success_solid("solid_b")
 
-    def fail_fn(_context, inputs):
+    @solid
+    def solid_c(_, a, b):
         check.failed("user error")
-        return [inputs["A"], inputs["B"], {"C": "compute_called"}]
+        return [a, b, {"C": "compute_called"}]
 
-    def success_fn(_context, inputs):
-        return [inputs["C"], {"D": "compute_called"}]
+    @solid
+    def solid_d(_, c):
+        return [c, {"D": "compute_called"}]
 
-    solid_c = single_output_solid(
-        name="C",
-        input_defs=[InputDefinition(name="A"), InputDefinition(name="B")],
-        compute_fn=fail_fn,
-        output_def=OutputDefinition(),
-    )
+    @pipeline
+    def pipeline_def():
+        solid_d(solid_c(solid_a(), solid_b()))
 
-    solid_d = single_output_solid(
-        name="D",
-        input_defs=[InputDefinition(name="C")],
-        compute_fn=success_fn,
-        output_def=OutputDefinition(),
-    )
-
-    pipeline_def = PipelineDefinition(
-        solid_defs=[solid_a, solid_b, solid_c, solid_d],
-        dependencies={
-            "C": {"A": DependencyDefinition(solid_a.name), "B": DependencyDefinition(solid_b.name)},
-            "D": {"C": DependencyDefinition(solid_c.name)},
-        },
-    )
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
 
-    assert pipeline_result.result_for_solid("A").success
-    assert pipeline_result.result_for_solid("B").success
-    assert not pipeline_result.result_for_solid("C").success
-    assert pipeline_result.result_for_solid("C").failure_data.error.cls_name == "CheckError"
-    assert not pipeline_result.result_for_solid("D").success
-    assert pipeline_result.result_for_solid("D").skipped
+    assert pipeline_result.result_for_solid("solid_a").success
+    assert pipeline_result.result_for_solid("solid_b").success
+    assert not pipeline_result.result_for_solid("solid_c").success
+    assert pipeline_result.result_for_solid("solid_c").failure_data.error.cls_name == "CheckError"
+    assert not pipeline_result.result_for_solid("solid_d").success
+    assert pipeline_result.result_for_solid("solid_d").skipped
 
 
 def test_failure_propagation():
@@ -116,72 +96,44 @@ def test_failure_propagation():
       D (fails) == E (skipped)
     """
 
-    solid_a = create_root_success_solid("A")
+    solid_a = create_root_success_solid("solid_a")
 
-    def fail_fn(_context, inputs):
+    @solid
+    def solid_b(_, in_):
+        return in_
+
+    @solid
+    def solid_c(_, in_):
+        return in_
+
+    @solid
+    def solid_d(_, _in):
         check.failed("user error")
-        return inputs
 
-    def success_fn(_context, inputs):
-        return inputs
+    @solid
+    def solid_e(_, in_):
+        return in_
 
-    solid_b = single_output_solid(
-        name="B",
-        input_defs=[InputDefinition(name="A")],
-        compute_fn=success_fn,
-        output_def=OutputDefinition(),
-    )
+    @solid
+    def solid_f(_, in_, _in2):
+        return in_
 
-    solid_c = single_output_solid(
-        name="C",
-        input_defs=[InputDefinition(name="B")],
-        compute_fn=success_fn,
-        output_def=OutputDefinition(),
-    )
-
-    solid_d = single_output_solid(
-        name="D",
-        input_defs=[InputDefinition(name="A")],
-        compute_fn=fail_fn,
-        output_def=OutputDefinition(),
-    )
-
-    solid_e = single_output_solid(
-        name="E",
-        input_defs=[InputDefinition(name="D")],
-        compute_fn=success_fn,
-        output_def=OutputDefinition(),
-    )
-
-    solid_f = single_output_solid(
-        name="F",
-        input_defs=[InputDefinition(name="C"), InputDefinition(name="E")],
-        compute_fn=success_fn,
-        output_def=OutputDefinition(),
-    )
-
-    pipeline_def = PipelineDefinition(
-        solid_defs=[solid_a, solid_b, solid_c, solid_d, solid_e, solid_f],
-        dependencies={
-            "B": {"A": DependencyDefinition(solid_a.name)},
-            "D": {"A": DependencyDefinition(solid_a.name)},
-            "C": {"B": DependencyDefinition(solid_b.name)},
-            "E": {"D": DependencyDefinition(solid_d.name)},
-            "F": {"C": DependencyDefinition(solid_c.name), "E": DependencyDefinition(solid_e.name)},
-        },
-    )
+    @pipeline
+    def pipeline_def():
+        a_result = solid_a()
+        solid_f(solid_c(solid_b(a_result)), solid_e(solid_d(a_result)))
 
     pipeline_result = execute_pipeline(pipeline_def, raise_on_error=False)
 
-    assert pipeline_result.result_for_solid("A").success
-    assert pipeline_result.result_for_solid("B").success
-    assert pipeline_result.result_for_solid("C").success
-    assert not pipeline_result.result_for_solid("D").success
-    assert pipeline_result.result_for_solid("D").failure_data.error.cls_name == "CheckError"
-    assert not pipeline_result.result_for_solid("E").success
-    assert pipeline_result.result_for_solid("E").skipped
-    assert not pipeline_result.result_for_solid("F").success
-    assert pipeline_result.result_for_solid("F").skipped
+    assert pipeline_result.result_for_solid("solid_a").success
+    assert pipeline_result.result_for_solid("solid_b").success
+    assert pipeline_result.result_for_solid("solid_c").success
+    assert not pipeline_result.result_for_solid("solid_d").success
+    assert pipeline_result.result_for_solid("solid_d").failure_data.error.cls_name == "CheckError"
+    assert not pipeline_result.result_for_solid("solid_e").success
+    assert pipeline_result.result_for_solid("solid_e").skipped
+    assert not pipeline_result.result_for_solid("solid_f").success
+    assert pipeline_result.result_for_solid("solid_f").skipped
 
 
 def test_do_not_yield_result():
@@ -216,15 +168,15 @@ def test_yield_non_result():
 
 
 def test_single_compute_fn_returning_result():
-    solid_inst = single_output_solid(
-        "test_return_result",
+    test_return_result = SolidDefinition(
+        name="test_return_result",
         input_defs=[],
-        compute_fn=lambda *_args, **_kwargs: Output(None),
-        output_def=OutputDefinition(),
+        compute_fn=lambda *args, **kwargs: Output(None),
+        output_defs=[OutputDefinition()],
     )
 
     with pytest.raises(DagsterInvariantViolationError):
-        execute_solid(solid_inst)
+        execute_solid(test_return_result)
 
 
 def test_user_error_propogation():

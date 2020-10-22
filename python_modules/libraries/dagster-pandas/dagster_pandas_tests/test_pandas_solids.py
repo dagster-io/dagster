@@ -12,17 +12,8 @@ from dagster import (
     execute_pipeline,
     execute_solid,
     lambda_solid,
+    solid,
 )
-from dagster.core.test_utils import single_output_solid
-
-
-def _dataframe_solid(name, input_defs, compute_fn):
-    return single_output_solid(
-        name=name,
-        input_defs=input_defs,
-        compute_fn=compute_fn,
-        output_def=OutputDefinition(DataFrame),
-    )
 
 
 def get_solid_result_value(solid_inst):
@@ -46,22 +37,10 @@ def get_num_csv_environment(solids_config):
     return {"solids": solids_config}
 
 
-def create_sum_table():
-    def compute(_context, inputs):
-        num_csv = inputs["num_csv"]
-        check.inst_param(num_csv, "num_csv", pd.DataFrame)
-        num_csv["sum"] = num_csv["num1"] + num_csv["num2"]
-        return num_csv
-
-    return _dataframe_solid(
-        name="sum_table", input_defs=[InputDefinition("num_csv", DataFrame)], compute_fn=compute
-    )
-
-
-@lambda_solid(
-    input_defs=[InputDefinition("num_csv", DataFrame)], output_def=OutputDefinition(DataFrame)
+@solid(
+    input_defs=[InputDefinition("num_csv", DataFrame)], output_defs=[OutputDefinition(DataFrame)]
 )
-def sum_table(num_csv):
+def sum_table(_, num_csv):
     check.inst_param(num_csv, "num_csv", pd.DataFrame)
     num_csv["sum"] = num_csv["num1"] + num_csv["num2"]
     return num_csv
@@ -85,7 +64,7 @@ def sum_sq_table_renamed_input(sum_table_renamed):
 
 
 def test_pandas_csv_in_memory():
-    df = get_solid_result_value(create_sum_table())
+    df = get_solid_result_value(sum_table)
     assert isinstance(df, pd.DataFrame)
     assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4], "sum": [3, 7]}
 
@@ -95,19 +74,14 @@ def _sum_only_pipeline():
 
 
 def test_two_input_solid():
-    def compute(_context, inputs):
-        num_csv1 = inputs["num_csv1"]
-        num_csv2 = inputs["num_csv2"]
+    @solid(
+        input_defs=[InputDefinition("num_csv1", DataFrame), InputDefinition("num_csv2", DataFrame)]
+    )
+    def two_input_solid(_, num_csv1, num_csv2):
         check.inst_param(num_csv1, "num_csv1", pd.DataFrame)
         check.inst_param(num_csv2, "num_csv2", pd.DataFrame)
         num_csv1["sum"] = num_csv1["num1"] + num_csv2["num2"]
         return num_csv1
-
-    two_input_solid = _dataframe_solid(
-        name="two_input_solid",
-        input_defs=[InputDefinition("num_csv1", DataFrame), InputDefinition("num_csv2", DataFrame)],
-        compute_fn=compute,
-    )
 
     pipe = PipelineDefinition(
         solid_defs=[
@@ -133,11 +107,10 @@ def test_two_input_solid():
 
 
 def test_no_compute_solid():
-    num_table = _dataframe_solid(
-        name="num_table",
-        input_defs=[InputDefinition("num_csv", DataFrame)],
-        compute_fn=lambda _context, inputs: inputs["num_csv"],
-    )
+    @solid(input_defs=[InputDefinition("num_csv", DataFrame)])
+    def num_table(_, num_csv):
+        return num_csv
+
     df = get_solid_result_value(num_table)
     assert df.to_dict("list") == {"num1": [1, 3], "num2": [2, 4]}
 
@@ -171,14 +144,11 @@ def load_num_csv_solid(name):
 
 
 def test_pandas_multiple_inputs():
-    def compute_fn(_context, inputs):
-        return inputs["num_csv1"] + inputs["num_csv2"]
-
-    double_sum = _dataframe_solid(
-        name="double_sum",
-        input_defs=[InputDefinition("num_csv1", DataFrame), InputDefinition("num_csv2", DataFrame)],
-        compute_fn=compute_fn,
+    @solid(
+        input_defs=[InputDefinition("num_csv1", DataFrame), InputDefinition("num_csv2", DataFrame)]
     )
+    def double_sum(_, num_csv1, num_csv2):
+        return num_csv1 + num_csv2
 
     pipe = PipelineDefinition(
         solid_defs=[load_num_csv_solid("load_one"), load_num_csv_solid("load_two"), double_sum],
