@@ -527,6 +527,12 @@ def _schedule_tick_state(instance, stream, tick_data):
     "is managed directly from Dagit",
 )
 @python_origin_target_argument
+@click.option(
+    "--ipc-output-file",
+    type=click.Path(),
+    help="Internal param used by dagster when it automatically spawns gRPC servers to communicate "
+    "the success or failure of the server launching. Can be ignored by users.",
+)
 def grpc_command(
     port=None,
     socket=None,
@@ -535,6 +541,7 @@ def grpc_command(
     heartbeat=False,
     heartbeat_timeout=30,
     lazy_load_user_code=False,
+    ipc_output_file=None,
     **kwargs
 ):
     if seven.IS_WINDOWS and port is None:
@@ -572,6 +579,7 @@ def grpc_command(
         heartbeat=heartbeat,
         heartbeat_timeout=heartbeat_timeout,
         lazy_load_user_code=lazy_load_user_code,
+        ipc_output_file=ipc_output_file,
     )
 
     server.serve()

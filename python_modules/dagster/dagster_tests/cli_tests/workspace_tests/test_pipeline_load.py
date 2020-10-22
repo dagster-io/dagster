@@ -1,7 +1,10 @@
+import sys
+
 import click
 import pytest
 from click.testing import CliRunner
 
+from dagster import seven
 from dagster.cli.workspace.cli_target import (
     get_external_pipeline_from_kwargs,
     pipeline_target_argument,
@@ -9,6 +12,8 @@ from dagster.cli.workspace.cli_target import (
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
+
+WINDOWS_PY36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
 
 def load_pipeline_via_cli_runner(cli_args):
@@ -59,12 +64,14 @@ def get_all_loading_combos():
 
 
 @pytest.mark.parametrize("cli_args", get_all_loading_combos())
+@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_valid_loading_combos_single_pipeline_repo_location(cli_args):
     external_pipeline = successfully_load_pipeline_via_cli(cli_args)
     assert isinstance(external_pipeline, ExternalPipeline)
     assert external_pipeline.name == "hello_world_pipeline"
 
 
+@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_repository_target_argument_one_repo_and_specified_wrong():
     result, _ = load_pipeline_via_cli_runner(
         ["-w", PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE, "-p", "not_present"]
@@ -80,6 +87,7 @@ def test_repository_target_argument_one_repo_and_specified_wrong():
 MULTI_PIPELINE_WORKSPACE = file_relative_path(__file__, "multi_pipeline/multi_pipeline.yaml")
 
 
+@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_successfully_find_pipeline():
     assert (
         successfully_load_pipeline_via_cli(
@@ -96,6 +104,7 @@ def test_successfully_find_pipeline():
     )
 
 
+@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_must_provide_name_to_multi_pipeline():
     result, _ = load_pipeline_via_cli_runner(["-w", MULTI_PIPELINE_WORKSPACE])
 

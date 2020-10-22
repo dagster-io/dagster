@@ -35,8 +35,8 @@ def ipc_write_unary_response(output_file, obj):
         stream.send(obj)
 
 
-def read_unary_response(output_file):
-    messages = list(ipc_read_event_stream(output_file))
+def read_unary_response(output_file, timeout=30):
+    messages = list(ipc_read_event_stream(output_file, timeout=timeout))
     check.invariant(len(messages) == 1)
     return messages[0]
 

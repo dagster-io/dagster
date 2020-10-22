@@ -13,8 +13,6 @@ from dagster import (
     PartitionSetDefinition,
     PresetDefinition,
     ScheduleDefinition,
-    Shape,
-    check,
     lambda_solid,
     pipeline,
     repository,
@@ -24,14 +22,9 @@ from dagster import (
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_list_command, run_wipe_command
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.instance import DagsterInstance
-from dagster.core.launcher import RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.serdes import ConfigurableClass
 from dagster.utils import file_relative_path, merge_dicts
 from dagster.version import __version__
 
@@ -152,47 +145,10 @@ def stderr_pipeline():
     fail()
 
 
-class InMemoryRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None):
-        self._inst_data = inst_data
-        self._queue = []
-
-    def launch_run(self, instance, run, external_pipeline):
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(run, "run", PipelineRun)
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        self._queue.append(run)
-        return run
-
-    def queue(self):
-        return self._queue
-
-    @classmethod
-    def config_type(cls):
-        return Shape({})
-
-    @classmethod
-    def from_config_value(cls, inst_data, config_value):
-        return cls(inst_data=inst_data,)
-
-    @property
-    def inst_data(self):
-        return self._inst_data
-
-    def can_terminate(self, run_id):
-        return False
-
-    def terminate(self, run_id):
-        check.not_implemented("Termintation not supported")
-
-
 @contextmanager
 def _default_cli_test_instance_tempdir(temp_dir, overrides=None):
     default_overrides = {
-        "run_launcher": {
-            "module": "dagster_tests.cli_tests.command_tests.test_cli_commands",
-            "class": "InMemoryRunLauncher",
-        }
+        "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher",}
     }
     with instance_for_test_tempdir(
         temp_dir, overrides=merge_dicts(default_overrides, (overrides if overrides else {}))

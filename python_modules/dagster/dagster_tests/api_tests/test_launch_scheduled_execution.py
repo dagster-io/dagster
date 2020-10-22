@@ -87,6 +87,15 @@ def the_repo():
     ]
 
 
+def _default_instance(enable_telemetry=False):
+    return instance_for_test(
+        enable_telemetry=enable_telemetry,
+        overrides={
+            "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher",}
+        },
+    )
+
+
 @contextmanager
 def cli_api_schedule_origin(schedule_name):
     recon_repo = ReconstructableRepository.for_file(__file__, "the_repo")
@@ -115,7 +124,7 @@ def grpc_schedule_origin(schedule_name):
     "schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin,],
 )
 def test_launch_successful_execution(schedule_origin_context):
-    with instance_for_test() as instance:
+    with _default_instance() as instance:
         with schedule_origin_context("simple_schedule") as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
             assert isinstance(result, ScheduledExecutionSuccess)
@@ -131,7 +140,7 @@ def test_launch_successful_execution(schedule_origin_context):
     "schedule_origin_context", [cli_api_schedule_origin],
 )
 def test_launch_successful_execution_telemetry(schedule_origin_context):
-    with instance_for_test(enable_telemetry=True):
+    with _default_instance(enable_telemetry=True):
         with schedule_origin_context("simple_schedule") as schedule_origin:
             sync_launch_scheduled_execution(schedule_origin)
 
@@ -151,7 +160,7 @@ def test_launch_successful_execution_telemetry(schedule_origin_context):
 
 @pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
 def test_bad_env_fn(schedule_origin_context):
-    with instance_for_test() as instance:
+    with _default_instance() as instance:
         with schedule_origin_context("bad_env_fn_schedule") as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
 
@@ -173,7 +182,7 @@ def test_bad_env_fn(schedule_origin_context):
 
 @pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
 def test_bad_should_execute(schedule_origin_context):
-    with instance_for_test() as instance:
+    with _default_instance() as instance:
         with schedule_origin_context("bad_should_execute_schedule") as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
             assert isinstance(result, ScheduledExecutionFailed)
@@ -194,7 +203,7 @@ def test_bad_should_execute(schedule_origin_context):
 
 @pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
 def test_skip(schedule_origin_context):
-    with instance_for_test() as instance:
+    with _default_instance() as instance:
         with schedule_origin_context("skip_schedule") as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
 
@@ -206,7 +215,7 @@ def test_skip(schedule_origin_context):
 
 @pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
 def test_wrong_config(schedule_origin_context):
-    with instance_for_test() as instance:
+    with _default_instance() as instance:
         with schedule_origin_context("wrong_config_schedule") as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
 
@@ -221,7 +230,7 @@ def test_wrong_config(schedule_origin_context):
 
 
 def test_bad_load():
-    with instance_for_test() as instance:
+    with _default_instance() as instance:
         instance = DagsterInstance.get()
 
         working_directory = os.path.dirname(__file__)
@@ -238,7 +247,7 @@ def test_bad_load():
 
 
 def test_bad_load_grpc():
-    with instance_for_test() as instance:
+    with _default_instance() as instance:
         with grpc_schedule_origin("doesnt_exist") as schedule_origin:
             result = sync_launch_scheduled_execution(schedule_origin)
             assert isinstance(result, ScheduledExecutionFailed)
@@ -250,7 +259,7 @@ def test_bad_load_grpc():
 
 
 def test_grpc_server_down():
-    with instance_for_test() as instance:
+    with _default_instance() as instance:
         down_grpc_repo_origin = RepositoryGrpcServerOrigin(
             host="localhost", port=find_free_port(), socket=None, repository_name="down_repo"
         )

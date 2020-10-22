@@ -1,10 +1,11 @@
 import math
 import os
 import queue
-import subprocess
 import sys
 import threading
 import time
+import uuid
+from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 
 import grpc
@@ -29,9 +30,18 @@ from dagster.core.host_representation.external_data import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, RepositoryOrigin
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
-from dagster.seven import multiprocessing
+from dagster.serdes import (
+    deserialize_json_to_dagster_namedtuple,
+    serialize_dagster_namedtuple,
+    whitelist_for_serdes,
+)
+from dagster.serdes.ipc import (
+    IPCErrorMessage,
+    ipc_write_stream,
+    open_ipc_subprocess,
+    read_unary_response,
+)
+from dagster.seven import get_system_temp_directory, multiprocessing
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_repository_from_origin
@@ -879,16 +889,14 @@ class DagsterApiServer(DagsterApiServicer):
         )
 
 
-# This is not a splendid scheme. We could possibly use a sentinel file for this, or send a custom
-# signal back to the client process (Unix only, i think, and questionable); or maybe the client
-# could poll the ping rpc instead/in addition to this
-SERVER_STARTED_TOKEN = "dagster_grpc_server_started"
+@whitelist_for_serdes
+class GrpcServerStartedEvent(namedtuple("GrpcServerStartedEvent", "")):
+    pass
 
-SERVER_STARTED_TOKEN_BYTES = b"dagster_grpc_server_started"
 
-SERVER_FAILED_TO_BIND_TOKEN = "dagster_grpc_server_failed_to_bind"
-
-SERVER_FAILED_TO_BIND_TOKEN_BYTES = b"dagster_grpc_server_failed_to_bind"
+@whitelist_for_serdes
+class GrpcServerFailedToBindEvent(namedtuple("GrpcServerStartedEvent", "")):
+    pass
 
 
 def server_termination_target(termination_event, server):
@@ -908,6 +916,7 @@ class DagsterGrpcServer(object):
         heartbeat=False,
         heartbeat_timeout=30,
         lazy_load_user_code=False,
+        ipc_output_file=None,
     ):
         check.opt_str_param(host, "host")
         check.opt_int_param(port, "port")
@@ -927,6 +936,8 @@ class DagsterGrpcServer(object):
         )
         check.bool_param(heartbeat, "heartbeat")
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
+        self._ipc_output_file = check.opt_str_param(ipc_output_file, "ipc_output_file")
+
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.invariant(
             max_workers > 1 if heartbeat else True,
@@ -961,10 +972,14 @@ class DagsterGrpcServer(object):
         # - 1 when a UDS is successfully bound
         res = self.server.add_insecure_port(server_address)
         if socket and res != 1:
-            print(SERVER_FAILED_TO_BIND_TOKEN)  # pylint: disable=print-call
+            if self._ipc_output_file:
+                with ipc_write_stream(self._ipc_output_file) as ipc_stream:
+                    ipc_stream.send(GrpcServerFailedToBindEvent())
             raise CouldNotBindGrpcServerToAddress(socket)
         if port and res != port:
-            print(SERVER_FAILED_TO_BIND_TOKEN)  # pylint: disable=print-call
+            if self._ipc_output_file:
+                with ipc_write_stream(self._ipc_output_file) as ipc_stream:
+                    ipc_stream.send(GrpcServerFailedToBindEvent())
             raise CouldNotBindGrpcServerToAddress(port)
 
     def serve(self):
@@ -996,8 +1011,10 @@ class DagsterGrpcServer(object):
         # pylint: disable=no-member
         self._health_servicer.set("DagsterApi", health_pb2.HealthCheckResponse.SERVING)
 
-        print(SERVER_STARTED_TOKEN)  # pylint: disable=print-call
-        sys.stdout.flush()
+        if self._ipc_output_file:
+            with ipc_write_stream(self._ipc_output_file) as ipc_stream:
+                ipc_stream.send(GrpcServerStartedEvent())
+
         server_termination_thread = threading.Thread(
             target=server_termination_target,
             args=[self._server_termination_event, self.server],
@@ -1027,21 +1044,17 @@ class CouldNotStartServerProcess(Exception):
         )
 
 
-def wait_for_grpc_server(server_process, timeout=3):
-    total_time = 0
-    backoff = 0.01
-    for line in iter(server_process.stdout.readline, ""):
-        if line.rstrip() == SERVER_FAILED_TO_BIND_TOKEN_BYTES:
-            raise CouldNotBindGrpcServerToAddress()
-        elif line.rstrip() != SERVER_STARTED_TOKEN_BYTES:
-            time.sleep(backoff)
-            total_time += backoff
-            backoff = backoff * 2
-            if total_time > timeout:
-                return False
-        else:
-            return True
-    return False
+def wait_for_grpc_server(ipc_output_file, timeout=3):
+    event = read_unary_response(ipc_output_file, timeout=timeout)
+
+    if isinstance(event, GrpcServerFailedToBindEvent):
+        raise CouldNotBindGrpcServerToAddress()
+    elif isinstance(event, GrpcServerStartedEvent):
+        return True
+    else:
+        raise Exception(
+            "Received unexpected IPC event from gRPC Server: {event}".format(event=event)
+        )
 
 
 def open_server_process(
@@ -1057,6 +1070,10 @@ def open_server_process(
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.int_param(max_workers, "max_workers")
 
+    output_file = os.path.join(
+        get_system_temp_directory(), "grpc-server-startup-{uuid}".format(uuid=uuid.uuid4().hex)
+    )
+
     subprocess_args = (
         [
             loadable_target_origin.executable_path
@@ -1071,6 +1088,7 @@ def open_server_process(
         + (["--heartbeat"] if heartbeat else [])
         + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
         + (["--lazy-load-user-code"] if lazy_load_user_code else [])
+        + (["--ipc-output-file", output_file])
     )
 
     if loadable_target_origin:
@@ -1095,16 +1113,16 @@ def open_server_process(
             + (["-a", loadable_target_origin.attribute] if loadable_target_origin.attribute else [])
         )
 
-    server_process = open_ipc_subprocess(subprocess_args, stdout=subprocess.PIPE)
+    server_process = open_ipc_subprocess(subprocess_args)
 
-    ready = wait_for_grpc_server(server_process)
-
-    if ready:
-        return server_process
-    else:
+    try:
+        wait_for_grpc_server(output_file)
+    except:
         if server_process.poll() is None:
             server_process.terminate()
-        return None
+        raise
+
+    return server_process
 
 
 def open_server_process_on_dynamic_port(
