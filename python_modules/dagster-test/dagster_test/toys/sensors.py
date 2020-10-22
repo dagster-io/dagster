@@ -73,4 +73,28 @@ def get_toys_sensors():
             },
         )
 
-    return [toy_file_sensor, toy_asset_sensor]
+    bucket = os.environ.get("DAGSTER_TOY_SENSOR_S3_BUCKET")
+
+    from dagster_aws.s3.sensor import get_s3_keys
+
+    @sensor(pipeline_name="log_s3_pipeline")
+    def toy_s3_sensor(context):
+        if not bucket:
+            raise Exception(
+                "S3 bucket not specified at environment variable `DAGSTER_TOY_SENSOR_S3_BUCKET`."
+            )
+
+        new_s3_keys = get_s3_keys(bucket, since_key=context.last_run_key)
+        if not new_s3_keys:
+            yield SkipReason(f"No s3 updates found for bucket {bucket}.")
+            return
+
+        for s3_key in new_s3_keys:
+            yield RunRequest(
+                run_key=s3_key,
+                run_config={
+                    "solids": {"read_s3_key": {"config": {"bucket": bucket, "s3_key": s3_key}}}
+                },
+            )
+
+    return [toy_file_sensor, toy_asset_sensor, toy_s3_sensor]
