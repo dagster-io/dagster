@@ -1,12 +1,24 @@
 # Changelog
 
-## 0.9.16 (Upcoming)
+## 0.9.16
 
 **Breaking Changes**
 
 - Removed `DagsterKubernetesPodOperator` in `dagster-airflow`.
 - Removed the `execute_plan` mutation from `dagster-graphql`.
 - `ModeDefinition`, `PartitionSetDefinition`, `PresetDefinition`, `@repository`, `@pipeline`, and `ScheduleDefinition` names must pass the regular expression `r"^[A-Za-z0-9_]+$"` and not be python keywords or disallowed names. See `DISALLOWED_NAMES` in `dagster.core.definitions.utils` for exhaustive list of illegal names.
+- `dagster-slack` is now upgraded to use slackclient 2.x - this means that this resource will only support Python 3.6 and above.
+- [K8s] Added a health check to the helm chart for user deployments, which relies on a new `dagster api grpc-health-check` cli command present in Dagster `0.9.16` and later.
+
+**New**
+
+- Add helm chart configurations to allow users to configure a `K8sRunLauncher`, in place of the `CeleryK8sRunLauncher`.
+- “Copy URL” button to preserve filter state on Run page in dagit
+
+**Bugfixes**
+
+- Addressed performance issues loading the /assets table in dagit. Requires a data migration to create a secondary index by running dagster instance reindex.
+- Dagit bugfixes and improvements
 
 ## 0.9.15
 
