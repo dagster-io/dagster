@@ -434,6 +434,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         "python_modules/libraries/dagster-postgres", extra_cmds_fn=postgres_extra_cmds_fn
     ),
+    ModuleBuildSpec("python_modules/libraries/dagster-slack", supported_pythons=SupportedPython3s),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-twilio",
         env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],

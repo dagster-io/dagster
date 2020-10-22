@@ -1,41 +1,6 @@
-from slackclient import SlackClient
+from slack import WebClient
 
-from dagster import Field, StringSource, resource, seven
-
-
-class SlackConnection:
-    def __init__(self, token):
-        self.token = token
-        self.sc = SlackClient(self.token)
-
-        class _Chat:
-            @classmethod
-            def post_message(
-                cls,
-                channel="#noise",
-                username="dagsterbot",
-                text="Hello from Dagster!",
-                # pylint: disable=line-too-long
-                icon_url="https://user-images.githubusercontent.com/609349/57993619-9ff2ee00-7a6e-11e9-9184-b3414e3eeb30.png",
-                attachments=None,
-            ):
-                """slack_resource.chat.post_message() : chat.postMessage
-
-                See https://api.slack.com/methods/chat.postMessage
-                """
-                api_params = {
-                    "channel": channel,
-                    "username": username,
-                    "text": text,
-                    "icon_url": icon_url,
-                    "attachments": seven.json.dumps(attachments),
-                }
-                return self.sc.api_call("chat.postMessage", **api_params)
-
-        self.chat = _Chat
-
-    def api_call(self, method, timeout=None, **kwargs):
-        return self.sc.api_call(method, timeout, **kwargs)
+from dagster import Field, StringSource, resource
 
 
 @resource(
@@ -71,7 +36,7 @@ def slack_resource(context):
 
         @solid(required_resource_keys={'slack'})
         def slack_solid(context):
-            context.resources.slack.chat.post_message(channel='#noise', text=':wave: hey there!')
+            context.resources.slack.chat_postMessage(channel='#noise', text=':wave: hey there!')
 
         @pipeline(
             mode_defs=[ModeDefinition(resource_defs={'slack': slack_resource})],
@@ -84,4 +49,4 @@ def slack_resource(context):
         )
 
     """
-    return SlackConnection(context.resource_config.get("token"))
+    return WebClient(context.resource_config.get("token"))
