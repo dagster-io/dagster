@@ -93,4 +93,4 @@ Errors
 
 .. autoexception:: DagsterDbtCliUnexpectedOutputError
 
-.. autoexception:: DagsterRpcDbtUnexpectedPollOutputError
+.. autoexception:: DagsterDbtRpcUnexpectedPollOutputError
