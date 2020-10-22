@@ -264,6 +264,7 @@ type PipelineRun {
 }
 
 enum PipelineRunStatus {
+  QUEUED
   NOT_STARTED
   MANAGED
   STARTED

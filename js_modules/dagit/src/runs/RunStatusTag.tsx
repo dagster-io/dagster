@@ -16,6 +16,12 @@ export const RunStatusTag = (props: Props) => {
 
   const tag = () => {
     switch (status) {
+      case 'QUEUED':
+        return (
+          <StatusTag minimal intent="none">
+            Queued
+          </StatusTag>
+        );
       case 'SUCCESS':
         return (
           <StatusTag minimal intent="success">

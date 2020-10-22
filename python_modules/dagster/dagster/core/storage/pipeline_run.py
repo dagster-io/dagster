@@ -18,6 +18,7 @@ from .tags import (
 
 @whitelist_for_serdes
 class PipelineRunStatus(Enum):
+    QUEUED = "QUEUED"
     NOT_STARTED = "NOT_STARTED"
     MANAGED = "MANAGED"
     STARTED = "STARTED"
@@ -108,6 +109,14 @@ class PipelineRun(
         # Placing this with the other imports causes a cyclic import
         # https://github.com/dagster-io/dagster/issues/3181
         from dagster.core.host_representation.origin import ExternalPipelineOrigin
+
+        if status == PipelineRunStatus.QUEUED:
+            check.inst_param(
+                external_pipeline_origin,
+                "external_pipeline_origin",
+                ExternalPipelineOrigin,
+                "external_pipeline_origin is required for queued runs",
+            )
 
         return super(PipelineRun, cls).__new__(
             cls,
@@ -249,6 +258,17 @@ class PipelineRun(
         )
 
     def with_status(self, status):
+        if status == PipelineRunStatus.QUEUED:
+            # Placing this with the other imports causes a cyclic import
+            # https://github.com/dagster-io/dagster/issues/3181
+            from dagster.core.host_representation.origin import ExternalPipelineOrigin
+
+            check.inst(
+                self.external_pipeline_origin,
+                ExternalPipelineOrigin,
+                "external_pipeline_origin is required for queued runs",
+            )
+
         return self._replace(status=status)
 
     def with_mode(self, mode):

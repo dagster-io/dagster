@@ -16,6 +16,7 @@ const FaviconsForStatus = {
   [PipelineRunStatus.FAILURE]: '/favicon_failed.ico',
   [PipelineRunStatus.STARTED]: '/favicon_pending.ico',
   [PipelineRunStatus.NOT_STARTED]: '/favicon_pending.ico',
+  [PipelineRunStatus.QUEUED]: '/favicon_pending.ico',
   [PipelineRunStatus.SUCCESS]: '/favicon_success.ico',
 };
 
