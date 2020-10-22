@@ -126,11 +126,15 @@ export const TagEditor = ({tags: propTags, open, onChange, onRequestClose}: ITag
 export const TagContainer = ({tags, onRequestEdit}: ITagContainerProps) => {
   return (
     <Container>
-      {tags.map((tag, idx) => {
-        return <RunTag tag={tag} key={idx} />;
-      })}
+      <TagList>
+        {tags.map((tag, idx) => (
+          <RunTag tag={tag} key={idx} />
+        ))}
+      </TagList>
       <TagEditorLink onRequestOpen={onRequestEdit}>
-        <Icon icon={IconNames.EDIT} iconSize={12} style={{marginBottom: 2}} /> Edit Tags
+        <div style={{whiteSpace: 'nowrap'}}>
+          <Icon icon={IconNames.EDIT} iconSize={12} style={{marginBottom: 2}} /> Edit Tags
+        </div>
       </TagEditorLink>
     </Container>
   );
@@ -175,16 +179,21 @@ const Input = styled.input`
   border: 1px solid #cccccc;
 `;
 const Container = styled.div`
+  align-items: flex-start;
   display: flex;
   flex-direction: row;
   border-bottom: 1px solid #ececec;
-  padding: 3px 7px;
+  padding: 4px 8px;
+`;
+const TagList = styled.div`
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
 `;
 const Link = styled.div`
-  align-self: center;
   color: #666;
   cursor: pointer;
-  margin: 0 15px;
+  margin: 4px 12px;
   font-size: 12px;
   &:hover {
     color: #aaa;

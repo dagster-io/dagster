@@ -1,6 +1,7 @@
-import {Position, Tag, Tooltip} from '@blueprintjs/core';
+import {Colors, Position, Tag, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
+
 export const DAGSTER_TAG_NAMESPACE = 'dagster/';
 
 interface IRunTagProps {
@@ -18,8 +19,17 @@ export const RunTag = ({tag, onClick}: IRunTagProps) => {
       }
     : undefined;
 
-  if (tag.key.startsWith(DAGSTER_TAG_NAMESPACE)) {
-    const tagKey = tag.key.substr(DAGSTER_TAG_NAMESPACE.length);
+  const isDagsterTag = tag.key.startsWith(DAGSTER_TAG_NAMESPACE);
+  const tagKey = isDagsterTag ? tag.key.substr(DAGSTER_TAG_NAMESPACE.length) : tag.key;
+
+  const tagContent = (
+    <TagElement isDagsterTag={isDagsterTag} onClick={onTagClick}>
+      <TagKey>{tagKey}</TagKey>
+      <TagValue isDagsterTag={isDagsterTag}>{tag.value}</TagValue>
+    </TagElement>
+  );
+
+  if (isDagsterTag) {
     return (
       <Tooltip
         content={`${tag.key}=${tag.value}`}
@@ -27,55 +37,36 @@ export const RunTag = ({tag, onClick}: IRunTagProps) => {
         targetTagName="div"
         position={Position.LEFT}
       >
-        <TagElement onClick={onTagClick}>
-          <span
-            style={{
-              padding: '3px 5px',
-              backgroundColor: 'rgb(199, 212, 234)',
-              color: 'rgba(0,0,0,0.8)',
-            }}
-          >
-            {tagKey}
-          </span>
-          <span
-            style={{
-              padding: '2px 5px',
-              backgroundColor: 'rgb(255,255,255, 0.75)',
-              borderRadius: 3,
-              color: 'rgba(0,0,0,0.7)',
-              border: '1px solid rgb(199, 212, 234)',
-            }}
-          >
-            {tag.value}
-          </span>
-        </TagElement>
+        {tagContent}
       </Tooltip>
     );
   }
 
-  return (
-    <TagElement onClick={onTagClick}>
-      <span
-        style={{
-          padding: '2px 5px',
-          borderRight: '1px solid #999',
-          backgroundColor: '#5C7080',
-        }}
-      >
-        {tag.key}
-      </span>
-      <span style={{padding: '2px 5px', backgroundColor: '#7d8c98'}}>{tag.value}</span>
-    </TagElement>
-  );
+  return tagContent;
 };
 
-const TagElement = styled(Tag)`
-  padding: 0 !important;
-  margin: 1px !important;
+interface TagChildProps {
+  isDagsterTag: boolean;
+}
+
+const TagElement = styled(Tag)<TagChildProps>`
+  padding: 1px !important;
+  margin: 1px 2px !important;
   overflow: hidden;
-  .bp3-fill {
-    display: inline-flex;
-    background-color: rgb(199, 212, 234);
-  }
-  ${({onClick}) => (onClick ? `cursor: pointer;` : '')}
+  background-color: ${({isDagsterTag}) => (isDagsterTag ? Colors.LIGHT_GRAY2 : Colors.GRAY1)};
+  border: ${({isDagsterTag}) =>
+    isDagsterTag ? `1px solid ${Colors.LIGHT_GRAY1}` : `1px solid ${Colors.GRAY1}`};
+  color: ${({isDagsterTag}) => (isDagsterTag ? Colors.DARK_GRAY1 : Colors.WHITE)};
+  cursor: ${({onClick}) => (onClick ? `pointer` : 'default')};
+  max-width: 400px;
+`;
+
+const TagKey = styled.span`
+  padding: 2px 4px;
+`;
+
+const TagValue = styled.span<TagChildProps>`
+  background-color: ${({isDagsterTag}) => (isDagsterTag ? Colors.LIGHT_GRAY4 : Colors.GRAY3)};
+  border-radius: 3px;
+  padding: 2px 4px;
 `;
