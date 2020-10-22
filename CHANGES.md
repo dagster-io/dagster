@@ -13,6 +13,7 @@
 **Breaking Changes**
 
 - CeleryDockerExecutor no longer requires a repo_location_name config field.
+- `executeRunInProcess` was removed from `dagster-graphql`.
 
 **New**
 
