@@ -1,13 +1,8 @@
 import os
 
 import yaml
-from defines import (
-    TOX_MAP,
-    UNIT_IMAGE_VERSION,
-    SupportedPython,
-    SupportedPython3s,
-    SupportedPythons,
-)
+from defines import TOX_MAP, SupportedPython, SupportedPython3s
+from images import publish_test_images, test_image_depends_fn
 from module_build_spec import ModuleBuildSpec
 from step_builder import StepBuilder, wait_step
 from utils import (
@@ -24,87 +19,6 @@ DO_COVERAGE = True
 
 # GCP tests need appropriate credentials
 GCP_CREDS_LOCAL_FILE = "/tmp/gcp-key-elementl-dev.json"
-
-
-def publish_test_images():
-    """This set of tasks builds and pushes Docker images, which are used by the dagster-airflow and
-    the dagster-k8s tests
-    """
-    tests = []
-    for version in SupportedPythons:
-        key = "dagster-test-images-{version}".format(version=TOX_MAP[version])
-        tests.append(
-            StepBuilder("test images {version}".format(version=version), key=key)
-            # these run commands are coupled to the way the test-image-builder is built
-            # see .buildkite/images/test_image_builder/Dockerfile
-            .run(
-                # credentials
-                "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-1 | sh",
-                'export GOOGLE_APPLICATION_CREDENTIALS="/tmp/gcp-key-elementl-dev.json"',
-                "/scriptdir/aws.pex s3 cp s3://$${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json $${GOOGLE_APPLICATION_CREDENTIALS}",
-                #
-                # build and tag test image
-                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
-                + version,
-                "./python_modules/dagster-test/dagster_test/test_project/build.sh "
-                + version
-                + " $${TEST_IMAGE}",
-                #
-                # push the built image
-                'echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"',
-                "docker push $${TEST_IMAGE}",
-            )
-            .on_python_image(
-                "test-image-builder:v2",
-                [
-                    "AIRFLOW_HOME",
-                    "AWS_ACCOUNT_ID",
-                    "AWS_ACCESS_KEY_ID",
-                    "AWS_SECRET_ACCESS_KEY",
-                    "BUILDKITE_SECRETS_BUCKET",
-                ],
-            )
-            .build()
-        )
-
-        key = "dagster-core-test-images-{version}".format(version=TOX_MAP[version])
-        tests.append(
-            StepBuilder("core test images {version}".format(version=version), key=key)
-            # these run commands are coupled to the way the test-image-builder is built
-            # see .buildkite/images/test_image_builder/Dockerfile
-            .run(
-                # credentials
-                "/scriptdir/aws.pex ecr get-login --no-include-email --region us-west-1 | sh",
-                # set the base image
-                "export BASE_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/buildkite-unit:py"
-                + version
-                + "-"
-                + UNIT_IMAGE_VERSION,
-                # build and tag test image
-                "export TEST_IMAGE=$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com/dagster-core-docker-buildkite:$${BUILDKITE_BUILD_ID}-"
-                + version,
-                "./python_modules/dagster-test/build_core.sh " + version + " $${TEST_IMAGE}",
-                #
-                # push the built image
-                'echo -e "--- \033[32m:docker: Pushing Docker image\033[0m"',
-                "docker push $${TEST_IMAGE}",
-            )
-            .on_python_image(
-                "test-image-builder:v2",
-                [
-                    "AWS_ACCOUNT_ID",
-                    "AWS_ACCESS_KEY_ID",
-                    "AWS_SECRET_ACCESS_KEY",
-                    "BUILDKITE_SECRETS_BUCKET",
-                ],
-            )
-            .build()
-        )
-    return tests
-
-
-def test_image_depends_fn(version):
-    return ["dagster-test-images-{version}".format(version=TOX_MAP[version])]
 
 
 def airflow_extra_cmds_fn(version):
@@ -186,28 +100,6 @@ def celery_docker_extra_cmds_fn(version):
         connect_sibling_docker_container(
             "postgres", "test-postgres-db-celery-docker", "POSTGRES_TEST_DB_HOST",
         ),
-        "popd",
-    ]
-
-
-def integration_suite_extra_cmds_fn(version):
-    return [
-        'export AIRFLOW_HOME="/airflow"',
-        "mkdir -p $${AIRFLOW_HOME}",
-        "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
-        'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-1.amazonaws.com"',
-        "aws ecr get-login --no-include-email --region us-west-1 | sh",
-        r"aws s3 cp s3://\${BUILDKITE_SECRETS_BUCKET}/gcp-key-elementl-dev.json "
-        + GCP_CREDS_LOCAL_FILE,
-        "export GOOGLE_APPLICATION_CREDENTIALS=" + GCP_CREDS_LOCAL_FILE,
-        "pushd python_modules/libraries/dagster-celery",
-        # Run the rabbitmq db. We are in docker running docker
-        # so this will be a sibling container.
-        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-        # Can't use host networking on buildkite and communicate via localhost
-        # between these sibling containers, so pass along the ip.
-        network_buildkite_container("rabbitmq"),
-        connect_sibling_docker_container("rabbitmq", "test-rabbitmq", "DAGSTER_CELERY_BROKER_HOST"),
         "popd",
     ]
 
@@ -485,51 +377,6 @@ def extra_library_tests():
     return tests
 
 
-def integration_tests():
-    tests = []
-    tests += ModuleBuildSpec(
-        os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra"),
-        supported_pythons=SupportedPython3s,
-        upload_coverage=True,
-    ).get_tox_build_steps()
-
-    integration_suites_root = os.path.join(SCRIPT_PATH, "..", "integration_tests", "test_suites")
-    integration_suites = [
-        os.path.join("integration_tests", "test_suites", suite)
-        for suite in os.listdir(integration_suites_root)
-    ]
-
-    for integration_suite in integration_suites:
-        tox_env_suffixes = None
-        if integration_suite == os.path.join(
-            "integration_tests", "test_suites", "k8s-integration-test-suite"
-        ):
-            tox_env_suffixes = ["-default", "-markscheduler"]
-        elif integration_suite == os.path.join(
-            "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
-        ):
-            tox_env_suffixes = ["-default", "-markusercodedeployment"]
-
-        tests += ModuleBuildSpec(
-            integration_suite,
-            env_vars=[
-                "AIRFLOW_HOME",
-                "AWS_ACCOUNT_ID",
-                "AWS_ACCESS_KEY_ID",
-                "AWS_SECRET_ACCESS_KEY",
-                "BUILDKITE_SECRETS_BUCKET",
-                "GOOGLE_APPLICATION_CREDENTIALS",
-            ],
-            supported_pythons=SupportedPython3s,
-            upload_coverage=True,
-            extra_cmds_fn=integration_suite_extra_cmds_fn,
-            depends_on_fn=test_image_depends_fn,
-            tox_env_suffixes=tox_env_suffixes,
-            retries=2,
-        ).get_tox_build_steps()
-    return tests
-
-
 def examples_tests():
     """Auto-discover and test all new examples"""
 
@@ -772,7 +619,6 @@ def python_steps():
     steps += version_equality_checks()
     steps += next_docs_build_tests()
     steps += examples_tests()
-    steps += integration_tests()
 
     return steps
 
