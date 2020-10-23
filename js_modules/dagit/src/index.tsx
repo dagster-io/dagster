@@ -3,6 +3,8 @@ import '@blueprintjs/icons/lib/css/blueprint-icons.css';
 import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 
+import 'src/fonts/fonts.css';
+
 import ApolloClient from 'apollo-client';
 import {ApolloLink} from 'apollo-link';
 import {WebSocketLink} from 'apollo-link-ws';
