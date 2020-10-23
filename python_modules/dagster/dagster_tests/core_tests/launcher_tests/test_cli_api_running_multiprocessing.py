@@ -82,12 +82,12 @@ def crashy_solid(sum_df):  # pylint: disable=W0613
 
 @pipeline
 def passing_pipeline():
-    return sum_solid()
+    sum_solid()
 
 
 @pipeline
 def failing_pipeline():
-    return error_solid(sum_solid())
+    error_solid(sum_solid())
 
 
 @pipeline
@@ -112,7 +112,7 @@ def composite_with_nested_config_solid():
 
 @pipeline
 def composite_pipeline():
-    return composite_with_nested_config_solid()
+    composite_with_nested_config_solid()
 
 
 @composite_solid(
@@ -128,7 +128,7 @@ def composite_with_nested_config_solid_and_config_mapping():
 
 @pipeline
 def composite_pipeline_with_config_mapping():
-    return composite_with_nested_config_solid_and_config_mapping()
+    composite_with_nested_config_solid_and_config_mapping()
 
 
 def get_events_of_type(events, event_type):

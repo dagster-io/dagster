@@ -293,7 +293,7 @@ def more_complicated_nested_config():
     def a_solid_with_multilayered_config(_):
         return None
 
-    return a_solid_with_multilayered_config()
+    a_solid_with_multilayered_config()
 
 
 @pipeline(
@@ -323,7 +323,7 @@ def more_complicated_nested_config():
     ]
 )
 def csv_hello_world():
-    return sum_sq_solid(sum_df=sum_solid())
+    sum_sq_solid(sum_df=sum_solid())
 
 
 @pipeline
@@ -335,7 +335,7 @@ def csv_hello_world_with_expectations():
 
 @pipeline
 def csv_hello_world_two():
-    return sum_solid()
+    sum_solid()
 
 
 @solid
@@ -345,7 +345,7 @@ def solid_that_gets_tags(context):
 
 @pipeline(tags={"tag_key": "tag_value"})
 def hello_world_with_tags():
-    return solid_that_gets_tags()
+    solid_that_gets_tags()
 
 
 @solid(name="solid_with_list", input_defs=[], output_defs=[], config_schema=[int])
@@ -360,7 +360,7 @@ def pipeline_with_list():
 
 @pipeline
 def csv_hello_world_df_input():
-    return sum_sq_solid(sum_solid())
+    sum_sq_solid(sum_solid())
 
 
 @pipeline
@@ -369,7 +369,7 @@ def no_config_pipeline():
     def return_hello():
         return "Hello"
 
-    return return_hello()
+    return_hello()
 
 
 @pipeline
@@ -382,7 +382,7 @@ def no_config_chain_pipeline():
     def return_hello_world(_):
         return "Hello World"
 
-    return return_hello_world(return_foo())
+    return_hello_world(return_foo())
 
 
 @pipeline
@@ -424,7 +424,7 @@ def pipeline_with_enum_config():
     def takes_an_enum(_context):
         pass
 
-    return takes_an_enum()
+    takes_an_enum()
 
 
 @pipeline
@@ -433,7 +433,7 @@ def naughty_programmer_pipeline():
     def throw_a_thing():
         raise Exception("bad programmer, bad")
 
-    return throw_a_thing()
+    throw_a_thing()
 
 
 @pipeline
@@ -453,7 +453,7 @@ def pipeline_with_invalid_definition_error():
     def fail_subset(_, some_input):
         return some_input
 
-    return fail_subset(one())
+    fail_subset(one())
 
 
 @resource(config_schema=Field(Int))
@@ -500,7 +500,7 @@ def multi_mode_with_resources():
     def apply_to_three(context):
         return context.resources.op(3)
 
-    return apply_to_three()
+    apply_to_three()
 
 
 @resource(config_schema=Field(Int, is_required=False))
@@ -560,7 +560,7 @@ def multi_mode_with_loggers():
         context.log.critical("OMG!")
         return 6
 
-    return return_six()
+    return_six()
 
 
 @pipeline
@@ -585,7 +585,7 @@ def composites_pipeline():
     def div_four(num):
         return div_two.alias("div_2")(div_two.alias("div_1")(num))
 
-    return div_four(add_four())
+    div_four(add_four())
 
 
 @pipeline
@@ -751,7 +751,7 @@ def tagged_pipeline():
     def simple_solid():
         return "Hello"
 
-    return simple_solid()
+    simple_solid()
 
 
 @pipeline
@@ -790,7 +790,7 @@ def retry_multi_input_early_terminate_pipeline():
         return input_one + input_two
 
     step_one = return_one()
-    return sum_inputs(input_one=get_input_one(step_one), input_two=get_input_two(step_one))
+    sum_inputs(input_one=get_input_one(step_one), input_two=get_input_two(step_one))
 
 
 def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None):
@@ -1033,7 +1033,7 @@ def chained_failure_pipeline():
     def after_failure(_):
         return "world"
 
-    return after_failure(conditionally_fail(always_succeed()))
+    after_failure(conditionally_fail(always_succeed()))
 
 
 @repository

@@ -49,7 +49,7 @@ def test_multiple_overrides_pipeline():
 
     @pipeline
     def wrap_pipeline():
-        return nesting_wrap.alias("outer_wrap")()
+        nesting_wrap.alias("outer_wrap")()
 
     result = execute_pipeline(
         wrap_pipeline,
@@ -66,7 +66,7 @@ def test_multiple_overrides_pipeline():
 def test_good_override():
     @pipeline
     def wrap_pipeline():
-        return wrap.alias("do_stuff")()
+        wrap.alias("do_stuff")()
 
     result = execute_pipeline(
         wrap_pipeline,
@@ -82,7 +82,7 @@ def test_good_override():
 def test_missing_config():
     @pipeline
     def wrap_pipeline():
-        return wrap.alias("do_stuff")()
+        wrap.alias("do_stuff")()
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(wrap_pipeline)
@@ -142,7 +142,7 @@ def test_bad_override():
 
     @pipeline
     def wrap_pipeline():
-        return bad_wrap.alias("do_stuff")()
+        bad_wrap.alias("do_stuff")()
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         execute_pipeline(
@@ -174,7 +174,7 @@ def test_config_mapper_throws():
 
     @pipeline
     def wrap_pipeline():
-        return bad_wrap.alias("do_stuff")()
+        bad_wrap.alias("do_stuff")()
 
     with pytest.raises(DagsterConfigMappingFunctionError) as exc_info:
         execute_pipeline(
@@ -205,7 +205,7 @@ def test_config_mapper_throws_nested():
 
     @pipeline
     def wrap_pipeline():
-        return container.alias("layer0")()
+        container.alias("layer0")()
 
     with pytest.raises(DagsterConfigMappingFunctionError) as exc_info:
         execute_pipeline(
@@ -234,7 +234,7 @@ def test_composite_config_field():
 
     @pipeline
     def test_pipeline():
-        return test()
+        test()
 
     res = execute_pipeline(test_pipeline, {"solids": {"test": {"config": {"override": 5}}}})
     assert res.result_for_handle("test.inner_solid").output_value() == "5"
@@ -262,7 +262,7 @@ def test_nested_composite_config_field():
 
     @pipeline
     def test_pipeline():
-        return test()
+        test()
 
     res = execute_pipeline(test_pipeline, {"solids": {"test": {"config": {"override": 5}}}})
     assert res.success
@@ -303,7 +303,7 @@ def test_nested_with_inputs():
 
     @pipeline(name="config_mapping")
     def config_mapping_pipeline():
-        return pipe(outer_wrap())
+        pipe(outer_wrap())
 
     result = execute_pipeline(
         config_mapping_pipeline, {"solids": {"outer_wrap": {"config": {"outer_first": "foo"}}}}
@@ -335,7 +335,7 @@ def test_wrap_none_config_and_inputs():
 
     @pipeline(name="config_mapping")
     def config_mapping_pipeline():
-        return pipe(wrap_none())
+        pipe(wrap_none())
 
     # Check all good
     result = execute_pipeline(
@@ -457,7 +457,7 @@ def test_wrap_all_config_no_inputs():
 
     @pipeline(name="config_mapping")
     def config_mapping_pipeline():
-        return pipe(wrap_all_config_no_inputs())
+        pipe(wrap_all_config_no_inputs())
 
     result = execute_pipeline(
         config_mapping_pipeline,
@@ -553,7 +553,7 @@ def test_wrap_all_config_one_input():
 
     @pipeline(name="config_mapping")
     def config_mapping_pipeline():
-        return pipe(wrap_all_config_one_input())
+        pipe(wrap_all_config_one_input())
 
     result = execute_pipeline(
         config_mapping_pipeline,
@@ -645,7 +645,7 @@ def test_wrap_all_config_and_inputs():
 
     @pipeline(name="config_mapping")
     def config_mapping_pipeline():
-        return pipe(wrap_all())
+        pipe(wrap_all())
 
     result = execute_pipeline(
         config_mapping_pipeline,
@@ -703,7 +703,7 @@ def test_empty_config():
 
     @pipeline
     def wrap_pipeline():
-        return wrap_solid()
+        wrap_solid()
 
     res = execute_pipeline(wrap_pipeline, run_config={"solids": {}})
     assert res.result_for_solid("wrap_solid").output_values == {"result": "an input"}
@@ -725,7 +725,7 @@ def test_nested_empty_config():
 
     @pipeline
     def wrap_pipeline():
-        return double_wrap()
+        double_wrap()
 
     res = execute_pipeline(wrap_pipeline, run_config={"solids": {}})
     assert res.result_for_solid("double_wrap").output_values == {"result": "an input"}
@@ -752,7 +752,7 @@ def test_nested_empty_config_input():
 
     @pipeline
     def wrap_pipeline():
-        return double_wrap()
+        double_wrap()
 
     res = execute_pipeline(
         wrap_pipeline, run_config={"solids": {"double_wrap": {"inputs": {"num": {"value": 2}}}}},

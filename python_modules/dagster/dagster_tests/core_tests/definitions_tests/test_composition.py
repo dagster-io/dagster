@@ -548,7 +548,8 @@ def test_collision_invocations():
 def test_alias_invoked(recwarn):
     @pipeline
     def _():
-        return [single_input_solid.alias("foo")(), single_input_solid.alias("bar")()]
+        single_input_solid.alias("foo")()
+        single_input_solid.alias("bar")()
 
     assert len(recwarn) == 0
 
@@ -565,7 +566,8 @@ def test_alias_not_invoked():
 
         @pipeline
         def _my_pipeline():
-            return [single_input_solid.alias("foo"), single_input_solid.alias("bar")]
+            single_input_solid.alias("foo")
+            single_input_solid.alias("bar")
 
     assert len(record) == 2  # This pipeline should raise a warning for each aliasing of the solid.
 
@@ -576,7 +578,7 @@ def test_tag_invoked():
 
         @pipeline
         def _my_pipeline():
-            return single_input_solid.tag({})()
+            single_input_solid.tag({})()
 
         execute_pipeline(_my_pipeline)
 
@@ -595,7 +597,8 @@ def test_tag_not_invoked():
 
         @pipeline
         def _my_pipeline():
-            return [single_input_solid.tag({}), single_input_solid.tag({})]
+            single_input_solid.tag({})
+            single_input_solid.tag({})
 
         execute_pipeline(_my_pipeline)
 
@@ -611,7 +614,7 @@ def test_tag_not_invoked():
 
         @pipeline
         def _my_pipeline():
-            return single_input_solid.tag({"a": "b"})
+            single_input_solid.tag({"a": "b"})
 
         execute_pipeline(_my_pipeline)
 
@@ -622,7 +625,7 @@ def test_with_hooks_invoked():
 
         @pipeline
         def _my_pipeline():
-            return single_input_solid.with_hooks(set())()
+            single_input_solid.with_hooks(set())()
 
         execute_pipeline(_my_pipeline)
 
@@ -645,7 +648,8 @@ def test_with_hooks_not_invoked():
 
         @pipeline
         def _my_pipeline():
-            return [single_input_solid.with_hooks(set()), single_input_solid.with_hooks(set())]
+            single_input_solid.with_hooks(set())
+            single_input_solid.with_hooks(set())
 
         execute_pipeline(_my_pipeline)
 
@@ -661,7 +665,7 @@ def test_with_hooks_not_invoked():
 
         @pipeline
         def _my_pipeline():
-            return single_input_solid.with_hooks({a_hook})
+            single_input_solid.with_hooks({a_hook})
 
         execute_pipeline(_my_pipeline)
 
@@ -669,7 +673,7 @@ def test_with_hooks_not_invoked():
 def test_with_hooks_not_empty():
     @pipeline
     def _():
-        return [single_input_solid.with_hooks({a_hook})]
+        single_input_solid.with_hooks({a_hook})
 
     assert 1 == 1
 
@@ -690,7 +694,7 @@ def test_multiple_pending_invocations():
             bar = single_input_solid.alias("bar")
             foo_tag = foo.tag({})
             _bar_hook = bar.with_hooks({a_hook})
-            return foo_tag()
+            foo_tag()
 
     assert (
         len(record) == 1
@@ -842,3 +846,17 @@ def test_alias_on_invoked_solid_fails():
             return_one().alias("something")  # pylint: disable=no-member
 
         execute_pipeline(alias_on_invoked_solid_pipeline)
+
+
+def test_warn_on_pipeline_return():
+    @solid
+    def noop(_):
+        pass
+
+    with pytest.warns(
+        UserWarning, match="You have returned a value out of a @pipeline-decorated function. "
+    ):
+
+        @pipeline
+        def _returns_something():
+            return noop()

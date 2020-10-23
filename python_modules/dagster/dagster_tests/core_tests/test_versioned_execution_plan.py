@@ -72,7 +72,7 @@ def versioned_solid_takes_input(_, intput):
 
 @pipeline
 def versioned_pipeline():
-    return versioned_solid_takes_input(versioned_solid_no_input())
+    versioned_solid_takes_input(versioned_solid_no_input())
 
 
 @solid
@@ -82,7 +82,7 @@ def solid_takes_input(_, intput):
 
 @pipeline
 def partially_versioned_pipeline():
-    return solid_takes_input(versioned_solid_no_input())
+    solid_takes_input(versioned_solid_no_input())
 
 
 def versioned_pipeline_expected_step1_version():
@@ -176,7 +176,7 @@ def basic_takes_input_solid(_, intpt):
 
 @pipeline
 def no_version_pipeline():
-    return basic_takes_input_solid(basic_solid())
+    basic_takes_input_solid(basic_solid())
 
 
 def test_default_unmemoized_steps():
@@ -291,7 +291,7 @@ def run_test_with_builtin_type(type_to_test, loader_version, type_value):
 
     @pipeline
     def versioned_pipeline_ext_input_builtin_type():
-        return versioned_solid_takes_input(versioned_solid_ext_input_builtin_type())
+        versioned_solid_takes_input(versioned_solid_ext_input_builtin_type())
 
     run_config = {
         "solids": {
@@ -340,7 +340,7 @@ def versioned_solid_default_value(_, default_input):
 
 @pipeline
 def versioned_pipeline_default_value():
-    return versioned_solid_default_value()
+    versioned_solid_default_value()
 
 
 def test_resolve_step_versions_default_value():
@@ -520,7 +520,7 @@ def test_step_versions_composite_solid():
 
     @pipeline
     def wrap_pipeline():
-        return wrap.alias("do_stuff")()
+        wrap.alias("do_stuff")()
 
     run_config = {
         "solids": {"do_stuff": {"config": {"override_str": "override"}}},

@@ -20,7 +20,7 @@ def composite_with_nested_config_solid():
 
 @pipeline
 def composite_pipeline():
-    return composite_with_nested_config_solid()
+    composite_with_nested_config_solid()
 
 
 @composite_solid(
@@ -36,7 +36,7 @@ def composite_with_nested_config_solid_and_config_mapping():
 
 @pipeline
 def composite_pipeline_with_config_mapping():
-    return composite_with_nested_config_solid_and_config_mapping()
+    composite_with_nested_config_solid_and_config_mapping()
 
 
 def test_execution_plan_for_composite_solid():

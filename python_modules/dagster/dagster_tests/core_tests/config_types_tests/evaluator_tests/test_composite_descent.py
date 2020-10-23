@@ -266,7 +266,7 @@ def test_double_nested_input_via_config_mapping():
 
     @pipeline
     def wrap_pipeline_double_nested_input():
-        return double_wrap()
+        double_wrap()
 
     solid_handle_dict = composite_descent(
         wrap_pipeline_double_nested_input, {"double_wrap": {"inputs": {"num": {"value": 2}}}}
@@ -315,7 +315,7 @@ def test_provide_one_of_two_inputs_via_config():
 
     @pipeline(name="config_mapping")
     def config_mapping_pipeline():
-        return wrap_all_config_one_input()
+        wrap_all_config_one_input()
 
     solids_config_dict = {
         "wrap_all_config_one_input": {
@@ -362,7 +362,7 @@ def nesting_wrap():
 
 @pipeline
 def wrap_pipeline():
-    return nesting_wrap.alias("layer0")()
+    nesting_wrap.alias("layer0")()
 
 
 @composite_solid
@@ -377,7 +377,7 @@ def nesting_wrap_no_mapping():
 
 @pipeline
 def no_wrap_pipeline():
-    return nesting_wrap_no_mapping.alias("layer0")()
+    nesting_wrap_no_mapping.alias("layer0")()
 
 
 def get_fully_unwrapped_config():
@@ -403,7 +403,7 @@ def test_direct_composite_descent_with_error():
 
     @pipeline
     def wrap_pipeline_with_error():
-        return nesting_wrap_wrong_type_at_leaf.alias("layer0")()
+        nesting_wrap_wrong_type_at_leaf.alias("layer0")()
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
         composite_descent(

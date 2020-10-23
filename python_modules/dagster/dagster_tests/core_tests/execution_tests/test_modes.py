@@ -38,7 +38,7 @@ def solid_that_uses_adder_resource(context, number):
     ]
 )
 def pipeline_with_mode():
-    return solid_that_uses_adder_resource()
+    solid_that_uses_adder_resource()
 
 
 def test_execute_pipeline_with_mode():
@@ -83,7 +83,7 @@ def solid_that_gets_tags(context):
     mode_defs=[ModeDefinition(name="tags"),], tags={"tag_key": "tag_value"},
 )
 def pipeline_with_one_mode_and_tags():
-    return solid_that_gets_tags()
+    solid_that_gets_tags()
 
 
 def test_execute_pipeline_with_mode_and_tags():
@@ -103,7 +103,7 @@ def test_execute_pipeline_with_mode_and_tags():
     tags={"pipeline_tag_key": "pipeline_tag_value"},
 )
 def pipeline_with_multi_mode_and_tags():
-    return solid_that_gets_tags()
+    solid_that_gets_tags()
 
 
 def test_execute_pipeline_with_multi_mode_and_pipeline_def_tags():

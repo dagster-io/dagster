@@ -143,7 +143,7 @@ def test_input_types_succeed_in_pipeline():
 
     @pipeline
     def pipe():
-        return take_num(return_one())
+        take_num(return_one())
 
     pipeline_result = execute_pipeline(pipe)
     assert pipeline_result.success
@@ -162,7 +162,7 @@ def test_output_types_succeed_in_pipeline():
 
     @pipeline
     def pipe():
-        return return_one()
+        return_one()
 
     pipeline_result = execute_pipeline(pipe)
     assert pipeline_result.success
@@ -186,7 +186,7 @@ def test_input_types_fail_in_pipeline():
 
     @pipeline
     def pipe():
-        return take_string(return_one())
+        take_string(return_one())
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_pipeline(pipe)
@@ -214,7 +214,7 @@ def test_output_types_fail_in_pipeline():
 
     @pipeline
     def pipe():
-        return return_int_fails()
+        return_int_fails()
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_pipeline(pipe)
@@ -269,7 +269,7 @@ def test_input_type_returns_wrong_thing():
 
     @pipeline
     def pipe():
-        return take_bad_thing(return_one())
+        take_bad_thing(return_one())
 
     with pytest.raises(
         DagsterInvariantViolationError,
@@ -296,7 +296,7 @@ def test_output_type_returns_wrong_thing():
 
     @pipeline
     def pipe():
-        return return_one_bad_thing()
+        return_one_bad_thing()
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_pipeline(pipe)
@@ -319,7 +319,7 @@ def test_input_type_throw_arbitrary_exception():
 
     @pipeline
     def pipe():
-        return take_throws(return_one())
+        take_throws(return_one())
 
     with pytest.raises(AlwaysFailsException):
         execute_pipeline(pipe)
@@ -337,7 +337,7 @@ def test_output_type_throw_arbitrary_exception():
 
     @pipeline
     def pipe():
-        return return_one_throws()
+        return_one_throws()
 
     with pytest.raises(AlwaysFailsException):
         execute_pipeline(pipe)

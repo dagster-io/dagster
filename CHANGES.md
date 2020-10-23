@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.17
+
+- We now warn if you return anything from a function decorated with `@pipeline`. This return value actually had no impact at all and was ignored, but we are making changes that will use that value in the future. By changing your code to not return anything now you will avoid any breaking changes with zero user-visible impact.
+
 ## 0.9.16
 
 **Breaking Changes**

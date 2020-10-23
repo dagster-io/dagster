@@ -43,7 +43,7 @@ def foo_pipeline():
     return_one ---> add_nums --> multiply_two --> add_one
     return_two --|
     """
-    return add_one(multiply_two(add_nums(return_one(), return_two())))
+    add_one(multiply_two(add_nums(return_one(), return_two())))
 
 
 def test_generate_dep_graph():

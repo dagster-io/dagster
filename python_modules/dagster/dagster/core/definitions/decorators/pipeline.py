@@ -1,3 +1,4 @@
+import warnings
 from functools import update_wrapper
 
 from dagster import check
@@ -34,7 +35,17 @@ class _Pipeline(object):
 
         enter_composition(self.name, "@pipeline")
         try:
-            fn()
+            output = fn()
+            if output is not None:
+                warnings.warn(
+                    "You have returned a value out of a @pipeline-decorated function. "
+                    "This currently has no effect on behavior, but will after 0.10.0 is "
+                    "released. In order to preserve existing behavior to do not return "
+                    "anything out of this function. Pipelines (and its successor, graphs) "
+                    "will have meaningful outputs just like composite solids do today, "
+                    "and the return value will be meaningful."
+                )
+
         finally:
             context = exit_composition()
 

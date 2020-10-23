@@ -19,7 +19,7 @@ def define_pipeline():
 
     @pipeline
     def addy_pipeline():
-        return add_three(add_two(add_one()))
+        add_three(add_two(add_one()))
 
     return addy_pipeline
 
