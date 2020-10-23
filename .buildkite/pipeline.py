@@ -143,6 +143,25 @@ def airline_demo_extra_cmds_fn(_):
     ]
 
 
+def dbt_example_extra_cmds_fn(_):
+    return [
+        "pushd examples/dbt_example",
+        # Run the postgres db. We are in docker running docker
+        # so this will be a sibling container.
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        # Can't use host networking on buildkite and communicate via localhost
+        # between these sibling containers, so pass along the ip.
+        network_buildkite_container("postgres"),
+        connect_sibling_docker_container(
+            "postgres", "dbt_example_postgresql", "DAGSTER_DBT_EXAMPLE_PGHOST"
+        ),
+        "mkdir -p ~/.dbt/",
+        "touch ~/.dbt/profiles.yml",
+        "cat dbt_example_project/profiles.yml >> ~/.dbt/profiles.yml",
+        "popd",
+    ]
+
+
 def celery_extra_cmds_fn(version):
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
@@ -296,6 +315,12 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=SupportedPython3s,
         extra_cmds_fn=airline_demo_extra_cmds_fn,
         buildkite_label="airline-demo",
+    ),
+    ModuleBuildSpec(
+        "examples/dbt_example",
+        supported_pythons=SupportedPython3s,
+        extra_cmds_fn=dbt_example_extra_cmds_fn,
+        buildkite_label="dbt_example",
     ),
     # Examples: Events Demo
     # TODO: https://github.com/dagster-io/dagster/issues/2617
@@ -517,6 +542,7 @@ def examples_tests():
         "docs_snippets",
         "legacy_examples",
         "airline_demo",
+        "dbt_example",
     ]
 
     examples_root = os.path.join(SCRIPT_PATH, "..", "examples")

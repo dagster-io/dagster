@@ -17,8 +17,8 @@ def generate_materializations(
                 entries = [
                     EventMetadataEntry.json(data=node_result.node, label="Node"),
                     EventMetadataEntry.text(text=str(node_result.status), label="Status"),
-                    EventMetadataEntry.text(
-                        text=str(node_result.execution_time), label="Execution Time (seconds)"
+                    EventMetadataEntry.float(
+                        value=node_result.execution_time, label="Execution Time (seconds)",
                     ),
                     EventMetadataEntry.text(
                         text=node_result.node["config"]["materialized"],
@@ -42,8 +42,10 @@ def generate_materializations(
                                 text=step_timing.completed_at.isoformat(timespec="seconds"),
                                 label="Execution Completed At",
                             ),
-                            EventMetadataEntry.text(
-                                text=str(step_timing.duration), label="Execution Duration (seconds)"
+                            EventMetadataEntry.float(
+                                # this is a value like datetime.timedelta(microseconds=51484)
+                                value=step_timing.duration.total_seconds(),
+                                label="Execution Duration",
                             ),
                         ]
                         entries.extend(execution_entries)
@@ -57,15 +59,17 @@ def generate_materializations(
                                 text=step_timing.completed_at.isoformat(timespec="seconds"),
                                 label="Compilation Completed At",
                             ),
-                            EventMetadataEntry.text(
-                                text=str(step_timing.duration),
-                                label="Compilation Duration (seconds)",
+                            EventMetadataEntry.float(
+                                # this is a value like datetime.timedelta(microseconds=51484)
+                                value=step_timing.duration.total_seconds(),
+                                label="Compilation Duration",
                             ),
                         ]
                         entries.extend(execution_entries)
 
+                unique_id = node_result.node["unique_id"]
                 yield AssetMaterialization(
-                    description="A materialized node within the dbt graph.",
+                    description="dbt node: {unique_id}".format(unique_id=unique_id),
                     metadata_entries=entries,
-                    asset_key=node_result.node["unique_id"],
+                    asset_key=unique_id,
                 )

@@ -10,6 +10,11 @@ docker-compose stop
 docker-compose rm -f
 popd
 
+pushd examples/dbt_example
+docker-compose stop
+docker-compose rm -f
+popd
+
 pushd python_modules/libraries/dagster-celery
 docker-compose stop
 docker-compose rm -f

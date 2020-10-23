@@ -1,0 +1,19 @@
+version: "3.7"
+
+services:
+  dbt_example_postgresql:
+    image: postgres:11
+    container_name: dbt_example_postgresql
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "dbt_example"
+      POSTGRES_PASSWORD: "dbt_example"
+      POSTGRES_DB: "dbt_example"
+    networks:
+      - postgres
+
+networks:
+  postgres:
+    driver: bridge
+    name: postgres
