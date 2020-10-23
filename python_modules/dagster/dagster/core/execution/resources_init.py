@@ -216,9 +216,13 @@ def get_required_resource_keys_for_step(
 
     # add all the system storage resource keys
     resource_keys = resource_keys.union(system_storage_def.required_resource_keys)
-    solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition
+
+    # add all the intermediate storage resource keys
+    if intermediate_storage_def is not None:
+        resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
 
     # add all the solid compute resource keys
+    solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition
     resource_keys = resource_keys.union(solid_def.required_resource_keys)
 
     # add input type and input hydration config resource keys

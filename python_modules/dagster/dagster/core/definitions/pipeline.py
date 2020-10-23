@@ -676,6 +676,19 @@ def _validate_resource_dependencies(mode_definitions, solid_defs, solid_dict, pi
                             mode_name=mode_def.name,
                         )
                     )
+        for intermediate_storage in mode_def.intermediate_storage_defs or []:
+            for required_resource in intermediate_storage.required_resource_keys:
+                if required_resource not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            "Resource '{resource}' is required by intermediate storage "
+                            "'{storage_name}', but is not provided by mode '{mode_name}'."
+                        ).format(
+                            resource=required_resource,
+                            storage_name=intermediate_storage.name,
+                            mode_name=mode_def.name,
+                        )
+                    )
         for solid in solid_dict.values():
             for hook_def in solid.hook_defs:
                 for required_resource in hook_def.required_resource_keys:
