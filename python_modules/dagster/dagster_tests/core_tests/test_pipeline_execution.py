@@ -28,7 +28,7 @@ from dagster import (
 from dagster.cli.workspace.load import location_handle_from_python_file
 from dagster.core.definitions import Solid
 from dagster.core.definitions.dependency import DependencyStructure
-from dagster.core.definitions.solid_container import _create_adjacency_lists
+from dagster.core.definitions.graph import _create_adjacency_lists
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.host_representation import RepositoryLocation, UserProcessApi

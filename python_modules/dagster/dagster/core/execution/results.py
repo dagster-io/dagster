@@ -3,9 +3,8 @@ from collections import defaultdict
 import six
 
 from dagster import check
-from dagster.core.definitions import PipelineDefinition, Solid, SolidHandle
+from dagster.core.definitions import GraphDefinition, PipelineDefinition, Solid, SolidHandle
 from dagster.core.definitions.events import ObjectStoreOperation
-from dagster.core.definitions.solid_container import IContainSolids
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
@@ -20,9 +19,9 @@ def _construct_events_by_step_key(event_list):
     return dict(events_by_step_key)
 
 
-class IContainSolidsExecutionResult(object):
+class GraphExecutionResult(object):
     def __init__(self, container, event_list, reconstruct_context, handle=None):
-        self.container = check.inst_param(container, "container", IContainSolids)
+        self.container = check.inst_param(container, "container", GraphDefinition)
         self.event_list = check.list_param(event_list, "step_event_list", of_type=DagsterEvent)
         self.reconstruct_context = check.callable_param(reconstruct_context, "reconstruct_context")
         self.handle = check.opt_inst_param(handle, "handle", SolidHandle)
@@ -138,7 +137,7 @@ class IContainSolidsExecutionResult(object):
         return self._result_for_handle(solid, handle)
 
 
-class PipelineExecutionResult(IContainSolidsExecutionResult):
+class PipelineExecutionResult(GraphExecutionResult):
     """The result of executing a pipeline.
 
     Returned by :py:func:`execute_pipeline`. Users should not instantiate this class.
@@ -157,7 +156,7 @@ class PipelineExecutionResult(IContainSolidsExecutionResult):
         return self.container
 
 
-class CompositeSolidExecutionResult(IContainSolidsExecutionResult):
+class CompositeSolidExecutionResult(GraphExecutionResult):
     """Execution result for a composite solid in a pipeline.
 
     Users should not instantiate this class.

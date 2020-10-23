@@ -1,15 +1,18 @@
 from collections import OrderedDict
 
+import six
+from toposort import CircularDependencyError, toposort_flatten
+
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 
-from .dependency import SolidHandle
+from .dependency import DependencyStructure, Solid, SolidHandle
 from .i_solid_definition import ISolidDefinition
 from .input import InputDefinition, InputMapping
 from .output import OutputDefinition, OutputMapping
-from .solid_container import IContainSolids, create_execution_structure, validate_dependency_dict
+from .solid_container import create_execution_structure, validate_dependency_dict
 
 
 def _check_solids_arg(graph_name, solid_defs):
@@ -39,8 +42,35 @@ def _check_solids_arg(graph_name, solid_defs):
     return solid_defs
 
 
-# pylint: disable=abstract-method
-class GraphDefinition(ISolidDefinition, IContainSolids):
+def _create_adjacency_lists(solids, dep_structure):
+    check.list_param(solids, "solids", Solid)
+    check.inst_param(dep_structure, "dep_structure", DependencyStructure)
+
+    visit_dict = {s.name: False for s in solids}
+    forward_edges = {s.name: set() for s in solids}
+    backward_edges = {s.name: set() for s in solids}
+
+    def visit(solid_name):
+        if visit_dict[solid_name]:
+            return
+
+        visit_dict[solid_name] = True
+
+        for output_handle in dep_structure.all_upstream_outputs_from_solid(solid_name):
+            forward_node = output_handle.solid.name
+            backward_node = solid_name
+            if forward_node in forward_edges:
+                forward_edges[forward_node].add(backward_node)
+                backward_edges[backward_node].add(forward_node)
+                visit(forward_node)
+
+    for s in solids:
+        visit(s.name)
+
+    return (forward_edges, backward_edges)
+
+
+class GraphDefinition(ISolidDefinition):
     def __init__(
         self,
         name,
@@ -93,6 +123,21 @@ class GraphDefinition(ISolidDefinition, IContainSolids):
         # must happen after base class construction as properties are assumed to be there
         # eager computation to detect cycles
         self.solids_in_topological_order = self._solids_in_topological_order()
+
+    def _solids_in_topological_order(self):
+
+        _forward_edges, backward_edges = _create_adjacency_lists(
+            self.solids, self.dependency_structure
+        )
+
+        try:
+            order = toposort_flatten(backward_edges)
+        except CircularDependencyError as err:
+            six.raise_from(
+                DagsterInvalidDefinitionError(str(err)), err,
+            )
+
+        return [self.solid_named(solid_name) for solid_name in order]
 
     @property
     def solids(self):

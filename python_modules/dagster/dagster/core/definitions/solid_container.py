@@ -2,12 +2,10 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from collections import defaultdict
 
 import six
-from toposort import CircularDependencyError
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster.core.utils import toposort_flatten
 
 from .dependency import DependencyStructure, IDependencyDefinition, Solid, SolidInvocation
 
@@ -31,48 +29,6 @@ class IContainSolids(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         Returns:
             Solid: The solid with the given name
         """
-
-    def _solids_in_topological_order(self):
-        _forward_edges, backward_edges = _create_adjacency_lists(
-            self.solids, self.dependency_structure
-        )
-
-        try:
-            order = toposort_flatten(backward_edges)
-        except CircularDependencyError as err:
-            six.raise_from(
-                DagsterInvalidDefinitionError(str(err)), err,
-            )
-
-        return [self.solid_named(solid_name) for solid_name in order]
-
-
-def _create_adjacency_lists(solids, dep_structure):
-    check.list_param(solids, "solids", Solid)
-    check.inst_param(dep_structure, "dep_structure", DependencyStructure)
-
-    visit_dict = {s.name: False for s in solids}
-    forward_edges = {s.name: set() for s in solids}
-    backward_edges = {s.name: set() for s in solids}
-
-    def visit(solid_name):
-        if visit_dict[solid_name]:
-            return
-
-        visit_dict[solid_name] = True
-
-        for output_handle in dep_structure.all_upstream_outputs_from_solid(solid_name):
-            forward_node = output_handle.solid.name
-            backward_node = solid_name
-            if forward_node in forward_edges:
-                forward_edges[forward_node].add(backward_node)
-                backward_edges[backward_node].add(forward_node)
-                visit(forward_node)
-
-    for s in solids:
-        visit(s.name)
-
-    return (forward_edges, backward_edges)
 
 
 def validate_dependency_dict(dependencies):

@@ -1,14 +1,14 @@
 from collections import defaultdict, namedtuple
 
 from dagster import check
+from dagster.core.definitions import GraphDefinition
 from dagster.core.definitions.dependency import Solid, SolidInputHandle
-from dagster.core.definitions.solid_container import IContainSolids
 from dagster.serdes import whitelist_for_serdes
 
 
 def build_solid_invocation_snap(icontains_solids, solid):
     check.inst_param(solid, "solid", Solid)
-    check.inst_param(icontains_solids, "icontains_solids", IContainSolids)
+    check.inst_param(icontains_solids, "icontains_solids", GraphDefinition)
     dep_structure = icontains_solids.dependency_structure
 
     input_def_snaps = []
@@ -36,7 +36,7 @@ def build_solid_invocation_snap(icontains_solids, solid):
 
 
 def build_dep_structure_snapshot_from_icontains_solids(icontains_solids):
-    check.inst_param(icontains_solids, "icontains_solids", IContainSolids)
+    check.inst_param(icontains_solids, "icontains_solids", GraphDefinition)
     return DependencyStructureSnapshot(
         solid_invocation_snaps=[
             build_solid_invocation_snap(icontains_solids, solid)
