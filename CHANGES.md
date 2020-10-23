@@ -15,6 +15,11 @@
 - Add helm chart configurations to allow users to configure a `K8sRunLauncher`, in place of the `CeleryK8sRunLauncher`.
 - “Copy URL” button to preserve filter state on Run page in dagit
 
+**Community Contributions**
+
+- Dagster CLI options can now be passed in via environment variables (Thanks @xinbinhuang!)
+- New `--limit` flag on the `dagster run list` command (Thanks @haydarai!)
+
 **Bugfixes**
 
 - Addressed performance issues loading the /assets table in dagit. Requires a data migration to create a secondary index by running dagster instance reindex.
