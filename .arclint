@@ -21,7 +21,8 @@
       "type": "script-and-regex",
       "script-and-regex.script": "yamllint -c .yamllint.yaml --strict",
       "script-and-regex.regex": "/^(?P<line>\\d+):(?P<offset>\\d+) +(?P<severity>warning|error) +(?P<message>.*) +\\((?P<name>.*)\\)$/m",
-      "include": "(\\.(yml|yaml)$)"
+      "include": "(helm/dagster/.*\\.(yml|yaml)$)",
+      "exclude": "(helm/dagster/templates/.*\\.(yml|yaml)$)"
     }
   }
 }
