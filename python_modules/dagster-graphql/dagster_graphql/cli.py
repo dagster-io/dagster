@@ -138,7 +138,7 @@ PREDEFINED_QUERIES = {
         "\n\n{warning}".format(warning=WORKSPACE_TARGET_WARNING)
     )
     + (
-        "\n\n Examples:"
+        "\n\nExamples:"
         "\n\n1. dagster-graphql"
         "\n\n2. dagster-graphql -y path/to/{default_filename}"
         "\n\n3. dagster-graphql -f path/to/file.py -a define_repo"

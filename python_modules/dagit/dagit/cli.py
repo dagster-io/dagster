@@ -36,7 +36,7 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
             warning=WORKSPACE_TARGET_WARNING
         )
         + (
-            "\n\n Examples:"
+            "\n\nExamples:"
             "\n\n1. dagit (works if .{default_filename} exists)"
             "\n\n2. dagit -w path/to/{default_filename}"
             "\n\n3. dagit -f path/to/file.py"
@@ -45,8 +45,8 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
             "\n\n6. dagit -f path/to/file.py -a define_repo"
             "\n\n7. dagit -m some_module -a define_repo"
             "\n\n8. dagit -p 3333"
-            "\n\nOptions Can also provide arguments via environment variables prefixed with DAGIT_"
-            "\n\n    DAGIT_PORT=3333 dagit"
+            "\n\nOptions can also provide arguments via environment variables prefixed with DAGIT"
+            "\n\nFor example, DAGIT_PORT=3333 dagit"
         ).format(default_filename=DEFAULT_WORKSPACE_YAML_FILENAME)
     ),
 )
