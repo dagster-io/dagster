@@ -57,7 +57,7 @@ class GraphDefinition(ISolidDefinition, IContainSolids):
         self._solid_defs = _check_solids_arg(name, solid_defs)
         self._dependencies = validate_dependency_dict(dependencies)
         self._dependency_structure, self._solid_dict = create_execution_structure(
-            solid_defs, self._dependencies, container_definition=self
+            solid_defs, self._dependencies, graph_definition=self
         )
 
         # List[InputMapping]

@@ -74,14 +74,14 @@ class Solid(object):
             Definition of the solid.
     """
 
-    def __init__(self, name, definition, container_definition=None, tags=None, hook_defs=None):
+    def __init__(self, name, definition, graph_definition, tags=None, hook_defs=None):
         from .graph import GraphDefinition
         from .solid import ISolidDefinition
 
         self.name = check.str_param(name, "name")
         self.definition = check.inst_param(definition, "definition", ISolidDefinition)
-        self.container_definition = check.opt_inst_param(
-            container_definition, "container_definition", GraphDefinition,
+        self.graph_definition = check.inst_param(
+            graph_definition, "graph_definition", GraphDefinition,
         )
         self._additional_tags = validate_tags(tags)
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
@@ -143,13 +143,10 @@ class Solid(object):
         return self.definition.tags.updated_with(self._additional_tags)
 
     def container_maps_input(self, input_name):
-        if self.container_definition is None:
-            return False
-
-        return self.container_definition.mapped_input(self.name, input_name) is not None
+        return self.graph_definition.mapped_input(self.name, input_name) is not None
 
     def container_mapped_input(self, input_name):
-        return self.container_definition.mapped_input(self.name, input_name)
+        return self.graph_definition.mapped_input(self.name, input_name)
 
     @property
     def hook_defs(self):

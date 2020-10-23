@@ -132,7 +132,7 @@ def validate_dependency_dict(dependencies):
     return dependencies
 
 
-def create_execution_structure(solid_defs, dependencies_dict, container_definition):
+def create_execution_structure(solid_defs, dependencies_dict, graph_definition):
     """This builder takes the dependencies dictionary specified during creation of the
     PipelineDefinition object and builds (1) the execution structure and (2) a solid dependency
     dictionary.
@@ -184,8 +184,8 @@ def create_execution_structure(solid_defs, dependencies_dict, container_definiti
         key_type=six.string_types + (SolidInvocation,),
         value_type=dict,
     )
-    # container_definition is none in the context of a pipeline
-    check.inst_param(container_definition, "container_definition", GraphDefinition)
+    # graph_definition is none in the context of a pipeline
+    check.inst_param(graph_definition, "graph_definition", GraphDefinition)
 
     # Same as dep_dict but with SolidInvocation replaced by alias string
     aliased_dependencies_dict = {}
@@ -213,7 +213,7 @@ def create_execution_structure(solid_defs, dependencies_dict, container_definiti
                 name_to_aliases[dep.solid].add(dep.solid)
 
     pipeline_solid_dict = _build_pipeline_solid_dict(
-        solid_defs, name_to_aliases, alias_to_solid_instance, container_definition
+        solid_defs, name_to_aliases, alias_to_solid_instance, graph_definition
     )
 
     _validate_dependencies(aliased_dependencies_dict, pipeline_solid_dict, alias_to_name)
@@ -226,7 +226,7 @@ def create_execution_structure(solid_defs, dependencies_dict, container_definiti
 
 
 def _build_pipeline_solid_dict(
-    solid_defs, name_to_aliases, alias_to_solid_instance, container_definition
+    solid_defs, name_to_aliases, alias_to_solid_instance, graph_definition
 ):
     pipeline_solids = []
     for solid_def in solid_defs:
@@ -241,7 +241,7 @@ def _build_pipeline_solid_dict(
                 Solid(
                     name=alias,
                     definition=solid_def,
-                    container_definition=container_definition,
+                    graph_definition=graph_definition,
                     tags=solid_instance_tags,
                     hook_defs=hook_defs,
                 )
