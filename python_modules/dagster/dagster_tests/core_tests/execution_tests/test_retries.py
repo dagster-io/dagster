@@ -20,7 +20,6 @@ from dagster import (
     solid,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.plan.objects import StepRestartedData
 from dagster.core.execution.retries import Retries, RetryMode
 from dagster.core.instance import DagsterInstance
 
