@@ -321,13 +321,13 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
 def test_k8s_run_launcher(
     dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher
 ):
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), 'env.yaml'))
-    pipeline_name = 'demo_pipeline'
+    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    pipeline_name = "demo_pipeline"
     run = create_run_for_test(
         dagster_instance_for_k8s_run_launcher,
         pipeline_name=pipeline_name,
         run_config=run_config,
-        mode='default',
+        mode="default",
     )
 
     dagster_instance_for_k8s_run_launcher.launch_run(
@@ -335,7 +335,7 @@ def test_k8s_run_launcher(
         ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
     )
     result = wait_for_job_and_get_raw_logs(
-        job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
+        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
@@ -344,8 +344,8 @@ def test_k8s_run_launcher(
 def test_failing_k8s_run_launcher(
     dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher
 ):
-    run_config = {'blah blah this is wrong': {}}
-    pipeline_name = 'demo_pipeline'
+    run_config = {"blah blah this is wrong": {}}
+    pipeline_name = "demo_pipeline"
     run = create_run_for_test(
         dagster_instance_for_k8s_run_launcher, pipeline_name=pipeline_name, run_config=run_config
     )
@@ -354,7 +354,7 @@ def test_failing_k8s_run_launcher(
         ReOriginatedExternalPipelineForTest(get_test_project_external_pipeline(pipeline_name)),
     )
     result = wait_for_job_and_get_raw_logs(
-        job_name='dagster-run-%s' % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
+        job_name="dagster-run-%s" % run.run_id, namespace=helm_namespace_for_k8s_run_launcher
     )
 
     assert "PIPELINE_SUCCESS" not in result, "no match, result: {}".format(result)

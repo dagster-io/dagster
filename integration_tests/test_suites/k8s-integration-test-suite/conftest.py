@@ -47,11 +47,11 @@ def k8s_scheduler(
 ):  # pylint: disable=redefined-outer-name,unused-argument
     return K8sScheduler(
         scheduler_namespace=helm_namespace_for_k8s_run_launcher,
-        image_pull_secrets=[{'name': 'element-dev-key'}],
-        service_account_name='dagit-admin',
-        instance_config_map='dagster-instance',
-        postgres_password_secret='dagster-postgresql-secret',
-        dagster_home='/opt/dagster/dagster_home',
+        image_pull_secrets=[{"name": "element-dev-key"}],
+        service_account_name="dagit-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
         job_image=test_project_docker_image(),
         load_incluster_config=False,
         kubeconfig_file=cluster_provider.kubeconfig_file,
@@ -61,7 +61,7 @@ def k8s_scheduler(
     )
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def restore_k8s_cron_tab(
     helm_namespace_for_k8s_run_launcher,
 ):  # pylint: disable=redefined-outer-name
@@ -88,8 +88,8 @@ def run_launcher(
         kubeconfig_file=cluster_provider.kubeconfig_file,
         image_pull_policy=image_pull_policy(),
         job_namespace=helm_namespace_for_k8s_run_launcher,
-        env_config_maps=['dagster-pipeline-env', 'test-env-configmap'],
-        env_secrets=['test-env-secret'],
+        env_config_maps=["dagster-pipeline-env", "test-env-configmap"],
+        env_secrets=["test-env-secret"],
     )
 
 
