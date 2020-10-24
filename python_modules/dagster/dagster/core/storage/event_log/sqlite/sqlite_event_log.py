@@ -114,7 +114,9 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             # errors, we know that another process is on the case and it's safe to continue:
             err_msg = str(exc)
             if not (
-                "table event_logs already exists" in err_msg
+                "table asset_keys already exists" in err_msg
+                or "table secondary_indexes already exists" in err_msg
+                or "table event_logs already exists" in err_msg
                 or "database is locked" in err_msg
                 or "table alembic_version already exists" in err_msg
                 or "UNIQUE constraint failed: alembic_version.version_num" in err_msg
