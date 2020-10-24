@@ -185,11 +185,11 @@ def poll_for_finished_run(instance, run_id, timeout=20):
                 raise Exception("Timed out")
 
 
-def poll_for_step_start(instance, run_id, timeout=10):
+def poll_for_step_start(instance, run_id, timeout=30):
     poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
 
 
-def poll_for_event(instance, run_id, event_type, message, timeout=10):
+def poll_for_event(instance, run_id, event_type, message, timeout=30):
     total_time = 0
     backoff = 0.01
 
