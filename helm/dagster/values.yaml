@@ -311,7 +311,6 @@ rabbitmq:
   volumePermissions:
     enabled: true
 
-hello: hi
 ####################################################################################################
 # Redis: Configuration values for Redis. Can be used instead of RabbitMQ.
 ####################################################################################################

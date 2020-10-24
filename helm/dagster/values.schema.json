@@ -1,0 +1,160 @@
+{
+    "title": "HelmValues",
+    "description": "Schema for Helm values.",
+    "type": "object",
+    "properties": {
+        "dagit": {
+            "$ref": "#/definitions/Dagit"
+        }
+    },
+    "required": [
+        "dagit"
+    ],
+    "definitions": {
+        "PullPolicy": {
+            "title": "PullPolicy",
+            "description": "An enumeration.",
+            "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+            ],
+            "type": "string"
+        },
+        "Image": {
+            "title": "Image",
+            "type": "object",
+            "properties": {
+                "repository": {
+                    "title": "Repository",
+                    "type": "string"
+                },
+                "tag": {
+                    "title": "Tag",
+                    "type": "string"
+                },
+                "pullPolicy": {
+                    "$ref": "#/definitions/PullPolicy"
+                }
+            },
+            "required": [
+                "repository",
+                "tag",
+                "pullPolicy"
+            ],
+            "additionalProperties": false
+        },
+        "Service": {
+            "title": "Service",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "title": "Type",
+                    "type": "string"
+                },
+                "port": {
+                    "title": "Port",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "type",
+                "port"
+            ],
+            "additionalProperties": false
+        },
+        "NodeSelector": {
+            "title": "NodeSelector",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector"
+        },
+        "Affinity": {
+            "title": "Affinity",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
+        },
+        "Tolerations": {
+            "title": "Tolerations",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations"
+        },
+        "PodSecurityContext": {
+            "title": "PodSecurityContext",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+        },
+        "SecurityContext": {
+            "title": "SecurityContext",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+        },
+        "Resources": {
+            "title": "Resources",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "LivenessProbe": {
+            "title": "LivenessProbe",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/livenessProbe"
+        },
+        "StartupProbe": {
+            "title": "StartupProbe",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.16.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/startupProbe"
+        },
+        "Dagit": {
+            "title": "Dagit",
+            "type": "object",
+            "properties": {
+                "replicaCount": {
+                    "title": "Replicacount",
+                    "type": "integer"
+                },
+                "image": {
+                    "$ref": "#/definitions/Image"
+                },
+                "service": {
+                    "$ref": "#/definitions/Service"
+                },
+                "nodeSelector": {
+                    "$ref": "#/definitions/NodeSelector"
+                },
+                "affinity": {
+                    "$ref": "#/definitions/Affinity"
+                },
+                "tolerations": {
+                    "$ref": "#/definitions/Tolerations"
+                },
+                "podSecurityContext": {
+                    "$ref": "#/definitions/PodSecurityContext"
+                },
+                "securityContext": {
+                    "$ref": "#/definitions/SecurityContext"
+                },
+                "resources": {
+                    "$ref": "#/definitions/Resources"
+                },
+                "livenessProbe": {
+                    "$ref": "#/definitions/LivenessProbe"
+                },
+                "startupProbe": {
+                    "$ref": "#/definitions/StartupProbe"
+                }
+            },
+            "required": [
+                "replicaCount",
+                "image",
+                "service"
+            ]
+        }
+    }
+}

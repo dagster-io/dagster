@@ -23,6 +23,7 @@ setup(
         "dagster",
         "packaging==18.0",
         "pandas",
+        'pydantic; python_version >="3"',
         'pytablereader; python_version >="3"',
         "requests",
         'slackclient>=2,<3; python_version >="3"',
@@ -36,6 +37,7 @@ setup(
             "dagster-image = automation.docker.cli:main",
             "dagster-release = automation.release.cli:main",
             "dagster-scaffold = automation.scaffold.cli:main",
+            "dagster-helm = automation.helm.cli:main",
         ]
     },
 )
