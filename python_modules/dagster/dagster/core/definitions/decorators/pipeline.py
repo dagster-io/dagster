@@ -43,7 +43,8 @@ class _Pipeline(object):
                     "released. In order to preserve existing behavior to do not return "
                     "anything out of this function. Pipelines (and its successor, graphs) "
                     "will have meaningful outputs just like composite solids do today, "
-                    "and the return value will be meaningful."
+                    "and the return value will be meaningful.",
+                    stacklevel=2,
                 )
 
         finally:
