@@ -44,7 +44,6 @@ install_dev_python_modules:
 				-e python_modules/automation \
 				-e python_modules/libraries/dagster-pandas \
 				-e python_modules/libraries/dagster-aws \
-				-e python_modules/libraries/dagster-aws-pyspark \
 				-e python_modules/libraries/dagster-celery \
 				-e python_modules/libraries/dagster-celery-docker \
 				-e python_modules/libraries/dagster-cron \
@@ -59,6 +58,7 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-prometheus \
 				-e python_modules/libraries/dagster-spark \
 				-e python_modules/libraries/dagster-pyspark \
+				-e python_modules/libraries/dagster-aws-pyspark \
 				-e python_modules/libraries/dagster-databricks \
 				-e python_modules/libraries/dagster-shell \
 				-e python_modules/libraries/dagster-slack \
