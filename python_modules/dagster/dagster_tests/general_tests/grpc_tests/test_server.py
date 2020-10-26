@@ -1,6 +1,8 @@
 import threading
 import time
 
+import grpc
+
 from dagster.grpc.client import ephemeral_grpc_api_client
 
 
@@ -19,9 +21,12 @@ def test_streaming_terminate():
         stream_events_result_thread.start()
         while not streaming_results:
             time.sleep(0.001)
-        res = api_client.shutdown_server()
-        assert res.success
-        assert res.serializable_error_info is None
+
+        try:
+            api_client.shutdown_server()
+        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+            # shutting down sometimes happens so fast that it terminates the calling RPC
+            pass
 
         stream_events_result_thread.join()
         assert len(streaming_results) == 100000
