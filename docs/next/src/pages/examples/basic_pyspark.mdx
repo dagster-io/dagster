@@ -4,28 +4,21 @@ import { ExampleReferenceLink } from 'components/ExampleReference';
 
 <ExampleReferenceLink filePath="examples/basic_pyspark" />
 
+Passing PySpark DataFrames between solids requires a little bit of extra care, for a couple reasons:
+* Spark has a lazy execution model, which means that PySpark won't process any data until an action like `write` or `collect` is called on a DataFrame.
+* PySpark DataFrames cannot be pickled, which means that [Asset Stores](/overview/asset-stores/asset_stores) like the `fs_asset_store` won't work for them.
+
+In this example, we've defined an Asset Store that knows how to store and retrieve PySpark DataFrames that are produced and consumed by solids.
+
+This example assumes that all the outputs within the pipeline will be PySpark DataFrames and stored in the same way.  To learn how to use different Asset Stores for different outputs within the same pipeline, take a look at the [Asset Store overview](/overview/asset-stores/asset_stores).
+
+This example writes out DataFrames to the local file system, but can be tweaked to write to cloud object stores like S3 by changing to the `write` and `read` invocations.
+
 ```python literalinclude caption=repo.py
 file:/basic_pyspark/repo.py
 startAfter:start_repo_marker_0
 endBefore:end_repo_marker_0
 ```
-
-The `pyspark` resource enables passing Spark configuration. Solid bodies can use it to access
-a `SparkSession` through its `spark_session` property.
-
-Because PySpark has a lazy execution model, when the PySpark jobs execute depends on what
-intermediate store is configured. With the default in-memory intermediate store, the solids that
-yield a DataFrame don't trigger execution, and the job won't run until an action, e.g. `count` in
-the example is called on one of the DataFrames.
-
-Alternatively, with a local filesystem intermediate store or S3 intermediate store, any solid outputs
-that are DataFrames will be persisted to Parquet files. This means that, with these intermediate
-stores, the PySpark jobs execute immediately upon solid completion.
-
-`dagster_pyspark.DataFrame`, which is a `DagsterType` knows how to save and load PySpark DataFrames.
-`make_python_type_usable_as_dagster_type` tells Dagster that when a solid has a return type
-annotation for a, `pyspark.sql.DataFrame`, then Dagster should use the `dagster_pyspark.DataFrame`
-to save and load it.
 
 ## Open in a playground
 
