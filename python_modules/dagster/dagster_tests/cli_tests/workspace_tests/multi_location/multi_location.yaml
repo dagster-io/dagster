@@ -5,3 +5,6 @@ load_from:
   - python_module:
       module_name: dagster.utils.test.hello_world_repository
       location_name: loaded_from_module
+  - python_package:
+      package_name: dagster.utils.test.hello_world_repository
+      location_name: loaded_from_package

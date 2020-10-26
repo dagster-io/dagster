@@ -146,7 +146,7 @@ def list_repositories_command(args):
     )
     try:
         loadable_targets = get_loadable_targets(
-            python_file, module_name, working_directory, attribute
+            python_file, module_name, None, working_directory, attribute
         )
         return ListRepositoriesResponse(
             [
@@ -577,6 +577,7 @@ def grpc_command(
             "attribute",
             "working_directory",
             "module_name",
+            "package_name",
             "python_file",
             "empty_working_directory",
         ]
@@ -587,6 +588,7 @@ def grpc_command(
             working_directory=get_working_directory_from_kwargs(kwargs),
             module_name=kwargs["module_name"],
             python_file=kwargs["python_file"],
+            package_name=kwargs["package_name"],
         )
 
     server = DagsterGrpcServer(

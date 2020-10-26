@@ -371,9 +371,23 @@ def valid_pipeline_python_origin_target_args():
         },
         {
             "workspace": None,
+            "pipeline": "foo",
+            "python_file": None,
+            "package_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "attribute": "bar",
+        },
+        {
+            "workspace": None,
             "pipeline": None,
             "python_file": None,
             "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "attribute": "foo_pipeline",
+        },
+        {
+            "workspace": None,
+            "pipeline": None,
+            "python_file": None,
+            "package_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": "foo_pipeline",
         },
         {

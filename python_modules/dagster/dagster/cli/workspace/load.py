@@ -108,10 +108,11 @@ def location_handle_from_module_name(
         module_name=module_name,
         working_directory=None,
         attribute=attribute,
+        package_name=None,
     )
 
     return RepositoryLocationHandle.create_python_env_location(
-        loadable_target_origin, location_name, user_process_api, use_python_package=False
+        loadable_target_origin, location_name, user_process_api
     )
 
 
@@ -148,12 +149,13 @@ def location_handle_from_package_name(
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=executable_path,
         python_file=None,
-        module_name=package_name,
+        module_name=None,
         working_directory=None,
         attribute=attribute,
+        package_name=package_name,
     )
     return RepositoryLocationHandle.create_python_env_location(
-        loadable_target_origin, location_name, user_process_api, use_python_package=True
+        loadable_target_origin, location_name, user_process_api,
     )
 
 

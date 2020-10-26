@@ -1,10 +1,8 @@
 import re
-import sys
 
 import click
 import pytest
 from click.testing import CliRunner
-from dagster import seven
 from dagster.cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     repository_target_argument,
@@ -139,7 +137,7 @@ def test_missing_location_name_multi_location():
 
     assert (
         """Must provide --location as there are more than one locations available. """
-        """Options are: ['loaded_from_file', 'loaded_from_module']"""
+        """Options are: ['loaded_from_file', 'loaded_from_module', 'loaded_from_package']"""
     ) in result.stdout
 
 

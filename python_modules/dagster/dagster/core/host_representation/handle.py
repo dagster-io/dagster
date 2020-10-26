@@ -119,14 +119,10 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
 
     @staticmethod
     def create_python_env_location(
-        loadable_target_origin,
-        location_name=None,
-        user_process_api=UserProcessApi.GRPC,
-        use_python_package=False,
+        loadable_target_origin, location_name=None, user_process_api=UserProcessApi.GRPC,
     ):
         check.inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
         check.opt_str_param(location_name, "location_name")
-        check.bool_param(use_python_package, "use_python_package")
 
         if user_process_api == UserProcessApi.GRPC:
             return RepositoryLocationHandle.create_process_bound_grpc_server_location(
@@ -136,7 +132,9 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         response = sync_list_repositories(
             executable_path=loadable_target_origin.executable_path,
             python_file=loadable_target_origin.python_file,
-            module_name=loadable_target_origin.module_name,
+            module_name=loadable_target_origin.package_name
+            if loadable_target_origin.package_name
+            else loadable_target_origin.module_name,
             working_directory=loadable_target_origin.working_directory,
             attribute=loadable_target_origin.attribute,
         )
@@ -150,10 +148,10 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
                 )
                 for lrs in response.repository_symbols
             }
-        elif use_python_package:
+        elif loadable_target_origin.package_name:
             repository_code_pointer_dict = {
                 lrs.repository_name: CodePointer.from_python_package(
-                    loadable_target_origin.module_name, lrs.attribute
+                    loadable_target_origin.package_name, lrs.attribute
                 )
                 for lrs in response.repository_symbols
             }

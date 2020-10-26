@@ -10,20 +10,56 @@ from dagster.core.host_representation.handle import (
     PythonEnvRepositoryLocationHandle,
     UserProcessApi,
 )
+from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils import file_relative_path
 
 
-@pytest.mark.parametrize(
-    "python_user_process_api", [UserProcessApi.CLI, UserProcessApi.GRPC],
-)
-def test_multi_location_workspace(python_user_process_api):
+def _get_single_code_pointer(workspace, location_name):
+    return next(
+        iter(
+            workspace.get_repository_location_handle(
+                location_name
+            ).repository_code_pointer_dict.values()
+        )
+    )
+
+
+def test_multi_location_workspace_foo():
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "multi_location.yaml")], python_user_process_api,
-    ) as workspace:
-        assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_location_handles) == 2
-        assert workspace.has_repository_location_handle("loaded_from_file")
-        assert workspace.has_repository_location_handle("loaded_from_module")
+        [file_relative_path(__file__, "multi_location.yaml")], UserProcessApi.CLI,
+    ) as cli_workspace:
+        assert isinstance(cli_workspace, Workspace)
+        assert len(cli_workspace.repository_location_handles) == 3
+        assert cli_workspace.has_repository_location_handle("loaded_from_file")
+        assert cli_workspace.has_repository_location_handle("loaded_from_module")
+        assert cli_workspace.has_repository_location_handle("loaded_from_package")
+
+        with load_workspace_from_yaml_paths(
+            [file_relative_path(__file__, "multi_location.yaml")], UserProcessApi.GRPC,
+        ) as grpc_workspace:
+            assert isinstance(grpc_workspace, Workspace)
+            assert len(grpc_workspace.repository_location_handles) == 3
+            assert grpc_workspace.has_repository_location_handle("loaded_from_file")
+            assert grpc_workspace.has_repository_location_handle("loaded_from_module")
+            assert grpc_workspace.has_repository_location_handle("loaded_from_package")
+
+            assert serialize_dagster_namedtuple(
+                _get_single_code_pointer(cli_workspace, "loaded_from_file")
+            ) == serialize_dagster_namedtuple(
+                _get_single_code_pointer(grpc_workspace, "loaded_from_file")
+            )
+
+            assert serialize_dagster_namedtuple(
+                _get_single_code_pointer(cli_workspace, "loaded_from_module")
+            ) == serialize_dagster_namedtuple(
+                _get_single_code_pointer(grpc_workspace, "loaded_from_module")
+            )
+
+            assert serialize_dagster_namedtuple(
+                _get_single_code_pointer(cli_workspace, "loaded_from_package")
+            ) == serialize_dagster_namedtuple(
+                _get_single_code_pointer(grpc_workspace, "loaded_from_package")
+            )
 
 
 @pytest.mark.parametrize(
@@ -38,9 +74,10 @@ def test_multi_file_extend_workspace(python_user_process_api):
         python_user_process_api,
     ) as workspace:
         assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_location_handles) == 3
+        assert len(workspace.repository_location_handles) == 4
         assert workspace.has_repository_location_handle("loaded_from_file")
         assert workspace.has_repository_location_handle("loaded_from_module")
+        assert workspace.has_repository_location_handle("loaded_from_package")
         assert workspace.has_repository_location_handle("extra_location")
 
 
@@ -56,9 +93,10 @@ def test_multi_file_override_workspace(python_user_process_api):
         python_user_process_api,
     ) as workspace:
         assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_location_handles) == 2
+        assert len(workspace.repository_location_handles) == 3
         assert workspace.has_repository_location_handle("loaded_from_file")
         assert workspace.has_repository_location_handle("loaded_from_module")
+        assert workspace.has_repository_location_handle("loaded_from_package")
 
         # Ensure location `loaded_from_file` has been overridden
         external_repositories = sync_get_external_repositories(
@@ -81,9 +119,10 @@ def test_multi_file_extend_and_override_workspace(python_user_process_api):
         python_user_process_api,
     ) as workspace:
         assert isinstance(workspace, Workspace)
-        assert len(workspace.repository_location_handles) == 3
+        assert len(workspace.repository_location_handles) == 4
         assert workspace.has_repository_location_handle("loaded_from_file")
         assert workspace.has_repository_location_handle("loaded_from_module")
+        assert workspace.has_repository_location_handle("loaded_from_package")
         assert workspace.has_repository_location_handle("extra_location")
 
         # Ensure location `loaded_from_file` has been overridden

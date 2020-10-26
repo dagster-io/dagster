@@ -7,7 +7,7 @@ from dagster.api.list_repositories import (
     sync_list_repositories_ephemeral_grpc,
     sync_list_repositories_grpc,
 )
-from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
+from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.grpc.types import LoadableRepositorySymbol
 from dagster.utils import file_relative_path
@@ -118,6 +118,7 @@ def test_sync_list_python_file_grpc():
         module_name=None,
         working_directory=None,
         attribute=None,
+        package_name=None,
     )
 
     loadable_repo_symbols = response.repository_symbols
@@ -149,6 +150,7 @@ def test_sync_list_python_file_multi_repo_grpc():
         module_name=None,
         working_directory=None,
         attribute=None,
+        package_name=None,
     )
 
     loadable_repo_symbols = response.repository_symbols
@@ -186,6 +188,7 @@ def test_sync_list_python_file_attribute_multi_repo_grpc():
         module_name=None,
         working_directory=None,
         attribute="repo_one_symbol",
+        package_name=None,
     )
 
     loadable_repo_symbols = response.repository_symbols
@@ -218,6 +221,7 @@ def test_sync_list_python_module_grpc():
         module_name=module_name,
         working_directory=None,
         attribute=None,
+        package_name=None,
     )
 
     loadable_repo_symbols = response.repository_symbols
@@ -252,6 +256,7 @@ def test_sync_list_python_module_attribute_grpc():
         module_name=module_name,
         working_directory=None,
         attribute="hello_world_repository",
+        package_name=None,
     )
 
     loadable_repo_symbols = response.repository_symbols
@@ -275,6 +280,41 @@ def test_sync_list_python_module_attribute_grpc():
     assert repository_code_pointer_dict["hello_world_repository"].module == module_name
     assert (
         repository_code_pointer_dict["hello_world_repository"].fn_name == "hello_world_repository"
+    )
+
+
+def test_sync_list_python_package_attribute_grpc():
+    package_name = "dagster.utils.test.hello_world_repository"
+    response = sync_list_repositories_ephemeral_grpc(
+        sys.executable,
+        python_file=None,
+        module_name=None,
+        working_directory=None,
+        attribute="hello_world_repository",
+        package_name=package_name,
+    )
+
+    loadable_repo_symbols = response.repository_symbols
+
+    assert isinstance(loadable_repo_symbols, list)
+    assert len(loadable_repo_symbols) == 1
+    assert isinstance(loadable_repo_symbols[0], LoadableRepositorySymbol)
+
+    symbol = loadable_repo_symbols[0]
+
+    assert symbol.repository_name == "hello_world_repository"
+    assert symbol.attribute == "hello_world_repository"
+
+    executable_path = response.executable_path
+    assert executable_path == sys.executable
+
+    repository_code_pointer_dict = response.repository_code_pointer_dict
+
+    assert "hello_world_repository" in repository_code_pointer_dict
+    assert isinstance(repository_code_pointer_dict["hello_world_repository"], PackageCodePointer)
+    assert repository_code_pointer_dict["hello_world_repository"].module == package_name
+    assert (
+        repository_code_pointer_dict["hello_world_repository"].attribute == "hello_world_repository"
     )
 
 
@@ -327,6 +367,7 @@ def test_sync_list_python_file_grpc_with_error():
             module_name=None,
             working_directory=None,
             attribute=None,
+            package_name=None,
         )
 
     assert e.value.args[0].startswith("(ValueError) - ValueError: User did something bad")

@@ -26,6 +26,7 @@ from dagster.utils.hosted_user_process import recon_repository_from_origin
 from .load import (
     load_workspace_from_yaml_paths,
     location_handle_from_module_name,
+    location_handle_from_package_name,
     location_handle_from_python_file,
 )
 from .workspace import Workspace
@@ -59,6 +60,8 @@ WORKSPACE_CLI_ARGS = (
     "workspace",
     "python_file",
     "working_directory",
+    "empty_working_directory",
+    "package_name",
     "module_name",
     "attribute",
     "repository_yaml",
@@ -70,6 +73,7 @@ WORKSPACE_CLI_ARGS = (
 WorkspaceFileTarget = namedtuple("WorkspaceFileTarget", "paths")
 PythonFileTarget = namedtuple("PythonFileTarget", "python_file attribute working_directory")
 ModuleTarget = namedtuple("ModuleTarget", "module_name attribute")
+PackageTarget = namedtuple("PackageTarget", "package_name attribute")
 GrpcServerTarget = namedtuple("GrpcServerTarget", "host port socket")
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
@@ -79,6 +83,7 @@ WorkspaceLoadTarget = (
     WorkspaceFileTarget,
     PythonFileTarget,
     ModuleTarget,
+    PackageTarget,
     EmptyWorkspaceTarget,
     GrpcServerTarget,
 )
@@ -107,7 +112,9 @@ def created_workspace_load_target(kwargs):
             kwargs,
             "python_file",
             "working_directory",
+            "empty_working_directory",
             "module_name",
+            "package_name",
             "attribute",
             "workspace",
             "grpc_host",
@@ -120,7 +127,9 @@ def created_workspace_load_target(kwargs):
             kwargs,
             "python_file",
             "working_directory",
+            "empty_working_directory",
             "module_name",
+            "package_name",
             "attribute",
             "grpc_host",
             "grpc_port",
@@ -129,7 +138,7 @@ def created_workspace_load_target(kwargs):
         return WorkspaceFileTarget(paths=list(kwargs["workspace"]))
     if kwargs.get("python_file"):
         _check_cli_arguments_none(
-            kwargs, "workspace", "module_name", "grpc_host", "grpc_port", "grpc_socket"
+            kwargs, "module_name", "package_name", "grpc_host", "grpc_port", "grpc_socket",
         )
         working_directory = get_working_directory_from_kwargs(kwargs)
         return PythonFileTarget(
@@ -140,9 +149,9 @@ def created_workspace_load_target(kwargs):
     if kwargs.get("module_name"):
         _check_cli_arguments_none(
             kwargs,
-            "workspace",
-            "python_file",
+            "package_name",
             "working_directory",
+            "empty_working_directory",
             "grpc_host",
             "grpc_port",
             "grpc_socket",
@@ -150,14 +159,31 @@ def created_workspace_load_target(kwargs):
         return ModuleTarget(
             module_name=kwargs.get("module_name"), attribute=kwargs.get("attribute"),
         )
+    if kwargs.get("package_name"):
+        _check_cli_arguments_none(
+            kwargs,
+            "working_directory",
+            "empty_working_directory",
+            "grpc_host",
+            "grpc_port",
+            "grpc_socket",
+        )
+        return PackageTarget(
+            package_name=kwargs.get("package_name"), attribute=kwargs.get("attribute"),
+        )
     if kwargs.get("grpc_port"):
-        _check_cli_arguments_none(kwargs, "grpc_socket")
+        _check_cli_arguments_none(
+            kwargs, "attribute", "working_directory", "empty_working_directory", "grpc_socket",
+        )
         return GrpcServerTarget(
             port=kwargs.get("grpc_port"),
             socket=None,
             host=(kwargs.get("grpc_host") if kwargs.get("grpc_host") else "localhost"),
         )
     elif kwargs.get("grpc_socket"):
+        _check_cli_arguments_none(
+            kwargs, "attribute", "working_directory", "empty_working_directory",
+        )
         return GrpcServerTarget(
             port=None,
             socket=kwargs.get("grpc_socket"),
@@ -196,6 +222,16 @@ def workspace_from_load_target(load_target, instance):
                 )
             ]
         )
+    elif isinstance(load_target, PackageTarget):
+        return Workspace(
+            [
+                location_handle_from_package_name(
+                    load_target.package_name,
+                    load_target.attribute,
+                    user_process_api=python_user_process_api_from_instance(instance),
+                )
+            ]
+        )
     elif isinstance(load_target, GrpcServerTarget):
         return Workspace(
             [
@@ -229,6 +265,10 @@ def python_target_click_options():
             # are better equipped to surface errors
             type=click.Path(exists=False),
             help="Specify python file where repository or pipeline function lives",
+        ),
+        click.option(
+            "--package-name",
+            help="Specify installed Python package where repository or pipeline function lives",
         ),
         click.option(
             "--module-name", "-m", help="Specify module where repository or pipeline function lives"
@@ -448,10 +488,11 @@ def get_pipeline_python_origin_from_kwargs(kwargs):
 def _get_code_pointer_dict_from_kwargs(kwargs):
     python_file = kwargs.get("python_file")
     module_name = kwargs.get("module_name")
+    package_name = kwargs.get("package_name")
     working_directory = get_working_directory_from_kwargs(kwargs)
     attribute = kwargs.get("attribute")
     if python_file:
-        _check_cli_arguments_none(kwargs, "module_name")
+        _check_cli_arguments_none(kwargs, "module_name", "package_name")
         return {
             repository_def_from_target_def(
                 loadable_target.target_definition
@@ -459,17 +500,27 @@ def _get_code_pointer_dict_from_kwargs(kwargs):
                 python_file, loadable_target.attribute, working_directory
             )
             for loadable_target in get_loadable_targets(
-                python_file, module_name, working_directory, attribute
+                python_file, module_name, package_name, working_directory, attribute
             )
         }
     elif module_name:
-        _check_cli_arguments_none(kwargs, "python_file", "working_directory")
+        _check_cli_arguments_none(kwargs, "python_file", "working_directory", "package_name")
         return {
             repository_def_from_target_def(
                 loadable_target.target_definition
             ).name: CodePointer.from_module(module_name, loadable_target.attribute)
             for loadable_target in get_loadable_targets(
-                python_file, module_name, working_directory, attribute
+                python_file, module_name, package_name, working_directory, attribute
+            )
+        }
+    elif package_name:
+        _check_cli_arguments_none(kwargs, "module_name", "python_file", "working_directory")
+        return {
+            repository_def_from_target_def(
+                loadable_target.target_definition
+            ).name: CodePointer.from_python_package(package_name, loadable_target.attribute)
+            for loadable_target in get_loadable_targets(
+                python_file, module_name, package_name, working_directory, attribute
             )
         }
     else:
@@ -485,7 +536,7 @@ def get_working_directory_from_kwargs(kwargs):
 def get_repository_python_origin_from_kwargs(kwargs):
     provided_repo_name = kwargs.get("repository")
 
-    if not (kwargs.get("python_file") or kwargs.get("module_name")):
+    if not (kwargs.get("python_file") or kwargs.get("module_name") or kwargs.get("package_name")):
         raise click.UsageError("Must specify a python file or module name")
 
     # Short-circuit the case where an attribute and no repository name is passed in,
@@ -494,16 +545,21 @@ def get_repository_python_origin_from_kwargs(kwargs):
     # (e.g. to log an origin ID for an error message)
     if kwargs.get("attribute") and not provided_repo_name:
         if kwargs.get("python_file"):
-            _check_cli_arguments_none(kwargs, "module_name")
+            _check_cli_arguments_none(kwargs, "module_name", "package_name")
             code_pointer = CodePointer.from_python_file(
                 kwargs.get("python_file"),
                 kwargs.get("attribute"),
                 get_working_directory_from_kwargs(kwargs),
             )
         elif kwargs.get("module_name"):
-            _check_cli_arguments_none(kwargs, "python_file", "working_directory")
+            _check_cli_arguments_none(kwargs, "python_file", "working_directory", "package_name")
             code_pointer = CodePointer.from_module(
                 kwargs.get("module_name"), kwargs.get("attribute"),
+            )
+        elif kwargs.get("package_name"):
+            _check_cli_arguments_none(kwargs, "python_file", "working_directory", "module_name")
+            code_pointer = CodePointer.from_python_package(
+                kwargs.get("package_name"), kwargs.get("attribute"),
             )
         else:
             check.failed("Must specify a Python file or module name")
