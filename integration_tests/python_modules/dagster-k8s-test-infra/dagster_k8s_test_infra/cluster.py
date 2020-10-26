@@ -10,7 +10,7 @@ import kubernetes
 import psycopg2
 import pytest
 from dagster_k8s.utils import wait_for_pod
-from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage
+from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
 from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
 
 from dagster import check
@@ -230,6 +230,7 @@ def dagster_instance_for_k8s_run_launcher(helm_namespace_for_k8s_run_launcher, r
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=PostgresRunStorage(postgres_url),
             event_storage=PostgresEventLogStorage(postgres_url),
+            schedule_storage=PostgresScheduleStorage(postgres_url),
             compute_log_manager=NoOpComputeLogManager(),
             run_launcher=run_launcher,
         )
