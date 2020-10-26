@@ -52,6 +52,10 @@ async function testApp() {
   return component!.root;
 }
 
+// [dish] Possibly temporary -- let's come back to this once we have the newer testing pieces
+// in place.
+jest.useRealTimers();
+
 it('renders without error', async () => {
   await testApp();
 });

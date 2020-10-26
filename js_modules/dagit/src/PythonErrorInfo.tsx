@@ -1,7 +1,7 @@
 import {Button} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import styled from 'styled-components';
 
 import {MetadataEntries} from 'src/runs/MetadataEntry';
 import {MetadataEntryFragment} from 'src/runs/types/MetadataEntryFragment';
