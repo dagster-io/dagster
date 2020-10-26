@@ -7,9 +7,11 @@ from contextlib import contextmanager
 import yaml
 from dagster import Shape, check, composite_solid, pipeline, seven, solid
 from dagster.core.host_representation import ExternalPipeline
+from dagster.core.host_representation.origin import ExternalPipelineOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.launcher.default_run_launcher import DefaultRunLauncher
+from dagster.core.runs_coordinator import RunsCoordinator
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.serdes import ConfigurableClass
@@ -303,3 +305,37 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
     def terminate(self, run_id):
         check.not_implemented("Termintation not supported")
+
+
+class MockedRunsCoordinator(RunsCoordinator, ConfigurableClass):
+    def __init__(self, inst_data=None):
+        self._inst_data = inst_data
+        self._queue = []
+
+    def submit_run(self, pipeline_run, external_pipeline):
+        check.inst_param(pipeline_run, "run", PipelineRun)
+        check.opt_inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.inst(pipeline_run.external_pipeline_origin, ExternalPipelineOrigin)
+        self._queue.append(pipeline_run)
+        return pipeline_run
+
+    def queue(self):
+        return self._queue
+
+    @classmethod
+    def config_type(cls):
+        return Shape({})
+
+    @classmethod
+    def from_config_value(cls, inst_data, config_value):
+        return cls(inst_data=inst_data,)
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    def can_cancel_run(self, run_id):
+        check.not_implemented("Cancellation not supported")
+
+    def cancel_run(self, run_id):
+        check.not_implemented("Cancellation not supported")

@@ -11,6 +11,7 @@ from dagster.core.snap import (
     snapshot_from_execution_plan,
 )
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
 def test_get_run_by_id():
@@ -90,6 +91,30 @@ def test_create_execution_plan_snapshot():
 
     assert run.execution_plan_snapshot_id == ep_snapshot_id
     assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)
+
+
+def test_submit_run():
+    with get_foo_pipeline_handle() as pipeline_handle:
+        instance = DagsterInstance.local_temp(
+            overrides={
+                "runs_coordinator": {
+                    "module": "dagster.core.test_utils",
+                    "class": "MockedRunsCoordinator",
+                }
+            },
+        )
+
+        run = create_run_for_test(
+            instance=instance,
+            pipeline_name=pipeline_handle.pipeline_name,
+            run_id="foo-bar",
+            external_pipeline_origin=pipeline_handle.get_external_origin(),
+        )
+
+        instance.submit_run(run.run_id, None)
+
+        assert len(instance.runs_coordinator.queue()) == 1
+        assert instance.runs_coordinator.queue()[0].run_id == "foo-bar"
 
 
 def test_dagster_home_not_set():

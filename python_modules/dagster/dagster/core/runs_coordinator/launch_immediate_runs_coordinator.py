@@ -3,16 +3,30 @@ import weakref
 from dagster import DagsterInstance, check
 from dagster.core.host_representation import ExternalPipeline
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunsCoordinator
 
 
-class LaunchImmediateRunsCoordinator(RunsCoordinator):
+class LaunchImmediateRunsCoordinator(RunsCoordinator, ConfigurableClass):
     """Immediately send runs to the run launcher.
     """
 
-    def __init__(self):
+    def __init__(self, inst_data=None):
+        self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self._instance_ref = None
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {}
+
+    @classmethod
+    def from_config_value(cls, inst_data, config_value):
+        return cls(inst_data=inst_data, **config_value)
 
     def initialize(self, instance):
         check.inst_param(instance, "instance", DagsterInstance)

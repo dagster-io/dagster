@@ -3,7 +3,7 @@ from dagster.utils.external import external_pipeline_from_run
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
-def test_get_external_pipeline_from_run():
+def test_external_pipeline_from_run():
     with instance_for_test() as instance:
         with get_foo_pipeline_handle() as pipeline_handle:
             run = create_run_for_test(

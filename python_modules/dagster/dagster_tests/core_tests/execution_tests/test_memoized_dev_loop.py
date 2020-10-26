@@ -2,6 +2,7 @@ from dagster import execute_pipeline, seven
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
+from dagster.core.runs_coordinator import LaunchImmediateRunsCoordinator
 from dagster.core.storage.event_log import ConsolidatedSqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
@@ -31,6 +32,7 @@ def test_dev_loop_changing_versions():
             event_storage=event_store,
             compute_log_manager=compute_log_manager,
             run_launcher=DefaultRunLauncher(),
+            runs_coordinator=LaunchImmediateRunsCoordinator(),
         )
 
         run_config = {

@@ -11,6 +11,7 @@ import psycopg2
 import pytest
 from dagster import check
 from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.runs_coordinator import LaunchImmediateRunsCoordinator
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
@@ -178,6 +179,7 @@ def dagster_instance_with_k8s_scheduler(
             run_storage=SqliteRunStorage.from_local(os.path.join(schedule_tempdir, "runs")),
             event_storage=PostgresEventLogStorage(postgres_url),
             compute_log_manager=NoOpComputeLogManager(),
+            runs_coordinator=LaunchImmediateRunsCoordinator(),
             run_launcher=run_launcher,
             schedule_storage=SqliteScheduleStorage.from_local(
                 os.path.join(schedule_tempdir, "schedules")
@@ -207,6 +209,7 @@ def dagster_instance_for_user_deployments(
             run_storage=PostgresRunStorage(postgres_url),
             event_storage=PostgresEventLogStorage(postgres_url),
             compute_log_manager=NoOpComputeLogManager(),
+            runs_coordinator=LaunchImmediateRunsCoordinator(),
             run_launcher=run_launcher,
         )
         yield instance
@@ -231,6 +234,7 @@ def dagster_instance_for_k8s_run_launcher(helm_namespace_for_k8s_run_launcher, r
             event_storage=PostgresEventLogStorage(postgres_url),
             schedule_storage=PostgresScheduleStorage(postgres_url),
             compute_log_manager=NoOpComputeLogManager(),
+            runs_coordinator=LaunchImmediateRunsCoordinator(),
             run_launcher=run_launcher,
         )
         yield instance
@@ -252,6 +256,7 @@ def dagster_instance(helm_namespace, run_launcher):  # pylint: disable=redefined
             run_storage=PostgresRunStorage(postgres_url),
             event_storage=PostgresEventLogStorage(postgres_url),
             compute_log_manager=NoOpComputeLogManager(),
+            runs_coordinator=LaunchImmediateRunsCoordinator(),
             run_launcher=run_launcher,
         )
         yield instance

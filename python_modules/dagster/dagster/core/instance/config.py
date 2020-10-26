@@ -52,6 +52,7 @@ def dagster_instance_config_schema():
         "event_log_storage": config_field_for_configurable_class(),
         "schedule_storage": config_field_for_configurable_class(),
         "scheduler": config_field_for_configurable_class(),
+        "runs_coordinator": config_field_for_configurable_class(),
         "run_launcher": config_field_for_configurable_class(),
         "telemetry": Field({"enabled": Field(Bool, is_required=False)}),
         "opt_in": Field({"local_servers": Field(Bool, is_required=False)}),
