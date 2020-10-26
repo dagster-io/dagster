@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import {gql} from '@apollo/client';
 
 import {YamlModeValidationResult} from 'src/configeditor/codemirror-yaml/mode';
 import {ConfigEditorValidationFragment} from 'src/configeditor/types/ConfigEditorValidationFragment';

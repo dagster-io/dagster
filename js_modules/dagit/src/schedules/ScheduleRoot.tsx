@@ -1,7 +1,6 @@
+import {gql, useQuery} from '@apollo/client';
 import {IBreadcrumbProps} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 import {RouteComponentProps} from 'react-router';
 
 import {useScheduleSelector} from 'src/DagsterRepositoryContext';

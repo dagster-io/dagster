@@ -1,6 +1,5 @@
-import gql from 'graphql-tag';
+import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformationFragment} from 'src/RepositoryInformation';

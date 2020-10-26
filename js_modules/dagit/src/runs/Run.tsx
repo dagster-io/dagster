@@ -1,8 +1,7 @@
+import {ApolloClient, useMutation} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import ApolloClient from 'apollo-client';
 import * as React from 'react';
-import {useMutation} from 'react-apollo';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';

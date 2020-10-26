@@ -1,8 +1,7 @@
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {Callout, Checkbox, Intent, NonIdealState, ProgressBar, TextArea} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {useMutation, useQuery} from 'react-apollo';
 
 import {ButtonLink} from 'src/ButtonLink';
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';

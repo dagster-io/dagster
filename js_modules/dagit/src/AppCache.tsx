@@ -1,36 +1,28 @@
-import {
-  InMemoryCache,
-  IntrospectionFragmentMatcher,
-  defaultDataIdFromObject,
-} from 'apollo-cache-inmemory';
+import {InMemoryCache, defaultDataIdFromObject} from '@apollo/client';
 
 // this is a require cause otherwise it breaks
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const {__schema} = require('./filteredSchema.generated.json');
-
-const fragmentMatcher = new IntrospectionFragmentMatcher({
-  introspectionQueryResultData: {
-    __schema,
-  },
-});
+const possibleTypes = require('./possibleTypes.generated.json');
 
 export const AppCache = new InMemoryCache({
   addTypename: true,
-  fragmentMatcher,
-  cacheRedirects: {
+  possibleTypes,
+  typePolicies: {
     Query: {
-      pipeline: (_, args, {getCacheKey}) => {
-        return getCacheKey({__typename: 'Pipeline', name: args.name});
-      },
-      type: (_, args) => {
-        // That's "IdValue" from 'apollo-utilities'.
-        // Magical thing to make it work with interfaces, getCacheKey gets
-        // incorrect typename and breaks
-        return {
-          type: 'id',
-          generated: true,
-          id: `Type.${args.typeName}`,
-        };
+      fields: {
+        pipeline: (_, {args, toReference}) => {
+          return toReference({__typename: 'Pipeline', name: args?.name});
+        },
+        type: (_, {args}) => {
+          // That's "IdValue" from '@apollo/client/utilities'.
+          // Magical thing to make it work with interfaces, getCacheKey gets
+          // incorrect typename and breaks
+          return {
+            type: 'id',
+            generated: true,
+            id: `Type.${args?.typeName}`,
+          };
+        },
       },
     },
   },
@@ -44,6 +36,8 @@ export const AppCache = new InMemoryCache({
       (object.__typename === 'RegularType' || object.__typename === 'CompositeType')
     ) {
       return `Type.${object.name}`;
+    } else if (object.__typename === 'Instance') {
+      return 'Instance';
     } else {
       return defaultDataIdFromObject(object);
     }

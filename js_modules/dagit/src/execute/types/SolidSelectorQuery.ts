@@ -1,6 +1,7 @@
 // @generated
 /* tslint:disable */
 /* eslint-disable */
+// @generated
 // This file was automatically generated and should not be edited.
 
 import { PipelineSelector } from "./../../types/globalTypes";
@@ -104,7 +105,7 @@ export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_S
 }
 
 export interface SolidSelectorQuery_pipelineOrError_Pipeline_solids_definition_SolidDefinition_configField_configType {
-  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType";
+  __typename: "RegularConfigType" | "ArrayConfigType" | "ScalarUnionConfigType" | "NullableConfigType" | "EnumConfigType" | "CompositeConfigType";
   key: string;
   description: string | null;
 }

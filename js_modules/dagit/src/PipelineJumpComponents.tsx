@@ -1,6 +1,6 @@
+import {gql} from '@apollo/client';
 import {Button, MenuItem} from '@blueprintjs/core';
 import {Select} from '@blueprintjs/select';
-import gql from 'graphql-tag';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import styled from 'styled-components/macro';

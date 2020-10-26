@@ -1,126 +1,118 @@
-type ArrayConfigType implements ConfigType & WrappingConfigType {
-  key: String!
+type Query {
+  version: String!
+  repositoriesOrError: RepositoriesOrError!
+  repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
+  pipelineOrError(params: PipelineSelector!): PipelineOrError!
+  pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
+  scheduler: SchedulerOrError!
+  scheduleDefinitionOrError(scheduleSelector: ScheduleSelector!): ScheduleDefinitionOrError!
+  scheduleDefinitionsOrError(repositorySelector: RepositorySelector!): ScheduleDefinitionsOrError!
+  scheduleStatesOrError(repositorySelector: RepositorySelector, withNoScheduleDefinition: Boolean): ScheduleStatesOrError!
+  partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
+  partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
+  pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
+  pipelineRunOrError(runId: ID!): PipelineRunOrError!
+  pipelineRunTags: [PipelineTagAndValues!]!
+  runGroupOrError(runId: ID!): RunGroupOrError!
+  runGroupsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunGroupsOrError!
+  isPipelineConfigValid(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): PipelineConfigValidationResult!
+  executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
+  runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
+  instance: Instance!
+  assetsOrError(prefixPath: [String!]): AssetsOrError!
+  assetOrError(assetKey: AssetKeyInput!): AssetOrError!
+}
+
+union RepositoriesOrError = RepositoryConnection | PythonError
+
+type RepositoryConnection {
+  nodes: [Repository!]!
+}
+
+type Repository {
+  id: ID!
+  name: String!
+  location: RepositoryLocation!
+  pipelines: [Pipeline!]!
+  usedSolids: [UsedSolid!]!
+  usedSolid(name: String!): UsedSolid
+  origin: RepositoryOrigin!
+  partitionSets: [PartitionSet!]!
+}
+
+type RepositoryLocation {
+  name: String!
+  isReloadSupported: Boolean!
+  environmentPath: String
+  repositories: [Repository!]!
+}
+
+type Pipeline implements SolidContainer & IPipelineSnapshot {
+  solids: [Solid!]!
+  name: String!
   description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  ofType: ConfigType!
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  modes: [Mode!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
+  runs: [PipelineRun!]!
+  schedules: [ScheduleDefinition!]!
+  parentSnapshotId: String
+  id: ID!
+  presets: [PipelinePreset!]!
 }
 
-type Asset {
-  key: AssetKey!
-  assetMaterializations(cursor: String, limit: Int): [AssetMaterialization!]!
-  runs(cursor: String, limit: Int): [PipelineRun!]!
+interface SolidContainer {
+  solids: [Solid!]!
 }
 
-type AssetConnection {
-  nodes: [Asset!]!
+type Solid {
+  name: String!
+  definition: ISolidDefinition!
+  inputs: [Input!]!
+  outputs: [Output!]!
 }
 
-type AssetKey {
-  path: [String!]!
-}
-
-input AssetKeyInput {
-  path: [String!]!
-}
-
-type AssetMaterialization {
-  materializationEvent: StepMaterializationEvent!
-  runOrError: PipelineRunOrError!
-  partition: String
-}
-
-type AssetNotFoundError implements Error {
-  message: String!
-}
-
-union AssetOrError = Asset | AssetsNotSupportedError | AssetNotFoundError
-
-type AssetsNotSupportedError implements Error {
-  message: String!
-}
-
-union AssetsOrError = AssetConnection | AssetsNotSupportedError | PythonError
-
-type CodePointer {
-  description: String!
-  metadata: [CodePointerMetadata!]!
-}
-
-type CodePointerMetadata {
-  key: String!
-  value: String!
-}
-
-type CompositeConfigType implements ConfigType {
-  key: String!
-  description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  fields: [ConfigTypeField!]!
-}
-
-type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
+interface ISolidDefinition {
   name: String!
   description: String
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   requiredResources: [ResourceRequirement!]!
-  solids: [Solid!]!
-  inputMappings: [InputMapping!]!
-  outputMappings: [OutputMapping!]!
 }
 
-enum ComputeIOType {
-  STDOUT
-  STDERR
-}
-
-type ComputeLogFile {
-  path: String!
-  data: String
-  cursor: Int!
-  size: Int!
-  downloadUrl: String
-}
-
-type ComputeLogs {
-  runId: String!
-  stepKey: String!
-  stdout: ComputeLogFile
-  stderr: ComputeLogFile
-}
-
-interface ConfigType {
+type MetadataItemDefinition {
   key: String!
-  description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
+  value: String!
 }
 
-type ConfigTypeField {
+type InputDefinition {
+  solidDefinition: SolidDefinition!
   name: String!
   description: String
-  configType: ConfigType!
-  configTypeKey: String!
-  isRequired: Boolean!
+  type: DagsterType!
 }
 
-type ConfigTypeNotFoundError implements Error {
-  message: String!
-  pipeline: Pipeline!
-  configTypeName: String!
+type SolidDefinition implements ISolidDefinition {
+  name: String!
+  description: String
+  metadata: [MetadataItemDefinition!]!
+  inputDefinitions: [InputDefinition!]!
+  outputDefinitions: [OutputDefinition!]!
+  requiredResources: [ResourceRequirement!]!
+  configField: ConfigTypeField
 }
 
-type ConflictingExecutionParamsError implements Error {
-  message: String!
+type OutputDefinition {
+  solidDefinition: SolidDefinition!
+  name: String!
+  description: String
+  type: DagsterType!
 }
-
-scalar Cursor
 
 interface DagsterType {
   key: String!
@@ -136,17 +128,187 @@ interface DagsterType {
   innerTypes: [DagsterType!]!
 }
 
+interface ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+}
+
+type ResourceRequirement {
+  resourceKey: String!
+}
+
+type ConfigTypeField {
+  name: String!
+  description: String
+  configType: ConfigType!
+  configTypeKey: String!
+  isRequired: Boolean!
+}
+
+type Input {
+  solid: Solid!
+  definition: InputDefinition!
+  dependsOn: [Output!]!
+}
+
+type Output {
+  solid: Solid!
+  definition: OutputDefinition!
+  dependedBy: [Input!]!
+}
+
+interface IPipelineSnapshot {
+  name: String!
+  description: String
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  solids: [Solid!]!
+  modes: [Mode!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
+}
+
+union DagsterTypeOrError = RegularDagsterType | PipelineNotFoundError | DagsterTypeNotFoundError | PythonError
+
+type RegularDagsterType implements DagsterType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  isNothing: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [DagsterType!]!
+}
+
+type PipelineNotFoundError implements Error {
+  message: String!
+  pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+interface Error {
+  message: String!
+}
+
 type DagsterTypeNotFoundError implements Error {
   message: String!
   dagsterTypeName: String!
 }
 
-union DagsterTypeOrError = RegularDagsterType | PipelineNotFoundError | DagsterTypeNotFoundError | PythonError
+type PythonError implements Error {
+  message: String!
+  className: String
+  stack: [String!]!
+  cause: PythonError
+}
 
-union DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | PipelineRunNotFoundError
+type Mode {
+  name: String!
+  description: String
+  resources: [Resource!]!
+  loggers: [Logger!]!
+}
 
-type DeletePipelineRunSuccess {
+type Resource {
+  name: String!
+  description: String
+  configField: ConfigTypeField
+}
+
+type Logger {
+  name: String!
+  description: String
+  configField: ConfigTypeField
+}
+
+type SolidHandle {
+  handleID: String!
+  solid: Solid!
+  parent: SolidHandle
+}
+
+type PipelineTag {
+  key: String!
+  value: String!
+}
+
+type PipelineRun {
   runId: String!
+  pipelineSnapshotId: String
+  status: PipelineRunStatus!
+  pipeline: PipelineReference!
+  pipelineName: String!
+  solidSelection: [String!]
+  stats: PipelineRunStatsOrError!
+  stepStats: [PipelineRunStepStats!]!
+  computeLogs(stepKey: String!): ComputeLogs!
+  executionPlan: ExecutionPlan
+  stepKeysToExecute: [String!]
+  runConfigYaml: String!
+  mode: String!
+  tags: [PipelineTag!]!
+  rootRunId: String
+  parentRunId: String
+  canTerminate: Boolean!
+  assets: [Asset!]!
+}
+
+enum PipelineRunStatus {
+  NOT_STARTED
+  MANAGED
+  STARTED
+  SUCCESS
+  FAILURE
+}
+
+interface PipelineReference {
+  name: String!
+  solidSelection: [String!]
+}
+
+union PipelineRunStatsOrError = PipelineRunStatsSnapshot | PythonError
+
+type PipelineRunStatsSnapshot {
+  runId: String!
+  stepsSucceeded: Int!
+  stepsFailed: Int!
+  materializations: Int!
+  expectations: Int!
+  startTime: Float
+  endTime: Float
+}
+
+type PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [Materialization!]!
+  expectationResults: [ExpectationResult!]!
+}
+
+enum StepEventStatus {
+  SKIPPED
+  SUCCESS
+  FAILURE
+}
+
+type Materialization implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  assetKey: AssetKey
 }
 
 interface DisplayableEvent {
@@ -155,47 +317,423 @@ interface DisplayableEvent {
   metadataEntries: [EventMetadataEntry!]!
 }
 
-type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
+interface EventMetadataEntry {
+  label: String!
+  description: String
+}
+
+type AssetKey {
+  path: [String!]!
+}
+
+type ExpectationResult implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  success: Boolean!
+}
+
+type ComputeLogs {
+  runId: String!
+  stepKey: String!
+  stdout: ComputeLogFile
+  stderr: ComputeLogFile
+}
+
+type ComputeLogFile {
+  path: String!
+  data: String
+  cursor: Int!
+  size: Int!
+  downloadUrl: String
+}
+
+type ExecutionPlan {
+  steps: [ExecutionStep!]!
+  artifactsPersisted: Boolean!
+}
+
+type ExecutionStep {
+  key: String!
+  inputs: [ExecutionStepInput!]!
+  outputs: [ExecutionStepOutput!]!
+  solidHandleID: String!
+  kind: StepKind!
+  metadata: [MetadataItemDefinition!]!
+}
+
+type ExecutionStepInput {
+  name: String!
+  type: DagsterType!
+  dependsOn: [ExecutionStep!]!
+}
+
+type ExecutionStepOutput {
+  name: String!
+  type: DagsterType!
+}
+
+enum StepKind {
+  COMPUTE
+}
+
+type Asset {
+  key: AssetKey!
+  assetMaterializations(cursor: String, limit: Int): [AssetMaterialization!]!
+  runs(cursor: String, limit: Int): [PipelineRun!]!
+}
+
+type AssetMaterialization {
+  materializationEvent: StepMaterializationEvent!
+  runOrError: PipelineRunOrError!
+  partition: String
+}
+
+type StepMaterializationEvent implements MessageEvent & StepEvent {
   runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
   stepKey: String
   solidHandleID: String
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  error: PythonError
-  markerStart: String
-  markerEnd: String
+  materialization: Materialization!
 }
 
-type EnumConfigType implements ConfigType {
+interface MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+}
+
+enum LogLevel {
+  CRITICAL
+  ERROR
+  INFO
+  WARNING
+  DEBUG
+}
+
+interface StepEvent {
+  stepKey: String
+  solidHandleID: String
+}
+
+union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError | PythonError
+
+type PipelineRunNotFoundError implements Error {
+  message: String!
+  runId: String!
+}
+
+type ScheduleDefinition {
+  name: String!
+  cronSchedule: String!
+  pipelineName: String!
+  solidSelection: [String]
+  mode: String!
+  scheduleState: ScheduleState
+  runConfigOrError: ScheduleRunConfigOrError
+  partitionSet: PartitionSet
+}
+
+type ScheduleState {
+  scheduleOriginId: String!
+  scheduleName: String!
+  cronSchedule: String!
+  status: ScheduleStatus!
+  runs(limit: Int): [PipelineRun!]!
+  runsCount: Int!
+  ticks(limit: Int): [ScheduleTick!]!
+  ticksCount: Int!
+  stats: ScheduleTickStatsSnapshot!
+  logsPath: String!
+  runningScheduleCount: Int!
+  repositoryOrigin: RepositoryOrigin!
+  repositoryOriginId: String!
+  id: ID!
+}
+
+enum ScheduleStatus {
+  RUNNING
+  STOPPED
+  ENDED
+}
+
+type ScheduleTick {
+  tickId: String!
+  status: ScheduleTickStatus!
+  timestamp: Float!
+  tickSpecificData: ScheduleTickSpecificData
+}
+
+enum ScheduleTickStatus {
+  STARTED
+  SKIPPED
+  SUCCESS
+  FAILURE
+}
+
+union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
+
+type ScheduleTickSuccessData {
+  run: PipelineRun
+}
+
+type ScheduleTickFailureData {
+  error: PythonError!
+}
+
+type ScheduleTickStatsSnapshot {
+  ticksStarted: Int!
+  ticksSucceeded: Int!
+  ticksSkipped: Int!
+  ticksFailed: Int!
+}
+
+union RepositoryOrigin = PythonRepositoryOrigin | GrpcRepositoryOrigin
+
+type PythonRepositoryOrigin {
+  executablePath: String!
+  codePointer: CodePointer!
+}
+
+type CodePointer {
+  description: String!
+  metadata: [CodePointerMetadata!]!
+}
+
+type CodePointerMetadata {
   key: String!
-  description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  values: [EnumConfigValue!]!
-  givenName: String!
-}
-
-type EnumConfigValue {
   value: String!
-  description: String
 }
 
-interface Error {
+type GrpcRepositoryOrigin {
+  grpcUrl: String!
+}
+
+union ScheduleRunConfigOrError = ScheduleRunConfig | PythonError
+
+type ScheduleRunConfig {
+  yaml: String!
+}
+
+type PartitionSet {
+  name: String!
+  pipelineName: String!
+  solidSelection: [String!]
+  mode: String!
+  partitionsOrError(cursor: String, limit: Int, reverse: Boolean): PartitionsOrError!
+  partition(partitionName: String!): Partition
+}
+
+union PartitionsOrError = Partitions | PythonError
+
+type Partitions {
+  results: [Partition!]!
+}
+
+type Partition {
+  name: String!
+  partitionSetName: String!
+  solidSelection: [String!]
+  mode: String!
+  runConfigOrError: PartitionRunConfigOrError!
+  tagsOrError: PartitionTagsOrError!
+  runs(filter: PipelineRunsFilter, cursor: String, limit: Int): [PipelineRun!]!
+}
+
+union PartitionRunConfigOrError = PartitionRunConfig | PythonError
+
+type PartitionRunConfig {
+  yaml: String!
+}
+
+union PartitionTagsOrError = PartitionTags | PythonError
+
+type PartitionTags {
+  results: [PipelineTag!]!
+}
+
+input PipelineRunsFilter {
+  runId: String
+  pipelineName: String
+  tags: [ExecutionTag!]
+  status: PipelineRunStatus
+  snapshotId: String
+}
+
+input ExecutionTag {
+  key: String!
+  value: String!
+}
+
+type PipelinePreset {
+  name: String!
+  solidSelection: [String!]
+  runConfigYaml: String!
+  mode: String!
+  tags: [PipelineTag!]!
+}
+
+type UsedSolid {
+  definition: ISolidDefinition!
+  invocations: [SolidInvocationSite!]!
+}
+
+type SolidInvocationSite {
+  pipeline: Pipeline!
+  solidHandle: SolidHandle!
+}
+
+union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
+
+type RepositoryNotFoundError implements Error {
+  message: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+input RepositorySelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
+
+type InvalidSubsetError implements Error {
+  message: String!
+  pipeline: Pipeline!
+}
+
+input PipelineSelector {
+  pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+  solidSelection: [String!]
+}
+
+union PipelineSnapshotOrError = PipelineSnapshot | PipelineSnapshotNotFoundError | PipelineNotFoundError | PythonError
+
+type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
+  name: String!
+  description: String
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  solids: [Solid!]!
+  modes: [Mode!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
+  solidSelection: [String!]
+  runs(cursor: String, limit: Int): [PipelineRun!]!
+  schedules: [ScheduleDefinition!]!
+  parentSnapshotId: String
+}
+
+type PipelineSnapshotNotFoundError implements Error {
+  message: String!
+  snapshotId: String!
+}
+
+union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
+
+type Scheduler {
+  schedulerClass: String
+}
+
+type SchedulerNotDefinedError implements Error {
   message: String!
 }
 
-enum EvaluationErrorReason {
-  RUNTIME_TYPE_MISMATCH
-  MISSING_REQUIRED_FIELD
-  MISSING_REQUIRED_FIELDS
-  FIELD_NOT_DEFINED
-  FIELDS_NOT_DEFINED
-  SELECTOR_FIELD_ERROR
+union ScheduleDefinitionOrError = ScheduleDefinition | ScheduleDefinitionNotFoundError | PythonError
+
+type ScheduleDefinitionNotFoundError implements Error {
+  message: String!
+  scheduleName: String!
+}
+
+input ScheduleSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  scheduleName: String!
+}
+
+union ScheduleDefinitionsOrError = ScheduleDefinitions | RepositoryNotFoundError | PythonError
+
+type ScheduleDefinitions {
+  results: [ScheduleDefinition!]!
+}
+
+union ScheduleStatesOrError = ScheduleStates | RepositoryNotFoundError | PythonError
+
+type ScheduleStates {
+  results: [ScheduleState!]!
+}
+
+union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
+
+type PartitionSets {
+  results: [PartitionSet!]!
+}
+
+union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError
+
+type PartitionSetNotFoundError implements Error {
+  message: String!
+  partitionSetName: String!
+}
+
+union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | PythonError
+
+type PipelineRuns {
+  results: [PipelineRun!]!
+}
+
+type InvalidPipelineRunsFilterError implements Error {
+  message: String!
+}
+
+type PipelineTagAndValues {
+  key: String!
+  values: [String!]!
+}
+
+union RunGroupOrError = RunGroup | RunGroupNotFoundError | PythonError
+
+type RunGroup {
+  rootRunId: String!
+  runs: [PipelineRun]
+}
+
+type RunGroupNotFoundError implements Error {
+  message: String!
+  runId: String!
+}
+
+type RunGroupsOrError {
+  results: [RunGroup!]!
+}
+
+union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
+
+type PipelineConfigValidationValid {
+  pipelineName: String!
+}
+
+type PipelineConfigValidationInvalid {
+  pipelineName: String!
+  errors: [PipelineConfigValidationError!]!
+}
+
+interface PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
 }
 
 type EvaluationStack {
@@ -212,65 +750,102 @@ type EvaluationStackPathEntry {
   fieldName: String!
 }
 
-type EventFloatMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  floatValue: Float!
+enum EvaluationErrorReason {
+  RUNTIME_TYPE_MISMATCH
+  MISSING_REQUIRED_FIELD
+  MISSING_REQUIRED_FIELDS
+  FIELD_NOT_DEFINED
+  FIELDS_NOT_DEFINED
+  SELECTOR_FIELD_ERROR
 }
 
-type EventIntMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  intValue: Int!
+scalar RunConfigData
+
+union ExecutionPlanOrError = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
+
+union RunConfigSchemaOrError = RunConfigSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError | PythonError
+
+type RunConfigSchema {
+  rootConfigType: ConfigType!
+  allConfigTypes: [ConfigType!]!
+  isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
 }
 
-type EventJsonMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  jsonString: String!
+type ModeNotFoundError implements Error {
+  message: String!
+  mode: String!
 }
 
-type EventMarkdownMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  mdStr: String!
+type Instance {
+  info: String!
+  runLauncher: RunLauncher
+  assetsSupported: Boolean!
+  executablePath: String!
 }
 
-interface EventMetadataEntry {
-  label: String!
-  description: String
-}
-
-type EventPathMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  path: String!
-}
-
-type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  module: String!
+type RunLauncher {
   name: String!
 }
 
-type EventTextMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  text: String!
+union AssetsOrError = AssetConnection | AssetsNotSupportedError | PythonError
+
+type AssetConnection {
+  nodes: [Asset!]!
 }
 
-type EventUrlMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  url: String!
+type AssetsNotSupportedError implements Error {
+  message: String!
 }
 
-input ExecutionMetadata {
-  runId: String
-  tags: [ExecutionTag!]
-  rootRunId: String
-  parentRunId: String
+union AssetOrError = Asset | AssetsNotSupportedError | AssetNotFoundError
+
+type AssetNotFoundError implements Error {
+  message: String!
+}
+
+input AssetKeyInput {
+  path: [String!]!
+}
+
+type Mutation {
+  launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
+  launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
+  reconcileSchedulerState(repositorySelector: RepositorySelector!): ReconcileSchedulerStateMutationResult!
+  startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
+  stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
+  terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
+  deletePipelineRun(runId: String!): DeletePipelineRunResult!
+  reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
+  launchPartitionBackfill(backfillParams: PartitionBackfillParams!): PartitionBackfillResult!
+  triggerExecution(triggerSelector: TriggerSelector!): TriggerMutationResult!
+}
+
+union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+
+type LaunchPipelineRunSuccess {
+  run: PipelineRun!
+}
+
+type InvalidStepError {
+  invalidStepKey: String!
+}
+
+type InvalidOutputError {
+  stepKey: String!
+  invalidOutputName: String!
+}
+
+type PipelineRunConflict implements Error {
+  message: String!
+}
+
+type PresetNotFoundError implements Error {
+  message: String!
+  preset: String!
+}
+
+type ConflictingExecutionParamsError implements Error {
+  message: String!
 }
 
 input ExecutionParams {
@@ -282,21 +857,99 @@ input ExecutionParams {
   preset: String
 }
 
-type ExecutionPlan {
-  steps: [ExecutionStep!]!
-  artifactsPersisted: Boolean!
+input ExecutionMetadata {
+  runId: String
+  tags: [ExecutionTag!]
+  rootRunId: String
+  parentRunId: String
 }
 
-union ExecutionPlanOrError = ExecutionPlan | PipelineConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
+union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
 
-type ExecutionStep {
-  key: String!
-  inputs: [ExecutionStepInput!]!
-  outputs: [ExecutionStepOutput!]!
-  solidHandleID: String!
-  kind: StepKind!
-  metadata: [MetadataItemDefinition!]!
+union ReconcileSchedulerStateMutationResult = PythonError | ReconcileSchedulerStateSuccess
+
+type ReconcileSchedulerStateSuccess {
+  message: String!
 }
+
+union ScheduleMutationResult = PythonError | ScheduleStateResult
+
+type ScheduleStateResult {
+  scheduleState: ScheduleState!
+}
+
+union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | PythonError
+
+type TerminatePipelineExecutionSuccess {
+  run: PipelineRun!
+}
+
+type TerminatePipelineExecutionFailure {
+  run: PipelineRun!
+  message: String!
+}
+
+union DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | PipelineRunNotFoundError
+
+type DeletePipelineRunSuccess {
+  runId: String!
+}
+
+union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound
+
+type ReloadNotSupported implements Error {
+  message: String!
+}
+
+type RepositoryLocationNotFound implements Error {
+  message: String!
+}
+
+union PartitionBackfillResult = PartitionBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+
+type PartitionBackfillSuccess {
+  backfillId: String!
+  launchedRunIds: [String!]!
+}
+
+input PartitionBackfillParams {
+  selector: PartitionSetSelector!
+  partitionNames: [String!]!
+  reexecutionSteps: [String!]
+  fromFailure: Boolean
+  tags: [ExecutionTag!]
+}
+
+input PartitionSetSelector {
+  partitionSetName: String!
+  repositorySelector: RepositorySelector!
+}
+
+union TriggerMutationResult = TriggerExecutionSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
+
+type TriggerExecutionSuccess {
+  launchedRunIds: [String!]!
+}
+
+input TriggerSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  jobName: String!
+}
+
+type Subscription {
+  pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
+  computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
+}
+
+union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionFailure
+
+type PipelineRunLogsSubscriptionSuccess {
+  run: PipelineRun!
+  messages: [PipelineRunEvent!]!
+}
+
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -309,10 +962,10 @@ type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   failureMetadata: FailureMetadata
 }
 
-type ExecutionStepInput {
-  name: String!
-  type: DagsterType!
-  dependsOn: [ExecutionStep!]!
+type FailureMetadata implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 type ExecutionStepInputEvent implements MessageEvent & StepEvent {
@@ -326,9 +979,11 @@ type ExecutionStepInputEvent implements MessageEvent & StepEvent {
   typeCheck: TypeCheck!
 }
 
-type ExecutionStepOutput {
-  name: String!
-  type: DagsterType!
+type TypeCheck implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  success: Boolean!
 }
 
 type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
@@ -340,15 +995,6 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent {
   solidHandleID: String
   outputName: String!
   typeCheck: TypeCheck!
-}
-
-type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
 }
 
 type ExecutionStepSkippedEvent implements MessageEvent & StepEvent {
@@ -389,172 +1035,13 @@ type ExecutionStepUpForRetryEvent implements MessageEvent & StepEvent {
   secondsToWait: Int
 }
 
-input ExecutionTag {
-  key: String!
-  value: String!
-}
-
-type ExpectationResult implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  success: Boolean!
-}
-
-type FailureMetadata implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-}
-
-type FieldNotDefinedConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  fieldName: String!
-}
-
-type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  fieldNames: [String!]!
-}
-
-type GrpcRepositoryOrigin {
-  grpcUrl: String!
-}
-
-type HookCompletedEvent implements MessageEvent & StepEvent {
+type ExecutionStepRestartEvent implements MessageEvent & StepEvent {
   runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
   stepKey: String
   solidHandleID: String
-}
-
-type HookErroredEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  error: PythonError!
-}
-
-type HookSkippedEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-}
-
-type Input {
-  solid: Solid!
-  definition: InputDefinition!
-  dependsOn: [Output!]!
-}
-
-type InputDefinition {
-  solidDefinition: SolidDefinition!
-  name: String!
-  description: String
-  type: DagsterType!
-}
-
-type InputMapping {
-  mappedInput: Input!
-  definition: InputDefinition!
-}
-
-type Instance {
-  info: String!
-  runLauncher: RunLauncher
-  assetsSupported: Boolean!
-  executablePath: String!
-}
-
-type InvalidOutputError {
-  stepKey: String!
-  invalidOutputName: String!
-}
-
-type InvalidPipelineRunsFilterError implements Error {
-  message: String!
-}
-
-type InvalidStepError {
-  invalidStepKey: String!
-}
-
-type InvalidSubsetError implements Error {
-  message: String!
-  pipeline: Pipeline!
-}
-
-interface IPipelineSnapshot {
-  name: String!
-  description: String
-  pipelineSnapshotId: String!
-  dagsterTypes: [DagsterType!]!
-  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
-  solids: [Solid!]!
-  modes: [Mode!]!
-  solidHandles(parentHandleID: String): [SolidHandle!]!
-  solidHandle(handleID: String!): SolidHandle
-  tags: [PipelineTag!]!
-}
-
-interface ISolidDefinition {
-  name: String!
-  description: String
-  metadata: [MetadataItemDefinition!]!
-  inputDefinitions: [InputDefinition!]!
-  outputDefinitions: [OutputDefinition!]!
-  requiredResources: [ResourceRequirement!]!
-}
-
-union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
-
-union LaunchPipelineReexecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
-
-type LaunchPipelineRunSuccess {
-  run: PipelineRun!
-}
-
-type ListDagsterType implements DagsterType & WrappingDagsterType {
-  key: String!
-  name: String
-  displayName: String!
-  description: String
-  isNullable: Boolean!
-  isList: Boolean!
-  isBuiltin: Boolean!
-  isNothing: Boolean!
-  inputSchemaType: ConfigType
-  outputSchemaType: ConfigType
-  innerTypes: [DagsterType!]!
-  ofType: DagsterType!
-}
-
-type Logger {
-  name: String!
-  description: String
-  configField: ConfigTypeField
-}
-
-enum LogLevel {
-  CRITICAL
-  ERROR
-  INFO
-  WARNING
-  DEBUG
 }
 
 type LogMessageEvent implements MessageEvent {
@@ -566,94 +1053,50 @@ type LogMessageEvent implements MessageEvent {
   solidHandleID: String
 }
 
-type Materialization implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  assetKey: AssetKey
-}
-
-interface MessageEvent {
+type PipelineFailureEvent implements MessageEvent & PipelineEvent {
   runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
   stepKey: String
   solidHandleID: String
+  pipelineName: String!
+  error: PythonError
 }
 
-type MetadataItemDefinition {
-  key: String!
-  value: String!
+interface PipelineEvent {
+  pipelineName: String!
 }
 
-type MissingFieldConfigError implements PipelineConfigValidationError {
+type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
+  runId: String!
   message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  field: ConfigTypeField!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  pipelineName: String!
+  error: PythonError!
 }
 
-type MissingFieldsConfigError implements PipelineConfigValidationError {
+type PipelineStartEvent implements MessageEvent & PipelineEvent {
+  runId: String!
   message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  fields: [ConfigTypeField!]!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  pipelineName: String!
 }
 
-type MissingRunIdErrorEvent {
-  invalidRunId: String!
-}
-
-type Mode {
-  name: String!
-  description: String
-  resources: [Resource!]!
-  loggers: [Logger!]!
-}
-
-type ModeNotFoundError implements Error {
+type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
+  runId: String!
   message: String!
-  mode: String!
-}
-
-type Mutation {
-  launchPipelineExecution(executionParams: ExecutionParams!): LaunchPipelineExecutionResult!
-  launchPipelineReexecution(executionParams: ExecutionParams!): LaunchPipelineReexecutionResult!
-  reconcileSchedulerState(repositorySelector: RepositorySelector!): ReconcileSchedulerStateMutationResult!
-  startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
-  stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
-  terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
-  deletePipelineRun(runId: String!): DeletePipelineRunResult!
-  reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
-  launchPartitionBackfill(backfillParams: PartitionBackfillParams!): PartitionBackfillResult!
-  triggerExecution(triggerSelector: TriggerSelector!): TriggerMutationResult!
-}
-
-type NullableConfigType implements ConfigType & WrappingConfigType {
-  key: String!
-  description: String
-  recursiveConfigTypes: [ConfigType!]!
-  typeParamKeys: [String!]!
-  isSelector: Boolean!
-  ofType: ConfigType!
-}
-
-type NullableDagsterType implements DagsterType & WrappingDagsterType {
-  key: String!
-  name: String
-  displayName: String!
-  description: String
-  isNullable: Boolean!
-  isList: Boolean!
-  isBuiltin: Boolean!
-  isNothing: Boolean!
-  inputSchemaType: ConfigType
-  outputSchemaType: ConfigType
-  innerTypes: [DagsterType!]!
-  ofType: DagsterType!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  pipelineName: String!
 }
 
 type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
@@ -680,383 +1123,69 @@ enum ObjectStoreOperationType {
   CP_OBJECT
 }
 
-type Output {
-  solid: Solid!
-  definition: OutputDefinition!
-  dependedBy: [Input!]!
-}
-
-type OutputDefinition {
-  solidDefinition: SolidDefinition!
-  name: String!
-  description: String
-  type: DagsterType!
-}
-
-type OutputMapping {
-  mappedOutput: Output!
-  definition: OutputDefinition!
-}
-
-type PageInfo {
-  lastCursor: Cursor
-  hasNextPage: Boolean
-  hasPreviousPage: Boolean
-  count: Int!
-  totalCount: Int!
-}
-
-type Partition {
-  name: String!
-  partitionSetName: String!
-  solidSelection: [String!]
-  mode: String!
-  runConfigOrError: PartitionRunConfigOrError!
-  tagsOrError: PartitionTagsOrError!
-  runs(filter: PipelineRunsFilter, cursor: String, limit: Int): [PipelineRun!]!
-}
-
-input PartitionBackfillParams {
-  selector: PartitionSetSelector!
-  partitionNames: [String!]!
-  reexecutionSteps: [String!]
-  fromFailure: Boolean
-  tags: [ExecutionTag!]
-}
-
-union PartitionBackfillResult = PartitionBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
-
-type PartitionBackfillSuccess {
-  backfillId: String!
-  launchedRunIds: [String!]!
-}
-
-type PartitionRunConfig {
-  yaml: String!
-}
-
-union PartitionRunConfigOrError = PartitionRunConfig | PythonError
-
-type Partitions {
-  results: [Partition!]!
-}
-
-type PartitionSet {
-  name: String!
-  pipelineName: String!
-  solidSelection: [String!]
-  mode: String!
-  partitionsOrError(cursor: String, limit: Int, reverse: Boolean): PartitionsOrError!
-  partition(partitionName: String!): Partition
-}
-
-type PartitionSetNotFoundError implements Error {
-  message: String!
-  partitionSetName: String!
-}
-
-union PartitionSetOrError = PartitionSet | PartitionSetNotFoundError | PythonError
-
-type PartitionSets {
-  results: [PartitionSet!]!
-}
-
-input PartitionSetSelector {
-  partitionSetName: String!
-  repositorySelector: RepositorySelector!
-}
-
-union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
-
-union PartitionsOrError = Partitions | PythonError
-
-type PartitionTags {
-  results: [PipelineTag!]!
-}
-
-union PartitionTagsOrError = PartitionTags | PythonError
-
-type Pipeline implements SolidContainer & IPipelineSnapshot {
-  solids: [Solid!]!
-  name: String!
-  description: String
-  pipelineSnapshotId: String!
-  dagsterTypes: [DagsterType!]!
-  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
-  modes: [Mode!]!
-  solidHandles(parentHandleID: String): [SolidHandle!]!
-  solidHandle(handleID: String!): SolidHandle
-  tags: [PipelineTag!]!
-  runs: [PipelineRun!]!
-  schedules: [ScheduleDefinition!]!
-  parentSnapshotId: String
-  id: ID!
-  presets: [PipelinePreset!]!
-}
-
-interface PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-}
-
-type PipelineConfigValidationInvalid {
-  pipelineName: String!
-  errors: [PipelineConfigValidationError!]!
-}
-
-union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | PipelineConfigValidationInvalid | PipelineNotFoundError | PythonError
-
-type PipelineConfigValidationValid {
-  pipelineName: String!
-}
-
-interface PipelineEvent {
-  pipelineName: String!
-}
-
-type PipelineFailureEvent implements MessageEvent & PipelineEvent {
+type StepExpectationResultEvent implements MessageEvent & StepEvent {
   runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
   stepKey: String
   solidHandleID: String
-  pipelineName: String!
+  expectationResult: ExpectationResult!
+}
+
+type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
   error: PythonError
+  markerStart: String
+  markerEnd: String
 }
 
-type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
+type HookCompletedEvent implements MessageEvent & StepEvent {
   runId: String!
   message: String!
   timestamp: String!
   level: LogLevel!
   stepKey: String
   solidHandleID: String
-  pipelineName: String!
+}
+
+type HookSkippedEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+}
+
+type HookErroredEvent implements MessageEvent & StepEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
   error: PythonError!
 }
-
-type PipelineNotFoundError implements Error {
-  message: String!
-  pipelineName: String!
-  repositoryName: String!
-  repositoryLocationName: String!
-}
-
-union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
-
-type PipelinePreset {
-  name: String!
-  solidSelection: [String!]
-  runConfigYaml: String!
-  mode: String!
-  tags: [PipelineTag!]!
-}
-
-interface PipelineReference {
-  name: String!
-  solidSelection: [String!]
-}
-
-type PipelineRun {
-  runId: String!
-  pipelineSnapshotId: String
-  status: PipelineRunStatus!
-  pipeline: PipelineReference!
-  pipelineName: String!
-  solidSelection: [String!]
-  stats: PipelineRunStatsOrError!
-  stepStats: [PipelineRunStepStats!]!
-  computeLogs(stepKey: String!): ComputeLogs!
-  executionPlan: ExecutionPlan
-  stepKeysToExecute: [String!]
-  runConfigYaml: String!
-  mode: String!
-  tags: [PipelineTag!]!
-  rootRunId: String
-  parentRunId: String
-  canTerminate: Boolean!
-  assets: [Asset!]!
-}
-
-type PipelineRunConflict implements Error {
-  message: String!
-}
-
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent
 
 type PipelineRunLogsSubscriptionFailure {
   message: String!
   missingRunId: String
 }
 
-union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionFailure
+scalar Cursor
 
-type PipelineRunLogsSubscriptionSuccess {
-  run: PipelineRun!
-  messages: [PipelineRunEvent!]!
-}
-
-type PipelineRunNotFoundError implements Error {
-  message: String!
-  runId: String!
-}
-
-union PipelineRunOrError = PipelineRun | PipelineRunNotFoundError | PythonError
-
-type PipelineRuns {
-  results: [PipelineRun!]!
-}
-
-input PipelineRunsFilter {
-  runId: String
-  pipelineName: String
-  tags: [ExecutionTag!]
-  status: PipelineRunStatus
-  snapshotId: String
-}
-
-union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | PythonError
-
-union PipelineRunStatsOrError = PipelineRunStatsSnapshot | PythonError
-
-type PipelineRunStatsSnapshot {
-  runId: String!
-  stepsSucceeded: Int!
-  stepsFailed: Int!
-  materializations: Int!
-  expectations: Int!
-  startTime: Float
-  endTime: Float
-}
-
-enum PipelineRunStatus {
-  NOT_STARTED
-  MANAGED
-  STARTED
-  SUCCESS
-  FAILURE
-}
-
-type PipelineRunStepStats {
-  runId: String!
-  stepKey: String!
-  status: StepEventStatus
-  startTime: Float
-  endTime: Float
-  materializations: [Materialization!]!
-  expectationResults: [ExpectationResult!]!
-}
-
-input PipelineSelector {
-  pipelineName: String!
-  repositoryName: String!
-  repositoryLocationName: String!
-  solidSelection: [String!]
-}
-
-type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
-  name: String!
-  description: String
-  pipelineSnapshotId: String!
-  dagsterTypes: [DagsterType!]!
-  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
-  solids: [Solid!]!
-  modes: [Mode!]!
-  solidHandles(parentHandleID: String): [SolidHandle!]!
-  solidHandle(handleID: String!): SolidHandle
-  tags: [PipelineTag!]!
-  solidSelection: [String!]
-  runs(cursor: String, limit: Int): [PipelineRun!]!
-  schedules: [ScheduleDefinition!]!
-  parentSnapshotId: String
-}
-
-type PipelineSnapshotNotFoundError implements Error {
-  message: String!
-  snapshotId: String!
-}
-
-union PipelineSnapshotOrError = PipelineSnapshot | PipelineSnapshotNotFoundError | PipelineNotFoundError | PythonError
-
-type PipelineStartEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  pipelineName: String!
-}
-
-type PipelineSuccessEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  pipelineName: String!
-}
-
-type PipelineTag {
-  key: String!
-  value: String!
-}
-
-type PipelineTagAndValues {
-  key: String!
-  values: [String!]!
-}
-
-type PresetNotFoundError implements Error {
-  message: String!
-  preset: String!
-}
-
-type PythonError implements Error {
-  message: String!
-  className: String
-  stack: [String!]!
-  cause: PythonError
-}
-
-type PythonRepositoryOrigin {
-  executablePath: String!
-  codePointer: CodePointer!
-}
-
-type Query {
-  version: String!
-  repositoriesOrError: RepositoriesOrError!
-  repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
-  pipelineOrError(params: PipelineSelector!): PipelineOrError!
-  pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
-  scheduler: SchedulerOrError!
-  scheduleDefinitionOrError(scheduleSelector: ScheduleSelector!): ScheduleDefinitionOrError!
-  scheduleDefinitionsOrError(repositorySelector: RepositorySelector!): ScheduleDefinitionsOrError!
-  scheduleStatesOrError(repositorySelector: RepositorySelector, withNoScheduleDefinition: Boolean): ScheduleStatesOrError!
-  partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
-  partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
-  pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
-  pipelineRunOrError(runId: ID!): PipelineRunOrError!
-  pipelineRunTags: [PipelineTagAndValues!]!
-  runGroupOrError(runId: ID!): RunGroupOrError!
-  runGroupsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): RunGroupsOrError!
-  isPipelineConfigValid(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): PipelineConfigValidationResult!
-  executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
-  runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
-  instance: Instance!
-  assetsOrError(prefixPath: [String!]): AssetsOrError!
-  assetOrError(assetKey: AssetKeyInput!): AssetOrError!
-}
-
-union ReconcileSchedulerStateMutationResult = PythonError | ReconcileSchedulerStateSuccess
-
-type ReconcileSchedulerStateSuccess {
-  message: String!
+enum ComputeIOType {
+  STDOUT
+  STDERR
 }
 
 type RegularConfigType implements ConfigType {
@@ -1068,115 +1197,17 @@ type RegularConfigType implements ConfigType {
   givenName: String!
 }
 
-type RegularDagsterType implements DagsterType {
+type ArrayConfigType implements ConfigType & WrappingConfigType {
   key: String!
-  name: String
-  displayName: String!
   description: String
-  isNullable: Boolean!
-  isList: Boolean!
-  isBuiltin: Boolean!
-  isNothing: Boolean!
-  inputSchemaType: ConfigType
-  outputSchemaType: ConfigType
-  innerTypes: [DagsterType!]!
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  ofType: ConfigType!
 }
 
-type ReloadNotSupported implements Error {
-  message: String!
-}
-
-union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound
-
-union RepositoriesOrError = RepositoryConnection | PythonError
-
-type Repository {
-  id: ID!
-  name: String!
-  location: RepositoryLocation!
-  pipelines: [Pipeline!]!
-  usedSolids: [UsedSolid!]!
-  usedSolid(name: String!): UsedSolid
-  origin: RepositoryOrigin!
-  partitionSets: [PartitionSet!]!
-}
-
-type RepositoryConnection {
-  nodes: [Repository!]!
-}
-
-type RepositoryLocation {
-  name: String!
-  isReloadSupported: Boolean!
-  environmentPath: String
-  repositories: [Repository!]!
-}
-
-type RepositoryLocationNotFound implements Error {
-  message: String!
-}
-
-type RepositoryNotFoundError implements Error {
-  message: String!
-  repositoryName: String!
-  repositoryLocationName: String!
-}
-
-union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
-
-union RepositoryOrigin = PythonRepositoryOrigin | GrpcRepositoryOrigin
-
-input RepositorySelector {
-  repositoryName: String!
-  repositoryLocationName: String!
-}
-
-type Resource {
-  name: String!
-  description: String
-  configField: ConfigTypeField
-}
-
-type ResourceRequirement {
-  resourceKey: String!
-}
-
-scalar RunConfigData
-
-type RunConfigSchema {
-  rootConfigType: ConfigType!
-  allConfigTypes: [ConfigType!]!
-  isRunConfigValid(runConfigData: RunConfigData): PipelineConfigValidationResult!
-}
-
-union RunConfigSchemaOrError = RunConfigSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError | PythonError
-
-type RunGroup {
-  rootRunId: String!
-  runs: [PipelineRun]
-}
-
-type RunGroupNotFoundError implements Error {
-  message: String!
-  runId: String!
-}
-
-union RunGroupOrError = RunGroup | RunGroupNotFoundError | PythonError
-
-type RunGroupsOrError {
-  results: [RunGroup!]!
-}
-
-type RunLauncher {
-  name: String!
-}
-
-type RuntimeMismatchConfigError implements PipelineConfigValidationError {
-  message: String!
-  path: [String!]!
-  stack: EvaluationStack!
-  reason: EvaluationErrorReason!
-  valueRep: String
+interface WrappingConfigType {
+  ofType: ConfigType!
 }
 
 type ScalarUnionConfigType implements ConfigType {
@@ -1191,126 +1222,82 @@ type ScalarUnionConfigType implements ConfigType {
   nonScalarTypeKey: String!
 }
 
-type ScheduleDefinition {
-  name: String!
-  cronSchedule: String!
-  pipelineName: String!
-  solidSelection: [String]
-  mode: String!
-  scheduleState: ScheduleState
-  runConfigOrError: ScheduleRunConfigOrError
-  partitionSet: PartitionSet
+type NullableConfigType implements ConfigType & WrappingConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  ofType: ConfigType!
 }
 
-type ScheduleDefinitionNotFoundError implements Error {
-  message: String!
-  scheduleName: String!
+type EnumConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  values: [EnumConfigValue!]!
+  givenName: String!
 }
 
-union ScheduleDefinitionOrError = ScheduleDefinition | ScheduleDefinitionNotFoundError | PythonError
-
-type ScheduleDefinitions {
-  results: [ScheduleDefinition!]!
+type EnumConfigValue {
+  value: String!
+  description: String
 }
 
-union ScheduleDefinitionsOrError = ScheduleDefinitions | RepositoryNotFoundError | PythonError
-
-union ScheduleMutationResult = PythonError | ScheduleStateResult
+type CompositeConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  fields: [ConfigTypeField!]!
+}
 
 type ScheduleNotFoundError implements Error {
   message: String!
   scheduleName: String!
 }
 
-type Scheduler {
-  schedulerClass: String
-}
-
-type SchedulerNotDefinedError implements Error {
+type RuntimeMismatchConfigError implements PipelineConfigValidationError {
   message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  valueRep: String
 }
 
-union SchedulerOrError = Scheduler | SchedulerNotDefinedError | PythonError
-
-type ScheduleRunConfig {
-  yaml: String!
-}
-
-union ScheduleRunConfigOrError = ScheduleRunConfig | PythonError
-
-input ScheduleSelector {
-  repositoryName: String!
-  repositoryLocationName: String!
-  scheduleName: String!
-}
-
-type ScheduleState {
-  scheduleOriginId: String!
-  scheduleName: String!
-  cronSchedule: String!
-  status: ScheduleStatus!
-  runs(limit: Int): [PipelineRun!]!
-  runsCount: Int!
-  ticks(limit: Int): [ScheduleTick!]!
-  ticksCount: Int!
-  stats: ScheduleTickStatsSnapshot!
-  logsPath: String!
-  runningScheduleCount: Int!
-  repositoryOrigin: RepositoryOrigin!
-  repositoryOriginId: String!
-  id: ID!
-}
-
-type ScheduleStateNotFoundError implements Error {
+type MissingFieldConfigError implements PipelineConfigValidationError {
   message: String!
-  scheduleOriginId: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  field: ConfigTypeField!
 }
 
-type ScheduleStateResult {
-  scheduleState: ScheduleState!
+type MissingFieldsConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fields: [ConfigTypeField!]!
 }
 
-type ScheduleStates {
-  results: [ScheduleState!]!
+type FieldNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldName: String!
 }
 
-union ScheduleStatesOrError = ScheduleStates | RepositoryNotFoundError | PythonError
-
-enum ScheduleStatus {
-  RUNNING
-  STOPPED
-  ENDED
-}
-
-type ScheduleTick {
-  tickId: String!
-  status: ScheduleTickStatus!
-  timestamp: Float!
-  tickSpecificData: ScheduleTickSpecificData
-}
-
-type ScheduleTickFailureData {
-  error: PythonError!
-}
-
-union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
-
-type ScheduleTickStatsSnapshot {
-  ticksStarted: Int!
-  ticksSucceeded: Int!
-  ticksSkipped: Int!
-  ticksFailed: Int!
-}
-
-enum ScheduleTickStatus {
-  STARTED
-  SKIPPED
-  SUCCESS
-  FAILURE
-}
-
-type ScheduleTickSuccessData {
-  run: PipelineRun
+type FieldsNotDefinedConfigError implements PipelineConfigValidationError {
+  message: String!
+  path: [String!]!
+  stack: EvaluationStack!
+  reason: EvaluationErrorReason!
+  fieldNames: [String!]!
 }
 
 type SelectorTypeConfigError implements PipelineConfigValidationError {
@@ -1321,106 +1308,71 @@ type SelectorTypeConfigError implements PipelineConfigValidationError {
   incomingFields: [String!]!
 }
 
-type Solid {
-  name: String!
-  definition: ISolidDefinition!
-  inputs: [Input!]!
-  outputs: [Output!]!
+type ConfigTypeNotFoundError implements Error {
+  message: String!
+  pipeline: Pipeline!
+  configTypeName: String!
 }
 
-interface SolidContainer {
-  solids: [Solid!]!
+type ScheduleStateNotFoundError implements Error {
+  message: String!
+  scheduleOriginId: String!
 }
 
-type SolidDefinition implements ISolidDefinition {
+type ListDagsterType implements DagsterType & WrappingDagsterType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  isNothing: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [DagsterType!]!
+  ofType: DagsterType!
+}
+
+interface WrappingDagsterType {
+  ofType: DagsterType!
+}
+
+type NullableDagsterType implements DagsterType & WrappingDagsterType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  isNothing: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [DagsterType!]!
+  ofType: DagsterType!
+}
+
+type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   name: String!
   description: String
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
   requiredResources: [ResourceRequirement!]!
-  configField: ConfigTypeField
+  solids: [Solid!]!
+  inputMappings: [InputMapping!]!
+  outputMappings: [OutputMapping!]!
 }
 
-type SolidHandle {
-  handleID: String!
-  solid: Solid!
-  parent: SolidHandle
+type InputMapping {
+  mappedInput: Input!
+  definition: InputDefinition!
 }
 
-type SolidInvocationSite {
-  pipeline: Pipeline!
-  solidHandle: SolidHandle!
-}
-
-interface StepEvent {
-  stepKey: String
-  solidHandleID: String
-}
-
-enum StepEventStatus {
-  SKIPPED
-  SUCCESS
-  FAILURE
-}
-
-type StepExpectationResultEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  expectationResult: ExpectationResult!
-}
-
-enum StepKind {
-  COMPUTE
-}
-
-type StepMaterializationEvent implements MessageEvent & StepEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  materialization: Materialization!
-}
-
-type Subscription {
-  pipelineRunLogs(runId: ID!, after: Cursor): PipelineRunLogsSubscriptionPayload!
-  computeLogs(runId: ID!, stepKey: String!, ioType: ComputeIOType!, cursor: String): ComputeLogFile!
-}
-
-type TerminatePipelineExecutionFailure {
-  run: PipelineRun!
-  message: String!
-}
-
-union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | PythonError
-
-type TerminatePipelineExecutionSuccess {
-  run: PipelineRun!
-}
-
-type TriggerExecutionSuccess {
-  launchedRunIds: [String!]!
-}
-
-union TriggerMutationResult = TriggerExecutionSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
-
-input TriggerSelector {
-  repositoryName: String!
-  repositoryLocationName: String!
-  jobName: String!
-}
-
-type TypeCheck implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  success: Boolean!
+type OutputMapping {
+  mappedOutput: Output!
+  definition: OutputDefinition!
 }
 
 type UnknownPipeline implements PipelineReference {
@@ -1428,15 +1380,63 @@ type UnknownPipeline implements PipelineReference {
   solidSelection: [String!]
 }
 
-type UsedSolid {
-  definition: ISolidDefinition!
-  invocations: [SolidInvocationSite!]!
+type MissingRunIdErrorEvent {
+  invalidRunId: String!
 }
 
-interface WrappingConfigType {
-  ofType: ConfigType!
+type EventPathMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  path: String!
 }
 
-interface WrappingDagsterType {
-  ofType: DagsterType!
+type EventJsonMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  jsonString: String!
+}
+
+type EventTextMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  text: String!
+}
+
+type EventUrlMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  url: String!
+}
+
+type EventMarkdownMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  mdStr: String!
+}
+
+type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  module: String!
+  name: String!
+}
+
+type EventFloatMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  floatValue: Float!
+}
+
+type EventIntMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  intValue: Int!
+}
+
+type PageInfo {
+  lastCursor: Cursor
+  hasNextPage: Boolean
+  hasPreviousPage: Boolean
+  count: Int!
+  totalCount: Int!
 }

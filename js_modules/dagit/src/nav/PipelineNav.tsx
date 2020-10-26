@@ -1,7 +1,6 @@
+import {gql, useQuery} from '@apollo/client';
 import {IBreadcrumbProps, IconName, Tag} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import React from 'react';
-import {useQuery} from 'react-apollo';
 import {useRouteMatch} from 'react-router-dom';
 import styled from 'styled-components';
 

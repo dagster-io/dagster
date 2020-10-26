@@ -14,13 +14,12 @@ leveraging Jest is easiest.
 */
 
 // collect mocks from various tests in the codebase
-import {MOCKS as AppMocks} from 'src/testing/AppMocks';
 import {MOCKS as SVGMocks} from 'src/testing/SVGMocks';
 
 const dagsterRoot = path.resolve(path.join(__dirname, '..', '..', '..', '..'));
 
 it(`builds mocks`, () => {
-  for (const mock of [...SVGMocks, ...AppMocks]) {
+  for (const mock of SVGMocks) {
     const query = print(addTypenameToDocument(mock.query))
       .replace(/[\n\r]/g, '')
       .replace(/[ ][ ]+/g, ' ');

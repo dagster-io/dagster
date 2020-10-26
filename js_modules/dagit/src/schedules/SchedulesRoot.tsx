@@ -1,3 +1,4 @@
+import {useQuery} from '@apollo/client';
 import {
   Callout,
   Card,
@@ -11,7 +12,6 @@ import {
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {Header, ScrollContainer} from 'src/ListComponents';

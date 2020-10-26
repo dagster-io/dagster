@@ -1,7 +1,6 @@
+import {gql, useMutation} from '@apollo/client';
 import {Button, Intent, Spinner} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {useMutation} from 'react-apollo';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {SCHEDULES_ROOT_QUERY} from 'src/schedules/ScheduleUtils';

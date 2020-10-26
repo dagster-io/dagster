@@ -1,3 +1,4 @@
+import {gql, useLazyQuery, useMutation} from '@apollo/client';
 import {
   Button,
   Intent,
@@ -8,10 +9,8 @@ import {
   Position,
   Tooltip,
 } from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import * as qs from 'query-string';
 import * as React from 'react';
-import {useLazyQuery, useMutation} from 'react-apollo';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {DagsterRepositoryContext} from 'src/DagsterRepositoryContext';

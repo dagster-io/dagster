@@ -1,5 +1,5 @@
+import {gql} from '@apollo/client';
 import {Checkbox, Colors, NonIdealState, Spinner} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components';

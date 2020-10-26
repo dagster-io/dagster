@@ -1,5 +1,5 @@
+import {ErrorResponse, onError} from '@apollo/client/link/error';
 import {Intent, Position, Toaster} from '@blueprintjs/core';
-import {ErrorResponse, onError} from 'apollo-link-error';
 import {GraphQLError} from 'graphql';
 import * as React from 'react';
 

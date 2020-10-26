@@ -1,5 +1,5 @@
+import {gql} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import React from 'react';
 
 import {PythonErrorInfo} from 'src/PythonErrorInfo';

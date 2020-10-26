@@ -1,7 +1,7 @@
+import {gql} from '@apollo/client';
 import {Colors, Icon, Intent, Spinner} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import Ansi from 'ansi-to-react';
-import gql from 'graphql-tag';
 import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 

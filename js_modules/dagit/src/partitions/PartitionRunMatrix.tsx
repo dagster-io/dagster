@@ -1,9 +1,8 @@
+import {gql, useQuery} from '@apollo/client';
 import {Checkbox, Colors, Intent, MultiSlider} from '@blueprintjs/core';
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
-import gql from 'graphql-tag';
 import {uniq} from 'lodash';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 import styled from 'styled-components/macro';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';

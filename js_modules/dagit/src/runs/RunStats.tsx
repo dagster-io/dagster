@@ -1,7 +1,6 @@
+import {gql, useQuery} from '@apollo/client';
 import {Spinner} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 

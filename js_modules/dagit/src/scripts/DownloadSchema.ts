@@ -27,23 +27,12 @@ writeFileSync('./src/schema.graphql', sdl);
 
 // Write filteredSchema.json, a reduced schema for runtime usage
 // See https://www.apollographql.com/docs/react/advanced/fragments.html
-const types = schemaJson.__schema.types.map(
-  (type: {name: string; kind: string; possibleTypes: [{name: string}]}) => {
-    const {name, kind} = type;
-    const possibleTypes = type.possibleTypes
-      ? type.possibleTypes.map((t) => ({
-          name: t.name,
-        }))
-      : null;
-    return {name, kind, possibleTypes};
-  },
-);
+const possibleTypes = {};
 
-writeFileSync(
-  './src/filteredSchema.generated.json',
-  JSON.stringify({
-    __schema: {
-      types,
-    },
-  }),
-);
+schemaJson.__schema.types.forEach((supertype: {name: string; possibleTypes: [{name: string}]}) => {
+  if (supertype.possibleTypes) {
+    possibleTypes[supertype.name] = supertype.possibleTypes.map((subtype) => subtype.name);
+  }
+});
+
+writeFileSync('./src/possibleTypes.generated.json', JSON.stringify(possibleTypes));

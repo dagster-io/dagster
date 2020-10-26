@@ -13,7 +13,7 @@ import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFrag
 import {MOCKS} from 'src/testing/SVGMocks';
 import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from 'src/types/PipelineExplorerRootQuery';
 
-const snapshotsDir = path.join(__dirname, '__snapshots__');
+const snapshotsDir = path.join(__dirname, '..', '..', '__tests__', 'graph', '__snapshots__');
 
 function readMock(mock: {filepath: string}) {
   const {data} = JSON.parse(fs.readFileSync(mock.filepath).toString());

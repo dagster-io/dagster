@@ -1,6 +1,5 @@
-import gql from 'graphql-tag';
+import {gql, useApolloClient} from '@apollo/client';
 import * as React from 'react';
-import {useApolloClient} from 'react-apollo';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';

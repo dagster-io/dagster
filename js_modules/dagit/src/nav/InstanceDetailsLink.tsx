@@ -1,7 +1,6 @@
+import {gql, useQuery} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 import {Link} from 'react-router-dom';
 
 import {InstanceDetailSummaryQuery} from 'src/nav/types/InstanceDetailSummaryQuery';

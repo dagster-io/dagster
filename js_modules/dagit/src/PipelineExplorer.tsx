@@ -1,6 +1,6 @@
+import {gql} from '@apollo/client';
 import {Breadcrumbs, Checkbox, Colors, Icon, InputGroup, NonIdealState} from '@blueprintjs/core';
 import Color from 'color';
-import gql from 'graphql-tag';
 import {History} from 'history';
 import * as querystring from 'query-string';
 import * as React from 'react';

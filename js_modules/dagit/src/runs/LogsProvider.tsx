@@ -1,5 +1,4 @@
-import {ApolloClient} from 'apollo-client';
-import gql from 'graphql-tag';
+import {ApolloClient, gql} from '@apollo/client';
 import * as React from 'react';
 
 import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
@@ -137,15 +136,15 @@ export class LogsProvider extends React.Component<
     });
 
     if (local) {
-      local.status = status;
+      const toWrite = {...local, status};
       if (status === PipelineRunStatus.FAILURE || status === PipelineRunStatus.SUCCESS) {
-        local.canTerminate = false;
+        toWrite.canTerminate = false;
       }
       this.props.client.writeFragment({
         fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
         fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
         id: `PipelineRun.${this.props.runId}`,
-        data: local,
+        data: toWrite,
       });
     }
   }

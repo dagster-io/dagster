@@ -1,8 +1,6 @@
+import {ApolloClient, gql, ApolloConsumer} from '@apollo/client';
 import {Button, Colors, NonIdealState, Spinner} from '@blueprintjs/core';
-import ApolloClient from 'apollo-client';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {ApolloConsumer} from 'react-apollo';
 import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
 

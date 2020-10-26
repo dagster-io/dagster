@@ -1,6 +1,5 @@
-import gql from 'graphql-tag';
+import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';

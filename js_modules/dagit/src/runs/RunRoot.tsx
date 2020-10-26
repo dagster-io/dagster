@@ -1,8 +1,7 @@
+import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {useApolloClient, useQuery} from 'react-apollo';
 import {RouteComponentProps} from 'react-router';
 
 import {AssetsSupported} from 'src/AssetsSupported';

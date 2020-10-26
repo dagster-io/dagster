@@ -1,6 +1,6 @@
+import {gql} from '@apollo/client';
 import {Colors, Icon} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import * as React from 'react';
 
 import {ConfigTypeSchema} from 'src/ConfigTypeSchema';

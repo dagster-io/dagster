@@ -1,3 +1,4 @@
+import {ApolloClient, gql, useApolloClient, useQuery} from '@apollo/client';
 import {
   Button,
   HTMLInputProps,
@@ -9,10 +10,7 @@ import {
   Spinner,
 } from '@blueprintjs/core';
 import {Select, Suggest} from '@blueprintjs/select';
-import {isEqual} from 'apollo-utilities';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {WithApolloClient, useQuery, withApollo} from 'react-apollo';
 import * as ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
@@ -53,7 +51,7 @@ interface ConfigEditorConfigPickerProps {
 const PRESET_PICKER_HINT_TEXT = `Define a PresetDefinition, PartitionSetDefinition, or a schedule decorator (e.g. @daily_schedule) to autofill this session...`;
 
 class ConfigEditorConfigPickerInternal extends React.Component<
-  WithApolloClient<ConfigEditorConfigPickerProps>
+  ConfigEditorConfigPickerProps & {client: ApolloClient<any>}
 > {
   onSelectPartitionSet = (partitionSet: PartitionSet) => {
     this.props.onSaveSession({
@@ -184,9 +182,10 @@ class ConfigEditorConfigPickerInternal extends React.Component<
   }
 }
 
-export const ConfigEditorConfigPicker = withApollo<ConfigEditorConfigPickerProps>(
-  ConfigEditorConfigPickerInternal,
-);
+export const ConfigEditorConfigPicker = (props: ConfigEditorConfigPickerProps) => {
+  const client = useApolloClient();
+  return <ConfigEditorConfigPickerInternal {...props} client={client} />;
+};
 
 interface ConfigEditorPartitionPickerProps {
   pipeline: Pipeline;
@@ -298,7 +297,6 @@ export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPa
       />
     );
   },
-  isEqual,
 );
 
 interface ConfigEditorConfigGeneratorPickerProps {
@@ -417,7 +415,6 @@ export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEd
       </div>
     );
   },
-  isEqual,
 );
 
 function activateSelect(select: Select<any> | null) {

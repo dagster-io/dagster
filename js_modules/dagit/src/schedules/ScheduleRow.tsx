@@ -1,4 +1,4 @@
-import {useMutation, useQuery} from '@apollo/react-hooks';
+import {useMutation, useQuery, gql} from '@apollo/client';
 import {
   Button,
   Callout,
@@ -17,7 +17,6 @@ import {
   Tooltip,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import * as qs from 'query-string';
 import * as React from 'react';
 import {useState} from 'react';

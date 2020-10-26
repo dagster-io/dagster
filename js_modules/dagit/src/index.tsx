@@ -5,11 +5,9 @@ import '@blueprintjs/table/lib/css/table.css';
 
 import 'src/fonts/fonts.css';
 
-import ApolloClient from 'apollo-client';
-import {ApolloLink} from 'apollo-link';
-import {WebSocketLink} from 'apollo-link-ws';
+import {ApolloClient, ApolloLink, ApolloProvider} from '@apollo/client';
+import {WebSocketLink} from '@apollo/client/link/ws';
 import * as React from 'react';
-import {ApolloProvider} from 'react-apollo';
 import * as ReactDOM from 'react-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';

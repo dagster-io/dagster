@@ -1,6 +1,6 @@
+import {gql} from '@apollo/client';
 import {Button, Classes, Colors, Dialog, Icon, Position, Tooltip} from '@blueprintjs/core';
 import CSS from 'csstype';
-import gql from 'graphql-tag';
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
 import styled from 'styled-components/macro';

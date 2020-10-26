@@ -1,8 +1,7 @@
+import {gql, useQuery} from '@apollo/client';
 import {Button, Callout, Code, Divider, IBreadcrumbProps, Icon, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import React, {useState} from 'react';
-import {useQuery} from 'react-apollo';
 import {useHistory} from 'react-router-dom';
 
 import {ButtonLink} from 'src/ButtonLink';

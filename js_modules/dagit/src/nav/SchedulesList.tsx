@@ -1,7 +1,6 @@
+import {gql, useQuery} from '@apollo/client';
 import {Button, ButtonGroup, Colors, Icon, InputGroup} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import React from 'react';
-import {useQuery} from 'react-apollo';
 import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';

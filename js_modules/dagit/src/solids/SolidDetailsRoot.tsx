@@ -1,6 +1,5 @@
-import gql from 'graphql-tag';
+import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components/macro';
 

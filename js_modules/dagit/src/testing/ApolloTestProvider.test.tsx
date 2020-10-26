@@ -1,6 +1,6 @@
+import {useQuery} from '@apollo/client';
 import {render, screen} from '@testing-library/react';
 import React from 'react';
-import {useQuery} from 'react-apollo';
 
 import {INSTANCE_DETAIL_SUMMARY_QUERY} from 'src/nav/InstanceDetailsLink';
 import {InstanceDetailSummaryQuery} from 'src/nav/types/InstanceDetailSummaryQuery';
@@ -25,7 +25,7 @@ describe('ApolloTestProvider', () => {
         <Thing />
       </ApolloTestProvider>,
     );
-    const result = await screen.findAllByText('Version: Hello World');
+    const result = await screen.findAllByText('Version: x.y.z');
     expect(result.length).toBe(1);
   });
 

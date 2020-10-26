@@ -1,7 +1,7 @@
+import {useMutation} from '@apollo/client';
 import {Button, IconName, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {useMutation} from 'react-apollo';
 
 import {useRepository, useRepositoryOptions} from 'src/DagsterRepositoryContext';
 import {SharedToaster} from 'src/DomUtils';

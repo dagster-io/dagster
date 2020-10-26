@@ -1,5 +1,4 @@
-import {isEqual} from 'apollo-utilities';
-import gql from 'graphql-tag';
+import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
@@ -190,23 +189,20 @@ const StructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   textMatch: boolean;
-}> = React.memo(
-  ({node, metadata, textMatch}) => (
-    <Row
-      level={LogLevel.INFO}
-      onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
-      onMouseLeave={() => setHighlightedGaantChartTime(null)}
-      textMatch={textMatch}
-    >
-      <SolidColumn stepKey={'stepKey' in node && node.stepKey} />
-      <StructuredContent>
-        <LogsRowStructuredContent node={node} metadata={metadata} />
-      </StructuredContent>
-      <TimestampColumn time={'timestamp' in node && node.timestamp} />
-    </Row>
-  ),
-  isEqual,
-);
+}> = React.memo(({node, metadata, textMatch}) => (
+  <Row
+    level={LogLevel.INFO}
+    onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
+    onMouseLeave={() => setHighlightedGaantChartTime(null)}
+    textMatch={textMatch}
+  >
+    <SolidColumn stepKey={'stepKey' in node && node.stepKey} />
+    <StructuredContent>
+      <LogsRowStructuredContent node={node} metadata={metadata} />
+    </StructuredContent>
+    <TimestampColumn time={'timestamp' in node && node.timestamp} />
+  </Row>
+));
 
 interface UnstructuredProps {
   node: LogsRowUnstructuredFragment;
@@ -247,19 +243,16 @@ export class Unstructured extends React.Component<UnstructuredProps> {
 const UnstructuredMemoizedContent: React.FunctionComponent<{
   node: LogsRowUnstructuredFragment;
   textMatch: boolean;
-}> = React.memo(
-  ({node, textMatch}) => (
-    <Row
-      level={node.level}
-      onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
-      onMouseLeave={() => setHighlightedGaantChartTime(null)}
-      textMatch={textMatch}
-    >
-      <SolidColumn stepKey={node.stepKey} />
-      <EventTypeColumn>{node.level}</EventTypeColumn>
-      <span style={{flex: 1}}>{node.message}</span>
-      <TimestampColumn time={node.timestamp} />
-    </Row>
-  ),
-  isEqual,
-);
+}> = React.memo(({node, textMatch}) => (
+  <Row
+    level={node.level}
+    onMouseEnter={() => setHighlightedGaantChartTime(node.timestamp)}
+    onMouseLeave={() => setHighlightedGaantChartTime(null)}
+    textMatch={textMatch}
+  >
+    <SolidColumn stepKey={node.stepKey} />
+    <EventTypeColumn>{node.level}</EventTypeColumn>
+    <span style={{flex: 1}}>{node.message}</span>
+    <TimestampColumn time={node.timestamp} />
+  </Row>
+));

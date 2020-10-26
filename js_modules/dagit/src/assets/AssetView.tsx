@@ -1,8 +1,7 @@
+import {gql, useQuery} from '@apollo/client';
 import {Colors, Button, ButtonGroup} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import {uniq} from 'lodash';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
 import styled from 'styled-components';
 

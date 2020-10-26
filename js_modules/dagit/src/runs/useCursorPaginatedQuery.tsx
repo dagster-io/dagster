@@ -1,7 +1,7 @@
+import {useQuery} from '@apollo/client';
 import {DocumentNode} from 'graphql';
 import * as querystring from 'query-string';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 import {__RouterContext as RouterContext} from 'react-router';
 
 import {CursorPaginationProps} from 'src/CursorControls';

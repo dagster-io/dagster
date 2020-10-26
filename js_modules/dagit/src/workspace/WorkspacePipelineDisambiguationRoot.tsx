@@ -1,6 +1,6 @@
+import {useQuery} from '@apollo/client';
 import {Callout, IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 import {Link, Redirect} from 'react-router-dom';
 
 import {ROOT_REPOSITORIES_QUERY} from 'src/DagsterRepositoryContext';

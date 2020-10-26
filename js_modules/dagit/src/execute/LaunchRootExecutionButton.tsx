@@ -1,5 +1,5 @@
+import {useMutation} from '@apollo/client';
 import * as React from 'react';
-import {useMutation} from 'react-apollo';
 
 import {LaunchButton} from 'src/execute/LaunchButton';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from 'src/runs/RunUtils';

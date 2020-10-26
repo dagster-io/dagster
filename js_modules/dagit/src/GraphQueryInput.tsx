@@ -1,6 +1,6 @@
+import {gql} from '@apollo/client';
 import {Button, Colors, InputGroup, Intent, Menu, MenuItem, Popover} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';

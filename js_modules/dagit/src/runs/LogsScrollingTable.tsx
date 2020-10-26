@@ -1,6 +1,6 @@
+import {gql} from '@apollo/client';
 import {Colors, NonIdealState, Spinner} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {CellMeasurer, CellMeasurerCache, List, ListRowProps} from 'react-virtualized';

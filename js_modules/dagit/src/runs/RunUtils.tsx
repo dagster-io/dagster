@@ -1,5 +1,5 @@
+import {gql} from '@apollo/client';
 import {Icon, Popover} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
@@ -34,7 +34,7 @@ export const RunsQueryRefetchContext = React.createContext<{
 
 export function handleLaunchResult(
   pipelineName: string,
-  result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution},
+  result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
   opts: {openInNewWindow: boolean},
 ) {
   const obj =

@@ -1,7 +1,6 @@
+import {gql, useApolloClient, useMutation} from '@apollo/client';
 import {Button, Icon, Intent, Spinner, Tooltip} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {useApolloClient, useMutation} from 'react-apollo';
 
 import {SharedToaster} from 'src/DomUtils';
 import {ShortcutHandler} from 'src/ShortcutHandler';

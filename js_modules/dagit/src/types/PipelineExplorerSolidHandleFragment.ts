@@ -1,6 +1,7 @@
 // @generated
 /* tslint:disable */
 /* eslint-disable */
+// @generated
 // This file was automatically generated and should not be edited.
 
 // ====================================================
@@ -102,7 +103,7 @@ export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefin
 }
 
 export interface PipelineExplorerSolidHandleFragment_solid_definition_SolidDefinition_configField_configType {
-  __typename: "ArrayConfigType" | "CompositeConfigType" | "EnumConfigType" | "NullableConfigType" | "RegularConfigType" | "ScalarUnionConfigType";
+  __typename: "RegularConfigType" | "ArrayConfigType" | "ScalarUnionConfigType" | "NullableConfigType" | "EnumConfigType" | "CompositeConfigType";
   key: string;
   description: string | null;
 }

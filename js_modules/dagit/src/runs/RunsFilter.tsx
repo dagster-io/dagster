@@ -1,7 +1,6 @@
-import gql from 'graphql-tag';
+import {gql, QueryResult, useQuery} from '@apollo/client';
 import * as querystring from 'query-string';
 import * as React from 'react';
-import {QueryResult, useQuery} from 'react-apollo';
 import {__RouterContext as RouterContext} from 'react-router';
 
 import {DagsterRepositoryContext, useRepositorySelector} from 'src/DagsterRepositoryContext';

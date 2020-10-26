@@ -1,6 +1,6 @@
+import {gql} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components/macro';

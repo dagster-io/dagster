@@ -1,7 +1,6 @@
+import {gql, useQuery} from '@apollo/client';
 import {Colors, Intent, Popover} from '@blueprintjs/core';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {useQuery} from 'react-apollo';
 import styled from 'styled-components/macro';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';

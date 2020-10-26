@@ -1,8 +1,8 @@
+import {gql} from '@apollo/client';
+import {Query} from '@apollo/react-components';
 import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import gql from 'graphql-tag';
 import * as React from 'react';
-import {Query} from 'react-apollo';
 import {Redirect, RouteComponentProps} from 'react-router-dom';
 
 import {

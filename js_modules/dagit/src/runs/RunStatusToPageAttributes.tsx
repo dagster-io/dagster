@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {RunStatusPipelineRunFragment} from 'src/runs/types/RunStatusPipelineRunFragment';

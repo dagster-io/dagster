@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import {gql} from '@apollo/client';
 import React from 'react';
 import styled from 'styled-components/macro';
 

@@ -1,4 +1,4 @@
-import gql from 'graphql-tag';
+import {gql} from '@apollo/client';
 
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RunMetadataProvider} from 'src/RunMetadataProvider';
