@@ -1044,7 +1044,7 @@ class CouldNotStartServerProcess(Exception):
         )
 
 
-def wait_for_grpc_server(ipc_output_file, timeout=3):
+def wait_for_grpc_server(ipc_output_file, timeout=15):
     event = read_unary_response(ipc_output_file, timeout=timeout)
 
     if isinstance(event, GrpcServerFailedToBindEvent):
