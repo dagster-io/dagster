@@ -1,38 +1,58 @@
 # start_repo_marker_0
+import os
+
 from dagster import (
+    DagsterType,
     ModeDefinition,
-    make_python_type_usable_as_dagster_type,
+    OutputDefinition,
     pipeline,
     repository,
+    resource,
     solid,
 )
-from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
-from dagster_pyspark import pyspark_resource
-from pyspark.sql import DataFrame, Row
+from dagster.core.storage.asset_store import AssetStore
+from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-# Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
-make_python_type_usable_as_dagster_type(python_type=DataFrame, dagster_type=DagsterPySparkDataFrame)
+
+class LocalParquetStore(AssetStore):
+    def _get_path(self, context, step_output_handle):
+        return os.path.join(
+            context.run_id, step_output_handle.step_key, step_output_handle.output_name,
+        )
+
+    def set_asset(self, context, step_output_handle, obj, _):
+        obj.write.parquet(self._get_path(context, step_output_handle))
+
+    def get_asset(self, context, step_output_handle, _):
+        spark = SparkSession.builder.getOrCreate()
+        return spark.read.parquet()
 
 
-@solid(required_resource_keys={"pyspark"})
-def make_people(context) -> DataFrame:
+@resource
+def local_parquet_store(_):
+    return LocalParquetStore()
+
+
+@solid(output_defs=[OutputDefinition(asset_store_key="spark_asset_store")])
+def make_people(_):
     schema = StructType([StructField("name", StringType()), StructField("age", IntegerType())])
     rows = [Row(name="Thom", age=51), Row(name="Jonny", age=48), Row(name="Nigel", age=49)]
-    return context.resources.pyspark.spark_session.createDataFrame(rows, schema)
+    spark = SparkSession.builder.getOrCreate()
+    return spark.createDataFrame(rows, schema)
 
 
-@solid
-def filter_over_50(_, people: DataFrame) -> DataFrame:
+@solid(output_defs=[OutputDefinition(asset_store_key="spark_asset_store")])
+def filter_over_50(_, people):
     return people.filter(people["age"] > 50)
 
 
-@solid
-def count_people(_, people: DataFrame) -> int:
+@solid(output_defs=[OutputDefinition(asset_store_key="spark_asset_store")])
+def count_people(_, people) -> int:
     return people.count()
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"pyspark": pyspark_resource})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"spark_asset_store": local_parquet_store})])
 def my_pipeline():
     count_people(filter_over_50(make_people()))
 
