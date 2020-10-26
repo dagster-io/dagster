@@ -18,7 +18,7 @@ from dagster.cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
-from dagster.core.errors import DagsterLaunchFailedError, DagsterSubprocessError
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import (
     create_execution_plan,
@@ -770,12 +770,7 @@ def _launch_scheduled_execution(
 
     try:
         launched_run = instance.launch_run(possibly_invalid_pipeline_run.run_id, external_pipeline)
-    except DagsterLaunchFailedError:
-        error = serializable_error_info_from_exc_info(sys.exc_info())
-        instance.report_engine_event(
-            error.message, possibly_invalid_pipeline_run, EngineEventData.engine_error(error),
-        )
-        instance.report_run_failed(possibly_invalid_pipeline_run)
+    except Exception:  # pylint: disable=broad-except
         stream.send(
             ScheduledExecutionFailed(run_id=possibly_invalid_pipeline_run.run_id, errors=[error])
         )

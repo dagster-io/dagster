@@ -404,18 +404,12 @@ def _schedule_run_at_time(
                     run_id=run_to_launch.run_id, schedule_name=schedule_name
                 )
             )
-        except Exception as e:  # pylint: disable=broad-except
-            if not isinstance(e, KeyboardInterrupt):
-                error = serializable_error_info_from_exc_info(sys.exc_info())
-                instance.report_engine_event(
-                    error.message, run_to_launch, EngineEventData.engine_error(error),
+        except Exception:  # pylint: disable=broad-except
+            logger.error(
+                "Run {run_id} created successfully but failed to launch.".format(
+                    run_id=run_to_launch.run_id
                 )
-                instance.report_run_failed(run_to_launch)
-                logger.error(
-                    "Run {run_id} created successfully but failed to launch.".format(
-                        run_id=run_to_launch.run_id
-                    )
-                )
+            )
 
     _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
 

@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import time
 from collections import defaultdict
 from enum import Enum
@@ -22,6 +23,7 @@ from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME
 from .ref import InstanceRef
@@ -1062,7 +1064,22 @@ class DagsterInstance:
             run_id (str): The id of the run the launch.
         """
         run = self.get_run_by_id(run_id)
-        return self._run_launcher.launch_run(self, run, external_pipeline=external_pipeline)
+
+        try:
+            launched_run = self._run_launcher.launch_run(
+                self, run, external_pipeline=external_pipeline
+            )
+        except:
+            from dagster.core.events import EngineEventData
+
+            error = serializable_error_info_from_exc_info(sys.exc_info())
+            self.report_engine_event(
+                error.message, run, EngineEventData.engine_error(error),
+            )
+            self.report_run_failed(run)
+            raise
+
+        return launched_run
 
     # Scheduler
 

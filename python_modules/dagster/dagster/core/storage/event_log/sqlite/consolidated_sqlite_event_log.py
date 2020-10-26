@@ -6,7 +6,7 @@ from sqlalchemy.pool import NullPool
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from dagster import check
+from dagster import StringSource, check
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.sql import (
     check_alembic_revision,
@@ -66,7 +66,7 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
 
     @classmethod
     def config_type(cls):
-        return {"base_dir": str}
+        return {"base_dir": StringSource}
 
     @staticmethod
     def from_config_value(inst_data, config_value):

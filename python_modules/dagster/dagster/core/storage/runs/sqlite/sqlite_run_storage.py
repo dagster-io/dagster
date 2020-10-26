@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
-from dagster import check
+from dagster import StringSource, check
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -57,7 +57,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {"base_dir": str}
+        return {"base_dir": StringSource}
 
     @staticmethod
     def from_config_value(inst_data, config_value):

@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 from contextlib import contextmanager
@@ -6,6 +7,7 @@ from contextlib import contextmanager
 import pytest
 
 from dagster import DefaultRunLauncher, file_relative_path, pipeline, repository, seven, solid
+from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation.handle import RepositoryLocationHandle, UserProcessApi
 from dagster.core.host_representation.repository_location import (
     GrpcServerRepositoryLocation,
@@ -13,7 +15,9 @@ from dagster.core.host_representation.repository_location import (
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import (
+    environ,
     instance_for_test,
+    instance_for_test_tempdir,
     poll_for_event,
     poll_for_finished_run,
     poll_for_step_start,
@@ -213,6 +217,51 @@ def test_successful_run(get_external_pipeline, run_config):  # pylint: disable=r
 
             pipeline_run = poll_for_finished_run(instance, run_id)
             assert pipeline_run.status == PipelineRunStatus.SUCCESS
+
+
+@pytest.mark.parametrize(
+    "get_external_pipeline",
+    [
+        get_external_pipeline_from_grpc_server_repository,
+        get_external_pipeline_from_managed_grpc_python_env_repository,
+    ],
+)
+def test_invalid_instance_run(get_external_pipeline):
+    with seven.TemporaryDirectory() as temp_dir:
+        correct_run_storage_dir = os.path.join(temp_dir, "history", "")
+        wrong_run_storage_dir = os.path.join(temp_dir, "wrong", "")
+
+        with environ({"RUN_STORAGE_ENV": correct_run_storage_dir}):
+            with instance_for_test_tempdir(
+                temp_dir,
+                overrides={
+                    "run_storage": {
+                        "module": "dagster.core.storage.runs",
+                        "class": "SqliteRunStorage",
+                        "config": {"base_dir": {"env": "RUN_STORAGE_ENV"}},
+                    }
+                },
+            ) as instance:
+                pipeline_run = instance.create_run_for_pipeline(pipeline_def=noop_pipeline,)
+
+                # Server won't be able to load the run from run storage
+                with environ({"RUN_STORAGE_ENV": wrong_run_storage_dir}):
+                    with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
+
+                        with pytest.raises(
+                            DagsterLaunchFailedError,
+                            match=re.escape(
+                                "gRPC server could not load run {run_id} in order to execute it".format(
+                                    run_id=pipeline_run.run_id
+                                )
+                            ),
+                        ):
+                            instance.launch_run(
+                                run_id=pipeline_run.run_id, external_pipeline=external_pipeline,
+                            )
+
+                        failed_run = instance.get_run_by_id(pipeline_run.run_id)
+                        assert failed_run.status == PipelineRunStatus.FAILURE
 
 
 @pytest.mark.parametrize(

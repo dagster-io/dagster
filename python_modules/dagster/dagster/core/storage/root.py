@@ -1,6 +1,6 @@
 import os
 
-from dagster import check
+from dagster import StringSource, check
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 
@@ -34,4 +34,4 @@ class LocalArtifactStorage(ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {"base_dir": str}
+        return {"base_dir": StringSource}

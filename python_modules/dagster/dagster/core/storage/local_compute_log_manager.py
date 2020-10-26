@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers.polling import PollingObserver
 
-from dagster import check
+from dagster import StringSource, check
 from dagster.core.execution.compute_logs import mirror_stream_to_file
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
@@ -55,7 +55,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {"base_dir": str}
+        return {"base_dir": StringSource}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
