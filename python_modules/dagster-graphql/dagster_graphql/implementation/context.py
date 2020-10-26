@@ -16,7 +16,7 @@ class DagsterGraphQLContext:
         for handle in self._workspace.repository_location_handles:
             check.invariant(
                 self._repository_locations.get(handle.location_name) is None,
-                'Can not have multiple locations with the same name, got multiple "{name}"'.format(
+                'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
                     name=handle.location_name,
                 ),
             )

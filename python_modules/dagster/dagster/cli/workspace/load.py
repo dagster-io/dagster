@@ -5,9 +5,15 @@ import warnings
 import six
 from dagster import check
 from dagster.core.code_pointer import CodePointer, rebase_file
-from dagster.core.host_representation import RepositoryLocationHandle, UserProcessApi
+from dagster.core.host_representation import (
+    GrpcServerRepositoryLocationOrigin,
+    InProcessRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    PythonEnvRepositoryLocationOrigin,
+    UserProcessApi,
+)
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.utils import load_yaml_from_path
+from dagster.utils import load_yaml_from_path, merge_dicts
 
 from .config_schema import ensure_workspace_config
 from .workspace import Workspace
@@ -18,7 +24,7 @@ def load_workspace_from_yaml_paths(yaml_paths, python_user_process_api):
     check.inst_param(python_user_process_api, "python_user_process_api", UserProcessApi)
 
     workspace_configs = [load_yaml_from_path(yaml_path) for yaml_path in yaml_paths]
-    workspaces = []
+    origins_by_name = {}
     for workspace_config, yaml_path in zip(workspace_configs, yaml_paths):
         check.invariant(
             workspace_config is not None,
@@ -27,23 +33,28 @@ def load_workspace_from_yaml_paths(yaml_paths, python_user_process_api):
                 "the file contains valid yaml."
             ).format(yaml_path=os.path.abspath(yaml_path)),
         )
-        workspaces.append(
-            load_workspace_from_config(workspace_config, yaml_path, python_user_process_api)
+
+        origins_by_name = merge_dicts(
+            origins_by_name,
+            _repo_location_origins_from_config(
+                workspace_config, yaml_path, python_user_process_api
+            ),
         )
 
-    repository_location_handles_dict = {}
-    for workspace in workspaces:
-        for repository_location_name in workspace.repository_location_names:
-            repository_location_handles_dict[
-                repository_location_name
-            ] = workspace.get_repository_location_handle(repository_location_name)
-
-    repository_location_handles = list(repository_location_handles_dict.values())
-    merged_workspace = Workspace(repository_location_handles)
-    return merged_workspace
+    return Workspace(list(origins_by_name.values()))
 
 
 def load_workspace_from_config(workspace_config, yaml_path, python_user_process_api):
+    return Workspace(
+        list(
+            _repo_location_origins_from_config(
+                workspace_config, yaml_path, python_user_process_api
+            ).values()
+        )
+    )
+
+
+def _repo_location_origins_from_config(workspace_config, yaml_path, python_user_process_api):
     ensure_workspace_config(workspace_config, yaml_path)
     check.inst_param(python_user_process_api, "python_user_process_api", UserProcessApi)
 
@@ -53,31 +64,36 @@ def load_workspace_from_config(workspace_config, yaml_path, python_user_process_
             "You are using the legacy repository yaml format. Please update your file "
             "to abide by the new workspace file format."
         )
-        return Workspace(
-            [
-                RepositoryLocationHandle.create_in_process_location(
-                    pointer=CodePointer.from_legacy_repository_yaml(yaml_path)
-                )
-            ]
+
+        origin = InProcessRepositoryLocationOrigin(
+            CodePointer.from_legacy_repository_yaml(yaml_path)
         )
 
-    location_handles = []
+        return {origin.location_name: origin}
+
+    location_origins = {}
     for location_config in workspace_config["load_from"]:
-        location_handles.append(
-            _location_handle_from_location_config(
-                location_config, yaml_path, python_user_process_api
-            )
+        origin = _location_origin_from_location_config(
+            location_config, yaml_path, python_user_process_api
+        )
+        check.invariant(
+            location_origins.get(origin.location_name) is None,
+            'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
+                name=origin.location_name,
+            ),
         )
 
-    return Workspace(location_handles)
+        location_origins[origin.location_name] = origin
+
+    return location_origins
 
 
-def _location_handle_from_module_config(
+def _location_origin_from_module_config(
     python_module_config, user_process_api, executable_path=sys.executable
 ):
     check.inst_param(user_process_api, "user_process_api", UserProcessApi)
     module_name, attribute, location_name = _get_module_config_data(python_module_config)
-    return location_handle_from_module_name(
+    return location_origin_from_module_name(
         module_name, attribute, user_process_api, location_name, executable_path
     )
 
@@ -94,7 +110,15 @@ def _get_module_config_data(python_module_config):
     )
 
 
-def location_handle_from_module_name(
+def _create_python_env_location_origin(loadable_target_origin, location_name, user_process_api):
+    return (
+        PythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
+        if user_process_api == UserProcessApi.CLI
+        else ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
+    )
+
+
+def location_origin_from_module_name(
     module_name, attribute, user_process_api, location_name=None, executable_path=sys.executable
 ):
     check.str_param(module_name, "module_name")
@@ -111,17 +135,17 @@ def location_handle_from_module_name(
         package_name=None,
     )
 
-    return RepositoryLocationHandle.create_python_env_location(
+    return _create_python_env_location_origin(
         loadable_target_origin, location_name, user_process_api
     )
 
 
-def _location_handle_from_package_config(
+def _location_origin_from_package_config(
     python_package_config, user_process_api, executable_path=sys.executable
 ):
     check.inst_param(user_process_api, "user_process_api", UserProcessApi)
     module_name, attribute, location_name = _get_package_config_data(python_package_config)
-    return location_handle_from_package_name(
+    return location_origin_from_package_name(
         module_name, attribute, user_process_api, location_name, executable_path
     )
 
@@ -138,7 +162,7 @@ def _get_package_config_data(python_package_config):
     )
 
 
-def location_handle_from_package_name(
+def location_origin_from_package_name(
     package_name, attribute, user_process_api, location_name=None, executable_path=sys.executable
 ):
     check.str_param(package_name, "package_name")
@@ -154,12 +178,12 @@ def location_handle_from_package_name(
         attribute=attribute,
         package_name=package_name,
     )
-    return RepositoryLocationHandle.create_python_env_location(
+    return _create_python_env_location_origin(
         loadable_target_origin, location_name, user_process_api,
     )
 
 
-def _location_handle_from_python_file_config(
+def _location_origin_from_python_file_config(
     python_file_config, yaml_path, user_process_api, executable_path=sys.executable
 ):
     check.str_param(yaml_path, "yaml_path")
@@ -169,7 +193,7 @@ def _location_handle_from_python_file_config(
         python_file_config, yaml_path
     )
 
-    return location_handle_from_python_file(
+    return location_origin_from_python_file(
         absolute_path,
         attribute,
         working_directory,
@@ -194,7 +218,7 @@ def _get_python_file_config_data(python_file_config, yaml_path):
     )
 
 
-def location_handle_from_python_file(
+def location_origin_from_python_file(
     python_file,
     attribute,
     working_directory,
@@ -216,14 +240,12 @@ def location_handle_from_python_file(
         attribute=attribute,
     )
 
-    return RepositoryLocationHandle.create_python_env_location(
-        loadable_target_origin=loadable_target_origin,
-        location_name=location_name,
-        user_process_api=user_process_api,
+    return _create_python_env_location_origin(
+        loadable_target_origin, location_name, user_process_api,
     )
 
 
-def _location_handle_from_grpc_server_config(grpc_server_config, yaml_path):
+def _location_origin_from_grpc_server_config(grpc_server_config, yaml_path):
     check.dict_param(grpc_server_config, "grpc_server_config")
     check.str_param(yaml_path, "yaml_path")
 
@@ -241,12 +263,12 @@ def _location_handle_from_grpc_server_config(grpc_server_config, yaml_path):
     if not host:
         host = "localhost"
 
-    return RepositoryLocationHandle.create_grpc_server_location(
+    return GrpcServerRepositoryLocationOrigin(
         port=port, socket=socket, host=host, location_name=location_name,
     )
 
 
-def _location_handle_from_python_environment_config(
+def _location_origin_from_python_environment_config(
     python_environment_config, yaml_path, user_process_api
 ):
     check.dict_param(python_environment_config, "python_environment_config")
@@ -268,35 +290,35 @@ def _location_handle_from_python_environment_config(
     )
 
     if python_file_config:
-        return _location_handle_from_python_file_config(
+        return _location_origin_from_python_file_config(
             python_file_config, yaml_path, user_process_api, executable_path
         )
     elif python_module_config:
-        return _location_handle_from_module_config(
+        return _location_origin_from_module_config(
             python_module_config, user_process_api, executable_path
         )
     else:
         check.invariant(python_package_config)
-        return _location_handle_from_package_config(
+        return _location_origin_from_package_config(
             python_package_config, user_process_api, executable_path
         )
 
 
-def _location_handle_from_location_config(location_config, yaml_path, python_user_process_api):
+def _location_origin_from_location_config(location_config, yaml_path, python_user_process_api):
     check.dict_param(location_config, "location_config")
     check.str_param(yaml_path, "yaml_path")
     check.inst_param(python_user_process_api, "python_user_process_api", UserProcessApi)
 
     if is_target_config(location_config):
-        return _location_handle_from_target_config(
+        return _location_origin_from_target_config(
             location_config, yaml_path, python_user_process_api
         )
 
     elif "grpc_server" in location_config:
-        return _location_handle_from_grpc_server_config(location_config["grpc_server"], yaml_path)
+        return _location_origin_from_grpc_server_config(location_config["grpc_server"], yaml_path)
 
     elif "python_environment" in location_config:
-        return _location_handle_from_python_environment_config(
+        return _location_origin_from_python_environment_config(
             location_config["python_environment"], yaml_path, python_user_process_api
         )
 
@@ -312,22 +334,22 @@ def is_target_config(potential_target_config):
     )
 
 
-def _location_handle_from_target_config(target_config, yaml_path, user_process_api):
+def _location_origin_from_target_config(target_config, yaml_path, user_process_api):
     check.dict_param(target_config, "target_config")
     check.param_invariant(is_target_config(target_config), "target_config")
     check.str_param(yaml_path, "yaml_path")
     check.inst_param(user_process_api, "user_process_api", UserProcessApi)
 
     if "python_file" in target_config:
-        return _location_handle_from_python_file_config(
+        return _location_origin_from_python_file_config(
             target_config["python_file"], yaml_path, user_process_api
         )
 
     elif "python_module" in target_config:
-        return _location_handle_from_module_config(target_config["python_module"], user_process_api)
+        return _location_origin_from_module_config(target_config["python_module"], user_process_api)
 
     elif "python_package" in target_config:
-        return _location_handle_from_package_config(
+        return _location_origin_from_package_config(
             target_config["python_package"], user_process_api
         )
 

@@ -9,49 +9,17 @@ from dagster import check
 from dagster.api.list_repositories import sync_list_repositories, sync_list_repositories_grpc
 from dagster.core.code_pointer import CodePointer
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.host_representation.origin import (
+    IN_PROCESS_NAME,
+    GrpcServerRepositoryLocationOrigin,
+    InProcessRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    PythonEnvRepositoryLocationOrigin,
+    RepositoryLocationOrigin,
+)
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryOrigin, RepositoryPythonOrigin
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-
-# This is a hard-coded name for the special "in-process" location.
-# This is typically only used for test, although we may allow
-# users to load user code into a host process as well. We want
-# to encourage the user code to be in user processes as much
-# as possible since that it how this system will be used in prod.
-# We used a hard-coded name so that we don't have to create
-# made up names for this case.
-IN_PROCESS_NAME = "<<in_process>>"
-
-
-def _assign_grpc_location_name(port, socket, host):
-    check.opt_int_param(port, "port")
-    check.opt_str_param(socket, "socket")
-    check.str_param(host, "host")
-    check.invariant(port or socket)
-    return "grpc:{host}:{socket_or_port}".format(
-        host=host, socket_or_port=(socket if socket else port)
-    )
-
-
-def get_default_repository_location_name(repo_name):
-    check.str_param(repo_name, "repo_name")
-    return repo_name + "_location"
-
-
-def _assign_python_env_location_name(repository_code_pointer_dict):
-    check.dict_param(
-        repository_code_pointer_dict,
-        "repository_code_pointer_dict",
-        key_type=str,
-        value_type=CodePointer,
-    )
-    if len(repository_code_pointer_dict) > 1:
-        raise DagsterInvariantViolationError(
-            "If there is one than more repository you must provide a location name"
-        )
-
-    return get_default_repository_location_name(next(iter(repository_code_pointer_dict.keys())))
 
 
 # Which API the host process should use to communicate with the process
@@ -89,20 +57,48 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         pass
 
     @staticmethod
+    def create_from_repository_location_origin(repo_location_origin):
+        check.inst_param(repo_location_origin, "repo_location_origin", RepositoryLocationOrigin)
+        if isinstance(repo_location_origin, PythonEnvRepositoryLocationOrigin):
+            return RepositoryLocationHandle.create_python_env_location(repo_location_origin)
+        elif isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin):
+            return RepositoryLocationHandle.create_process_bound_grpc_server_location(
+                repo_location_origin
+            )
+        elif isinstance(repo_location_origin, GrpcServerRepositoryLocationOrigin):
+            return RepositoryLocationHandle.create_grpc_server_location(repo_location_origin)
+        elif isinstance(repo_location_origin, InProcessRepositoryLocationOrigin):
+            return RepositoryLocationHandle.create_in_process_location(
+                repo_location_origin.code_pointer
+            )
+        else:
+            check.failed("Unexpected repository location origin")
+
+    @staticmethod
     def create_from_repository_origin(repository_origin, instance):
         check.inst_param(repository_origin, "repository_origin", RepositoryOrigin)
         check.inst_param(instance, "instance", DagsterInstance)
 
         if isinstance(repository_origin, RepositoryGrpcServerOrigin):
-            return RepositoryLocationHandle.create_grpc_server_location(
-                port=repository_origin.port,
-                socket=repository_origin.socket,
-                host=repository_origin.host,
+            return RepositoryLocationHandle.create_from_repository_location_origin(
+                GrpcServerRepositoryLocationOrigin(
+                    port=repository_origin.port,
+                    socket=repository_origin.socket,
+                    host=repository_origin.host,
+                )
             )
         elif isinstance(repository_origin, RepositoryPythonOrigin):
-            return RepositoryLocationHandle.create_python_env_location(
-                loadable_target_origin=repository_origin.loadable_target_origin,
-                user_process_api=python_user_process_api_from_instance(instance),
+            loadable_target_origin = repository_origin.loadable_target_origin
+            user_process_api = python_user_process_api_from_instance(instance)
+
+            repo_location_origin = (
+                ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin)
+                if user_process_api == UserProcessApi.GRPC
+                else PythonEnvRepositoryLocationOrigin(loadable_target_origin)
+            )
+
+            return RepositoryLocationHandle.create_from_repository_location_origin(
+                repo_location_origin
             )
         else:
             raise DagsterInvariantViolationError("Unexpected repository origin type")
@@ -118,16 +114,10 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         return InProcessRepositoryLocationHandle(IN_PROCESS_NAME, {repo_def.name: pointer})
 
     @staticmethod
-    def create_python_env_location(
-        loadable_target_origin, location_name=None, user_process_api=UserProcessApi.GRPC,
-    ):
-        check.inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
-        check.opt_str_param(location_name, "location_name")
+    def create_python_env_location(origin):
+        check.inst_param(origin, "origin", PythonEnvRepositoryLocationOrigin)
 
-        if user_process_api == UserProcessApi.GRPC:
-            return RepositoryLocationHandle.create_process_bound_grpc_server_location(
-                loadable_target_origin=loadable_target_origin, location_name=location_name
-            )
+        loadable_target_origin = origin.loadable_target_origin
 
         response = sync_list_repositories(
             executable_path=loadable_target_origin.executable_path,
@@ -163,17 +153,16 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
                 for lrs in response.repository_symbols
             }
         return PythonEnvRepositoryLocationHandle(
-            location_name=location_name
-            if location_name
-            else _assign_python_env_location_name(repository_code_pointer_dict),
-            loadable_target_origin=loadable_target_origin,
-            repository_code_pointer_dict=repository_code_pointer_dict,
+            origin=origin, repository_code_pointer_dict=repository_code_pointer_dict,
         )
 
     @staticmethod
-    def create_process_bound_grpc_server_location(loadable_target_origin, location_name):
+    def create_process_bound_grpc_server_location(origin):
         from dagster.grpc.client import client_heartbeat_thread
         from dagster.grpc.server import GrpcServerProcess
+
+        check.inst_param(origin, "origin", ManagedGrpcPythonEnvRepositoryLocationOrigin)
+        loadable_target_origin = origin.loadable_target_origin
 
         server = GrpcServerProcess(
             loadable_target_origin=loadable_target_origin,
@@ -195,11 +184,8 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         code_pointer_dict = list_repositories_response.repository_code_pointer_dict
 
         return ManagedGrpcPythonEnvRepositoryLocationHandle(
-            loadable_target_origin=loadable_target_origin,
+            origin=origin,
             executable_path=list_repositories_response.executable_path,
-            location_name=location_name
-            if location_name
-            else _assign_python_env_location_name(code_pointer_dict),
             repository_code_pointer_dict=code_pointer_dict,
             client=client,
             grpc_server_process=server,
@@ -208,13 +194,14 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         )
 
     @staticmethod
-    def create_grpc_server_location(port, socket, host, location_name=None):
-        from dagster.grpc.client import DagsterGrpcClient
+    def create_grpc_server_location(origin):
+        check.inst_param(origin, "origin", GrpcServerRepositoryLocationOrigin)
 
-        check.opt_int_param(port, "port")
-        check.opt_str_param(socket, "socket")
-        check.str_param(host, "host")
-        check.opt_str_param(location_name, "location_name")
+        port = origin.port
+        socket = origin.socket
+        host = origin.host
+
+        from dagster.grpc.client import DagsterGrpcClient
 
         client = DagsterGrpcClient(port=port, socket=socket, host=host)
 
@@ -225,45 +212,46 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         )
 
         return GrpcServerRepositoryLocationHandle(
-            port=port,
-            socket=socket,
-            host=host,
-            location_name=location_name
-            if location_name
-            else _assign_grpc_location_name(port, socket, host),
-            client=client,
-            repository_names=repository_names,
+            origin=origin, client=client, repository_names=repository_names,
         )
 
 
 class GrpcServerRepositoryLocationHandle(
-    namedtuple(
-        "_GrpcServerRepositoryLocationHandle",
-        "port socket host location_name client repository_names",
-    ),
+    namedtuple("_GrpcServerRepositoryLocationHandle", "origin client repository_names",),
     RepositoryLocationHandle,
 ):
     """
     Represents a gRPC server that Dagster is not responsible for managing.
     """
 
-    def __new__(cls, port, socket, host, location_name, client, repository_names):
+    def __new__(cls, origin, client, repository_names):
         from dagster.grpc.client import DagsterGrpcClient
 
         return super(GrpcServerRepositoryLocationHandle, cls).__new__(
             cls,
-            check.opt_int_param(port, "port"),
-            check.opt_str_param(socket, "socket"),
-            check.str_param(host, "host"),
-            check.str_param(location_name, "location_name"),
+            check.inst_param(origin, "origin", GrpcServerRepositoryLocationOrigin),
             check.inst_param(client, "client", DagsterGrpcClient),
             check.set_param(repository_names, "repository_names", of_type=str),
         )
 
+    @property
+    def port(self):
+        return self.origin.port
+
+    @property
+    def socket(self):
+        return self.origin.socket
+
+    @property
+    def host(self):
+        return self.origin.host
+
+    @property
+    def location_name(self):
+        return self.origin.location_name
+
     def create_reloaded_handle(self):
-        return RepositoryLocationHandle.create_grpc_server_location(
-            self.port, self.socket, self.host, self.location_name
-        )
+        return RepositoryLocationHandle.create_grpc_server_location(self.origin)
 
     def get_current_image(self):
         job_image = self.client.get_current_image().current_image
@@ -294,19 +282,13 @@ class GrpcServerRepositoryLocationHandle(
 
 
 class PythonEnvRepositoryLocationHandle(
-    namedtuple(
-        "_PythonEnvRepositoryLocationHandle",
-        "loadable_target_origin location_name repository_code_pointer_dict",
-    ),
+    namedtuple("_PythonEnvRepositoryLocationHandle", "origin repository_code_pointer_dict",),
     RepositoryLocationHandle,
 ):
-    def __new__(cls, loadable_target_origin, location_name, repository_code_pointer_dict):
+    def __new__(cls, origin, repository_code_pointer_dict):
         return super(PythonEnvRepositoryLocationHandle, cls).__new__(
             cls,
-            check.inst_param(
-                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
-            ),
-            check.str_param(location_name, "location_name"),
+            check.inst_param(origin, "origin", PythonEnvRepositoryLocationOrigin,),
             check.dict_param(
                 repository_code_pointer_dict,
                 "repository_code_pointer_dict",
@@ -316,19 +298,25 @@ class PythonEnvRepositoryLocationHandle(
         )
 
     @property
+    def loadable_target_origin(self):
+        return self.origin.loadable_target_origin
+
+    @property
+    def location_name(self):
+        return self.origin.location_name
+
+    @property
     def executable_path(self):
         return self.loadable_target_origin.executable_path
 
     def create_reloaded_handle(self):
-        return RepositoryLocationHandle.create_python_env_location(
-            self.loadable_target_origin, self.location_name,
-        )
+        return RepositoryLocationHandle.create_from_repository_location_origin(self.origin)
 
 
 class ManagedGrpcPythonEnvRepositoryLocationHandle(
     namedtuple(
         "_ManagedGrpcPythonEnvRepositoryLocationHandle",
-        "loadable_target_origin executable_path location_name repository_code_pointer_dict "
+        "origin executable_path repository_code_pointer_dict "
         "grpc_server_process client heartbeat_thread heartbeat_shutdown_event",
     ),
     RepositoryLocationHandle,
@@ -339,9 +327,8 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
 
     def __new__(
         cls,
-        loadable_target_origin,
+        origin,
         executable_path,
-        location_name,
         repository_code_pointer_dict,
         grpc_server_process,
         client,
@@ -353,11 +340,8 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
 
         return super(ManagedGrpcPythonEnvRepositoryLocationHandle, cls).__new__(
             cls,
-            check.inst_param(
-                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
-            ),
+            check.inst_param(origin, "origin", ManagedGrpcPythonEnvRepositoryLocationOrigin,),
             check.str_param(executable_path, "executable_path"),
-            check.str_param(location_name, "location_name"),
             check.dict_param(
                 repository_code_pointer_dict,
                 "repository_code_pointer_dict",
@@ -369,6 +353,14 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
             check.inst_param(heartbeat_thread, "heartbeat_thread", threading.Thread),
             heartbeat_shutdown_event,
         )
+
+    @property
+    def location_name(self):
+        return self.origin.location_name
+
+    @property
+    def loadable_target_origin(self):
+        return self.origin.loadable_target_origin
 
     @property
     def repository_names(self):
@@ -387,9 +379,7 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(
         return self.grpc_server_process.socket
 
     def create_reloaded_handle(self):
-        return RepositoryLocationHandle.create_process_bound_grpc_server_location(
-            self.loadable_target_origin, self.location_name,
-        )
+        return RepositoryLocationHandle.create_from_repository_location_origin(self.origin)
 
     def cleanup(self):
         self.heartbeat_shutdown_event.set()

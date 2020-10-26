@@ -7,7 +7,12 @@ from contextlib import contextmanager
 import pytest
 from dagster import DefaultRunLauncher, file_relative_path, pipeline, repository, seven, solid
 from dagster.core.errors import DagsterLaunchFailedError
-from dagster.core.host_representation.handle import RepositoryLocationHandle, UserProcessApi
+from dagster.core.host_representation import (
+    GrpcServerRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    PythonEnvRepositoryLocationOrigin,
+)
+from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.host_representation.repository_location import (
     GrpcServerRepositoryLocation,
     RepositoryLocation,
@@ -107,11 +112,13 @@ def get_external_pipeline_from_grpc_server_repository(pipeline_name):
     try:
         with server_process.create_ephemeral_client() as api_client:
             repository_location = GrpcServerRepositoryLocation(
-                RepositoryLocationHandle.create_grpc_server_location(
-                    location_name="test",
-                    port=api_client.port,
-                    socket=api_client.socket,
-                    host=api_client.host,
+                RepositoryLocationHandle.create_from_repository_location_origin(
+                    GrpcServerRepositoryLocationOrigin(
+                        location_name="test",
+                        port=api_client.port,
+                        socket=api_client.socket,
+                        host=api_client.host,
+                    )
                 )
             )
 
@@ -124,12 +131,14 @@ def get_external_pipeline_from_grpc_server_repository(pipeline_name):
 
 @contextmanager
 def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name):
-    repository_location_handle = RepositoryLocationHandle.create_process_bound_grpc_server_location(
-        loadable_target_origin=LoadableTargetOrigin(
-            attribute="nope",
-            python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
-        ),
-        location_name="nope",
+    repository_location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
+        ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                attribute="nope",
+                python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+            ),
+            location_name="nope",
+        )
     )
     repository_location = GrpcServerRepositoryLocation(repository_location_handle)
     try:
@@ -140,14 +149,15 @@ def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name)
 
 @contextmanager
 def get_external_pipeline_from_python_location(pipeline_name):
-    repository_location_handle = RepositoryLocationHandle.create_python_env_location(
-        loadable_target_origin=LoadableTargetOrigin(
-            executable_path=sys.executable,
-            attribute="nope",
-            python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
-        ),
-        location_name="nope",
-        user_process_api=UserProcessApi.CLI,
+    repository_location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
+        PythonEnvRepositoryLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                attribute="nope",
+                python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+            ),
+            location_name="nope",
+        )
     )
 
     yield (

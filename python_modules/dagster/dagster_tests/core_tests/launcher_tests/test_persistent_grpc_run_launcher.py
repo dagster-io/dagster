@@ -3,6 +3,10 @@ import time
 import pytest
 from dagster import file_relative_path, seven
 from dagster.core.errors import DagsterLaunchFailedError
+from dagster.core.host_representation import (
+    GrpcServerRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.instance import DagsterInstance
@@ -54,11 +58,13 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
         )
         with server_process.create_ephemeral_client() as api_client:
             repository_location = GrpcServerRepositoryLocation(
-                RepositoryLocationHandle.create_grpc_server_location(
-                    location_name="test",
-                    port=api_client.port,
-                    socket=api_client.socket,
-                    host=api_client.host,
+                RepositoryLocationHandle.create_from_repository_location_origin(
+                    GrpcServerRepositoryLocationOrigin(
+                        location_name="test",
+                        port=api_client.port,
+                        socket=api_client.socket,
+                        host=api_client.host,
+                    )
                 )
             )
 
@@ -90,12 +96,14 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
 
 def test_terminate_after_shutdown():
     with grpc_instance() as instance:
-        repository_location_handle = RepositoryLocationHandle.create_process_bound_grpc_server_location(
-            loadable_target_origin=LoadableTargetOrigin(
-                attribute="nope",
-                python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
-            ),
-            location_name="nope",
+        repository_location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
+            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                loadable_target_origin=LoadableTargetOrigin(
+                    attribute="nope",
+                    python_file=file_relative_path(__file__, "test_default_run_launcher.py"),
+                ),
+                location_name="nope",
+            )
         )
         repository_location = GrpcServerRepositoryLocation(repository_location_handle)
 
@@ -149,11 +157,13 @@ def test_server_down():
 
         with server_process.create_ephemeral_client() as api_client:
             repository_location = GrpcServerRepositoryLocation(
-                RepositoryLocationHandle.create_grpc_server_location(
-                    location_name="test",
-                    port=api_client.port,
-                    socket=api_client.socket,
-                    host=api_client.host,
+                RepositoryLocationHandle.create_from_repository_location_origin(
+                    GrpcServerRepositoryLocationOrigin(
+                        location_name="test",
+                        port=api_client.port,
+                        socket=api_client.socket,
+                        host=api_client.host,
+                    )
                 )
             )
 

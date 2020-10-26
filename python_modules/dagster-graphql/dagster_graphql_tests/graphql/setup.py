@@ -45,11 +45,11 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.cli.workspace.load import location_handle_from_python_file
+from dagster.cli.workspace.load import location_origin_from_python_file
 from dagster.core.definitions.decorators import job
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import RepositoryLocation
+from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
 from dagster.core.host_representation.handle import python_user_process_api_from_instance
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
@@ -104,12 +104,14 @@ def create_main_recon_repo():
 
 def get_main_external_repo(instance):
     return RepositoryLocation.from_handle(
-        location_handle_from_python_file(
-            python_file=file_relative_path(__file__, "setup.py"),
-            attribute=main_repo_name(),
-            working_directory=None,
-            user_process_api=python_user_process_api_from_instance(instance),
-            location_name=main_repo_location_name(),
+        RepositoryLocationHandle.create_from_repository_location_origin(
+            location_origin_from_python_file(
+                python_file=file_relative_path(__file__, "setup.py"),
+                attribute=main_repo_name(),
+                working_directory=None,
+                user_process_api=python_user_process_api_from_instance(instance),
+                location_name=main_repo_location_name(),
+            )
         )
     ).get_repository(main_repo_name())
 

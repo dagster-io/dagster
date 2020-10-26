@@ -6,8 +6,11 @@ import kubernetes
 import pytest
 from dagster import DagsterInstance, ScheduleDefinition, seven
 from dagster.core.definitions import lambda_solid, pipeline, repository
-from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
-from dagster.core.host_representation.handle import UserProcessApi
+from dagster.core.host_representation import (
+    PythonEnvRepositoryLocationOrigin,
+    RepositoryLocation,
+    RepositoryLocationHandle,
+)
 from dagster.core.scheduler import ScheduleStatus
 from dagster.core.scheduler.scheduler import (
     DagsterScheduleDoesNotExist,
@@ -79,13 +82,16 @@ def test_repository():
 
 def get_test_external_repo():
     return RepositoryLocation.from_handle(
-        RepositoryLocationHandle.create_python_env_location(
-            loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable, python_file=__file__, attribute="test_repository",
+        RepositoryLocationHandle.create_from_repository_location_origin(
+            PythonEnvRepositoryLocationOrigin(
+                loadable_target_origin=LoadableTargetOrigin(
+                    executable_path=sys.executable,
+                    python_file=__file__,
+                    attribute="test_repository",
+                ),
+                location_name="test_location",
             ),
-            location_name="test_location",
-            user_process_api=UserProcessApi.CLI,
-        )
+        ),
     ).get_repository("test_repository")
 
 

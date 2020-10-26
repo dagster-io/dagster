@@ -3,8 +3,10 @@ import sys
 from dagster import check
 from dagster.cli.workspace import Workspace
 from dagster.core.code_pointer import CodePointer
-from dagster.core.host_representation import RepositoryLocationHandle
-from dagster.core.host_representation.handle import UserProcessApi
+from dagster.core.host_representation import (
+    InProcessRepositoryLocationOrigin,
+    PythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster_graphql.implementation.context import DagsterGraphQLContext
@@ -53,7 +55,7 @@ def define_in_process_context(python_file, fn_name, instance):
     return DagsterGraphQLContext(
         workspace=Workspace(
             [
-                RepositoryLocationHandle.create_in_process_location(
+                InProcessRepositoryLocationOrigin(
                     CodePointer.from_python_file(python_file, fn_name, None)
                 )
             ]
@@ -68,12 +70,11 @@ def define_out_of_process_context(python_file, fn_name, instance):
     return DagsterGraphQLContext(
         workspace=Workspace(
             [
-                RepositoryLocationHandle.create_python_env_location(
+                PythonEnvRepositoryLocationOrigin(
                     loadable_target_origin=LoadableTargetOrigin(
                         executable_path=sys.executable, python_file=python_file, attribute=fn_name,
                     ),
                     location_name=main_repo_location_name(),
-                    user_process_api=UserProcessApi.CLI,
                 )
             ]
         ),

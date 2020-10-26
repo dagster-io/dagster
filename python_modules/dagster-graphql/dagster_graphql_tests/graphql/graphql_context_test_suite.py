@@ -7,8 +7,12 @@ import six
 from dagster import check, file_relative_path, seven
 from dagster.cli.workspace import Workspace
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import RepositoryLocationHandle
-from dagster.core.host_representation.handle import UserProcessApi
+from dagster.core.host_representation import (
+    GrpcServerRepositoryLocationOrigin,
+    InProcessRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    PythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.storage.event_log import InMemoryEventLogStorage
@@ -261,9 +265,7 @@ class EnvironmentManagers:
         @contextmanager
         def _mgr_fn(recon_repo):
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-            with Workspace(
-                [RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)]
-            ) as workspace:
+            with Workspace([InProcessRepositoryLocationOrigin(recon_repo.pointer)]) as workspace:
                 yield workspace
 
         return MarkedManager(_mgr_fn, [Marks.hosted_user_process_env])
@@ -279,10 +281,8 @@ class EnvironmentManagers:
             loadable_target_origin = recon_repo.get_origin().loadable_target_origin
             with Workspace(
                 [
-                    RepositoryLocationHandle.create_python_env_location(
-                        loadable_target_origin=loadable_target_origin,
-                        location_name="test",
-                        user_process_api=UserProcessApi.CLI,
+                    PythonEnvRepositoryLocationOrigin(
+                        loadable_target_origin=loadable_target_origin, location_name="test",
                     )
                 ]
             ) as workspace:
@@ -300,7 +300,7 @@ class EnvironmentManagers:
             loadable_target_origin = recon_repo.get_origin().loadable_target_origin
             with Workspace(
                 [
-                    RepositoryLocationHandle.create_process_bound_grpc_server_location(
+                    ManagedGrpcPythonEnvRepositoryLocationOrigin(
                         loadable_target_origin=loadable_target_origin, location_name="test",
                     )
                 ]
@@ -322,7 +322,7 @@ class EnvironmentManagers:
                 with server_process.create_ephemeral_client() as api_client:
                     with Workspace(
                         [
-                            RepositoryLocationHandle.create_grpc_server_location(
+                            GrpcServerRepositoryLocationOrigin(
                                 port=api_client.port,
                                 socket=api_client.socket,
                                 host=api_client.host,
@@ -345,7 +345,7 @@ class EnvironmentManagers:
 
             with Workspace(
                 [
-                    RepositoryLocationHandle.create_python_env_location(
+                    ManagedGrpcPythonEnvRepositoryLocationOrigin(
                         loadable_target_origin=LoadableTargetOrigin(
                             executable_path=sys.executable,
                             python_file=file_relative_path(__file__, "setup.py"),
@@ -353,7 +353,7 @@ class EnvironmentManagers:
                         ),
                         location_name="test",
                     ),
-                    RepositoryLocationHandle.create_python_env_location(
+                    ManagedGrpcPythonEnvRepositoryLocationOrigin(
                         loadable_target_origin=LoadableTargetOrigin(
                             executable_path=sys.executable,
                             python_file=file_relative_path(__file__, "setup.py"),

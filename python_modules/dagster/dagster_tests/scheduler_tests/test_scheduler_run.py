@@ -9,7 +9,11 @@ import pytest
 from dagster import DagsterEventType, daily_schedule, hourly_schedule, pipeline, repository, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
+from dagster.core.host_representation import (
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    RepositoryLocation,
+    RepositoryLocationHandle,
+)
 from dagster.core.scheduler import ScheduleState, ScheduleStatus, ScheduleTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
@@ -219,8 +223,10 @@ def default_repo():
         working_directory=os.getcwd(),
     )
 
-    with RepositoryLocationHandle.create_python_env_location(
-        loadable_target_origin=loadable_target_origin, location_name="test_location",
+    with RepositoryLocationHandle.create_from_repository_location_origin(
+        ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            loadable_target_origin=loadable_target_origin, location_name="test_location",
+        )
     ) as handle:
         yield RepositoryLocation.from_handle(handle).get_repository("the_repo")
 

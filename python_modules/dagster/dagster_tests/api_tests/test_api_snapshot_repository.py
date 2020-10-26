@@ -10,7 +10,12 @@ from dagster.api.snapshot_repository import (
     sync_get_external_repositories_grpc,
     sync_get_streaming_external_repositories_grpc,
 )
-from dagster.core.host_representation import ExternalRepository, RepositoryLocation
+from dagster.core.host_representation import (
+    ExternalRepository,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    PythonEnvRepositoryLocationOrigin,
+    RepositoryLocation,
+)
 from dagster.core.host_representation.handle import RepositoryLocationHandle, UserProcessApi
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
@@ -82,12 +87,14 @@ def giant_repo():
 
 @contextmanager
 def get_giant_repo_grpc_repository_location_handle():
-    handle = RepositoryLocationHandle.create_process_bound_grpc_server_location(
-        loadable_target_origin=LoadableTargetOrigin(
-            attribute="giant_repo",
-            module_name="dagster_tests.api_tests.test_api_snapshot_repository",
-        ),
-        location_name="giant_repo_location",
+    handle = RepositoryLocationHandle.create_from_repository_location_origin(
+        ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                attribute="giant_repo",
+                module_name="dagster_tests.api_tests.test_api_snapshot_repository",
+            ),
+            location_name="giant_repo_location",
+        )
     )
     try:
         yield handle
@@ -96,14 +103,15 @@ def get_giant_repo_grpc_repository_location_handle():
 
 
 def test_giant_external_repository():
-    repository_location_handle = RepositoryLocationHandle.create_python_env_location(
-        loadable_target_origin=LoadableTargetOrigin(
-            executable_path=sys.executable,
-            module_name="dagster_tests.api_tests.test_api_snapshot_repository",
-            attribute="giant_repo",
-        ),
-        location_name="giant_repo_location",
-        user_process_api=UserProcessApi.CLI,
+    repository_location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
+        PythonEnvRepositoryLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                module_name="dagster_tests.api_tests.test_api_snapshot_repository",
+                attribute="giant_repo",
+            ),
+            location_name="giant_repo_location",
+        )
     )
     external_repos = sync_get_external_repositories(repository_location_handle)
 

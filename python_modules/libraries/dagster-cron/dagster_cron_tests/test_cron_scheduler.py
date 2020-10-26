@@ -7,8 +7,11 @@ import pytest
 import yaml
 from dagster import ScheduleDefinition
 from dagster.core.definitions import lambda_solid, pipeline, repository
-from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
-from dagster.core.host_representation.handle import UserProcessApi
+from dagster.core.host_representation import (
+    PythonEnvRepositoryLocationOrigin,
+    RepositoryLocation,
+    RepositoryLocationHandle,
+)
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.scheduler import ScheduleState, ScheduleStatus
@@ -118,12 +121,15 @@ def test_repository():
 
 def get_test_external_repo():
     return RepositoryLocation.from_handle(
-        RepositoryLocationHandle.create_python_env_location(
-            loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable, python_file=__file__, attribute="test_repository",
-            ),
-            location_name="test_location",
-            user_process_api=UserProcessApi.CLI,
+        RepositoryLocationHandle.create_from_repository_location_origin(
+            PythonEnvRepositoryLocationOrigin(
+                loadable_target_origin=LoadableTargetOrigin(
+                    executable_path=sys.executable,
+                    python_file=__file__,
+                    attribute="test_repository",
+                ),
+                location_name="test_location",
+            )
         )
     ).get_repository("test_repository")
 

@@ -9,11 +9,12 @@ from click import UsageError
 from dagster import check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
-from dagster.core.host_representation import ExternalRepository, RepositoryLocation
-from dagster.core.host_representation.handle import (
-    RepositoryLocationHandle,
-    python_user_process_api_from_instance,
+from dagster.core.host_representation import (
+    ExternalRepository,
+    GrpcServerRepositoryLocationOrigin,
+    RepositoryLocation,
 )
+from dagster.core.host_representation.handle import python_user_process_api_from_instance
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import (
     PipelinePythonOrigin,
@@ -25,9 +26,9 @@ from dagster.utils.hosted_user_process import recon_repository_from_origin
 
 from .load import (
     load_workspace_from_yaml_paths,
-    location_handle_from_module_name,
-    location_handle_from_package_name,
-    location_handle_from_python_file,
+    location_origin_from_module_name,
+    location_origin_from_package_name,
+    location_origin_from_python_file,
 )
 from .workspace import Workspace
 
@@ -204,7 +205,7 @@ def workspace_from_load_target(load_target, instance):
     elif isinstance(load_target, PythonFileTarget):
         return Workspace(
             [
-                location_handle_from_python_file(
+                location_origin_from_python_file(
                     python_file=load_target.python_file,
                     attribute=load_target.attribute,
                     working_directory=load_target.working_directory,
@@ -215,7 +216,7 @@ def workspace_from_load_target(load_target, instance):
     elif isinstance(load_target, ModuleTarget):
         return Workspace(
             [
-                location_handle_from_module_name(
+                location_origin_from_module_name(
                     load_target.module_name,
                     load_target.attribute,
                     user_process_api=python_user_process_api_from_instance(instance),
@@ -225,7 +226,7 @@ def workspace_from_load_target(load_target, instance):
     elif isinstance(load_target, PackageTarget):
         return Workspace(
             [
-                location_handle_from_package_name(
+                location_origin_from_package_name(
                     load_target.package_name,
                     load_target.attribute,
                     user_process_api=python_user_process_api_from_instance(instance),
@@ -235,7 +236,7 @@ def workspace_from_load_target(load_target, instance):
     elif isinstance(load_target, GrpcServerTarget):
         return Workspace(
             [
-                RepositoryLocationHandle.create_grpc_server_location(
+                GrpcServerRepositoryLocationOrigin(
                     port=load_target.port, socket=load_target.socket, host=load_target.host,
                 )
             ]

@@ -3,6 +3,10 @@ from contextlib import contextmanager
 
 from dagster import file_relative_path
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import (
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+    PythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.host_representation.handle import (
     PipelineHandle,
     RepositoryLocationHandle,
@@ -17,24 +21,31 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
 
 def get_bar_repo_repository_location_handle(user_process_api=UserProcessApi.CLI):
-    return RepositoryLocationHandle.create_python_env_location(
-        loadable_target_origin=LoadableTargetOrigin(
-            executable_path=sys.executable,
-            python_file=file_relative_path(__file__, "api_tests_repo.py"),
-            attribute="bar_repo",
-        ),
-        location_name="bar_repo_location",
-        user_process_api=user_process_api,
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable,
+        python_file=file_relative_path(__file__, "api_tests_repo.py"),
+        attribute="bar_repo",
     )
+    location_name = "bar_repo_location"
+
+    origin = (
+        ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
+        if user_process_api == UserProcessApi.GRPC
+        else PythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
+    )
+
+    return RepositoryLocationHandle.create_from_repository_location_origin(origin)
 
 
 @contextmanager
 def get_bar_repo_grpc_repository_location_handle():
-    handle = RepositoryLocationHandle.create_process_bound_grpc_server_location(
-        loadable_target_origin=LoadableTargetOrigin(
-            attribute="bar_repo", python_file=file_relative_path(__file__, "api_tests_repo.py"),
-        ),
-        location_name="bar_repo",
+    handle = RepositoryLocationHandle.create_from_repository_location_origin(
+        ManagedGrpcPythonEnvRepositoryLocationOrigin(
+            loadable_target_origin=LoadableTargetOrigin(
+                attribute="bar_repo", python_file=file_relative_path(__file__, "api_tests_repo.py"),
+            ),
+            location_name="bar_repo",
+        )
     )
     try:
         yield handle

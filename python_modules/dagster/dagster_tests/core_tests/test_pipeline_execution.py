@@ -24,13 +24,17 @@ from dagster import (
     reexecute_pipeline,
     solid,
 )
-from dagster.cli.workspace.load import location_handle_from_python_file
+from dagster.cli.workspace.load import location_origin_from_python_file
 from dagster.core.definitions import Solid
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.definitions.graph import _create_adjacency_lists
 from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
 from dagster.core.execution.results import SolidExecutionResult
-from dagster.core.host_representation import RepositoryLocation, UserProcessApi
+from dagster.core.host_representation import (
+    RepositoryLocation,
+    RepositoryLocationHandle,
+    UserProcessApi,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import step_output_event_filter
 from dagster.core.utility_solids import (
@@ -168,11 +172,13 @@ def test_diamond_toposort():
 
 def test_external_diamond_toposort():
     repo_location = RepositoryLocation.from_handle(
-        location_handle_from_python_file(
-            python_file=__file__,
-            attribute="create_diamond_pipeline",
-            working_directory=None,
-            user_process_api=UserProcessApi.GRPC,
+        RepositoryLocationHandle.create_from_repository_location_origin(
+            location_origin_from_python_file(
+                python_file=__file__,
+                attribute="create_diamond_pipeline",
+                working_directory=None,
+                user_process_api=UserProcessApi.GRPC,
+            )
         )
     )
     external_repo = next(iter(repo_location.get_repositories().values()))

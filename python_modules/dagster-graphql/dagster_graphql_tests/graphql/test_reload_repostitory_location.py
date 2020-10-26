@@ -18,7 +18,7 @@ from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_cont
 
 class TestReloadRepositoriesOutOfProcess(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.readonly_in_memory_instance_out_of_process_env()]
+        context_variants=[GraphQLContextVariant.readonly_in_memory_instance_managed_grpc_env()]
     )
 ):
     def test_out_of_process_reload_location(self, graphql_context):

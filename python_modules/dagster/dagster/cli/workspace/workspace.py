@@ -1,15 +1,27 @@
 from dagster import check
-from dagster.core.host_representation import RepositoryLocationHandle
+from dagster.core.host_representation import RepositoryLocationHandle, RepositoryLocationOrigin
 
 
 class Workspace:
-    def __init__(self, repository_location_handles):
+    def __init__(self, repository_location_origins):
         check.list_param(
-            repository_location_handles,
-            "repository_location_handles",
-            of_type=RepositoryLocationHandle,
+            repository_location_origins,
+            "repository_location_origins",
+            of_type=RepositoryLocationOrigin,
         )
-        self._location_handle_dict = {rlh.location_name: rlh for rlh in repository_location_handles}
+
+        self._location_handle_dict = {}
+        for origin in repository_location_origins:
+            check.invariant(
+                self._location_handle_dict.get(origin.location_name) is None,
+                'Cannot have multiple locations with the same name, got multiple "{name}"'.format(
+                    name=origin.location_name,
+                ),
+            )
+
+            self._location_handle_dict[
+                origin.location_name
+            ] = RepositoryLocationHandle.create_from_repository_location_origin(origin)
 
     @property
     def repository_location_handles(self):
