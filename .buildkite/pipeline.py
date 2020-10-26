@@ -640,7 +640,7 @@ def next_docs_build_tests():
         .build(),
         StepBuilder("documentation coverage")
         .run(
-            "make dev_install",
+            "make install_dev_python_modules",
             "pip install -e python_modules/automation",
             "pip install -r docs-requirements.txt -qqq",
             "cd docs",
