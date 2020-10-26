@@ -70,16 +70,16 @@ class Solid(object):
     Attributes:
         name (str):
             Name of the solid inside the pipeline. Must be unique per-pipeline.
-        definition (SolidDefinition):
-            Definition of the solid.
+        definition (NodeDefinition):
+            Definition of the Node.
     """
 
     def __init__(self, name, definition, graph_definition, tags=None, hook_defs=None):
         from .graph import GraphDefinition
-        from .solid import ISolidDefinition
+        from .solid import NodeDefinition
 
         self.name = check.str_param(name, "name")
-        self.definition = check.inst_param(definition, "definition", ISolidDefinition)
+        self.definition = check.inst_param(definition, "definition", NodeDefinition)
         self.graph_definition = check.inst_param(
             graph_definition, "graph_definition", GraphDefinition,
         )

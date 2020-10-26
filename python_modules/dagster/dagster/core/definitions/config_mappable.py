@@ -118,13 +118,13 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
 
 
 def _check_configurable_param(configurable):
-    from dagster.core.definitions.composition import CallableSolidNode
+    from dagster.core.definitions.composition import CallableNode
 
     check.param_invariant(
-        not isinstance(configurable, CallableSolidNode),
+        not isinstance(configurable, CallableNode),
         "configurable",
         (
-            "You have invoked `configured` on a CallableSolidNode (an intermediate type), which is "
+            "You have invoked `configured` on a CallableNode (an intermediate type), which is "
             "produced by aliasing or tagging a solid definition. To configure a solid, you must "
             "call `configured` on either a SolidDefinition and CompositeSolidDefinition. To fix "
             "this error, make sure to call `configured` on the definition object *before* using "

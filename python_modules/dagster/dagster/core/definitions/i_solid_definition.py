@@ -8,7 +8,9 @@ from .hook import HookDefinition
 from .utils import check_valid_name, validate_tags
 
 
-class ISolidDefinition(IConfigMappable):
+# base class for SolidDefinition and GraphDefinition
+# represents that this is embedable within a graph
+class NodeDefinition(IConfigMappable):
     def __init__(
         self, name, input_defs, output_defs, description=None, tags=None, positional_inputs=None
     ):
@@ -108,7 +110,7 @@ class ISolidDefinition(IConfigMappable):
         raise NotImplementedError()
 
     @abstractmethod
-    def iterate_solid_defs(self):
+    def iterate_node_defs(self):
         raise NotImplementedError()
 
     @abstractmethod
@@ -135,28 +137,28 @@ class ISolidDefinition(IConfigMappable):
                 yield inner_type
 
     def __call__(self, *args, **kwargs):
-        from .composition import CallableSolidNode
+        from .composition import CallableNode
 
-        return CallableSolidNode(self)(*args, **kwargs)
+        return CallableNode(self)(*args, **kwargs)
 
     def alias(self, name):
-        from .composition import CallableSolidNode
+        from .composition import CallableNode
 
         check.str_param(name, "name")
 
-        return CallableSolidNode(self, given_alias=name)
+        return CallableNode(self, given_alias=name)
 
     def tag(self, tags):
-        from .composition import CallableSolidNode
+        from .composition import CallableNode
 
-        return CallableSolidNode(self, tags=validate_tags(tags))
+        return CallableNode(self, tags=validate_tags(tags))
 
     def with_hooks(self, hook_defs):
-        from .composition import CallableSolidNode
+        from .composition import CallableNode
 
         hook_defs = frozenset(check.set_param(hook_defs, "hook_defs", of_type=HookDefinition))
 
-        return CallableSolidNode(self, hook_defs=hook_defs)
+        return CallableNode(self, hook_defs=hook_defs)
 
     @abstractproperty
     def required_resource_keys(self):

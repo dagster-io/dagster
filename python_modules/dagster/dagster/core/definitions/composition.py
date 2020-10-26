@@ -15,14 +15,14 @@ from .inference import (
     infer_output_definitions,
 )
 from .output import OutputDefinition
-from .solid import ISolidDefinition
+from .solid import NodeDefinition
 from .utils import validate_tags
 
 _composition_stack = []
 
 
 def _not_invoked_warning(solid, context_source, context_name):
-    check.inst_param(solid, "solid", CallableSolidNode)
+    check.inst_param(solid, "solid", CallableNode)
 
     warning_message = (
         "While in {context} context '{name}', received an uninvoked solid '{solid_name}'.\n"
@@ -37,7 +37,7 @@ def _not_invoked_warning(solid, context_source, context_name):
     warning_message = warning_message.format(
         context=context_source,
         name=context_name,
-        solid_name=solid.solid_def.name,
+        solid_name=solid.node_def.name,
         given_alias=solid.given_alias,
         tags=solid.tags,
         hooks=[hook.name for hook in solid.hook_defs],
@@ -84,37 +84,37 @@ class InProgressCompositionContext(object):
         self._pending_invocations = {}
 
     def observe_invocation(
-        self, given_alias, solid_def, input_bindings, input_mappings, tags=None, hook_defs=None
+        self, given_alias, node_def, input_bindings, input_mappings, tags=None, hook_defs=None
     ):
         if given_alias is None:
-            solid_name = solid_def.name
-            self._pending_invocations.pop(solid_name, None)
-            if self._collisions.get(solid_name):
-                self._collisions[solid_name] += 1
-                solid_name = "{solid_name}_{n}".format(
-                    solid_name=solid_name, n=self._collisions[solid_name]
+            node_name = node_def.name
+            self._pending_invocations.pop(node_name, None)
+            if self._collisions.get(node_name):
+                self._collisions[node_name] += 1
+                node_name = "{node_name}_{n}".format(
+                    node_name=node_name, n=self._collisions[node_name]
                 )
             else:
-                self._collisions[solid_name] = 1
+                self._collisions[node_name] = 1
         else:
-            solid_name = given_alias
-            self._pending_invocations.pop(solid_name, None)
+            node_name = given_alias
+            self._pending_invocations.pop(node_name, None)
 
-        if self._invocations.get(solid_name):
+        if self._invocations.get(node_name):
             raise DagsterInvalidDefinitionError(
-                "{source} {name} invoked the same solid ({solid_name}) twice without aliasing.".format(
-                    source=self.source, name=self.name, solid_name=solid_name
+                "{source} {name} invoked the same node ({node_name}) twice without aliasing.".format(
+                    source=self.source, name=self.name, node_name=node_name
                 )
             )
 
-        self._invocations[solid_name] = InvokedSolidNode(
-            solid_name, solid_def, input_bindings, input_mappings, tags, hook_defs
+        self._invocations[node_name] = InvokedNode(
+            node_name, node_def, input_bindings, input_mappings, tags, hook_defs
         )
-        return solid_name
+        return node_name
 
     def add_pending_invocation(self, solid):
-        solid = check.opt_inst_param(solid, "solid", CallableSolidNode)
-        solid_name = solid.given_alias if solid.given_alias else solid.solid_def.name
+        solid = check.opt_inst_param(solid, "solid", CallableNode)
+        solid_name = solid.given_alias if solid.given_alias else solid.node_def.name
         self._pending_invocations[solid_name] = solid
 
     def complete(self, output):
@@ -138,21 +138,21 @@ class CompleteCompositionContext(
     def __new__(cls, name, source, invocations, output_mapping_dict, pending_invocations):
 
         dep_dict = {}
-        solid_def_dict = {}
+        node_def_dict = {}
         input_mappings = []
 
         for solid in pending_invocations.values():
             _not_invoked_warning(solid, source, name)
 
         for invocation in invocations.values():
-            def_name = invocation.solid_def.name
-            if def_name in solid_def_dict and solid_def_dict[def_name] is not invocation.solid_def:
+            def_name = invocation.node_def.name
+            if def_name in node_def_dict and node_def_dict[def_name] is not invocation.node_def:
                 raise DagsterInvalidDefinitionError(
                     'Detected conflicting solid definitions with the same name "{name}"'.format(
                         name=def_name
                     )
                 )
-            solid_def_dict[def_name] = invocation.solid_def
+            node_def_dict[def_name] = invocation.node_def
 
             deps = {}
             for input_name, node in invocation.input_bindings.items():
@@ -169,28 +169,28 @@ class CompleteCompositionContext(
 
             dep_dict[
                 SolidInvocation(
-                    invocation.solid_def.name,
-                    invocation.solid_name,
+                    invocation.node_def.name,
+                    invocation.node_name,
                     tags=invocation.tags,
                     hook_defs=invocation.hook_defs,
                 )
             ] = deps
 
             for input_name, node in invocation.input_mappings.items():
-                input_mappings.append(node.input_def.mapping_to(invocation.solid_name, input_name))
+                input_mappings.append(node.input_def.mapping_to(invocation.node_name, input_name))
 
         return super(cls, CompleteCompositionContext).__new__(
-            cls, name, list(solid_def_dict.values()), dep_dict, input_mappings, output_mapping_dict
+            cls, name, list(node_def_dict.values()), dep_dict, input_mappings, output_mapping_dict
         )
 
 
-class CallableSolidNode(object):
-    """An intermediate object in solid composition to allow for binding information such as
+class CallableNode(object):
+    """An intermediate object in composition to allow for binding information such as
     an alias before invoking.
     """
 
-    def __init__(self, solid_def, given_alias=None, tags=None, hook_defs=None):
-        self.solid_def = solid_def
+    def __init__(self, node_def, given_alias=None, tags=None, hook_defs=None):
+        self.node_def = check.inst_param(node_def, "node_def", NodeDefinition)
         self.given_alias = check.opt_str_param(given_alias, "given_alias")
         self.tags = check.opt_inst_param(tags, "tags", frozentags)
         self.hook_defs = check.opt_set_param(hook_defs, "hook_defs", HookDefinition)
@@ -199,42 +199,42 @@ class CallableSolidNode(object):
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
-        solid_name = self.given_alias if self.given_alias else self.solid_def.name
-        assert_in_composition(solid_name)
+        node_name = self.given_alias if self.given_alias else self.node_def.name
+        assert_in_composition(node_name)
 
         input_bindings = {}
         input_mappings = {}
 
         # handle *args
         for idx, output_node in enumerate(args):
-            if idx >= len(self.solid_def.input_defs):
+            if idx >= len(self.node_def.input_defs):
                 raise DagsterInvalidDefinitionError(
-                    "In {source} {name}, received too many inputs for solid "
-                    "invocation {solid_name}. Only {def_num} defined, received {arg_num}".format(
+                    "In {source} {name}, received too many inputs for "
+                    "invocation {node_name}. Only {def_num} defined, received {arg_num}".format(
                         source=current_context().source,
                         name=current_context().name,
-                        solid_name=solid_name,
-                        def_num=len(self.solid_def.input_defs),
+                        node_name=node_name,
+                        def_num=len(self.node_def.input_defs),
                         arg_num=len(args),
                     )
                 )
 
-            input_name = self.solid_def.resolve_input_name_at_position(idx)
+            input_name = self.node_def.resolve_input_name_at_position(idx)
             if input_name is None:
                 raise DagsterInvalidDefinitionError(
                     "In {source} {name}, could not resolve input based on position at "
-                    "index {idx} for solid invocation {solid_name}. Use keyword args instead, "
+                    "index {idx} for invocation {node_name}. Use keyword args instead, "
                     "available inputs are: {inputs}".format(
                         idx=idx,
                         source=current_context().source,
                         name=current_context().name,
-                        solid_name=solid_name,
-                        inputs=list(map(lambda inp: inp.name, self.solid_def.input_defs)),
+                        node_name=node_name,
+                        inputs=list(map(lambda inp: inp.name, self.node_def.input_defs)),
                     )
                 )
 
             self._process_argument_node(
-                solid_name,
+                node_name,
                 output_node,
                 input_name,
                 input_mappings,
@@ -245,7 +245,7 @@ class CallableSolidNode(object):
         # then **kwargs
         for input_name, output_node in kwargs.items():
             self._process_argument_node(
-                solid_name,
+                node_name,
                 output_node,
                 input_name,
                 input_mappings,
@@ -253,25 +253,26 @@ class CallableSolidNode(object):
                 "(passed by keyword)",
             )
 
-        solid_name = current_context().observe_invocation(
+        # the node name is potentially reassigned for aliasing
+        resolved_node_name = current_context().observe_invocation(
             self.given_alias,
-            self.solid_def,
+            self.node_def,
             input_bindings,
             input_mappings,
             self.tags,
             self.hook_defs,
         )
 
-        if len(self.solid_def.output_defs) == 0:
+        if len(self.node_def.output_defs) == 0:
             return None
 
-        if len(self.solid_def.output_defs) == 1:
-            output_name = self.solid_def.output_defs[0].name
-            return InvokedSolidOutputHandle(solid_name, output_name)
+        if len(self.node_def.output_defs) == 1:
+            output_name = self.node_def.output_defs[0].name
+            return InvokedSolidOutputHandle(resolved_node_name, output_name)
 
-        outputs = [output_def.name for output_def in self.solid_def.output_defs]
-        return namedtuple("_{solid_def}_outputs".format(solid_def=self.solid_def.name), outputs)(
-            **{output: InvokedSolidOutputHandle(solid_name, output) for output in outputs}
+        outputs = [output_def.name for output_def in self.node_def.output_defs]
+        return namedtuple("_{node_def}_outputs".format(node_def=self.node_def.name), outputs)(
+            **{output: InvokedSolidOutputHandle(resolved_node_name, output) for output in outputs}
         )
 
     def _process_argument_node(
@@ -314,9 +315,7 @@ class CallableSolidNode(object):
                     options=output_node._fields,
                 )
             )
-        elif isinstance(output_node, CallableSolidNode) or isinstance(
-            output_node, ISolidDefinition
-        ):
+        elif isinstance(output_node, CallableNode) or isinstance(output_node, NodeDefinition):
             raise DagsterInvalidDefinitionError(
                 "In {source} {name}, received an un-invoked solid for input "
                 '"{input_name}" {arg_desc} in solid invocation "{solid_name}". '
@@ -344,38 +343,36 @@ class CallableSolidNode(object):
             )
 
     def alias(self, name):
-        return CallableSolidNode(self.solid_def, name, self.tags)
+        return CallableNode(self.node_def, name, self.tags)
 
     def tag(self, tags):
         tags = validate_tags(tags)
-        return CallableSolidNode(
-            self.solid_def,
+        return CallableNode(
+            self.node_def,
             self.given_alias,
             frozentags(tags) if self.tags is None else self.tags.updated_with(tags),
         )
 
     def with_hooks(self, hook_defs):
         hook_defs = check.set_param(hook_defs, "hook_defs", of_type=HookDefinition)
-        return CallableSolidNode(
-            self.solid_def, self.given_alias, self.tags, hook_defs.union(self.hook_defs)
+        return CallableNode(
+            self.node_def, self.given_alias, self.tags, hook_defs.union(self.hook_defs)
         )
 
 
-class InvokedSolidNode(
-    namedtuple(
-        "_InvokedSolidNode", "solid_name solid_def input_bindings input_mappings tags hook_defs"
-    )
+class InvokedNode(
+    namedtuple("_InvokedNode", "node_name, node_def input_bindings input_mappings tags hook_defs")
 ):
     """The metadata about a solid invocation saved by the current composition context.
     """
 
     def __new__(
-        cls, solid_name, solid_def, input_bindings, input_mappings, tags=None, hook_defs=None
+        cls, node_name, node_def, input_bindings, input_mappings, tags=None, hook_defs=None
     ):
-        return super(cls, InvokedSolidNode).__new__(
+        return super(cls, InvokedNode).__new__(
             cls,
-            check.str_param(solid_name, "solid_name"),
-            check.inst_param(solid_def, "solid_def", ISolidDefinition),
+            check.str_param(node_name, "node_name"),
+            check.inst_param(node_def, "node_def", NodeDefinition),
             check.dict_param(input_bindings, "input_bindings", key_type=str),
             check.dict_param(
                 input_mappings, "input_mappings", key_type=str, value_type=InputMappingNode

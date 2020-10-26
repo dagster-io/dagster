@@ -23,7 +23,7 @@ from dagster import (
 from dagster.core.definitions.logger import LoggerDefinition
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
-from dagster.core.definitions.solid import ISolidDefinition
+from dagster.core.definitions.solid import NodeDefinition
 from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
 from dagster.core.execution.context_creation_pipeline import (
     SystemPipelineExecutionContext,
@@ -293,7 +293,7 @@ def execute_solid(
         Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of executing the
         solid.
     """
-    check.inst_param(solid_def, "solid_def", ISolidDefinition)
+    check.inst_param(solid_def, "solid_def", NodeDefinition)
     check.opt_inst_param(mode_def, "mode_def", ModeDefinition)
     input_values = check.opt_dict_param(input_values, "input_values", key_type=str)
     solid_defs = [solid_def]

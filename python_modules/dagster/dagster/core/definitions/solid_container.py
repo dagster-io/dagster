@@ -130,10 +130,10 @@ def create_execution_structure(solid_defs, dependencies_dict, graph_definition):
 
     as well as a dagster.core.definitions.dependency.DependencyStructure object.
     """
-    from .solid import ISolidDefinition
+    from .solid import NodeDefinition
     from .graph import GraphDefinition
 
-    check.list_param(solid_defs, "solid_defs", of_type=ISolidDefinition)
+    check.list_param(solid_defs, "solid_defs", of_type=NodeDefinition)
     check.dict_param(
         dependencies_dict,
         "dependencies_dict",

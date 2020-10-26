@@ -4,12 +4,12 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.backcompat import experimental_arg_warning, rename_warning
 
 from .graph import GraphDefinition
-from .i_solid_definition import ISolidDefinition
+from .i_solid_definition import NodeDefinition
 from .input import InputDefinition
 from .output import OutputDefinition
 
 
-class SolidDefinition(ISolidDefinition):
+class SolidDefinition(NodeDefinition):
     """
     The definition of a Solid that performs a user-defined computation.
 
@@ -128,7 +128,7 @@ class SolidDefinition(ISolidDefinition):
         for tt in self.all_input_output_types():
             yield tt
 
-    def iterate_solid_defs(self):
+    def iterate_node_defs(self):
         yield self
 
     def resolve_output_to_origin(self, output_name, handle):
@@ -266,7 +266,7 @@ class CompositeSolidDefinition(GraphDefinition):
         super(CompositeSolidDefinition, self).__init__(
             name=name,
             description=description,
-            solid_defs=solid_defs,
+            node_defs=solid_defs,
             dependencies=dependencies,
             tags=tags,
             positional_inputs=positional_inputs,
@@ -281,8 +281,8 @@ class CompositeSolidDefinition(GraphDefinition):
         for tt in self.all_input_output_types():
             yield tt
 
-        for solid_def in self._solid_defs:
-            for ttype in solid_def.all_dagster_types():
+        for node_def in self._node_defs:
+            for ttype in node_def.all_dagster_types():
                 yield ttype
 
     def construct_configured_copy(
@@ -294,7 +294,7 @@ class CompositeSolidDefinition(GraphDefinition):
     ):
         return CompositeSolidDefinition(
             name=new_name,
-            solid_defs=self._solid_defs,
+            solid_defs=self._node_defs,
             input_mappings=self.input_mappings,
             output_mappings=self.output_mappings,
             config_mapping=self.config_mapping,

@@ -4,7 +4,7 @@ import warnings
 import six
 
 from dagster import check
-from dagster.core.definitions.solid import ISolidDefinition
+from dagster.core.definitions.solid import NodeDefinition
 from dagster.core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidSubsetError,
@@ -24,7 +24,7 @@ from .graph import GraphDefinition
 from .hook import HookDefinition
 from .mode import ModeDefinition
 from .preset import PresetDefinition
-from .solid import ISolidDefinition
+from .solid import NodeDefinition
 from .utils import validate_tags
 
 
@@ -161,7 +161,7 @@ class PipelineDefinition(GraphDefinition):
             name=name,
             description=description,
             dependencies=dependencies,
-            solid_defs=solid_defs,
+            node_defs=solid_defs,
             tags=check.opt_dict_param(tags, "tags", key_type=str),
             positional_inputs=positional_inputs,
             input_mappings=input_mappings,
@@ -171,7 +171,7 @@ class PipelineDefinition(GraphDefinition):
             _configured_config_schema=_configured_config_schema,
         )
 
-        self._current_level_solid_defs = solid_defs
+        self._current_level_node_defs = solid_defs
         self._tags = validate_tags(tags)
 
         mode_definitions = check.opt_list_param(mode_defs, "mode_defs", of_type=ModeDefinition)
@@ -192,7 +192,7 @@ class PipelineDefinition(GraphDefinition):
                 )
             seen_modes.add(mode_def.name)
 
-        self._dagster_type_dict = construct_dagster_type_dictionary(self._current_level_solid_defs)
+        self._dagster_type_dict = construct_dagster_type_dictionary(self._current_level_node_defs)
 
         self._hook_defs = check.opt_set_param(hook_defs, "hook_defs", of_type=HookDefinition)
 
@@ -218,7 +218,7 @@ class PipelineDefinition(GraphDefinition):
         # Validate solid resource dependencies
         _validate_resource_dependencies(
             self._mode_definitions,
-            self._current_level_solid_defs,
+            self._current_level_node_defs,
             self._solid_dict,
             self._hook_defs,
         )
@@ -226,7 +226,8 @@ class PipelineDefinition(GraphDefinition):
         # Validate unsatisfied inputs can be materialized from config
         _validate_inputs(self._dependency_structure, self._solid_dict)
 
-        self._all_solid_defs = _build_all_solid_defs(self._current_level_solid_defs)
+        # Recursively explore all nodes in the this pipeline
+        self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
         self._parent_pipeline_def = check.opt_inst_param(
             _parent_pipeline_def, "_parent_pipeline_def", PipelineDefinition
         )
@@ -347,21 +348,21 @@ class PipelineDefinition(GraphDefinition):
 
     @property
     def all_solid_defs(self):
-        return list(self._all_solid_defs.values())
+        return list(self._all_node_defs.values())
 
     @property
     def top_level_solid_defs(self):
-        return self._current_level_solid_defs
+        return self._current_level_node_defs
 
     def solid_def_named(self, name):
         check.str_param(name, "name")
 
-        check.invariant(name in self._all_solid_defs, "{} not found".format(name))
-        return self._all_solid_defs[name]
+        check.invariant(name in self._all_node_defs, "{} not found".format(name))
+        return self._all_node_defs[name]
 
     def has_solid_def(self, name):
         check.str_param(name, "name")
-        return name in self._all_solid_defs
+        return name in self._all_node_defs
 
     def get_pipeline_subset_def(self, solids_to_execute):
         return (
@@ -579,26 +580,26 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
         )
 
 
-def _validate_resource_dependencies(mode_definitions, solid_defs, solid_dict, pipeline_hook_defs):
+def _validate_resource_dependencies(mode_definitions, node_defs, solid_dict, pipeline_hook_defs):
     """This validation ensures that each pipeline context provides the resources that are required
     by each solid.
     """
     check.list_param(mode_definitions, "mode_definitions", of_type=ModeDefinition)
-    check.list_param(solid_defs, "solid_defs", of_type=ISolidDefinition)
+    check.list_param(node_defs, "node_defs", of_type=NodeDefinition)
     check.set_param(pipeline_hook_defs, "pipeline_hook_defs", of_type=HookDefinition)
 
     for mode_def in mode_definitions:
         mode_resources = set(mode_def.resource_defs.keys())
-        for solid_def in solid_defs:
-            for required_resource in solid_def.required_resource_keys:
+        for node_def in node_defs:
+            for required_resource in node_def.required_resource_keys:
                 if required_resource not in mode_resources:
                     raise DagsterInvalidDefinitionError(
                         (
-                            'Resource "{resource}" is required by solid def {solid_def_name}, but is not '
+                            'Resource "{resource}" is required by solid def {node_def_name}, but is not '
                             'provided by mode "{mode_name}".'
                         ).format(
                             resource=required_resource,
-                            solid_def_name=solid_def.name,
+                            node_def_name=node_def.name,
                             mode_name=mode_def.name,
                         )
                     )
@@ -680,19 +681,19 @@ def _validate_inputs(dependency_structure, solid_dict):
                     )
 
 
-def _build_all_solid_defs(solid_defs):
+def _build_all_node_defs(node_defs):
     all_defs = {}
-    for current_level_solid_def in solid_defs:
-        for solid_def in current_level_solid_def.iterate_solid_defs():
-            if solid_def.name in all_defs:
-                if all_defs[solid_def.name] != solid_def:
+    for current_level_node_def in node_defs:
+        for node_def in current_level_node_def.iterate_node_defs():
+            if node_def.name in all_defs:
+                if all_defs[node_def.name] != node_def:
                     raise DagsterInvalidDefinitionError(
                         'Detected conflicting solid definitions with the same name "{name}"'.format(
-                            name=solid_def.name
+                            name=node_def.name
                         )
                     )
             else:
-                all_defs[solid_def.name] = solid_def
+                all_defs[node_def.name] = node_def
 
     return all_defs
 

@@ -18,7 +18,7 @@ from .graph import GraphDefinition
 from .logger import LoggerDefinition
 from .mode import ModeDefinition
 from .resource import ResourceDefinition
-from .solid import ISolidDefinition, SolidDefinition
+from .solid import NodeDefinition, SolidDefinition
 
 
 def _is_selector_field_optional(config_type):
@@ -327,23 +327,24 @@ def define_solid_dictionary_cls(solids, dependency_structure, parent_handle=None
     return Shape(fields)
 
 
-def iterate_solid_def_config_types(solid_def):
+def iterate_node_def_config_types(node_def):
+    check.inst_param(node_def, "node_def", NodeDefinition)
 
-    if isinstance(solid_def, SolidDefinition):
-        if solid_def.config_schema:
-            for config_type in iterate_config_types(solid_def.config_schema.config_type):
+    if isinstance(node_def, SolidDefinition):
+        if node_def.config_schema:
+            for config_type in iterate_config_types(node_def.config_schema.config_type):
                 yield config_type
-    elif isinstance(solid_def, GraphDefinition):
-        for solid in solid_def.solids:
-            for config_type in iterate_solid_def_config_types(solid.definition):
+    elif isinstance(node_def, GraphDefinition):
+        for solid in node_def.solids:
+            for config_type in iterate_node_def_config_types(solid.definition):
                 yield config_type
 
     else:
-        check.invariant("Unexpected ISolidDefinition type {type}".format(type=type(solid_def)))
+        check.invariant("Unexpected NodeDefinition type {type}".format(type=type(node_def)))
 
 
-def _gather_all_schemas(solid_defs):
-    dagster_types = construct_dagster_type_dictionary(solid_defs)
+def _gather_all_schemas(node_defs):
+    dagster_types = construct_dagster_type_dictionary(node_defs)
     for dagster_type in list(dagster_types.values()) + list(ALL_RUNTIME_BUILTINS):
         if dagster_type.loader:
             for ct in iterate_config_types(dagster_type.loader.schema_type):
@@ -353,26 +354,26 @@ def _gather_all_schemas(solid_defs):
                 yield ct
 
 
-def _gather_all_config_types(solid_defs, environment_type):
-    check.list_param(solid_defs, "solid_defs", ISolidDefinition)
+def _gather_all_config_types(node_defs, environment_type):
+    check.list_param(node_defs, "node_defs", NodeDefinition)
     check.inst_param(environment_type, "environment_type", ConfigType)
 
-    for solid_def in solid_defs:
-        for config_type in iterate_solid_def_config_types(solid_def):
+    for node_def in node_defs:
+        for config_type in iterate_node_def_config_types(node_def):
             yield config_type
 
     for config_type in iterate_config_types(environment_type):
         yield config_type
 
 
-def construct_config_type_dictionary(solid_defs, environment_type):
-    check.list_param(solid_defs, "solid_defs", ISolidDefinition)
+def construct_config_type_dictionary(node_defs, environment_type):
+    check.list_param(node_defs, "node_defs", NodeDefinition)
     check.inst_param(environment_type, "environment_type", ConfigType)
 
     type_dict_by_name = {t.given_name: t for t in ALL_CONFIG_BUILTINS if t.given_name}
     type_dict_by_key = {t.key: t for t in ALL_CONFIG_BUILTINS}
-    all_types = list(_gather_all_config_types(solid_defs, environment_type)) + list(
-        _gather_all_schemas(solid_defs)
+    all_types = list(_gather_all_config_types(node_defs, environment_type)) + list(
+        _gather_all_schemas(node_defs)
     )
 
     for config_type in all_types:

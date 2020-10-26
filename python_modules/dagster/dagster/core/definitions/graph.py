@@ -9,37 +9,37 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 
 from .dependency import DependencyStructure, Solid, SolidHandle
-from .i_solid_definition import ISolidDefinition
+from .i_solid_definition import NodeDefinition
 from .input import InputDefinition, InputMapping
 from .output import OutputDefinition, OutputMapping
 from .solid_container import create_execution_structure, validate_dependency_dict
 
 
-def _check_solids_arg(graph_name, solid_defs):
-    if not isinstance(solid_defs, list):
+def _check_node_defs_arg(graph_name, node_defs):
+    if not isinstance(node_defs, list):
         raise DagsterInvalidDefinitionError(
             '"solids" arg to "{name}" is not a list. Got {val}.'.format(
-                name=graph_name, val=repr(solid_defs)
+                name=graph_name, val=repr(node_defs)
             )
         )
-    for solid_def in solid_defs:
-        if isinstance(solid_def, ISolidDefinition):
+    for node_def in node_defs:
+        if isinstance(node_def, NodeDefinition):
             continue
-        elif callable(solid_def):
+        elif callable(node_def):
             raise DagsterInvalidDefinitionError(
                 """You have passed a lambda or function {func} into {name} that is
                 not a solid. You have likely forgetten to annotate this function with
                 an @solid or @lambda_solid decorator.'
                 """.format(
-                    name=graph_name, func=solid_def.__name__
+                    name=graph_name, func=node_def.__name__
                 )
             )
         else:
             raise DagsterInvalidDefinitionError(
-                "Invalid item in solid list: {item}".format(item=repr(solid_def))
+                "Invalid item in solid list: {item}".format(item=repr(node_def))
             )
 
-    return solid_defs
+    return node_defs
 
 
 def _create_adjacency_lists(solids, dep_structure):
@@ -70,12 +70,12 @@ def _create_adjacency_lists(solids, dep_structure):
     return (forward_edges, backward_edges)
 
 
-class GraphDefinition(ISolidDefinition):
+class GraphDefinition(NodeDefinition):
     def __init__(
         self,
         name,
         description,
-        solid_defs,
+        node_defs,
         dependencies,
         input_mappings,
         output_mappings,
@@ -84,10 +84,12 @@ class GraphDefinition(ISolidDefinition):
         _configured_config_schema,
         **kwargs
     ):
-        self._solid_defs = _check_solids_arg(name, solid_defs)
+        self._node_defs = _check_node_defs_arg(name, node_defs)
+        # TODO: backcompat for now
+        self._solid_defs = self._node_defs
         self._dependencies = validate_dependency_dict(dependencies)
         self._dependency_structure, self._solid_dict = create_execution_structure(
-            solid_defs, self._dependencies, graph_definition=self
+            node_defs, self._dependencies, graph_definition=self
         )
 
         # List[InputMapping]
@@ -199,11 +201,11 @@ class GraphDefinition(ISolidDefinition):
 
         return solid
 
-    def iterate_solid_defs(self):
+    def iterate_node_defs(self):
         yield self
-        for outer_solid_def in self._solid_defs:
-            for solid_def in outer_solid_def.iterate_solid_defs():
-                yield solid_def
+        for outer_node_def in self._node_defs:
+            for node_def in outer_node_def.iterate_node_defs():
+                yield node_def
 
     @property
     def input_mappings(self):
