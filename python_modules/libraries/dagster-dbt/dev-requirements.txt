@@ -1,3 +1,2 @@
 dbt==0.17.*
 -e ../dagster-postgres
-responses==0.10.*

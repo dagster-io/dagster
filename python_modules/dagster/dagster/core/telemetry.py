@@ -443,8 +443,19 @@ SLACK_PROMPT = """
 }
 
 
+def is_running_in_test():
+    return os.getenv("BUILDKITE") is not None or os.getenv("TF_BUILD") is not None
+
+
 def upload_logs(stop_event):
     """Upload logs to telemetry server every hour, or when log directory size is > 10MB"""
+
+    # We add a sanity check to ensure that no logs are uploaded in our
+    # buildkite/azure testing pipelines. The check is present at upload to
+    # allow for testing of logs being correctly written.
+    if is_running_in_test():
+        return
+
     try:
         last_run = datetime.datetime.now() - datetime.timedelta(minutes=120)
         dagster_log_dir = get_dir_from_dagster_home("logs")
