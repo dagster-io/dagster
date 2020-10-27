@@ -3,17 +3,17 @@ import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
 import {RowContainer} from 'src/ListComponents';
-import {PIPELINE_LABEL} from 'src/RunGraphUtils';
 import {colorHash} from 'src/Util';
-import {RunGraphFragment} from 'src/types/RunGraphFragment';
+import {PIPELINE_LABEL} from 'src/partitions/PartitionGraphUtils';
+import {PartitionGraphFragment} from 'src/partitions/types/PartitionGraphFragment';
 
 type PointValue = number | null | undefined;
 type Point = {x: string; y: PointValue};
 
 interface PartitionGraphProps {
-  runsByPartitionName: {[name: string]: RunGraphFragment[]};
-  getPipelineDataForRun: (run: RunGraphFragment) => PointValue;
-  getStepDataForRun: (run: RunGraphFragment) => {[key: string]: PointValue[]};
+  runsByPartitionName: {[name: string]: PartitionGraphFragment[]};
+  getPipelineDataForRun: (run: PartitionGraphFragment) => PointValue;
+  getStepDataForRun: (run: PartitionGraphFragment) => {[key: string]: PointValue[]};
   title?: string;
   yLabel?: string;
 }
@@ -91,7 +91,7 @@ export class PartitionGraph extends React.Component<PartitionGraphProps, Partiti
     });
   };
 
-  selectRun(runs?: RunGraphFragment[]) {
+  selectRun(runs?: PartitionGraphFragment[]) {
     if (!runs || !runs.length) {
       return null;
     }
@@ -180,7 +180,7 @@ const _fillPartitions = (partitionNames: string[], points: Point[]) => {
   }));
 };
 
-const _reverseSortRunCompare = (a: RunGraphFragment, b: RunGraphFragment) => {
+const _reverseSortRunCompare = (a: PartitionGraphFragment, b: PartitionGraphFragment) => {
   if (!a.stats || a.stats.__typename !== 'PipelineRunStatsSnapshot' || !a.stats.startTime) {
     return 1;
   }

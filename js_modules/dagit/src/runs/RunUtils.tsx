@@ -1,5 +1,6 @@
 import {gql} from '@apollo/client';
 import {Icon, Popover} from '@blueprintjs/core';
+import qs from 'query-string';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
@@ -71,9 +72,11 @@ export function handleLaunchResult(
 
 export function openRunInBrowser(
   run: {runId: string; pipelineName: string},
-  opts: {openInNewWindow: boolean},
+  opts: {openInNewWindow: boolean; query?: {[key: string]: string}},
 ) {
-  const url = `${APP_PATH_PREFIX}/pipeline/${run.pipelineName}/runs/${run.runId}`;
+  const url = `${APP_PATH_PREFIX}/pipeline/${run.pipelineName}/runs/${run.runId}?${
+    opts.query ? qs.stringify(opts.query) : ''
+  }`;
   if (opts.openInNewWindow) {
     window.open(url, '_blank');
   } else {

@@ -3,12 +3,13 @@ import * as React from 'react';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {PARTITION_GRAPH_SET_PARTITION_FRAGMENT} from 'src/partitions/PartitionGraphSet';
+import {PARTITION_RUN_MATRIX_PARTITION_FRAGMENT} from 'src/partitions/PartitionRunMatrix';
 import {
   PartitionLongitudinalQuery,
   PartitionLongitudinalQueryVariables,
   PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
 } from 'src/partitions/types/PartitionLongitudinalQuery';
-import {RunTable} from 'src/runs/RunTable';
 
 type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
 
@@ -153,38 +154,8 @@ const PARTITION_SET_QUERY = gql`
         partitionsOrError(cursor: $cursor, limit: $limit, reverse: $reverse) {
           ... on Partitions {
             results {
-              name
-              runs {
-                runId
-                pipelineName
-                tags {
-                  key
-                  value
-                }
-                stats {
-                  __typename
-                  ... on PipelineRunStatsSnapshot {
-                    startTime
-                    endTime
-                    materializations
-                  }
-                }
-                status
-                stepStats {
-                  __typename
-                  stepKey
-                  startTime
-                  endTime
-                  status
-                  materializations {
-                    __typename
-                  }
-                  expectationResults {
-                    success
-                  }
-                }
-                ...RunTableRunFragment
-              }
+              ...PartitionGraphSetPartitionFragment
+              ...PartitionRunMatrixPartitionFragment
             }
           }
           ... on PythonError {
@@ -194,6 +165,7 @@ const PARTITION_SET_QUERY = gql`
       }
     }
   }
+  ${PARTITION_GRAPH_SET_PARTITION_FRAGMENT}
+  ${PARTITION_RUN_MATRIX_PARTITION_FRAGMENT}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
-  ${RunTable.fragments.RunTableRunFragment}
 `;

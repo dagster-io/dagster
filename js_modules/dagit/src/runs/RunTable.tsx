@@ -18,6 +18,9 @@ interface RunTableProps {
   runs: RunTableRunFragment[];
   onSetFilter: (search: TokenizingFieldValue[]) => void;
   nonIdealState?: React.ReactNode;
+
+  additionalColumnHeaders?: React.ReactNode[];
+  additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
 
 export const RunTable = (props: RunTableProps) => {
@@ -73,7 +76,9 @@ export const RunTable = (props: RunTableProps) => {
           </th>
           <th style={{maxWidth: '90px'}}>Pipeline Definition</th>
           <th style={{flex: 1}}>Execution Params</th>
-          <th colSpan={2}>Timing</th>
+          <th>Timing</th>
+          {props.additionalColumnHeaders}
+          <th />
         </tr>
       </thead>
       <tbody>
@@ -83,6 +88,7 @@ export const RunTable = (props: RunTableProps) => {
             key={run.runId}
             onSetFilter={onSetFilter}
             checked={checkedRuns.includes(run)}
+            additionalColumns={props.additionalColumnsForRow?.(run)}
             onToggleChecked={() =>
               setChecked(
                 checkedRuns.includes(run)
@@ -127,7 +133,8 @@ const RunRow: React.FunctionComponent<{
   onSetFilter: (search: TokenizingFieldValue[]) => void;
   checked?: boolean;
   onToggleChecked?: () => void;
-}> = ({run, onSetFilter, checked, onToggleChecked}) => {
+  additionalColumns?: React.ReactNode[];
+}> = ({run, onSetFilter, checked, onToggleChecked, additionalColumns}) => {
   const pipelineLink = `/pipeline/${explorerPathToString({
     pipelineName: run.pipelineName,
     snapshotId: run.pipelineSnapshotId || '',
@@ -168,6 +175,7 @@ const RunRow: React.FunctionComponent<{
         <RunTime run={run} />
         <RunElapsed run={run} />
       </td>
+      {additionalColumns}
       <td style={{maxWidth: '52px'}}>
         <RunActionsMenu run={run} />
       </td>

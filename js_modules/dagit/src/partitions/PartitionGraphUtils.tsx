@@ -4,11 +4,11 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {colorHash} from 'src/Util';
-import {RunGraphFragment} from 'src/types/RunGraphFragment';
+import {PartitionGraphFragment} from 'src/partitions/types/PartitionGraphFragment';
 
 export const PIPELINE_LABEL = 'Total pipeline';
-export const RUN_GRAPH_FRAGMENT = gql`
-  fragment RunGraphFragment on PipelineRun {
+export const PARTITION_GRAPH_FRAGMENT = gql`
+  fragment PartitionGraphFragment on PipelineRun {
     runId
     stats {
       ... on PipelineRunStatsSnapshot {
@@ -36,7 +36,7 @@ export const RUN_GRAPH_FRAGMENT = gql`
   }
 `;
 
-export const getPipelineDurationForRun = (run: RunGraphFragment) => {
+export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {
   const {stats} = run;
   if (
     stats &&
@@ -50,7 +50,7 @@ export const getPipelineDurationForRun = (run: RunGraphFragment) => {
   return undefined;
 };
 
-export const getStepDurationsForRun = (run: RunGraphFragment) => {
+export const getStepDurationsForRun = (run: PartitionGraphFragment) => {
   const {stepStats} = run;
 
   const perStepDuration = {};
@@ -63,7 +63,7 @@ export const getStepDurationsForRun = (run: RunGraphFragment) => {
   return perStepDuration;
 };
 
-export const getPipelineMaterializationCountForRun = (run: RunGraphFragment) => {
+export const getPipelineMaterializationCountForRun = (run: PartitionGraphFragment) => {
   const {stats} = run;
   if (stats && stats.__typename === 'PipelineRunStatsSnapshot') {
     return stats.materializations;
@@ -71,7 +71,7 @@ export const getPipelineMaterializationCountForRun = (run: RunGraphFragment) => 
   return undefined;
 };
 
-export const getStepMaterializationCountForRun = (run: RunGraphFragment) => {
+export const getStepMaterializationCountForRun = (run: PartitionGraphFragment) => {
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
@@ -80,12 +80,12 @@ export const getStepMaterializationCountForRun = (run: RunGraphFragment) => {
   return perStepCounts;
 };
 
-export const getPipelineExpectationSuccessForRun = (run: RunGraphFragment) => {
+export const getPipelineExpectationSuccessForRun = (run: PartitionGraphFragment) => {
   const stepCounts: {[key: string]: number} = getStepExpectationSuccessForRun(run);
   return _arraySum(Object.values(stepCounts));
 };
 
-export const getStepExpectationSuccessForRun = (run: RunGraphFragment) => {
+export const getStepExpectationSuccessForRun = (run: PartitionGraphFragment) => {
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
@@ -95,12 +95,12 @@ export const getStepExpectationSuccessForRun = (run: RunGraphFragment) => {
   return perStepCounts;
 };
 
-export const getPipelineExpectationFailureForRun = (run: RunGraphFragment) => {
+export const getPipelineExpectationFailureForRun = (run: PartitionGraphFragment) => {
   const stepCounts: {[key: string]: number} = getStepExpectationFailureForRun(run);
   return _arraySum(Object.values(stepCounts));
 };
 
-export const getStepExpectationFailureForRun = (run: RunGraphFragment) => {
+export const getStepExpectationFailureForRun = (run: PartitionGraphFragment) => {
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
@@ -110,7 +110,7 @@ export const getStepExpectationFailureForRun = (run: RunGraphFragment) => {
   return perStepCounts;
 };
 
-export const getPipelineExpectationRateForRun = (run: RunGraphFragment) => {
+export const getPipelineExpectationRateForRun = (run: PartitionGraphFragment) => {
   const stepSuccesses: {
     [key: string]: number;
   } = getStepExpectationSuccessForRun(run);
@@ -125,7 +125,7 @@ export const getPipelineExpectationRateForRun = (run: RunGraphFragment) => {
   return pipelineTotal ? pipelineSuccesses / pipelineTotal : 0;
 };
 
-export const getStepExpectationRateForRun = (run: RunGraphFragment) => {
+export const getStepExpectationRateForRun = (run: PartitionGraphFragment) => {
   const {stepStats} = run;
   const perStepCounts = {};
   stepStats.forEach((stepStat) => {
@@ -209,13 +209,13 @@ export const StepSelector = ({
   );
 };
 
-const NavSectionHeader = styled.div`
+export const NavSectionHeader = styled.div`
   border-bottom: 1px solid ${Colors.GRAY5};
   margin-bottom: 10px;
   padding-bottom: 5px;
   display: flex;
 `;
-const NavSection = styled.div`
+export const NavSection = styled.div`
   margin-bottom: 30px;
 `;
 const Item = styled.div`

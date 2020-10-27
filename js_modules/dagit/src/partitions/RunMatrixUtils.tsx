@@ -1,15 +1,20 @@
 import {Colors} from '@blueprintjs/core';
 import styled from 'styled-components/macro';
 
-import {RUN_STATUS_COLORS} from 'src/runs/RunStatusDots';
+export const STEP_STATUS_COLORS = {
+  SUCCESS: '#009857',
+  FAILURE: Colors.RED3,
+  SKIPPED: Colors.GOLD3,
+};
 
-const SUCCESS_COLOR = ({dimSuccesses}: {dimSuccesses?: boolean}) =>
-  dimSuccesses ? '#CFE6DC' : '#009857';
 // In CSS, you can layer multiple backgrounds on top of each other by comma-separating values in
 // `background`. However, this only works with gradients, not with primitive color values. To do
 // hovered + red without color math (?), just stack the colors as flat gradients.
 const flatGradient = (color: string) => `linear-gradient(to left, ${color} 0%, ${color} 100%)`;
 const flatGradientStack = (colors: string[]) => colors.map(flatGradient).join(',');
+
+const SuccessColorForProps = ({dimSuccesses}: {dimSuccesses?: boolean}) =>
+  dimSuccesses ? '#CFE6DC' : STEP_STATUS_COLORS.SUCCESS;
 
 export const GridColumn = styled.div<{
   disabled?: boolean;
@@ -26,8 +31,8 @@ export const GridColumn = styled.div<{
     !focused &&
     !multiselectFocused &&
     `&:hover {
-    cursor: default;
     background: ${Colors.LIGHT_GRAY3};
+    cursor: default;
     ${TopLabelTilted} {
       background: ${Colors.LIGHT_GRAY5};
       .tilted {
@@ -79,6 +84,9 @@ export const GridColumn = styled.div<{
     height: 23px;
     display: inline-block;
 
+    &:hover:not(.empty) {
+      background: ${Colors.BLUE5};
+    }
     &:before {
       content: ' ';
       display: inline-block;
@@ -88,36 +96,44 @@ export const GridColumn = styled.div<{
     }
     &.success {
       &:before {
-        background: ${SUCCESS_COLOR};
+        background: ${SuccessColorForProps};
       }
     }
     &.failure {
       &:before {
-        background: ${RUN_STATUS_COLORS.FAILURE};
+        background: ${STEP_STATUS_COLORS.FAILURE};
       }
     }
     &.failure-success {
       &:before {
-        background: linear-gradient(135deg, ${RUN_STATUS_COLORS.FAILURE} 40%, ${SUCCESS_COLOR} 41%);
+        background: linear-gradient(
+          135deg,
+          ${STEP_STATUS_COLORS.FAILURE} 40%,
+          ${SuccessColorForProps} 41%
+        );
       }
     }
     &.failure-blank {
       &:before {
         background: linear-gradient(
           135deg,
-          ${RUN_STATUS_COLORS.FAILURE} 40%,
+          ${STEP_STATUS_COLORS.FAILURE} 40%,
           rgba(150, 150, 150, 0.3) 41%
         );
       }
     }
     &.skipped {
       &:before {
-        background: ${Colors.GOLD3};
+        background: ${STEP_STATUS_COLORS.SKIPPED};
       }
     }
     &.skipped-success {
       &:before {
-        background: linear-gradient(135deg, ${Colors.GOLD3} 40%, ${SUCCESS_COLOR} 41%);
+        background: linear-gradient(
+          135deg,
+          ${STEP_STATUS_COLORS.SKIPPED} 40%,
+          ${SuccessColorForProps} 41%
+        );
       }
     }
     &.missing {
@@ -127,7 +143,11 @@ export const GridColumn = styled.div<{
     }
     &.missing-success {
       &:before {
-        background: linear-gradient(135deg, ${Colors.WHITE} 40%, ${SUCCESS_COLOR} 41%);
+        background: linear-gradient(
+          135deg,
+          ${STEP_STATUS_COLORS.SKIPPED} 40%,
+          ${SuccessColorForProps} 41%
+        );
       }
     }
   }
@@ -142,7 +162,7 @@ export const LeftLabel = styled.div<{hovered?: boolean; redness?: number}>`
   background: ${({redness, hovered}) =>
     flatGradientStack([
       redness ? `rgba(255, 0, 0, ${redness * 0.6})` : 'transparent',
-      hovered ? Colors.LIGHT_GRAY3 : 'transparent',
+      hovered ? Colors.LIGHT_GRAY2 : 'transparent',
     ])};
 `;
 
