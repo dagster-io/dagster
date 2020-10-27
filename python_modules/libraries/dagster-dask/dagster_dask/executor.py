@@ -1,6 +1,6 @@
 import dask
 import dask.distributed
-from dagster import Executor, Field, Permissive, Selector, check, seven
+from dagster import Executor, Field, Permissive, Selector, StringSource, check, seven
 from dagster.core.definitions.executor import check_cross_process_constraints, executor
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan
@@ -20,6 +20,9 @@ DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
         "cluster": Field(
             Selector(
                 {
+                    "existing": Field(
+                        {"address": StringSource}, description="Connect to an existing scheduler.",
+                    ),
                     "local": Field(
                         Permissive(), is_required=False, description="Local cluster configuration."
                     ),
@@ -61,7 +64,7 @@ def dask_executor(init_context):
     """Dask-based executor.
 
     The 'cluster' can be one of the following:
-    ('local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube').
+    ('existing', 'local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube').
 
     If the Dask executor is used without providing executor-specific config, a local Dask cluster
     will be created (as when calling :py:class:`dask.distributed.Client() <dask:distributed.Client>`
@@ -161,7 +164,10 @@ class DaskExecutor(Executor):
         instance = pipeline_context.instance
 
         cluster_type = self.cluster_type
-        if cluster_type == "local":
+        if cluster_type == "existing":
+            # address passed directly to Client() below to connect to existing Scheduler
+            cluster = self.cluster_configuration["address"]
+        elif cluster_type == "local":
             from dask.distributed import LocalCluster
 
             cluster = LocalCluster(**self.build_dict(pipeline_name))
@@ -203,7 +209,7 @@ class DaskExecutor(Executor):
             cluster = KubeCluster(**self.build_dict(pipeline_name))
         else:
             raise ValueError(
-                f"Must be providing one of the following ('local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube') not {cluster_type}"
+                f"Must be providing one of the following ('existing', 'local', 'yarn', 'ssh', 'pbs', 'moab', 'sge', 'lsf', 'slurm', 'oar', 'kube') not {cluster_type}"
             )
 
         with dask.distributed.Client(cluster) as client:

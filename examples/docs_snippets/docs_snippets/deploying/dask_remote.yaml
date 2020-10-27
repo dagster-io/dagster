@@ -5,4 +5,6 @@ storage:
 execution:
   dask:
     config:
-      address: "dask_scheduler.dns_name:8787"
+      cluster:
+        existing:
+          address: "dask_scheduler.dns_name:8787"
