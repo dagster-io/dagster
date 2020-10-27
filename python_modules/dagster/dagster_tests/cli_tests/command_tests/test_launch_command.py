@@ -55,9 +55,7 @@ def test_launch_non_existant_file():
     with default_cli_test_instance() as instance:
         kwargs = non_existant_python_origin_target_args()
 
-        with pytest.raises(
-            DagsterUserCodeProcessError, match=re.escape("No such file or directory")
-        ):
+        with pytest.raises(DagsterUserCodeProcessError):
             run_launch(kwargs, instance)
 
 
