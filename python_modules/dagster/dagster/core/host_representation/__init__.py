@@ -44,6 +44,7 @@ from .handle import (
 )
 from .historical import HistoricalPipeline
 from .origin import (
+    IN_PROCESS_NAME,
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,

@@ -2,7 +2,7 @@ import os
 import time
 
 from dagster import execute_pipeline
-from dagster.core.host_representation.handle import IN_PROCESS_NAME
+from dagster.core.host_representation import IN_PROCESS_NAME
 from dagster.utils import safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector

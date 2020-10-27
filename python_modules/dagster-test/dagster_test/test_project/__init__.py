@@ -8,7 +8,12 @@ from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )
-from dagster.core.host_representation import ExternalPipeline, InProcessRepositoryLocation
+from dagster.core.host_representation import (
+    ExternalPipeline,
+    InProcessRepositoryLocationOrigin,
+    RepositoryLocation,
+    RepositoryLocationHandle,
+)
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
@@ -105,10 +110,14 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
 
 def get_test_project_external_pipeline(pipeline_name):
     return (
-        InProcessRepositoryLocation(
-            ReconstructableRepository.for_file(
-                file_relative_path(__file__, "test_pipelines/repo.py"),
-                "define_demo_execution_repo",
+        RepositoryLocation.from_handle(
+            RepositoryLocationHandle.create_from_repository_location_origin(
+                InProcessRepositoryLocationOrigin(
+                    ReconstructableRepository.for_file(
+                        file_relative_path(__file__, "test_pipelines/repo.py"),
+                        "define_demo_execution_repo",
+                    )
+                )
             )
         )
         .get_repository("demo_execution_repo")

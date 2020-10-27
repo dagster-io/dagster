@@ -4,18 +4,14 @@ from contextlib import contextmanager
 from dagster import file_relative_path
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
+    GrpcServerRepositoryLocation,
+    InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    PythonEnvRepositoryLocationOrigin,
-)
-from dagster.core.host_representation.handle import (
     PipelineHandle,
+    PythonEnvRepositoryLocationOrigin,
+    RepositoryLocation,
     RepositoryLocationHandle,
     UserProcessApi,
-)
-from dagster.core.host_representation.repository_location import (
-    GrpcServerRepositoryLocation,
-    InProcessRepositoryLocation,
-    RepositoryLocation,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 
@@ -81,7 +77,15 @@ def legacy_get_bar_repo_handle():
     recon_repo = ReconstructableRepository.from_legacy_repository_yaml(
         file_relative_path(__file__, "legacy_repository_file.yaml")
     )
-    return InProcessRepositoryLocation(recon_repo).get_repository("bar_repo").handle
+    return (
+        RepositoryLocation.from_handle(
+            RepositoryLocationHandle.create_from_repository_location_origin(
+                InProcessRepositoryLocationOrigin(recon_repo)
+            )
+        )
+        .get_repository("bar_repo")
+        .handle
+    )
 
 
 def legacy_get_foo_pipeline_handle():

@@ -4,7 +4,11 @@ import sys
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import InProcessRepositoryLocation
+from dagster.core.host_representation import (
+    InProcessRepositoryLocationOrigin,
+    RepositoryLocation,
+    RepositoryLocationHandle,
+)
 from dagster.utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -39,10 +43,14 @@ def build_and_tag_test_image(tag):
 
 def get_test_project_external_pipeline(pipeline_name):
     return (
-        InProcessRepositoryLocation(
-            ReconstructableRepository.for_file(
-                file_relative_path(__file__, "test_pipelines/repo.py"),
-                "define_demo_execution_repo",
+        RepositoryLocation.from_handle(
+            RepositoryLocationHandle.create_from_repository_location_origin(
+                InProcessRepositoryLocationOrigin(
+                    ReconstructableRepository.for_file(
+                        file_relative_path(__file__, "test_pipelines/repo.py"),
+                        "define_demo_execution_repo",
+                    )
+                )
             )
         )
         .get_repository("demo_execution_repo")
@@ -80,5 +88,5 @@ def test_project_docker_image():
         image_name=image_name,
         tag=docker_image_tag,
     )
-    print("Using Docker image: %s" % final_docker_image)
+    print("Using Docker image: %s" % final_docker_image)  # pylint: disable=print-call
     return final_docker_image

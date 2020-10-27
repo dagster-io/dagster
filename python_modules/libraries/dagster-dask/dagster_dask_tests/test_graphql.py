@@ -19,8 +19,7 @@ def test_execute_hammer_through_dagit():
     instance = DagsterInstance.local_temp()
 
     context = DagsterGraphQLContext(
-        workspace=Workspace([InProcessRepositoryLocationOrigin(recon_repo.pointer)]),
-        instance=instance,
+        workspace=Workspace([InProcessRepositoryLocationOrigin(recon_repo)]), instance=instance,
     )
 
     selector = infer_pipeline_selector(context, "hammer_pipeline")

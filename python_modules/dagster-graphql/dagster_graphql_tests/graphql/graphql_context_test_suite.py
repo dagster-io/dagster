@@ -265,7 +265,7 @@ class EnvironmentManagers:
         @contextmanager
         def _mgr_fn(recon_repo):
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-            with Workspace([InProcessRepositoryLocationOrigin(recon_repo.pointer)]) as workspace:
+            with Workspace([InProcessRepositoryLocationOrigin(recon_repo)]) as workspace:
                 yield workspace
 
         return MarkedManager(_mgr_fn, [Marks.hosted_user_process_env])

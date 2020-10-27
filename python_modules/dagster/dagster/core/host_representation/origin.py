@@ -4,7 +4,7 @@ from collections import namedtuple
 
 import six
 from dagster import check
-from dagster.core.code_pointer import CodePointer
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import whitelist_for_serdes
 
@@ -58,15 +58,15 @@ class RepositoryLocationOrigin(six.with_metaclass(ABCMeta)):
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
-    namedtuple("_InProcessRepositoryLocationOrigin", "code_pointer"), RepositoryLocationOrigin,
+    namedtuple("_InProcessRepositoryLocationOrigin", "recon_repo"), RepositoryLocationOrigin,
 ):
     """Identifies a repository location constructed in the host process. Should only be
        used in tests.
     """
 
-    def __new__(cls, code_pointer):
+    def __new__(cls, recon_repo):
         return super(InProcessRepositoryLocationOrigin, cls).__new__(
-            cls, check.inst_param(code_pointer, "code_pointer", CodePointer,)
+            cls, check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
         )
 
     @property

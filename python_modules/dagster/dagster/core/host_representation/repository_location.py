@@ -25,7 +25,6 @@ from dagster.api.snapshot_schedule import (
     sync_get_external_schedule_execution_data,
     sync_get_external_schedule_execution_data_grpc,
 )
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -159,11 +158,8 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         check.inst_param(
             repository_location_handle, "repository_location_handle", RepositoryLocationHandle
         )
-
         if isinstance(repository_location_handle, InProcessRepositoryLocationHandle):
-            check.invariant(len(repository_location_handle.repository_code_pointer_dict) == 1)
-            pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
-            return InProcessRepositoryLocation(ReconstructableRepository(pointer))
+            return InProcessRepositoryLocation(repository_location_handle)
         elif isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle):
             return PythonEnvRepositoryLocation(repository_location_handle)
         elif isinstance(
@@ -178,9 +174,10 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
 
 
 class InProcessRepositoryLocation(RepositoryLocation):
-    def __init__(self, recon_repo):
-        self._recon_repo = check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-        self._handle = RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)
+    def __init__(self, handle):
+        self._handle = check.inst_param(handle, "handle", InProcessRepositoryLocationHandle,)
+
+        recon_repo = self._handle.origin.recon_repo
 
         repo_def = recon_repo.get_definition()
         def_name = repo_def.name
@@ -195,10 +192,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
         return False
 
     def get_reconstructable_pipeline(self, name):
-        return self._recon_repo.get_reconstructable_pipeline(name)
+        return self.get_reconstructable_repository().get_reconstructable_pipeline(name)
 
     def get_reconstructable_repository(self):
-        return self._recon_repo
+        return self._handle.origin.recon_repo
 
     @property
     def name(self):

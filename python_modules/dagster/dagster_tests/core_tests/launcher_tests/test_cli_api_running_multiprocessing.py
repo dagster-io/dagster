@@ -24,7 +24,11 @@ from dagster import (
     solid,
 )
 from dagster.core.events import DagsterEventType
-from dagster.core.host_representation.handle import RepositoryHandle, RepositoryLocationHandle
+from dagster.core.host_representation import (
+    InProcessRepositoryLocationOrigin,
+    RepositoryHandle,
+    RepositoryLocationHandle,
+)
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path
@@ -153,7 +157,9 @@ def _external_pipeline_from_def(pipeline_def, solid_selection=None):
     recon_pipeline = reconstructable(pipeline_def)
     recon_repo = recon_pipeline.repository
     repo_def = recon_repo.get_definition()
-    location_handle = RepositoryLocationHandle.create_in_process_location(recon_repo.pointer)
+    location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
+        InProcessRepositoryLocationOrigin(recon_repo)
+    )
     repository_handle = RepositoryHandle(
         repository_name=repo_def.name, repository_location_handle=location_handle,
     )
