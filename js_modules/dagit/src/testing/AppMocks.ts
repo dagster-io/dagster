@@ -3,9 +3,9 @@ import path from 'path';
 import {ROOT_REPOSITORIES_QUERY} from 'src/DagsterRepositoryContext';
 import {PIPELINE_EXPLORER_ROOT_QUERY} from 'src/PipelineExplorerRoot';
 import {SIDEBAR_TABBED_CONTAINER_SOLID_QUERY} from 'src/SidebarSolidContainer';
-import {CachedGraphQLRequest} from 'src/__tests__/MockedApolloLinks';
 import {USED_SOLID_DETAILS_QUERY} from 'src/solids/SolidDetailsRoot';
 import {SOLIDS_ROOT_QUERY} from 'src/solids/SolidsRoot';
+import {CachedGraphQLRequest} from 'src/testing/MockedApolloLinks';
 import {TYPE_EXPLORER_CONTAINER_QUERY} from 'src/typeexplorer/TypeExplorerContainer';
 import {TYPE_LIST_CONTAINER_QUERY} from 'src/typeexplorer/TypeListContainer';
 import {TypeExplorerContainerQueryVariables} from 'src/typeexplorer/types/TypeExplorerContainerQuery';
@@ -18,7 +18,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
     name: 'ROOT_REPOSITORIES_QUERY',
     query: ROOT_REPOSITORIES_QUERY,
     variables: undefined,
-    filepath: path.join(__dirname, '__data__', 'ROOT_REPOSITORIES_QUERY.json'),
+    filepath: path.join(__dirname, '..', '__tests__', '__data__', 'ROOT_REPOSITORIES_QUERY.json'),
   },
   {
     name: 'PIPELINE_EXPLORER_ROOT_QUERY',
@@ -34,7 +34,13 @@ export const MOCKS: CachedGraphQLRequest[] = [
       rootHandleID: '',
       requestScopeHandleID: '',
     } as PipelineExplorerRootQueryVariables,
-    filepath: path.join(__dirname, '__data__', 'PIPELINE_EXPLORER_ROOT_QUERY.json'),
+    filepath: path.join(
+      __dirname,
+      '..',
+      '__tests__',
+      '__data__',
+      'PIPELINE_EXPLORER_ROOT_QUERY.json',
+    ),
   },
   {
     name: 'TYPE_EXPLORER_CONTAINER_QUERY',
@@ -47,7 +53,13 @@ export const MOCKS: CachedGraphQLRequest[] = [
       },
       dagsterTypeName: 'PySparkDataFrame',
     } as TypeExplorerContainerQueryVariables,
-    filepath: path.join(__dirname, '__data__', 'TYPE_EXPLORER_CONTAINER_QUERY.json'),
+    filepath: path.join(
+      __dirname,
+      '..',
+      '__tests__',
+      '__data__',
+      'TYPE_EXPLORER_CONTAINER_QUERY.json',
+    ),
   },
   {
     name: 'TYPE_LIST_CONTAINER_QUERY',
@@ -59,7 +71,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
         pipelineName: 'airline_demo_ingest_pipeline',
       },
     } as TypeListContainerQueryVariables,
-    filepath: path.join(__dirname, '__data__', 'TYPE_LIST_CONTAINER_QUERY.json'),
+    filepath: path.join(__dirname, '..', '__tests__', '__data__', 'TYPE_LIST_CONTAINER_QUERY.json'),
   },
   {
     name: 'SOLIDS_ROOT_QUERY',
@@ -70,7 +82,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
         repositoryName: 'internal_dagit_repository',
       },
     },
-    filepath: path.join(__dirname, '__data__', 'SOLIDS_ROOT_QUERY.json'),
+    filepath: path.join(__dirname, '..', '__tests__', '__data__', 'SOLIDS_ROOT_QUERY.json'),
   },
   {
     name: 'USED_SOLIDS_DETAILS_QUERY',
@@ -82,7 +94,7 @@ export const MOCKS: CachedGraphQLRequest[] = [
       },
       name: 's3_to_df',
     },
-    filepath: path.join(__dirname, '__data__', 'USED_SOLID_DETAILS_QUERY.json'),
+    filepath: path.join(__dirname, '..', '__tests__', '__data__', 'USED_SOLID_DETAILS_QUERY.json'),
   },
   {
     name: 'SIDEBAR_TABBED_CONTAINER_SOLID_QUERY',
@@ -95,6 +107,12 @@ export const MOCKS: CachedGraphQLRequest[] = [
       },
       handleID: 'download_q2_sfo_weather',
     } as SidebarTabbedContainerSolidQueryVariables,
-    filepath: path.join(__dirname, '__data__', 'SIDEBAR_TABBED_CONTAINER_SOLID_QUERY.json'),
+    filepath: path.join(
+      __dirname,
+      '..',
+      '__tests__',
+      '__data__',
+      'SIDEBAR_TABBED_CONTAINER_SOLID_QUERY.json',
+    ),
   },
 ];

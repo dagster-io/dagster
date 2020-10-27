@@ -105,6 +105,7 @@
     "eslint-plugin-react-hooks": "^4.0.8",
     "graphql-tools": "^7.0.0",
     "graphql.macro": "^1.4.2",
+    "jest-environment-jsdom-sixteen": "^1.0.3",
     "prettier": "2.1.1",
     "pretty": "^2.0.0",
     "react-is": "^16.13.1",
@@ -124,7 +125,8 @@
     "build-for-python": "yarn run build && cd ../../python_modules/dagit/dagit && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagit/build ./webapp/ && mkdir -p webapp/build/vendor/graphql-playground && cp ../../../js_modules/dagit/node_modules/graphql-playground-react/build/static/css/index.css webapp/build/vendor/graphql-playground/index.css && cp ../../../js_modules/dagit/node_modules/graphql-playground-react/build/favicon.png webapp/build/vendor/graphql-playground/favicon.png && cp ../../../js_modules/dagit/node_modules/graphql-playground-react/build/static/js/middleware.js webapp/build/vendor/graphql-playground/middleware.js",
     "eject": "react-scripts eject",
     "test": "yarn run ts && yarn run jest && yarn run check-prettier",
-    "jest": "jest",
+    "jest": "react-scripts test --env=jest-environment-jsdom-sixteen",
+    "jest:debug": "react-scripts --inspect-brk test --runInBand --no-cache",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix",
     "check-lint": "eslint src/ --ext=.tsx,.ts,.js",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
@@ -141,28 +143,12 @@
       "**/*.{js,jsx,ts,tsx}",
       "!**/node_modules/**"
     ],
-    "roots": [
-      "<rootDir>/src"
-    ],
     "transform": {
-      "^.+\\.(js|ts|tsx|test.tsx)$": "babel-jest",
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga|css)$": "<rootDir>/jest/fileTransformer.js"
+      "^.+\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga|css)$": "<rootDir>/jest/fileTransformer.js"
     },
     "moduleNameMapper": {
-      "^worker-loader(.*)/workers/(.*)$": "<rootDir>/jest/mocks/$2",
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga|css)$": "<rootDir>/jest/fileTransformer.js",
-      "^src/(.*)$": "<rootDir>/src/$1"
-    },
-    "moduleFileExtensions": [
-      "js",
-      "jsx",
-      "json",
-      "ts",
-      "tsx"
-    ],
-    "testRegex": ".*\\.test\\.(ts|tsx)$",
-    "testURL": "http://localhost",
-    "timers": "fake"
+      "^worker-loader(.*)/workers/(.*)$": "<rootDir>/jest/mocks/$2"
+    }
   },
   "babelMacros": {},
   "browserslist": [

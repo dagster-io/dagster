@@ -32,7 +32,6 @@
     "node_modules",
     "public",
     "scripts",
-    "src/setupTests.ts",
     "webpack"
   ],
   "include": ["src", "types", "typings.d.ts"]

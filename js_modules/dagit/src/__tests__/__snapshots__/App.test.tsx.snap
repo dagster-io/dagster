@@ -19,11 +19,7 @@ exports[`renders execution 1`] = `
         <img
           alt="logo"
           onClick={[Function]}
-          src={
-            Object {
-              "process": [Function],
-            }
-          }
+          src="nav-logo-icon.png"
           style={
             Object {
               "height": 40,
@@ -35,11 +31,7 @@ exports[`renders execution 1`] = `
         >
           <img
             alt="title"
-            src={
-              Object {
-                "process": [Function],
-              }
-            }
+            src="nav-title.png"
             style={
               Object {
                 "height": 10,
@@ -817,11 +809,7 @@ exports[`renders pipeline page 1`] = `
         <img
           alt="logo"
           onClick={[Function]}
-          src={
-            Object {
-              "process": [Function],
-            }
-          }
+          src="nav-logo-icon.png"
           style={
             Object {
               "height": 40,
@@ -833,11 +821,7 @@ exports[`renders pipeline page 1`] = `
         >
           <img
             alt="title"
-            src={
-              Object {
-                "process": [Function],
-              }
-            }
+            src="nav-title.png"
             style={
               Object {
                 "height": 10,
@@ -5574,11 +5558,7 @@ exports[`renders pipeline solid page 1`] = `
         <img
           alt="logo"
           onClick={[Function]}
-          src={
-            Object {
-              "process": [Function],
-            }
-          }
+          src="nav-logo-icon.png"
           style={
             Object {
               "height": 40,
@@ -5590,11 +5570,7 @@ exports[`renders pipeline solid page 1`] = `
         >
           <img
             alt="title"
-            src={
-              Object {
-                "process": [Function],
-              }
-            }
+            src="nav-title.png"
             style={
               Object {
                 "height": 10,
@@ -10331,11 +10307,7 @@ exports[`renders solids explorer 1`] = `
         <img
           alt="logo"
           onClick={[Function]}
-          src={
-            Object {
-              "process": [Function],
-            }
-          }
+          src="nav-logo-icon.png"
           style={
             Object {
               "height": 40,
@@ -10347,11 +10319,7 @@ exports[`renders solids explorer 1`] = `
         >
           <img
             alt="title"
-            src={
-              Object {
-                "process": [Function],
-              }
-            }
+            src="nav-title.png"
             style={
               Object {
                 "height": 10,
@@ -12194,11 +12162,7 @@ exports[`renders type page 1`] = `
         <img
           alt="logo"
           onClick={[Function]}
-          src={
-            Object {
-              "process": [Function],
-            }
-          }
+          src="nav-logo-icon.png"
           style={
             Object {
               "height": 40,
@@ -12210,11 +12174,7 @@ exports[`renders type page 1`] = `
         >
           <img
             alt="title"
-            src={
-              Object {
-                "process": [Function],
-              }
-            }
+            src="nav-title.png"
             style={
               Object {
                 "height": 10,
@@ -16951,11 +16911,7 @@ exports[`renders type page 2`] = `
         <img
           alt="logo"
           onClick={[Function]}
-          src={
-            Object {
-              "process": [Function],
-            }
-          }
+          src="nav-logo-icon.png"
           style={
             Object {
               "height": 40,
@@ -16967,11 +16923,7 @@ exports[`renders type page 2`] = `
         >
           <img
             alt="title"
-            src={
-              Object {
-                "process": [Function],
-              }
-            }
+            src="nav-title.png"
             style={
               Object {
                 "height": 10,
@@ -21708,11 +21660,7 @@ exports[`renders without error 1`] = `
         <img
           alt="logo"
           onClick={[Function]}
-          src={
-            Object {
-              "process": [Function],
-            }
-          }
+          src="nav-logo-icon.png"
           style={
             Object {
               "height": 40,
@@ -21724,11 +21672,7 @@ exports[`renders without error 1`] = `
         >
           <img
             alt="title"
-            src={
-              Object {
-                "process": [Function],
-              }
-            }
+            src="nav-title.png"
             style={
               Object {
                 "height": 10,

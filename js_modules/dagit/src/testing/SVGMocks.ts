@@ -1,10 +1,10 @@
 import path from 'path';
 
 import {PIPELINE_EXPLORER_ROOT_QUERY} from 'src/PipelineExplorerRoot';
-import {CachedGraphQLRequest} from 'src/__tests__/MockedApolloLinks';
+import {CachedGraphQLRequest} from 'src/testing/MockedApolloLinks';
 import {PipelineExplorerRootQueryVariables} from 'src/types/PipelineExplorerRootQuery';
 
-const dataDir = path.join(__dirname, '__data__');
+const dataDir = path.join(__dirname, '..', '__tests__', 'graph', '__data__');
 
 // Top level rendering of these pipelines
 export const MOCKS: CachedGraphQLRequest[] = [
