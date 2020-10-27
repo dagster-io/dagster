@@ -123,6 +123,15 @@ To migrate to 0.10.0, you'll need to update your `values.yaml` with the followin
 `env_secrets` -> `envSecrets`
 `env_config_maps` -> `envConfigMaps`
 
+## Restructured: scheduler in Helm values
+
+When specifying the Dagster instance scheduler, rather than using a boolean field to switch between the
+current options of `K8sScheduler` and `DagsterDaemonScheduler`, we now require the scheduler type to be
+explicitly defined under `scheduler.type`. If the user specified `scheduler.type` has required config,
+additional fields will need to be specified under `scheduler.config`.
+
+`scheduler.type` and corresponding `scheduler.config` values are enforced via [JSON Schema](https://helm.sh/docs/topics/charts/#schema-files).
+
 # Migrating to 0.9.0
 
 ## Removal: `config` argument

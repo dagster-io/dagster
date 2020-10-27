@@ -7,3 +7,4 @@ from .postgresql import PostgreSQL
 from .rabbitmq import RabbitMQ
 from .redis import Redis
 from .userdeployments import UserDeployments
+from .scheduler import Scheduler

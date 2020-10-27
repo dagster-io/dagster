@@ -33,6 +33,9 @@
         },
         "computeLogManager": {
             "$ref": "#/definitions/ComputeLogManager"
+        },
+        "scheduler": {
+            "$ref": "#/definitions/Scheduler"
         }
     },
     "required": [
@@ -44,7 +47,8 @@
         "flower",
         "ingress",
         "imagePullSecrets",
-        "computeLogManager"
+        "computeLogManager",
+        "scheduler"
     ],
     "definitions": {
         "PullPolicy": {
@@ -1041,6 +1045,124 @@
                             "config": {
                                 "required": [
                                     "customComputeLogManager"
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "SchedulerType": {
+            "title": "SchedulerType",
+            "description": "An enumeration.",
+            "enum": [
+                "DagsterDaemonScheduler",
+                "K8sScheduler"
+            ],
+            "type": "string"
+        },
+        "SecretEnvSource": {
+            "title": "SecretEnvSource",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecretEnvSource"
+        },
+        "K8sSchedulerConfig": {
+            "title": "K8sSchedulerConfig",
+            "type": "object",
+            "properties": {
+                "image": {
+                    "$ref": "#/definitions/Image"
+                },
+                "schedulerNamespace": {
+                    "title": "Schedulernamespace",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "loadInclusterConfig": {
+                    "title": "Loadinclusterconfig",
+                    "type": "boolean"
+                },
+                "kubeconfigFile": {
+                    "title": "Kubeconfigfile",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "envSecrets": {
+                    "title": "Envsecrets",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SecretEnvSource"
+                    }
+                }
+            },
+            "required": [
+                "image",
+                "loadInclusterConfig",
+                "envSecrets"
+            ],
+            "additionalProperties": false
+        },
+        "SchedulerConfig": {
+            "title": "SchedulerConfig",
+            "type": "object",
+            "properties": {
+                "k8sScheduler": {
+                    "title": "K8sSchedulerConfig",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/K8sSchedulerConfig"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
+        "Scheduler": {
+            "title": "Scheduler",
+            "type": "object",
+            "properties": {
+                "type": {
+                    "$ref": "#/definitions/SchedulerType"
+                },
+                "config": {
+                    "$ref": "#/definitions/SchedulerConfig"
+                }
+            },
+            "required": [
+                "type",
+                "config"
+            ],
+            "additionalProperties": false,
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "K8sScheduler"
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "config": {
+                                "required": [
+                                    "k8sScheduler"
                                 ]
                             }
                         }

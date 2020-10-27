@@ -17,6 +17,8 @@
 - `SolidExecutionResult.compute_output_event_dict` changed to `SolidExecutionResult.compute_output_events_dict`
 - Eliminated `pipeline_def` property from `InitResourceContext`.
 - Removed the argument `step_keys_to_execute` to the `reexecute_pipeline` and `reexecute_pipeline_iterator`.
+- [Helm/K8s]
+  - The schema for the `scheduler` values in the helm chart has been rewritten.
 
 ## 0.9.22.post0
 

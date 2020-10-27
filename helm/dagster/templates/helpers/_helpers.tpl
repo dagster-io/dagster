@@ -24,6 +24,11 @@ If release name contains chart name it will be used as a full name.
 {{- end -}}
 {{- end -}}
 
+# Image utils
+{{- define "image.job_image" -}}
+"{{- .repository -}}:{{- .tag -}}"
+{{- end -}}
+
 # Dagit image e.g. repo/foo:bar
 {{- define "dagster.dagit_image" -}}
 {{ required "Dagit image repository .Values.dagit.image.repository is required" .Values.dagit.image.repository -}}

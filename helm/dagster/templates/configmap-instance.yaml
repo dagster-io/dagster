@@ -10,40 +10,13 @@ metadata:
 data:
   dagster.yaml: |
     scheduler:
-      {{- if .Values.scheduler.k8sEnabled }}
-      module: dagster_k8s.scheduler
-      class: K8sScheduler
-      config:
-        load_incluster_config: {{ .Values.scheduler.loadInclusterConfig }}
-        scheduler_namespace: {{ .Values.scheduler.schedulerNamespace | default .Release.Namespace }}
-        kubeconfig_file: {{ .Values.scheduler.kubeconfigFile }}
-        {{- with $.Values.imagePullSecrets }}
-        image_pull_secrets:
-          {{- toYaml . | nindent 10 }}
-        {{- end }}
-        service_account_name: {{ include "dagster.serviceAccountName" . }}
-        job_image: "{{- .Values.scheduler.image.repository -}}:{{- .Values.scheduler.image.tag -}}"
-        dagster_home:
-          env: DAGSTER_HOME
-        postgres_password_secret:
-          env: DAGSTER_K8S_PG_PASSWORD_SECRET
-        image_pull_policy: {{ .Values.scheduler.image.pullPolicy }}
-        instance_config_map:
-          env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
-        env_config_maps:
-          - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
-        env_secrets:
-          {{- if $.Values.scheduler.envSecrets -}}
-          {{- range $name := $.Values.scheduler.envSecrets }}
-          {{- if $name }}
-          - {{ $name }}
-          {{- end }}
-          {{- end }}
-          {{- end }}
-    {{- else }}
-      module: dagster.core.scheduler
-      class: DagsterDaemonScheduler
-    {{- end }}
+      {{- $schedulerType := .Values.scheduler.type }}
+
+      {{- if eq $schedulerType "DagsterDaemonScheduler"}}
+        {{- include "dagsterYaml.scheduler.daemon" . | indent 6 -}}
+      {{- else if eq $schedulerType "K8sScheduler" }}
+        {{- include "dagsterYaml.scheduler.k8s" . | indent 6 -}}
+      {{- end }}
 
     schedule_storage:
       module: dagster_postgres.schedule_storage
