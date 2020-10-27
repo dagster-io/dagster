@@ -1258,6 +1258,33 @@ class DagsterInstance:
     def delete_schedule_state(self, schedule_origin_id):
         return self._schedule_storage.delete_schedule_state(schedule_origin_id)
 
+    def all_stored_job_state(self, repository_origin_id=None, job_type=None):
+        return self._schedule_storage.all_stored_job_state(repository_origin_id, job_type)
+
+    def get_job_state(self, job_origin_id):
+        return self._schedule_storage.get_job_state(job_origin_id)
+
+    def add_job_state(self, job_state):
+        return self._schedule_storage.add_job_state(job_state)
+
+    def update_job_state(self, job_state):
+        return self._schedule_storage.update_job_state(job_state)
+
+    def delete_job_state(self, job_origin_id):
+        return self._schedule_storage.delete_job_state(job_origin_id)
+
+    def get_job_ticks(self, job_origin_id):
+        return self._schedule_storage.get_job_ticks(job_origin_id)
+
+    def get_latest_job_tick(self, job_origin_id):
+        return self._schedule_storage.get_latest_job_tick(job_origin_id)
+
+    def create_job_tick(self, job_tick_data):
+        return self._schedule_storage.create_job_tick(job_tick_data)
+
+    def update_job_tick(self, tick):
+        return self._schedule_storage.update_job_tick(tick)
+
     def wipe_all_schedules(self):
         if self._scheduler:
             self._scheduler.wipe(self)

@@ -2,17 +2,19 @@ import warnings
 from collections import OrderedDict
 
 from dagster import check
+from dagster.core.definitions.job import JobType
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
 
 from .external_data import (
+    ExternalJobData,
     ExternalPartitionSetData,
     ExternalPipelineData,
     ExternalRepositoryData,
     ExternalScheduleData,
 )
-from .handle import PartitionSetHandle, PipelineHandle, RepositoryHandle, ScheduleHandle
+from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle, ScheduleHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
 
@@ -65,6 +67,20 @@ class ExternalRepository:
         return [
             ExternalSchedule(external_schedule_data, self._handle)
             for external_schedule_data in self.external_repository_data.external_schedule_datas
+        ]
+
+    def get_external_sensor(self, sensor_name):
+        job_data = self.external_repository_data.get_external_job_data(sensor_name)
+        if job_data.job_type != JobType.SENSOR:
+            check.failed("Could not find sensor named " + sensor_name)
+
+        return ExternalSensor(job_data, self._handle)
+
+    def get_external_sensors(self):
+        return [
+            ExternalSensor(external_job_data, self._handle)
+            for external_job_data in self.external_repository_data.external_job_datas
+            if external_job_data.job_type == JobType.SENSOR
         ]
 
     def get_external_partition_set(self, partition_set_name):
@@ -402,6 +418,44 @@ class ExternalSchedule:
             self.cron_schedule,
             start_timestamp=None,
         )
+
+
+class ExternalSensor:
+    def __init__(self, external_job_data, handle):
+        self._external_job_data = check.inst_param(
+            external_job_data, "external_job_data", ExternalJobData,
+        )
+        check.param_invariant(external_job_data.job_type == JobType.SENSOR, "external_job_data")
+        self._handle = JobHandle(
+            self._external_job_data.name, check.inst_param(handle, "handle", RepositoryHandle)
+        )
+
+    @property
+    def name(self):
+        return self._external_job_data.name
+
+    @property
+    def pipeline_name(self):
+        return self._external_job_data.pipeline_name
+
+    @property
+    def solid_selection(self):
+        return self._external_job_data.solid_selection
+
+    @property
+    def mode(self):
+        return self._external_job_data.mode
+
+    def get_external_origin(self):
+        return self._handle.get_external_origin()
+
+    def get_external_origin_id(self):
+        return self.get_external_origin().get_id()
+
+    def get_default_sensor_state(self):
+        from dagster.core.scheduler.job import JobState, JobStatus
+
+        return JobState(self.get_external_origin(), JobType.SENSOR, JobStatus.STOPPED)
 
 
 class ExternalPartitionSet:

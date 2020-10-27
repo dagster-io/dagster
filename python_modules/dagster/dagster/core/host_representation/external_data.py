@@ -365,7 +365,7 @@ def external_repository_data_from_def(repository_def):
             key=lambda psd: psd.name,
         ),
         external_job_datas=sorted(
-            list(map(external_job_from_def, repository_def.job_defs)), key=lambda ted: ted.name,
+            list(map(external_job_from_def, repository_def.job_defs)), key=lambda job: job.name,
         ),
     )
 

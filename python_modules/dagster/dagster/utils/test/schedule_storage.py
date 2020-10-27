@@ -9,6 +9,7 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.scheduler import ScheduleState, ScheduleStatus
+from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
 from dagster.core.scheduler.scheduler import ScheduleTickData, ScheduleTickStatus
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
@@ -58,6 +59,11 @@ class TestScheduleStorage:
         fake_target = ExternalScheduleOrigin(cls.fake_repo_target(), schedule_name)
 
         return ScheduleState(fake_target, status, cron_schedule, start_timestamp=None)
+
+    @classmethod
+    def build_sensor(cls, sensor_name, status=JobStatus.STOPPED):
+        external_job_origin = cls.fake_repo_target().get_job_origin(sensor_name)
+        return JobState(external_job_origin, JobType.SENSOR, status)
 
     def test_basic_schedule_storage(self, storage):
         assert storage
@@ -294,3 +300,207 @@ class TestScheduleStorage:
         assert stats.ticks_succeeded == 3
         assert stats.ticks_skipped == 4
         assert stats.ticks_failed == 5
+
+    def test_basic_job_storage(self, storage):
+        assert storage
+        job = self.build_sensor("my_sensor")
+        storage.add_job_state(job)
+        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        assert len(jobs) == 1
+
+        job = jobs[0]
+        assert job.job_name == "my_sensor"
+
+    def test_add_multiple_jobs(self, storage):
+        assert storage
+
+        job = self.build_sensor("my_sensor")
+        job_2 = self.build_sensor("my_sensor_2")
+        job_3 = self.build_sensor("my_sensor_3")
+
+        storage.add_job_state(job)
+        storage.add_job_state(job_2)
+        storage.add_job_state(job_3)
+
+        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        assert len(jobs) == 3
+
+        assert any(s.job_name == "my_sensor" for s in jobs)
+        assert any(s.job_name == "my_sensor_2" for s in jobs)
+        assert any(s.job_name == "my_sensor_3" for s in jobs)
+
+    def test_get_job_state(self, storage):
+        assert storage
+
+        state = self.build_sensor("my_sensor")
+        storage.add_job_state(state)
+        job = storage.get_job_state(state.job_origin_id)
+
+        assert job.job_name == "my_sensor"
+
+    def test_get_job_state_not_found(self, storage):
+        assert storage
+
+        storage.add_job_state(self.build_sensor("my_sensor"))
+        job_state = storage.get_job_state("fake_id")
+        assert job_state is None
+
+    def test_update_job(self, storage):
+        assert storage
+
+        job = self.build_sensor("my_sensor")
+        storage.add_job_state(job)
+
+        new_job = job.with_status(JobStatus.RUNNING)
+        storage.update_job_state(new_job)
+
+        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        assert len(jobs) == 1
+
+        job = jobs[0]
+        assert job.job_name == "my_sensor"
+        assert job.status == JobStatus.RUNNING
+
+        stopped_job = job.with_status(JobStatus.STOPPED)
+        storage.update_job_state(stopped_job)
+
+        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        assert len(jobs) == 1
+
+        job = jobs[0]
+        assert job.job_name == "my_sensor"
+        assert job.status == JobStatus.STOPPED
+
+    def test_update_job_not_found(self, storage):
+        assert storage
+
+        job = self.build_sensor("my_sensor")
+
+        with pytest.raises(DagsterInvariantViolationError):
+            storage.update_job_state(job)
+
+    def test_delete_job_state(self, storage):
+        assert storage
+        job = self.build_sensor("my_sensor")
+        storage.add_job_state(job)
+        storage.delete_job_state(job.job_origin_id)
+
+        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        assert len(jobs) == 0
+
+    def test_delete_job_not_found(self, storage):
+        assert storage
+
+        job = self.build_sensor("my_sensor")
+
+        with pytest.raises(DagsterInvariantViolationError):
+            storage.delete_job_state(job.job_origin_id)
+
+    def test_add_job_with_same_name(self, storage):
+        assert storage
+
+        job = self.build_sensor("my_sensor")
+        storage.add_job_state(job)
+
+        with pytest.raises(DagsterInvariantViolationError):
+            storage.add_job_state(job)
+
+    def build_job_tick_data(
+        self,
+        current_time,
+        status=JobTickStatus.STARTED,
+        run_id=None,
+        error=None,
+        execution_key=None,
+    ):
+        return JobTickData(
+            "my_sensor",
+            "my_sensor",
+            JobType.SENSOR,
+            status,
+            current_time,
+            run_id,
+            error,
+            execution_key,
+        )
+
+    def test_create_job_tick(self, storage):
+        assert storage
+
+        current_time = time.time()
+        tick = storage.create_job_tick(self.build_job_tick_data(current_time))
+        assert tick.tick_id == 1
+
+        ticks = storage.get_job_ticks("my_sensor")
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.tick_id == 1
+        assert tick.job_name == "my_sensor"
+        assert tick.timestamp == current_time
+        assert tick.status == JobTickStatus.STARTED
+        assert tick.run_id == None
+        assert tick.error == None
+
+    def test_update_job_tick_to_success(self, storage):
+        assert storage
+
+        current_time = time.time()
+        tick = storage.create_job_tick(self.build_job_tick_data(current_time))
+
+        updated_tick = tick.with_status(JobTickStatus.SUCCESS, run_id="1234")
+        assert updated_tick.status == JobTickStatus.SUCCESS
+
+        storage.update_job_tick(updated_tick)
+
+        ticks = storage.get_job_ticks("my_sensor")
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.tick_id == 1
+        assert tick.job_name == "my_sensor"
+        assert tick.timestamp == current_time
+        assert tick.status == JobTickStatus.SUCCESS
+        assert tick.run_id == "1234"
+        assert tick.error == None
+
+    def test_update_job_tick_to_skip(self, storage):
+        assert storage
+
+        current_time = time.time()
+        tick = storage.create_job_tick(self.build_job_tick_data(current_time))
+
+        updated_tick = tick.with_status(JobTickStatus.SKIPPED)
+        assert updated_tick.status == JobTickStatus.SKIPPED
+
+        storage.update_job_tick(updated_tick)
+
+        ticks = storage.get_job_ticks("my_sensor")
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.tick_id == 1
+        assert tick.job_name == "my_sensor"
+        assert tick.timestamp == current_time
+        assert tick.status == JobTickStatus.SKIPPED
+        assert tick.run_id == None
+        assert tick.error == None
+
+    def test_update_job_tick_to_failure(self, storage):
+        assert storage
+
+        current_time = time.time()
+        tick = storage.create_job_tick(self.build_job_tick_data(current_time))
+        error = SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
+
+        updated_tick = tick.with_status(JobTickStatus.FAILURE, error=error)
+        assert updated_tick.status == JobTickStatus.FAILURE
+
+        storage.update_job_tick(updated_tick)
+
+        ticks = storage.get_job_ticks("my_sensor")
+        assert len(ticks) == 1
+        tick = ticks[0]
+        assert tick.tick_id == 1
+        assert tick.job_name == "my_sensor"
+        assert tick.timestamp == current_time
+        assert tick.status == JobTickStatus.FAILURE
+        assert tick.run_id == None
+        assert tick.error == error

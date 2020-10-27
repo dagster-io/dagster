@@ -12,6 +12,7 @@ from .instance import instance_cli
 from .pipeline import pipeline_cli
 from .run import run_cli
 from .schedule import schedule_cli
+from .sensor import sensor_cli
 
 
 def create_dagster_cli():
@@ -21,6 +22,7 @@ def create_dagster_cli():
         "run": run_cli,
         "instance": instance_cli,
         "schedule": schedule_cli,
+        "sensor": sensor_cli,
         "asset": asset_cli,
         "debug": debug_cli,
     }

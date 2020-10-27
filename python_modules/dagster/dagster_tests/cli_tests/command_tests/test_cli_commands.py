@@ -22,6 +22,7 @@ from dagster import (
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_list_command, run_wipe_command
+from dagster.core.definitions.sensor import SensorDefinition
 from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
@@ -112,6 +113,14 @@ def define_bar_partitions():
     }
 
 
+def define_bar_sensors():
+    return {
+        "foo_sensor": SensorDefinition(
+            name="foo_sensor", pipeline_name="baz", should_execute=lambda _: True
+        )
+    }
+
+
 @repository
 def bar():
     return {
@@ -122,6 +131,7 @@ def bar():
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_bar_partitions(),
+        "jobs": define_bar_sensors(),
     }
 
 
@@ -277,8 +287,8 @@ def scheduler_instance(overrides=None):
 
 
 @contextmanager
-def grpc_server_scheduler_cli_args():
-    with scheduler_instance() as instance:
+def grpc_server_scheduler_cli_args(overrides=None):
+    with scheduler_instance(overrides) as instance:
         with grpc_server_bar_cli_args() as args:
             yield args, instance
 
@@ -290,7 +300,16 @@ def schedule_command_contexts():
         args_with_instance(
             scheduler_instance(), ["-w", file_relative_path(__file__, "workspace.yaml")]
         ),
-        pytest.param(grpc_server_scheduler_cli_args()),
+        grpc_server_scheduler_cli_args(),
+    ]
+
+
+def sensor_command_contexts():
+    return [
+        args_with_instance(
+            scheduler_instance(), ["-w", file_relative_path(__file__, "workspace.yaml")],
+        ),
+        grpc_server_scheduler_cli_args(),
     ]
 
 
