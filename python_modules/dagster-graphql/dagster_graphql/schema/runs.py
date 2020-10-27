@@ -361,6 +361,18 @@ class DauphinPipelineEvent(dauphin.Interface):
     pipelineName = dauphin.NonNull(dauphin.String)
 
 
+class DauphinPipelineEnqueuedEvent(dauphin.ObjectType):
+    class Meta(object):
+        name = "PipelineEnqueuedEvent"
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
+
+
+class DauphinPipelineDequeuedEvent(dauphin.ObjectType):
+    class Meta(object):
+        name = "PipelineDequeuedEvent"
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
+
+
 class DauphinPipelineStartEvent(dauphin.ObjectType):
     class Meta(object):
         name = "PipelineStartEvent"
@@ -802,6 +814,10 @@ def from_dagster_event_record(event_record, pipeline_name):
             failureMetadata=dagster_event.step_failure_data.user_failure_data,
             **basic_params
         )
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_ENQUEUED:
+        return DauphinPipelineEnqueuedEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_DEQUEUED:
+        return DauphinPipelineDequeuedEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
         return DauphinPipelineStartEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS:

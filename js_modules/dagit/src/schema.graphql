@@ -1385,6 +1385,26 @@ type MissingRunIdErrorEvent {
   invalidRunId: String!
 }
 
+type PipelineEnqueuedEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  pipelineName: String!
+}
+
+type PipelineDequeuedEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  pipelineName: String!
+}
+
 type EventPathMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String
