@@ -3,8 +3,7 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {IStepState} from 'src/RunMetadataProvider';
-import {IRunMetadataDict} from 'src/RunMetadataProvider';
+import {IStepState, IRunMetadataDict} from 'src/RunMetadataProvider';
 import {SuggestionProvider, TokenizingField, TokenizingFieldValue} from 'src/TokenizingField';
 import {ComputeLogLink} from 'src/runs/ComputeLogModal';
 import {LogLevel} from 'src/runs/LogLevel';

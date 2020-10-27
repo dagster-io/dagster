@@ -7,8 +7,7 @@ import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
-import {PipelineRunTag} from 'src/LocalStorage';
-import {IExecutionSession, IStorageData} from 'src/LocalStorage';
+import {PipelineRunTag, IExecutionSession, IStorageData} from 'src/LocalStorage';
 import {ShortcutHandler} from 'src/ShortcutHandler';
 import {SecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
 import {

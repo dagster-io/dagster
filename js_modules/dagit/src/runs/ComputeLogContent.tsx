@@ -1,5 +1,4 @@
-import {Colors, Icon} from '@blueprintjs/core';
-import {Intent, Spinner} from '@blueprintjs/core';
+import {Colors, Icon, Intent, Spinner} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import Ansi from 'ansi-to-react';
 import gql from 'graphql-tag';

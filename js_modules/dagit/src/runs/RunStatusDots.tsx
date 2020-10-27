@@ -1,6 +1,4 @@
-import {Spinner} from '@blueprintjs/core';
-import {Popover} from '@blueprintjs/core';
-import {Colors} from '@blueprintjs/core';
+import {Spinner, Popover, Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 

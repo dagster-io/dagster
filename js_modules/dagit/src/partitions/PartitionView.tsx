@@ -1,5 +1,4 @@
-import {Spinner, Button} from '@blueprintjs/core';
-import {Colors} from '@blueprintjs/core';
+import {Spinner, Button, Colors} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';

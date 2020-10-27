@@ -1,4 +1,3 @@
-import 'codemirror';
 import 'codemirror/addon/comment/comment';
 import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/fold/foldgutter';
@@ -14,7 +13,7 @@ import 'codemirror/keymap/sublime';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/material.css';
 import 'src/configeditor/codemirror-yaml/lint'; // Patch lint
-import 'src/configeditor/codemirror-yaml/mode';
+import 'src/configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
 import {Editor} from 'codemirror';
 import * as React from 'react';
@@ -27,7 +26,7 @@ import {
   YamlModeValidateFunction,
   expandAutocompletionContextAtCursor,
   findRangeInDocumentFromPath,
-} from 'src/configeditor/codemirror-yaml/mode';
+} from 'src/configeditor/codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 import {
   ConfigEditorRunConfigSchemaFragment,
   ConfigEditorRunConfigSchemaFragment_allConfigTypes,

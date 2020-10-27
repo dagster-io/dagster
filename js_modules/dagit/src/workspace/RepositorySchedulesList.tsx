@@ -1,5 +1,4 @@
-import {Tooltip} from '@blueprintjs/core';
-import {Colors, NonIdealState} from '@blueprintjs/core';
+import {Tooltip, Colors, NonIdealState} from '@blueprintjs/core';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';

@@ -15,8 +15,7 @@ import {useLazyQuery, useMutation} from 'react-apollo';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {DagsterRepositoryContext} from 'src/DagsterRepositoryContext';
-import {SharedToaster} from 'src/DomUtils';
-import {ROOT_SERVER_URI} from 'src/DomUtils';
+import {SharedToaster, ROOT_SERVER_URI} from 'src/DomUtils';
 import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 import {REEXECUTE_PIPELINE_UNKNOWN} from 'src/runs/RunActionButtons';
 import {

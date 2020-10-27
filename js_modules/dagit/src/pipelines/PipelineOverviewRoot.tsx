@@ -3,8 +3,7 @@ import {IconNames} from '@blueprintjs/icons';
 import gql from 'graphql-tag';
 import * as React from 'react';
 import {useQuery} from 'react-apollo';
-import {Link, Redirect} from 'react-router-dom';
-import {RouteComponentProps} from 'react-router-dom';
+import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';
@@ -23,8 +22,13 @@ import {
 } from 'src/pipelines/types/PipelineOverviewQuery';
 import {RunActionsMenu} from 'src/runs/RunActionsMenu';
 import {RunStatus, RunStatusWithStats} from 'src/runs/RunStatusDots';
-import {RunTime, RunsQueryRefetchContext, titleForRun} from 'src/runs/RunUtils';
-import {RunComponentFragments, RunElapsed} from 'src/runs/RunUtils';
+import {
+  RunTime,
+  RunsQueryRefetchContext,
+  titleForRun,
+  RunComponentFragments,
+  RunElapsed,
+} from 'src/runs/RunUtils';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
 
