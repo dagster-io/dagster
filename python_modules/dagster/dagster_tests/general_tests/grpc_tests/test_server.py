@@ -7,7 +7,7 @@ from dagster.grpc.client import ephemeral_grpc_api_client
 
 
 def _stream_events_target(results, api_client):
-    for result in api_client.streaming_ping(sequence_length=100000, echo="foo"):
+    for result in api_client.streaming_ping(sequence_length=10000, echo="foo"):
         results.append(result)
 
 
@@ -19,7 +19,12 @@ def test_streaming_terminate():
         )
         stream_events_result_thread.daemon = True
         stream_events_result_thread.start()
+
+        start = time.time()
         while not streaming_results:
+            if time.time() - start > 15:
+                raise Exception("Timed out waiting for streaming results")
+
             time.sleep(0.001)
 
         try:
@@ -28,8 +33,10 @@ def test_streaming_terminate():
             # shutting down sometimes happens so fast that it terminates the calling RPC
             pass
 
-        stream_events_result_thread.join()
-        assert len(streaming_results) == 100000
+        stream_events_result_thread.join(timeout=90)
+
+        assert not stream_events_result_thread.is_alive()
+        assert len(streaming_results) == 10000
 
         api_client._server_process.wait()  # pylint: disable=protected-access
         assert api_client._server_process.poll() == 0  # pylint: disable=protected-access
