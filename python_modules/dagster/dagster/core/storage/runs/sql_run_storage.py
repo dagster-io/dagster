@@ -195,7 +195,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         # If we have a tags filter, then we need to select from a joined table
         if filters.tags:
             base_query = db.select(base_query_columns).select_from(
-                RunsTable.outerjoin(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+                RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
             )
         else:
             base_query = db.select(base_query_columns).select_from(RunsTable)
