@@ -54,6 +54,7 @@ def test_dataframe_outputs(file_type, read, other):
 
         result = execute_solid(
             return_df,
+            mode_def=ModeDefinition(resource_defs={"pyspark": pyspark_resource}),
             run_config={"solids": {"return_df": {"outputs": [{"df": {file_type: options}}]}}},
         )
         assert result.success
@@ -62,6 +63,7 @@ def test_dataframe_outputs(file_type, read, other):
 
         result = execute_solid(
             return_df,
+            mode_def=ModeDefinition(resource_defs={"pyspark": pyspark_resource}),
             run_config={
                 "solids": {
                     "return_df": {

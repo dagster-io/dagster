@@ -218,6 +218,7 @@ class PipelineDefinition(GraphDefinition):
         _validate_resource_dependencies(
             self._mode_definitions,
             self._current_level_node_defs,
+            self._dagster_type_dict,
             self._solid_dict,
             self._hook_defs,
         )
@@ -579,12 +580,16 @@ def _get_pipeline_subset_def(pipeline_def, solids_to_execute):
         )
 
 
-def _validate_resource_dependencies(mode_definitions, node_defs, solid_dict, pipeline_hook_defs):
+def _validate_resource_dependencies(
+    mode_definitions, node_defs, dagster_type_dict, solid_dict, pipeline_hook_defs
+):
     """This validation ensures that each pipeline context provides the resources that are required
     by each solid.
     """
     check.list_param(mode_definitions, "mode_definitions", of_type=ModeDefinition)
     check.list_param(node_defs, "node_defs", of_type=NodeDefinition)
+    check.dict_param(dagster_type_dict, "dagster_type_dict")
+    check.dict_param(solid_dict, "solid_dict")
     check.set_param(pipeline_hook_defs, "pipeline_hook_defs", of_type=HookDefinition)
 
     for mode_def in mode_definitions:
@@ -602,6 +607,9 @@ def _validate_resource_dependencies(mode_definitions, node_defs, solid_dict, pip
                             mode_name=mode_def.name,
                         )
                     )
+
+        _validate_type_resource_deps_for_mode(mode_def, mode_resources, dagster_type_dict)
+
         for system_storage_def in mode_def.system_storage_defs:
             for required_resource in system_storage_def.required_resource_keys:
                 if required_resource not in mode_resources:
@@ -656,6 +664,79 @@ def _validate_resource_dependencies(mode_definitions, node_defs, solid_dict, pip
                             mode_name=mode_def.name,
                         )
                     )
+
+
+def _validate_type_resource_deps_for_mode(mode_def, mode_resources, dagster_type_dict):
+    for dagster_type in dagster_type_dict.values():
+        for required_resource in dagster_type.required_resource_keys:
+            if required_resource not in mode_resources:
+                raise DagsterInvalidDefinitionError(
+                    (
+                        'Resource "{resource}" is required by type "{type_name}", but is not '
+                        'provided by mode "{mode_name}".'
+                    ).format(
+                        resource=required_resource,
+                        type_name=dagster_type.display_name,
+                        mode_name=mode_def.name,
+                    )
+                )
+        if dagster_type.loader:
+            for required_resource in dagster_type.loader.required_resource_keys():
+                if required_resource not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'Resource "{resource}" is required by the loader on type '
+                            '"{type_name}", but is not provided by mode "{mode_name}".'
+                        ).format(
+                            resource=required_resource,
+                            type_name=dagster_type.display_name,
+                            mode_name=mode_def.name,
+                        )
+                    )
+        if dagster_type.materializer:
+            for required_resource in dagster_type.materializer.required_resource_keys():
+                if required_resource not in mode_resources:
+                    raise DagsterInvalidDefinitionError(
+                        (
+                            'Resource "{resource}" is required by the materializer on type '
+                            '"{type_name}", but is not provided by mode "{mode_name}".'
+                        ).format(
+                            resource=required_resource,
+                            type_name=dagster_type.display_name,
+                            mode_name=mode_def.name,
+                        )
+                    )
+
+        for plugin in dagster_type.auto_plugins:
+            used_by_storage = set(
+                [
+                    storage_def.name
+                    for storage_def in mode_def.system_storage_defs
+                    if plugin.compatible_with_storage_def(storage_def)
+                ]
+                + [
+                    intermediate_storage_def.name
+                    for intermediate_storage_def in mode_def.intermediate_storage_defs
+                    if plugin.compatible_with_storage_def(intermediate_storage_def)
+                ]
+            )
+
+            if used_by_storage:
+                for required_resource in plugin.required_resource_keys():
+                    if required_resource not in mode_resources:
+                        raise DagsterInvalidDefinitionError(
+                            (
+                                'Resource "{resource}" is required by the plugin "{plugin_name}"'
+                                ' on type "{type_name}" (used with storages {storages}), '
+                                'but is not provided by mode "{mode_name}".'
+                            ).format(
+                                resource=required_resource,
+                                type_name=dagster_type.display_name,
+                                plugin_name=plugin.__name__,
+                                mode_name=mode_def.name,
+                                storages=used_by_storage,
+                            )
+                        )
 
 
 def _validate_inputs(dependency_structure, solid_dict):

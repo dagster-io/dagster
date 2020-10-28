@@ -20,6 +20,7 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.api import execute_run
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.core.types.dagster_type import create_any_type
@@ -386,7 +387,10 @@ def test_resource_dependent_hydration_with_selective_init():
 
 
 def define_plugin_pipeline(
-    should_require_resources=True, resources_initted=None, compatible_storage=True
+    should_require_resources=True,
+    resources_initted=None,
+    compatible_storage=True,
+    mode_defines_resource=True,
 ):
     if resources_initted is None:
         resources_initted = {}
@@ -427,7 +431,12 @@ def define_plugin_pipeline(
     def output_solid(_context):
         return "hello"
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"a": resource_a})])
+    if mode_defines_resource:
+        mode_defs = [ModeDefinition(resource_defs={"a": resource_a})]
+    else:
+        mode_defs = [ModeDefinition()]
+
+    @pipeline(mode_defs=mode_defs)
     def plugin_pipeline():
         output_solid()
 
@@ -638,3 +647,77 @@ def test_resource_passed_version():
         pass
 
     assert passed_version_resource.version == "42"
+
+
+def test_type_missing_resource_fails():
+    def resource_based_type_check(context, value):
+        return context.resources.a == value
+
+    CustomType = DagsterType(
+        name="NeedsA", type_check_fn=resource_based_type_check, required_resource_keys={"a"},
+    )
+
+    @solid(output_defs=[OutputDefinition(CustomType, "custom_type")])
+    def custom_type_solid(_):
+        return "A"
+
+    with pytest.raises(DagsterInvalidDefinitionError, match='required by type "NeedsA"'):
+
+        @pipeline
+        def _type_check_pipeline():
+            custom_type_solid()
+
+
+def test_loader_missing_resource_fails():
+    @dagster_type_loader(String, required_resource_keys={"a"})
+    def InputHydration(context, hello):
+        assert context.resources.a == "A"
+        return CustomType(hello)
+
+    @usable_as_dagster_type(loader=InputHydration)
+    class CustomType(str):
+        pass
+
+    @solid(input_defs=[InputDefinition("_custom_type", CustomType)])
+    def custom_type_solid(_, _custom_type):
+        return "A"
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='required by the loader on type "CustomType"'
+    ):
+
+        @pipeline
+        def _type_check_pipeline():
+            custom_type_solid()
+
+
+def test_materialize_missing_resource_fails():
+    @dagster_type_materializer(String, required_resource_keys={"a"})
+    def materialize(context, *_args, **_kwargs):
+        assert context.resources.a == "A"
+        return AssetMaterialization("hello")
+
+    CustomType = create_any_type(name="CustomType", materializer=materialize)
+
+    @solid(output_defs=[OutputDefinition(CustomType, "custom_type")])
+    def custom_type_solid(_):
+        return "A"
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match='required by the materializer on type "CustomType"'
+    ):
+
+        @pipeline
+        def _type_check_pipeline():
+            custom_type_solid()
+
+
+def test_plugin_missing_resource_fails():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r'required by the plugin "CustomStoragePlugin" on type "CustomType" \(used with storages',
+    ):
+        define_plugin_pipeline(mode_defines_resource=False)
+
+    # works since storages are not compatible with plugin
+    define_plugin_pipeline(mode_defines_resource=False, compatible_storage=False)

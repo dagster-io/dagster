@@ -134,7 +134,7 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
         raise Exception("Couldn't find object at {success_key}".format(success_key=success_key))
 
 
-def test_spark_dataframe_output_csv():
+def test_spark_dataframe_output_csv(spark_config):
     spark = SparkSession.builder.getOrCreate()
     num_df = (
         spark.read.format("csv")
@@ -152,7 +152,7 @@ def test_spark_dataframe_output_csv():
     def passthrough_df(_context, df):
         return df
 
-    @pipeline
+    @pipeline(mode_defs=[spark_local_fs_mode])
     def passthrough():
         passthrough_df(emit())
 
@@ -161,6 +161,7 @@ def test_spark_dataframe_output_csv():
         result = execute_pipeline(
             passthrough,
             run_config={
+                "resources": {"pyspark": {"config": {"spark_conf": spark_config}}},
                 "solids": {
                     "passthrough_df": {
                         "outputs": [{"result": {"csv": {"path": file_name, "header": True}}}]
