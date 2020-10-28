@@ -6,9 +6,13 @@ from contextlib import contextmanager
 import pytest
 from dagster import daily_schedule, pipeline, repository, solid
 from dagster.api.launch_scheduled_execution import sync_launch_scheduled_execution
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.host_representation import (
+    ExternalRepositoryOrigin,
+    ExternalScheduleOrigin,
+    GrpcServerRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import RepositoryGrpcServerOrigin
 from dagster.core.scheduler import (
     ScheduleTickStatus,
     ScheduledExecutionFailed,
@@ -95,10 +99,18 @@ def _default_instance():
 
 
 @contextmanager
-def cli_api_schedule_origin(schedule_name):
-    recon_repo = ReconstructableRepository.for_file(__file__, "the_repo")
-    schedule = recon_repo.get_reconstructable_schedule(schedule_name)
-    yield schedule.get_origin()
+def python_schedule_origin(schedule_name):
+
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable, python_file=__file__, attribute="the_repo"
+    )
+
+    repo_origin = ExternalRepositoryOrigin(
+        ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin=loadable_target_origin),
+        "the_repo",
+    )
+
+    yield repo_origin.get_schedule_origin(schedule_name)
 
 
 @contextmanager
@@ -108,18 +120,19 @@ def grpc_schedule_origin(schedule_name):
     )
     server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
     with server_process.create_ephemeral_client() as api_client:
-        repo_origin = RepositoryGrpcServerOrigin(
-            host=api_client.host,
-            port=api_client.port,
-            socket=api_client.socket,
+        repo_origin = ExternalRepositoryOrigin(
+            GrpcServerRepositoryLocationOrigin(
+                host=api_client.host, port=api_client.port, socket=api_client.socket,
+            ),
             repository_name="the_repo",
         )
+
         yield repo_origin.get_schedule_origin(schedule_name)
     server_process.wait()
 
 
 @pytest.mark.parametrize(
-    "schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin,],
+    "schedule_origin_context", [python_schedule_origin, grpc_schedule_origin,],
 )
 def test_launch_successful_execution(schedule_origin_context):
     with _default_instance() as instance:
@@ -135,7 +148,7 @@ def test_launch_successful_execution(schedule_origin_context):
 
 
 @pytest.mark.parametrize(
-    "schedule_origin_context", [cli_api_schedule_origin],
+    "schedule_origin_context", [python_schedule_origin],
 )
 def test_launch_successful_execution_telemetry(schedule_origin_context):
     with _default_instance():
@@ -156,7 +169,7 @@ def test_launch_successful_execution_telemetry(schedule_origin_context):
                 assert message_end.get("action") == "_launch_scheduled_execution_ended"
 
 
-@pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
+@pytest.mark.parametrize("schedule_origin_context", [python_schedule_origin, grpc_schedule_origin])
 def test_bad_env_fn(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("bad_env_fn_schedule") as schedule_origin:
@@ -178,7 +191,7 @@ def test_bad_env_fn(schedule_origin_context):
             )
 
 
-@pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
+@pytest.mark.parametrize("schedule_origin_context", [python_schedule_origin, grpc_schedule_origin])
 def test_bad_should_execute(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("bad_should_execute_schedule") as schedule_origin:
@@ -199,7 +212,7 @@ def test_bad_should_execute(schedule_origin_context):
             )
 
 
-@pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
+@pytest.mark.parametrize("schedule_origin_context", [python_schedule_origin, grpc_schedule_origin])
 def test_skip(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("skip_schedule") as schedule_origin:
@@ -211,7 +224,7 @@ def test_skip(schedule_origin_context):
             assert ticks[0].status == ScheduleTickStatus.SKIPPED
 
 
-@pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
+@pytest.mark.parametrize("schedule_origin_context", [python_schedule_origin, grpc_schedule_origin])
 def test_wrong_config(schedule_origin_context):
     with _default_instance() as instance:
         with schedule_origin_context("wrong_config_schedule") as schedule_origin:
@@ -232,14 +245,28 @@ def test_bad_load():
         instance = DagsterInstance.get()
 
         working_directory = os.path.dirname(__file__)
-        recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
-        schedule = recon_repo.get_reconstructable_schedule("also_doesnt_exist")
 
-        result = sync_launch_scheduled_execution(schedule.get_origin())
+        loadable_target_origin = LoadableTargetOrigin(
+            executable_path=sys.executable,
+            python_file=__file__,
+            attribute="doesnt_exist",
+            working_directory=working_directory,
+        )
+
+        repo_origin = ExternalRepositoryOrigin(
+            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                loadable_target_origin=loadable_target_origin
+            ),
+            "doesnt_exist",
+        )
+
+        schedule_origin = repo_origin.get_schedule_origin("also_doesnt_exist")
+
+        result = sync_launch_scheduled_execution(schedule_origin)
         assert isinstance(result, ScheduledExecutionFailed)
         assert "doesnt_exist not found at module scope in file" in result.errors[0].to_string()
 
-        ticks = instance.get_schedule_ticks(schedule.get_origin_id())
+        ticks = instance.get_schedule_ticks(schedule_origin.get_id())
         assert ticks[0].status == ScheduleTickStatus.FAILURE
         assert "doesnt_exist not found at module scope in file" in ticks[0].error.message
 
@@ -258,9 +285,13 @@ def test_bad_load_grpc():
 
 def test_grpc_server_down():
     with _default_instance() as instance:
-        down_grpc_repo_origin = RepositoryGrpcServerOrigin(
-            host="localhost", port=find_free_port(), socket=None, repository_name="down_repo"
+        down_grpc_repo_origin = ExternalRepositoryOrigin(
+            GrpcServerRepositoryLocationOrigin(
+                host="localhost", port=find_free_port(), socket=None,
+            ),
+            repository_name="down_repo",
         )
+
         down_grpc_schedule_origin = down_grpc_repo_origin.get_schedule_origin("down_schedule")
 
         instance = DagsterInstance.get()
@@ -274,7 +305,7 @@ def test_grpc_server_down():
         assert "failed to connect to all addresses" in ticks[0].error.message
 
 
-@pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
+@pytest.mark.parametrize("schedule_origin_context", [python_schedule_origin, grpc_schedule_origin])
 def test_launch_failure(schedule_origin_context):
     with instance_for_test(
         overrides={
@@ -296,25 +327,30 @@ def test_launch_failure(schedule_origin_context):
             assert ticks[0].status == ScheduleTickStatus.SUCCESS
 
 
-def test_origin_ids_stable(monkeypatch):
+def test_origin_ids_stable():
     # This test asserts fixed schedule origin IDs to prevent any changes from
     # accidentally shifting these ids that are persisted to ScheduleStorage
 
-    # stable exe path for test
-    monkeypatch.setattr(sys, "executable", "/fake/python")
+    python_origin = ExternalScheduleOrigin(
+        ExternalRepositoryOrigin(
+            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                LoadableTargetOrigin(
+                    executable_path="/fake/executable",
+                    python_file="/fake/file/path",
+                    attribute="fake_attribute",
+                )
+            ),
+            "fake_repo",
+        ),
+        "fake_schedule",
+    )
+    assert python_origin.get_id() == "be50189ea5d28dedf78acc475cb46050d780364a"
 
-    file_repo = ReconstructableRepository.for_file(
-        "/path/to/file", "the_repo", "/path/to/working_dir"
+    grpc_origin = ExternalScheduleOrigin(
+        ExternalRepositoryOrigin(
+            GrpcServerRepositoryLocationOrigin(host="fakehost", port=52618), "repo_name"
+        ),
+        "fake_schedule",
     )
 
-    # ensure monkeypatch worked
-    assert file_repo.get_origin().executable_path == "/fake/python"
-
-    assert file_repo.get_origin_id() == "3766b1c554fd961b88b9301756250febff3d0ffa"
-    schedule = file_repo.get_reconstructable_schedule("simple_schedule")
-    assert schedule.get_origin_id() == "7c60d01588673ffcaea16b6fd59d998dc63ed3c3"
-
-    module_repo = ReconstructableRepository.for_module("dummy_module", "the_repo")
-    assert module_repo.get_origin_id() == "86503fc349d4ecf44bd22ca1de64c10f8ffcebbd"
-    module_schedule = module_repo.get_reconstructable_schedule("simple_schedule")
-    assert module_schedule.get_origin_id() == "e4c7131b74ad600969876d8fa461f215ced9631a"
+    assert grpc_origin.get_id() == "db2ef19777de79ca7ccaff32fa6ea47f389260a1"

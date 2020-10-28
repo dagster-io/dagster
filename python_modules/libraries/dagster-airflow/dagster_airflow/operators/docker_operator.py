@@ -207,7 +207,7 @@ class DagsterDockerOperator(DockerOperator):
 
         input_json = serialize_dagster_namedtuple(
             ExecuteStepArgs(
-                pipeline_origin=recon_pipeline.get_origin(),
+                pipeline_origin=recon_pipeline.get_python_origin(),
                 pipeline_run_id=self.run_id,
                 instance_ref=self.instance_ref,
                 mode=self.mode,

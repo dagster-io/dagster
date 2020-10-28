@@ -3,10 +3,14 @@ import time
 
 import pytest
 from dagster import DagsterInvariantViolationError
-from dagster.core.code_pointer import ModuleCodePointer
-from dagster.core.origin import RepositoryPythonOrigin, SchedulePythonOrigin
+from dagster.core.host_representation import (
+    ExternalRepositoryOrigin,
+    ExternalScheduleOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
+)
 from dagster.core.scheduler import ScheduleState, ScheduleStatus
 from dagster.core.scheduler.scheduler import ScheduleTickData, ScheduleTickStatus
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster.utils.error import SerializableErrorInfo
 
@@ -38,13 +42,20 @@ class TestScheduleStorage:
 
     @staticmethod
     def fake_repo_target():
-        return RepositoryPythonOrigin(sys.executable, ModuleCodePointer("fake", "fake"))
+        return ExternalRepositoryOrigin(
+            ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                LoadableTargetOrigin(
+                    executable_path=sys.executable, module_name="fake", attribute="fake"
+                ),
+            ),
+            "fake_repo_name",
+        )
 
     @classmethod
     def build_schedule(
         cls, schedule_name, cron_schedule, status=ScheduleStatus.STOPPED,
     ):
-        fake_target = SchedulePythonOrigin(schedule_name, cls.fake_repo_target())
+        fake_target = ExternalScheduleOrigin(cls.fake_repo_target(), schedule_name)
 
         return ScheduleState(fake_target, status, cron_schedule, start_timestamp=None)
 

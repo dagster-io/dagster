@@ -20,7 +20,7 @@ from dagster.core.events.log import DagsterEventRecord
 from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import InstanceRef
-from dagster.core.origin import PipelineOrigin
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -228,7 +228,7 @@ def _submit_task_k8s_job(app, pipeline_context, step, queue, priority):
         job_namespace=pipeline_context.executor.job_namespace,
         user_defined_k8s_config_dict=user_defined_k8s_config.to_dict(),
         retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
-        pipeline_origin_packed=pack_value(pipeline_context.pipeline.get_origin()),
+        pipeline_origin_packed=pack_value(pipeline_context.pipeline.get_python_origin()),
         load_incluster_config=pipeline_context.executor.load_incluster_config,
         kubeconfig_file=pipeline_context.executor.kubeconfig_file,
     )
@@ -311,7 +311,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 pipeline_origin_packed, "pipeline_origin_packed"
             )  # TODO: make part of args
         )
-        check.inst(pipeline_origin, PipelineOrigin)
+        check.inst(pipeline_origin, PipelinePythonOrigin)
 
         user_defined_k8s_config = UserDefinedDagsterK8sConfig.from_dict(
             user_defined_k8s_config_dict

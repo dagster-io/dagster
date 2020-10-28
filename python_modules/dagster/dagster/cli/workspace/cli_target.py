@@ -16,11 +16,7 @@ from dagster.core.host_representation import (
     RepositoryLocation,
     RepositoryLocationHandle,
 )
-from dagster.core.origin import (
-    PipelinePythonOrigin,
-    RepositoryGrpcServerOrigin,
-    RepositoryPythonOrigin,
-)
+from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.grpc.utils import get_loadable_targets
 from dagster.utils.hosted_user_process import recon_repository_from_origin
 
@@ -424,7 +420,7 @@ def pipeline_target_argument(f):
     return apply_click_params(repository_target_argument(f), pipeline_option())
 
 
-def get_external_repository_origin_from_kwargs(kwargs):
+def get_repository_origin_from_kwargs(kwargs):
     provided_repo_name = kwargs.get("repository")
 
     if not provided_repo_name:
@@ -433,20 +429,6 @@ def get_external_repository_origin_from_kwargs(kwargs):
     repository_location_origin = get_repository_location_origin_from_kwargs(kwargs)
 
     return ExternalRepositoryOrigin(repository_location_origin, provided_repo_name)
-
-
-def get_repository_origin_from_kwargs(kwargs):
-    load_target = created_workspace_load_target(kwargs)
-
-    if isinstance(load_target, GrpcServerTarget):
-        return RepositoryGrpcServerOrigin(
-            host=load_target.host,
-            port=load_target.port,
-            socket=load_target.socket,
-            repository_name=kwargs["repository"],
-        )
-
-    return get_repository_python_origin_from_kwargs(kwargs)
 
 
 def get_pipeline_python_origin_from_kwargs(kwargs):

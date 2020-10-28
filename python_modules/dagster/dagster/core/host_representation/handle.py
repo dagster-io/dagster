@@ -20,8 +20,7 @@ from dagster.core.host_representation.origin import (
     RepositoryLocationOrigin,
 )
 from dagster.core.host_representation.selector import PipelineSelector
-from dagster.core.instance import DagsterInstance
-from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryOrigin, RepositoryPythonOrigin
+from dagster.core.origin import RepositoryPythonOrigin
 
 
 def _get_repository_python_origin(executable_path, repository_code_pointer_dict, repository_name):
@@ -58,32 +57,6 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
             return InProcessRepositoryLocationHandle(repo_location_origin)
         else:
             check.failed("Unexpected repository location origin")
-
-    @staticmethod
-    def create_from_repository_origin(repository_origin, instance):
-        check.inst_param(repository_origin, "repository_origin", RepositoryOrigin)
-        check.inst_param(instance, "instance", DagsterInstance)
-
-        if isinstance(repository_origin, RepositoryGrpcServerOrigin):
-            return RepositoryLocationHandle.create_from_repository_location_origin(
-                GrpcServerRepositoryLocationOrigin(
-                    port=repository_origin.port,
-                    socket=repository_origin.socket,
-                    host=repository_origin.host,
-                )
-            )
-        elif isinstance(repository_origin, RepositoryPythonOrigin):
-            loadable_target_origin = repository_origin.loadable_target_origin
-
-            repo_location_origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
-                loadable_target_origin
-            )
-
-            return RepositoryLocationHandle.create_from_repository_location_origin(
-                repo_location_origin
-            )
-        else:
-            raise DagsterInvariantViolationError("Unexpected repository origin type")
 
     @abstractmethod
     def get_repository_python_origin(self, repository_name):
@@ -316,37 +289,6 @@ class RepositoryHandle(
             ),
         )
 
-    def get_origin(self):
-        if isinstance(self.repository_location_handle, InProcessRepositoryLocationHandle):
-            return RepositoryPythonOrigin(
-                code_pointer=self.repository_location_handle.repository_code_pointer_dict[
-                    self.repository_name
-                ],
-                executable_path=sys.executable,
-            )
-        elif isinstance(
-            self.repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
-        ):
-            return RepositoryPythonOrigin(
-                code_pointer=self.repository_location_handle.repository_code_pointer_dict[
-                    self.repository_name
-                ],
-                executable_path=self.repository_location_handle.executable_path,
-            )
-        elif isinstance(self.repository_location_handle, GrpcServerRepositoryLocationHandle):
-            return RepositoryGrpcServerOrigin(
-                host=self.repository_location_handle.host,
-                port=self.repository_location_handle.port,
-                socket=self.repository_location_handle.socket,
-                repository_name=self.repository_name,
-            )
-        else:
-            check.failed(
-                "Can not target represented RepositoryDefinition locally for repository from a {}.".format(
-                    self.repository_location_handle.__class__.__name__
-                )
-            )
-
     def get_external_origin(self):
         return ExternalRepositoryOrigin(
             self.repository_location_handle.origin, self.repository_name,
@@ -375,9 +317,6 @@ class PipelineHandle(namedtuple("_PipelineHandle", "pipeline_name repository_han
     def location_name(self):
         return self.repository_handle.repository_location_handle.location_name
 
-    def get_origin(self):
-        return self.repository_handle.get_origin().get_pipeline_origin(self.pipeline_name)
-
     def get_external_origin(self):
         return self.repository_handle.get_external_origin().get_pipeline_origin(self.pipeline_name)
 
@@ -403,9 +342,6 @@ class ScheduleHandle(namedtuple("_ScheduleHandle", "schedule_name repository_han
     @property
     def location_name(self):
         return self.repository_handle.repository_location_handle.location_name
-
-    def get_origin(self):
-        return self.repository_handle.get_origin().get_schedule_origin(self.schedule_name)
 
     def get_external_origin(self):
         return self.repository_handle.get_external_origin().get_schedule_origin(self.schedule_name)

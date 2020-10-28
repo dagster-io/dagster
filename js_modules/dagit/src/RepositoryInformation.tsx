@@ -7,13 +7,11 @@ import {RepositoryOriginFragment} from 'src/types/RepositoryOriginFragment';
 export const RepositoryInformationFragment = gql`
   fragment RepositoryOriginFragment on RepositoryOrigin {
     ... on PythonRepositoryOrigin {
-      codePointer {
-        metadata {
-          key
-          value
-        }
-      }
       executablePath
+      repositoryMetadata {
+        key
+        value
+      }
     }
     ... on GrpcRepositoryOrigin {
       grpcUrl
@@ -39,7 +37,7 @@ export const RepositoryOriginInformation: React.FunctionComponent<{
   if (origin.__typename === 'PythonRepositoryOrigin') {
     return (
       <>
-        {origin.codePointer.metadata.map((metadata, idx) => (
+        {origin.repositoryMetadata.map((metadata, idx) => (
           <div key={idx}>
             <span style={{marginRight: 5}}>{metadata.key}:</span>
             <span style={{opacity: 0.5}}>{metadata.value}</span>

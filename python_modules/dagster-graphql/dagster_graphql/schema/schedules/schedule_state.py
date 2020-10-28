@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.origin import RepositoryGrpcServerOrigin
+from dagster.core.host_representation import GrpcServerRepositoryLocationOrigin
 from dagster.core.scheduler import ScheduleState
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster_graphql import dauphin
@@ -120,8 +120,8 @@ class DauphinScheduleState(dauphin.ObjectType):
         return self._schedule_state.repository_origin_id
 
     def resolve_repository_origin(self, graphene_info):
-        origin = self._schedule_state.origin.get_repo_origin()
-        if isinstance(origin, RepositoryGrpcServerOrigin):
+        origin = self._schedule_state.origin.external_repository_origin
+        if isinstance(origin.repository_location_origin, GrpcServerRepositoryLocationOrigin):
             return graphene_info.schema.type_named("GrpcRepositoryOrigin")(origin)
         else:
             return graphene_info.schema.type_named("PythonRepositoryOrigin")(origin)

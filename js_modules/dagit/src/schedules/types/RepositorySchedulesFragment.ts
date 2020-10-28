@@ -15,21 +15,16 @@ export interface RepositorySchedulesFragment_scheduleDefinitions_partitionSet {
   name: string;
 }
 
-export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
-  __typename: "CodePointerMetadata";
+export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata {
+  __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer {
-  __typename: "CodePointer";
-  metadata: RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
-}
-
 export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin {
   __typename: "PythonRepositoryOrigin";
-  codePointer: RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer;
   executablePath: string;
+  repositoryMetadata: RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata[];
 }
 
 export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_GrpcRepositoryOrigin {
@@ -123,21 +118,16 @@ export interface RepositorySchedulesFragment_scheduleDefinitions {
   scheduleState: RepositorySchedulesFragment_scheduleDefinitions_scheduleState | null;
 }
 
-export interface RepositorySchedulesFragment_origin_PythonRepositoryOrigin_codePointer_metadata {
-  __typename: "CodePointerMetadata";
+export interface RepositorySchedulesFragment_origin_PythonRepositoryOrigin_repositoryMetadata {
+  __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface RepositorySchedulesFragment_origin_PythonRepositoryOrigin_codePointer {
-  __typename: "CodePointer";
-  metadata: RepositorySchedulesFragment_origin_PythonRepositoryOrigin_codePointer_metadata[];
-}
-
 export interface RepositorySchedulesFragment_origin_PythonRepositoryOrigin {
   __typename: "PythonRepositoryOrigin";
-  codePointer: RepositorySchedulesFragment_origin_PythonRepositoryOrigin_codePointer;
   executablePath: string;
+  repositoryMetadata: RepositorySchedulesFragment_origin_PythonRepositoryOrigin_repositoryMetadata[];
 }
 
 export interface RepositorySchedulesFragment_origin_GrpcRepositoryOrigin {

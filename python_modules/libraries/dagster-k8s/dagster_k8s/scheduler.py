@@ -106,7 +106,7 @@ class K8sScheduler(Scheduler, ConfigurableClass):
     def _job_template(self, external_schedule):
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        local_target = external_schedule.get_origin()
+        local_target = external_schedule.get_external_origin()
 
         job_config = self.job_config
 
@@ -140,7 +140,7 @@ class K8sScheduler(Scheduler, ConfigurableClass):
             schedule=external_schedule.cron_schedule, job_template=job_template
         )
 
-        schedule_origin_id = external_schedule.get_origin_id()
+        schedule_origin_id = external_schedule.get_external_origin_id()
         cron_job = kubernetes.client.V1beta1CronJob(
             spec=cron_job_spec, metadata={"name": schedule_origin_id}
         )
@@ -165,7 +165,7 @@ class K8sScheduler(Scheduler, ConfigurableClass):
         self._start_cron_job(external_schedule)
 
         # Verify that the cron job is running
-        cron_job = self.get_cron_job(schedule_origin_id=external_schedule.get_origin_id())
+        cron_job = self.get_cron_job(schedule_origin_id=external_schedule.get_external_origin_id())
         if not cron_job:
             raise DagsterSchedulerError(
                 "Attempted to add K8s CronJob for schedule {schedule_name}, but failed. "

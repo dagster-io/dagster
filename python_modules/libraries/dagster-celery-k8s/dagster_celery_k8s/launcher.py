@@ -7,11 +7,14 @@ from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import Retries
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
+from dagster.core.host_representation import (
+    ExternalPipeline,
+    GrpcServerRepositoryLocationHandle,
+    GrpcServerRepositoryLocationOrigin,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
-from dagster.core.origin import PipelineGrpcServerOrigin, PipelinePythonOrigin
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -172,7 +175,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         job_image = None
         pipeline_origin = None
         env_vars = None
-        if isinstance(external_pipeline.get_origin(), PipelineGrpcServerOrigin):
+        if isinstance(
+            external_pipeline.get_external_origin().external_repository_origin.repository_location_origin,
+            GrpcServerRepositoryLocationOrigin,
+        ):
             if exc_config.get("job_image"):
                 raise DagsterInvariantViolationError(
                     "Cannot specify job_image in executor config when loading pipeline "
@@ -208,7 +214,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                 raise DagsterInvariantViolationError(
                     "Cannot find job_image in celery-k8s executor config."
                 )
-            pipeline_origin = external_pipeline.get_origin()
+            pipeline_origin = external_pipeline.get_python_origin()
 
         job_config = DagsterK8sJobConfig(
             dagster_home=self.dagster_home,

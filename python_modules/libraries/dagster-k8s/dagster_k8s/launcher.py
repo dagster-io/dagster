@@ -12,11 +12,14 @@ from dagster import (
 )
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
-from dagster.core.host_representation import ExternalPipeline
-from dagster.core.host_representation.handle import GrpcServerRepositoryLocationHandle
+from dagster.core.host_representation import (
+    ExternalPipeline,
+    GrpcServerRepositoryLocationHandle,
+    GrpcServerRepositoryLocationOrigin,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
-from dagster.core.origin import PipelineGrpcServerOrigin, PipelinePythonOrigin
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import frozentags, merge_dicts
@@ -241,7 +244,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         pipeline_origin = None
         job_config = None
-        if isinstance(external_pipeline.get_origin(), PipelineGrpcServerOrigin):
+        if isinstance(
+            external_pipeline.get_external_origin().external_repository_origin.repository_location_origin,
+            GrpcServerRepositoryLocationOrigin,
+        ):
             if self._job_image:
                 raise DagsterInvariantViolationError(
                     "Cannot specify job_image in run launcher config when loading pipeline "
@@ -272,7 +278,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             )
         else:
-            pipeline_origin = external_pipeline.get_origin()
+            pipeline_origin = external_pipeline.get_python_origin()
             job_config = self._get_static_job_config()
 
         input_json = serialize_dagster_namedtuple(

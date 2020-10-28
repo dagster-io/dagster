@@ -225,7 +225,7 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
         )
 
     def resolve_id(self, _graphene_info):
-        return self._external_pipeline.get_origin_id()
+        return self._external_pipeline.get_external_origin_id()
 
     def get_represented_pipeline(self):
         return self._external_pipeline

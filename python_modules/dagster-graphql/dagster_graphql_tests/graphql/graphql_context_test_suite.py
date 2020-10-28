@@ -280,7 +280,7 @@ class EnvironmentManagers:
             """Goes out of process via grpc"""
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
-            loadable_target_origin = recon_repo.get_origin().loadable_target_origin
+            loadable_target_origin = recon_repo.get_python_origin().loadable_target_origin
             with Workspace(
                 [
                     ManagedGrpcPythonEnvRepositoryLocationOrigin(
@@ -298,7 +298,7 @@ class EnvironmentManagers:
         def _mgr_fn(recon_repo):
             check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
 
-            loadable_target_origin = recon_repo.get_origin().loadable_target_origin
+            loadable_target_origin = recon_repo.get_python_origin().loadable_target_origin
 
             server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
             try:

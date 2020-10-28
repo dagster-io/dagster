@@ -171,7 +171,7 @@ def test_start_and_stop_schedule(
         schedule = external_repo.get_external_schedule(
             schedule_name="no_config_pipeline_every_min_schedule"
         )
-        schedule_origin_id = schedule.get_origin_id()
+        schedule_origin_id = schedule.get_external_origin_id()
 
         instance.start_schedule_and_update_storage_state(external_schedule=schedule)
 
@@ -219,7 +219,7 @@ def test_start_schedule_cron_job(
         assert len(cron_jobs) == 3
 
         external_schedules_dict = {
-            external_repo.get_external_schedule(name).get_origin_id(): schedule_def
+            external_repo.get_external_schedule(name).get_external_origin_id(): schedule_def
             for name, schedule_def in schedules_dict.items()
         }
 
@@ -329,14 +329,18 @@ def test_start_and_stop_schedule_cron_tab(
 
         # Stop second schedule
         instance.stop_schedule_and_update_storage_state(
-            external_repo.get_external_schedule("no_config_pipeline_daily_schedule").get_origin_id()
+            external_repo.get_external_schedule(
+                "no_config_pipeline_daily_schedule"
+            ).get_external_origin_id()
         )
         cron_jobs = instance.scheduler.get_all_cron_jobs()
         assert len(cron_jobs) == 1
 
         # Try stopping second schedule again
         instance.stop_schedule_and_update_storage_state(
-            external_repo.get_external_schedule("no_config_pipeline_daily_schedule").get_origin_id()
+            external_repo.get_external_schedule(
+                "no_config_pipeline_daily_schedule"
+            ).get_external_origin_id()
         )
         cron_jobs = instance.scheduler.get_all_cron_jobs()
         assert len(cron_jobs) == 1
@@ -368,15 +372,17 @@ def test_start_and_stop_schedule_cron_tab(
         instance.stop_schedule_and_update_storage_state(
             external_repo.get_external_schedule(
                 "no_config_pipeline_every_min_schedule"
-            ).get_origin_id()
+            ).get_external_origin_id()
         )
         instance.stop_schedule_and_update_storage_state(
-            external_repo.get_external_schedule("no_config_pipeline_daily_schedule").get_origin_id()
+            external_repo.get_external_schedule(
+                "no_config_pipeline_daily_schedule"
+            ).get_external_origin_id()
         )
         instance.stop_schedule_and_update_storage_state(
             external_repo.get_external_schedule(
                 "default_config_pipeline_every_min_schedule"
-            ).get_origin_id()
+            ).get_external_origin_id()
         )
 
         cron_jobs = instance.scheduler.get_all_cron_jobs()
@@ -411,7 +417,7 @@ def test_script_execution(
 
                 cron_job_name = external_repo.get_external_schedule(
                     "no_config_pipeline_every_min_schedule"
-                ).get_origin_id()
+                ).get_external_origin_id()
 
                 batch_v1beta1_api = kubernetes.client.BatchV1beta1Api()
                 cron_job = batch_v1beta1_api.read_namespaced_cron_job(
@@ -472,7 +478,7 @@ def test_start_schedule_fails(
         schedule = instance.get_stored_schedule_state(
             external_repo.get_external_schedule(
                 "no_config_pipeline_every_min_schedule"
-            ).get_origin_id()
+            ).get_external_origin_id()
         )
 
         assert schedule.status == ScheduleStatus.STOPPED
@@ -526,7 +532,7 @@ def test_start_schedule_manual_delete_debug(
         instance.scheduler._end_cron_job(  # pylint: disable=protected-access
             external_repo.get_external_schedule(
                 "no_config_pipeline_every_min_schedule"
-            ).get_origin_id(),
+            ).get_external_origin_id(),
         )
 
         # Check debug command
@@ -580,7 +586,7 @@ def test_stop_schedule_fails(
         external_schedule = external_repo.get_external_schedule(
             "no_config_pipeline_every_min_schedule"
         )
-        schedule_origin_id = external_schedule.get_origin_id()
+        schedule_origin_id = external_schedule.get_external_origin_id()
 
         def raises(*args, **kwargs):
             raise Exception("Patch")
@@ -628,7 +634,7 @@ def test_stop_schedule_unsuccessful(
             instance.stop_schedule_and_update_storage_state(
                 external_repo.get_external_schedule(
                     "no_config_pipeline_every_min_schedule"
-                ).get_origin_id()
+                ).get_external_origin_id()
             )
 
 

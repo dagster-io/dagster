@@ -13,18 +13,7 @@ export const SCHEDULE_STATE_FRAGMENT = gql`
     id
     scheduleOriginId
     repositoryOrigin {
-      ... on PythonRepositoryOrigin {
-        codePointer {
-          metadata {
-            key
-            value
-          }
-        }
-        executablePath
-      }
-      ... on GrpcRepositoryOrigin {
-        grpcUrl
-      }
+      ...RepositoryOriginFragment
     }
     repositoryOriginId
     scheduleName
@@ -67,6 +56,7 @@ export const SCHEDULE_STATE_FRAGMENT = gql`
   }
 
   ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${RepositoryInformationFragment}
 `;
 
 export const REPOSITORY_SCHEDULES_FRAGMENT = gql`

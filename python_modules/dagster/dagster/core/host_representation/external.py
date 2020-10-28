@@ -1,6 +1,8 @@
+import warnings
 from collections import OrderedDict
 
 from dagster import check
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
 
@@ -102,18 +104,15 @@ class ExternalRepository:
     def get_external_origin(self):
         return self.handle.get_external_origin()
 
+    def get_python_origin(self):
+        return self.handle.repository_location_handle.get_repository_python_origin(self.name,)
+
     def get_external_origin_id(self):
-        return self.get_external_origin().get_id()
-
-    def get_origin(self):
-        return self._handle.get_origin()
-
-    def get_origin_id(self):
         """
         A means of identifying the repository this ExternalRepository represents based on
         where it came from.
         """
-        return self.get_origin().get_id()
+        return self.get_external_origin().get_id()
 
 
 class ExternalPipeline(RepresentedPipeline):
@@ -229,17 +228,27 @@ class ExternalPipeline(RepresentedPipeline):
     def handle(self):
         return self._handle
 
+    def get_origin(self):
+        # Returns a PipelinePythonOrigin - maintained for backwards compatibility since this
+        # is called in several run launchers to start execution
+        warnings.warn(
+            "ExternalPipeline.get_origin() is deprecated. Use get_python_origin() if you want "
+            "an origin to use for pipeline execution, or get_external_origin if you want an origin "
+            "to load an ExternalPipeline."
+        )
+        return self.get_python_origin()
+
+    def get_python_origin(self):
+        repository_python_origin = self.repository_handle.repository_location_handle.get_repository_python_origin(
+            self.repository_handle.repository_name,
+        )
+        return PipelinePythonOrigin(self.name, repository_python_origin)
+
     def get_external_origin(self):
         return self.handle.get_external_origin()
 
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
-
-    def get_origin(self):
-        return self._handle.get_origin()
-
-    def get_origin_id(self):
-        return self.get_origin().get_id()
 
     @property
     def pipeline_snapshot(self):
@@ -388,12 +397,6 @@ class ExternalSchedule:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
-    def get_origin(self):
-        return self._handle.get_origin()
-
-    def get_origin_id(self):
-        return self.get_origin().get_id()
-
     # ScheduleState that represents the state of the schedule
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
@@ -401,7 +404,10 @@ class ExternalSchedule:
         from dagster.core.scheduler import ScheduleState, ScheduleStatus
 
         return ScheduleState(
-            self.get_origin(), ScheduleStatus.STOPPED, self.cron_schedule, start_timestamp=None,
+            self.get_external_origin(),
+            ScheduleStatus.STOPPED,
+            self.cron_schedule,
+            start_timestamp=None,
         )
 
 

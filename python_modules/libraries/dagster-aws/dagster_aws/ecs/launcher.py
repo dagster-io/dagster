@@ -138,7 +138,7 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(run, "run", PipelineRun)
         input_json = serialize_dagster_namedtuple(
             ExecuteRunArgs(
-                pipeline_origin=external_pipeline.get_origin(),
+                pipeline_origin=external_pipeline.get_python_origin(),
                 pipeline_run_id=run.run_id,
                 instance_ref=instance.get_ref(),
             )

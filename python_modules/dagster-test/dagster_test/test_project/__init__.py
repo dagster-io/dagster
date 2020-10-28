@@ -61,7 +61,7 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
             reconstructable_pipeline.solids_to_execute,
         )
 
-    def get_origin(self):
+    def get_python_origin(self):
         """
         Hack! Inject origin that the docker-celery images will use. The BK image uses a different
         directory structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than
@@ -89,7 +89,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
             external_pipeline.external_pipeline_data, external_pipeline.repository_handle,
         )
 
-    def get_origin(self):
+    def get_python_origin(self):
         """
         Hack! Inject origin that the k8s images will use. The BK image uses a different directory
         structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images

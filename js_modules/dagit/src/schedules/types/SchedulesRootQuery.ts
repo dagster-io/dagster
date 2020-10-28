@@ -19,21 +19,16 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinit
   name: string;
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
-  __typename: "CodePointerMetadata";
+export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata {
+  __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer {
-  __typename: "CodePointer";
-  metadata: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
-}
-
 export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin {
   __typename: "PythonRepositoryOrigin";
-  codePointer: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_codePointer;
   executablePath: string;
+  repositoryMetadata: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata[];
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState_repositoryOrigin_GrpcRepositoryOrigin {
@@ -127,21 +122,16 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinit
   scheduleState: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState | null;
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_codePointer_metadata {
-  __typename: "CodePointerMetadata";
+export interface SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_repositoryMetadata {
+  __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_codePointer {
-  __typename: "CodePointer";
-  metadata: SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_codePointer_metadata[];
-}
-
 export interface SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin {
   __typename: "PythonRepositoryOrigin";
-  codePointer: SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_codePointer;
   executablePath: string;
+  repositoryMetadata: SchedulesRootQuery_repositoryOrError_Repository_origin_PythonRepositoryOrigin_repositoryMetadata[];
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_origin_GrpcRepositoryOrigin {
@@ -210,21 +200,16 @@ export interface SchedulesRootQuery_unLoadableScheduleStates_RepositoryNotFoundE
   __typename: "RepositoryNotFoundError";
 }
 
-export interface SchedulesRootQuery_unLoadableScheduleStates_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
-  __typename: "CodePointerMetadata";
+export interface SchedulesRootQuery_unLoadableScheduleStates_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata {
+  __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface SchedulesRootQuery_unLoadableScheduleStates_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer {
-  __typename: "CodePointer";
-  metadata: SchedulesRootQuery_unLoadableScheduleStates_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
-}
-
 export interface SchedulesRootQuery_unLoadableScheduleStates_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin {
   __typename: "PythonRepositoryOrigin";
-  codePointer: SchedulesRootQuery_unLoadableScheduleStates_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_codePointer;
   executablePath: string;
+  repositoryMetadata: SchedulesRootQuery_unLoadableScheduleStates_ScheduleStates_results_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata[];
 }
 
 export interface SchedulesRootQuery_unLoadableScheduleStates_ScheduleStates_results_repositoryOrigin_GrpcRepositoryOrigin {

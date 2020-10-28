@@ -505,15 +505,10 @@ union RepositoryOrigin = PythonRepositoryOrigin | GrpcRepositoryOrigin
 
 type PythonRepositoryOrigin {
   executablePath: String!
-  codePointer: CodePointer!
+  repositoryMetadata: [RepositoryMetadata!]!
 }
 
-type CodePointer {
-  description: String!
-  metadata: [CodePointerMetadata!]!
-}
-
-type CodePointerMetadata {
+type RepositoryMetadata {
   key: String!
   value: String!
 }

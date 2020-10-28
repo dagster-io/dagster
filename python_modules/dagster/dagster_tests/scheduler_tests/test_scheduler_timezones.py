@@ -27,7 +27,7 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
         with pendulum.test(freeze_datetime):
             external_schedule = external_repo.get_external_schedule("daily_central_time_schedule")
 
-            schedule_origin = external_schedule.get_origin()
+            schedule_origin = external_schedule.get_external_origin()
 
             instance.start_schedule_and_update_storage_state(external_schedule)
 
@@ -117,8 +117,8 @@ def test_differing_timezones(external_repo_context):
                 "daily_eastern_time_schedule"
             )
 
-            schedule_origin = external_schedule.get_origin()
-            eastern_origin = external_eastern_schedule.get_origin()
+            schedule_origin = external_schedule.get_external_origin()
+            eastern_origin = external_eastern_schedule.get_external_origin()
 
             instance.start_schedule_and_update_storage_state(external_schedule)
             instance.start_schedule_and_update_storage_state(external_eastern_schedule)
@@ -235,7 +235,7 @@ def test_different_days_in_different_timezones(external_repo_context):
         with pendulum.test(freeze_datetime):
             # Runs every day at 11PM (CST)
             external_schedule = external_repo.get_external_schedule("daily_late_schedule")
-            schedule_origin = external_schedule.get_origin()
+            schedule_origin = external_schedule.get_external_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
             assert instance.get_runs_count() == 0
@@ -300,7 +300,7 @@ def test_hourly_dst_spring_forward(external_repo_context):
 
         with pendulum.test(freeze_datetime):
             external_schedule = external_repo.get_external_schedule("hourly_central_time_schedule")
-            schedule_origin = external_schedule.get_origin()
+            schedule_origin = external_schedule.get_external_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
             assert instance.get_runs_count() == 0
@@ -367,7 +367,7 @@ def test_hourly_dst_fall_back(external_repo_context):
 
         with pendulum.test(freeze_datetime):
             external_schedule = external_repo.get_external_schedule("hourly_central_time_schedule")
-            schedule_origin = external_schedule.get_origin()
+            schedule_origin = external_schedule.get_external_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
             assert instance.get_runs_count() == 0
@@ -445,7 +445,7 @@ def test_daily_dst_spring_forward(external_repo_context):
 
         with pendulum.test(freeze_datetime):
             external_schedule = external_repo.get_external_schedule("daily_central_time_schedule")
-            schedule_origin = external_schedule.get_origin()
+            schedule_origin = external_schedule.get_external_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
             assert instance.get_runs_count() == 0
@@ -515,7 +515,7 @@ def test_daily_dst_fall_back(external_repo_context):
 
         with pendulum.test(freeze_datetime):
             external_schedule = external_repo.get_external_schedule("daily_central_time_schedule")
-            schedule_origin = external_schedule.get_origin()
+            schedule_origin = external_schedule.get_external_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
             assert instance.get_runs_count() == 0
@@ -588,7 +588,7 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
             external_schedule = external_repo.get_external_schedule(
                 "daily_dst_transition_schedule_skipped_time"
             )
-            schedule_origin = external_schedule.get_origin()
+            schedule_origin = external_schedule.get_external_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
             assert instance.get_runs_count() == 0
@@ -657,7 +657,7 @@ def test_execute_during_dst_transition_fall_back(external_repo_context):
             external_schedule = external_repo.get_external_schedule(
                 "daily_dst_transition_schedule_doubled_time"
             )
-            schedule_origin = external_schedule.get_origin()
+            schedule_origin = external_schedule.get_external_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
             assert instance.get_runs_count() == 0

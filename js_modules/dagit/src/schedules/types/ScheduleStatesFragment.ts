@@ -10,21 +10,16 @@ import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../t
 // GraphQL fragment: ScheduleStatesFragment
 // ====================================================
 
-export interface ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata {
-  __typename: "CodePointerMetadata";
+export interface ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata {
+  __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin_codePointer {
-  __typename: "CodePointer";
-  metadata: ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin_codePointer_metadata[];
-}
-
 export interface ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin {
   __typename: "PythonRepositoryOrigin";
-  codePointer: ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin_codePointer;
   executablePath: string;
+  repositoryMetadata: ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata[];
 }
 
 export interface ScheduleStatesFragment_results_repositoryOrigin_GrpcRepositoryOrigin {

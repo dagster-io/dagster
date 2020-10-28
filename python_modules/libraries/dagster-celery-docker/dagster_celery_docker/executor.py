@@ -189,7 +189,7 @@ def _submit_task_docker(app, pipeline_context, step, queue, priority):
         repo_name=recon_repo.get_definition().name,
         run_id=pipeline_context.pipeline_run.run_id,
         docker_config=pipeline_context.executor.docker_config,
-        pipeline_origin_packed=pack_value(pipeline_context.pipeline.get_origin()),
+        pipeline_origin_packed=pack_value(pipeline_context.pipeline.get_python_origin()),
         retries_dict=pipeline_context.executor.retries.for_inner_plan().to_config(),
     )
     return task_signature.apply_async(

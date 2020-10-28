@@ -96,8 +96,8 @@ def launch_scheduled_runs(
 
     for schedule_state in schedules:
         try:
-            with RepositoryLocationHandle.create_from_repository_origin(
-                schedule_state.origin.repository_origin, instance
+            with RepositoryLocationHandle.create_from_repository_location_origin(
+                schedule_state.origin.external_repository_origin.repository_location_origin,
             ) as repo_location_handle:
                 repo_location = RepositoryLocation.from_handle(repo_location_handle)
 
@@ -220,7 +220,7 @@ def launch_scheduled_runs_for_schedule(
         else:
             tick = instance.create_schedule_tick(
                 ScheduleTickData(
-                    schedule_origin_id=external_schedule.get_origin_id(),
+                    schedule_origin_id=external_schedule.get_external_origin_id(),
                     schedule_name=schedule_name,
                     timestamp=schedule_timestamp,
                     cron_schedule=external_schedule.cron_schedule,

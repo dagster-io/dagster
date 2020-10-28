@@ -33,7 +33,8 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     errors = debug_info.errors
     external_schedules = external_repository.get_external_schedules()
     changeset = get_schedule_change_set(
-        instance.all_stored_schedule_state(external_repository.get_origin_id()), external_schedules
+        instance.all_stored_schedule_state(external_repository.get_external_origin_id()),
+        external_schedules,
     )
 
     if len(errors) == 0 and len(changeset) == 0:
@@ -216,17 +217,23 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             if running_filter:
                 schedules = [
                     s
-                    for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
+                    for s in instance.all_stored_schedule_state(
+                        external_repo.get_external_origin_id()
+                    )
                     if s.status == ScheduleStatus.RUNNING
                 ]
             elif stopped_filter:
                 schedules = [
                     s
-                    for s in instance.all_stored_schedule_state(external_repo.get_origin_id())
+                    for s in instance.all_stored_schedule_state(
+                        external_repo.get_external_origin_id()
+                    )
                     if s.status == ScheduleStatus.STOPPED
                 ]
             else:
-                schedules = instance.all_stored_schedule_state(external_repo.get_origin_id())
+                schedules = instance.all_stored_schedule_state(
+                    external_repo.get_external_origin_id()
+                )
 
             for schedule_state in schedules:
                 # If --name filter is present, only print the schedule name
@@ -328,7 +335,7 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
 
             try:
                 instance.stop_schedule_and_update_storage_state(
-                    external_repo.get_external_schedule(schedule_name).get_origin_id()
+                    external_repo.get_external_schedule(schedule_name).get_external_origin_id()
                 )
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
@@ -356,7 +363,7 @@ def execute_logs_command(schedule_name, cli_args, print_fn, instance=None):
             check_repo_and_scheduler(external_repo, instance)
             logs_path = os.path.join(
                 instance.logs_path_for_schedule(
-                    external_repo.get_external_schedule(schedule_name).get_origin_id()
+                    external_repo.get_external_schedule(schedule_name).get_external_origin_id()
                 )
             )
             print_fn(logs_path)
@@ -385,7 +392,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
 
             if all_running_flag:
                 for schedule_state in instance.all_stored_schedule_state(
-                    external_repo.get_origin_id()
+                    external_repo.get_external_origin_id()
                 ):
                     if schedule_state.status == ScheduleStatus.RUNNING:
                         try:
@@ -407,7 +414,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
                 schedule_state = instance.get_stored_schedule_state(
-                    external_schedule.get_origin_id()
+                    external_schedule.get_external_origin_id()
                 )
                 if schedule_state != None and schedule_state.status != ScheduleStatus.RUNNING:
                     click.UsageError(
