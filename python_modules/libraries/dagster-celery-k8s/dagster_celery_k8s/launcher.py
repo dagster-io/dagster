@@ -194,7 +194,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             repository_name = external_pipeline.repository_handle.repository_name
             pipeline_origin = PipelinePythonOrigin(
                 pipeline_name=external_pipeline.name,
-                repository_origin=repository_location_handle.get_repository_python_origin(
+                repository_origin=repository_location_handle.reload_repository_python_origin(
                     repository_name
                 ),
             )

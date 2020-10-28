@@ -30,7 +30,7 @@ def test_execute_run_api_grpc_server_handle():
                 for event in sync_execute_run_grpc(
                     api_client=pipeline_handle.repository_handle.repository_location_handle.client,
                     instance_ref=instance.get_ref(),
-                    pipeline_origin=pipeline_handle.get_origin(),
+                    pipeline_origin=pipeline_handle.get_external_origin(),
                     pipeline_run=pipeline_run,
                 )
             ]
@@ -78,7 +78,7 @@ def test_execute_run_api_grpc_python_handle():
             )
 
             loadable_target_origin = (
-                pipeline_handle.get_origin().repository_origin.loadable_target_origin
+                pipeline_handle.get_external_origin().external_repository_origin.repository_location_origin.loadable_target_origin
             )
 
             with GrpcServerProcess(
@@ -89,7 +89,7 @@ def test_execute_run_api_grpc_python_handle():
                     for event in sync_execute_run_grpc(
                         api_client=api_client,
                         instance_ref=instance.get_ref(),
-                        pipeline_origin=pipeline_handle.get_origin(),
+                        pipeline_origin=pipeline_handle.get_external_origin(),
                         pipeline_run=pipeline_run,
                     )
                 ]

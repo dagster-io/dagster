@@ -1,12 +1,12 @@
 import os
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
 import six
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -59,6 +59,10 @@ class RepositoryLocationOrigin(six.with_metaclass(ABCMeta)):
     def is_reload_supported(self):
         return True
 
+    @abstractmethod
+    def get_cli_args(self):
+        pass
+
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
@@ -76,6 +80,9 @@ class InProcessRepositoryLocationOrigin(
     @property
     def location_name(self):
         return IN_PROCESS_NAME
+
+    def get_cli_args(self):
+        check.invariant(False, "Cannot get CLI args for an in process repository location")
 
     @property
     def is_reload_supported(self):
@@ -104,6 +111,9 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             else _assign_loadable_target_origin_name(loadable_target_origin),
         )
 
+    def get_cli_args(self):
+        return " ".join(self.loadable_target_origin.get_cli_args())
+
 
 @whitelist_for_serdes
 class GrpcServerRepositoryLocationOrigin(
@@ -124,3 +134,90 @@ class GrpcServerRepositoryLocationOrigin(
             if location_name
             else _assign_grpc_location_name(port, socket, host),
         )
+
+    def get_cli_args(self):
+        if self.port:
+            return "--grpc-host {host} --grpc-port {port}".format(host=self.host, port=self.port)
+        else:
+            return "--grpc-host {host} --grpc-socket {socket}".format(
+                host=self.host, socket=self.socket
+            )
+
+
+@whitelist_for_serdes
+class ExternalRepositoryOrigin(
+    namedtuple("_ExternalRepositoryOrigin", "repository_location_origin repository_name")
+):
+    """Serializable representation of an ExternalRepository that can be used to
+       uniquely it or reload it in across process boundaries.
+    """
+
+    def __new__(cls, repository_location_origin, repository_name):
+        return super(ExternalRepositoryOrigin, cls).__new__(
+            cls,
+            check.inst_param(
+                repository_location_origin, "repository_location_origin", RepositoryLocationOrigin
+            ),
+            check.str_param(repository_name, "repository_name"),
+        )
+
+    def get_id(self):
+        return create_snapshot_id(self)
+
+    def get_pipeline_origin(self, pipeline_name):
+        return ExternalPipelineOrigin(self, pipeline_name)
+
+    @abstractmethod
+    def get_schedule_origin(self, schedule_name):
+        return ExternalScheduleOrigin(self, schedule_name)
+
+    def get_cli_args(self):
+        return self.repository_location_origin.get_cli_args() + " -r " + self.repository_name
+
+
+@whitelist_for_serdes
+class ExternalPipelineOrigin(
+    namedtuple("_ExternalPipelineOrigin", "external_repository_origin pipeline_name")
+):
+    """Serializable representation of an ExternalPipeline that can be used to
+       uniquely it or reload it in across process boundaries.
+    """
+
+    def __new__(cls, external_repository_origin, pipeline_name):
+        return super(ExternalPipelineOrigin, cls).__new__(
+            cls,
+            check.inst_param(
+                external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
+            ),
+            check.str_param(pipeline_name, "pipeline_name"),
+        )
+
+    def get_repo_cli_args(self):
+        return self.external_repository_origin.get_cli_args()
+
+    def get_id(self):
+        return create_snapshot_id(self)
+
+
+@whitelist_for_serdes
+class ExternalScheduleOrigin(
+    namedtuple("_ExternalScheduleOrigin", "external_repository_origin schedule_name")
+):
+    """Serializable representation of an ExternalSchedule that can be used to
+       uniquely it or reload it in across process boundaries.
+    """
+
+    def __new__(cls, external_repository_origin, schedule_name):
+        return super(ExternalScheduleOrigin, cls).__new__(
+            cls,
+            check.inst_param(
+                external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
+            ),
+            check.str_param(schedule_name, "schedule_name"),
+        )
+
+    def get_repo_cli_args(self):
+        return self.external_repository_origin.get_cli_args()
+
+    def get_id(self):
+        return create_snapshot_id(self)

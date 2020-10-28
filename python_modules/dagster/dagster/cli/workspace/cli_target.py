@@ -11,6 +11,7 @@ from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
 from dagster.core.host_representation import (
     ExternalRepository,
+    ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
     RepositoryLocation,
     RepositoryLocationHandle,
@@ -233,6 +234,14 @@ def get_workspace_from_kwargs(kwargs):
 def python_target_click_options():
     return [
         click.option(
+            "--empty-working-directory",
+            is_flag=True,
+            required=False,
+            default=False,
+            help="Indicates that the working directory should be empty and should not set to the current "
+            "directory as a default",
+        ),
+        click.option(
             "--working-directory",
             "-d",
             help="Specify working directory to use when loading the repository or pipeline. Can only be used along with -f/--python-file",
@@ -413,6 +422,17 @@ def pipeline_target_argument(f):
     from dagster.cli.pipeline import apply_click_params
 
     return apply_click_params(repository_target_argument(f), pipeline_option())
+
+
+def get_external_repository_origin_from_kwargs(kwargs):
+    provided_repo_name = kwargs.get("repository")
+
+    if not provided_repo_name:
+        raise click.UsageError("Must provide --repository to load a repository")
+
+    repository_location_origin = get_repository_location_origin_from_kwargs(kwargs)
+
+    return ExternalRepositoryOrigin(repository_location_origin, provided_repo_name)
 
 
 def get_repository_origin_from_kwargs(kwargs):

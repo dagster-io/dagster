@@ -223,14 +223,6 @@ def _schedule_tick_state(instance, stream, tick_data):
 
 @click.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
 @click.option(
-    "--empty-working-directory",
-    is_flag=True,
-    required=False,
-    default=False,
-    help="Indicates that the working directory should be empty and should not set to the current "
-    "directory as a default",
-)
-@click.option(
     "--port",
     "-p",
     type=click.INT,

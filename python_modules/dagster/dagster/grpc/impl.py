@@ -36,26 +36,19 @@ from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionErrorData,
 )
 from dagster.core.instance import DagsterInstance
+from dagster.core.instance.ref import InstanceRef
 from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
 )
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.types import (
-    ExecutionPlanSnapshotArgs,
-    ExternalJobArgs,
-    ExternalScheduleExecutionArgs,
-    PartitionArgs,
-    PartitionNamesArgs,
-    ScheduleExecutionDataMode,
-)
+from dagster.grpc.types import ExecutionPlanSnapshotArgs, ScheduleExecutionDataMode
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage
 from dagster.utils import delay_interrupts, start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import recon_repository_from_origin
 
-from .types import ExecuteRunArgs, ExternalScheduleExecutionArgs, PartitionSetExecutionParamArgs
+from .types import ExecuteExternalPipelineArgs
 
 
 class RunInSubprocessComplete:
@@ -106,7 +99,7 @@ def _run_in_subprocess(
     start_termination_thread(termination_event)
     try:
         execute_run_args = deserialize_json_to_dagster_namedtuple(serialized_execute_run_args)
-        check.inst_param(execute_run_args, "execute_run_args", ExecuteRunArgs)
+        check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
 
         instance = DagsterInstance.from_ref(execute_run_args.instance_ref)
         pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
@@ -216,31 +209,28 @@ def get_external_pipeline_subset_result(recon_pipeline, solid_selection):
     return ExternalPipelineSubsetResult(success=True, external_pipeline_data=external_pipeline_data)
 
 
-def get_external_schedule_execution(recon_repo, external_schedule_execution_args):
+def get_external_schedule_execution(
+    recon_repo,
+    instance_ref,
+    schedule_name,
+    schedule_execution_data_mode,
+    scheduled_execution_timestamp,
+    scheduled_execution_timezone,
+):
     check.inst_param(
         recon_repo, "recon_repo", ReconstructableRepository,
     )
-    check.inst_param(
-        external_schedule_execution_args,
-        "external_schedule_execution_args",
-        ExternalScheduleExecutionArgs,
-    )
-
     definition = recon_repo.get_definition()
-    schedule_def = definition.get_schedule_def(external_schedule_execution_args.schedule_name)
-    with DagsterInstance.from_ref(external_schedule_execution_args.instance_ref) as instance:
+    schedule_def = definition.get_schedule_def(schedule_name)
+    with DagsterInstance.from_ref(instance_ref) as instance:
 
         scheduled_execution_time = (
-            pendulum.from_timestamp(
-                external_schedule_execution_args.scheduled_execution_timestamp,
-                tz=external_schedule_execution_args.scheduled_execution_timezone,
-            )
-            if external_schedule_execution_args.scheduled_execution_timestamp
+            pendulum.from_timestamp(scheduled_execution_timestamp, tz=scheduled_execution_timezone,)
+            if scheduled_execution_timestamp
             else None
         )
 
         schedule_context = ScheduleExecutionContext(instance, scheduled_execution_time)
-        schedule_execution_data_mode = external_schedule_execution_args.schedule_execution_data_mode
 
         try:
             with user_code_error_boundary(
@@ -282,14 +272,13 @@ def get_external_schedule_execution(recon_repo, external_schedule_execution_args
             )
 
 
-def get_external_job_params(recon_repo, external_job_args):
+def get_external_job_params(recon_repo, instance_ref, name):
     check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-    check.inst_param(
-        external_job_args, "external_job_args", ExternalJobArgs,
-    )
+    check.inst_param(instance_ref, "instance_ref", InstanceRef)
+    check.str_param(name, "name")
     definition = recon_repo.get_definition()
-    job_def = definition.get_job_def(external_job_args.name)
-    with DagsterInstance.from_ref(external_job_args.instance_ref) as instance:
+    job_def = definition.get_job_def(name)
+    with DagsterInstance.from_ref(instance_ref) as instance:
         context = JobContext(instance)
 
         try:
@@ -314,12 +303,10 @@ def get_external_job_params(recon_repo, external_job_args):
             )
 
 
-def get_partition_config(args):
-    check.inst_param(args, "args", PartitionArgs)
-    recon_repo = recon_repository_from_origin(args.repository_origin)
+def get_partition_config(recon_repo, partition_set_name, partition_name):
     definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(args.partition_set_name)
-    partition = partition_set_def.get_partition(args.partition_name)
+    partition_set_def = definition.get_partition_set_def(partition_set_name)
+    partition = partition_set_def.get_partition(partition_name)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -336,11 +323,9 @@ def get_partition_config(args):
         )
 
 
-def get_partition_names(args):
-    check.inst_param(args, "args", PartitionNamesArgs)
-    recon_repo = recon_repository_from_origin(args.repository_origin)
+def get_partition_names(recon_repo, partition_set_name):
     definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(args.partition_set_name)
+    partition_set_def = definition.get_partition_set_def(partition_set_name)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -356,12 +341,10 @@ def get_partition_names(args):
         )
 
 
-def get_partition_tags(args):
-    check.inst_param(args, "args", PartitionArgs)
-    recon_repo = recon_repository_from_origin(args.repository_origin)
+def get_partition_tags(recon_repo, partition_set_name, partition_name):
     definition = recon_repo.get_definition()
-    partition_set_def = definition.get_partition_set_def(args.partition_set_name)
-    partition = partition_set_def.get_partition(args.partition_name)
+    partition_set_def = definition.get_partition_set_def(partition_set_name)
+    partition = partition_set_def.get_partition(partition_name)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -402,11 +385,9 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
         )
 
 
-def get_partition_set_execution_param_data(args):
-    check.inst_param(args, "args", PartitionSetExecutionParamArgs)
-    recon_repo = recon_repository_from_origin(args.repository_origin)
+def get_partition_set_execution_param_data(recon_repo, partition_set_name, partition_names):
     repo_definition = recon_repo.get_definition()
-    partition_set_def = repo_definition.get_partition_set_def(args.partition_set_name)
+    partition_set_def = repo_definition.get_partition_set_def(partition_set_name)
     try:
         with user_code_error_boundary(
             PartitionExecutionError,
@@ -415,7 +396,7 @@ def get_partition_set_execution_param_data(args):
         ):
             all_partitions = partition_set_def.get_partitions()
         partitions = [
-            partition for partition in all_partitions if partition.name in args.partition_names
+            partition for partition in all_partitions if partition.name in partition_names
         ]
 
         partition_data = []

@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.errors import DagsterSubprocessError
-from dagster.core.origin import PipelineOrigin
+from dagster.core.host_representation import ExternalPipelineOrigin
 from dagster.core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,
@@ -20,7 +20,7 @@ def sync_get_external_execution_plan_grpc(
     from dagster.grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
-    check.inst_param(pipeline_origin, "pipeline_origin", PipelineOrigin)
+    check.inst_param(pipeline_origin, "pipeline_origin", ExternalPipelineOrigin)
     check.opt_list_param(solid_selection, "solid_selection", of_type=str)
     check.dict_param(run_config, "run_config")
     check.str_param(mode, "mode")

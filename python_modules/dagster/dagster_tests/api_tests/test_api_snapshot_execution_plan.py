@@ -18,7 +18,7 @@ def test_execution_plan_error_grpc():
         ):
             sync_get_external_execution_plan_grpc(
                 api_client,
-                pipeline_handle.get_origin(),
+                pipeline_handle.get_external_origin(),
                 run_config={},
                 mode="made_up_mode",
                 pipeline_snapshot_id="12345",
@@ -31,7 +31,7 @@ def test_execution_plan_snapshot_api_grpc():
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
-            pipeline_handle.get_origin(),
+            pipeline_handle.get_external_origin(),
             run_config={},
             mode="default",
             pipeline_snapshot_id="12345",
@@ -51,7 +51,7 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc():
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
-            pipeline_handle.get_origin(),
+            pipeline_handle.get_external_origin(),
             run_config={},
             mode="default",
             pipeline_snapshot_id="12345",
@@ -71,7 +71,7 @@ def test_execution_plan_with_subset_snapshot_api_grpc():
 
         execution_plan_snapshot = sync_get_external_execution_plan_grpc(
             api_client,
-            pipeline_handle.get_origin(),
+            pipeline_handle.get_external_origin(),
             run_config={"solids": {"do_input": {"inputs": {"x": {"value": "test"}}}}},
             mode="default",
             pipeline_snapshot_id="12345",

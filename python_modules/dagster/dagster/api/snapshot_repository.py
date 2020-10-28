@@ -2,10 +2,10 @@ from dagster import check
 from dagster.core.host_representation import (
     ExternalRepository,
     ExternalRepositoryData,
+    ExternalRepositoryOrigin,
     RepositoryHandle,
     RepositoryLocationHandle,
 )
-from dagster.core.origin import RepositoryGrpcServerOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
@@ -18,11 +18,8 @@ def sync_get_external_repositories_grpc(api_client, repository_location_handle):
     for repository_name in repository_location_handle.repository_names:
         external_repository_data = check.inst(
             api_client.external_repository(
-                repository_grpc_server_origin=RepositoryGrpcServerOrigin(
-                    repository_location_handle.host,
-                    repository_location_handle.port,
-                    repository_location_handle.socket,
-                    repository_name,
+                external_repository_origin=ExternalRepositoryOrigin(
+                    repository_location_handle.origin, repository_name,
                 )
             ),
             ExternalRepositoryData,
@@ -48,11 +45,8 @@ def sync_get_streaming_external_repositories_grpc(api_client, repository_locatio
     for repository_name in repository_location_handle.repository_names:
         external_repository_chunks = list(
             api_client.streaming_external_repository(
-                repository_grpc_server_origin=RepositoryGrpcServerOrigin(
-                    repository_location_handle.host,
-                    repository_location_handle.port,
-                    repository_location_handle.socket,
-                    repository_name,
+                external_repository_origin=ExternalRepositoryOrigin(
+                    repository_location_handle.origin, repository_name,
                 )
             )
         )

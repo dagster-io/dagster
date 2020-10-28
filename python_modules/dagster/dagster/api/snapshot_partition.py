@@ -16,7 +16,7 @@ def sync_get_external_partition_names_grpc(api_client, repository_handle, partit
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")
-    repository_origin = repository_handle.get_origin()
+    repository_origin = repository_handle.get_external_origin()
     return check.inst(
         api_client.external_partition_names(
             partition_names_args=PartitionNamesArgs(
@@ -36,7 +36,7 @@ def sync_get_external_partition_config_grpc(
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")
     check.str_param(partition_name, "partition_name")
-    repository_origin = repository_handle.get_origin()
+    repository_origin = repository_handle.get_external_origin()
     return check.inst(
         api_client.external_partition_config(
             partition_args=PartitionArgs(
@@ -59,7 +59,7 @@ def sync_get_external_partition_tags_grpc(
     check.str_param(partition_set_name, "partition_set_name")
     check.str_param(partition_name, "partition_name")
 
-    repository_origin = repository_handle.get_origin()
+    repository_origin = repository_handle.get_external_origin()
     return check.inst(
         api_client.external_partition_tags(
             partition_args=PartitionArgs(
@@ -82,7 +82,7 @@ def sync_get_external_partition_set_execution_param_data_grpc(
     check.str_param(partition_set_name, "partition_set_name")
     check.list_param(partition_names, "partition_names", of_type=str)
 
-    repository_origin = repository_handle.get_origin()
+    repository_origin = repository_handle.get_external_origin()
 
     return check.inst(
         api_client.external_partition_set_execution_params(

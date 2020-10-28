@@ -99,6 +99,12 @@ class ExternalRepository:
     def handle(self):
         return self._handle
 
+    def get_external_origin(self):
+        return self.handle.get_external_origin()
+
+    def get_external_origin_id(self):
+        return self.get_external_origin().get_id()
+
     def get_origin(self):
         return self._handle.get_origin()
 
@@ -222,6 +228,12 @@ class ExternalPipeline(RepresentedPipeline):
     @property
     def handle(self):
         return self._handle
+
+    def get_external_origin(self):
+        return self.handle.get_external_origin()
+
+    def get_external_origin_id(self):
+        return self.get_external_origin().get_id()
 
     def get_origin(self):
         return self._handle.get_origin()
@@ -369,6 +381,12 @@ class ExternalSchedule:
     @property
     def handle(self):
         return self._handle
+
+    def get_external_origin(self):
+        return self.handle.get_external_origin()
+
+    def get_external_origin_id(self):
+        return self.get_external_origin().get_id()
 
     def get_origin(self):
         return self._handle.get_origin()

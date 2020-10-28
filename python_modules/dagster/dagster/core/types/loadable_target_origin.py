@@ -1,8 +1,10 @@
 from collections import namedtuple
 
 from dagster import check
+from dagster.serdes import whitelist_for_serdes
 
 
+@whitelist_for_serdes
 class LoadableTargetOrigin(
     namedtuple(
         "LoadableTargetOrigin",
@@ -27,3 +29,27 @@ class LoadableTargetOrigin(
             attribute=check.opt_str_param(attribute, "attribute"),
             package_name=check.opt_str_param(package_name, "package_name"),
         )
+
+    def get_cli_args(self):
+
+        # Need to ensure that everything that consumes this knows about
+        # --empty-working-directory and --use-python-package
+        args = (
+            (
+                (
+                    ["-f", self.python_file,]
+                    + (
+                        ["-d", self.working_directory]
+                        if self.working_directory
+                        else ["--empty-working-directory"]
+                    )
+                )
+                if self.python_file
+                else []
+            )
+            + (["-m", self.module_name] if self.module_name else [])
+            + (["-a", self.attribute] if self.attribute else [])
+            + (["--package-name", self.package_name] if self.package_name else [])
+        )
+
+        return args

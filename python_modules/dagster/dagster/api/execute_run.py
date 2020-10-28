@@ -1,10 +1,10 @@
 from dagster import check
 from dagster.core.events import EngineEventData
+from dagster.core.host_representation import ExternalPipelineOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelineOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.server import ExecuteRunArgs
+from dagster.grpc.server import ExecuteExternalPipelineArgs
 from dagster.serdes.ipc import IPCErrorMessage
 
 
@@ -14,7 +14,7 @@ def execute_run_grpc(api_client, instance_ref, pipeline_origin, pipeline_run):
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     check.inst_param(instance_ref, "instance_ref", InstanceRef)
-    check.inst_param(pipeline_origin, "pipeline_origin", PipelineOrigin)
+    check.inst_param(pipeline_origin, "pipeline_origin", ExternalPipelineOrigin)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
 
     with DagsterInstance.from_ref(instance_ref) as instance:
@@ -28,7 +28,7 @@ def execute_run_grpc(api_client, instance_ref, pipeline_origin, pipeline_run):
 
         run_did_fail = False
 
-        execute_run_args = ExecuteRunArgs(
+        execute_run_args = ExecuteExternalPipelineArgs(
             pipeline_origin=pipeline_origin,
             pipeline_run_id=pipeline_run.run_id,
             instance_ref=instance_ref,

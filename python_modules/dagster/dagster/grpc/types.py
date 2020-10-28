@@ -3,8 +3,9 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
+from dagster.core.host_representation import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelineOrigin, PipelinePythonOrigin, RepositoryOrigin
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -27,7 +28,9 @@ class ExecutionPlanSnapshotArgs(
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(pipeline_origin, "pipeline_origin", PipelineOrigin),
+            pipeline_origin=check.inst_param(
+                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
+            ),
             solid_selection=check.opt_list_param(solid_selection, "solid_selection", of_type=str),
             run_config=check.dict_param(run_config, "run_config"),
             mode=check.str_param(mode, "mode"),
@@ -43,7 +46,24 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
     def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
         return super(ExecuteRunArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(pipeline_origin, "pipeline_origin", PipelineOrigin),
+            pipeline_origin=check.inst_param(
+                pipeline_origin, "pipeline_origin", PipelinePythonOrigin,
+            ),
+            pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+        )
+
+
+@whitelist_for_serdes
+class ExecuteExternalPipelineArgs(
+    namedtuple("_ExecuteExternalPipelineArgs", "pipeline_origin pipeline_run_id instance_ref")
+):
+    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
+        return super(ExecuteExternalPipelineArgs, cls).__new__(
+            cls,
+            pipeline_origin=check.inst_param(
+                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin,
+            ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
         )
@@ -145,7 +165,7 @@ class PartitionArgs(
         return super(PartitionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", RepositoryOrigin
+                repository_origin, "repository_origin", ExternalRepositoryOrigin,
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
             partition_name=check.str_param(partition_name, "partition_name"),
@@ -158,7 +178,7 @@ class PartitionNamesArgs(namedtuple("_PartitionNamesArgs", "repository_origin pa
         return super(PartitionNamesArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", RepositoryOrigin
+                repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
         )
@@ -174,7 +194,7 @@ class PartitionSetExecutionParamArgs(
         return super(PartitionSetExecutionParamArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", RepositoryOrigin
+                repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
             partition_set_name=check.str_param(partition_set_name, "partition_set_name"),
             partition_names=check.list_param(partition_names, "partition_names", of_type=str),
@@ -188,7 +208,9 @@ class PipelineSubsetSnapshotArgs(
     def __new__(cls, pipeline_origin, solid_selection):
         return super(PipelineSubsetSnapshotArgs, cls).__new__(
             cls,
-            pipeline_origin=check.inst_param(pipeline_origin, "pipeline_origin", PipelineOrigin),
+            pipeline_origin=check.inst_param(
+                pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
+            ),
             solid_selection=check.list_param(solid_selection, "solid_selection", of_type=str)
             if solid_selection
             else None,
@@ -224,7 +246,7 @@ class ExternalScheduleExecutionArgs(
         return super(ExternalScheduleExecutionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", RepositoryOrigin
+                repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
             instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
             schedule_name=check.str_param(schedule_name, "schedule_name"),
@@ -248,7 +270,7 @@ class ExternalJobArgs(namedtuple("_ExternalJobArgs", "repository_origin instance
         return super(ExternalJobArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
-                repository_origin, "repository_origin", RepositoryOrigin
+                repository_origin, "repository_origin", ExternalRepositoryOrigin
             ),
             instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
             name=check.str_param(name, "name"),

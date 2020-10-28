@@ -1,6 +1,6 @@
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test, poll_for_event, poll_for_finished_run
-from dagster.grpc.server import ExecuteRunArgs
+from dagster.grpc.server import ExecuteExternalPipelineArgs
 
 from .utils import get_foo_grpc_pipeline_handle
 
@@ -34,8 +34,8 @@ def test_launch_run_grpc():
             run_id = pipeline_run.run_id
 
             res = api_client.start_run(
-                ExecuteRunArgs(
-                    pipeline_origin=pipeline_handle.get_origin(),
+                ExecuteExternalPipelineArgs(
+                    pipeline_origin=pipeline_handle.get_external_origin(),
                     pipeline_run_id=run_id,
                     instance_ref=instance.get_ref(),
                 )
@@ -87,8 +87,8 @@ def test_launch_unloadable_run_grpc():
 
             with instance_for_test() as other_instance:
                 res = api_client.start_run(
-                    ExecuteRunArgs(
-                        pipeline_origin=pipeline_handle.get_origin(),
+                    ExecuteExternalPipelineArgs(
+                        pipeline_origin=pipeline_handle.get_external_origin(),
                         pipeline_run_id=run_id,
                         instance_ref=other_instance.get_ref(),
                     )

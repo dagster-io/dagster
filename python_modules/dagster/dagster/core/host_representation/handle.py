@@ -1,6 +1,6 @@
 import sys
 import threading
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
 import six
@@ -9,6 +9,7 @@ from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.core.definitions.reconstructable import repository_def_from_pointer
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation.origin import (
+    ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -17,6 +18,16 @@ from dagster.core.host_representation.origin import (
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryOrigin, RepositoryPythonOrigin
+
+
+def _get_repository_python_origin(executable_path, repository_code_pointer_dict, repository_name):
+    if repository_name not in repository_code_pointer_dict:
+        raise DagsterInvariantViolationError(
+            "Unable to find repository name {} on GRPC server.".format(repository_name)
+        )
+
+    code_pointer = repository_code_pointer_dict[repository_name]
+    return RepositoryPythonOrigin(executable_path=executable_path, code_pointer=code_pointer)
 
 
 class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
@@ -67,6 +78,10 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         else:
             raise DagsterInvariantViolationError("Unexpected repository origin type")
 
+    @abstractmethod
+    def get_repository_python_origin(self, repository_name):
+        pass
+
 
 class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
     """
@@ -89,6 +104,9 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
         self.repository_names = set(
             symbol.repository_name for symbol in list_repositories_response.repository_symbols
         )
+
+        self.executable_path = list_repositories_response.executable_path
+        self.repository_code_pointer_dict = list_repositories_response.repository_code_pointer_dict
 
     @property
     def port(self):
@@ -117,20 +135,19 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
         return job_image
 
     def get_repository_python_origin(self, repository_name):
+        return _get_repository_python_origin(
+            self.executable_path, self.repository_code_pointer_dict, repository_name
+        )
+
+    def reload_repository_python_origin(self, repository_name):
         check.str_param(repository_name, "repository_name")
 
-        list_repositories_reply = self.client.list_repositories()
-        repository_code_pointer_dict = list_repositories_reply.repository_code_pointer_dict
+        list_repositories_response = sync_list_repositories_grpc(self.client)
 
-        if repository_name not in repository_code_pointer_dict:
-            raise DagsterInvariantViolationError(
-                "Unable to find repository name {} on GRPC server.".format(repository_name)
-            )
-
-        code_pointer = repository_code_pointer_dict[repository_name]
-        return RepositoryPythonOrigin(
-            executable_path=list_repositories_reply.executable_path or sys.executable,
-            code_pointer=code_pointer,
+        return _get_repository_python_origin(
+            list_repositories_response.executable_path,
+            list_repositories_response.repository_code_pointer_dict,
+            repository_name,
         )
 
 
@@ -166,6 +183,11 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
         list_repositories_response = sync_list_repositories_grpc(self.client)
 
         self.repository_code_pointer_dict = list_repositories_response.repository_code_pointer_dict
+
+    def get_repository_python_origin(self, repository_name):
+        return _get_repository_python_origin(
+            self.executable_path, self.repository_code_pointer_dict, repository_name
+        )
 
     @property
     def executable_path(self):
@@ -213,6 +235,11 @@ class InProcessRepositoryLocationHandle(RepositoryLocationHandle):
     def location_name(self):
         return self.origin.location_name
 
+    def get_repository_python_origin(self, repository_name):
+        return _get_repository_python_origin(
+            sys.executable, self.repository_code_pointer_dict, repository_name
+        )
+
 
 class RepositoryHandle(
     namedtuple("_RepositoryHandle", "repository_name repository_location_handle")
@@ -257,6 +284,14 @@ class RepositoryHandle(
                 )
             )
 
+    def get_external_origin(self):
+        return ExternalRepositoryOrigin(
+            self.repository_location_handle.origin, self.repository_name,
+        )
+
+    def get_python_origin(self):
+        return self.repository_location_handle.get_repository_python_origin(self.repository_name)
+
 
 class PipelineHandle(namedtuple("_PipelineHandle", "pipeline_name repository_handle")):
     def __new__(cls, pipeline_name, repository_handle):
@@ -280,6 +315,12 @@ class PipelineHandle(namedtuple("_PipelineHandle", "pipeline_name repository_han
     def get_origin(self):
         return self.repository_handle.get_origin().get_pipeline_origin(self.pipeline_name)
 
+    def get_external_origin(self):
+        return self.repository_handle.get_external_origin().get_pipeline_origin(self.pipeline_name)
+
+    def get_python_origin(self):
+        return self.repository_handle.get_python_origin().get_pipeline_origin(self.pipeline_name)
+
     def to_selector(self):
         return PipelineSelector(self.location_name, self.repository_name, self.pipeline_name, None)
 
@@ -302,6 +343,9 @@ class ScheduleHandle(namedtuple("_ScheduleHandle", "schedule_name repository_han
 
     def get_origin(self):
         return self.repository_handle.get_origin().get_schedule_origin(self.schedule_name)
+
+    def get_external_origin(self):
+        return self.repository_handle.get_external_origin().get_schedule_origin(self.schedule_name)
 
 
 class PartitionSetHandle(namedtuple("_PartitionSetHandle", "partition_set_name repository_handle")):

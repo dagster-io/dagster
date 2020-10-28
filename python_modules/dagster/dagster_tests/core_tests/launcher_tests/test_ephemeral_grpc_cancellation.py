@@ -3,11 +3,15 @@ import threading
 import time
 
 from dagster import Field, Int, Materialization, pipeline, repository, solid
-from dagster.core.origin import PipelineGrpcServerOrigin, RepositoryGrpcServerOrigin
+from dagster.core.host_representation import (
+    ExternalPipelineOrigin,
+    ExternalRepositoryOrigin,
+    GrpcServerRepositoryLocationOrigin,
+)
 from dagster.core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
-from dagster.grpc.types import CancelExecutionRequest, ExecuteRunArgs
+from dagster.grpc.types import CancelExecutionRequest, ExecuteExternalPipelineArgs
 
 
 @solid(config_schema={"length": Field(Int)}, output_defs=[])
@@ -47,15 +51,15 @@ def test_cancel_run():
             pipeline_run = instance.create_run_for_pipeline(
                 streaming_pipeline, run_config={"solids": {"streamer": {"config": {"length": 20}}}},
             )
-            execute_run_args = ExecuteRunArgs(
-                pipeline_origin=PipelineGrpcServerOrigin(
-                    pipeline_name="streaming_pipeline",
-                    repository_origin=RepositoryGrpcServerOrigin(
-                        host="localhost",
-                        socket=api_client.socket,
-                        port=api_client.port,
+            execute_run_args = ExecuteExternalPipelineArgs(
+                pipeline_origin=ExternalPipelineOrigin(
+                    ExternalRepositoryOrigin(
+                        repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                            host="localhost", socket=api_client.socket, port=api_client.port,
+                        ),
                         repository_name="test_repository",
                     ),
+                    pipeline_name="streaming_pipeline",
                 ),
                 pipeline_run_id=pipeline_run.run_id,
                 instance_ref=instance.get_ref(),

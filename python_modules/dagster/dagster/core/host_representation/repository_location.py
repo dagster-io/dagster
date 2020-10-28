@@ -39,15 +39,8 @@ from dagster.grpc.impl import (
     get_partition_set_execution_param_data,
     get_partition_tags,
 )
-from dagster.grpc.types import (
-    ExternalJobArgs,
-    ExternalScheduleExecutionArgs,
-    PartitionArgs,
-    PartitionNamesArgs,
-    PartitionSetExecutionParamArgs,
-    ScheduleExecutionDataMode,
-)
-from dagster.utils.hosted_user_process import external_repo_from_def, recon_repository_from_origin
+from dagster.grpc.types import ScheduleExecutionDataMode
+from dagster.utils.hosted_user_process import external_repo_from_def
 
 from .selector import PipelineSelector
 
@@ -164,9 +157,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, handle):
         self._handle = check.inst_param(handle, "handle", InProcessRepositoryLocationHandle,)
 
-        recon_repo = self._handle.origin.recon_repo
+        self._recon_repo = self._handle.origin.recon_repo
 
-        repo_def = recon_repo.get_definition()
+        repo_def = self._recon_repo.get_definition()
         def_name = repo_def.name
         self._external_repo = external_repo_from_def(
             repo_def,
@@ -246,33 +239,30 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
 
-        args = PartitionArgs(
-            repository_origin=repository_handle.get_origin(),
+        return get_partition_config(
+            recon_repo=self._recon_repo,
             partition_set_name=partition_set_name,
             partition_name=partition_name,
         )
-        return get_partition_config(args)
 
     def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
         check.str_param(partition_name, "partition_name")
 
-        args = PartitionArgs(
-            repository_origin=repository_handle.get_origin(),
+        return get_partition_tags(
+            recon_repo=self._recon_repo,
             partition_set_name=partition_set_name,
             partition_name=partition_name,
         )
-        return get_partition_tags(args)
 
     def get_external_partition_names(self, repository_handle, partition_set_name):
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(partition_set_name, "partition_set_name")
 
-        args = PartitionNamesArgs(
-            repository_origin=repository_handle.get_origin(), partition_set_name=partition_set_name
+        return get_partition_names(
+            recon_repo=self._recon_repo, partition_set_name=partition_set_name,
         )
-        return get_partition_names(args)
 
     def get_external_schedule_execution_data(
         self,
@@ -292,10 +282,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
             scheduled_execution_time, "scheduled_execution_time", pendulum.Pendulum
         )
 
-        repo_origin = repository_handle.get_origin()
-        args = ExternalScheduleExecutionArgs(
+        return get_external_schedule_execution(
+            self._recon_repo,
             instance_ref=instance.get_ref(),
-            repository_origin=repo_origin,
             schedule_name=schedule_name,
             schedule_execution_data_mode=schedule_execution_data_mode,
             scheduled_execution_timestamp=scheduled_execution_time.timestamp()
@@ -306,20 +295,12 @@ class InProcessRepositoryLocation(RepositoryLocation):
             else None,
         )
 
-        recon_repo = recon_repository_from_origin(repo_origin)
-        return get_external_schedule_execution(recon_repo, args)
-
     def get_external_job_params(self, instance, repository_handle, name):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(name, "name")
 
-        repo_origin = repository_handle.get_origin()
-        recon_repo = recon_repository_from_origin(repo_origin)
-        args = ExternalJobArgs(
-            instance_ref=instance.get_ref(), repository_origin=repo_origin, name=name,
-        )
-        return get_external_job_params(recon_repo, args)
+        return get_external_job_params(self._recon_repo, instance_ref=instance.get_ref(), name=name)
 
     def get_external_partition_set_execution_param_data(
         self, repository_handle, partition_set_name, partition_names
@@ -328,12 +309,11 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(partition_set_name, "partition_set_name")
         check.list_param(partition_names, "partition_names", of_type=str)
 
-        args = PartitionSetExecutionParamArgs(
-            repository_origin=repository_handle.get_origin(),
+        return get_partition_set_execution_param_data(
+            self._recon_repo,
             partition_set_name=partition_set_name,
             partition_names=partition_names,
         )
-        return get_partition_set_execution_param_data(args)
 
 
 class GrpcServerRepositoryLocation(RepositoryLocation):
@@ -384,7 +364,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
         execution_plan_snapshot_or_error = sync_get_external_execution_plan_grpc(
             api_client=self._handle.client,
-            pipeline_origin=external_pipeline.get_origin(),
+            pipeline_origin=external_pipeline.get_external_origin(),
             run_config=run_config,
             mode=mode,
             pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
@@ -412,7 +392,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         external_repository = self.external_repositories[selector.repository_name]
         pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
         return sync_get_external_pipeline_subset_grpc(
-            self._handle.client, pipeline_handle.get_origin(), selector.solid_selection
+            self._handle.client, pipeline_handle.get_external_origin(), selector.solid_selection
         )
 
     def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):

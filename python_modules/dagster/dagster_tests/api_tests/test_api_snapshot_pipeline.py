@@ -12,7 +12,7 @@ from .utils import get_bar_grpc_repo_handle, get_foo_grpc_pipeline_handle
 def _test_pipeline_subset_grpc(pipeline_handle, solid_selection=None):
     api_client = pipeline_handle.repository_handle.repository_location_handle.client
     return sync_get_external_pipeline_subset_grpc(
-        api_client, pipeline_handle.get_origin(), solid_selection=solid_selection
+        api_client, pipeline_handle.get_external_origin(), solid_selection=solid_selection
     )
 
 

@@ -13,7 +13,11 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.types import CanCancelExecutionRequest, CancelExecutionRequest, ExecuteRunArgs
+from dagster.grpc.types import (
+    CanCancelExecutionRequest,
+    CancelExecutionRequest,
+    ExecuteExternalPipelineArgs,
+)
 from dagster.serdes import ConfigurableClass
 from dagster.utils import merge_dicts
 
@@ -93,8 +97,8 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         res = repository_location_handle.client.start_run(
-            ExecuteRunArgs(
-                pipeline_origin=external_pipeline.get_origin(),
+            ExecuteExternalPipelineArgs(
+                pipeline_origin=external_pipeline.get_external_origin(),
                 pipeline_run_id=run.run_id,
                 instance_ref=self._instance.get_ref(),
             )

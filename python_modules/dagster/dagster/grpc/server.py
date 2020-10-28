@@ -15,18 +15,9 @@ from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
     repository_def_from_target_def,
 )
-from dagster.core.errors import PartitionExecutionError, user_code_error_boundary
-from dagster.core.host_representation.external_data import (
-    ExternalPartitionConfigData,
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionExecutionParamData,
-    ExternalPartitionNamesData,
-    ExternalPartitionSetExecutionParamData,
-    ExternalPartitionTagsData,
-    external_repository_data_from_def,
-)
+from dagster.core.host_representation import ExternalPipelineOrigin, ExternalRepositoryOrigin
+from dagster.core.host_representation.external_data import external_repository_data_from_def
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import PipelineOrigin, RepositoryGrpcServerOrigin, RepositoryOrigin
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
@@ -42,7 +33,6 @@ from dagster.serdes.ipc import (
 from dagster.seven import get_system_temp_directory, multiprocessing
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import recon_repository_from_origin
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 from .__generated__ import api_pb2
@@ -55,6 +45,10 @@ from .impl import (
     get_external_job_params,
     get_external_pipeline_subset_result,
     get_external_schedule_execution,
+    get_partition_config,
+    get_partition_names,
+    get_partition_set_execution_param_data,
+    get_partition_tags,
     start_run_in_subprocess,
 )
 from .types import (
@@ -62,7 +56,7 @@ from .types import (
     CanCancelExecutionResult,
     CancelExecutionRequest,
     CancelExecutionResult,
-    ExecuteRunArgs,
+    ExecuteExternalPipelineArgs,
     ExecutionPlanSnapshotArgs,
     ExternalJobArgs,
     ExternalScheduleExecutionArgs,
@@ -285,23 +279,25 @@ class DagsterApiServer(DagsterApiServicer):
         if run_id in self._termination_times:
             del self._termination_times[run_id]
 
-    def _recon_repository_from_origin(self, repository_origin):
+    def _recon_repository_from_origin(self, external_repository_origin):
         check.inst_param(
-            repository_origin, "repository_origin", RepositoryOrigin,
+            external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
         )
 
-        if isinstance(repository_origin, RepositoryGrpcServerOrigin):
-            return ReconstructableRepository(
-                self._repository_symbols_and_code_pointers.code_pointers_by_repo_name[
-                    repository_origin.repository_name
-                ]
-            )
-        return recon_repository_from_origin(repository_origin)
+        return ReconstructableRepository(
+            self._repository_symbols_and_code_pointers.code_pointers_by_repo_name[
+                external_repository_origin.repository_name
+            ]
+        )
 
-    def _recon_pipeline_from_origin(self, pipeline_origin):
-        check.inst_param(pipeline_origin, "pipeline_origin", PipelineOrigin)
-        recon_repo = self._recon_repository_from_origin(pipeline_origin.repository_origin)
-        return recon_repo.get_reconstructable_pipeline(pipeline_origin.pipeline_name)
+    def _recon_pipeline_from_origin(self, external_pipeline_origin):
+        check.inst_param(
+            external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
+        )
+        recon_repo = self._recon_repository_from_origin(
+            external_pipeline_origin.external_repository_origin
+        )
+        return recon_repo.get_reconstructable_pipeline(external_pipeline_origin.pipeline_name)
 
     def Ping(self, request, _context):
         echo = request.echo
@@ -360,134 +356,46 @@ class DagsterApiServer(DagsterApiServicer):
         check.inst_param(partition_names_args, "partition_names_args", PartitionNamesArgs)
 
         recon_repo = self._recon_repository_from_origin(partition_names_args.repository_origin)
-        definition = recon_repo.get_definition()
-        partition_set_def = definition.get_partition_set_def(
-            partition_names_args.partition_set_name
-        )
-        try:
-            with user_code_error_boundary(
-                PartitionExecutionError,
-                lambda: "Error occurred during the execution of the partition generation function for "
-                "partition set {partition_set_name}".format(
-                    partition_set_name=partition_set_def.name
-                ),
-            ):
-                return api_pb2.ExternalPartitionNamesReply(
-                    serialized_external_partition_names_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                        ExternalPartitionNamesData(
-                            partition_names=partition_set_def.get_partition_names()
-                        )
-                    )
-                )
-        except PartitionExecutionError:
-            return api_pb2.ExternalPartitionNamesReply(
-                serialized_external_partition_names_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                    ExternalPartitionExecutionErrorData(
-                        serializable_error_info_from_exc_info(sys.exc_info())
-                    )
-                )
+
+        return api_pb2.ExternalPartitionNamesReply(
+            serialized_external_partition_names_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                get_partition_names(recon_repo, partition_names_args.partition_set_name,)
             )
+        )
 
     def ExternalPartitionSetExecutionParams(self, request, _context):
-        partition_set_execution_param_args = deserialize_json_to_dagster_namedtuple(
+        args = deserialize_json_to_dagster_namedtuple(
             request.serialized_partition_set_execution_param_args
         )
 
         check.inst_param(
-            partition_set_execution_param_args,
-            "partition_set_execution_param_args",
-            PartitionSetExecutionParamArgs,
+            args, "args", PartitionSetExecutionParamArgs,
         )
 
-        recon_repo = self._recon_repository_from_origin(
-            partition_set_execution_param_args.repository_origin
-        )
-        definition = recon_repo.get_definition()
-        partition_set_def = definition.get_partition_set_def(
-            partition_set_execution_param_args.partition_set_name
-        )
+        recon_repo = self._recon_repository_from_origin(args.repository_origin)
 
-        try:
-            with user_code_error_boundary(
-                PartitionExecutionError,
-                lambda: "Error occurred during the partition generation for partition set "
-                "{partition_set_name}".format(partition_set_name=partition_set_def.name),
-            ):
-                all_partitions = partition_set_def.get_partitions()
-            partitions = [
-                partition
-                for partition in all_partitions
-                if partition.name in partition_set_execution_param_args.partition_names
-            ]
-
-            partition_data = []
-            for partition in partitions:
-
-                def _error_message_fn(partition_set_name, partition_name):
-                    return lambda: (
-                        "Error occurred during the partition config and tag generation for "
-                        "partition set {partition_set_name}::{partition_name}".format(
-                            partition_set_name=partition_set_name, partition_name=partition_name
-                        )
-                    )
-
-                with user_code_error_boundary(
-                    PartitionExecutionError,
-                    _error_message_fn(partition_set_def.name, partition.name),
-                ):
-                    run_config = partition_set_def.run_config_for_partition(partition)
-                    tags = partition_set_def.tags_for_partition(partition)
-
-                partition_data.append(
-                    ExternalPartitionExecutionParamData(
-                        name=partition.name, tags=tags, run_config=run_config,
-                    )
-                )
-
-            return api_pb2.ExternalPartitionSetExecutionParamsReply(
-                serialized_external_partition_set_execution_param_data_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                    ExternalPartitionSetExecutionParamData(partition_data=partition_data)
+        return api_pb2.ExternalPartitionSetExecutionParamsReply(
+            serialized_external_partition_set_execution_param_data_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                get_partition_set_execution_param_data(
+                    recon_repo=recon_repo,
+                    partition_set_name=args.partition_set_name,
+                    partition_names=args.partition_names,
                 )
             )
-
-        except PartitionExecutionError:
-            return api_pb2.ExternalPartitionSetExecutionParamsReply(
-                ExternalPartitionExecutionErrorData(
-                    serializable_error_info_from_exc_info(sys.exc_info())
-                )
-            )
+        )
 
     def ExternalPartitionConfig(self, request, _context):
-        partition_args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
+        args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
 
-        check.inst_param(partition_args, "partition_args", PartitionArgs)
+        check.inst_param(args, "args", PartitionArgs)
 
-        recon_repo = self._recon_repository_from_origin(partition_args.repository_origin)
-        definition = recon_repo.get_definition()
-        partition_set_def = definition.get_partition_set_def(partition_args.partition_set_name)
-        partition = partition_set_def.get_partition(partition_args.partition_name)
-        try:
-            with user_code_error_boundary(
-                PartitionExecutionError,
-                lambda: "Error occurred during the evaluation of the `run_config_for_partition` "
-                "function for partition set {partition_set_name}".format(
-                    partition_set_name=partition_set_def.name
-                ),
-            ):
-                run_config = partition_set_def.run_config_for_partition(partition)
-                return api_pb2.ExternalPartitionConfigReply(
-                    serialized_external_partition_config_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                        ExternalPartitionConfigData(name=partition.name, run_config=run_config)
-                    )
-                )
-        except PartitionExecutionError:
-            return api_pb2.ExternalPartitionConfigReply(
-                serialized_external_partition_config_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                    ExternalPartitionExecutionErrorData(
-                        serializable_error_info_from_exc_info(sys.exc_info())
-                    )
-                )
+        recon_repo = self._recon_repository_from_origin(args.repository_origin)
+
+        return api_pb2.ExternalPartitionConfigReply(
+            serialized_external_partition_config_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                get_partition_config(recon_repo, args.partition_set_name, args.partition_name)
             )
+        )
 
     def ExternalPartitionTags(self, request, _context):
         partition_args = deserialize_json_to_dagster_namedtuple(request.serialized_partition_args)
@@ -495,31 +403,14 @@ class DagsterApiServer(DagsterApiServicer):
         check.inst_param(partition_args, "partition_args", PartitionArgs)
 
         recon_repo = self._recon_repository_from_origin(partition_args.repository_origin)
-        definition = recon_repo.get_definition()
-        partition_set_def = definition.get_partition_set_def(partition_args.partition_set_name)
-        partition = partition_set_def.get_partition(partition_args.partition_name)
-        try:
-            with user_code_error_boundary(
-                PartitionExecutionError,
-                lambda: "Error occurred during the evaluation of the `tags_for_partition` function for "
-                "partition set {partition_set_name}".format(
-                    partition_set_name=partition_set_def.name
-                ),
-            ):
-                tags = partition_set_def.tags_for_partition(partition)
-                return api_pb2.ExternalPartitionTagsReply(
-                    serialized_external_partition_tags_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                        ExternalPartitionTagsData(name=partition.name, tags=tags)
-                    )
-                )
-        except PartitionExecutionError:
-            return api_pb2.ExternalPartitionTagsReply(
-                serialized_external_partition_tags_or_external_partition_execution_error=serialize_dagster_namedtuple(
-                    ExternalPartitionExecutionErrorData(
-                        serializable_error_info_from_exc_info(sys.exc_info())
-                    )
+
+        return api_pb2.ExternalPartitionTagsReply(
+            serialized_external_partition_tags_or_external_partition_execution_error=serialize_dagster_namedtuple(
+                get_partition_tags(
+                    recon_repo, partition_args.partition_set_name, partition_args.partition_name
                 )
             )
+        )
 
     def ExternalPipelineSubsetSnapshot(self, request, _context):
         pipeline_subset_snapshot_args = deserialize_json_to_dagster_namedtuple(
@@ -546,7 +437,7 @@ class DagsterApiServer(DagsterApiServicer):
             request.serialized_repository_python_origin
         )
 
-        check.inst_param(repository_origin, "repository_origin", RepositoryOrigin)
+        check.inst_param(repository_origin, "repository_origin", ExternalRepositoryOrigin)
         recon_repo = self._recon_repository_from_origin(repository_origin)
         return serialize_dagster_namedtuple(
             external_repository_data_from_def(recon_repo.get_definition())
@@ -583,23 +474,26 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
     def ExternalScheduleExecution(self, request, _context):
-        external_schedule_execution_args = deserialize_json_to_dagster_namedtuple(
+        args = deserialize_json_to_dagster_namedtuple(
             request.serialized_external_schedule_execution_args
         )
 
         check.inst_param(
-            external_schedule_execution_args,
-            "external_schedule_execution_args",
-            ExternalScheduleExecutionArgs,
+            args, "args", ExternalScheduleExecutionArgs,
         )
 
-        recon_repo = self._recon_repository_from_origin(
-            external_schedule_execution_args.repository_origin
-        )
+        recon_repo = self._recon_repository_from_origin(args.repository_origin)
 
         return api_pb2.ExternalScheduleExecutionReply(
             serialized_external_schedule_execution_data_or_external_schedule_execution_error=serialize_dagster_namedtuple(
-                get_external_schedule_execution(recon_repo, external_schedule_execution_args)
+                get_external_schedule_execution(
+                    recon_repo,
+                    args.instance_ref,
+                    args.schedule_name,
+                    args.schedule_execution_data_mode,
+                    args.scheduled_execution_timestamp,
+                    args.scheduled_execution_timezone,
+                )
             )
         )
 
@@ -614,7 +508,9 @@ class DagsterApiServer(DagsterApiServicer):
         recon_repo = self._recon_repository_from_origin(external_job_args.repository_origin)
         return api_pb2.ExternalJobParamsReply(
             serialized_external_job_params_or_external_job_params_error_data=serialize_dagster_namedtuple(
-                get_external_job_params(recon_repo, external_job_args)
+                get_external_job_params(
+                    recon_repo, external_job_args.instance_ref, external_job_args.name
+                )
             )
         )
 
@@ -633,7 +529,7 @@ class DagsterApiServer(DagsterApiServicer):
             execute_run_args = deserialize_json_to_dagster_namedtuple(
                 request.serialized_execute_run_args
             )
-            check.inst_param(execute_run_args, "execute_run_args", ExecuteRunArgs)
+            check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
 
             run_id = execute_run_args.pipeline_run_id
 
@@ -794,7 +690,7 @@ class DagsterApiServer(DagsterApiServicer):
         try:
             execute_run_args = check.inst(
                 deserialize_json_to_dagster_namedtuple(request.serialized_execute_run_args),
-                ExecuteRunArgs,
+                ExecuteExternalPipelineArgs,
             )
             run_id = execute_run_args.pipeline_run_id
             recon_pipeline = self._recon_pipeline_from_origin(execute_run_args.pipeline_origin)
@@ -1103,31 +999,7 @@ def open_server_process(
     )
 
     if loadable_target_origin:
-        subprocess_args += (
-            (
-                (
-                    ["-f", loadable_target_origin.python_file,]
-                    + (
-                        ["-d", loadable_target_origin.working_directory]
-                        if loadable_target_origin.working_directory
-                        else ["--empty-working-directory"]
-                    )
-                )
-                if loadable_target_origin.python_file
-                else []
-            )
-            + (
-                ["-m", loadable_target_origin.module_name]
-                if loadable_target_origin.module_name
-                else []
-            )
-            + (["-a", loadable_target_origin.attribute] if loadable_target_origin.attribute else [])
-            + (
-                ["--package-name", loadable_target_origin.package_name]
-                if loadable_target_origin.package_name
-                else []
-            )
-        )
+        subprocess_args += loadable_target_origin.get_cli_args()
 
     server_process = open_ipc_subprocess(subprocess_args)
 
