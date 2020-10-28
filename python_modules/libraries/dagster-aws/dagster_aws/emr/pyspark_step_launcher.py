@@ -14,10 +14,8 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.utils import raise_interrupts_immediately
 from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
+from dagster_aws.emr.configs_spark import spark_config as get_spark_config
 from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
-from dagster_pyspark.utils import build_pyspark_zip
-from dagster_spark.configs_spark import spark_config as get_spark_config
-from dagster_spark.utils import flatten_dict, format_for_cli
 
 # On EMR, Spark is installed here
 EMR_SPARK_HOME = "/usr/lib/spark/"
@@ -167,6 +165,7 @@ class EmrPySparkStepLauncher(StepLauncher):
         `spark-submit --py-files my_pyspark_project.zip emr_step_main.py` on EMR this will
         print 1, 2.
         """
+        from dagster_pyspark.utils import build_pyspark_zip
 
         with seven.TemporaryDirectory() as temp_dir:
             s3 = boto3.client("s3", region_name=self.region_name)
@@ -191,6 +190,7 @@ class EmrPySparkStepLauncher(StepLauncher):
             if self.deploy_local_pipeline_package:
                 # Zip and upload package containing pipeline
                 zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
+
                 build_pyspark_zip(zip_local_path, self.local_pipeline_package_path)
                 _upload_file_to_s3(zip_local_path, CODE_ZIP_NAME)
 
@@ -292,6 +292,8 @@ class EmrPySparkStepLauncher(StepLauncher):
         """From the local Dagster instance, construct EMR steps that will kick off execution on a
         remote EMR cluster.
         """
+        from dagster_spark.utils import flatten_dict, format_for_cli
+
         action_on_failure = self.action_on_failure
 
         # Execute Solid via spark-submit

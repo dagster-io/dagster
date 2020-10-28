@@ -38,7 +38,7 @@ CONFIG_TYPES = {
     "spark.driver.memoryOverhead": ConfigType.MEMORY,
     "spark.executor.memory": ConfigType.MEMORY,
     "spark.executor.pyspark.memory": ConfigType.MEMORY,
-    "spark.executor.memoryOverhead	": ConfigType.MEMORY,
+    "spark.executor.memoryOverhead": ConfigType.MEMORY,
     "spark.extraListeners": ConfigType.STRING,
     "spark.local.dir": ConfigType.STRING,
     "spark.logConf": ConfigType.BOOL,
@@ -266,10 +266,7 @@ def serialize(result):
 
 
 @click.command()
-@click.option(
-    "--output-file", help="Base path to write config file to", required=True, type=click.Path()
-)
-def run(output_file):
+def run():
     r = requests.get(
         "https://raw.githubusercontent.com/apache/spark/{}/docs/configuration.md".format(
             SPARK_VERSION
@@ -279,8 +276,13 @@ def run(output_file):
     result = extract(r.text)
     serialized = serialize(result)
 
-    with open(output_file, "wb") as f:
-        f.write(serialized)
+    output_files = [
+        "python_modules/libraries/dagster-spark/dagster_spark/configs_spark.py",
+        "python_modules/libraries/dagster-aws/dagster_aws/emr/configs_spark.py",
+    ]
+    for output_file in output_files:
+        with open(output_file, "wb") as f:
+            f.write(serialized)
 
 
 if __name__ == "__main__":
