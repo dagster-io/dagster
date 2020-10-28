@@ -180,7 +180,7 @@ def test_materialization():
 
 def test_materialization_assign_label_from_asset_key():
     mat = AssetMaterialization(asset_key=AssetKey(["foo", "bar"]))
-    assert mat.label == "foo.bar"
+    assert mat.label == "foo bar"
 
 
 def test_rehydrate_solid_handle():

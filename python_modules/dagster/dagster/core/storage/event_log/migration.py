@@ -1,6 +1,8 @@
 import sqlalchemy as db
 from tqdm import tqdm
 
+from dagster import AssetKey
+
 from .schema import AssetKeyTable, SqlEventLogStorageTable
 
 
@@ -47,7 +49,7 @@ def migrate_asset_key_data(event_log_storage, print_fn=lambda _: None):
             try:
                 conn.execute(
                     AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        asset_key=asset_key
+                        asset_key=AssetKey.from_db_string(asset_key).to_string()
                     )
                 )
             except db.exc.IntegrityError:

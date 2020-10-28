@@ -10,7 +10,14 @@ def create_asset_cli_group():
 
 
 @click.command(
-    name="wipe", help="Eliminate asset key indexes from event logs. Warning: Cannot be undone"
+    name="wipe",
+    help=(
+        "Eliminate asset key indexes from event logs. Warning: Cannot be undone\n\n"
+        "Usage: \n\n"
+        "  dagster asset wipe --all\n\n"
+        "  dagster asset wipe <unstructured_asset_key_name>\n\n"
+        "  dagster asset wipe <json_string_of_structured_asset_key>\n\n"
+    ),
 )
 @click.argument("key", nargs=-1)
 @click.option("--all", is_flag=True, help="Eliminate all asset key indexes")

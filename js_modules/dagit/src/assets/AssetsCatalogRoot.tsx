@@ -6,14 +6,17 @@ import {AssetsCatalogTable} from 'src/assets/AssetsCatalogTable';
 import {TopNav} from 'src/nav/TopNav';
 
 export const AssetsCatalogRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {
-  const currentPath = (match.params['0'] || '').split('/').filter((x: string) => x);
+  const currentPath = (match.params['0'] || '')
+    .split('/')
+    .filter((x: string) => x)
+    .map(decodeURIComponent);
   const breadcrumbs: IBreadcrumbProps[] = [
     {icon: 'panel-table', text: 'Assets', href: '/instance/ssets'},
   ];
 
   if (currentPath.length) {
     currentPath.reduce((accum: string, elem: string) => {
-      const href = `${accum}/${elem}`;
+      const href = `${accum}/${encodeURIComponent(elem)}`;
       breadcrumbs.push({text: elem, href});
       return href;
     }, '/instance/assets');

@@ -204,7 +204,7 @@ const matches = (haystack: string, needle: string) =>
     .every((word) => haystack.toLowerCase().includes(word));
 
 const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: string[]}) => {
-  useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join('.')}` : 'Assets');
+  useDocumentTitle(currentPath.length ? `Assets: ${currentPath.join(' \u203A ')}` : 'Assets');
   const pathMap: {[key: string]: Asset} = {};
   assets.forEach((asset) => {
     const [pathKey] = asset.key.path.slice(currentPath.length, currentPath.length + 1);
@@ -229,7 +229,9 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
         <tbody>
           {pathKeys.map((pathKey: string, idx: number) => {
             const linkUrl = `/instance/assets/${
-              currentPath.length ? currentPath.join('/') + `/${pathKey}` : pathKey
+              currentPath.length
+                ? currentPath.map(encodeURIComponent).join('/') + `/${encodeURIComponent(pathKey)}`
+                : encodeURIComponent(pathKey)
             }`;
             return (
               <tr key={idx}>

@@ -30,7 +30,7 @@ interface AssetKey {
 }
 
 export const AssetView: React.FunctionComponent<{assetKey: AssetKey}> = ({assetKey}) => {
-  const assetPath = assetKey.path.join('.');
+  const assetPath = assetKey.path.join(' \u203A ');
   useDocumentTitle(`Asset: ${assetPath}`);
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {

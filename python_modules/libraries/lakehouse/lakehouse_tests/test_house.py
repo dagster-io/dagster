@@ -208,4 +208,4 @@ def test_yields_materialization(basic_lakehouse_single_asset_pipeline):
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
     assert materialization.asset_key.path == ["apple", "banana"]
-    assert materialization.label == "apple.banana"
+    assert materialization.label == "apple banana"

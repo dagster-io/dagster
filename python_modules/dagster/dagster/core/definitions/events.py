@@ -4,7 +4,7 @@ import warnings
 from collections import namedtuple
 from enum import Enum
 
-from dagster import check
+from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import Persistable, whitelist_for_persistence, whitelist_for_serdes
 from dagster.utils import is_str
@@ -31,16 +31,6 @@ def validate_asset_key_string(s):
 
 def parse_asset_key_string(s):
     return list(filter(lambda x: x, re.split(ASSET_KEY_SPLIT_REGEX, s)))
-
-
-def validate_structured_asset_key(l):
-    if len(l) == 0:
-        raise DagsterInvalidAssetKey()
-
-    for s in l:
-        validate_asset_key_string(s)
-
-    return l
 
 
 @whitelist_for_persistence
@@ -86,19 +76,19 @@ class AssetKey(namedtuple("_AssetKey", "path"), Persistable):
 
     def __new__(cls, path=None):
         if is_str(path):
-            path = [validate_asset_key_string(path)]
+            path = [path]
         elif isinstance(path, list):
-            path = validate_structured_asset_key(check.list_param(path, "path", of_type=str))
+            path = check.list_param(path, "path", of_type=str)
         else:
-            path = validate_structured_asset_key(check.tuple_param(path, "path", of_type=str))
+            path = check.tuple_param(path, "path", of_type=str)
 
         return super(AssetKey, cls).__new__(cls, path=path)
 
     def __str__(self):
-        return "AssetKey({})".format(self.to_string())
+        return "AssetKey({})".format(self.path)
 
     def __repr__(self):
-        return "AssetKey({})".format(self.to_string())
+        return "AssetKey({})".format(self.path)
 
     def __hash__(self):
         return hash(tuple(self.path))
@@ -108,21 +98,33 @@ class AssetKey(namedtuple("_AssetKey", "path"), Persistable):
             return False
         return self.to_string() == other.to_string()
 
-    def to_string(self):
+    def to_string(self, legacy=False):
         if not self.path:
             return None
-        return ASSET_KEY_STRUCTURED_DELIMITER.join(self.path)
+        if legacy:
+            return ASSET_KEY_STRUCTURED_DELIMITER.join(self.path)
+        return seven.json.dumps(self.path)
 
     @staticmethod
     def from_db_string(asset_key_string):
         if not asset_key_string:
             return None
-        return AssetKey(parse_asset_key_string(asset_key_string))
+        if asset_key_string[0] == "[":
+            # is a json string
+            try:
+                path = seven.json.loads(asset_key_string)
+            except seven.JSONDecodeError:
+                path = parse_asset_key_string(asset_key_string)
+        else:
+            path = parse_asset_key_string(asset_key_string)
+        return AssetKey(path)
 
     @staticmethod
-    def get_db_prefix(path):
+    def get_db_prefix(path, legacy=False):
         check.list_param(path, "path", of_type=str)
-        return ASSET_KEY_STRUCTURED_DELIMITER.join(path)
+        if legacy:
+            return ASSET_KEY_STRUCTURED_DELIMITER.join(path)
+        return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
     def from_graphql_input(asset_key):
@@ -549,7 +551,7 @@ class AssetMaterialization(
 
     @property
     def label(self):
-        return self.asset_key.to_string()
+        return " ".join(self.asset_key.path)
 
     @staticmethod
     def file(path, description=None, asset_key=None):

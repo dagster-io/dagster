@@ -350,23 +350,30 @@ class SqlEventLogStorage(EventLogStorage):
 
         with self.connect(run_id) as conn:
             removed_asset_keys = [
-                row[0] for row in conn.execute(removed_asset_key_query).fetchall()
+                AssetKey.from_db_string(row[0])
+                for row in conn.execute(removed_asset_key_query).fetchall()
             ]
             conn.execute(delete_statement)
             if len(removed_asset_keys) > 0:
+                keys_to_check = []
+                keys_to_check.extend([key.to_string() for key in removed_asset_keys])
+                keys_to_check.extend([key.to_string(legacy=True) for key in removed_asset_keys])
                 remaining_asset_keys = [
-                    row[0]
+                    AssetKey.from_db_string(row[0])
                     for row in conn.execute(
                         db.select([SqlEventLogStorageTable.c.asset_key])
-                        .where(SqlEventLogStorageTable.c.asset_key.in_(removed_asset_keys))
+                        .where(SqlEventLogStorageTable.c.asset_key.in_(keys_to_check))
                         .group_by(SqlEventLogStorageTable.c.asset_key)
                     )
                 ]
                 to_remove = set(removed_asset_keys) - set(remaining_asset_keys)
                 if to_remove:
+                    keys_to_remove = []
+                    keys_to_remove.extend([key.to_string() for key in to_remove])
+                    keys_to_remove.extend([key.to_string(legacy=True) for key in to_remove])
                     conn.execute(
                         AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
-                            AssetKeyTable.c.asset_key.in_(to_remove)
+                            AssetKeyTable.c.asset_key.in_(keys_to_remove)
                         )
                     )
 
@@ -508,12 +515,27 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
 
     def has_asset_key(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
-        asset_key_str = asset_key.to_string()
         if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
-            query = db.select([1]).where(AssetKeyTable.c.asset_key == asset_key_str).limit(1)
+            query = (
+                db.select([1])
+                .where(
+                    db.or_(
+                        AssetKeyTable.c.asset_key == asset_key.to_string(),
+                        AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+                    )
+                )
+                .limit(1)
+            )
         else:
             query = (
-                db.select([1]).where(SqlEventLogStorageTable.c.asset_key == asset_key_str).limit(1)
+                db.select([1])
+                .where(
+                    db.or_(
+                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                        SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
+                    )
+                )
+                .limit(1)
             )
         with self.connect() as conn:
             results = conn.execute(query).fetchall()
@@ -532,15 +554,25 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         else:
             if self.has_secondary_index(SECONDARY_INDEX_ASSET_KEY):
                 query = db.select([AssetKeyTable.c.asset_key]).where(
-                    AssetKeyTable.c.asset_key.startswith(AssetKey.get_db_prefix(prefix_path))
+                    db.or_(
+                        AssetKeyTable.c.asset_key.startswith(AssetKey.get_db_prefix(prefix_path)),
+                        AssetKeyTable.c.asset_key.startswith(
+                            AssetKey.get_db_prefix(prefix_path, legacy=True)
+                        ),
+                    )
                 )
             else:
                 query = (
                     db.select([SqlEventLogStorageTable.c.asset_key])
                     .where(SqlEventLogStorageTable.c.asset_key != None)
                     .where(
-                        SqlEventLogStorageTable.c.asset_key.startswith(
-                            AssetKey.get_db_prefix(prefix_path)
+                        db.or_(
+                            SqlEventLogStorageTable.c.asset_key.startswith(
+                                AssetKey.get_db_prefix(prefix_path)
+                            ),
+                            SqlEventLogStorageTable.c.asset_key.startswith(
+                                AssetKey.get_db_prefix(prefix_path, legacy=True)
+                            ),
                         )
                     )
                     .distinct()
@@ -548,13 +580,17 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
 
         with self.connect() as conn:
             results = conn.execute(query).fetchall()
-        return [AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key]
+        return list(
+            set([AssetKey.from_db_string(asset_key) for (asset_key,) in results if asset_key])
+        )
 
     def get_asset_events(self, asset_key, cursor=None, limit=None):
         check.inst_param(asset_key, "asset_key", AssetKey)
-        asset_key_str = asset_key.to_string()
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]).where(
-            SqlEventLogStorageTable.c.asset_key == asset_key_str
+            db.or_(
+                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
+            )
         )
         query = self._add_cursor_limit_to_query(query, cursor, limit)
         with self.connect() as conn:
@@ -578,12 +614,16 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
 
     def get_asset_run_ids(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
-        asset_key_str = asset_key.to_string()
         query = (
             db.select(
                 [SqlEventLogStorageTable.c.run_id, db.func.max(SqlEventLogStorageTable.c.timestamp)]
             )
-            .where(SqlEventLogStorageTable.c.asset_key == asset_key_str)
+            .where(
+                db.or_(
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                    SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
+                )
+            )
             .group_by(SqlEventLogStorageTable.c.run_id,)
             .order_by(db.func.max(SqlEventLogStorageTable.c.timestamp).desc())
         )
@@ -597,9 +637,17 @@ class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage
         check.inst_param(asset_key, "asset_key", AssetKey)
         event_query = db.select(
             [SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]
-        ).where(SqlEventLogStorageTable.c.asset_key == asset_key.to_string())
+        ).where(
+            db.or_(
+                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(),
+                SqlEventLogStorageTable.c.asset_key == asset_key.to_string(legacy=True),
+            )
+        )
         asset_key_delete = AssetKeyTable.delete().where(  # pylint: disable=no-value-for-parameter
-            AssetKeyTable.c.asset_key == asset_key.to_string()
+            db.or_(
+                AssetKeyTable.c.asset_key == asset_key.to_string(),
+                AssetKeyTable.c.asset_key == asset_key.to_string(legacy=True),
+            )
         )
 
         with self.connect() as conn:

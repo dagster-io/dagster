@@ -3,6 +3,7 @@ from click.testing import CliRunner
 from dagster import AssetKey, AssetMaterialization, Output, execute_pipeline, pipeline, solid
 from dagster.cli.asset import asset_wipe_command
 from dagster.core.instance import DagsterInstance
+from dagster.seven import json
 
 
 @pytest.fixture(name="asset_instance")
@@ -55,7 +56,7 @@ def test_asset_wipe_errors(asset_instance):  # pylint: disable=unused-argument
         in result.output
     )
 
-    result = runner.invoke(asset_wipe_command, ["--all", "path.to.asset_key"])
+    result = runner.invoke(asset_wipe_command, ["--all", json.dumps(["path", "to", "asset_key"])])
     assert result.exit_code == 2
     assert "Error, cannot use more than one of: asset key, `--all`." in result.output
 
@@ -75,11 +76,15 @@ def test_asset_single_wipe(asset_instance):
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 4
 
-    result = runner.invoke(asset_wipe_command, ["path.to.asset_3"], input="DELETE\n")
+    result = runner.invoke(
+        asset_wipe_command, [json.dumps(["path", "to", "asset_3"])], input="DELETE\n"
+    )
     assert result.exit_code == 0
     assert "Removed asset indexes from event logs" in result.output
 
-    result = runner.invoke(asset_wipe_command, ["path.to.asset_4"], input="DELETE\n")
+    result = runner.invoke(
+        asset_wipe_command, [json.dumps(["path", "to", "asset_4"])], input="DELETE\n"
+    )
     assert result.exit_code == 0
     assert "Removed asset indexes from event logs" in result.output
 
@@ -95,7 +100,11 @@ def test_asset_multi_wipe(asset_instance):
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 4
 
-    result = runner.invoke(asset_wipe_command, ["path.to.asset_3", "asset_1"], input="DELETE\n")
+    result = runner.invoke(
+        asset_wipe_command,
+        [json.dumps(["path", "to", "asset_3"]), json.dumps(["asset_1"])],
+        input="DELETE\n",
+    )
     assert result.exit_code == 0
     assert "Removed asset indexes from event logs" in result.output
     asset_keys = asset_instance.all_asset_keys()

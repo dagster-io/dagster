@@ -1,4 +1,4 @@
-from dagster import DagsterInstance, execute_pipeline
+from dagster import AssetKey, DagsterInstance, execute_pipeline
 
 from ..repo import materialization_pipeline
 
@@ -10,4 +10,4 @@ def test_materialized_assets():
     assert instance.is_asset_aware
     asset_keys = instance.all_asset_keys()
     assert len(asset_keys) == 1
-    assert asset_keys[0].to_string() == "dashboards.analytics_dashboard"
+    assert asset_keys[0] == AssetKey(["dashboards", "analytics_dashboard"])

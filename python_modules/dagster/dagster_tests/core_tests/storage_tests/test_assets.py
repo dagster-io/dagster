@@ -1,3 +1,4 @@
+import time
 from contextlib import contextmanager
 
 import pytest
@@ -7,17 +8,15 @@ from dagster import (
     DagsterEventType,
     Output,
     execute_pipeline,
+    file_relative_path,
     pipeline,
     seven,
     solid,
 )
-from dagster.core.definitions.events import (
-    parse_asset_key_string,
-    validate_asset_key_string,
-    validate_structured_asset_key,
-)
+from dagster.core.definitions.events import parse_asset_key_string, validate_asset_key_string
 from dagster.core.errors import DagsterInvalidAssetKey
-from dagster.core.events.log import EventRecord
+from dagster.core.events import DagsterEvent, StepMaterializationData
+from dagster.core.events.log import DagsterEventRecord, EventRecord
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -29,6 +28,7 @@ from dagster.core.storage.event_log.migration import migrate_asset_key_data
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
+from dagster.utils.test import copy_directory
 
 
 def get_instance(temp_dir, event_log_storage):
@@ -106,16 +106,18 @@ def test_validate_asset_key_string():
         validate_asset_key_string("(Hello)")
 
 
+def test_structured_asset_key():
+    asset_parsed = AssetKey(parse_asset_key_string("(Hello)"))
+    assert len(asset_parsed.path) == 1
+    assert asset_parsed.path[0] == "Hello"
+
+    asset_structured = AssetKey(["(Hello)"])
+    assert len(asset_structured.path) == 1
+    assert asset_structured.path[0] == "(Hello)"
+
+
 def test_parse_asset_key_string():
     assert parse_asset_key_string("foo.bar_b-az") == ["foo", "bar_b", "az"]
-
-
-def test_validate_structured_asset_key():
-    asset_key_valid = ["f0-O", "b4_r"]
-    assert asset_key_valid == validate_structured_asset_key(asset_key_valid)
-    asset_key_invalid = ["(foo)"]
-    with pytest.raises(DagsterInvalidAssetKey):
-        validate_structured_asset_key(asset_key_invalid)
 
 
 @asset_test
@@ -127,7 +129,7 @@ def test_asset_keys(asset_aware_context):
         asset_keys = event_log_storage.get_all_asset_keys()
         assert len(asset_keys) == 3
         assert set([asset_key.to_string() for asset_key in asset_keys]) == set(
-            ["asset_1", "asset_2", "path.to.asset_3"]
+            ['["asset_1"]', '["asset_2"]', '["path", "to", "asset_3"]']
         )
         prefixed_keys = event_log_storage.get_all_asset_keys(prefix_path=["asset"])
         assert len(prefixed_keys) == 2
@@ -179,7 +181,7 @@ def test_asset_normalization(asset_aware_context):
         asset_keys = event_log_storage.get_all_asset_keys()
         assert len(asset_keys) == 1
         asset_key = asset_keys[0]
-        assert asset_key.to_string() == "path.to.asset_4"
+        assert asset_key.to_string() == '["path", "to", "asset_4"]'
         assert asset_key.path == ["path", "to", "asset_4"]
 
 
@@ -227,3 +229,49 @@ def test_asset_secondary_index(asset_aware_context):
         event_log_storage.delete_events(two_two.run_id)
         asset_keys = event_log_storage.get_all_asset_keys()
         assert len(asset_keys) == 1
+
+
+def test_asset_key_structure():
+    src_dir = file_relative_path(__file__, "compat_tests/snapshot_0_9_16_asset_key_structure")
+    with copy_directory(src_dir) as test_dir:
+        asset_storage = ConsolidatedSqliteEventLogStorage(test_dir)
+        asset_keys = asset_storage.get_all_asset_keys()
+        assert len(asset_keys) == 5
+
+        # get a structured asset key
+        asset_key = AssetKey(["dashboards", "cost_dashboard"])
+
+        # check that backcompat events are read
+        assert asset_storage.has_asset_key(asset_key)
+        events = asset_storage.get_asset_events(asset_key)
+        assert len(events) == 1
+        run_ids = asset_storage.get_asset_run_ids(asset_key)
+        assert len(run_ids) == 1
+
+        # check that backcompat events are merged with newly stored events
+        run_id = "fake_run_id"
+        asset_storage.store_event(_materialization_event_record(run_id, asset_key))
+        assert asset_storage.has_asset_key(asset_key)
+        events = asset_storage.get_asset_events(asset_key)
+        assert len(events) == 2
+        run_ids = asset_storage.get_asset_run_ids(asset_key)
+        assert len(run_ids) == 2
+
+
+def _materialization_event_record(run_id, asset_key):
+    return DagsterEventRecord(
+        None,
+        "",
+        "debug",
+        "",
+        run_id,
+        time.time() - 25,
+        step_key="my_step_key",
+        pipeline_name="my_pipeline",
+        dagster_event=DagsterEvent(
+            DagsterEventType.STEP_MATERIALIZATION.value,
+            "my_pipeline",
+            step_key="my_step_key",
+            event_specific_data=StepMaterializationData(AssetMaterialization(asset_key=asset_key)),
+        ),
+    )
