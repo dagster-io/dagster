@@ -34,7 +34,6 @@ install_dev_python_modules:
 # Need to manually install Airflow because we no longer explicitly depend on it
 # dagster-pandas must come before dasgtermill because of dependency
 # See https://github.com/dagster-io/dagster/issues/1485
-# NOTE: These installations will fail for Python 2.7 (Flyte and Dask don't work w/ py27)
 
 	pip install apache-airflow \
 				-e python_modules/dagster \
@@ -61,7 +60,6 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-aws-pyspark \
 				-e python_modules/libraries/dagster-databricks \
 				-e python_modules/libraries/dagster-shell \
-				-e python_modules/libraries/dagster-slack \
 				-e python_modules/libraries/dagster-snowflake \
 				-e python_modules/libraries/dagster-ssh \
 				-e python_modules/libraries/dagster-twilio \
@@ -92,6 +90,7 @@ install_dev_python_modules:
 	-pip install -r docs-requirements.txt $(QUIET)
 	-pip install -r python_modules/dagster/dev-requirements.txt $(QUIET)
 	-pip install -e python_modules/libraries/dagster-dbt $(QUIET)
+	-pip install -e python_modules/libraries/dagster-slack $(QUIET)
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules
