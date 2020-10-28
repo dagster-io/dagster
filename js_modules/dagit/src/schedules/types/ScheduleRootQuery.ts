@@ -40,24 +40,18 @@ export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_
   name: string;
 }
 
-export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata {
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin {
-  __typename: "PythonRepositoryOrigin";
-  executablePath: string;
-  repositoryMetadata: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata[];
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
-
-export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_GrpcRepositoryOrigin {
-  __typename: "GrpcRepositoryOrigin";
-  grpcUrl: string;
-}
-
-export type ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin = ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_PythonRepositoryOrigin | ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_repositoryOrigin_GrpcRepositoryOrigin;
 
 export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";

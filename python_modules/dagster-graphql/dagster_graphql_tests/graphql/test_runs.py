@@ -30,6 +30,14 @@ query PipelineRunsRootQuery($selector: PipelineSelector!) {
 fragment RunHistoryRunFragment on PipelineRun {
   runId
   status
+  repositoryOrigin {
+    repositoryLocationName
+    repositoryName
+    repositoryLocationMetadata {
+      key
+      value
+    }
+  }
   pipeline {
     ...on PipelineReference { name }
   }
@@ -197,6 +205,12 @@ class TestGetRuns(ExecutingGraphQLContextTestMatrix):
 
         assert tags[0]["key"] == "fruit"
         assert tags[0]["value"] == "apple"
+
+        origin = runs[0]["repositoryOrigin"]
+        assert origin
+        assert origin["repositoryLocationName"] == selector["repositoryLocationName"]
+        assert origin["repositoryName"] == selector["repositoryName"]
+        assert origin["repositoryLocationMetadata"]
 
         payload_two = sync_execute_get_run_log_data(
             context=graphql_context,

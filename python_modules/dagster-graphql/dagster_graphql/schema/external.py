@@ -3,9 +3,8 @@ from __future__ import absolute_import
 from dagster import check
 from dagster.core.host_representation import (
     ExternalRepository,
-    GrpcServerRepositoryLocationOrigin,
+    ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvRepositoryLocationHandle,
-    ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
 from dagster.utils.error import SerializableErrorInfo
@@ -40,10 +39,7 @@ class DauphinRepository(dauphin.ObjectType):
 
     def resolve_origin(self, graphene_info):
         origin = self._repository.get_external_origin()
-        if isinstance(origin.repository_location_origin, GrpcServerRepositoryLocationOrigin):
-            return graphene_info.schema.type_named("GrpcRepositoryOrigin")(origin)
-        else:
-            return graphene_info.schema.type_named("PythonRepositoryOrigin")(origin)
+        return graphene_info.schema.type_named("RepositoryOrigin")(origin)
 
     def resolve_location(self, graphene_info):
         return graphene_info.schema.type_named("RepositoryLocation")(self._repository_location)
@@ -82,32 +78,25 @@ class DauphinRepository(dauphin.ObjectType):
         )
 
 
-class DauphinPythonRepositoryOrigin(dauphin.ObjectType):
+class DauphinRepositoryOrigin(dauphin.ObjectType):
     class Meta(object):
-        name = "PythonRepositoryOrigin"
+        name = "RepositoryOrigin"
 
-    executable_path = dauphin.NonNull(dauphin.String)
-    repository_metadata = dauphin.non_null_list("RepositoryMetadata")
+    repository_location_name = dauphin.NonNull(dauphin.String)
+    repository_name = dauphin.NonNull(dauphin.String)
+    repository_location_metadata = dauphin.non_null_list("RepositoryMetadata")
 
     def __init__(self, origin):
-        check.inst_param(
-            origin.repository_location_origin,
-            "origin",
-            ManagedGrpcPythonEnvRepositoryLocationOrigin,
-        )
-        self._loadable_target_origin = origin.repository_location_origin.loadable_target_origin
+        self._origin = check.inst_param(origin, "origin", ExternalRepositoryOrigin)
 
-    def resolve_executable_path(self, _graphene_info):
-        return self._loadable_target_origin.executable_path
+    def resolve_repository_location_name(self, _graphene_info):
+        return self._origin.repository_location_origin.location_name
 
-    def resolve_repository_metadata(self, graphene_info):
-        metadata = {
-            "python_file": self._loadable_target_origin.python_file,
-            "module_name": self._loadable_target_origin.module_name,
-            "working_directory": self._loadable_target_origin.working_directory,
-            "attribute": self._loadable_target_origin.attribute,
-            "package_name": self._loadable_target_origin.package_name,
-        }
+    def resolve_repository_name(self, _graphene_info):
+        return self._origin.repository_name
+
+    def resolve_repository_location_metadata(self, graphene_info):
+        metadata = self._origin.repository_location_origin.get_display_metadata()
         return [
             graphene_info.schema.type_named("RepositoryMetadata")(key=key, value=value)
             for key, value in metadata.items()
@@ -121,30 +110,6 @@ class DauphinRepositoryMetadata(dauphin.ObjectType):
 
     key = dauphin.NonNull(dauphin.String)
     value = dauphin.NonNull(dauphin.String)
-
-
-class DauphinGrpcRepositoryOrigin(dauphin.ObjectType):
-    class Meta(object):
-        name = "GrpcRepositoryOrigin"
-
-    grpc_url = dauphin.NonNull(dauphin.String)
-
-    def __init__(self, origin):
-        self._origin = check.inst_param(
-            origin.repository_location_origin, "origin", GrpcServerRepositoryLocationOrigin
-        )
-
-    def resolve_grpc_url(self, _graphene_info):
-        return "grpc:{host}:{socket_or_port}".format(
-            host=self._origin.host,
-            socket_or_port=(self._origin.socket if self._origin.socket else self._origin.port),
-        )
-
-
-class DauphinRepositoryOrigin(dauphin.Union):
-    class Meta(object):
-        name = "RepositoryOrigin"
-        types = ("PythonRepositoryOrigin", "GrpcRepositoryOrigin")
 
 
 class DauphinRepositoryLocationOrLoadFailure(dauphin.Union):

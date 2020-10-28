@@ -10,24 +10,18 @@ import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../t
 // GraphQL fragment: ScheduleStatesFragment
 // ====================================================
 
-export interface ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata {
+export interface ScheduleStatesFragment_results_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin {
-  __typename: "PythonRepositoryOrigin";
-  executablePath: string;
-  repositoryMetadata: ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata[];
+export interface ScheduleStatesFragment_results_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: ScheduleStatesFragment_results_repositoryOrigin_repositoryLocationMetadata[];
 }
-
-export interface ScheduleStatesFragment_results_repositoryOrigin_GrpcRepositoryOrigin {
-  __typename: "GrpcRepositoryOrigin";
-  grpcUrl: string;
-}
-
-export type ScheduleStatesFragment_results_repositoryOrigin = ScheduleStatesFragment_results_repositoryOrigin_PythonRepositoryOrigin | ScheduleStatesFragment_results_repositoryOrigin_GrpcRepositoryOrigin;
 
 export interface ScheduleStatesFragment_results_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";

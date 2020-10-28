@@ -5,11 +5,7 @@ import styled from 'styled-components/macro';
 
 import {RepositoryInformation} from 'src/RepositoryInformation';
 import {ReloadRepositoryLocationButton, ReloadResult} from 'src/nav/ReloadRepositoryLocationButton';
-import {
-  DagsterRepoOption,
-  isRepositoryOptionEqual,
-  useDagitExecutablePath,
-} from 'src/workspace/WorkspaceContext';
+import {DagsterRepoOption, isRepositoryOptionEqual} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
 
 interface RepositoryPickerProps {
@@ -27,7 +23,6 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({
 }) => {
   const history = useHistory();
   const [open, setOpen] = React.useState(false);
-  const dagitExecutablePath = useDagitExecutablePath();
 
   const selectOption = (repo: DagsterRepoOption) => {
     history.push(workspacePath(repo.repository.name, repo.repositoryLocation.name));
@@ -65,12 +60,7 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({
               onClick={() => selectOption(option)}
               active={repo ? isRepositoryOptionEqual(repo, option) : false}
               icon="git-repo"
-              text={
-                <RepositoryInformation
-                  repository={option.repository}
-                  dagitExecutablePath={dagitExecutablePath}
-                />
-              }
+              text={<RepositoryInformation repository={option.repository} />}
             />
           ))}
         </Menu>

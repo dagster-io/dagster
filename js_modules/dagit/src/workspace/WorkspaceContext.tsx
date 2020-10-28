@@ -3,12 +3,11 @@ import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {RepositoryInformationFragment} from 'src/RepositoryInformation';
+import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
 import {RepositorySelector} from 'src/types/globalTypes';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
 import {RepoAddress} from 'src/workspace/types';
-import {InstanceExecutableQuery} from 'src/workspace/types/InstanceExecutableQuery';
 import {
   RootRepositoriesQuery,
   RootRepositoriesQuery_repositoryLocationsOrError_PythonError,
@@ -85,7 +84,7 @@ export const ROOT_REPOSITORIES_QUERY = gql`
     }
   }
   ${PythonErrorInfo.fragments.PythonErrorFragment}
-  ${RepositoryInformationFragment}
+  ${REPOSITORY_INFO_FRAGMENT}
 `;
 
 const getRepositoryOptionHash = (a: DagsterRepoOption) =>
@@ -273,22 +272,6 @@ export const optionToRepoAddress = (option: DagsterRepoOption) => {
     name: option.repository.name,
     location: option.repository.location.name,
   };
-};
-
-export const INSTANCE_EXECUTABLE_QUERY = gql`
-  query InstanceExecutableQuery {
-    instance {
-      executablePath
-    }
-  }
-`;
-
-export const useDagitExecutablePath = () => {
-  const {data} = useQuery<InstanceExecutableQuery>(INSTANCE_EXECUTABLE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
-
-  return data?.instance.executablePath;
 };
 
 export const scheduleSelectorWithRepository = (

@@ -15,24 +15,18 @@ export interface ScheduleDefinitionFragment_partitionSet {
   name: string;
 }
 
-export interface ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata {
+export interface ScheduleDefinitionFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin {
-  __typename: "PythonRepositoryOrigin";
-  executablePath: string;
-  repositoryMetadata: ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata[];
+export interface ScheduleDefinitionFragment_scheduleState_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: ScheduleDefinitionFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
-
-export interface ScheduleDefinitionFragment_scheduleState_repositoryOrigin_GrpcRepositoryOrigin {
-  __typename: "GrpcRepositoryOrigin";
-  grpcUrl: string;
-}
-
-export type ScheduleDefinitionFragment_scheduleState_repositoryOrigin = ScheduleDefinitionFragment_scheduleState_repositoryOrigin_PythonRepositoryOrigin | ScheduleDefinitionFragment_scheduleState_repositoryOrigin_GrpcRepositoryOrigin;
 
 export interface ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";

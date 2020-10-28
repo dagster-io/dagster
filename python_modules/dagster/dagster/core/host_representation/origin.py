@@ -1,4 +1,5 @@
 import os
+import sys
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 
@@ -63,6 +64,10 @@ class RepositoryLocationOrigin(six.with_metaclass(ABCMeta)):
     def get_cli_args(self):
         pass
 
+    @abstractmethod
+    def get_display_metadata(self):
+        pass
+
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
@@ -87,6 +92,11 @@ class InProcessRepositoryLocationOrigin(
     @property
     def is_reload_supported(self):
         return False
+
+    def get_display_metadata(self):
+        return {
+            "in_process_code_pointer": self.recon_repo.pointer.describe(),
+        }
 
 
 @whitelist_for_serdes
@@ -113,6 +123,21 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
 
     def get_cli_args(self):
         return " ".join(self.loadable_target_origin.get_cli_args())
+
+    def get_display_metadata(self):
+        metadata = {
+            "python_file": self.loadable_target_origin.python_file,
+            "module_name": self.loadable_target_origin.module_name,
+            "working_directory": self.loadable_target_origin.working_directory,
+            "attribute": self.loadable_target_origin.attribute,
+            "package_name": self.loadable_target_origin.package_name,
+            "executable_path": (
+                self.loadable_target_origin.executable_path
+                if self.loadable_target_origin.executable_path != sys.executable
+                else None
+            ),
+        }
+        return {key: value for key, value in metadata.items() if value is not None}
 
 
 @whitelist_for_serdes
@@ -142,6 +167,10 @@ class GrpcServerRepositoryLocationOrigin(
             return "--grpc-host {host} --grpc-socket {socket}".format(
                 host=self.host, socket=self.socket
             )
+
+    def get_display_metadata(self):
+        metadata = {"host": self.host, "port": self.port, "socket": self.socket}
+        return {key: value for key, value in metadata.items() if value is not None}
 
 
 @whitelist_for_serdes

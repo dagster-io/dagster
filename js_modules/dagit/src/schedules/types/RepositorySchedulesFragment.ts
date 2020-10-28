@@ -15,24 +15,18 @@ export interface RepositorySchedulesFragment_scheduleDefinitions_partitionSet {
   name: string;
 }
 
-export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata {
+export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin {
-  __typename: "PythonRepositoryOrigin";
-  executablePath: string;
-  repositoryMetadata: RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin_repositoryMetadata[];
+export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
-
-export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_GrpcRepositoryOrigin {
-  __typename: "GrpcRepositoryOrigin";
-  grpcUrl: string;
-}
-
-export type RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin = RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_PythonRepositoryOrigin | RepositorySchedulesFragment_scheduleDefinitions_scheduleState_repositoryOrigin_GrpcRepositoryOrigin;
 
 export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
@@ -118,24 +112,18 @@ export interface RepositorySchedulesFragment_scheduleDefinitions {
   scheduleState: RepositorySchedulesFragment_scheduleDefinitions_scheduleState | null;
 }
 
-export interface RepositorySchedulesFragment_origin_PythonRepositoryOrigin_repositoryMetadata {
+export interface RepositorySchedulesFragment_origin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface RepositorySchedulesFragment_origin_PythonRepositoryOrigin {
-  __typename: "PythonRepositoryOrigin";
-  executablePath: string;
-  repositoryMetadata: RepositorySchedulesFragment_origin_PythonRepositoryOrigin_repositoryMetadata[];
+export interface RepositorySchedulesFragment_origin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: RepositorySchedulesFragment_origin_repositoryLocationMetadata[];
 }
-
-export interface RepositorySchedulesFragment_origin_GrpcRepositoryOrigin {
-  __typename: "GrpcRepositoryOrigin";
-  grpcUrl: string;
-}
-
-export type RepositorySchedulesFragment_origin = RepositorySchedulesFragment_origin_PythonRepositoryOrigin | RepositorySchedulesFragment_origin_GrpcRepositoryOrigin;
 
 export interface RepositorySchedulesFragment_location {
   __typename: "RepositoryLocation";

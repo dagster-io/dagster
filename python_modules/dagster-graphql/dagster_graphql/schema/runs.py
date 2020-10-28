@@ -103,6 +103,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     runId = dauphin.NonNull(dauphin.String)
     # Nullable because of historical runs
     pipelineSnapshotId = dauphin.String()
+    repositoryOrigin = dauphin.Field("RepositoryOrigin")
     status = dauphin.NonNull("PipelineRunStatus")
     pipeline = dauphin.NonNull("PipelineReference")
     pipelineName = dauphin.NonNull(dauphin.String)
@@ -135,8 +136,17 @@ class DauphinPipelineRun(dauphin.ObjectType):
     def resolve_id(self, _):
         return self._pipeline_run.run_id
 
+    def resolve_repositoryOrigin(self, graphene_info):
+        return (
+            graphene_info.schema.type_named("RepositoryOrigin")(
+                self._pipeline_run.external_pipeline_origin.external_repository_origin
+            )
+            if self._pipeline_run.external_pipeline_origin
+            else None
+        )
+
     def resolve_pipeline(self, graphene_info):
-        return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run,)
+        return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run)
 
     def resolve_pipelineName(self, _graphene_info):
         return self._pipeline_run.pipeline_name

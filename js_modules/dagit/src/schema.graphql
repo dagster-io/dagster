@@ -249,6 +249,7 @@ type PipelineRun {
   id: ID!
   runId: String!
   pipelineSnapshotId: String
+  repositoryOrigin: RepositoryOrigin
   status: PipelineRunStatus!
   pipeline: PipelineReference!
   pipelineName: String!
@@ -265,6 +266,17 @@ type PipelineRun {
   parentRunId: String
   canTerminate: Boolean!
   assets: [Asset!]!
+}
+
+type RepositoryOrigin {
+  repositoryLocationName: String!
+  repositoryName: String!
+  repositoryLocationMetadata: [RepositoryMetadata!]!
+}
+
+type RepositoryMetadata {
+  key: String!
+  value: String!
 }
 
 enum PipelineRunStatus {
@@ -498,22 +510,6 @@ type ScheduleTickStatsSnapshot {
   ticksSucceeded: Int!
   ticksSkipped: Int!
   ticksFailed: Int!
-}
-
-union RepositoryOrigin = PythonRepositoryOrigin | GrpcRepositoryOrigin
-
-type PythonRepositoryOrigin {
-  executablePath: String!
-  repositoryMetadata: [RepositoryMetadata!]!
-}
-
-type RepositoryMetadata {
-  key: String!
-  value: String!
-}
-
-type GrpcRepositoryOrigin {
-  grpcUrl: String!
 }
 
 type PartitionSet {
