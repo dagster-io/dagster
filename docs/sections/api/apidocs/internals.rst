@@ -161,9 +161,7 @@ Run launcher
 
 .. autoclass:: DefaultRunLauncher
 
-.. autoclass:: CliApiRunLauncher
-
-.. autoclass:: GRPCApiRunLauncher
+.. autoclass:: GrpcRunLauncher
 
 .. currentmodule:: dagster_graphql.launcher
 

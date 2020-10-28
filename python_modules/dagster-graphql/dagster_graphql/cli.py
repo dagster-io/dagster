@@ -214,7 +214,7 @@ def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwarg
         print(res)  # pylint: disable=print-call
     else:
         instance = DagsterInstance.get()
-        with get_workspace_from_kwargs(kwargs, instance) as workspace:
+        with get_workspace_from_kwargs(kwargs) as workspace:
             execute_query_from_cli(
                 workspace, query, instance, variables, output,
             )

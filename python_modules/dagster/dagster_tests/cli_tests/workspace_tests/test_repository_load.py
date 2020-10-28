@@ -8,7 +8,6 @@ from dagster.cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster.core.host_representation import ExternalRepository
-from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import new_cwd
 from dagster.utils import file_relative_path
 
@@ -19,9 +18,7 @@ def load_repository_via_cli_runner(cli_args):
     @click.command(name="test_repository_command")
     @repository_target_argument
     def command(**kwargs):
-        with get_external_repository_from_kwargs(
-            kwargs, DagsterInstance.ephemeral()
-        ) as external_repo:
+        with get_external_repository_from_kwargs(kwargs) as external_repo:
             capture_result["external_repo"] = external_repo
 
     runner = CliRunner()

@@ -1,15 +1,11 @@
-import sys
-
 import click
 import pytest
 from click.testing import CliRunner
-from dagster import seven
 from dagster.cli.workspace.cli_target import (
     get_external_pipeline_from_kwargs,
     pipeline_target_argument,
 )
 from dagster.core.host_representation import ExternalPipeline
-from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
 
 
@@ -19,9 +15,7 @@ def load_pipeline_via_cli_runner(cli_args):
     @click.command(name="test_pipeline_command")
     @pipeline_target_argument
     def command(**kwargs):
-        with get_external_pipeline_from_kwargs(
-            kwargs, DagsterInstance.ephemeral()
-        ) as external_pipeline:
+        with get_external_pipeline_from_kwargs(kwargs) as external_pipeline:
             capture_result["external_pipeline"] = external_pipeline
 
     runner = CliRunner()

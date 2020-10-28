@@ -5,39 +5,8 @@ from dagster.core.host_representation import (
     RepositoryHandle,
     RepositoryLocationHandle,
 )
-from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
+from dagster.core.origin import RepositoryGrpcServerOrigin
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
-
-from .utils import execute_unary_api_cli_command
-
-
-def sync_get_external_repositories(repository_location_handle):
-    check.inst_param(
-        repository_location_handle, "repository_location_handle", RepositoryLocationHandle,
-    )
-
-    repos = []
-
-    for _, pointer in repository_location_handle.repository_code_pointer_dict.items():
-        external_repository_data = check.inst(
-            execute_unary_api_cli_command(
-                repository_location_handle.executable_path,
-                "repository",
-                RepositoryPythonOrigin(repository_location_handle.executable_path, pointer),
-            ),
-            ExternalRepositoryData,
-        )
-        repos.append(
-            ExternalRepository(
-                external_repository_data,
-                RepositoryHandle(
-                    repository_name=external_repository_data.name,
-                    repository_location_handle=repository_location_handle,
-                ),
-            )
-        )
-
-    return repos
 
 
 def sync_get_external_repositories_grpc(api_client, repository_location_handle):

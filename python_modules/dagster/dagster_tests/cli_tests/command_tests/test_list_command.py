@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import os
 import re
+import sys
 
 import pytest
 from click import UsageError
@@ -60,7 +61,9 @@ def test_list_command_grpc_socket():
 
     with GrpcServerProcess(
         loadable_target_origin=LoadableTargetOrigin(
-            python_file=file_relative_path(__file__, "test_cli_commands.py"), attribute="bar"
+            executable_path=sys.executable,
+            python_file=file_relative_path(__file__, "test_cli_commands.py"),
+            attribute="bar",
         ),
     ).create_ephemeral_client() as api_client:
         execute_list_command(
@@ -89,7 +92,9 @@ def test_list_command_deployed_grpc():
     with instance_for_test() as instance:
         with GrpcServerProcess(
             loadable_target_origin=LoadableTargetOrigin(
-                python_file=file_relative_path(__file__, "test_cli_commands.py"), attribute="bar"
+                executable_path=sys.executable,
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                attribute="bar",
             ),
             force_port=True,
         ).create_ephemeral_client() as api_client:

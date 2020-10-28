@@ -121,7 +121,7 @@ def host_dagit_ui(
         # Allow the instance components to change behavior in the context of a long running server process
         instance.optimize_for_dagit(db_statement_timeout)
 
-        with get_workspace_from_kwargs(kwargs, instance) as workspace:
+        with get_workspace_from_kwargs(kwargs) as workspace:
             if not workspace:
                 raise Exception("Unable to load workspace with cli_args: {}".format(kwargs))
 

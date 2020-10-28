@@ -37,10 +37,8 @@ from .handle import (
     InProcessRepositoryLocationHandle,
     ManagedGrpcPythonEnvRepositoryLocationHandle,
     PipelineHandle,
-    PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
     RepositoryLocationHandle,
-    UserProcessApi,
 )
 from .historical import HistoricalPipeline
 from .origin import (
@@ -48,14 +46,12 @@ from .origin import (
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    PythonEnvRepositoryLocationOrigin,
     RepositoryLocationOrigin,
 )
 from .pipeline_index import PipelineIndex
 from .repository_location import (
     GrpcServerRepositoryLocation,
     InProcessRepositoryLocation,
-    PythonEnvRepositoryLocation,
     RepositoryLocation,
 )
 from .represented import RepresentedPipeline

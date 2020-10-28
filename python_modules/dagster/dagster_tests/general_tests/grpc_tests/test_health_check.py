@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.client import DagsterGrpcClient
@@ -7,7 +9,9 @@ from dagster.utils import file_relative_path
 
 def test_health_check_success():
     loadable_target_origin = LoadableTargetOrigin(
-        attribute="bar_repo", python_file=file_relative_path(__file__, "grpc_repo.py"),
+        executable_path=sys.executable,
+        attribute="bar_repo",
+        python_file=file_relative_path(__file__, "grpc_repo.py"),
     )
     server = GrpcServerProcess(
         loadable_target_origin=loadable_target_origin,

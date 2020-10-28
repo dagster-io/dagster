@@ -364,12 +364,9 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         "python_modules/dagster-graphql",
         tox_env_suffixes=[
             "-in_memory_instance_hosted_user_process_env",
-            "-in_memory_instance_out_of_process_env",
             "-in_memory_instance_multi_location",
             "-in_memory_instance_managed_grpc_env",
             "-sqlite_instance_hosted_user_process_env",
-            "-readonly_sqlite_instance_out_of_process_env",
-            "-sqlite_with_default_run_launcher_out_of_process_env",
             "-sqlite_instance_multi_location",
             "-sqlite_instance_managed_grpc_env",
             "-sqlite_instance_deployed_grpc_env",
@@ -383,7 +380,6 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         tox_env_suffixes=[
             "-not_graphql_context_test_suite",
             "-postgres_instance_hosted_user_process_env",
-            "-postgres_instance_out_of_process_env",
             "-postgres_instance_multi_location",
             "-postgres_instance_managed_grpc_env",
             "-postgres_instance_deployed_grpc_env",

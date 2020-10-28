@@ -1,12 +1,11 @@
 from dagster.cli.workspace import Workspace
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths
-from dagster.core.host_representation.handle import UserProcessApi
 from dagster.utils import file_relative_path
 
 
 def test_multi_location_error():
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "multi_location_with_error.yaml")], UserProcessApi.CLI,
+        [file_relative_path(__file__, "multi_location_with_error.yaml")],
     ) as cli_workspace:
         assert isinstance(cli_workspace, Workspace)
         assert len(cli_workspace.repository_location_handles) == 1
@@ -28,7 +27,7 @@ def test_multi_location_error():
 # A workspace still loads even if there's an error loading all of its locations
 def test_workspace_with_only_error():
     with load_workspace_from_yaml_paths(
-        [file_relative_path(__file__, "workspace_with_only_error.yaml")], UserProcessApi.CLI,
+        [file_relative_path(__file__, "workspace_with_only_error.yaml")]
     ) as cli_workspace:
         assert isinstance(cli_workspace, Workspace)
         assert len(cli_workspace.repository_location_handles) == 0

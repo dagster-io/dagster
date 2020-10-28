@@ -5,26 +5,16 @@ import pendulum
 import six
 from dagster import check
 from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
-from dagster.api.snapshot_job import sync_get_external_job_params, sync_get_external_job_params_grpc
+from dagster.api.snapshot_job import sync_get_external_job_params_grpc
 from dagster.api.snapshot_partition import (
-    sync_get_external_partition_config,
     sync_get_external_partition_config_grpc,
-    sync_get_external_partition_names,
     sync_get_external_partition_names_grpc,
-    sync_get_external_partition_set_execution_param_data,
     sync_get_external_partition_set_execution_param_data_grpc,
-    sync_get_external_partition_tags,
     sync_get_external_partition_tags_grpc,
 )
 from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset_grpc
-from dagster.api.snapshot_repository import (
-    sync_get_external_repositories,
-    sync_get_streaming_external_repositories_grpc,
-)
-from dagster.api.snapshot_schedule import (
-    sync_get_external_schedule_execution_data,
-    sync_get_external_schedule_execution_data_grpc,
-)
+from dagster.api.snapshot_repository import sync_get_streaming_external_repositories_grpc
+from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.host_representation import (
     ExternalExecutionPlan,
@@ -33,7 +23,6 @@ from dagster.core.host_representation import (
     InProcessRepositoryLocationHandle,
     ManagedGrpcPythonEnvRepositoryLocationHandle,
     PipelineHandle,
-    PythonEnvRepositoryLocationHandle,
     RepositoryHandle,
     RepositoryLocationHandle,
 )
@@ -160,8 +149,6 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
         )
         if isinstance(repository_location_handle, InProcessRepositoryLocationHandle):
             return InProcessRepositoryLocation(repository_location_handle)
-        elif isinstance(repository_location_handle, PythonEnvRepositoryLocationHandle):
-            return PythonEnvRepositoryLocation(repository_location_handle)
         elif isinstance(
             repository_location_handle, GrpcServerRepositoryLocationHandle
         ) or isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle):
@@ -223,7 +210,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             ),
         )
 
-        from dagster.cli.api import get_external_pipeline_subset_result
+        from dagster.grpc.impl import get_external_pipeline_subset_result
 
         return get_external_pipeline_subset_result(
             self.get_reconstructable_pipeline(selector.pipeline_name), selector.solid_selection
@@ -318,6 +305,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             if scheduled_execution_time
             else None,
         )
+
         recon_repo = recon_repository_from_origin(repo_origin)
         return get_external_schedule_execution(recon_repo, args)
 
@@ -497,149 +485,4 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
 
         return sync_get_external_partition_set_execution_param_data_grpc(
             self._handle.client, repository_handle, partition_set_name, partition_names
-        )
-
-
-class PythonEnvRepositoryLocation(RepositoryLocation):
-    def __init__(self, repository_location_handle):
-        self._handle = check.inst_param(
-            repository_location_handle,
-            "repository_location_handle",
-            PythonEnvRepositoryLocationHandle,
-        )
-
-        repo_list = sync_get_external_repositories(self._handle)
-        self.external_repositories = {er.name: er for er in repo_list}
-
-    @property
-    def is_reload_supported(self):
-        return True
-
-    def get_repository(self, name):
-        check.str_param(name, "name")
-        return self.external_repositories[name]
-
-    def has_repository(self, name):
-        return name in self.external_repositories
-
-    def get_repositories(self):
-        return self.external_repositories
-
-    @property
-    def name(self):
-        return self._handle.location_name
-
-    @property
-    def location_handle(self):
-        return self._handle
-
-    def get_external_execution_plan(
-        self, external_pipeline, run_config, mode, step_keys_to_execute
-    ):
-        from dagster.api.snapshot_execution_plan import sync_get_external_execution_plan
-
-        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.dict_param(run_config, "run_config")
-        check.str_param(mode, "mode")
-        check.opt_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
-
-        execution_plan_snapshot_or_error = sync_get_external_execution_plan(
-            pipeline_origin=external_pipeline.get_origin(),
-            solid_selection=external_pipeline.solid_selection,
-            run_config=run_config,
-            mode=mode,
-            step_keys_to_execute=step_keys_to_execute,
-            pipeline_snapshot_id=external_pipeline.identifying_pipeline_snapshot_id,
-        )
-
-        if isinstance(execution_plan_snapshot_or_error, ExecutionPlanSnapshotErrorData):
-            return execution_plan_snapshot_or_error
-
-        return ExternalExecutionPlan(
-            execution_plan_snapshot=execution_plan_snapshot_or_error,
-            represented_pipeline=external_pipeline,
-        )
-
-    def get_subset_external_pipeline_result(self, selector):
-        from dagster.api.snapshot_pipeline import sync_get_external_pipeline_subset
-
-        check.inst_param(selector, "selector", PipelineSelector)
-        check.invariant(
-            selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
-                self=self, selector=selector
-            ),
-        )
-
-        external_repository = self.external_repositories[selector.repository_name]
-        pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
-        return sync_get_external_pipeline_subset(
-            pipeline_handle.get_origin(), selector.solid_selection
-        )
-
-    def get_external_partition_config(self, repository_handle, partition_set_name, partition_name):
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-        check.str_param(partition_name, "partition_name")
-
-        return sync_get_external_partition_config(
-            repository_handle, partition_set_name, partition_name
-        )
-
-    def get_external_partition_tags(self, repository_handle, partition_set_name, partition_name):
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-        check.str_param(partition_name, "partition_name")
-
-        return sync_get_external_partition_tags(
-            repository_handle, partition_set_name, partition_name
-        )
-
-    def get_external_partition_names(self, repository_handle, partition_set_name):
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-
-        return sync_get_external_partition_names(repository_handle, partition_set_name)
-
-    def get_external_schedule_execution_data(
-        self,
-        instance,
-        repository_handle,
-        schedule_name,
-        schedule_execution_data_mode,
-        scheduled_execution_time,
-    ):
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(schedule_name, "schedule_name")
-        check.inst_param(
-            schedule_execution_data_mode, "schedule_execution_data_mode", ScheduleExecutionDataMode
-        )
-        check.opt_inst_param(
-            scheduled_execution_time, "scheduled_execution_time", datetime.datetime
-        )
-
-        return sync_get_external_schedule_execution_data(
-            instance,
-            repository_handle,
-            schedule_name,
-            schedule_execution_data_mode,
-            scheduled_execution_time,
-        )
-
-    def get_external_job_params(self, instance, repository_handle, name):
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(name, "name")
-        return sync_get_external_job_params(instance, repository_handle, name)
-
-    def get_external_partition_set_execution_param_data(
-        self, repository_handle, partition_set_name, partition_names
-    ):
-        check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        check.str_param(partition_set_name, "partition_set_name")
-        check.list_param(partition_names, "partition_names", of_type=str)
-
-        return sync_get_external_partition_set_execution_param_data(
-            repository_handle, partition_set_name, partition_names
         )

@@ -32,7 +32,7 @@ def test_sync_run_launcher_run():
             },
         )
 
-        external_repo = get_main_external_repo(instance)
+        external_repo = get_main_external_repo()
         external_pipeline = external_repo.get_full_external_pipeline("noop_pipeline")
 
         run = create_run_for_test(instance=instance, pipeline_name=external_pipeline.name)

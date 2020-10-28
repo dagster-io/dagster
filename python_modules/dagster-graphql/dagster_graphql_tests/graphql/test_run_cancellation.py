@@ -2,8 +2,8 @@ import os
 import time
 
 from dagster import execute_pipeline
-from dagster.core.host_representation import IN_PROCESS_NAME
-from dagster.utils import safe_tempfile_path
+from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.utils import file_relative_path, safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
@@ -34,7 +34,7 @@ mutation($runId: String!) {
 
 class TestRunVariantTermination(
     make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_with_default_run_launcher_in_process_env()]
+        context_variants=[GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env()]
     )
 ):
     def test_basic_termination(self, graphql_context):
@@ -135,8 +135,9 @@ class TestRunVariantTermination(
 
     def test_run_finished(self, graphql_context):
         instance = graphql_context.instance
-        pipeline = graphql_context.get_repository_location(
-            IN_PROCESS_NAME
+
+        pipeline = ReconstructableRepository.for_file(
+            file_relative_path(__file__, "setup.py"), "test_repo",
         ).get_reconstructable_pipeline("noop_pipeline")
 
         pipeline_result = execute_pipeline(pipeline, instance=instance)

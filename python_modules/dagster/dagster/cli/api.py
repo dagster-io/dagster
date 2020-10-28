@@ -18,7 +18,6 @@ from dagster.cli.workspace.cli_target import (
     python_origin_target_argument,
     repository_target_argument,
 )
-from dagster.core.definitions.reconstructable import repository_def_from_target_def
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import (
@@ -27,24 +26,10 @@ from dagster.core.execution.api import (
     execute_run_iterator,
 )
 from dagster.core.execution.retries import Retries
-from dagster.core.host_representation import external_repository_data_from_def
 from dagster.core.host_representation.external import ExternalPipeline
-from dagster.core.host_representation.external_data import (
-    ExternalExecutionParamsData,
-    ExternalExecutionParamsErrorData,
-    ExternalPartitionConfigData,
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionNamesData,
-    ExternalPartitionSetExecutionParamData,
-    ExternalPartitionTagsData,
-    ExternalPipelineSubsetResult,
-    ExternalRepositoryData,
-    ExternalScheduleExecutionData,
-    ExternalScheduleExecutionErrorData,
-)
+from dagster.core.host_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
-from dagster.core.origin import RepositoryPythonOrigin
 from dagster.core.scheduler import (
     ScheduleTickData,
     ScheduleTickStatus,
@@ -52,272 +37,26 @@ from dagster.core.scheduler import (
     ScheduledExecutionSkipped,
     ScheduledExecutionSuccess,
 )
-from dagster.core.snap.execution_plan_snapshot import (
-    ExecutionPlanSnapshot,
-    ExecutionPlanSnapshotErrorData,
-)
 from dagster.core.storage.tags import check_tags
 from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
-from dagster.grpc.impl import (
-    get_external_execution_plan_snapshot,
-    get_external_job_params,
-    get_external_pipeline_subset_result,
-    get_external_schedule_execution,
-    get_partition_config,
-    get_partition_names,
-    get_partition_set_execution_param_data,
-    get_partition_tags,
-)
-from dagster.grpc.types import (
-    ExecuteRunArgs,
-    ExecuteStepArgs,
-    ExecutionPlanSnapshotArgs,
-    ExternalJobArgs,
-    ExternalScheduleExecutionArgs,
-    ListRepositoriesInput,
-    ListRepositoriesResponse,
-    LoadableRepositorySymbol,
-    PartitionArgs,
-    PartitionNamesArgs,
-    PartitionSetExecutionParamArgs,
-    PipelineSubsetSnapshotArgs,
-    ScheduleExecutionDataMode,
-)
-from dagster.grpc.utils import get_loadable_targets
+from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs, ScheduleExecutionDataMode
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.serdes.ipc import ipc_write_stream, ipc_write_unary_response, read_unary_input
-from dagster.utils import delay_interrupts, setup_windows_interrupt_support
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import (
-    recon_pipeline_from_origin,
-    recon_repository_from_origin,
-)
+from dagster.serdes.ipc import ipc_write_stream
+from dagster.utils import setup_windows_interrupt_support
+from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.merger import merge_dicts
-
-# Helpers
-
-
-def unary_api_cli_command(name, help_str, input_cls, output_cls):
-    """
-    Use this to decorate synchronous api cli commands that take
-    one object and return one object.
-    """
-    check.str_param(name, "name")
-    check.str_param(help_str, "help_str")
-    check.type_param(input_cls, "input_cls")
-    check.inst_param(output_cls, "output_cls", (tuple, check.type_types))
-
-    def wrap(fn):
-        @click.command(name=name, help=help_str)
-        @click.argument("input_file", type=click.Path())
-        @click.argument("output_file", type=click.Path())
-        def command(input_file, output_file):
-            args = check.inst(read_unary_input(input_file), input_cls)
-            output = check.inst(fn(args), output_cls)
-            ipc_write_unary_response(output_file, output)
-
-        return command
-
-    return wrap
-
-
-@unary_api_cli_command(
-    name="list_repositories",
-    help_str=(
-        "[INTERNAL] Return the snapshot for the given repository. This is an internal utility. "
-        "Users should generally not invoke this command interactively."
-    ),
-    input_cls=ListRepositoriesInput,
-    output_cls=(ListRepositoriesResponse, SerializableErrorInfo),
-)
-def list_repositories_command(args):
-    check.inst_param(args, "args", ListRepositoriesInput)
-    python_file, module_name, working_directory, attribute = (
-        args.python_file,
-        args.module_name,
-        args.working_directory,
-        args.attribute,
-    )
-    try:
-        loadable_targets = get_loadable_targets(
-            python_file, module_name, None, working_directory, attribute
-        )
-        return ListRepositoriesResponse(
-            [
-                LoadableRepositorySymbol(
-                    attribute=lt.attribute,
-                    repository_name=repository_def_from_target_def(lt.target_definition).name,
-                )
-                for lt in loadable_targets
-            ]
-        )
-    except Exception:  # pylint: disable=broad-except
-        return serializable_error_info_from_exc_info(sys.exc_info())
-
-
-@unary_api_cli_command(
-    name="repository",
-    help_str=(
-        "[INTERNAL] Return all repository symbols in a given python_file or module name. "
-        "Used to bootstrap workspace creation process. This is an internal utility. Users should "
-        "generally not invoke this command interactively."
-    ),
-    input_cls=RepositoryPythonOrigin,
-    output_cls=ExternalRepositoryData,
-)
-def repository_snapshot_command(repository_python_origin):
-
-    recon_repo = recon_repository_from_origin(repository_python_origin)
-    return external_repository_data_from_def(recon_repo.get_definition())
-
-
-@unary_api_cli_command(
-    name="pipeline_subset",
-    help_str=(
-        "[INTERNAL] Return ExternalPipelineSubsetResult for the given pipeline. This is an "
-        "internal utility. Users should generally not invoke this command interactively."
-    ),
-    input_cls=PipelineSubsetSnapshotArgs,
-    output_cls=ExternalPipelineSubsetResult,
-)
-def pipeline_subset_snapshot_command(args):
-    return get_external_pipeline_subset_result(
-        recon_pipeline_from_origin(args.pipeline_origin), args.solid_selection
-    )
-
-
-@unary_api_cli_command(
-    name="execution_plan",
-    help_str=(
-        "[INTERNAL] Create an execution plan and return its snapshot. This is an internal utility. "
-        "Users should generally not invoke this command interactively."
-    ),
-    input_cls=ExecutionPlanSnapshotArgs,
-    output_cls=(ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),
-)
-def execution_plan_snapshot_command(args):
-    check.inst_param(args, "args", ExecutionPlanSnapshotArgs)
-
-    recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
-    return get_external_execution_plan_snapshot(recon_pipeline, args)
-
-
-@unary_api_cli_command(
-    name="partition_config",
-    help_str=(
-        "[INTERNAL] Return the config for a partition. This is an internal utility. Users should "
-        "generally not invoke this command interactively."
-    ),
-    input_cls=PartitionArgs,
-    output_cls=(ExternalPartitionConfigData, ExternalPartitionExecutionErrorData),
-)
-def partition_config_command(args):
-    check.inst_param(args, "args", PartitionArgs)
-    return get_partition_config(args)
-
-
-@unary_api_cli_command(
-    name="partition_tags",
-    help_str=(
-        "[INTERNAL] Return the tags for a partition. This is an internal utility. Users should "
-        "generally not invoke this command interactively."
-    ),
-    input_cls=PartitionArgs,
-    output_cls=(ExternalPartitionTagsData, ExternalPartitionExecutionErrorData),
-)
-def partition_tags_command(args):
-    return get_partition_tags(args)
-
-
-@unary_api_cli_command(
-    name="partition_names",
-    help_str=(
-        "[INTERNAL] Return the partition names for a partition set . This is an internal utility. "
-        "Users should generally not invoke this command interactively."
-    ),
-    input_cls=PartitionNamesArgs,
-    output_cls=(ExternalPartitionNamesData, ExternalPartitionExecutionErrorData),
-)
-def partition_names_command(args):
-    return get_partition_names(args)
-
-
-@unary_api_cli_command(
-    name="partition_set_execution_param_data",
-    help_str=(
-        "[INTERNAL] Return the args for launching a partition backfill. This is an internal "
-        "utility. Users should generally not invoke this command interactively."
-    ),
-    input_cls=PartitionSetExecutionParamArgs,
-    output_cls=(ExternalPartitionSetExecutionParamData, ExternalPartitionExecutionErrorData),
-)
-def partition_set_execution_param_command(args):
-    return get_partition_set_execution_param_data(args)
-
-
-@unary_api_cli_command(
-    name="schedule_config",
-    help_str=(
-        "[INTERNAL] Return the config for a schedule. This is an internal utility. Users should "
-        "generally not invoke this command interactively."
-    ),
-    input_cls=ExternalScheduleExecutionArgs,
-    output_cls=(ExternalScheduleExecutionData, ExternalScheduleExecutionErrorData),
-)
-def schedule_execution_data_command(args):
-    recon_repo = recon_repository_from_origin(args.repository_origin)
-    return get_external_schedule_execution(recon_repo, args)
-
-
-@unary_api_cli_command(
-    name="job_params",
-    help_str=(
-        "[INTERNAL] Return the execution params for a triggered execution. This is an internal "
-        "utility. Users should generally not invoke this command interactively."
-    ),
-    input_cls=ExternalJobArgs,
-    output_cls=(ExternalExecutionParamsData, ExternalExecutionParamsErrorData),
-)
-def job_params_command(args):
-    recon_repo = recon_repository_from_origin(args.repository_origin)
-    return get_external_job_params(recon_repo, args)
 
 
 @whitelist_for_serdes
 class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
     pass
-
-
-@click.command(
-    name="execute_run",
-    help=(
-        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
-        "interactively."
-    ),
-)
-@click.argument("input_file", type=click.Path())
-@click.argument("output_file", type=click.Path())
-def execute_run_command(input_file, output_file):
-    # Ensure that interrupts from the run launcher only happen inside user code or specially
-    # designated checkpoints
-    with delay_interrupts():
-        args = check.inst(read_unary_input(input_file), ExecuteRunArgs)
-        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
-        with DagsterInstance.from_ref(args.instance_ref) as instance:
-            with ipc_write_stream(output_file) as ipc_stream:
-
-                def send_to_stream(event):
-                    ipc_stream.send(event)
-
-                return _execute_run_command_body(
-                    recon_pipeline, args.pipeline_run_id, instance, send_to_stream
-                )
 
 
 @click.command(
@@ -675,7 +414,7 @@ def launch_scheduled_execution(output_file, schedule_name, **kwargs):
                     status=ScheduleTickStatus.STARTED,
                 ),
             ) as tick:
-                with get_repository_location_from_kwargs(kwargs, instance) as repo_location:
+                with get_repository_location_from_kwargs(kwargs) as repo_location:
                     repo_dict = repo_location.get_repositories()
                     check.invariant(
                         repo_dict and len(repo_dict) == 1,
@@ -810,19 +549,8 @@ def create_api_cli_group():
         ),
     )
 
-    group.add_command(execute_run_command)
     group.add_command(execute_run_with_structured_logs_command)
     group.add_command(execute_step_with_structured_logs_command)
-    group.add_command(repository_snapshot_command)
-    group.add_command(pipeline_subset_snapshot_command)
-    group.add_command(execution_plan_snapshot_command)
-    group.add_command(list_repositories_command)
-    group.add_command(partition_config_command)
-    group.add_command(partition_tags_command)
-    group.add_command(partition_names_command)
-    group.add_command(partition_set_execution_param_command)
-    group.add_command(schedule_execution_data_command)
-    group.add_command(job_params_command)
     group.add_command(launch_scheduled_execution)
     group.add_command(grpc_command)
     group.add_command(grpc_health_check_command)

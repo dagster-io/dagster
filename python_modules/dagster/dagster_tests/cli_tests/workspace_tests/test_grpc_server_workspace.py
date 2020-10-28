@@ -4,7 +4,6 @@ from dagster import seven
 from dagster.check import CheckError
 from dagster.cli.workspace import Workspace
 from dagster.cli.workspace.load import load_workspace_from_config
-from dagster.core.host_representation.handle import UserProcessApi
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path
 
@@ -32,7 +31,6 @@ load_from:
                 yaml.safe_load(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
                 file_relative_path(__file__, "not_a_real.yaml"),
-                python_user_process_api=UserProcessApi.CLI,  # doesn't affect grpc_server locations
             )
             assert isinstance(workspace, Workspace)
             assert len(workspace.repository_location_handles) == 2
@@ -78,7 +76,6 @@ load_from:
                 yaml.safe_load(workspace_yaml),
                 # fake out as if it were loaded by a yaml file in this directory
                 file_relative_path(__file__, "not_a_real.yaml"),
-                UserProcessApi.CLI,
             )
             assert isinstance(workspace, Workspace)
             assert len(workspace.repository_location_handles) == 2
@@ -117,5 +114,4 @@ load_from:
             yaml.safe_load(workspace_yaml),
             # fake out as if it were loaded by a yaml file in this directory
             file_relative_path(__file__, "not_a_real.yaml"),
-            UserProcessApi.CLI,
         )

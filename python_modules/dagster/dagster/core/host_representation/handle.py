@@ -2,44 +2,21 @@ import sys
 import threading
 from abc import ABCMeta
 from collections import namedtuple
-from enum import Enum
 
 import six
 from dagster import check
-from dagster.api.list_repositories import sync_list_repositories, sync_list_repositories_grpc
-from dagster.core.code_pointer import CodePointer
+from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.core.definitions.reconstructable import repository_def_from_pointer
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
-    PythonEnvRepositoryLocationOrigin,
     RepositoryLocationOrigin,
 )
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryOrigin, RepositoryPythonOrigin
-
-
-# Which API the host process should use to communicate with the process
-# containing user code
-class UserProcessApi(Enum):
-    # Execute via the command-line API
-    CLI = "CLI"
-    # Connect via gRPC
-    GRPC = "GRPC"
-
-
-def python_user_process_api_from_instance(instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-
-    opt_in_settings = instance.get_settings("opt_in")
-    return (
-        UserProcessApi.CLI
-        if (opt_in_settings and not opt_in_settings["local_servers"])
-        else UserProcessApi.GRPC
-    )
 
 
 class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
@@ -55,9 +32,7 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
     @staticmethod
     def create_from_repository_location_origin(repo_location_origin):
         check.inst_param(repo_location_origin, "repo_location_origin", RepositoryLocationOrigin)
-        if isinstance(repo_location_origin, PythonEnvRepositoryLocationOrigin):
-            return PythonEnvRepositoryLocationHandle(repo_location_origin)
-        elif isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin):
+        if isinstance(repo_location_origin, ManagedGrpcPythonEnvRepositoryLocationOrigin):
             return ManagedGrpcPythonEnvRepositoryLocationHandle(repo_location_origin)
         elif isinstance(repo_location_origin, GrpcServerRepositoryLocationOrigin):
             return GrpcServerRepositoryLocationHandle(repo_location_origin)
@@ -81,12 +56,9 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
             )
         elif isinstance(repository_origin, RepositoryPythonOrigin):
             loadable_target_origin = repository_origin.loadable_target_origin
-            user_process_api = python_user_process_api_from_instance(instance)
 
-            repo_location_origin = (
-                ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin)
-                if user_process_api == UserProcessApi.GRPC
-                else PythonEnvRepositoryLocationOrigin(loadable_target_origin)
+            repo_location_origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(
+                loadable_target_origin
             )
 
             return RepositoryLocationHandle.create_from_repository_location_origin(
@@ -162,58 +134,6 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
         )
 
 
-class PythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
-    def __init__(self, origin):
-        self.origin = check.inst_param(origin, "origin", PythonEnvRepositoryLocationOrigin)
-        loadable_target_origin = self.origin.loadable_target_origin
-
-        response = sync_list_repositories(
-            executable_path=loadable_target_origin.executable_path,
-            python_file=loadable_target_origin.python_file,
-            module_name=loadable_target_origin.module_name
-            if loadable_target_origin.module_name
-            else loadable_target_origin.package_name,
-            working_directory=loadable_target_origin.working_directory,
-            attribute=loadable_target_origin.attribute,
-        )
-
-        if loadable_target_origin.python_file:
-            self.repository_code_pointer_dict = {
-                lrs.repository_name: CodePointer.from_python_file(
-                    loadable_target_origin.python_file,
-                    lrs.attribute,
-                    loadable_target_origin.working_directory,
-                )
-                for lrs in response.repository_symbols
-            }
-        elif loadable_target_origin.package_name:
-            self.repository_code_pointer_dict = {
-                lrs.repository_name: CodePointer.from_python_package(
-                    loadable_target_origin.package_name, lrs.attribute
-                )
-                for lrs in response.repository_symbols
-            }
-        else:
-            self.repository_code_pointer_dict = {
-                lrs.repository_name: CodePointer.from_module(
-                    loadable_target_origin.module_name, lrs.attribute
-                )
-                for lrs in response.repository_symbols
-            }
-
-    @property
-    def loadable_target_origin(self):
-        return self.origin.loadable_target_origin
-
-    @property
-    def location_name(self):
-        return self.origin.location_name
-
-    @property
-    def executable_path(self):
-        return self.loadable_target_origin.executable_path
-
-
 class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
     """
     A Python environment for which Dagster is managing a gRPC server.
@@ -245,9 +165,11 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
         self.heartbeat_thread.start()
         list_repositories_response = sync_list_repositories_grpc(self.client)
 
-        self.executable_path = list_repositories_response.executable_path
-
         self.repository_code_pointer_dict = list_repositories_response.repository_code_pointer_dict
+
+    @property
+    def executable_path(self):
+        return self.loadable_target_origin.executable_path
 
     @property
     def location_name(self):
@@ -313,8 +235,6 @@ class RepositoryHandle(
                 executable_path=sys.executable,
             )
         elif isinstance(
-            self.repository_location_handle, PythonEnvRepositoryLocationHandle
-        ) or isinstance(
             self.repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle
         ):
             return RepositoryPythonOrigin(

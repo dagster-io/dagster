@@ -93,7 +93,7 @@ def pipeline_list_command(**kwargs):
 
 def execute_list_command(cli_args, print_fn, instance):
     check.inst_param(instance, "instance", DagsterInstance)
-    with get_external_repository_from_kwargs(cli_args, instance) as external_repository:
+    with get_external_repository_from_kwargs(cli_args) as external_repository:
         title = "Repository {name}".format(name=external_repository.name)
         print_fn(title)
         print_fn("*" * len(title))
@@ -166,12 +166,12 @@ def get_partitioned_pipeline_instructions(command_name):
 @click.option("--verbose", is_flag=True)
 @pipeline_target_argument
 def pipeline_print_command(verbose, **cli_args):
-    with DagsterInstance.get() as instance:
-        return execute_print_command(verbose, cli_args, click.echo, instance)
+    with DagsterInstance.get():
+        return execute_print_command(verbose, cli_args, click.echo)
 
 
-def execute_print_command(verbose, cli_args, print_fn, instance):
-    with get_external_pipeline_from_kwargs(cli_args, instance) as external_pipeline:
+def execute_print_command(verbose, cli_args, print_fn):
+    with get_external_pipeline_from_kwargs(cli_args) as external_pipeline:
         pipeline_snapshot = external_pipeline.pipeline_snapshot
 
         if verbose:
@@ -597,7 +597,7 @@ def execute_launch_command(instance, kwargs):
     check.inst_param(instance, "instance", DagsterInstance)
     config = get_config_from_args(kwargs)
 
-    with get_repository_location_from_kwargs(kwargs, instance) as repo_location:
+    with get_repository_location_from_kwargs(kwargs) as repo_location:
         external_repo = get_external_repository_from_repo_location(
             repo_location, kwargs.get("repository")
         )
@@ -823,7 +823,7 @@ def pipeline_backfill_command(**kwargs):
 
 
 def execute_backfill_command(cli_args, print_fn, instance):
-    with get_repository_location_from_kwargs(cli_args, instance) as repo_location:
+    with get_repository_location_from_kwargs(cli_args) as repo_location:
         _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_location)
 
 

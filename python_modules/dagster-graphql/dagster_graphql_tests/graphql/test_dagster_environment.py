@@ -1,7 +1,7 @@
 import sys
 
 from dagster.core.host_representation import (
-    PythonEnvRepositoryLocationOrigin,
+    ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
     RepositoryLocationHandle,
 )
@@ -11,7 +11,7 @@ from dagster.utils import file_relative_path
 
 def test_dagster_out_of_process_location():
     with RepositoryLocationHandle.create_from_repository_location_origin(
-        PythonEnvRepositoryLocationOrigin(
+        ManagedGrpcPythonEnvRepositoryLocationOrigin(
             location_name="test_location",
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,

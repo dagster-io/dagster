@@ -35,7 +35,7 @@ SMOKE_TEST_QUERY = """
 )
 def test_smoke_app(instance):
     with get_workspace_from_kwargs(
-        dict(module_name="dagit_tests.toy.bar_repo", definition="bar"), instance
+        dict(module_name="dagit_tests.toy.bar_repo", definition="bar")
     ) as workspace:
 
         flask_app = app.create_app_from_workspace(workspace, instance)

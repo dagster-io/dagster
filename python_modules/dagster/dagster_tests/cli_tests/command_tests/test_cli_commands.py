@@ -3,6 +3,7 @@ from __future__ import print_function
 import json
 import os
 import string
+import sys
 from contextlib import contextmanager
 
 import mock
@@ -186,7 +187,9 @@ def args_with_managed_grpc_instance(*args):
 def grpc_server_bar_kwargs(pipeline_name=None):
     server_process = GrpcServerProcess(
         loadable_target_origin=LoadableTargetOrigin(
-            python_file=file_relative_path(__file__, "test_cli_commands.py"), attribute="bar"
+            executable_path=sys.executable,
+            python_file=file_relative_path(__file__, "test_cli_commands.py"),
+            attribute="bar",
         ),
     )
     with server_process.create_ephemeral_client() as client:
@@ -219,7 +222,9 @@ def python_bar_cli_args(pipeline_name=None):
 def grpc_server_bar_cli_args(pipeline_name=None):
     server_process = GrpcServerProcess(
         loadable_target_origin=LoadableTargetOrigin(
-            python_file=file_relative_path(__file__, "test_cli_commands.py"), attribute="bar"
+            executable_path=sys.executable,
+            python_file=file_relative_path(__file__, "test_cli_commands.py"),
+            attribute="bar",
         ),
     )
     with server_process.create_ephemeral_client() as client:

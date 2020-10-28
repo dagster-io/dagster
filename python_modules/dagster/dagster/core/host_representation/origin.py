@@ -83,23 +83,6 @@ class InProcessRepositoryLocationOrigin(
 
 
 @whitelist_for_serdes
-class PythonEnvRepositoryLocationOrigin(
-    namedtuple("_PythonEnvRepositoryLocationOrigin", "loadable_target_origin location_name"),
-    RepositoryLocationOrigin,
-):
-    def __new__(cls, loadable_target_origin, location_name=None):
-        return super(PythonEnvRepositoryLocationOrigin, cls).__new__(
-            cls,
-            check.inst_param(
-                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
-            ),
-            check.str_param(location_name, "location_name")
-            if location_name
-            else _assign_loadable_target_origin_name(loadable_target_origin),
-        )
-
-
-@whitelist_for_serdes
 class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     namedtuple(
         "_ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin location_name"

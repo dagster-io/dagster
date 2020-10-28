@@ -15,8 +15,6 @@ from dagster.core.host_representation import (
     RepositoryLocation,
     RepositoryLocationHandle,
 )
-from dagster.core.host_representation.handle import python_user_process_api_from_instance
-from dagster.core.instance import DagsterInstance
 from dagster.core.origin import (
     PipelinePythonOrigin,
     RepositoryGrpcServerOrigin,
@@ -195,36 +193,21 @@ def created_workspace_load_target(kwargs):
         _cli_load_invariant(False)
 
 
-def location_origins_from_load_target(load_target, instance):
+def location_origins_from_load_target(load_target):
     if isinstance(load_target, WorkspaceFileTarget):
-        return location_origins_from_yaml_paths(
-            load_target.paths, python_user_process_api_from_instance(instance),
-        )
+        return location_origins_from_yaml_paths(load_target.paths,)
     elif isinstance(load_target, PythonFileTarget):
         return [
             location_origin_from_python_file(
                 python_file=load_target.python_file,
                 attribute=load_target.attribute,
                 working_directory=load_target.working_directory,
-                user_process_api=python_user_process_api_from_instance(instance),
             )
         ]
     elif isinstance(load_target, ModuleTarget):
-        return [
-            location_origin_from_module_name(
-                load_target.module_name,
-                load_target.attribute,
-                user_process_api=python_user_process_api_from_instance(instance),
-            )
-        ]
+        return [location_origin_from_module_name(load_target.module_name, load_target.attribute,)]
     elif isinstance(load_target, PackageTarget):
-        return [
-            location_origin_from_package_name(
-                load_target.package_name,
-                load_target.attribute,
-                user_process_api=python_user_process_api_from_instance(instance),
-            )
-        ]
+        return [location_origin_from_package_name(load_target.package_name, load_target.attribute,)]
     elif isinstance(load_target, GrpcServerTarget):
         return [
             GrpcServerRepositoryLocationOrigin(
@@ -237,16 +220,14 @@ def location_origins_from_load_target(load_target, instance):
         check.not_implemented("Unsupported: {}".format(load_target))
 
 
-def workspace_from_load_target(load_target, instance):
+def workspace_from_load_target(load_target):
     check.inst_param(load_target, "load_target", WorkspaceLoadTarget)
-    check.inst_param(instance, "instance", DagsterInstance)
 
-    return Workspace(location_origins_from_load_target(load_target, instance))
+    return Workspace(location_origins_from_load_target(load_target))
 
 
-def get_workspace_from_kwargs(kwargs, instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-    return workspace_from_load_target(created_workspace_load_target(kwargs), instance)
+def get_workspace_from_kwargs(kwargs):
+    return workspace_from_load_target(created_workspace_load_target(kwargs))
 
 
 def python_target_click_options():
@@ -587,16 +568,14 @@ def get_repository_python_origin_from_kwargs(kwargs):
 
 
 @contextmanager
-def get_repository_location_from_kwargs(kwargs, instance):
-    origin = get_repository_location_origin_from_kwargs(kwargs, instance)
+def get_repository_location_from_kwargs(kwargs):
+    origin = get_repository_location_origin_from_kwargs(kwargs)
     with RepositoryLocationHandle.create_from_repository_location_origin(origin) as handle:
         yield RepositoryLocation.from_handle(handle)
 
 
-def get_repository_location_origin_from_kwargs(kwargs, instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-
-    all_origins = location_origins_from_load_target(created_workspace_load_target(kwargs), instance)
+def get_repository_location_origin_from_kwargs(kwargs):
+    all_origins = location_origins_from_load_target(created_workspace_load_target(kwargs))
 
     origins_by_name = {origin.location_name: origin for origin in all_origins}
 
@@ -663,9 +642,8 @@ def get_external_repository_from_repo_location(repo_location, provided_repo_name
 
 
 @contextmanager
-def get_external_repository_from_kwargs(kwargs, instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-    with get_repository_location_from_kwargs(kwargs, instance) as repo_location:
+def get_external_repository_from_kwargs(kwargs):
+    with get_repository_location_from_kwargs(kwargs) as repo_location:
         provided_repo_name = kwargs.get("repository")
         yield get_external_repository_from_repo_location(repo_location, provided_repo_name)
 
@@ -707,9 +685,8 @@ def get_external_pipeline_from_external_repo(external_repo, provided_pipeline_na
 
 
 @contextmanager
-def get_external_pipeline_from_kwargs(kwargs, instance):
-    check.inst_param(instance, "instance", DagsterInstance)
-    with get_external_repository_from_kwargs(kwargs, instance) as external_repo:
+def get_external_pipeline_from_kwargs(kwargs):
+    with get_external_repository_from_kwargs(kwargs) as external_repo:
         provided_pipeline_name = kwargs.get("pipeline")
         yield get_external_pipeline_from_external_repo(external_repo, provided_pipeline_name)
 

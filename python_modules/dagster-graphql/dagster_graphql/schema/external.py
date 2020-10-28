@@ -9,7 +9,7 @@ from dagster.core.code_pointer import (
 )
 from dagster.core.host_representation import (
     ExternalRepository,
-    PythonEnvRepositoryLocationHandle,
+    ManagedGrpcPythonEnvRepositoryLocationHandle,
     RepositoryLocation,
 )
 from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
@@ -124,7 +124,7 @@ class DauphinRepositoryLocation(dauphin.ObjectType):
         self._location = check.inst_param(location, "location", RepositoryLocation)
         environment_path = (
             location.location_handle.executable_path
-            if isinstance(location.location_handle, PythonEnvRepositoryLocationHandle)
+            if isinstance(location.location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle)
             else None
         )
 

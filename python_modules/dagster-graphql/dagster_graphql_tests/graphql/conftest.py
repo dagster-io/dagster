@@ -18,7 +18,8 @@ def graphql_context():
                 }
             },
         ) as instance:
-            yield define_test_out_of_process_context(instance)
+            with define_test_out_of_process_context(instance) as context:
+                yield context
 
 
 @pytest.yield_fixture(scope="function")
