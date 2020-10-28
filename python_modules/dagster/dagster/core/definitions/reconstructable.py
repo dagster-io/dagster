@@ -1,3 +1,4 @@
+import inspect
 import os
 import sys
 from collections import namedtuple
@@ -272,6 +273,16 @@ def reconstructable(target):
             )
         )
 
+    try:
+        if (
+            hasattr(target, "__module__")
+            and hasattr(target, "__name__")
+            and inspect.getmodule(target).__name__ != "__main__"
+        ):
+            return ReconstructablePipeline.for_module(target.__module__, target.__name__)
+    except:  # pylint: disable=bare-except
+        pass
+
     python_file = get_python_file_from_target(target)
     if not python_file:
         raise DagsterInvariantViolationError(
@@ -281,11 +292,7 @@ def reconstructable(target):
             "use build_reconstructable_pipeline."
         )
 
-    pointer = FileCodePointer(
-        python_file=python_file, fn_name=target.__name__, working_directory=os.getcwd()
-    )
-
-    return bootstrap_standalone_recon_pipeline(pointer)
+    return ReconstructablePipeline.for_file(python_file, target.__name__)
 
 
 @experimental

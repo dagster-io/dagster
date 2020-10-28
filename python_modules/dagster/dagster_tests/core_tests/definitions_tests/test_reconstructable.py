@@ -7,6 +7,7 @@ import pytest
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
 from dagster.core.definitions.reconstructable import ReconstructableRepository, reconstructable
 from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id
+from dagster.utils import file_relative_path
 
 
 @lambda_solid
@@ -165,3 +166,15 @@ def test_solid_selection():
 
     sub_pipe_unresolved = recon_pipe.subset_for_execution(["the_solid+"])
     assert sub_pipe_unresolved.solids_to_execute == {"the_solid"}
+
+
+def test_reconstructable_module():
+    original_sys_path = sys.path
+    try:
+        sys.path.insert(0, file_relative_path(__file__, "."))
+        from foo import bar_pipeline  # pylint: disable=import-error
+
+        reconstructable(bar_pipeline)
+
+    finally:
+        sys.path = original_sys_path
