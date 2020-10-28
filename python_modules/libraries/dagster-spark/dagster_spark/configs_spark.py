@@ -5,7 +5,7 @@
 Produced via:
 parse_spark_configs.py \
 	--output-file \
-	../libraries/dagster-spark/dagster_spark/configs_spark.py \
+	./python_modules/libraries/dagster-spark/dagster_spark/configs_spark.py \
 
 """
 
@@ -28,7 +28,7 @@ def spark_config():
                                             String,
                                             description="""Application Properties: The name of your application. This will appear in the UI and in log data.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -87,7 +87,7 @@ def spark_config():
                                                         String,
                                                         description="""Networking: Driver-specific port for the block manager to listen on, for cases where it cannot use the same configuration as executors.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -124,7 +124,7 @@ def spark_config():
                                                         String,
                                                         description="""Application Properties: The amount of memory to be allocated to PySpark in each executor, in MiB unless otherwise specified. If set, PySpark memory for an executor will be limited to this amount. If not set, Spark will not limit Python's memory use and it is up to the application to avoid exceeding the overhead memory space shared with other non-JVM processes. When PySpark is run in YARN or Kubernetes, this memory is added to executor resource requests.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -181,13 +181,13 @@ def spark_config():
                                                                                 String,
                                                                                 description="""Runtime Environment: Set the time interval by which the executor logs will be rolled over. Rolling is disabled by default. Valid values are daily, hourly, minutely or any interval in seconds. See spark.executor.logs.rolling.maxRetainedFiles for automatic cleaning of old logs.""",
                                                                                 is_required=False,
-                                                                            )
+                                                                            ),
                                                                         }
                                                                     )
                                                                 ),
                                                             }
                                                         )
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -221,7 +221,7 @@ def spark_config():
                                             String,
                                             description="""Application Properties: Directory to use for "scratch" space in Spark, including map output files and RDDs that get stored on disk. This should be on a fast, local disk in your system. It can also be a comma-separated list of multiple directories on different disks. NOTE: In Spark 1.0 and later this will be overridden by SPARK_LOCAL_DIRS (Standalone), MESOS_SANDBOX (Mesos) or LOCAL_DIRS (YARN) environment variables set by the cluster manager.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -258,7 +258,7 @@ def spark_config():
                                             String,
                                             description="""Application Properties: Application information that will be written into Yarn RM log/HDFS audit log when running on Yarn/HDFS. Its length depends on the Hadoop configuration hadoop.caller.context.max.size. It should be concise, and typically can have up to 50 characters.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -269,7 +269,7 @@ def spark_config():
                                             String,
                                             description="""Runtime Environment: Regex to decide which Spark configuration properties and environment variables in driver and executor environments contain sensitive information. When this regex matches a property key or value, the value is redacted from the environment UI and various logs like YARN and event logs.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -393,7 +393,7 @@ def spark_config():
                                                         String,
                                                         description="""Runtime Environment: Python binary executable to use for PySpark in driver. (default is spark.pyspark.python)""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -446,7 +446,7 @@ def spark_config():
                                                         String,
                                                         description="""Shuffle Behavior: Size of the in-memory buffer for each shuffle file output stream, in KiB unless otherwise specified. These buffers reduce the number of disk seeks and system calls made in creating intermediate shuffle files.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -499,10 +499,10 @@ def spark_config():
                                                                                 String,
                                                                                 description="""Shuffle Behavior: Cache entries limited to the specified memory footprint in bytes.""",
                                                                                 is_required=False,
-                                                                            )
+                                                                            ),
                                                                         }
                                                                     )
-                                                                )
+                                                                ),
                                                             }
                                                         )
                                                     ),
@@ -521,7 +521,7 @@ def spark_config():
                                                         Int,
                                                         description="""Shuffle Behavior: (Advanced) In the sort-based shuffle manager, avoid merge-sorting data if there is no map-side aggregation and there are at most this many reduce partitions.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -532,7 +532,7 @@ def spark_config():
                                                         Bool,
                                                         description="""Shuffle Behavior: Whether to compress data spilled during shuffles. Compression will use spark.io.compression.codec.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -575,7 +575,7 @@ def spark_config():
                                                         String,
                                                         description="""Spark UI: Whether to log events for every block update, if spark.eventLog.enabled is true. *Warning*: This will increase the size of the event log considerably.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -586,7 +586,7 @@ def spark_config():
                                                         String,
                                                         description="""Spark UI: If true, use the long form of call sites in the event log. Otherwise use the short form.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -617,7 +617,7 @@ def spark_config():
                                                         String,
                                                         description="""Spark UI: Buffer size to use when writing to output streams, in KiB unless otherwise specified.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -634,7 +634,7 @@ def spark_config():
                                                         String,
                                                         description="""Spark UI: How many DAG graph nodes the Spark UI and status APIs remember before garbage collecting.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -655,7 +655,7 @@ def spark_config():
                                                         String,
                                                         description="""Spark UI: How often to update live entities. -1 means "never update" when replaying applications, meaning only the last write will happen. For live applications, this avoids a few operations that we can live without when rapidly processing incoming task events.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -725,7 +725,7 @@ def spark_config():
                                                     ),
                                                 }
                                             )
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -739,10 +739,10 @@ def spark_config():
                                                         String,
                                                         description="""Spark UI: How many finished executions the Spark UI and status APIs remember before garbage collecting.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -756,7 +756,7 @@ def spark_config():
                                                         String,
                                                         description="""Spark Streaming: How many batches the Spark Streaming UI and status APIs remember before garbage collecting.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -849,10 +849,10 @@ def spark_config():
                                                                     String,
                                                                     description="""Spark Streaming: Whether to close the file after writing a write-ahead log record on the driver. Set this to 'true' when you want to use S3 (or any file system that does not support flushing) for the metadata WAL on the driver.""",
                                                                     is_required=False,
-                                                                )
+                                                                ),
                                                             }
                                                         )
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -898,7 +898,7 @@ def spark_config():
                                                                     String,
                                                                     description="""Compression and Serialization: Block size in bytes used in LZ4 compression, in the case when LZ4 compression codec is used. Lowering this block size will also lower shuffle memory usage when LZ4 is used.""",
                                                                     is_required=False,
-                                                                )
+                                                                ),
                                                             }
                                                         )
                                                     ),
@@ -909,7 +909,7 @@ def spark_config():
                                                                     String,
                                                                     description="""Compression and Serialization: Block size in bytes used in Snappy compression, in the case when Snappy compression codec is used. Lowering this block size will also lower shuffle memory usage when Snappy is used.""",
                                                                     is_required=False,
-                                                                )
+                                                                ),
                                                             }
                                                         )
                                                     ),
@@ -931,7 +931,7 @@ def spark_config():
                                                     ),
                                                 }
                                             )
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -984,7 +984,7 @@ def spark_config():
                                                     ),
                                                 }
                                             )
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -995,7 +995,7 @@ def spark_config():
                                             String,
                                             description="""Compression and Serialization: Whether to compress serialized RDD partitions (e.g. for StorageLevel.MEMORY_ONLY_SER in Java and Scala or StorageLevel.MEMORY_ONLY in Python). Can save substantial space at the cost of some extra CPU time. Compression will use spark.io.compression.codec.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1072,7 +1072,7 @@ def spark_config():
                                                         Bool,
                                                         description="""Memory Management: Enables proactive block replication for RDD blocks. Cached RDD block replicas lost due to executor failures are replenished if there are any existing available replicas. This tries to get the replication level of the block to the initial number.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -1094,7 +1094,7 @@ def spark_config():
                                                         String,
                                                         description="""Memory Management: Controls how often to trigger a garbage collection. This context cleaner triggers cleanups only when weak references are garbage collected. In long-running applications with large driver JVMs, where there is little memory pressure on the driver, this may happen very occasionally or not at all. Not cleaning at all may lead to executors running out of disk space after a while.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -1140,7 +1140,7 @@ def spark_config():
                                             Int,
                                             description="""Execution Behavior: Default number of partitions in RDDs returned by transformations like join, reduceByKey, and parallelize when not set by user.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1170,13 +1170,13 @@ def spark_config():
                                                                                 Int,
                                                                                 description="""Execution Behavior: The file output committer algorithm version, valid algorithm version number: 1 or 2. Version 2 may have better performance, but version 1 may handle failures better in certain situations, as per MAPREDUCE-4815.""",
                                                                                 is_required=False,
-                                                                            )
+                                                                            ),
                                                                         }
                                                                     )
-                                                                )
+                                                                ),
                                                             }
                                                         )
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -1193,7 +1193,7 @@ def spark_config():
                                                         String,
                                                         description="""Networking: Maximum message size (in MB) to allow in "control plane" communication; generally only applies to map output size information sent between executors and the driver. Increase this if you are running jobs with many thousands of map and reduce tasks and see messages about the RPC message size.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -1209,7 +1209,7 @@ def spark_config():
                                                         String,
                                                         description="""Networking: Duration for an RPC ask operation to wait before retrying.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -1233,7 +1233,7 @@ def spark_config():
                                             String,
                                             description="""Networking: Port for all block managers to listen on. These exist on both the driver and the executors.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1244,7 +1244,7 @@ def spark_config():
                                             String,
                                             description="""Networking: Default timeout for all network interactions. This config will be used in place of spark.core.connection.ack.wait.timeout, spark.storage.blockManagerSlaveTimeoutMs, spark.shuffle.io.connectionTimeout, spark.rpc.askTimeout or spark.rpc.lookupTimeout if they are not configured.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1255,7 +1255,7 @@ def spark_config():
                                             String,
                                             description="""Networking: Maximum number of retries when binding to a port before giving up. When a port is given a specific value (non 0), each subsequent retry will increment the port used in the previous attempt by 1 before retrying. This essentially allows it to try a range of ports from the start port specified to port + maxRetries.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1275,16 +1275,16 @@ def spark_config():
                                                                                 String,
                                                                                 description="""Networking: How long for the connection to wait for ack to occur before timing out and giving up. To avoid unwilling timeout caused by long pause like GC, you can set larger value.""",
                                                                                 is_required=False,
-                                                                            )
+                                                                            ),
                                                                         }
                                                                     )
-                                                                )
+                                                                ),
                                                             }
                                                         )
-                                                    )
+                                                    ),
                                                 }
                                             )
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1295,7 +1295,7 @@ def spark_config():
                                             String,
                                             description="""Scheduling: When running on a standalone deploy cluster or a Mesos cluster in "coarse-grained" sharing mode, the maximum amount of CPU cores to request for the application from across the cluster (not from each machine). If not set, the default will be spark.deploy.defaultCores on Spark's standalone cluster manager, or infinite (all available cores) on Mesos.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1327,7 +1327,7 @@ def spark_config():
                                                     ),
                                                 }
                                             )
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1356,7 +1356,7 @@ def spark_config():
                                                         String,
                                                         description="""Scheduling: The interval length for the scheduler to revive the worker resource offers to run tasks.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -1370,10 +1370,10 @@ def spark_config():
                                                                     String,
                                                                     description="""Scheduling: Capacity for event queue in Spark listener bus, must be greater than 0. Consider increasing value (e.g. 20000) if listener events are dropped. Increasing this value may result in the driver using more memory.""",
                                                                     is_required=False,
-                                                                )
+                                                                ),
                                                             }
                                                         )
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -1445,7 +1445,7 @@ def spark_config():
                                                                     String,
                                                                     description="""Scheduling: (Experimental) If set to "true", Spark will blacklist the executor immediately when a fetch failure happens. If external shuffle service is enabled, then the whole node will be blacklisted.""",
                                                                     is_required=False,
-                                                                )
+                                                                ),
                                                             }
                                                         )
                                                     ),
@@ -1535,7 +1535,7 @@ def spark_config():
                                             String,
                                             description="""Scheduling: Number of consecutive stage attempts allowed before a stage is aborted.""",
                                             is_required=False,
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1610,7 +1610,7 @@ def spark_config():
                                                         String,
                                                         description="""SparkR: Executable for executing R scripts in client modes for driver. Ignored in cluster modes.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -1621,7 +1621,7 @@ def spark_config():
                                                         String,
                                                         description="""SparkR: Executable for executing sparkR shell in client modes for driver. Ignored in cluster modes. It is the same as environment variable SPARKR_DRIVER_R, but take precedence over it. spark.r.shell.command is used for sparkR shell while spark.r.driver.command is used for running R script.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -1648,10 +1648,10 @@ def spark_config():
                                                         String,
                                                         description="""GraphX: Checkpoint interval for graph and message in Pregel. It used to avoid stackOverflowError due to long lineage chains after lots of iterations. The checkpoint is disabled by default.""",
                                                         is_required=False,
-                                                    )
+                                                    ),
                                                 }
                                             )
-                                        )
+                                        ),
                                     }
                                 )
                             ),
@@ -1684,7 +1684,7 @@ def spark_config():
                             ),
                         }
                     )
-                )
+                ),
             }
         )
     )

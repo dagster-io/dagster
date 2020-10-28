@@ -12,8 +12,7 @@ from enum import Enum
 
 import click
 import requests
-
-from .printer import IndentingBufferPrinter
+from automation.printer import IndentingBufferPrinter
 
 SPARK_VERSION = "v2.4.0"
 TABLE_REGEX = r"### (.{,30}?)\n\n(<table.*?>.*?<\/table>)"
@@ -173,9 +172,9 @@ class SparkConfig(namedtuple("_SparkConfig", "path default meaning")):
         with printer.with_indent():
             printer.line("")
             printer.line("{config_type},".format(config_type=config_type))
-            printer.append("description='''")
+            printer.append('description="""')
             printer.append(self.meaning)
-            printer.line("''',")
+            printer.line('""",')
             # printer.line("default_value='{}',".format(self.default))
             printer.line("is_required=False,")
 
@@ -206,7 +205,7 @@ class SparkConfigNode(object):
                     with printer.with_indent():
                         for (k, v) in retdict.items():
                             with printer.with_indent():
-                                printer.append("'{}': ".format(k))
+                                printer.append('"{}": '.format(k))
                             v.write(printer)
 
                             printer.line(",")
