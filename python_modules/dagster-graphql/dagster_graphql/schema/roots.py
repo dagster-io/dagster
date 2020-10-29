@@ -7,7 +7,6 @@ from dagster.core.host_representation import (
     RepositorySelector,
     RepresentedPipeline,
     ScheduleSelector,
-    TriggerSelector,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -23,7 +22,6 @@ from dagster_graphql.implementation.execution import (
     launch_pipeline_execution,
     launch_pipeline_reexecution,
     terminate_pipeline_execution,
-    trigger_execution,
 )
 from dagster_graphql.implementation.external import (
     fetch_repositories,
@@ -660,21 +658,6 @@ def create_retries_params(retries_config):
     return Retries.from_graphql_input(retries_config)
 
 
-class DauphinTriggerExecution(dauphin.Mutation):
-    class Meta(object):
-        name = "TriggerExecution"
-
-    class Arguments(object):
-        trigger_selector = dauphin.NonNull("TriggerSelector")
-
-    Output = dauphin.NonNull("TriggerMutationResult")
-
-    def mutate(self, graphene_info, trigger_selector):
-        return trigger_execution(
-            graphene_info, TriggerSelector.from_graphql_input(trigger_selector)
-        )
-
-
 class DauphinMutation(dauphin.ObjectType):
     class Meta(object):
         name = "Mutation"
@@ -688,7 +671,6 @@ class DauphinMutation(dauphin.ObjectType):
     delete_pipeline_run = DauphinDeleteRunMutation.Field()
     reload_repository_location = DauphinReloadRepositoryLocationMutation.Field()
     launch_partition_backfill = DauphinLaunchPartitionBackfillMutation.Field()
-    trigger_execution = DauphinTriggerExecution.Field()
 
 
 DauphinComputeIOType = dauphin.Enum.from_enum(ComputeIOType)
@@ -798,18 +780,6 @@ class DauphinPartitionSetSelector(dauphin.InputObjectType):
 
     partitionSetName = dauphin.NonNull(dauphin.String)
     repositorySelector = dauphin.NonNull("RepositorySelector")
-
-
-class DauphinTriggerSelector(dauphin.InputObjectType):
-    class Meta(object):
-        name = "TriggerSelector"
-        description = """
-            This type represents the fields necessary to identify a triggered execution target.
-        """
-
-    repositoryName = dauphin.NonNull(dauphin.String)
-    repositoryLocationName = dauphin.NonNull(dauphin.String)
-    jobName = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPartitionBackfillParams(dauphin.InputObjectType):

@@ -10,6 +10,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.definitions import (
     JobDefinition,
+    JobType,
     PartitionSetDefinition,
     PipelineDefinition,
     PresetDefinition,
@@ -103,7 +104,7 @@ class ExternalRepositoryData(
             if external_job_data.name == name:
                 return external_job_data
 
-        check.failed("Could not find external triggered execution data named " + name)
+        check.failed("Could not find job data named " + name)
 
 
 @whitelist_for_serdes
@@ -215,13 +216,16 @@ class ExternalScheduleExecutionErrorData(
 
 
 @whitelist_for_serdes
-class ExternalJobData(namedtuple("_ExternalJobData", "name pipeline_name solid_selection mode")):
+class ExternalJobData(
+    namedtuple("_ExternalJobData", "name job_type pipeline_name solid_selection mode")
+):
     def __new__(
-        cls, name, pipeline_name, solid_selection, mode,
+        cls, name, job_type, pipeline_name, solid_selection, mode,
     ):
         return super(ExternalJobData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
+            job_type=check.inst_param(job_type, "job_type", JobType),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
             mode=check.opt_str_param(mode, "mode"),
@@ -388,6 +392,7 @@ def external_job_from_def(job_def):
     check.inst_param(job_def, "job_def", JobDefinition)
     return ExternalJobData(
         name=job_def.name,
+        job_type=job_def.job_type,
         pipeline_name=job_def.pipeline_name,
         solid_selection=job_def.solid_selection,
         mode=job_def.mode,

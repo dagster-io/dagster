@@ -5,7 +5,6 @@ from .decorators import (
     failure_hook,
     hook,
     hourly_schedule,
-    job,
     lambda_solid,
     monthly_schedule,
     pipeline,
@@ -54,7 +53,7 @@ from .graph import GraphDefinition
 from .hook import HookDefinition
 from .input import InputDefinition, InputMapping
 from .intermediate_storage import IntermediateStorageDefinition, intermediate_storage
-from .job import JobContext, JobDefinition
+from .job import JobContext, JobDefinition, JobType
 from .logger import LoggerDefinition, logger
 from .mode import ModeDefinition
 from .output import OutputDefinition, OutputMapping

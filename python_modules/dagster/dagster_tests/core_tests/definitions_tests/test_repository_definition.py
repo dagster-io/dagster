@@ -10,7 +10,6 @@ from dagster import (
     lambda_solid,
     repository,
 )
-from dagster.core.definitions.decorators import job
 
 
 def create_single_node_pipeline(name, called):
@@ -162,19 +161,3 @@ def test_schedule_partitions():
     assert len(some_repo.schedule_defs) == 1
     assert len(some_repo.partition_set_defs) == 1
     assert some_repo.get_partition_set_def("daily_foo_partitions")
-
-
-def test_jobs():
-    @job(pipeline_name="foo")
-    def unscheduled_foo(_):
-        return {}
-
-    @repository
-    def some_repo():
-        return {
-            "pipelines": {"foo": lambda: create_single_node_pipeline("foo", {})},
-            "jobs": {"unscheduled_foo": lambda: unscheduled_foo},
-        }
-
-    assert len(some_repo.job_defs) == 1
-    assert some_repo.get_job_def("unscheduled_foo")

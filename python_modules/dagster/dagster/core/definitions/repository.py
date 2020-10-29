@@ -247,26 +247,28 @@ class RepositoryData(object):
                         "{partition_set_name}".format(partition_set_name=definition.name)
                     )
                 partition_sets[definition.name] = definition
-            elif isinstance(definition, ScheduleDefinition):
-                if definition.name in schedules:
-                    raise DagsterInvalidDefinitionError(
-                        "Duplicate schedule definition found for schedule {schedule_name}".format(
-                            schedule_name=definition.name
-                        )
-                    )
-                schedules[definition.name] = definition
-                if isinstance(definition, PartitionScheduleDefinition):
-                    partition_set_def = definition.get_partition_set()
-                    if (
-                        partition_set_def.name in partition_sets
-                        and partition_set_def != partition_sets[partition_set_def.name]
-                    ):
-                        raise DagsterInvalidDefinitionError(
-                            "Duplicate partition set definition found for partition set "
-                            "{partition_set_name}".format(partition_set_name=partition_set_def.name)
-                        )
-                    partition_sets[partition_set_def.name] = partition_set_def
             elif isinstance(definition, JobDefinition):
+                if isinstance(definition, ScheduleDefinition):
+                    if definition.name in schedules:
+                        raise DagsterInvalidDefinitionError(
+                            "Duplicate schedule definition found for schedule {schedule_name}".format(
+                                schedule_name=definition.name
+                            )
+                        )
+                    schedules[definition.name] = definition
+                    if isinstance(definition, PartitionScheduleDefinition):
+                        partition_set_def = definition.get_partition_set()
+                        if (
+                            partition_set_def.name in partition_sets
+                            and partition_set_def != partition_sets[partition_set_def.name]
+                        ):
+                            raise DagsterInvalidDefinitionError(
+                                "Duplicate partition set definition found for partition set "
+                                "{partition_set_name}".format(
+                                    partition_set_name=partition_set_def.name
+                                )
+                            )
+                        partition_sets[partition_set_def.name] = partition_set_def
                 if definition.name in jobs:
                     raise DagsterInvalidDefinitionError(
                         "Duplicate job definition found for job {name}".format(name=definition.name)

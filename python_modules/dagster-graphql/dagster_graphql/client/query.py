@@ -362,20 +362,3 @@ mutation($backfillParams: PartitionBackfillParams!) {
 }
 """
 )
-
-LAUNCH_TRIGGERED_EXECUTION = (
-    ERROR_FRAGMENT
-    + """
-mutation($triggerSelector: TriggerSelector!) {
-  triggerExecution(triggerSelector: $triggerSelector) {
-    __typename
-    ... on PythonError {
-      ...errorFragment
-    }
-    ... on TriggerExecutionSuccess {
-      launchedRunIds
-    }
-  }
-}
-  """
-)
