@@ -8,6 +8,11 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum AssetStoreOperationType {
+  GET_ASSET = "GET_ASSET",
+  SET_ASSET = "SET_ASSET",
+}
+
 export enum ComputeIOType {
   STDERR = "STDERR",
   STDOUT = "STDOUT",

@@ -142,6 +142,19 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
           <MetadataEntries entries={node.operationResult.metadataEntries} />
         </DefaultContent>
       );
+    case 'AssetStoreOperationEvent':
+      return (
+        <DefaultContent
+          message={node.message}
+          eventType={
+            node.assetStoreResult.op === 'SET_ASSET'
+              ? 'Store Asset'
+              : node.assetStoreResult.op === 'GET_ASSET'
+              ? 'Retrieve Asset'
+              : ''
+          }
+        />
+      );
     case 'HookCompletedEvent':
       return <DefaultContent eventType="Hook Event" message={node.message} />;
     case 'HookSkippedEvent':

@@ -82,10 +82,7 @@ def test_default_asset_store():
             asset_store_operation_events[1].event_specific_data.op
             == AssetStoreOperationType.GET_ASSET
         )
-        assert (
-            StepOutputHandle("solid_a.compute", "result")
-            == asset_store_operation_events[1].event_specific_data.step_output_handle
-        )
+        assert "solid_a.compute" == asset_store_operation_events[1].event_specific_data.step_key
 
         # SET ASSET for step "solid_b.compute" output "result"
         assert (

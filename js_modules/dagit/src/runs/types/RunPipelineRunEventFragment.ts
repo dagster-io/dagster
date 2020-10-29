@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { LogLevel, ObjectStoreOperationType } from "./../../types/globalTypes";
+import { LogLevel, ObjectStoreOperationType, AssetStoreOperationType } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RunPipelineRunEventFragment
@@ -534,6 +534,20 @@ export interface RunPipelineRunEventFragment_ObjectStoreOperationEvent {
   operationResult: RunPipelineRunEventFragment_ObjectStoreOperationEvent_operationResult;
 }
 
+export interface RunPipelineRunEventFragment_AssetStoreOperationEvent_assetStoreResult {
+  __typename: "AssetStoreOperationResult";
+  op: AssetStoreOperationType;
+}
+
+export interface RunPipelineRunEventFragment_AssetStoreOperationEvent {
+  __typename: "AssetStoreOperationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  assetStoreResult: RunPipelineRunEventFragment_AssetStoreOperationEvent_assetStoreResult;
+}
+
 export interface RunPipelineRunEventFragment_EngineEvent_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -640,4 +654,4 @@ export interface RunPipelineRunEventFragment_HookErroredEvent {
   error: RunPipelineRunEventFragment_HookErroredEvent_error;
 }
 
-export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_PipelineFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent | RunPipelineRunEventFragment_HookErroredEvent;
+export type RunPipelineRunEventFragment = RunPipelineRunEventFragment_ExecutionStepSkippedEvent | RunPipelineRunEventFragment_StepMaterializationEvent | RunPipelineRunEventFragment_PipelineInitFailureEvent | RunPipelineRunEventFragment_PipelineFailureEvent | RunPipelineRunEventFragment_ExecutionStepFailureEvent | RunPipelineRunEventFragment_ExecutionStepInputEvent | RunPipelineRunEventFragment_ExecutionStepOutputEvent | RunPipelineRunEventFragment_StepExpectationResultEvent | RunPipelineRunEventFragment_ObjectStoreOperationEvent | RunPipelineRunEventFragment_AssetStoreOperationEvent | RunPipelineRunEventFragment_EngineEvent | RunPipelineRunEventFragment_HookErroredEvent;

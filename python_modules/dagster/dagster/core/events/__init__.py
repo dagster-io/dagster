@@ -13,7 +13,7 @@ from dagster.core.definitions import (
     SolidHandle,
     TypeCheck,
 )
-from dagster.core.definitions.events import ObjectStoreOperationType
+from dagster.core.definitions.events import AssetStoreOperationType, ObjectStoreOperationType
 from dagster.core.execution.context.system import (
     HookContext,
     SystemExecutionContext,
@@ -814,18 +814,36 @@ class DagsterEvent(
         from dagster.core.definitions.events import AssetStoreOperation
 
         check.inst_param(asset_store_operation, "asset_store_operation", AssetStoreOperation)
+
+        if AssetStoreOperationType(asset_store_operation.op) == AssetStoreOperationType.SET_ASSET:
+            message = (
+                'Stored output "{output_name}" using asset store "{asset_store_key}".'
+            ).format(
+                asset_store_key=asset_store_operation.asset_store_handle.asset_store_key,
+                output_name=asset_store_operation.step_output_handle.output_name,
+            )
+        elif AssetStoreOperationType(asset_store_operation.op) == AssetStoreOperationType.GET_ASSET:
+            message = (
+                'Retrieved output "{output_name}" from step "{step_key}" '
+                'using asset store "{asset_store_key}".'
+            ).format(
+                asset_store_key=asset_store_operation.asset_store_handle.asset_store_key,
+                output_name=asset_store_operation.step_output_handle.output_name,
+                step_key=asset_store_operation.step_output_handle.step_key,
+            )
+        else:
+            message = ""
+
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_STORE_OPERATION,
             step_context=step_context,
             event_specific_data=AssetStoreOperationData(
-                asset_store_operation.op,
-                asset_store_operation.step_output_handle,
-                asset_store_operation.asset_store_handle,
-            ),
-            message='addressable asset operation: {op} for output "{output_name}".'.format(
-                op=asset_store_operation.op.value,
+                op=asset_store_operation.op,
+                step_key=asset_store_operation.step_output_handle.step_key,
                 output_name=asset_store_operation.step_output_handle.output_name,
+                asset_store_key=asset_store_operation.asset_store_handle.asset_store_key,
             ),
+            message=message,
         )
 
     @staticmethod
@@ -928,7 +946,7 @@ class StepExpectationResultData(namedtuple("_StepExpectationResultData", "expect
 
 @whitelist_for_serdes
 class AssetStoreOperationData(
-    namedtuple("_AssetStoreOperationData", "op step_output_handle asset_store")
+    namedtuple("_AssetStoreOperationData", "op step_key output_name asset_store_key")
 ):
     pass
 

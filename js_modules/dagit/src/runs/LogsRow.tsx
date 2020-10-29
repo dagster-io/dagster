@@ -113,6 +113,11 @@ export class Structured extends React.Component<StructuredProps, StructuredState
             }
           }
         }
+        ... on AssetStoreOperationEvent {
+          assetStoreResult {
+            op
+          }
+        }
         ... on EngineEvent {
           metadataEntries {
             ...MetadataEntryFragment
