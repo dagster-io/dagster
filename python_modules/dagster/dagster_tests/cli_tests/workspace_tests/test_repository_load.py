@@ -14,8 +14,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import new_cwd
 from dagster.utils import file_relative_path
 
-WINDOWS_PY36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
-
 
 def load_repository_via_cli_runner(cli_args):
     capture_result = {"external_repo": None}
@@ -72,7 +70,6 @@ LEGACY_REPOSITORY = file_relative_path(__file__, "hello_world_in_file/legacy_rep
         ["-w", LEGACY_REPOSITORY, "-r", "hello_world_repository"],
     ),
 )
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_valid_repository_target_combos_with_single_repo_single_location(cli_args):
     if cli_args[1] == LEGACY_REPOSITORY:
         with pytest.warns(
@@ -88,7 +85,6 @@ def test_valid_repository_target_combos_with_single_repo_single_location(cli_arg
     assert external_repository.name == "hello_world_repository"
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_repository_target_argument_one_repo_and_specified_wrong():
     result, _ = load_repository_via_cli_runner(
         ["-w", PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE, "-r", "not_present"]
@@ -102,7 +98,6 @@ def test_repository_target_argument_one_repo_and_specified_wrong():
     )
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_repository_target_argument_one_location_and_specified_wrong():
     result, _ = load_repository_via_cli_runner(
         ["-w", PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE, "-l", "location_not_present"]
@@ -119,7 +114,6 @@ def test_repository_target_argument_one_location_and_specified_wrong():
 MULTI_LOCATION_WORKSPACE = file_relative_path(__file__, "multi_location/multi_location.yaml")
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_valid_multi_location_from_file():
     external_repository = successfully_load_repository_via_cli(
         ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_file"]
@@ -128,7 +122,6 @@ def test_valid_multi_location_from_file():
     assert external_repository.handle.repository_location_handle.location_name == "loaded_from_file"
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_valid_multi_location_from_module():
     external_repository = successfully_load_repository_via_cli(
         ["-w", MULTI_LOCATION_WORKSPACE, "-l", "loaded_from_module"]
@@ -139,7 +132,6 @@ def test_valid_multi_location_from_module():
     )
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_missing_location_name_multi_location():
     result, _ = load_repository_via_cli_runner(["-w", MULTI_LOCATION_WORKSPACE])
 
@@ -154,7 +146,6 @@ def test_missing_location_name_multi_location():
 SINGLE_LOCATION_MULTI_REPO_WORKSPACE = file_relative_path(__file__, "multi_repo/multi_repo.yaml")
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_valid_multi_repo():
     assert (
         successfully_load_repository_via_cli(
@@ -170,7 +161,6 @@ def test_valid_multi_repo():
     )
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_missing_repo_name_in_multi_repo_location():
     result, _ = load_repository_via_cli_runner(["-w", SINGLE_LOCATION_MULTI_REPO_WORKSPACE])
 
@@ -182,7 +172,6 @@ def test_missing_repo_name_in_multi_repo_location():
     ) in result.stdout
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_legacy_repository_yaml_autoload():
     with pytest.warns(
         UserWarning,
@@ -194,7 +183,6 @@ def test_legacy_repository_yaml_autoload():
             assert successfully_load_repository_via_cli([]).name == "hello_world_repository"
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_legacy_repository_yaml_dash_y():
     with pytest.warns(
         UserWarning,
@@ -210,7 +198,6 @@ def test_legacy_repository_yaml_dash_y():
             )
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_legacy_repository_yaml_module_autoload():
     with pytest.warns(
         UserWarning,
@@ -222,7 +209,6 @@ def test_legacy_repository_yaml_module_autoload():
             assert successfully_load_repository_via_cli([]).name == "hello_world_repository"
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_legacy_repository_module_yaml_dash_y():
     with pytest.warns(
         UserWarning,
@@ -238,7 +224,6 @@ def test_legacy_repository_module_yaml_dash_y():
             )
 
 
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_local_directory_module():
     cli_args = [
         "-w",
@@ -277,6 +262,5 @@ def test_local_directory_module():
         ],
     ),
 )
-@pytest.mark.skipif(WINDOWS_PY36, reason="Failing due to https://bugs.python.org/issue37380")
 def test_local_directory_file(cli_args):
     assert successfully_load_repository_via_cli(cli_args)
