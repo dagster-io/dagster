@@ -10,7 +10,7 @@ from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.launcher.default_run_launcher import DefaultRunLauncher
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.serdes import ConfigurableClass
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -279,6 +279,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.invariant(run.status == PipelineRunStatus.NOT_STARTED)
         self._queue.append(run)
         return run
 
