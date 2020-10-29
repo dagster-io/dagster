@@ -263,16 +263,20 @@ class DagsterApiServer(DagsterApiServicer):
                         instance.report_run_failed(run)
 
             for run_id in runs_to_clear:
-                del self._executions[run_id]
-                del self._termination_events[run_id]
-                if run_id in self._termination_times:
-                    del self._termination_times[run_id]
+                self._clear_run(run_id)
 
             # Once there are no more running executions after we have received a request to
             # shut down, terminate the server
             if self._shutdown_once_executions_finish_event.is_set():
                 if len(self._executions) == 0:
                     self._server_termination_event.set()
+
+    # Assumes execution lock is being held
+    def _clear_run(self, run_id):
+        del self._executions[run_id]
+        del self._termination_events[run_id]
+        if run_id in self._termination_times:
+            del self._termination_times[run_id]
 
     def _recon_repository_from_origin(self, repository_origin):
         check.inst_param(
@@ -861,7 +865,8 @@ class DagsterApiServer(DagsterApiServicer):
         # Ensure that if the run failed, we remove it from the executions map before
         # returning so that CanCancel will never return True
         if not success:
-            self._check_for_orphaned_runs()
+            with self._execution_lock:
+                self._clear_run(run_id)
 
         return api_pb2.StartRunReply(
             serialized_start_run_result=serialize_dagster_namedtuple(

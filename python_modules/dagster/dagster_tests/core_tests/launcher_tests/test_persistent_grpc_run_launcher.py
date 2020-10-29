@@ -2,7 +2,6 @@ import time
 
 import pytest
 from dagster import file_relative_path, seven
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
@@ -69,10 +68,7 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
 
             assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-            launcher = instance.run_launcher
-            launcher.launch_run(
-                instance=instance, run=pipeline_run, external_pipeline=external_pipeline
-            )
+            instance.launch_run(run_id=pipeline_run.run_id, external_pipeline=external_pipeline)
 
         # Server process now receives shutdown event, run has not finished yet
         pipeline_run = instance.get_run_by_id(run_id)
@@ -111,8 +107,7 @@ def test_terminate_after_shutdown():
             pipeline_def=sleepy_pipeline, run_config=None
         )
 
-        launcher = instance.run_launcher
-        launcher.launch_run(instance, pipeline_run, external_pipeline)
+        instance.launch_run(pipeline_run.run_id, external_pipeline)
 
         poll_for_step_start(instance, pipeline_run.run_id)
 
@@ -128,9 +123,11 @@ def test_terminate_after_shutdown():
         )
 
         with pytest.raises(DagsterLaunchFailedError):
-            launcher.launch_run(
-                instance, doomed_to_fail_pipeline_run, doomed_to_fail_external_pipeline
+            instance.launch_run(
+                doomed_to_fail_pipeline_run.run_id, doomed_to_fail_external_pipeline
             )
+
+        launcher = instance.run_launcher
 
         # Can terminate the run even after the shutdown event has been received
         assert launcher.can_terminate(pipeline_run.run_id)
@@ -168,12 +165,11 @@ def test_server_down():
                 pipeline_def=sleepy_pipeline, run_config=None
             )
 
-            launcher = instance.run_launcher
-
-            launcher.launch_run(instance, pipeline_run, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, external_pipeline)
 
             poll_for_step_start(instance, pipeline_run.run_id)
 
+            launcher = instance.run_launcher
             assert launcher.can_terminate(pipeline_run.run_id)
 
             original_run_tags = instance.get_run_by_id(pipeline_run.run_id).tags[GRPC_INFO_TAG]

@@ -37,9 +37,7 @@ def test_sync_run_launcher_run():
 
         run = create_run_for_test(instance=instance, pipeline_name=external_pipeline.name)
 
-        run = instance.run_launcher.launch_run(
-            instance=instance, run=run, external_pipeline=external_pipeline
-        )
+        run = instance.launch_run(run_id=run.run_id, external_pipeline=external_pipeline)
 
         completed_run = instance.get_run_by_id(run.run_id)
         assert completed_run.is_success

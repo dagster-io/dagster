@@ -205,7 +205,12 @@ class GrpcRunLauncher(RunLauncher, ConfigurableClass):
 
     def cleanup_managed_grpc_servers(self):
         """Shut down any managed grpc servers that used this run launcher to start a run.
-        Should only be used for teardown purposes within tests.
+        Should only be used for teardown purposes within tests (generally it's fine for a server
+        to out-live the host process, since it might be finishing an execution and will
+        automatically shut itself down once it no longer receives a heartbeat from the host
+        process). But in tests, gRPC servers access the DagsterInstance during execution, so we need
+        to shut them down before we can safely remove the temporary directory created for the
+        DagsterInstance.
         """
         for repository_location_handle in self._run_id_to_repository_location_handle_cache.values():
             if isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle):

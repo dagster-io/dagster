@@ -205,10 +205,7 @@ def test_successful_run(get_external_pipeline, run_config):  # pylint: disable=r
 
             assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-            launcher = instance.run_launcher
-            launcher.launch_run(
-                instance=instance, run=pipeline_run, external_pipeline=external_pipeline
-            )
+            instance.launch_run(run_id=pipeline_run.run_id, external_pipeline=external_pipeline)
 
             pipeline_run = instance.get_run_by_id(run_id)
             assert pipeline_run
@@ -290,8 +287,7 @@ def test_crashy_run(get_external_pipeline, run_config):  # pylint: disable=redef
 
             assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-            launcher = instance.run_launcher
-            launcher.launch_run(instance, pipeline_run, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, external_pipeline)
 
             failed_pipeline_run = instance.get_run_by_id(run_id)
 
@@ -338,11 +334,11 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
 
             assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
-            launcher = instance.run_launcher
-            launcher.launch_run(instance, pipeline_run, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, external_pipeline)
 
             poll_for_step_start(instance, run_id)
 
+            launcher = instance.run_launcher
             assert launcher.can_terminate(run_id)
             assert launcher.terminate(run_id)
 
@@ -442,8 +438,7 @@ def test_single_solid_selection_execution(
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
         with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
-            launcher = instance.run_launcher
-            launcher.launch_run(instance, pipeline_run, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, external_pipeline)
             finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
             event_records = instance.all_logs(run_id)
@@ -480,8 +475,7 @@ def test_multi_solid_selection_execution(
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
         with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
-            launcher = instance.run_launcher
-            launcher.launch_run(instance, pipeline_run, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, external_pipeline)
             finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
             event_records = instance.all_logs(run_id)
@@ -517,8 +511,7 @@ def test_engine_events(get_external_pipeline, run_config):  # pylint: disable=re
         assert instance.get_run_by_id(run_id).status == PipelineRunStatus.NOT_STARTED
 
         with get_external_pipeline(pipeline_run.pipeline_name) as external_pipeline:
-            launcher = instance.run_launcher
-            launcher.launch_run(instance, pipeline_run, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, external_pipeline)
             finished_pipeline_run = poll_for_finished_run(instance, run_id)
 
             assert finished_pipeline_run
