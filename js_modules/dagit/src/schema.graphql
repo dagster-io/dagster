@@ -828,7 +828,6 @@ type Mutation {
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   launchPartitionBackfill(backfillParams: PartitionBackfillParams!): PartitionBackfillResult!
-  triggerExecution(triggerSelector: TriggerSelector!): TriggerMutationResult!
 }
 
 union LaunchPipelineExecutionResult = LaunchPipelineRunSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
@@ -934,18 +933,6 @@ input PartitionBackfillParams {
 input PartitionSetSelector {
   partitionSetName: String!
   repositorySelector: RepositorySelector!
-}
-
-union TriggerMutationResult = TriggerExecutionSuccess | InvalidStepError | InvalidOutputError | PipelineConfigValidationInvalid | PipelineNotFoundError | PipelineRunConflict | PythonError | PresetNotFoundError | ConflictingExecutionParamsError
-
-type TriggerExecutionSuccess {
-  launchedRunIds: [String!]!
-}
-
-input TriggerSelector {
-  repositoryName: String!
-  repositoryLocationName: String!
-  jobName: String!
 }
 
 type Subscription {
