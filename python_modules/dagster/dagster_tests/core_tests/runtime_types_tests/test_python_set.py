@@ -129,3 +129,18 @@ def test_closed_typing_set_input_fail():
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(take_set, input_values={"tt": {"fkjdf"}})
+
+
+def test_typed_set_type_loader():
+    @lambda_solid(input_defs=[InputDefinition(name="tt", dagster_type=typing.Set[int])])
+    def take_set(tt):
+        return tt
+
+    expected_output = set([1, 2, 3, 4])
+    assert (
+        execute_solid(
+            take_set,
+            run_config={"solids": {"take_set": {"inputs": {"tt": list(expected_output)}}}},
+        ).output_value()
+        == expected_output
+    )
