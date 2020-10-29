@@ -46,7 +46,8 @@ export const TimezoneProvider: React.FunctionComponent = (props) => {
 
 const formatOffset = (mm: number) => {
   const amm = Math.abs(mm);
-  return `${mm < 0 ? '-' : '+'}${Math.floor(amm / 60)}:${amm % 60 < 10 ? '0' : ''}${amm % 60}`;
+  // moment.tz.zone() offsets are inverted: https://momentjs.com/timezone/docs/#/zone-object/offset/
+  return `${mm < 0 ? '+' : '-'}${Math.floor(amm / 60)}:${amm % 60 < 10 ? '0' : ''}${amm % 60}`;
 };
 
 const AllTimezoneItems = moment.tz
