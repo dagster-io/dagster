@@ -225,14 +225,15 @@ def test_check_repo_and_scheduler_no_external_schedules():
 
 
 def test_check_repo_and_scheduler_dagster_home_not_set():
-    repository = mock.MagicMock(spec=ExternalRepository)
-    repository.get_external_schedules.return_value = [mock.MagicMock()]
-    instance = mock.MagicMock(spec=DagsterInstance)
+    with environ({"DAGSTER_HOME": ""}):
+        repository = mock.MagicMock(spec=ExternalRepository)
+        repository.get_external_schedules.return_value = [mock.MagicMock()]
+        instance = mock.MagicMock(spec=DagsterInstance)
 
-    with pytest.raises(
-        click.UsageError, match=re.escape("The environment variable $DAGSTER_HOME is not set.")
-    ):
-        check_repo_and_scheduler(repository, instance)
+        with pytest.raises(
+            click.UsageError, match=re.escape("The environment variable $DAGSTER_HOME is not set.")
+        ):
+            check_repo_and_scheduler(repository, instance)
 
 
 def test_check_repo_and_scheduler_instance_scheduler_not_set():
