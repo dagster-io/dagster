@@ -1,8 +1,8 @@
 """Pipeline definitions for the simple_pyspark example."""
 from dagster import ModeDefinition, PresetDefinition, pipeline
 from dagster.core.definitions.no_step_launcher import no_step_launcher
+from dagster_aws.emr import emr_pyspark_step_launcher
 from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
-from dagster_aws_pyspark import emr_pyspark_step_launcher
 from dagster_databricks import databricks_pyspark_step_launcher
 from dagster_pyspark import pyspark_resource
 

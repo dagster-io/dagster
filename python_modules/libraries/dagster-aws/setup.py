@@ -28,5 +28,6 @@ if __name__ == "__main__":
         packages=find_packages(exclude=["test"]),
         include_package_data=True,
         install_requires=["boto3>=1.9", "dagster", "packaging", "psycopg2-binary", "requests"],
+        extras_require={"pyspark": ["dagster-pyspark"]},
         zip_safe=False,
     )

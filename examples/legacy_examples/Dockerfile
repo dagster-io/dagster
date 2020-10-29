@@ -20,7 +20,6 @@ RUN pip install --no-deps \
 	-e dagster-pandas \
 	-e dagstermill \
 	-e dagster-aws \
-	-e dagster-aws-pyspark \
 	-e dagster-spark \
 	-e dagster-pyspark \
 	-e dagster-postgres \
@@ -37,7 +36,6 @@ RUN pip install \
 	-e dagster-pandas \
 	-e dagstermill \
 	-e dagster-aws \
-	-e dagster-aws-pyspark \
 	-e dagster-spark \
 	-e dagster-pyspark \
 	-e dagster-postgres \

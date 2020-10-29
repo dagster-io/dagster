@@ -57,7 +57,6 @@ install_dev_python_modules:
 				-e python_modules/libraries/dagster-prometheus \
 				-e python_modules/libraries/dagster-spark \
 				-e python_modules/libraries/dagster-pyspark \
-				-e python_modules/libraries/dagster-aws-pyspark \
 				-e python_modules/libraries/dagster-databricks \
 				-e python_modules/libraries/dagster-shell \
 				-e python_modules/libraries/dagster-snowflake \

@@ -9,8 +9,8 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.no_step_launcher import no_step_launcher
+from dagster_aws.emr import emr_pyspark_step_launcher
 from dagster_aws.s3 import s3_intermediate_storage, s3_resource
-from dagster_aws_pyspark import emr_pyspark_step_launcher
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
