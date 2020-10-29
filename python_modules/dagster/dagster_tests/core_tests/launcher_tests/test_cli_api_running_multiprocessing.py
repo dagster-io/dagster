@@ -4,6 +4,7 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 
+import pytest
 from dagster import (
     AssetMaterialization,
     Field,
@@ -19,6 +20,7 @@ from dagster import (
     lambda_solid,
     pipeline,
     reconstructable,
+    seven,
     solid,
 )
 from dagster.core.events import DagsterEventType
@@ -213,6 +215,7 @@ def test_failing():
         assert instance.all_logs(pipeline_run.run_id)
 
 
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
 def test_execution_crash():
     run_config = {
         "solids": {"sum_solid": {"inputs": {"num": file_relative_path(__file__, "data/num.csv")}}}
