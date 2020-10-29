@@ -25,6 +25,7 @@ import {
   SchedulerRootQuery_scheduleStatesOrError,
   SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results,
 } from 'src/schedules/types/SchedulerRootQuery';
+import {Table} from 'src/ui/Table';
 
 type ScheduleState = SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results;
 
@@ -135,14 +136,29 @@ const RepositorySchedules = ({
           <RepositoryInformation repository={repository} />
         </Callout>
       )}
-      {repositoryLoadableSchedules.map((scheduleState: any) => (
-        <ScheduleStateRow
-          scheduleState={scheduleState}
-          key={scheduleState.scheduleOriginId}
-          showStatus={true}
-          dagsterRepoOption={option}
-        />
-      ))}
+      {repositoryLoadableSchedules.length ? (
+        <Table striped style={{width: '100%'}}>
+          <thead>
+            <tr>
+              <th style={{maxWidth: '60px'}}></th>
+              <th style={{paddingLeft: '20px'}}>Schedule Name</th>
+              <th style={{width: '150px'}}>Schedule</th>
+              <th style={{width: '100px'}}>Last Tick</th>
+              <th>Latest Runs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {repositoryLoadableSchedules.map((scheduleState: any) => (
+              <ScheduleStateRow
+                scheduleState={scheduleState}
+                key={scheduleState.scheduleOriginId}
+                showStatus={true}
+                dagsterRepoOption={option}
+              />
+            ))}
+          </tbody>
+        </Table>
+      ) : null}
     </div>
   );
 };

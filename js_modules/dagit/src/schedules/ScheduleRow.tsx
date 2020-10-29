@@ -517,11 +517,11 @@ export const ScheduleStateRow: React.FunctionComponent<{
       )}
 
       {dagsterRepoOption ? (
-        <td style={{flex: 1.4}}>
+        <td>
           <ButtonLink onClick={goToSchedule}>{scheduleName}</ButtonLink>
         </td>
       ) : (
-        <td style={{flex: 3}}>
+        <td>
           <div style={{display: 'flex', alignItems: 'base'}}>
             <div>{scheduleName}</div>
             <ButtonLink onClick={() => setShowRepositoryOrigin(!showRepositoryOrigin)}>
@@ -560,54 +560,55 @@ export const ScheduleStateRow: React.FunctionComponent<{
           )}
         </div>
       </td>
-      <td style={{flex: 1}}>
+      <td>
         {latestTick ? (
           <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
         ) : null}
       </td>
-      <td
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div style={{display: 'flex'}}>
-          {runs.map((run) => {
-            return (
-              <div
-                style={{
-                  cursor: 'pointer',
-                  marginRight: '4px',
-                }}
-                key={run.runId}
-              >
-                <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
-                  <Tooltip
-                    position={'top'}
-                    content={titleForRun(run)}
-                    wrapperTagName="div"
-                    targetTagName="div"
-                  >
-                    <RunStatus status={run.status} />
-                  </Tooltip>
-                </Link>
-              </div>
-            );
-          })}
+      <td>
+        <div
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
+          <div style={{display: 'flex'}}>
+            {runs.map((run) => {
+              return (
+                <div
+                  style={{
+                    cursor: 'pointer',
+                    marginRight: '4px',
+                  }}
+                  key={run.runId}
+                >
+                  <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
+                    <Tooltip
+                      position={'top'}
+                      content={titleForRun(run)}
+                      wrapperTagName="div"
+                      targetTagName="div"
+                    >
+                      <RunStatus status={run.status} />
+                    </Tooltip>
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+          {runsCount > NUM_RUNS_TO_DISPLAY && (
+            <Link
+              to={`/instance/runs/?q=${encodeURIComponent(
+                `tag:dagster/schedule_name=${scheduleName}`,
+              )}`}
+              style={{verticalAlign: 'top'}}
+            >
+              {' '}
+              +{runsCount - NUM_RUNS_TO_DISPLAY} more
+            </Link>
+          )}
         </div>
-        {runsCount > NUM_RUNS_TO_DISPLAY && (
-          <Link
-            to={`/instance/runs/?q=${encodeURIComponent(
-              `tag:dagster/schedule_name=${scheduleName}`,
-            )}`}
-            style={{verticalAlign: 'top'}}
-          >
-            {' '}
-            +{runsCount - NUM_RUNS_TO_DISPLAY} more
-          </Link>
-        )}
       </td>
     </tr>
   );
