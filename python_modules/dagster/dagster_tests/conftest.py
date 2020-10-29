@@ -4,6 +4,7 @@ import sys
 import time
 from contextlib import contextmanager
 
+import docker
 import grpc
 import pytest
 from dagster import check, seven
@@ -33,13 +34,21 @@ def dagster_docker_image():
         # if the Docker daemon is not running, so for now we just skip the tests using this
         # fixture if the build fails, and warn with the output from the build command
         try:
-            build_and_tag_test_image(docker_image)
-        except subprocess.CalledProcessError as exc_info:
-            pytest.skip(
-                "Skipped container tests due to a failure when trying to build the image. "
-                "Most likely, the docker deamon is not running.\n"
-                "Output:\n{}".format(exc_info.output.decode())
+            client = docker.from_env()
+            client.images.get(docker_image)
+            print(  # pylint: disable=print-call
+                "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
+                "docker rmi {image}".format(image=docker_image)
             )
+        except docker.errors.ImageNotFound:
+            try:
+                build_and_tag_test_image(docker_image)
+            except subprocess.CalledProcessError as exc_info:
+                pytest.skip(
+                    "Skipped container tests due to a failure when trying to build the image. "
+                    "Most likely, the docker deamon is not running.\n"
+                    "Output:\n{}".format(exc_info.output.decode())
+                )
 
     return docker_image
 
@@ -59,11 +68,10 @@ def wait_for_connection(host, port):
 
     pytest.skip(
         "Skipped grpc container tests due to a failure when trying to connect to the GRPC server "
-        "at {host}:{port}'.format(host=host, port=port)"
+        "at {host}:{port}".format(host=host, port=port)
     )
 
 
-@contextmanager
 def docker_service_up(docker_compose_file, service_name):
     check.str_param(service_name, "service_name")
     check.str_param(docker_compose_file, "docker_compose_file")
@@ -88,8 +96,6 @@ def docker_service_up(docker_compose_file, service_name):
         subprocess.check_output(
             ["docker-compose", "-f", docker_compose_file, "up", "-d", service_name], env=env,
         )
-
-    yield
 
 
 @pytest.fixture(scope="session")
