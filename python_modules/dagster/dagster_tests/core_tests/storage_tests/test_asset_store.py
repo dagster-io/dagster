@@ -7,13 +7,15 @@ from dagster import (
     OutputDefinition,
     execute_pipeline,
     pipeline,
+    resource,
     seven,
     solid,
 )
-from dagster.core.definitions.events import AssetStoreOperationType
+from dagster.core.definitions.events import AssetMaterialization, AssetStoreOperationType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.storage.asset_store import (
+    AssetStore,
     custom_path_filesystem_asset_store,
     default_filesystem_asset_store,
     mem_asset_store,
@@ -120,7 +122,7 @@ def test_step_subset_with_custom_paths():
             assert not evt.is_failure
 
         # when a path is provided via asset store, it's able to run step subset using an execution
-        # plan when the dependendee outputs were not previously created by dagster-controlled
+        # plan when the ascendant outputs were not previously created by dagster-controlled
         # computations
         step_subset_events = execute_pipeline_with_steps(
             pipeline_def, step_keys_to_execute=["solid_b.compute"]
@@ -129,6 +131,56 @@ def test_step_subset_with_custom_paths():
             assert not evt.is_failure
         # only the selected step subset was executed
         assert set([evt.step_key for evt in step_subset_events]) == {"solid_b.compute"}
+
+        # Asset Materialization events
+        step_materialization_events = list(
+            filter(lambda evt: evt.is_step_materialization, step_subset_events)
+        )
+        assert len(step_materialization_events) == 1
+        assert test_asset_metadata_dict["solid_b"]["path"] == (
+            step_materialization_events[0]
+            .event_specific_data.materialization.metadata_entries[0]
+            .entry_data.path
+        )
+
+
+def test_asset_store_multi_materialization():
+    class DummyAssetStore(AssetStore):
+        def __init__(self):
+            self.values = {}
+
+        def set_asset(self, _context, step_output_handle, obj, _asset_metadata):
+            self.values[step_output_handle] = obj
+
+            yield AssetMaterialization(asset_key="yield_one")
+            yield AssetMaterialization(asset_key="yield_two")
+
+        def get_asset(self, _context, step_output_handle, _asset_metadata):
+            return self.values[step_output_handle]
+
+    @resource
+    def dummy_asset_store(_):
+        return DummyAssetStore()
+
+    @solid(output_defs=[OutputDefinition(asset_store_key="store")],)
+    def solid_a(_context):
+        return 1
+
+    @solid()
+    def solid_b(_context, a):
+        assert a == 1
+
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"store": dummy_asset_store})])
+    def asset_pipeline():
+        solid_b(solid_a())
+
+    result = execute_pipeline(asset_pipeline)
+    assert result.success
+    # Asset Materialization events
+    step_materialization_events = list(
+        filter(lambda evt: evt.is_step_materialization, result.event_list)
+    )
+    assert len(step_materialization_events) == 2
 
 
 def test_different_asset_stores():

@@ -35,7 +35,7 @@ from dagster.core.execution.plan.objects import (
 from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.storage.asset_store import AssetStoreHandle
 from dagster.core.types.dagster_type import DagsterTypeKind
-from dagster.utils import iterate_with_context, raise_interrupts_immediately
+from dagster.utils import ensure_gen, iterate_with_context, raise_interrupts_immediately
 from dagster.utils.timing import time_execution_scope
 
 
@@ -344,9 +344,30 @@ def _set_addressable_asset(context, step_output_handle, asset_store_handle, valu
     check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
 
     asset_store = context.get_asset_store(asset_store_handle.asset_store_key)
-    asset_store.set_asset(context, step_output_handle, value, asset_store_handle.asset_metadata)
+    materializations = asset_store.set_asset(
+        context, step_output_handle, value, asset_store_handle.asset_metadata
+    )
 
-    return AssetStoreOperation(
+    # Allow zero, one, or multiple AssetMaterialization yielded by set_asset
+    if materializations is not None:
+        for materialization in ensure_gen(materializations):
+            if not isinstance(materialization, AssetMaterialization):
+                raise DagsterInvariantViolationError(
+                    (
+                        "asset_store on output {output_name} has returned "
+                        "value {value} of type {python_type}. The return type can only be "
+                        "AssetMaterialization."
+                    ).format(
+                        output_name=step_output_handle.output_name,
+                        value=repr(materialization),
+                        python_type=type(materialization).__name__,
+                    )
+                )
+
+            yield materialization
+
+    # SET_ASSET operation by AssetStore
+    yield AssetStoreOperation(
         AssetStoreOperationType.SET_ASSET, step_output_handle, asset_store_handle
     )
 
@@ -357,9 +378,11 @@ def _set_intermediates(step_context, step_output, step_output_handle, output, ve
         res = _set_addressable_asset(
             step_context, step_output_handle, step_output.asset_store_handle, output.value
         )
-
-        if isinstance(res, AssetStoreOperation):
-            yield DagsterEvent.asset_store_operation(step_context, res)
+        for evt in res:
+            if isinstance(evt, AssetStoreOperation):
+                yield DagsterEvent.asset_store_operation(step_context, evt)
+            if isinstance(evt, AssetMaterialization):
+                yield DagsterEvent.step_materialization(step_context, evt)
     else:
         res = step_context.intermediate_storage.set_intermediate(
             context=step_context,

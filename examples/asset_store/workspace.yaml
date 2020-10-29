@@ -1,2 +1,3 @@
 load_from:
-  - python_file: pickled_object.py
+  - python_file: builtin_default.py
+  - python_file: builtin_custom_path.py

@@ -365,6 +365,10 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.ASSET_STORE_OPERATION
 
     @property
+    def is_step_materialization(self):
+        return self.event_type == DagsterEventType.STEP_MATERIALIZATION
+
+    @property
     def asset_key(self):
         if self.event_type != DagsterEventType.STEP_MATERIALIZATION:
             return None
