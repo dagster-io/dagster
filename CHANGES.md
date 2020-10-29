@@ -2,6 +2,24 @@
 
 ## 0.9.17
 
+**New**
+
+- [dagster-dask] Allow connecting to an existing scheduler via its address
+- [dagster-aws] Importing dagster_aws.emr no longer transitively importing dagster_spark
+- [dagster-dbr] CLI solids now emit materializations
+
+**Community contributions**
+
+- Docs fix (Thanks @kaplanbora!)
+
+**Bug fixes**
+
+- `PipelineDefinition` 's that do not meet resource requirements for its types will now fail at definition time
+- Dagit bugfixes and improvements
+- Fixed an issue where a run could be left hanging if there was a failure during launch
+
+**Deprecated**
+
 - We now warn if you return anything from a function decorated with `@pipeline`. This return value actually had no impact at all and was ignored, but we are making changes that will use that value in the future. By changing your code to not return anything now you will avoid any breaking changes with zero user-visible impact.
 
 ## 0.9.16
