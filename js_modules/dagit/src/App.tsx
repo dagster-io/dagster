@@ -39,7 +39,7 @@ const AppRoutes = () => (
   </Switch>
 );
 
-export const App: React.FunctionComponent = () => {
+export const AppContent = () => {
   const {options, loading, error} = useRepositoryOptions();
   const [repo, setRepo] = useCurrentRepositoryState(options);
   useDocumentTitle('Dagit');
@@ -72,12 +72,16 @@ export const App: React.FunctionComponent = () => {
 
   return (
     <div style={{display: 'flex', height: '100%'}}>
-      <BrowserRouter basename={APP_PATH_PREFIX}>
-        <TimezoneProvider>
-          <LeftNav options={options} loading={loading} repo={repo} setRepo={setRepo} />
-          {content()}
-        </TimezoneProvider>
-      </BrowserRouter>
+      <LeftNav options={options} loading={loading} repo={repo} setRepo={setRepo} />
+      {content()}
     </div>
   );
 };
+
+export const App: React.FunctionComponent = () => (
+  <BrowserRouter basename={APP_PATH_PREFIX}>
+    <TimezoneProvider>
+      <AppContent />
+    </TimezoneProvider>
+  </BrowserRouter>
+);

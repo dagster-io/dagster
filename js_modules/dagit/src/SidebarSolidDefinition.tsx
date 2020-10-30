@@ -172,7 +172,7 @@ export class SidebarSolidDefinition extends React.Component<
         )}
         {hasRequiredResources && (
           <SidebarSection title={'Required Resources'}>
-            {definition.requiredResources.sort().map((requirement) => (
+            {[...definition.requiredResources].sort().map((requirement) => (
               <ResourceContainer key={requirement.resourceKey}>
                 <Icon iconSize={14} icon={IconNames.LAYERS} color={Colors.DARK_GRAY2} />
                 <ResourceHeader>{requirement.resourceKey}</ResourceHeader>
