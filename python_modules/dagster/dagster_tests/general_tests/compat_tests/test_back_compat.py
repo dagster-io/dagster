@@ -49,68 +49,6 @@ def _event_log_migration_regex(run_id, current_revision, expected_revision=None)
     return _migration_regex(warning, current_revision, expected_revision)
 
 
-# test that we can load runs and events from an old instance
-def test_0_6_4():
-    src_dir = file_relative_path(__file__, "snapshot_0_6_4")
-    with copy_directory(src_dir) as test_dir:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-
-        runs = instance.get_runs()
-        with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_event_log_migration_regex(
-                run_id="c7a6c4d7-6c88-46d0-8baa-d4937c3cefe5", current_revision=None
-            ),
-        ):
-            for run in runs:
-                instance.all_logs(run.run_id)
-
-
-def test_0_6_6_sqlite_exc():
-    src_dir = file_relative_path(__file__, "snapshot_0_6_6/sqlite")
-    with copy_directory(src_dir) as test_dir:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        runs = instance.get_runs()
-        # Note that this is a deliberate choice -- old runs are simply invisible, and their
-        # presence won't raise DagsterInstanceMigrationRequired. This is a reasonable choice since
-        # the runs.db has moved and otherwise we would have to do a check for the existence of an
-        # old runs.db every time we accessed the runs. Instead, we'll do this only in the upgrade
-        # method.
-        assert len(runs) == 0
-
-        run_ids = instance._event_storage.get_all_run_ids()
-        assert run_ids == ["89296095-892d-4a15-aa0d-9018d1580945"]
-
-        with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_event_log_migration_regex(
-                run_id="89296095-892d-4a15-aa0d-9018d1580945", current_revision=None
-            ),
-        ):
-            instance._event_storage.get_logs_for_run("89296095-892d-4a15-aa0d-9018d1580945")
-
-
-def test_0_6_6_sqlite_migrate():
-    src_dir = file_relative_path(__file__, "snapshot_0_6_6/sqlite")
-    assert os.path.exists(file_relative_path(__file__, "snapshot_0_6_6/sqlite/runs.db"))
-    assert not os.path.exists(file_relative_path(__file__, "snapshot_0_6_6/sqlite/history/runs.db"))
-
-    with copy_directory(src_dir) as test_dir:
-        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
-        instance.upgrade()
-
-        runs = instance.get_runs()
-        assert len(runs) == 1
-
-        run_ids = instance._event_storage.get_all_run_ids()
-        assert run_ids == ["89296095-892d-4a15-aa0d-9018d1580945"]
-
-        instance._event_storage.get_logs_for_run("89296095-892d-4a15-aa0d-9018d1580945")
-
-        assert not os.path.exists(os.path.join(test_dir, "runs.db"))
-        assert os.path.exists(os.path.join(test_dir, "history/runs.db"))
-
-
 def test_event_log_step_key_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_event_log_migration/sqlite")
     with copy_directory(src_dir) as test_dir:

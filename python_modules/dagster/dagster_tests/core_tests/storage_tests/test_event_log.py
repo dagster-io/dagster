@@ -282,8 +282,7 @@ def test_filesystem_event_log_storage_run_corrupted_bad_data():
 def cmd(exceptions, tmpdir_path):
     storage = SqliteEventLogStorage(tmpdir_path)
     try:
-        with storage.connect("foo"):
-            pass
+        storage.get_logs_for_run_by_log_id("foo")
     except Exception as exc:  # pylint: disable=broad-except
         exceptions.put(exc)
         exc_info = sys.exc_info()
@@ -292,8 +291,8 @@ def cmd(exceptions, tmpdir_path):
 
 def test_concurrent_sqlite_event_log_connections():
     exceptions = multiprocessing.Queue()
-
     with seven.TemporaryDirectory() as tmpdir_path:
+
         ps = []
         for _ in range(5):
             ps.append(multiprocessing.Process(target=cmd, args=(exceptions, tmpdir_path)))
