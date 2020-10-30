@@ -19,7 +19,7 @@ from dagster.core.definitions.events import RetryRequested
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
-from dagster.core.runs_coordinator import LaunchImmediateRunsCoordinator
+from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -47,8 +47,8 @@ def test_fs_stores():
             run_storage=run_store,
             event_storage=event_store,
             compute_log_manager=compute_log_manager,
+            run_coordinator=DefaultRunCoordinator(),
             run_launcher=DefaultRunLauncher(),
-            runs_coordinator=LaunchImmediateRunsCoordinator(),
         )
 
         result = execute_pipeline(simple, instance=instance)

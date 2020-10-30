@@ -97,9 +97,9 @@ def test_submit_run():
     with get_foo_pipeline_handle() as pipeline_handle:
         instance = DagsterInstance.local_temp(
             overrides={
-                "runs_coordinator": {
+                "run_coordinator": {
                     "module": "dagster.core.test_utils",
-                    "class": "MockedRunsCoordinator",
+                    "class": "MockedRunCoordinator",
                 }
             },
         )
@@ -113,8 +113,8 @@ def test_submit_run():
 
         instance.submit_run(run.run_id, None)
 
-        assert len(instance.runs_coordinator.queue()) == 1
-        assert instance.runs_coordinator.queue()[0].run_id == "foo-bar"
+        assert len(instance.run_coordinator.queue()) == 1
+        assert instance.run_coordinator.queue()[0].run_id == "foo-bar"
 
 
 def test_dagster_home_not_set():

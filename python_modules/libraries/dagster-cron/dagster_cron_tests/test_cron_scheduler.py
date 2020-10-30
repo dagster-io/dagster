@@ -15,7 +15,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.runs_coordinator import LaunchImmediateRunsCoordinator
+from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.scheduler import ScheduleState, ScheduleStatus
 from dagster.core.scheduler.scheduler import (
     DagsterScheduleDoesNotExist,
@@ -155,7 +155,7 @@ def define_scheduler_instance(tempdir):
         compute_log_manager=NoOpComputeLogManager(),
         schedule_storage=SqliteScheduleStorage.from_local(os.path.join(tempdir, "schedules")),
         scheduler=SystemCronScheduler(),
-        runs_coordinator=LaunchImmediateRunsCoordinator(),
+        run_coordinator=DefaultRunCoordinator(),
         run_launcher=SyncInMemoryRunLauncher(),
     )
 

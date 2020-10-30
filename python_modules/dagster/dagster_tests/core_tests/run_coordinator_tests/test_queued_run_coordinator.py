@@ -2,7 +2,7 @@ import contextlib
 
 import pytest
 from dagster.check import CheckError
-from dagster.core.runs_coordinator.queued_runs_coordinator import QueuedRunsCoordinator
+from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.utils import merge_dicts
@@ -21,7 +21,7 @@ def instance():
 
 @pytest.fixture()
 def coordinator(instance):  # pylint: disable=redefined-outer-name
-    run_coordinator = QueuedRunsCoordinator()
+    run_coordinator = QueuedRunCoordinator()
     run_coordinator.initialize(instance)
     yield run_coordinator
 

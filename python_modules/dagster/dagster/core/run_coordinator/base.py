@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 import six
 
 
-class RunsCoordinator(six.with_metaclass(ABCMeta)):
+class RunCoordinator(six.with_metaclass(ABCMeta)):
     def initialize(self, instance):
         """
         Perform any initialization that depends on the surrounding DagsterInstance.
