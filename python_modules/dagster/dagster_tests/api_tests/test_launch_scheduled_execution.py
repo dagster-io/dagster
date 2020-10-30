@@ -86,9 +86,8 @@ def the_repo():
     ]
 
 
-def _default_instance(enable_telemetry=False):
+def _default_instance():
     return instance_for_test(
-        enable_telemetry=enable_telemetry,
         overrides={
             "run_launcher": {"module": "dagster.core.test_utils", "class": "MockedRunLauncher",}
         },
@@ -139,7 +138,7 @@ def test_launch_successful_execution(schedule_origin_context):
     "schedule_origin_context", [cli_api_schedule_origin],
 )
 def test_launch_successful_execution_telemetry(schedule_origin_context):
-    with _default_instance(enable_telemetry=True):
+    with _default_instance():
         with schedule_origin_context("simple_schedule") as schedule_origin:
             sync_launch_scheduled_execution(schedule_origin)
 

@@ -265,6 +265,18 @@ def _get_telemetry_logger():
     return logger
 
 
+# For use in test teardown
+def cleanup_telemetry_logger():
+    logger = logging.getLogger("dagster_telemetry_logger")
+    if len(logger.handlers) == 0:
+        return
+
+    check.invariant(len(logger.handlers) == 1)
+    handler = next(iter(logger.handlers))
+    handler.close()
+    logger.removeHandler(handler)
+
+
 def write_telemetry_log_line(log_line):
     logger = _get_telemetry_logger()
     logger.info(json.dumps(log_line))
@@ -447,7 +459,7 @@ def is_running_in_test():
     return os.getenv("BUILDKITE") is not None or os.getenv("TF_BUILD") is not None
 
 
-def upload_logs(stop_event):
+def upload_logs(stop_event, raise_errors=False):
     """Upload logs to telemetry server every hour, or when log directory size is > 10MB"""
 
     # We add a sanity check to ensure that no logs are uploaded in our
@@ -490,16 +502,20 @@ def upload_logs(stop_event):
                 last_run = datetime.datetime.now()
                 dagster_log_dir = get_dir_from_dagster_home("logs")
                 dagster_log_queue_dir = get_dir_from_dagster_home(".logs_queue")
-                _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir)
+                _upload_logs(
+                    dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors=raise_errors
+                )
                 in_progress = False
 
             stop_event.wait(600)  # Sleep for 10 minutes
     except Exception:  # pylint: disable=broad-except
-        pass
+        if raise_errors:
+            raise
 
 
-def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir):
+def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors):
     """Send POST request to telemetry server with the contents of $DAGSTER_HOME/logs/ directory """
+
     try:
         if log_size > 0:
             # Delete contents of dagster_log_queue_dir so that new logs can be copied over
@@ -507,6 +523,8 @@ def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir):
                 # Todo: there is probably a way to try to upload these logs without introducing
                 # too much complexity...
                 os.remove(os.path.join(dagster_log_queue_dir, f))
+
+            os.rmdir(dagster_log_queue_dir)
 
             os.rename(dagster_log_dir, dagster_log_queue_dir)
 
@@ -531,4 +549,5 @@ def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir):
                 os.remove(curr_full_path)
 
     except Exception:  # pylint: disable=broad-except
-        pass
+        if raise_errors:
+            raise

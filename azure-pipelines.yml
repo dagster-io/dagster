@@ -15,7 +15,6 @@ parameters:
     # https://github.com/dagster-io/dagster/issues/2859
     - api_tests
     - cli_tests
-    - cli_command_grpc_tests
 - name: py3_env_suffixes
   type: object
   default:

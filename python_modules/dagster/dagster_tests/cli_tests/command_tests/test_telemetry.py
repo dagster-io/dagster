@@ -6,20 +6,19 @@ from difflib import SequenceMatcher
 import mock
 import pytest
 import responses
-import yaml
 from click.testing import CliRunner
 from dagster import seven
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
-from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import (
     DAGSTER_TELEMETRY_URL,
     UPDATE_REPO_STATS,
+    cleanup_telemetry_logger,
     get_dir_from_dagster_home,
     hash_name,
     upload_logs,
 )
-from dagster.core.test_utils import environ, instance_for_test
+from dagster.core.test_utils import environ, instance_for_test, instance_for_test_tempdir
 from dagster.utils import file_relative_path, pushd, script_relative_path
 
 EXPECTED_KEYS = set(
@@ -44,7 +43,7 @@ def path_to_file(path):
 
 
 def test_dagster_telemetry_enabled(caplog):
-    with instance_for_test(enable_telemetry=True):
+    with instance_for_test(overrides={"telemetry": {"enabled": True}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
             pipeline_attribute = "foo_pipeline"
@@ -68,7 +67,7 @@ def test_dagster_telemetry_enabled(caplog):
 
 
 def test_dagster_telemetry_disabled(caplog):
-    with instance_for_test(enable_telemetry=False):
+    with instance_for_test(overrides={"telemetry": {"enabled": False}}):
         runner = CliRunner()
         with pushd(path_to_file("")):
             pipeline_name = "foo_pipeline"
@@ -84,11 +83,7 @@ def test_dagster_telemetry_disabled(caplog):
 
 def test_dagster_telemetry_unset(caplog):
     with seven.TemporaryDirectory() as temp_dir:
-        with environ({"DAGSTER_HOME": temp_dir}):
-            with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
-                yaml.dump({}, fd, default_flow_style=False)
-
-            DagsterInstance.local_temp(temp_dir)
+        with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"
@@ -114,11 +109,7 @@ def test_dagster_telemetry_unset(caplog):
 
 def test_repo_stats(caplog):
     with seven.TemporaryDirectory() as temp_dir:
-        with environ({"DAGSTER_HOME": temp_dir}):
-            with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
-                yaml.dump({}, fd, default_flow_style=False)
-
-            DagsterInstance.local_temp(temp_dir)
+        with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             with pushd(path_to_file("")):
                 pipeline_name = "multi_mode_with_resources"
@@ -155,9 +146,6 @@ def test_repo_stats(caplog):
 # Note that both environment must be set together. Otherwise, if env={"BUILDKITE": None} ran in the
 # azure pipeline, then this test would fail, because TF_BUILD would be set implicitly, resulting in
 # no logs being uploaded. The same applies in the reverse way, if only TF_BUILD is set to None.
-@pytest.mark.skipif(
-    os.name == "nt", reason="TemporaryDirectory disabled for win because of event.log contention"
-)
 @pytest.mark.parametrize("env", [{"BUILDKITE": None, "TF_BUILD": None}])
 @responses.activate
 def test_dagster_telemetry_upload(env):
@@ -165,8 +153,10 @@ def test_dagster_telemetry_upload(env):
     for handler in logger.handlers:
         logger.removeHandler(handler)
 
+    responses.add(responses.POST, DAGSTER_TELEMETRY_URL)
+
     with environ(env):
-        with instance_for_test(enable_telemetry=True):
+        with instance_for_test():
             runner = CliRunner()
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"
@@ -178,12 +168,15 @@ def test_dagster_telemetry_upload(env):
             mock_stop_event = mock.MagicMock()
             mock_stop_event.is_set.return_value = False
 
-            def side_effect():
+            def side_effect(_):
                 mock_stop_event.is_set.return_value = True
 
             mock_stop_event.wait.side_effect = side_effect
 
-            upload_logs(mock_stop_event)
+            # Needed to avoid file contention issues on windows with the telemetry log file
+            cleanup_telemetry_logger()
+
+            upload_logs(mock_stop_event, raise_errors=True)
             assert responses.assert_call_count(DAGSTER_TELEMETRY_URL, 1)
 
 
@@ -191,7 +184,7 @@ def test_dagster_telemetry_upload(env):
 @responses.activate
 def test_dagster_telemetry_no_test_env_upload(env):
     with environ(env):
-        with instance_for_test(enable_telemetry=True):
+        with instance_for_test():
             runner = CliRunner()
             with pushd(path_to_file("")):
                 pipeline_attribute = "foo_pipeline"

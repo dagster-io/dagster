@@ -278,9 +278,6 @@ def test_valid_path_prefix():
             )
 
 
-@pytest.mark.skipif(
-    os.name == "nt", reason="TemporaryDirectory disabled for win because of event.log contention"
-)
 @mock.patch("gevent.pywsgi.WSGIServer.serve_forever")
 def test_dagit_logs(
     server_mock, caplog,
