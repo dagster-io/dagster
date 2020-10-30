@@ -10,13 +10,17 @@ import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
 describe('App', () => {
   const defaultMocks = {
     Repository: () => ({
-      name: 'my_repository',
+      name: () => 'my_repository',
+      pipelines: () => new MockList(1),
     }),
     RepositoryOrError: () => ({
       __typename: 'Repository',
     }),
     RepositoriesOrError: () => ({
       __typename: 'RepositoryConnection',
+    }),
+    RepositoryLocation: () => ({
+      name: () => 'my_location',
     }),
     RepositoryLocationConnection: () => ({
       nodes: () => new MockList(2),
@@ -76,7 +80,7 @@ describe('App', () => {
   describe('Routes', () => {
     it('renders solid details', async () => {
       render(
-        <MemoryRouter initialEntries={['/solid/foo_solid']}>
+        <MemoryRouter initialEntries={['/workspace/my_repository@my_location/solid/foo_solid']}>
           <ApolloTestProvider mocks={defaultMocks}>
             <AppContent />
           </ApolloTestProvider>
@@ -93,7 +97,7 @@ describe('App', () => {
 
     it('renders solids explorer', async () => {
       render(
-        <MemoryRouter initialEntries={['/solids/foo_solid']}>
+        <MemoryRouter initialEntries={['/workspace/my_repository@my_location/solids/foo_solid']}>
           <ApolloTestProvider mocks={defaultMocks}>
             <AppContent />
           </ApolloTestProvider>
@@ -122,13 +126,12 @@ describe('App', () => {
         PipelineSnapshotOrError: () => ({
           __typename: 'PipelineSnapshot',
         }),
-        Repository: () => ({
-          pipelines: () => new MockList(1),
-        }),
       };
 
       render(
-        <MemoryRouter initialEntries={['/pipeline/foo_pipeline/overview']}>
+        <MemoryRouter
+          initialEntries={['/workspace/my_repository@my_location/pipelines/foo_pipeline/overview']}
+        >
           <ApolloTestProvider mocks={mocks}>
             <AppContent />
           </ApolloTestProvider>

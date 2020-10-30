@@ -2,11 +2,10 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors, NonIdealState} from '@blueprintjs/core';
 import * as querystring from 'query-string';
 import * as React from 'react';
-import {RouteComponentProps} from 'react-router';
+import {useHistory, useLocation} from 'react-router-dom';
 import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualized';
 import styled from 'styled-components/macro';
 
-import {DagsterRepositoryContext, useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
 import {SolidTypeSignature} from 'src/SolidTypeSignature';
 import {SplitPanelContainer} from 'src/SplitPanelContainer';
@@ -24,6 +23,9 @@ import {
   SolidsRootQuery_repositoryOrError_Repository_usedSolids,
 } from 'src/solids/types/SolidsRootQuery';
 import {FontFamily} from 'src/ui/styles';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 function flatUniq(arrs: string[][]) {
   const results: {[key: string]: boolean} = {};
@@ -89,39 +91,60 @@ function filterSolidsWithSearch(solids: Solid[], search: TokenizingFieldValue[])
   });
 }
 
-type SolidsRootProps = RouteComponentProps<{name: string}>;
+interface Props {
+  name?: string;
+  repoAddress: RepoAddress;
+}
 
-export const SolidsRoot: React.FunctionComponent<SolidsRootProps> = (props) => {
+export const SolidsRoot: React.FC<Props> = (props) => {
+  const {name, repoAddress} = props;
   useDocumentTitle('Solids');
-  const repoContext = React.useContext(DagsterRepositoryContext);
-  const repositorySelector = useRepositorySelector();
+  const repositorySelector = repoAddressToSelector(repoAddress);
+
   const queryResult = useQuery<SolidsRootQuery>(SOLIDS_ROOT_QUERY, {
-    skip: !repoContext?.repository || !repoContext?.repositoryLocation,
     variables: {repositorySelector},
   });
+
   return (
-    <Loading queryResult={queryResult}>
-      {({repositoryOrError}) => {
-        if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
-          return <SolidsRootWithData usedSolids={repositoryOrError.usedSolids} {...props} />;
-        }
-        return null;
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minWidth: 0,
+        width: '100%',
+        height: '100%',
       }}
-    </Loading>
+    >
+      <Loading queryResult={queryResult}>
+        {({repositoryOrError}) => {
+          if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
+            return (
+              <SolidsRootWithData
+                {...props}
+                name={name}
+                repoAddress={repoAddress}
+                usedSolids={repositoryOrError.usedSolids}
+              />
+            );
+          }
+          return null;
+        }}
+      </Loading>
+    </div>
   );
 };
 
-const SolidsRootWithData: React.FunctionComponent<
-  SolidsRootProps & {
-    usedSolids: Solid[];
-  }
-> = ({location, match, history, usedSolids}) => {
+const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
+  const {name, repoAddress, usedSolids} = props;
+  const history = useHistory();
+  const location = useLocation();
+
   const {q, typeExplorer} = querystring.parse(location.search);
   const suggestions = searchSuggestionsForSolids(usedSolids);
   const search = tokenizedValuesFromString((q as string) || '', suggestions);
   const filtered = filterSolidsWithSearch(usedSolids, search);
 
-  const selected = usedSolids.find((s) => s.definition.name === match.params.name);
+  const selected = usedSolids.find((s) => s.definition.name === name);
 
   const onSearch = (search: TokenizingFieldValue[]) => {
     history.push({
@@ -130,7 +153,9 @@ const SolidsRootWithData: React.FunctionComponent<
   };
 
   const onClickSolid = (defName: string) => {
-    history.push(`/solids/${defName}?${querystring.stringify({q})}`);
+    history.push(
+      workspacePathFromAddress(repoAddress, `/solids/${defName}?${querystring.stringify({q})}`),
+    );
   };
 
   React.useEffect(() => {
@@ -144,6 +169,18 @@ const SolidsRootWithData: React.FunctionComponent<
       onSearch([...search, {token: 'input', value: typeExplorer}]);
     }
   });
+
+  const onClickInvocation = React.useCallback(
+    ({pipelineName, handleID}) => {
+      history.push(
+        workspacePathFromAddress(
+          repoAddress,
+          `/pipelines/${pipelineName}/${handleID.split('.').join('/')}`,
+        ),
+      );
+    },
+    [history, repoAddress],
+  );
 
   return (
     <SplitPanelContainer
@@ -187,9 +224,8 @@ const SolidsRootWithData: React.FunctionComponent<
           <SolidDetailScrollContainer>
             <UsedSolidDetails
               name={selected.definition.name}
-              onClickInvocation={({pipelineName, handleID}) =>
-                history.push(`/pipeline/${pipelineName}/${handleID.split('.').join('/')}`)
-              }
+              onClickInvocation={onClickInvocation}
+              repoAddress={repoAddress}
             />
           </SolidDetailScrollContainer>
         ) : (
@@ -203,13 +239,15 @@ const SolidsRootWithData: React.FunctionComponent<
   );
 };
 
-const SolidList: React.FunctionComponent<{
+interface SolidListProps {
   items: Solid[];
   width: number;
   height: number;
   selected: Solid | undefined;
   onClickSolid: (name: string) => void;
-}> = (props) => {
+}
+
+const SolidList: React.FunctionComponent<SolidListProps> = (props) => {
   const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 
   // Reset our cell sizes when the panel's width is changed. This is similar to a useEffect

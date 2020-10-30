@@ -12,6 +12,7 @@ import {PartitionSetSelector} from 'src/partitions/PartitionSetSelector';
 import {PartitionsBackfillPartitionSelector} from 'src/partitions/PartitionsBackfill';
 import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from 'src/partitions/types/PipelinePartitionsRootQuery';
 import {useChunkedPartitionsQuery} from 'src/partitions/useChunkedPartitionsQuery';
+import {RepoAddress} from 'src/workspace/types';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 
@@ -20,6 +21,7 @@ interface PartitionViewProps {
   partitionSet: PartitionSet;
   partitionSets: PartitionSet[];
   onChangePartitionSet: (set: PartitionSet) => void;
+  repoAddress: RepoAddress;
 }
 
 export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
@@ -27,6 +29,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   partitionSet,
   partitionSets,
   onChangePartitionSet,
+  repoAddress,
 }) => {
   const [pageSize, setPageSize] = React.useState<number | 'all'>(30);
   const [runTags, setRunTags] = React.useState<TokenizingFieldValue[]>([]);
@@ -35,6 +38,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
     partitionSet.name,
     pageSize,
     runTags,
+    repoAddress,
   );
 
   const allStepKeys = {};
@@ -65,6 +69,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
               setRunTags([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
               setShowBackfillSetup(false);
             }}
+            repoAddress={repoAddress}
           />
         )}
       </Dialog>
@@ -104,6 +109,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
         <PartitionRunMatrix
           partitions={partitions}
           pipelineName={pipelineName}
+          repoAddress={repoAddress}
           runTags={runTags}
           setRunTags={setRunTags}
         />

@@ -1,15 +1,9 @@
 import {gql} from '@apollo/client';
 import {Query} from '@apollo/client/react/components';
-import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {Redirect, RouteComponentProps} from 'react-router-dom';
+import {Redirect} from 'react-router-dom';
 
-import {
-  usePipelineSelector,
-  useRepositoryOptions,
-  useRepositorySelector,
-} from 'src/DagsterRepositoryContext';
 import {
   IExecutionSessionChanges,
   applyChangesToSession,
@@ -32,42 +26,42 @@ import {
   PipelineExecutionRootQueryVariables,
 } from 'src/execute/types/PipelineExecutionRootQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<{
+interface Props {
   pipelinePath: string;
-}>> = ({match}) => {
-  const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
+  repoAddress: RepoAddress;
+}
+
+export const PipelineExecutionRoot: React.FC<Props> = (props) => {
+  const {pipelinePath, repoAddress} = props;
+  const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
 
-  const {loading} = useRepositoryOptions();
-  const {repositoryName, repositoryLocationName} = useRepositorySelector();
-  const [data, onSave] = useStorage(repositoryName, pipelineName);
+  const [data, onSave] = useStorage(repoAddress.name || '', pipelineName);
 
   const session = data.sessions[data.current];
-  const pipelineSelector = usePipelineSelector(pipelineName, session?.solidSelection || undefined);
+  const pipelineSelector = {
+    ...repoAddressToSelector(repoAddress),
+    pipelineName,
+    solidSelection: session?.solidSelection || undefined,
+  };
 
   if (snapshotId) {
-    return <Redirect to={`/pipeline/${pipelineName}/playground`} />;
+    return (
+      <Redirect
+        to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/playground`)}
+      />
+    );
   }
 
   const onSaveSession = (session: string, changes: IExecutionSessionChanges) => {
     onSave(applyChangesToSession(data, session, changes));
   };
 
-  if (loading) {
-    return <ExecutionSessionContainerLoading />;
-  }
-
-  // No repository, we're in an empty workspace.
-  if (!repositoryLocationName || !repositoryName) {
-    return (
-      <NonIdealState
-        title="Pipeline Not Found"
-        icon={IconNames.FLOW_BRANCH}
-        description="Cannot load playground without pipeline"
-      />
-    );
-  }
+  const {name: repositoryName, location: repositoryLocationName} = repoAddress;
 
   return (
     <>
@@ -161,6 +155,7 @@ export const PipelineExecutionRoot: React.FunctionComponent<RouteComponentProps<
                   runConfigSchemaOrError={configSchemaOrError}
                   currentSession={session}
                   pipelineSelector={pipelineSelector}
+                  repoAddress={repoAddress}
                 />
               );
             }}

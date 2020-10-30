@@ -2,7 +2,6 @@ import {gql} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components/macro';
 
 import {CursorPaginationControls} from 'src/CursorControls';
@@ -27,10 +26,14 @@ import {
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['id', 'snapshotId', 'status', 'tag'];
 
-export const PipelineRunsRoot: React.FC<RouteComponentProps<{pipelinePath: string}>> = ({
-  match,
-}) => {
-  const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
+interface Props {
+  pipelinePath: string;
+}
+
+export const PipelineRunsRoot: React.FC<Props> = (props) => {
+  const {pipelinePath} = props;
+  const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);
+
   useDocumentTitle(`Pipeline: ${pipelineName}`);
   const [filterTokens, setFilterTokens] = useRunFiltering(ENABLED_FILTERS);
 

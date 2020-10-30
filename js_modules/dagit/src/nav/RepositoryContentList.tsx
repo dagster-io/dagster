@@ -5,10 +5,11 @@ import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {DagsterRepoOption} from 'src/DagsterRepositoryContext';
 import {ShortcutHandler} from 'src/ShortcutHandler';
 import {tabForPipelinePathComponent} from 'src/nav/PipelineNav';
 import {ContentListSolidsQuery} from 'src/nav/types/ContentListSolidsQuery';
+import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
+import {workspacePath} from 'src/workspace/workspacePath';
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
@@ -28,6 +29,8 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
   const [focused, setFocused] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const pipelineTab = tabForPipelinePathComponent(tab);
+  const repoName = repo.repository.name;
+  const repoLocation = repo.repositoryLocation.name;
 
   const history = useHistory();
 
@@ -59,7 +62,11 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
           .map((pipeline) => pipeline.name)
           .filter((p) => !q || iincludes(p, q))
           .map((p) => ({
-            to: `/pipeline/${p}/${tab === 'partitions' ? 'overview' : pipelineTab.pathComponent}`,
+            to: workspacePath(
+              repoName,
+              repoLocation,
+              `/pipelines/${p}/${tab === 'partitions' ? 'overview' : pipelineTab.pathComponent}`,
+            ),
             label: p,
           }))
       : usedSolids
@@ -70,7 +77,7 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
               s.invocations.some((i) => iincludes(i.pipeline.name, q)),
           )
           .map(({definition}) => ({
-            to: `/solid/${definition.name}`,
+            to: workspacePath(repoName, repoLocation, `/solid/${definition.name}`),
             label: definition.name,
           }));
 

@@ -20,20 +20,12 @@ import {IconNames} from '@blueprintjs/icons';
 import * as qs from 'query-string';
 import * as React from 'react';
 import {useState} from 'react';
-import {Link, useHistory, useRouteMatch} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {ButtonLink} from 'src/ButtonLink';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {ConfirmationOptions, useConfirmation} from 'src/CustomConfirmationProvider';
-import {
-  DagsterRepoOption,
-  repositorySelectorFromDagsterRepoOption,
-  scheduleSelectorWithRepository,
-  useCurrentRepositoryState,
-  useRepositoryOptions,
-  useScheduleSelector,
-} from 'src/DagsterRepositoryContext';
 import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryOriginInformation} from 'src/RepositoryInformation';
@@ -57,6 +49,13 @@ import {
 } from 'src/schedules/types/StopSchedule';
 import {ScheduleStatus, ScheduleTickStatus} from 'src/types/globalTypes';
 import {FontFamily} from 'src/ui/styles';
+import {
+  DagsterRepoOption,
+  scheduleSelectorWithRepository,
+  useScheduleSelector,
+} from 'src/workspace/WorkspaceContext';
+import {RepoAddress} from 'src/workspace/types';
+import {workspacePath, workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 
@@ -137,10 +136,11 @@ const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
   }
 };
 
-export const ScheduleRow: React.FunctionComponent<{
+export const ScheduleRow: React.FC<{
   schedule: ScheduleDefinitionFragment;
-}> = ({schedule}) => {
-  const match = useRouteMatch('/schedules/:scheduleName');
+  repoAddress: RepoAddress;
+}> = (props) => {
+  const {repoAddress, schedule} = props;
 
   const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
@@ -171,12 +171,10 @@ export const ScheduleRow: React.FunctionComponent<{
     ? null
     : data?.scheduleDefinitionOrError?.runConfigOrError.yaml;
 
-  const displayName = match ? (
-    <div>{name}</div>
-  ) : (
+  const displayName = (
     <>
       <div>
-        <Link to={`/schedules/${name}`}>{name}</Link>
+        <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
       </div>
       {scheduleId && (
         <span style={{fontSize: '12px'}}>
@@ -191,7 +189,9 @@ export const ScheduleRow: React.FunctionComponent<{
       <tr key={name}>
         <td>{displayName}</td>
         <td>
-          <Link to={`/pipeline/${pipelineName}/`}>{pipelineName}</Link>
+          <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
+            {pipelineName}
+          </Link>
         </td>
         <td
           style={{
@@ -251,7 +251,9 @@ export const ScheduleRow: React.FunctionComponent<{
       </td>
       <td>{displayName}</td>
       <td>
-        <Link to={`/pipeline/${pipelineName}/`}>{pipelineName}</Link>
+        <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
+          {pipelineName}
+        </Link>
       </td>
       <td
         style={{
@@ -356,7 +358,7 @@ export const ScheduleRow: React.FunctionComponent<{
                     icon="edit"
                     target="_blank"
                     disabled={!runConfigYaml}
-                    href={`/pipeline/${pipelineName}/playground/setup?${qs.stringify({
+                    href={`/pipelines/${pipelineName}/playground/setup?${qs.stringify({
                       mode,
                       solidSelection,
                       config: runConfigYaml,
@@ -368,7 +370,7 @@ export const ScheduleRow: React.FunctionComponent<{
                       text="View Partition History..."
                       icon="multi-select"
                       target="_blank"
-                      href={`/pipeline/${pipelineName}/partitions`}
+                      href={`/pipelines/${pipelineName}/partitions`}
                     />
                   ) : null}
                 </Menu>
@@ -431,10 +433,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
     onCompleted: displayScheduleMutationErrors,
   });
 
-  const history = useHistory();
   const confirm = useConfirmation();
-  const {options} = useRepositoryOptions();
-  const [, setRepo] = useCurrentRepositoryState(options);
   const [showRepositoryOrigin, setShowRepositoryOrigin] = useState(false);
 
   const {
@@ -448,14 +447,6 @@ export const ScheduleStateRow: React.FunctionComponent<{
     repositoryOrigin,
   } = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
-
-  const goToSchedule = () => {
-    if (!dagsterRepoOption) {
-      return;
-    }
-    setRepo(dagsterRepoOption);
-    history.push(`/schedules/${scheduleName}`);
-  };
 
   const switchScheduleStatus = async (
     status: ScheduleStatus,
@@ -485,10 +476,10 @@ export const ScheduleStateRow: React.FunctionComponent<{
         variables: {scheduleOriginId},
       });
     } else {
-      const scheduleSelector = scheduleSelectorWithRepository(
-        scheduleName,
-        repositorySelectorFromDagsterRepoOption(dagsterRepoOption),
-      );
+      const scheduleSelector = scheduleSelectorWithRepository(scheduleName, {
+        repositoryLocationName: dagsterRepoOption.repository.location.name,
+        repositoryName: dagsterRepoOption.repository.name,
+      });
 
       startSchedule({
         variables: {scheduleSelector},
@@ -517,7 +508,15 @@ export const ScheduleStateRow: React.FunctionComponent<{
 
       {dagsterRepoOption ? (
         <td>
-          <ButtonLink onClick={goToSchedule}>{scheduleName}</ButtonLink>
+          <Link
+            to={workspacePath(
+              dagsterRepoOption?.repository.name,
+              dagsterRepoOption?.repositoryLocation.name,
+              scheduleName,
+            )}
+          >
+            {scheduleName}
+          </Link>
         </td>
       ) : (
         <td>

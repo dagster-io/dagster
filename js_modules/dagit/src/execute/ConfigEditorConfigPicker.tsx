@@ -15,7 +15,6 @@ import * as ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
-import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {IExecutionSession} from 'src/LocalStorage';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {ShortcutHandler} from 'src/ShortcutHandler';
@@ -30,6 +29,8 @@ import {
 } from 'src/execute/types/ConfigPartitionsQuery';
 import {PythonErrorFragment} from 'src/types/PythonErrorFragment';
 import {RepositorySelector} from 'src/types/globalTypes';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 
 type Pipeline = ConfigEditorGeneratorPipelineFragment;
 type Preset = ConfigEditorGeneratorPipelineFragment_presets;
@@ -46,6 +47,7 @@ interface ConfigEditorConfigPickerProps {
   onCreateSession: (initial: Partial<IExecutionSession>) => void;
   onLoading: () => void;
   onLoaded: () => void;
+  repoAddress: RepoAddress;
 }
 
 const PRESET_PICKER_HINT_TEXT = `Define a PresetDefinition, PartitionSetDefinition, or a schedule decorator (e.g. @daily_schedule) to autofill this session...`;
@@ -152,7 +154,7 @@ class ConfigEditorConfigPickerInternal extends React.Component<
   };
 
   render() {
-    const {pipeline, solidSelection, base, partitionSets} = this.props;
+    const {pipeline, solidSelection, base, partitionSets, repoAddress} = this.props;
 
     return (
       <PickerContainer>
@@ -174,6 +176,7 @@ class ConfigEditorConfigPickerInternal extends React.Component<
               partitionSetName={base.partitionsSetName}
               value={base.partitionName}
               onSelect={this.onSelectPartition}
+              repoAddress={repoAddress}
             />
           </>
         )}
@@ -196,12 +199,13 @@ interface ConfigEditorPartitionPickerProps {
     partitionSetName: string,
     partitionName: string,
   ) => void;
+  repoAddress: RepoAddress;
 }
 
-export const ConfigEditorPartitionPicker: React.FunctionComponent<ConfigEditorPartitionPickerProps> = React.memo(
+export const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = React.memo(
   (props) => {
-    const {partitionSetName, value, onSelect} = props;
-    const repositorySelector = useRepositorySelector();
+    const {partitionSetName, value, onSelect, repoAddress} = props;
+    const repositorySelector = repoAddressToSelector(repoAddress);
     const {data, loading} = useQuery<ConfigPartitionsQuery>(CONFIG_PARTITIONS_QUERY, {
       variables: {repositorySelector, partitionSetName},
       fetchPolicy: 'network-only',

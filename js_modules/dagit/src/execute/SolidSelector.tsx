@@ -3,7 +3,6 @@ import {Colors, Intent, Popover} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {ShortcutHandler} from 'src/ShortcutHandler';
@@ -15,6 +14,8 @@ import {
 import {PipelineGraph} from 'src/graph/PipelineGraph';
 import {SVGViewport} from 'src/graph/SVGViewport';
 import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 
 interface ISolidSelectorProps {
   pipelineName: string;
@@ -23,6 +24,7 @@ interface ISolidSelectorProps {
   query: string | null;
   onChange: (value: string[] | null, query: string | null) => void;
   onRequestClose?: () => void;
+  repoAddress: RepoAddress;
 }
 
 interface SolidSelectorModalProps {
@@ -90,10 +92,14 @@ const SOLID_SELECTOR_QUERY = gql`
 `;
 
 export const SolidSelector = (props: ISolidSelectorProps) => {
-  const {serverProvidedSubsetError, query, onChange} = props;
+  const {serverProvidedSubsetError, query, onChange, pipelineName, repoAddress} = props;
   const [pending, setPending] = React.useState<string>(query || '*');
   const [focused, setFocused] = React.useState(false);
-  const selector = usePipelineSelector(props.pipelineName);
+  const selector = {
+    ...repoAddressToSelector(repoAddress),
+    pipelineName,
+  };
+
   const {data, loading} = useQuery<SolidSelectorQuery>(SOLID_SELECTOR_QUERY, {
     variables: {selector},
     fetchPolicy: 'cache-and-network',

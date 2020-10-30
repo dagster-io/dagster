@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Redirect, Route, Switch} from 'react-router-dom';
+import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
 import {PipelineExplorerRegexRoot} from 'src/PipelineExplorerRoot';
 import {PipelineRunsRoot} from 'src/PipelineRunsRoot';
@@ -8,8 +8,14 @@ import {PipelineExecutionSetupRoot} from 'src/execute/PipelineExecutionSetupRoot
 import {PipelineNav} from 'src/nav/PipelineNav';
 import {PipelinePartitionsRoot} from 'src/partitions/PipelinePartitionsRoot';
 import {PipelineOverviewRoot} from 'src/pipelines/PipelineOverviewRoot';
+import {RepoAddress} from 'src/workspace/types';
 
-export const PipelineRoot: React.FunctionComponent<{}> = () => {
+interface Props {
+  repoAddress: RepoAddress;
+}
+
+export const PipelineRoot: React.FC<Props> = (props) => {
+  const {repoAddress} = props;
   return (
     <div
       style={{
@@ -20,22 +26,54 @@ export const PipelineRoot: React.FunctionComponent<{}> = () => {
         height: '100%',
       }}
     >
-      <PipelineNav />
+      <PipelineNav repoAddress={repoAddress} />
       <Switch>
-        <Route path="/pipeline/:pipelinePath/overview" component={PipelineOverviewRoot} />
         <Route
-          path="/pipeline/:pipelinePath/playground/setup"
-          component={PipelineExecutionSetupRoot}
+          path="/workspace/:repoPath/pipelines/:pipelinePath/overview"
+          render={(props) => <PipelineOverviewRoot {...props} repoAddress={repoAddress} />}
         />
-        <Route path="/pipeline/:pipelinePath/playground" component={PipelineExecutionRoot} />
         <Route
-          path="/pipeline/:pipelinePath/runs/:runId"
-          render={({match}) => <Redirect to={`/instance/runs/${match.params.runId}`} />}
+          path="/workspace/:repoPath/pipelines/:pipelinePath/playground/setup"
+          component={(props: RouteComponentProps<{pipelinePath: string}>) => (
+            <PipelineExecutionSetupRoot
+              pipelinePath={props.match.params.pipelinePath}
+              repoAddress={repoAddress}
+            />
+          )}
         />
-        <Route path="/pipeline/:pipelinePath/runs" component={PipelineRunsRoot} />
-        <Route path="/pipeline/:pipelinePath/partitions" component={PipelinePartitionsRoot} />
+        <Route
+          path="/workspace/:repoPath/pipelines/:pipelinePath/playground"
+          component={(props: RouteComponentProps<{pipelinePath: string}>) => (
+            <PipelineExecutionRoot
+              pipelinePath={props.match.params.pipelinePath}
+              repoAddress={repoAddress}
+            />
+          )}
+        />
+        <Route
+          path="/workspace/:repoPath/pipelines/:pipelinePath/runs/:runId"
+          render={(props: RouteComponentProps<{runId: string}>) => (
+            <Redirect to={`/instance/runs/${props.match.params.runId}`} />
+          )}
+        />
+        {/* Move to `/instance`: */}
+        <Route
+          path="/workspace/:repoPath/pipelines/:pipelinePath/runs"
+          component={(props: RouteComponentProps<{pipelinePath: string}>) => (
+            <PipelineRunsRoot pipelinePath={props.match.params.pipelinePath} />
+          )}
+        />
+        <Route
+          path="/workspace/:repoPath/pipelines/:pipelinePath/partitions"
+          render={(props: RouteComponentProps<{pipelinePath: string}>) => (
+            <PipelinePartitionsRoot
+              pipelinePath={props.match.params.pipelinePath}
+              repoAddress={repoAddress}
+            />
+          )}
+        />
         {/* Capture solid subpath in a regex match */}
-        <Route path="/pipeline/(/?.*)" component={PipelineExplorerRegexRoot} />
+        <Route path="/workspace/:repoPath/pipelines/(/?.*)" component={PipelineExplorerRegexRoot} />
       </Switch>
     </div>
   );

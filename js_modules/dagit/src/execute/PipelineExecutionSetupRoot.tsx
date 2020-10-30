@@ -1,20 +1,25 @@
 import * as querystring from 'query-string';
 import * as React from 'react';
 import {Redirect} from 'react-router';
-import {RouteComponentProps} from 'react-router-dom';
 
-import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {IExecutionSession, applyCreateSession, useStorage} from 'src/LocalStorage';
+import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
+import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentProps<{
+interface Props {
   pipelinePath: string;
-}>> = ({match}) => {
-  const {repositoryName} = useRepositorySelector();
-  const pipelineName = match.params.pipelinePath.split(':')[0];
+  repoAddress: RepoAddress;
+}
+
+export const PipelineExecutionSetupRoot: React.FC<Props> = (props) => {
+  const {pipelinePath, repoAddress} = props;
+
+  const {pipelineName} = explorerPathFromString(pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
 
-  const [data, onSave] = useStorage(repositoryName, pipelineName);
+  const [data, onSave] = useStorage(repoAddress.name, pipelineName);
   const qs = querystring.parse(window.location.search);
 
   React.useEffect(() => {
@@ -38,5 +43,12 @@ export const PipelineExecutionSetupRoot: React.FunctionComponent<RouteComponentP
       onSave(applyCreateSession(data, newSession));
     }
   });
-  return <Redirect to={{pathname: `/pipeline/${pipelineName}/playground`}} />;
+
+  return (
+    <Redirect
+      to={{
+        pathname: workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/playground`),
+      }}
+    />
+  );
 };

@@ -135,7 +135,7 @@ const RunRow: React.FunctionComponent<{
   onToggleChecked?: () => void;
   additionalColumns?: React.ReactNode[];
 }> = ({run, onSetFilter, checked, onToggleChecked, additionalColumns}) => {
-  const pipelineLink = `/instance/snapshots/${explorerPathToString({
+  const snapshotLink = `/instance/snapshots/${explorerPathToString({
     pipelineName: run.pipelineName,
     snapshotId: run.pipelineSnapshotId || '',
     solidsQuery: '',
@@ -165,7 +165,7 @@ const RunRow: React.FunctionComponent<{
       </td>
       <td style={{width: '90px'}}>
         <div style={{fontFamily: FontFamily.monospace}}>
-          <Link to={pipelineLink}>{run.pipelineSnapshotId?.slice(0, 8)}</Link>
+          <Link to={snapshotLink}>{run.pipelineSnapshotId?.slice(0, 8)}</Link>
         </div>
       </td>
       <td>

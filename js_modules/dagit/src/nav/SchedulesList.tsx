@@ -1,14 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, ButtonGroup, Colors, Icon, InputGroup} from '@blueprintjs/core';
+import {Button, Colors, Icon, InputGroup} from '@blueprintjs/core';
 import React from 'react';
 import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {DagsterRepoOption} from 'src/DagsterRepositoryContext';
 import {ShortcutHandler} from 'src/ShortcutHandler';
 import {SchedulesListQuery} from 'src/nav/types/SchedulesListQuery';
 import {ScheduleStatus} from 'src/types/globalTypes';
+import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
+import {workspacePath} from 'src/workspace/workspacePath';
 
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
@@ -22,6 +23,8 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
   const [focused, setFocused] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const history = useHistory();
+  const repoName = repo.repository.name;
+  const repoLocation = repo.repositoryLocation.name;
 
   const [q, setQ] = React.useState<string>('');
 
@@ -43,7 +46,7 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
   const items = repoSchedules
     .filter(({name}) => !q || iincludes(name, q))
     .map(({name, scheduleState}) => ({
-      to: `/schedules/${name}`,
+      to: workspacePath(repoName, repoLocation, `/schedules/${name}`),
       label: name,
       status: scheduleState?.status,
     }));
@@ -111,13 +114,11 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
           />
         </ShortcutHandler>
         <div style={{width: 4}} />
-        <ButtonGroup>
-          <a href="/schedules">
-            <Button small={true} icon={<Icon icon="diagram-tree" iconSize={13} />}>
-              View All{' '}
-            </Button>
-          </a>
-        </ButtonGroup>
+        <Link to={workspacePath(repoName, repoLocation, '/schedules')}>
+          <Button small={true} icon={<Icon icon="diagram-tree" iconSize={13} />}>
+            View All
+          </Button>
+        </Link>
       </Header>
       <Items>
         {items.map((p) => (

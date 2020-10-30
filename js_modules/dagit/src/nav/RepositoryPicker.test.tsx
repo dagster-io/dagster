@@ -4,10 +4,10 @@ import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {useRepositoryOptions} from 'src/DagsterRepositoryContext';
 import {OnReload} from 'src/nav/ReloadRepositoryLocationButton';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
+import {useRepositoryOptions} from 'src/workspace/WorkspaceContext';
 
 describe('RepositoryPicker', () => {
   const defaultMocks = {
@@ -33,7 +33,6 @@ describe('RepositoryPicker', () => {
           onReload={props.onReload || jest.fn()}
           options={options}
           repo={options[0]}
-          setRepo={jest.fn()}
         />
       </MemoryRouter>
     );

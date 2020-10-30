@@ -1,10 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
-import {Redirect, RouteComponentProps} from 'react-router-dom';
+import {Redirect} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
 import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
@@ -14,28 +13,38 @@ import {
   PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results,
   PipelinePartitionsRootQueryVariables,
 } from 'src/partitions/types/PipelinePartitionsRootQuery';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 
-export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps<{
+interface Props {
   pipelinePath: string;
-}>> = ({match}) => {
-  const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
-  useDocumentTitle(`Pipeline: ${pipelineName}`);
+  repoAddress: RepoAddress;
+}
 
-  const repositorySelector = useRepositorySelector();
+export const PipelinePartitionsRoot: React.FC<Props> = (props) => {
+  const {pipelinePath, repoAddress} = props;
+  const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);
+  useDocumentTitle(`Pipeline: ${pipelineName}`);
+  const repositorySelector = repoAddressToSelector(repoAddress);
+
   const queryResult = useQuery<PipelinePartitionsRootQuery, PipelinePartitionsRootQueryVariables>(
     PIPELINE_PARTITIONS_ROOT_QUERY,
     {
       variables: {repositorySelector, pipelineName},
       fetchPolicy: 'network-only',
-      skip: !repositorySelector.repositoryLocationName || !repositorySelector.repositoryName,
     },
   );
   const [selected, setSelected] = React.useState<PartitionSet | undefined>();
 
   if (snapshotId) {
-    return <Redirect to={`/pipeline/${pipelineName}/partitions`} />;
+    return (
+      <Redirect
+        to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/partitions`)}
+      />
+    );
   }
 
   return (
@@ -81,6 +90,7 @@ export const PipelinePartitionsRoot: React.FunctionComponent<RouteComponentProps
               partitionSets={partitionSetsOrError.results}
               onChangePartitionSet={setSelected}
               pipelineName={pipelineName}
+              repoAddress={repoAddress}
             />
           </PartitionRootContainer>
         );

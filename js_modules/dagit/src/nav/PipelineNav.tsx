@@ -2,13 +2,15 @@ import {IBreadcrumbProps, IconName} from '@blueprintjs/core';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
-import {useRepository} from 'src/DagsterRepositoryContext';
 import {
   explorerPathFromString,
   explorerPathToString,
   PipelineExplorerPath,
 } from 'src/PipelinePathUtils';
 import {TopNav} from 'src/nav/TopNav';
+import {useWorkspaceState} from 'src/workspace/WorkspaceContext';
+import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 interface Tab {
   title: string;
@@ -46,7 +48,7 @@ export function tabForPipelinePathComponent(component?: string): Tab {
   return pipelineTabs[match];
 }
 
-const tabForKey = (explorerPath: PipelineExplorerPath) => {
+const tabForKey = (repoAddress: RepoAddress, explorerPath: PipelineExplorerPath) => {
   const explorerPathForTab = explorerPathToString({
     ...explorerPath,
     pathSolids: [],
@@ -58,24 +60,29 @@ const tabForKey = (explorerPath: PipelineExplorerPath) => {
     const tab = pipelineTabs[key];
     return {
       text: tab.title,
-      href: `/pipeline/${explorerPathForTab}${tab.pathComponent}`,
+      href: workspacePathFromAddress(
+        repoAddress,
+        `/pipelines/${explorerPathForTab}${tab.pathComponent}`,
+      ),
     };
   };
 };
 
-interface CurrentPipelineNavProps {
-  active: Tab;
-  explorerPath: PipelineExplorerPath;
+interface Props {
+  repoAddress: RepoAddress;
 }
 
-export const PipelineNav: React.FunctionComponent<{}> = () => {
-  const match = useRouteMatch<{tab: string; selector: string}>(['/pipeline/:selector/:tab?']);
+export const PipelineNav: React.FC<Props> = (props) => {
+  const {repoAddress} = props;
+  const {activeRepo} = useWorkspaceState();
+  const match = useRouteMatch<{tab: string; selector: string}>([
+    '/workspace/:repoPath/pipelines/:selector/:tab?',
+  ]);
+
   const active = tabForPipelinePathComponent(match.params.tab);
   const explorerPath = explorerPathFromString(match.params.selector);
 
-  const repository = useRepository();
-
-  const hasPartitionSet = repository?.partitionSets
+  const hasPartitionSet = activeRepo?.repo.repository.partitionSets
     .map((x) => x.pipelineName)
     .includes(explorerPath.pipelineName);
 
@@ -86,7 +93,7 @@ export const PipelineNav: React.FunctionComponent<{}> = () => {
 
   const tabs = currentOrder
     .filter((key) => hasPartitionSet || key !== 'partitions')
-    .map(tabForKey(explorerPath));
+    .map(tabForKey(repoAddress, explorerPath));
 
   return <TopNav activeTab={active.title} breadcrumbs={breadcrumbs} tabs={tabs} />;
 };

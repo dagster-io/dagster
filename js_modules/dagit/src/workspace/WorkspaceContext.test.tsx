@@ -1,15 +1,15 @@
 import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
+import {MemoryRouter} from 'react-router-dom';
 
-import {useCurrentRepositoryState, useRepositoryOptions} from 'src/DagsterRepositoryContext';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
+import {useWorkspaceState} from 'src/workspace/WorkspaceContext';
 
-describe('DagsterRepositoryContext', () => {
+describe('WorkspaceContext', () => {
   const Test = () => {
-    const {options} = useRepositoryOptions();
-    const [repo] = useCurrentRepositoryState(options);
-    return <div>Pipeline count: {repo?.repository.pipelines.length}</div>;
+    const {activeRepo} = useWorkspaceState();
+    return <div>Pipeline count: {activeRepo?.repo.repository.pipelines.length}</div>;
   };
 
   describe('Repository options', () => {
@@ -32,9 +32,11 @@ describe('DagsterRepositoryContext', () => {
       };
 
       const {rerender} = render(
-        <ApolloTestProvider mocks={mocks}>
-          <Test key="a" />
-        </ApolloTestProvider>,
+        <MemoryRouter initialEntries={['/workspace/foo@bar/etc']}>
+          <ApolloTestProvider mocks={mocks}>
+            <Test key="a" />
+          </ApolloTestProvider>
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
@@ -43,9 +45,11 @@ describe('DagsterRepositoryContext', () => {
 
       numPipelines++;
       rerender(
-        <ApolloTestProvider mocks={mocks}>
-          <Test key="b" />
-        </ApolloTestProvider>,
+        <MemoryRouter initialEntries={['/workspace/foo@bar/etc']}>
+          <ApolloTestProvider mocks={mocks}>
+            <Test key="b" />
+          </ApolloTestProvider>
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
@@ -54,9 +58,11 @@ describe('DagsterRepositoryContext', () => {
 
       numPipelines--;
       rerender(
-        <ApolloTestProvider mocks={mocks}>
-          <Test key="c" />
-        </ApolloTestProvider>,
+        <MemoryRouter initialEntries={['/workspace/foo@bar/etc']}>
+          <ApolloTestProvider mocks={mocks}>
+            <Test key="c" />
+          </ApolloTestProvider>
+        </MemoryRouter>,
       );
 
       await waitFor(() => {

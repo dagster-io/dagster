@@ -5,8 +5,11 @@ import {Link} from 'react-router-dom';
 
 import {RunStatusWithStats} from 'src/runs/RunStatusDots';
 import {Table} from 'src/ui/Table';
+import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 import {RepositoryPipelinesListQuery} from 'src/workspace/types/RepositoryPipelinesListQuery';
-import {workspacePath} from 'src/workspace/workspacePath';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 const REPOSITORY_PIPELINES_LIST_QUERY = gql`
   query RepositoryPipelinesListQuery($repositorySelector: RepositorySelector!) {
@@ -30,17 +33,13 @@ const REPOSITORY_PIPELINES_LIST_QUERY = gql`
   }
 `;
 
-interface RepositoryViewProps {
-  repoName: string;
-  repoLocation: string;
+interface Props {
+  repoAddress: RepoAddress;
 }
 
-export const RepositoryPipelinesList = (props: RepositoryViewProps) => {
-  const {repoName, repoLocation} = props;
-  const repositorySelector = {
-    repositoryName: repoName,
-    repositoryLocationName: repoLocation,
-  };
+export const RepositoryPipelinesList: React.FC<Props> = (props) => {
+  const {repoAddress} = props;
+  const repositorySelector = repoAddressToSelector(repoAddress);
 
   const {data, error, loading} = useQuery<RepositoryPipelinesListQuery>(
     REPOSITORY_PIPELINES_LIST_QUERY,
@@ -59,7 +58,7 @@ export const RepositoryPipelinesList = (props: RepositoryViewProps) => {
     return (
       <NonIdealState
         title="Unable to load pipelines"
-        description={`Could not load pipelines for ${repoName}@${repoLocation}`}
+        description={`Could not load pipelines for ${repoAddressAsString(repoAddress)}`}
       />
     );
   }
@@ -81,7 +80,7 @@ export const RepositoryPipelinesList = (props: RepositoryViewProps) => {
             <tr key={name}>
               <td style={{width: '60%'}}>
                 <div>
-                  <Link to={workspacePath(repoName, repoLocation, `/pipelines/${name}`)}>
+                  <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${name}`)}>
                     {name}
                   </Link>
                 </div>

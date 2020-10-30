@@ -24,7 +24,12 @@ export const SnapshotRoot: React.FC<RouteComponentProps<{pipelinePath: string; t
     >
       <SnapshotNav activeTab={tab} explorerPath={explorerPath} />
       <Switch>
-        <Route path="/instance/snapshots/:pipelinePath/runs" component={PipelineRunsRoot} />
+        <Route
+          path="/instance/snapshots/:pipelinePath/runs"
+          render={(props: RouteComponentProps<{pipelinePath: string}>) => (
+            <PipelineRunsRoot pipelinePath={props.match.params.pipelinePath} />
+          )}
+        />
         <Route path="/instance/snapshots/(/?.*)" component={PipelineExplorerSnapshotRoot} />
       </Switch>
     </div>

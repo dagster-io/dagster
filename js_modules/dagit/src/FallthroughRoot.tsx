@@ -2,7 +2,8 @@ import {NonIdealState} from '@blueprintjs/core';
 import React from 'react';
 import {Redirect, Route, RouteComponentProps, Switch} from 'react-router-dom';
 
-import {DagsterRepositoryContext} from 'src/DagsterRepositoryContext';
+import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 const InstanceRedirect = (props: RouteComponentProps<any>) => {
   const {location} = props;
@@ -14,15 +15,22 @@ export const FallthroughRoot = () => {
   return (
     <Switch>
       <Route path={['/runs/(.*)?', '/assets/(.*)?', '/scheduler']} component={InstanceRedirect} />
-      <DagsterRepositoryContext.Consumer>
-        {(context) =>
-          context?.repository?.pipelines.length ? (
-            <Redirect to={`/pipeline/${context?.repository.pipelines[0].name}/`} />
-          ) : (
-            <Route render={() => <NonIdealState title="No pipelines" />} />
-          )
-        }
-      </DagsterRepositoryContext.Consumer>
+      <WorkspaceContext.Consumer>
+        {(context) => {
+          if (context?.activeRepo?.repo.repository.pipelines.length) {
+            const repoAddress = context.activeRepo.address;
+            return (
+              <Redirect
+                to={workspacePathFromAddress(
+                  repoAddress,
+                  `/pipelines/${context?.activeRepo?.repo.repository.pipelines[0].name}/`,
+                )}
+              />
+            );
+          }
+          return <Route render={() => <NonIdealState title="No pipelines" />} />;
+        }}
+      </WorkspaceContext.Consumer>
     </Switch>
   );
 };

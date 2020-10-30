@@ -3,15 +3,15 @@ import {IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {ROOT_REPOSITORIES_QUERY} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
 import {TopNav} from 'src/nav/TopNav';
-import {RootRepositoriesQuery} from 'src/types/RootRepositoriesQuery';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
+import {ROOT_REPOSITORIES_QUERY} from 'src/workspace/WorkspaceContext';
+import {RootRepositoriesQuery} from 'src/workspace/types/RootRepositoriesQuery';
 import {workspacePath} from 'src/workspace/workspacePath';
 
-export const WorkspaceOverviewRoot: React.FunctionComponent<{}> = () => {
+export const WorkspaceOverviewRoot: React.FC<{}> = () => {
   const queryResult = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
     fetchPolicy: 'cache-and-network',
   });

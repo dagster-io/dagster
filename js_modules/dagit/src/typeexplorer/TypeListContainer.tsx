@@ -1,11 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
 import {TypeList} from 'src/typeexplorer/TypeList';
 import {TypeListContainerQuery} from 'src/typeexplorer/types/TypeListContainerQuery';
+import {usePipelineSelector} from 'src/workspace/WorkspaceContext';
 
 interface ITypeListContainerProps {
   explorerPath: PipelineExplorerPath;

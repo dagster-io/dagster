@@ -13,7 +13,6 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
 import {ButtonLink} from 'src/ButtonLink';
-import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {SharedToaster} from 'src/DomUtils';
 import {filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
@@ -33,6 +32,8 @@ import {
 } from 'src/partitions/RunMatrixUtils';
 import {PartitionsBackfillSelectorQuery} from 'src/partitions/types/PartitionsBackfillSelectorQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
@@ -108,12 +109,13 @@ function textToPartitions(selected: string, all: string[]) {
   return result.sort((a, b) => all.indexOf(a) - all.indexOf(b));
 }
 
-export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
+export const PartitionsBackfillPartitionSelector: React.FC<{
   partitionSetName: string;
   pipelineName: string;
   onLaunch?: (backfillId: string) => void;
-}> = ({partitionSetName, pipelineName, onLaunch}) => {
-  const repositorySelector = useRepositorySelector();
+  repoAddress: RepoAddress;
+}> = ({partitionSetName, pipelineName, onLaunch, repoAddress}) => {
+  const repositorySelector = repoAddressToSelector(repoAddress);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined
   >();
@@ -445,6 +447,7 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
             fromFailure={options.fromFailure}
             tags={tags}
             onSuccess={onSuccess}
+            repoAddress={repoAddress}
           />
         </div>
       </div>
@@ -452,7 +455,7 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
   );
 };
 
-const LaunchBackfillButton: React.FunctionComponent<{
+const LaunchBackfillButton: React.FC<{
   partitionSetName: string;
   partitionNames: string[];
   reexecutionSteps?: string[];
@@ -460,6 +463,7 @@ const LaunchBackfillButton: React.FunctionComponent<{
   tags?: PipelineRunTag[];
   onSuccess?: (backfillId: string) => void;
   onError?: () => void;
+  repoAddress: RepoAddress;
 }> = ({
   partitionSetName,
   partitionNames,
@@ -468,8 +472,9 @@ const LaunchBackfillButton: React.FunctionComponent<{
   tags,
   onSuccess,
   onError,
+  repoAddress,
 }) => {
-  const repositorySelector = useRepositorySelector();
+  const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
   const [launchBackfill] = useMutation(LAUNCH_PARTITION_BACKFILL_MUTATION);
   React.useEffect(() => {

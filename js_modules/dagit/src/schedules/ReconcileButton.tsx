@@ -2,8 +2,8 @@ import {gql, useMutation} from '@apollo/client';
 import {Button, Intent, Spinner} from '@blueprintjs/core';
 import * as React from 'react';
 
-import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {SCHEDULES_ROOT_QUERY} from 'src/schedules/ScheduleUtils';
+import {useRepositorySelector} from 'src/workspace/WorkspaceContext';
 
 export const ReconcileButton: React.FunctionComponent<{}> = () => {
   const repositorySelector = useRepositorySelector();

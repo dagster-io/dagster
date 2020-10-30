@@ -1,9 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
-import {RouteComponentProps} from 'react-router';
 
-import {useScheduleSelector} from 'src/DagsterRepositoryContext';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
@@ -13,13 +11,24 @@ import {SCHEDULE_DEFINITION_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules
 import {ScheduleRootQuery} from 'src/schedules/types/ScheduleRootQuery';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
+interface Props {
   scheduleName: string;
-}>> = ({match}) => {
-  const {scheduleName} = match.params;
+  repoAddress: RepoAddress;
+}
+
+export const ScheduleRoot: React.FC<Props> = (props) => {
+  const {scheduleName, repoAddress} = props;
   useDocumentTitle(`Schedule: ${scheduleName}`);
-  const scheduleSelector = useScheduleSelector(scheduleName);
+
+  const scheduleSelector = {
+    ...repoAddressToSelector(repoAddress),
+    scheduleName,
+  };
+
   const queryResult = useQuery<ScheduleRootQuery>(SCHEDULE_ROOT_QUERY, {
     variables: {
       scheduleSelector,
@@ -34,7 +43,11 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
       {({scheduleDefinitionOrError}) => {
         if (scheduleDefinitionOrError.__typename === 'ScheduleDefinition') {
           const breadcrumbs: IBreadcrumbProps[] = [
-            {icon: 'time', text: 'Schedules', href: '/schedules'},
+            {
+              icon: 'time',
+              text: 'Schedules',
+              href: workspacePathFromAddress(repoAddress, '/schedules'),
+            },
             {text: scheduleDefinitionOrError.name},
           ];
 
@@ -48,7 +61,7 @@ export const ScheduleRoot: React.FunctionComponent<RouteComponentProps<{
                     <ScheduleRowHeader schedule={scheduleDefinitionOrError} />
                   </thead>
                   <tbody>
-                    <ScheduleRow schedule={scheduleDefinitionOrError} />
+                    <ScheduleRow repoAddress={repoAddress} schedule={scheduleDefinitionOrError} />
                   </tbody>
                 </Table>
               </Page>

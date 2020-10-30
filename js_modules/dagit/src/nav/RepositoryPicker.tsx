@@ -3,26 +3,25 @@ import React from 'react';
 import {useHistory} from 'react-router';
 import styled from 'styled-components/macro';
 
+import {RepositoryInformation} from 'src/RepositoryInformation';
+import {ReloadRepositoryLocationButton, ReloadResult} from 'src/nav/ReloadRepositoryLocationButton';
 import {
   DagsterRepoOption,
   isRepositoryOptionEqual,
   useDagitExecutablePath,
-} from 'src/DagsterRepositoryContext';
-import {RepositoryInformation} from 'src/RepositoryInformation';
-import {ReloadRepositoryLocationButton, ReloadResult} from 'src/nav/ReloadRepositoryLocationButton';
+} from 'src/workspace/WorkspaceContext';
+import {workspacePath} from 'src/workspace/workspacePath';
 
 interface RepositoryPickerProps {
   loading: boolean;
   onReload: (location: string, result: ReloadResult) => void;
   options: DagsterRepoOption[];
   repo: DagsterRepoOption | null;
-  setRepo: (repo: DagsterRepoOption) => void;
 }
 
 export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({
   loading,
   repo,
-  setRepo,
   options,
   onReload,
 }) => {
@@ -31,8 +30,7 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({
   const dagitExecutablePath = useDagitExecutablePath();
 
   const selectOption = (repo: DagsterRepoOption) => {
-    setRepo(repo);
-    history.push('/');
+    history.push(workspacePath(repo.repository.name, repo.repositoryLocation.name));
   };
 
   const titleContents = () => {

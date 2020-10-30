@@ -1,14 +1,14 @@
 import {useQuery} from '@apollo/client';
 import {Callout, IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
-import {Link, Redirect} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
-import {ROOT_REPOSITORIES_QUERY} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
 import {TopNav} from 'src/nav/TopNav';
-import {RootRepositoriesQuery} from 'src/types/RootRepositoriesQuery';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
+import {ROOT_REPOSITORIES_QUERY} from 'src/workspace/WorkspaceContext';
+import {RootRepositoriesQuery} from 'src/workspace/types/RootRepositoriesQuery';
 import {workspacePath} from 'src/workspace/workspacePath';
 
 type Props = {
@@ -49,16 +49,6 @@ export const WorkspacePipelineDisambiguationRoot: React.FunctionComponent<Props>
           const matches = nodes.filter((repo) =>
             repo.pipelines.some((pipeline) => pipeline.name === pipelineName),
           );
-
-          // If only one match, redirect to that repo.
-          if (matches.length === 1) {
-            return <Redirect to={`/pipelines/${pipelineName}`} />;
-            // todo dish: Use proper workspace paths for these.
-            // const {name, location} = matches[0];
-            // return (
-            //   <Redirect to={workspacePath(name, location.name, `/pipeline/${pipelineName}`)} />
-            // );
-          }
 
           if (!matches.length) {
             return (

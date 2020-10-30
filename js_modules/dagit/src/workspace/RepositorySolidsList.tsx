@@ -4,8 +4,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Table} from 'src/ui/Table';
+import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 import {RepositorySolidsListQuery} from 'src/workspace/types/RepositorySolidsListQuery';
-import {workspacePath} from 'src/workspace/workspacePath';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 const REPOSITORY_SOLIDS_LIST_QUERY = gql`
   query RepositorySolidsListQuery($repositorySelector: RepositorySelector!) {
@@ -32,17 +35,13 @@ const REPOSITORY_SOLIDS_LIST_QUERY = gql`
   }
 `;
 
-interface RepositoryViewProps {
-  repoName: string;
-  repoLocation: string;
+interface Props {
+  repoAddress: RepoAddress;
 }
 
-export const RepositorySolidsList = (props: RepositoryViewProps) => {
-  const {repoName, repoLocation} = props;
-  const repositorySelector = {
-    repositoryName: repoName,
-    repositoryLocationName: repoLocation,
-  };
+export const RepositorySolidsList: React.FC<Props> = (props) => {
+  const {repoAddress} = props;
+  const repositorySelector = repoAddressToSelector(repoAddress);
 
   const {data, error, loading} = useQuery<RepositorySolidsListQuery>(REPOSITORY_SOLIDS_LIST_QUERY, {
     fetchPolicy: 'cache-and-network',
@@ -57,7 +56,7 @@ export const RepositorySolidsList = (props: RepositoryViewProps) => {
     return (
       <NonIdealState
         title="Unable to load pipelines"
-        description={`Could not load pipelines for ${repoName}@${repoLocation}`}
+        description={`Could not load pipelines for ${repoAddressAsString(repoAddress)}`}
       />
     );
   }
@@ -84,7 +83,7 @@ export const RepositorySolidsList = (props: RepositoryViewProps) => {
             <tr key={`${solidName}`}>
               <td style={{width: '40%'}}>
                 <div>
-                  <Link to={workspacePath(repoName, repoLocation, `/solids/${solidName}`)}>
+                  <Link to={workspacePathFromAddress(repoAddress, `/solids/${solidName}`)}>
                     {solidName}
                   </Link>
                 </div>
@@ -94,7 +93,7 @@ export const RepositorySolidsList = (props: RepositoryViewProps) => {
                 {pipelines.size ? (
                   Array.from(pipelines).map((pipeline) => (
                     <div key={pipeline}>
-                      <Link to={workspacePath(repoName, repoLocation, `/pipelines/${pipeline}`)}>
+                      <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipeline}`)}>
                         {pipeline}
                       </Link>
                     </div>

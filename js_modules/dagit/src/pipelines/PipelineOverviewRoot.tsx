@@ -5,7 +5,6 @@ import * as React from 'react';
 import {Link, Redirect, RouteComponentProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
 import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {Timestamp} from 'src/TimeComponents';
@@ -30,17 +29,26 @@ import {
 } from 'src/runs/RunUtils';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 type Run = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs;
 type Schedule = PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules;
 
-export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
-  pipelinePath: string;
-}>> = ({match}) => {
+type Props = RouteComponentProps<{pipelinePath: string}> & {repoAddress: RepoAddress};
+
+export const PipelineOverviewRoot: React.FC<Props> = (props) => {
+  const {match, repoAddress} = props;
   const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
 
-  const pipelineSelector = usePipelineSelector(pipelineName);
+  const repositorySelector = repoAddressToSelector(repoAddress);
+  const pipelineSelector = {
+    pipelineName,
+    ...repositorySelector,
+  };
+
   const queryResult = useQuery<PipelineOverviewQuery, PipelineOverviewQueryVariables>(
     PIPELINE_OVERVIEW_QUERY,
     {
@@ -51,7 +59,9 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
   );
 
   if (snapshotId) {
-    return <Redirect to={`/pipeline/${pipelineName}/overview`} />;
+    return (
+      <Redirect to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/overview`)} />
+    );
   }
 
   return (
@@ -117,7 +127,9 @@ export const PipelineOverviewRoot: React.FunctionComponent<RouteComponentProps<{
                       margin: '10px 0',
                     }}
                   >
-                    <Link to={`/pipeline/${pipelineName}:`}>Explore Pipeline Definition &gt;</Link>
+                    <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}`)}>
+                      Explore Pipeline Definition &gt;
+                    </Link>
                   </div>
                 </div>
               </OverviewSection>

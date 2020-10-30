@@ -1,7 +1,6 @@
 import {gql, useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
-import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {PARTITION_GRAPH_SET_RUN_FRAGMENT} from 'src/partitions/PartitionGraphSet';
@@ -16,6 +15,8 @@ import {
   PartitionSetNamesQueryVariables,
 } from 'src/partitions/types/PartitionSetNamesQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 
 interface DataState {
   runs: PartitionSetLoaderRunFragment[];
@@ -41,8 +42,9 @@ export function useChunkedPartitionsQuery(
   partitionSetName: string,
   pageSize: number | 'all',
   runsFilter: TokenizingFieldValue[],
+  repoAddress: RepoAddress,
 ) {
-  const {repositoryName, repositoryLocationName} = useRepositorySelector();
+  const repositorySelector = repoAddressToSelector(repoAddress);
   const client = useApolloClient();
 
   const version = React.useRef(0);
@@ -73,7 +75,7 @@ export function useChunkedPartitionsQuery(
         query: PARTITION_SET_NAMES_QUERY,
         variables: {
           partitionSetName,
-          repositorySelector: {repositoryName, repositoryLocationName},
+          repositorySelector,
           reverse: true,
           cursor: cursor,
           limit: pageSize === 'all' ? 100000 : pageSize,
@@ -172,15 +174,7 @@ export function useChunkedPartitionsQuery(
     return () => {
       version.current += 1;
     };
-  }, [
-    pageSize,
-    cursor,
-    client,
-    partitionSetName,
-    repositoryName,
-    repositoryLocationName,
-    runsFilter,
-  ]);
+  }, [pageSize, cursor, client, partitionSetName, runsFilter, repositorySelector]);
 
   // Note: cursor === null is page zero and cursors specify subsequent pages.
 

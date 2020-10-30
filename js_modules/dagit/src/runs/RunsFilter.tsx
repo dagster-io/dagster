@@ -3,7 +3,6 @@ import * as querystring from 'query-string';
 import * as React from 'react';
 import {__RouterContext as RouterContext} from 'react-router';
 
-import {DagsterRepositoryContext, useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {
   SuggestionProvider,
   TokenizingField,
@@ -13,6 +12,7 @@ import {
 } from 'src/TokenizingField';
 import {RunsSearchSpaceQuery} from 'src/runs/types/RunsSearchSpaceQuery';
 import {PipelineRunStatus, PipelineRunsFilter} from 'src/types/globalTypes';
+import {useRepository, useRepositorySelector} from 'src/workspace/WorkspaceContext';
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'snapshotId' | 'tag';
 
@@ -153,13 +153,13 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
   onChange,
   enabledFilters,
 }) => {
-  const repoContext = React.useContext(DagsterRepositoryContext);
+  const repository = useRepository();
   const repositorySelector = useRepositorySelector();
   const suggestions = searchSuggestionsForRuns(
     useQuery<RunsSearchSpaceQuery>(RUNS_SEARCH_SPACE_QUERY, {
       fetchPolicy: 'cache-and-network',
-      skip: !repoContext?.repository || !repoContext?.repositoryLocation,
-      variables: repoContext?.repository ? {repositorySelector} : {},
+      skip: !repository,
+      variables: repository ? {repositorySelector} : {},
     }),
     enabledFilters,
   );

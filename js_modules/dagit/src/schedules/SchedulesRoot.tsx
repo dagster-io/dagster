@@ -13,7 +13,6 @@ import {
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {Header, ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
@@ -31,11 +30,17 @@ import {
   SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results,
 } from 'src/schedules/types/SchedulesRootQuery';
 import {Table} from 'src/ui/Table';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 
-const GetStaleReconcileSection: React.FunctionComponent<{
+interface GetStaleReconcileSectionProps {
+  repoAddress: RepoAddress;
   scheduleDefinitionsWithoutState: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
   scheduleStatesWithoutDefinitions: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[];
-}> = ({scheduleDefinitionsWithoutState, scheduleStatesWithoutDefinitions}) => {
+}
+
+const GetStaleReconcileSection: React.FC<GetStaleReconcileSectionProps> = (props) => {
+  const {repoAddress, scheduleDefinitionsWithoutState, scheduleStatesWithoutDefinitions} = props;
   if (
     scheduleDefinitionsWithoutState.length === 0 &&
     scheduleStatesWithoutDefinitions.length === 0
@@ -67,15 +72,23 @@ const GetStaleReconcileSection: React.FunctionComponent<{
           </div>
         </div>
       </Callout>
-      <ScheduleWithoutStateTable schedules={scheduleDefinitionsWithoutState} />
+      <ScheduleWithoutStateTable
+        repoAddress={repoAddress}
+        schedules={scheduleDefinitionsWithoutState}
+      />
       <ScheduleStatesWithoutDefinitionsTable scheduleStates={scheduleStatesWithoutDefinitions} />
     </Card>
   );
 };
 
-export const SchedulesRoot: React.FunctionComponent = () => {
+interface Props {
+  repoAddress: RepoAddress;
+}
+
+export const SchedulesRoot: React.FC<Props> = (props) => {
+  const {repoAddress} = props;
   useDocumentTitle('Schedules');
-  const repositorySelector = useRepositorySelector();
+  const repositorySelector = repoAddressToSelector(repoAddress);
 
   const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
     variables: {
@@ -145,6 +158,7 @@ export const SchedulesRoot: React.FunctionComponent = () => {
                 scheduleStatesWithoutDefinitionsOrError.results;
               staleReconcileSection = (
                 <GetStaleReconcileSection
+                  repoAddress={repoAddress}
                   scheduleDefinitionsWithoutState={scheduleDefinitionsWithoutState}
                   scheduleStatesWithoutDefinitions={scheduleStatesWithoutDefinitions}
                 />
@@ -165,13 +179,21 @@ export const SchedulesRoot: React.FunctionComponent = () => {
   );
 };
 
-const ScheduleTable: React.FunctionComponent<{
+interface ScheduleTableProps {
   schedules: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
   repository: SchedulesRootQuery_repositoryOrError_Repository;
-}> = (props) => {
-  if (props.schedules.length === 0) {
+}
+
+const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = (props) => {
+  const {repository, schedules} = props;
+  if (schedules.length === 0) {
     return null;
   }
+
+  const repoAddress = {
+    name: repository.name,
+    location: repository.location.name,
+  };
 
   return (
     <div>
@@ -181,24 +203,24 @@ const ScheduleTable: React.FunctionComponent<{
         <SchedulerTimezoneNote />
       </div>
       <div>
-        {`${props.schedules.length} loaded from `}
+        {`${schedules.length} loaded from `}
         <Tooltip
           interactionKind={PopoverInteractionKind.HOVER}
           content={
             <pre>
-              <RepositoryInformation repository={props.repository} />
+              <RepositoryInformation repository={repository} />
               <div style={{fontSize: 11}}>
                 <span style={{marginRight: 5}}>id:</span>
-                <span style={{opacity: 0.5}}>{props.repository.id}</span>
+                <span style={{opacity: 0.5}}>{repository.id}</span>
               </div>
             </pre>
           }
         >
-          <Code>{props.repository.name}</Code>
+          <Code>{repository.name}</Code>
         </Tooltip>
       </div>
 
-      {props.schedules.length > 0 && (
+      {schedules.length > 0 && (
         <Table striped style={{width: '100%'}}>
           <thead>
             <tr>
@@ -212,8 +234,8 @@ const ScheduleTable: React.FunctionComponent<{
             </tr>
           </thead>
           <tbody>
-            {props.schedules.map((schedule) => (
-              <ScheduleRow schedule={schedule} key={schedule.name} />
+            {schedules.map((schedule) => (
+              <ScheduleRow repoAddress={repoAddress} schedule={schedule} key={schedule.name} />
             ))}
           </tbody>
         </Table>
@@ -222,10 +244,14 @@ const ScheduleTable: React.FunctionComponent<{
   );
 };
 
-const ScheduleWithoutStateTable: React.FunctionComponent<{
+interface ScheduleWithoutStateTableProps {
+  repoAddress: RepoAddress;
   schedules: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
-}> = (props) => {
-  if (props.schedules.length === 0) {
+}
+
+const ScheduleWithoutStateTable: React.FC<ScheduleWithoutStateTableProps> = (props) => {
+  const {repoAddress, schedules} = props;
+  if (schedules.length === 0 || !repoAddress) {
     return null;
   }
 
@@ -236,7 +262,7 @@ const ScheduleWithoutStateTable: React.FunctionComponent<{
         The following are new schedule definitions for which there are no entries in schedule
         storage yet. After reconciliation, these schedules can be turned on.
       </p>
-      {props.schedules.length > 0 && (
+      {schedules.length > 0 && (
         <Table striped style={{width: '100%'}}>
           <thead>
             <tr>
@@ -247,8 +273,8 @@ const ScheduleWithoutStateTable: React.FunctionComponent<{
             </tr>
           </thead>
           <tbody>
-            {props.schedules.map((schedule) => (
-              <ScheduleRow schedule={schedule} key={schedule.name} />
+            {schedules.map((schedule) => (
+              <ScheduleRow repoAddress={repoAddress} schedule={schedule} key={schedule.name} />
             ))}
           </tbody>
         </Table>
@@ -261,10 +287,9 @@ interface ScheduleStateTableProps {
   scheduleStates: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results[];
 }
 
-const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleStateTableProps> = (
-  props,
-) => {
-  if (props.scheduleStates.length === 0) {
+const ScheduleStatesWithoutDefinitionsTable: React.FC<ScheduleStateTableProps> = (props) => {
+  const {scheduleStates} = props;
+  if (scheduleStates.length === 0) {
     return null;
   }
 
@@ -276,7 +301,7 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
         definition anymore. This means that the schedule definition has been deleted or renamed.
         After reconciliation, these entries will be deleted.
       </p>
-      {props.scheduleStates.length > 0 && (
+      {scheduleStates.length > 0 && (
         <Table>
           <thead>
             <tr>
@@ -287,7 +312,7 @@ const ScheduleStatesWithoutDefinitionsTable: React.FunctionComponent<ScheduleSta
             </tr>
           </thead>
           <tbody>
-            {props.scheduleStates.map((scheduleState) => (
+            {scheduleStates.map((scheduleState) => (
               <ScheduleStateRow
                 scheduleState={scheduleState}
                 key={scheduleState.scheduleOriginId}

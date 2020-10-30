@@ -3,13 +3,13 @@ import {Button, IconName, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {useRepository, useRepositoryOptions} from 'src/DagsterRepositoryContext';
 import {SharedToaster} from 'src/DomUtils';
 import {IStepState} from 'src/RunMetadataProvider';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
 import {CANCEL_MUTATION, ReExecutionStyle} from 'src/runs/RunUtils';
 import {StepSelection} from 'src/runs/StepSelection';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {useRepository, useRepositoryOptions} from 'src/workspace/WorkspaceContext';
 
 // Descriptions of re-execute options
 export const REEXECUTE_PIPELINE_UNKNOWN =

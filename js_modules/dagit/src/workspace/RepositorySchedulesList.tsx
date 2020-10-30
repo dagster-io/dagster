@@ -6,8 +6,11 @@ import {Link} from 'react-router-dom';
 import {RunStatusWithStats} from 'src/runs/RunStatusDots';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {Table} from 'src/ui/Table';
+import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 import {RepositorySchedulesListQuery} from 'src/workspace/types/RepositorySchedulesListQuery';
-import {workspacePath} from 'src/workspace/workspacePath';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 const REPOSITORY_SCHEDULES_LIST_QUERY = gql`
   query RepositorySchedulesListQuery($repositorySelector: RepositorySelector!) {
@@ -39,17 +42,13 @@ const REPOSITORY_SCHEDULES_LIST_QUERY = gql`
   }
 `;
 
-interface RepositoryViewProps {
-  repoName: string;
-  repoLocation: string;
+interface Props {
+  repoAddress: RepoAddress;
 }
 
-export const RepositorySchedulesList = (props: RepositoryViewProps) => {
-  const {repoName, repoLocation} = props;
-  const repositorySelector = {
-    repositoryName: repoName,
-    repositoryLocationName: repoLocation,
-  };
+export const RepositorySchedulesList: React.FC<Props> = (props) => {
+  const {repoAddress} = props;
+  const repositorySelector = repoAddressToSelector(repoAddress);
 
   const {data, error, loading} = useQuery<RepositorySchedulesListQuery>(
     REPOSITORY_SCHEDULES_LIST_QUERY,
@@ -67,7 +66,7 @@ export const RepositorySchedulesList = (props: RepositoryViewProps) => {
     return (
       <NonIdealState
         title="Unable to load pipelines"
-        description={`Could not load pipelines for ${repoName}@${repoLocation}`}
+        description={`Could not load pipelines for ${repoAddressAsString(repoAddress)}`}
       />
     );
   }
@@ -99,7 +98,7 @@ export const RepositorySchedulesList = (props: RepositoryViewProps) => {
             <tr key={`${pipelineName}-${name}`}>
               <td style={{width: '25%'}}>
                 <div>
-                  <Link to={workspacePath(repoName, repoLocation, `/schedules/${name}`)}>
+                  <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>
                     {name}
                   </Link>
                 </div>
@@ -108,7 +107,7 @@ export const RepositorySchedulesList = (props: RepositoryViewProps) => {
                 ) : null}
               </td>
               <td style={{width: '20%'}}>
-                <Link to={workspacePath(repoName, repoLocation, `/pipelines/${pipelineName}`)}>
+                <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}`)}>
                   {pipelineName}
                 </Link>
               </td>

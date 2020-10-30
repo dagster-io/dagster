@@ -5,7 +5,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
-import {DagsterRepositoryContext} from 'src/DagsterRepositoryContext';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {IStepState, RunMetadataProvider} from 'src/RunMetadataProvider';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
@@ -33,6 +32,7 @@ import {
   RunPipelineRunEventFragment,
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
 } from 'src/runs/types/RunPipelineRunEventFragment';
+import {useWorkspaceState} from 'src/workspace/WorkspaceContext';
 
 interface RunProps {
   client: ApolloClient<any>;
@@ -158,18 +158,18 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
     LaunchPipelineReexecution,
     LaunchPipelineReexecutionVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
-  const repoContext = React.useContext(DagsterRepositoryContext);
+  const {activeRepo} = useWorkspaceState();
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
   const onLaunch = async (style: ReExecutionStyle) => {
-    if (!run || run.pipeline.__typename === 'UnknownPipeline' || !repoContext) {
+    if (!run || run.pipeline.__typename === 'UnknownPipeline' || !activeRepo) {
       return;
     }
     const variables = getReexecutionVariables({
       run,
       style,
-      repositoryLocationName: repoContext.repositoryLocation?.name,
-      repositoryName: repoContext.repository?.name,
+      repositoryLocationName: activeRepo.address.location,
+      repositoryName: activeRepo.address.name,
     });
     const result = await launchPipelineReexecution({variables});
     handleLaunchResult(run.pipeline.name, result, {openInNewWindow: false});

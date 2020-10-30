@@ -2,14 +2,9 @@ import {gql, useQuery} from '@apollo/client';
 import {Button, Callout, Code, Divider, IBreadcrumbProps, Icon, Intent} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import React, {useState} from 'react';
-import {useHistory} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
 import {ButtonLink} from 'src/ButtonLink';
-import {
-  DagsterRepoOption,
-  useCurrentRepositoryState,
-  useRepositoryOptions,
-} from 'src/DagsterRepositoryContext';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
@@ -25,6 +20,8 @@ import {
   SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results,
 } from 'src/schedules/types/SchedulerRootQuery';
 import {Table} from 'src/ui/Table';
+import {DagsterRepoOption, useRepositoryOptions} from 'src/workspace/WorkspaceContext';
+import {workspacePath} from 'src/workspace/workspacePath';
 
 type ScheduleState = SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results;
 
@@ -99,18 +96,9 @@ const RepositorySchedules = ({
   repositoryOriginId: string;
   option: DagsterRepoOption;
 }) => {
-  const history = useHistory();
-  const {options} = useRepositoryOptions();
-  const [, setRepo] = useCurrentRepositoryState(options);
-
   const {repository} = option;
 
   const [showRepositoryOrigin, setShowRepositoryOrigin] = useState(false);
-
-  const goToRepositorySchedules = (dagsterRepoOption: DagsterRepoOption) => {
-    setRepo(dagsterRepoOption);
-    history.push(`/schedules`);
-  };
 
   return (
     <div key={repositoryOriginId} style={{marginTop: 30}}>
@@ -122,13 +110,11 @@ const RepositorySchedules = ({
             <Icon icon={showRepositoryOrigin ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_RIGHT} />
           </ButtonLink>
         </div>
-        <Button
-          style={{marginLeft: 10}}
-          onClick={() => goToRepositorySchedules(option)}
-          small={true}
+        <Link
+          to={workspacePath(option.repository.name, option.repositoryLocation.name, '/schedules')}
         >
           Go to repository schedules
-        </Button>{' '}
+        </Link>
       </div>
       {showRepositoryOrigin && (
         <Callout style={{marginBottom: 20}}>

@@ -24,7 +24,7 @@ describe('LeftNav', () => {
       render(
         <MemoryRouter>
           <ApolloTestProvider mocks={defaultMocks}>
-            <LeftNav loading={false} options={[]} repo={null} setRepo={() => {}} />
+            <LeftNav />
           </ApolloTestProvider>
         </MemoryRouter>,
       );
@@ -45,7 +45,7 @@ describe('LeftNav', () => {
       render(
         <MemoryRouter>
           <ApolloTestProvider mocks={mocks}>
-            <LeftNav loading={false} options={[]} repo={null} setRepo={() => {}} />
+            <LeftNav />
           </ApolloTestProvider>
         </MemoryRouter>,
       );

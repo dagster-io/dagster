@@ -4,7 +4,6 @@ import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Redirect, RouteComponentProps, useHistory} from 'react-router-dom';
 
-import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
 import {PipelineExplorer, PipelineExplorerOptions} from 'src/PipelineExplorer';
 import {
@@ -19,6 +18,8 @@ import {
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot,
 } from 'src/types/PipelineExplorerRootQuery';
 import {PipelineExplorerSolidHandleFragment} from 'src/types/PipelineExplorerSolidHandleFragment';
+import {useWorkspaceState, usePipelineSelector} from 'src/workspace/WorkspaceContext';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 function explodeComposite(
   handles: PipelineExplorerSolidHandleFragment[],
@@ -134,10 +135,9 @@ export const PipelineExplorerSnapshotRoot: React.FC<RouteComponentProps> = (prop
   return <PipelineExplorerRoot explorerPath={explorerPath} />;
 };
 
-const PipelineExplorerRoot: React.FunctionComponent<{explorerPath: PipelineExplorerPath}> = (
-  props,
-) => {
+const PipelineExplorerRoot: React.FC<{explorerPath: PipelineExplorerPath}> = (props) => {
   const history = useHistory();
+  const {activeRepo} = useWorkspaceState();
   const {explorerPath} = props;
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false,
@@ -166,10 +166,17 @@ const PipelineExplorerRoot: React.FunctionComponent<{explorerPath: PipelineExplo
         const invalidParent =
           parentHandle && parentHandle.solid.definition.__typename !== 'CompositeSolidDefinition';
 
-        if (invalidSelection || invalidParent) {
+        if (activeRepo && (invalidSelection || invalidParent)) {
           const n = {...explorerPath};
           n.pathSolids = n.pathSolids.slice(0, n.pathSolids.length - 1);
-          return <Redirect to={`/pipeline/${explorerPathToString(n)}`} />;
+          return (
+            <Redirect
+              to={workspacePathFromAddress(
+                activeRepo.address,
+                `/pipelines/${explorerPathToString(n)}`,
+              )}
+            />
+          );
         }
 
         return (
@@ -179,6 +186,7 @@ const PipelineExplorerRoot: React.FunctionComponent<{explorerPath: PipelineExplo
             explorerPath={explorerPath}
             history={history}
             pipeline={result}
+            repoAddress={activeRepo?.address}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
             selectedHandle={selectedHandle}
@@ -250,8 +258,8 @@ const ExplorerSnapshotResolver: React.FunctionComponent<ResolverProps> = ({
   options,
 }) => {
   const parentNames = explorerPath.pathSolids.slice(0, explorerPath.pathSolids.length - 1);
-
   const pipelineSelector = usePipelineSelector(explorerPath.pipelineName);
+
   const queryResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
     PIPELINE_EXPLORER_ROOT_QUERY,
     {

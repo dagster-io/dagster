@@ -1,13 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
-import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
 import {PipelineExplorerPath} from 'src/PipelinePathUtils';
 import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
 import {SidebarSolidInvocation} from 'src/SidebarSolidInvocation';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {SidebarTabbedContainerSolidQuery} from 'src/types/SidebarTabbedContainerSolidQuery';
+import {usePipelineSelector} from 'src/workspace/WorkspaceContext';
 
 interface SidebarSolidContainerProps {
   handleID: string;

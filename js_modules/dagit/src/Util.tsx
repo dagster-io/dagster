@@ -91,7 +91,7 @@ export function patchCopyToRemoveZeroWidthUnderscores() {
   });
 }
 
-export function memoize<T extends object, R>(
+export function memoize<T, R>(
   fn: (arg: T, ...rest: any[]) => R,
   hashFn?: (arg: T, ...rest: any[]) => any,
   hashSize?: number,
@@ -108,7 +108,7 @@ export function memoize<T extends object, R>(
   };
 }
 
-export function asyncMemoize<T extends object, R>(
+export function asyncMemoize<T, R>(
   fn: (arg: T, ...rest: any[]) => PromiseLike<R>,
   hashFn?: (arg: T, ...rest: any[]) => any,
   hashSize?: number,

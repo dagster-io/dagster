@@ -71,7 +71,7 @@ export const RunRoot: React.FC<RouteComponentProps<{runId: string}>> = (props) =
   );
 };
 
-export const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (props) => {
+const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (props) => {
   const {data, runId} = props;
   useDocumentTitle(`Run: ${runId}`);
 

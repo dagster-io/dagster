@@ -18,6 +18,8 @@ import {PipelineGraphContainer} from 'src/graph/PipelineGraphContainer';
 import {SolidNameOrPath} from 'src/solids/SolidNameOrPath';
 import {PipelineExplorerFragment} from 'src/types/PipelineExplorerFragment';
 import {PipelineExplorerSolidHandleFragment} from 'src/types/PipelineExplorerSolidHandleFragment';
+import {RepoAddress} from 'src/workspace/types';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 export interface PipelineExplorerOptions {
   explodeComposites: boolean;
@@ -29,6 +31,7 @@ interface PipelineExplorerProps {
   options: PipelineExplorerOptions;
   setOptions: (options: PipelineExplorerOptions) => void;
   pipeline: PipelineExplorerFragment;
+  repoAddress?: RepoAddress;
   handles: PipelineExplorerSolidHandleFragment[];
   selectedHandle?: PipelineExplorerSolidHandleFragment;
   parentHandle?: PipelineExplorerSolidHandleFragment;
@@ -135,13 +138,15 @@ export class PipelineExplorer extends React.Component<
   };
 
   buildPath = (path: string) => {
-    const {explorerPath} = this.props;
+    const {explorerPath, repoAddress} = this.props;
     const {snapshotId} = explorerPath;
     if (snapshotId) {
       return `/instance/snapshots/${path}`;
     }
-    // TODO DISH: Use workspace URL here
-    return `/pipeline/${path}`;
+    if (repoAddress) {
+      return workspacePathFromAddress(repoAddress, `/pipelines/${path}`);
+    }
+    return `/workspace/pipelines/${path}`;
   };
 
   public render() {

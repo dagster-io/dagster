@@ -3,7 +3,6 @@ import {Checkbox, Colors, Dialog, Button, Classes} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {GraphQueryInput} from 'src/GraphQueryInput';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {OptionsDivider} from 'src/VizComponents';
@@ -30,6 +29,8 @@ import {
   DisplayOptions,
   StatusSquareFinalColor,
 } from 'src/partitions/useMatrixData';
+import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
+import {RepoAddress} from 'src/workspace/types';
 
 const TITLE_TOTAL_FAILURES = 'This step failed at least once for this percent of partitions.';
 
@@ -52,11 +53,12 @@ interface PartitionRunSelection {
 interface PartitionRunMatrixProps {
   pipelineName: string;
   partitions: {name: string; runs: PartitionRunMatrixRunFragment[]}[];
+  repoAddress: RepoAddress;
   runTags: TokenizingFieldValue[];
   setRunTags: (val: TokenizingFieldValue[]) => void;
 }
 
-export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps> = (props) => {
+export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => {
   const {viewport, containerProps} = useViewport();
   const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
   const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
@@ -70,7 +72,7 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
   });
 
   // Retrieve the pipeline's structure
-  const repositorySelector = useRepositorySelector();
+  const repositorySelector = repoAddressToSelector(props.repoAddress);
   const pipelineSelector = {...repositorySelector, pipelineName: props.pipelineName};
   const pipeline = useQuery<
     PartitionRunMatrixPipelineQuery,

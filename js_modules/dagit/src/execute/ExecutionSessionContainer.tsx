@@ -39,6 +39,7 @@ import {
   PreviewConfigQueryVariables,
 } from 'src/execute/types/PreviewConfigQuery';
 import {PipelineSelector} from 'src/types/globalTypes';
+import {RepoAddress} from 'src/workspace/types';
 
 const YAML_SYNTAX_INVALID = `The YAML you provided couldn't be parsed. Please fix the syntax errors and try again.`;
 const LOADING_PIPELINE = `Loading pipeline and partition sets...`;
@@ -55,6 +56,7 @@ interface IExecutionSessionContainerProps {
   runConfigSchemaOrError?: ExecutionSessionContainerRunConfigSchemaFragment;
   currentSession: IExecutionSession;
   pipelineSelector: PipelineSelector;
+  repoAddress: RepoAddress;
 }
 
 interface IExecutionSessionContainerState {
@@ -309,7 +311,14 @@ export class ExecutionSessionContainer extends React.Component<
   onConfigLoaded = () => this.setState({configLoading: false});
 
   render() {
-    const {currentSession, onCreateSession, onSaveSession, partitionSets, pipeline} = this.props;
+    const {
+      currentSession,
+      onCreateSession,
+      onSaveSession,
+      partitionSets,
+      pipeline,
+      repoAddress,
+    } = this.props;
     const {
       preview,
       previewLoading,
@@ -342,6 +351,7 @@ export class ExecutionSessionContainer extends React.Component<
                 onLoaded={this.onConfigLoaded}
                 onCreateSession={onCreateSession}
                 onSaveSession={onSaveSession}
+                repoAddress={repoAddress}
               />
               <SessionSettingsSpacer />
               <SolidSelector
@@ -354,6 +364,7 @@ export class ExecutionSessionContainer extends React.Component<
                 value={currentSession.solidSelection || null}
                 query={currentSession.solidSelectionQuery || null}
                 onChange={this.onSolidSelectionChange}
+                repoAddress={repoAddress}
               />
               <SessionSettingsSpacer />
               <ConfigEditorModePicker
