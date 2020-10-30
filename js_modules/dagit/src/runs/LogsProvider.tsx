@@ -111,6 +111,10 @@ export class LogsProvider extends React.Component<
       for (const {__typename} of msg.pipelineRunLogs.messages) {
         if (__typename === 'PipelineStartEvent') {
           nextPipelineStatus = PipelineRunStatus.STARTED;
+        } else if (__typename === 'PipelineEnqueuedEvent') {
+          nextPipelineStatus = PipelineRunStatus.QUEUED;
+        } else if (__typename === 'PipelineDequeuedEvent') {
+          nextPipelineStatus = PipelineRunStatus.NOT_STARTED;
         } else if (__typename === 'PipelineSuccessEvent') {
           nextPipelineStatus = PipelineRunStatus.SUCCESS;
         } else if (

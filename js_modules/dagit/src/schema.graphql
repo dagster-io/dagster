@@ -950,7 +950,7 @@ type PipelineRunLogsSubscriptionSuccess {
   messages: [PipelineRunEvent!]!
 }
 
-union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent
+union PipelineRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | PipelineFailureEvent | PipelineInitFailureEvent | PipelineStartEvent | PipelineEnqueuedEvent | PipelineDequeuedEvent | PipelineSuccessEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -1081,6 +1081,26 @@ type PipelineInitFailureEvent implements MessageEvent & PipelineEvent {
 }
 
 type PipelineStartEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  pipelineName: String!
+}
+
+type PipelineEnqueuedEvent implements MessageEvent & PipelineEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  pipelineName: String!
+}
+
+type PipelineDequeuedEvent implements MessageEvent & PipelineEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -1383,26 +1403,6 @@ type UnknownPipeline implements PipelineReference {
 
 type MissingRunIdErrorEvent {
   invalidRunId: String!
-}
-
-type PipelineEnqueuedEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  pipelineName: String!
-}
-
-type PipelineDequeuedEvent implements MessageEvent & PipelineEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  pipelineName: String!
 }
 
 type EventPathMetadataEntry implements EventMetadataEntry {

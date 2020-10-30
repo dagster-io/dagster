@@ -180,6 +180,8 @@
           {"name": "PipelineFailureEvent"},
           {"name": "PipelineInitFailureEvent"},
           {"name": "PipelineStartEvent"},
+          {"name": "PipelineEnqueuedEvent"},
+          {"name": "PipelineDequeuedEvent"},
           {"name": "PipelineSuccessEvent"},
           {"name": "ObjectStoreOperationEvent"},
           {"name": "StepExpectationResultEvent"},
@@ -560,8 +562,7 @@
         "possibleTypes": [
           {"name": "RepositoryLocation"},
           {"name": "ReloadNotSupported"},
-          {"name": "RepositoryLocationNotFound"},
-          {"name": "PythonError"}
+          {"name": "RepositoryLocationNotFound"}
         ]
       },
       {"name": "ReloadNotSupported", "kind": "OBJECT", "possibleTypes": null},
@@ -628,6 +629,8 @@
           {"name": "PipelineFailureEvent"},
           {"name": "PipelineInitFailureEvent"},
           {"name": "PipelineStartEvent"},
+          {"name": "PipelineEnqueuedEvent"},
+          {"name": "PipelineDequeuedEvent"},
           {"name": "PipelineSuccessEvent"},
           {"name": "ObjectStoreOperationEvent"},
           {"name": "StepExpectationResultEvent"},
@@ -657,11 +660,15 @@
           {"name": "PipelineFailureEvent"},
           {"name": "PipelineInitFailureEvent"},
           {"name": "PipelineStartEvent"},
+          {"name": "PipelineEnqueuedEvent"},
+          {"name": "PipelineDequeuedEvent"},
           {"name": "PipelineSuccessEvent"}
         ]
       },
       {"name": "PipelineInitFailureEvent", "kind": "OBJECT", "possibleTypes": null},
       {"name": "PipelineStartEvent", "kind": "OBJECT", "possibleTypes": null},
+      {"name": "PipelineEnqueuedEvent", "kind": "OBJECT", "possibleTypes": null},
+      {"name": "PipelineDequeuedEvent", "kind": "OBJECT", "possibleTypes": null},
       {"name": "PipelineSuccessEvent", "kind": "OBJECT", "possibleTypes": null},
       {"name": "ObjectStoreOperationEvent", "kind": "OBJECT", "possibleTypes": null},
       {"name": "ObjectStoreOperationResult", "kind": "OBJECT", "possibleTypes": null},

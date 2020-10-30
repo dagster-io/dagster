@@ -39,4 +39,5 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         root_run_id=execution_params.execution_metadata.root_run_id,
         parent_run_id=execution_params.execution_metadata.parent_run_id,
         status=PipelineRunStatus.NOT_STARTED,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
     )
