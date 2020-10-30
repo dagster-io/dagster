@@ -63,6 +63,22 @@ class AssetStore(six.with_metaclass(ABCMeta)):
         """
 
 
+class InMemoryAssetStore(AssetStore):
+    def __init__(self):
+        self.values = {}
+
+    def set_asset(self, _context, step_output_handle, obj, _asset_metadata):
+        self.values[step_output_handle] = obj
+
+    def get_asset(self, _context, step_output_handle, _asset_metadata):
+        return self.values[step_output_handle]
+
+
+@resource
+def mem_asset_store(_):
+    return InMemoryAssetStore()
+
+
 class PickledObjectFilesystemAssetStore(AssetStore):
     def __init__(self, base_dir=None):
         self.base_dir = check.opt_str_param(base_dir, "base_dir")

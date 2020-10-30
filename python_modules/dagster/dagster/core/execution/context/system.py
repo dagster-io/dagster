@@ -225,7 +225,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
         super(SystemStepExecutionContext, self).__init__(execution_context_data, log_manager)
         self._required_resource_keys = get_required_resource_keys_for_step(
             step,
-            execution_context_data.pipeline_def,
+            execution_context_data.execution_plan,
             execution_context_data.system_storage_def,
             execution_context_data.intermediate_storage_def,
         )

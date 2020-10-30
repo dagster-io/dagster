@@ -200,7 +200,7 @@ def get_required_resource_keys_to_init(
             continue
         resource_keys = resource_keys.union(
             get_required_resource_keys_for_step(
-                step, execution_plan.pipeline_def, system_storage_def, intermediate_storage_def
+                step, execution_plan, system_storage_def, intermediate_storage_def,
             )
         )
     for hook_def in execution_plan.get_all_hook_defs():
@@ -210,7 +210,7 @@ def get_required_resource_keys_to_init(
 
 
 def get_required_resource_keys_for_step(
-    execution_step, pipeline_def, system_storage_def, intermediate_storage_def
+    execution_step, execution_plan, system_storage_def, intermediate_storage_def
 ):
     resource_keys = set()
 
@@ -222,18 +222,23 @@ def get_required_resource_keys_for_step(
         resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
 
     # add all the solid compute resource keys
-    solid_def = pipeline_def.get_solid(execution_step.solid_handle).definition
+    solid_def = execution_plan.pipeline_def.get_solid(execution_step.solid_handle).definition
     resource_keys = resource_keys.union(solid_def.required_resource_keys)
 
-    # add input type and input hydration config resource keys
+    # add input type, input loader, and input asset store resource keys
     for step_input in execution_step.step_inputs:
         resource_keys = resource_keys.union(step_input.dagster_type.required_resource_keys)
         if step_input.source_type == StepInputSourceType.CONFIG and step_input.dagster_type.loader:
             resource_keys = resource_keys.union(
                 step_input.dagster_type.loader.required_resource_keys()
             )
+        if step_input.is_from_output:
+            for source_handle in step_input.source_handles:
+                source_asset_store_key = execution_plan.get_asset_store_key(source_handle)
+                if source_asset_store_key:
+                    resource_keys = resource_keys.union([source_asset_store_key])
 
-    # add output type and output materialization config resource keys
+    # add output type, output materializer, and output asset store resource keys
     for step_output in execution_step.step_outputs:
         resource_keys = resource_keys.union(step_output.dagster_type.required_resource_keys)
         if step_output.should_materialize and step_output.dagster_type.materializer:
