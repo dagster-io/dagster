@@ -25,10 +25,7 @@ from dagster.core.storage.init import InitIntermediateStorageContext, InitSystem
 from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
-from dagster.core.system_config.objects import (
-    EmptyIntermediateStoreBackcompatConfig,
-    EnvironmentConfig,
-)
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.loggers import default_loggers, default_system_loggers
 from dagster.utils import EventGenerationManager, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -60,26 +57,6 @@ def system_storage_def_from_config(mode_definition, environment_config):
 def construct_intermediate_storage_data(storage_init_context):
     return storage_init_context.intermediate_storage_def.intermediate_storage_creation_fn(
         storage_init_context
-    )
-
-
-def intermediate_storage_def_from_config(mode_definition, environment_config):
-    if isinstance(
-        environment_config.intermediate_storage.intermediate_storage_name,
-        EmptyIntermediateStoreBackcompatConfig,
-    ):
-        return None
-    for intermediate_storage_def in mode_definition.intermediate_storage_defs:
-        if (
-            intermediate_storage_def.name
-            == environment_config.intermediate_storage.intermediate_storage_name
-        ):
-            return intermediate_storage_def
-
-    check.failed(
-        "Could not find storage mode {}. Should have be caught by config system".format(
-            environment_config.intermediate_storage.intermediate_storage_name
-        )
     )
 
 
@@ -122,7 +99,7 @@ def create_context_creation_data(
 
     mode_def = pipeline_def.get_mode_definition(pipeline_run.mode)
     system_storage_def = system_storage_def_from_config(mode_def, environment_config)
-    intermediate_storage_def = intermediate_storage_def_from_config(mode_def, environment_config)
+    intermediate_storage_def = environment_config.intermediate_storage_def_for_mode(mode_def)
     executor_def = executor_def_from_config(mode_def, environment_config)
 
     return ContextCreationData(

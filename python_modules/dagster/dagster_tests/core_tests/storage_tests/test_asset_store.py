@@ -1,8 +1,10 @@
 import os
 import pickle
 
+import pytest
 from dagster import (
     DagsterInstance,
+    DagsterInvariantViolationError,
     ModeDefinition,
     OutputDefinition,
     execute_pipeline,
@@ -23,41 +25,30 @@ from dagster.core.storage.asset_store import (
 
 
 def define_asset_pipeline(asset_store, asset_metadata_dict):
-    @solid(
-        output_defs=[
-            OutputDefinition(
-                asset_store_key="default_fs_asset_store",
-                asset_metadata=asset_metadata_dict.get("solid_a"),
-            )
-        ],
-    )
+    @solid(output_defs=[OutputDefinition(asset_metadata=asset_metadata_dict.get("solid_a"),)],)
     def solid_a(_context):
         return [1, 2, 3]
 
-    @solid(
-        output_defs=[
-            OutputDefinition(
-                asset_store_key="default_fs_asset_store",
-                asset_metadata=asset_metadata_dict.get("solid_b"),
-            )
-        ],
-    )
+    @solid(output_defs=[OutputDefinition(asset_metadata=asset_metadata_dict.get("solid_b"),)],)
     def solid_b(_context, _df):
         return 1
 
-    @pipeline(
-        mode_defs=[ModeDefinition("local", resource_defs={"default_fs_asset_store": asset_store})]
-    )
+    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"asset_store": asset_store})])
     def asset_pipeline():
         solid_b(solid_a())
 
     return asset_pipeline
 
 
-def test_default_asset_store():
+def test_result_output():
+    # SolidExecutionResult
+    pass
+
+
+def test_fs_asset_store():
     with seven.TemporaryDirectory() as tmpdir_path:
-        default_asset_store = default_filesystem_asset_store.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_asset_pipeline(default_asset_store, {})
+        asset_store = default_filesystem_asset_store.configured({"base_dir": tmpdir_path})
+        pipeline_def = define_asset_pipeline(asset_store, {})
 
         result = execute_pipeline(pipeline_def)
         assert result.success
@@ -138,14 +129,14 @@ def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
 
 def test_step_subset_with_custom_paths():
     with seven.TemporaryDirectory() as tmpdir_path:
-        default_asset_store = custom_path_filesystem_asset_store
+        asset_store = custom_path_filesystem_asset_store
         # pass hardcoded file path via asset_metadata
         test_asset_metadata_dict = {
             "solid_a": {"path": os.path.join(tmpdir_path, "a")},
             "solid_b": {"path": os.path.join(tmpdir_path, "b")},
         }
 
-        pipeline_def = define_asset_pipeline(default_asset_store, test_asset_metadata_dict)
+        pipeline_def = define_asset_pipeline(asset_store, test_asset_metadata_dict)
         events = execute_pipeline_with_steps(pipeline_def)
         for evt in events:
             assert not evt.is_failure
@@ -226,3 +217,41 @@ def test_different_asset_stores():
         solid_b(solid_a())
 
     assert execute_pipeline(asset_pipeline).success
+
+
+@resource
+def my_asset_store(_):
+    pass
+
+
+def test_set_asset_store_and_intermediate_storage():
+    from dagster import intermediate_storage, fs_intermediate_storage
+
+    @intermediate_storage()
+    def my_intermediate_storage(_):
+        pass
+
+    with pytest.raises(DagsterInvariantViolationError):
+
+        @pipeline(
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"asset_store": my_asset_store},
+                    intermediate_storage_defs=[my_intermediate_storage, fs_intermediate_storage],
+                )
+            ]
+        )
+        def my_pipeline():
+            pass
+
+        execute_pipeline(my_pipeline)
+
+
+def test_set_asset_store_configure_intermediate_storage():
+    with pytest.raises(DagsterInvariantViolationError):
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": my_asset_store})])
+        def my_pipeline():
+            pass
+
+        execute_pipeline(my_pipeline, run_config={"intermediate_storage": {"filesystem": {}}})

@@ -5,10 +5,13 @@ from dagster.grpc.server import ExecuteExternalPipelineArgs
 from .utils import get_foo_grpc_pipeline_handle
 
 
-def _get_engine_events(event_records):
-    for er in event_records:
-        if er.dagster_event and er.dagster_event.is_engine_event:
-            yield er
+def _check_event_log_contains(event_log, expected_type_and_message):
+    types_and_messages = [(e.dagster_event.event_type_value, e.message) for e in event_log]
+    for expected_event_type, expected_message_fragment in expected_type_and_message:
+        assert any(
+            event_type == expected_event_type and expected_message_fragment in message
+            for event_type, message in types_and_messages
+        )
 
 
 def test_launch_run_grpc():
@@ -52,15 +55,18 @@ def test_launch_run_grpc():
                 instance, run_id, event_type="ENGINE_EVENT", message="Process for pipeline exited"
             )
             event_records = instance.all_logs(run_id)
-
-            (started_process, executing_steps, finished_steps, process_exited) = tuple(
-                _get_engine_events(event_records)
+            _check_event_log_contains(
+                event_records,
+                [
+                    ("ENGINE_EVENT", msg)
+                    for msg in [
+                        "Started process for pipeline",
+                        "Executing steps in process",
+                        "Finished steps in process",
+                        "Process for pipeline exited",
+                    ]
+                ],
             )
-
-            assert "Started process for pipeline" in started_process.message
-            assert "Executing steps in process" in executing_steps.message
-            assert "Finished steps in process" in finished_steps.message
-            assert "Process for pipeline exited" in process_exited.message
 
 
 def test_launch_unloadable_run_grpc():

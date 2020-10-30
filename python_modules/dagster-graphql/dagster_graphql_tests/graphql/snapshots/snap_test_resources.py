@@ -14,6 +14,11 @@ snapshots['test_mode_fetch_resources 1'] = {
                 'name': 'add_mode',
                 'resources': [
                     {
+                        'configField': None,
+                        'description': None,
+                        'name': 'asset_store'
+                    },
+                    {
                         'configField': {
                             'configType': {
                                 'key': 'Int'
@@ -27,6 +32,11 @@ snapshots['test_mode_fetch_resources 1'] = {
             {
                 'name': 'double_adder',
                 'resources': [
+                    {
+                        'configField': None,
+                        'description': None,
+                        'name': 'asset_store'
+                    },
                     {
                         'configField': {
                             'configType': {
@@ -55,6 +65,11 @@ snapshots['test_mode_fetch_resources 1'] = {
             {
                 'name': 'mult_mode',
                 'resources': [
+                    {
+                        'configField': None,
+                        'description': None,
+                        'name': 'asset_store'
+                    },
                     {
                         'configField': {
                             'configType': {

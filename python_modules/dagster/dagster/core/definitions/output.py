@@ -24,7 +24,7 @@ class OutputDefinition(object):
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
-        asset_store_key (Optional[str])
+        asset_store_key (str)
         asset_metadata (Optional[Dict[str, Any]])
     """
 
@@ -34,7 +34,7 @@ class OutputDefinition(object):
         name=None,
         description=None,
         is_required=None,
-        asset_store_key=None,
+        asset_store_key="asset_store",
         asset_metadata=None,
     ):
         self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))

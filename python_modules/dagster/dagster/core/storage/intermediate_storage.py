@@ -52,7 +52,7 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
 
             if step_input.is_from_single_output:
                 for source_handle in step_input.source_handles:
-                    if context.execution_plan.get_asset_store_handle(source_handle) is not None:
+                    if context.using_asset_store(source_handle):
                         # skip when the source output has asset store configured
                         continue
 
@@ -69,7 +69,7 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
             elif step_input.is_from_multiple_outputs:
                 missing_source_handles = []
                 for source_handle in step_input.source_handles:
-                    if context.execution_plan.get_asset_store_handle(source_handle) is not None:
+                    if context.using_asset_store(source_handle):
                         # skip when the source output has asset store configured
                         continue
 

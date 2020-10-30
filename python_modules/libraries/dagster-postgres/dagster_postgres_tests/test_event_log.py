@@ -263,7 +263,7 @@ def test_basic_get_logs_for_run_multiple_runs_cursors(conn_string):
     assert set(map(lambda e: e.run_id, out_events_one)) == {result_one.run_id}
 
     out_events_two = event_log_storage.get_logs_for_run(result_two.run_id, cursor=2)
-    assert len(out_events_two) == 8
+    assert len(out_events_two) == len(events_two)
     assert set(event_types(out_events_two)) == set(event_types(events_one))
 
     assert set(map(lambda e: e.run_id, out_events_two)) == {result_two.run_id}

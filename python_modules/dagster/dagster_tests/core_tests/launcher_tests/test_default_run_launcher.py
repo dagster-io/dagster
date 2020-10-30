@@ -159,14 +159,13 @@ def _is_multiprocess(run_config):
     return run_config and "execution" in run_config and "multiprocess" in run_config["execution"]
 
 
-def _check_event_log(event_log, expected_type_and_message):
-    assert len(event_log) == len(expected_type_and_message)
-    log_iter = iter(event_log)
-
-    for event_type, message in expected_type_and_message:
-        next_log = next(log_iter)
-        assert next_log.dagster_event.event_type_value == event_type
-        assert message in next_log.message
+def _check_event_log_contains(event_log, expected_type_and_message):
+    types_and_messages = [(e.dagster_event.event_type_value, e.message) for e in event_log]
+    for expected_event_type, expected_message_fragment in expected_type_and_message:
+        assert any(
+            event_type == expected_event_type and expected_message_fragment in message
+            for event_type, message in types_and_messages
+        )
 
 
 @pytest.mark.parametrize(
@@ -336,15 +335,9 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
             run_logs = instance.all_logs(run_id)
 
             if _is_multiprocess(run_config):
-                _check_event_log(
+                _check_event_log_contains(
                     run_logs,
                     [
-                        ("ENGINE_EVENT", "Started process for pipeline"),
-                        ("PIPELINE_START", 'Started execution of pipeline "sleepy_pipeline".'),
-                        ("ENGINE_EVENT", "Executing steps using multiprocess executor"),
-                        ("ENGINE_EVENT", "Launching subprocess for sleepy_solid.compute"),
-                        ("ENGINE_EVENT", "Executing step sleepy_solid.compute in subprocess"),
-                        ("STEP_START", 'Started execution of step "sleepy_solid.compute".'),
                         ("ENGINE_EVENT", "Received pipeline termination request"),
                         (
                             "ENGINE_EVENT",
@@ -359,13 +352,9 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
                     ],
                 )
             else:
-                _check_event_log(
+                _check_event_log_contains(
                     run_logs,
                     [
-                        ("ENGINE_EVENT", "Started process for pipeline"),
-                        ("PIPELINE_START", 'Started execution of pipeline "sleepy_pipeline".'),
-                        ("ENGINE_EVENT", "Executing steps in process"),
-                        ("STEP_START", 'Started execution of step "sleepy_solid.compute".'),
                         ("ENGINE_EVENT", "Received pipeline termination request"),
                         ("STEP_FAILURE", 'Execution of step "sleepy_solid.compute" failed.'),
                         ("PIPELINE_FAILURE", 'Execution of pipeline "sleepy_pipeline" failed.'),
@@ -508,22 +497,34 @@ def test_engine_events(get_external_pipeline, run_config):  # pylint: disable=re
             if _is_multiprocess(run_config):
                 messages = [
                     "Started process for pipeline",
+                    "Starting initialization of resources",
+                    "Finished initialization of resources",
                     "Executing steps using multiprocess executor",
                     "Launching subprocess for return_one.compute",
                     "Executing step return_one.compute in subprocess",
+                    "Starting initialization of resources",
+                    "Finished initialization of resources",
                     # multiply_by_2 and multiply_by_3 launch and execute in non-deterministic order
+                    "",
+                    "",
+                    "",
+                    "",
                     "",
                     "",
                     "",
                     "",
                     "Launching subprocess for add.compute",
                     "Executing step add.compute in subprocess",
+                    "Starting initialization of resources",
+                    "Finished initialization of resources",
                     "Multiprocess executor: parent process exiting",
                     "Process for pipeline exited",
                 ]
             else:
                 messages = [
                     "Started process for pipeline",
+                    "Starting initialization of resources",
+                    "Finished initialization of resources",
                     "Executing steps in process",
                     "Finished steps in process",
                     "Process for pipeline exited",

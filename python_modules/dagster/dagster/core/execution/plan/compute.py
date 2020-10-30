@@ -43,9 +43,7 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
                 should_materialize=name in config_output_names,
                 asset_store_handle=AssetStoreHandle(
                     output_def.asset_store_key, output_def.asset_metadata
-                )
-                if output_def.asset_store_key
-                else None,
+                ),
             )
             for name, output_def in solid.definition.output_dict.items()
         ],

@@ -1069,7 +1069,14 @@ snapshots['test_external_repository_data 1'] = '''{
               }
             ],
             "name": "default",
-            "resource_def_snaps": [],
+            "resource_def_snaps": [
+              {
+                "__class__": "ResourceDefSnap",
+                "config_field_snap": null,
+                "description": null,
+                "name": "asset_store"
+              }
+            ],
             "root_config_key": "Shape.6811763b21837fa90300427f32281dcf8566e1b1"
           },
           {
@@ -1092,7 +1099,14 @@ snapshots['test_external_repository_data 1'] = '''{
               }
             ],
             "name": "mode_one",
-            "resource_def_snaps": [],
+            "resource_def_snaps": [
+              {
+                "__class__": "ResourceDefSnap",
+                "config_field_snap": null,
+                "description": null,
+                "name": "asset_store"
+              }
+            ],
             "root_config_key": "Shape.6811763b21837fa90300427f32281dcf8566e1b1"
           }
         ],
@@ -2190,7 +2204,14 @@ snapshots['test_external_pipeline_data 1'] = '''{
           }
         ],
         "name": "default",
-        "resource_def_snaps": [],
+        "resource_def_snaps": [
+          {
+            "__class__": "ResourceDefSnap",
+            "config_field_snap": null,
+            "description": null,
+            "name": "asset_store"
+          }
+        ],
         "root_config_key": "Shape.6811763b21837fa90300427f32281dcf8566e1b1"
       },
       {
@@ -2213,7 +2234,14 @@ snapshots['test_external_pipeline_data 1'] = '''{
           }
         ],
         "name": "mode_one",
-        "resource_def_snaps": [],
+        "resource_def_snaps": [
+          {
+            "__class__": "ResourceDefSnap",
+            "config_field_snap": null,
+            "description": null,
+            "name": "asset_store"
+          }
+        ],
         "root_config_key": "Shape.6811763b21837fa90300427f32281dcf8566e1b1"
       }
     ],

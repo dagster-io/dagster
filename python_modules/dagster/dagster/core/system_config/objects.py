@@ -143,6 +143,22 @@ class EnvironmentConfig(
             resources=config_mapped_resource_configs,
         )
 
+    def intermediate_storage_def_for_mode(self, mode_definition):
+        if isinstance(
+            self.intermediate_storage.intermediate_storage_name,
+            EmptyIntermediateStoreBackcompatConfig,
+        ):
+            return None
+        for intermediate_storage_def in mode_definition.intermediate_storage_defs:
+            if intermediate_storage_def.name == self.intermediate_storage.intermediate_storage_name:
+                return intermediate_storage_def
+
+        check.failed(
+            "Could not find storage mode {}. Should have be caught by config system".format(
+                self.intermediate_storage.intermediate_storage_name
+            )
+        )
+
 
 def config_map_resources(pipeline_def, config_value, mode):
     """This function executes the config mappings for resources with respect to IConfigMappable.

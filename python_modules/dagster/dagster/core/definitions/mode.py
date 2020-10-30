@@ -4,6 +4,7 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.definitions.executor import ExecutorDefinition, default_executors
 from dagster.loggers import default_loggers
+from dagster.utils.merger import merge_dicts
 
 from .logger import LoggerDefinition
 from .resource import ResourceDefinition
@@ -68,12 +69,22 @@ class ModeDefinition(
                 "intermediate_storage_defs for intermediates and resource_defs for files"
             )
 
+        check.opt_dict_param(
+            resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
+        )
+        if resource_defs and "asset_store" in resource_defs:
+            resource_defs_with_defaults = resource_defs
+        else:
+            from dagster.core.storage.asset_store import mem_asset_store
+
+            resource_defs_with_defaults = merge_dicts(
+                {"asset_store": mem_asset_store}, resource_defs or {}
+            )
+
         return super(ModeDefinition, cls).__new__(
             cls,
             name=check_valid_name(name) if name else DEFAULT_MODE_NAME,
-            resource_defs=check.opt_dict_param(
-                resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
-            ),
+            resource_defs=resource_defs_with_defaults,
             loggers=(
                 check.opt_dict_param(
                     logger_defs, "logger_defs", key_type=str, value_type=LoggerDefinition

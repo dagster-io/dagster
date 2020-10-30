@@ -201,7 +201,7 @@ def test_in_pipeline_manager_with_resources():
             run_config={"resources": {"list": {"config": path}}},
             mode="prod",
         ) as manager:
-            assert len(manager.context.resources._asdict()) == 1
+            assert "list" in manager.context.resources._asdict()
 
             with open(path, "rb") as fd:
                 messages = pickle.load(fd)

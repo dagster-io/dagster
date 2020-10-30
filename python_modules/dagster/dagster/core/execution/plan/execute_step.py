@@ -33,7 +33,6 @@ from dagster.core.execution.plan.objects import (
     TypeCheckData,
 )
 from dagster.core.execution.resolve_versions import resolve_step_output_versions
-from dagster.core.storage.asset_store import AssetStoreHandle
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.utils import ensure_gen, iterate_with_context, raise_interrupts_immediately
 from dagster.utils.timing import time_execution_scope
@@ -330,9 +329,8 @@ def _create_step_events_for_output(step_context, output):
         yield evt
 
 
-def _get_addressable_asset(context, step_output_handle, asset_store_handle):
-    check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
-
+def _get_addressable_asset(context, step_output_handle):
+    asset_store_handle = context.execution_plan.get_asset_store_handle(step_output_handle)
     asset_store = context.get_asset_store(asset_store_handle.asset_store_key)
     obj = asset_store.get_asset(context, step_output_handle, asset_store_handle.asset_metadata)
 
@@ -341,9 +339,8 @@ def _get_addressable_asset(context, step_output_handle, asset_store_handle):
     )
 
 
-def _set_addressable_asset(context, step_output_handle, asset_store_handle, value):
-    check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
-
+def _set_addressable_asset(context, step_output_handle, value):
+    asset_store_handle = context.execution_plan.get_asset_store_handle(step_output_handle)
     asset_store = context.get_asset_store(asset_store_handle.asset_store_key)
     materializations = asset_store.set_asset(
         context, step_output_handle, value, asset_store_handle.asset_metadata
@@ -374,11 +371,8 @@ def _set_addressable_asset(context, step_output_handle, asset_store_handle, valu
 
 
 def _set_intermediates(step_context, step_output, step_output_handle, output, version):
-    if step_output.asset_store_handle:
-        # use asset_store if it's configured on provided by the user
-        res = _set_addressable_asset(
-            step_context, step_output_handle, step_output.asset_store_handle, output.value
-        )
+    if step_context.using_asset_store(step_output_handle):
+        res = _set_addressable_asset(step_context, step_output_handle, output.value)
         for evt in res:
             if isinstance(evt, AssetStoreOperation):
                 yield DagsterEvent.asset_store_operation(step_context, evt)
@@ -512,13 +506,8 @@ def _input_values_from_intermediate_storage(step_context):
 
             input_value = []
             for source_handle in step_input.source_handles:
-                source_asset_store_handle = step_context.execution_plan.get_asset_store_handle(
-                    source_handle
-                )
-                if source_asset_store_handle:
-                    input_value = _get_addressable_asset(
-                        step_context, source_handle, source_asset_store_handle
-                    )
+                if step_context.using_asset_store(source_handle):
+                    input_value = _get_addressable_asset(step_context, source_handle)
                 elif (
                     source_handle in step_input.addresses
                     and step_context.intermediate_storage.has_intermediate_at_address(
@@ -552,13 +541,8 @@ def _input_values_from_intermediate_storage(step_context):
 
         elif step_input.is_from_single_output:
             source_handle = step_input.source_handles[0]
-            source_asset_store_handle = step_context.execution_plan.get_asset_store_handle(
-                source_handle
-            )
-            if source_asset_store_handle:
-                input_value = _get_addressable_asset(
-                    step_context, source_handle, source_asset_store_handle
-                )
+            if step_context.using_asset_store(source_handle):
+                input_value = _get_addressable_asset(step_context, source_handle)
             elif source_handle in step_input.addresses:
                 input_value = step_context.intermediate_storage.get_intermediate_from_address(
                     step_context,
@@ -569,7 +553,7 @@ def _input_values_from_intermediate_storage(step_context):
             else:
                 input_value = step_context.intermediate_storage.get_intermediate(
                     context=step_context,
-                    step_output_handle=step_input.source_handles[0],
+                    step_output_handle=source_handle,
                     dagster_type=step_input.dagster_type,
                 )
 
