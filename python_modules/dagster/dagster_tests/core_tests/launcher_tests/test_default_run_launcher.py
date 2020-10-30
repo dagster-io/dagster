@@ -274,6 +274,10 @@ def test_invalid_instance_run(get_external_pipeline):
 @pytest.mark.parametrize(
     "run_config", run_configs(),
 )
+@pytest.mark.skipif(
+    seven.IS_WINDOWS,
+    reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
+)
 def test_crashy_run(get_external_pipeline, run_config):  # pylint: disable=redefined-outer-name
     with instance_for_test() as instance:
         pipeline_run = instance.create_run_for_pipeline(

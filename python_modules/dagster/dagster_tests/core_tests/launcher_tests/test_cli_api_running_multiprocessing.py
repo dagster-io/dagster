@@ -215,7 +215,10 @@ def test_failing():
         assert instance.all_logs(pipeline_run.run_id)
 
 
-@pytest.mark.skipif(seven.IS_WINDOWS, reason="Unix-only test")
+@pytest.mark.skipif(
+    seven.IS_WINDOWS,
+    reason="Crashy pipelines leave resources open on windows, causing filesystem contention",
+)
 def test_execution_crash():
     run_config = {
         "solids": {"sum_solid": {"inputs": {"num": file_relative_path(__file__, "data/num.csv")}}}
