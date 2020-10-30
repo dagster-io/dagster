@@ -4,9 +4,6 @@ dev_webapp:
 download-schema:
 	REACT_APP_GRAPHQL_URI="http://localhost:3333/graphql" yarn run download-schema
 
-download-mocks:
-	yarn run download-mocks
-
 generate-types: download-schema
 	yarn run generate-types
 

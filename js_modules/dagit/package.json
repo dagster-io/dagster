@@ -124,7 +124,6 @@
     "check-lint": "eslint src/ --ext=.tsx,.ts,.js",
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
-    "download-mocks": "jest -i --collectCoverage=false --testRegex='src/scripts/DownloadMocks.ts'",
     "download-schema": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/DownloadSchema.ts",
     "generate-types": "find src -type d -name types | xargs rm -r && apollo codegen:generate --includes \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python append_generated.py",
     "watch-types": "apollo codegen:generate --includes \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql  --globalTypesFile ./src/types/globalTypes.ts --watch",
