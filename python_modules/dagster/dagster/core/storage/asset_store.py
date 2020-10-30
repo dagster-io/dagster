@@ -31,7 +31,7 @@ class AssetStore(six.with_metaclass(ABCMeta)):
     Base class for user-provided asset store.
 
     Extend this class to handle asset operations. Users should implement ``set_asset`` to store a
-    data object that can be tracked by the Dagster machinery and ``get_asset`` to retrive a data
+    data object that can be tracked by the Dagster machinery and ``get_asset`` to retrieve a data
     object.
     """
 
