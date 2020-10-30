@@ -1,7 +1,7 @@
+# pylint chokes on the perfectly ok import from alembic.migration
+import sys
 from contextlib import contextmanager
 
-# pylint chokes on the perfectly ok import from alembic.migration
-import six
 import sqlalchemy as db
 from alembic.command import downgrade, stamp, upgrade
 from alembic.config import Config
@@ -53,7 +53,7 @@ def check_alembic_revision(alembic_config, conn):
 def handle_schema_errors(conn, alembic_config, msg=None):
     try:
         yield
-    except (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError) as exc:
+    except (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError):
         db_revision, head_revision = (None, None)
 
         try:
@@ -65,11 +65,11 @@ def handle_schema_errors(conn, alembic_config, msg=None):
             pass
 
         if db_revision != head_revision:
-            six.raise_from(
-                DagsterInstanceMigrationRequired(
-                    msg=msg, db_revision=db_revision, head_revision=head_revision
-                ),
-                exc,
+            raise DagsterInstanceMigrationRequired(
+                msg=msg,
+                db_revision=db_revision,
+                head_revision=head_revision,
+                original_exc_info=sys.exc_info(),
             )
 
         raise

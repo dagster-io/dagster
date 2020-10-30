@@ -381,15 +381,22 @@ class DagsterBackfillFailedError(DagsterError):
 class DagsterInstanceMigrationRequired(DagsterError):
     """Indicates that the dagster instance must be migrated."""
 
-    def __init__(self, msg=None, db_revision=None, head_revision=None):
+    def __init__(self, msg=None, db_revision=None, head_revision=None, original_exc_info=None):
         super(DagsterInstanceMigrationRequired, self).__init__(
             "Instance is out of date and must be migrated{additional_msg}."
-            "{revision_clause} Please run `dagster instance migrate`.".format(
+            "{revision_clause} Please run `dagster instance migrate`.{original_exception_clause}".format(
                 additional_msg=" ({msg})".format(msg=msg) if msg else "",
                 revision_clause=(
                     " Database is at revision {db_revision}, head is "
                     "{head_revision}.".format(db_revision=db_revision, head_revision=head_revision)
                     if db_revision or head_revision
+                    else ""
+                ),
+                original_exception_clause=(
+                    "\n\nOriginal exception:\n\n{original_exception}".format(
+                        original_exception="".join(traceback.format_exception(*original_exc_info))
+                    )
+                    if original_exc_info
                     else ""
                 ),
             )

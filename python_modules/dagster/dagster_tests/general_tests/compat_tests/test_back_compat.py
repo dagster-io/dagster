@@ -295,13 +295,14 @@ def test_event_log_asset_key_migration():
 def test_0_8_0_scheduler_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_8_0_scheduler_change")
     with copy_directory(src_dir) as test_dir:
-
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         with pytest.raises(
             DagsterInstanceMigrationRequired,
             match=_schedule_storage_migration_regex(current_revision="da7cd32b690d"),
-        ):
+        ) as exc_info:
             instance.all_stored_schedule_state()
+
+        assert "no such column: schedules.schedule_origin_id" in exc_info.exconly()
 
         instance.upgrade()
 
