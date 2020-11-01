@@ -69,7 +69,7 @@ def giant_repo():
 
 @contextmanager
 def get_giant_repo_grpc_repository_location_handle():
-    handle = RepositoryLocationHandle.create_from_repository_location_origin(
+    with RepositoryLocationHandle.create_from_repository_location_origin(
         ManagedGrpcPythonEnvRepositoryLocationOrigin(
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
@@ -78,11 +78,8 @@ def get_giant_repo_grpc_repository_location_handle():
             ),
             location_name="giant_repo_location",
         )
-    )
-    try:
+    ) as handle:
         yield handle
-    finally:
-        handle.cleanup()
 
 
 def test_giant_external_repository_grpc():

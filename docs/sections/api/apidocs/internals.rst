@@ -161,8 +161,6 @@ Run launcher
 
 .. autoclass:: DefaultRunLauncher
 
-.. autoclass:: GrpcRunLauncher
-
 .. currentmodule:: dagster_graphql.launcher
 
 See also: :py:class:`dagster_k8s.K8sRunLauncher`.

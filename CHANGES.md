@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.18
+
+**Breaking Changes**
+
+- `GrpcRunLauncher` has been removed and merged into `DefaultRunLauncher`.
+
 ## 0.9.17
 
 **New**

@@ -24,28 +24,9 @@ from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
 )
 
 
-def grpc_instance():
-    return instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster.core.launcher.grpc_run_launcher",
-                "class": "GrpcRunLauncher",
-            }
-        },
-    )
-
-
 def test_run_always_finishes():  # pylint: disable=redefined-outer-name
     with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(
-            temp_dir,
-            overrides={
-                "run_launcher": {
-                    "module": "dagster.core.launcher.grpc_run_launcher",
-                    "class": "GrpcRunLauncher",
-                }
-            },
-        )
+        instance = DagsterInstance.local_temp(temp_dir)
 
         pipeline_run = instance.create_run_for_pipeline(pipeline_def=slow_pipeline, run_config=None)
         run_id = pipeline_run.run_id
@@ -97,8 +78,8 @@ def test_run_always_finishes():  # pylint: disable=redefined-outer-name
 
 
 def test_terminate_after_shutdown():
-    with grpc_instance() as instance:
-        repository_location_handle = RepositoryLocationHandle.create_from_repository_location_origin(
+    with instance_for_test() as instance:
+        with RepositoryLocationHandle.create_from_repository_location_origin(
             ManagedGrpcPythonEnvRepositoryLocationOrigin(
                 loadable_target_origin=LoadableTargetOrigin(
                     executable_path=sys.executable,
@@ -107,23 +88,23 @@ def test_terminate_after_shutdown():
                 ),
                 location_name="nope",
             )
-        )
-        repository_location = GrpcServerRepositoryLocation(repository_location_handle)
+        ) as repository_location_handle:
+            repository_location = GrpcServerRepositoryLocation(repository_location_handle)
 
-        external_pipeline = repository_location.get_repository("nope").get_full_external_pipeline(
-            "sleepy_pipeline"
-        )
+            external_pipeline = repository_location.get_repository(
+                "nope"
+            ).get_full_external_pipeline("sleepy_pipeline")
 
-        pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=sleepy_pipeline, run_config=None
-        )
+            pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=sleepy_pipeline, run_config=None
+            )
 
-        instance.launch_run(pipeline_run.run_id, external_pipeline)
+            instance.launch_run(pipeline_run.run_id, external_pipeline)
 
-        poll_for_step_start(instance, pipeline_run.run_id)
+            poll_for_step_start(instance, pipeline_run.run_id)
 
-        # Tell the server to shut down once executions finish
-        repository_location_handle.client.cleanup_server()
+            # Leaving this context manager cleans up the repository location handle,
+            # which tells the server to shut down once executions finish
 
         # Trying to start another run fails
         doomed_to_fail_external_pipeline = repository_location.get_repository(
@@ -148,7 +129,7 @@ def test_terminate_after_shutdown():
 
 
 def test_server_down():
-    with grpc_instance() as instance:
+    with instance_for_test() as instance:
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute="nope",

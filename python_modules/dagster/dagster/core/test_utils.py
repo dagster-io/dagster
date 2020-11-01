@@ -10,7 +10,6 @@ from dagster.core.host_representation import ExternalPipeline
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.launcher.default_run_launcher import DefaultRunLauncher
-from dagster.core.launcher.grpc_run_launcher import GrpcRunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.serdes import ConfigurableClass
@@ -112,7 +111,7 @@ def cleanup_test_instance(instance):
     # all runs to reach a terminal state, and close any subprocesses or threads
     # that might be accessing the run history DB.
     instance.run_launcher.join()
-    if isinstance(instance.run_launcher, (DefaultRunLauncher, GrpcRunLauncher)):
+    if isinstance(instance.run_launcher, DefaultRunLauncher):
         instance.run_launcher.cleanup_managed_grpc_servers()
 
     cleanup_telemetry_logger()

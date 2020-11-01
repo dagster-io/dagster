@@ -29,7 +29,7 @@ def get_bar_repo_repository_location_handle():
 
 @contextmanager
 def get_bar_repo_grpc_repository_location_handle():
-    handle = RepositoryLocationHandle.create_from_repository_location_origin(
+    with RepositoryLocationHandle.create_from_repository_location_origin(
         ManagedGrpcPythonEnvRepositoryLocationOrigin(
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
@@ -38,11 +38,8 @@ def get_bar_repo_grpc_repository_location_handle():
             ),
             location_name="bar_repo",
         )
-    )
-    try:
+    ) as handle:
         yield handle
-    finally:
-        handle.cleanup()
 
 
 @contextmanager
