@@ -584,7 +584,9 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
         freeze_datetime = pendulum.create(2019, 3, 9, 0, 0, 0, tz="US/Central").in_tz("US/Pacific")
 
         with pendulum.test(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("daily_dst_transition_schedule")
+            external_schedule = external_repo.get_external_schedule(
+                "daily_dst_transition_schedule_skipped_time"
+            )
             schedule_origin = external_schedule.get_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
@@ -651,7 +653,9 @@ def test_execute_during_dst_transition_fall_back(external_repo_context):
         freeze_datetime = pendulum.create(2019, 11, 2, 0, 0, 0, tz="US/Central").in_tz("US/Pacific")
 
         with pendulum.test(freeze_datetime):
-            external_schedule = external_repo.get_external_schedule("daily_dst_transition_schedule")
+            external_schedule = external_repo.get_external_schedule(
+                "daily_dst_transition_schedule_doubled_time"
+            )
             schedule_origin = external_schedule.get_origin()
             instance.start_schedule_and_update_storage_state(external_schedule)
 
@@ -673,9 +677,9 @@ def test_execute_during_dst_transition_fall_back(external_repo_context):
             assert len(ticks) == 3
 
             expected_datetimes_utc = [
-                pendulum.create(2019, 11, 4, 8, 30, 0, tz="UTC"),
-                pendulum.create(2019, 11, 3, 8, 30, 0, tz="UTC"),
-                pendulum.create(2019, 11, 2, 7, 30, 0, tz="UTC"),
+                pendulum.create(2019, 11, 4, 7, 30, 0, tz="UTC"),
+                pendulum.create(2019, 11, 3, 6, 30, 0, tz="UTC"),
+                pendulum.create(2019, 11, 2, 6, 30, 0, tz="UTC"),
             ]
 
             expected_partition_times = [

@@ -92,7 +92,17 @@ def daily_late_schedule(date):
     execution_time=datetime.time(hour=2, minute=30),
     execution_timezone="US/Central",
 )
-def daily_dst_transition_schedule(date):
+def daily_dst_transition_schedule_skipped_time(date):
+    return _solid_config(date)
+
+
+@daily_schedule(
+    pipeline_name="the_pipeline",
+    start_date=_COUPLE_DAYS_AGO,
+    execution_time=datetime.time(hour=1, minute=30),
+    execution_timezone="US/Central",
+)
+def daily_dst_transition_schedule_doubled_time(date):
     return _solid_config(date)
 
 
@@ -180,7 +190,8 @@ def the_repo():
         simple_hourly_schedule,
         daily_schedule_without_timezone,
         daily_late_schedule,
-        daily_dst_transition_schedule,
+        daily_dst_transition_schedule_skipped_time,
+        daily_dst_transition_schedule_doubled_time,
         daily_central_time_schedule,
         daily_eastern_time_schedule,
         hourly_central_time_schedule,
