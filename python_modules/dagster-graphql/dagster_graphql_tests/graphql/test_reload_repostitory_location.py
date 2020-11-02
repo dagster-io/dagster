@@ -114,10 +114,14 @@ class TestReloadRepositoriesOutOfProcess(
             assert result
             assert result.data
             assert result.data["reloadRepositoryLocation"]
-            assert result.data["reloadRepositoryLocation"]["__typename"] == "PythonError"
+            assert (
+                result.data["reloadRepositoryLocation"]["__typename"]
+                == "RepositoryLocationLoadFailure"
+            )
+            assert result.data["reloadRepositoryLocation"]["name"] == "test"
             assert (
                 "Mocked repository load failure"
-                in result.data["reloadRepositoryLocation"]["message"]
+                in result.data["reloadRepositoryLocation"]["error"]["message"]
             )
 
         # can be reloaded again successfully
@@ -165,8 +169,11 @@ mutation ($repositoryLocationName: String!) {
         }
         isReloadSupported
       }
-      ... on PythonError {
-          message
+      ... on RepositoryLocationLoadFailure {
+          name
+          error {
+              message
+          }
       }
    }
 }

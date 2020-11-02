@@ -678,6 +678,12 @@ class DauphinRepositoriesOrError(dauphin.Union):
         types = ("RepositoryConnection", DauphinPythonError)
 
 
+class RepositoryLocationsOrError(dauphin.Union):
+    class Meta(object):
+        name = "RepositoryLocationsOrError"
+        types = ("RepositoryLocationConnection", DauphinPythonError)
+
+
 class DauphinRepositoryNotFoundError(dauphin.ObjectType):
     class Meta(object):
         name = "RepositoryNotFoundError"

@@ -1,0 +1,9 @@
+load_from:
+  - python_file:
+      relative_path: test_cli_repo.py
+      attribute: test
+      location_name: test_cli_location
+  - python_module:
+      module_name: does_not_exist_module
+      attribute: fails
+      location_name: test_cli_location_error

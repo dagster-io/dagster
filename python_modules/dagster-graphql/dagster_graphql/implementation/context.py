@@ -33,6 +33,10 @@ class DagsterGraphQLContext:
     def repository_locations(self):
         return list(self._repository_locations.values())
 
+    @property
+    def repository_location_names(self):
+        return self._workspace.repository_location_names
+
     def repository_location_errors(self):
         return self._workspace.repository_location_errors
 

@@ -140,3 +140,24 @@ def fetch_repository(graphene_info, repository_selector):
     return graphene_info.schema.type_named("RepositoryNotFoundError")(
         repository_selector.location_name, repository_selector.repository_name
     )
+
+
+@capture_dauphin_error
+def fetch_repository_locations(graphene_info):
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+
+    nodes = []
+
+    for location_name in graphene_info.context.repository_location_names:
+        node = (
+            graphene_info.schema.type_named("RepositoryLocation")(
+                graphene_info.context.get_repository_location(location_name)
+            )
+            if graphene_info.context.has_repository_location(location_name)
+            else graphene_info.schema.type_named("RepositoryLocationLoadFailure")(
+                location_name, graphene_info.context.get_repository_location_error(location_name),
+            )
+        )
+        nodes.append(node)
+
+    return graphene_info.schema.type_named("RepositoryLocationConnection")(nodes=nodes)

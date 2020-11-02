@@ -13,8 +13,10 @@ from dagster.core.host_representation import (
     RepositoryLocation,
 )
 from dagster.core.origin import RepositoryGrpcServerOrigin, RepositoryPythonOrigin
+from dagster.utils.error import SerializableErrorInfo
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
+from dagster_graphql.schema.errors import DauphinPythonError
 
 
 class DauphinRepository(dauphin.ObjectType):
@@ -111,6 +113,12 @@ class DauphinRepositoryOrigin(dauphin.Union):
         types = ("PythonRepositoryOrigin", "GrpcRepositoryOrigin")
 
 
+class DauphinRepositoryLocationOrLoadFailure(dauphin.Union):
+    class Meta(object):
+        name = "RepositoryLocationOrLoadFailure"
+        types = ("RepositoryLocation", "RepositoryLocationLoadFailure")
+
+
 class DauphinRepositoryLocation(dauphin.ObjectType):
     class Meta(object):
         name = "RepositoryLocation"
@@ -141,6 +149,21 @@ class DauphinRepositoryLocation(dauphin.ObjectType):
             graphene_info.schema.type_named("Repository")(repository, self._location)
             for repository in self._location.get_repositories().values()
         ]
+
+
+class DauphinRepositoryLocationLoadFailure(dauphin.ObjectType):
+    class Meta(object):
+        name = "RepositoryLocationLoadFailure"
+
+    name = dauphin.NonNull(dauphin.String)
+    error = dauphin.NonNull("PythonError")
+
+    def __init__(self, name, error):
+        check.str_param(name, "name")
+        check.inst_param(error, "error", SerializableErrorInfo)
+        super(DauphinRepositoryLocationLoadFailure, self).__init__(
+            name=name, error=DauphinPythonError(error)
+        )
 
 
 class DauphinCodePointer(dauphin.ObjectType):
@@ -187,3 +210,10 @@ class DauphinRepositoryConnection(dauphin.ObjectType):
         name = "RepositoryConnection"
 
     nodes = dauphin.non_null_list("Repository")
+
+
+class DauphinRepositoryLocationConnection(dauphin.ObjectType):
+    class Meta(object):
+        name = "RepositoryLocationConnection"
+
+    nodes = dauphin.non_null_list("RepositoryLocationOrLoadFailure")

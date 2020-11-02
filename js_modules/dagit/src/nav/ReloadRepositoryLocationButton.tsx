@@ -28,10 +28,17 @@ export const ReloadRepositoryLocationButton: React.FunctionComponent<{
     const {data} = await reload();
     setReloading(false);
 
-    const error =
-      data?.reloadRepositoryLocation.__typename !== 'RepositoryLocation'
-        ? data?.reloadRepositoryLocation.message
-        : null;
+    let error = null;
+    switch (data?.reloadRepositoryLocation.__typename) {
+      case 'RepositoryLocation':
+        break;
+      case 'RepositoryLocationLoadFailure':
+        error = data?.reloadRepositoryLocation.error.message;
+        break;
+      default:
+        error = data?.reloadRepositoryLocation.message;
+        break;
+    }
 
     if (error) {
       SharedToaster.show({
@@ -84,8 +91,10 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
       ... on RepositoryLocationNotFound {
         message
       }
-      ... on PythonError {
-        message
+      ... on RepositoryLocationLoadFailure {
+        error {
+          message
+        }
       }
     }
   }

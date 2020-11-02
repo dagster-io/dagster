@@ -53,6 +53,29 @@ def test_basic_repositories():
         assert result_data["data"]["repositoriesOrError"]["nodes"]
 
 
+def test_basic_repository_locations():
+    query = "{ repositoryLocationsOrError { ... on RepositoryLocationConnection { nodes { ... on RepositoryLocation { __typename, name } ... on RepositoryLocationLoadFailure { __typename, name, error { message } } } } } }"
+
+    workspace_path = file_relative_path(__file__, "./cli_test_error_workspace.yaml")
+
+    with dagster_cli_runner() as runner:
+        result = runner.invoke(ui, ["-w", workspace_path, "-t", query])
+
+        assert result.exit_code == 0
+
+        result_data = json.loads(result.output)
+
+        nodes = result_data["data"]["repositoryLocationsOrError"]["nodes"]
+        assert len(nodes) == 2
+
+        assert nodes[0]["__typename"] == "RepositoryLocation"
+        assert nodes[0]["name"] == "test_cli_location"
+
+        assert nodes[1]["__typename"] == "RepositoryLocationLoadFailure"
+        assert nodes[1]["name"] == "test_cli_location_error"
+        assert "No module named" in nodes[1]["error"]["message"]
+
+
 def test_basic_variables():
     query = """
     query FooBar($pipelineName: String! $repositoryName: String! $repositoryLocationName: String!){

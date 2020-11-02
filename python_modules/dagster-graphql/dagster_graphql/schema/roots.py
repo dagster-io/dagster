@@ -28,6 +28,7 @@ from dagster_graphql.implementation.execution import (
 from dagster_graphql.implementation.external import (
     fetch_repositories,
     fetch_repository,
+    fetch_repository_locations,
     get_full_external_pipeline_or_raise,
 )
 from dagster_graphql.implementation.fetch_assets import get_asset, get_assets
@@ -86,6 +87,8 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull("RepositoryOrError"),
         repositorySelector=dauphin.NonNull("RepositorySelector"),
     )
+
+    repositoryLocationsOrError = dauphin.NonNull("RepositoryLocationsOrError")
 
     pipelineOrError = dauphin.Field(
         dauphin.NonNull("PipelineOrError"), params=dauphin.NonNull("PipelineSelector")
@@ -193,6 +196,9 @@ class DauphinQuery(dauphin.ObjectType):
         return fetch_repository(
             graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
+
+    def resolve_repositoryLocationsOrError(self, graphene_info):
+        return fetch_repository_locations(graphene_info)
 
     def resolve_pipelineSnapshotOrError(self, graphene_info, **kwargs):
         snapshot_id_arg = kwargs.get("snapshotId")
@@ -471,7 +477,7 @@ class DauphinReloadRepositoryLocationMutationResult(dauphin.Union):
             "RepositoryLocation",
             "ReloadNotSupported",
             "RepositoryLocationNotFound",
-            "PythonError",
+            "RepositoryLocationLoadFailure",
         )
 
 
@@ -502,8 +508,8 @@ class DauphinReloadRepositoryLocationMutation(dauphin.Mutation):
                 graphene_info.context.get_repository_location(location_name)
             )
         else:
-            return graphene_info.schema.type_named("PythonError")(
-                graphene_info.context.get_repository_location_error(location_name)
+            return graphene_info.schema.type_named("RepositoryLocationLoadFailure")(
+                location_name, graphene_info.context.get_repository_location_error(location_name)
             )
 
 

@@ -1,5 +1,6 @@
 import sys
 import warnings
+from collections import OrderedDict
 
 from dagster import check
 from dagster.core.host_representation import RepositoryLocationHandle, RepositoryLocationOrigin
@@ -8,7 +9,7 @@ from dagster.utils.error import serializable_error_info_from_exc_info
 
 class Workspace:
     def __init__(self, repository_location_origins):
-        self._location_origin_dict = {}
+        self._location_origin_dict = OrderedDict()
         check.list_param(
             repository_location_origins,
             "repository_location_origins",
@@ -56,7 +57,7 @@ class Workspace:
 
     @property
     def repository_location_names(self):
-        return list(self._location_handle_dict.keys())
+        return list(self._location_origin_dict.keys())
 
     @property
     def repository_location_errors(self):

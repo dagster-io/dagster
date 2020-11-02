@@ -2,6 +2,7 @@ type Query {
   version: String!
   repositoriesOrError: RepositoriesOrError!
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
+  repositoryLocationsOrError: RepositoryLocationsOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
@@ -602,6 +603,19 @@ input RepositorySelector {
   repositoryLocationName: String!
 }
 
+union RepositoryLocationsOrError = RepositoryLocationConnection | PythonError
+
+type RepositoryLocationConnection {
+  nodes: [RepositoryLocationOrLoadFailure!]!
+}
+
+union RepositoryLocationOrLoadFailure = RepositoryLocation | RepositoryLocationLoadFailure
+
+type RepositoryLocationLoadFailure {
+  name: String!
+  error: PythonError!
+}
+
 union PipelineOrError = Pipeline | PipelineNotFoundError | InvalidSubsetError | PythonError
 
 type InvalidSubsetError implements Error {
@@ -896,7 +910,7 @@ type DeletePipelineRunSuccess {
   runId: String!
 }
 
-union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound | PythonError
+union ReloadRepositoryLocationMutationResult = RepositoryLocation | ReloadNotSupported | RepositoryLocationNotFound | RepositoryLocationLoadFailure
 
 type ReloadNotSupported implements Error {
   message: String!
