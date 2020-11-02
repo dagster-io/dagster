@@ -80,9 +80,11 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
                     runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
                     onSetFilter={setFilterTokens}
                   />
-                  <div style={{marginTop: '16px'}}>
-                    <CursorPaginationControls {...paginationProps} />
-                  </div>
+                  {pipelineRunsOrError.results.length > 0 ? (
+                    <div style={{marginTop: '16px'}}>
+                      <CursorPaginationControls {...paginationProps} />
+                    </div>
+                  ) : null}
                 </>
               );
             }}

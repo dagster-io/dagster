@@ -98,7 +98,7 @@ function searchSuggestionsForRuns(
   result?: QueryResult<RunsSearchSpaceQuery>,
   enabledFilters?: string[],
 ): SuggestionProvider[] {
-  const tags = (result && result.data && result.data.pipelineRunTags) || [];
+  const tags = result?.data?.pipelineRunTags || [];
   const pipelineNames =
     result?.data?.repositoryOrError?.__typename === 'Repository'
       ? result.data.repositoryOrError.pipelines.map((n) => n.name)
@@ -121,7 +121,7 @@ function searchSuggestionsForRuns(
       token: 'tag',
       values: () => {
         const all: string[] = [];
-        tags
+        [...tags]
           .sort((a, b) => a.key.localeCompare(b.key))
           .forEach((t) => t.values.forEach((v) => all.push(`${t.key}=${v}`)));
         return all;
