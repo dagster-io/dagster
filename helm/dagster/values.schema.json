@@ -11,12 +11,16 @@
         },
         "rabbitmq": {
             "$ref": "#/definitions/RabbitMQ"
+        },
+        "redis": {
+            "$ref": "#/definitions/Redis"
         }
     },
     "required": [
         "dagit",
         "postgresql",
-        "rabbitmq"
+        "rabbitmq",
+        "redis"
     ],
     "definitions": {
         "PullPolicy": {
@@ -51,7 +55,7 @@
                 "pullPolicy"
             ]
         },
-        "automation__helm__schema__kubernetes__Service": {
+        "automation__helm__schema__subschema__kubernetes__Service": {
             "title": "Service",
             "type": "object",
             "properties": {
@@ -130,7 +134,7 @@
                     "$ref": "#/definitions/Image"
                 },
                 "service": {
-                    "$ref": "#/definitions/automation__helm__schema__kubernetes__Service"
+                    "$ref": "#/definitions/automation__helm__schema__subschema__kubernetes__Service"
                 },
                 "nodeSelector": {
                     "$ref": "#/definitions/NodeSelector"
@@ -163,7 +167,7 @@
                 "service"
             ]
         },
-        "automation__helm__schema__postgresql__Service": {
+        "automation__helm__schema__subschema__postgresql__Service": {
             "title": "Service",
             "type": "object",
             "properties": {
@@ -204,7 +208,7 @@
                     "type": "string"
                 },
                 "service": {
-                    "$ref": "#/definitions/automation__helm__schema__postgresql__Service"
+                    "$ref": "#/definitions/automation__helm__schema__subschema__postgresql__Service"
                 }
             },
             "required": [
@@ -235,7 +239,7 @@
                 "password"
             ]
         },
-        "automation__helm__schema__rabbitmq__Service": {
+        "automation__helm__schema__subschema__rabbitmq__Service": {
             "title": "Service",
             "type": "object",
             "properties": {
@@ -271,7 +275,7 @@
                     "$ref": "#/definitions/RabbitMQConfiguration"
                 },
                 "service": {
-                    "$ref": "#/definitions/automation__helm__schema__rabbitmq__Service"
+                    "$ref": "#/definitions/automation__helm__schema__subschema__rabbitmq__Service"
                 },
                 "volumePermissions": {
                     "$ref": "#/definitions/VolumePermissions"
@@ -283,6 +287,40 @@
                 "service",
                 "volumePermissions"
             ]
+        },
+        "Redis": {
+            "title": "Redis",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "host": {
+                    "title": "Host",
+                    "type": "string"
+                },
+                "port": {
+                    "title": "Port",
+                    "type": "integer"
+                },
+                "brokerDbNumber": {
+                    "title": "Brokerdbnumber",
+                    "type": "integer"
+                },
+                "backendDbNumber": {
+                    "title": "Backenddbnumber",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "enabled",
+                "host",
+                "port",
+                "brokerDbNumber",
+                "backendDbNumber"
+            ],
+            "additionalProperties": false
         }
     }
 }

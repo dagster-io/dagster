@@ -326,14 +326,18 @@ rabbitmq:
 redis:
   # if enabled, external redis will be used instead of rabbitmq
   enabled: false
+
   # Redis host URL
   host: ""
+
   # Redis port
   port: 6379
+
   # Set DB number for Redis broker DB (default 0)
-  brokerDbNumber:
+  brokerDbNumber: 0
+
   # Set DB number for Redis backend DB (default 0)
-  backendDbNumber:
+  backendDbNumber: 0
 
 ####################################################################################################
 # Flower: (Optional) The flower web interface for diagnostics and debugging Celery queues & workers
