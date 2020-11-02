@@ -227,7 +227,7 @@ def after_install(options, home_dir):
 
 
 @cli.command()
-@click.option("--helm-repo", "-r", required=True)
+@click.option("--helm-repo", "-r", required=True, type=click.Path(exists=True, resolve_path=True))
 @click.option("--ver", "-v", required=True)
 @click.option("--dry-run", is_flag=True)
 def helm(helm_repo, ver, dry_run):
