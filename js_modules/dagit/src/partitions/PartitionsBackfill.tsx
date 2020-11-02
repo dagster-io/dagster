@@ -1,5 +1,14 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
-import {Callout, Checkbox, Intent, NonIdealState, ProgressBar, TextArea} from '@blueprintjs/core';
+import {
+  Callout,
+  Checkbox,
+  Intent,
+  NonIdealState,
+  Classes,
+  Colors,
+  Spinner,
+  InputGroup,
+} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
@@ -145,8 +154,8 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
 
   if (!data || loading) {
     return (
-      <div style={{maxWidth: 600, margin: '40px auto'}}>
-        <ProgressBar />
+      <div style={{width: '100%', margin: '40px auto'}}>
+        <Spinner size={40} />
       </div>
     );
   }
@@ -255,182 +264,189 @@ export const PartitionsBackfillPartitionSelector: React.FunctionComponent<{
   const selectedString = partitionsToText(selected, partitionNames);
 
   return (
-    <div style={{marginBottom: 20, padding: 10, border: '5px solid antiquewhite'}}>
-      {usingDefaultRunLauncher && (
-        <div style={{marginBottom: 10}}>
-          <Callout intent={Intent.WARNING}>
-            Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for launching
-            backfills is not advised, as queueing runs is not currently supported. Check your
-            instance configuration in <code>dagster.yaml</code> to configure a run launcher more
-            appropriate for launching a large number of jobs.
-          </Callout>
-        </div>
-      )}
-
-      <h3>Launch Partition Backfill</h3>
-      <div style={{display: 'flex', alignItems: 'center', marginBottom: 4}}>
-        <strong style={{display: 'block'}}>Partitions</strong>
-        <Checkbox
-          label="Select All"
-          disabled={!selectablePartitions.length}
-          style={{marginBottom: 0, marginLeft: 10}}
-          checked={selected.length === selectablePartitions.length}
-          onClick={() =>
-            setSelected(selected.length === selectablePartitions.length ? [] : selectablePartitions)
-          }
-        />
-      </div>
-      <TextArea
-        growVertically
-        small
-        fill
-        placeholder={placeholderForPartitions(partitionNames)}
-        key={selectedString}
-        defaultValue={selectedString}
-        onBlur={(e) => {
-          try {
-            setSelected(textToPartitions(e.target.value, partitionNames));
-          } catch (err) {
-            e.preventDefault();
-            alert(err.message);
-          }
-        }}
-      />
-      <div style={{display: 'flex', marginTop: 10}}>
-        <div>
-          <strong style={{display: 'block', marginBottom: 4}}>Options</strong>
-          <div style={{display: 'flex'}}>
-            <Checkbox
-              label="Re-execute From Last Run"
-              disabled={partitionsWithLastRunSuccess.length === 0}
-              checked={options.reexecute}
-              onChange={() => {
-                setSelected([]);
-                setQuery('');
-                setOptions(
-                  options.reexecute
-                    ? {...options, reexecute: false, fromFailure: false}
-                    : {...options, reexecute: true},
-                );
-              }}
-            />
-            <div style={{width: 20}} />
-            <Checkbox
-              label="Re-execute From Failure"
-              checked={options.fromFailure}
-              disabled={partitionsWithLastRunFailure.length === 0 || !options.reexecute}
-              onChange={() => {
-                setSelected([]);
-                setQuery('');
-                setOptions({...options, reexecute: true, fromFailure: !options.fromFailure});
-              }}
-            />
-          </div>
-        </div>
-        <div style={{marginLeft: 20}}>
-          <strong style={{display: 'block', marginBottom: 4}}>Step Subset</strong>
-          <GraphQueryInput
-            small
-            disabled={options.fromFailure}
-            width={260}
-            items={solids}
-            value={query}
-            placeholder="Type a Step Subset"
-            onChange={setQuery}
+    <div>
+      <div className={Classes.DIALOG_BODY}>
+        <div style={{display: 'flex', alignItems: 'center', marginBottom: 4}}>
+          <strong style={{display: 'block'}}>Partitions</strong>
+          <Checkbox
+            label="Select All"
+            disabled={!selectablePartitions.length}
+            style={{marginBottom: 0, marginLeft: 10}}
+            checked={selected.length === selectablePartitions.length}
+            onClick={() =>
+              setSelected(
+                selected.length === selectablePartitions.length ? [] : selectablePartitions,
+              )
+            }
           />
         </div>
-      </div>
-
-      <div style={{display: 'flex', marginTop: 10, justifyContent: 'space-between'}}>
-        <strong style={{display: 'block', marginBottom: 4}}>Preview</strong>
-        <div style={{opacity: 0.5}}>Click or drag to edit selected partitions</div>
-      </div>
-      <div style={{display: 'flex'}}>
-        {query && (
-          <GridFloatingContainer floating={true}>
-            <GridColumn disabled>
-              <TopLabel></TopLabel>
-              {stepRows.map((step) => (
-                <LeftLabel style={{paddingLeft: step.x}} key={step.name}>
-                  {step.name}
-                </LeftLabel>
-              ))}
-            </GridColumn>
-          </GridFloatingContainer>
-        )}
-
-        <GridScrollContainer>
-          <div style={{display: 'flex', paddingLeft: 10}}>
-            {partitionNames.map((partitionName, idx) => (
-              <GridColumn
-                key={partitionName}
-                style={{zIndex: partitionNames.length - idx, userSelect: 'none'}}
-                disabled={!selectablePartitions.includes(partitionName)}
-                focused={selected.includes(partitionName)}
-                multiselectFocused={currentRangeSelection.includes(partitionName)}
-                onMouseDown={() => onPartitionMouseDown(partitionName)}
-                onMouseUp={() => onPartitionMouseUp(partitionName)}
-                onMouseOver={() => onPartitionMouseOver(partitionName)}
-              >
-                <TopLabelTilted>
-                  <div className="tilted">{partitionName}</div>
-                </TopLabelTilted>
-                {!options.reexecute ? (
-                  <div
-                    className={`square ${
-                      selectablePartitions.includes(partitionName) ? 'missing' : 'disabled'
-                    }`}
-                  />
-                ) : options.fromFailure ? (
-                  <div
-                    className={`square ${
-                      selectablePartitions.includes(partitionName) ? 'failure' : 'disabled'
-                    }`}
-                  />
-                ) : (
-                  stepRows.map((step) => (
+        <InputGroup
+          small
+          fill
+          placeholder={placeholderForPartitions(partitionNames)}
+          key={selectedString}
+          defaultValue={selectedString}
+          onBlur={(e) => {
+            try {
+              setSelected(textToPartitions(e.target.value, partitionNames));
+            } catch (err) {
+              e.preventDefault();
+              alert(err.message);
+            }
+          }}
+        />
+        <div style={{display: 'flex', marginTop: 10}}>
+          <div>
+            <strong style={{display: 'block', marginBottom: 4}}>Step Subset</strong>
+            <GraphQueryInput
+              small
+              disabled={options.fromFailure}
+              width={260}
+              items={solids}
+              value={query}
+              placeholder="Type a Step Subset"
+              onChange={setQuery}
+            />
+          </div>
+          <div style={{marginLeft: 20}}>
+            <strong style={{display: 'block', marginBottom: 4}}>Options</strong>
+            <div style={{display: 'flex'}}>
+              <Checkbox
+                label="Re-execute From Last Run"
+                disabled={partitionsWithLastRunSuccess.length === 0}
+                checked={options.reexecute}
+                onChange={() => {
+                  setSelected([]);
+                  setQuery('');
+                  setOptions(
+                    options.reexecute
+                      ? {...options, reexecute: false, fromFailure: false}
+                      : {...options, reexecute: true},
+                  );
+                }}
+              />
+              <div style={{width: 20}} />
+              <Checkbox
+                label="Re-execute From Failure"
+                checked={options.fromFailure}
+                disabled={partitionsWithLastRunFailure.length === 0 || !options.reexecute}
+                onChange={() => {
+                  setSelected([]);
+                  setQuery('');
+                  setOptions({...options, reexecute: true, fromFailure: !options.fromFailure});
+                }}
+              />
+            </div>
+          </div>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            marginTop: 20,
+            paddingTop: 20,
+            borderTop: `1px solid ${Colors.LIGHT_GRAY3}`,
+            justifyContent: 'space-between',
+          }}
+        >
+          <strong style={{display: 'block', marginBottom: 4}}>Preview</strong>
+          <div style={{color: Colors.GRAY3}}>Click or drag to edit selected partitions</div>
+        </div>
+        <div style={{display: 'flex', border: `1px solid ${Colors.LIGHT_GRAY1}`}}>
+          {query && (
+            <GridFloatingContainer floating={true}>
+              <GridColumn disabled>
+                <TopLabel></TopLabel>
+                {stepRows.map((step) => (
+                  <LeftLabel style={{paddingLeft: step.x}} key={step.name}>
+                    {step.name}
+                  </LeftLabel>
+                ))}
+              </GridColumn>
+            </GridFloatingContainer>
+          )}
+          <GridScrollContainer>
+            <div style={{display: 'flex', paddingLeft: 10}}>
+              {partitionNames.map((partitionName, idx) => (
+                <GridColumn
+                  key={partitionName}
+                  style={{zIndex: partitionNames.length - idx, userSelect: 'none'}}
+                  disabled={!selectablePartitions.includes(partitionName)}
+                  focused={selected.includes(partitionName)}
+                  multiselectFocused={currentRangeSelection.includes(partitionName)}
+                  onMouseDown={() => onPartitionMouseDown(partitionName)}
+                  onMouseUp={() => onPartitionMouseUp(partitionName)}
+                  onMouseOver={() => onPartitionMouseOver(partitionName)}
+                >
+                  <TopLabelTilted>
+                    <div className="tilted">{partitionName}</div>
+                  </TopLabelTilted>
+                  {!options.reexecute ? (
                     <div
-                      key={`${partitionName}:${step.name}`}
                       className={`square ${
                         selectablePartitions.includes(partitionName) ? 'missing' : 'disabled'
                       }`}
                     />
-                  ))
-                )}
-              </GridColumn>
-            ))}
+                  ) : options.fromFailure ? (
+                    <div
+                      className={`square ${
+                        selectablePartitions.includes(partitionName) ? 'failure' : 'disabled'
+                      }`}
+                    />
+                  ) : (
+                    stepRows.map((step) => (
+                      <div
+                        key={`${partitionName}:${step.name}`}
+                        className={`square ${
+                          selectablePartitions.includes(partitionName) ? 'missing' : 'disabled'
+                        }`}
+                      />
+                    ))
+                  )}
+                </GridColumn>
+              ))}
+            </div>
+          </GridScrollContainer>
+        </div>
+
+        {usingDefaultRunLauncher && (
+          <div style={{marginTop: 10}}>
+            <Callout intent={Intent.WARNING}>
+              Using the default run launcher <code>{DEFAULT_RUN_LAUNCHER_NAME}</code> for launching
+              backfills is not advised, as queueing runs is not currently supported. Check your
+              instance configuration in <code>dagster.yaml</code> to configure a run launcher more
+              appropriate for launching a large number of jobs.
+            </Callout>
           </div>
-        </GridScrollContainer>
-      </div>
-      {stepRows.length === 0 && (
-        <div style={{padding: 20, textAlign: 'center'}}>No data to display.</div>
-      )}
-      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
-        <TagEditor
-          tags={tags}
-          onChange={setTags}
-          open={tagEditorOpen}
-          onRequestClose={() => setTagEditorOpen(false)}
-        />
-        {tags.length ? (
-          <div style={{border: '1px solid #ececec', borderBottom: 'none'}}>
-            <TagContainer tags={tags} onRequestEdit={() => setTagEditorOpen(true)} />
-          </div>
-        ) : (
-          <ButtonLink onClick={() => setTagEditorOpen(true)} style={{margin: '9px  9px 0 9px'}}>
-            + Add tags to backfill runs
-          </ButtonLink>
         )}
-        <LaunchBackfillButton
-          partitionNames={selected}
-          partitionSetName={partitionSet.name}
-          reexecutionSteps={
-            !options.fromFailure ? stepRows.map((step) => `${step.name}.compute`) : undefined
-          }
-          fromFailure={options.fromFailure}
-          tags={tags}
-          onSuccess={onSuccess}
-        />
+      </div>
+      <div className={Classes.DIALOG_FOOTER}>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'flex-end'}}>
+          <TagEditor
+            tags={tags}
+            onChange={setTags}
+            open={tagEditorOpen}
+            onRequestClose={() => setTagEditorOpen(false)}
+          />
+          {tags.length ? (
+            <div style={{border: '1px solid #ececec', borderBottom: 'none'}}>
+              <TagContainer tags={tags} onRequestEdit={() => setTagEditorOpen(true)} />
+            </div>
+          ) : (
+            <ButtonLink onClick={() => setTagEditorOpen(true)} style={{margin: '9px  9px 0 9px'}}>
+              + Add tags to backfill runs
+            </ButtonLink>
+          )}
+          <LaunchBackfillButton
+            partitionNames={selected}
+            partitionSetName={partitionSet.name}
+            reexecutionSteps={
+              !options.fromFailure ? stepRows.map((step) => `${step.name}.compute`) : undefined
+            }
+            fromFailure={options.fromFailure}
+            tags={tags}
+            onSuccess={onSuccess}
+          />
+        </div>
       </div>
     </div>
   );

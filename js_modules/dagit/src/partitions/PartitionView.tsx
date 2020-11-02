@@ -1,4 +1,4 @@
-import {Spinner, Button} from '@blueprintjs/core';
+import {Spinner, Button, Dialog, Colors} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -9,16 +9,10 @@ import {PartitionPageSizeSelector} from 'src/partitions/PartitionPageSizeSelecto
 import {PartitionRunMatrix} from 'src/partitions/PartitionRunMatrix';
 import {PartitionSetSelector} from 'src/partitions/PartitionSetSelector';
 import {PartitionsBackfillPartitionSelector} from 'src/partitions/PartitionsBackfill';
-import {
-  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
-  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs,
-} from 'src/partitions/types/PartitionLongitudinalQuery';
 import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from 'src/partitions/types/PipelinePartitionsRootQuery';
 import {useChunkedPartitionsQuery} from 'src/partitions/useChunkedPartitionsQuery';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
-type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
-type Run = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs;
 
 interface PartitionViewProps {
   pipelineName: string;
@@ -55,16 +49,23 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
 
   return (
     <div>
-      {showBackfillSetup && (
-        <PartitionsBackfillPartitionSelector
-          partitionSetName={partitionSet.name}
-          pipelineName={pipelineName}
-          onLaunch={(backfillId: string) => {
-            setRunTags({'dagster/backfill': backfillId});
-            setShowBackfillSetup(false);
-          }}
-        />
-      )}
+      <Dialog
+        onClose={() => setShowBackfillSetup(false)}
+        style={{width: 800, background: Colors.WHITE}}
+        title={`Launch ${partitionSet.name} backfill`}
+        isOpen={showBackfillSetup}
+      >
+        {showBackfillSetup && (
+          <PartitionsBackfillPartitionSelector
+            partitionSetName={partitionSet.name}
+            pipelineName={pipelineName}
+            onLaunch={(backfillId: string) => {
+              setRunTags({'dagster/backfill': backfillId});
+              setShowBackfillSetup(false);
+            }}
+          />
+        )}
+      </Dialog>
       <PartitionPagerContainer>
         <PartitionSetSelector
           selected={partitionSet}
@@ -72,13 +73,13 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
           onSelect={onChangePartitionSet}
         />
         <div style={{width: 10}} />
-        <PartitionPageSizeSelector
-          value={paginationProps.hasPrevCursor ? undefined : pageSize}
-          onChange={(value) => {
-            setPageSize(value);
-            paginationProps.reset();
-          }}
-        />
+        <Button
+          onClick={() => setShowBackfillSetup(!showBackfillSetup)}
+          icon={IconNames.ADD}
+          active={showBackfillSetup}
+        >
+          Launch a partition backfill
+        </Button>
         {loading && (
           <div style={{marginLeft: 15, display: 'flex', alignItems: 'center'}}>
             <Spinner size={19} />
@@ -87,13 +88,13 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
           </div>
         )}
         <div style={{flex: 1}} />
-        <Button
-          onClick={() => setShowBackfillSetup(!showBackfillSetup)}
-          icon={IconNames.ADD}
-          active={showBackfillSetup}
-        >
-          Launch a partition backfill
-        </Button>
+        <PartitionPageSizeSelector
+          value={paginationProps.hasPrevCursor ? undefined : pageSize}
+          onChange={(value) => {
+            setPageSize(value);
+            paginationProps.reset();
+          }}
+        />
         <div style={{width: 10}} />
         <CursorHistoryControls {...paginationProps} />
       </PartitionPagerContainer>

@@ -76,7 +76,7 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
   const [stepSortOrder, setSortBy] = React.useState<string>('');
   const [options, setOptions] = React.useState<DisplayOptions>({
     showPrevious: false,
-    showSucessful: true,
+    showFailuresAndGapsOnly: true,
     colorizeByAge: false,
   });
   React.useEffect(() => {
@@ -188,9 +188,11 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
         />
         <OptionsDivider />
         <Checkbox
-          label="Show Successful Steps"
-          checked={options.showSucessful}
-          onChange={() => setOptions({...options, showSucessful: !options.showSucessful})}
+          label="Only Show Failures and Gaps"
+          checked={options.showFailuresAndGapsOnly}
+          onChange={() =>
+            setOptions({...options, showFailuresAndGapsOnly: !options.showFailuresAndGapsOnly})
+          }
           style={{marginBottom: 0, height: 20}}
         />
         <OptionsDivider />

@@ -30,7 +30,7 @@ export const StatusSquareFinalColor: {[key: string]: StatusSquareColor} = {
 };
 
 export interface DisplayOptions {
-  showSucessful: boolean;
+  showFailuresAndGapsOnly: boolean;
   showPrevious: boolean;
   colorizeByAge: boolean;
 }
@@ -133,11 +133,19 @@ function buildMatrixData(
     };
   });
 
-  if (!options.showSucessful) {
+  if (options.showFailuresAndGapsOnly) {
     for (let ii = stepRows.length - 1; ii >= 0; ii--) {
       if (stepRows[ii].finalFailurePercent === 0) {
         stepRows.splice(ii, 1);
         partitionColumns.forEach((p) => p.steps.splice(ii, 1));
+      }
+    }
+    for (let ii = partitionColumns.length - 1; ii >= 0; ii--) {
+      if (
+        partitionColumns[ii].runs.length === 0 ||
+        partitionColumns[ii].steps.every((step) => step.color.includes('SUCCESS'))
+      ) {
+        partitionColumns.splice(ii, 1);
       }
     }
   }
