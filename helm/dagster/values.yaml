@@ -178,22 +178,28 @@ scheduler:
 # database that is accessible from this chart.
 ####################################################################################################
 postgresql:
+  # set postgresql.enabled to be false to disable deploy of a PostgreSQL database and use an
+  # existing external PostgreSQL database
+  enabled: true
+
   # Used by init container to check that db is running. (Even if enabled:false)
   image:
     repository: "postgres"
     tag: "9.6.16"
     pullPolicy: IfNotPresent
-  # set postgresql.enabled to be false to disable deploy of a PostgreSQL database and use an
-  # existing external PostgreSQL database
-  enabled: true
+
   # set this PostgreSQL hostname when using an external PostgreSQL database
   postgresqlHost: ""
+
   postgresqlUsername: test
+
   # Note when changing this password (e.g. in test) that credentials will
   # persist as long as the PVCs do -- see:
   # https://github.com/helm/charts/issues/12836#issuecomment-524552358
   postgresqlPassword: test
+
   postgresqlDatabase: test
+
   service:
     port: 5432
 

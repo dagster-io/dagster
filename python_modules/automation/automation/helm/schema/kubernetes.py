@@ -16,9 +16,6 @@ class Image(BaseModel):
     tag: str
     pullPolicy: PullPolicy
 
-    class Config:
-        extra = Extra.forbid
-
 
 class Service(BaseModel):
     type: str

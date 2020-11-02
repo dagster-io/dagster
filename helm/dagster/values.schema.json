@@ -5,10 +5,14 @@
     "properties": {
         "dagit": {
             "$ref": "#/definitions/Dagit"
+        },
+        "postgresql": {
+            "$ref": "#/definitions/PostgreSQL"
         }
     },
     "required": [
-        "dagit"
+        "dagit",
+        "postgresql"
     ],
     "definitions": {
         "PullPolicy": {
@@ -41,10 +45,9 @@
                 "repository",
                 "tag",
                 "pullPolicy"
-            ],
-            "additionalProperties": false
+            ]
         },
-        "Service": {
+        "automation__helm__schema__kubernetes__Service": {
             "title": "Service",
             "type": "object",
             "properties": {
@@ -123,7 +126,7 @@
                     "$ref": "#/definitions/Image"
                 },
                 "service": {
-                    "$ref": "#/definitions/Service"
+                    "$ref": "#/definitions/automation__helm__schema__kubernetes__Service"
                 },
                 "nodeSelector": {
                     "$ref": "#/definitions/NodeSelector"
@@ -153,6 +156,60 @@
             "required": [
                 "replicaCount",
                 "image",
+                "service"
+            ]
+        },
+        "automation__helm__schema__postgresql__Service": {
+            "title": "Service",
+            "type": "object",
+            "properties": {
+                "port": {
+                    "title": "Port",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "port"
+            ]
+        },
+        "PostgreSQL": {
+            "title": "PostgreSQL",
+            "type": "object",
+            "properties": {
+                "image": {
+                    "$ref": "#/definitions/Image"
+                },
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "postgresqlHost": {
+                    "title": "Postgresqlhost",
+                    "type": "string"
+                },
+                "postgresqlUsername": {
+                    "title": "Postgresqlusername",
+                    "type": "string"
+                },
+                "postgresqlPassword": {
+                    "title": "Postgresqlpassword",
+                    "type": "string"
+                },
+                "postgresqlDatabase": {
+                    "title": "Postgresqldatabase",
+                    "type": "string"
+                },
+                "service": {
+                    "$ref": "#/definitions/automation__helm__schema__postgresql__Service"
+                }
+            },
+            "required": [
+                "image",
+                "enabled",
+                "postgresqlHost",
+                "postgresqlUsername",
+                "postgresqlPassword",
+                "postgresqlDatabase",
                 "service"
             ]
         }
