@@ -4,7 +4,6 @@
   "private": true,
   "dependencies": {
     "@apollo/client": "^3.2.5",
-    "@apollo/react-components": "^4.0.0",
     "@blueprintjs/core": "^3.23.0",
     "@blueprintjs/icons": "^3.13.0",
     "@blueprintjs/select": "^3.11.2",

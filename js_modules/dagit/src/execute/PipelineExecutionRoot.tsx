@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Query} from '@apollo/react-components';
+import {Query} from '@apollo/client/react/components';
 import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
