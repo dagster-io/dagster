@@ -259,26 +259,34 @@ def test_valid_path_prefix():
 
 
 @mock.patch("gevent.pywsgi.WSGIServer.serve_forever")
-@pytest.mark.skip
 def test_dagit_logs(
     server_mock, caplog,
 ):
     with seven.TemporaryDirectory() as temp_dir:
         with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
-            result = runner.invoke(
-                ui, ["-w", file_relative_path(__file__, "telemetry_repository.yaml"),],
-            )
+            workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")
+            result = runner.invoke(ui, ["-w", workspace_path],)
             assert result.exit_code == 0, str(result.exception)
 
+            expected_repo_stats = {
+                hash_name("test_repository"): 1,
+                hash_name("dagster_test_repository"): 4,
+            }
             actions = set()
             for record in caplog.records:
                 message = json.loads(record.getMessage())
                 actions.add(message.get("action"))
                 if message.get("action") == UPDATE_REPO_STATS:
                     assert message.get("pipeline_name_hash") == ""
-                    assert message.get("num_pipelines_in_repo") == str(4)
-                    assert message.get("repo_hash") == hash_name("dagster_test_repository")
+                    repo_hash = message.get("repo_hash")
+
+                    assert repo_hash in expected_repo_stats
+                    expected_num_pipelines_in_repo = expected_repo_stats.get(repo_hash)
+                    assert message.get("num_pipelines_in_repo") == str(
+                        expected_num_pipelines_in_repo
+                    )
+
                 assert set(message.keys()) == set(
                     [
                         "action",
@@ -296,5 +304,5 @@ def test_dagit_logs(
                 )
 
             assert actions == set([START_DAGIT_WEBSERVER, UPDATE_REPO_STATS])
-            assert len(caplog.records) == 2
+            assert len(caplog.records) == 3
             assert server_mock.call_args_list == [mock.call()]

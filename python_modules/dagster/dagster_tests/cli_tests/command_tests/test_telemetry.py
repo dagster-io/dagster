@@ -9,6 +9,7 @@ import responses
 from click.testing import CliRunner
 from dagster import seven
 from dagster.cli.pipeline import pipeline_execute_command
+from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
 from dagster.core.telemetry import (
     DAGSTER_TELEMETRY_URL,
@@ -16,6 +17,7 @@ from dagster.core.telemetry import (
     cleanup_telemetry_logger,
     get_dir_from_dagster_home,
     hash_name,
+    log_workspace_stats,
     upload_logs,
 )
 from dagster.core.test_utils import environ, instance_for_test, instance_for_test_tempdir
@@ -141,6 +143,21 @@ def test_repo_stats(caplog):
 
                 assert len(caplog.records) == 5
                 assert result.exit_code == 0
+
+
+def test_log_workspace_stats(caplog):
+    with instance_for_test() as instance:
+        with load_workspace_from_yaml_paths(
+            [file_relative_path(__file__, "./multi_env_telemetry_workspace.yaml")]
+        ) as workspace:
+            log_workspace_stats(instance, workspace)
+
+            for record in caplog.records:
+                message = json.loads(record.getMessage())
+                assert message.get("action") == UPDATE_REPO_STATS
+                assert set(message.keys()) == EXPECTED_KEYS
+
+            assert len(caplog.records) == 2
 
 
 # Note that both environment must be set together. Otherwise, if env={"BUILDKITE": None} ran in the
