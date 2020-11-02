@@ -1,16 +1,13 @@
-import re
 import typing
 
 import pytest
 from dagster import (
-    DagsterInvalidDefinitionError,
     DagsterTypeCheckDidNotPass,
     Dict,
     InputDefinition,
     OutputDefinition,
     execute_solid,
     lambda_solid,
-    usable_as_dagster_type,
 )
 
 
@@ -168,58 +165,3 @@ def test_complicated_dictionary_typing_fail():
 
     with pytest.raises(DagsterTypeCheckDidNotPass):
         execute_solid(emit_dict)
-
-
-def test_dict_type_loader():
-    test_input = {"hello": 5, "goodbye": 42}
-
-    @lambda_solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
-    def emit_dict(dict_input):
-        return dict_input
-
-    result = execute_solid(
-        emit_dict, run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
-    )
-    assert result.success
-    assert result.output_value() == test_input
-
-
-def test_dict_type_loader_typing_fail():
-    @usable_as_dagster_type
-    class CustomType(str):
-        pass
-
-    test_input = {"hello": "foo", "goodbye": "bar"}
-
-    @lambda_solid(
-        input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, CustomType])]
-    )
-    def emit_dict(dict_input):
-        return dict_input
-
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=re.compile(
-            'Input "dict_input" in solid '
-            '"emit_dict" is not connected to the output of a previous solid and can not be loaded '
-            "from configuration, creating an impossible to execute pipeline. Possible solutions are:"
-        ),
-    ):
-        execute_solid(
-            emit_dict, run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
-        )
-
-
-def test_dict_type_loader_inner_type_mismatch():
-
-    test_input = {"hello": "foo", "goodbye": "bar"}
-
-    @lambda_solid(input_defs=[InputDefinition("dict_input", dagster_type=typing.Dict[str, int])])
-    def emit_dict(dict_input):
-        return dict_input
-
-    # TODO: change this depending on resolution of https://github.com/dagster-io/dagster/issues/3180
-    with pytest.raises(DagsterTypeCheckDidNotPass):
-        execute_solid(
-            emit_dict, run_config={"solids": {"emit_dict": {"inputs": {"dict_input": test_input}}}},
-        )
