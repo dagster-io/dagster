@@ -393,7 +393,9 @@ flower:
 ####################################################################################################
 ingress:
   enabled: false
+
   annotations: {}
+
   dagit:
     # Ingress hostname for Dagit e.g. dagit.mycompany.com
     # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit
@@ -407,7 +409,7 @@ ingress:
     #   - path: "/*"
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
-    precedingPaths:
+    precedingPaths: []
 
     # Different http paths to add to the ingress after the default dagit path
     # Example:
@@ -416,7 +418,7 @@ ingress:
     #   - path: "/*"
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
-    succeedingPaths:
+    succeedingPaths: []
 
   flower:
     # Ingress hostname for Flower e.g. flower.mycompany.com
@@ -432,7 +434,7 @@ ingress:
     #   - path: "/*"
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
-    precedingPaths:
+    precedingPaths: []
 
     # Different http paths to add to the ingress after the default flower path
     # Example:
@@ -441,7 +443,7 @@ ingress:
     #   - path: "/*"
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
-    succeedingPaths:
+    succeedingPaths: []
 
 ####################################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart

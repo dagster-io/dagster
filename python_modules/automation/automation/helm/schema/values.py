@@ -13,3 +13,4 @@ class HelmValues(BaseModel):
     rabbitmq: subschema.RabbitMQ
     redis: subschema.Redis
     flower: subschema.Flower
+    ingress: subschema.Ingress

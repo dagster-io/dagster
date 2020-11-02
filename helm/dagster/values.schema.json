@@ -17,6 +17,9 @@
         },
         "flower": {
             "$ref": "#/definitions/Flower"
+        },
+        "ingress": {
+            "$ref": "#/definitions/Ingress"
         }
     },
     "required": [
@@ -24,7 +27,8 @@
         "postgresql",
         "rabbitmq",
         "redis",
-        "flower"
+        "flower",
+        "ingress"
     ],
     "definitions": {
         "PullPolicy": {
@@ -396,6 +400,124 @@
                 "resources",
                 "livenessProbe",
                 "startupProbe"
+            ]
+        },
+        "IngressPath": {
+            "title": "IngressPath",
+            "type": "object",
+            "properties": {
+                "path": {
+                    "title": "Path",
+                    "type": "string"
+                },
+                "serviceName": {
+                    "title": "Servicename",
+                    "type": "string"
+                },
+                "servicePort": {
+                    "title": "Serviceport",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "integer"
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "path",
+                "serviceName",
+                "servicePort"
+            ]
+        },
+        "DagitIngressConfiguration": {
+            "title": "DagitIngressConfiguration",
+            "type": "object",
+            "properties": {
+                "host": {
+                    "title": "Host",
+                    "type": "string"
+                },
+                "precedingPaths": {
+                    "title": "Precedingpaths",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IngressPath"
+                    }
+                },
+                "succeedingPaths": {
+                    "title": "Succeedingpaths",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IngressPath"
+                    }
+                }
+            },
+            "required": [
+                "host",
+                "precedingPaths",
+                "succeedingPaths"
+            ]
+        },
+        "FlowerIngressConfiguration": {
+            "title": "FlowerIngressConfiguration",
+            "type": "object",
+            "properties": {
+                "host": {
+                    "title": "Host",
+                    "type": "string"
+                },
+                "path": {
+                    "title": "Path",
+                    "type": "string"
+                },
+                "precedingPaths": {
+                    "title": "Precedingpaths",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IngressPath"
+                    }
+                },
+                "succeedingPaths": {
+                    "title": "Succeedingpaths",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/IngressPath"
+                    }
+                }
+            },
+            "required": [
+                "host",
+                "path",
+                "precedingPaths",
+                "succeedingPaths"
+            ]
+        },
+        "Ingress": {
+            "title": "Ingress",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
+                },
+                "dagit": {
+                    "$ref": "#/definitions/DagitIngressConfiguration"
+                },
+                "flower": {
+                    "$ref": "#/definitions/FlowerIngressConfiguration"
+                }
+            },
+            "required": [
+                "enabled",
+                "annotations",
+                "dagit",
+                "flower"
             ]
         }
     }
