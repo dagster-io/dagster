@@ -8,11 +8,15 @@
         },
         "postgresql": {
             "$ref": "#/definitions/PostgreSQL"
+        },
+        "rabbitmq": {
+            "$ref": "#/definitions/RabbitMQ"
         }
     },
     "required": [
         "dagit",
-        "postgresql"
+        "postgresql",
+        "rabbitmq"
     ],
     "definitions": {
         "PullPolicy": {
@@ -211,6 +215,73 @@
                 "postgresqlPassword",
                 "postgresqlDatabase",
                 "service"
+            ]
+        },
+        "RabbitMQConfiguration": {
+            "title": "RabbitMQConfiguration",
+            "type": "object",
+            "properties": {
+                "username": {
+                    "title": "Username",
+                    "type": "string"
+                },
+                "password": {
+                    "title": "Password",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "username",
+                "password"
+            ]
+        },
+        "automation__helm__schema__rabbitmq__Service": {
+            "title": "Service",
+            "type": "object",
+            "properties": {
+                "port": {
+                    "title": "Port",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "port"
+            ]
+        },
+        "VolumePermissions": {
+            "title": "VolumePermissions",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "const": true,
+                    "type": "boolean"
+                }
+            }
+        },
+        "RabbitMQ": {
+            "title": "RabbitMQ",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "rabbitmq": {
+                    "$ref": "#/definitions/RabbitMQConfiguration"
+                },
+                "service": {
+                    "$ref": "#/definitions/automation__helm__schema__rabbitmq__Service"
+                },
+                "volumePermissions": {
+                    "$ref": "#/definitions/VolumePermissions"
+                }
+            },
+            "required": [
+                "enabled",
+                "rabbitmq",
+                "service",
+                "volumePermissions"
             ]
         }
     }

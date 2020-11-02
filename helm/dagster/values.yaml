@@ -308,11 +308,14 @@ k8sRunLauncher:
 ####################################################################################################
 rabbitmq:
   enabled: true
+
   rabbitmq:
     username: test
     password: test
+
   service:
     port: 5672
+
   # https://github.com/helm/charts/issues/17250#issuecomment-533444837
   volumePermissions:
     enabled: true
