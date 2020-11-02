@@ -1,6 +1,6 @@
 import sys
 import threading
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from collections import namedtuple
 from enum import Enum
 
@@ -43,10 +43,6 @@ def python_user_process_api_from_instance(instance):
 
 
 class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
-    @abstractmethod
-    def create_reloaded_handle(self):
-        pass
-
     def __enter__(self):
         return self
 
@@ -138,9 +134,6 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
     def location_name(self):
         return self.origin.location_name
 
-    def create_reloaded_handle(self):
-        return RepositoryLocationHandle.create_from_repository_location_origin(self.origin)
-
     def get_current_image(self):
         job_image = self.client.get_current_image().current_image
         if not job_image:
@@ -220,9 +213,6 @@ class PythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
     def executable_path(self):
         return self.loadable_target_origin.executable_path
 
-    def create_reloaded_handle(self):
-        return RepositoryLocationHandle.create_from_repository_location_origin(self.origin)
-
 
 class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
     """
@@ -283,9 +273,6 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
     def socket(self):
         return self.grpc_server_process.socket
 
-    def create_reloaded_handle(self):
-        return RepositoryLocationHandle.create_from_repository_location_origin(self.origin)
-
     def cleanup(self):
         self.heartbeat_shutdown_event.set()
         self.heartbeat_thread.join()
@@ -303,9 +290,6 @@ class InProcessRepositoryLocationHandle(RepositoryLocationHandle):
     @property
     def location_name(self):
         return self.origin.location_name
-
-    def create_reloaded_handle(self):
-        raise NotImplementedError("Not implemented for in-process")
 
 
 class RepositoryHandle(

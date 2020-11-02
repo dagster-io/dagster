@@ -33,18 +33,34 @@ class DagsterGraphQLContext:
     def repository_locations(self):
         return list(self._repository_locations.values())
 
+    def repository_location_errors(self):
+        return self._workspace.repository_location_errors
+
     def get_repository_location(self, name):
         return self._repository_locations[name]
+
+    def has_repository_location_error(self, name):
+        return self._workspace.has_repository_location_error(name)
+
+    def get_repository_location_error(self, name):
+        return self._workspace.get_repository_location_error(name)
 
     def has_repository_location(self, name):
         return name in self._repository_locations
 
+    def is_reload_supported(self, name):
+        return self._workspace.is_reload_supported(name)
+
     def reload_repository_location(self, name):
-        new_handle = self._workspace.reload_repository_location(name)
-        new_location = RepositoryLocation.from_handle(new_handle)
-        check.invariant(new_location.name == name)
-        self._repository_locations[name] = new_location
-        return new_location
+        self._workspace.reload_repository_location(name)
+
+        if self._workspace.has_repository_location_handle(name):
+            new_handle = self._workspace.get_repository_location_handle(name)
+            new_location = RepositoryLocation.from_handle(new_handle)
+            check.invariant(new_location.name == name)
+            self._repository_locations[name] = new_location
+        else:
+            del self._repository_locations[name]
 
     def get_subset_external_pipeline(self, selector):
         check.inst_param(selector, "selector", PipelineSelector)

@@ -1,0 +1,7 @@
+load_from:
+  - python_file:
+      relative_path: hello_world_repository.py
+      location_name: working_location
+  - python_module:
+      module_name: non_existant_module
+      location_name: broken_location

@@ -84,6 +84,55 @@ class TestReloadRepositoriesOutOfProcess(
                     {"name": "new_repo"}
                 ]
 
+    def test_reload_failure(self, graphql_context):
+        result = execute_dagster_graphql(
+            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"}
+        )
+
+        assert result
+        assert result.data
+        assert result.data["reloadRepositoryLocation"]
+        assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
+        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "test_repo"}]
+        assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True
+
+        with mock.patch(
+            # note it where the function is *used* that needs to mocked, not
+            # where it is defined.
+            # see https://docs.python.org/3/library/unittest.mock.html#where-to-patch
+            "dagster.core.host_representation.handle.sync_list_repositories_grpc"
+        ) as cli_command_mock:
+            cli_command_mock.side_effect = Exception("Mocked repository load failure")
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                RELOAD_REPOSITORY_LOCATION_QUERY,
+                {"repositoryLocationName": "test"},
+            )
+
+            assert result
+            assert result.data
+            assert result.data["reloadRepositoryLocation"]
+            assert result.data["reloadRepositoryLocation"]["__typename"] == "PythonError"
+            assert (
+                "Mocked repository load failure"
+                in result.data["reloadRepositoryLocation"]["message"]
+            )
+
+        # can be reloaded again successfully
+        result = execute_dagster_graphql(
+            graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"},
+        )
+
+        assert result
+        assert result.data
+        assert result.data["reloadRepositoryLocation"]
+        assert result.data["reloadRepositoryLocation"]["__typename"] == "RepositoryLocation"
+        assert result.data["reloadRepositoryLocation"]["name"] == "test"
+        assert result.data["reloadRepositoryLocation"]["repositories"] == [{"name": "test_repo"}]
+        assert result.data["reloadRepositoryLocation"]["isReloadSupported"] is True
+
 
 class TestReloadRepositoriesInProcess(
     make_graphql_context_test_suite(
@@ -115,6 +164,9 @@ mutation ($repositoryLocationName: String!) {
             name
         }
         isReloadSupported
+      }
+      ... on PythonError {
+          message
       }
    }
 }

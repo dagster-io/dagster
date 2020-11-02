@@ -84,6 +84,9 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
       ... on RepositoryLocationNotFound {
         message
       }
+      ... on PythonError {
+        message
+      }
     }
   }
 `;

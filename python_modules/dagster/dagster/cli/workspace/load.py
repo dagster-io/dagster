@@ -21,6 +21,10 @@ from .workspace import Workspace
 
 
 def load_workspace_from_yaml_paths(yaml_paths, python_user_process_api):
+    return Workspace(location_origins_from_yaml_paths(yaml_paths, python_user_process_api))
+
+
+def location_origins_from_yaml_paths(yaml_paths, python_user_process_api):
     check.list_param(yaml_paths, "yaml_paths", str)
     check.inst_param(python_user_process_api, "python_user_process_api", UserProcessApi)
 
@@ -42,7 +46,7 @@ def load_workspace_from_yaml_paths(yaml_paths, python_user_process_api):
             ),
         )
 
-    return Workspace(list(origins_by_name.values()))
+    return list(origins_by_name.values())
 
 
 def load_workspace_from_config(workspace_config, yaml_path, python_user_process_api):
@@ -51,7 +55,7 @@ def load_workspace_from_config(workspace_config, yaml_path, python_user_process_
             _repo_location_origins_from_config(
                 workspace_config, yaml_path, python_user_process_api
             ).values()
-        )
+        ),
     )
 
 

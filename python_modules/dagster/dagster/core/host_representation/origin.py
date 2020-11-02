@@ -55,6 +55,10 @@ class RepositoryLocationOrigin(six.with_metaclass(ABCMeta)):
        uniquely identify the location or reload it in across process boundaries.
     """
 
+    @property
+    def is_reload_supported(self):
+        return True
+
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
@@ -72,6 +76,10 @@ class InProcessRepositoryLocationOrigin(
     @property
     def location_name(self):
         return IN_PROCESS_NAME
+
+    @property
+    def is_reload_supported(self):
+        return False
 
 
 @whitelist_for_serdes

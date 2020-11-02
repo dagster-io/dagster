@@ -13,6 +13,7 @@ from dagster.core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocationOrigin,
     RepositoryLocation,
+    RepositoryLocationHandle,
 )
 from dagster.core.host_representation.handle import python_user_process_api_from_instance
 from dagster.core.instance import DagsterInstance
@@ -25,10 +26,10 @@ from dagster.grpc.utils import get_loadable_targets
 from dagster.utils.hosted_user_process import recon_repository_from_origin
 
 from .load import (
-    load_workspace_from_yaml_paths,
     location_origin_from_module_name,
     location_origin_from_package_name,
     location_origin_from_python_file,
+    location_origins_from_yaml_paths,
 )
 from .workspace import Workspace
 
@@ -194,57 +195,53 @@ def created_workspace_load_target(kwargs):
         _cli_load_invariant(False)
 
 
+def location_origins_from_load_target(load_target, instance):
+    if isinstance(load_target, WorkspaceFileTarget):
+        return location_origins_from_yaml_paths(
+            load_target.paths, python_user_process_api_from_instance(instance),
+        )
+    elif isinstance(load_target, PythonFileTarget):
+        return [
+            location_origin_from_python_file(
+                python_file=load_target.python_file,
+                attribute=load_target.attribute,
+                working_directory=load_target.working_directory,
+                user_process_api=python_user_process_api_from_instance(instance),
+            )
+        ]
+    elif isinstance(load_target, ModuleTarget):
+        return [
+            location_origin_from_module_name(
+                load_target.module_name,
+                load_target.attribute,
+                user_process_api=python_user_process_api_from_instance(instance),
+            )
+        ]
+    elif isinstance(load_target, PackageTarget):
+        return [
+            location_origin_from_package_name(
+                load_target.package_name,
+                load_target.attribute,
+                user_process_api=python_user_process_api_from_instance(instance),
+            )
+        ]
+    elif isinstance(load_target, GrpcServerTarget):
+        return [
+            GrpcServerRepositoryLocationOrigin(
+                port=load_target.port, socket=load_target.socket, host=load_target.host,
+            )
+        ]
+    elif isinstance(load_target, EmptyWorkspaceTarget):
+        return []
+    else:
+        check.not_implemented("Unsupported: {}".format(load_target))
+
+
 def workspace_from_load_target(load_target, instance):
     check.inst_param(load_target, "load_target", WorkspaceLoadTarget)
     check.inst_param(instance, "instance", DagsterInstance)
 
-    if isinstance(load_target, WorkspaceFileTarget):
-        return load_workspace_from_yaml_paths(
-            load_target.paths, python_user_process_api_from_instance(instance)
-        )
-    elif isinstance(load_target, PythonFileTarget):
-        return Workspace(
-            [
-                location_origin_from_python_file(
-                    python_file=load_target.python_file,
-                    attribute=load_target.attribute,
-                    working_directory=load_target.working_directory,
-                    user_process_api=python_user_process_api_from_instance(instance),
-                )
-            ]
-        )
-    elif isinstance(load_target, ModuleTarget):
-        return Workspace(
-            [
-                location_origin_from_module_name(
-                    load_target.module_name,
-                    load_target.attribute,
-                    user_process_api=python_user_process_api_from_instance(instance),
-                )
-            ]
-        )
-    elif isinstance(load_target, PackageTarget):
-        return Workspace(
-            [
-                location_origin_from_package_name(
-                    load_target.package_name,
-                    load_target.attribute,
-                    user_process_api=python_user_process_api_from_instance(instance),
-                )
-            ]
-        )
-    elif isinstance(load_target, GrpcServerTarget):
-        return Workspace(
-            [
-                GrpcServerRepositoryLocationOrigin(
-                    port=load_target.port, socket=load_target.socket, host=load_target.host,
-                )
-            ]
-        )
-    elif isinstance(load_target, EmptyWorkspaceTarget):
-        return Workspace([])
-    else:
-        check.not_implemented("Unsupported: {}".format(load_target))
+    return Workspace(location_origins_from_load_target(load_target, instance))
 
 
 def get_workspace_from_kwargs(kwargs, instance):
@@ -591,36 +588,44 @@ def get_repository_python_origin_from_kwargs(kwargs):
 
 @contextmanager
 def get_repository_location_from_kwargs(kwargs, instance):
+    origin = get_repository_location_origin_from_kwargs(kwargs, instance)
+    with RepositoryLocationHandle.create_from_repository_location_origin(origin) as handle:
+        yield RepositoryLocation.from_handle(handle)
+
+
+def get_repository_location_origin_from_kwargs(kwargs, instance):
     check.inst_param(instance, "instance", DagsterInstance)
-    with get_workspace_from_kwargs(kwargs, instance) as workspace:
-        provided_location_name = kwargs.get("location")
 
-        if provided_location_name is None and len(workspace.repository_location_handles) == 1:
-            yield RepositoryLocation.from_handle(next(iter(workspace.repository_location_handles)))
+    all_origins = location_origins_from_load_target(created_workspace_load_target(kwargs), instance)
 
-        elif provided_location_name is None:
-            raise click.UsageError(
-                (
-                    "Must provide --location as there are more than one locations "
-                    "available. Options are: {}"
-                ).format(_sorted_quoted(workspace.repository_location_names))
+    origins_by_name = {origin.location_name: origin for origin in all_origins}
+
+    provided_location_name = kwargs.get("location")
+
+    if provided_location_name is None and len(origins_by_name) == 1:
+        return next(iter(origins_by_name.values()))
+
+    elif provided_location_name is None:
+        raise click.UsageError(
+            (
+                "Must provide --location as there are more than one locations "
+                "available. Options are: {}"
+            ).format(_sorted_quoted(origins_by_name.keys()))
+        )
+
+    elif not origins_by_name.get(provided_location_name):
+        raise click.UsageError(
+            (
+                'Location "{provided_location_name}" not found in workspace. '
+                "Found {found_names} instead."
+            ).format(
+                provided_location_name=provided_location_name,
+                found_names=_sorted_quoted(origins_by_name.keys()),
             )
+        )
 
-        elif not workspace.has_repository_location_handle(provided_location_name):
-            raise click.UsageError(
-                (
-                    'Location "{provided_location_name}" not found in workspace. '
-                    "Found {found_names} instead."
-                ).format(
-                    provided_location_name=provided_location_name,
-                    found_names=_sorted_quoted(workspace.repository_location_names),
-                )
-            )
-
-        else:
-            yield RepositoryLocation.from_handle(
-                workspace.get_repository_location_handle(provided_location_name)
-            )
+    else:
+        return origins_by_name.get(provided_location_name)
 
 
 def get_external_repository_from_repo_location(repo_location, provided_repo_name):

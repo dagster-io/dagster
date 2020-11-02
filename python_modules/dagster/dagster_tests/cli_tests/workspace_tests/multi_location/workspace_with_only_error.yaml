@@ -1,0 +1,4 @@
+load_from:
+  - python_module:
+      module_name: non_existant_module
+      location_name: broken_location
