@@ -14,13 +14,17 @@
         },
         "redis": {
             "$ref": "#/definitions/Redis"
+        },
+        "flower": {
+            "$ref": "#/definitions/Flower"
         }
     },
     "required": [
         "dagit",
         "postgresql",
         "rabbitmq",
-        "redis"
+        "redis",
+        "flower"
     ],
     "definitions": {
         "PullPolicy": {
@@ -321,6 +325,78 @@
                 "backendDbNumber"
             ],
             "additionalProperties": false
+        },
+        "Annotations": {
+            "title": "Annotations",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
+        },
+        "automation__helm__schema__subschema__flower__Service": {
+            "title": "Service",
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "$ref": "#/definitions/Annotations"
+                },
+                "port": {
+                    "title": "Port",
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "annotations",
+                "port"
+            ]
+        },
+        "Flower": {
+            "title": "Flower",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                },
+                "service": {
+                    "$ref": "#/definitions/automation__helm__schema__subschema__flower__Service"
+                },
+                "nodeSelector": {
+                    "$ref": "#/definitions/NodeSelector"
+                },
+                "affinity": {
+                    "$ref": "#/definitions/Affinity"
+                },
+                "tolerations": {
+                    "$ref": "#/definitions/Tolerations"
+                },
+                "podSecurityContext": {
+                    "$ref": "#/definitions/PodSecurityContext"
+                },
+                "securityContext": {
+                    "$ref": "#/definitions/SecurityContext"
+                },
+                "resources": {
+                    "$ref": "#/definitions/Resources"
+                },
+                "livenessProbe": {
+                    "$ref": "#/definitions/LivenessProbe"
+                },
+                "startupProbe": {
+                    "$ref": "#/definitions/StartupProbe"
+                }
+            },
+            "required": [
+                "enabled",
+                "service",
+                "nodeSelector",
+                "affinity",
+                "tolerations",
+                "podSecurityContext",
+                "securityContext",
+                "resources",
+                "livenessProbe",
+                "startupProbe"
+            ]
         }
     }
 }

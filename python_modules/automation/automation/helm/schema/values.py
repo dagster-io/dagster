@@ -12,3 +12,4 @@ class HelmValues(BaseModel):
     postgresql: subschema.PostgreSQL
     rabbitmq: subschema.RabbitMQ
     redis: subschema.Redis
+    flower: subschema.Flower

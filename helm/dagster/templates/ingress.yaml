@@ -43,7 +43,7 @@ spec:
           - path: {{ .Values.ingress.flower.path | default "/*" }}
             backend:
               serviceName: {{ template "dagster.fullname" . }}-flower-service
-              servicePort: {{ .Values.flower.service.port | default 5555 }}
+              servicePort: {{ .Values.flower.service.port }}
           {{- range .Values.ingress.flower.succeedingPaths }}
           - path: {{ .path }}
             backend:

@@ -344,9 +344,11 @@ redis:
 ####################################################################################################
 flower:
   enabled: false
+
   service:
-    annotations:
-    port:
+    annotations: {}
+    port: 5555
+
   # Support Node, affinity and tolerations for Flower pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -356,6 +358,7 @@ flower:
   tolerations: []
   podSecurityContext: {}
   securityContext: {}
+
   resources: {}
   # If you want to specify resources, uncomment the following lines, adjust them as necessary,
   # and remove the curly braces after 'resources:'.
@@ -365,6 +368,7 @@ flower:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
+
   # Liveness probe detects when to restart flower.
   # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
   livenessProbe:
@@ -373,6 +377,7 @@ flower:
     # initialDelaySeconds: 60
     periodSeconds: 20
     failureThreshold: 3
+
   # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
   # then liveness probe takes over.
   # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in

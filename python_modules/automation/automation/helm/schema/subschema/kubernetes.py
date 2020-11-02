@@ -74,3 +74,12 @@ class StartupProbe(BaseModel):
                 version=SupportedKubernetes.V1_16,
             )
         }
+
+
+class Annotations(BaseModel):
+    class Config:
+        schema_extra = {
+            "$ref": create_definition_ref(
+                "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
+            )
+        }
