@@ -14,7 +14,7 @@ class JobType(Enum):
     SENSOR = "SENSOR"
 
 
-class JobContext(object):
+class JobContext:
     """Context for generating the execution parameters for an JobDefinition at runtime.
 
     An instance of this class is made available as the first argument to the JobDefinition

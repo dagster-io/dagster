@@ -15,7 +15,10 @@ def test_external_sensor_grpc():
                 instance, repository_handle, "sensor_foo", None
             )
             assert isinstance(result, ExternalSensorExecutionData)
-            assert result.run_config == {"foo": "FOO"}
+            assert len(result.run_params) == 2
+            run_params = result.run_params[0]
+            assert run_params.run_config == {"foo": "FOO"}
+            assert run_params.tags == {"foo": "foo_tag"}
 
 
 def test_external_sensor_error():

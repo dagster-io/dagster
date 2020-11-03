@@ -6,7 +6,7 @@ from dagster import check
 from dagster.core.definitions.job import JobType
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler import ScheduleState, ScheduleTick
-from dagster.core.scheduler.job import JobState, JobTick, JobTickData
+from dagster.core.scheduler.job import JobState, JobTick, JobTickData, JobTickStatus
 from dagster.core.scheduler.scheduler import (
     ScheduleTickData,
     ScheduleTickStatsSnapshot,
@@ -327,6 +327,24 @@ class SqlScheduleStorage(ScheduleStorage):
         return list(
             map(lambda r: JobTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
         )
+
+    def has_job_tick(self, job_origin_id, execution_key, statuses=None):
+        check.str_param(job_origin_id, "job_origin_id")
+        check.str_param(execution_key, "execution_key")
+        check.opt_list_param(statuses, "statuses", of_type=JobTickStatus)
+
+        query = (
+            db.select([1])
+            .select_from(JobTickTable)
+            .where(JobTickTable.c.job_origin_id == job_origin_id)
+            .where(JobTickTable.c.execution_key == execution_key)
+        )
+        if statuses:
+            query = query.where(JobTickTable.c.status.in_([status.value for status in statuses]))
+        query = query.limit(1)
+
+        rows = self.execute(query)
+        return len(rows) > 0
 
     def create_job_tick(self, job_tick_data):
         check.inst_param(job_tick_data, "job_tick_data", JobTickData)
