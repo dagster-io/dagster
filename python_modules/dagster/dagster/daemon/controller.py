@@ -1,6 +1,6 @@
 from dagster.core.run_coordinator import QueuedRunCoordinator
 from dagster.core.scheduler import DagsterDaemonScheduler
-from dagster.daemon.daemon import SchedulerDaemon, get_default_daemon_logger
+from dagster.daemon.daemon import SchedulerDaemon, SensorDaemon, get_default_daemon_logger
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 
 
@@ -21,6 +21,8 @@ class DagsterDaemonController(object):
             self._add_daemon(
                 SchedulerDaemon(instance, interval_seconds=30, max_catchup_runs=max_catchup_runs)
             )
+
+        self._add_daemon(SensorDaemon(instance, interval_seconds=30))
 
         if isinstance(instance.run_coordinator, QueuedRunCoordinator):
             max_concurrent_runs = instance.run_coordinator.max_concurrent_runs

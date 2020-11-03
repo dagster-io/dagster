@@ -5,6 +5,7 @@ from abc import abstractmethod
 import pendulum
 from dagster import DagsterInstance, check
 from dagster.scheduler import execute_scheduler_iteration
+from dagster.scheduler.sensor import execute_sensor_iteration
 from dagster.utils.log import default_format_string
 
 
@@ -46,3 +47,8 @@ class SchedulerDaemon(DagsterDaemon):
 
     def run_iteration(self):
         execute_scheduler_iteration(self._instance, self._logger, self._max_catchup_runs)
+
+
+class SensorDaemon(DagsterDaemon):
+    def run_iteration(self):
+        execute_sensor_iteration(self._instance, self._logger)
