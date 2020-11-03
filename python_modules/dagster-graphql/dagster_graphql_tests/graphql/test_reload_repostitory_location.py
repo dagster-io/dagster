@@ -124,6 +124,26 @@ class TestReloadRepositoriesOutOfProcess(
                 in result.data["reloadRepositoryLocation"]["error"]["message"]
             )
 
+            # Verify failure is idempotent
+            result = execute_dagster_graphql(
+                graphql_context,
+                RELOAD_REPOSITORY_LOCATION_QUERY,
+                {"repositoryLocationName": "test"},
+            )
+
+            assert result
+            assert result.data
+            assert result.data["reloadRepositoryLocation"]
+            assert (
+                result.data["reloadRepositoryLocation"]["__typename"]
+                == "RepositoryLocationLoadFailure"
+            )
+            assert result.data["reloadRepositoryLocation"]["name"] == "test"
+            assert (
+                "Mocked repository load failure"
+                in result.data["reloadRepositoryLocation"]["error"]["message"]
+            )
+
         # can be reloaded again successfully
         result = execute_dagster_graphql(
             graphql_context, RELOAD_REPOSITORY_LOCATION_QUERY, {"repositoryLocationName": "test"},

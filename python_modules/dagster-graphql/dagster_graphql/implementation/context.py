@@ -63,7 +63,7 @@ class DagsterGraphQLContext:
             new_location = RepositoryLocation.from_handle(new_handle)
             check.invariant(new_location.name == name)
             self._repository_locations[name] = new_location
-        else:
+        elif name in self._repository_locations:
             del self._repository_locations[name]
 
     def get_subset_external_pipeline(self, selector):
