@@ -1,5 +1,5 @@
 import pytest
-from dagster import DagsterInstance, ModeDefinition, PipelineDefinition, check, resource, solid
+from dagster import ModeDefinition, PipelineDefinition, check, resource, solid
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events.log import EventRecord, construct_event_logger
 from dagster.core.execution.api import (
@@ -10,6 +10,7 @@ from dagster.core.execution.api import (
     execute_run_iterator,
 )
 from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.test_utils import instance_for_test
 
 
 @resource
@@ -34,39 +35,40 @@ def resource_solid(_):
 
 
 def test_execute_pipeline_iterator():
-    records = []
+    with instance_for_test() as instance:
+        records = []
 
-    def event_callback(record):
-        assert isinstance(record, EventRecord)
-        records.append(record)
+        def event_callback(record):
+            assert isinstance(record, EventRecord)
+            records.append(record)
 
-    pipeline = PipelineDefinition(
-        name="basic_resource_pipeline",
-        solid_defs=[resource_solid],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"a": resource_a, "b": resource_b},
-                logger_defs={"callback": construct_event_logger(event_callback)},
-            )
-        ],
-    )
-    iterator = execute_pipeline_iterator(
-        pipeline, run_config={"loggers": {"callback": {}}}, instance=DagsterInstance.local_temp(),
-    )
+        pipeline = PipelineDefinition(
+            name="basic_resource_pipeline",
+            solid_defs=[resource_solid],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"a": resource_a, "b": resource_b},
+                    logger_defs={"callback": construct_event_logger(event_callback)},
+                )
+            ],
+        )
+        iterator = execute_pipeline_iterator(
+            pipeline, run_config={"loggers": {"callback": {}}}, instance=instance
+        )
 
-    event_type = None
-    while event_type != "STEP_START":
-        event = next(iterator)
-        event_type = event.event_type_value
+        event_type = None
+        while event_type != "STEP_START":
+            event = next(iterator)
+            event_type = event.event_type_value
 
-    iterator.close()
-    events = [record.dagster_event for record in records if record.is_dagster_event]
-    messages = [record.user_message for record in records if not record.is_dagster_event]
-    pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
-    assert len(pipeline_failure_events) == 1
-    assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
-    assert len([message for message in messages if message == "CLEANING A"]) > 0
-    assert len([message for message in messages if message == "CLEANING B"]) > 0
+        iterator.close()
+        events = [record.dagster_event for record in records if record.is_dagster_event]
+        messages = [record.user_message for record in records if not record.is_dagster_event]
+        pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
+        assert len(pipeline_failure_events) == 1
+        assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
+        assert len([message for message in messages if message == "CLEANING A"]) > 0
+        assert len([message for message in messages if message == "CLEANING B"]) > 0
 
 
 def test_execute_run_iterator():
@@ -76,50 +78,51 @@ def test_execute_run_iterator():
         assert isinstance(record, EventRecord)
         records.append(record)
 
-    instance = DagsterInstance.local_temp()
+    with instance_for_test() as instance:
+        pipeline_def = PipelineDefinition(
+            name="basic_resource_pipeline",
+            solid_defs=[resource_solid],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"a": resource_a, "b": resource_b},
+                    logger_defs={"callback": construct_event_logger(event_callback)},
+                )
+            ],
+        )
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
+        )
 
-    pipeline_def = PipelineDefinition(
-        name="basic_resource_pipeline",
-        solid_defs=[resource_solid],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"a": resource_a, "b": resource_b},
-                logger_defs={"callback": construct_event_logger(event_callback)},
-            )
-        ],
-    )
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
-    )
+        iterator = execute_run_iterator(
+            InMemoryPipeline(pipeline_def), pipeline_run, instance=instance
+        )
 
-    iterator = execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+        event_type = None
+        while event_type != "STEP_START":
+            event = next(iterator)
+            event_type = event.event_type_value
 
-    event_type = None
-    while event_type != "STEP_START":
-        event = next(iterator)
-        event_type = event.event_type_value
+        iterator.close()
+        events = [record.dagster_event for record in records if record.is_dagster_event]
+        messages = [record.user_message for record in records if not record.is_dagster_event]
+        pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
+        assert len(pipeline_failure_events) == 1
+        assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
+        assert len([message for message in messages if message == "CLEANING A"]) > 0
+        assert len([message for message in messages if message == "CLEANING B"]) > 0
 
-    iterator.close()
-    events = [record.dagster_event for record in records if record.is_dagster_event]
-    messages = [record.user_message for record in records if not record.is_dagster_event]
-    pipeline_failure_events = [event for event in events if event.is_pipeline_failure]
-    assert len(pipeline_failure_events) == 1
-    assert "GeneratorExit" in pipeline_failure_events[0].pipeline_failure_data.error.message
-    assert len([message for message in messages if message == "CLEANING A"]) > 0
-    assert len([message for message in messages if message == "CLEANING B"]) > 0
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
+        ).with_status(PipelineRunStatus.SUCCESS)
 
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
-    ).with_status(PipelineRunStatus.SUCCESS)
-
-    with pytest.raises(
-        check.CheckError,
-        match=r"Pipeline run basic_resource_pipeline \({}\) in state"
-        r" PipelineRunStatus.SUCCESS, expected PipelineRunStatus.NOT_STARTED".format(
-            pipeline_run.run_id
-        ),
-    ):
-        execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+        with pytest.raises(
+            check.CheckError,
+            match=r"Pipeline run basic_resource_pipeline \({}\) in state"
+            r" PipelineRunStatus.SUCCESS, expected PipelineRunStatus.NOT_STARTED".format(
+                pipeline_run.run_id
+            ),
+        ):
+            execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
 
 
 def test_execute_run_bad_state():
@@ -129,30 +132,29 @@ def test_execute_run_bad_state():
         assert isinstance(record, EventRecord)
         records.append(record)
 
-    instance = DagsterInstance.local_temp()
+    with instance_for_test() as instance:
+        pipeline_def = PipelineDefinition(
+            name="basic_resource_pipeline",
+            solid_defs=[resource_solid],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"a": resource_a, "b": resource_b},
+                    logger_defs={"callback": construct_event_logger(event_callback)},
+                )
+            ],
+        )
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
+        ).with_status(PipelineRunStatus.SUCCESS)
 
-    pipeline_def = PipelineDefinition(
-        name="basic_resource_pipeline",
-        solid_defs=[resource_solid],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"a": resource_a, "b": resource_b},
-                logger_defs={"callback": construct_event_logger(event_callback)},
-            )
-        ],
-    )
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline_def, run_config={"loggers": {"callback": {}}}, mode="default",
-    ).with_status(PipelineRunStatus.SUCCESS)
-
-    with pytest.raises(
-        check.CheckError,
-        match=r"Pipeline run basic_resource_pipeline \({}\) in state"
-        r" PipelineRunStatus.SUCCESS, expected PipelineRunStatus.NOT_STARTED".format(
-            pipeline_run.run_id
-        ),
-    ):
-        execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+        with pytest.raises(
+            check.CheckError,
+            match=r"Pipeline run basic_resource_pipeline \({}\) in state"
+            r" PipelineRunStatus.SUCCESS, expected PipelineRunStatus.NOT_STARTED".format(
+                pipeline_run.run_id
+            ),
+        ):
+            execute_run(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
 
 
 def test_execute_plan_iterator():
@@ -162,35 +164,36 @@ def test_execute_plan_iterator():
         assert isinstance(record, EventRecord)
         records.append(record)
 
-    instance = DagsterInstance.local_temp()
+    with instance_for_test() as instance:
+        pipeline = PipelineDefinition(
+            name="basic_resource_pipeline",
+            solid_defs=[resource_solid],
+            mode_defs=[
+                ModeDefinition(
+                    resource_defs={"a": resource_a, "b": resource_b},
+                    logger_defs={"callback": construct_event_logger(event_callback)},
+                )
+            ],
+        )
+        run_config = {"loggers": {"callback": {}}}
 
-    pipeline = PipelineDefinition(
-        name="basic_resource_pipeline",
-        solid_defs=[resource_solid],
-        mode_defs=[
-            ModeDefinition(
-                resource_defs={"a": resource_a, "b": resource_b},
-                logger_defs={"callback": construct_event_logger(event_callback)},
-            )
-        ],
-    )
-    run_config = {"loggers": {"callback": {}}}
+        execution_plan = create_execution_plan(pipeline, run_config=run_config)
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline_def=pipeline,
+            run_config={"loggers": {"callback": {}}},
+            execution_plan=execution_plan,
+        )
 
-    execution_plan = create_execution_plan(pipeline, run_config=run_config)
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=pipeline,
-        run_config={"loggers": {"callback": {}}},
-        execution_plan=execution_plan,
-    )
+        iterator = execute_plan_iterator(
+            execution_plan, pipeline_run, instance, run_config=run_config
+        )
 
-    iterator = execute_plan_iterator(execution_plan, pipeline_run, instance, run_config=run_config)
+        event_type = None
+        while event_type != "STEP_START":
+            event = next(iterator)
+            event_type = event.event_type_value
 
-    event_type = None
-    while event_type != "STEP_START":
-        event = next(iterator)
-        event_type = event.event_type_value
-
-    iterator.close()
-    messages = [record.user_message for record in records if not record.is_dagster_event]
-    assert len([message for message in messages if message == "CLEANING A"]) > 0
-    assert len([message for message in messages if message == "CLEANING B"]) > 0
+        iterator.close()
+        messages = [record.user_message for record in records if not record.is_dagster_event]
+        assert len([message for message in messages if message == "CLEANING A"]) > 0
+        assert len([message for message in messages if message == "CLEANING B"]) > 0

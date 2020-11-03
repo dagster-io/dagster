@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import time
+import warnings
 from collections import defaultdict
 from enum import Enum
 
@@ -286,6 +287,11 @@ class DagsterInstance:
 
     @staticmethod
     def local_temp(tempdir=None, overrides=None):
+        warnings.warn(
+            "To create a local DagsterInstance for a test, use the instance_for_test "
+            "context manager instead, which ensures that resoures are cleaned up afterwards"
+        )
+
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
 

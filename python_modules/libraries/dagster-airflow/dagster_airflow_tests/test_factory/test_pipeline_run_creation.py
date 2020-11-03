@@ -1,7 +1,6 @@
 import mock
-from dagster import DagsterInstance, seven
 from dagster.core.errors import DagsterRunAlreadyExists
-from dagster.core.test_utils import register_managed_run_for_test
+from dagster.core.test_utils import instance_for_test, register_managed_run_for_test
 
 
 class Spy(object):
@@ -29,8 +28,7 @@ class Spy(object):
 # 4. We expect the second to then try to get_run() again, this time succeeding.
 # 5. We expect the run storage to only contain one run.
 def test_pipeline_run_creation_race():
-    with seven.TemporaryDirectory() as tempdir:
-        instance = DagsterInstance.local_temp(tempdir)
+    with instance_for_test() as instance:
         run_id = "run_id"
 
         # Spy on the result of add_run

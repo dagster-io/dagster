@@ -8,7 +8,7 @@ import pytest
 from dagster import execute_pipeline, pipeline
 from dagster.core.definitions.events import PathMetadataEntryData
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path
 from dagstermill import DagstermillError, define_dagstermill_solid
 from jupyter_client.kernelspec import NoSuchKernel
@@ -62,18 +62,15 @@ def exec_for_test(fn_name, env=None, raise_on_error=True, **kwargs):
     result = None
     recon_pipeline = ReconstructablePipeline.for_module("dagstermill.examples.repository", fn_name)
 
-    try:
-        result = execute_pipeline(
-            recon_pipeline,
-            env,
-            instance=DagsterInstance.local_temp(),
-            raise_on_error=raise_on_error,
-            **kwargs
-        )
-        yield result
-    finally:
-        if result:
-            cleanup_result_notebook(result)
+    with instance_for_test() as instance:
+        try:
+            result = execute_pipeline(
+                recon_pipeline, env, instance=instance, raise_on_error=raise_on_error, **kwargs
+            )
+            yield result
+        finally:
+            if result:
+                cleanup_result_notebook(result)
 
 
 @pytest.mark.notebook_test
@@ -265,14 +262,13 @@ def test_hello_world_reexecution():
             )
 
             reexecution_result = None
-            try:
-                reexecution_result = execute_pipeline(
-                    reexecution_pipeline, instance=DagsterInstance.local_temp()
-                )
-                assert reexecution_result.success
-            finally:
-                if reexecution_result:
-                    cleanup_result_notebook(reexecution_result)
+            with instance_for_test() as instance:
+                try:
+                    reexecution_result = execute_pipeline(reexecution_pipeline, instance=instance)
+                    assert reexecution_result.success
+                finally:
+                    if reexecution_result:
+                        cleanup_result_notebook(reexecution_result)
 
 
 @pytest.mark.notebook_test

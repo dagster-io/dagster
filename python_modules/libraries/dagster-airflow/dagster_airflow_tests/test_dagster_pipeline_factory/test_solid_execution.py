@@ -7,9 +7,10 @@ from airflow.models.dag import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.utils.dates import days_ago
-from dagster import DagsterEventType, DagsterInstance, execute_pipeline
+from dagster import DagsterEventType, execute_pipeline
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR
 from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.core.test_utils import instance_for_test
 from dagster.seven import get_current_datetime_in_utc, mock
 from dagster_airflow.dagster_pipeline_factory import make_dagster_pipeline_from_airflow_dag
 
@@ -103,90 +104,92 @@ def test_template_task_dag():
     # pylint: disable=pointless-statement
     t1 >> [t2, t3]
 
-    instance = DagsterInstance.local_temp()
-    manager = instance.compute_log_manager
+    with instance_for_test() as instance:
+        manager = instance.compute_log_manager
 
-    execution_date = get_current_datetime_in_utc()
-    execution_date_add_one_week = execution_date + datetime.timedelta(days=7)
-    execution_date_iso = execution_date.strftime("%Y-%m-%d")
-    execution_date_add_one_week_iso = execution_date_add_one_week.strftime("%Y-%m-%d")
+        execution_date = get_current_datetime_in_utc()
+        execution_date_add_one_week = execution_date + datetime.timedelta(days=7)
+        execution_date_iso = execution_date.strftime("%Y-%m-%d")
+        execution_date_add_one_week_iso = execution_date_add_one_week.strftime("%Y-%m-%d")
 
-    result = execute_pipeline(
-        make_dagster_pipeline_from_airflow_dag(
-            dag=dag, tags={AIRFLOW_EXECUTION_DATE_STR: execution_date_iso}
-        ),
-        instance=instance,
-    )
+        result = execute_pipeline(
+            make_dagster_pipeline_from_airflow_dag(
+                dag=dag, tags={AIRFLOW_EXECUTION_DATE_STR: execution_date_iso}
+            ),
+            instance=instance,
+        )
 
-    compute_steps = [
-        event.step_key
-        for event in result.step_event_list
-        if event.event_type == DagsterEventType.STEP_START
-    ]
+        compute_steps = [
+            event.step_key
+            for event in result.step_event_list
+            if event.event_type == DagsterEventType.STEP_START
+        ]
 
-    assert compute_steps == [
-        "airflow_print_hello.compute",
-        "airflow_sleep.compute",
-        "airflow_templated.compute",
-    ]
+        assert compute_steps == [
+            "airflow_print_hello.compute",
+            "airflow_sleep.compute",
+            "airflow_templated.compute",
+        ]
 
-    for step_key in compute_steps:
-        compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
-        assert os.path.exists(compute_io_path)
-        stdout_file = open(compute_io_path, "r")
-        file_contents = normalize_file_content(stdout_file.read())
-        stdout_file.close()
+        for step_key in compute_steps:
+            compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
+            assert os.path.exists(compute_io_path)
+            stdout_file = open(compute_io_path, "r")
+            file_contents = normalize_file_content(stdout_file.read())
+            stdout_file.close()
 
-        if step_key == "airflow_print_hello.compute":
-            assert file_contents.count("INFO - Running command: echo hello dagsir\n") == 1
-            assert file_contents.count("INFO - Command exited with return code 0") == 1
+            if step_key == "airflow_print_hello.compute":
+                assert file_contents.count("INFO - Running command: echo hello dagsir\n") == 1
+                assert file_contents.count("INFO - Command exited with return code 0") == 1
 
-        elif step_key == "airflow_sleep.compute":
-            assert file_contents.count("INFO - Running command: sleep 2\n") == 1
-            assert file_contents.count("INFO - Output:\n") == 1
-            assert file_contents.count("INFO - Command exited with return code 0") == 1
+            elif step_key == "airflow_sleep.compute":
+                assert file_contents.count("INFO - Running command: sleep 2\n") == 1
+                assert file_contents.count("INFO - Output:\n") == 1
+                assert file_contents.count("INFO - Command exited with return code 0") == 1
 
-        elif step_key == "airflow_templated.compute":
-            assert (
-                file_contents.count(
-                    "INFO - Running command: \n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n        "
-                    "echo '{execution_date_iso}'\n        "
-                    "echo '{execution_date_add_one_week_iso}'\n        "
-                    "echo 'Parameter I passed in'\n    \n    \n".format(
-                        execution_date_iso=execution_date_iso,
-                        execution_date_add_one_week_iso=execution_date_add_one_week_iso,
+            elif step_key == "airflow_templated.compute":
+                assert (
+                    file_contents.count(
+                        "INFO - Running command: \n    \n        "
+                        "echo '{execution_date_iso}'\n        "
+                        "echo '{execution_date_add_one_week_iso}'\n        "
+                        "echo 'Parameter I passed in'\n    \n        "
+                        "echo '{execution_date_iso}'\n        "
+                        "echo '{execution_date_add_one_week_iso}'\n        "
+                        "echo 'Parameter I passed in'\n    \n        "
+                        "echo '{execution_date_iso}'\n        "
+                        "echo '{execution_date_add_one_week_iso}'\n        "
+                        "echo 'Parameter I passed in'\n    \n        "
+                        "echo '{execution_date_iso}'\n        "
+                        "echo '{execution_date_add_one_week_iso}'\n        "
+                        "echo 'Parameter I passed in'\n    \n        "
+                        "echo '{execution_date_iso}'\n        "
+                        "echo '{execution_date_add_one_week_iso}'\n        "
+                        "echo 'Parameter I passed in'\n    \n    \n".format(
+                            execution_date_iso=execution_date_iso,
+                            execution_date_add_one_week_iso=execution_date_add_one_week_iso,
+                        )
                     )
+                    == 1
                 )
-                == 1
-            )
-            assert (
-                file_contents.count(
-                    "INFO - {execution_date_iso}\n".format(execution_date_iso=execution_date_iso)
-                )
-                == 5
-            )
-            assert (
-                file_contents.count(
-                    "INFO - {execution_date_add_one_week_iso}\n".format(
-                        execution_date_add_one_week_iso=execution_date_add_one_week_iso
+                assert (
+                    file_contents.count(
+                        "INFO - {execution_date_iso}\n".format(
+                            execution_date_iso=execution_date_iso
+                        )
                     )
+                    == 5
                 )
-                == 5
-            )
-            assert file_contents.count("INFO - Parameter I passed in\n") == 5
-            assert file_contents.count("INFO - Command exited with return code 0") == 1
+                assert (
+                    file_contents.count(
+                        "INFO - {execution_date_add_one_week_iso}\n".format(
+                            execution_date_add_one_week_iso=execution_date_add_one_week_iso
+                        )
+                    )
+                    == 5
+                )
+                assert file_contents.count("INFO - Parameter I passed in\n") == 5
+                assert file_contents.count("INFO - Command exited with return code 0") == 1
 
 
 def intercept_spark_submit(*args, **kwargs):

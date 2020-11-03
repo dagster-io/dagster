@@ -1,5 +1,4 @@
 from dagster import (
-    DagsterInstance,
     InputDefinition,
     ModeDefinition,
     Output,
@@ -8,6 +7,7 @@ from dagster import (
     reconstructable,
     solid,
 )
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 from dagster_ge.factory import ge_data_context, ge_validation_solid_factory
 from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
@@ -68,20 +68,23 @@ def test_yielded_results_config_pandas(snapshot):
             }
         }
     }
-    result = execute_pipeline(
-        reconstructable(hello_world_pandas_pipeline),
-        run_config=run_config,
-        mode="basic",
-        instance=DagsterInstance.local_temp(),
-    )
-    assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
-    expectations = result.result_for_solid("ge_validation_solid").expectation_results_during_compute
-    assert len(expectations) == 1
-    mainexpect = expectations[0]
-    assert mainexpect.success
-    # purge system specific metadata for testing
-    metadata = mainexpect.metadata_entries[0].entry_data.md_str.split("### Info")[0]
-    snapshot.assert_match(metadata)
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(hello_world_pandas_pipeline),
+            run_config=run_config,
+            mode="basic",
+            instance=instance,
+        )
+        assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
+        expectations = result.result_for_solid(
+            "ge_validation_solid"
+        ).expectation_results_during_compute
+        assert len(expectations) == 1
+        mainexpect = expectations[0]
+        assert mainexpect.success
+        # purge system specific metadata for testing
+        metadata = mainexpect.metadata_entries[0].entry_data.md_str.split("### Info")[0]
+        snapshot.assert_match(metadata)
 
 
 def test_yielded_results_config_pyspark(snapshot):  # pylint:disable=unused-argument
@@ -92,14 +95,17 @@ def test_yielded_results_config_pyspark(snapshot):  # pylint:disable=unused-argu
             }
         }
     }
-    result = execute_pipeline(
-        reconstructable(hello_world_pyspark_pipeline),
-        run_config=run_config,
-        mode="basic",
-        instance=DagsterInstance.local_temp(),
-    )
-    assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
-    expectations = result.result_for_solid("ge_validation_solid").expectation_results_during_compute
-    assert len(expectations) == 1
-    mainexpect = expectations[0]
-    assert mainexpect.success
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(hello_world_pyspark_pipeline),
+            run_config=run_config,
+            mode="basic",
+            instance=instance,
+        )
+        assert result.result_for_solid("reyielder").output_value()[0]["success_percent"] == 100
+        expectations = result.result_for_solid(
+            "ge_validation_solid"
+        ).expectation_results_during_compute
+        assert len(expectations) == 1
+        mainexpect = expectations[0]
+        assert mainexpect.success

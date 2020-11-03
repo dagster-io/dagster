@@ -129,7 +129,7 @@ class InstanceManagers:
         @contextmanager
         def _readonly_sqlite_instance():
             with seven.TemporaryDirectory() as temp_dir:
-                with DagsterInstance.local_temp(
+                with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
                         "scheduler": {
@@ -170,7 +170,7 @@ class InstanceManagers:
         @contextmanager
         def _sqlite_instance():
             with seven.TemporaryDirectory() as temp_dir:
-                with DagsterInstance.local_temp(
+                with instance_for_test_tempdir(
                     temp_dir,
                     overrides={
                         "scheduler": {

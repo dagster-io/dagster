@@ -2,7 +2,6 @@ import re
 
 import pytest
 from dagster import (
-    DagsterInstance,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     InputDefinition,
@@ -13,6 +12,7 @@ from dagster import (
     reconstructable,
     solid,
 )
+from dagster.core.test_utils import instance_for_test
 
 
 def test_multiple_outputs():
@@ -135,36 +135,38 @@ def test_multiple_outputs_only_emit_one():
 
 
 def test_multiple_outputs_only_emit_one_multiproc():
-    pipe = reconstructable(define_multi_out)
-    result = execute_pipeline(
-        pipe,
-        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
-        instance=DagsterInstance.local_temp(),
-    )
-    assert result.success
+    with instance_for_test() as instance:
 
-    solid_result = result.result_for_solid("multiple_outputs")
-    assert set(solid_result.output_values.keys()) == set(["output_one"])
+        pipe = reconstructable(define_multi_out)
+        result = execute_pipeline(
+            pipe,
+            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+            instance=instance,
+        )
+        assert result.success
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Output 'not_defined' not defined in solid 'multiple_outputs'",
-    ):
-        solid_result.output_value("not_defined")
+        solid_result = result.result_for_solid("multiple_outputs")
+        assert set(solid_result.output_values.keys()) == set(["output_one"])
 
-    with pytest.raises(DagsterInvariantViolationError, match="Did not find result output_two"):
-        solid_result.output_value("output_two")
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match="Output 'not_defined' not defined in solid 'multiple_outputs'",
+        ):
+            solid_result.output_value("not_defined")
 
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match=re.escape(
-            "Tried to get result for solid 'not_present' in "
-            "'multiple_outputs_only_emit_one_pipeline'. No such top level solid."
-        ),
-    ):
-        result.result_for_solid("not_present")
+        with pytest.raises(DagsterInvariantViolationError, match="Did not find result output_two"):
+            solid_result.output_value("output_two")
 
-    assert result.result_for_solid("downstream_two").skipped
+        with pytest.raises(
+            DagsterInvariantViolationError,
+            match=re.escape(
+                "Tried to get result for solid 'not_present' in "
+                "'multiple_outputs_only_emit_one_pipeline'. No such top level solid."
+            ),
+        ):
+            result.result_for_solid("not_present")
+
+        assert result.result_for_solid("downstream_two").skipped
 
 
 def test_missing_non_optional_output_fails():

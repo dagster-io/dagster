@@ -20,7 +20,7 @@ from dagster import (
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.retries import Retries, RetryMode
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 
 executors = pytest.mark.parametrize(
     "environment",
@@ -68,30 +68,30 @@ def define_run_retry_pipeline():
 
 @executors
 def test_retries(environment):
-    instance = DagsterInstance.local_temp()
-    pipe = reconstructable(define_run_retry_pipeline)
-    fails = dict(environment)
-    fails["solids"] = {"can_fail": {"config": {"fail": True}}}
+    with instance_for_test() as instance:
+        pipe = reconstructable(define_run_retry_pipeline)
+        fails = dict(environment)
+        fails["solids"] = {"can_fail": {"config": {"fail": True}}}
 
-    result = execute_pipeline(pipe, run_config=fails, instance=instance, raise_on_error=False,)
+        result = execute_pipeline(pipe, run_config=fails, instance=instance, raise_on_error=False,)
 
-    assert not result.success
+        assert not result.success
 
-    passes = dict(environment)
-    passes["solids"] = {"can_fail": {"config": {"fail": False}}}
+        passes = dict(environment)
+        passes["solids"] = {"can_fail": {"config": {"fail": False}}}
 
-    second_result = reexecute_pipeline(
-        pipe, parent_run_id=result.run_id, run_config=passes, instance=instance,
-    )
-    assert second_result.success
-    downstream_of_failed = second_result.result_for_solid("downstream_of_failed").output_value()
-    assert downstream_of_failed == "okay perfect"
+        second_result = reexecute_pipeline(
+            pipe, parent_run_id=result.run_id, run_config=passes, instance=instance,
+        )
+        assert second_result.success
+        downstream_of_failed = second_result.result_for_solid("downstream_of_failed").output_value()
+        assert downstream_of_failed == "okay perfect"
 
-    will_be_skipped = [
-        e for e in second_result.event_list if "will_be_skipped" in str(e.solid_handle)
-    ]
-    assert str(will_be_skipped[0].event_type_value) == "STEP_SKIPPED"
-    assert str(will_be_skipped[1].event_type_value) == "STEP_SKIPPED"
+        will_be_skipped = [
+            e for e in second_result.event_list if "will_be_skipped" in str(e.solid_handle)
+        ]
+        assert str(will_be_skipped[0].event_type_value) == "STEP_SKIPPED"
+        assert str(will_be_skipped[1].event_type_value) == "STEP_SKIPPED"
 
 
 def define_step_retry_pipeline():
@@ -113,23 +113,22 @@ def define_step_retry_pipeline():
 
 @executors
 def test_step_retry(environment):
-    with seven.TemporaryDirectory() as tempdir:
-        env = dict(environment)
-        env["solids"] = {"fail_first_time": {"config": tempdir}}
-        result = execute_pipeline(
-            reconstructable(define_step_retry_pipeline),
-            run_config=env,
-            instance=DagsterInstance.local_temp(),
-        )
-    assert result.success
-    events = defaultdict(list)
-    for ev in result.event_list:
-        events[ev.event_type].append(ev)
+    with instance_for_test() as instance:
+        with seven.TemporaryDirectory() as tempdir:
+            env = dict(environment)
+            env["solids"] = {"fail_first_time": {"config": tempdir}}
+            result = execute_pipeline(
+                reconstructable(define_step_retry_pipeline), run_config=env, instance=instance,
+            )
+        assert result.success
+        events = defaultdict(list)
+        for ev in result.event_list:
+            events[ev.event_type].append(ev)
 
-    assert len(events[DagsterEventType.STEP_START]) == 1
-    assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 1
-    assert len(events[DagsterEventType.STEP_RESTARTED]) == 1
-    assert len(events[DagsterEventType.STEP_SUCCESS]) == 1
+        assert len(events[DagsterEventType.STEP_START]) == 1
+        assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 1
+        assert len(events[DagsterEventType.STEP_RESTARTED]) == 1
+        assert len(events[DagsterEventType.STEP_SUCCESS]) == 1
 
 
 def define_retry_limit_pipeline():
@@ -151,48 +150,50 @@ def define_retry_limit_pipeline():
 
 @executors
 def test_step_retry_limit(environment):
-    result = execute_pipeline(
-        reconstructable(define_retry_limit_pipeline),
-        run_config=environment,
-        raise_on_error=False,
-        instance=DagsterInstance.local_temp(),
-    )
-    assert not result.success
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(define_retry_limit_pipeline),
+            run_config=environment,
+            raise_on_error=False,
+            instance=instance,
+        )
+        assert not result.success
 
-    events = defaultdict(list)
-    for ev in result.events_by_step_key["default_max.compute"]:
-        events[ev.event_type].append(ev)
+        events = defaultdict(list)
+        for ev in result.events_by_step_key["default_max.compute"]:
+            events[ev.event_type].append(ev)
 
-    assert len(events[DagsterEventType.STEP_START]) == 1
-    assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 1
-    assert len(events[DagsterEventType.STEP_RESTARTED]) == 1
-    assert len(events[DagsterEventType.STEP_FAILURE]) == 1
+        assert len(events[DagsterEventType.STEP_START]) == 1
+        assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 1
+        assert len(events[DagsterEventType.STEP_RESTARTED]) == 1
+        assert len(events[DagsterEventType.STEP_FAILURE]) == 1
 
-    events = defaultdict(list)
-    for ev in result.events_by_step_key["three_max.compute"]:
-        events[ev.event_type].append(ev)
+        events = defaultdict(list)
+        for ev in result.events_by_step_key["three_max.compute"]:
+            events[ev.event_type].append(ev)
 
-    assert len(events[DagsterEventType.STEP_START]) == 1
-    assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 3
-    assert len(events[DagsterEventType.STEP_RESTARTED]) == 3
-    assert len(events[DagsterEventType.STEP_FAILURE]) == 1
+        assert len(events[DagsterEventType.STEP_START]) == 1
+        assert len(events[DagsterEventType.STEP_UP_FOR_RETRY]) == 3
+        assert len(events[DagsterEventType.STEP_RESTARTED]) == 3
+        assert len(events[DagsterEventType.STEP_FAILURE]) == 1
 
 
 def test_retry_deferral():
-    events = execute_plan(
-        create_execution_plan(define_retry_limit_pipeline()),
-        pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
-        retries=Retries(RetryMode.DEFERRED),
-        instance=DagsterInstance.local_temp(),
-    )
-    events_by_type = defaultdict(list)
-    for ev in events:
-        events_by_type[ev.event_type].append(ev)
+    with instance_for_test() as instance:
+        events = execute_plan(
+            create_execution_plan(define_retry_limit_pipeline()),
+            pipeline_run=PipelineRun(pipeline_name="retry_limits", run_id="42"),
+            retries=Retries(RetryMode.DEFERRED),
+            instance=instance,
+        )
+        events_by_type = defaultdict(list)
+        for ev in events:
+            events_by_type[ev.event_type].append(ev)
 
-    assert len(events_by_type[DagsterEventType.STEP_START]) == 2
-    assert len(events_by_type[DagsterEventType.STEP_UP_FOR_RETRY]) == 2
-    assert DagsterEventType.STEP_RESTARTED not in events
-    assert DagsterEventType.STEP_SUCCESS not in events
+        assert len(events_by_type[DagsterEventType.STEP_START]) == 2
+        assert len(events_by_type[DagsterEventType.STEP_UP_FOR_RETRY]) == 2
+        assert DagsterEventType.STEP_RESTARTED not in events
+        assert DagsterEventType.STEP_SUCCESS not in events
 
 
 DELAY = 2
@@ -217,28 +218,29 @@ def define_retry_wait_fixed_pipeline():
 
 @executors
 def test_step_retry_fixed_wait(environment):
-    with seven.TemporaryDirectory() as tempdir:
-        env = dict(environment)
-        env["solids"] = {"fail_first_and_wait": {"config": tempdir}}
+    with instance_for_test() as instance:
+        with seven.TemporaryDirectory() as tempdir:
+            env = dict(environment)
+            env["solids"] = {"fail_first_and_wait": {"config": tempdir}}
 
-        event_iter = execute_pipeline_iterator(
-            reconstructable(define_retry_wait_fixed_pipeline),
-            run_config=env,
-            instance=DagsterInstance.local_temp(),
-        )
-        start_wait = None
-        end_wait = None
-        success = None
-        for event in event_iter:
-            if event.is_step_up_for_retry:
-                start_wait = time.time()
-            if event.is_step_restarted:
-                end_wait = time.time()
-            if event.is_pipeline_success:
-                success = True
+            event_iter = execute_pipeline_iterator(
+                reconstructable(define_retry_wait_fixed_pipeline),
+                run_config=env,
+                instance=instance,
+            )
+            start_wait = None
+            end_wait = None
+            success = None
+            for event in event_iter:
+                if event.is_step_up_for_retry:
+                    start_wait = time.time()
+                if event.is_step_restarted:
+                    end_wait = time.time()
+                if event.is_pipeline_success:
+                    success = True
 
-        assert success
-        assert start_wait is not None
-        assert end_wait is not None
-        delay = end_wait - start_wait
-        assert delay > DELAY
+            assert success
+            assert start_wait is not None
+            assert end_wait is not None
+            delay = end_wait - start_wait
+            assert delay > DELAY

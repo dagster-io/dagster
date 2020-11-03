@@ -1,10 +1,10 @@
 import copy
 
-from dagster import execute_pipeline, lambda_solid, pipeline, repository, seven
+from dagster import execute_pipeline, lambda_solid, pipeline, repository
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
+from dagster.core.test_utils import instance_for_test
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
     execute_dagster_graphql,
@@ -306,8 +306,7 @@ def get_repo_at_time_2():
 
 
 def test_runs_over_time():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+    with instance_for_test() as instance:
 
         repo_1 = get_repo_at_time_1()
 
@@ -390,9 +389,7 @@ def test_runs_over_time():
 
 
 def test_run_groups_over_time():
-    with seven.TemporaryDirectory() as tempdir:
-        instance = DagsterInstance.local_temp(tempdir=tempdir)
-
+    with instance_for_test() as instance:
         repo_1 = get_repo_at_time_1()
 
         full_evolve_run_id = execute_pipeline(
@@ -509,8 +506,7 @@ def test_run_groups_over_time():
 
 
 def test_filtered_runs():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+    with instance_for_test() as instance:
         repo = get_repo_at_time_1()
         run_id_1 = execute_pipeline(
             repo.get_pipeline("foo_pipeline"), instance=instance, tags={"run": "one"}
@@ -539,8 +535,7 @@ def test_filtered_runs():
 
 
 def test_run_group():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+    with instance_for_test() as instance:
         repo = get_repo_at_time_1()
         foo_pipeline = repo.get_pipeline("foo_pipeline")
         runs = [execute_pipeline(foo_pipeline, instance=instance)]
@@ -583,8 +578,7 @@ def test_run_group():
 
 
 def test_run_group_not_found():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+    with instance_for_test() as instance:
         with define_out_of_process_context(
             __file__, "get_repo_at_time_1", instance
         ) as context_at_time_1:
@@ -602,9 +596,7 @@ def test_run_group_not_found():
 
 
 def test_run_groups():
-    with seven.TemporaryDirectory() as tempdir:
-        instance = DagsterInstance.local_temp(tempdir=tempdir)
-
+    with instance_for_test() as instance:
         repo = get_repo_at_time_1()
         foo_pipeline = repo.get_pipeline("foo_pipeline")
 

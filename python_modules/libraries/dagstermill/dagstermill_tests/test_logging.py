@@ -11,7 +11,7 @@ from dagster import (
     reconstructable,
     seven,
 )
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 from dagstermill.examples.repository import define_hello_logging_solid
 
@@ -54,40 +54,43 @@ def define_hello_logging_pipeline():
 def test_logging():
     with safe_tempfile_path() as test_file_path:
         with safe_tempfile_path() as critical_file_path:
-            execute_pipeline(
-                reconstructable(define_hello_logging_pipeline),
-                {
-                    "loggers": {
-                        "test": {
-                            "config": {
-                                "name": "test",
-                                "file_path": test_file_path,
-                                "log_level": "DEBUG",
-                            }
-                        },
-                        "critical": {
-                            "config": {
-                                "name": "critical",
-                                "file_path": critical_file_path,
-                                "log_level": "CRITICAL",
-                            }
-                        },
-                    }
-                },
-                instance=DagsterInstance.local_temp(),
-            )
+            with instance_for_test() as instance:
+                execute_pipeline(
+                    reconstructable(define_hello_logging_pipeline),
+                    {
+                        "loggers": {
+                            "test": {
+                                "config": {
+                                    "name": "test",
+                                    "file_path": test_file_path,
+                                    "log_level": "DEBUG",
+                                }
+                            },
+                            "critical": {
+                                "config": {
+                                    "name": "critical",
+                                    "file_path": critical_file_path,
+                                    "log_level": "CRITICAL",
+                                }
+                            },
+                        }
+                    },
+                    instance=instance,
+                )
 
-            with open(test_file_path, "r") as test_file:
-                records = [
-                    json.loads(line) for line in test_file.read().strip("\n").split("\n") if line
-                ]
+                with open(test_file_path, "r") as test_file:
+                    records = [
+                        json.loads(line)
+                        for line in test_file.read().strip("\n").split("\n")
+                        if line
+                    ]
 
-            with open(critical_file_path, "r") as critical_file:
-                critical_records = [
-                    json.loads(line)
-                    for line in critical_file.read().strip("\n").split("\n")
-                    if line
-                ]
+                with open(critical_file_path, "r") as critical_file:
+                    critical_records = [
+                        json.loads(line)
+                        for line in critical_file.read().strip("\n").split("\n")
+                        if line
+                    ]
 
     messages = [x["dagster_meta"]["orig_message"] for x in records]
 

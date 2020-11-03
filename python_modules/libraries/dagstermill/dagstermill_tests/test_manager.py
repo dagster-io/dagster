@@ -11,8 +11,8 @@ import pytest
 from dagster import AssetMaterialization, ModeDefinition, ResourceDefinition, check
 from dagster.core.definitions.dependency import SolidHandle
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.serdes import pack_value
 from dagster.utils import safe_tempfile_path
@@ -31,41 +31,41 @@ def in_pipeline_manager(
     manager = Manager()
 
     run_id = make_new_run_id()
-    instance = DagsterInstance.local_temp()
-    marshal_dir = tempfile.mkdtemp()
+    with instance_for_test() as instance:
+        marshal_dir = tempfile.mkdtemp()
 
-    if not executable_dict:
-        executable_dict = ReconstructablePipeline.for_module(
-            "dagstermill.examples.repository", "define_hello_world_pipeline"
-        ).to_dict()
+        if not executable_dict:
+            executable_dict = ReconstructablePipeline.for_module(
+                "dagstermill.examples.repository", "define_hello_world_pipeline"
+            ).to_dict()
 
-    pipeline_run_dict = pack_value(
-        PipelineRun(
-            pipeline_name=pipeline_name,
-            run_id=run_id,
-            mode=mode or "default",
-            run_config=None,
-            step_keys_to_execute=None,
-            status=PipelineRunStatus.NOT_STARTED,
+        pipeline_run_dict = pack_value(
+            PipelineRun(
+                pipeline_name=pipeline_name,
+                run_id=run_id,
+                mode=mode or "default",
+                run_config=None,
+                step_keys_to_execute=None,
+                status=PipelineRunStatus.NOT_STARTED,
+            )
         )
-    )
 
-    try:
-        with safe_tempfile_path() as output_log_file_path:
-            context_dict = {
-                "pipeline_run_dict": pipeline_run_dict,
-                "solid_handle_kwargs": solid_handle._asdict(),
-                "executable_dict": executable_dict,
-                "marshal_dir": marshal_dir,
-                "run_config": {},
-                "output_log_path": output_log_file_path,
-                "instance_ref_dict": pack_value(instance.get_ref()),
-            }
+        try:
+            with safe_tempfile_path() as output_log_file_path:
+                context_dict = {
+                    "pipeline_run_dict": pipeline_run_dict,
+                    "solid_handle_kwargs": solid_handle._asdict(),
+                    "executable_dict": executable_dict,
+                    "marshal_dir": marshal_dir,
+                    "run_config": {},
+                    "output_log_path": output_log_file_path,
+                    "instance_ref_dict": pack_value(instance.get_ref()),
+                }
 
-            manager.reconstitute_pipeline_context(**dict(context_dict, **kwargs))
-            yield manager
-    finally:
-        shutil.rmtree(marshal_dir)
+                manager.reconstitute_pipeline_context(**dict(context_dict, **kwargs))
+                yield manager
+        finally:
+            shutil.rmtree(marshal_dir)
 
 
 def test_get_out_of_pipeline_context():

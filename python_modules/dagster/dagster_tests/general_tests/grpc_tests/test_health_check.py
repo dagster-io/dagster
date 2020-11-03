@@ -21,6 +21,7 @@ def test_health_check_success():
     )
     with server.create_ephemeral_client() as client:
         assert client.health_check_query() == "SERVING"
+    server.wait()
 
 
 def test_health_check_fail():

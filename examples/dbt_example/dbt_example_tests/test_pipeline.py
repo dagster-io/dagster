@@ -1,6 +1,6 @@
-from dagster import DagsterInstance, execute_pipeline
+from dagster import execute_pipeline
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.seven import TemporaryDirectory
+from dagster.core.test_utils import instance_for_test
 
 CEREALS_DATASET_URL = "https://gist.githubusercontent.com/mgasner/bd2c0f66dff4a9f01855cfa6870b1fce/raw/2de62a57fb08da7c58d6480c987077cf91c783a1/cereal.csv"
 
@@ -17,11 +17,10 @@ def test_pipeline(pg_hostname, postgres):  # pylint: disable=unused-argument
         "analyze_cereals",
         "post_plot_to_slack",
     }
-    with TemporaryDirectory() as tempdir:
-
+    with instance_for_test() as instance:
         res = execute_pipeline(
             ReconstructablePipeline.for_module("dbt_example", "dbt_example_pipeline"),
-            instance=DagsterInstance.local_temp(tempdir=tempdir),
+            instance=instance,
             mode="dev",
             run_config={
                 "solids": {

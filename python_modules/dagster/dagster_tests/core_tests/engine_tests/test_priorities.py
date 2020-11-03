@@ -1,4 +1,5 @@
-from dagster import DagsterInstance, execute_pipeline, pipeline, reconstructable, solid
+from dagster import execute_pipeline, pipeline, reconstructable, solid
+from dagster.core.test_utils import instance_for_test
 
 
 @solid(tags={"dagster/priority": "-1"})
@@ -36,16 +37,17 @@ def test_priorities():
 
 
 def test_priorities_mp():
-    pipe = reconstructable(priority_test)
-    result = execute_pipeline(
-        pipe,
-        {
-            "execution": {"multiprocess": {"config": {"max_concurrent": 1}}},
-            "storage": {"filesystem": {}},
-        },
-        instance=DagsterInstance.local_temp(),
-    )
-    assert result.success
-    assert [
-        str(event.solid_handle) for event in result.step_event_list if event.is_step_success
-    ] == ["high", "high_2", "none", "none_2", "low", "low_2"]
+    with instance_for_test() as instance:
+        pipe = reconstructable(priority_test)
+        result = execute_pipeline(
+            pipe,
+            {
+                "execution": {"multiprocess": {"config": {"max_concurrent": 1}}},
+                "storage": {"filesystem": {}},
+            },
+            instance=instance,
+        )
+        assert result.success
+        assert [
+            str(event.solid_handle) for event in result.step_event_list if event.is_step_success
+        ] == ["high", "high_2", "none", "none_2", "low", "low_2"]

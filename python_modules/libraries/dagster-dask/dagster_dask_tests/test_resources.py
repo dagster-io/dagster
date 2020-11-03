@@ -1,5 +1,4 @@
 from dagster import (
-    DagsterInstance,
     Dict,
     ModeDefinition,
     Output,
@@ -8,6 +7,7 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.test_utils import instance_for_test
 from dagster_dask import dask_resource
 from dask.distributed import Client
 
@@ -38,12 +38,12 @@ def test_single_local_cluster():
         "threads_per_worker": 1,
         "dashboard_address": None,
     }
-
-    run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
-    result = execute_pipeline(
-        scheduler_info_pipeline, run_config=run_config, instance=DagsterInstance.local_temp(),
-    )
-    _assert_scheduler_info_result(result, cluster_config)
+    with instance_for_test() as instance:
+        run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
+        result = execute_pipeline(
+            scheduler_info_pipeline, run_config=run_config, instance=instance,
+        )
+        _assert_scheduler_info_result(result, cluster_config)
 
 
 def test_multiple_local_cluster():
@@ -52,12 +52,13 @@ def test_multiple_local_cluster():
         {"n_workers": 2, "threads_per_worker": 1, "dashboard_address": None,},
     ]
 
-    for cluster_config in cluster_configs:
-        run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
-        result = execute_pipeline(
-            scheduler_info_pipeline, run_config=run_config, instance=DagsterInstance.local_temp(),
-        )
-        _assert_scheduler_info_result(result, cluster_config)
+    with instance_for_test() as instance:
+        for cluster_config in cluster_configs:
+            run_config = {"resources": {"dask": {"config": {"cluster": {"local": cluster_config}}}}}
+            result = execute_pipeline(
+                scheduler_info_pipeline, run_config=run_config, instance=instance,
+            )
+            _assert_scheduler_info_result(result, cluster_config)
 
 
 def _assert_scheduler_info_result(result, config):

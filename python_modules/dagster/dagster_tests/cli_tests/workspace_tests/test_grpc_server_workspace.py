@@ -10,9 +10,10 @@ from dagster.utils import file_relative_path
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_grpc_socket_workspace():
-
-    with GrpcServerProcess().create_ephemeral_client() as first_server:
-        with GrpcServerProcess().create_ephemeral_client() as second_server:
+    first_server_process = GrpcServerProcess()
+    with first_server_process.create_ephemeral_client() as first_server:
+        second_server_process = GrpcServerProcess()
+        with second_server_process.create_ephemeral_client() as second_server:
             first_socket = first_server.socket
             second_socket = second_server.socket
             workspace_yaml = """
@@ -53,11 +54,15 @@ load_from:
             assert local_port_default_host.port is None
 
             assert all(map(lambda x: x.location_name, workspace.repository_location_handles))
+        second_server_process.wait()
+    first_server_process.wait()
 
 
 def test_grpc_server_workspace():
-    with GrpcServerProcess(force_port=True).create_ephemeral_client() as first_server:
-        with GrpcServerProcess(force_port=True).create_ephemeral_client() as second_server:
+    first_server_process = GrpcServerProcess(force_port=True)
+    with first_server_process.create_ephemeral_client() as first_server:
+        second_server_process = GrpcServerProcess(force_port=True)
+        with second_server_process.create_ephemeral_client() as second_server:
             first_port = first_server.port
             second_port = second_server.port
             workspace_yaml = """
@@ -98,6 +103,8 @@ load_from:
             assert local_port_default_host.socket is None
 
             assert all(map(lambda x: x.location_name, workspace.repository_location_handles))
+        second_server_process.wait()
+    first_server_process.wait()
 
 
 def test_cannot_set_socket_and_port():

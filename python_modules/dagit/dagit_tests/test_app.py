@@ -1,8 +1,6 @@
 import json
-import os
 
 import pytest
-import yaml
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace
 from dagit.cli import host_dagit_ui_with_workspace, ui
@@ -10,7 +8,7 @@ from dagster import seven
 from dagster.cli.workspace.load import load_workspace_from_yaml_paths
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
-from dagster.core.test_utils import environ
+from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.seven import mock
 from dagster.utils import file_relative_path
 
@@ -37,7 +35,7 @@ def test_create_app_with_workspace_and_scheduler():
         [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace:
         with seven.TemporaryDirectory() as temp_dir:
-            instance = DagsterInstance.local_temp(
+            with instance_for_test_tempdir(
                 temp_dir,
                 overrides={
                     "scheduler": {
@@ -46,8 +44,8 @@ def test_create_app_with_workspace_and_scheduler():
                         "config": {"base_dir": temp_dir},
                     }
                 },
-            )
-            assert create_app_from_workspace(workspace, instance)
+            ) as instance:
+                assert create_app_from_workspace(workspace, instance)
 
 
 def test_notebook_view():
@@ -266,11 +264,7 @@ def test_dagit_logs(
     server_mock, caplog,
 ):
     with seven.TemporaryDirectory() as temp_dir:
-        with environ({"DAGSTER_HOME": temp_dir}):
-            with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
-                yaml.dump({}, fd, default_flow_style=False)
-
-            DagsterInstance.local_temp(temp_dir)
+        with instance_for_test_tempdir(temp_dir):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             result = runner.invoke(
                 ui, ["-w", file_relative_path(__file__, "telemetry_repository.yaml"),],

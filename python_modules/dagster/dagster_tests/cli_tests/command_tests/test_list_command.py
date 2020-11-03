@@ -9,7 +9,6 @@ from click import UsageError
 from click.testing import CliRunner
 from dagster import seven
 from dagster.cli.pipeline import execute_list_command, pipeline_list_command
-from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
@@ -57,32 +56,37 @@ def assert_correct_extra_repository_output(result):
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_list_command_grpc_socket():
-    runner = CliRunner()
+    with instance_for_test() as instance:
+        runner = CliRunner()
 
-    with GrpcServerProcess(
-        loadable_target_origin=LoadableTargetOrigin(
-            executable_path=sys.executable,
-            python_file=file_relative_path(__file__, "test_cli_commands.py"),
-            attribute="bar",
-        ),
-    ).create_ephemeral_client() as api_client:
-        execute_list_command(
-            {"grpc_socket": api_client.socket}, no_print, DagsterInstance.local_temp(),
-        )
-        execute_list_command(
-            {"grpc_socket": api_client.socket, "grpc_host": api_client.host},
-            no_print,
-            DagsterInstance.local_temp(),
+        server_process = GrpcServerProcess(
+            loadable_target_origin=LoadableTargetOrigin(
+                executable_path=sys.executable,
+                python_file=file_relative_path(__file__, "test_cli_commands.py"),
+                attribute="bar",
+            ),
         )
 
-        result = runner.invoke(pipeline_list_command, ["--grpc-socket", api_client.socket])
-        assert_correct_bar_repository_output(result)
+        with server_process.create_ephemeral_client() as api_client:
+            execute_list_command(
+                {"grpc_socket": api_client.socket}, no_print, instance,
+            )
+            execute_list_command(
+                {"grpc_socket": api_client.socket, "grpc_host": api_client.host},
+                no_print,
+                instance,
+            )
 
-        result = runner.invoke(
-            pipeline_list_command,
-            ["--grpc-socket", api_client.socket, "--grpc-host", api_client.host],
-        )
-        assert_correct_bar_repository_output(result)
+            result = runner.invoke(pipeline_list_command, ["--grpc-socket", api_client.socket])
+            assert_correct_bar_repository_output(result)
+
+            result = runner.invoke(
+                pipeline_list_command,
+                ["--grpc-socket", api_client.socket, "--grpc-host", api_client.host],
+            )
+            assert_correct_bar_repository_output(result)
+
+        server_process.wait()
 
 
 @pytest.mark.deployed_grpc
@@ -90,15 +94,16 @@ def test_list_command_deployed_grpc():
     runner = CliRunner()
 
     with instance_for_test() as instance:
-        with GrpcServerProcess(
+        server_process = GrpcServerProcess(
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
                 python_file=file_relative_path(__file__, "test_cli_commands.py"),
                 attribute="bar",
             ),
             force_port=True,
-        ).create_ephemeral_client() as api_client:
+        )
 
+        with server_process.create_ephemeral_client() as api_client:
             result = runner.invoke(pipeline_list_command, ["--grpc-port", api_client.port])
             assert_correct_bar_repository_output(result)
 
@@ -128,6 +133,8 @@ def test_list_command_deployed_grpc():
                     no_print,
                     instance,
                 )
+
+        server_process.wait()
 
 
 def test_list_command_cli():

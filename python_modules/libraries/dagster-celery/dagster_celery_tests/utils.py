@@ -5,7 +5,7 @@ import pytest
 from click.testing import CliRunner
 from dagster import execute_pipeline, seven
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 from dagster_celery.cli import main
 
 BUILDKITE = os.getenv("BUILDKITE")
@@ -28,6 +28,15 @@ def tempdir_wrapper(tempdir=None):
 
 
 @contextmanager
+def _instance_wrapper(instance):
+    if instance:
+        yield instance
+    else:
+        with instance_for_test() as instance:
+            yield instance
+
+
+@contextmanager
 def execute_pipeline_on_celery(
     pipeline_name, instance=None, run_config=None, tempdir=None, tags=None, subset=None
 ):
@@ -36,15 +45,15 @@ def execute_pipeline_on_celery(
         pipeline_def = ReconstructablePipeline.for_file(
             REPO_FILE, pipeline_name
         ).subset_for_execution(subset)
-        instance = instance or DagsterInstance.local_temp(tempdir=tempdir)
-        run_config = run_config or {
-            "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
-            "execution": {"celery": {}},
-        }
-        result = execute_pipeline(
-            pipeline_def, run_config=run_config, instance=instance, tags=tags,
-        )
-        yield result
+        with _instance_wrapper(instance) as wrapped_instance:
+            run_config = run_config or {
+                "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                "execution": {"celery": {}},
+            }
+            result = execute_pipeline(
+                pipeline_def, run_config=run_config, instance=wrapped_instance, tags=tags,
+            )
+            yield result
 
 
 @contextmanager

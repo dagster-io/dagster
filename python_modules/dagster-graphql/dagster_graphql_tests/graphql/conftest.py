@@ -1,6 +1,6 @@
 import pytest
 from dagster import seven
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test_tempdir
 
 from .setup import define_test_in_process_context, define_test_out_of_process_context
 
@@ -8,7 +8,7 @@ from .setup import define_test_in_process_context, define_test_out_of_process_co
 @pytest.yield_fixture(scope="function")
 def graphql_context():
     with seven.TemporaryDirectory() as temp_dir:
-        with DagsterInstance.local_temp(
+        with instance_for_test_tempdir(
             temp_dir,
             overrides={
                 "scheduler": {
@@ -25,7 +25,7 @@ def graphql_context():
 @pytest.yield_fixture(scope="function")
 def graphql_in_process_context():
     with seven.TemporaryDirectory() as temp_dir:
-        with DagsterInstance.local_temp(
+        with instance_for_test_tempdir(
             temp_dir,
             overrides={
                 "scheduler": {

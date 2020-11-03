@@ -22,8 +22,8 @@ from dagster.core.events import DagsterEventType
 from dagster.core.events.log import DagsterEventRecord, construct_event_logger
 from dagster.core.execution.api import execute_run
 from dagster.core.execution.stats import StepEventStatus
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.event_log.migration import migrate_asset_key_data
+from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
@@ -53,18 +53,17 @@ def synthesize_events(solids_fn, run_id=None, check_success=True):
     def a_pipe():
         solids_fn()
 
-    instance = DagsterInstance.local_temp()
+    with instance_for_test() as instance:
+        pipeline_run = instance.create_run_for_pipeline(
+            a_pipe, run_id=run_id, run_config={"loggers": {"callback": {}, "console": {}}}
+        )
 
-    pipeline_run = instance.create_run_for_pipeline(
-        a_pipe, run_id=run_id, run_config={"loggers": {"callback": {}, "console": {}}}
-    )
+        result = execute_run(InMemoryPipeline(a_pipe), pipeline_run, instance)
 
-    result = execute_run(InMemoryPipeline(a_pipe), pipeline_run, instance)
+        if check_success:
+            assert result.success
 
-    if check_success:
-        assert result.success
-
-    return events, result
+        return events, result
 
 
 def fetch_all_events(conn_string):
@@ -511,12 +510,13 @@ def test_load_from_config(hostname):
     )
 
     # pylint: disable=protected-access
-    from_url = DagsterInstance.local_temp(overrides=yaml.safe_load(url_cfg))._event_storage
-    from_explicit = DagsterInstance.local_temp(
-        overrides=yaml.safe_load(explicit_cfg)
-    )._event_storage
+    with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
+        from_url = from_url_instance._event_storage
 
-    assert from_url.postgres_url == from_explicit.postgres_url
+        with instance_for_test(overrides=yaml.safe_load(explicit_cfg)) as explicit_instance:
+            from_explicit = explicit_instance._event_storage
+
+            assert from_url.postgres_url == from_explicit.postgres_url
 
 
 def test_asset_materialization(conn_string):

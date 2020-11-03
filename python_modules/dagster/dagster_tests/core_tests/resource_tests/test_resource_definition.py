@@ -23,6 +23,7 @@ from dagster.core.errors import DagsterConfigMappingFunctionError, DagsterInvali
 from dagster.core.events.log import EventRecord, LogMessageRecord, construct_event_logger
 from dagster.core.execution.api import create_execution_plan, execute_plan, execute_run
 from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 
 
 def define_string_resource():
@@ -803,20 +804,21 @@ def define_resource_teardown_failure_pipeline():
 
 
 def test_multiprocessing_resource_teardown_failure():
-    pipeline = reconstructable(define_resource_teardown_failure_pipeline)
-    result = execute_pipeline(
-        pipeline,
-        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
-        instance=DagsterInstance.local_temp(),
-        raise_on_error=False,
-    )
-    assert result.success
-    error_events = [
-        event
-        for event in result.event_list
-        if event.is_engine_event and event.event_specific_data.error
-    ]
-    assert len(error_events) > 1
+    with instance_for_test() as instance:
+        pipeline = reconstructable(define_resource_teardown_failure_pipeline)
+        result = execute_pipeline(
+            pipeline,
+            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+            instance=instance,
+            raise_on_error=False,
+        )
+        assert result.success
+        error_events = [
+            event
+            for event in result.event_list
+            if event.is_engine_event and event.event_specific_data.error
+        ]
+        assert len(error_events) > 1
 
 
 def test_single_step_resource_event_logs():
@@ -851,24 +853,29 @@ def test_single_step_resource_event_logs():
         ],
     )
 
-    instance = DagsterInstance.local_temp()
+    with instance_for_test() as instance:
+        pipeline_run = instance.create_run_for_pipeline(
+            pipeline,
+            run_config={"loggers": {"callback": {}}},
+            step_keys_to_execute=["resource_solid.compute"],
+        )
 
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline,
-        run_config={"loggers": {"callback": {}}},
-        step_keys_to_execute=["resource_solid.compute"],
-    )
+        result = execute_run(InMemoryPipeline(pipeline), pipeline_run, instance)
 
-    result = execute_run(InMemoryPipeline(pipeline), pipeline_run, instance)
+        assert result.success
+        log_messages = [event for event in events if isinstance(event, LogMessageRecord)]
+        assert len(log_messages) == 2
 
-    assert result.success
-    log_messages = [event for event in events if isinstance(event, LogMessageRecord)]
-    assert len(log_messages) == 2
-
-    resource_log_message = next(
-        iter([message for message in log_messages if message.user_message == USER_RESOURCE_MESSAGE])
-    )
-    assert resource_log_message.step_key == "resource_solid.compute"
+        resource_log_message = next(
+            iter(
+                [
+                    message
+                    for message in log_messages
+                    if message.user_message == USER_RESOURCE_MESSAGE
+                ]
+            )
+        )
+        assert resource_log_message.step_key == "resource_solid.compute"
 
 
 def test_configured_with_config():

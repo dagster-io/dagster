@@ -16,7 +16,7 @@ from dagster import (
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterIncompleteExecutionPlanError, DagsterSubprocessError
 from dagster.core.events import DagsterEventType
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.utils import send_interrupt
 from dagster_celery_tests.repo import COMPOSITE_DEPTH
 
@@ -128,54 +128,53 @@ def test_terminate_pipeline_on_celery():
     with seven.TemporaryDirectory() as tempdir:
         pipeline_def = ReconstructablePipeline.for_file(REPO_FILE, "interrupt_pipeline")
 
-        instance = DagsterInstance.local_temp(tempdir=tempdir)
-        run_config = {
-            "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
-            "execution": {"celery": {}},
-        }
+        with instance_for_test_tempdir(tempdir) as instance:
+            run_config = {
+                "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                "execution": {"celery": {}},
+            }
 
-        results = []
-        result_types = []
-        interrupt_thread = None
+            results = []
+            result_types = []
+            interrupt_thread = None
 
-        try:
-            for result in execute_pipeline_iterator(
-                pipeline=pipeline_def, run_config=run_config, instance=instance,
-            ):
-                # Interrupt once the first step starts
-                if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
-                    interrupt_thread = Thread(target=send_interrupt, args=())
-                    interrupt_thread.start()
+            try:
+                for result in execute_pipeline_iterator(
+                    pipeline=pipeline_def, run_config=run_config, instance=instance,
+                ):
+                    # Interrupt once the first step starts
+                    if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
+                        interrupt_thread = Thread(target=send_interrupt, args=())
+                        interrupt_thread.start()
 
-                results.append(result)
-                result_types.append(result.event_type)
+                    results.append(result)
+                    result_types.append(result.event_type)
 
-            assert False
-        except DagsterIncompleteExecutionPlanError:
-            pass
+                assert False
+            except DagsterIncompleteExecutionPlanError:
+                pass
 
-        interrupt_thread.join()
+            interrupt_thread.join()
 
-        # At least one step succeeded (the one that was running when the interrupt fired)
-        assert DagsterEventType.STEP_SUCCESS in result_types
+            # At least one step succeeded (the one that was running when the interrupt fired)
+            assert DagsterEventType.STEP_SUCCESS in result_types
 
-        # At least one step was revoked (and there were no step failure events)
-        revoke_steps = [
-            result
-            for result in results
-            if result.event_type == DagsterEventType.ENGINE_EVENT
-            and "was revoked." in result.message
-        ]
+            # At least one step was revoked (and there were no step failure events)
+            revoke_steps = [
+                result
+                for result in results
+                if result.event_type == DagsterEventType.ENGINE_EVENT
+                and "was revoked." in result.message
+            ]
 
-        assert len(revoke_steps) > 0
+            assert len(revoke_steps) > 0
 
-        # The overall pipeline failed
-        assert DagsterEventType.PIPELINE_FAILURE in result_types
+            # The overall pipeline failed
+            assert DagsterEventType.PIPELINE_FAILURE in result_types
 
 
 def test_execute_eagerly_on_celery():
-    with seven.TemporaryDirectory() as tempdir:
-        instance = DagsterInstance.local_temp(tempdir=tempdir)
+    with instance_for_test() as instance:
         with execute_eagerly_on_celery("test_pipeline", instance=instance) as result:
             assert result.result_for_solid("simple").output_value() == 1
             assert len(result.step_event_list) == 4
@@ -310,32 +309,34 @@ def test_execute_eagerly_retries_pipeline_on_celery():
 def test_bad_broker():
     pass
     # with pytest.raises(check.CheckError) as exc_info:
-    #     event_stream = execute_pipeline_iterator(
-    #         ExecutionTargetHandle.for_pipeline_python_file(
-    #             __file__, 'test_diamond_pipeline'
-    #         ).build_pipeline_definition(),
-    #         run_config={
-    #             'storage': {'filesystem': {}},
-    #             'execution': {'celery': {'config': {'broker': 'notlocal.bad'}}},
-    #         },
-    #         instance=DagsterInstance.local_temp(),
-    #     )
-    #     list(event_stream)
-    # assert 'Must use S3 or GCS storage with non-local Celery' in str(exc_info.value)
+    #     with instance_for_test() as instance:
+    #         event_stream = execute_pipeline_iterator(
+    #             ExecutionTargetHandle.for_pipeline_python_file(
+    #                 __file__, "test_diamond_pipeline"
+    #             ).build_pipeline_definition(),
+    #             run_config={
+    #                 "storage": {"filesystem": {}},
+    #                 "execution": {"celery": {"config": {"broker": "notlocal.bad"}}},
+    #             },
+    #             instance=instance,
+    #         )
+    #         list(event_stream)
+    # assert "Must use S3 or GCS storage with non-local Celery" in str(exc_info.value)
 
 
 def test_engine_error():
     with pytest.raises(DagsterSubprocessError):
         with seven.TemporaryDirectory() as tempdir:
-            storage = os.path.join(tempdir, "flakey_storage")
-            execute_pipeline(
-                ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
-                run_config={
-                    "storage": {"filesystem": {"config": {"base_dir": storage}}},
-                    "execution": {
-                        "celery": {"config": {"config_source": {"task_always_eager": True}}}
+            with instance_for_test_tempdir(tempdir) as instance:
+                storage = os.path.join(tempdir, "flakey_storage")
+                execute_pipeline(
+                    ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
+                    run_config={
+                        "storage": {"filesystem": {"config": {"base_dir": storage}}},
+                        "execution": {
+                            "celery": {"config": {"config_source": {"task_always_eager": True}}}
+                        },
+                        "solids": {"destroy": {"config": storage}},
                     },
-                    "solids": {"destroy": {"config": storage}},
-                },
-                instance=DagsterInstance.local_temp(tempdir=tempdir),
-            )
+                    instance=instance,
+                )

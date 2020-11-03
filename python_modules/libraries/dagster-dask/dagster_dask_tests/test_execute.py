@@ -19,8 +19,11 @@ from dagster import (
 from dagster.core.definitions.executor import default_executors
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import DagsterEventType
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import instance_for_test, nesting_composite_pipeline
+from dagster.core.test_utils import (
+    instance_for_test,
+    instance_for_test_tempdir,
+    nesting_composite_pipeline,
+)
 from dagster.utils import send_interrupt
 from dagster_dask import DataFrame, dask_executor
 from dask.distributed import Scheduler, Worker
@@ -38,15 +41,16 @@ def dask_engine_pipeline():
 
 def test_execute_on_dask_local():
     with seven.TemporaryDirectory() as tempdir:
-        result = execute_pipeline(
-            reconstructable(dask_engine_pipeline),
-            run_config={
-                "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
-                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
-            },
-            instance=DagsterInstance.local_temp(),
-        )
-        assert result.result_for_solid("simple").output_value() == 1
+        with instance_for_test_tempdir(tempdir) as instance:
+            result = execute_pipeline(
+                reconstructable(dask_engine_pipeline),
+                run_config={
+                    "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                    "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                },
+                instance=instance,
+            )
+            assert result.result_for_solid("simple").output_value() == 1
 
 
 def dask_composite_pipeline():
@@ -56,15 +60,16 @@ def dask_composite_pipeline():
 
 
 def test_composite_execute():
-    result = execute_pipeline(
-        reconstructable(dask_composite_pipeline),
-        run_config={
-            "storage": {"filesystem": {}},
-            "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
-        },
-        instance=DagsterInstance.local_temp(),
-    )
-    assert result.success
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(dask_composite_pipeline),
+            run_config={
+                "storage": {"filesystem": {}},
+                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+            },
+            instance=instance,
+        )
+        assert result.success
 
 
 @solid(input_defs=[InputDefinition("df", dagster_pd.DataFrame)])
@@ -86,17 +91,18 @@ def test_pandas_dask():
         }
     }
 
-    result = execute_pipeline(
-        ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
-        run_config={
-            "storage": {"filesystem": {}},
-            "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
-            **run_config,
-        },
-        instance=DagsterInstance.local_temp(),
-    )
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
+            run_config={
+                "storage": {"filesystem": {}},
+                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                **run_config,
+            },
+            instance=instance,
+        )
 
-    assert result.success
+        assert result.success
 
 
 @solid(input_defs=[InputDefinition("df", DataFrame)])
@@ -117,43 +123,46 @@ def test_dask():
             }
         }
     }
+    with instance_for_test() as instance:
 
-    result = execute_pipeline(
-        ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
-        run_config={
-            "storage": {"filesystem": {}},
-            "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
-            **run_config,
-        },
-        instance=DagsterInstance.local_temp(),
-    )
+        result = execute_pipeline(
+            ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
+            run_config={
+                "storage": {"filesystem": {}},
+                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                **run_config,
+            },
+            instance=instance,
+        )
 
     assert result.success
 
 
 def test_execute_on_dask_local_with_intermediate_storage():
     with seven.TemporaryDirectory() as tempdir:
-        result = execute_pipeline(
-            reconstructable(dask_engine_pipeline),
-            run_config={
-                "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
-                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
-            },
-            instance=DagsterInstance.local_temp(),
-        )
-        assert result.result_for_solid("simple").output_value() == 1
+        with instance_for_test_tempdir(tempdir) as instance:
+            result = execute_pipeline(
+                reconstructable(dask_engine_pipeline),
+                run_config={
+                    "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                    "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                },
+                instance=instance,
+            )
+            assert result.result_for_solid("simple").output_value() == 1
 
 
 def test_execute_on_dask_local_with_default_storage():
     with pytest.raises(DagsterUnmetExecutorRequirementsError):
-        result = execute_pipeline(
-            reconstructable(dask_engine_pipeline),
-            run_config={
-                "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
-            },
-            instance=DagsterInstance.local_temp(),
-        )
-        assert result.result_for_solid("simple").output_value() == 1
+        with instance_for_test() as instance:
+            result = execute_pipeline(
+                reconstructable(dask_engine_pipeline),
+                run_config={
+                    "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+                },
+                instance=instance,
+            )
+            assert result.result_for_solid("simple").output_value() == 1
 
 
 @solid(input_defs=[InputDefinition("df", DataFrame)])
@@ -182,30 +191,31 @@ def test_dask_terminate():
     interrupt_thread = None
     result_types = []
 
-    try:
-        for result in execute_pipeline_iterator(
-            pipeline=ReconstructablePipeline.for_file(__file__, sleepy_dask_pipeline.name),
-            run_config=run_config,
-            instance=DagsterInstance.local_temp(),
-        ):
-            # Interrupt once the first step starts
-            if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
-                interrupt_thread = Thread(target=send_interrupt, args=())
-                interrupt_thread.start()
+    with instance_for_test() as instance:
+        try:
+            for result in execute_pipeline_iterator(
+                pipeline=ReconstructablePipeline.for_file(__file__, sleepy_dask_pipeline.name),
+                run_config=run_config,
+                instance=instance,
+            ):
+                # Interrupt once the first step starts
+                if result.event_type == DagsterEventType.STEP_START and not interrupt_thread:
+                    interrupt_thread = Thread(target=send_interrupt, args=())
+                    interrupt_thread.start()
 
-            if result.event_type == DagsterEventType.STEP_FAILURE:
-                assert "KeyboardInterrupt" in result.event_specific_data.error.message
+                if result.event_type == DagsterEventType.STEP_FAILURE:
+                    assert "KeyboardInterrupt" in result.event_specific_data.error.message
 
-            result_types.append(result.event_type)
+                result_types.append(result.event_type)
 
-        assert False
-    except KeyboardInterrupt:
-        pass
+            assert False
+        except KeyboardInterrupt:
+            pass
 
-    interrupt_thread.join()
+        interrupt_thread.join()
 
-    assert DagsterEventType.STEP_FAILURE in result_types
-    assert DagsterEventType.PIPELINE_FAILURE in result_types
+        assert DagsterEventType.STEP_FAILURE in result_types
+        assert DagsterEventType.PIPELINE_FAILURE in result_types
 
 
 def test_existing_scheduler():

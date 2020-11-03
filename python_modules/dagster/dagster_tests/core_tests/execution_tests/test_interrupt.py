@@ -17,7 +17,7 @@ from dagster import (
     seven,
     solid,
 )
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.utils import (
     check_received_delayed_interrupt,
     delay_interrupts,
@@ -93,40 +93,44 @@ def test_single_proc_interrupt():
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
 def test_interrupt_multiproc():
     with seven.TemporaryDirectory() as tempdir:
-        file_1 = os.path.join(tempdir, "file_1")
-        file_2 = os.path.join(tempdir, "file_2")
-        file_3 = os.path.join(tempdir, "file_3")
-        file_4 = os.path.join(tempdir, "file_4")
+        with instance_for_test_tempdir(tempdir) as instance:
 
-        # launch a thread that waits until the file is written to launch an interrupt
-        Thread(target=_send_kbd_int, args=([file_1, file_2, file_3, file_4],)).start()
+            file_1 = os.path.join(tempdir, "file_1")
+            file_2 = os.path.join(tempdir, "file_2")
+            file_3 = os.path.join(tempdir, "file_3")
+            file_4 = os.path.join(tempdir, "file_4")
 
-        results = []
-        try:
-            # launch a pipeline that writes a file and loops infinitely
-            # next time the launched thread wakes up it will send a keyboard
-            # interrupt
-            for result in execute_pipeline_iterator(
-                reconstructable(write_files_pipeline),
-                run_config={
-                    "solids": {
-                        "write_1": {"config": {"tempfile": file_1}},
-                        "write_2": {"config": {"tempfile": file_2}},
-                        "write_3": {"config": {"tempfile": file_3}},
-                        "write_4": {"config": {"tempfile": file_4}},
+            # launch a thread that waits until the file is written to launch an interrupt
+            Thread(target=_send_kbd_int, args=([file_1, file_2, file_3, file_4],)).start()
+
+            results = []
+            try:
+                # launch a pipeline that writes a file and loops infinitely
+                # next time the launched thread wakes up it will send a keyboard
+                # interrupt
+                for result in execute_pipeline_iterator(
+                    reconstructable(write_files_pipeline),
+                    run_config={
+                        "solids": {
+                            "write_1": {"config": {"tempfile": file_1}},
+                            "write_2": {"config": {"tempfile": file_2}},
+                            "write_3": {"config": {"tempfile": file_3}},
+                            "write_4": {"config": {"tempfile": file_4}},
+                        },
+                        "execution": {"multiprocess": {"config": {"max_concurrent": 4}}},
+                        "storage": {"filesystem": {}},
                     },
-                    "execution": {"multiprocess": {"config": {"max_concurrent": 4}}},
-                    "storage": {"filesystem": {}},
-                },
-                instance=DagsterInstance.local_temp(tempdir=tempdir),
-            ):
-                results.append(result)
-            assert False  # should never reach
-        except (DagsterSubprocessError, KeyboardInterrupt):
-            pass
+                    instance=instance,
+                ):
+                    results.append(result)
+                assert False  # should never reach
+            except (DagsterSubprocessError, KeyboardInterrupt):
+                pass
 
-        assert [result.event_type for result in results].count(DagsterEventType.STEP_FAILURE) == 4
-        assert DagsterEventType.PIPELINE_FAILURE in [result.event_type for result in results]
+            assert [result.event_type for result in results].count(
+                DagsterEventType.STEP_FAILURE
+            ) == 4
+            assert DagsterEventType.PIPELINE_FAILURE in [result.event_type for result in results]
 
 
 def test_interrupt_resource_teardown():

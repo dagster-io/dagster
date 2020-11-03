@@ -1,37 +1,30 @@
-from dagster import DagsterInstance, seven
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.test_utils import create_run_for_test
+from dagster.core.test_utils import create_run_for_test, instance_for_test
 
 from .setup import get_main_external_repo
 
 
 def test_sync_run_launcher_from_configurable_class():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance_no_hijack = DagsterInstance.local_temp(
-            temp_dir,
-            overrides={
-                "run_launcher": {
-                    "module": "dagster.core.launcher.sync_in_memory_run_launcher",
-                    "class": "SyncInMemoryRunLauncher",
-                }
-            },
-        )
-
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                "class": "SyncInMemoryRunLauncher",
+            }
+        },
+    ) as instance_no_hijack:
         assert isinstance(instance_no_hijack.run_launcher, SyncInMemoryRunLauncher)
 
 
 def test_sync_run_launcher_run():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(
-            temp_dir,
-            overrides={
-                "run_launcher": {
-                    "module": "dagster.core.launcher.sync_in_memory_run_launcher",
-                    "class": "SyncInMemoryRunLauncher",
-                }
-            },
-        )
-
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster.core.launcher.sync_in_memory_run_launcher",
+                "class": "SyncInMemoryRunLauncher",
+            }
+        },
+    ) as instance:
         external_repo = get_main_external_repo()
         external_pipeline = external_repo.get_full_external_pipeline("noop_pipeline")
 

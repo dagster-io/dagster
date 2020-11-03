@@ -1,7 +1,9 @@
 import pytest
 import sqlalchemy as db
 import yaml
-from dagster.core.instance import DagsterInstance
+from dagster import seven
+from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.test_utils import instance_for_test
 from dagster_postgres.utils import get_conn
 
 
@@ -44,10 +46,15 @@ def full_pg_config(hostname):
 def test_connection_leak(hostname, conn_string):
     num_instances = 20
 
+    tempdir = seven.TemporaryDirectory()
     copies = []
     for _ in range(num_instances):
         copies.append(
-            DagsterInstance.local_temp(overrides=yaml.safe_load(full_pg_config(hostname)))
+            DagsterInstance.from_ref(
+                InstanceRef.from_dir(
+                    tempdir.name, overrides=yaml.safe_load(full_pg_config(hostname))
+                )
+            )
         )
 
     with get_conn(conn_string).cursor() as curs:
@@ -59,9 +66,14 @@ def test_connection_leak(hostname, conn_string):
     # with number of instances
     assert res[0][0] < num_instances
 
+    for copy in copies:
+        copy.dispose()
+
+    tempdir.cleanup()
+
 
 def test_statement_timeouts(hostname):
-    with DagsterInstance.local_temp(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
+    with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
         instance.optimize_for_dagit(statement_timeout=500)  # 500ms
 
         # ensure migration error is not raised by being up to date

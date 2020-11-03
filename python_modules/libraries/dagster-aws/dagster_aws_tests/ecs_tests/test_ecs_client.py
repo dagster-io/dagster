@@ -2,7 +2,7 @@ import os
 
 import boto3
 import pytest
-from dagster import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 from dagster_aws.ecs import client
 from moto import mock_ecs, mock_logs
 
@@ -162,8 +162,9 @@ def test_one_run():
 
 
 def test_ecs_run_launcher_inits():
-    DagsterInstance.local_temp(
+    with instance_for_test(
         overrides={
             "run_launcher": {"module": "dagster_aws.ecs.launcher", "class": "ECSRunLauncher"}
         }
-    )
+    ):
+        pass

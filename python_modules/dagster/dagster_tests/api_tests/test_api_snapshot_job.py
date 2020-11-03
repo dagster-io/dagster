@@ -1,18 +1,16 @@
-from dagster import seven
 from dagster.api.snapshot_job import sync_get_external_job_params_ephemeral_grpc
 from dagster.core.host_representation import (
     ExternalExecutionParamsData,
     ExternalExecutionParamsErrorData,
 )
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 
 from .utils import get_bar_repo_handle
 
 
 def test_external_job_error():
-    with get_bar_repo_handle() as repository_handle:
-        with seven.TemporaryDirectory() as temp_dir:
-            instance = DagsterInstance.local_temp(temp_dir)
+    with instance_for_test() as instance:
+        with get_bar_repo_handle() as repository_handle:
             result = sync_get_external_job_params_ephemeral_grpc(
                 instance, repository_handle, "job_error"
             )
@@ -21,9 +19,8 @@ def test_external_job_error():
 
 
 def test_external_job_grpc():
-    with get_bar_repo_handle() as repository_handle:
-        with seven.TemporaryDirectory() as temp_dir:
-            instance = DagsterInstance.local_temp(temp_dir)
+    with instance_for_test() as instance:
+        with get_bar_repo_handle() as repository_handle:
             result = sync_get_external_job_params_ephemeral_grpc(
                 instance, repository_handle, "job_foo"
             )

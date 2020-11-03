@@ -10,7 +10,12 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster.core.test_utils import (
+    create_run_for_test,
+    environ,
+    instance_for_test,
+    instance_for_test_tempdir,
+)
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
@@ -38,11 +43,13 @@ def do_test_single_write_read(instance):
 
 
 def test_filesystem_persist_one_run(tmpdir):
-    do_test_single_write_read(DagsterInstance.local_temp(str(tmpdir)))
+    with instance_for_test_tempdir(str(tmpdir)) as instance:
+        do_test_single_write_read(instance)
 
 
 def test_in_memory_persist_one_run():
-    do_test_single_write_read(DagsterInstance.ephemeral())
+    with DagsterInstance.ephemeral() as instance:
+        do_test_single_write_read(instance)
 
 
 def test_create_pipeline_snapshot():
@@ -54,16 +61,15 @@ def test_create_pipeline_snapshot():
     def noop_pipeline():
         noop_solid()
 
-    instance = DagsterInstance.local_temp()
+    with instance_for_test() as instance:
+        result = execute_pipeline(noop_pipeline, instance=instance)
+        assert result.success
 
-    result = execute_pipeline(noop_pipeline, instance=instance)
-    assert result.success
+        run = instance.get_run_by_id(result.run_id)
 
-    run = instance.get_run_by_id(result.run_id)
-
-    assert run.pipeline_snapshot_id == create_pipeline_snapshot_id(
-        noop_pipeline.get_pipeline_snapshot()
-    )
+        assert run.pipeline_snapshot_id == create_pipeline_snapshot_id(
+            noop_pipeline.get_pipeline_snapshot()
+        )
 
 
 def test_create_execution_plan_snapshot():
@@ -75,46 +81,45 @@ def test_create_execution_plan_snapshot():
     def noop_pipeline():
         noop_solid()
 
-    instance = DagsterInstance.local_temp()
+    with instance_for_test() as instance:
+        execution_plan = create_execution_plan(noop_pipeline)
 
-    execution_plan = create_execution_plan(noop_pipeline)
+        ep_snapshot = snapshot_from_execution_plan(
+            execution_plan, noop_pipeline.get_pipeline_snapshot_id()
+        )
+        ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
 
-    ep_snapshot = snapshot_from_execution_plan(
-        execution_plan, noop_pipeline.get_pipeline_snapshot_id()
-    )
-    ep_snapshot_id = create_execution_plan_snapshot_id(ep_snapshot)
+        result = execute_pipeline(noop_pipeline, instance=instance)
+        assert result.success
 
-    result = execute_pipeline(noop_pipeline, instance=instance)
-    assert result.success
+        run = instance.get_run_by_id(result.run_id)
 
-    run = instance.get_run_by_id(result.run_id)
-
-    assert run.execution_plan_snapshot_id == ep_snapshot_id
-    assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)
+        assert run.execution_plan_snapshot_id == ep_snapshot_id
+        assert run.execution_plan_snapshot_id == create_execution_plan_snapshot_id(ep_snapshot)
 
 
 def test_submit_run():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        instance = DagsterInstance.local_temp(
-            overrides={
-                "run_coordinator": {
-                    "module": "dagster.core.test_utils",
-                    "class": "MockedRunCoordinator",
-                }
-            },
-        )
+    with instance_for_test(
+        overrides={
+            "run_coordinator": {
+                "module": "dagster.core.test_utils",
+                "class": "MockedRunCoordinator",
+            }
+        }
+    ) as instance:
+        with get_foo_pipeline_handle() as pipeline_handle:
 
-        run = create_run_for_test(
-            instance=instance,
-            pipeline_name=pipeline_handle.pipeline_name,
-            run_id="foo-bar",
-            external_pipeline_origin=pipeline_handle.get_external_origin(),
-        )
+            run = create_run_for_test(
+                instance=instance,
+                pipeline_name=pipeline_handle.pipeline_name,
+                run_id="foo-bar",
+                external_pipeline_origin=pipeline_handle.get_external_origin(),
+            )
 
-        instance.submit_run(run.run_id, None)
+            instance.submit_run(run.run_id, None)
 
-        assert len(instance.run_coordinator.queue()) == 1
-        assert instance.run_coordinator.queue()[0].run_id == "foo-bar"
+            assert len(instance.run_coordinator.queue()) == 1
+            assert instance.run_coordinator.queue()[0].run_id == "foo-bar"
 
 
 def test_dagster_home_not_set():

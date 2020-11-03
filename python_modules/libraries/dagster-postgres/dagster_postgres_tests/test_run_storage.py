@@ -1,9 +1,8 @@
 import pytest
 import yaml
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
-from dagster.core.test_utils import environ
+from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.utils.test.run_storage import TestRunStorage
 
@@ -148,11 +147,16 @@ def test_load_from_config(hostname):
         )
 
         # pylint: disable=protected-access
-        from_url = DagsterInstance.local_temp(overrides=yaml.safe_load(url_cfg))._run_storage
-        from_explicit = DagsterInstance.local_temp(
-            overrides=yaml.safe_load(explicit_cfg)
-        )._run_storage
-        from_env = DagsterInstance.local_temp(overrides=yaml.safe_load(env_cfg))._run_storage
-
-        assert from_url.postgres_url == from_explicit.postgres_url
-        assert from_url.postgres_url == from_env.postgres_url
+        with instance_for_test(overrides=yaml.safe_load(url_cfg)) as from_url_instance:
+            with instance_for_test(
+                overrides=yaml.safe_load(explicit_cfg)
+            ) as from_explicit_instance:
+                assert (
+                    from_url_instance._run_storage.postgres_url
+                    == from_explicit_instance._run_storage.postgres_url
+                )
+            with instance_for_test(overrides=yaml.safe_load(env_cfg)) as from_env_instance:
+                assert (
+                    from_url_instance._run_storage.postgres_url
+                    == from_env_instance._run_storage.postgres_url
+                )

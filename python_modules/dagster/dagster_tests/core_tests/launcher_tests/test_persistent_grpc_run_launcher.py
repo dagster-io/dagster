@@ -10,7 +10,6 @@ from dagster.core.host_representation import (
 )
 from dagster.core.host_representation.handle import RepositoryLocationHandle
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
-from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import GRPC_INFO_TAG
 from dagster.core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
@@ -25,9 +24,7 @@ from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
 
 
 def test_run_always_finishes():  # pylint: disable=redefined-outer-name
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
-
+    with instance_for_test() as instance:
         pipeline_run = instance.create_run_for_pipeline(pipeline_def=slow_pipeline, run_config=None)
         run_id = pipeline_run.run_id
 

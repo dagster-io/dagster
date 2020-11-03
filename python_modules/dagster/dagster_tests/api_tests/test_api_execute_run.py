@@ -1,14 +1,12 @@
-from dagster import seven
 from dagster.api.execute_run import sync_execute_run_grpc
-from dagster.core.instance import DagsterInstance
+from dagster.core.test_utils import instance_for_test
 from dagster.grpc.server import GrpcServerProcess
 
 from .utils import get_foo_grpc_pipeline_handle, get_foo_pipeline_handle
 
 
 def test_execute_run_api_grpc_server_handle():
-    with seven.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
+    with instance_for_test() as instance:
         with get_foo_grpc_pipeline_handle() as pipeline_handle:
             pipeline_run = instance.create_run(
                 pipeline_name="foo",
@@ -58,9 +56,8 @@ def test_execute_run_api_grpc_server_handle():
 
 
 def test_execute_run_api_grpc_python_handle():
-    with get_foo_pipeline_handle() as pipeline_handle:
-        with seven.TemporaryDirectory() as temp_dir:
-            instance = DagsterInstance.local_temp(temp_dir)
+    with instance_for_test() as instance:
+        with get_foo_pipeline_handle() as pipeline_handle:
             pipeline_run = instance.create_run(
                 pipeline_name="foo",
                 run_id=None,
@@ -81,9 +78,8 @@ def test_execute_run_api_grpc_python_handle():
                 pipeline_handle.get_external_origin().external_repository_origin.repository_location_origin.loadable_target_origin
             )
 
-            with GrpcServerProcess(
-                loadable_target_origin, max_workers=2
-            ).create_ephemeral_client() as api_client:
+            server_process = GrpcServerProcess(loadable_target_origin, max_workers=2)
+            with server_process.create_ephemeral_client() as api_client:
                 events = [
                     event
                     for event in sync_execute_run_grpc(
@@ -114,3 +110,4 @@ def test_execute_run_api_grpc_python_handle():
                     "PIPELINE_SUCCESS",
                     "ENGINE_EVENT",
                 ]
+            server_process.wait()
