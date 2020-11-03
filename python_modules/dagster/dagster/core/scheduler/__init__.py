@@ -5,7 +5,7 @@ from .execution import (
     ScheduledExecutionSuccess,
 )
 from .scheduler import (
-    DagsterCommandLineScheduler,
+    DagsterDaemonScheduler,
     DagsterScheduleDoesNotExist,
     DagsterScheduleReconciliationError,
     DagsterSchedulerError,

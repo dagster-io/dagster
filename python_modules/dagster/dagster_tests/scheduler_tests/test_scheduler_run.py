@@ -8,7 +8,6 @@ import pendulum
 import pytest
 from dagster import DagsterEventType, daily_schedule, hourly_schedule, pipeline, repository, solid
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
@@ -19,7 +18,8 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFil
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.scheduler.scheduler import get_default_scheduler_logger, launch_scheduled_runs
+from dagster.daemon import get_default_daemon_logger
+from dagster.scheduler.scheduler import launch_scheduled_runs
 from dagster.utils import merge_dicts
 from dagster.utils.partitions import DEFAULT_DATE_FORMAT
 
@@ -209,12 +209,16 @@ def schedule_instance(overrides=None):
             {
                 "scheduler": {
                     "module": "dagster.core.scheduler",
-                    "class": "DagsterCommandLineScheduler",
+                    "class": "DagsterDaemonScheduler",
                 },
             },
             (overrides if overrides else {}),
         )
     )
+
+
+def logger():
+    return get_default_daemon_logger("SchedulerDaemon")
 
 
 @contextmanager
@@ -294,14 +298,6 @@ def wait_for_all_runs_to_start(instance, timeout=10):
             break
 
 
-def test_with_incorrect_scheduler():
-    with instance_for_test() as instance:
-        with pytest.raises(DagsterInvariantViolationError):
-            launch_scheduled_runs(
-                instance, get_default_scheduler_logger(), pendulum.now("UTC"),
-            )
-
-
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_simple_schedule(external_repo_context, capfd):
     freeze_datetime = pendulum.datetime(
@@ -321,7 +317,7 @@ def test_simple_schedule(external_repo_context, capfd):
 
             # launch_scheduled_runs does nothing before the first tick
             launch_scheduled_runs(
-                instance, get_default_scheduler_logger(), pendulum.now("UTC"),
+                instance, logger(), pendulum.now("UTC"),
             )
             assert instance.get_runs_count() == 0
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
@@ -331,15 +327,15 @@ def test_simple_schedule(external_repo_context, capfd):
 
             assert (
                 captured.out
-                == """2019-02-27 17:59:59 - dagster-scheduler - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-27 17:59:59 - dagster-scheduler - INFO - No new runs for simple_schedule
+                == """2019-02-27 17:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-27 17:59:59 - SchedulerDaemon - INFO - No new runs for simple_schedule
 """
             )
 
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
             launch_scheduled_runs(
-                instance, get_default_scheduler_logger(), pendulum.now("UTC"),
+                instance, logger(), pendulum.now("UTC"),
             )
 
             assert instance.get_runs_count() == 1
@@ -367,9 +363,9 @@ def test_simple_schedule(external_repo_context, capfd):
 
             assert (
                 captured.out
-                == """2019-02-27 18:00:01 - dagster-scheduler - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-27 18:00:01 - dagster-scheduler - INFO - Launching run for simple_schedule at 2019-02-28 00:00:00+0000
-2019-02-27 18:00:01 - dagster-scheduler - INFO - Completed scheduled launch of run {run_id} for simple_schedule
+                == """2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-28 00:00:00+0000
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule
 """.format(
                     run_id=instance.get_runs()[0].run_id
                 )
@@ -377,7 +373,7 @@ def test_simple_schedule(external_repo_context, capfd):
 
             # Verify idempotence
             launch_scheduled_runs(
-                instance, get_default_scheduler_logger(), pendulum.now("UTC"),
+                instance, logger(), pendulum.now("UTC"),
             )
             assert instance.get_runs_count() == 1
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
@@ -388,7 +384,7 @@ def test_simple_schedule(external_repo_context, capfd):
         freeze_datetime = freeze_datetime.add(seconds=2)
         with pendulum.test(freeze_datetime):
             launch_scheduled_runs(
-                instance, get_default_scheduler_logger(), pendulum.now("UTC"),
+                instance, logger(), pendulum.now("UTC"),
             )
             assert instance.get_runs_count() == 1
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
@@ -401,7 +397,7 @@ def test_simple_schedule(external_repo_context, capfd):
 
             # Traveling two more days in the future before running results in two new ticks
             launch_scheduled_runs(
-                instance, get_default_scheduler_logger(), pendulum.now("UTC"),
+                instance, logger(), pendulum.now("UTC"),
             )
             assert instance.get_runs_count() == 3
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
@@ -417,10 +413,10 @@ def test_simple_schedule(external_repo_context, capfd):
 
             assert (
                 captured.out
-                == """2019-03-01 18:00:03 - dagster-scheduler - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-03-01 18:00:03 - dagster-scheduler - INFO - Launching 2 runs for simple_schedule at the following times: 2019-03-01 00:00:00+0000, 2019-03-02 00:00:00+0000
-2019-03-01 18:00:03 - dagster-scheduler - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
-2019-03-01 18:00:03 - dagster-scheduler - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule
+                == """2019-03-01 18:00:03 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-03-01 18:00:03 - SchedulerDaemon - INFO - Launching 2 runs for simple_schedule at the following times: 2019-03-01 00:00:00+0000, 2019-03-02 00:00:00+0000
+2019-03-01 18:00:03 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
+2019-03-01 18:00:03 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule
 """.format(
                     first_run_id=instance.get_runs()[1].run_id,
                     second_run_id=instance.get_runs()[0].run_id,
@@ -428,7 +424,7 @@ def test_simple_schedule(external_repo_context, capfd):
             )
 
             # Check idempotence again
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
             assert instance.get_runs_count() == 3
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
             assert len(ticks) == 3
@@ -440,7 +436,7 @@ def test_no_started_schedules(external_repo_context, capfd):
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         schedule_origin = external_schedule.get_origin()
 
-        launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+        launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
         assert instance.get_runs_count() == 0
 
         ticks = instance.get_schedule_ticks(schedule_origin.get_id())
@@ -462,7 +458,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
 
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 0
 
@@ -479,7 +475,7 @@ def test_schedule_without_timezone(external_repo_context, capfd):
 
         initial_datetime = initial_datetime.add(days=1)
         with pendulum.test(initial_datetime):
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
             assert instance.get_runs_count() == 0
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
             assert len(ticks) == 0
@@ -494,7 +490,7 @@ def test_bad_env_fn(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
@@ -531,7 +527,7 @@ def test_bad_should_execute(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
@@ -571,7 +567,7 @@ def test_skip(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
@@ -583,9 +579,9 @@ def test_skip(external_repo_context, capfd):
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-02-26 18:00:00 - dagster-scheduler - INFO - Checking for new runs for the following schedules: skip_schedule
-2019-02-26 18:00:00 - dagster-scheduler - INFO - Launching run for skip_schedule at 2019-02-27 00:00:00+0000
-2019-02-26 18:00:00 - dagster-scheduler - INFO - should_execute returned False for skip_schedule, skipping
+                == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: skip_schedule
+2019-02-26 18:00:00 - SchedulerDaemon - INFO - Launching run for skip_schedule at 2019-02-27 00:00:00+0000
+2019-02-26 18:00:00 - SchedulerDaemon - INFO - should_execute returned False for skip_schedule, skipping
 """
             )
 
@@ -599,7 +595,7 @@ def test_wrong_config(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 1
 
@@ -680,7 +676,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             )
             instance.add_schedule_state(unloadable_schedule_state)
 
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 1
             wait_for_all_runs_to_start(instance)
@@ -720,7 +716,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
         initial_datetime = initial_datetime.add(days=1)
         with pendulum.test(initial_datetime):
             new_now = pendulum.now("UTC")
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), new_now)
+            launch_scheduled_runs(instance, logger(), new_now)
 
             assert instance.get_runs_count() == 3
             wait_for_all_runs_to_start(instance)
@@ -786,7 +782,7 @@ def test_run_scheduled_on_time_boundary(external_repo_context):
             # Start schedule exactly at midnight
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 1
             ticks = instance.get_schedule_ticks(schedule_origin.get_id())
@@ -808,7 +804,7 @@ def test_bad_load(capfd):
 
         initial_datetime = initial_datetime.add(seconds=1)
         with pendulum.test(initial_datetime):
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 0
 
@@ -822,7 +818,7 @@ def test_bad_load(capfd):
 
         initial_datetime = initial_datetime.add(days=1)
         with pendulum.test(initial_datetime):
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
             assert instance.get_runs_count() == 0
             ticks = instance.get_schedule_ticks(fake_origin.get_id())
             assert len(ticks) == 0
@@ -843,7 +839,7 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
         initial_datetime = initial_datetime.add(seconds=2)
         with pendulum.test(initial_datetime):
             launch_scheduled_runs(
-                instance, get_default_scheduler_logger(), pendulum.now("UTC"),
+                instance, logger(), pendulum.now("UTC"),
             )
 
             assert instance.get_runs_count() == 2
@@ -859,11 +855,11 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
             assert (
                 captured.out
-                == """2019-02-27 18:00:01 - dagster-scheduler - INFO - Checking for new runs for the following schedules: simple_hourly_schedule, simple_schedule
-2019-02-27 18:00:01 - dagster-scheduler - INFO - Launching run for simple_hourly_schedule at 2019-02-28 00:00:00+0000
-2019-02-27 18:00:01 - dagster-scheduler - INFO - Completed scheduled launch of run {first_run_id} for simple_hourly_schedule
-2019-02-27 18:00:01 - dagster-scheduler - INFO - Launching run for simple_schedule at 2019-02-28 00:00:00+0000
-2019-02-27 18:00:01 - dagster-scheduler - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule
+                == """2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_hourly_schedule, simple_schedule
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Launching run for simple_hourly_schedule at 2019-02-28 00:00:00+0000
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_hourly_schedule
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-28 00:00:00+0000
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule
 """.format(
                     first_run_id=instance.get_runs()[1].run_id,
                     second_run_id=instance.get_runs()[0].run_id,
@@ -872,7 +868,7 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
 
         initial_datetime = initial_datetime.add(hours=1)
         with pendulum.test(initial_datetime):
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 3
 
@@ -890,10 +886,10 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-02-27 19:00:01 - dagster-scheduler - INFO - Checking for new runs for the following schedules: simple_hourly_schedule, simple_schedule
-2019-02-27 19:00:01 - dagster-scheduler - INFO - Launching run for simple_hourly_schedule at 2019-02-28 01:00:00+0000
-2019-02-27 19:00:01 - dagster-scheduler - INFO - Completed scheduled launch of run {third_run_id} for simple_hourly_schedule
-2019-02-27 19:00:01 - dagster-scheduler - INFO - No new runs for simple_schedule
+                == """2019-02-27 19:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_hourly_schedule, simple_schedule
+2019-02-27 19:00:01 - SchedulerDaemon - INFO - Launching run for simple_hourly_schedule at 2019-02-28 01:00:00+0000
+2019-02-27 19:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {third_run_id} for simple_hourly_schedule
+2019-02-27 19:00:01 - SchedulerDaemon - INFO - No new runs for simple_schedule
 """.format(
                     third_run_id=instance.get_runs()[0].run_id
                 )
@@ -918,7 +914,7 @@ def test_launch_failure(external_repo_context, capfd):
         with pendulum.test(initial_datetime):
             instance.start_schedule_and_update_storage_state(external_schedule)
 
-            launch_scheduled_runs(instance, get_default_scheduler_logger(), pendulum.now("UTC"))
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
 
             assert instance.get_runs_count() == 1
 
@@ -944,9 +940,9 @@ def test_launch_failure(external_repo_context, capfd):
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-02-26 18:00:00 - dagster-scheduler - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:00:00 - dagster-scheduler - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
-2019-02-26 18:00:00 - dagster-scheduler - ERROR - Run {run_id} created successfully but failed to launch.
+                == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-26 18:00:00 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
+2019-02-26 18:00:00 - SchedulerDaemon - ERROR - Run {run_id} created successfully but failed to launch.
 """.format(
                     run_id=instance.get_runs()[0].run_id
                 )
@@ -967,7 +963,7 @@ def test_max_catchup_runs(capfd):
         with pendulum.test(initial_datetime):
             # Day is now March 4 at 11:59PM
             launch_scheduled_runs(
-                instance, get_default_scheduler_logger(), pendulum.now("UTC"), max_catchup_runs=2,
+                instance, logger(), pendulum.now("UTC"), max_catchup_runs=2,
             )
 
             assert instance.get_runs_count() == 2
@@ -1010,11 +1006,11 @@ def test_max_catchup_runs(capfd):
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-03-04 17:59:59 - dagster-scheduler - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-03-04 17:59:59 - dagster-scheduler - WARNING - simple_schedule has fallen behind, only launching 2 runs
-2019-03-04 17:59:59 - dagster-scheduler - INFO - Launching 2 runs for simple_schedule at the following times: 2019-03-03 00:00:00+0000, 2019-03-04 00:00:00+0000
-2019-03-04 17:59:59 - dagster-scheduler - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
-2019-03-04 17:59:59 - dagster-scheduler - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule
+                == """2019-03-04 17:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-03-04 17:59:59 - SchedulerDaemon - WARNING - simple_schedule has fallen behind, only launching 2 runs
+2019-03-04 17:59:59 - SchedulerDaemon - INFO - Launching 2 runs for simple_schedule at the following times: 2019-03-03 00:00:00+0000, 2019-03-04 00:00:00+0000
+2019-03-04 17:59:59 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
+2019-03-04 17:59:59 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule
 """.format(
                     first_run_id=instance.get_runs()[1].run_id,
                     second_run_id=instance.get_runs()[0].run_id,

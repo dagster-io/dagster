@@ -248,6 +248,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-cli_command_cli_api_tests",
             "-cli_command_grpc_tests",
             "-core_tests",
+            "-daemon_tests",
             "-general_tests",
             "-scheduler_tests",
         ],

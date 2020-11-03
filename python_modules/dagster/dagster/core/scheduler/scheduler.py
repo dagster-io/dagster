@@ -6,6 +6,8 @@ from enum import Enum
 
 import six
 from dagster import check
+from dagster.config import Field
+from dagster.config.source import IntSource
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.instance import DagsterInstance
@@ -429,12 +431,13 @@ class Scheduler(six.with_metaclass(abc.ABCMeta)):
         """
 
 
-class DagsterCommandLineScheduler(Scheduler, ConfigurableClass):
+class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     """Scheduler implementation that launches runs from the `dagster scheduler run`
     long-lived process.
     """
 
-    def __init__(self, inst_data=None):
+    def __init__(self, max_catchup_runs=None, inst_data=None):
+        self.max_catchup_runs = check.opt_int_param(max_catchup_runs, "max_catchup_runs", 5)
         self._inst_data = inst_data
 
     @property
@@ -443,11 +446,13 @@ class DagsterCommandLineScheduler(Scheduler, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        return {}
+        return {"max_catchup_runs": Field(IntSource, is_required=False)}
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return DagsterCommandLineScheduler(inst_data=inst_data,)
+        return DagsterDaemonScheduler(
+            inst_data=inst_data, max_catchup_runs=config_value.get("max_catchup_runs")
+        )
 
     def debug_info(self):
         return ""

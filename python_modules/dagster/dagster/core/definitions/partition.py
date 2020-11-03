@@ -209,7 +209,7 @@ class PartitionSetDefinition(
             Partition): A partition selector for the schedule.
             environment_vars (Optional[dict]): The environment variables to set for the schedule.
             execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-                with DagsterCommandLineScheduler, and must be set when using that scheduler.
+                with DagsterDaemonScheduler, and must be set when using that scheduler.
 
         Returns:
             ScheduleDefinition: The generated ScheduleDefinition for the partition selector

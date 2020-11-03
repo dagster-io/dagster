@@ -1,14 +1,12 @@
 import datetime
-import logging
 import os
 import sys
 import time
 
-import click
 import pendulum
 from croniter import croniter
 from dagster import check
-from dagster.core.errors import DagsterInvariantViolationError, DagsterSubprocessError
+from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.host_representation import (
     ExternalPipeline,
@@ -19,7 +17,6 @@ from dagster.core.host_representation import (
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import (
-    DagsterCommandLineScheduler,
     ScheduleState,
     ScheduleStatus,
     ScheduleTickData,
@@ -30,7 +27,6 @@ from dagster.core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.grpc.types import ScheduleExecutionDataMode
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.log import default_format_string
 
 
 class ScheduleTickHolder:
@@ -72,50 +68,9 @@ _DEFAULT_MAX_CATCHUP_RUNS = 5
 _SCHEDULER_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S%z"
 
 
-@click.command(
-    name="run", help="Poll for scheduled runs form all running schedules and launch them",
-)
-@click.option("--interval", help="How frequently to check for runs to launch", default=30)
-@click.option(
-    "--max-catchup-runs",
-    help="Max number of past runs since the schedule was started that we should execute",
-    default=_DEFAULT_MAX_CATCHUP_RUNS,
-)
-def scheduler_run_command(interval, max_catchup_runs):
-    execute_scheduler_command(interval, max_catchup_runs)
-
-
-def _mockable_localtime(_):
-    now_time = pendulum.now()
-    return now_time.timetuple()
-
-
-def get_default_scheduler_logger():
-    handler = logging.StreamHandler(sys.stdout)
-    logger = logging.getLogger("dagster-scheduler")
-    logger.setLevel(logging.INFO)
-    logger.handlers = [handler]
-
-    formatter = logging.Formatter(default_format_string(), "%Y-%m-%d %H:%M:%S")
-
-    formatter.converter = _mockable_localtime
-
-    handler.setFormatter(formatter)
-    return logger
-
-
-def execute_scheduler_command(interval, max_catchup_runs):
-    logger = get_default_scheduler_logger()
-    while True:
-        with DagsterInstance.get() as instance:
-            end_datetime_utc = pendulum.now("UTC")
-
-            launch_scheduled_runs(instance, logger, end_datetime_utc, max_catchup_runs)
-
-            time_left = interval - (pendulum.now("UTC") - end_datetime_utc).seconds
-
-            if time_left > 0:
-                time.sleep(time_left)
+def execute_scheduler_iteration(instance, logger, max_catchup_runs):
+    end_datetime_utc = pendulum.now("UTC")
+    launch_scheduled_runs(instance, logger, end_datetime_utc, max_catchup_runs)
 
 
 def launch_scheduled_runs(
@@ -128,15 +83,6 @@ def launch_scheduled_runs(
     schedules = [
         s for s in instance.all_stored_schedule_state() if s.status == ScheduleStatus.RUNNING
     ]
-
-    if not isinstance(instance.scheduler, DagsterCommandLineScheduler):
-        raise DagsterInvariantViolationError(
-            """Your dagster.yaml must be configured as follows in order to use dagster-scheduler:
-scheduler:
-  module: dagster.core.scheduler
-  class: DagsterCommandLineScheduler
-        """,
-        )
 
     if not schedules:
         logger.info("Not checking for any runs since no schedules have been started.")
@@ -240,7 +186,7 @@ def launch_scheduled_runs_for_schedule(
         return
 
     if len(tick_times) > max_catchup_runs:
-        logger.warn(
+        logger.warning(
             "{schedule_name} has fallen behind, only launching {max_catchup_runs} runs".format(
                 schedule_name=schedule_name, max_catchup_runs=max_catchup_runs
             )
@@ -511,12 +457,3 @@ def _create_scheduler_run(
             ),
         )
     return possibly_invalid_pipeline_run
-
-
-def create_scheduler_cli_group():
-    group = click.Group(name="scheduler")
-    group.add_command(scheduler_run_command)
-    return group
-
-
-scheduler_cli = create_scheduler_cli_group()

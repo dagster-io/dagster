@@ -41,13 +41,13 @@ def test_attempt_to_launch_runs_filter(instance):  # pylint: disable=redefined-o
         instance, run_id="non-queued-run", status=PipelineRunStatus.NOT_STARTED,
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(instance)
-    coordinator.attempt_to_launch_runs()
+    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10)
+    coordinator.run_iteration()
 
     assert get_run_ids(instance.run_launcher.queue()) == ["queued-run"]
 
 
-def test_attempt_to_launch_runs_no_queued(instance,):  # pylint: disable=redefined-outer-name
+def test_attempt_to_launch_runs_no_queued(instance):  # pylint: disable=redefined-outer-name
 
     create_run(
         instance, run_id="queued-run", status=PipelineRunStatus.STARTED,
@@ -56,8 +56,8 @@ def test_attempt_to_launch_runs_no_queued(instance,):  # pylint: disable=redefin
         instance, run_id="non-queued-run", status=PipelineRunStatus.NOT_STARTED,
     )
 
-    coordinator = QueuedRunCoordinatorDaemon(instance)
-    coordinator.attempt_to_launch_runs()
+    coordinator = QueuedRunCoordinatorDaemon(instance, interval_seconds=5, max_concurrent_runs=10)
+    coordinator.run_iteration()
 
     assert instance.run_launcher.queue() == []
 
@@ -86,7 +86,9 @@ def test_get_queued_runs_max_runs(
             instance, run_id=run_id, status=PipelineRunStatus.QUEUED,
         )
 
-    coordinator = QueuedRunCoordinatorDaemon(instance, max_concurrent_runs=max_runs)
-    coordinator.attempt_to_launch_runs()
+    coordinator = QueuedRunCoordinatorDaemon(
+        instance, interval_seconds=5, max_concurrent_runs=max_runs,
+    )
+    coordinator.run_iteration()
 
     assert len(instance.run_launcher.queue()) == max(0, max_runs - num_in_progress_runs)

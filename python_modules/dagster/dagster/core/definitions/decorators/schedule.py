@@ -64,7 +64,7 @@ def schedule(
         environment_vars (Optional[Dict[str, str]]): Any environment variables to set when executing
             the schedule.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterCommandLineScheduler, and must be set when using that scheduler.
+            with DagsterDaemonScheduler, and must be set when using that scheduler.
     """
 
     def inner(fn):
@@ -133,7 +133,7 @@ def monthly_schedule(
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterCommandLineScheduler, and must be set when using that scheduler.
+            with DagsterDaemonScheduler, and must be set when using that scheduler.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -263,7 +263,7 @@ def weekly_schedule(
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterCommandLineScheduler, and must be set when using that scheduler.
+            with DagsterDaemonScheduler, and must be set when using that scheduler.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -388,7 +388,7 @@ def daily_schedule(
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterCommandLineScheduler, and must be set when using that scheduler.
+            with DagsterDaemonScheduler, and must be set when using that scheduler.
     """
     check.str_param(pipeline_name, "pipeline_name")
     check.inst_param(start_date, "start_date", datetime.datetime)
@@ -504,7 +504,7 @@ def hourly_schedule(
         end_date (Optional[datetime.datetime]): The last time to run the schedule to, defaults to
             current time.
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterCommandLineScheduler, and must be set when using that scheduler.
+            with DagsterDaemonScheduler, and must be set when using that scheduler.
     """
     check.opt_str_param(name, "name")
     check.inst_param(start_date, "start_date", datetime.datetime)

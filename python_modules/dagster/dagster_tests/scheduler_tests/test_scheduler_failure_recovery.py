@@ -7,11 +7,12 @@ from dagster.core.scheduler import ScheduleTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import cleanup_test_instance
-from dagster.scheduler.scheduler import get_default_scheduler_logger, launch_scheduled_runs
+from dagster.scheduler.scheduler import launch_scheduled_runs
 from dagster.seven import multiprocessing
 
 from .test_scheduler_run import (
     instance_with_schedules,
+    logger,
     repos,
     validate_run_started,
     validate_tick,
@@ -24,10 +25,7 @@ def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, 
         try:
             with pendulum.test(execution_datetime):
                 launch_scheduled_runs(
-                    instance,
-                    get_default_scheduler_logger(),
-                    pendulum.now("UTC"),
-                    debug_crash_flags=debug_crash_flags,
+                    instance, logger(), pendulum.now("UTC"), debug_crash_flags=debug_crash_flags,
                 )
         finally:
             cleanup_test_instance(instance)
@@ -66,8 +64,8 @@ def test_failure_recovery_before_run_created(
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-02-26 18:00:00 - dagster-scheduler - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:00:00 - dagster-scheduler - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
+                == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-26 18:00:00 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
 """
             )
 
@@ -107,10 +105,10 @@ def test_failure_recovery_before_run_created(
             captured = capfd.readouterr()
             assert (
                 captured.out
-                == """2019-02-26 18:05:00 - dagster-scheduler - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:05:00 - dagster-scheduler - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
-2019-02-26 18:05:00 - dagster-scheduler - INFO - Resuming previously interrupted schedule execution
-2019-02-26 18:05:00 - dagster-scheduler - INFO - Completed scheduled launch of run {run_id} for simple_schedule
+                == """2019-02-26 18:05:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
+2019-02-26 18:05:00 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
+2019-02-26 18:05:00 - SchedulerDaemon - INFO - Resuming previously interrupted schedule execution
+2019-02-26 18:05:00 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule
 """.format(
                     run_id=instance.get_runs()[0].run_id
                 )

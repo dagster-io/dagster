@@ -70,7 +70,7 @@ class ScheduleDefinition(object):
         environment_vars (Optional[dict[str, str]]): The environment variables to set for the
             schedule
         execution_timezone (Optional[str]): Timezone in which the schedule should run. Only works
-            with DagsterCommandLineScheduler, and must be set when using that scheduler.
+            with DagsterDaemonScheduler, and must be set when using that scheduler.
     """
 
     __slots__ = [
