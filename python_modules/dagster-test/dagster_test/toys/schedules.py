@@ -42,6 +42,12 @@ def backfilling_partition_selector(
     return selected
 
 
+def _toys_tz_info():
+    # Provides execution_timezone information, which is only used to determine execution time when
+    # the scheduler configured is the DagsterCommandLineScheduler
+    return "US/Pacific"
+
+
 def backfill_should_execute(context, partition_set_def, retry_failed=False):
     status_filters = (
         [PipelineRunStatus.STARTED, PipelineRunStatus.SUCCESS] if retry_failed else None
@@ -83,6 +89,7 @@ def backfill_test_schedule():
         cron_schedule="* * * * *",  # tick every minute
         partition_selector=backfilling_partition_selector,
         should_execute=_should_execute,
+        execution_timezone=_toys_tz_info(),
     )
 
 
@@ -104,6 +111,7 @@ def materialization_schedule():
         cron_schedule="* * * * *",  # tick every minute
         partition_selector=backfilling_partition_selector,
         should_execute=_should_execute,
+        execution_timezone=_toys_tz_info(),
     )
 
 
@@ -130,6 +138,7 @@ def longitudinal_schedule():
         cron_schedule="*/5 * * * *",  # tick every 5 minutes
         partition_selector=_partition_selector,
         should_execute=_should_execute,
+        execution_timezone=_toys_tz_info(),
     )
 
 
@@ -145,6 +154,7 @@ def get_toys_schedules():
             cron_schedule="* * * * *",
             pipeline_name="many_events",
             run_config_fn=lambda _: {"storage": {"filesystem": {}}},
+            execution_timezone=_toys_tz_info(),
         ),
         ScheduleDefinition(
             name="pandas_hello_world_hourly",
@@ -177,5 +187,6 @@ def get_toys_schedules():
                 },
                 "storage": {"filesystem": {}},
             },
+            execution_timezone=_toys_tz_info(),
         ),
     ]
