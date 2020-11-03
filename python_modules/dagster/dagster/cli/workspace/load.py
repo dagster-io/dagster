@@ -1,6 +1,7 @@
 import os
 import sys
 import warnings
+from collections import OrderedDict
 
 import six
 from dagster import check
@@ -26,7 +27,7 @@ def location_origins_from_yaml_paths(yaml_paths):
     check.list_param(yaml_paths, "yaml_paths", str)
 
     workspace_configs = [load_yaml_from_path(yaml_path) for yaml_path in yaml_paths]
-    origins_by_name = {}
+    origins_by_name = OrderedDict()
     for workspace_config, yaml_path in zip(workspace_configs, yaml_paths):
         check.invariant(
             workspace_config is not None,
@@ -65,7 +66,7 @@ def _repo_location_origins_from_config(workspace_config, yaml_path):
 
         return {origin.location_name: origin}
 
-    location_origins = {}
+    location_origins = OrderedDict()
     for location_config in workspace_config["load_from"]:
         origin = _location_origin_from_location_config(location_config, yaml_path)
         check.invariant(
