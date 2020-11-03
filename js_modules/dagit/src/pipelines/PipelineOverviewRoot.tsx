@@ -221,7 +221,7 @@ const OverviewSchedule = ({schedule}: {schedule: Schedule}) => {
                   }}
                   key={run.runId}
                 >
-                  <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
+                  <Link to={`/instance/runs/${run.runId}`}>
                     <Tooltip
                       position={'top'}
                       content={titleForRun(run)}
@@ -253,7 +253,7 @@ const OverviewRun = ({run}: {run: Run}) => {
       </td>
       <td style={{width: '100%'}}>
         <div style={{fontFamily: FontFamily.monospace}}>
-          <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</Link>
+          <Link to={`/instance/runs/${run.runId}`}>{titleForRun(run)}</Link>
         </div>
         <div style={{marginTop: 5}}>{`Mode: ${run.mode}`}</div>
         {time}

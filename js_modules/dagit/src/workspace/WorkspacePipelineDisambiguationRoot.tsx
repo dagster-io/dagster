@@ -52,10 +52,12 @@ export const WorkspacePipelineDisambiguationRoot: React.FunctionComponent<Props>
 
           // If only one match, redirect to that repo.
           if (matches.length === 1) {
-            const {name, location} = matches[0];
-            return (
-              <Redirect to={workspacePath(name, location.name, `/pipelines/${pipelineName}`)} />
-            );
+            return <Redirect to={`/pipelines/${pipelineName}`} />;
+            // todo dish: Use proper workspace paths for these.
+            // const {name, location} = matches[0];
+            // return (
+            //   <Redirect to={workspacePath(name, location.name, `/pipeline/${pipelineName}`)} />
+            // );
           }
 
           if (!matches.length) {

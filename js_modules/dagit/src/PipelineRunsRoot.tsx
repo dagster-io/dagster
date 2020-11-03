@@ -27,9 +27,9 @@ import {
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['id', 'snapshotId', 'status', 'tag'];
 
-export const PipelineRunsRoot: React.FunctionComponent<RouteComponentProps<{
-  pipelinePath: string;
-}>> = ({match}) => {
+export const PipelineRunsRoot: React.FC<RouteComponentProps<{pipelinePath: string}>> = ({
+  match,
+}) => {
   const {pipelineName, snapshotId} = explorerPathFromString(match.params.pipelinePath);
   useDocumentTitle(`Pipeline: ${pipelineName}`);
   const [filterTokens, setFilterTokens] = useRunFiltering(ENABLED_FILTERS);

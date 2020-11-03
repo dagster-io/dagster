@@ -1,17 +1,14 @@
-import {gql, useQuery} from '@apollo/client';
-import {IBreadcrumbProps, IconName, Tag} from '@blueprintjs/core';
+import {IBreadcrumbProps, IconName} from '@blueprintjs/core';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
-import styled from 'styled-components';
 
-import {useActivePipelineForName, useRepository} from 'src/DagsterRepositoryContext';
+import {useRepository} from 'src/DagsterRepositoryContext';
 import {
   explorerPathFromString,
   explorerPathToString,
   PipelineExplorerPath,
 } from 'src/PipelinePathUtils';
 import {TopNav} from 'src/nav/TopNav';
-import {FontFamily} from 'src/ui/styles';
 
 interface Tab {
   title: string;
@@ -39,7 +36,6 @@ const pipelineTabs: {[key: string]: Tab} = {
   },
 };
 
-const snapshotOrder = ['definition', 'runs'];
 const currentOrder = ['overview', 'definition', 'playground', 'runs', 'partitions'];
 
 export function tabForPipelinePathComponent(component?: string): Tab {
@@ -67,87 +63,16 @@ const tabForKey = (explorerPath: PipelineExplorerPath) => {
   };
 };
 
-const SNAPSHOT_PARENT_QUERY = gql`
-  query SnapshotQuery($snapshotId: String!) {
-    pipelineSnapshotOrError(snapshotId: $snapshotId) {
-      ... on PipelineSnapshot {
-        parentSnapshotId
-      }
-    }
-  }
-`;
-
-interface SnapshotNavProps {
-  active: Tab;
-  explorerPath: PipelineExplorerPath;
-}
-
-const SnapshotNav = (props: SnapshotNavProps) => {
-  const {active, explorerPath} = props;
-  const {pipelineName, snapshotId} = explorerPath;
-
-  const currentPipelineState = useActivePipelineForName(pipelineName);
-  const currentSnapshotID = currentPipelineState?.pipelineSnapshotId;
-
-  const {data, loading} = useQuery(SNAPSHOT_PARENT_QUERY, {
-    variables: {snapshotId},
-  });
-
-  const tag = () => {
-    if (loading) {
-      return (
-        <Tag intent="none" minimal>
-          ...
-        </Tag>
-      );
-    }
-
-    if (
-      !currentSnapshotID ||
-      (currentSnapshotID !== snapshotId &&
-        data?.pipelineSnapshotOrError?.parentSnapshotId !== currentSnapshotID)
-    ) {
-      return (
-        <Tag intent="warning" minimal>
-          Snapshot
-        </Tag>
-      );
-    }
-
-    return (
-      <Tag intent="success" minimal>
-        Current
-      </Tag>
-    );
-  };
-
-  const breadcrumbs: IBreadcrumbProps[] = [
-    {text: 'Pipelines', icon: 'diagram-tree'},
-    {
-      text: explorerPath.pipelineName,
-      href: `/pipeline/${explorerPath.pipelineName}`,
-    },
-    {
-      text: (
-        <div style={{alignItems: 'center', display: 'flex', flexDirection: 'row'}}>
-          <Mono>{explorerPath.snapshotId}</Mono>
-          <div style={{width: '70px'}}>{tag()}</div>
-        </div>
-      ),
-    },
-  ];
-
-  const tabs = snapshotOrder.map(tabForKey(explorerPath));
-  return <TopNav activeTab={active.title} breadcrumbs={breadcrumbs} tabs={tabs} />;
-};
-
 interface CurrentPipelineNavProps {
   active: Tab;
   explorerPath: PipelineExplorerPath;
 }
 
-const CurrentPipelineNav = (props: CurrentPipelineNavProps) => {
-  const {active, explorerPath} = props;
+export const PipelineNav: React.FunctionComponent<{}> = () => {
+  const match = useRouteMatch<{tab: string; selector: string}>(['/pipeline/:selector/:tab?']);
+  const active = tabForPipelinePathComponent(match.params.tab);
+  const explorerPath = explorerPathFromString(match.params.selector);
+
   const repository = useRepository();
 
   const hasPartitionSet = repository?.partitionSets
@@ -165,21 +90,3 @@ const CurrentPipelineNav = (props: CurrentPipelineNavProps) => {
 
   return <TopNav activeTab={active.title} breadcrumbs={breadcrumbs} tabs={tabs} />;
 };
-
-export const PipelineNav: React.FunctionComponent<{}> = () => {
-  const match = useRouteMatch<{tab: string; selector: string}>(['/pipeline/:selector/:tab?']);
-  const active = tabForPipelinePathComponent(match.params.tab);
-  const explorerPath = explorerPathFromString(match.params.selector);
-  const {snapshotId} = explorerPath;
-
-  if (snapshotId) {
-    return <SnapshotNav active={active} explorerPath={explorerPath} />;
-  }
-  return <CurrentPipelineNav active={active} explorerPath={explorerPath} />;
-};
-
-const Mono = styled.div`
-  font-family: ${FontFamily.monospace};
-  font-size: 14px;
-  margin-right: 12px;
-`;

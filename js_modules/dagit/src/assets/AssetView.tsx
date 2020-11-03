@@ -3,6 +3,7 @@ import {Colors, Button, ButtonGroup} from '@blueprintjs/core';
 import {uniq} from 'lodash';
 import * as React from 'react';
 import {Line, ChartComponentProps} from 'react-chartjs-2';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {Header} from 'src/ListComponents';
@@ -113,11 +114,7 @@ const AssetLastMaterialization: React.FunctionComponent<{
               )}
             </td>
             <td style={{fontFamily: FontFamily.monospace}}>
-              {run ? (
-                <a href={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>{titleForRun(run)}</a>
-              ) : (
-                runId
-              )}
+              {run ? <Link to={`/instance/runs/${run.runId}`}>{titleForRun(run)}</Link> : runId}
             </td>
             <td>
               {materialization.label}

@@ -7,7 +7,7 @@ import {explorerPathToString} from 'src/PipelinePathUtils';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
-import {RunStatusTag} from 'src/runs/RunStatusTag';
+import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
 import {RunTag} from 'src/runs/RunTag';
 import {RunComponentFragments, RunElapsed, RunTime, titleForRun} from 'src/runs/RunUtils';
 import {RunTableRunFragment, RunTableRunFragment_tags} from 'src/runs/types/RunTableRunFragment';
@@ -135,7 +135,7 @@ const RunRow: React.FunctionComponent<{
   onToggleChecked?: () => void;
   additionalColumns?: React.ReactNode[];
 }> = ({run, onSetFilter, checked, onToggleChecked, additionalColumns}) => {
-  const pipelineLink = `/pipeline/${explorerPathToString({
+  const pipelineLink = `/instance/snapshots/${explorerPathToString({
     pipelineName: run.pipelineName,
     snapshotId: run.pipelineSnapshotId || '',
     solidsQuery: '',
@@ -154,10 +154,10 @@ const RunRow: React.FunctionComponent<{
         {onToggleChecked && <Checkbox checked={checked} />}
       </td>
       <td style={{width: '90px', fontFamily: FontFamily.monospace}}>
-        <Link to={`${pipelineLink}runs/${run.runId}`}>{titleForRun(run)}</Link>
+        <Link to={`/instance/runs/${run.runId}`}>{titleForRun(run)}</Link>
       </td>
       <td style={{maxWidth: '120px'}}>
-        <RunStatusTag status={run.status} runId={run.runId} />
+        <RunStatusTagWithStats status={run.status} runId={run.runId} />
       </td>
       <td style={{width: '100%'}}>
         {run.pipelineName}

@@ -295,7 +295,7 @@ export const ScheduleRow: React.FunctionComponent<{
                 }}
                 key={run.runId}
               >
-                <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
+                <Link to={`/instance/runs/${run.runId}`}>
                   <Tooltip
                     position={'top'}
                     content={runLabel}
@@ -582,7 +582,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
                   }}
                   key={run.runId}
                 >
-                  <Link to={`/pipeline/${run.pipelineName}/runs/${run.runId}`}>
+                  <Link to={`/instance/runs/${run.runId}`}>
                     <Tooltip
                       position={'top'}
                       content={titleForRun(run)}
@@ -634,7 +634,7 @@ export const TickTag: React.FunctionComponent<{
       } else {
         return (
           <a
-            href={`/pipeline/${eventSpecificData.run?.pipelineName}/runs/${eventSpecificData.run?.runId}`}
+            href={`/instance/runs/${eventSpecificData.run?.runId}`}
             style={{textDecoration: 'none'}}
           >
             <Tag minimal={true} intent={Intent.SUCCESS} interactive={true}>

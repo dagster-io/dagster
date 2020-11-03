@@ -301,6 +301,7 @@ const SVGViewportStyles: React.CSSProperties = {
   position: 'relative',
   overflow: 'hidden',
   userSelect: 'none',
+  outline: 'none',
 };
 
 const ZoomSliderContainer = styled.div`

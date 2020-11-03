@@ -74,7 +74,7 @@ export function openRunInBrowser(
   run: {runId: string; pipelineName: string},
   opts: {openInNewWindow: boolean; query?: {[key: string]: string}},
 ) {
-  const url = `${APP_PATH_PREFIX}/pipeline/${run.pipelineName}/runs/${run.runId}?${
+  const url = `${APP_PATH_PREFIX}/instance/runs/${run.runId}?${
     opts.query ? qs.stringify(opts.query) : ''
   }`;
   if (opts.openInNewWindow) {

@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {IconName, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
-import {Redirect, RouteComponentProps} from 'react-router-dom';
+import {Redirect, RouteComponentProps, useHistory} from 'react-router-dom';
 
 import {usePipelineSelector} from 'src/DagsterRepositoryContext';
 import {Loading} from 'src/Loading';
@@ -121,10 +121,24 @@ function explodeCompositesInHandleGraph(handles: PipelineExplorerSolidHandleFrag
   return results;
 }
 
-export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> = (props) => {
+export const PipelineExplorerRegexRoot: React.FC<RouteComponentProps> = (props) => {
   const explorerPath = explorerPathFromString(props.match.params['0']);
   useDocumentTitle(`Pipeline: ${explorerPath.pipelineName}`);
+  return <PipelineExplorerRoot explorerPath={explorerPath} />;
+};
 
+export const PipelineExplorerSnapshotRoot: React.FC<RouteComponentProps> = (props) => {
+  const explorerPath = explorerPathFromString(props.match.params['0']);
+  const {pipelineName, snapshotId} = explorerPath;
+  useDocumentTitle(`Snapshot: ${pipelineName}${snapshotId ? `@${snapshotId.slice(0, 8)}` : ''}`);
+  return <PipelineExplorerRoot explorerPath={explorerPath} />;
+};
+
+const PipelineExplorerRoot: React.FunctionComponent<{explorerPath: PipelineExplorerPath}> = (
+  props,
+) => {
+  const history = useHistory();
+  const {explorerPath} = props;
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false,
   });
@@ -163,7 +177,7 @@ export const PipelineExplorerRoot: React.FunctionComponent<RouteComponentProps> 
             options={options}
             setOptions={setOptions}
             explorerPath={explorerPath}
-            history={props.history}
+            history={history}
             pipeline={result}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}

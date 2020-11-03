@@ -72,7 +72,7 @@ export class PipelineExplorer extends React.Component<
 
   handleQueryChange = (solidsQuery: string) => {
     const {history, explorerPath} = this.props;
-    history.replace(`/pipeline/${explorerPathToString({...explorerPath, solidsQuery})}`);
+    history.replace(this.buildPath(explorerPathToString({...explorerPath, solidsQuery})));
   };
 
   handleAdjustPath = (fn: (solidNames: string[]) => void) => {
@@ -82,7 +82,7 @@ export class PipelineExplorer extends React.Component<
     if (retValue !== undefined) {
       throw new Error('handleAdjustPath function is expected to mutate the array');
     }
-    history.push(`/pipeline/${explorerPathToString({...explorerPath, pathSolids})}`);
+    history.push(this.buildPath(explorerPathToString({...explorerPath, pathSolids})));
   };
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
@@ -92,7 +92,7 @@ export class PipelineExplorer extends React.Component<
   handleClickSolid = (arg: SolidNameOrPath) => {
     this.handleAdjustPath((solidNames) => {
       if ('name' in arg) {
-        solidNames[solidNames.length - 1] = arg.name;
+        solidNames[solidNames.length ? solidNames.length - 1 : 0] = arg.name;
       } else {
         if (arg.path[0] !== '..') {
           solidNames.length = 0;
@@ -134,6 +134,16 @@ export class PipelineExplorer extends React.Component<
     this.handleClickSolid({name: ''});
   };
 
+  buildPath = (path: string) => {
+    const {explorerPath} = this.props;
+    const {snapshotId} = explorerPath;
+    if (snapshotId) {
+      return `/instance/snapshots/${path}`;
+    }
+    // TODO DISH: Use workspace URL here
+    return `/pipeline/${path}`;
+  };
+
   public render() {
     const {options, pipeline, explorerPath, parentHandle, selectedHandle} = this.props;
     const {highlighted} = this.state;
@@ -165,10 +175,12 @@ export class PipelineExplorer extends React.Component<
                 items={explorerPath.pathSolids.map((name, idx) => {
                   return {
                     text: name,
-                    href: `/pipeline/${explorerPathToString({
-                      ...explorerPath,
-                      pathSolids: explorerPath.pathSolids.slice(0, idx + 1),
-                    })}`,
+                    href: this.buildPath(
+                      explorerPathToString({
+                        ...explorerPath,
+                        pathSolids: explorerPath.pathSolids.slice(0, idx + 1),
+                      }),
+                    ),
                   };
                 })}
                 currentBreadcrumbRenderer={() => (

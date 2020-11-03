@@ -6,17 +6,17 @@ import {RunStatusTag} from 'src/runs/RunStatusTag';
 describe('RunStatusTag', () => {
   describe('Status type', () => {
     it('renders `succeeded`', () => {
-      render(<RunStatusTag runId="foo" status="SUCCESS" />);
+      render(<RunStatusTag status="SUCCESS" />);
       expect(screen.getByText(/succeeded/i)).toBeVisible();
     });
 
     it('renders `failed`', () => {
-      render(<RunStatusTag runId="foo" status="FAILURE" />);
+      render(<RunStatusTag status="FAILURE" />);
       expect(screen.getByText(/failed/i)).toBeVisible();
     });
 
     it('renders `started`', () => {
-      render(<RunStatusTag runId="foo" status="STARTED" />);
+      render(<RunStatusTag status="STARTED" />);
       expect(screen.getByText(/running/i)).toBeVisible();
     });
   });
