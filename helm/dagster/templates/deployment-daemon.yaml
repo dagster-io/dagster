@@ -1,0 +1,90 @@
+{{- if .Values.dagsterDaemon.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dagster.fullname" $ -}}-daemon
+  labels:
+    {{- include "dagster.labels" $ | nindent 4 }}
+    component: dagster-daemon
+    deployment: daemon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "dagster.selectorLabels" $ | nindent 6 }}
+      component: dagster-daemon
+      deployment: daemon
+  template:
+    metadata:
+      labels:
+        {{- include "dagster.selectorLabels" $ | nindent 8 }}
+        component: dagster-daemon
+        deployment: daemon
+      annotations:
+        checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
+    spec:
+      imagePullSecrets:
+        {{- toYaml $.Values.imagePullSecrets | nindent 8 }}
+      serviceAccountName: {{ include "dagster.serviceAccountName" $ }}
+      securityContext:
+        {{- toYaml .Values.dagsterDaemon.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: check-db-ready
+          image: "{{- $.Values.postgresql.image.repository -}}:{{- $.Values.postgresql.image.tag -}}"
+          imagePullPolicy: "{{- $.Values.postgresql.image.pullPolicy -}}"
+          command: ['sh', '-c',
+            'until pg_isready -h {{ include "dagster.postgresql.host" $ }} -p {{ $.Values.postgresql.service.port }}; do echo waiting for database; sleep 2; done;',
+            ]
+          securityContext:
+            {{- toYaml .Values.dagsterDaemon.securityContext | nindent 12 }}
+      containers:
+        - name: {{ $.Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.dagsterDaemon.securityContext | nindent 12 }}
+          imagePullPolicy: {{ .Values.dagsterDaemon.image.pullPolicy }}
+          image: "{{ .Values.dagsterDaemon.image.repository }}:{{ .Values.dagsterDaemon.image.tag }}"
+          command: ["dagster-daemon"]
+          args: ["run"]
+          env:
+            - name: DAGSTER_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ template "dagster.fullname" $ }}-postgresql-secret"
+                  key: postgresql-password
+          envFrom:
+            - configMapRef:
+                name: {{ template "dagster.fullname" $ }}-daemon-env
+            {{- if .Values.dagsterDaemon.envConfigMaps -}}
+            {{- range $name := .Values.dagsterDaemon.envConfigMaps }}
+            {{- if $name }}
+            - configMapRef:
+                name: {{ $name }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.dagsterDaemon.envSecrets -}}
+            {{- range $name := .Values.dagsterDaemon.envSecrets }}
+            {{- if $name }}
+            - secretRef:
+                name: {{ $name }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+          volumeMounts:
+            - name: dagster-instance
+              mountPath: "{{ $.Values.dagster_home }}/dagster.yaml"
+              subPath: dagster.yaml
+          resources:
+            {{- toYaml .Values.dagsterDaemon.resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .Values.dagsterDaemon.nodeSelector | nindent 8 }}
+      volumes:
+        - name: dagster-instance
+          configMap:
+            name: {{ template "dagster.fullname" $ }}-instance
+      affinity:
+        {{- toYaml .Values.dagsterDaemon.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.dagsterDaemon.tolerations | nindent 8 }}
+---
+{{ end }}

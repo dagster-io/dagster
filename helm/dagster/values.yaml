@@ -457,6 +457,34 @@ ingress:
     succeedingPaths: []
 
 ####################################################################################################
+# Dagster Daemon [EXPERIMENTAL]: (Optional) Deploy a daemon for run coordination, etc.
+####################################################################################################
+dagsterDaemon:
+  enabled: false
+
+  image:
+    repository: "dagster/k8s-dagit"
+    tag: "latest"
+    pullPolicy: Always
+
+  queuedRunCoordinator:
+    enabled: true
+    config: {}
+
+  env:
+    YOUR_ENV_VAR: ""
+  envConfigMaps:
+    - ""
+  envSecrets:
+    - ""
+  nodeSelector: {}
+  affinity: {}
+  tolerations: []
+  podSecurityContext: {}
+  securityContext: {}
+  resources: {}
+
+####################################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ####################################################################################################
 extraManifests:

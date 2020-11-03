@@ -14,6 +14,7 @@ from dagster.core.host_representation import (
     RepositoryLocation,
     RepositoryLocationHandle,
 )
+from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
@@ -105,6 +106,29 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                     "define_demo_execution_repo",
                 ),
             ),
+        )
+
+    def get_external_origin(self):
+        """
+        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
+        structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
+        inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
+        work, we need to inject this one.
+        """
+
+        return ExternalPipelineOrigin(
+            external_repository_origin=ExternalRepositoryOrigin(
+                repository_location_origin=InProcessRepositoryLocationOrigin(
+                    recon_repo=ReconstructableRepository(
+                        pointer=FileCodePointer(
+                            python_file="/dagster_test/test_project/test_pipelines/repo.py",
+                            fn_name="define_demo_execution_repo",
+                        )
+                    )
+                ),
+                repository_name="demo_execution_repo",
+            ),
+            pipeline_name=self._pipeline_index.name,
         )
 
 

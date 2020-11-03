@@ -55,7 +55,7 @@ def integration_tests():
         elif integration_suite == os.path.join(
             "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
         ):
-            tox_env_suffixes = ["-default", "-markusercodedeployment"]
+            tox_env_suffixes = ["-default", "-markusercodedeployment", "-markruncoordinator"]
 
         tests += ModuleBuildSpec(
             integration_suite,

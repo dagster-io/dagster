@@ -59,6 +59,14 @@ def helm_namespace_for_user_deployments(
 
 
 @pytest.fixture(scope="session")
+def helm_namespace_for_run_coordinator(
+    cluster_provider, request
+):  # pylint: disable=unused-argument, redefined-outer-name
+    with _helm_namespace_helper(helm_chart_for_run_coordinator, request) as namespace:
+        yield namespace
+
+
+@pytest.fixture(scope="session")
 def helm_namespace(
     cluster_provider, request
 ):  # pylint: disable=unused-argument, redefined-outer-name
@@ -407,6 +415,79 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
         "postgresqlPassword": "test",
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
+    }
+
+    with _helm_chart_helper(namespace, should_cleanup, helm_config):
+        yield
+
+
+@contextmanager
+def helm_chart_for_run_coordinator(namespace, docker_image, should_cleanup=True):
+    check.str_param(namespace, "namespace")
+    check.str_param(docker_image, "docker_image")
+    check.bool_param(should_cleanup, "should_cleanup")
+
+    repository, tag = docker_image.split(":")
+    pull_policy = image_pull_policy()
+    helm_config = {
+        "userDeployments": {
+            "enabled": True,
+            "deployments": [
+                {
+                    "name": "user-code-deployment-1",
+                    "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+                    "dagsterApiGrpcArgs": [
+                        "-m",
+                        "dagster_test.test_project.test_pipelines.repo",
+                        "-a",
+                        "define_demo_execution_repo",
+                    ],
+                    "port": 3030,
+                }
+            ],
+        },
+        "dagit": {
+            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+            "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
+            "env_config_maps": [TEST_CONFIGMAP_NAME],
+            "env_secrets": [TEST_SECRET_NAME],
+            "livenessProbe": {
+                "tcpSocket": {"port": "http"},
+                "periodSeconds": 20,
+                "failureThreshold": 3,
+            },
+            "startupProbe": {
+                "tcpSocket": {"port": "http"},
+                "failureThreshold": 6,
+                "periodSeconds": 10,
+            },
+        },
+        "celery": {
+            "enabled": True,
+            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+            "replicaCount": 1,
+            "extraWorkerQueues": [{"name": "extra-queue-1", "replicaCount": 1},],
+            "livenessProbe": {
+                "initialDelaySeconds": 15,
+                "periodSeconds": 10,
+                "timeoutSeconds": 10,
+                "successThreshold": 1,
+                "failureThreshold": 3,
+            },
+            "configSource": {
+                "broker_transport_options": {"priority_steps": [9]},
+                "worker_concurrency": 1,
+            },
+        },
+        "scheduler": {"k8sEnabled": "true", "schedulerNamespace": namespace},
+        "serviceAccount": {"name": "dagit-admin"},
+        "postgresqlPassword": "test",
+        "postgresqlDatabase": "test",
+        "postgresqlUser": "test",
+        "dagsterDaemon": {
+            "enabled": True,
+            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+        },
     }
 
     with _helm_chart_helper(namespace, should_cleanup, helm_config):
