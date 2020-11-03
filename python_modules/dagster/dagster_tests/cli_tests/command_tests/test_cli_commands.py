@@ -22,7 +22,8 @@ from dagster import (
 from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_list_command, run_wipe_command
-from dagster.core.definitions.sensor import SensorDefinition
+from dagster.core.definitions.decorators.sensor import sensor
+from dagster.core.definitions.sensor import SensorRunParams
 from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
@@ -114,11 +115,11 @@ def define_bar_partitions():
 
 
 def define_bar_sensors():
-    return {
-        "foo_sensor": SensorDefinition(
-            name="foo_sensor", pipeline_name="baz", should_execute=lambda _: True
-        )
-    }
+    @sensor(pipeline_name="baz")
+    def foo_sensor(_):
+        return SensorRunParams(execution_key=None, run_config={})
+
+    return {"foo_sensor": foo_sensor}
 
 
 @repository

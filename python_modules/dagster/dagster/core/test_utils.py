@@ -1,4 +1,5 @@
 import os
+import signal
 import sys
 import time
 from contextlib import contextmanager
@@ -340,3 +341,18 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
     def cancel_run(self, run_id):
         check.not_implemented("Cancellation not supported")
+
+
+def get_terminate_signal():
+    if sys.platform == "win32":
+        return signal.SIGTERM
+    return signal.SIGKILL
+
+
+def get_crash_signals():
+    if sys.platform == "win32":
+        return [
+            get_terminate_signal()
+        ]  # Windows keeps resources open after termination in a way that messes up tests
+    else:
+        return [get_terminate_signal(), signal.SIGINT]

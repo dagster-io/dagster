@@ -1279,6 +1279,9 @@ class DagsterInstance:
     def get_latest_job_tick(self, job_origin_id):
         return self._schedule_storage.get_latest_job_tick(job_origin_id)
 
+    def has_job_tick(self, job_origin_id, execution_key, statuses=None):
+        return self._schedule_storage.has_job_tick(job_origin_id, execution_key, statuses)
+
     def create_job_tick(self, job_tick_data):
         return self._schedule_storage.create_job_tick(job_tick_data)
 

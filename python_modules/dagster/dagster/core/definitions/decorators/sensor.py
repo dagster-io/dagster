@@ -1,26 +1,27 @@
+import inspect
+
 from dagster import check
-from dagster.core.definitions.sensor import SensorDefinition
+from dagster.core.definitions.sensor import SensorDefinition, SensorRunParams, SensorSkipData
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils.backcompat import experimental
 
 
 @experimental
-def sensor(
-    pipeline_name, name=None, run_config_fn=None, tags_fn=None, solid_selection=None, mode=None,
-):
+def sensor(pipeline_name, name=None, solid_selection=None, mode=None):
     """
-    The decorated function will be called to determine whether the provided job should execute,
-    taking a :py:class:`~dagster.core.definitions.sensor.SensorExecutionContext`
-    as its only argument, returning a boolean if the execution should fire
+    Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
+    decorated function may:
+
+    1. Return a `SensorRunParams` object.
+    2. Yield a number of `SensorRunParams` objects.
+    3. Return a `SensorSkipData` object, providing a descriptive message of why no runs were
+       requested.
+    4. Yield nothing (skipping without providing a reason)
+
+    Takes a :py:class:`~dagster.SensorExecutionContext`.
 
     Args:
         name (str): The name of this sensor
-        run_config_fn (Optional[Callable[[SensorExecutionContext], Optional[Dict]]]): A function
-            that takes a SensorExecutionContext object and returns the environment configuration
-            that parameterizes this execution, as a dict.
-        tags_fn (Optional[Callable[[SensorExecutionContext], Optional[Dict[str, str]]]]): A function
-            that generates tags to attach to the sensor runs. Takes a
-            :py:class:`~dagster.SensorExecutionContext` and returns a dictionary of tags (string
-            key-value pairs).
         solid_selection (Optional[List[str]]): A list of solid subselection (including single
             solid names) to execute for runs for this sensor e.g.
             ``['*some_solid+', 'other_solid']``
@@ -33,12 +34,28 @@ def sensor(
         check.callable_param(fn, "fn")
         sensor_name = name or fn.__name__
 
+        def _wrapped_fn(context):
+            result = fn(context)
+
+            if inspect.isgenerator(result):
+                for item in result:
+                    yield item
+            elif isinstance(result, (SensorSkipData, SensorRunParams)):
+                yield result
+
+            elif result is not None:
+                raise DagsterInvariantViolationError(
+                    (
+                        "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+                        "{result} of type {type_}.  Should only return SensorSkipData or "
+                        "SensorRunParams objects."
+                    ).format(sensor_name=sensor_name, result=result, type_=type(result))
+                )
+
         return SensorDefinition(
             name=sensor_name,
             pipeline_name=pipeline_name,
-            should_execute=fn,
-            run_config_fn=run_config_fn,
-            tags_fn=tags_fn,
+            evaluation_fn=_wrapped_fn,
             solid_selection=solid_selection,
             mode=mode,
         )
