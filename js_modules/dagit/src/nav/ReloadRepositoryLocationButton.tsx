@@ -9,9 +9,15 @@ import {
   ReloadRepositoryLocationMutationVariables,
 } from 'src/nav/types/ReloadRepositoryLocationMutation';
 
-export const ReloadRepositoryLocationButton: React.FunctionComponent<{
+export type ReloadResult = {type: 'success'} | {type: 'error'; message: string};
+
+interface Props {
   location: string;
-}> = ({location}) => {
+  onReload: (location: string, result: ReloadResult) => void;
+}
+
+export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
+  const {location, onReload} = props;
   const apollo = useApolloClient();
   const [reload] = useMutation<
     ReloadRepositoryLocationMutation,
@@ -28,25 +34,20 @@ export const ReloadRepositoryLocationButton: React.FunctionComponent<{
     const {data} = await reload();
     setReloading(false);
 
-    let error = null;
+    let loadFailure = null;
     switch (data?.reloadRepositoryLocation.__typename) {
       case 'RepositoryLocation':
         break;
       case 'RepositoryLocationLoadFailure':
-        error = data?.reloadRepositoryLocation.error.message;
+        loadFailure = data?.reloadRepositoryLocation.error.message;
         break;
       default:
-        error = data?.reloadRepositoryLocation.message;
+        loadFailure = data?.reloadRepositoryLocation.message;
         break;
     }
 
-    if (error) {
-      SharedToaster.show({
-        message: error,
-        timeout: 3000,
-        icon: 'error',
-        intent: Intent.DANGER,
-      });
+    if (loadFailure) {
+      onReload(location, {type: 'error', message: loadFailure});
     } else {
       SharedToaster.show({
         message: 'Repository Location Reloaded',
@@ -54,6 +55,7 @@ export const ReloadRepositoryLocationButton: React.FunctionComponent<{
         icon: 'refresh',
         intent: Intent.SUCCESS,
       });
+      onReload(location, {type: 'success'});
 
       // clears and re-fetches all the queries bound to the UI
       apollo.resetStore();
@@ -69,6 +71,7 @@ export const ReloadRepositoryLocationButton: React.FunctionComponent<{
       <Tooltip
         className="bp3-dark"
         hoverOpenDelay={500}
+        hoverCloseDelay={0}
         content={'Reload metadata from this repository location.'}
       >
         <Button
