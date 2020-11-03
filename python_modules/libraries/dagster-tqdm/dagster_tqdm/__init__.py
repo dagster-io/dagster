@@ -4,7 +4,7 @@ from tqdm.auto import tqdm
 class dagster_tqdm(tqdm):
     def __init__(self, *args, **kwargs):
         kwargs = kwargs.copy()
-        kwargs['mininterval'] = kwargs.get('mininterval', 5)
+        kwargs["mininterval"] = kwargs.get("mininterval", 5)
         self.context = kwargs.pop("context")
         super().__init__(*args, **kwargs)
 
