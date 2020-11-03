@@ -266,17 +266,19 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                     )
                 )
 
-            job_image = repository_location_handle.get_current_image()
+            repository_name = external_pipeline.repository_handle.repository_name
+
+            repository_origin = repository_location_handle.reload_repository_python_origin(
+                repository_name
+            )
+
+            job_image = repository_origin.container_image
+
+            pipeline_origin = PipelinePythonOrigin(
+                pipeline_name=external_pipeline.name, repository_origin=repository_origin
+            )
 
             job_config = self._get_grpc_job_config(job_image)
-
-            repository_name = external_pipeline.repository_handle.repository_name
-            pipeline_origin = PipelinePythonOrigin(
-                pipeline_name=external_pipeline.name,
-                repository_origin=repository_location_handle.reload_repository_python_origin(
-                    repository_name
-                ),
-            )
         else:
             pipeline_origin = external_pipeline.get_python_origin()
             job_config = self._get_static_job_config()

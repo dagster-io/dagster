@@ -61,7 +61,7 @@ def postgres_instance(overrides=None):
 
 @pytest.mark.integration
 @pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
-def test_execute_celery_docker():
+def test_execute_celery_docker_image_on_executor_config():
     docker_image = test_project_docker_image()
     docker_config = {
         "image": docker_image,
@@ -119,6 +119,73 @@ def test_execute_celery_docker():
 
         result = execute_pipeline(
             get_test_project_recon_pipeline("docker_celery_pipeline"),
+            run_config=run_config,
+            instance=instance,
+        )
+        assert result.success
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
+def test_execute_celery_docker_image_on_pipeline_config():
+    docker_image = test_project_docker_image()
+    docker_config = {
+        "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
+        "network": "container:test-postgres-db-celery-docker",
+    }
+
+    if IS_BUILDKITE:
+        ecr_client = boto3.client("ecr", region_name="us-west-1")
+        token = ecr_client.get_authorization_token()
+        username, password = (
+            base64.b64decode(token["authorizationData"][0]["authorizationToken"])
+            .decode()
+            .split(":")
+        )
+        registry = token["authorizationData"][0]["proxyEndpoint"]
+
+        docker_config["registry"] = {
+            "url": registry,
+            "username": username,
+            "password": password,
+        }
+
+    else:
+        try:
+            client = docker.from_env()
+            client.images.get(docker_image)
+            print(  # pylint: disable=print-call
+                "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
+                "docker rmi {image}".format(image=docker_image)
+            )
+        except docker.errors.ImageNotFound:
+            build_and_tag_test_image(docker_image)
+
+    run_config = merge_dicts(
+        merge_yamls(
+            [
+                os.path.join(test_project_environments_path(), "env.yaml"),
+                os.path.join(test_project_environments_path(), "env_s3.yaml"),
+            ]
+        ),
+        {
+            "execution": {
+                "celery-docker": {
+                    "config": {
+                        "docker": docker_config,
+                        "config_source": {"task_always_eager": True},
+                    }
+                }
+            },
+        },
+    )
+
+    with postgres_instance() as instance:
+
+        container_image = test_project_docker_image()
+
+        result = execute_pipeline(
+            get_test_project_recon_pipeline("docker_celery_pipeline", container_image),
             run_config=run_config,
             instance=instance,
         )

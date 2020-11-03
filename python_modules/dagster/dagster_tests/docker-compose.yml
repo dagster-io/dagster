@@ -7,6 +7,8 @@ services:
     container_name: dagster-grpc-server
     ports:
       - "8090:8090"
+    environment:
+      - DAGSTER_CURRENT_IMAGE=${IMAGE_NAME}
     command:
       [
         "dagster",

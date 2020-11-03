@@ -10,6 +10,7 @@ from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer, Packag
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.grpc.types import LoadableRepositorySymbol
 from dagster.utils import file_relative_path
+from dagster_test.dagster_core_docker_buildkite import test_project_docker_image
 
 
 def test_sync_list_python_file_grpc():
@@ -225,6 +226,8 @@ def test_sync_list_container_grpc(docker_grpc_client):
     response = sync_list_repositories_grpc(docker_grpc_client)
 
     loadable_repo_symbols = response.repository_symbols
+
+    assert docker_grpc_client.get_current_image().current_image == test_project_docker_image()
 
     assert isinstance(loadable_repo_symbols, list)
     assert len(loadable_repo_symbols) == 1
