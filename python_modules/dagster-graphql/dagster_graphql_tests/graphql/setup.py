@@ -105,17 +105,17 @@ def create_main_recon_repo():
     return ReconstructableRepository.for_file(__file__, main_repo_name())
 
 
+@contextmanager
 def get_main_external_repo():
-    return RepositoryLocation.from_handle(
-        RepositoryLocationHandle.create_from_repository_location_origin(
-            location_origin_from_python_file(
-                python_file=file_relative_path(__file__, "setup.py"),
-                attribute=main_repo_name(),
-                working_directory=None,
-                location_name=main_repo_location_name(),
-            )
+    with RepositoryLocationHandle.create_from_repository_location_origin(
+        location_origin_from_python_file(
+            python_file=file_relative_path(__file__, "setup.py"),
+            attribute=main_repo_name(),
+            working_directory=None,
+            location_name=main_repo_location_name(),
         )
-    ).get_repository(main_repo_name())
+    ) as handle:
+        yield RepositoryLocation.from_handle(handle).get_repository(main_repo_name())
 
 
 @lambda_solid(

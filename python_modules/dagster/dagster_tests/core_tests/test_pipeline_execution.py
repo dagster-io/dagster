@@ -167,22 +167,21 @@ def test_diamond_toposort():
 
 
 def test_external_diamond_toposort():
-    repo_location = RepositoryLocation.from_handle(
-        RepositoryLocationHandle.create_from_repository_location_origin(
-            location_origin_from_python_file(
-                python_file=__file__, attribute="create_diamond_pipeline", working_directory=None,
-            )
+    with RepositoryLocationHandle.create_from_repository_location_origin(
+        location_origin_from_python_file(
+            python_file=__file__, attribute="create_diamond_pipeline", working_directory=None,
         )
-    )
-    external_repo = next(iter(repo_location.get_repositories().values()))
-    external_pipeline = next(iter(external_repo.get_all_external_pipelines()))
-    assert external_pipeline.solid_names_in_topological_order == [
-        "A_source",
-        "A",
-        "B",
-        "C",
-        "D",
-    ]
+    ) as handle:
+        repo_location = RepositoryLocation.from_handle(handle)
+        external_repo = next(iter(repo_location.get_repositories().values()))
+        external_pipeline = next(iter(external_repo.get_all_external_pipelines()))
+        assert external_pipeline.solid_names_in_topological_order == [
+            "A_source",
+            "A",
+            "B",
+            "C",
+            "D",
+        ]
 
 
 def compute_called(name):

@@ -18,4 +18,5 @@ def test_bad_workspace_yaml_load():
                 "yaml file at"
             ),
         ):
-            load_workspace_from_yaml_paths([os.path.join(temp_dir, "foo.yaml")])
+            with load_workspace_from_yaml_paths([os.path.join(temp_dir, "foo.yaml")]):
+                pass

@@ -25,12 +25,12 @@ def test_sync_run_launcher_run():
             }
         },
     ) as instance:
-        external_repo = get_main_external_repo()
-        external_pipeline = external_repo.get_full_external_pipeline("noop_pipeline")
+        with get_main_external_repo() as external_repo:
+            external_pipeline = external_repo.get_full_external_pipeline("noop_pipeline")
 
-        run = create_run_for_test(instance=instance, pipeline_name=external_pipeline.name)
+            run = create_run_for_test(instance=instance, pipeline_name=external_pipeline.name)
 
-        run = instance.launch_run(run_id=run.run_id, external_pipeline=external_pipeline)
+            run = instance.launch_run(run_id=run.run_id, external_pipeline=external_pipeline)
 
-        completed_run = instance.get_run_by_id(run.run_id)
-        assert completed_run.is_success
+            completed_run = instance.get_run_by_id(run.run_id)
+            assert completed_run.is_success
