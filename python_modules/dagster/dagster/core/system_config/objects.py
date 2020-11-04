@@ -239,7 +239,7 @@ def config_map_objects(config_value, defs, keyed_by, def_type, name_of_def_type)
     obj_config_evr = obj_def.apply_config_mapping(obj_config)
     if not obj_config_evr.success:
         raise DagsterInvalidConfigError(
-            "Error in config for {} {}".format(name_of_def_type, obj_name),
+            'Invalid configuration provided for {} "{}"'.format(name_of_def_type, obj_name),
             obj_config_evr.errors,
             obj_config,
         )

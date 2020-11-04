@@ -76,9 +76,12 @@ def test_failing_k8s_run_launcher(
     event_records = dagster_instance_for_k8s_run_launcher.all_logs(run.run_id)
 
     assert any(
-        ['Undefined field "blah blah this is wrong"' in str(event) for event in event_records]
+        [
+            'Received unexpected config entry "blah blah this is wrong"' in str(event)
+            for event in event_records
+        ]
     )
-    assert any(['Missing required field "solids"' in str(event) for event in event_records])
+    assert any(['Missing required config entry "solids"' in str(event) for event in event_records])
 
 
 @pytest.mark.integration

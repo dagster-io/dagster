@@ -69,13 +69,17 @@ def test_init_compute_log_with_bad_config():
     with seven.TemporaryDirectory() as tmpdir_path:
         with open(os.path.join(tmpdir_path, "dagster.yaml"), "w") as fd:
             yaml.dump({"compute_logs": {"garbage": "flargh"}}, fd, default_flow_style=False)
-        with pytest.raises(DagsterInvalidConfigError, match='Undefined field "garbage"'):
+        with pytest.raises(
+            DagsterInvalidConfigError, match='Received unexpected config entry "garbage"'
+        ):
             DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
 
 
 def test_init_compute_log_with_bad_config_override():
     with seven.TemporaryDirectory() as tmpdir_path:
-        with pytest.raises(DagsterInvalidConfigError, match='Undefined field "garbage"'):
+        with pytest.raises(
+            DagsterInvalidConfigError, match='Received unexpected config entry "garbage"'
+        ):
             DagsterInstance.from_ref(
                 InstanceRef.from_dir(tmpdir_path, overrides={"compute_logs": {"garbage": "flargh"}})
             )

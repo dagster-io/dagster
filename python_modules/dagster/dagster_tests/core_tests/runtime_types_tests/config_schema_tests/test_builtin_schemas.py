@@ -136,8 +136,9 @@ def test_int_input_schema_failure_wrong_key():
             run_config=single_input_env("take_int", "num", {"wrong_key": "dkjdfkdj"}),
             solid_selection={"take_int"},
         )
-    assert 'Error 1: Undefined field "wrong_key" at path root:solids:take_int:inputs:num' in str(
-        exc_info.value
+    assert (
+        'Error 1: Received unexpected config entry "wrong_key" at path root:solids:take_int:inputs:num'
+        in str(exc_info.value)
     )
 
 

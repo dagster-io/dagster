@@ -116,7 +116,7 @@ def test_basic_json_misnamed_output_config_schema():
         )
 
     assert len(exc_context.value.errors) == 1
-    assert 'Error 1: Undefined field "wrong_name"' in exc_context.value.message
+    assert 'Error 1: Received unexpected config entry "wrong_name"' in exc_context.value.message
     assert "at path root:solids:return_named_one:outputs[0]" in exc_context.value.message
 
 
@@ -127,7 +127,10 @@ def test_no_outputs_no_inputs_config_schema():
         EnvironmentConfig.build(no_input_no_output_pipeline(), {"solids": {"return_one": {}}})
 
     assert len(exc_context.value.errors) == 1
-    assert 'Error 1: Undefined field "return_one" at path root:solids' in exc_context.value.message
+    assert (
+        'Error 1: Received unexpected config entry "return_one" at path root:solids'
+        in exc_context.value.message
+    )
 
 
 def test_no_outputs_one_input_config_schema():
@@ -150,7 +153,7 @@ def test_no_outputs_one_input_config_schema():
         )
 
     assert len(exc_context.value.errors) == 1
-    exp_msg = 'Error 1: Undefined field "outputs" at path root:solids:take_input_return_nothing'
+    exp_msg = 'Error 1: Received unexpected config entry "outputs" at path root:solids:take_input_return_nothing'
     assert exp_msg in exc_context.value.message
 
 

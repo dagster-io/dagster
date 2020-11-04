@@ -752,7 +752,7 @@ def test_configured_composite_solid_cannot_stub_inner_solids_config():
 
     with pytest.raises(
         DagsterInvalidConfigError,
-        match='Undefined field "solids" at path root:solids:return_int_composite.',
+        match='Received unexpected config entry "solids" at path root:solids:return_int_composite.',
     ):
         execute_pipeline(
             return_int_pipeline,

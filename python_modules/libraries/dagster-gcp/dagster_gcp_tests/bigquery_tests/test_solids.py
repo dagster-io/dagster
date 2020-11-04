@@ -110,7 +110,7 @@ def test_bad_config():
         (
             # Schema update options must be a list
             {"schema_update_options": "this is not valid schema update options"},
-            "Value at path root:solids:test:config:query_job_config:schema_update_options must be list. Expected: [BQSchemaUpdateOption]",
+            'Value at path root:solids:test:config:query_job_config:schema_update_options must be list. Expected: "[BQSchemaUpdateOption]"',
         ),
         (
             {"schema_update_options": ["this is not valid schema update options"]},

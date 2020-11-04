@@ -137,8 +137,8 @@ def create_fields_not_defined_error(context, undefined_fields):
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELDS_NOT_DEFINED,
         message=(
-            'Fields "{undefined_fields}" are not defined {path_msg}. Available '
-            'fields: "{available_fields}."'
+            'Received unexpected config entries "{undefined_fields}" {path_msg}. '
+            'Expected: "{available_fields}."'
         ).format(
             undefined_fields=undefined_fields,
             path_msg=get_friendly_path_msg(context.stack),
@@ -189,7 +189,7 @@ def create_field_not_defined_error(context, received_field):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.FIELD_NOT_DEFINED,
-        message='Undefined field "{received}" {path_msg}. Expected: "{type_name}".'.format(
+        message='Received unexpected config entry "{received}" {path_msg}. Expected: "{type_name}".'.format(
             path_msg=get_friendly_path_msg(context.stack),
             type_name=print_config_type_key_to_string(
                 context.config_schema_snapshot, context.config_type_key, with_lines=False
@@ -207,7 +207,7 @@ def create_array_error(context, config_value):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message="Value {path_msg} must be list. Expected: {type_name}".format(
+        message='Value {path_msg} must be list. Expected: "{type_name}"'.format(
             path_msg=get_friendly_path_msg(context.stack),
             type_name=print_config_type_key_to_string(
                 context.config_schema_snapshot, context.config_type_key, with_lines=False
@@ -224,13 +224,8 @@ def create_missing_required_field_error(context, expected_field):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD,
-        message=(
-            'Missing required field "{expected}" {path_msg}. Available Fields: '
-            '"{available_fields}".'
-        ).format(
-            expected=expected_field,
-            path_msg=get_friendly_path_msg(context.stack),
-            available_fields=sorted(context.config_type_snap.field_names),
+        message=('Missing required config entry "{expected}" {path_msg}.').format(
+            expected=expected_field, path_msg=get_friendly_path_msg(context.stack),
         ),
         error_data=MissingFieldErrorData(
             field_name=expected_field, field_snap=context.config_type_snap.get_field(expected_field)
@@ -248,7 +243,7 @@ def create_missing_required_fields_error(context, missing_fields):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELDS,
-        message='Missing required fields "{missing_fields}" {path_msg}".'.format(
+        message='Missing required config entries "{missing_fields}" {path_msg}".'.format(
             missing_fields=missing_fields, path_msg=get_friendly_path_msg(context.stack)
         ),
         error_data=MissingFieldsErrorData(
@@ -353,8 +348,11 @@ def create_none_not_allowed_error(context):
     return EvaluationError(
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
-        message="Value {path_msg} must not be None.".format(
+        message='Value {path_msg} must not be None. Expected "{type_name}"'.format(
             path_msg=get_friendly_path_msg(context.stack),
+            type_name=print_config_type_key_to_string(
+                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            ),
         ),
         error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(None)),
     )

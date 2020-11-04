@@ -263,7 +263,7 @@ def test_solid_config_error():
 
     res = process_config(int_solid_config_type, {"notconfig": 1})
     assert not res.success
-    assert re.match('Undefined field "notconfig"', res.errors[0].message)
+    assert re.match('Received unexpected config entry "notconfig"', res.errors[0].message)
 
     res = process_config(int_solid_config_type, 1)
     assert not res.success

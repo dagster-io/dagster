@@ -135,13 +135,7 @@ def test_single_required_string_field_config_type():
     }
 
     with pytest.raises(
-        AssertionError,
-        match=(
-            re.escape(
-                'Missing required field "string_field" at the root. Available Fields: '
-                "\"['string_field']\"."
-            )
-        ),
+        AssertionError, match='Missing required config entry "string_field" at the root.',
     ):
         _validate(_single_required_string_config_dict(), {})
 
@@ -158,7 +152,10 @@ def test_single_required_string_field_config_type():
 def test_undefined_field_error():
     with pytest.raises(
         AssertionError,
-        match=('Undefined field "extra" at the root. Expected: "{ string_field: ' 'String }".'),
+        match=(
+            'Received unexpected config entry "extra" at the root. Expected: "{ string_field: '
+            'String }".'
+        ),
     ):
         _validate(
             _single_required_string_config_dict(), {"string_field": "value", "extra": "extra"}
@@ -325,7 +322,8 @@ def test_single_nested_config_undefined_errors():
     with pytest.raises(
         AssertionError,
         match=(
-            'Undefined field "not_a_field" at path root:nested. Expected: ' '"{ int_field: Int }".'
+            'Received unexpected config entry "not_a_field" at path root:nested. Expected: '
+            '"{ int_field: Int }".'
         ),
     ):
         _validate(_single_nested_config(), {"nested": {"int_field": 2, "not_a_field": 1}})
@@ -463,7 +461,7 @@ def test_wrong_solid_name():
 
     pe = pe_info.value
 
-    assert 'Undefined field "another_name" at path root:solids' in str(pe)
+    assert 'Received unexpected config entry "another_name" at path root:solids' in str(pe)
 
 
 def fail_me():
@@ -486,7 +484,8 @@ def test_wrong_resources():
     )
 
     with pytest.raises(
-        DagsterInvalidConfigError, match='Undefined field "nope" at path root:resources'
+        DagsterInvalidConfigError,
+        match='Received unexpected config entry "nope" at path root:resources',
     ):
         execute_pipeline(pipeline_def, {"resources": {"nope": {}}})
 
@@ -596,11 +595,7 @@ def test_no_env_missing_required_error_handling():
     assert mfe.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
     assert len(pe.errors) == 1
 
-    assert pe.errors[0].message == (
-        """Missing required field "solids" at the root. """
-        """Available Fields: "['execution', 'intermediate_storage', 'loggers', """
-        """'resources', 'solids', 'storage']"."""
-    )
+    assert pe.errors[0].message == 'Missing required config entry "solids" at the root.'
 
 
 def test_root_extra_field():
@@ -622,7 +617,7 @@ def test_root_extra_field():
     assert len(pe.errors) == 1
     fnd = pe.errors[0]
     assert fnd.reason == DagsterEvaluationErrorReason.FIELD_NOT_DEFINED
-    assert 'Undefined field "nope"' in pe.message
+    assert 'Received unexpected config entry "nope"' in pe.message
 
 
 def test_deeper_path():
@@ -726,10 +721,7 @@ def test_required_resource_not_given():
     pe = pe_info.value
     error = pe.errors[0]
     assert error.reason == DagsterEvaluationErrorReason.MISSING_REQUIRED_FIELD
-    assert (
-        error.message == 'Missing required field "required" at path root:resources. '
-        "Available Fields: \"['required']\"."
-    )
+    assert error.message == 'Missing required config entry "required" at path root:resources.'
 
 
 def test_multilevel_good_error_handling_solids():
@@ -752,8 +744,7 @@ def test_multilevel_good_error_handling_solids():
 
     assert len(missing_field_pe_info.value.errors) == 1
     assert missing_field_pe_info.value.errors[0].message == (
-        """Missing required field "good_error_handling" at path root:solids. """
-        """Available Fields: "['good_error_handling']"."""
+        """Missing required config entry "good_error_handling" at path root:solids."""
     )
 
 
@@ -771,8 +762,7 @@ def test_multilevel_good_error_handling_solid_name_solids():
 
     assert len(pe_info.value.errors) == 1
     assert pe_info.value.errors[0].message == (
-        """Missing required field "config" at path root:solids:good_error_handling. """
-        """Available Fields: "['config', 'outputs']"."""
+        """Missing required config entry "config" at path root:solids:good_error_handling."""
     )
 
 

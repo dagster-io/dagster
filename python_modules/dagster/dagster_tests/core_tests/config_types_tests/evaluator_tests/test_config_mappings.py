@@ -88,8 +88,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message == (
-        'Missing required field "solids" at the root. Available Fields: '
-        """"['execution', 'intermediate_storage', 'loggers', 'resources', 'solids', 'storage']"."""
+        'Missing required config entry "solids" at the root.'
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
@@ -97,8 +96,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message == (
-        'Missing required field "solids" at the root. Available Fields: '
-        """"['execution', 'intermediate_storage', 'loggers', 'resources', 'solids', 'storage']"."""
+        'Missing required config entry "solids" at the root.'
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
@@ -106,8 +104,7 @@ def test_missing_config():
 
     assert len(exc_info.value.errors) == 1
     assert exc_info.value.errors[0].message == (
-        'Missing required field "do_stuff" at path root:solids. Available Fields: '
-        """"['do_stuff']"."""
+        'Missing required config entry "do_stuff" at path root:solids.'
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
@@ -116,8 +113,7 @@ def test_missing_config():
     assert len(exc_info.value.errors) == 1
     assert (
         exc_info.value.errors[0].message
-        == 'Missing required field "config" at path root:solids:do_stuff. Available Fields: '
-        "\"['config', 'outputs']\"."
+        == 'Missing required config entry "config" at path root:solids:do_stuff.'
     )
 
     with pytest.raises(DagsterInvalidConfigError) as exc_info:
@@ -126,8 +122,7 @@ def test_missing_config():
     assert len(exc_info.value.errors) == 1
     assert (
         exc_info.value.errors[0].message
-        == 'Missing required field "override_str" at path root:solids:do_stuff:config. Available '
-        "Fields: \"['override_str']\"."
+        == 'Missing required config entry "override_str" at path root:solids:do_stuff:config.'
     )
 
 
@@ -680,14 +675,13 @@ def test_wrap_all_config_and_inputs():
 
     assert len(exc_info.value.errors) == 2
     assert exc_info.value.errors[0].message == (
-        'Undefined field "this_key_doesnt_exist" at path root:solids:wrap_all:config. '
+        'Received unexpected config entry "this_key_doesnt_exist" at path root:solids:wrap_all:config. '
         'Expected: "{ config_field_a: String config_field_b: String }".'
     )
 
     assert (
         exc_info.value.errors[1].message
-        == 'Missing required field "config_field_b" at path root:solids:wrap_all:config. '
-        "Available Fields: \"['config_field_a', 'config_field_b']\"."
+        == 'Missing required config entry "config_field_b" at path root:solids:wrap_all:config.'
     )
 
 

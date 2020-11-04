@@ -257,9 +257,8 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
               extraNodes.push([...path, fieldName].join('.'));
             }
           }
-
-          errorsAndPaths.push({pathKey: path.join('.'), error: e});
         }
+        errorsAndPaths.push({pathKey: path.join('.'), error: e});
       });
     }
 

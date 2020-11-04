@@ -245,10 +245,7 @@ def test_set_solid_configable_input_bad():
             run_config={"solids": {"set_solid": {"inputs": {"set_input": {"foo", "bar", "baz"}}}}},
         )
 
-    expected = (
-        "Value at path root:solids:set_solid:inputs:set_input must be list. "
-        "Expected: [(String | { json: { path: String } pickle: { path: String } value: String })]"
-    )
+    expected = "Value at path root:solids:set_solid:inputs:set_input must be list."
 
     assert expected in str(exc_info.value)
 
