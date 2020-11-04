@@ -96,6 +96,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         config_source=None,
         retries=None,
         inst_data=None,
+        k8s_client_batch_api=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -108,6 +109,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         else:
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
+
+        self._batch_api = k8s_client_batch_api or kubernetes.client.BatchV1Api()
 
         self.instance_config_map = check.str_param(instance_config_map, "instance_config_map")
         self.dagster_home = check.str_param(dagster_home, "dagster_home")
@@ -219,7 +222,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             env_secrets=exc_config.get("env_secrets"),
         )
 
-        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(external_pipeline.tags))
+        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
         from dagster.cli.api import ExecuteRunArgs
 
@@ -244,9 +247,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         job_namespace = exc_config.get("job_namespace")
 
-        api = kubernetes.client.BatchV1Api()
-        api.create_namespaced_job(body=job, namespace=job_namespace)
-
+        self._batch_api.create_namespaced_job(body=job, namespace=job_namespace)
         self._instance.report_engine_event(
             "Kubernetes run_coordinator job launched",
             run,

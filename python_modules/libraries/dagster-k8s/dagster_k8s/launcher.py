@@ -114,6 +114,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_namespace="default",
         env_config_maps=None,
         env_secrets=None,
+        k8s_client_batch_api=None,
+        k8s_client_core_api=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -128,8 +130,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
 
-        self._batch_api = kubernetes.client.BatchV1Api()
-        self._core_api = kubernetes.client.CoreV1Api()
+        self._batch_api = k8s_client_batch_api or kubernetes.client.BatchV1Api()
+        self._core_api = k8s_client_core_api or kubernetes.client.CoreV1Api()
 
         self.job_config = None
         self._job_image = check.opt_str_param(job_image, "job_image")
@@ -235,7 +237,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = "dagster-run-{}".format(run.run_id)
         pod_name = job_name
 
-        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(external_pipeline.tags))
+        user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
         pipeline_origin = None
         job_config = None
