@@ -1,13 +1,13 @@
 import {MockList} from '@graphql-tools/mock';
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {useRepositoryOptions} from 'src/DagsterRepositoryContext';
+import {OnReload} from 'src/nav/ReloadRepositoryLocationButton';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {asyncWait} from 'src/testing/asyncWait';
 
 describe('RepositoryPicker', () => {
   const defaultMocks = {
@@ -15,18 +15,22 @@ describe('RepositoryPicker', () => {
       __typename: 'RepositoryConnection',
       nodes: () => new MockList(2),
     }),
+    RepositoryLocationsOrError: () => ({
+      __typename: 'RepositoryLocation',
+    }),
     RepositoryLocation: () => ({
       isReloadSupported: true,
       name: () => 'undisclosed-location',
     }),
   };
 
-  const Wrapper = () => {
+  const Wrapper: React.FC<{onReload?: OnReload}> = (props) => {
     const {loading, options} = useRepositoryOptions();
     return (
       <MemoryRouter>
         <RepositoryPicker
           loading={loading}
+          onReload={props.onReload || jest.fn()}
           options={options}
           repo={options[0]}
           setRepo={jest.fn()}
@@ -48,9 +52,10 @@ describe('RepositoryPicker', () => {
       </ApolloTestProvider>,
     );
 
-    await asyncWait();
-    expect(screen.getByText(/foo-bar/i)).toBeVisible();
-    expect(screen.getByRole('button', {name: /refresh/i})).toBeVisible();
+    await waitFor(() => {
+      expect(screen.getByText(/foo-bar/i)).toBeVisible();
+      expect(screen.getByRole('button', {name: /refresh/i})).toBeVisible();
+    });
   });
 
   it('surfaces reloading errors', async () => {
@@ -63,24 +68,23 @@ describe('RepositoryPicker', () => {
       }),
     };
 
+    const onReload = jest.fn();
+
     render(
       <ApolloTestProvider mocks={{...defaultMocks, ...mocks}}>
-        <Wrapper />
+        <Wrapper onReload={onReload} />
       </ApolloTestProvider>,
     );
 
-    await asyncWait();
-    userEvent.click(screen.getByRole('button', {name: /refresh/i}));
+    const button = await screen.findByRole('button', {name: /refresh/i});
+    userEvent.click(button);
 
-    await asyncWait();
-
-    // Show error
-    const errorText = screen.getByText(/error loading repository/i);
-    expect(errorText).toBeVisible();
-    userEvent.click(errorText);
-
-    // Show dialog with error message
-    expect(screen.getByText(/failed to load repository location/i)).toBeVisible();
-    expect(screen.getByText(/oh no rofl/i)).toBeVisible();
+    await waitFor(() => {
+      expect(onReload.mock.calls.length).toBe(1);
+      expect(onReload.mock.calls[0]).toEqual([
+        'undisclosed-location',
+        {type: 'error', message: 'oh no rofl'},
+      ]);
+    });
   });
 });

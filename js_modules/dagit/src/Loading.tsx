@@ -25,18 +25,22 @@ export const Loading = <TData extends {}>(props: ILoadingProps<TData>) => {
     );
   }
   if (!data || (loading && !allowStaleData) || Object.keys(data).length === 0) {
-    return (
-      <LoadingContainer>
-        <LoadingCentering>
-          <ProgressBar />
-        </LoadingCentering>
-      </LoadingContainer>
-    );
+    return <LoadingWithProgress />;
   }
   return <>{children(data as TData)}</>;
 };
 
-const LoadingContainer = styled.div`
+export const LoadingWithProgress: React.FC<{}> = () => {
+  return (
+    <LoadingContainer>
+      <LoadingCentering>
+        <ProgressBar />
+      </LoadingCentering>
+    </LoadingContainer>
+  );
+};
+
+export const LoadingContainer = styled.div`
   width: 100%;
   height: 100%;
   display: flex;
@@ -44,7 +48,7 @@ const LoadingContainer = styled.div`
   justify-content: center;
 `;
 
-const LoadingCentering = styled.div`
+export const LoadingCentering = styled.div`
   max-width: 600px;
   width: 75%;
 `;

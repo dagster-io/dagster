@@ -1,12 +1,11 @@
 import {MockList} from '@graphql-tools/mock';
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {App, AppContent} from 'src/App';
 import {breakOnUnderscores} from 'src/Util';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {asyncWait} from 'src/testing/asyncWait';
 
 describe('App', () => {
   const defaultMocks = {
@@ -18,6 +17,16 @@ describe('App', () => {
     }),
     RepositoriesOrError: () => ({
       __typename: 'RepositoryConnection',
+    }),
+    RepositoryLocationConnection: () => ({
+      nodes: () => new MockList(2),
+    }),
+    RepositoryLocationsOrError: () => ({
+      __typename: 'RepositoryLocationConnection',
+      nodes: () => new MockList(2),
+    }),
+    RepositoryLocationOrLoadFailure: () => ({
+      __typename: 'RepositoryLocation',
     }),
     SolidDefinition: () => ({
       configField: null,
@@ -50,9 +59,8 @@ describe('App', () => {
       </ApolloTestProvider>,
     );
 
-    await asyncWait();
-
-    expect(screen.getByText('Instance Details')).toBeVisible();
+    const details = await screen.findByText('Instance Details');
+    expect(details).toBeVisible();
 
     const [runsLink] = screen.getAllByText('Runs');
     expect(runsLink.closest('a')).toHaveAttribute('href', '/instance/runs');
@@ -75,12 +83,12 @@ describe('App', () => {
         </MemoryRouter>,
       );
 
-      await asyncWait();
-
-      expect(screen.getByRole('heading', {name: breakOnUnderscores('foo_solid')})).toBeVisible();
-      expect(screen.getByText(/inputs/i)).toBeVisible();
-      expect(screen.getByText(/outputs/i)).toBeVisible();
-      expect(screen.getByText(/all invocations/i)).toBeVisible();
+      await waitFor(() => {
+        expect(screen.getByRole('heading', {name: breakOnUnderscores('foo_solid')})).toBeVisible();
+        expect(screen.getByText(/inputs/i)).toBeVisible();
+        expect(screen.getByText(/outputs/i)).toBeVisible();
+        expect(screen.getByText(/all invocations/i)).toBeVisible();
+      });
     });
 
     it('renders solids explorer', async () => {
@@ -92,14 +100,13 @@ describe('App', () => {
         </MemoryRouter>,
       );
 
-      await asyncWait();
-
-      expect(screen.getByPlaceholderText('Filter by name or input/output type...')).toBeVisible();
-
-      expect(screen.getByRole('heading', {name: breakOnUnderscores('foo_solid')})).toBeVisible();
-      expect(screen.getByText(/inputs/i)).toBeVisible();
-      expect(screen.getByText(/outputs/i)).toBeVisible();
-      expect(screen.getByText(/all invocations/i)).toBeVisible();
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('Filter by name or input/output type...')).toBeVisible();
+        expect(screen.getByRole('heading', {name: breakOnUnderscores('foo_solid')})).toBeVisible();
+        expect(screen.getByText(/inputs/i)).toBeVisible();
+        expect(screen.getByText(/outputs/i)).toBeVisible();
+        expect(screen.getByText(/all invocations/i)).toBeVisible();
+      });
     });
 
     it('renders pipeline overview', async () => {
@@ -128,13 +135,12 @@ describe('App', () => {
         </MemoryRouter>,
       );
 
-      await asyncWait();
-
-      expect(screen.getByRole('tablist')).toBeVisible();
-      expect(screen.getByRole('link', {name: /overview/i})).toBeVisible();
-
-      expect(screen.getByText(/no pipeline schedules/i)).toBeVisible();
-      expect(screen.getByText(/no recent assets/i)).toBeVisible();
+      await waitFor(() => {
+        expect(screen.getByRole('tablist')).toBeVisible();
+        expect(screen.getByRole('link', {name: /overview/i})).toBeVisible();
+        expect(screen.getByText(/no pipeline schedules/i)).toBeVisible();
+        expect(screen.getByText(/no recent assets/i)).toBeVisible();
+      });
     });
   });
 });

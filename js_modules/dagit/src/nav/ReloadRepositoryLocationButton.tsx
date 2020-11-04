@@ -10,14 +10,9 @@ import {
 } from 'src/nav/types/ReloadRepositoryLocationMutation';
 
 export type ReloadResult = {type: 'success'} | {type: 'error'; message: string};
+export type OnReload = (location: string, result: ReloadResult) => void;
 
-interface Props {
-  location: string;
-  onReload: (location: string, result: ReloadResult) => void;
-}
-
-export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
-  const {location, onReload} = props;
+export const useRepositoryLocationReload = (location: string, onReload: OnReload) => {
   const apollo = useApolloClient();
   const [reload] = useMutation<
     ReloadRepositoryLocationMutation,
@@ -61,6 +56,18 @@ export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
       apollo.resetStore();
     }
   };
+
+  return {reloading, onClick};
+};
+
+interface Props {
+  location: string;
+  onReload: (location: string, result: ReloadResult) => void;
+}
+
+export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
+  const {location, onReload} = props;
+  const {reloading, onClick} = useRepositoryLocationReload(location, onReload);
 
   return (
     <ShortcutHandler

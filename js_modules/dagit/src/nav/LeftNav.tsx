@@ -14,6 +14,7 @@ import {InstanceDetailsLink} from 'src/nav/InstanceDetailsLink';
 import {RepositoryContentList} from 'src/nav/RepositoryContentList';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {SchedulesList} from 'src/nav/SchedulesList';
+import {useRepositoryLocations} from 'src/workspace/useRepositoryLocations';
 
 const KEYCODE_FOR_1 = 49;
 
@@ -56,6 +57,13 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
     | {selector: string; tab: string; rootTab: undefined}
     | {selector: undefined; tab: undefined; rootTab: string}
   >(['/pipeline/:selector/:tab?', '/solid/:selector', '/schedules/:selector', '/:rootTab?']);
+  const {nodes: locations, refetch} = useRepositoryLocations();
+
+  const anyErrors = locations.some((node) => node.__typename === 'RepositoryLocationLoadFailure');
+
+  const onReload = () => {
+    refetch();
+  };
 
   return (
     <LeftNavContainer>
@@ -100,7 +108,22 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
           minHeight: 0,
         }}
       >
-        <RepositoryPicker loading={loading} options={options} repo={repo} setRepo={setRepo} />
+        <RepositoryPicker
+          loading={loading}
+          options={options}
+          repo={repo}
+          setRepo={setRepo}
+          onReload={onReload}
+        />
+        {anyErrors ? (
+          <LoadingError>
+            <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
+            <div style={{fontSize: '12px', margin: '0 8px'}}>
+              An error occurred while loading a repository.{' '}
+              <Link to="/workspace/repository-locations">View details</Link>
+            </div>
+          </LoadingError>
+        ) : null}
         {repo && (
           <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
             <ItemHeader>Pipelines & Solids:</ItemHeader>
@@ -200,4 +223,28 @@ const LogoMetaContainer = styled.div`
   right: 0;
   z-index: 1;
   border-bottom: 1px solid ${Colors.DARK_GRAY4};
+`;
+
+const LoadingError = styled.div`
+  align-items: center;
+  background-color: ${Colors.GOLD5};
+  border: 0;
+  color: ${Colors.DARK_GRAY3};
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 8px 12px;
+  text-align: left;
+
+  &:active {
+    outline: none;
+  }
+
+  & a,
+  a:hover,
+  a:active {
+    color: ${Colors.DARK_GRAY3};
+    text-decoration: underline;
+    white-space: nowrap;
+  }
 `;
