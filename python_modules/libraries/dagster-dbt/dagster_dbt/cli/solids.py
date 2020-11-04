@@ -642,14 +642,14 @@ def dbt_cli_docs_generate(context) -> Dict:
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "full-refresh": Field(
-            config=Noneable(str),
-            default_value=None,
+            config=bool,
+            default_value=False,
             is_required=False,
             description=("Drop existing seed tables and recreate them."),
         ),
         "show": Field(
-            config=Noneable(str),
-            default_value=None,
+            config=bool,
+            default_value=False,
             is_required=False,
             description=("Show a sample of the loaded data in the terminal."),
         ),
