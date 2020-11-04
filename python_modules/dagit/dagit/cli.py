@@ -9,7 +9,7 @@ from dagster import check, seven
 from dagster.cli.workspace import Workspace, get_workspace_from_kwargs, workspace_target_argument
 from dagster.cli.workspace.cli_target import WORKSPACE_TARGET_WARNING
 from dagster.core.instance import DagsterInstance
-from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action, log_repo_stats, upload_logs
+from dagster.core.telemetry import START_DAGIT_WEBSERVER, log_action, upload_logs
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from gevent import pywsgi
 from geventwebsocket.handler import WebSocketHandler
@@ -131,22 +131,6 @@ def host_dagit_ui(
 def host_dagit_ui_with_workspace(instance, workspace, host, port, path_prefix, port_lookup=True):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(workspace, "workspace", Workspace)
-
-    if len(workspace.repository_location_handles) == 1:
-        repository_location_handle = workspace.repository_location_handles[0]
-
-        # Telemetry logic needs to be updated to support multi-repo / gRPC repo locations
-        # See https://github.com/dagster-io/dagster/issues/2752
-        if (
-            hasattr(repository_location_handle, "repository_code_pointer_dict")
-            and len(repository_location_handle.repository_code_pointer_dict) == 1
-        ):
-            pointer = next(iter(repository_location_handle.repository_code_pointer_dict.values()))
-            from dagster.core.definitions.reconstructable import ReconstructableRepository
-
-            recon_repo = ReconstructableRepository(pointer)
-
-            log_repo_stats(instance=instance, repo=recon_repo, source="dagit")
 
     app = create_app_from_workspace(workspace, instance, path_prefix)
 
