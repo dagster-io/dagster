@@ -786,6 +786,18 @@ def _create_run_config_schema(pipeline_def, mode_definition):
     )
     from .run_config_schema import RunConfigSchema
 
+    # When executing with a subset pipeline, include the missing solids
+    # from the original pipeline as ignored to allow execution with
+    # run config that is valid for the original
+    if pipeline_def.is_subset_pipeline:
+        ignored_solids = [
+            solid
+            for solid in pipeline_def.parent_pipeline_def.solids
+            if not pipeline_def.has_solid_named(solid.name)
+        ]
+    else:
+        ignored_solids = []
+
     environment_type = define_environment_cls(
         EnvironmentClassCreationData(
             pipeline_name=pipeline_def.name,
@@ -793,6 +805,7 @@ def _create_run_config_schema(pipeline_def, mode_definition):
             dependency_structure=pipeline_def.dependency_structure,
             mode_definition=mode_definition,
             logger_defs=mode_definition.loggers,
+            ignored_solids=ignored_solids,
         )
     )
 
