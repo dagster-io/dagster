@@ -8,6 +8,8 @@ from .cli import (
     dbt_cli_snapshot,
     dbt_cli_snapshot_freshness,
     dbt_cli_test,
+    dbt_cli_docs_generate,
+    dbt_cli_seed,
 )
 from .errors import (
     DagsterDbtCliFatalRuntimeError,

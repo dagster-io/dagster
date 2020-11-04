@@ -551,3 +551,188 @@ def dbt_cli_compile(context) -> Dict:
         )
 
     yield Output(cli_output)
+
+
+@solid(
+    description="A solid to invoke dbt docs generate via CLI.",
+    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
+    output_defs=[OutputDefinition(name="result", dagster_type=Dict)],
+    config_schema={
+        **CLI_CONFIG_SCHEMA,
+        "threads": Field(
+            config=Noneable(int),
+            default_value=None,
+            is_required=False,
+            description=(
+                "Specify number of threads to use while executing models. Overrides settings "
+                "in profiles.yml."
+            ),
+        ),
+        "no-version-check": Field(
+            config=bool,
+            description=(
+                "Skip the check that dbt's version matches the one specified in the "
+                "dbt_project.yml file ('require-dbt-version')"
+            ),
+            is_required=False,
+            default_value=False,
+        ),
+        "models": Field(
+            config=Noneable([str]),
+            default_value=None,
+            is_required=False,
+            description="The dbt models to run.",
+        ),
+        "exclude": Field(
+            config=Noneable([str]),
+            default_value=None,
+            is_required=False,
+            description="The dbt models to exclude.",
+        ),
+        "selector": Field(
+            config=Noneable([str]),
+            default_value=None,
+            is_required=False,
+            description="The selector name to use, as defined in your selectors.yml",
+        ),
+        "state": Field(
+            config=Noneable([str]),
+            default_value=None,
+            is_required=False,
+            description=(
+                "If set, use the given directory as the source for json files to compare with "
+                "this project."
+            ),
+        ),
+        "yield_materializations": Field(
+            config=Bool, is_required=False, default_value=True, description="FIXME"
+        ),
+    },
+    tags={"kind": "dbt"},
+)
+@experimental
+def dbt_cli_docs_generate(context) -> Dict:
+    """This solid executes ``dbt docs generate`` via the dbt CLI."""
+    cli_output = execute_cli(
+        context.solid_config["dbt_executable"],
+        command=("docs", "generate",),
+        flags_dict=passthrough_flags_only(
+            context.solid_config,
+            ("threads", "no-version-check", "models", "exclude", "selector", "state",),
+        ),
+        log=context.log,
+        warn_error=context.solid_config["warn-error"],
+        ignore_handled_error=context.solid_config["ignore_handled_error"],
+    )
+
+    if context.solid_config["yield_materializations"]:
+        yield AssetMaterialization(
+            asset_key="dbt_compile_cli_output",
+            description="Output from the CLI execution of `dbt docs generate`.",
+            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
+        )
+
+    yield Output(cli_output)
+
+
+@solid(
+    description="A solid to invoke dbt seed via CLI.",
+    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
+    output_defs=[OutputDefinition(name="result", dagster_type=Dict)],
+    config_schema={
+        **CLI_CONFIG_SCHEMA,
+        "full-refresh": Field(
+            config=Noneable(str),
+            default_value=None,
+            is_required=False,
+            description=("Drop existing seed tables and recreate them."),
+        ),
+        "show": Field(
+            config=Noneable(str),
+            default_value=None,
+            is_required=False,
+            description=("Show a sample of the loaded data in the terminal."),
+        ),
+        "threads": Field(
+            config=Noneable(int),
+            default_value=None,
+            is_required=False,
+            description=(
+                "Specify number of threads to use while executing models. Overrides settings "
+                "in profiles.yml."
+            ),
+        ),
+        "no-version-check": Field(
+            config=bool,
+            description=(
+                "Skip the check that dbt's version matches the one specified in the "
+                "dbt_project.yml file ('require-dbt-version')"
+            ),
+            is_required=False,
+            default_value=False,
+        ),
+        "models": Field(
+            config=Noneable([str]),
+            default_value=None,
+            is_required=False,
+            description="The dbt models to run.",
+        ),
+        "exclude": Field(
+            config=Noneable([str]),
+            default_value=None,
+            is_required=False,
+            description="The dbt models to exclude.",
+        ),
+        "selector": Field(
+            config=Noneable([str]),
+            default_value=None,
+            is_required=False,
+            description="The selector name to use, as defined in your selectors.yml",
+        ),
+        "state": Field(
+            config=Noneable([str]),
+            default_value=None,
+            is_required=False,
+            description=(
+                "If set, use the given directory as the source for json files to compare with "
+                "this project."
+            ),
+        ),
+        "yield_materializations": Field(
+            config=Bool, is_required=False, default_value=True, description="FIXME"
+        ),
+    },
+    tags={"kind": "dbt"},
+)
+@experimental
+def dbt_cli_seed(context) -> Dict:
+    """This solid executes ``dbt seed`` via the dbt CLI."""
+    cli_output = execute_cli(
+        context.solid_config["dbt_executable"],
+        command=("seed",),
+        flags_dict=passthrough_flags_only(
+            context.solid_config,
+            (
+                "full-refresh",
+                "show",
+                "threads",
+                "no-version-check",
+                "models",
+                "exclude",
+                "selector",
+                "state",
+            ),
+        ),
+        log=context.log,
+        warn_error=context.solid_config["warn-error"],
+        ignore_handled_error=context.solid_config["ignore_handled_error"],
+    )
+
+    if context.solid_config["yield_materializations"]:
+        yield AssetMaterialization(
+            asset_key="dbt_compile_cli_output",
+            description="Output from the CLI execution of `dbt seed`.",
+            metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
+        )
+
+    yield Output(cli_output)
