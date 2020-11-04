@@ -1,7 +1,8 @@
 from dagster import check
 from dagster.config.field_utils import Permissive
+from dagster.core.types.dagster_type import String
 
-from .config_schema import dagster_type_loader
+from .config_schema import DagsterTypeLoader, dagster_type_loader
 from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
 
 
@@ -18,13 +19,38 @@ PythonDict = PythonObjectDagsterType(
 )
 
 
+class TypedDictLoader(DagsterTypeLoader):
+    def __init__(self, value_dagster_type):
+        self._value_dagster_type = check.inst_param(
+            value_dagster_type, "value_dagster_type", DagsterType
+        )
+
+    @property
+    def schema_type(self):
+        return Permissive()
+
+    def construct_from_config_value(self, context, config_value):
+        config_value = check.dict_param(config_value, "config_value")
+        runtime_value = dict()
+        for key, val in config_value.items():
+            runtime_value[key] = self._value_dagster_type.loader.construct_from_config_value(
+                context, val
+            )
+        return runtime_value
+
+
 class _TypedPythonDict(DagsterType):
     def __init__(self, key_type, value_type):
         self.key_type = check.inst_param(key_type, "key_type", DagsterType)
         self.value_type = check.inst_param(value_type, "value_type", DagsterType)
+        can_get_from_config = self.value_type.loader is not None and isinstance(
+            self.key_type, type(String)
+        )  # True if value_type has a DagsterTypeLoader, meaning we can load the input from config,
+        # otherwise False.
         super(_TypedPythonDict, self).__init__(
             key="TypedPythonDict.{}.{}".format(key_type.key, value_type.key),
             name=None,
+            loader=(TypedDictLoader(self.value_type) if can_get_from_config else None),
             type_check_fn=self.type_check_method,
         )
 
