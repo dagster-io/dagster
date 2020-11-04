@@ -9,7 +9,7 @@ import warnings
 from contextlib import contextmanager
 
 from dagster.core.execution import poll_compute_logs, watch_orphans
-from dagster.seven import IS_WINDOWS
+from dagster.seven import IS_WINDOWS, wait_for_process
 from dagster.utils import ensure_file
 
 WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is disabled for the current environment. Set the environment variable `PYTHONLEGACYWINDOWSSTDIO` to enable.\n\u001b[0m"""
@@ -99,6 +99,7 @@ def execute_windows_tail(path, stream):
         if tail_process:
             time.sleep(2 * poll_compute_logs.POLLING_INTERVAL)
             tail_process.terminate()
+            wait_for_process(tail_process)
 
 
 @contextmanager
@@ -132,6 +133,7 @@ def _clean_up_subprocess(subprocess_obj):
     try:
         if subprocess_obj:
             subprocess_obj.terminate()
+            wait_for_process(subprocess_obj)
     except OSError:
         pass
 
