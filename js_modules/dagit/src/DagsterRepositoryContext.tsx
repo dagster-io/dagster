@@ -103,30 +103,29 @@ export const useRepositoryOptions = () => {
  * is the repo currently active in your session.
  */
 export const useCurrentRepositoryState = (options: DagsterRepoOption[]) => {
-  const [repo, _setRepo] = React.useState<DagsterRepoOption | null>(null);
+  const [repoKey, setRepoKey] = React.useState<string | null>(null);
 
   const setRepo = (next: DagsterRepoOption) => {
-    window.localStorage.setItem(LAST_REPO_KEY, getRepositoryOptionHash(next));
-    _setRepo(next);
+    const key = getRepositoryOptionHash(next);
+    window.localStorage.setItem(LAST_REPO_KEY, key);
+    setRepoKey(key);
   };
 
   // If the selection is null or the selected repository cannot be found in the set,
   // coerce the selection to the last used repo or [0].
   React.useEffect(() => {
-    if (!options.length) {
-      return;
-    }
     if (
-      !repo ||
-      !options.some((o) => getRepositoryOptionHash(o) === getRepositoryOptionHash(repo))
+      options.length &&
+      (!repoKey || !options.some((o) => getRepositoryOptionHash(o) === repoKey))
     ) {
-      const lastHash = window.localStorage.getItem(LAST_REPO_KEY);
-      const last = lastHash && options.find((o) => getRepositoryOptionHash(o) === lastHash);
-      setRepo(last || options[0]);
+      const lastKey = window.localStorage.getItem(LAST_REPO_KEY);
+      const last = lastKey && options.find((o) => getRepositoryOptionHash(o) === lastKey);
+      setRepoKey(getRepositoryOptionHash(last || options[0]));
     }
-  }, [repo, options]);
+  }, [repoKey, options]);
 
-  return [repo, setRepo] as [typeof repo, typeof setRepo];
+  const repoForKey = options.find((o) => getRepositoryOptionHash(o) === repoKey) || null;
+  return [repoForKey, setRepo] as [typeof repoForKey, typeof setRepo];
 };
 
 export const useRepositorySelector = (): RepositorySelector => {
