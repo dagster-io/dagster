@@ -4,7 +4,29 @@
 
 **Breaking Changes**
 
-- `GrpcRunLauncher` has been removed and merged into `DefaultRunLauncher`.
+- `CliApiRunLauncher` and `GrpcRunLauncher` have been combined into `DefaultRunLauncher`.
+If you had one of these run launchers in your `dagster.yaml`, replace it with `DefaultRunLauncher`
+or remove the `run_launcher:` section entirely.
+
+**New**
+
+- Added a type loader for typed dictionaries: can now load typed dictionaries from config.
+
+**Bugfixes**
+
+- Dagit bugfixes and improvements
+  - Added error handling for repository errors on startup and reload
+  - Repaired timezone offsets
+  - Fixed pipeline explorer state for empty pipelines
+  - Fixed Scheduler table
+- User-defined k8s config in the pipeline run tags (with key `dagster-k8s/config`) will now be
+passed to the k8s jobs when using the `dagster-k8s` and `dagster-celery-k8s` run launchers.
+Previously, only user-defined k8s config in the pipeline definition’s tag was passed down.
+
+**Experimental**
+
+- Run queuing: the new `QueuedRunCoordinator` enables limiting the number of concurrent runs.
+The `DefaultRunCoordinator` launches jobs directly from Dagit, preserving existing behavior.
 
 ## 0.9.17
 
