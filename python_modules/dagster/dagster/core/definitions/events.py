@@ -50,11 +50,34 @@ class AssetKey(namedtuple("_AssetKey", "path"), Persistable):
 
     Example usage:
 
-        AssetKey('flat_asset_key')
+    .. code-block:: python
 
-        AssetKey(['parent', 'child', 'grandchild'])
+        @solid
+        def emit_metadata_solid(context, df):
+            yield AssetMaterialization(
+                asset_key=AssetKey('flat_asset_key'),
+                metadata_entries=[
+                    EventMetadataEntry.text("Text-based metadata for this event", "text_metadata")
+                ],
+            )
 
-        AssetKey(('parent', 'child', 'grandchild'))
+        @solid
+        def structured_asset_key_solid(context, df):
+            yield AssetMaterialization(
+                asset_key=AssetKey(['parent', 'child', 'grandchild']),
+                metadata_entries=[
+                    EventMetadataEntry.text("Text-based metadata for this event", "text_metadata")
+                ],
+            )
+
+        @solid
+        def structured_asset_key_solid_2(context, df):
+            yield AssetMaterialization(
+                asset_key=AssetKey(('parent', 'child', 'grandchild')),
+                metadata_entries=[
+                    EventMetadataEntry.text("Text-based metadata for this event", "text_metadata")
+                ],
+            )
 
     Args:
         path (str|str[]|str()): String, list of strings, or tuple of strings.  A list of strings
@@ -120,7 +143,7 @@ class EventMetadataEntry(
     Args:
         label (str): Short display label for this metadata entry.
         description (Optional[str]): A human-readable description of this metadata entry.
-        entry_data (Union[TextMetadataEntryData, UrlMetadataEntryData, PathMetadataEntryData, JsonMetadataEntryData, MarkdownMetadataEntryData]):
+        entry_data (Union[(Union[TextMetadataEntryData, UrlMetadataEntryData, PathMetadataEntryData, JsonMetadataEntryData, MarkdownMetadataEntryData, FloatMetadataEntryData, IntMetadataEntryData]):
             Typed metadata entry data. The different types allow for customized display in tools
             like dagit.
     """
@@ -136,7 +159,18 @@ class EventMetadataEntry(
     @staticmethod
     def text(text, label, description=None):
         """Static constructor for a metadata entry containing text as
-        :py:class:`TextMetadataEntryData`.
+        :py:class:`TextMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            @solid
+            def emit_metadata_solid(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata_entries=[
+                        EventMetadataEntry.text("Text-based metadata for this event", "text_metadata")
+                    ],
+                )
 
         Args:
             text (Optional[str]): The text of this metadata entry.
@@ -148,7 +182,20 @@ class EventMetadataEntry(
     @staticmethod
     def url(url, label, description=None):
         """Static constructor for a metadata entry containing a URL as
-        :py:class:`UrlMetadataEntryData`.
+        :py:class:`UrlMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            @solid
+            def emit_metadata_solid(context):
+                yield AssetMaterialization(
+                    asset_key="my_dashboard",
+                    metadata_entries=[
+                        EventMetadataEntry.url(
+                            "http://mycoolsite.com/my_dashboard", label="dashboard_url"
+                        ),
+                    ],
+                )
 
         Args:
             url (Optional[str]): The URL contained by this metadata entry.
@@ -160,19 +207,38 @@ class EventMetadataEntry(
     @staticmethod
     def path(path, label, description=None):
         """Static constructor for a metadata entry containing a path as
-        :py:class:`PathMetadataEntryData`.
+        :py:class:`PathMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            @solid
+            def emit_metadata_solid(context):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata_entries=[EventMetadataEntry.path("path/to/file", label="filepath")],
+                )
 
         Args:
             path (Optional[str]): The path contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
+
         return EventMetadataEntry(label, description, PathMetadataEntryData(path))
 
     @staticmethod
     def fspath(path, label=None, description=None):
         """Static constructor for a metadata entry containing a filesystem path as
-        :py:class:`PathMetadataEntryData`.
+        :py:class:`PathMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            @solid
+            def emit_metadata_solid(context):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata_entries=[EventMetadataEntry.fspath("path/to/file")],
+                )
 
         Args:
             path (Optional[str]): The path contained by this metadata entry.
@@ -187,7 +253,21 @@ class EventMetadataEntry(
     @staticmethod
     def json(data, label, description=None):
         """Static constructor for a metadata entry containing JSON data as
-        :py:class:`JsonMetadataEntryData`.
+        :py:class:`JsonMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            @solid
+            def emit_metadata_solid(context):
+                yield ExpectationResult(
+                    success=not missing_things,
+                    label="is_present",
+                    metadata_entries=[
+                        EventMetadataEntry.json(
+                            label="metadata", data={"missing_columns": missing_things},
+                        )
+                    ],
+                )
 
         Args:
             data (Optional[Dict[str, Any]]): The JSON data contained by this metadata entry.
@@ -198,7 +278,17 @@ class EventMetadataEntry(
 
     @staticmethod
     def md(md_str, label, description=None):
-        """Static constructor for a metadata entry containing markdown.
+        """Static constructor for a metadata entry containing markdown data as
+        :py:class:`MarkdownMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            @solid
+            def emit_metadata_solid(context, md_str):
+                yield AssetMaterialization(
+                    asset_key="info",
+                    metadata_entries=[EventMetadataEntry.md(md_str=md_str)],
+                )
 
         Args:
             md_str (Optional[str]): The markdown contained by this metadata entry.
@@ -219,25 +309,45 @@ class EventMetadataEntry(
     @staticmethod
     def float(value, label, description=None):
         """Static constructor for a metadata entry containing float as
-        :py:class:`FloatMetadataEntryData`.
+        :py:class:`FloatMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            @solid
+            def emit_metadata_solid(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata_entries=[EventMetadataEntry.float(calculate_bytes(df), "size (bytes)")],
+                )
 
         Args:
             value (Optional[float]): The float value contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
+
         return EventMetadataEntry(label, description, FloatMetadataEntryData(value))
 
     @staticmethod
     def int(value, label, description=None):
         """Static constructor for a metadata entry containing int as
-        :py:class:`IntMetadataEntryData`.
+        :py:class:`IntMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            @solid
+            def emit_metadata_solid(context, df):
+                yield AssetMaterialization(
+                    asset_key="my_dataset",
+                    metadata_entries=[EventMetadataEntry.int(len(df), "number of rows")],
+                )
 
         Args:
             value (Optional[int]): The int value contained by this metadata entry.
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
+
         return EventMetadataEntry(label, description, IntMetadataEntryData(value))
 
 
@@ -323,6 +433,12 @@ class PythonArtifactMetadataEntryData(
 
 @whitelist_for_persistence
 class FloatMetadataEntryData(namedtuple("_FloatMetadataEntryData", "value"), Persistable):
+    """Container class for float metadata entry data.
+
+    Args:
+        value (Optional[float]): The float value.
+    """
+
     def __new__(cls, value):
         return super(FloatMetadataEntryData, cls).__new__(
             cls, check.opt_float_param(value, "value")
@@ -331,6 +447,12 @@ class FloatMetadataEntryData(namedtuple("_FloatMetadataEntryData", "value"), Per
 
 @whitelist_for_persistence
 class IntMetadataEntryData(namedtuple("_IntMetadataEntryData", "value"), Persistable):
+    """Container class for int metadata entry data.
+
+    Args:
+        value (Optional[int]): The int value.
+    """
+
     def __new__(cls, value):
         return super(IntMetadataEntryData, cls).__new__(cls, check.opt_int_param(value, "value"))
 
@@ -392,7 +514,7 @@ class AssetMaterialization(
     framework.
 
     Solid authors should use these events to organize metadata about the side effects of their
-    computations, enabling tooling like the Assets dashboard in `dagit`.
+    computations, enabling tooling like the Assets dashboard in Dagit.
 
     Args:
         asset_key (str|List[str]|AssetKey): A key to identify the materialized asset across pipeline

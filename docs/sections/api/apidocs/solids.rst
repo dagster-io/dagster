@@ -100,6 +100,11 @@ structured events.
 .. autoclass:: UrlMetadataEntryData
     :members:
 
+.. autoclass:: FloatMetadataEntryData
+    :members:
+
+.. autoclass:: IntMetadataEntryData
+    :members:
 
 -------
 
