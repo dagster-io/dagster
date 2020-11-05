@@ -26,6 +26,7 @@ from .rpc import (
     create_dbt_rpc_run_sql_solid,
     dbt_rpc_compile_sql,
     dbt_rpc_generate_docs,
+    dbt_rpc_generate_docs_and_wait,
     dbt_rpc_resource,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,

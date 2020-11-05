@@ -1006,11 +1006,11 @@ def dbt_rpc_seed(context: SolidExecutionContext) -> String:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_seed_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
-    """This solid sends the ``dbt seed`` command to a dbt RPC server and returns the request
-    token.
+    """This solid sends the ``dbt seed`` command to a dbt RPC server and returns the
+    result of the executed dbt process.
 
-    This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
-    poll the progress of the running dbt process.
+    This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
+    process is completed.
     """
     resp = context.resources.dbt_rpc.seed(
         show=context.solid_config["show"], **context.solid_config["task_tags"],
@@ -1060,7 +1060,8 @@ def dbt_rpc_seed_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     tags={"kind": "dbt"},
 )
 def dbt_rpc_generate_docs(context: SolidExecutionContext) -> String:
-    """This solid sends the ``dbt run`` command to a dbt RPC server and returns the request token.
+    """This solid sends the ``dbt generate docs`` command to a dbt RPC server and returns the
+    request token.
 
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
     poll the progress of the running dbt process.
@@ -1074,3 +1075,75 @@ def dbt_rpc_generate_docs(context: SolidExecutionContext) -> String:
     context.log.debug(resp.text)
     raise_for_rpc_error(context, resp)
     return resp.json().get("result").get("request_token")
+
+
+@solid(
+    description="A solid to invoke dbt docs generate over RPC.",
+    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
+    output_defs=[OutputDefinition(name="result", dagster_type=DbtRpcOutput)],
+    config_schema={
+        "models": Field(
+            config=Noneable(Array(String)),
+            default_value=None,
+            is_required=False,
+            description="The dbt models to compile and generate docs for.",
+        ),
+        "exclude": Field(
+            config=Noneable(Array(String)),
+            default_value=None,
+            is_required=False,
+            description="The dbt models to exclude.",
+        ),
+        "compile": Field(
+            config=Bool,
+            is_required=False,
+            default_value=False,
+            description="If True, compile the project before generating a catalog.",
+        ),
+        "task_tags": Permissive(),
+        "interval": Field(
+            config=Int,
+            is_required=False,
+            default_value=10,
+            description="The interval (in seconds) at which to poll the dbt rpc process.",
+        ),
+        "logs": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description="Whether or not to return logs from the process.",
+        ),
+        "yield_materializations": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will "
+                "be yielded when the solid executes. Default: True"
+            ),
+        ),
+    },
+    required_resource_keys={"dbt_rpc"},
+    tags={"kind": "dbt"},
+)
+def dbt_rpc_generate_docs_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
+    """This solid sends the ``dbt generate docs`` command to a dbt RPC server and returns the
+    result of the executed dbt process.
+
+    This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt
+    process is completed.
+    """
+    resp = context.resources.dbt_rpc.run(
+        models=context.solid_config["models"],
+        exclude=context.solid_config["exclude"],
+        compile=context.solid_config["compile"],
+        **context.solid_config["task_tags"],
+    )
+    context.log.debug(resp.text)
+    raise_for_rpc_error(context, resp)
+    request_token = resp.json().get("result").get("request_token")
+    return _poll_rpc(
+        context,
+        request_token,
+        should_yield_materializations=context.solid_config["yield_materializations"],
+    )
