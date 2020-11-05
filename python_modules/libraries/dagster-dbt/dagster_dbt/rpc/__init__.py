@@ -7,6 +7,7 @@ from .solids import (
     dbt_rpc_run_operation,
     dbt_rpc_run_operation_and_wait,
     dbt_rpc_seed,
+    dbt_rpc_seed_and_wait,
     dbt_rpc_snapshot,
     dbt_rpc_snapshot_and_wait,
     dbt_rpc_snapshot_freshness,
