@@ -1059,8 +1059,8 @@ def dbt_rpc_seed_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_generate_docs(context: SolidExecutionContext) -> String:
-    """This solid sends the ``dbt generate docs`` command to a dbt RPC server and returns the
+def dbt_rpc_docs_generate(context: SolidExecutionContext) -> String:
+    """This solid sends the ``dbt docs generate`` command to a dbt RPC server and returns the
     request token.
 
     This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
@@ -1126,8 +1126,8 @@ def dbt_rpc_generate_docs(context: SolidExecutionContext) -> String:
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
 )
-def dbt_rpc_generate_docs_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
-    """This solid sends the ``dbt generate docs`` command to a dbt RPC server and returns the
+def dbt_rpc_docs_generate_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
+    """This solid sends the ``dbt docs generate`` command to a dbt RPC server and returns the
     result of the executed dbt process.
 
     This dbt RPC solid is synchronous, and will periodically poll the dbt RPC server until the dbt

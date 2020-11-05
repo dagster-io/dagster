@@ -2,8 +2,8 @@ from .resources import DbtRpcClient, dbt_rpc_resource, local_dbt_rpc_resource
 from .solids import (
     create_dbt_rpc_run_sql_solid,
     dbt_rpc_compile_sql,
-    dbt_rpc_generate_docs,
-    dbt_rpc_generate_docs_and_wait,
+    dbt_rpc_docs_generate,
+    dbt_rpc_docs_generate_and_wait,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,
     dbt_rpc_run_operation,

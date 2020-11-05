@@ -2,8 +2,8 @@ import responses
 from dagster import ModeDefinition, execute_solid
 from dagster_dbt import (
     DbtRpcOutput,
-    dbt_rpc_generate_docs,
-    dbt_rpc_generate_docs_and_wait,
+    dbt_rpc_docs_generate,
+    dbt_rpc_docs_generate_and_wait,
     dbt_rpc_resource,
     dbt_rpc_run,
     dbt_rpc_run_and_wait,
@@ -161,7 +161,7 @@ def test_dbt_rpc_seed(rsps):
     assert result.output_value("request_token") == "1234-xo-xo"
 
 
-def test_dbt_rpc_generate_docs(rsps):
+def test_dbt_rpc_docs_generate(rsps):
     host = "0.0.0.0"
     port = 8580
 
@@ -173,7 +173,7 @@ def test_dbt_rpc_generate_docs(rsps):
     )
 
     result = execute_solid(
-        dbt_rpc_generate_docs,
+        dbt_rpc_docs_generate,
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
         run_config={"resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},},
@@ -416,7 +416,7 @@ def test_dbt_rpc_seed_and_wait(rsps, non_terminal_poll_result, terminal_poll_res
     assert isinstance(result.output_value("result"), DbtRpcOutput)
 
 
-def test_dbt_rpc_generate_docs_and_wait(rsps, non_terminal_poll_result, terminal_poll_result):
+def test_dbt_rpc_docs_generate_and_wait(rsps, non_terminal_poll_result, terminal_poll_result):
     host = "0.0.0.0"
     port = 8580
 
@@ -442,7 +442,7 @@ def test_dbt_rpc_generate_docs_and_wait(rsps, non_terminal_poll_result, terminal
     )
 
     result = execute_solid(
-        dbt_rpc_generate_docs_and_wait,
+        dbt_rpc_docs_generate_and_wait,
         mode_def=ModeDefinition(name="unittest", resource_defs={"dbt_rpc": dbt_rpc_resource}),
         input_values={"start_after": None},
         run_config={"resources": {"dbt_rpc": {"config": {"host": host, "port": port}}},},
