@@ -946,15 +946,6 @@ def create_dbt_rpc_run_sql_solid(
             description="If True, show a sample of the seeded data in the response.",
         ),
         "task_tags": Permissive(),
-        "yield_materializations": Field(
-            config=Bool,
-            is_required=False,
-            default_value=True,
-            description=(
-                "If True, materializations corresponding to the results of the dbt operation will "
-                "be yielded when the solid executes. Default: True"
-            ),
-        ),
     },
     required_resource_keys={"dbt_rpc"},
     tags={"kind": "dbt"},
@@ -1032,3 +1023,54 @@ def dbt_rpc_seed_and_wait(context: SolidExecutionContext) -> DbtRpcOutput:
         request_token,
         should_yield_materializations=context.solid_config["yield_materializations"],
     )
+
+
+@solid(
+    description="A solid to invoke dbt docs generate over RPC.",
+    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
+    output_defs=[
+        OutputDefinition(
+            name="request_token",
+            dagster_type=String,
+            description="The request token of the invoked dbt run.",
+        )
+    ],
+    config_schema={
+        "models": Field(
+            config=Noneable(Array(String)),
+            default_value=None,
+            is_required=False,
+            description="The dbt models to compile and generate docs for.",
+        ),
+        "exclude": Field(
+            config=Noneable(Array(String)),
+            default_value=None,
+            is_required=False,
+            description="The dbt models to exclude.",
+        ),
+        "compile": Field(
+            config=Bool,
+            is_required=False,
+            default_value=False,
+            description="If True, compile the project before generating a catalog.",
+        ),
+        "task_tags": Permissive(),
+    },
+    required_resource_keys={"dbt_rpc"},
+    tags={"kind": "dbt"},
+)
+def dbt_rpc_generate_docs(context: SolidExecutionContext) -> String:
+    """This solid sends the ``dbt run`` command to a dbt RPC server and returns the request token.
+
+    This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
+    poll the progress of the running dbt process.
+    """
+    resp = context.resources.dbt_rpc.run(
+        models=context.solid_config["models"],
+        exclude=context.solid_config["exclude"],
+        compile=context.solid_config["compile"],
+        **context.solid_config["task_tags"],
+    )
+    context.log.debug(resp.text)
+    raise_for_rpc_error(context, resp)
+    return resp.json().get("result").get("request_token")
