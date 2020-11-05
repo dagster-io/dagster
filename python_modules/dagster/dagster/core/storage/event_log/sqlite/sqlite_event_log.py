@@ -44,7 +44,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
     .. code-block:: YAML
 
-        run_storage:
+        event_log_storage:
           module: dagster.core.storage.event_log
           class: SqliteEventLogStorage
           config:
