@@ -926,3 +926,49 @@ def create_dbt_rpc_run_sql_solid(
         return pd.DataFrame.from_records(data=table["rows"], columns=table["column_names"])
 
     return _dbt_rpc_run_sql
+
+
+@solid(
+    description="A solid to invoke dbt seed over RPC.",
+    input_defs=[InputDefinition(name="start_after", dagster_type=Nothing),],
+    output_defs=[
+        OutputDefinition(
+            name="request_token",
+            description="The request token of the invoked dbt seed.",
+            dagster_type=String,
+        ),
+    ],
+    config_schema={
+        "show": Field(
+            config=Bool,
+            is_required=False,
+            default_value=False,
+            description="If True, show a sample of the seeded data in the response.",
+        ),
+        "task_tags": Permissive(),
+        "yield_materializations": Field(
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will "
+                "be yielded when the solid executes. Default: True"
+            ),
+        ),
+    },
+    required_resource_keys={"dbt_rpc"},
+    tags={"kind": "dbt"},
+)
+def dbt_rpc_seed(context: SolidExecutionContext) -> String:
+    """This solid sends the ``dbt seed`` command to a dbt RPC server and returns the request
+    token.
+
+    This dbt RPC solid is asynchronous. The request token can be used in subsequent RPC requests to
+    poll the progress of the running dbt process.
+    """
+    resp = context.resources.dbt_rpc.seed(
+        show=context.solid_config["show"], **context.solid_config["task_tags"],
+    )
+    context.log.debug(resp.text)
+    raise_for_rpc_error(context, resp)
+    return resp.json().get("result").get("request_token")
