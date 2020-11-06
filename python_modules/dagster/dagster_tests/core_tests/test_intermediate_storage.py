@@ -1,8 +1,21 @@
 import os
 
 import pytest
-from dagster import Bool, Int, List, Optional, String, check
+from dagster import (
+    Bool,
+    Int,
+    List,
+    Nothing,
+    Optional,
+    Output,
+    String,
+    check,
+    execute_pipeline,
+    pipeline,
+    solid,
+)
 from dagster.core.definitions.events import ObjectStoreOperationType
+from dagster.core.errors import DagsterObjectStoreError
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
@@ -202,3 +215,18 @@ def test_file_system_intermediate_storage_with_composite_type_storage_plugin():
                 StepOutputHandle("obj_name"),
                 ["hello"],
             )
+
+
+def test_error_message():
+    @solid
+    def nothing_solid(_):
+        yield Output(Nothing)
+
+    @pipeline
+    def repro():
+        nothing_solid()
+
+    with pytest.raises(DagsterObjectStoreError):
+        execute_pipeline(
+            repro, run_config={"storage": {"filesystem": {}}},
+        )

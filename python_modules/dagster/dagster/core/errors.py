@@ -483,3 +483,7 @@ class DagsterUnknownStepStateError(DagsterError):
 
 class DagsterIncompleteExecutionPlanError(DagsterError):
     """When pipeline execution completes with an active execution in an incomplete state"""
+
+
+class DagsterObjectStoreError(DagsterError):
+    """Errors during an object store operation."""

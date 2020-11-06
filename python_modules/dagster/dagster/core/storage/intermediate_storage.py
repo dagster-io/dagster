@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
-from dagster.core.errors import DagsterAddressIOError
+from dagster.core.errors import DagsterAddressIOError, DagsterObjectStoreError
 from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
@@ -108,9 +108,23 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         check.param_invariant(len(paths) > 0, "paths")
 
         key = self.object_store.key_for_paths([self.root] + paths)
-        obj, uri = self.object_store.get_object(
-            key, serialization_strategy=dagster_type.serialization_strategy
-        )
+
+        try:
+            obj, uri = self.object_store.get_object(
+                key, serialization_strategy=dagster_type.serialization_strategy
+            )
+        except Exception as error:  # pylint: disable=broad-except
+            six.raise_from(
+                DagsterObjectStoreError(
+                    _object_store_operation_error_message(
+                        step_output_handle=step_output_handle,
+                        op=ObjectStoreOperationType.GET_OBJECT,
+                        object_store_name=self.object_store.name,
+                        serialization_strategy_name=dagster_type.serialization_strategy.name,
+                    )
+                ),
+                error,
+            )
 
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.GET_OBJECT,
@@ -148,9 +162,24 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         check.param_invariant(len(paths) > 0, "paths")
 
         key = self.object_store.key_for_paths([self.root] + paths)
-        uri = self.object_store.set_object(
-            key, value, serialization_strategy=dagster_type.serialization_strategy
-        )
+
+        try:
+            uri = self.object_store.set_object(
+                key, value, serialization_strategy=dagster_type.serialization_strategy
+            )
+        except Exception as error:  # pylint: disable=broad-except
+            six.raise_from(
+                DagsterObjectStoreError(
+                    _object_store_operation_error_message(
+                        step_output_handle=step_output_handle,
+                        op=ObjectStoreOperationType.SET_OBJECT,
+                        object_store_name=self.object_store.name,
+                        serialization_strategy_name=dagster_type.serialization_strategy.name,
+                    )
+                ),
+                error,
+            )
+
         return ObjectStoreOperation(
             op=ObjectStoreOperationType.SET_OBJECT,
             key=uri,
@@ -334,6 +363,38 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
     @property
     def root(self):
         return self.root_for_run_id(self.run_id)
+
+
+def _object_store_operation_error_message(
+    op, step_output_handle, object_store_name, serialization_strategy_name
+):
+    if ObjectStoreOperationType(op) == ObjectStoreOperationType.GET_OBJECT:
+        op_name = "retriving"
+    elif ObjectStoreOperationType(op) == ObjectStoreOperationType.SET_OBJECT:
+        op_name = "storing"
+    else:
+        op_name = ""
+
+    return (
+        'Error occurred during {op_name} output "{output_name}" for step "{step_key}" in '
+        "{object_store_modifier}object store{serialization_strategy_modifier}."
+    ).format(
+        op_name=op_name,
+        step_key=step_output_handle.step_key,
+        output_name=step_output_handle.output_name,
+        object_store_modifier=(
+            '"{object_store_name}" '.format(object_store_name=object_store_name)
+            if object_store_name
+            else ""
+        ),
+        serialization_strategy_modifier=(
+            ' using "{serialization_strategy_name}"'.format(
+                serialization_strategy_name=serialization_strategy_name
+            )
+            if serialization_strategy_name
+            else ""
+        ),
+    )
 
 
 def build_in_mem_intermediates_storage(run_id, type_storage_plugin_registry=None):
