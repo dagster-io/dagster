@@ -1,16 +1,38 @@
 import logging
+import sys
 import time
 
+import pendulum
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, check
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.utils.backcompat import experimental
 from dagster.utils.external import external_pipeline_from_run
+from dagster.utils.log import default_format_string
 
 IN_PROGRESS_STATUSES = [
     PipelineRunStatus.NOT_STARTED,
     PipelineRunStatus.STARTED,
 ]
+
+
+def _mockable_localtime(_):
+    now_time = pendulum.now()
+    return now_time.timetuple()
+
+
+def get_default_daemon_logger(logging_level=logging.INFO):
+    handler = logging.StreamHandler(sys.stdout)
+    logger = logging.getLogger("dagster-daemon")
+    logger.setLevel(logging_level)
+    logger.handlers = [handler]
+
+    formatter = logging.Formatter(default_format_string(), "%Y-%m-%d %H:%M:%S")
+
+    formatter.converter = _mockable_localtime
+
+    handler.setFormatter(formatter)
+    return logger
 
 
 class QueuedRunCoordinatorDaemon:
@@ -20,9 +42,15 @@ class QueuedRunCoordinatorDaemon:
     """
 
     @experimental
-    def __init__(self, instance, max_concurrent_runs=10):
+    def __init__(
+        self,
+        instance,
+        max_concurrent_runs=10,
+        logger=get_default_daemon_logger(logging_level=logging.DEBUG),
+    ):
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._max_concurrent_runs = check.int_param(max_concurrent_runs, "max_concurrent_runs")
+        self._logger = logger
 
     def run(self, interval_seconds=2):
         """
@@ -38,15 +66,26 @@ class QueuedRunCoordinatorDaemon:
             time.sleep(interval_seconds)
 
     def attempt_to_launch_runs(self):
-        max_runs_to_launch = self._max_concurrent_runs - self._count_in_progress_runs()
+        in_progress = self._count_in_progress_runs()
+        max_runs_to_launch = self._max_concurrent_runs - in_progress
 
         # Possibly under 0 if runs were launched without queuing
         if max_runs_to_launch <= 0:
+            self._logger.debug(
+                "{} runs are currently in progress. Maximum is {}, won't launch more.".format(
+                    in_progress, self._max_concurrent_runs
+                )
+            )
             return
 
-        runs = self._get_queued_runs(limit=max_runs_to_launch)
+        queued_runs = self._get_queued_runs(limit=max_runs_to_launch)
 
-        for run in runs:
+        if not queued_runs:
+            self._logger.debug("Poll returned no queued runs.")
+        else:
+            self._logger.debug("Retrieved {} queued runs to launch.".format(len(queued_runs)))
+
+        for run in queued_runs:
             with external_pipeline_from_run(run) as external_pipeline:
                 enqueued_event = DagsterEvent(
                     event_type_value=DagsterEventType.PIPELINE_DEQUEUED.value,
