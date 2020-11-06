@@ -1,7 +1,6 @@
 import sqlalchemy as db
-from tqdm import tqdm
-
 from dagster import AssetKey
+from tqdm import tqdm
 
 from .schema import AssetKeyTable, SqlEventLogStorageTable
 
