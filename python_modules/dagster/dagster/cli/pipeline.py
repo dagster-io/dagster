@@ -525,6 +525,7 @@ def _create_external_pipeline_run(
         pipeline_snapshot=external_pipeline_subset.pipeline_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline_subset.parent_pipeline_snapshot,
+        external_pipeline_origin=external_pipeline_subset.get_external_origin(),
     )
 
 
@@ -931,7 +932,7 @@ def _execute_backfill_command_at_location(cli_args, print_fn, instance, repo_loc
                 solid_selection=frozenset(solid_selection) if solid_selection else None,
             )
 
-            instance.launch_run(run.run_id, external_pipeline)
+            instance.submit_run(run.run_id, external_pipeline)
 
         print_fn("Launched backfill job `{}`".format(backfill_id))
 

@@ -1085,12 +1085,21 @@ class DagsterInstance:
         call its implementation of ``RunCoordinator.submit_run()`` to send the run to the
         coordinator for execution. Runs should be created in the instance (e.g., by calling
         ``DagsterInstance.create_run()``) *before* this method is called, and
-        should be in the ``PipelineRunStatus.NOT_STARTED`` state.
+        should be in the ``PipelineRunStatus.NOT_STARTED`` state. They also must have a non-null
+        ExternalPipelineOrigin.
 
         Args:
             run_id (str): The id of the run.
         """
+
+        from dagster.core.host_representation import ExternalPipelineOrigin
+
         run = self.get_run_by_id(run_id)
+        check.inst(
+            run.external_pipeline_origin,
+            ExternalPipelineOrigin,
+            "External pipeline origin must be set for submitted runs",
+        )
 
         try:
             submitted_run = self._run_coordinator.submit_run(
@@ -1113,11 +1122,12 @@ class DagsterInstance:
     def launch_run(self, run_id, external_pipeline):
         """Launch a pipeline run.
 
-        This method delegates to the ``RunLauncher``, if any, configured on the instance, and will
-        call its implementation of ``RunLauncher.launch_run()`` to begin the execution of the
-        specified run. Runs should be created in the instance (e.g., by calling
-        ``DagsterInstance.create_run()``) *before* this method is called, and
-        should be in the ``PipelineRunStatus.NOT_STARTED`` state.
+        This method is typically called using `instance.submit_run` rather than being invoked
+        directly. This method delegates to the ``RunLauncher``, if any, configured on the instance,
+        and will call its implementation of ``RunLauncher.launch_run()`` to begin the execution of
+        the specified run. Runs should be created in the instance (e.g., by calling
+        ``DagsterInstance.create_run()``) *before* this method is called, and should be in the
+        ``PipelineRunStatus.NOT_STARTED`` state.
 
         Args:
             run_id (str): The id of the run the launch.

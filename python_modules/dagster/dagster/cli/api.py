@@ -566,6 +566,7 @@ def _launch_scheduled_execution(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+        external_pipeline_origin=external_pipeline.get_external_origin(),
     )
 
     tick.update_with_status(ScheduleTickStatus.SUCCESS, run_id=possibly_invalid_pipeline_run.run_id)
@@ -583,7 +584,7 @@ def _launch_scheduled_execution(
         return
 
     try:
-        launched_run = instance.launch_run(possibly_invalid_pipeline_run.run_id, external_pipeline)
+        launched_run = instance.submit_run(possibly_invalid_pipeline_run.run_id, external_pipeline)
     except Exception:  # pylint: disable=broad-except
         stream.send(
             ScheduledExecutionFailed(

@@ -76,7 +76,7 @@ def create_and_launch_partition_backfill(graphene_info, backfill_params):
 
     for execution_params in execution_param_list:
         pipeline_run = create_valid_pipeline_run(graphene_info, external_pipeline, execution_params)
-        graphene_info.context.instance.launch_run(pipeline_run.run_id, external_pipeline)
+        graphene_info.context.instance.submit_run(pipeline_run.run_id, external_pipeline)
         launched_run_ids.append(pipeline_run.run_id)
 
     return graphene_info.schema.type_named("PartitionBackfillSuccess")(
