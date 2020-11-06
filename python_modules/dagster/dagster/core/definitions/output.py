@@ -37,15 +37,12 @@ class OutputDefinition(object):
         asset_store_key=None,
         asset_metadata=None,
     ):
-        from dagster.core.storage.asset_store import AssetStoreHandle
-
         self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, "description")
         self._is_required = check.opt_bool_param(is_required, "is_required", default=True)
-        self._asset_store_handle = (
-            AssetStoreHandle(asset_store_key, asset_metadata) if asset_store_key else None
-        )
+        self._asset_store_key = asset_store_key
+        self._asset_metadata = asset_metadata
 
     @property
     def name(self):
@@ -68,8 +65,12 @@ class OutputDefinition(object):
         return self._is_required
 
     @property
-    def asset_store_handle(self):
-        return self._asset_store_handle
+    def asset_store_key(self):
+        return self._asset_store_key
+
+    @property
+    def asset_metadata(self):
+        return self._asset_metadata
 
     def mapping_from(self, solid_name, output_name=None):
         """Create an output mapping from an output of a child solid.
