@@ -40,7 +40,6 @@ def test_documented_exports():
             "module": dagster,
             "whitelist": {
                 # NOTE: Do not add any additional entries to this whitelist
-                "RetryRequested",
                 "ScalarUnion",
                 "DefaultRunLauncher",
                 "build_intermediate_storage_from_object_store",
@@ -49,7 +48,6 @@ def test_documented_exports():
                 "Materialization",
                 "local_file_manager",
                 "SystemStorageData",
-                "PipelineRun",
             },
         },
         "dagster_gcp": {"module": dagster_gcp},

@@ -734,9 +734,9 @@ class Failure(Exception):
         )
 
 
-class RetryRequested(Exception):  # base exception instead?
+class RetryRequested(Exception):
     """
-    EXPERIMENTAL: A simple tool for retrying the execution of a step in dagster.
+    An exception to raise from a solid to indicate that it should be retried.
 
     Args:
         max_retries (Optional[int]):
@@ -744,6 +744,17 @@ class RetryRequested(Exception):  # base exception instead?
         seconds_to_wait (Optional[int]):
             Seconds to wait before restarting the step after putting the step in
             to the up_for_retry state
+
+    Example:
+
+        .. code-block:: python
+
+            @solid
+            def flakes():
+                try:
+                    flakey_operation()
+                except:
+                    raise RetryRequested(max_retries=3)
     """
 
     def __init__(self, max_retries=1, seconds_to_wait=None):

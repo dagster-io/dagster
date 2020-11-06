@@ -107,6 +107,10 @@ Instance
 Run storage
 -----------
 
+.. currentmodule:: dagster
+
+.. autoclass:: PipelineRun
+
 .. currentmodule:: dagster.core.storage.runs
 
 .. autoclass:: RunStorage
@@ -115,9 +119,6 @@ Run storage
 
 .. autoclass:: SqliteRunStorage
 
-.. currentmodule:: dagster.core.storage.pipeline_run
-
-.. autoclass:: PipelineRun
 
 See also: :py:class:`dagster_postgres.PostgresRunStorage`.
 

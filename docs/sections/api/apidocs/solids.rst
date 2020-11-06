@@ -54,7 +54,7 @@ Events
 The objects that can be yielded by the body of solids' compute functions to communicate with the
 Dagster framework.
 
-(Note that :py:class:`Failure` is intended to be raised from solids rather than yielded.)
+(Note that :py:class:`Failure` and :py:class:`RetryRequested` are intended to be raised from solids rather than yielded.)
 
 Event types
 ^^^^^^^^^^^
@@ -73,6 +73,8 @@ Event types
 
 .. autoclass:: Failure
     :members:
+
+.. autoclass:: RetryRequested
 
 -------
 
