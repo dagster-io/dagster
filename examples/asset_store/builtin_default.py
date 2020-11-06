@@ -5,6 +5,7 @@ from dagster import (
     PresetDefinition,
     execute_pipeline,
     pipeline,
+    reexecute_pipeline,
     repository,
     solid,
 )
@@ -60,3 +61,10 @@ def builtin_default_repo():
 if __name__ == "__main__":
     instance = DagsterInstance.ephemeral()
     result = execute_pipeline(model_pipeline, preset="local", instance=instance)
+    result_a = reexecute_pipeline(
+        model_pipeline,
+        parent_run_id=result.run_id,
+        preset="local",
+        instance=instance,
+        step_selection=["parse_df.compute*"],
+    )

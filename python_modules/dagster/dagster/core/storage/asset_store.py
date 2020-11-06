@@ -91,11 +91,21 @@ class PickledObjectFilesystemAssetStore(AssetStore):
         # automatically construct filepath
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
 
+        # resolve run_id as it's part of the file path
+        if (
+            # this is re-execution
+            context.pipeline_run.parent_run_id
+            # only part of the pipeline is being re-executed
+            and context.pipeline_run.step_keys_to_execute
+            # this step is not being executed
+            and step_output_handle.step_key not in context.pipeline_run.step_keys_to_execute
+        ):
+            run_id = context.pipeline_run.parent_run_id
+        else:
+            run_id = context.run_id
+
         return os.path.join(
-            self.base_dir,
-            context.run_id,
-            step_output_handle.step_key,
-            step_output_handle.output_name,
+            self.base_dir, run_id, step_output_handle.step_key, step_output_handle.output_name,
         )
 
     def set_asset(self, context, step_output_handle, obj, _asset_metadata):

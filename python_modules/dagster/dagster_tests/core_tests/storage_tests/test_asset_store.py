@@ -7,13 +7,13 @@ from dagster import (
     OutputDefinition,
     execute_pipeline,
     pipeline,
+    reexecute_pipeline,
     resource,
     seven,
     solid,
 )
 from dagster.core.definitions.events import AssetMaterialization, AssetStoreOperationType
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.storage.asset_store import (
     AssetStore,
     custom_path_filesystem_asset_store,
@@ -93,6 +93,38 @@ def test_default_asset_store():
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 1
+
+
+def test_default_asset_store_reexecution():
+    with seven.TemporaryDirectory() as tmpdir_path:
+        default_asset_store = default_filesystem_asset_store.configured({"base_dir": tmpdir_path})
+        pipeline_def = define_asset_pipeline(default_asset_store, {})
+        instance = DagsterInstance.ephemeral()
+
+        result = execute_pipeline(
+            pipeline_def, run_config={"storage": {"filesystem": {}}}, instance=instance
+        )
+        assert result.success
+
+        re_result = reexecute_pipeline(
+            pipeline_def,
+            result.run_id,
+            run_config={"storage": {"filesystem": {}}},
+            instance=instance,
+            step_selection=["solid_b.compute"],
+        )
+
+        # re-execution should yield asset_store_operation events instead of intermediate events
+        get_asset_events = list(
+            filter(
+                lambda evt: evt.is_asset_store_operation
+                and AssetStoreOperationType(evt.event_specific_data.op)
+                == AssetStoreOperationType.GET_ASSET,
+                re_result.event_list,
+            )
+        )
+        assert len(get_asset_events) == 1
+        assert get_asset_events[0].event_specific_data.step_key == "solid_a.compute"
 
 
 def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):

@@ -9,12 +9,16 @@ from ..builtin_default import model_pipeline
 
 def test_builtin_default():
     with seven.TemporaryDirectory() as tmpdir_path:
+        instance = DagsterInstance.ephemeral()
 
         run_config = {
             "resources": {"fs_asset_store": {"config": {"base_dir": tmpdir_path}}},
+            "storage": {"filesystem": None},
         }
 
-        result = execute_pipeline(model_pipeline, run_config=run_config, mode="test")
+        result = execute_pipeline(
+            model_pipeline, run_config=run_config, mode="test", instance=instance
+        )
 
         assert result.success
 
@@ -27,6 +31,15 @@ def test_builtin_default():
         assert os.path.isfile(filepath_parse_df)
         with open(filepath_parse_df, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3, 4, 5]
+
+        assert reexecute_pipeline(
+            model_pipeline,
+            result.run_id,
+            run_config=run_config,
+            mode="test",
+            instance=instance,
+            step_selection=["parse_df.compute"],
+        ).success
 
 
 def test_custom_path_asset_store():
