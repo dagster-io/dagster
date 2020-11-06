@@ -10,14 +10,14 @@ from dagster import (
 )
 from dagster.core.definitions.utils import struct_to_string
 from dagster.core.execution.api import reexecute_pipeline
-from dagster.core.storage.asset_store import custom_path_filesystem_asset_store
+from dagster.core.storage.asset_store import custom_path_fs_asset_store
 
 
 def train(df):
     return len(df)
 
 
-local_asset_store = custom_path_filesystem_asset_store.configured(
+local_asset_store = custom_path_fs_asset_store.configured(
     {"base_dir": "uncommitted/intermediates/"}
 )
 
@@ -61,9 +61,7 @@ def train_model(context, df):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition(
-            "test", resource_defs={"fs_asset_store": custom_path_filesystem_asset_store}
-        ),
+        ModeDefinition("test", resource_defs={"fs_asset_store": custom_path_fs_asset_store}),
         ModeDefinition("local", resource_defs={"fs_asset_store": local_asset_store}),
     ],
     preset_defs=[

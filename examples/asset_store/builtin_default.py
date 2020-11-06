@@ -9,16 +9,14 @@ from dagster import (
     repository,
     solid,
 )
-from dagster.core.storage.asset_store import default_filesystem_asset_store
+from dagster.core.storage.asset_store import fs_asset_store
 
 
 def train(df):
     return len(df)
 
 
-local_asset_store = default_filesystem_asset_store.configured(
-    {"base_dir": "uncommitted/intermediates/"}
-)
+local_asset_store = fs_asset_store.configured({"base_dir": "uncommitted/intermediates/"})
 
 
 @solid(output_defs=[OutputDefinition(asset_store_key="fs_asset_store")])
@@ -42,7 +40,7 @@ def train_model(context, df):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition("test", resource_defs={"fs_asset_store": default_filesystem_asset_store}),
+        ModeDefinition("test", resource_defs={"fs_asset_store": fs_asset_store}),
         ModeDefinition("local", resource_defs={"fs_asset_store": local_asset_store}),
     ],
     preset_defs=[

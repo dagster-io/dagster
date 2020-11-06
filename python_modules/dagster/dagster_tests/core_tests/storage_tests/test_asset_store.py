@@ -18,8 +18,8 @@ from dagster.core.definitions.events import AssetMaterialization, AssetStoreOper
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.storage.asset_store import (
     AssetStore,
-    custom_path_filesystem_asset_store,
-    default_filesystem_asset_store,
+    custom_path_fs_asset_store,
+    fs_asset_store,
     mem_asset_store,
 )
 
@@ -55,7 +55,7 @@ def test_result_output():
 
 def test_fs_asset_store():
     with seven.TemporaryDirectory() as tmpdir_path:
-        asset_store = default_filesystem_asset_store.configured({"base_dir": tmpdir_path})
+        asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
         pipeline_def = define_asset_pipeline(asset_store, {})
 
         result = execute_pipeline(pipeline_def)
@@ -96,7 +96,7 @@ def test_fs_asset_store():
 
 def test_default_asset_store_reexecution():
     with seven.TemporaryDirectory() as tmpdir_path:
-        default_asset_store = default_filesystem_asset_store.configured({"base_dir": tmpdir_path})
+        default_asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
         pipeline_def = define_asset_pipeline(default_asset_store, {})
         instance = DagsterInstance.ephemeral()
 
@@ -137,7 +137,7 @@ def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
 
 def test_step_subset_with_custom_paths():
     with seven.TemporaryDirectory() as tmpdir_path:
-        asset_store = custom_path_filesystem_asset_store
+        asset_store = custom_path_fs_asset_store
         # pass hardcoded file path via asset_metadata
         test_asset_metadata_dict = {
             "solid_a": {"path": os.path.join(tmpdir_path, "a")},

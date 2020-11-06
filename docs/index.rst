@@ -3,6 +3,7 @@
 .. toctree::
    :hidden:
 
+   sections/api/apidocs/assets
    sections/api/apidocs/cli
    sections/api/apidocs/config
    sections/api/apidocs/errors

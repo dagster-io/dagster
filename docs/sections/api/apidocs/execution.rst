@@ -36,9 +36,6 @@ Execution context
 .. autoclass:: AbstractComputeExecutionContext
    :members:
 
-.. autoclass:: SystemComputeExecutionContext
-   :members:
-
 .. currentmodule:: dagster
 
 .. autoclass:: reconstructable
