@@ -28,6 +28,10 @@ def define_two_int_pipeline():
     )
 
 
+def find_events(events, event_type=None):
+    return [e for e in events if (not event_type or e.event_type_value == event_type)]
+
+
 def test_execution_plan_simple_two_steps():
     pipeline_def = define_two_int_pipeline()
     instance = DagsterInstance.ephemeral()
@@ -43,20 +47,12 @@ def test_execution_plan_simple_two_steps():
     assert execution_plan.get_step_by_key("add_one.compute")
 
     events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
-    assert [e.event_type_value for e in events] == [
-        "STEP_START",
-        "STEP_OUTPUT",
-        "OBJECT_STORE_OPERATION",
-        "STEP_SUCCESS",
-        "STEP_START",
-        "OBJECT_STORE_OPERATION",
-        "STEP_INPUT",
-        "STEP_OUTPUT",
-        "OBJECT_STORE_OPERATION",
-        "STEP_SUCCESS",
-    ]
+    step_starts = find_events(events, event_type="STEP_START")
+    assert len(step_starts) == 2
+    step_successes = find_events(events, event_type="STEP_SUCCESS")
+    assert len(step_successes) == 2
 
-    output_events = [e for e in events if e.event_type_value == "STEP_OUTPUT"]
+    output_events = find_events(events, event_type="STEP_OUTPUT")
 
     assert output_events[0].step_key == "return_one.compute"
     assert output_events[0].is_successful_output
@@ -79,12 +75,13 @@ def test_execution_plan_two_outputs():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline_def, execution_plan=execution_plan
     )
-    step_events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
+    events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
 
-    assert step_events[1].step_key == "return_one_two.compute"
-    assert step_events[1].step_output_data.output_name == "num_one"
-    assert step_events[3].step_key == "return_one_two.compute"
-    assert step_events[3].step_output_data.output_name == "num_two"
+    output_events = find_events(events, event_type="STEP_OUTPUT")
+    assert output_events[0].step_key == "return_one_two.compute"
+    assert output_events[0].step_output_data.output_name == "num_one"
+    assert output_events[1].step_key == "return_one_two.compute"
+    assert output_events[1].step_output_data.output_name == "num_two"
 
 
 def test_reentrant_execute_plan():
@@ -105,6 +102,5 @@ def test_reentrant_execute_plan():
     step_events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
 
     assert called["yup"]
-    assert len(step_events) == 4
 
-    assert step_events[1].logging_tags["foo"] == "bar"
+    assert find_events(step_events, event_type="STEP_OUTPUT")[0].logging_tags["foo"] == "bar"

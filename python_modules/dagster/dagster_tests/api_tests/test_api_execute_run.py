@@ -5,6 +5,16 @@ from dagster.grpc.server import GrpcServerProcess
 from .utils import get_foo_grpc_pipeline_handle, get_foo_pipeline_handle
 
 
+def assert_ran_successfully(events):
+    assert len(events) == 17
+    pipeline_start_events = [e for e in events if e.event_type_value == "PIPELINE_START"]
+    step_success_events = [e for e in events if e.event_type_value == "STEP_SUCCESS"]
+    pipeline_success_events = [e for e in events if e.event_type_value == "PIPELINE_SUCCESS"]
+    assert len(pipeline_start_events) == 1
+    assert len(step_success_events) == 2
+    assert len(pipeline_success_events) == 1
+
+
 def test_execute_run_api_grpc_server_handle():
     with instance_for_test() as instance:
         with get_foo_grpc_pipeline_handle() as pipeline_handle:
@@ -32,27 +42,7 @@ def test_execute_run_api_grpc_server_handle():
                     pipeline_run=pipeline_run,
                 )
             ]
-
-    assert len(events) == 17
-    assert [event.event_type_value for event in events] == [
-        "ENGINE_EVENT",
-        "ENGINE_EVENT",
-        "PIPELINE_START",
-        "ENGINE_EVENT",
-        "STEP_START",
-        "STEP_OUTPUT",
-        "OBJECT_STORE_OPERATION",
-        "STEP_SUCCESS",
-        "STEP_START",
-        "OBJECT_STORE_OPERATION",
-        "STEP_INPUT",
-        "STEP_OUTPUT",
-        "OBJECT_STORE_OPERATION",
-        "STEP_SUCCESS",
-        "ENGINE_EVENT",
-        "PIPELINE_SUCCESS",
-        "ENGINE_EVENT",
-    ]
+    assert_ran_successfully(events)
 
 
 def test_execute_run_api_grpc_python_handle():
@@ -90,24 +80,5 @@ def test_execute_run_api_grpc_python_handle():
                     )
                 ]
 
-                assert len(events) == 17
-                assert [event.event_type_value for event in events] == [
-                    "ENGINE_EVENT",
-                    "ENGINE_EVENT",
-                    "PIPELINE_START",
-                    "ENGINE_EVENT",
-                    "STEP_START",
-                    "STEP_OUTPUT",
-                    "OBJECT_STORE_OPERATION",
-                    "STEP_SUCCESS",
-                    "STEP_START",
-                    "OBJECT_STORE_OPERATION",
-                    "STEP_INPUT",
-                    "STEP_OUTPUT",
-                    "OBJECT_STORE_OPERATION",
-                    "STEP_SUCCESS",
-                    "ENGINE_EVENT",
-                    "PIPELINE_SUCCESS",
-                    "ENGINE_EVENT",
-                ]
+                assert_ran_successfully(events)
             server_process.wait()
