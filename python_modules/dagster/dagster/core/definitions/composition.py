@@ -625,6 +625,10 @@ def do_composition(
             if not outputs_are_explicit:
                 continue
 
+            # if we are ignoring the output, disregard this unsatisfied mapping
+            if ignore_output_from_composition_fn:
+                continue
+
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{graph_name}' has unmapped output '{output_name}'. "
                 "Remove it or return a value from the appropriate solid invocation.".format(

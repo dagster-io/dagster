@@ -6,6 +6,7 @@ from dagster import (
     composite_solid,
     execute_solid,
     lambda_solid,
+    pipeline,
     solid,
     usable_as_dagster_type,
 )
@@ -347,3 +348,12 @@ def test_infer_output_description_from_docstring_google():
     assert len(defs) == 1
     assert defs[0].description == "a number"
     assert defs[0].dagster_type.name == "Int"
+
+
+def test_pipeline_api_stability():
+    @pipeline
+    def empty() -> None:
+        pass
+
+    # assert definition does not error
+    assert empty
