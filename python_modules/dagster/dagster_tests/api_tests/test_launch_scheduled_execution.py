@@ -16,6 +16,7 @@ from dagster.core.scheduler import (
     ScheduledExecutionSkipped,
     ScheduledExecutionSuccess,
 )
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.telemetry import get_dir_from_dagster_home
 from dagster.core.test_utils import instance_for_test, today_at_midnight
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -272,6 +273,28 @@ def test_grpc_server_down():
         ticks = instance.get_schedule_ticks(down_grpc_schedule_origin.get_id())
         assert ticks[0].status == ScheduleTickStatus.FAILURE
         assert "failed to connect to all addresses" in ticks[0].error.message
+
+
+@pytest.mark.parametrize("schedule_origin_context", [cli_api_schedule_origin, grpc_schedule_origin])
+def test_launch_failure(schedule_origin_context):
+    with instance_for_test(
+        overrides={
+            "run_launcher": {"module": "dagster.core.test_utils", "class": "ExplodingRunLauncher",},
+        },
+    ) as instance:
+        with schedule_origin_context("simple_schedule") as schedule_origin:
+            result = sync_launch_scheduled_execution(schedule_origin)
+            assert isinstance(result, ScheduledExecutionFailed)
+
+            assert "NotImplementedError" in result.errors[0]
+
+            run = instance.get_run_by_id(result.run_id)
+            assert run is not None
+
+            assert run.status == PipelineRunStatus.FAILURE
+
+            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
+            assert ticks[0].status == ScheduleTickStatus.SUCCESS
 
 
 def test_origin_ids_stable(monkeypatch):

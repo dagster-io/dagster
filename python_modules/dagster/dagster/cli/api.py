@@ -524,7 +524,10 @@ def _launch_scheduled_execution(
         launched_run = instance.launch_run(possibly_invalid_pipeline_run.run_id, external_pipeline)
     except Exception:  # pylint: disable=broad-except
         stream.send(
-            ScheduledExecutionFailed(run_id=possibly_invalid_pipeline_run.run_id, errors=[error])
+            ScheduledExecutionFailed(
+                run_id=possibly_invalid_pipeline_run.run_id,
+                errors=[serializable_error_info_from_exc_info(sys.exc_info())],
+            )
         )
         return
 
