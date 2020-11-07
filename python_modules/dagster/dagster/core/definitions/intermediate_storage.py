@@ -10,6 +10,7 @@ from .utils import check_valid_name
 
 class IntermediateStorageDefinition(IConfigMappable):
     """Defines intermediate data storage behaviors.
+
     Args:
         name (str): Name of the storage mode.
         is_persistent (bool): Whether the storage is persistent in a way that can cross process/node
