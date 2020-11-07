@@ -7,7 +7,7 @@
     {
         "name": "airline_demo",
         "title": "Airline Demo",
-        "description": "A comprehensive demo to showcase Dagster and"
+        "description": "A comprehensive demo to showcase Dagster and Dagit capabilities"
     },
     {
         "name": "materializations",
@@ -28,6 +28,11 @@
         "name": "config_mapping",
         "title": "Config Mapping",
         "description": "Simplify solid config schemas with config mapping."
+    },
+    {
+        "name": "dbt_example",
+        "title": "dbt Integration",
+        "description": "Use dagster-dbt to integrate dbt projects with Dagster."
     },
     {
         "name": "dep_dsl",
