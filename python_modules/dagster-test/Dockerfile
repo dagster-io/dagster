@@ -2,7 +2,7 @@ ARG PYTHON_VERSION
 
 
 # The tag value here must stay in sync with UNIT_IMAGE_VERSION in defines.py
-FROM 968703565975.dkr.ecr.us-west-1.amazonaws.com/buildkite-unit:py${PYTHON_VERSION}-2020-10-21T205221
+FROM 968703565975.dkr.ecr.us-west-1.amazonaws.com/buildkite-unit:py${PYTHON_VERSION}-2020-11-09T183031
 
 COPY . /
 

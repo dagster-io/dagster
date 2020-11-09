@@ -42,9 +42,11 @@ modest and require less build times so we have not pushed the process
 to a pipeline in buildkite.
 
 1. Update the git hash in `images/buildkite-unit-snapshot-builder/Dockerfile`
-2. Run: `dagster-image build-all --name buildkite-unit-snapshot-builder`
+2. Run, with the appropriate Dagster version,
+   `dagster-image build-all --name buildkite-unit-snapshot-builder --dagster-version 0.9.18`
 3. Run: `dagster-image snapshot -t unit`
-4. Then run `dagster-image build-all --name buildkite-unit`
+4. Then run, with the appropriate Dagster version,
+   `dagster-image build-all --name buildkite-unit --dagster-version 0.9.18`
 5. Then run `dagster-image push-all --name buildkite-unit`
 6. Next you have to update the Dockerfile in `dagster-test` manually with the value in
    `UNIT_IMAGE_VERSION` in the `FROM` directive.

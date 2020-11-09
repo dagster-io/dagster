@@ -7,7 +7,7 @@ RUN apt-get update -y \
 # Last git commit in dagster that build the snapshot files
 RUN git clone https://github.com/dagster-io/dagster.git dagster \
     && cd dagster \
-    && git checkout 5f7e7a625175eb09319516fe395004774f38793c
+    && git checkout 62106412d787d6ce4863beb97fee29ab3efd0936
 
 # for some reason this is only failing in the 3.8 image
 # RUN cd dagster && git checkout "${SNAPSHOT_GIT_HASH}"
