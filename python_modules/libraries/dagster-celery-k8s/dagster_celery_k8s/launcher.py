@@ -254,7 +254,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             EngineEventData(
                 [
                     EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(pod_name, "Kubernetes Pod name"),
                     EventMetadataEntry.text(job_namespace, "Kubernetes Namespace"),
                     EventMetadataEntry.text(run.run_id, "Run ID"),
                 ]

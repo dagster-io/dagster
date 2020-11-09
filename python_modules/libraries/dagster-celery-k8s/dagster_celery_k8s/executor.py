@@ -402,7 +402,6 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                 [
                     EventMetadataEntry.text(step_key, "Step key"),
                     EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(pod_name, "Kubernetes Pod name"),
                     EventMetadataEntry.text(job_config.job_image, "Job image"),
                     EventMetadataEntry.text(job_config.image_pull_policy, "Image pull policy"),
                     EventMetadataEntry.text(
@@ -433,7 +432,6 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                         [
                             EventMetadataEntry.text(step_key, "Step key"),
                             EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                            EventMetadataEntry.text(pod_name, "Kubernetes Pod name"),
                         ],
                         marker_end=DELEGATE_MARKER,
                     ),
