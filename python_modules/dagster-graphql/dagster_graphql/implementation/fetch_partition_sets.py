@@ -161,4 +161,4 @@ def _apply_cursor_limit_reverse(items, cursor, limit, reverse):
         else:
             end = start + limit
 
-    return items[start:end]
+    return items[max(start, 0) : end]

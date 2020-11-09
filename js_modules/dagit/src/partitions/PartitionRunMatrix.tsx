@@ -19,19 +19,17 @@ import {
 } from 'src/partitions/RunMatrixUtils';
 import {RunTagsTokenizingField} from 'src/partitions/RunTagsTokenizingField';
 import {SliceSlider} from 'src/partitions/SliceSlider';
-import {PartitionRunMatrixPartitionFragment} from 'src/partitions/types/PartitionRunMatrixPartitionFragment';
 import {
   PartitionRunMatrixPipelineQuery,
   PartitionRunMatrixPipelineQueryVariables,
 } from 'src/partitions/types/PartitionRunMatrixPipelineQuery';
+import {PartitionRunMatrixRunFragment} from 'src/partitions/types/PartitionRunMatrixRunFragment';
 import {
   useMatrixData,
   MatrixStep,
   DisplayOptions,
   StatusSquareFinalColor,
 } from 'src/partitions/useMatrixData';
-
-type Partition = PartitionRunMatrixPartitionFragment;
 
 const TITLE_TOTAL_FAILURES = 'This step failed at least once for this percent of partitions.';
 
@@ -40,13 +38,6 @@ const TITLE_FINAL_FAILURES = 'This step failed to run successfully for this perc
 const BOX_COL_WIDTH = 23;
 
 const OVERSCROLL = 150;
-
-const tagsToTokenFieldValues = (runTags?: {[key: string]: string}) => {
-  if (!runTags) {
-    return [];
-  }
-  return Object.keys(runTags).map((key) => ({token: 'tag', value: `${key}=${runTags[key]}`}));
-};
 
 const SORT_FINAL_ASC = 'FINAL_ASC';
 const SORT_FINAL_DESC = 'FINAL_DESC';
@@ -60,15 +51,13 @@ interface PartitionRunSelection {
 
 interface PartitionRunMatrixProps {
   pipelineName: string;
-  partitions: Partition[];
-  runTags?: {[key: string]: string};
+  partitions: {name: string; runs: PartitionRunMatrixRunFragment[]}[];
+  runTags: TokenizingFieldValue[];
+  setRunTags: (val: TokenizingFieldValue[]) => void;
 }
 
 export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps> = (props) => {
   const {viewport, containerProps} = useViewport();
-  const [runsFilter, setRunsFilter] = React.useState<TokenizingFieldValue[]>(
-    tagsToTokenFieldValues(props.runTags),
-  );
   const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
   const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
   const [stepQuery, setStepQuery] = React.useState<string>('');
@@ -76,12 +65,9 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
   const [stepSortOrder, setSortBy] = React.useState<string>('');
   const [options, setOptions] = React.useState<DisplayOptions>({
     showPrevious: false,
-    showFailuresAndGapsOnly: true,
+    showFailuresAndGapsOnly: false,
     colorizeByAge: false,
   });
-  React.useEffect(() => {
-    setRunsFilter(tagsToTokenFieldValues(props.runTags));
-  }, [props.runTags]);
 
   // Retrieve the pipeline's structure
   const repositorySelector = useRepositorySelector();
@@ -101,9 +87,9 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
     partitions: props.partitions,
     solidHandles,
     stepQuery,
-    runsFilter,
     options,
   });
+
   if (!data || !solidHandles) {
     return <span />;
   }
@@ -179,9 +165,9 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
       </Dialog>
       <OptionsContainer>
         <strong>Run Matrix</strong>
-        <div style={{width: 20}} />
+        <div style={{width: 10}} />
         <Checkbox
-          label="Show Previous Run States"
+          label="Show Previous States"
           checked={options.showPrevious}
           onChange={() => setOptions({...options, showPrevious: !options.showPrevious})}
           style={{marginBottom: 0, height: 20}}
@@ -213,8 +199,8 @@ export const PartitionRunMatrix: React.FunctionComponent<PartitionRunMatrixProps
         <div style={{flex: 1}} />
         <RunTagsTokenizingField
           runs={partitions.reduce((a, b) => [...a, ...b.runs], [])}
-          onChange={setRunsFilter}
-          tokens={runsFilter}
+          onChange={props.setRunTags}
+          tokens={props.runTags}
         />
       </OptionsContainer>
       <div
@@ -375,31 +361,28 @@ const Divider = styled.div`
   border-top: 1px solid ${Colors.GRAY5};
 `;
 
-export const PARTITION_RUN_MATRIX_PARTITION_FRAGMENT = gql`
-  fragment PartitionRunMatrixPartitionFragment on Partition {
-    name
-    runs {
-      runId
-      tags {
-        key
-        value
+export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`
+  fragment PartitionRunMatrixRunFragment on PipelineRun {
+    runId
+    tags {
+      key
+      value
+    }
+    stats {
+      __typename
+      ... on PipelineRunStatsSnapshot {
+        startTime
       }
-      stats {
+    }
+    stepStats {
+      __typename
+      stepKey
+      status
+      materializations {
         __typename
-        ... on PipelineRunStatsSnapshot {
-          startTime
-        }
       }
-      stepStats {
-        __typename
-        stepKey
-        status
-        materializations {
-          __typename
-        }
-        expectationResults {
-          success
-        }
+      expectationResults {
+        success
       }
     }
   }

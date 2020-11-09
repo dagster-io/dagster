@@ -1,108 +1,214 @@
-import {gql, useApolloClient} from '@apollo/client';
+import {gql, useApolloClient, ApolloClient} from '@apollo/client';
 import * as React from 'react';
 
 import {useRepositorySelector} from 'src/DagsterRepositoryContext';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {PARTITION_GRAPH_SET_PARTITION_FRAGMENT} from 'src/partitions/PartitionGraphSet';
-import {PARTITION_RUN_MATRIX_PARTITION_FRAGMENT} from 'src/partitions/PartitionRunMatrix';
+import {TokenizingFieldValue} from 'src/TokenizingField';
+import {PARTITION_GRAPH_SET_RUN_FRAGMENT} from 'src/partitions/PartitionGraphSet';
+import {PARTITION_RUN_MATRIX_RUN_FRAGMENT} from 'src/partitions/PartitionRunMatrix';
 import {
-  PartitionLongitudinalQuery,
-  PartitionLongitudinalQueryVariables,
-  PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results,
-} from 'src/partitions/types/PartitionLongitudinalQuery';
-
-type Partition = PartitionLongitudinalQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results;
+  PartitionSetLoaderQuery,
+  PartitionSetLoaderQueryVariables,
+} from 'src/partitions/types/PartitionSetLoaderQuery';
+import {PartitionSetLoaderRunFragment} from 'src/partitions/types/PartitionSetLoaderRunFragment';
+import {
+  PartitionSetNamesQuery,
+  PartitionSetNamesQueryVariables,
+} from 'src/partitions/types/PartitionSetNamesQuery';
+import {PipelineRunStatus} from 'src/types/globalTypes';
 
 interface DataState {
-  results: Partition[];
+  runs: PartitionSetLoaderRunFragment[];
+  partitionNames: string[];
   loading: boolean;
   cursorStack: string[];
   cursor: string | null;
 }
 
-const InitialDataState: DataState = {results: [], cursor: null, cursorStack: [], loading: false};
+const InitialDataState: DataState = {
+  runs: [],
+  partitionNames: [],
+  cursor: null,
+  cursorStack: [],
+  loading: false,
+};
 
 /**
  * This React hook mirrors `useCursorPaginatedQuery` but collects each page of partitions
  * in slices that are smaller than pageSize and cause the results to load incrementally.
  */
-export function useChunkedPartitionsQuery(partitionSetName: string, pageSize: number | 'all') {
+export function useChunkedPartitionsQuery(
+  partitionSetName: string,
+  pageSize: number | 'all',
+  runsFilter: TokenizingFieldValue[],
+) {
   const {repositoryName, repositoryLocationName} = useRepositorySelector();
   const client = useApolloClient();
 
   const version = React.useRef(0);
   const [dataState, setDataState] = React.useState<DataState>(InitialDataState);
-  const {cursor, loading, results, cursorStack} = dataState;
+  const {cursor, loading, cursorStack} = dataState;
 
   React.useEffect(() => {
+    // Note: there are several async steps to the loading process - to cancel the previous
+    // invocation, we bump a version number that is captured in a local variable.
+    // eg: If version.current no longer === v, this should stop updating state and exit.
     const v = version.current + 1;
     version.current = v;
 
-    setDataState((dataState) => ({...dataState, results: [], loading: true}));
+    setDataState((dataState) => ({...dataState, runs: [], loading: true}));
 
-    let c = cursor;
-    let accumulated: Partition[] = [];
-    const fetchOne = async () => {
-      const result = await client.query<
-        PartitionLongitudinalQuery,
-        PartitionLongitudinalQueryVariables
+    const runTags = runsFilter.map((token) => {
+      const [key, value] = token.value.split('=');
+      return {key, value};
+    });
+
+    const run = async () => {
+      // Load the partition names in the current page range
+      const namesResult = await client.query<
+        PartitionSetNamesQuery,
+        PartitionSetNamesQueryVariables
       >({
         fetchPolicy: 'network-only',
-        query: PARTITION_SET_QUERY,
+        query: PARTITION_SET_NAMES_QUERY,
         variables: {
           partitionSetName,
           repositorySelector: {repositoryName, repositoryLocationName},
           reverse: true,
-          cursor: c,
-          limit: pageSize === 'all' ? 2 : Math.min(2, pageSize - accumulated.length),
+          cursor: cursor,
+          limit: pageSize === 'all' ? 100000 : pageSize,
         },
       });
+
       if (version.current !== v) {
         return;
       }
-      const fetched = partitionsFromResult(result.data);
-      accumulated = [...fetched, ...accumulated];
-      const more = fetched.length > 0 && (pageSize === 'all' || accumulated.length < pageSize);
+      const partitionNames =
+        (namesResult.data.partitionSetOrError.__typename === 'PartitionSet' &&
+          namesResult.data.partitionSetOrError.partitionsOrError.__typename === 'Partitions' &&
+          namesResult.data.partitionSetOrError.partitionsOrError.results.map((r) => r.name)) ||
+        [];
 
-      setDataState((dataState) => ({...dataState, results: accumulated, loading: more}));
+      setDataState((state) => ({...state, partitionNames}));
 
-      if (more) {
-        c = accumulated[0].name;
-        fetchOne();
+      // Load runs in each of these partitions incrementally, running several queries in parallel
+      // to maximize the throughput we can achieve from the GraphQL interface.
+      const parallelQueries = 5;
+      for (let ii = partitionNames.length; ii >= 0; ii -= parallelQueries) {
+        const sliceNames = partitionNames.slice(Math.max(ii - parallelQueries, 0), ii);
+        const fetched = await Promise.all(
+          sliceNames.map((partitionName) =>
+            fetchRunsForFilter(client, {
+              limit: 1000,
+              filter: {
+                tags: [
+                  ...runTags,
+                  {key: 'dagster/partition_set', value: partitionSetName},
+                  {key: 'dagster/partition', value: partitionName},
+                ],
+              },
+            }),
+          ),
+        );
+        if (version.current !== v) {
+          return;
+        }
+        setDataState((state) => ({
+          ...state,
+          runs: [...state.runs].concat(...fetched),
+          loading: ii > 0,
+        }));
       }
+
+      // Periodically refresh pending runs and look for new runs in the displayed partitions.
+      // Note: this timer is canceled when a subsequent invocation of the useEffect updates `version.current`,
+      // because we don't want to create this interval until the initial load completes.
+
+      const timer: NodeJS.Timeout = setInterval(async () => {
+        if (version.current !== v) {
+          return clearInterval(timer);
+        }
+
+        setDataState((state) => ({...state, loading: true}));
+
+        // Fetch the 10 most recent runs for the pipeline so we pick up on new runs being launched.
+        // Note: this may be insufficient but seems like it will handle the 99% case where runs
+        // are either all queued (at the backfill start) or queued sequentially / slowly.
+        const recent = await fetchRunsForFilter(client, {
+          limit: 10,
+          filter: {
+            tags: [...runTags, {key: 'dagster/partition_set', value: partitionSetName}],
+          },
+        });
+
+        // Fetch runs in the partition set that are in the STARTED state, indicating active updates
+        const pending = await fetchRunsForFilter(client, {
+          filter: {
+            status: PipelineRunStatus.STARTED,
+            tags: [...runTags, {key: 'dagster/partition_set', value: partitionSetName}],
+          },
+        });
+
+        if (version.current !== v) {
+          return clearInterval(timer);
+        }
+
+        // Filter detected changes to just runs in our visible range of partitions, and then update
+        // local state if changes have been found.
+        const relevant = [...pending, ...recent].filter((run) =>
+          run.tags.find((t) => t.key === 'dagster/partition' && partitionNames.includes(t.value)),
+        );
+        setDataState((state) => {
+          const updated = state.runs
+            .filter((r) => !relevant.some((o) => o.runId === r.runId))
+            .concat(relevant);
+          return {...state, loading: false, runs: updated};
+        });
+      }, 10 * 1000);
     };
 
-    fetchOne();
-  }, [pageSize, cursor, client, partitionSetName, repositoryName, repositoryLocationName]);
+    run();
+
+    return () => {
+      version.current += 1;
+    };
+  }, [
+    pageSize,
+    cursor,
+    client,
+    partitionSetName,
+    repositoryName,
+    repositoryLocationName,
+    runsFilter,
+  ]);
 
   // Note: cursor === null is page zero and cursors specify subsequent pages.
 
   return {
     loading,
-    partitions:
-      pageSize === 'all'
-        ? results
-        : [...buildEmptyPartitions(pageSize - results.length), ...results],
+    partitions: assemblePartitions(dataState),
     paginationProps: {
       hasPrevCursor: cursor !== null,
-      hasNextCursor: results.length >= pageSize,
+      hasNextCursor: dataState.partitionNames.length >= pageSize,
       popCursor: () => {
         if (cursor === null) {
           return;
         }
         setDataState({
-          results: [],
-          cursor: cursorStack.length ? cursorStack[cursorStack.length - 1] : null,
-          cursorStack: cursorStack.slice(0, cursorStack.length - 1),
           loading: false,
+          cursorStack: cursorStack.slice(0, cursorStack.length - 1),
+          cursor: cursorStack.length ? cursorStack[cursorStack.length - 1] : null,
+          partitionNames: [],
+          runs: [],
         });
       },
       advanceCursor: () => {
         setDataState({
           loading: false,
           cursorStack: cursor ? [...cursorStack, cursor] : cursorStack,
-          cursor: results[0].name,
-          results: [],
+          cursor: dataState.partitionNames[0],
+          partitionNames: [],
+          runs: [],
         });
       },
       reset: () => {
@@ -112,33 +218,76 @@ export function useChunkedPartitionsQuery(partitionSetName: string, pageSize: nu
   };
 }
 
-function buildEmptyPartitions(count: number) {
+async function fetchRunsForFilter(
+  client: ApolloClient<object>,
+  variables: PartitionSetLoaderQueryVariables,
+) {
+  const result = await client.query<PartitionSetLoaderQuery, PartitionSetLoaderQueryVariables>({
+    fetchPolicy: 'network-only',
+    query: PARTITION_SET_LOADER_QUERY,
+    variables,
+  });
+  return (
+    (result.data.pipelineRunsOrError.__typename === 'PipelineRuns' &&
+      result.data.pipelineRunsOrError.results) ||
+    []
+  );
+}
+function assemblePartitions(data: {
+  partitionNames: string[];
+  runs: PartitionSetLoaderRunFragment[];
+}) {
   // Note: Partitions don't have any unique keys beside their names, so we use names
   // extensively in our display layer as React keys. To create unique empty partitions
   // we use different numbers of zero-width space characters
-  const empty: Partition[] = [];
-  for (let ii = 0; ii < count; ii++) {
-    empty.push({
+  const results: {
+    __typename: 'Partition';
+    name: string;
+    runs: PartitionSetLoaderRunFragment[];
+  }[] = [];
+  for (const name of data.partitionNames) {
+    results.push({
       __typename: 'Partition',
-      name: `\u200b`.repeat(ii + 1),
-      runs: [],
+      name,
+      runs: data.runs.filter((r) =>
+        r.tags.some((t) => t.key === 'dagster/partition' && t.value === name),
+      ),
     });
   }
-  return empty;
+  return results;
 }
 
-function partitionsFromResult(result?: PartitionLongitudinalQuery) {
-  if (result?.partitionSetOrError.__typename !== 'PartitionSet') {
-    return [];
+export const PARTITION_SET_LOADER_RUN_FRAGMENT = gql`
+  fragment PartitionSetLoaderRunFragment on PipelineRun {
+    ...PartitionGraphSetRunFragment
+    ...PartitionRunMatrixRunFragment
   }
-  if (result.partitionSetOrError.partitionsOrError.__typename !== 'Partitions') {
-    return [];
-  }
-  return result.partitionSetOrError.partitionsOrError.results;
-}
+  ${PARTITION_RUN_MATRIX_RUN_FRAGMENT}
+  ${PARTITION_GRAPH_SET_RUN_FRAGMENT}
+`;
 
-const PARTITION_SET_QUERY = gql`
-  query PartitionLongitudinalQuery(
+const PARTITION_SET_LOADER_QUERY = gql`
+  query PartitionSetLoaderQuery($filter: PipelineRunsFilter!, $cursor: String, $limit: Int) {
+    pipelineRunsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
+      ... on PipelineRuns {
+        results {
+          ...PartitionSetLoaderRunFragment
+        }
+      }
+      ... on InvalidPipelineRunsFilterError {
+        message
+      }
+      ... on PythonError {
+        ...PythonErrorFragment
+      }
+    }
+  }
+  ${PARTITION_SET_LOADER_RUN_FRAGMENT}
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
+`;
+
+const PARTITION_SET_NAMES_QUERY = gql`
+  query PartitionSetNamesQuery(
     $partitionSetName: String!
     $repositorySelector: RepositorySelector!
     $limit: Int
@@ -154,18 +303,11 @@ const PARTITION_SET_QUERY = gql`
         partitionsOrError(cursor: $cursor, limit: $limit, reverse: $reverse) {
           ... on Partitions {
             results {
-              ...PartitionGraphSetPartitionFragment
-              ...PartitionRunMatrixPartitionFragment
+              name
             }
-          }
-          ... on PythonError {
-            ...PythonErrorFragment
           }
         }
       }
     }
   }
-  ${PARTITION_GRAPH_SET_PARTITION_FRAGMENT}
-  ${PARTITION_RUN_MATRIX_PARTITION_FRAGMENT}
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;

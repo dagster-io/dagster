@@ -4,6 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {CursorHistoryControls} from 'src/CursorControls';
+import {TokenizingFieldValue} from 'src/TokenizingField';
 import {PartitionGraphSet} from 'src/partitions/PartitionGraphSet';
 import {PartitionPageSizeSelector} from 'src/partitions/PartitionPageSizeSelector';
 import {PartitionRunMatrix} from 'src/partitions/PartitionRunMatrix';
@@ -28,11 +29,12 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   onChangePartitionSet,
 }) => {
   const [pageSize, setPageSize] = React.useState<number | 'all'>(30);
-  const [runTags, setRunTags] = React.useState<{[key: string]: string}>({});
+  const [runTags, setRunTags] = React.useState<TokenizingFieldValue[]>([]);
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const {loading, partitions, paginationProps} = useChunkedPartitionsQuery(
     partitionSet.name,
     pageSize,
+    runTags,
   );
 
   const allStepKeys = {};
@@ -60,7 +62,7 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
             partitionSetName={partitionSet.name}
             pipelineName={pipelineName}
             onLaunch={(backfillId: string) => {
-              setRunTags({'dagster/backfill': backfillId});
+              setRunTags([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
               setShowBackfillSetup(false);
             }}
           />
@@ -99,7 +101,12 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
         <CursorHistoryControls {...paginationProps} />
       </PartitionPagerContainer>
       <div style={{position: 'relative'}}>
-        <PartitionRunMatrix pipelineName={pipelineName} partitions={partitions} runTags={runTags} />
+        <PartitionRunMatrix
+          partitions={partitions}
+          pipelineName={pipelineName}
+          runTags={runTags}
+          setRunTags={setRunTags}
+        />
         <PartitionGraphSet partitions={partitions} allStepKeys={Object.keys(allStepKeys)} />
       </div>
     </div>

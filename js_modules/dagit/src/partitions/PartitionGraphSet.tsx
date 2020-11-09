@@ -3,13 +3,10 @@ import gql from 'graphql-tag';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {TokenizingFieldValue} from 'src/TokenizingField';
 import {PartitionGraph} from 'src/partitions/PartitionGraph';
 import {
   PIPELINE_LABEL,
   PARTITION_GRAPH_FRAGMENT,
-  NavSectionHeader,
-  NavSection,
   StepSelector,
   getPipelineDurationForRun,
   getStepDurationsForRun,
@@ -22,17 +19,15 @@ import {
   getStepExpectationSuccessForRun,
   getStepMaterializationCountForRun,
 } from 'src/partitions/PartitionGraphUtils';
-import {PartitionGraphSetPartitionFragment} from 'src/partitions/types/PartitionGraphSetPartitionFragment';
-import {RunsFilter} from 'src/runs/RunsFilter';
+import {PartitionGraphSetRunFragment} from 'src/partitions/types/PartitionGraphSetRunFragment';
 
 export const PartitionGraphSet: React.FunctionComponent<{
-  partitions: PartitionGraphSetPartitionFragment[];
+  partitions: {name: string; runs: PartitionGraphSetRunFragment[]}[];
   allStepKeys: string[];
 }> = ({partitions, allStepKeys}) => {
   const initial: {[stepKey: string]: boolean} = {[PIPELINE_LABEL]: true};
   allStepKeys.forEach((stepKey) => (initial[stepKey] = true));
   const [selectedStepKeys, setSelectedStepKeys] = React.useState(initial);
-  const [tokens, setTokens] = React.useState<TokenizingFieldValue[]>([]);
   const durationGraph = React.useRef<any>(undefined);
   const materializationGraph = React.useRef<any>(undefined);
   const successGraph = React.useRef<any>(undefined);
@@ -54,9 +49,7 @@ export const PartitionGraphSet: React.FunctionComponent<{
 
   const runsByPartitionName = {};
   partitions.forEach((partition) => {
-    runsByPartitionName[partition.name] = partition.runs.filter(
-      (run) => !tokens.length || tokens.every((token) => applyFilter(token, run)),
-    );
+    runsByPartitionName[partition.name] = partition.runs;
   });
 
   return (
@@ -105,10 +98,6 @@ export const PartitionGraphSet: React.FunctionComponent<{
       </div>
       <div style={{width: 450}}>
         <NavContainer>
-          <NavSectionHeader>Run filters</NavSectionHeader>
-          <NavSection>
-            <RunsFilter tokens={tokens} onChange={setTokens} enabledFilters={['status', 'tag']} />
-          </NavSection>
           <StepSelector selected={selectedStepKeys} onChange={onStepChange} />
         </NavContainer>
       </div>
@@ -116,17 +105,14 @@ export const PartitionGraphSet: React.FunctionComponent<{
   );
 };
 
-export const PARTITION_GRAPH_SET_PARTITION_FRAGMENT = gql`
-  fragment PartitionGraphSetPartitionFragment on Partition {
-    name
-    runs {
-      status
-      tags {
-        key
-        value
-      }
-      ...PartitionGraphFragment
+export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
+  fragment PartitionGraphSetRunFragment on PipelineRun {
+    status
+    tags {
+      key
+      value
     }
+    ...PartitionGraphFragment
   }
   ${PARTITION_GRAPH_FRAGMENT}
 `;
@@ -146,19 +132,3 @@ const PartitionContentContainer = styled.div`
   max-width: 1600px;
   margin: 0 auto;
 `;
-
-const applyFilter = (
-  filter: TokenizingFieldValue,
-  run: PartitionGraphSetPartitionFragment['runs'][0],
-) => {
-  if (filter.token === 'id') {
-    return run.runId === filter.value;
-  }
-  if (filter.token === 'status') {
-    return run.status === filter.value;
-  }
-  if (filter.token === 'tag') {
-    return run.tags.some((tag) => filter.value === `${tag.key}=${tag.value}`);
-  }
-  return true;
-};
