@@ -707,11 +707,11 @@ def dbt_cli_docs_generate(context) -> Dict:
             is_required=False,
             default_value=False,
         ),
-        "models": Field(
+        "select": Field(
             config=Noneable([str]),
             default_value=None,
             is_required=False,
-            description="The dbt models to run.",
+            description="Specify the nodes to include.",
         ),
         "exclude": Field(
             config=Noneable([str]),
@@ -759,7 +759,7 @@ def dbt_cli_seed(context) -> Dict:
                 "show",
                 "threads",
                 "no-version-check",
-                "models",
+                "select",
                 "exclude",
                 "selector",
                 "state",
