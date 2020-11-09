@@ -26,6 +26,12 @@ def check_for_release():
 
 def is_phab_and_dagit_only():
     branch_name = os.getenv("BUILDKITE_BRANCH")
+    if branch_name is None:
+        branch_name = (
+            subprocess.check_output(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+            .decode("utf-8")
+            .strip()
+        )
     if not branch_name.startswith("phabricator"):
         return False
 
