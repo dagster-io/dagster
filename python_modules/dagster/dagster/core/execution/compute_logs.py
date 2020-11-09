@@ -9,6 +9,7 @@ import warnings
 from contextlib import contextmanager
 
 from dagster.core.execution import poll_compute_logs, watch_orphans
+from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.seven import IS_WINDOWS, wait_for_process
 from dagster.utils import ensure_file
 
@@ -91,14 +92,14 @@ def execute_windows_tail(path, stream):
     stream = stream if _fileno(stream) else None
 
     try:
-        tail_process = subprocess.Popen(
+        tail_process = open_ipc_subprocess(
             [sys.executable, poll_file, path, str(os.getpid())], stdout=stream
         )
         yield (tail_process.pid, None)
     finally:
         if tail_process:
             time.sleep(2 * poll_compute_logs.POLLING_INTERVAL)
-            tail_process.terminate()
+            interrupt_ipc_subprocess(tail_process)
             wait_for_process(tail_process)
 
 

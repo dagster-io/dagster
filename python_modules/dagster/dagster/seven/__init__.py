@@ -190,7 +190,7 @@ def get_args(callable_):
         return arg_spec.args
 
 
-def wait_for_process(process, timeout=None):
+def wait_for_process(process, timeout=30):
     # Using Popen.communicate instead of Popen.wait since the latter
     # can deadlock, see https://docs.python.org/3/library/subprocess.html#subprocess.Popen.wait
     if not timeout:

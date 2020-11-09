@@ -4,6 +4,8 @@ import os
 import sys
 import time
 
+from dagster.utils import delay_interrupts, raise_delayed_interrupts
+
 POLLING_INTERVAL = 0.1
 
 
@@ -30,6 +32,7 @@ def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
     """
     with open(filepath, "r") as file:
         for block in iter(lambda: file.read(1024), None):
+            raise_delayed_interrupts()
             if block:
                 print(block, end="", file=stream)  # pylint: disable=print-call
             else:
@@ -49,4 +52,5 @@ def execute_polling(args):
 
 
 if __name__ == "__main__":
-    execute_polling(sys.argv[1:])
+    with delay_interrupts():
+        execute_polling(sys.argv[1:])
