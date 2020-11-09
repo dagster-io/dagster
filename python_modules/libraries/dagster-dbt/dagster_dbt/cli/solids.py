@@ -663,7 +663,7 @@ def dbt_cli_docs_generate(context) -> Dict:
 
     if context.solid_config["yield_materializations"]:
         yield AssetMaterialization(
-            asset_key="dbt_compile_cli_output",
+            asset_key="dbt_docs_generate_cli_output",
             description="Output from the CLI execution of `dbt docs generate`.",
             metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
         )
@@ -772,7 +772,7 @@ def dbt_cli_seed(context) -> Dict:
 
     if context.solid_config["yield_materializations"]:
         yield AssetMaterialization(
-            asset_key="dbt_compile_cli_output",
+            asset_key="dbt_seed_cli_output",
             description="Output from the CLI execution of `dbt seed`.",
             metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
         )
