@@ -9,6 +9,7 @@ from click.testing import CliRunner
 from dagster.cli.sensor import (
     check_repo_and_scheduler,
     sensor_list_command,
+    sensor_preview_command,
     sensor_start_command,
     sensor_stop_command,
 )
@@ -29,7 +30,7 @@ def test_sensors_list(gen_sensor_args):
             result = runner.invoke(sensor_list_command, cli_args)
 
             assert result.exit_code == 0
-            assert result.output == "Repository bar\n**************\nJob: foo_sensor [STOPPED]\n"
+            assert result.output == "Repository bar\n**************\nSensor: foo_sensor [STOPPED]\n"
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
@@ -93,3 +94,34 @@ def test_check_repo_and_scheduler_dagster_home_not_set():
             click.UsageError, match=re.escape("The environment variable $DAGSTER_HOME is not set.")
         ):
             check_repo_and_scheduler(repository, instance)
+
+
+@pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
+def test_sensor_preview(gen_sensor_args):
+    with gen_sensor_args as (cli_args, instance):
+        runner = CliRunner()
+        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+            _instance.return_value = instance
+
+            result = runner.invoke(sensor_preview_command, cli_args + ["foo_sensor"],)
+
+            assert result.exit_code == 0
+            assert result.output == "Sensor returning run parameters for 1 run(s):\n\nfoo: FOO\n\n"
+
+
+@pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
+def test_sensor_preview_since(gen_sensor_args):
+    with gen_sensor_args as (cli_args, instance):
+        runner = CliRunner()
+        with mock.patch("dagster.core.instance.DagsterInstance.get") as _instance:
+            _instance.return_value = instance
+
+            result = runner.invoke(
+                sensor_preview_command, cli_args + ["foo_sensor", "--since", 1.1]
+            )
+
+            assert result.exit_code == 0
+            assert (
+                result.output
+                == "Sensor returning run parameters for 1 run(s):\n\nfoo: FOO\nsince: 1.1\n\n"
+            )

@@ -116,8 +116,11 @@ def define_bar_partitions():
 
 def define_bar_sensors():
     @sensor(pipeline_name="baz")
-    def foo_sensor(_):
-        return SensorRunParams(execution_key=None, run_config={})
+    def foo_sensor(context):
+        run_config = {"foo": "FOO"}
+        if context.last_completion_time:
+            run_config["since"] = context.last_completion_time
+        return SensorRunParams(execution_key=None, run_config=run_config)
 
     return {"foo_sensor": foo_sensor}
 
