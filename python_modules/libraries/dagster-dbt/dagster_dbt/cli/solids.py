@@ -259,7 +259,7 @@ def dbt_cli_run(context) -> DbtCliOutput:
             is_required=False,
             default_value=True,
             description=(
-                "If True, materializations corresponding to the results of the dbt operation will
+                "If True, materializations corresponding to the results of the dbt operation will "
                 "be yielded when the solid executes. Default: True"
             ),
         ),
@@ -324,7 +324,7 @@ def dbt_cli_test(context) -> DbtCliOutput:
             is_required=False,
             default_value=True,
             description=(
-                "If True, materializations corresponding to the results of the dbt operation will
+                "If True, materializations corresponding to the results of the dbt operation will "
                 "be yielded when the solid executes. Default: True"
             ),
         ),
@@ -380,7 +380,7 @@ def dbt_cli_snapshot(context) -> Dict:
             is_required=False,
             default_value=True,
             description=(
-                "If True, materializations corresponding to the results of the dbt operation will
+                "If True, materializations corresponding to the results of the dbt operation will "
                 "be yielded when the solid executes. Default: True"
             ),
         ),
@@ -443,7 +443,7 @@ def dbt_cli_run_operation(context) -> Dict:
             is_required=False,
             default_value=True,
             description=(
-                "If True, materializations corresponding to the results of the dbt operation will
+                "If True, materializations corresponding to the results of the dbt operation will "
                 "be yielded when the solid executes. Default: True"
             ),
         ),
@@ -542,7 +542,7 @@ def dbt_cli_snapshot_freshness(context) -> Dict:
             is_required=False,
             default_value=True,
             description=(
-                "If True, materializations corresponding to the results of the dbt operation will
+                "If True, materializations corresponding to the results of the dbt operation will "
                 "be yielded when the solid executes. Default: True"
             ),
         ),
@@ -639,7 +639,7 @@ def dbt_cli_compile(context) -> Dict:
             is_required=False,
             default_value=True,
             description=(
-                "If True, materializations corresponding to the results of the dbt operation will
+                "If True, materializations corresponding to the results of the dbt operation will "
                 "be yielded when the solid executes. Default: True"
             ),
         ),
@@ -739,7 +739,7 @@ def dbt_cli_docs_generate(context) -> Dict:
             is_required=False,
             default_value=True,
             description=(
-                "If True, materializations corresponding to the results of the dbt operation will
+                "If True, materializations corresponding to the results of the dbt operation will "
                 "be yielded when the solid executes. Default: True"
             ),
         ),
