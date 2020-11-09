@@ -255,7 +255,13 @@ def dbt_cli_run(context) -> DbtCliOutput:
             description="The dbt models to exclude.",
         ),
         "yield_materializations": Field(
-            config=Bool, is_required=False, default_value=True, description="FIXME"
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will
+                "be yielded when the solid executes. Default: True"
+            ),
         ),
     },
     tags={"kind": "dbt"},
@@ -314,7 +320,13 @@ def dbt_cli_test(context) -> DbtCliOutput:
             description="The dbt models to exclude.",
         ),
         "yield_materializations": Field(
-            config=Bool, is_required=False, default_value=True, description="FIXME"
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will
+                "be yielded when the solid executes. Default: True"
+            ),
         ),
     },
     tags={"kind": "dbt"},
@@ -364,7 +376,13 @@ def dbt_cli_snapshot(context) -> Dict:
             ),
         ),
         "yield_materializations": Field(
-            config=Bool, is_required=False, default_value=True, description="FIXME"
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will
+                "be yielded when the solid executes. Default: True"
+            ),
         ),
     },
     tags={"kind": "dbt"},
@@ -421,7 +439,13 @@ def dbt_cli_run_operation(context) -> Dict:
             ),
         ),
         "yield_materializations": Field(
-            config=Bool, is_required=False, default_value=True, description="FIXME"
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will
+                "be yielded when the solid executes. Default: True"
+            ),
         ),
     },
     tags={"kind": "dbt"},
@@ -514,7 +538,13 @@ def dbt_cli_snapshot_freshness(context) -> Dict:
             default_value=False,
         ),
         "yield_materializations": Field(
-            config=Bool, is_required=False, default_value=True, description="FIXME"
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will
+                "be yielded when the solid executes. Default: True"
+            ),
         ),
     },
     tags={"kind": "dbt"},
@@ -605,7 +635,13 @@ def dbt_cli_compile(context) -> Dict:
             ),
         ),
         "yield_materializations": Field(
-            config=Bool, is_required=False, default_value=True, description="FIXME"
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will
+                "be yielded when the solid executes. Default: True"
+            ),
         ),
     },
     tags={"kind": "dbt"},
@@ -699,7 +735,13 @@ def dbt_cli_docs_generate(context) -> Dict:
             ),
         ),
         "yield_materializations": Field(
-            config=Bool, is_required=False, default_value=True, description="FIXME"
+            config=Bool,
+            is_required=False,
+            default_value=True,
+            description=(
+                "If True, materializations corresponding to the results of the dbt operation will
+                "be yielded when the solid executes. Default: True"
+            ),
         ),
     },
     tags={"kind": "dbt"},
