@@ -2,7 +2,7 @@ import * as React from 'react';
 import styled, {css} from 'styled-components';
 
 import {Box} from 'src/ui/Box';
-import {AlignItems, FlexProperties, Spacing} from 'src/ui/types';
+import {AlignItems, DirectionalSpacing, FlexProperties, Spacing} from 'src/ui/types';
 
 type Direction = 'horizontal' | 'vertical';
 
@@ -10,8 +10,8 @@ interface Props {
   alignItems?: AlignItems;
   background?: string;
   direction: Direction;
-  margin?: Spacing;
-  padding?: Spacing;
+  margin?: DirectionalSpacing;
+  padding?: DirectionalSpacing;
   spacing: Spacing;
 }
 

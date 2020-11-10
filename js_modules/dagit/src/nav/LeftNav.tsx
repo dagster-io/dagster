@@ -14,6 +14,8 @@ import {InstanceDetailsLink} from 'src/nav/InstanceDetailsLink';
 import {RepositoryContentList} from 'src/nav/RepositoryContentList';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {SchedulesList} from 'src/nav/SchedulesList';
+import {Group} from 'src/ui/Group';
+import {Caption} from 'src/ui/Text';
 import {useRepositoryLocations} from 'src/workspace/useRepositoryLocations';
 
 const KEYCODE_FOR_1 = 49;
@@ -116,13 +118,18 @@ export const LeftNav: React.FunctionComponent<LeftNavProps> = ({
           onReload={onReload}
         />
         {anyErrors ? (
-          <LoadingError>
+          <Group
+            background={Colors.GOLD5}
+            padding={{vertical: 8, horizontal: 12}}
+            direction="horizontal"
+            spacing={8}
+          >
             <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
-            <div style={{fontSize: '12px', margin: '0 8px'}}>
+            <Caption color={Colors.DARK_GRAY3}>
               An error occurred while loading a repository.{' '}
-              <Link to="/workspace/repository-locations">View details</Link>
-            </div>
-          </LoadingError>
+              <DetailLink to="/workspace/repository-locations">View details</DetailLink>
+            </Caption>
+          </Group>
         ) : null}
         {repo && (
           <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
@@ -225,26 +232,13 @@ const LogoMetaContainer = styled.div`
   border-bottom: 1px solid ${Colors.DARK_GRAY4};
 `;
 
-const LoadingError = styled.div`
-  align-items: center;
-  background-color: ${Colors.GOLD5};
-  border: 0;
+const DetailLink = styled(Link)`
   color: ${Colors.DARK_GRAY3};
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  padding: 8px 12px;
-  text-align: left;
+  text-decoration: underline;
 
-  &:active {
-    outline: none;
-  }
-
-  & a,
-  a:hover,
-  a:active {
-    color: ${Colors.DARK_GRAY3};
-    text-decoration: underline;
-    white-space: nowrap;
+  && :hover,
+  :active,
+  :visited {
+    color: ${Colors.DARK_GRAY1};
   }
 `;

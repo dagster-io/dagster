@@ -3,9 +3,20 @@ import styled from 'styled-components';
 
 import {FontFamily} from 'src/ui/styles';
 
-export const Body = styled.span`
+interface TextProps {
+  color?: string;
+}
+
+export const Body = styled.span<TextProps>`
+  ${({color}) => (color ? `color: ${color};` : null)}
   font-family: ${FontFamily.default};
   font-size: 14px;
+`;
+
+export const Caption = styled.span<TextProps>`
+  ${({color}) => (color ? `color: ${color};` : null)}
+  font-family: ${FontFamily.default};
+  font-size: 12px;
 `;
 
 export const Code = styled.span`
