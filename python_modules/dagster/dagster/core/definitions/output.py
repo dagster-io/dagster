@@ -24,8 +24,11 @@ class OutputDefinition(object):
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
-        asset_store_key (str)
-        asset_metadata (Optional[Dict[str, Any]])
+        asset_store_key (Optional[str]): The resource key of the asset store used for this output.
+        asset_metadata (Optional[Dict[str, Any]]): A dict of the metadata that is used for the
+            output to store the given data object. For example, users can provide a file path if
+            the data object will be stored in a filesystem, or provide information of a database
+            table when it is going to load the data into the table.
     """
 
     def __init__(

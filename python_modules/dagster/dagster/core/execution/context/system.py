@@ -14,6 +14,7 @@ from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.execution.retries import Retries
 from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
@@ -286,6 +287,9 @@ class SystemStepExecutionContext(SystemExecutionContext):
     def for_hook(self, hook_def):
         return HookContext(self._execution_context_data, self.log, hook_def, self.step)
 
+    def for_asset_store(self, step_output_handle, asset_store_handle):
+        return AssetStoreContext(self.pipeline_run, step_output_handle, asset_store_handle)
+
     def get_asset_store(self, asset_store_key):
         from dagster.core.storage.asset_store import AssetStore
 
@@ -378,3 +382,47 @@ class HookContext(SystemExecutionContext):
     def solid_config(self):
         solid_config = self.environment_config.solids.get(str(self._step.solid_handle))
         return solid_config.config if solid_config else None
+
+
+class AssetStoreContext:
+    """The ``context`` object available to :py:class:`AssetStore`.
+
+    Attributes:
+        pipeline_run (PipelineRun): This run of the pipeline.
+        run_id (str): The id for this run of the pipeline.
+        step_key (str): The step_key for a compute step.
+        output_name (str): The name of the output. (default: 'result').
+        asset_metadata ([Dict[str, Any]]): A dict of the metadata that is used for the asset store
+            to store or retrieve the data object.
+    """
+
+    def __init__(self, pipeline_run, step_output_handle, asset_store_handle):
+        from dagster.core.storage.asset_store import AssetStoreHandle
+
+        self._pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        self._step_output_handle = check.inst_param(
+            step_output_handle, "step_output_handle", StepOutputHandle
+        )
+        self._asset_store_handle = check.inst_param(
+            asset_store_handle, "asset_store_handle", AssetStoreHandle
+        )
+
+    @property
+    def pipeline_run(self):
+        return self._pipeline_run
+
+    @property
+    def run_id(self):
+        return self._pipeline_run.run_id
+
+    @property
+    def step_key(self):
+        return self._step_output_handle.step_key
+
+    @property
+    def output_name(self):
+        return self._step_output_handle.output_name
+
+    @property
+    def asset_metadata(self):
+        return self._asset_store_handle.asset_metadata

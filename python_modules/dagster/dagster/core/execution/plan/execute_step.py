@@ -329,22 +329,24 @@ def _create_step_events_for_output(step_context, output):
         yield evt
 
 
-def _get_addressable_asset(context, step_output_handle):
-    asset_store_handle = context.execution_plan.get_asset_store_handle(step_output_handle)
-    asset_store = context.get_asset_store(asset_store_handle.asset_store_key)
-    obj = asset_store.get_asset(context, step_output_handle, asset_store_handle.asset_metadata)
+def _get_addressable_asset(step_context, step_output_handle):
+    asset_store_handle = step_context.execution_plan.get_asset_store_handle(step_output_handle)
+    asset_store = step_context.get_asset_store(asset_store_handle.asset_store_key)
+    asset_store_context = step_context.for_asset_store(step_output_handle, asset_store_handle)
+
+    obj = asset_store.get_asset(asset_store_context)
 
     return AssetStoreOperation(
         AssetStoreOperationType.GET_ASSET, step_output_handle, asset_store_handle, obj=obj,
     )
 
 
-def _set_addressable_asset(context, step_output_handle, value):
-    asset_store_handle = context.execution_plan.get_asset_store_handle(step_output_handle)
-    asset_store = context.get_asset_store(asset_store_handle.asset_store_key)
-    materializations = asset_store.set_asset(
-        context, step_output_handle, value, asset_store_handle.asset_metadata
-    )
+def _set_addressable_asset(step_context, step_output_handle, value):
+    asset_store_handle = step_context.execution_plan.get_asset_store_handle(step_output_handle)
+    asset_store = step_context.get_asset_store(asset_store_handle.asset_store_key)
+    asset_store_context = step_context.for_asset_store(step_output_handle, asset_store_handle)
+
+    materializations = asset_store.set_asset(asset_store_context, value)
 
     # Allow zero, one, or multiple AssetMaterialization yielded by set_asset
     if materializations is not None:

@@ -97,6 +97,7 @@ from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.system import (
+    AssetStoreContext,
     HookContext,
     SystemComputeExecutionContext,
     TypeCheckContext,
@@ -220,6 +221,7 @@ __all__ = [
     "SystemStorageData",
     "HookContext",
     "TypeCheckContext",
+    "AssetStoreContext",
     "PipelineRun",
     "default_executors",
     "default_intermediate_storage_defs",
