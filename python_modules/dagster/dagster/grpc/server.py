@@ -30,7 +30,7 @@ from dagster.serdes.ipc import (
     open_ipc_subprocess,
     read_unary_response,
 )
-from dagster.seven import get_system_temp_directory, multiprocessing
+from dagster.seven import multiprocessing
 from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
 from dagster.utils.error import serializable_error_info_from_exc_info
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -977,40 +977,41 @@ def open_server_process(
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.int_param(max_workers, "max_workers")
 
-    output_file = os.path.join(
-        get_system_temp_directory(), "grpc-server-startup-{uuid}".format(uuid=uuid.uuid4().hex)
-    )
+    with seven.TemporaryDirectory() as temp_dir:
+        output_file = os.path.join(
+            temp_dir, "grpc-server-startup-{uuid}".format(uuid=uuid.uuid4().hex)
+        )
 
-    subprocess_args = (
-        [
-            loadable_target_origin.executable_path
-            if loadable_target_origin and loadable_target_origin.executable_path
-            else sys.executable,
-            "-m",
-            "dagster.grpc",
-        ]
-        + (["--port", str(port)] if port else [])
-        + (["--socket", socket] if socket else [])
-        + ["-n", str(max_workers)]
-        + (["--heartbeat"] if heartbeat else [])
-        + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
-        + (["--lazy-load-user-code"] if lazy_load_user_code else [])
-        + (["--ipc-output-file", output_file])
-    )
+        subprocess_args = (
+            [
+                loadable_target_origin.executable_path
+                if loadable_target_origin and loadable_target_origin.executable_path
+                else sys.executable,
+                "-m",
+                "dagster.grpc",
+            ]
+            + (["--port", str(port)] if port else [])
+            + (["--socket", socket] if socket else [])
+            + ["-n", str(max_workers)]
+            + (["--heartbeat"] if heartbeat else [])
+            + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
+            + (["--lazy-load-user-code"] if lazy_load_user_code else [])
+            + (["--ipc-output-file", output_file])
+        )
 
-    if loadable_target_origin:
-        subprocess_args += loadable_target_origin.get_cli_args()
+        if loadable_target_origin:
+            subprocess_args += loadable_target_origin.get_cli_args()
 
-    server_process = open_ipc_subprocess(subprocess_args)
+        server_process = open_ipc_subprocess(subprocess_args)
 
-    try:
-        wait_for_grpc_server(output_file)
-    except:
-        if server_process.poll() is None:
-            server_process.terminate()
-        raise
+        try:
+            wait_for_grpc_server(output_file)
+        except:
+            if server_process.poll() is None:
+                server_process.terminate()
+            raise
 
-    return server_process
+        return server_process
 
 
 def open_server_process_on_dynamic_port(
