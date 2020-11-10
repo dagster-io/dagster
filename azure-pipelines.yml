@@ -1,20 +1,9 @@
 parameters:
-- name: py2_versions
-  type: object
-  default:
-    - "2.7"
 - name: py3_versions
   type: object
   default:
     - "3.6"
     - "3.7"
-- name: py2_env_suffixes
-  type: object
-  default:
-    # core_tests temporarily disabled on py2 due to timeouts:
-    # https://github.com/dagster-io/dagster/issues/2859
-    - api_tests
-    - cli_tests
 - name: py3_env_suffixes
   type: object
   default:
@@ -29,11 +18,6 @@ jobs:
       vmImage: "vs2017-win2016"
     strategy:
       matrix:
-        ${{ each py_version in parameters.py2_versions }}:
-          ${{ each env_suffix in parameters.py2_env_suffixes }}:
-            ${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}:
-              TOXENV: "py${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}"
-              python.version: "${{ py_version }}"
         ${{ each py_version in parameters.py3_versions }}:
           ${{ each env_suffix in parameters.py3_env_suffixes }}:
             ${{ replace(py_version, '.', '') }}-windows-${{ env_suffix }}:
