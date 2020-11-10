@@ -5,9 +5,11 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 import warnings
 from contextlib import contextmanager
 
+from dagster import seven
 from dagster.core.execution import poll_compute_logs, watch_orphans
 from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.seven import IS_WINDOWS, wait_for_process
@@ -91,16 +93,28 @@ def execute_windows_tail(path, stream):
     poll_file = os.path.abspath(poll_compute_logs.__file__)
     stream = stream if _fileno(stream) else None
 
-    try:
-        tail_process = open_ipc_subprocess(
-            [sys.executable, poll_file, path, str(os.getpid())], stdout=stream
+    with seven.TemporaryDirectory() as temp_dir:
+        ipc_output_file = os.path.join(
+            temp_dir, "execute-windows-tail-{uuid}".format(uuid=uuid.uuid4().hex)
         )
-        yield (tail_process.pid, None)
-    finally:
-        if tail_process:
-            time.sleep(2 * poll_compute_logs.POLLING_INTERVAL)
-            interrupt_ipc_subprocess(tail_process)
-            wait_for_process(tail_process)
+
+        try:
+            tail_process = open_ipc_subprocess(
+                [sys.executable, poll_file, path, str(os.getpid()), ipc_output_file], stdout=stream
+            )
+            yield (tail_process.pid, None)
+        finally:
+            if tail_process:
+                start_time = time.time()
+                while not os.path.isfile(ipc_output_file):
+                    if time.time() - start_time > 15:
+                        raise Exception("Timed out waiting for tail process to start")
+                    time.sleep(1)
+
+                # Now that we know the tail process has started, tell it to terminate once there is
+                # nothing more to output
+                interrupt_ipc_subprocess(tail_process)
+                wait_for_process(tail_process)
 
 
 @contextmanager

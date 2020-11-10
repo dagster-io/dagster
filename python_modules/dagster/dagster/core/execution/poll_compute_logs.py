@@ -4,7 +4,7 @@ import os
 import sys
 import time
 
-from dagster.utils import delay_interrupts, raise_delayed_interrupts
+from dagster.utils import delay_interrupts, pop_delayed_interrupts
 
 POLLING_INTERVAL = 0.1
 
@@ -32,21 +32,28 @@ def tail_polling(filepath, stream=sys.stdout, parent_pid=None):
     """
     with open(filepath, "r") as file:
         for block in iter(lambda: file.read(1024), None):
-            raise_delayed_interrupts()
             if block:
                 print(block, end="", file=stream)  # pylint: disable=print-call
             else:
-                if parent_pid and current_process_is_orphaned(parent_pid):
-                    sys.exit()
+                if pop_delayed_interrupts() or (
+                    parent_pid and current_process_is_orphaned(parent_pid)
+                ):
+                    return
                 time.sleep(POLLING_INTERVAL)
 
 
 def execute_polling(args):
-    if not args or len(args) != 2:
+    if not args or len(args) != 3:
         return
 
     filepath = args[0]
     parent_pid = int(args[1])
+    ipc_output_file = args[2]
+
+    # Signal to the calling process that we have started and are
+    # ready to receive the signal to terminate once execution has finished
+    with open(ipc_output_file, "w"):
+        pass
 
     tail_polling(filepath, sys.stdout, parent_pid)
 
