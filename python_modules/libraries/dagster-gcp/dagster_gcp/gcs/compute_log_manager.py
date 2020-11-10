@@ -1,7 +1,6 @@
 import os
 from contextlib import contextmanager
 
-import boto3
 from dagster import Field, StringSource, check, seven
 from dagster.core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
@@ -12,10 +11,11 @@ from dagster.core.storage.compute_log_manager import (
 from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import ensure_dir, ensure_file
+from google.cloud import storage
 
 
-class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
-    """Logs solid compute function stdout and stderr to S3.
+class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
+    """Logs solid compute function stdout and stderr to GCS.
 
     Users should not instantiate this class directly. Instead, use a YAML block in ``dagster.yaml``
     such as the following:
@@ -23,48 +23,29 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     .. code-block:: YAML
 
         compute_logs:
-          module: dagster_aws.s3.compute_log_manager
-          class: S3ComputeLogManager
+          module: dagster_gcp.gcs.compute_log_manager
+          class: GCSComputeLogManager
           config:
             bucket: "mycorp-dagster-compute-logs"
             local_dir: "/tmp/cool"
             prefix: "dagster-test-"
-            use_ssl: true
-            verify: true
-            verify_cert_path: "/path/to/cert/bundle.pem"
-            endpoint_url: "http://alternate-s3-host.io"
 
     Args:
-        bucket (str): The name of the s3 bucket to which to log.
+        bucket (str): The name of the gcs bucket to which to log.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
             ``dagster.seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
-        use_ssl (Optional[bool]): Whether or not to use SSL. Default True.
-        verify (Optional[bool]): Whether or not to verify SSL certificates. Default True.
-        verify_cert_path (Optional[str]): A filename of the CA cert bundle to use. Only used if
-            `verify` set to False.
-        endpoint_url (Optional[str]): Override for the S3 endpoint url.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.
     """
 
     def __init__(
-        self,
-        bucket,
-        local_dir=None,
-        inst_data=None,
-        prefix="dagster",
-        use_ssl=True,
-        verify=True,
-        verify_cert_path=None,
-        endpoint_url=None,
+        self, bucket, local_dir=None, inst_data=None, prefix="dagster",
     ):
-        _verify = False if not verify else verify_cert_path
-        self._s3_session = boto3.resource(
-            "s3", use_ssl=use_ssl, verify=_verify, endpoint_url=endpoint_url
-        ).meta.client
-        self._s3_bucket = check.str_param(bucket, "bucket")
-        self._s3_prefix = check.str_param(prefix, "prefix")
+        self._bucket_name = check.str_param(bucket, "bucket")
+        self._prefix = check.str_param(prefix, "prefix")
+
+        self._bucket = storage.Client().get_bucket(self._bucket_name)
 
         # proxy calls to local compute log manager (for subscriptions, etc)
         if not local_dir:
@@ -91,15 +72,11 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             "bucket": StringSource,
             "local_dir": Field(StringSource, is_required=False),
             "prefix": Field(StringSource, is_required=False, default_value="dagster"),
-            "use_ssl": Field(bool, is_required=False, default_value=True),
-            "verify": Field(bool, is_required=False, default_value=True),
-            "verify_cert_path": Field(StringSource, is_required=False),
-            "endpoint_url": Field(StringSource, is_required=False),
         }
 
     @staticmethod
     def from_config_value(inst_data, config_value):
-        return S3ComputeLogManager(inst_data=inst_data, **config_value)
+        return GCSComputeLogManager(inst_data=inst_data, **config_value)
 
     def get_local_path(self, run_id, key, io_type):
         return self.local_manager.get_local_path(run_id, key, io_type)
@@ -119,10 +96,9 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def download_url(self, run_id, key, io_type):
         if not self.is_watch_completed(run_id, key):
             return self.local_manager.download_url(run_id, key, io_type)
-        key = self._bucket_key(run_id, key, io_type)
 
-        url = self._s3_session.generate_presigned_url(
-            ClientMethod="get_object", Params={"Bucket": self._s3_bucket, "Key": key}
+        url = self._bucket.blob(self._bucket_key(run_id, key, io_type)).generate_signed_url(
+            expiration=3600  # match S3 default expiration
         )
 
         return url
@@ -140,15 +116,12 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
         local_path = self.get_local_path(run_id, key, io_type)
         if os.path.exists(local_path):
             return False
-        s3_objects = self._s3_session.list_objects(
-            Bucket=self._s3_bucket, Prefix=self._bucket_key(run_id, key, io_type)
-        )
-        return len(s3_objects) > 0
+        return self._bucket.blob(self._bucket_key(run_id, key, io_type)).exists()
 
     def _from_local_file_data(self, run_id, key, io_type, local_file_data):
         is_complete = self.is_watch_completed(run_id, key)
         path = (
-            "s3://{}/{}".format(self._s3_bucket, self._bucket_key(run_id, key, io_type))
+            "gs://{}/{}".format(self._bucket_name, self._bucket_key(run_id, key, io_type))
             if is_complete
             else local_file_data.path
         )
@@ -164,26 +137,24 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
     def _upload_from_local(self, run_id, key, io_type):
         path = self.get_local_path(run_id, key, io_type)
         ensure_file(path)
-        key = self._bucket_key(run_id, key, io_type)
         with open(path, "rb") as data:
-            self._s3_session.upload_fileobj(data, self._s3_bucket, key)
+            self._bucket.blob(self._bucket_key(run_id, key, io_type)).upload_from_file(data)
 
     def _download_to_local(self, run_id, key, io_type):
         path = self.get_local_path(run_id, key, io_type)
         ensure_dir(os.path.dirname(path))
         with open(path, "wb") as fileobj:
-            self._s3_session.download_fileobj(
-                self._s3_bucket, self._bucket_key(run_id, key, io_type), fileobj
-            )
+            self._bucket.blob(self._bucket_key(run_id, key, io_type)).download_to_file(fileobj)
 
     def _bucket_key(self, run_id, key, io_type):
         check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
         paths = [
-            self._s3_prefix,
+            self._prefix,
             "storage",
             run_id,
             "compute_logs",
             "{}.{}".format(key, extension),
         ]
-        return "/".join(paths)  # s3 path delimiter
+
+        return "/".join(paths)  # path delimiter
