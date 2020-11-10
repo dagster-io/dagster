@@ -150,6 +150,7 @@ pipeline_run:
 scheduler:
   # If k8sEnabled is true, then use K8sScheduler; else, use CronScheduler
   k8sEnabled: false
+
   # (K8sScheduler only) Image for K8s CronJob(s) to launch K8s Job(s). This image does
   # need access to dagster code (to call `dagster api launch_scheduled_execution`) and instance yaml
   # but does not need access to user code.
@@ -157,12 +158,17 @@ scheduler:
     repository: "dagster/k8s-dagster"
     tag: "latest"
     pullPolicy: Always
-  # (K8sScheduler only) K8s Namespace for K8s CronJob(s) and launched K8s Job(s)
+
+  # (K8sScheduler only) K8s Namespace for K8s CronJob(s) and launched K8s Job(s).
+  # If left empty, the release namespace will be used.
   schedulerNamespace: ""
+
   # (K8sScheduler only) Set to true to load kubeconfig from within cluster
   loadInclusterConfig: true
+
   # (K8sScheduler only) File to load kubeconfig from. Only set this if loadInclusterConfig is false.
   kubeconfigFile: ""
+
   # (K8sScheduler only) Additional (secret) environment variables can be retrieved and set from
   # the Secrets enumerated as a list here
   env_secrets:
@@ -291,14 +297,19 @@ k8sRunLauncher:
   #   pullPolicy: Always
 
   # The K8s namespace where new jobs will be launched.
-  jobNamespace: "default"
+  # If left empty, the release namespace will be used.
+  jobNamespace: ""
+
   # Set to true to load kubeconfig from within cluster.
   loadInclusterConfig: true
+
   # File to load kubeconfig from. Only set this if loadInclusterConfig is false.
   kubeconfigFile: ""
+
   # A list of custom ConfigMapEnvSource names from which to draw environment variables for the Job.
   envConfigMaps:
     - ""
+
   # A list of custom Secret names from which to draw environment variables for the Job.
   envSecrets:
     - ""
