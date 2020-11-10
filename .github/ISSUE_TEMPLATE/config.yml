@@ -1,0 +1,12 @@
+contact_links:
+  - name: Ask a question, get help, or share ideas 💭
+    url: https://github.com/dagster-io/dagster/discussions/category_choices
+    about: Discuss everything
+
+  - name: Add your company logo or write posts 📡
+    url: https://github.com/dagster-io/dagster-website
+    about: Visit dagster.io repo
+
+  - name: Join Dagster Slack Community 🔗
+    url: https://dagster-slackin.herokuapp.com/
+    about: Get help with issues, discuss Dagster and data engineering topics, and stay up to date with new releases and community events
