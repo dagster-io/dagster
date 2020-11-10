@@ -63,6 +63,7 @@ export const RunRoot: React.FC<RouteComponentProps<{runId: string}>> = (props) =
         minWidth: 0,
         width: '100%',
         height: '100%',
+        overflow: 'hidden',
       }}
     >
       <TopNav breadcrumbs={breadcrumbs} />
