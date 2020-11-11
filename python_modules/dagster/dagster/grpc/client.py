@@ -106,6 +106,9 @@ class DagsterGrpcClient(object):
                 "echo": res.echo,
             }
 
+    def get_server_id(self):
+        return self._query("GetServerId", api_pb2.Empty)
+
     def execution_plan_snapshot(self, execution_plan_snapshot_args):
         check.inst_param(
             execution_plan_snapshot_args, "execution_plan_snapshot_args", ExecutionPlanSnapshotArgs

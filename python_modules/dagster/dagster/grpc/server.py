@@ -188,6 +188,10 @@ class DagsterApiServer(DagsterApiServicer):
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
         )
 
+        # Each server is initialized with a unique UUID. This UUID is used by clients to track when
+        # servers are replaced and is used for cache invalidation and reloading.
+        self._server_id = str(uuid.uuid4())
+
         # Client tells the server to shutdown by calling ShutdownServer (or by failing to send a
         # hearbeat, at which point this event is set. The cleanup thread will then set the server
         # termination event once all current executions have finished, which will stop the server)
@@ -312,6 +316,9 @@ class DagsterApiServer(DagsterApiServicer):
         self.__last_heartbeat_time = time.time()
         echo = request.echo
         return api_pb2.PingReply(echo=echo)
+
+    def GetServerId(self, _request, _context):
+        return api_pb2.GetServerIdReply(server_id=self._server_id)
 
     def ExecutionPlanSnapshot(self, request, _context):
         execution_plan_args = deserialize_json_to_dagster_namedtuple(

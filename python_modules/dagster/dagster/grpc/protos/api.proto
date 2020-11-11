@@ -8,6 +8,7 @@ service DagsterApi {
   rpc Ping (PingRequest) returns (PingReply) {}
   rpc Heartbeat (PingRequest) returns (PingReply) {}
   rpc StreamingPing (StreamingPingRequest) returns (stream StreamingPingEvent) {}
+  rpc GetServerId (Empty) returns (GetServerIdReply) {}
   rpc ExecutionPlanSnapshot (ExecutionPlanSnapshotRequest) returns (ExecutionPlanSnapshotReply) {}
   rpc ListRepositories (ListRepositoriesRequest) returns (ListRepositoriesReply) {}
   rpc ExternalPartitionNames (ExternalPartitionNamesRequest) returns (ExternalPartitionNamesReply) {}
@@ -44,6 +45,10 @@ message StreamingPingRequest {
 message StreamingPingEvent {
   int32 sequence_number = 1;
   string echo = 2;
+}
+
+message GetServerIdReply {
+  string server_id = 1;
 }
 
 message ExecutionPlanSnapshotRequest {

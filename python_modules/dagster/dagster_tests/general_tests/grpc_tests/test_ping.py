@@ -135,3 +135,41 @@ def test_streaming():
         for sequence_number, result in enumerate(results):
             assert result["sequence_number"] == sequence_number
             assert result["echo"] == "foo"
+
+
+def test_get_server_id():
+    with ephemeral_grpc_api_client() as api_client:
+        assert api_client.get_server_id()
+
+
+def create_server_process():
+    port = find_free_port()
+    server_process = open_server_process(port=port, socket=None)
+    assert server_process is not None
+    return port, server_process
+
+
+def test_detect_server_restart():
+
+    # Create first server and query ID
+    port, server_process = create_server_process()
+    try:
+        api_client = DagsterGrpcClient(port=port)
+        server_id_one = api_client.get_server_id()
+        assert server_id_one
+    finally:
+        interrupt_ipc_subprocess_pid(server_process.pid)
+
+    with pytest.raises(grpc._channel._InactiveRpcError):  # pylint: disable=protected-access
+        api_client.get_server_id()
+
+    # Create second server and query ID
+    port, server_process = create_server_process()
+    try:
+        api_client = DagsterGrpcClient(port=port)
+        server_id_two = api_client.get_server_id()
+        assert server_id_two
+    finally:
+        interrupt_ipc_subprocess_pid(server_process.pid)
+
+    assert server_id_one != server_id_two
