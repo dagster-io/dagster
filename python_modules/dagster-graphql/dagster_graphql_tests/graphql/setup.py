@@ -938,6 +938,14 @@ def define_schedules():
     def run_config_error_schedule(_date):
         return asdf  # pylint: disable=undefined-variable
 
+    @daily_schedule(
+        pipeline_name="no_config_pipeline",
+        start_date=today_at_midnight() - datetime.timedelta(days=1),
+        execution_timezone="US/Central",
+    )
+    def timezone_schedule(_date):
+        return {"storage": {"filesystem": {}}}
+
     tagged_pipeline_schedule = ScheduleDefinition(
         name="tagged_pipeline_schedule",
         cron_schedule="0 0 * * *",
@@ -978,6 +986,7 @@ def define_schedules():
         tagged_pipeline_schedule,
         tagged_pipeline_override_schedule,
         tags_error_schedule,
+        timezone_schedule,
         invalid_config_schedule,
     ]
 

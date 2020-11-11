@@ -64,6 +64,7 @@ query ScheduleDefinitionsQuery($repositorySelector: RepositorySelector!) {
         pipelineName
         solidSelection
         mode
+        executionTimezone
         runConfigOrError {
           __typename
           ... on ScheduleRunConfig {
@@ -89,6 +90,7 @@ query getScheduleDefinition($scheduleSelector: ScheduleSelector!) {
       partitionSet {
         name
       }
+      executionTimezone
     }
   }
 }
@@ -194,6 +196,8 @@ def test_get_schedule_definitions_for_repository(graphql_context):
                 schedule["runConfigOrError"]["yaml"]
                 == "solids:\n  takes_an_enum:\n    config: invalid\n"
             )
+        elif schedule["name"] == "timezone_schedule":
+            assert schedule["executionTimezone"] == "US/Central"
         else:
             assert schedule["runConfigOrError"]["yaml"] == "storage:\n  filesystem: {}\n"
 
@@ -352,5 +356,16 @@ def test_get_single_schedule_definition(graphql_context):
     )
 
     assert result.data
+
     assert result.data["scheduleDefinitionOrError"]["__typename"] == "ScheduleDefinition"
     assert result.data["scheduleDefinitionOrError"]["partitionSet"]
+    assert not result.data["scheduleDefinitionOrError"]["executionTimezone"]
+
+    schedule_selector = infer_schedule_selector(context, "timezone_schedule")
+    result = execute_dagster_graphql(
+        context, GET_SCHEDULE_DEFINITION, variables={"scheduleSelector": schedule_selector}
+    )
+
+    assert result.data
+    assert result.data["scheduleDefinitionOrError"]["__typename"] == "ScheduleDefinition"
+    assert result.data["scheduleDefinitionOrError"]["executionTimezone"] == "US/Central"

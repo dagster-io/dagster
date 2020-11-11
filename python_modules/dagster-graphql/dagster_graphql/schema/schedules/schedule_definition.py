@@ -37,6 +37,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     pipeline_name = dauphin.NonNull(dauphin.String)
     solid_selection = dauphin.List(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
+    execution_timezone = dauphin.Field(dauphin.String)
     schedule_state = dauphin.Field("ScheduleState")
 
     runConfigOrError = dauphin.Field("ScheduleRunConfigOrError")
@@ -80,6 +81,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
             )
             if self._schedule_state
             else None,
+            execution_timezone=self._external_schedule.execution_timezone,
         )
 
 

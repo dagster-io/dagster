@@ -436,6 +436,7 @@ type ScheduleDefinition {
   pipelineName: String!
   solidSelection: [String]
   mode: String!
+  executionTimezone: String
   scheduleState: ScheduleState
   runConfigOrError: ScheduleRunConfigOrError
   partitionSet: PartitionSet
