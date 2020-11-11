@@ -132,6 +132,7 @@ export function asyncMemoize<T, R>(
 // Uses WeakMap to tie the lifecycle of the cache to the lifecycle of the
 // object argument.
 //
+// eslint-disable-next-line @typescript-eslint/ban-types
 export function weakmapMemoize<T extends object, R>(
   fn: (arg: T, ...rest: any[]) => R,
 ): (arg: T, ...rest: any[]) => R {

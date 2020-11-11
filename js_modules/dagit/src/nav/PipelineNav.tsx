@@ -75,12 +75,12 @@ interface Props {
 export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
   const {activeRepo} = useWorkspaceState();
-  const match = useRouteMatch<{tab: string; selector: string}>([
+  const match = useRouteMatch<{tab?: string; selector: string}>([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
   ]);
 
-  const active = tabForPipelinePathComponent(match.params.tab);
-  const explorerPath = explorerPathFromString(match.params.selector);
+  const active = tabForPipelinePathComponent(match!.params.tab);
+  const explorerPath = explorerPathFromString(match!.params.selector);
 
   const hasPartitionSet = activeRepo?.repo.repository.partitionSets
     .map((x) => x.pipelineName)

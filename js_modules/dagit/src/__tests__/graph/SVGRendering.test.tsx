@@ -1,5 +1,4 @@
 import fs from 'fs';
-import path from 'path';
 
 import {Colors} from '@blueprintjs/core';
 import pretty from 'pretty';
@@ -12,8 +11,6 @@ import {getDagrePipelineLayout} from 'src/graph/getFullSolidLayout';
 import {PipelineGraphSolidFragment} from 'src/graph/types/PipelineGraphSolidFragment';
 import {MOCKS} from 'src/testing/SVGMocks';
 import {PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot} from 'src/types/PipelineExplorerRootQuery';
-
-const snapshotsDir = path.join(__dirname, '..', '..', '__tests__', 'graph', '__snapshots__');
 
 function readMock(mock: {filepath: string}) {
   const {data} = JSON.parse(fs.readFileSync(mock.filepath).toString());
@@ -62,16 +59,8 @@ MOCKS.forEach((mock) => {
   it(`${mock.name}: renders the expected SVG`, () => {
     // load the GraphQL response and pull out the first layer of solids
     const solids = readMock(mock).solidHandles.map((h) => h.solid);
-
-    const expectedPath = path.join(snapshotsDir, `${mock.name}.svg`);
-    const actualPath = path.join(snapshotsDir, `${mock.name}.actual.svg`);
     const actual = svgForPipeline(mock.name, solids);
-
-    // write out the actual result for easy visual comparison and compare to existing
-    fs.writeFileSync(actualPath, actual);
-    if (fs.existsSync(expectedPath)) {
-      expect(fs.readFileSync(expectedPath).toString()).toEqual(actual);
-    }
+    expect(actual).toMatchSnapshot();
   });
 });
 
@@ -81,14 +70,6 @@ it(`renders the expected SVG when viewing a composite`, () => {
     MOCKS.find((m) => m.name === 'airline_demo_ingest_pipeline_composite')!,
   );
   const solids = pipeline.solidHandles.map((h) => h.solid);
-
-  const expectedPath = path.join(snapshotsDir, `airline-composite.svg`);
-  const actualPath = path.join(snapshotsDir, `airline-composite.actual.svg`);
-  const actual = svgForPipeline(name, solids, pipeline.solidHandle?.solid);
-
-  // write out the actual result for easy visual comparison and compare to existing
-  fs.writeFileSync(actualPath, actual);
-  if (fs.existsSync(expectedPath)) {
-    expect(fs.readFileSync(expectedPath).toString()).toEqual(actual);
-  }
+  const actual = svgForPipeline(pipeline.name, solids, pipeline.solidHandle?.solid);
+  expect(actual).toMatchSnapshot();
 });

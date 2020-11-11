@@ -118,7 +118,7 @@ class Header extends React.Component<HeaderProps, HeaderState> {
   }
 }
 
-export const Headers: React.FunctionComponent<{}> = () => {
+export const Headers = () => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
     <HeadersContainer>

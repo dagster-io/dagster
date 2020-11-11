@@ -41,7 +41,7 @@ const INSTANCE_TABS = [
   },
 ];
 
-const LeftNavRepositorySection: React.FC<{}> = () => {
+const LeftNavRepositorySection = () => {
   const match = useRouteMatch<
     | {repoPath: string; selector: string; tab: string; rootTab: undefined}
     | {selector: undefined; tab: undefined; rootTab: string}
@@ -106,7 +106,7 @@ const LeftNavRepositorySection: React.FC<{}> = () => {
   );
 };
 
-export const LeftNav: React.FC<{}> = () => {
+export const LeftNav = () => {
   const history = useHistory();
   return (
     <LeftNavContainer>

@@ -82,7 +82,7 @@ export function errorStackToYamlPath(entries: StackEntry[]) {
 }
 
 export function responseToYamlValidationResult(
-  configJSON: object,
+  configJSON: Record<string, unknown>,
   response: ConfigEditorValidationFragment,
 ): YamlModeValidationResult {
   if (response.__typename !== 'PipelineConfigValidationInvalid') {

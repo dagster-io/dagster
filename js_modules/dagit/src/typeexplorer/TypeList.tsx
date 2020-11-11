@@ -26,7 +26,7 @@ function groupTypes(types: Array<TypeListFragment>) {
   return groups;
 }
 
-export class TypeList extends React.Component<ITypeListProps, {}> {
+export class TypeList extends React.Component<ITypeListProps> {
   static fragments = {
     TypeListFragment: gql`
       fragment TypeListFragment on DagsterType {

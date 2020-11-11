@@ -9,6 +9,6 @@ export default {
   component: SearchDialog,
 } as Meta;
 
-const Template: Story<{}> = (props) => <SearchDialog {...props} />;
+const Template: Story = (props) => <SearchDialog {...props} />;
 
 export const Simple = Template.bind({});

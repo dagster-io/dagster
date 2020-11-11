@@ -11,7 +11,7 @@ import {ROOT_REPOSITORIES_QUERY} from 'src/workspace/WorkspaceContext';
 import {RootRepositoriesQuery} from 'src/workspace/types/RootRepositoriesQuery';
 import {workspacePath} from 'src/workspace/workspacePath';
 
-export const WorkspaceOverviewRoot: React.FC<{}> = () => {
+export const WorkspaceOverviewRoot = () => {
   const queryResult = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
     fetchPolicy: 'cache-and-network',
   });

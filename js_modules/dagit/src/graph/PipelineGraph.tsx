@@ -366,10 +366,10 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
               onDoubleClick={this.unfocus}
             >
               <PipelineGraphContents
+                {...this.props}
                 layout={layout}
                 minified={scale < DETAIL_ZOOM - 0.01}
                 onDoubleClickSolid={onDoubleClickSolid || this.focusOnSolid}
-                {...this.props}
               />
             </SVGContainer>
           </>

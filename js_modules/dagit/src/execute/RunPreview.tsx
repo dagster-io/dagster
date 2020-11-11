@@ -126,7 +126,7 @@ const RemoveExtraConfigButton = ({
 
 interface RunPreviewProps {
   validation: RunPreviewValidationFragment | null;
-  document: object | null;
+  document: any | null;
 
   actions?: React.ReactChild;
   runConfigSchema?: ConfigEditorRunConfigSchemaFragment;

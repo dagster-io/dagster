@@ -7,7 +7,7 @@
     "lib": ["es6", "dom", "esnext.asynciterable"],
     "sourceMap": true,
     "allowJs": true,
-    "jsx": "preserve",
+    "jsx": "react",
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
@@ -22,7 +22,8 @@
     "strict": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true
   },
   "exclude": [
     "acceptance-tests",

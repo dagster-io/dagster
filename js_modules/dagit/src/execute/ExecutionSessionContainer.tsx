@@ -62,7 +62,7 @@ interface IExecutionSessionContainerProps {
 interface IExecutionSessionContainerState {
   preview: PreviewConfigQuery | null;
   previewLoading: boolean;
-  previewedDocument: object | null;
+  previewedDocument: any | null;
 
   configLoading: boolean;
   editorHelpContext: ConfigEditorHelpContext | null;
@@ -272,7 +272,7 @@ export class ExecutionSessionContainer extends React.Component<
     this.props.onSaveSession({tags: toSave});
   };
 
-  checkConfig = async (client: ApolloClient<any>, configJSON: object) => {
+  checkConfig = async (client: ApolloClient<any>, configJSON: Record<string, unknown>) => {
     const {currentSession, pipelineSelector} = this.props;
 
     // Another request to preview a newer document may be made while this request

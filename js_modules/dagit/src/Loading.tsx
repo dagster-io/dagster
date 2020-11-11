@@ -10,7 +10,7 @@ interface ILoadingProps<TData> {
   allowStaleData?: boolean;
 }
 
-export const Loading = <TData extends {}>(props: ILoadingProps<TData>) => {
+export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<TData>) => {
   const {children, allowStaleData = false} = props;
   const {error, data, loading} = props.queryResult;
 
@@ -30,15 +30,13 @@ export const Loading = <TData extends {}>(props: ILoadingProps<TData>) => {
   return <>{children(data as TData)}</>;
 };
 
-export const LoadingWithProgress: React.FC<{}> = () => {
-  return (
-    <LoadingContainer>
-      <LoadingCentering>
-        <ProgressBar />
-      </LoadingCentering>
-    </LoadingContainer>
-  );
-};
+export const LoadingWithProgress = () => (
+  <LoadingContainer>
+    <LoadingCentering>
+      <ProgressBar />
+    </LoadingCentering>
+  </LoadingContainer>
+);
 
 export const LoadingContainer = styled.div`
   width: 100%;

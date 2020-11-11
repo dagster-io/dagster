@@ -5,7 +5,7 @@ import * as React from 'react';
 import {SCHEDULES_ROOT_QUERY} from 'src/schedules/ScheduleUtils';
 import {useRepositorySelector} from 'src/workspace/WorkspaceContext';
 
-export const ReconcileButton: React.FunctionComponent<{}> = () => {
+export const ReconcileButton = () => {
   const repositorySelector = useRepositorySelector();
   const refetchQueries = [
     {

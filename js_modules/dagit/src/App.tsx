@@ -14,7 +14,7 @@ import {LeftNav} from 'src/nav/LeftNav';
 import {WorkspaceContext, useWorkspaceState} from 'src/workspace/WorkspaceContext';
 import {WorkspaceRoot} from 'src/workspace/WorkspaceRoot';
 
-export const AppContent: React.FC<{}> = () => {
+export const AppContent = () => {
   useDocumentTitle('Dagit');
   const workspaceState = useWorkspaceState();
 
@@ -37,7 +37,7 @@ export const AppContent: React.FC<{}> = () => {
   );
 };
 
-export const App: React.FunctionComponent = () => (
+export const App = () => (
   <BrowserRouter basename={APP_PATH_PREFIX}>
     <TimezoneProvider>
       <AppContent />

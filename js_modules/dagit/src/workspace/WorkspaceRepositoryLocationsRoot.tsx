@@ -94,7 +94,7 @@ const ReloadButton: React.FC<{location: string; onReload: (location: string) => 
   );
 };
 
-export const WorkspaceRepositoryLocationsRoot: React.FC<{}> = () => {
+export const WorkspaceRepositoryLocationsRoot = () => {
   const {nodes, loading, refetch} = useRepositoryLocations();
   const [reloading, setReloading] = React.useState<string | null>(null);
 

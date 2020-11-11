@@ -40,11 +40,6 @@ interface RunProps {
   run?: RunFragment;
 }
 
-interface RunState {
-  logsFilter: LogFilter;
-  selection: StepSelection;
-}
-
 export const Run = (props: RunProps) => {
   const {client, run, runId} = props;
   const [logsFilter, setLogsFilter] = React.useState<LogFilter>(() =>

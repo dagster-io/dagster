@@ -213,7 +213,7 @@ export function useChunkedPartitionsQuery(
 }
 
 async function fetchRunsForFilter(
-  client: ApolloClient<object>,
+  client: ApolloClient<any>,
   variables: PartitionSetLoaderQueryVariables,
 ) {
   const result = await client.query<PartitionSetLoaderQuery, PartitionSetLoaderQueryVariables>({

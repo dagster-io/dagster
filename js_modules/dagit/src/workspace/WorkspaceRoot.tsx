@@ -107,7 +107,7 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   );
 };
 
-export const WorkspaceRoot: React.FC<{}> = () => (
+export const WorkspaceRoot = () => (
   <MainContent>
     <Switch>
       <Route path="/workspace" exact component={WorkspaceOverviewRoot} />

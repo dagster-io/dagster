@@ -10,7 +10,7 @@ import {SchedulerRoot} from 'src/schedules/SchedulerRoot';
 import {SnapshotRoot} from 'src/snapshots/SnapshotRoot';
 import {MainContent} from 'src/ui/MainContent';
 
-export const InstanceRoot: React.FunctionComponent<{}> = () => {
+export const InstanceRoot = () => {
   return (
     <MainContent>
       <Switch>

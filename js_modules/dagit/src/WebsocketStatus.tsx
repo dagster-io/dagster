@@ -30,6 +30,7 @@ export class WebsocketStatusProvider extends React.Component<
     status: WebSocket.CONNECTING,
   };
 
+  // eslint-disable-next-line @typescript-eslint/ban-types
   private unlisteners: Function[] = [];
 
   componentDidMount() {

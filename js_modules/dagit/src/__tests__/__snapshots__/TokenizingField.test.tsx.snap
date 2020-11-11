@@ -9,7 +9,7 @@ exports[`renders empty [snapshot] 1`] = `
     onClick={[Function]}
   >
     <div
-      className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 eoYAEk"
+      className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 TUPqf"
       onBlur={[Function]}
       onClick={[Function]}
     >
@@ -42,7 +42,7 @@ exports[`renders with tokens [snapshot] 1`] = `
     onClick={[Function]}
   >
     <div
-      className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 eoYAEk"
+      className="bp3-input bp3-tag-input TokenizingField__StyledTagInput-ebq0ud-0 TUPqf"
       onBlur={[Function]}
       onClick={[Function]}
     >

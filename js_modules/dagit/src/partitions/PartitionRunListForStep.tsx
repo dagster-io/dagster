@@ -18,7 +18,7 @@ interface StepStats {
   startTime: number | null;
   endTime: number | null;
   status: StepEventStatus | null;
-  materializations: object[];
+  materializations: Record<string, unknown>[];
   expectationResults: {success: boolean}[];
 }
 

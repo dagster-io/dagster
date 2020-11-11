@@ -26,7 +26,7 @@ import {workspacePath} from 'src/workspace/workspacePath';
 
 type ScheduleState = SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results;
 
-export const SchedulerRoot: React.FunctionComponent<{}> = () => {
+export const SchedulerRoot = () => {
   useDocumentTitle('Scheduler');
   const queryResult = useQuery<SchedulerRootQuery>(SCHEDULER_ROOT_QUERY, {
     variables: {},
@@ -58,7 +58,7 @@ export const SchedulerRoot: React.FunctionComponent<{}> = () => {
   );
 };
 
-const UnloadableScheduleInfo: React.FunctionComponent<{}> = () => {
+const UnloadableScheduleInfo = () => {
   const [showMore, setShowMore] = useState(false);
 
   return (

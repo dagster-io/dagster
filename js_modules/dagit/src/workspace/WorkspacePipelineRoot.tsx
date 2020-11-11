@@ -37,7 +37,7 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
   const entireMatch = useRouteMatch('/workspace/pipelines/(/?.*)');
   const location = useLocation();
 
-  const toAppend = entireMatch.params[0];
+  const toAppend = entireMatch!.params[0];
   const {search} = location;
 
   const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);

@@ -21,10 +21,6 @@ interface ExecutationTabProps {
   onClick: () => void;
 }
 
-interface ExecutationTabState {
-  editing: boolean;
-}
-
 const ExecutionTab = (props: ExecutationTabProps) => {
   const {canRemove, title, onChange, onClick, onRemove, active} = props;
 

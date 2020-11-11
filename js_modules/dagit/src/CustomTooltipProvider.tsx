@@ -1,10 +1,10 @@
 import React from 'react';
-import styled, {CSSProperties} from 'styled-components/macro';
+import styled from 'styled-components/macro';
 
-export const CustomTooltipProvider: React.FunctionComponent<{}> = () => {
+export const CustomTooltipProvider = () => {
   const [state, setState] = React.useState<null | {
     title: string;
-    style: CSSProperties;
+    style: React.CSSProperties;
   }>(null);
 
   React.useEffect(() => {

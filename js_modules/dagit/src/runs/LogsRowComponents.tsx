@@ -12,6 +12,7 @@ const bgcolorForLevel = (level: LogLevel) =>
   ({
     [LogLevel.DEBUG]: `transparent`,
     [LogLevel.INFO]: `transparent`,
+    [LogLevel.EVENT]: `transparent`,
     [LogLevel.WARNING]: `rgba(166, 121, 8, 0.05)`,
     [LogLevel.ERROR]: `rgba(206, 17, 38, 0.05)`,
     [LogLevel.CRITICAL]: `rgba(206, 17, 38, 0.05)`,
@@ -39,6 +40,7 @@ export const Row = styled.div<{level: LogLevel; textMatch: boolean}>`
     ({
       [LogLevel.DEBUG]: Colors.GRAY3,
       [LogLevel.INFO]: Colors.DARK_GRAY2,
+      [LogLevel.EVENT]: Colors.DARK_GRAY2,
       [LogLevel.WARNING]: Colors.GOLD2,
       [LogLevel.ERROR]: Colors.RED3,
       [LogLevel.CRITICAL]: Colors.RED3,
@@ -130,7 +132,7 @@ const TimestampColumnContainer = styled.div`
   color: ${Colors.GRAY3};
 `;
 
-export const EventTypeColumn: React.FunctionComponent<{}> = (props) => {
+export const EventTypeColumn: React.FC = (props) => {
   const widths = React.useContext(ColumnWidthsContext);
   return (
     <EventTypeColumnContainer style={{width: widths.eventType}}>

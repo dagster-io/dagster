@@ -1,6 +1,6 @@
 import {Button, ButtonGroup, Colors} from '@blueprintjs/core';
 import * as React from 'react';
-import styled, {CSSProperties} from 'styled-components/macro';
+import styled from 'styled-components/macro';
 
 const DIVIDER_THICKNESS = 4;
 
@@ -46,7 +46,7 @@ export class SplitPanelContainer extends React.Component<
     const {size, resizing} = this.state;
     const axis = this.props.axis || 'horizontal';
 
-    const firstPaneStyles: CSSProperties = {flexShrink: 0};
+    const firstPaneStyles: React.CSSProperties = {flexShrink: 0};
 
     // Note: The divider appears after the first panel, so making the first panel 100% wide
     // hides the divider offscreen. To prevent this, we subtract the divider depth.

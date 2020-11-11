@@ -295,11 +295,6 @@ type CodemirrorToken = CodeMirror.Token & {
   state: IParseState;
 };
 
-type FoundHint = {
-  text: string;
-  displayText: string;
-};
-
 CodeMirror.registerHelper(
   'hint',
   'yaml',
@@ -634,7 +629,9 @@ export type YamlModeValidationResult =
       errors: YamlModeValidationError[];
     };
 
-export type YamlModeValidateFunction = (configJSON: object) => Promise<YamlModeValidationResult>;
+export type YamlModeValidateFunction = (
+  configJSON: Record<string, unknown>,
+) => Promise<YamlModeValidationResult>;
 
 export type YamlModeValidationError = {
   message: string;
@@ -685,10 +682,10 @@ CodeMirror.registerHelper(
 
     yamlDoc.errors.slice(0, 10).forEach((error) => {
       const from = codeMirrorDoc.posFromIndex(
-        error.source.range ? error.source.range.start : 0,
+        error.source?.range ? error.source.range.start : 0,
       ) as CodeMirror.Position;
       const to = codeMirrorDoc.posFromIndex(
-        error.source.range ? error.source.range.end : Number.MAX_SAFE_INTEGER,
+        error.source?.range ? error.source.range.end : Number.MAX_SAFE_INTEGER,
       ) as CodeMirror.Position;
 
       if (!lastMarkLocation || lastMarkLocation.line < from.line) {
@@ -737,7 +734,7 @@ CodeMirror.registerHelper(
 
 export function validationErrorToCodemirrorError(
   error: YamlModeValidationError,
-  yamlDoc: yaml.ast.Document,
+  yamlDoc: yaml.Document,
   codeMirrorDoc: any,
 ): CodemirrorLintError | null {
   const part = error.reason === 'RUNTIME_TYPE_MISMATCH' ? 'value' : 'key';
@@ -757,7 +754,7 @@ export function validationErrorToCodemirrorError(
 }
 
 export function findRangeInDocumentFromPath(
-  doc: yaml.ast.Document,
+  doc: yaml.Document,
   path: Array<string>,
   pathPart: 'key' | 'value',
 ): {start: number; end: number} | null {
@@ -782,10 +779,7 @@ export function findRangeInDocumentFromPath(
   }
 }
 
-function nodeAtPath(
-  doc: yaml.ast.Document,
-  path: Array<string>,
-): yaml.ast.AstNode | yaml.ast.Pair | null {
+function nodeAtPath(doc: yaml.Document, path: Array<string>) {
   let node: any = doc.contents;
   for (let i = 0; i < path.length; i++) {
     const part = path[i];
