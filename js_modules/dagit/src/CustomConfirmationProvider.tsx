@@ -21,7 +21,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   onClose,
 }) => {
   return (
-    <Dialog icon="info-sign" onClose={onClose} title={title} isOpen={open}>
+    <Dialog icon={title ? 'info-sign' : undefined} onClose={onClose} title={title} isOpen={open}>
       <div className={Classes.DIALOG_BODY}>
         <p>{description}</p>
       </div>

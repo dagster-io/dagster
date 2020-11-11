@@ -49,7 +49,7 @@ interface TagChildProps {
   isDagsterTag: boolean;
 }
 
-const TagElement = styled(Tag)<TagChildProps>`
+const TagElement = styled(({isDagsterTag, ...rest}) => <Tag {...rest} />)<TagChildProps>`
   padding: 1px !important;
   margin: 1px 2px !important;
   overflow: hidden;
