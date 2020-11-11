@@ -17,7 +17,7 @@ dagit:
   replicaCount: 1
   # REQUIRED: Dagit image repository and tag to deploy
   image:
-    repository: "dagster/k8s-dagit"
+    repository: "dagster/k8s-dagit-example"
     tag: "latest"
     pullPolicy: Always
 

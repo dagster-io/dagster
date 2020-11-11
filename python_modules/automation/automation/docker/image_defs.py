@@ -107,6 +107,23 @@ def k8s_dagit_editable_cm(cwd):
 
 
 @contextlib.contextmanager
+def k8s_dagit_example_cm(cwd):
+    with copy_directories(
+        get_core_k8s_dirs()
+        + [
+            "python_modules/libraries/dagster-aws",
+            "python_modules/dagster-graphql",
+            "python_modules/dagit",
+        ],
+        cwd,
+    ):
+        with copy_directories(
+            ["examples/deploy_k8s/example_project"], cwd, destination="example_project"
+        ):
+            yield
+
+
+@contextlib.contextmanager
 def k8s_celery_worker_editable_cm(cwd):
     with copy_directories(
         get_core_k8s_dirs(), cwd,
@@ -120,6 +137,7 @@ CUSTOM_BUILD_CONTEXTMANAGERS = {
     "k8s-example": k8s_example_cm,
     "k8s-example-editable": k8s_example_editable_cm,
     "k8s-dagit-editable": k8s_dagit_editable_cm,
+    "k8s-dagit-example": k8s_dagit_example_cm,
     "k8s-celery-worker-editable": k8s_celery_worker_editable_cm,
 }
 

@@ -84,7 +84,7 @@ data:
         service_account_name: {{ include "dagster.serviceAccountName" . }}
         {{- if .Values.k8sRunLauncher.image }}
         job_image: "{{- .Values.k8sRunLauncher.image.repository -}}:{{- .Values.k8sRunLauncher.image.tag -}}"
-        image_pull_policy: {{- .Values.k8sRunLauncher.image.pull_policy -}}
+        image_pull_policy: {{ .Values.k8sRunLauncher.image.pullPolicy }}
         {{- end }}
         dagster_home:
           env: DAGSTER_HOME
