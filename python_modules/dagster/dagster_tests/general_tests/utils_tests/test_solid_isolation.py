@@ -249,5 +249,6 @@ def test_single_solid_with_bad_inputs():
     assert not result.success
     assert result.failure_data.error.cls_name == "DagsterTypeCheckDidNotPass"
     assert (
-        "Type check failed for step input num_two of type Int" in result.failure_data.error.message
+        'Type check failed for step input "num_two" - expected type "Int"'
+        in result.failure_data.error.message
     )
