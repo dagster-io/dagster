@@ -111,7 +111,7 @@ def resolve_to_config_type(dagster_type):
                 "The DagsterType and config schema systems are separate. "
                 "Valid config values are:\n{desc}"
             ).format(
-                type_name=dagster_type.name if dagster_type.name else dagster_type.key,
+                type_name=dagster_type.display_name,
                 dagster_type=repr(dagster_type),
                 desc=VALID_CONFIG_DESC,
             ),

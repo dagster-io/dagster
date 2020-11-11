@@ -145,10 +145,10 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
         check.invariant(self.has_intermediate(context, step_output_handle))
 
         if self.type_storage_plugin_registry.is_registered(dagster_type):
-            return self.type_storage_plugin_registry.get(dagster_type.name).get_intermediate_object(
-                self, context, dagster_type, step_output_handle
-            )
-        elif dagster_type.name is None:
+            return self.type_storage_plugin_registry.get(
+                dagster_type.unique_name
+            ).get_intermediate_object(self, context, dagster_type, step_output_handle)
+        elif not dagster_type.has_unique_name:
             self.type_storage_plugin_registry.check_for_unsupported_composite_overrides(
                 dagster_type
             )
@@ -206,10 +206,10 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
             )
 
         if self.type_storage_plugin_registry.is_registered(dagster_type):
-            return self.type_storage_plugin_registry.get(dagster_type.name).set_intermediate_object(
-                self, context, dagster_type, step_output_handle, value
-            )
-        elif dagster_type.name is None:
+            return self.type_storage_plugin_registry.get(
+                dagster_type.unique_name
+            ).set_intermediate_object(self, context, dagster_type, step_output_handle, value)
+        elif not dagster_type.has_unique_name:
             self.type_storage_plugin_registry.check_for_unsupported_composite_overrides(
                 dagster_type
             )

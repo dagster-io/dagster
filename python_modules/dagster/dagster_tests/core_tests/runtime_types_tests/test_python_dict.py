@@ -118,8 +118,8 @@ def test_basic_closed_typing_dictionary_output():
 
     assert execute_solid(emit_dict).output_value() == {"key": "value"}
     assert emit_dict.output_defs[0].dagster_type.key == "TypedPythonDict.String.String"
-    assert emit_dict.output_defs[0].dagster_type.key_type.name == "String"
-    assert emit_dict.output_defs[0].dagster_type.value_type.name == "String"
+    assert emit_dict.output_defs[0].dagster_type.key_type.unique_name == "String"
+    assert emit_dict.output_defs[0].dagster_type.value_type.unique_name == "String"
 
 
 def test_basic_closed_typing_dictionary_input():

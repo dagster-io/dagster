@@ -19,7 +19,7 @@ def build_dagster_type_snap(dagster_type):
     return DagsterTypeSnap(
         kind=dagster_type.kind,
         key=dagster_type.key,
-        name=dagster_type.name,
+        name=dagster_type.unique_name if dagster_type.has_unique_name else None,
         display_name=dagster_type.display_name,
         description=dagster_type.description,
         is_builtin=dagster_type.is_builtin,

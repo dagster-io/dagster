@@ -34,7 +34,7 @@ def _check_default_value(input_name, dagster_type, default_value):
                         "Received value {value} of type {type}"
                     ).format(
                         input_name=input_name,
-                        dagster_type=dagster_type.name,
+                        dagster_type=dagster_type.display_name,
                         value=default_value,
                         type=type(default_value),
                     ),

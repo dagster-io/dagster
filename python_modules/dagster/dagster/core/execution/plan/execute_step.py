@@ -112,7 +112,9 @@ def _do_type_check(context, dagster_type, value):
                 "Type checks must return TypeCheck. Type check for type {type_name} returned "
                 "value of type {return_type} when checking runtime value of type {dagster_type}."
             ).format(
-                type_name=dagster_type.name, return_type=type(type_check), dagster_type=type(value)
+                type_name=dagster_type.display_name,
+                return_type=type(type_check),
+                dagster_type=type(value),
             ),
         )
     return type_check
@@ -150,7 +152,7 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
             input_name=input_name,
             input_value=input_value,
             input_type=type(input_value),
-            dagster_type_name=step_input.dagster_type.name,
+            dagster_type_name=step_input.dagster_type.display_name,
             step_key=step_context.step.key,
         ),
     ):
@@ -207,7 +209,7 @@ def _type_checked_step_output_event_sequence(step_context, output, version):
             output_name=output.output_name,
             output_value=output.value,
             output_type=type(output.value),
-            dagster_type_name=step_output.dagster_type.name,
+            dagster_type_name=step_output.dagster_type.display_name,
             step_key=step_context.step.key,
         ),
     ):
@@ -438,7 +440,7 @@ def _create_output_materializations(step_context, output_name, value):
                                 "value {value} of type {python_type}. You must return an "
                                 "AssetMaterialization."
                             ).format(
-                                type_name=step_output.dagster_type.name,
+                                type_name=step_output.dagster_type.display_name,
                                 value=repr(materialization),
                                 python_type=type(materialization).__name__,
                             )

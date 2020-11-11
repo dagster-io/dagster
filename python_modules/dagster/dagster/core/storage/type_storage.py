@@ -52,13 +52,13 @@ class TypeStoragePluginRegistry(object):
         check.inst_param(type_to_register, "type_to_register", DagsterType)
         check.subclass_param(type_storage_plugin, "type_storage_plugin", TypeStoragePlugin)
         check.invariant(
-            type_to_register.name is not None,
+            type_to_register.unique_name is not None,
             "Cannot register a type storage plugin for an anonymous type",
         )
-        self._registry[type_to_register.name] = type_storage_plugin
+        self._registry[type_to_register.unique_name] = type_storage_plugin
 
     def is_registered(self, dagster_type):
-        if dagster_type.name is not None and dagster_type.name in self._registry:
+        if dagster_type.has_unique_name and dagster_type.unique_name in self._registry:
             return True
         return False
 
@@ -68,7 +68,11 @@ class TypeStoragePluginRegistry(object):
     def check_for_unsupported_composite_overrides(self, dagster_type):
         from dagster.core.types.dagster_type import DagsterTypeKind
 
-        composite_overrides = {t.name for t in dagster_type.inner_types if t.name in self._registry}
+        composite_overrides = {
+            t.unique_name
+            for t in dagster_type.inner_types
+            if (t.has_unique_name and t.unique_name in self._registry)
+        }
         if composite_overrides:
             outer_type = "composite type"
             if dagster_type.kind == DagsterTypeKind.LIST:

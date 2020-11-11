@@ -45,7 +45,7 @@ Bar = _Bar()
 def test_python_object_type():
     type_bar = Bar
 
-    assert type_bar.name == "Bar"
+    assert type_bar.unique_name == "Bar"
     assert type_bar.description == "A bar."
     assert_success(type_bar, BarObj())
 
@@ -56,7 +56,7 @@ def test_python_object_type():
 
 def test_python_object_union_type():
     ntype = PythonObjectDagsterType(python_type=(int, float))
-    assert ntype.name == "Union[int, float]"
+    assert ntype.unique_name == "Union[int, float]"
     assert_success(ntype, 1)
     assert_success(ntype, 1.5)
     assert_failure(ntype, "a")
@@ -68,7 +68,7 @@ def test_python_object_type_with_custom_type_check():
 
     Int3 = DagsterType(name="Int3", type_check_fn=eq_3)
 
-    assert Int3.name == "Int3"
+    assert Int3.unique_name == "Int3"
     assert check_dagster_type(Int3, 3).success
     assert not check_dagster_type(Int3, 5).success
 

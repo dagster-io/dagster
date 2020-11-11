@@ -7,9 +7,7 @@ from dagster import DagsterInvalidDefinitionError, Dict, List, Noneable, Optiona
 def test_invalid_optional_in_config():
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=re.escape(
-            "You have passed an instance of DagsterType Optional.Int to the config system"
-        ),
+        match=re.escape("You have passed an instance of DagsterType Int? to the config system"),
     ):
 
         @solid(config_schema=Optional[int])

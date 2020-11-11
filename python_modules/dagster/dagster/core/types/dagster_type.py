@@ -108,15 +108,15 @@ class DagsterType(object):
             check.param_invariant(
                 bool(key), "key", "If name is not provided, must provide key.",
             )
-            self.key, self.name = key, None
+            self.key, self._name = key, None
         elif key is None:
             check.param_invariant(
                 bool(name), "name", "If key is not provided, must provide name.",
             )
-            self.key, self.name = name, name
+            self.key, self._name = name, name
         else:
             check.invariant(key and name)
-            self.key, self.name = key, name
+            self.key, self._name = key, name
 
         self.description = check.opt_str_param(description, "description")
         self.loader = canonicalize_backcompat_args(
@@ -150,7 +150,7 @@ class DagsterType(object):
         )
 
         self._type_check_fn = check.callable_param(type_check_fn, "type_check_fn")
-        _validate_type_check_fn(self._type_check_fn, self.name)
+        _validate_type_check_fn(self._type_check_fn, self._name)
 
         auto_plugins = check.opt_list_param(auto_plugins, "auto_plugins", of_type=type)
 
@@ -198,7 +198,21 @@ class DagsterType(object):
 
     @property
     def display_name(self):
-        return self.name
+        """Asserted in __init__ to be not None, overridden in many subclasses"""
+        return self._name
+
+    @property
+    def unique_name(self):
+        """The unique name of this type. Can be None if the type is not unique, such as container types"""
+        check.invariant(
+            self._name is not None,
+            "unique_name requested but is None for type {}".format(self.display_name),
+        )
+        return self._name
+
+    @property
+    def has_unique_name(self):
+        return self._name is not None
 
     @property
     def inner_types(self):
@@ -515,7 +529,7 @@ class PythonObjectDagsterType(DagsterType):
                     "Value of type {value_type} failed type check for Dagster type {dagster_type}, "
                     "expected value to be of Python type {expected_type}."
                 ).format(
-                    value_type=type(value), dagster_type=self.name, expected_type=self.type_str,
+                    value_type=type(value), dagster_type=self._name, expected_type=self.type_str,
                 ),
             )
 
@@ -821,7 +835,7 @@ ALL_RUNTIME_BUILTINS = list(_RUNTIME_MAP.values())
 
 
 def construct_dagster_type_dictionary(solid_defs):
-    type_dict_by_name = {t.name: t for t in ALL_RUNTIME_BUILTINS}
+    type_dict_by_name = {t.unique_name: t for t in ALL_RUNTIME_BUILTINS}
     type_dict_by_key = {t.key: t for t in ALL_RUNTIME_BUILTINS}
     for solid_def in solid_defs:
         for dagster_type in solid_def.all_dagster_types():
@@ -830,19 +844,19 @@ def construct_dagster_type_dictionary(solid_defs):
             # and it is perfectly fine to have many of them.
             type_dict_by_key[dagster_type.key] = dagster_type
 
-            if not dagster_type.name:
+            if not dagster_type.has_unique_name:
                 continue
 
-            if dagster_type.name not in type_dict_by_name:
-                type_dict_by_name[dagster_type.name] = dagster_type
+            if dagster_type.unique_name not in type_dict_by_name:
+                type_dict_by_name[dagster_type.unique_name] = dagster_type
                 continue
 
-            if type_dict_by_name[dagster_type.name] is not dagster_type:
+            if type_dict_by_name[dagster_type.unique_name] is not dagster_type:
                 raise DagsterInvalidDefinitionError(
                     (
                         'You have created two dagster types with the same name "{type_name}". '
                         "Dagster types have must have unique names."
-                    ).format(type_name=dagster_type.name)
+                    ).format(type_name=dagster_type.display_name)
                 )
 
     return type_dict_by_key

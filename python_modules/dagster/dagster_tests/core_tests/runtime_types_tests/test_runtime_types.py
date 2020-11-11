@@ -64,25 +64,25 @@ def test_display_name():
 def test_builtins_available():
     pipeline_def = PipelineDefinition(name="test_builting_available", solid_defs=[])
     for builtin_type in ALL_RUNTIME_BUILTINS:
-        assert pipeline_def.has_dagster_type(builtin_type.name)
-        assert pipeline_def.dagster_type_named(builtin_type.name).is_builtin
+        assert pipeline_def.has_dagster_type(builtin_type.unique_name)
+        assert pipeline_def.dagster_type_named(builtin_type.unique_name).is_builtin
 
 
 def test_python_mapping():
     runtime = resolve_dagster_type(int)
-    assert runtime.name == "Int"
+    assert runtime.unique_name == "Int"
     runtime = resolve_dagster_type(str)
-    assert runtime.name == "String"
+    assert runtime.unique_name == "String"
     runtime = resolve_dagster_type(bool)
-    assert runtime.name == "Bool"
+    assert runtime.unique_name == "Bool"
     runtime = resolve_dagster_type(float)
-    assert runtime.name == "Float"
+    assert runtime.unique_name == "Float"
 
     @lambda_solid(input_defs=[InputDefinition("num", int)])
     def add_one(num):
         return num + 1
 
-    assert add_one.input_defs[0].dagster_type.name == "Int"
+    assert add_one.input_defs[0].dagster_type.unique_name == "Int"
 
     runtime = resolve_dagster_type(float)
     runtime.type_check(None, 1.0)

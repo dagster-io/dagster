@@ -366,7 +366,7 @@ def check_dagster_type(dagster_type, value):
         if not isinstance(type_check, TypeCheck):
             raise DagsterInvariantViolationError(
                 "Type checks can only return TypeCheck. Type {type_name} returned {value}.".format(
-                    type_name=dagster_type.name, value=repr(type_check)
+                    type_name=dagster_type.display_name, value=repr(type_check)
                 )
             )
         return type_check
