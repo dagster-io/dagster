@@ -113,23 +113,13 @@ cd dagster/js_modules/dagit
 make dev_webapp
 ```
 
-To run JavaScript tests for the Dagit frontend, you can run:
+During development, you might find these commands useful. Run them from `dagster/js_modules/dagit`:
 
-```bash
-cd dagster/js_modules/dagit
-yarn test
-```
+- `yarn ts`: Typescript typechecking
+- `yarn lint`: Linting with autofix
+- `yarn jest`: An interactive Jest test runner that runs only affected tests by default
 
-In webapp development it's handy to run `yarn run jest --watch` to have
-an interactive test runner.
-
-Some webapp tests use snapshots--auto-generated results to which the
-test render tree is compared. Those tests are supposed to break when you
-change something.
-
-Check that the change is sensible and run `yarn run jest -u` to update
-the snapshot to the new result. You can also update snapshots
-interactively when you are in `--watch` mode.
+To run all of them together, run `yarn test`.
 
 ## Developing Docs
 

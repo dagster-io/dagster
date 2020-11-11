@@ -118,7 +118,7 @@
     "build": "react-scripts build",
     "build-for-python": "yarn run build && cd ../../python_modules/dagit/dagit && rm -rf webapp && mkdir -p webapp && cp -r ../../../js_modules/dagit/build ./webapp/ && mkdir -p webapp/build/vendor/graphql-playground && cp ../../../js_modules/dagit/node_modules/graphql-playground-react/build/static/css/index.css webapp/build/vendor/graphql-playground/index.css && cp ../../../js_modules/dagit/node_modules/graphql-playground-react/build/favicon.png webapp/build/vendor/graphql-playground/favicon.png && cp ../../../js_modules/dagit/node_modules/graphql-playground-react/build/static/js/middleware.js webapp/build/vendor/graphql-playground/middleware.js",
     "eject": "react-scripts eject",
-    "test": "yarn run ts && yarn run jest && yarn run check-prettier",
+    "test": "yarn ts && yarn jest --watchAll=false && yarn lint",
     "jest": "react-scripts test --env=jest-environment-jsdom-sixteen",
     "jest:debug": "react-scripts --inspect-brk test --runInBand --no-cache",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix",
