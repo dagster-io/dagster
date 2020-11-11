@@ -1,11 +1,16 @@
 from dagster import check
 from dagster.core.host_representation import PipelineSelector, RepositoryLocation
 from dagster.core.host_representation.external import ExternalPipeline
+from dagster.core.host_representation.grpc_server_state_subscriber import (
+    LocationStateChangeEventType,
+    LocationStateSubscriber,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.grpc.types import ScheduleExecutionDataMode
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.errors import DauphinInvalidSubsetError
 from dagster_graphql.schema.pipelines import DauphinPipeline
+from rx.subjects import Subject
 
 
 class DagsterGraphQLContext:
@@ -13,6 +18,12 @@ class DagsterGraphQLContext:
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._workspace = workspace
         self._repository_locations = {}
+
+        self._location_state_events = Subject()
+        self._location_state_subscriber = LocationStateSubscriber(
+            self._location_state_events_handler
+        )
+
         for handle in self._workspace.repository_location_handles:
             check.invariant(
                 self._repository_locations.get(handle.location_name) is None,
@@ -20,9 +31,12 @@ class DagsterGraphQLContext:
                     name=handle.location_name,
                 ),
             )
+
+            handle.add_state_subscriber(self._location_state_subscriber)
             self._repository_locations[handle.location_name] = RepositoryLocation.from_handle(
                 handle
             )
+
         self.version = version
 
     @property
@@ -36,6 +50,22 @@ class DagsterGraphQLContext:
     @property
     def repository_location_names(self):
         return self._workspace.repository_location_names
+
+    def _location_state_events_handler(self, event):
+        # If the server was updated or we were not able to reconnect, we immediately reload the
+        # location handle
+
+        if event.event_type in (
+            LocationStateChangeEventType.LOCATION_UPDATED,
+            LocationStateChangeEventType.LOCATION_ERROR,
+        ):
+            # In case of an updated location, reload the handle to get updated repository data and
+            # re-attach a subscriber
+            # In case of a location error, just reload the handle in order to update the workspace
+            # with the correct error messages
+            self.reload_repository_location(event.location_name)
+
+        self._location_state_events.on_next(event)
 
     def repository_location_errors(self):
         return self._workspace.repository_location_errors
@@ -60,6 +90,7 @@ class DagsterGraphQLContext:
 
         if self._workspace.has_repository_location_handle(name):
             new_handle = self._workspace.get_repository_location_handle(name)
+            new_handle.add_state_subscriber(self._location_state_subscriber)
             new_location = RepositoryLocation.from_handle(new_handle)
             check.invariant(new_location.name == name)
             self._repository_locations[name] = new_location

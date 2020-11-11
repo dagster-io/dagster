@@ -8,6 +8,10 @@ from dagster import check
 from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.core.definitions.reconstructable import repository_def_from_pointer
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.host_representation.grpc_server_state_subscriber import (
+    LocationStateChangeEvent,
+    LocationStateChangeEventType,
+)
 from dagster.core.host_representation.origin import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
@@ -38,6 +42,9 @@ class RepositoryLocationHandle(six.with_metaclass(ABCMeta)):
         self.cleanup()
 
     def cleanup(self):
+        pass
+
+    def add_state_subscriber(self, subscriber):
         pass
 
     @staticmethod
@@ -90,6 +97,7 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
 
     def __init__(self, origin):
         from dagster.grpc.client import DagsterGrpcClient
+        from dagster.grpc.server_watcher import create_grpc_watch_thread
 
         self.origin = check.inst_param(origin, "origin", GrpcServerRepositoryLocationOrigin)
 
@@ -105,8 +113,43 @@ class GrpcServerRepositoryLocationHandle(RepositoryLocationHandle):
             symbol.repository_name for symbol in list_repositories_response.repository_symbols
         )
 
+        self._state_subscribers = []
+        watch_thread_shutdown_event, watch_thread = create_grpc_watch_thread(
+            self.client,
+            on_updated=lambda: self._send_state_event_to_subscribers(
+                LocationStateChangeEvent(
+                    LocationStateChangeEventType.LOCATION_ERROR,
+                    location_name=self.location_name,
+                    message="Server has been updated.",
+                )
+            ),
+            on_error=lambda: self._send_state_event_to_subscribers(
+                LocationStateChangeEvent(
+                    LocationStateChangeEventType.LOCATION_ERROR,
+                    location_name=self.location_name,
+                    message="Unable to reconnect to server. You can reload the server once it is "
+                    "reachable again",
+                )
+            ),
+        )
+        self._watch_thread_shutdown_event = watch_thread_shutdown_event
+        self._watch_thread = watch_thread
+        self._watch_thread.start()
+
         self.executable_path = list_repositories_response.executable_path
         self.repository_code_pointer_dict = list_repositories_response.repository_code_pointer_dict
+
+    def add_state_subscriber(self, subscriber):
+        self._state_subscribers.append(subscriber)
+
+    def _send_state_event_to_subscribers(self, event):
+        check.inst_param(event, "event", LocationStateChangeEvent)
+        for subscriber in self._state_subscribers:
+            subscriber.handle_event(event)
+
+    def cleanup(self):
+        self._watch_thread_shutdown_event.set()
+        self._watch_thread.join()
 
     @property
     def port(self):

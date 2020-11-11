@@ -96,7 +96,7 @@ def watch_grpc_server_thread(
                     on_updated()
                     set_server_id(new_server_id)
                     return False
-            except grpc.RpcError:  # pylint: disable=protected-access
+            except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
                 attempts += 1
 
         on_error()
@@ -106,7 +106,7 @@ def watch_grpc_server_thread(
         try:
             watch_for_changes()
             return
-        except grpc.RpcError:  # pylint: disable=protected-access
+        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
             on_disconnect()
             reconnected_to_same_server = reconnect_loop()
             if not reconnected_to_same_server:
