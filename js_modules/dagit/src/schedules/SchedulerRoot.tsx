@@ -67,7 +67,7 @@ const UnloadableScheduleInfo: React.FunctionComponent<{}> = () => {
 
         {!showMore && (
           <Button small={true} onClick={() => setShowMore(true)}>
-            Show more info.
+            Show more info
           </Button>
         )}
       </div>
@@ -220,13 +220,26 @@ const ScheduleStates: React.FunctionComponent<{
           <h3 style={{marginTop: 20}}>Unloadable schedules:</h3>
           <UnloadableScheduleInfo />
 
-          {unLoadableSchedules.map((scheduleState) => (
-            <ScheduleStateRow
-              scheduleState={scheduleState}
-              key={scheduleState.scheduleOriginId}
-              showStatus={true}
-            />
-          ))}
+          <Table striped style={{width: '100%'}}>
+            <thead>
+              <tr>
+                <th style={{maxWidth: '60px'}}></th>
+                <th>Schedule Name</th>
+                <th style={{width: '150px'}}>Schedule</th>
+                <th style={{width: '100px'}}>Last Tick</th>
+                <th>Latest Runs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {unLoadableSchedules.map((scheduleState) => (
+                <ScheduleStateRow
+                  scheduleState={scheduleState}
+                  key={scheduleState.scheduleOriginId}
+                  showStatus={true}
+                />
+              ))}
+            </tbody>
+          </Table>
         </>
       )}
     </div>
