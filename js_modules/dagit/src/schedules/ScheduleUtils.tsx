@@ -5,6 +5,7 @@ import React from 'react';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryInformationFragment} from 'src/RepositoryInformation';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
+import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
 
 export const SCHEDULE_STATE_FRAGMENT = gql`
   fragment ScheduleStateFragment on ScheduleState {
@@ -122,15 +123,26 @@ export const SCHEDULES_ROOT_QUERY = gql`
   ${RepositoryInformationFragment}
 `;
 
-export const SchedulerTimezoneNote = () => (
-  <div
-    style={{
-      color: Colors.GRAY3,
-      fontSize: 12.5,
-      marginBottom: 20,
-    }}
-  >
-    Schedule cron intervals displayed below are in the system time of the machine running the
-    scheduler.
-  </div>
-);
+export const SchedulerTimezoneNote: React.FC<{
+  schedulerOrError: SchedulerFragment;
+}> = ({schedulerOrError}) => {
+  if (
+    schedulerOrError.__typename !== 'Scheduler' ||
+    schedulerOrError.schedulerClass !== 'SystemCronScheduler'
+  ) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        color: Colors.GRAY3,
+        fontSize: 12.5,
+        marginBottom: 20,
+      }}
+    >
+      Schedule cron intervals displayed below are in the system time of the machine running the
+      scheduler.
+    </div>
+  );
+};

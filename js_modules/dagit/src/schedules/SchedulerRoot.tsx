@@ -16,6 +16,7 @@ import {SCHEDULE_STATE_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/Sche
 import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {
   SchedulerRootQuery,
+  SchedulerRootQuery_scheduler,
   SchedulerRootQuery_scheduleStatesOrError,
   SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results,
 } from 'src/schedules/types/SchedulerRootQuery';
@@ -44,7 +45,10 @@ export const SchedulerRoot: React.FunctionComponent<{}> = () => {
             return (
               <>
                 <SchedulerInfo schedulerOrError={scheduler} />
-                <ScheduleStates scheduleStatesOrError={scheduleStatesOrError} />
+                <ScheduleStates
+                  scheduleStatesOrError={scheduleStatesOrError}
+                  schedulerOrError={scheduler}
+                />
               </>
             );
           }}
@@ -150,7 +154,8 @@ const RepositorySchedules = ({
 
 const ScheduleStates: React.FunctionComponent<{
   scheduleStatesOrError: SchedulerRootQuery_scheduleStatesOrError;
-}> = ({scheduleStatesOrError}) => {
+  schedulerOrError: SchedulerRootQuery_scheduler;
+}> = ({scheduleStatesOrError, schedulerOrError}) => {
   const {options, error} = useRepositoryOptions();
 
   if (error) {
@@ -197,7 +202,7 @@ const ScheduleStates: React.FunctionComponent<{
       <div style={{display: 'flex'}}>
         <h2 style={{marginBottom: 0}}>All Schedules:</h2>
         <div style={{flex: 1}} />
-        <SchedulerTimezoneNote />
+        <SchedulerTimezoneNote schedulerOrError={schedulerOrError} />
       </div>
       <Divider />
 

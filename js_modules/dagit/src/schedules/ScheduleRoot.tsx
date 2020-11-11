@@ -8,6 +8,7 @@ import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
 import {ScheduleRow, ScheduleRowHeader} from 'src/schedules/ScheduleRow';
 import {SCHEDULE_DEFINITION_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
+import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {ScheduleRootQuery} from 'src/schedules/types/ScheduleRootQuery';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
@@ -40,7 +41,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
-      {({scheduleDefinitionOrError}) => {
+      {({scheduleDefinitionOrError, scheduler}) => {
         if (scheduleDefinitionOrError.__typename === 'ScheduleDefinition') {
           const breadcrumbs: IBreadcrumbProps[] = [
             {
@@ -55,7 +56,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
             <ScrollContainer>
               <TopNav breadcrumbs={breadcrumbs} />
               <Page>
-                <SchedulerTimezoneNote />
+                <SchedulerTimezoneNote schedulerOrError={scheduler} />
                 <Table striped style={{width: '100%'}}>
                   <thead>
                     <ScheduleRowHeader schedule={scheduleDefinitionOrError} />
@@ -77,6 +78,9 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
 export const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery($scheduleSelector: ScheduleSelector!) {
+    scheduler {
+      ...SchedulerFragment
+    }
     scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
       ... on ScheduleDefinition {
         ...ScheduleDefinitionFragment
@@ -91,5 +95,6 @@ export const SCHEDULE_ROOT_QUERY = gql`
     }
   }
 
+  ${SCHEDULER_FRAGMENT}
   ${SCHEDULE_DEFINITION_FRAGMENT}
 `;

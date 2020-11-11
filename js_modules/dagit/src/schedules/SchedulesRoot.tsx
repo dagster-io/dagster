@@ -25,6 +25,7 @@ import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from 'src/schedules/Schedul
 import {SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {
   SchedulesRootQuery,
+  SchedulesRootQuery_scheduler,
   SchedulesRootQuery_repositoryOrError_Repository,
   SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results,
   SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results,
@@ -149,6 +150,7 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
                 <ScheduleTable
                   schedules={scheduleDefinitionsWithState}
                   repository={repositoryOrError}
+                  scheduler={scheduler}
                 />
               );
             }
@@ -182,10 +184,11 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
 interface ScheduleTableProps {
   schedules: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
   repository: SchedulesRootQuery_repositoryOrError_Repository;
+  scheduler: SchedulesRootQuery_scheduler;
 }
 
 const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = (props) => {
-  const {repository, schedules} = props;
+  const {repository, schedules, scheduler} = props;
   if (schedules.length === 0) {
     return null;
   }
@@ -200,7 +203,7 @@ const ScheduleTable: React.FunctionComponent<ScheduleTableProps> = (props) => {
       <div style={{display: 'flex'}}>
         <Header>Schedules</Header>
         <div style={{flex: 1}} />
-        <SchedulerTimezoneNote />
+        <SchedulerTimezoneNote schedulerOrError={scheduler} />
       </div>
       <div>
         {`${schedules.length} loaded from `}
