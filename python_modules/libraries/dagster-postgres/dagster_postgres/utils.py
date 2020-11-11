@@ -52,7 +52,7 @@ def get_conn_string(username, password, hostname, db_name, port="5432"):
     )
 
 
-def retry_pg_connection_fn(fn, retry_limit=20, retry_wait=0.2):
+def retry_pg_connection_fn(fn, retry_limit=5, retry_wait=0.2):
     """Reusable retry logic for any psycopg2/sqlalchemy PG connection functions that may fail.
     Intended to be used anywhere we connect to PG, to gracefully handle transient connection issues.
     """
