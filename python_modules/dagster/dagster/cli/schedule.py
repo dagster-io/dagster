@@ -425,7 +425,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 print_fn("Restarted schedule {schedule_name}".format(schedule_name=schedule_name))
 
 
-@click.command(name="wipe", help="Deletes all schedules and schedule cron jobs.")
+@click.command(name="wipe", help="Deletes schedule history and turns off all schedules.")
 @repository_target_argument
 def schedule_wipe_command(**kwargs):
     return execute_wipe_command(kwargs, click.echo)
@@ -437,13 +437,13 @@ def execute_wipe_command(cli_args, print_fn):
             check_repo_and_scheduler(external_repo, instance)
 
             confirmation = click.prompt(
-                "Are you sure you want to delete all schedules and schedule cron jobs? Type DELETE"
+                "Are you sure you want to turn off all schedules and delete all schedule history? Type DELETE"
             )
             if confirmation == "DELETE":
                 instance.wipe_all_schedules()
-                print_fn("Wiped all schedules and schedule cron jobs")
+                print_fn("Turned off all schedules and deleted all schedule history")
             else:
-                click.echo("Exiting without deleting all schedules and schedule cron jobs")
+                print_fn("Exiting without turning off schedules or deleting schedule history")
 
 
 @click.command(name="debug", help="Debug information about the scheduler")

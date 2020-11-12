@@ -134,7 +134,7 @@ def test_schedules_wipe_correct_delete_message(gen_schedule_args):
                 raise result.exception
 
             assert result.exit_code == 0
-            assert "Wiped all schedules and schedule cron jobs" in result.output
+            assert "Turned off all schedules and deleted all schedule history" in result.output
 
             result = runner.invoke(schedule_up_command, cli_args + ["--preview"],)
 
@@ -156,7 +156,10 @@ def test_schedules_wipe_incorrect_delete_message(gen_schedule_args):
             result = runner.invoke(schedule_wipe_command, cli_args, input="WRONG\n",)
 
             assert result.exit_code == 0
-            assert "Exiting without deleting all schedules and schedule cron jobs" in result.output
+            assert (
+                "Exiting without turning off schedules or deleting schedule history"
+                in result.output
+            )
 
             result = runner.invoke(schedule_up_command, cli_args + ["--preview"],)
 
