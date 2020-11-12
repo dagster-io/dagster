@@ -165,19 +165,6 @@ def _run_in_subprocess(
         instance.dispose()
 
 
-def execute_run_in_subprocess(
-    serialized_execute_run_args, recon_pipeline, event_queue, termination_event
-):
-    with delay_interrupts():
-        _run_in_subprocess(
-            serialized_execute_run_args,
-            recon_pipeline,
-            termination_event,
-            subprocess_status_handler=event_queue.put,
-            run_event_handler=event_queue.put,
-        )
-
-
 def start_run_in_subprocess(
     serialized_execute_run_args, recon_pipeline, event_queue, termination_event
 ):

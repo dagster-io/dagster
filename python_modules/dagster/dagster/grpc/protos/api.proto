@@ -20,7 +20,6 @@ service DagsterApi {
   rpc ExternalScheduleExecution (ExternalScheduleExecutionRequest) returns (ExternalScheduleExecutionReply) {}
   rpc ExternalJobParams (ExternalJobParamsRequest) returns (ExternalJobParamsReply) {}
   rpc ShutdownServer (Empty) returns (ShutdownServerReply) {}
-  rpc ExecuteRun (ExecuteRunRequest) returns (stream ExecuteRunEvent) {}
   rpc CancelExecution (CancelExecutionRequest) returns (CancelExecutionReply) {}
   rpc CanCancelExecution (CanCancelExecutionRequest) returns (CanCancelExecutionReply) {}
   rpc StartRun (StartRunRequest) returns (StartRunReply) {}
@@ -129,14 +128,6 @@ message ExternalJobParamsRequest {
 
 message ExternalJobParamsReply {
   string serialized_external_job_params_or_external_job_params_error_data = 1;
-}
-
-message ExecuteRunRequest {
-  string serialized_execute_run_args = 1;
-}
-
-message ExecuteRunEvent {
-  string serialized_dagster_event_or_ipc_error_message = 1;
 }
 
 message ShutdownServerReply {

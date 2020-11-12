@@ -97,11 +97,6 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.Empty.SerializeToString,
             response_deserializer=api__pb2.ShutdownServerReply.FromString,
         )
-        self.ExecuteRun = channel.unary_stream(
-            "/api.DagsterApi/ExecuteRun",
-            request_serializer=api__pb2.ExecuteRunRequest.SerializeToString,
-            response_deserializer=api__pb2.ExecuteRunEvent.FromString,
-        )
         self.CancelExecution = channel.unary_unary(
             "/api.DagsterApi/CancelExecution",
             request_serializer=api__pb2.CancelExecutionRequest.SerializeToString,
@@ -217,12 +212,6 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
-    def ExecuteRun(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details("Method not implemented!")
-        raise NotImplementedError("Method not implemented!")
-
     def CancelExecution(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -324,11 +313,6 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ShutdownServer,
             request_deserializer=api__pb2.Empty.FromString,
             response_serializer=api__pb2.ShutdownServerReply.SerializeToString,
-        ),
-        "ExecuteRun": grpc.unary_stream_rpc_method_handler(
-            servicer.ExecuteRun,
-            request_deserializer=api__pb2.ExecuteRunRequest.FromString,
-            response_serializer=api__pb2.ExecuteRunEvent.SerializeToString,
         ),
         "CancelExecution": grpc.unary_unary_rpc_method_handler(
             servicer.CancelExecution,
@@ -784,35 +768,6 @@ class DagsterApi(object):
             "/api.DagsterApi/ShutdownServer",
             api__pb2.Empty.SerializeToString,
             api__pb2.ShutdownServerReply.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-        )
-
-    @staticmethod
-    def ExecuteRun(
-        request,
-        target,
-        options=(),
-        channel_credentials=None,
-        call_credentials=None,
-        insecure=False,
-        compression=None,
-        wait_for_ready=None,
-        timeout=None,
-        metadata=None,
-    ):
-        return grpc.experimental.unary_stream(
-            request,
-            target,
-            "/api.DagsterApi/ExecuteRun",
-            api__pb2.ExecuteRunRequest.SerializeToString,
-            api__pb2.ExecuteRunEvent.FromString,
             options,
             channel_credentials,
             insecure,

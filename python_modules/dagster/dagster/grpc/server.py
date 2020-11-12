@@ -40,7 +40,6 @@ from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServic
 from .impl import (
     RunInSubprocessComplete,
     StartRunInSubprocessSuccessful,
-    execute_run_in_subprocess,
     get_external_execution_plan_snapshot,
     get_external_job_params,
     get_external_pipeline_subset_result,
@@ -513,102 +512,6 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
         )
-
-    def ExecuteRun(self, request, _context):
-        if self._shutdown_once_executions_finish_event.is_set():
-            yield api_pb2.ExecuteRunEvent(
-                serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
-                    IPCErrorMessage(
-                        serializable_error_info=None,
-                        message="Tried to start a run on a server after telling it to shut down",
-                    )
-                )
-            )
-
-        try:
-            execute_run_args = deserialize_json_to_dagster_namedtuple(
-                request.serialized_execute_run_args
-            )
-            check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
-
-            run_id = execute_run_args.pipeline_run_id
-
-            recon_pipeline = self._recon_pipeline_from_origin(execute_run_args.pipeline_origin)
-
-        except:  # pylint: disable=bare-except
-            yield api_pb2.ExecuteRunEvent(
-                serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
-                    IPCErrorMessage(
-                        serializable_error_info=serializable_error_info_from_exc_info(
-                            sys.exc_info()
-                        ),
-                        message="Error during RPC setup for ExecuteRun",
-                    )
-                )
-            )
-            return
-
-        event_queue = multiprocessing.Queue()
-        termination_event = multiprocessing.Event()
-        execution_process = multiprocessing.Process(
-            target=execute_run_in_subprocess,
-            args=[
-                request.serialized_execute_run_args,
-                recon_pipeline,
-                event_queue,
-                termination_event,
-            ],
-        )
-        with self._execution_lock:
-            execution_process.start()
-            self._executions[run_id] = (
-                execution_process,
-                execute_run_args.instance_ref,
-            )
-            self._termination_events[run_id] = termination_event
-
-        done = False
-        while not done:
-            try:
-                # We use `get_nowait()` instead of `get()` so that we can handle the case where the
-                # execution process has died unexpectedly -- `get()` would hang forever in that case
-                dagster_event_or_ipc_error_message_or_done = event_queue.get_nowait()
-            except queue.Empty:
-                if not execution_process.is_alive():
-                    # subprocess died unexpectedly
-                    yield api_pb2.ExecuteRunEvent(
-                        serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
-                            IPCErrorMessage(
-                                serializable_error_info=serializable_error_info_from_exc_info(
-                                    sys.exc_info()
-                                ),
-                                message=(
-                                    "GRPC server: Subprocess for {run_id} terminated unexpectedly"
-                                ).format(run_id=run_id),
-                            )
-                        )
-                    )
-                    done = True
-                time.sleep(EVENT_QUEUE_POLL_INTERVAL)
-            else:
-                if isinstance(dagster_event_or_ipc_error_message_or_done, RunInSubprocessComplete):
-                    done = True
-                elif isinstance(
-                    dagster_event_or_ipc_error_message_or_done, StartRunInSubprocessSuccessful
-                ):
-                    continue
-                else:
-                    yield api_pb2.ExecuteRunEvent(
-                        serialized_dagster_event_or_ipc_error_message=serialize_dagster_namedtuple(
-                            dagster_event_or_ipc_error_message_or_done
-                        )
-                    )
-
-        with self._execution_lock:
-            if run_id in self._executions:
-                del self._executions[run_id]
-            if run_id in self._termination_events:
-                del self._termination_events[run_id]
 
     def ShutdownServer(self, request, _context):
         try:
