@@ -61,6 +61,7 @@ export const RUN_STATS_QUERY = gql`
         message
       }
       ... on PipelineRun {
+        id
         runId
         pipelineName
         stats {

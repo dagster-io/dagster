@@ -59,6 +59,7 @@ export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_result
 
 export interface PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
+  id: string;
   status: PipelineRunStatus;
   tags: PartitionSetLoaderQuery_pipelineRunsOrError_PipelineRuns_results_tags[];
   runId: string;

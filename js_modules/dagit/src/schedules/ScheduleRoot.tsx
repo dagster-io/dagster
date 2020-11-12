@@ -83,6 +83,7 @@ export const SCHEDULE_ROOT_QUERY = gql`
     }
     scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
       ... on ScheduleDefinition {
+        id
         ...ScheduleDefinitionFragment
       }
       ... on ScheduleDefinitionNotFoundError {

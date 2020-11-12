@@ -9,6 +9,7 @@ import {PartitionGraphFragment} from 'src/partitions/types/PartitionGraphFragmen
 export const PIPELINE_LABEL = 'Total pipeline';
 export const PARTITION_GRAPH_FRAGMENT = gql`
   fragment PartitionGraphFragment on PipelineRun {
+    id
     runId
     stats {
       ... on PipelineRunStatsSnapshot {

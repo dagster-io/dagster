@@ -211,6 +211,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   ) {
     pipelineSnapshotOrError(snapshotId: $snapshotId, activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
+        id
         name
         ...PipelineExplorerFragment
 

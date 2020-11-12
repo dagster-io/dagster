@@ -316,10 +316,13 @@ const SecondaryContainer = ({children}: {children: React.ReactNode}) => (
 const OverviewScheduleFragment = gql`
   fragment OverviewScheduleFragment on ScheduleDefinition {
     __typename
+    id
     name
     scheduleState {
+      id
       runsCount
       lastRuns: runs(limit: 1) {
+        id
         stats {
           ... on PipelineRunStatsSnapshot {
             endTime
@@ -327,6 +330,7 @@ const OverviewScheduleFragment = gql`
         }
       }
       runs(limit: 10) {
+        id
         runId
         pipelineName
         status
@@ -340,6 +344,7 @@ export const PIPELINE_OVERVIEW_QUERY = gql`
   query PipelineOverviewQuery($pipelineSelector: PipelineSelector!, $limit: Int!) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
+        id
         name
         description
         solidHandles(parentHandleID: "") {
@@ -351,6 +356,7 @@ export const PIPELINE_OVERVIEW_QUERY = gql`
         runs(limit: $limit) {
           ...RunActionMenuFragment
           ...RunTimeFragment
+          id
           assets {
             key {
               path
@@ -358,6 +364,7 @@ export const PIPELINE_OVERVIEW_QUERY = gql`
           }
         }
         schedules {
+          id
           ...OverviewScheduleFragment
         }
       }

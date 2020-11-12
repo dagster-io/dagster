@@ -21,6 +21,7 @@ export interface ContentListSolidsQuery_repositoryOrError_Repository_usedSolids_
 
 export interface ContentListSolidsQuery_repositoryOrError_Repository_usedSolids_invocations_pipeline {
   __typename: "Pipeline";
+  id: string;
   name: string;
 }
 

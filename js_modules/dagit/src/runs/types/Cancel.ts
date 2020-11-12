@@ -20,6 +20,7 @@ export interface Cancel_terminatePipelineExecution_PipelineRunNotFoundError {
 
 export interface Cancel_terminatePipelineExecution_TerminatePipelineExecutionSuccess_run {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   canTerminate: boolean;
 }

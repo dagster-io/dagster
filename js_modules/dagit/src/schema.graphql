@@ -42,6 +42,7 @@ type Repository {
 }
 
 type RepositoryLocation {
+  id: ID!
   name: String!
   isReloadSupported: Boolean!
   environmentPath: String
@@ -59,10 +60,10 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   solidHandles(parentHandleID: String): [SolidHandle!]!
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
+  id: ID!
   runs: [PipelineRun!]!
   schedules: [ScheduleDefinition!]!
   parentSnapshotId: String
-  id: ID!
   presets: [PipelinePreset!]!
 }
 
@@ -244,6 +245,7 @@ type PipelineTag {
 }
 
 type PipelineRun {
+  id: ID!
   runId: String!
   pipelineSnapshotId: String
   status: PipelineRunStatus!
@@ -431,6 +433,7 @@ type PipelineRunNotFoundError implements Error {
 }
 
 type ScheduleDefinition {
+  id: ID!
   name: String!
   cronSchedule: String!
   pipelineName: String!
@@ -613,6 +616,7 @@ type RepositoryLocationConnection {
 union RepositoryLocationOrLoadFailure = RepositoryLocation | RepositoryLocationLoadFailure
 
 type RepositoryLocationLoadFailure {
+  id: ID!
   name: String!
   error: PythonError!
 }
@@ -645,6 +649,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   solidHandle(handleID: String!): SolidHandle
   tags: [PipelineTag!]!
   solidSelection: [String!]
+  id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
   schedules: [ScheduleDefinition!]!
   parentSnapshotId: String

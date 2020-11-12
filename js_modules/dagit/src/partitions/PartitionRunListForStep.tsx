@@ -147,6 +147,7 @@ const PARTITION_RUN_LIST_FOR_STEP_QUERY = gql`
       ... on PipelineRuns {
         results {
           ...RunTableRunFragment
+          id
           runId
         }
       }

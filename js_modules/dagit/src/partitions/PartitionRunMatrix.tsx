@@ -365,6 +365,7 @@ const Divider = styled.div`
 
 export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`
   fragment PartitionRunMatrixRunFragment on PipelineRun {
+    id
     runId
     tags {
       key
@@ -394,6 +395,7 @@ export const PARTITION_RUN_MATRIX_PIPELINE_QUERY = gql`
   query PartitionRunMatrixPipelineQuery($pipelineSelector: PipelineSelector) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
+        id
         name
         solidHandles {
           handleID

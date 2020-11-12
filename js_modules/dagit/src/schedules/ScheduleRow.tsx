@@ -686,6 +686,7 @@ const FETCH_SCHEDULE_YAML = gql`
   query FetchScheduleYaml($scheduleSelector: ScheduleSelector!) {
     scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
       ... on ScheduleDefinition {
+        id
         runConfigOrError {
           ... on ScheduleRunConfig {
             yaml

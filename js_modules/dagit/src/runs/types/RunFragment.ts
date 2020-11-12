@@ -59,6 +59,7 @@ export interface RunFragment_executionPlan {
 
 export interface RunFragment {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
   pipeline: RunFragment_pipeline;

@@ -65,6 +65,7 @@ export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_Pipelin
 
 export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot {
   __typename: "PipelineSnapshot";
+  id: string;
   name: string;
   solidHandles: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];
 }

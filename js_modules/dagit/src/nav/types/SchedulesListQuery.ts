@@ -16,11 +16,13 @@ export interface SchedulesListQuery_scheduleDefinitionsOrError_RepositoryNotFoun
 
 export interface SchedulesListQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState {
   __typename: "ScheduleState";
+  id: string;
   status: ScheduleStatus;
 }
 
 export interface SchedulesListQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results {
   __typename: "ScheduleDefinition";
+  id: string;
   name: string;
   scheduleState: SchedulesListQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState | null;
 }

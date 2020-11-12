@@ -179,6 +179,7 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
       __typename
       ... on LaunchPipelineRunSuccess {
         run {
+          id
           runId
           pipelineName
         }
@@ -225,6 +226,7 @@ export const CANCEL_MUTATION = gql`
       }
       ... on TerminatePipelineExecutionSuccess {
         run {
+          id
           runId
           canTerminate
         }
@@ -242,6 +244,7 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
       __typename
       ... on LaunchPipelineRunSuccess {
         run {
+          id
           runId
           pipelineName
           rootRunId
@@ -362,6 +365,7 @@ export class TimeElapsed extends React.Component<{
 export const RunComponentFragments = {
   RUN_TIME_FRAGMENT: gql`
     fragment RunTimeFragment on PipelineRun {
+      id
       status
       stats {
         ... on PipelineRunStatsSnapshot {
@@ -377,6 +381,7 @@ export const RunComponentFragments = {
   `,
   RUN_ACTION_MENU_FRAGMENT: gql`
     fragment RunActionMenuFragment on PipelineRun {
+      id
       runId
       rootRunId
       pipelineName

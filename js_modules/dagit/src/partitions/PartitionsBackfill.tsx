@@ -562,6 +562,7 @@ export const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
             results {
               name
               runs(limit: 1) {
+                id
                 runId
                 status
               }
@@ -583,6 +584,7 @@ export const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
     }
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {
+        id
         name
         solidHandles {
           handleID

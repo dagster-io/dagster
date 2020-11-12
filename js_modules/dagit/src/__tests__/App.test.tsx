@@ -20,14 +20,19 @@ describe('App', () => {
       __typename: 'RepositoryConnection',
     }),
     RepositoryLocation: () => ({
+      environmentPath: () => 'what then',
+      id: () => 'my_location',
       name: () => 'my_location',
     }),
     RepositoryLocationConnection: () => ({
-      nodes: () => new MockList(2),
+      nodes: () => new MockList(1),
     }),
     RepositoryLocationsOrError: () => ({
       __typename: 'RepositoryLocationConnection',
-      nodes: () => new MockList(2),
+      nodes: () => new MockList(1),
+    }),
+    RepositoryLocationLoadFailure: () => ({
+      id: () => 'failed',
     }),
     RepositoryLocationOrLoadFailure: () => ({
       __typename: 'RepositoryLocation',

@@ -29,6 +29,7 @@ export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_Repos
 
 export interface ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocationLoadFailure {
   __typename: "RepositoryLocationLoadFailure";
+  id: string;
   error: ReloadRepositoryLocationMutation_reloadRepositoryLocation_RepositoryLocationLoadFailure_error;
 }
 

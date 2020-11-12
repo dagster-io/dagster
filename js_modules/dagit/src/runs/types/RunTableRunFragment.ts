@@ -39,6 +39,7 @@ export type RunTableRunFragment_stats = RunTableRunFragment_stats_PipelineRunSta
 
 export interface RunTableRunFragment {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;

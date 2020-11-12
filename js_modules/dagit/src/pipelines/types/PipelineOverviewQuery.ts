@@ -270,6 +270,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   rootRunId: string | null;
   pipelineName: string;
@@ -296,11 +297,13 @@ export type PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_sched
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns {
   __typename: "PipelineRun";
+  id: string;
   stats: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns_stats;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   pipelineName: string;
   status: PipelineRunStatus;
@@ -308,6 +311,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState {
   __typename: "ScheduleState";
+  id: string;
   runsCount: number;
   lastRuns: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns[];
   runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs[];
@@ -316,12 +320,14 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules {
   __typename: "ScheduleDefinition";
+  id: string;
   name: string;
   scheduleState: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState | null;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot {
   __typename: "PipelineSnapshot";
+  id: string;
   name: string;
   description: string | null;
   solidHandles: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];

@@ -1162,6 +1162,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot {
   __typename: "PipelineSnapshot";
+  id: string;
   name: string;
   description: string | null;
   modes: PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes[];

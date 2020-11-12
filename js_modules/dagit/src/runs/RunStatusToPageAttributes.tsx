@@ -26,6 +26,7 @@ export class RunStatusToPageAttributes extends React.Component<{
   static fragments = {
     RunStatusPipelineRunFragment: gql`
       fragment RunStatusPipelineRunFragment on PipelineRun {
+        id
         runId
         status
         pipeline {

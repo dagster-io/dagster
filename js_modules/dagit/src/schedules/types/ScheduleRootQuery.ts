@@ -66,6 +66,7 @@ export type ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_sched
 
 export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
+  id: string;
   pipelineName: string;
   status: PipelineRunStatus;
   runId: string;
@@ -112,6 +113,7 @@ export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_
 
 export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   tags: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState_runs_tags[];
   pipelineName: string;
@@ -136,6 +138,7 @@ export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_
 
 export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition {
   __typename: "ScheduleDefinition";
+  id: string;
   name: string;
   cronSchedule: string;
   pipelineName: string;

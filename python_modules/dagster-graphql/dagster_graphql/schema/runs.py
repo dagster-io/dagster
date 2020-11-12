@@ -99,6 +99,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
     class Meta(object):
         name = "PipelineRun"
 
+    id = dauphin.NonNull(dauphin.ID)
     runId = dauphin.NonNull(dauphin.String)
     # Nullable because of historical runs
     pipelineSnapshotId = dauphin.String()
@@ -130,6 +131,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
             runId=pipeline_run.run_id, status=pipeline_run.status, mode=pipeline_run.mode
         )
         self._pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+
+    def resolve_id(self, _):
+        return self._pipeline_run.run_id
 
     def resolve_pipeline(self, graphene_info):
         return get_pipeline_reference_or_raise(graphene_info, self._pipeline_run,)

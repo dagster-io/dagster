@@ -27,19 +27,13 @@ export const AppCache = new InMemoryCache({
     },
   },
   dataIdFromObject: (object: any) => {
-    if (object.name && object.__typename === 'Pipeline') {
-      return `${object.__typename}.${object.name}`;
-    } else if (object.runId && object.__typename === 'PipelineRun') {
-      return `${object.__typename}.${object.runId}`;
-    } else if (
+    if (
       object.name &&
       (object.__typename === 'RegularType' || object.__typename === 'CompositeType')
     ) {
       return `Type.${object.name}`;
     } else if (object.__typename === 'Instance') {
       return 'Instance';
-    } else if (object.__typename === 'RepositoryLocation') {
-      return `RepositoryLocation:${object.name}`;
     } else {
       return defaultDataIdFromObject(object);
     }

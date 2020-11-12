@@ -41,6 +41,7 @@ export type ScheduleDefinitionFragment_scheduleState_repositoryOrigin = Schedule
 
 export interface ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
+  id: string;
   pipelineName: string;
   status: PipelineRunStatus;
   runId: string;
@@ -87,6 +88,7 @@ export interface ScheduleDefinitionFragment_scheduleState_runs_tags {
 
 export interface ScheduleDefinitionFragment_scheduleState_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   tags: ScheduleDefinitionFragment_scheduleState_runs_tags[];
   pipelineName: string;
@@ -111,6 +113,7 @@ export interface ScheduleDefinitionFragment_scheduleState {
 
 export interface ScheduleDefinitionFragment {
   __typename: "ScheduleDefinition";
+  id: string;
   name: string;
   cronSchedule: string;
   pipelineName: string;

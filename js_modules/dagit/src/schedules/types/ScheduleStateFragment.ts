@@ -36,6 +36,7 @@ export type ScheduleStateFragment_repositoryOrigin = ScheduleStateFragment_repos
 
 export interface ScheduleStateFragment_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
+  id: string;
   pipelineName: string;
   status: PipelineRunStatus;
   runId: string;
@@ -82,6 +83,7 @@ export interface ScheduleStateFragment_runs_tags {
 
 export interface ScheduleStateFragment_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   tags: ScheduleStateFragment_runs_tags[];
   pipelineName: string;

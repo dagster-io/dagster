@@ -16,6 +16,7 @@ export interface RunsSearchSpaceQuery_repositoryOrError_PythonError {
 
 export interface RunsSearchSpaceQuery_repositoryOrError_Repository_pipelines {
   __typename: "Pipeline";
+  id: string;
   name: string;
 }
 

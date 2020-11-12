@@ -14,15 +14,16 @@ interface Props {
   mocks?: any;
 }
 
+const typeDefs = loader('../schema.graphql');
+
 export const ApolloTestProvider = (props: Props) => {
   const {children, mocks} = props;
 
   const client = React.useMemo(() => {
     // The loader has to live here instead of the module level, otherwise we can end
     // up with nondeterministic behavior when querying/caching.
-    const schemaDefinition = loader('../schema.graphql');
 
-    const schema = makeExecutableSchema({typeDefs: schemaDefinition});
+    const schema = makeExecutableSchema({typeDefs});
     const withMerge = mergeResolvers([defaultMocks, mocks]);
     const withMocks = addMocksToSchema({schema, mocks: withMerge});
     return new ApolloClient({

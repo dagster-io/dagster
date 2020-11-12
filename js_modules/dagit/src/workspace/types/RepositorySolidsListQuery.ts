@@ -22,6 +22,7 @@ export interface RepositorySolidsListQuery_repositoryOrError_Repository_usedSoli
 
 export interface RepositorySolidsListQuery_repositoryOrError_Repository_usedSolids_invocations_pipeline {
   __typename: "Pipeline";
+  id: string;
   name: string;
 }
 

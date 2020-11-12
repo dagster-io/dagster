@@ -221,6 +221,7 @@ const PipelineEnvironmentYamlQuery = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on PipelineRun {
+        id
         runConfigYaml
       }
     }

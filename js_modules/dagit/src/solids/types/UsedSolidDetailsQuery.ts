@@ -513,6 +513,7 @@ export type UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_definit
 
 export interface UsedSolidDetailsQuery_repositoryOrError_Repository_usedSolid_invocations_pipeline {
   __typename: "Pipeline";
+  id: string;
   name: string;
 }
 

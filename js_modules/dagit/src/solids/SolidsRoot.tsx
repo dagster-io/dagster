@@ -298,6 +298,7 @@ export const SOLIDS_ROOT_QUERY = gql`
           invocations {
             __typename
             pipeline {
+              id
               name
             }
           }

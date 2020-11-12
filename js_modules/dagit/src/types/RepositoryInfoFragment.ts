@@ -34,11 +34,13 @@ export type RepositoryInfoFragment_origin = RepositoryInfoFragment_origin_Python
 
 export interface RepositoryInfoFragment_location {
   __typename: "RepositoryLocation";
+  id: string;
   name: string;
 }
 
 export interface RepositoryInfoFragment {
   __typename: "Repository";
+  id: string;
   name: string;
   origin: RepositoryInfoFragment_origin;
   location: RepositoryInfoFragment_location;

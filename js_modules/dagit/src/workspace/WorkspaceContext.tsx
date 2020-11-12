@@ -51,12 +51,14 @@ export const ROOT_REPOSITORIES_QUERY = gql`
         nodes {
           __typename
           ... on RepositoryLocation {
+            id
             isReloadSupported
             name
             repositories {
               id
               name
               pipelines {
+                id
                 name
                 pipelineSnapshotId
               }
@@ -67,6 +69,7 @@ export const ROOT_REPOSITORIES_QUERY = gql`
             }
           }
           ... on RepositoryLocationLoadFailure {
+            id
             name
             error {
               message

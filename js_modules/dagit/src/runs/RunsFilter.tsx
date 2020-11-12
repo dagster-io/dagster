@@ -198,6 +198,7 @@ export const RUNS_SEARCH_SPACE_QUERY = gql`
       ... on Repository {
         id
         pipelines {
+          id
           name
         }
       }

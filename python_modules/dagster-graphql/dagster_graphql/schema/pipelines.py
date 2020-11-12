@@ -57,6 +57,7 @@ class DauphinIPipelineSnapshotMixin(object):
 
     name = dauphin.NonNull(dauphin.String)
     description = dauphin.String()
+    id = dauphin.NonNull(dauphin.ID)
     pipeline_snapshot_id = dauphin.NonNull(dauphin.String)
     dagster_types = dauphin.non_null_list("DagsterType")
     dagster_type_or_error = dauphin.Field(
@@ -79,6 +80,9 @@ class DauphinIPipelineSnapshotMixin(object):
     parent_snapshot_id = dauphin.String()
 
     def resolve_pipeline_snapshot_id(self, _):
+        return self.get_represented_pipeline().identifying_pipeline_snapshot_id
+
+    def resolve_id(self, _):
         return self.get_represented_pipeline().identifying_pipeline_snapshot_id
 
     def resolve_name(self, _):

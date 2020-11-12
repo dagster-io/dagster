@@ -51,6 +51,7 @@ export type RunStatsQuery_pipelineRunOrError_PipelineRun_stats = RunStatsQuery_p
 
 export interface RunStatsQuery_pipelineRunOrError_PipelineRun {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   pipelineName: string;
   stats: RunStatsQuery_pipelineRunOrError_PipelineRun_stats;

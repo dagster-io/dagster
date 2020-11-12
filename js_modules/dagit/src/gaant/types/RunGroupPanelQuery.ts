@@ -48,6 +48,7 @@ export type RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats = RunGroupPan
 
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   parentRunId: string | null;
   status: PipelineRunStatus;

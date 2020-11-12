@@ -23,11 +23,13 @@ export type OverviewScheduleFragment_scheduleState_lastRuns_stats = OverviewSche
 
 export interface OverviewScheduleFragment_scheduleState_lastRuns {
   __typename: "PipelineRun";
+  id: string;
   stats: OverviewScheduleFragment_scheduleState_lastRuns_stats;
 }
 
 export interface OverviewScheduleFragment_scheduleState_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   pipelineName: string;
   status: PipelineRunStatus;
@@ -35,6 +37,7 @@ export interface OverviewScheduleFragment_scheduleState_runs {
 
 export interface OverviewScheduleFragment_scheduleState {
   __typename: "ScheduleState";
+  id: string;
   runsCount: number;
   lastRuns: OverviewScheduleFragment_scheduleState_lastRuns[];
   runs: OverviewScheduleFragment_scheduleState_runs[];
@@ -43,6 +46,7 @@ export interface OverviewScheduleFragment_scheduleState {
 
 export interface OverviewScheduleFragment {
   __typename: "ScheduleDefinition";
+  id: string;
   name: string;
   scheduleState: OverviewScheduleFragment_scheduleState | null;
 }

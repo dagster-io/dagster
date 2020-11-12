@@ -1,3 +1,9 @@
+const fs = require('fs');
+const path = require('path');
+
+const schemaPath = path.resolve(path.join(__dirname, 'src', 'schema.graphql'));
+const schema = fs.readFileSync(schemaPath).toString();
+
 module.exports = {
   parser: '@typescript-eslint/parser', // Specifies the ESLint parser
   extends: [
@@ -6,7 +12,7 @@ module.exports = {
     'prettier/@typescript-eslint', // Uses eslint-config-prettier to disable ESLint rules from @typescript-eslint/eslint-plugin that would conflict with prettier
     'plugin:prettier/recommended', // Enables eslint-plugin-prettier and displays prettier errors as ESLint errors. Make sure this is always the last configuration in the extends array.
   ],
-  plugins: ['react-hooks', 'import'],
+  plugins: ['react-hooks', 'import', 'graphql'],
   parserOptions: {
     ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
     sourceType: 'module', // Allows for the use of imports
@@ -16,6 +22,14 @@ module.exports = {
   },
   rules: {
     curly: 'error',
+    'graphql/required-fields': [
+      'error',
+      {
+        env: 'apollo',
+        schemaString: schema,
+        requiredFields: ['id'],
+      },
+    ],
     'import/no-cycle': 'error',
     'import/no-default-export': 'error',
     'import/no-duplicates': 'error',
@@ -41,6 +55,7 @@ module.exports = {
     '@typescript-eslint/camelcase': 'off',
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/array-type': 'off',
     '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',

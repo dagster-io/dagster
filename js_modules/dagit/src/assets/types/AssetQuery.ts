@@ -95,6 +95,7 @@ export interface AssetQuery_assetOrError_Asset_historicalMaterializations_runOrE
 
 export interface AssetQuery_assetOrError_Asset_historicalMaterializations_runOrError_PipelineRun {
   __typename: "PipelineRun";
+  id: string;
   pipelineSnapshotId: string | null;
 }
 
@@ -113,6 +114,7 @@ export interface AssetQuery_assetOrError_Asset_lastMaterializations_runOrError_P
 
 export interface AssetQuery_assetOrError_Asset_lastMaterializations_runOrError_PipelineRun {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
   pipelineName: string;
@@ -228,6 +230,7 @@ export type AssetQuery_assetOrError_Asset_runs_stats = AssetQuery_assetOrError_A
 
 export interface AssetQuery_assetOrError_Asset_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;

@@ -10,6 +10,7 @@
 
 export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_pipelines {
   __typename: "Pipeline";
+  id: string;
   name: string;
   pipelineSnapshotId: string;
 }
@@ -45,6 +46,7 @@ export type RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationC
 
 export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories_location {
   __typename: "RepositoryLocation";
+  id: string;
   name: string;
 }
 
@@ -60,6 +62,7 @@ export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLoca
 
 export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation {
   __typename: "RepositoryLocation";
+  id: string;
   isReloadSupported: boolean;
   name: string;
   repositories: RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories[];
@@ -72,6 +75,7 @@ export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLoca
 
 export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure {
   __typename: "RepositoryLocationLoadFailure";
+  id: string;
   name: string;
   error: RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocationLoadFailure_error;
 }

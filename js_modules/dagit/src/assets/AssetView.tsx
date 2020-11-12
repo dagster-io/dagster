@@ -259,6 +259,7 @@ const AssetPartitionGridFragment = gql`
     partition
     runOrError {
       ... on PipelineRun {
+        id
         pipelineSnapshotId
       }
     }
@@ -279,6 +280,7 @@ export const ASSET_QUERY = gql`
         lastMaterializations: assetMaterializations(limit: 1) {
           runOrError {
             ... on PipelineRun {
+              id
               runId
               status
               pipelineName
@@ -298,6 +300,7 @@ export const ASSET_QUERY = gql`
         }
 
         runs(limit: 10) {
+          id
           ...RunTableRunFragment
         }
       }

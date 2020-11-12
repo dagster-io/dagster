@@ -39,6 +39,7 @@ export type PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_result
 
 export interface PartitionRunListForStepQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;

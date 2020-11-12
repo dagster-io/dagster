@@ -33,6 +33,7 @@ export type RunTimeFragment_stats = RunTimeFragment_stats_PipelineRunStatsSnapsh
 
 export interface RunTimeFragment {
   __typename: "PipelineRun";
+  id: string;
   status: PipelineRunStatus;
   stats: RunTimeFragment_stats;
 }

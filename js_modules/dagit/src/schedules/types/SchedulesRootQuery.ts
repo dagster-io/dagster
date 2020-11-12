@@ -40,6 +40,7 @@ export type SchedulesRootQuery_repositoryOrError_Repository_origin = SchedulesRo
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_location {
   __typename: "RepositoryLocation";
+  id: string;
   name: string;
 }
 
@@ -126,6 +127,7 @@ export type SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_re
 
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
+  id: string;
   pipelineName: string;
   status: PipelineRunStatus;
   runId: string;
@@ -172,6 +174,7 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
 
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   tags: SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState_runs_tags[];
   pipelineName: string;
@@ -196,6 +199,7 @@ export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitio
 
 export interface SchedulesRootQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results {
   __typename: "ScheduleDefinition";
+  id: string;
   name: string;
   cronSchedule: string;
   pipelineName: string;
@@ -255,6 +259,7 @@ export type SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_repo
 
 export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
+  id: string;
   pipelineName: string;
   status: PipelineRunStatus;
   runId: string;
@@ -301,6 +306,7 @@ export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results
 
 export interface SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   tags: SchedulesRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_tags[];
   pipelineName: string;

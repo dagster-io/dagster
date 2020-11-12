@@ -36,6 +36,7 @@ export type FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runCo
 
 export interface FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition {
   __typename: "ScheduleDefinition";
+  id: string;
   runConfigOrError: FetchScheduleYaml_scheduleDefinitionOrError_ScheduleDefinition_runConfigOrError | null;
 }
 

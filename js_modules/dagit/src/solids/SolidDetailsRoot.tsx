@@ -105,6 +105,7 @@ export const USED_SOLID_DETAILS_QUERY = gql`
           invocations {
             __typename
             pipeline {
+              id
               name
             }
             solidHandle {

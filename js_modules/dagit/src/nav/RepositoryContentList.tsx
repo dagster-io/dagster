@@ -278,6 +278,7 @@ export const CONTENT_LIST_SOLIDS_QUERY = gql`
           invocations {
             __typename
             pipeline {
+              id
               name
             }
           }

@@ -38,6 +38,7 @@ export const SCHEDULE_STATE_FRAGMENT = gql`
         __typename
         ... on ScheduleTickSuccessData {
           run {
+            id
             pipelineName
             status
             runId
@@ -52,6 +53,7 @@ export const SCHEDULE_STATE_FRAGMENT = gql`
     }
     runsCount
     runs(limit: 10) {
+      id
       runId
       tags {
         key
@@ -69,6 +71,7 @@ export const SCHEDULE_STATE_FRAGMENT = gql`
 
 export const SCHEDULE_DEFINITION_FRAGMENT = gql`
   fragment ScheduleDefinitionFragment on ScheduleDefinition {
+    id
     name
     cronSchedule
     pipelineName
@@ -78,6 +81,7 @@ export const SCHEDULE_DEFINITION_FRAGMENT = gql`
       name
     }
     scheduleState {
+      id
       ...ScheduleStateFragment
     }
   }
@@ -101,6 +105,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
     scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
       ... on ScheduleDefinitions {
         results {
+          id
           ...ScheduleDefinitionFragment
         }
       }
@@ -110,6 +115,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
       __typename
       ... on ScheduleStates {
         results {
+          id
           ...ScheduleStateFragment
         }
       }

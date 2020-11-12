@@ -18,9 +18,11 @@ const REPOSITORY_PIPELINES_LIST_QUERY = gql`
       ... on Repository {
         id
         pipelines {
+          id
           name
           description
           runs {
+            id
             runId
             status
           }

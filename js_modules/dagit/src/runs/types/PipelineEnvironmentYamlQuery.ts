@@ -14,6 +14,7 @@ export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRunNotF
 
 export interface PipelineEnvironmentYamlQuery_pipelineRunOrError_PipelineRun {
   __typename: "PipelineRun";
+  id: string;
   runConfigYaml: string;
 }
 

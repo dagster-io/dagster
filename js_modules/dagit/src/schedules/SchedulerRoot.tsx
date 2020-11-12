@@ -259,6 +259,7 @@ const SCHEDULER_ROOT_QUERY = gql`
     scheduleStatesOrError {
       ... on ScheduleStates {
         results {
+          id
           ...ScheduleStateFragment
         }
       }

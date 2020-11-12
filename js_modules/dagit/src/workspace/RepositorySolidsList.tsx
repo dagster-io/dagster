@@ -23,6 +23,7 @@ const REPOSITORY_SOLIDS_LIST_QUERY = gql`
           }
           invocations {
             pipeline {
+              id
               name
             }
           }

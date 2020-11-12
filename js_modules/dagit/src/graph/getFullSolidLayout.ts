@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-webpack-loader-syntax
-import LayoutWorker from 'worker-loader!babel-loader!../workers/dagre_layout.worker';
+import LayoutWorker from 'worker-loader!../workers/dagre_layout.worker';
 
 import {asyncMemoize, memoize} from 'src/Util';
 import {ILayoutSolid, layoutPipeline} from 'src/graph/layout';

@@ -123,6 +123,7 @@ class DauphinRepositoryLocation(dauphin.ObjectType):
     class Meta(object):
         name = "RepositoryLocation"
 
+    id = dauphin.NonNull(dauphin.ID)
     name = dauphin.NonNull(dauphin.String)
     is_reload_supported = dauphin.NonNull(dauphin.Boolean)
     environment_path = dauphin.String()
@@ -144,6 +145,9 @@ class DauphinRepositoryLocation(dauphin.ObjectType):
             is_reload_supported=location.is_reload_supported,
         )
 
+    def resolve_id(self, _):
+        return self.name
+
     def resolve_repositories(self, graphene_info):
         return [
             graphene_info.schema.type_named("Repository")(repository, self._location)
@@ -155,6 +159,7 @@ class DauphinRepositoryLocationLoadFailure(dauphin.ObjectType):
     class Meta(object):
         name = "RepositoryLocationLoadFailure"
 
+    id = dauphin.NonNull(dauphin.ID)
     name = dauphin.NonNull(dauphin.String)
     error = dauphin.NonNull("PythonError")
 
@@ -164,6 +169,9 @@ class DauphinRepositoryLocationLoadFailure(dauphin.ObjectType):
         super(DauphinRepositoryLocationLoadFailure, self).__init__(
             name=name, error=DauphinPythonError(error)
         )
+
+    def resolve_id(self, _):
+        return self.name
 
 
 class DauphinCodePointer(dauphin.ObjectType):

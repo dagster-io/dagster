@@ -53,6 +53,7 @@ export interface PartitionGraphFragment_stepStats {
 
 export interface PartitionGraphFragment {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   stats: PartitionGraphFragment_stats;
   stepStats: PartitionGraphFragment_stepStats[];

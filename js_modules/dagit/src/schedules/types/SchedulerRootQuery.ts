@@ -65,6 +65,7 @@ export type SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_repo
 
 export interface SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
+  id: string;
   pipelineName: string;
   status: PipelineRunStatus;
   runId: string;
@@ -111,6 +112,7 @@ export interface SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results
 
 export interface SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   tags: SchedulerRootQuery_scheduleStatesOrError_ScheduleStates_results_runs_tags[];
   pipelineName: string;

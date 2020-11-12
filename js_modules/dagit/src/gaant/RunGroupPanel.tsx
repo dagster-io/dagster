@@ -90,6 +90,7 @@ const RUN_GROUP_PANEL_QUERY = gql`
       ... on RunGroup {
         rootRunId
         runs {
+          id
           runId
           parentRunId
           status

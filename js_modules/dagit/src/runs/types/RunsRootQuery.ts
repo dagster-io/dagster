@@ -39,6 +39,7 @@ export type RunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats = RunsR
 
 export interface RunsRootQuery_pipelineRunsOrError_PipelineRuns_results {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
   stepKeysToExecute: string[] | null;

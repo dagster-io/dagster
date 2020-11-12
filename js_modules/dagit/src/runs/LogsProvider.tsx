@@ -234,6 +234,7 @@ export const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
 
 export const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
   fragment PipelineRunLogsSubscriptionStatusFragment on PipelineRun {
+    id
     runId
     status
     canTerminate

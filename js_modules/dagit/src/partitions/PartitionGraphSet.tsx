@@ -107,6 +107,7 @@ export const PartitionGraphSet: React.FunctionComponent<{
 
 export const PARTITION_GRAPH_SET_RUN_FRAGMENT = gql`
   fragment PartitionGraphSetRunFragment on PipelineRun {
+    id
     status
     tags {
       key

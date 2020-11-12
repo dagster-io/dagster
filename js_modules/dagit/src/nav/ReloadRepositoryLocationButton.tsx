@@ -102,6 +102,7 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
         message
       }
       ... on RepositoryLocationLoadFailure {
+        id
         error {
           message
         }

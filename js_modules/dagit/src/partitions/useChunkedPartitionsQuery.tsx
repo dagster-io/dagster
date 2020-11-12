@@ -253,6 +253,7 @@ function assemblePartitions(data: {
 
 export const PARTITION_SET_LOADER_RUN_FRAGMENT = gql`
   fragment PartitionSetLoaderRunFragment on PipelineRun {
+    id
     ...PartitionGraphSetRunFragment
     ...PartitionRunMatrixRunFragment
   }
@@ -265,6 +266,7 @@ const PARTITION_SET_LOADER_QUERY = gql`
     pipelineRunsOrError(filter: $filter, cursor: $cursor, limit: $limit) {
       ... on PipelineRuns {
         results {
+          id
           ...PartitionSetLoaderRunFragment
         }
       }

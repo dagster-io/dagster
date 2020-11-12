@@ -32,6 +32,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     class Meta(object):
         name = "ScheduleDefinition"
 
+    id = dauphin.NonNull(dauphin.ID)
     name = dauphin.NonNull(dauphin.String)
     cron_schedule = dauphin.NonNull(dauphin.String)
     pipeline_name = dauphin.NonNull(dauphin.String)
@@ -42,6 +43,9 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
 
     runConfigOrError = dauphin.Field("ScheduleRunConfigOrError")
     partition_set = dauphin.Field("PartitionSet")
+
+    def resolve_id(self, _):
+        return "%s:%s" % (self.name, self.pipeline_name)
 
     def resolve_runConfigOrError(self, graphene_info):
         return get_schedule_config(graphene_info, self._external_schedule)

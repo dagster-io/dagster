@@ -245,8 +245,10 @@ export const SCHEDULES_LIST_QUERY = gql`
     scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
       ... on ScheduleDefinitions {
         results {
+          id
           name
           scheduleState {
+            id
             status
           }
         }

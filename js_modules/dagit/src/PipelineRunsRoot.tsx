@@ -129,6 +129,7 @@ export const PIPELINE_RUNS_ROOT_QUERY = gql`
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on PipelineRuns {
         results {
+          id
           ...RunTableRunFragment
         }
       }

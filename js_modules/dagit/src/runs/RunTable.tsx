@@ -106,6 +106,7 @@ export const RunTable = (props: RunTableProps) => {
 RunTable.fragments = {
   RunTableRunFragment: gql`
     fragment RunTableRunFragment on PipelineRun {
+      id
       runId
       status
       stepKeysToExecute

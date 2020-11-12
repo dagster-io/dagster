@@ -14,6 +14,7 @@ export interface AssetPartitionGridFragment_runOrError_PipelineRunNotFoundError 
 
 export interface AssetPartitionGridFragment_runOrError_PipelineRun {
   __typename: "PipelineRun";
+  id: string;
   pipelineSnapshotId: string | null;
 }
 

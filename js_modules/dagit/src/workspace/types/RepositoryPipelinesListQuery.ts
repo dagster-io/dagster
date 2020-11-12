@@ -16,12 +16,14 @@ export interface RepositoryPipelinesListQuery_repositoryOrError_PythonError {
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
 }
 
 export interface RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines {
   __typename: "Pipeline";
+  id: string;
   name: string;
   description: string | null;
   runs: RepositoryPipelinesListQuery_repositoryOrError_Repository_pipelines_runs[];

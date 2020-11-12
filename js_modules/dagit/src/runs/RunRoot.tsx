@@ -104,6 +104,7 @@ export const RUN_ROOT_QUERY = gql`
     pipelineRunOrError(runId: $runId) {
       __typename
       ... on PipelineRun {
+        id
         pipeline {
           __typename
           ... on PipelineReference {

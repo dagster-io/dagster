@@ -16,6 +16,7 @@ export interface RunActionMenuFragment_tags {
 
 export interface RunActionMenuFragment {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   rootRunId: string | null;
   pipelineName: string;

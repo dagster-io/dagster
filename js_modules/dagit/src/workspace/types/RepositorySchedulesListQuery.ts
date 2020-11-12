@@ -16,12 +16,14 @@ export interface RepositorySchedulesListQuery_repositoryOrError_PythonError {
 
 export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipelines_schedules_scheduleState_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
 }
 
 export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipelines_schedules_scheduleState {
   __typename: "ScheduleState";
+  id: string;
   status: ScheduleStatus;
   runs: RepositorySchedulesListQuery_repositoryOrError_Repository_pipelines_schedules_scheduleState_runs[];
 }
@@ -29,6 +31,7 @@ export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipel
 export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipelines_schedules {
   __typename: "ScheduleDefinition";
   cronSchedule: string;
+  id: string;
   mode: string;
   name: string;
   pipelineName: string;
@@ -37,6 +40,7 @@ export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipel
 
 export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipelines {
   __typename: "Pipeline";
+  id: string;
   name: string;
   schedules: RepositorySchedulesListQuery_repositoryOrError_Repository_pipelines_schedules[];
 }

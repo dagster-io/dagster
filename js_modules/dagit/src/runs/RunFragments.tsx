@@ -11,6 +11,7 @@ export const RunFragments = {
     fragment RunFragment on PipelineRun {
       ...RunStatusPipelineRunFragment
 
+      id
       runConfigYaml
       runId
       canTerminate

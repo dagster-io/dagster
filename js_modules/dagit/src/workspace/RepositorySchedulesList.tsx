@@ -19,15 +19,19 @@ const REPOSITORY_SCHEDULES_LIST_QUERY = gql`
       ... on Repository {
         id
         pipelines {
+          id
           name
           schedules {
             cronSchedule
+            id
             mode
             name
             pipelineName
             scheduleState {
+              id
               status
               runs {
+                id
                 runId
                 status
               }

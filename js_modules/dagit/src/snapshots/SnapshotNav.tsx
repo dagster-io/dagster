@@ -12,6 +12,7 @@ const SNAPSHOT_PARENT_QUERY = gql`
   query SnapshotQuery($snapshotId: String!) {
     pipelineSnapshotOrError(snapshotId: $snapshotId) {
       ... on PipelineSnapshot {
+        id
         parentSnapshotId
       }
     }

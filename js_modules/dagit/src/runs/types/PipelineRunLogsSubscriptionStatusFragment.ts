@@ -12,6 +12,7 @@ import { PipelineRunStatus } from "./../../types/globalTypes";
 
 export interface PipelineRunLogsSubscriptionStatusFragment {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
   canTerminate: boolean;

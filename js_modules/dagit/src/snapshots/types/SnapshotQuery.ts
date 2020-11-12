@@ -14,6 +14,7 @@ export interface SnapshotQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundE
 
 export interface SnapshotQuery_pipelineSnapshotOrError_PipelineSnapshot {
   __typename: "PipelineSnapshot";
+  id: string;
   parentSnapshotId: string | null;
 }
 

@@ -12,6 +12,7 @@ import { RepositorySelector, PipelineSelector, PipelineRunStatus } from "./../..
 
 export interface PartitionsBackfillSelectorQuery_partitionSetOrError_PartitionSet_partitionsOrError_Partitions_results_runs {
   __typename: "PipelineRun";
+  id: string;
   runId: string;
   status: PipelineRunStatus;
 }
@@ -116,6 +117,7 @@ export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_Pipelin
 
 export interface PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot {
   __typename: "PipelineSnapshot";
+  id: string;
   name: string;
   solidHandles: PartitionsBackfillSelectorQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles[];
 }

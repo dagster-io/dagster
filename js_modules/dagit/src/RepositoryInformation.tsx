@@ -20,11 +20,13 @@ export const RepositoryInformationFragment = gql`
     }
   }
   fragment RepositoryInfoFragment on Repository {
+    id
     name
     origin {
       ...RepositoryOriginFragment
     }
     location {
+      id
       name
     }
   }

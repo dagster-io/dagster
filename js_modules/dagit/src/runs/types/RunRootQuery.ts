@@ -63,6 +63,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan {
 
 export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   __typename: "PipelineRun";
+  id: string;
   pipeline: RunRootQuery_pipelineRunOrError_PipelineRun_pipeline;
   runId: string;
   status: PipelineRunStatus;
