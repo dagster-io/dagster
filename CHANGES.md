@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.9.19
+
+**New**
+
+- Improved error handling when the intermediate storage stores and retrieves objects.
+- New URL scheme in Dagit, with repository details included on all paths for pipelines, solids, and schedules
+- Relaxed constraints for the AssetKey constructor, to enable arbitrary strings as part of the key path.
+- When executing a subset of a pipeline, configuration that does not apply to the current subset but would be valid in the original pipeline is now allowed and ignored.
+- GCSComputeLogManager was added, allowing for compute logs to be persisted to Google cloud storage
+- The step-partition matrix in Dagit now auto-reloads runs
+
+**Bugfixes**
+
+- Dagit bugfixes and improvements
+- When specifying a namespace during helm install, the same namespace will now be used by the K8sScheduler or K8sRunLauncher, unless overridden.
+- `@pipeline` decorated functions with -> None  typing no longer cause unexpected problems.
+- Fixed an issue where compute logs might not always be complete on Windows.
+
 ## 0.9.18
 
 **Breaking Changes**
