@@ -26,5 +26,6 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["test"]),
         install_requires=["dagster", "snowflake-connector-python>=2.1.0"],
+        extras_require={"snowflake.sqlalchemy": ["sqlalchemy", "snowflake-sqlalchemy"]},
         zip_safe=False,
     )
