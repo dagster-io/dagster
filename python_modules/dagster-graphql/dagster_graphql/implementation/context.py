@@ -50,10 +50,13 @@ class DagsterGraphQLContext:
     def repository_location_names(self):
         return self._workspace.repository_location_names
 
+    @property
+    def location_state_events(self):
+        return self._location_state_events
+
     def _location_state_events_handler(self, event):
         # If the server was updated or we were not able to reconnect, we immediately reload the
         # location handle
-
         if event.event_type in (
             LocationStateChangeEventType.LOCATION_UPDATED,
             LocationStateChangeEventType.LOCATION_ERROR,

@@ -9,7 +9,7 @@ from dagster.serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster.utils import find_free_port
 
 
-def wait_for_condition(fn, interval, timeout=30):
+def wait_for_condition(fn, interval, timeout=60):
     start_time = time.time()
     while not fn():
         if time.time() - start_time > timeout:
@@ -32,7 +32,7 @@ def test_grpc_watch_thread_server_update():
 
     called = {}
 
-    def on_updated():
+    def on_updated(_):
         called["yup"] = True
 
     # Create initial server
@@ -77,7 +77,7 @@ def test_grpc_watch_thread_server_reconnect():
     def on_reconnected():
         called["on_reconnected"] = True
 
-    def should_not_be_called():
+    def should_not_be_called(*args, **kwargs):
         raise Exception("This method should not be called")
 
     # Create initial server
@@ -120,7 +120,7 @@ def test_grpc_watch_thread_server_error():
     def on_error():
         called["on_error"] = True
 
-    def should_not_be_called():
+    def should_not_be_called(*args, **kwargs):
         raise Exception("This method should not be called")
 
     # Create initial server
@@ -169,7 +169,7 @@ def test_grpc_watch_thread_server_complex_cycle():
     def on_reconnected():
         events.append("on_reconnected")
 
-    def on_updated():
+    def on_updated(_):
         events.append("on_updated")
 
     def on_error():
@@ -189,7 +189,7 @@ def test_grpc_watch_thread_server_complex_cycle():
         on_updated=on_updated,
         on_error=on_error,
         watch_interval=watch_interval,
-        max_reconnect_attempts=5,
+        max_reconnect_attempts=3,
     )
     watch_thread.start()
     time.sleep(watch_interval * 3)
@@ -232,7 +232,7 @@ def test_grpc_watch_thread_server_complex_cycle_2():
     def on_reconnected():
         events.append("on_reconnected")
 
-    def on_updated():
+    def on_updated(_):
         events.append("on_updated")
 
     def on_error():
@@ -253,7 +253,7 @@ def test_grpc_watch_thread_server_complex_cycle_2():
         on_updated=on_updated,
         on_error=on_error,
         watch_interval=watch_interval,
-        max_reconnect_attempts=4,
+        max_reconnect_attempts=3,
     )
     watch_thread.start()
     time.sleep(watch_interval * 3)
@@ -293,7 +293,7 @@ def test_run_grpc_watch_without_server():
     def on_error():
         called["on_error"] = True
 
-    def should_not_be_called():
+    def should_not_be_called(*args, **kwargs):
         raise Exception("This method should not be called")
 
     shutdown_event, watch_thread = create_grpc_watch_thread(

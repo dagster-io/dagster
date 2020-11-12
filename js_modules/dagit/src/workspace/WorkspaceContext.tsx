@@ -8,6 +8,7 @@ import {RepositorySelector} from 'src/types/globalTypes';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
 import {RepoAddress} from 'src/workspace/types';
+import {RepositoryLocationsQuery} from 'src/workspace/types/RepositoryLocationsQuery';
 import {
   RootRepositoriesQuery,
   RootRepositoriesQuery_repositoryLocationsOrError_PythonError,
@@ -56,6 +57,7 @@ export const ROOT_REPOSITORIES_QUERY = gql`
           ... on RepositoryLocation {
             id
             isReloadSupported
+            serverId
             name
             repositories {
               id
@@ -85,6 +87,34 @@ export const ROOT_REPOSITORIES_QUERY = gql`
   }
   ${PythonErrorInfo.fragments.PythonErrorFragment}
   ${REPOSITORY_INFO_FRAGMENT}
+`;
+
+export const REPOSITORY_LOCATIONS_QUERY = gql`
+  query RepositoryLocationsQuery {
+    repositoryLocationsOrError {
+      __typename
+      ... on RepositoryLocationConnection {
+        nodes {
+          __typename
+          ... on RepositoryLocation {
+            id
+            isReloadSupported
+            serverId
+            name
+          }
+          ... on RepositoryLocationLoadFailure {
+            id
+            name
+            error {
+              message
+            }
+          }
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
 const getRepositoryOptionHash = (a: DagsterRepoOption) =>
@@ -124,6 +154,24 @@ const useLocalStorageState = (options: DagsterRepoOption[]) => {
 
   const repoForKey = options.find((o) => getRepositoryOptionHash(o) === repoKey) || null;
   return [repoForKey, setRepo] as [typeof repoForKey, typeof setRepo];
+};
+
+export const useNetworkedRepositoryLocations = () => {
+  const {data, loading, refetch} = useQuery<RepositoryLocationsQuery>(REPOSITORY_LOCATIONS_QUERY, {
+    fetchPolicy: 'no-cache',
+  });
+
+  const locations = React.useMemo(() => {
+    return data?.repositoryLocationsOrError.__typename === 'RepositoryLocationConnection'
+      ? data?.repositoryLocationsOrError.nodes
+      : [];
+  }, [data]);
+
+  return {
+    loading,
+    locations,
+    refetch,
+  };
 };
 
 /**

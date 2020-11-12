@@ -66,6 +66,7 @@ from dagster_graphql.implementation.utils import (
     capture_dauphin_error,
     pipeline_selector_from_graphql,
 )
+from dagster_graphql.schema.external import get_location_state_change_observable
 
 from .config_types import to_dauphin_config_type
 from .runs import DauphinPipelineRunStatus
@@ -713,6 +714,8 @@ class DauphinSubscription(dauphin.ObjectType):
         cursor=dauphin.Argument(dauphin.String),
     )
 
+    locationStateChangeEvents = dauphin.Field(dauphin.NonNull("LocationStateChangeSubscription"))
+
     def resolve_pipelineRunLogs(self, graphene_info, runId, after=None):
         return get_pipeline_run_observable(graphene_info, runId, after)
 
@@ -721,6 +724,9 @@ class DauphinSubscription(dauphin.ObjectType):
         return get_compute_log_observable(
             graphene_info, runId, stepKey, ComputeIOType(ioType), cursor
         )
+
+    def resolve_locationStateChangeEvents(self, graphene_info):
+        return get_location_state_change_observable(graphene_info)
 
 
 class DauphinRunConfigData(dauphin.GenericScalar, dauphin.Scalar):

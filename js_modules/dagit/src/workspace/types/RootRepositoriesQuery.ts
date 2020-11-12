@@ -53,6 +53,7 @@ export interface RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLoca
   __typename: "RepositoryLocation";
   id: string;
   isReloadSupported: boolean;
+  serverId: string | null;
   name: string;
   repositories: RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories[];
 }

@@ -75,7 +75,7 @@ def watch_grpc_server_thread(
                 set_server_id(new_server_id)
             elif curr != new_server_id:
                 set_server_id(new_server_id)
-                return on_updated()
+                return on_updated(new_server_id)
 
             shutdown_event.wait(watch_interval)
 
@@ -93,7 +93,7 @@ def watch_grpc_server_thread(
                     on_reconnected()
                     return True
                 else:
-                    on_updated()
+                    on_updated(new_server_id)
                     set_server_id(new_server_id)
                     return False
             except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access

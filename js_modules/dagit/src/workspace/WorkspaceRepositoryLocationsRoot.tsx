@@ -18,8 +18,8 @@ import {TopNav} from 'src/nav/TopNav';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
-import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
-import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from 'src/workspace/types/RootRepositoriesQuery';
+import {useNetworkedRepositoryLocations} from 'src/workspace/WorkspaceContext';
+import {RepositoryLocationsQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from 'src/workspace/types/RepositoryLocationsQuery';
 
 const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boolean}> = (
   props,
@@ -95,7 +95,7 @@ const ReloadButton: React.FC<{location: string; onReload: (location: string) => 
 };
 
 export const WorkspaceRepositoryLocationsRoot = () => {
-  const {locations, loading, refetch} = React.useContext(WorkspaceContext);
+  const {locations, loading, refetch} = useNetworkedRepositoryLocations();
   const [reloading, setReloading] = React.useState<string | null>(null);
 
   if (loading && !locations.length) {
