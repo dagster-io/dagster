@@ -15,8 +15,7 @@ import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {SchedulesList} from 'src/nav/SchedulesList';
 import {Group} from 'src/ui/Group';
 import {Caption} from 'src/ui/Text';
-import {useWorkspaceState} from 'src/workspace/WorkspaceContext';
-import {useRepositoryLocations} from 'src/workspace/useRepositoryLocations';
+import {useWorkspaceState, useRepositoryLocations} from 'src/workspace/WorkspaceContext';
 
 const KEYCODE_FOR_1 = 49;
 

@@ -14,11 +14,14 @@ describe('WorkspaceContext', () => {
 
   describe('Repository options', () => {
     const defaultMocks = {
-      RepositoriesOrError: () => ({
-        __typename: 'RepositoryConnection',
+      RepositoryLocationsOrError: () => ({
+        __typename: 'RepositoryLocationConnection',
       }),
-      RepositoryConnection: () => ({
-        nodes: () => new MockList(1),
+      RepositoryLocationOrLoadFailure: () => ({
+        __typename: 'RepositoryLocation',
+      }),
+      RepositoryLocation: () => ({
+        repositories: () => new MockList(1),
       }),
     };
 

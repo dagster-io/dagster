@@ -11,16 +11,19 @@ import {useRepositoryOptions} from 'src/workspace/WorkspaceContext';
 
 describe('RepositoryPicker', () => {
   const defaultMocks = {
-    RepositoriesOrError: () => ({
-      __typename: 'RepositoryConnection',
-      nodes: () => new MockList(2),
+    RepositoryLocationOrLoadFailure: () => ({
+      __typename: 'RepositoryLocation',
     }),
     RepositoryLocationsOrError: () => ({
-      __typename: 'RepositoryLocation',
+      __typename: 'RepositoryLocationConnection',
+    }),
+    RepositoryLocationConnection: () => ({
+      nodes: () => new MockList(1),
     }),
     RepositoryLocation: () => ({
       isReloadSupported: true,
       name: () => 'undisclosed-location',
+      repositories: () => new MockList(1),
     }),
   };
 
@@ -40,13 +43,14 @@ describe('RepositoryPicker', () => {
 
   it('renders the current repository and refresh button', async () => {
     const mocks = {
+      ...defaultMocks,
       Repository: () => ({
         name: () => 'foo-bar',
       }),
     };
 
     render(
-      <ApolloTestProvider mocks={{...defaultMocks, ...mocks}}>
+      <ApolloTestProvider mocks={mocks}>
         <Wrapper />
       </ApolloTestProvider>,
     );
@@ -59,6 +63,7 @@ describe('RepositoryPicker', () => {
 
   it('surfaces reloading errors', async () => {
     const mocks = {
+      ...defaultMocks,
       ReloadRepositoryLocationMutationResult: () => ({
         __typename: 'RepositoryLocationLoadFailure',
       }),
@@ -70,7 +75,7 @@ describe('RepositoryPicker', () => {
     const onReload = jest.fn();
 
     render(
-      <ApolloTestProvider mocks={{...defaultMocks, ...mocks}}>
+      <ApolloTestProvider mocks={mocks}>
         <Wrapper onReload={onReload} />
       </ApolloTestProvider>,
     );

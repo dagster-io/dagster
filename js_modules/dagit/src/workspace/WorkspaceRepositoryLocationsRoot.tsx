@@ -18,8 +18,8 @@ import {TopNav} from 'src/nav/TopNav';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
-import {RepositoryLocationQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from 'src/workspace/types/RepositoryLocationQuery';
-import {useRepositoryLocations} from 'src/workspace/useRepositoryLocations';
+import {useRepositoryLocations} from 'src/workspace/WorkspaceContext';
+import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from 'src/workspace/types/RootRepositoriesQuery';
 
 const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boolean}> = (
   props,

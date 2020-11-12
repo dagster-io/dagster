@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, useLazyQuery} from '@apollo/client';
 import {Button, ButtonGroup, Colors, Icon, InputGroup} from '@blueprintjs/core';
 import React from 'react';
 import {useHistory} from 'react-router';
@@ -36,7 +36,7 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
 
   const [q, setQ] = React.useState<string>('');
   // Load solids, but only if the user clicks on the Solid option
-  const solids = useQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
+  const [fetchSolids, solids] = useLazyQuery<ContentListSolidsQuery>(CONTENT_LIST_SOLIDS_QUERY, {
     fetchPolicy: 'cache-first',
     variables: {
       repositorySelector: {
@@ -48,9 +48,10 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
 
   React.useEffect(() => {
     if (type === 'solids') {
-      solids.refetch();
+      fetchSolids();
     }
-  }, [type, solids]);
+  }, [type, fetchSolids]);
+
   const usedSolids =
     solids.data?.repositoryOrError?.__typename === 'Repository'
       ? solids.data.repositoryOrError.usedSolids
