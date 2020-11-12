@@ -46,12 +46,12 @@ class Retries:
         self._attempts[key] += 1
 
     def for_inner_plan(self):
-        if self.disabled:
+        if self.disabled or self.deferred:
             return self
         elif self.enabled:
             return Retries(mode=RetryMode.DEFERRED, previous_attempts=dict(self._attempts))
         else:
-            check.failed("Can not create Retries for inner plan when already in deferred mode")
+            check.failed("Unexpected Retries state! Expected enabled, disabled, or deferred")
 
     @staticmethod
     def from_config(config_value):

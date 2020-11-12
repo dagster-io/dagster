@@ -261,3 +261,24 @@ def test_interrupt_step_launcher(mode):
             assert DagsterEventType.PIPELINE_FAILURE in results
 
             interrupt_thread.join()
+
+
+def test_multiproc_launcher_requests_retry():
+    mode = "request_retry"
+    with seven.TemporaryDirectory() as tmpdir:
+        run_config = make_run_config(tmpdir, mode)
+        run_config["execution"] = {"multiprocess": {}}
+        result = execute_pipeline(
+            instance=DagsterInstance.local_temp(tmpdir),
+            pipeline=reconstructable(define_basic_pipeline),
+            mode=mode,
+            run_config=run_config,
+        )
+        assert result.success
+        assert result.result_for_solid("return_two").output_value() == 2
+        assert result.result_for_solid("add_one").output_value() == 3
+        for step_key, events in result.events_by_step_key.items():
+            if step_key:
+                event_types = [event.event_type for event in events]
+                assert DagsterEventType.STEP_UP_FOR_RETRY in event_types
+                assert DagsterEventType.STEP_RESTARTED in event_types
