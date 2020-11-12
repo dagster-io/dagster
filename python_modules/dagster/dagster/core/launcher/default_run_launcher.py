@@ -212,5 +212,10 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         """
         for repository_location_handle in self._run_id_to_repository_location_handle_cache.values():
             if isinstance(repository_location_handle, ManagedGrpcPythonEnvRepositoryLocationHandle):
-                repository_location_handle.client.cleanup_server()
+                check.invariant(
+                    repository_location_handle.is_cleaned_up,
+                    "ManagedGrpcPythonRepositoryLocationHandle was not cleaned up "
+                    "before test teardown. This may indicate that the handle is not "
+                    "being used as a contextmanager.",
+                )
                 repository_location_handle.grpc_server_process.wait()

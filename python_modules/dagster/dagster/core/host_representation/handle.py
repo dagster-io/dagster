@@ -171,16 +171,22 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
             heartbeat=True,
             lazy_load_user_code=True,
         )
-        self.client = self.grpc_server_process.create_ephemeral_client()
 
-        self.heartbeat_shutdown_event = threading.Event()
+        try:
+            self.client = self.grpc_server_process.create_ephemeral_client()
 
-        self.heartbeat_thread = threading.Thread(
-            target=client_heartbeat_thread, args=(self.client, self.heartbeat_shutdown_event)
-        )
-        self.heartbeat_thread.daemon = True
-        self.heartbeat_thread.start()
-        list_repositories_response = sync_list_repositories_grpc(self.client)
+            self.heartbeat_shutdown_event = threading.Event()
+
+            self.heartbeat_thread = threading.Thread(
+                target=client_heartbeat_thread, args=(self.client, self.heartbeat_shutdown_event)
+            )
+            self.heartbeat_thread.daemon = True
+            self.heartbeat_thread.start()
+
+            list_repositories_response = sync_list_repositories_grpc(self.client)
+        except:
+            self.cleanup()
+            raise
 
         self.repository_code_pointer_dict = list_repositories_response.repository_code_pointer_dict
 
@@ -218,9 +224,28 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
         return self.grpc_server_process.socket
 
     def cleanup(self):
-        self.heartbeat_shutdown_event.set()
-        self.heartbeat_thread.join()
-        self.client.cleanup_server()
+        if self.heartbeat_shutdown_event:
+            self.heartbeat_shutdown_event.set()
+            self.heartbeat_shutdown_event = None
+
+        if self.heartbeat_thread:
+            self.heartbeat_thread.join()
+            self.heartbeat_thread = None
+
+        if self.client:
+            self.client.cleanup_server()
+            self.client = None
+
+    @property
+    def is_cleaned_up(self):
+        return not self.client
+
+    def __del__(self):
+        check.invariant(
+            self.is_cleaned_up,
+            "Deleting a ManagedGrpcPythonEnvRepositoryLocationHandle without first cleaning it up."
+            " This may indicate that the handle is not being used as a contextmanager.",
+        )
 
 
 class InProcessRepositoryLocationHandle(RepositoryLocationHandle):

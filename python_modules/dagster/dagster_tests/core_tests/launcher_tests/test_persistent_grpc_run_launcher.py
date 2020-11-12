@@ -100,29 +100,27 @@ def test_terminate_after_shutdown():
 
             poll_for_step_start(instance, pipeline_run.run_id)
 
-            # Leaving this context manager cleans up the repository location handle,
-            # which tells the server to shut down once executions finish
+            # Tell the server to shut down once executions finish
+            repository_location_handle.client.cleanup_server()
 
-        # Trying to start another run fails
-        doomed_to_fail_external_pipeline = repository_location.get_repository(
-            "nope"
-        ).get_full_external_pipeline("math_diamond")
-        doomed_to_fail_pipeline_run = instance.create_run_for_pipeline(
-            pipeline_def=math_diamond, run_config=None
-        )
-
-        with pytest.raises(DagsterLaunchFailedError):
-            instance.launch_run(
-                doomed_to_fail_pipeline_run.run_id, doomed_to_fail_external_pipeline
+            # Trying to start another run fails
+            doomed_to_fail_external_pipeline = repository_location.get_repository(
+                "nope"
+            ).get_full_external_pipeline("math_diamond")
+            doomed_to_fail_pipeline_run = instance.create_run_for_pipeline(
+                pipeline_def=math_diamond, run_config=None
             )
 
-        launcher = instance.run_launcher
+            with pytest.raises(DagsterLaunchFailedError):
+                instance.launch_run(
+                    doomed_to_fail_pipeline_run.run_id, doomed_to_fail_external_pipeline
+                )
 
-        # Can terminate the run even after the shutdown event has been received
-        assert launcher.can_terminate(pipeline_run.run_id)
-        assert launcher.terminate(pipeline_run.run_id)
+            launcher = instance.run_launcher
 
-        # Server process now shuts down cleanly since there are no more executions
+            # Can terminate the run even after the shutdown event has been received
+            assert launcher.can_terminate(pipeline_run.run_id)
+            assert launcher.terminate(pipeline_run.run_id)
 
 
 def test_server_down():
