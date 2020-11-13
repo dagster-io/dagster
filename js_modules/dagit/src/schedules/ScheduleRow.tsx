@@ -358,11 +358,14 @@ export const ScheduleRow: React.FC<{
                     icon="edit"
                     target="_blank"
                     disabled={!runConfigYaml}
-                    href={`/pipelines/${pipelineName}/playground/setup?${qs.stringify({
-                      mode,
-                      solidSelection,
-                      config: runConfigYaml,
-                    })}`}
+                    href={workspacePathFromAddress(
+                      repoAddress,
+                      `/pipelines/${pipelineName}/playground/setup?${qs.stringify({
+                        mode,
+                        solidSelection,
+                        config: runConfigYaml,
+                      })}`,
+                    )}
                   />
 
                   {schedule.partitionSet?.name ? (
@@ -370,7 +373,10 @@ export const ScheduleRow: React.FC<{
                       text="View Partition History..."
                       icon="multi-select"
                       target="_blank"
-                      href={`/pipelines/${pipelineName}/partitions`}
+                      href={workspacePathFromAddress(
+                        repoAddress,
+                        `/pipelines/${pipelineName}/partitions`,
+                      )}
                     />
                   ) : null}
                 </Menu>
