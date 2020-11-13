@@ -1,9 +1,9 @@
-import datetime
 import os
 import sys
 import time
 from contextlib import contextmanager
 
+import pendulum
 import yaml
 from dagster import Shape, check, composite_solid, pipeline, seven, solid
 from dagster.core.host_representation import ExternalPipeline
@@ -239,8 +239,9 @@ def new_cwd(path):
         os.chdir(old)
 
 
-def today_at_midnight():
-    return datetime.datetime.combine(datetime.date.today(), datetime.time())
+def today_at_midnight(timezone_name=None):
+    now = pendulum.now(timezone_name)
+    return pendulum.create(now.year, now.month, now.day, tz=now.timezone.name)
 
 
 class ExplodingRunLauncher(RunLauncher, ConfigurableClass):

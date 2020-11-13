@@ -1,4 +1,3 @@
-import datetime
 import json
 import os
 import sys
@@ -23,7 +22,7 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import find_free_port
 
-_COUPLE_DAYS_AGO = today_at_midnight() - datetime.timedelta(days=2)
+_COUPLE_DAYS_AGO = today_at_midnight().subtract(days=2)
 
 
 def _throw(_context):
