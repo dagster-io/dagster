@@ -2,7 +2,7 @@ import {execSync} from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
-import {addTypenameToDocument} from 'apollo-utilities';
+import {addTypenameToDocument} from '@apollo/client/utilities';
 import {print} from 'graphql/language/printer';
 
 /*

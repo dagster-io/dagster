@@ -27,7 +27,7 @@
     "dagre": "^0.8.2",
     "fuse.js": "^6.4.2",
     "graphql": "^15.0.0",
-    "graphql-playground-react": "^1.7.27",
+    "graphql-playground-react": "1.7.20",
     "highlight.js": "^9.16.2",
     "lodash": "^4.17.15",
     "lru-cache": "^5.1.1",
