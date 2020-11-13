@@ -49,11 +49,7 @@ import {
 } from 'src/schedules/types/StopSchedule';
 import {ScheduleStatus, ScheduleTickStatus} from 'src/types/globalTypes';
 import {FontFamily} from 'src/ui/styles';
-import {
-  DagsterRepoOption,
-  scheduleSelectorWithRepository,
-  useScheduleSelector,
-} from 'src/workspace/WorkspaceContext';
+import {DagsterRepoOption, scheduleSelectorWithRepository} from 'src/workspace/WorkspaceContext';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePath, workspacePathFromAddress} from 'src/workspace/workspacePath';
 
@@ -153,7 +149,11 @@ export const ScheduleRow: React.FC<{
 
   const scheduleId = scheduleState?.scheduleOriginId;
 
-  const scheduleSelector = useScheduleSelector(name);
+  const scheduleSelector = {
+    repositoryLocationName: repoAddress.location,
+    repositoryName: repoAddress.name,
+    scheduleName: name,
+  };
 
   const [configRequested, setConfigRequested] = React.useState(false);
 
@@ -466,9 +466,9 @@ export const ScheduleStateRow: React.FunctionComponent<{
         await confirm({
           title: 'Are you sure you want to stop this schedule?',
           description:
-            'The schedule definition for this schedule is not available.' +
+            'The schedule definition for this schedule is not available. ' +
             'If you turn off this schedule, you will not be able to turn it back on from ' +
-            'this currently loaded workspace.',
+            'the currently loaded workspace.',
         });
         stopSchedule({
           variables: {scheduleOriginId},

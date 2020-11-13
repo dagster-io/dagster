@@ -7,6 +7,7 @@ from dagster.core.host_representation import (
     RepositorySelector,
     ScheduleSelector,
 )
+from dagster.core.scheduler import ScheduleStatus
 from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
@@ -85,7 +86,12 @@ def get_schedule_states_or_error(
             for repository in repository_location.get_repositories().values()
             for schedule in repository.get_external_schedules()
         ]
-        return _get_schedule_states(graphene_info, stored_schedule_states, external_schedules)
+        return _get_schedule_states(
+            graphene_info,
+            stored_schedule_states,
+            external_schedules,
+            with_no_schedule_definition_filter,
+        )
 
     location = graphene_info.context.get_repository_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
@@ -128,8 +134,10 @@ def _get_schedule_states(
         # same origin id
         results = list(
             filter(
-                lambda schedule_state: schedule_state.schedule_origin_id
-                not in external_schedule_origin_ids,
+                lambda schedule_state: (
+                    schedule_state.schedule_origin_id not in external_schedule_origin_ids
+                )
+                and schedule_state.status == ScheduleStatus.RUNNING,
                 results,
             )
         )

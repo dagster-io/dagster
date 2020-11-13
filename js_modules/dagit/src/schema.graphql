@@ -39,6 +39,7 @@ type Repository {
   usedSolid(name: String!): UsedSolid
   origin: RepositoryOrigin!
   partitionSets: [PartitionSet!]!
+  scheduleDefinitions: [ScheduleDefinition!]!
 }
 
 type RepositoryLocation {
