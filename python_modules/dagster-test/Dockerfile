@@ -8,6 +8,9 @@ COPY . /
 
 ENV GOOGLE_APPLICATION_CREDENTIALS="/modules/gac.json"
 
+# Prevent telemetry from being sent in image
+ENV BUILDKITE=true
+
 # This makes sure that logs show up immediately instead of being buffered
 ENV PYTHONUNBUFFERED=1
 
