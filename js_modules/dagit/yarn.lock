@@ -6149,7 +6149,7 @@ codemirror-graphql@^0.6.11, codemirror-graphql@timsuchanek/codemirror-graphql#de
     graphql-language-service-interface "^1.0.18"
     graphql-language-service-parser "^1.0.18"
 
-codemirror@^5.18.2, codemirror@^5.26.0, codemirror@^5.38.0, codemirror@^5.49.2:
+codemirror@^5.18.2, codemirror@^5.26.0, codemirror@^5.38.0, codemirror@^5.58.2:
   version "5.58.2"
   resolved "https://registry.yarnpkg.com/codemirror/-/codemirror-5.58.2.tgz#ed54a1796de1498688bea1cdd4e9eeb187565d1b"
   integrity sha512-K/hOh24cCwRutd1Mk3uLtjWzNISOkm4fvXiMO7LucCrqbh6aJDdtqUziim3MZUI6wOY0rvY1SlL1Ork01uMy6w==
@@ -14311,10 +14311,10 @@ react-chartjs-2@^2.9.0:
     lodash "^4.17.19"
     prop-types "^15.7.2"
 
-react-codemirror2@^6.0.0:
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/react-codemirror2/-/react-codemirror2-6.0.1.tgz#7daba40795eb2a52637926b6fe0b73a6e9090723"
-  integrity sha512-rutEKVgvFhWcy/GeVA1hFbqrO89qLqgqdhUr7YhYgIzdyICdlRQv+ztuNvOFQMXrO0fLt0VkaYOdMdYdQgsSUA==
+react-codemirror2@^7.2.1:
+  version "7.2.1"
+  resolved "https://registry.yarnpkg.com/react-codemirror2/-/react-codemirror2-7.2.1.tgz#38dab492fcbe5fb8ebf5630e5bb7922db8d3a10c"
+  integrity sha512-t7YFmz1AXdlImgHXA9Ja0T6AWuopilub24jRaQdPVbzUJVNKIYuy3uCFZYa7CE5S3UW6SrSa5nAqVQvtzRF9gw==
 
 react-codemirror@^1.0.0:
   version "1.0.0"
