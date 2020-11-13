@@ -113,7 +113,7 @@ class InputDefinition:
     def metadata(self):
         return self._metadata
 
-    def mapping_to(self, solid_name, input_name):
+    def mapping_to(self, solid_name, input_name, fan_in_index=None):
         """Create an input mapping to an input of a child solid.
 
         In a CompositeSolidDefinition, you can use this helper function to construct
@@ -122,6 +122,7 @@ class InputDefinition:
         Args:
             solid_name (str): The name of the child solid to which to map this input.
             input_name (str): The name of the child solid' input to which to map this input.
+            fan_in_index (Optional[int]): The index in to a fanned in input, else None
 
         Examples:
 
@@ -131,10 +132,37 @@ class InputDefinition:
                     'child_solid', 'int_input'
                 )
         """
-        return InputMapping(self, solid_name, input_name)
+        check.str_param(solid_name, "solid_name")
+        check.str_param(input_name, "input_name")
+        check.opt_int_param(fan_in_index, "fan_in_index")
+
+        if fan_in_index is not None:
+            maps_to = FanInInputPointer(solid_name, input_name, fan_in_index)
+        else:
+            maps_to = InputPointer(solid_name, input_name)
+        return InputMapping(self, maps_to)
 
 
-class InputMapping(namedtuple("_InputMapping", "definition solid_name input_name")):
+class InputPointer(namedtuple("_InputPointer", "solid_name input_name")):
+    def __new__(cls, solid_name, input_name):
+        return super(InputPointer, cls).__new__(
+            cls,
+            check.str_param(solid_name, "solid_name"),
+            check.str_param(input_name, "input_name"),
+        )
+
+
+class FanInInputPointer(namedtuple("_FanInInputPointer", "solid_name input_name fan_in_index")):
+    def __new__(cls, solid_name, input_name, fan_in_index):
+        return super(FanInInputPointer, cls).__new__(
+            cls,
+            check.str_param(solid_name, "solid_name"),
+            check.str_param(input_name, "input_name"),
+            check.int_param(fan_in_index, "fan_in_index"),
+        )
+
+
+class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
     """Defines an input mapping for a composite solid.
 
     Args:
@@ -143,10 +171,13 @@ class InputMapping(namedtuple("_InputMapping", "definition solid_name input_name
         input_name (str): The name of the input to the child solid onto which to map the input.
     """
 
-    def __new__(cls, definition, solid_name, input_name):
+    def __new__(cls, definition, maps_to):
         return super(InputMapping, cls).__new__(
             cls,
             check.inst_param(definition, "definition", InputDefinition),
-            check.str_param(solid_name, "solid_name"),
-            check.str_param(input_name, "input_name"),
+            check.inst_param(maps_to, "maps_to", (InputPointer, FanInInputPointer)),
         )
+
+    @property
+    def maps_to_fan_in(self):
+        return isinstance(self.maps_to, FanInInputPointer)

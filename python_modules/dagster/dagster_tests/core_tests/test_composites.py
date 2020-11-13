@@ -7,6 +7,7 @@ from dagster import (
     DependencyDefinition,
     Field,
     InputDefinition,
+    List,
     Optional,
     Output,
     OutputDefinition,
@@ -552,3 +553,37 @@ def test_composite_skippable_output_result(composition_decorator):
 
     result = execute_solid(baz_composite)
     assert result.output_values == {}
+
+
+def test_input_mapping_fan_in():
+    @solid
+    def operate_two_nums(_context, nums: List[float]):
+        return nums[1] / nums[0]
+
+    @solid
+    def combine(_context, num1: float, num2: float):
+        result = num2 + num1
+        return result
+
+    @composite_solid
+    def example_computation(num1: float = 1.0, num2: float = 1.0):
+        res1 = operate_two_nums.alias("res1")
+        res2 = operate_two_nums.alias("res2")
+        return combine(res1([num1, num2]), res2([num1, num2]))
+
+    @pipeline
+    def example_computation_pipeline():
+        example_computation()
+
+    # from config
+    result = execute_pipeline(
+        example_computation_pipeline,
+        run_config={"solids": {"example_computation": {"inputs": {"num1": 1, "num2": 5}}}},
+    )
+    assert result.success
+    assert result.output_for_solid("example_computation") == 10.0
+
+    # from default
+    result = execute_pipeline(example_computation_pipeline)
+    assert result.success
+    assert result.output_for_solid("example_computation") == 2.0

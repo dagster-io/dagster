@@ -1,9 +1,23 @@
-from dagster import Float, InputDefinition, Int, OutputDefinition, composite_solid, pipeline, solid
+from dagster import (
+    Float,
+    InputDefinition,
+    Int,
+    List,
+    OutputDefinition,
+    composite_solid,
+    pipeline,
+    solid,
+)
 
 
-@solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-def add_one(_, num):
-    return num + 1
+@solid(output_defs=[OutputDefinition(Int)])
+def emit_one(_):
+    return 1
+
+
+@solid(input_defs=[InputDefinition("numbers", List[Int])], output_defs=[OutputDefinition(Int)])
+def add(_, numbers):
+    return sum(numbers)
 
 
 @solid(input_defs=[InputDefinition("num", Float)], output_defs=[OutputDefinition(Float)])
@@ -11,14 +25,14 @@ def div_two(_, num):
     return num / 2
 
 
-@composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
-def add_two(num):
-    return add_one(num=add_one(num))
+@composite_solid(output_defs=[OutputDefinition(Int)])
+def emit_two():
+    return add([emit_one(), emit_one()])
 
 
 @composite_solid(input_defs=[InputDefinition("num", Int)], output_defs=[OutputDefinition(Int)])
 def add_four(num):
-    return add_two(num=add_two(num))
+    return add([emit_two(), emit_two(), num])
 
 
 @composite_solid(input_defs=[InputDefinition("num", Float)], output_defs=[OutputDefinition(Float)])

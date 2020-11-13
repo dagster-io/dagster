@@ -16,6 +16,8 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.core.definitions.composition import MappedInputPlaceholder
+from dagster.core.definitions.solid import CompositeSolidDefinition
 
 
 def test_simple_values():
@@ -127,14 +129,92 @@ def test_collect_one():
     assert execute_pipeline(multi_one).success
 
 
-def test_bad_dsl():
+def test_fan_in_manual():
+    # manually building up this guy
+    @composite_solid
+    def _target_composite_dsl(str_in, none_in):
+        num = emit_num()
+        return collect([num, str_in, none_in])
 
-    with pytest.raises(DagsterInvalidDefinitionError, match="list containing invalid types"):
+    # base case works
+    _target_composite_manual = CompositeSolidDefinition(
+        name="manual_composite",
+        solid_defs=[emit_num, collect],
+        input_mappings=[
+            InputDefinition("str_in").mapping_to("collect", "stuff", 1),
+            InputDefinition("none_in").mapping_to("collect", "stuff", 2),
+        ],
+        output_mappings=[OutputDefinition().mapping_from("collect")],
+        dependencies={
+            "collect": {
+                "stuff": MultiDependencyDefinition(
+                    [
+                        DependencyDefinition("emit_num"),
+                        MappedInputPlaceholder,
+                        MappedInputPlaceholder,
+                    ]
+                )
+            }
+        },
+    )
 
-        @composite_solid
-        def _composed_collect(str_in, none_in):
-            num = emit_num()
-            collect([num, str_in, none_in])
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="index 2 in the MultiDependencyDefinition is not a MappedInputPlaceholder",
+    ):
+        _missing_placeholder = CompositeSolidDefinition(
+            name="manual_composite",
+            solid_defs=[emit_num, collect],
+            input_mappings=[
+                InputDefinition("str_in").mapping_to("collect", "stuff", 1),
+                InputDefinition("none_in").mapping_to("collect", "stuff", 2),
+            ],
+            output_mappings=[OutputDefinition().mapping_from("collect")],
+            dependencies={
+                "collect": {
+                    "stuff": MultiDependencyDefinition(
+                        [DependencyDefinition("emit_num"), MappedInputPlaceholder,]
+                    )
+                }
+            },
+        )
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="is not a MultiDependencyDefinition"):
+        _bad_target = CompositeSolidDefinition(
+            name="manual_composite",
+            solid_defs=[emit_num, collect],
+            input_mappings=[
+                InputDefinition("str_in").mapping_to("collect", "stuff", 1),
+                InputDefinition("none_in").mapping_to("collect", "stuff", 2),
+            ],
+            output_mappings=[OutputDefinition().mapping_from("collect")],
+            dependencies={"collect": {"stuff": DependencyDefinition("emit_num")}},
+        )
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Unsatisfied MappedInputPlaceholder at index 3",
+    ):
+        _missing_placeholder = CompositeSolidDefinition(
+            name="manual_composite",
+            solid_defs=[emit_num, collect],
+            input_mappings=[
+                InputDefinition("str_in").mapping_to("collect", "stuff", 1),
+                InputDefinition("none_in").mapping_to("collect", "stuff", 2),
+            ],
+            output_mappings=[OutputDefinition().mapping_from("collect")],
+            dependencies={
+                "collect": {
+                    "stuff": MultiDependencyDefinition(
+                        [
+                            DependencyDefinition("emit_num"),
+                            MappedInputPlaceholder,
+                            MappedInputPlaceholder,
+                            MappedInputPlaceholder,
+                        ]
+                    )
+                }
+            },
+        )
 
 
 def test_nothing_deps():

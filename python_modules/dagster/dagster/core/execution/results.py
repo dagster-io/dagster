@@ -207,13 +207,13 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
             output_mapping = self.solid.definition.get_output_mapping(output_name)
 
             inner_solid_values = self._result_for_handle(
-                self.solid.definition.solid_named(output_mapping.solid_name),
-                SolidHandle(output_mapping.solid_name, None),
+                self.solid.definition.solid_named(output_mapping.maps_from.solid_name),
+                SolidHandle(output_mapping.maps_from.solid_name, None),
             ).output_values
 
             if inner_solid_values is not None:  # may be None if inner solid was skipped
-                if output_mapping.output_name in inner_solid_values:
-                    values[output_name] = inner_solid_values[output_mapping.output_name]
+                if output_mapping.maps_from.output_name in inner_solid_values:
+                    values[output_name] = inner_solid_values[output_mapping.maps_from.output_name]
 
         return values
 
@@ -239,9 +239,9 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         output_mapping = self.solid.definition.get_output_mapping(output_name)
 
         return self._result_for_handle(
-            self.solid.definition.solid_named(output_mapping.solid_name),
-            SolidHandle(output_mapping.solid_name, None),
-        ).output_value(output_mapping.output_name)
+            self.solid.definition.solid_named(output_mapping.maps_from.solid_name),
+            SolidHandle(output_mapping.maps_from.solid_name, None),
+        ).output_value(output_mapping.maps_from.output_name)
 
 
 class SolidExecutionResult:

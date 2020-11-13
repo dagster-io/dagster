@@ -316,8 +316,8 @@ class OutputMappingSnap(
 
 def build_output_mapping_snap(output_mapping):
     return OutputMappingSnap(
-        mapped_solid_name=output_mapping.solid_name,
-        mapped_output_name=output_mapping.output_name,
+        mapped_solid_name=output_mapping.maps_from.solid_name,
+        mapped_output_name=output_mapping.maps_from.output_name,
         external_output_name=output_mapping.definition.name,
     )
 
@@ -337,7 +337,7 @@ class InputMappingSnap(
 
 def build_input_mapping_snap(input_mapping):
     return InputMappingSnap(
-        mapped_solid_name=input_mapping.solid_name,
-        mapped_input_name=input_mapping.input_name,
+        mapped_solid_name=input_mapping.maps_to.solid_name,
+        mapped_input_name=input_mapping.maps_to.input_name,
         external_input_name=input_mapping.definition.name,
     )

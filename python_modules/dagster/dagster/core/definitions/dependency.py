@@ -8,7 +8,7 @@ from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags
 
 from .hook import HookDefinition
-from .input import InputDefinition
+from .input import FanInInputPointer, InputDefinition, InputPointer
 from .output import OutputDefinition
 from .utils import DEFAULT_OUTPUT, struct_to_string, validate_tags
 
@@ -142,10 +142,26 @@ class Solid:
         return self.definition.tags.updated_with(self._additional_tags)
 
     def container_maps_input(self, input_name):
-        return self.graph_definition.mapped_input(self.name, input_name) is not None
+        return (
+            self.graph_definition.input_mapping_for_pointer(InputPointer(self.name, input_name))
+            is not None
+        )
 
     def container_mapped_input(self, input_name):
-        return self.graph_definition.mapped_input(self.name, input_name)
+        return self.graph_definition.input_mapping_for_pointer(InputPointer(self.name, input_name))
+
+    def container_maps_fan_in_input(self, input_name, fan_in_index):
+        return (
+            self.graph_definition.input_mapping_for_pointer(
+                FanInInputPointer(self.name, input_name, fan_in_index)
+            )
+            is not None
+        )
+
+    def container_mapped_fan_in_input(self, input_name, fan_in_index):
+        return self.graph_definition.input_mapping_for_pointer(
+            FanInInputPointer(self.name, input_name, fan_in_index)
+        )
 
     @property
     def hook_defs(self):
@@ -321,6 +337,10 @@ class SolidInputHandle(namedtuple("_SolidInputHandle", "solid input_def")):
     def solid_name(self):
         return self.solid.name
 
+    @property
+    def input_name(self):
+        return self.input_def.name
+
 
 class SolidOutputHandle(namedtuple("_SolidOutputHandle", "solid output_def")):
     def __new__(cls, solid, output_def):
@@ -373,6 +393,8 @@ class InputToOutputHandleDict(defaultdict):
 
 
 def _create_handle_dict(solid_dict, dep_dict):
+    from .composition import MappedInputPlaceholder
+
     check.dict_param(solid_dict, "solid_dict", key_type=str, value_type=Solid)
     check.two_dim_dict_param(dep_dict, "dep_dict", value_type=IDependencyDefinition)
 
@@ -382,10 +404,21 @@ def _create_handle_dict(solid_dict, dep_dict):
         from_solid = solid_dict[solid_name]
         for input_name, dep_def in input_dict.items():
             if dep_def.is_multi():
-                handle_dict[from_solid.input_handle(input_name)] = [
-                    solid_dict[dep.solid].output_handle(dep.output)
-                    for dep in dep_def.get_definitions()
-                ]
+                handles = []
+                for inner_dep in dep_def.get_dependencies_and_mappings():
+                    if isinstance(inner_dep, DependencyDefinition):
+                        handles.append(solid_dict[inner_dep.solid].output_handle(inner_dep.output))
+                    elif inner_dep is MappedInputPlaceholder:
+                        handles.append(inner_dep)
+                    else:
+                        check.failed(
+                            "Unexpected MultiDependencyDefinition dependencies type {}".format(
+                                inner_dep
+                            )
+                        )
+
+                handle_dict[from_solid.input_handle(input_name)] = handles
+
             else:
                 handle_dict[from_solid.input_handle(input_name)] = solid_dict[
                     dep_def.solid
@@ -415,7 +448,7 @@ class DependencyStructure:
 
         for input_handle, output_handle_or_list in self._handle_dict.items():
             output_handle_list = (
-                output_handle_or_list
+                [x for x in output_handle_or_list if isinstance(x, SolidOutputHandle)]
                 if isinstance(output_handle_or_list, list)
                 else [output_handle_or_list]
             )
@@ -517,7 +550,7 @@ class DependencyStructure:
 
 class IDependencyDefinition(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     @abstractmethod
-    def get_definitions(self):
+    def get_solid_dependencies(self):
         pass
 
     @abstractmethod
@@ -571,7 +604,7 @@ class DependencyDefinition(
             check.opt_str_param(description, "description"),
         )
 
-    def get_definitions(self):
+    def get_solid_dependencies(self):
         return [self]
 
     def is_multi(self):
@@ -624,21 +657,31 @@ class MultiDependencyDefinition(
     """
 
     def __new__(cls, dependencies):
-        deps = check.list_param(dependencies, "dependencies", of_type=DependencyDefinition)
+        from .composition import MappedInputPlaceholder
+
+        deps = check.list_param(dependencies, "dependencies")
         seen = {}
         for dep in deps:
-            key = dep.solid + ":" + dep.output
-            if key in seen:
-                raise DagsterInvalidDefinitionError(
-                    'Duplicate dependencies on solid "{dep.solid}" output "{dep.output}" '
-                    "used in the same MultiDependencyDefinition.".format(dep=dep)
-                )
-            seen[key] = True
+            if isinstance(dep, DependencyDefinition):
+                key = dep.solid + ":" + dep.output
+                if key in seen:
+                    raise DagsterInvalidDefinitionError(
+                        'Duplicate dependencies on solid "{dep.solid}" output "{dep.output}" '
+                        "used in the same MultiDependencyDefinition.".format(dep=dep)
+                    )
+                seen[key] = True
+            elif dep is MappedInputPlaceholder:
+                pass
+            else:
+                check.failed("Unexpected dependencies entry {}".format(dep))
 
         return super(MultiDependencyDefinition, cls).__new__(cls, deps)
 
-    def get_definitions(self):
-        return self.dependencies
+    def get_solid_dependencies(self):
+        return [dep for dep in self.dependencies if isinstance(dep, DependencyDefinition)]
 
     def is_multi(self):
         return True
+
+    def get_dependencies_and_mappings(self):
+        return self.dependencies

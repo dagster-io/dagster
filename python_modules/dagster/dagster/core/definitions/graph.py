@@ -7,9 +7,9 @@ from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterTypeKind
 from toposort import CircularDependencyError, toposort_flatten
 
-from .dependency import DependencyStructure, Solid, SolidHandle
+from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
 from .i_solid_definition import NodeDefinition
-from .input import InputDefinition, InputMapping
+from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .output import OutputDefinition, OutputMapping
 from .solid_container import create_execution_structure, validate_dependency_dict
 
@@ -93,6 +93,7 @@ class GraphDefinition(NodeDefinition):
         self._input_mappings, input_defs = _validate_in_mappings(
             check.opt_list_param(input_mappings, "input_mappings"),
             self._solid_dict,
+            self._dependency_structure,
             name,
             class_name=type(self).__name__,
         )
@@ -221,12 +222,11 @@ class GraphDefinition(NodeDefinition):
                 return mapping
         return None
 
-    def mapped_input(self, solid_name, input_name):
-        check.str_param(solid_name, "solid_name")
-        check.str_param(input_name, "input_name")
+    def input_mapping_for_pointer(self, pointer):
+        check.inst_param(pointer, "pointer", (InputPointer, FanInInputPointer))
 
         for mapping in self._input_mappings:
-            if mapping.solid_name == solid_name and mapping.input_name == input_name:
+            if mapping.maps_to == pointer:
                 return mapping
         return None
 
@@ -243,9 +243,9 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_output_mapping(output_name)
         check.invariant(mapping, "Can only resolve outputs for valid output names")
-        mapped_solid = self.solid_named(mapping.solid_name)
+        mapped_solid = self.solid_named(mapping.maps_from.solid_name)
         return mapped_solid.definition.resolve_output_to_origin(
-            mapping.output_name, SolidHandle(mapped_solid.name, handle),
+            mapping.maps_from.output_name, SolidHandle(mapped_solid.name, handle),
         )
 
     def default_value_for_input(self, input_name):
@@ -257,9 +257,9 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_solid = self.solid_named(mapping.solid_name)
+        mapped_solid = self.solid_named(mapping.maps_to.solid_name)
 
-        return mapped_solid.definition.default_value_for_input(mapping.input_name)
+        return mapped_solid.definition.default_value_for_input(mapping.maps_to.input_name)
 
     def input_has_default(self, input_name):
         check.str_param(input_name, "input_name")
@@ -270,9 +270,9 @@ class GraphDefinition(NodeDefinition):
 
         mapping = self.get_input_mapping(input_name)
         check.invariant(mapping, "Can only resolve inputs for valid input names")
-        mapped_solid = self.solid_named(mapping.solid_name)
+        mapped_solid = self.solid_named(mapping.maps_to.solid_name)
 
-        return mapped_solid.definition.input_has_default(mapping.input_name)
+        return mapped_solid.definition.input_has_default(mapping.maps_to.input_name)
 
     @property
     def required_resource_keys(self):
@@ -304,64 +304,133 @@ class GraphDefinition(NodeDefinition):
         return self.config_mapping.config_schema if self.has_config_mapping else None
 
 
-def _validate_in_mappings(input_mappings, solid_dict, name, class_name):
-    input_def_dict = OrderedDict()
-    for mapping in input_mappings:
-        if isinstance(mapping, InputMapping):
-            if input_def_dict.get(mapping.definition.name):
-                if input_def_dict[mapping.definition.name] != mapping.definition:
-                    raise DagsterInvalidDefinitionError(
-                        "In {class_name} {name} multiple input mappings with same "
-                        "definition name but different definitions".format(
-                            name=name, class_name=class_name
-                        ),
-                    )
-            else:
-                input_def_dict[mapping.definition.name] = mapping.definition
+def _validate_in_mappings(input_mappings, solid_dict, dependency_structure, name, class_name):
+    from .composition import MappedInputPlaceholder
 
-            target_solid = solid_dict.get(mapping.solid_name)
-            if target_solid is None:
+    input_def_dict = OrderedDict()
+    mapping_keys = set()
+
+    for mapping in input_mappings:
+        # handle incorrect objects passed in as mappings
+        if not isinstance(mapping, InputMapping):
+            if isinstance(mapping, InputDefinition):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' input mapping references solid "
-                    "'{solid_name}' which it does not contain.".format(
-                        name=name, solid_name=mapping.solid_name, class_name=class_name
+                    "In {class_name} '{name}' you passed an InputDefinition "
+                    "named '{input_name}' directly in to input_mappings. Return "
+                    "an InputMapping by calling mapping_to on the InputDefinition.".format(
+                        name=name, input_name=mapping.name, class_name=class_name
                     )
                 )
-            if not target_solid.has_input(mapping.input_name):
+            else:
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' input mapping to solid '{mapping.solid_name}' "
-                    "which contains no input named '{mapping.input_name}'".format(
+                    "In {class_name} '{name}' received unexpected type '{type}' in input_mappings. "
+                    "Provide an OutputMapping using InputDefinition(...).mapping_to(...)".format(
+                        type=type(mapping), name=name, class_name=class_name
+                    )
+                )
+
+        if input_def_dict.get(mapping.definition.name):
+            if input_def_dict[mapping.definition.name] != mapping.definition:
+                raise DagsterInvalidDefinitionError(
+                    "In {class_name} {name} multiple input mappings with same "
+                    "definition name but different definitions".format(
+                        name=name, class_name=class_name
+                    ),
+                )
+        else:
+            input_def_dict[mapping.definition.name] = mapping.definition
+
+        target_solid = solid_dict.get(mapping.maps_to.solid_name)
+        if target_solid is None:
+            raise DagsterInvalidDefinitionError(
+                "In {class_name} '{name}' input mapping references solid "
+                "'{solid_name}' which it does not contain.".format(
+                    name=name, solid_name=mapping.maps_to.solid_name, class_name=class_name
+                )
+            )
+        if not target_solid.has_input(mapping.maps_to.input_name):
+            raise DagsterInvalidDefinitionError(
+                "In {class_name} '{name}' input mapping to solid '{mapping.maps_to.solid_name}' "
+                "which contains no input named '{mapping.maps_to.input_name}'".format(
+                    name=name, mapping=mapping, class_name=class_name
+                )
+            )
+
+        target_input = target_solid.input_def_named(mapping.maps_to.input_name)
+        solid_input_handle = SolidInputHandle(target_solid, target_input)
+
+        if mapping.maps_to_fan_in:
+            if not dependency_structure.has_multi_deps(solid_input_handle):
+                raise DagsterInvalidDefinitionError(
+                    'In {class_name} "{name}" input mapping target '
+                    '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" (index {mapping.maps_to.fan_in_index} of fan-in) '
+                    "is not a MultiDependencyDefinition.".format(
+                        name=name, mapping=mapping, class_name=class_name
+                    )
+                )
+            inner_deps = dependency_structure.get_multi_deps(solid_input_handle)
+            if (mapping.maps_to.fan_in_index >= len(inner_deps)) or (
+                inner_deps[mapping.maps_to.fan_in_index] is not MappedInputPlaceholder
+            ):
+                raise DagsterInvalidDefinitionError(
+                    'In {class_name} "{name}" input mapping target '
+                    '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" index {mapping.maps_to.fan_in_index} in '
+                    "the MultiDependencyDefinition is not a MappedInputPlaceholder".format(
+                        name=name, mapping=mapping, class_name=class_name
+                    )
+                )
+            mapping_keys.add(
+                "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}.{mapping.maps_to.fan_in_index}".format(
+                    mapping=mapping
+                )
+            )
+            target_type = target_input.dagster_type.get_inner_type_for_fan_in()
+            fan_in_msg = " (index {} of fan-in)".format(mapping.maps_to.fan_in_index)
+        else:
+            if dependency_structure.has_deps(solid_input_handle):
+                raise DagsterInvalidDefinitionError(
+                    'In {class_name} "{name}" input mapping target '
+                    '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" '
+                    "is already satisfied by solid output".format(
                         name=name, mapping=mapping, class_name=class_name
                     )
                 )
 
-            target_input = target_solid.input_def_named(mapping.input_name)
-            if target_input.dagster_type != mapping.definition.dagster_type:
-                raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' input "
-                    "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "
-                    "{mapping.solid_name}.{mapping.input_name} of different type "
-                    "{target_input.dagster_type.display_name}. InputMapping source and "
-                    "destination must have the same type.".format(
-                        mapping=mapping, name=name, target_input=target_input, class_name=class_name
-                    )
-                )
+            mapping_keys.add(
+                "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}".format(mapping=mapping)
+            )
+            target_type = target_input.dagster_type
+            fan_in_msg = ""
 
-        elif isinstance(mapping, InputDefinition):
+        if target_type != mapping.definition.dagster_type:
             raise DagsterInvalidDefinitionError(
-                "In {class_name} '{name}' you passed an InputDefinition "
-                "named '{input_name}' directly in to input_mappings. Return "
-                "an InputMapping by calling mapping_to on the InputDefinition.".format(
-                    name=name, input_name=mapping.name, class_name=class_name
+                "In {class_name} '{name}' input "
+                "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "
+                "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}{fan_in_msg} of different type "
+                "{target_type.display_name}. InputMapping source and "
+                "destination must have the same type.".format(
+                    mapping=mapping,
+                    name=name,
+                    target_type=target_type,
+                    class_name=class_name,
+                    fan_in_msg=fan_in_msg,
                 )
             )
-        else:
-            raise DagsterInvalidDefinitionError(
-                "In {class_name} '{name}' received unexpected type '{type}' in input_mappings. "
-                "Provide an OutputMapping using InputDefinition(...).mapping_to(...)".format(
-                    type=type(mapping), name=name, class_name=class_name
-                )
-            )
+
+    for input_handle in dependency_structure.input_handles():
+        if dependency_structure.has_multi_deps(input_handle):
+            for idx, dep in enumerate(dependency_structure.get_multi_deps(input_handle)):
+                if dep is MappedInputPlaceholder:
+                    mapping_str = "{input_handle.solid_name}.{input_handle.input_name}.{idx}".format(
+                        input_handle=input_handle, idx=idx
+                    )
+                    if mapping_str not in mapping_keys:
+                        raise DagsterInvalidDefinitionError(
+                            "Unsatisfied MappedInputPlaceholder at index {idx} in "
+                            "MultiDependencyDefinition for '{input_handle.solid_name}.{input_handle.input_name}'".format(
+                                input_handle=input_handle, idx=idx
+                            )
+                        )
 
     return input_mappings, input_def_dict.values()
 
@@ -370,23 +439,23 @@ def _validate_out_mappings(output_mappings, solid_dict, name, class_name):
     for mapping in output_mappings:
         if isinstance(mapping, OutputMapping):
 
-            target_solid = solid_dict.get(mapping.solid_name)
+            target_solid = solid_dict.get(mapping.maps_from.solid_name)
             if target_solid is None:
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output mapping references solid "
                     "'{solid_name}' which it does not contain.".format(
-                        name=name, solid_name=mapping.solid_name, class_name=class_name
+                        name=name, solid_name=mapping.maps_from.solid_name, class_name=class_name
                     )
                 )
-            if not target_solid.has_output(mapping.output_name):
+            if not target_solid.has_output(mapping.maps_from.output_name):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} {name} output mapping from solid '{mapping.solid_name}' "
-                    "which contains no output named '{mapping.output_name}'".format(
+                    "In {class_name} {name} output mapping from solid '{mapping.maps_from.solid_name}' "
+                    "which contains no output named '{mapping.maps_from.output_name}'".format(
                         name=name, mapping=mapping, class_name=class_name
                     )
                 )
 
-            target_output = target_solid.output_def_named(mapping.output_name)
+            target_output = target_solid.output_def_named(mapping.maps_from.output_name)
 
             if mapping.definition.dagster_type.kind != DagsterTypeKind.ANY and (
                 target_output.dagster_type != mapping.definition.dagster_type
@@ -394,7 +463,7 @@ def _validate_out_mappings(output_mappings, solid_dict, name, class_name):
                 raise DagsterInvalidDefinitionError(
                     "In {class_name} '{name}' output "
                     "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} "
-                    "maps from {mapping.solid_name}.{mapping.output_name} of different type "
+                    "maps from {mapping.maps_from.solid_name}.{mapping.maps_from.output_name} of different type "
                     "{target_output.dagster_type.display_name}. OutputMapping source "
                     "and destination must have the same type.".format(
                         class_name=class_name,

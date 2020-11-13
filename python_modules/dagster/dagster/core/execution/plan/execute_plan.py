@@ -61,9 +61,12 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
             with pipeline_context.instance.compute_log_manager.watch(
                 step_context.pipeline_run, step_context.step.key
             ):
-                missing_input_sources = pipeline_context.intermediate_storage.get_missing_input_sources(
-                    step_context, step
-                )
+
+                missing_input_sources = [
+                    step_input.source
+                    for step_input in step.step_inputs
+                    if not step_input.source.can_load_input_object(step_context)
+                ]
                 if missing_input_sources:
                     # In partial pipeline execution, we may end up here without having validated the
                     # missing dependent outputs were optional

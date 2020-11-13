@@ -94,10 +94,19 @@ class OutputDefinition:
 
                 output_mapping = OutputDefinition(Int).mapping_from('child_solid')
         """
-        return OutputMapping(self, solid_name, output_name)
+        return OutputMapping(self, OutputPointer(solid_name, output_name))
 
 
-class OutputMapping(namedtuple("_OutputMapping", "definition solid_name output_name")):
+class OutputPointer(namedtuple("_OutputPointer", "solid_name output_name")):
+    def __new__(cls, solid_name, output_name=None):
+        return super(OutputPointer, cls).__new__(
+            cls,
+            check.str_param(solid_name, "solid_name"),
+            check.opt_str_param(output_name, "output_name", DEFAULT_OUTPUT),
+        )
+
+
+class OutputMapping(namedtuple("_OutputMapping", "definition maps_from")):
     """Defines an output mapping for a composite solid.
 
     Args:
@@ -106,10 +115,9 @@ class OutputMapping(namedtuple("_OutputMapping", "definition solid_name output_n
         output_name (str): The name of the child solid's output from which to map the output.
     """
 
-    def __new__(cls, definition, solid_name, output_name=None):
+    def __new__(cls, definition, maps_from):
         return super(OutputMapping, cls).__new__(
             cls,
             check.inst_param(definition, "definition", OutputDefinition),
-            check.str_param(solid_name, "solid_name"),
-            check.opt_str_param(output_name, "output_name", DEFAULT_OUTPUT),
+            check.inst_param(maps_from, "maps_from", OutputPointer),
         )

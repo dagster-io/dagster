@@ -21,6 +21,10 @@ from .utils import validate_tags
 _composition_stack = []
 
 
+class MappedInputPlaceholder:
+    """Marker for holding places in fan-in lists where input mappings will feed"""
+
+
 def _not_invoked_warning(solid, context_source, context_name):
     check.inst_param(solid, "solid", CallableNode)
 
@@ -83,9 +87,7 @@ class InProgressCompositionContext:
         self._collisions = {}
         self._pending_invocations = {}
 
-    def observe_invocation(
-        self, given_alias, node_def, input_bindings, input_mappings, tags=None, hook_defs=None
-    ):
+    def observe_invocation(self, given_alias, node_def, input_bindings, tags=None, hook_defs=None):
         if given_alias is None:
             node_name = node_def.name
             self._pending_invocations.pop(node_name, None)
@@ -108,7 +110,7 @@ class InProgressCompositionContext:
             )
 
         self._invocations[node_name] = InvokedNode(
-            node_name, node_def, input_bindings, input_mappings, tags, hook_defs
+            node_name, node_def, input_bindings, tags, hook_defs
         )
         return node_name
 
@@ -158,12 +160,30 @@ class CompleteCompositionContext(
             for input_name, node in invocation.input_bindings.items():
                 if isinstance(node, InvokedSolidOutputHandle):
                     deps[input_name] = DependencyDefinition(node.solid_name, node.output_name)
-                elif isinstance(node, list) and all(
-                    map(lambda item: isinstance(item, InvokedSolidOutputHandle), node)
-                ):
-                    deps[input_name] = MultiDependencyDefinition(
-                        [DependencyDefinition(call.solid_name, call.output_name) for call in node]
+                elif isinstance(node, InputMappingNode):
+                    input_mappings.append(
+                        node.input_def.mapping_to(invocation.node_name, input_name)
                     )
+                elif isinstance(node, list):
+                    entries = []
+                    for idx, fanned_in_node in enumerate(node):
+                        if isinstance(fanned_in_node, InvokedSolidOutputHandle):
+                            entries.append(
+                                DependencyDefinition(
+                                    fanned_in_node.solid_name, fanned_in_node.output_name
+                                )
+                            )
+                        elif isinstance(fanned_in_node, InputMappingNode):
+                            entries.append(MappedInputPlaceholder)
+                            input_mappings.append(
+                                fanned_in_node.input_def.mapping_to(
+                                    invocation.node_name, input_name, idx
+                                )
+                            )
+                        else:
+                            check.invariant("Unexpected fanned in node received")
+
+                    deps[input_name] = MultiDependencyDefinition(entries)
                 else:
                     check.failed("Unexpected input binding - got {node}".format(node=node))
 
@@ -175,9 +195,6 @@ class CompleteCompositionContext(
                     hook_defs=invocation.hook_defs,
                 )
             ] = deps
-
-            for input_name, node in invocation.input_mappings.items():
-                input_mappings.append(node.input_def.mapping_to(invocation.node_name, input_name))
 
         return super(cls, CompleteCompositionContext).__new__(
             cls, name, list(node_def_dict.values()), dep_dict, input_mappings, output_mapping_dict
@@ -203,7 +220,6 @@ class CallableNode:
         assert_in_composition(node_name)
 
         input_bindings = {}
-        input_mappings = {}
 
         # handle *args
         for idx, output_node in enumerate(args):
@@ -237,7 +253,6 @@ class CallableNode:
                 node_name,
                 output_node,
                 input_name,
-                input_mappings,
                 input_bindings,
                 "(at position {idx})".format(idx=idx),
             )
@@ -245,22 +260,12 @@ class CallableNode:
         # then **kwargs
         for input_name, output_node in kwargs.items():
             self._process_argument_node(
-                node_name,
-                output_node,
-                input_name,
-                input_mappings,
-                input_bindings,
-                "(passed by keyword)",
+                node_name, output_node, input_name, input_bindings, "(passed by keyword)",
             )
 
         # the node name is potentially reassigned for aliasing
         resolved_node_name = current_context().observe_invocation(
-            self.given_alias,
-            self.node_def,
-            input_bindings,
-            input_mappings,
-            self.tags,
-            self.hook_defs,
+            self.given_alias, self.node_def, input_bindings, self.tags, self.hook_defs,
         )
 
         if len(self.node_def.output_defs) == 0:
@@ -275,30 +280,32 @@ class CallableNode:
             **{output: InvokedSolidOutputHandle(resolved_node_name, output) for output in outputs}
         )
 
-    def _process_argument_node(
-        self, solid_name, output_node, input_name, input_mappings, input_bindings, arg_desc
-    ):
+    def _process_argument_node(self, solid_name, output_node, input_name, input_bindings, arg_desc):
 
-        if isinstance(output_node, InvokedSolidOutputHandle):
+        if isinstance(output_node, (InvokedSolidOutputHandle, InputMappingNode)):
             input_bindings[input_name] = output_node
-        elif isinstance(output_node, InputMappingNode):
-            input_mappings[input_name] = output_node
-        elif isinstance(output_node, list):
-            if all(map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)):
-                input_bindings[input_name] = output_node
 
-            else:
-                raise DagsterInvalidDefinitionError(
-                    "In {source} {name}, received a list containing invalid types for input "
-                    '"{input_name}" {arg_desc} in solid invocation {solid_name}. '
-                    "Lists can only contain the output from previous solid invocations.".format(
-                        source=current_context().source,
-                        name=current_context().name,
-                        arg_desc=arg_desc,
-                        input_name=input_name,
-                        solid_name=solid_name,
+        elif isinstance(output_node, list):
+            input_bindings[input_name] = []
+            for idx, fanned_in_node in enumerate(output_node):
+                if isinstance(fanned_in_node, (InvokedSolidOutputHandle, InputMappingNode)):
+                    input_bindings[input_name].append(fanned_in_node)
+                else:
+                    raise DagsterInvalidDefinitionError(
+                        "In {source} {name}, received a list containing an invalid type "
+                        'at index {idx} for input "{input_name}" {arg_desc} in '
+                        "solid invocation {solid_name}. Lists can only contain the "
+                        "output from previous solid invocations or input mappings, "
+                        "received {type}".format(
+                            source=current_context().source,
+                            name=current_context().name,
+                            arg_desc=arg_desc,
+                            input_name=input_name,
+                            solid_name=solid_name,
+                            idx=idx,
+                            type=type(output_node),
+                        )
                     )
-                )
 
         elif isinstance(output_node, tuple) and all(
             map(lambda item: isinstance(item, InvokedSolidOutputHandle), output_node)
@@ -360,23 +367,16 @@ class CallableNode:
         )
 
 
-class InvokedNode(
-    namedtuple("_InvokedNode", "node_name, node_def input_bindings input_mappings tags hook_defs")
-):
+class InvokedNode(namedtuple("_InvokedNode", "node_name, node_def input_bindings tags hook_defs")):
     """The metadata about a solid invocation saved by the current composition context.
     """
 
-    def __new__(
-        cls, node_name, node_def, input_bindings, input_mappings, tags=None, hook_defs=None
-    ):
+    def __new__(cls, node_name, node_def, input_bindings, tags=None, hook_defs=None):
         return super(cls, InvokedNode).__new__(
             cls,
             check.str_param(node_name, "node_name"),
             check.inst_param(node_def, "node_def", NodeDefinition),
             check.dict_param(input_bindings, "input_bindings", key_type=str),
-            check.dict_param(
-                input_mappings, "input_mappings", key_type=str, value_type=InputMappingNode
-            ),
             check.opt_inst_param(tags, "tags", frozentags),
             check.opt_set_param(hook_defs, "hook_defs", HookDefinition),
         )

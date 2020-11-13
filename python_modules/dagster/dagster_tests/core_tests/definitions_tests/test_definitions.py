@@ -260,3 +260,26 @@ def test_cycle_detect():
                 },
             },
         )
+
+
+def test_composite_mapping_collision():
+    @lambda_solid
+    def return_one():
+        return 1
+
+    @lambda_solid
+    def add(a, b):
+        return a + b
+
+    with pytest.raises(DagsterInvalidDefinitionError, match="already satisfied by solid output"):
+        CompositeSolidDefinition(
+            name="add_one",
+            solid_defs=[return_one, add],
+            input_mappings=[InputDefinition("val").mapping_to("add", "a")],
+            dependencies={
+                "add": {
+                    "a": DependencyDefinition("return_one"),
+                    "b": DependencyDefinition("return_one"),
+                }
+            },
+        )
