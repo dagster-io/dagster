@@ -15,7 +15,9 @@ S3_SESSION_CONFIG = {
         str, description="Specifies a custom region for the S3 session", is_required=False
     ),
     "endpoint_url": Field(
-        StringSource, description="Specifies a custom endpoint for the S3 session", is_required=False
+        StringSource,
+        description="Specifies a custom endpoint for the S3 session",
+        is_required=False,
     ),
     "max_attempts": Field(
         int,
