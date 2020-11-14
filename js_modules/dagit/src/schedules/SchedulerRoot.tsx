@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Divider, IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
+import {Colors, IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 
@@ -17,6 +17,9 @@ import {
 import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {SchedulesTable, UnLoadableSchedules} from 'src/schedules/SchedulesRoot';
 import {SchedulerRootQuery} from 'src/schedules/types/SchedulerRootQuery';
+import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
+import {Heading, Subheading} from 'src/ui/Text';
 
 export const SchedulerRoot = () => {
   useDocumentTitle('Scheduler');
@@ -55,29 +58,32 @@ export const SchedulerRoot = () => {
             }
 
             const repositoryDefinitionsSection = (
-              <div>
-                <div style={{display: 'flex'}}>
-                  <h2 style={{marginBottom: 0}}>All Schedules:</h2>
-                  <div style={{flex: 1}} />
+              <Group direction="vertical" spacing={32}>
+                <Box
+                  flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
+                  padding={{bottom: 12}}
+                  border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+                >
+                  <Heading>All schedules</Heading>
                   <SchedulerTimezoneNote schedulerOrError={scheduler} />
-                </div>
-                <Divider />
+                </Box>
                 {repositoriesOrError.nodes.map((repository) => (
-                  <div style={{marginTop: 32}} key={repository.name}>
+                  <Group direction="vertical" spacing={12} key={repository.name}>
+                    <Subheading>{`${repository.name}@${repository.location.name}`}</Subheading>
                     <SchedulesTable repository={repository} />
-                  </div>
+                  </Group>
                 ))}
-              </div>
+              </Group>
             );
 
             return (
-              <>
+              <Group direction="vertical" spacing={32}>
                 <SchedulerInfo schedulerOrError={scheduler} />
                 {repositoryDefinitionsSection}
                 {unLoadableSchedules.length > 0 && (
                   <UnLoadableSchedules unLoadableSchedules={unLoadableSchedules} />
                 )}
-              </>
+              </Group>
             );
           }}
         </Loading>

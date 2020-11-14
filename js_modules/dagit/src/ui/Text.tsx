@@ -7,6 +7,18 @@ interface TextProps {
   color?: string;
 }
 
+export const Heading = styled.span<TextProps>`
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+`;
+
+export const Subheading = styled.span<TextProps>`
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+`;
+
 export const Body = styled.span<TextProps>`
   ${({color}) => (color ? `color: ${color};` : null)}
   font-family: ${FontFamily.default};
@@ -20,9 +32,9 @@ export const Caption = styled.span<TextProps>`
 `;
 
 export const Code = styled.span`
-  background-color: ${Colors.LIGHT_GRAY3};
+  background-color: ${Colors.LIGHT_GRAY4};
   border-radius: 3px;
   font-family: ${FontFamily.monospace};
-  font-size: 13px;
-  padding: 1px 4px;
+  font-size: 12px;
+  padding: 2px 4px;
 `;

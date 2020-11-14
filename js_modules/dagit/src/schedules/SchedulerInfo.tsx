@@ -34,7 +34,6 @@ export const SchedulerInfo: React.FunctionComponent<{
         icon="time"
         intent={Intent.WARNING}
         title="The current dagster instance does not have a scheduler configured."
-        style={{marginBottom: 40}}
       >
         <p>
           A scheduler must be configured on the instance to run schedules. Therefore, the schedules
@@ -55,7 +54,7 @@ export const SchedulerInfo: React.FunctionComponent<{
 
   if (!errorsOnly && schedulerOrError.__typename === 'Scheduler') {
     return (
-      <Callout icon="time" style={{marginBottom: 40}}>
+      <Callout icon="time">
         <span style={{fontWeight: 'bold'}}>Scheduler Class:</span>{' '}
         <pre style={{display: 'inline'}}>{schedulerOrError.schedulerClass}</pre>
       </Callout>

@@ -2,7 +2,6 @@ import {useMutation, useQuery, gql} from '@apollo/client';
 import {
   Button,
   Callout,
-  Code,
   Colors,
   Icon,
   Intent,
@@ -48,6 +47,7 @@ import {
   StopSchedule_stopRunningSchedule_PythonError,
 } from 'src/schedules/types/StopSchedule';
 import {ScheduleStatus, ScheduleTickStatus} from 'src/types/globalTypes';
+import {Code} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 import {DagsterRepoOption, scheduleSelectorWithRepository} from 'src/workspace/WorkspaceContext';
 import {RepoAddress} from 'src/workspace/types';
@@ -105,7 +105,7 @@ const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
   );
 };
 
-const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
+export const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
   let error:
     | StartSchedule_startSchedule_PythonError
     | StopSchedule_stopRunningSchedule_PythonError
@@ -313,7 +313,7 @@ export const ScheduleRow: React.FC<{
         </div>
         {runsCount > NUM_RUNS_TO_DISPLAY && (
           <Link
-            to={`/instance/runs/?q=${encodeURIComponent(`tag:dagster/schedule_name=${name}`)}`}
+            to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}
             style={{verticalAlign: 'top'}}
           >
             {' '}
@@ -682,7 +682,7 @@ export const TickTag: React.FunctionComponent<{
   }
 };
 
-const FETCH_SCHEDULE_YAML = gql`
+export const FETCH_SCHEDULE_YAML = gql`
   query FetchScheduleYaml($scheduleSelector: ScheduleSelector!) {
     scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
       ... on ScheduleDefinition {
@@ -701,7 +701,7 @@ const FETCH_SCHEDULE_YAML = gql`
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
-const START_SCHEDULE_MUTATION = gql`
+export const START_SCHEDULE_MUTATION = gql`
   mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
     startSchedule(scheduleSelector: $scheduleSelector) {
       __typename
@@ -721,7 +721,7 @@ const START_SCHEDULE_MUTATION = gql`
   }
 `;
 
-const STOP_SCHEDULE_MUTATION = gql`
+export const STOP_SCHEDULE_MUTATION = gql`
   mutation StopSchedule($scheduleOriginId: String!) {
     stopRunningSchedule(scheduleOriginId: $scheduleOriginId) {
       __typename

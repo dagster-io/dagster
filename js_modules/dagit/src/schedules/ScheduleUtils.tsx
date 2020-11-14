@@ -158,7 +158,6 @@ export const SchedulerTimezoneNote: React.FC<{
       style={{
         color: Colors.GRAY3,
         fontSize: 12.5,
-        marginBottom: 20,
       }}
     >
       Schedule cron intervals displayed below are in the system time of the machine running the

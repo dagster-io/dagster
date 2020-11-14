@@ -4,7 +4,6 @@ import {Route, RouteComponentProps, Switch} from 'react-router-dom';
 
 import {PipelineRoot} from 'src/pipelines/PipelineRoot';
 import {ScheduleRoot} from 'src/schedules/ScheduleRoot';
-import {SchedulesRoot} from 'src/schedules/SchedulesRoot';
 import {SolidDetailsRoot} from 'src/solids/SolidDetailsRoot';
 import {SolidsRoot} from 'src/solids/SolidsRoot';
 import {MainContent} from 'src/ui/MainContent';
@@ -82,16 +81,12 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
         )}
       />
       <Route
-        path="/workspace/:repoPath/schedules"
-        exact
-        render={() => <SchedulesRoot repoAddress={addressForPath} />}
-      />
-      <Route
-        path="/workspace/:repoPath/schedules/:scheduleName"
-        render={(props: RouteComponentProps<{scheduleName: string}>) => (
+        path="/workspace/:repoPath/schedules/:scheduleName/:runTab?"
+        render={(props: RouteComponentProps<{runTab?: string; scheduleName: string}>) => (
           <ScheduleRoot
             scheduleName={props.match.params.scheduleName}
             repoAddress={addressForPath}
+            runTab={props.match.params.runTab}
           />
         )}
       />

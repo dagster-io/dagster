@@ -1,29 +1,18 @@
 import {useQuery} from '@apollo/client';
-import {
-  Button,
-  Callout,
-  Code,
-  IBreadcrumbProps,
-  Intent,
-  NonIdealState,
-  PopoverInteractionKind,
-  Tooltip,
-} from '@blueprintjs/core';
+import {Button, Callout, Intent, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import React, {useState} from 'react';
 
-import {Header, ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {RepositoryInformation} from 'src/RepositoryInformation';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {TopNav} from 'src/nav/TopNav';
 import {ScheduleRow, ScheduleStateRow} from 'src/schedules/ScheduleRow';
 import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {RepositorySchedulesFragment} from 'src/schedules/types/RepositorySchedulesFragment';
 import {ScheduleStatesFragment_results} from 'src/schedules/types/ScheduleStatesFragment';
 import {SchedulesRootQuery} from 'src/schedules/types/SchedulesRootQuery';
+import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -46,77 +35,68 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
     partialRefetch: true,
   });
 
-  const breadcrumbs: IBreadcrumbProps[] = [{icon: 'time', text: 'Schedules'}];
-
   return (
-    <ScrollContainer>
-      <TopNav breadcrumbs={breadcrumbs} />
-      <Loading queryResult={queryResult} allowStaleData={true}>
-        {(result) => {
-          const {repositoryOrError, scheduler, unLoadableScheduleStates} = result;
-          let scheduleDefinitionsSection = null;
-          let unLoadableSchedulesSection = null;
+    <Loading queryResult={queryResult} allowStaleData={true}>
+      {(result) => {
+        const {repositoryOrError, scheduler, unLoadableScheduleStates} = result;
+        let scheduleDefinitionsSection = null;
+        let unLoadableSchedulesSection = null;
 
-          if (repositoryOrError.__typename === 'PythonError') {
-            scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
-          } else if (unLoadableScheduleStates.__typename === 'PythonError') {
-            scheduleDefinitionsSection = <PythonErrorInfo error={unLoadableScheduleStates} />;
-          } else if (
-            repositoryOrError.__typename === 'RepositoryNotFoundError' ||
-            unLoadableScheduleStates.__typename === 'RepositoryNotFoundError'
-          ) {
+        if (repositoryOrError.__typename === 'PythonError') {
+          scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
+        } else if (unLoadableScheduleStates.__typename === 'PythonError') {
+          scheduleDefinitionsSection = <PythonErrorInfo error={unLoadableScheduleStates} />;
+        } else if (
+          repositoryOrError.__typename === 'RepositoryNotFoundError' ||
+          unLoadableScheduleStates.__typename === 'RepositoryNotFoundError'
+        ) {
+          scheduleDefinitionsSection = (
+            <NonIdealState
+              icon={IconNames.ERROR}
+              title="Repository not found"
+              description="Could not load this repository."
+            />
+          );
+        } else {
+          const scheduleDefinitions = repositoryOrError.scheduleDefinitions;
+          if (!scheduleDefinitions.length) {
             scheduleDefinitionsSection = (
               <NonIdealState
                 icon={IconNames.ERROR}
-                title="Repository not found"
-                description="Could not load this repository."
+                title="No Schedules Found"
+                description={
+                  <p>
+                    This repository does not have any schedules defined. Visit the{' '}
+                    <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
+                      scheduler documentation
+                    </a>{' '}
+                    for more information about scheduling pipeline runs in Dagster. .
+                  </p>
+                }
               />
             );
           } else {
-            const scheduleDefinitions = repositoryOrError.scheduleDefinitions;
-            if (!scheduleDefinitions.length) {
-              scheduleDefinitionsSection = (
-                <NonIdealState
-                  icon={IconNames.ERROR}
-                  title="No Schedules Found"
-                  description={
-                    <p>
-                      This repository does not have any schedules defined. Visit the{' '}
-                      <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
-                        scheduler documentation
-                      </a>{' '}
-                      for more information about scheduling pipeline runs in Dagster. .
-                    </p>
-                  }
-                />
-              );
-            } else {
-              scheduleDefinitionsSection = scheduleDefinitions.length > 0 && (
-                <div>
-                  <div style={{display: 'flex'}}>
-                    <Header>Schedules</Header>
-                    <div style={{flex: 1}} />
-                    <SchedulerTimezoneNote schedulerOrError={scheduler} />
-                  </div>
-                  <SchedulesTable repository={repositoryOrError} />
-                </div>
-              );
-            }
-            unLoadableSchedulesSection = unLoadableScheduleStates.results.length > 0 && (
-              <UnLoadableSchedules unLoadableSchedules={unLoadableScheduleStates.results} />
+            scheduleDefinitionsSection = scheduleDefinitions.length > 0 && (
+              <Group direction="vertical" spacing={16}>
+                <SchedulerTimezoneNote schedulerOrError={scheduler} />
+                <SchedulesTable repository={repositoryOrError} />
+              </Group>
             );
           }
-
-          return (
-            <div style={{padding: '16px'}}>
-              <SchedulerInfo schedulerOrError={scheduler} />
-              {scheduleDefinitionsSection}
-              {unLoadableSchedulesSection}
-            </div>
+          unLoadableSchedulesSection = unLoadableScheduleStates.results.length > 0 && (
+            <UnLoadableSchedules unLoadableSchedules={unLoadableScheduleStates.results} />
           );
-        }}
-      </Loading>
-    </ScrollContainer>
+        }
+
+        return (
+          <Group direction="vertical" spacing={20}>
+            <SchedulerInfo schedulerOrError={scheduler} />
+            {scheduleDefinitionsSection}
+            {unLoadableSchedulesSection}
+          </Group>
+        );
+      }}
+    </Loading>
   );
 };
 
@@ -135,23 +115,6 @@ export const SchedulesTable: React.FunctionComponent<SchedulesTableProps> = (pro
 
   return (
     <>
-      <div>
-        {`${schedules.length} loaded from `}
-        <Tooltip
-          interactionKind={PopoverInteractionKind.HOVER}
-          content={
-            <pre>
-              <RepositoryInformation repository={repository} />
-              <div style={{fontSize: 11}}>
-                <span style={{marginRight: 5}}>id:</span>
-                <span style={{opacity: 0.5}}>{repository.id}</span>
-              </div>
-            </pre>
-          }
-        >
-          <Code>{repository.name}</Code>
-        </Tooltip>
-      </div>
       <Table striped style={{width: '100%'}}>
         <thead>
           <tr>

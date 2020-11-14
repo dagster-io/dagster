@@ -3,9 +3,9 @@ import * as React from 'react';
 import {Redirect, Route, Switch} from 'react-router-dom';
 
 import {TopNav} from 'src/nav/TopNav';
+import {SchedulesRoot} from 'src/schedules/SchedulesRoot';
 import {Page} from 'src/ui/Page';
 import {RepositoryPipelinesList} from 'src/workspace/RepositoryPipelinesList';
-import {RepositorySchedulesList} from 'src/workspace/RepositorySchedulesList';
 import {RepositorySolidsList} from 'src/workspace/RepositorySolidsList';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {RepoAddress} from 'src/workspace/types';
@@ -49,7 +49,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
         <Switch>
           <Route
             path="/workspace/:repoPath/schedules"
-            render={() => <RepositorySchedulesList repoAddress={repoAddress} />}
+            render={() => <SchedulesRoot repoAddress={repoAddress} />}
           />
           <Route
             path="/workspace/:repoPath/solids"
