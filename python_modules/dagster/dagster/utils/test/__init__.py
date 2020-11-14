@@ -33,7 +33,7 @@ from dagster.core.execution.context_creation_pipeline import (
     create_log_manager,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import ScheduleStatus, Scheduler
+from dagster.core.scheduler import Scheduler
 from dagster.core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
 from dagster.core.snap import snapshot_from_execution_plan
 from dagster.core.storage.file_manager import LocalFileManager

@@ -9,9 +9,10 @@ from dagster.cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     repository_target_argument,
 )
+from dagster.core.definitions.job import JobType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import ScheduleStatus, get_schedule_change_set
+from dagster.core.scheduler.job import JobStatus
 
 
 def create_schedule_cli_group():
@@ -32,12 +33,26 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     debug_info = instance.scheduler_debug_info()
     errors = debug_info.errors
     external_schedules = external_repository.get_external_schedules()
-    changeset = get_schedule_change_set(
-        instance.all_stored_schedule_state(external_repository.get_external_origin_id()),
-        external_schedules,
+    schedule_states = instance.all_stored_job_state(
+        external_repository.get_external_origin_id(), JobType.SCHEDULE
     )
+    external_schedules_dict = {s.get_external_origin_id(): s for s in external_schedules}
+    schedule_states_dict = {s.job_origin_id: s for s in schedule_states}
 
-    if len(errors) == 0 and len(changeset) == 0:
+    external_schedule_origin_ids = set(external_schedules_dict.keys())
+    schedule_state_ids = set(schedule_states_dict.keys())
+
+    added_schedules = external_schedule_origin_ids - schedule_state_ids
+    removed_schedules = schedule_state_ids - external_schedule_origin_ids
+
+    changed_schedules = []
+    for schedule_origin_id in external_schedule_origin_ids & schedule_state_ids:
+        schedule_state = schedule_states_dict[schedule_origin_id]
+        external_schedule = external_schedules_dict[schedule_origin_id]
+        if schedule_state.job_specific_data.cron_schedule != external_schedule.cron_schedule:
+            changed_schedules.append(schedule_origin_id)
+
+    if not errors and not added_schedules and not changed_schedules and not removed_schedules:
         if preview:
             print_fn(click.style("No planned changes to schedules.", fg="magenta", bold=True))
             print_fn("{num} schedules will remain unchanged".format(num=len(external_schedules)))
@@ -46,7 +61,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
             print_fn("{num} schedules unchanged".format(num=len(external_schedules)))
         return
 
-    if len(errors):
+    if errors:
         print_fn(
             click.style(
                 "Planned Error Fixes:" if preview else "Errors Resolved:", fg="magenta", bold=True
@@ -54,53 +69,51 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         )
         print_fn("\n".join(debug_info.errors))
 
-    if len(changeset):
+    if added_schedules or changed_schedules or removed_schedules:
         print_fn(
             click.style(
                 "Planned Schedule Changes:" if preview else "Changes:", fg="magenta", bold=True
             )
         )
 
-    for change in changeset:
-        change_type, schedule_name, schedule_origin_id, changes = change
-
-        if change_type == "add":
-            print_fn(
-                click.style(
-                    "  + {name} (add) [{id}]".format(name=schedule_name, id=schedule_origin_id),
-                    fg="green",
-                )
+    for schedule_origin_id in added_schedules:
+        print_fn(
+            click.style(
+                "  + {name} (add) [{id}]".format(
+                    name=external_schedules_dict[schedule_origin_id].name, id=schedule_origin_id
+                ),
+                fg="green",
             )
+        )
 
-        if change_type == "change":
-            print_fn(
-                click.style(
-                    "  ~ {name} (update) [{id}]".format(name=schedule_name, id=schedule_origin_id),
-                    fg="yellow",
-                )
-            )
-            for change_name, diff in changes:
-                if len(diff) == 2:
-                    old, new = diff
-                    print_fn(
-                        click.style("\t %s: " % change_name, fg="yellow")
-                        + click.style(old, fg="red")
-                        + " => "
-                        + click.style(new, fg="green")
-                    )
-                else:
-                    print_fn(
-                        click.style("\t %s: " % change_name, fg="yellow")
-                        + click.style(diff, fg="green")
-                    )
+    for schedule_origin_id in changed_schedules:
+        schedule_state = schedule_states_dict[schedule_origin_id]
+        external_schedule = external_schedules_dict[schedule_origin_id]
 
-        if change_type == "remove":
-            print_fn(
-                click.style(
-                    "  - {name} (delete) [{id}]".format(name=schedule_name, id=schedule_origin_id),
-                    fg="red",
-                )
+        print_fn(
+            click.style(
+                "  ~ {name} (update) [{id}]".format(
+                    name=external_schedule.name, id=schedule_origin_id
+                ),
+                fg="yellow",
             )
+        )
+        print_fn(
+            click.style("\t cron_schedule: ", fg="yellow")
+            + click.style(schedule_state.job_specific_data.cron_schedule, fg="red")
+            + " => "
+            + click.style(external_schedule.cron_schedule, fg="green")
+        )
+
+    for schedule_origin_id in removed_schedules:
+        print_fn(
+            click.style(
+                "  - {name} (delete) [{id}]".format(
+                    name=schedule_states_dict[schedule_origin_id].job_name, id=schedule_origin_id
+                ),
+                fg="red",
+            )
+        )
 
 
 def check_repo_and_scheduler(repository, instance):
@@ -217,28 +230,28 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             if running_filter:
                 schedules = [
                     s
-                    for s in instance.all_stored_schedule_state(
-                        external_repo.get_external_origin_id()
+                    for s in instance.all_stored_job_state(
+                        external_repo.get_external_origin_id(), job_type=JobType.SCHEDULE
                     )
-                    if s.status == ScheduleStatus.RUNNING
+                    if s.status == JobStatus.RUNNING
                 ]
             elif stopped_filter:
                 schedules = [
                     s
-                    for s in instance.all_stored_schedule_state(
-                        external_repo.get_external_origin_id()
+                    for s in instance.all_stored_job_state(
+                        external_repo.get_external_origin_id(), job_type=JobType.SCHEDULE
                     )
-                    if s.status == ScheduleStatus.STOPPED
+                    if s.status == JobStatus.STOPPED
                 ]
             else:
-                schedules = instance.all_stored_schedule_state(
-                    external_repo.get_external_origin_id()
+                schedules = instance.all_stored_job_state(
+                    external_repo.get_external_origin_id(), job_type=JobType.SCHEDULE
                 )
 
             for schedule_state in schedules:
                 # If --name filter is present, only print the schedule name
                 if name_filter:
-                    print_fn(schedule_state.name)
+                    print_fn(schedule_state.job_name)
                     continue
 
                 flag = (
@@ -247,7 +260,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                     else ""
                 )
                 schedule_title = "Schedule: {name} {flag}".format(
-                    name=schedule_state.name, flag=flag
+                    name=schedule_state.job_name, flag=flag
                 )
 
                 if not first:
@@ -257,7 +270,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 print_fn(schedule_title)
                 print_fn(
                     "Cron Schedule: {cron_schedule}".format(
-                        cron_schedule=schedule_state.cron_schedule
+                        cron_schedule=schedule_state.job_specific_data.cron_schedule
                     )
                 )
 
@@ -391,16 +404,16 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             repository_name = external_repo.name
 
             if all_running_flag:
-                for schedule_state in instance.all_stored_schedule_state(
-                    external_repo.get_external_origin_id()
+                for schedule_state in instance.all_stored_job_state(
+                    external_repo.get_external_origin_id(), JobType.SCHEDULE
                 ):
-                    if schedule_state.status == ScheduleStatus.RUNNING:
+                    if schedule_state.status == JobStatus.RUNNING:
                         try:
                             external_schedule = external_repo.get_external_schedule(
-                                schedule_state.name
+                                schedule_state.job_name
                             )
                             instance.stop_schedule_and_update_storage_state(
-                                schedule_state.schedule_origin_id
+                                schedule_state.job_origin_id
                             )
                             instance.start_schedule_and_update_storage_state(external_schedule)
                         except DagsterInvariantViolationError as ex:
@@ -413,20 +426,16 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 )
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
-                schedule_state = instance.get_stored_schedule_state(
-                    external_schedule.get_external_origin_id()
-                )
-                if schedule_state != None and schedule_state.status != ScheduleStatus.RUNNING:
+                schedule_state = instance.get_job_state(external_schedule.get_external_origin_id())
+                if schedule_state != None and schedule_state.status != JobStatus.RUNNING:
                     click.UsageError(
                         "Cannot restart a schedule {name} because is not currently running".format(
-                            name=schedule_state.name
+                            name=schedule_state.job_name
                         )
                     )
 
                 try:
-                    instance.stop_schedule_and_update_storage_state(
-                        schedule_state.schedule_origin_id
-                    )
+                    instance.stop_schedule_and_update_storage_state(schedule_state.job_origin_id)
                     instance.start_schedule_and_update_storage_state(external_schedule)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)

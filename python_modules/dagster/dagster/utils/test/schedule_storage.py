@@ -5,14 +5,18 @@ import pytest
 from dagster import DagsterInvariantViolationError
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
-    ExternalScheduleOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
-from dagster.core.scheduler import ScheduleState, ScheduleStatus
-from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
-from dagster.core.scheduler.scheduler import ScheduleTickData, ScheduleTickStatus
+from dagster.core.scheduler.job import (
+    JobState,
+    JobStatus,
+    JobTickData,
+    JobTickStatus,
+    JobType,
+    ScheduleJobData,
+)
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster.seven import get_current_datetime_in_utc
 from dagster.utils.error import SerializableErrorInfo
 
 
@@ -54,11 +58,14 @@ class TestScheduleStorage:
 
     @classmethod
     def build_schedule(
-        cls, schedule_name, cron_schedule, status=ScheduleStatus.STOPPED,
+        cls, schedule_name, cron_schedule, status=JobStatus.STOPPED,
     ):
-        fake_target = ExternalScheduleOrigin(cls.fake_repo_target(), schedule_name)
-
-        return ScheduleState(fake_target, status, cron_schedule, start_timestamp=None)
+        return JobState(
+            cls.fake_repo_target().get_job_origin(schedule_name),
+            JobType.SCHEDULE,
+            status,
+            ScheduleJobData(cron_schedule, start_timestamp=None),
+        )
 
     @classmethod
     def build_sensor(cls, sensor_name, status=JobStatus.STOPPED):
@@ -69,14 +76,16 @@ class TestScheduleStorage:
         assert storage
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_schedule_state(schedule)
-        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
+        storage.add_job_state(schedule)
+        schedules = storage.all_stored_job_state(
+            self.fake_repo_target().get_id(), JobType.SCHEDULE,
+        )
         assert len(schedules) == 1
 
         schedule = schedules[0]
-        assert schedule.name == "my_schedule"
-        assert schedule.cron_schedule == "* * * * *"
-        assert schedule.start_timestamp == None
+        assert schedule.job_name == "my_schedule"
+        assert schedule.job_specific_data.cron_schedule == "* * * * *"
+        assert schedule.job_specific_data.start_timestamp == None
 
     def test_add_multiple_schedules(self, storage):
         assert storage
@@ -85,32 +94,32 @@ class TestScheduleStorage:
         schedule_2 = self.build_schedule("my_schedule_2", "* * * * *")
         schedule_3 = self.build_schedule("my_schedule_3", "* * * * *")
 
-        storage.add_schedule_state(schedule)
-        storage.add_schedule_state(schedule_2)
-        storage.add_schedule_state(schedule_3)
+        storage.add_job_state(schedule)
+        storage.add_job_state(schedule_2)
+        storage.add_job_state(schedule_3)
 
-        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
+        schedules = storage.all_stored_job_state(self.fake_repo_target().get_id(), JobType.SCHEDULE)
         assert len(schedules) == 3
 
-        assert any(s.name == "my_schedule" for s in schedules)
-        assert any(s.name == "my_schedule_2" for s in schedules)
-        assert any(s.name == "my_schedule_3" for s in schedules)
+        assert any(s.job_name == "my_schedule" for s in schedules)
+        assert any(s.job_name == "my_schedule_2" for s in schedules)
+        assert any(s.job_name == "my_schedule_3" for s in schedules)
 
     def test_get_schedule_state(self, storage):
         assert storage
 
         state = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_schedule_state(state)
-        schedule = storage.get_schedule_state(state.schedule_origin_id)
+        storage.add_job_state(state)
+        schedule = storage.get_job_state(state.job_origin_id)
 
-        assert schedule.name == "my_schedule"
-        assert schedule.start_timestamp == None
+        assert schedule.job_name == "my_schedule"
+        assert schedule.job_specific_data.start_timestamp == None
 
     def test_get_schedule_state_not_found(self, storage):
         assert storage
 
-        storage.add_schedule_state(self.build_schedule("my_schedule", "* * * * *"))
-        schedule = storage.get_schedule_state("fake_id")
+        storage.add_job_state(self.build_schedule("my_schedule", "* * * * *"))
+        schedule = storage.get_job_state("fake_id")
 
         assert schedule is None
 
@@ -118,31 +127,37 @@ class TestScheduleStorage:
         assert storage
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_schedule_state(schedule)
+        storage.add_job_state(schedule)
 
-        now_time = get_current_datetime_in_utc()
+        now_time = get_current_datetime_in_utc().timestamp()
 
-        new_schedule = schedule.with_status(ScheduleStatus.RUNNING, start_time_utc=now_time)
-        storage.update_schedule_state(new_schedule)
+        new_schedule = schedule.with_status(JobStatus.RUNNING).with_data(
+            ScheduleJobData(
+                cron_schedule=schedule.job_specific_data.cron_schedule, start_timestamp=now_time,
+            )
+        )
+        storage.update_job_state(new_schedule)
 
-        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
+        schedules = storage.all_stored_job_state(self.fake_repo_target().get_id(), JobType.SCHEDULE)
         assert len(schedules) == 1
 
         schedule = schedules[0]
-        assert schedule.name == "my_schedule"
-        assert schedule.status == ScheduleStatus.RUNNING
-        assert schedule.start_timestamp == get_timestamp_from_utc_datetime(now_time)
+        assert schedule.job_name == "my_schedule"
+        assert schedule.status == JobStatus.RUNNING
+        assert schedule.job_specific_data.start_timestamp == now_time
 
-        stopped_schedule = schedule.with_status(ScheduleStatus.STOPPED)
-        storage.update_schedule_state(stopped_schedule)
+        stopped_schedule = schedule.with_status(JobStatus.STOPPED).with_data(
+            ScheduleJobData(schedule.job_specific_data.cron_schedule)
+        )
+        storage.update_job_state(stopped_schedule)
 
-        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
+        schedules = storage.all_stored_job_state(self.fake_repo_target().get_id(), JobType.SCHEDULE)
         assert len(schedules) == 1
 
         schedule = schedules[0]
-        assert schedule.name == "my_schedule"
-        assert schedule.status == ScheduleStatus.STOPPED
-        assert schedule.start_timestamp == None
+        assert schedule.job_name == "my_schedule"
+        assert schedule.status == JobStatus.STOPPED
+        assert schedule.job_specific_data.start_timestamp == None
 
     def test_update_schedule_not_found(self, storage):
         assert storage
@@ -150,16 +165,16 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(DagsterInvariantViolationError):
-            storage.update_schedule_state(schedule)
+            storage.update_job_state(schedule)
 
     def test_delete_schedule_state(self, storage):
         assert storage
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_schedule_state(schedule)
-        storage.delete_schedule_state(schedule.schedule_origin_id)
+        storage.add_job_state(schedule)
+        storage.delete_job_state(schedule.job_origin_id)
 
-        schedules = storage.all_stored_schedule_state(self.fake_repo_target().get_id())
+        schedules = storage.all_stored_job_state(self.fake_repo_target().get_id(), JobType.SCHEDULE)
         assert len(schedules) == 0
 
     def test_delete_schedule_not_found(self, storage):
@@ -168,37 +183,33 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(DagsterInvariantViolationError):
-            storage.delete_schedule_state(schedule.schedule_origin_id)
+            storage.delete_job_state(schedule.job_origin_id)
 
     def test_add_schedule_with_same_name(self, storage):
         assert storage
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_schedule_state(schedule)
+        storage.add_job_state(schedule)
 
         with pytest.raises(DagsterInvariantViolationError):
-            storage.add_schedule_state(schedule)
+            storage.add_job_state(schedule)
 
-    def build_tick(self, current_time, status=ScheduleTickStatus.STARTED, run_id=None, error=None):
-        return ScheduleTickData(
-            "my_schedule", "my_schedule", "* * * * *", current_time, status, run_id, error
+    def build_tick(self, current_time, status=JobTickStatus.STARTED, run_id=None, error=None):
+        return JobTickData(
+            "my_schedule", "my_schedule", JobType.SCHEDULE, status, current_time, run_id, error
         )
 
     def test_create_tick(self, storage):
         assert storage
 
         current_time = time.time()
-        tick = storage.create_schedule_tick(self.build_tick(current_time))
-        assert tick.tick_id == 1
-
-        ticks = storage.get_schedule_ticks("my_schedule")
+        tick = storage.create_job_tick(self.build_tick(current_time))
+        ticks = storage.get_job_ticks("my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.tick_id == 1
-        assert tick.schedule_name == "my_schedule"
-        assert tick.cron_schedule == "* * * * *"
+        assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
-        assert tick.status == ScheduleTickStatus.STARTED
+        assert tick.status == JobTickStatus.STARTED
         assert tick.run_id == None
         assert tick.error == None
 
@@ -206,21 +217,19 @@ class TestScheduleStorage:
         assert storage
 
         current_time = time.time()
-        tick = storage.create_schedule_tick(self.build_tick(current_time))
+        tick = storage.create_job_tick(self.build_tick(current_time))
 
-        updated_tick = tick.with_status(ScheduleTickStatus.SUCCESS, run_id="1234")
-        assert updated_tick.status == ScheduleTickStatus.SUCCESS
+        updated_tick = tick.with_status(JobTickStatus.SUCCESS, run_id="1234")
+        assert updated_tick.status == JobTickStatus.SUCCESS
 
-        storage.update_schedule_tick(updated_tick)
+        storage.update_job_tick(updated_tick)
 
-        ticks = storage.get_schedule_ticks("my_schedule")
+        ticks = storage.get_job_ticks("my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.tick_id == 1
-        assert tick.schedule_name == "my_schedule"
-        assert tick.cron_schedule == "* * * * *"
+        assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
-        assert tick.status == ScheduleTickStatus.SUCCESS
+        assert tick.status == JobTickStatus.SUCCESS
         assert tick.run_id == "1234"
         assert tick.error == None
 
@@ -228,21 +237,19 @@ class TestScheduleStorage:
         assert storage
 
         current_time = time.time()
-        tick = storage.create_schedule_tick(self.build_tick(current_time))
+        tick = storage.create_job_tick(self.build_tick(current_time))
 
-        updated_tick = tick.with_status(ScheduleTickStatus.SKIPPED)
-        assert updated_tick.status == ScheduleTickStatus.SKIPPED
+        updated_tick = tick.with_status(JobTickStatus.SKIPPED)
+        assert updated_tick.status == JobTickStatus.SKIPPED
 
-        storage.update_schedule_tick(updated_tick)
+        storage.update_job_tick(updated_tick)
 
-        ticks = storage.get_schedule_ticks("my_schedule")
+        ticks = storage.get_job_ticks("my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
-        assert tick.tick_id == 1
-        assert tick.schedule_name == "my_schedule"
-        assert tick.cron_schedule == "* * * * *"
+        assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
-        assert tick.status == ScheduleTickStatus.SKIPPED
+        assert tick.status == JobTickStatus.SKIPPED
         assert tick.run_id == None
         assert tick.error == None
 
@@ -250,28 +257,27 @@ class TestScheduleStorage:
         assert storage
 
         current_time = time.time()
-        tick = storage.create_schedule_tick(self.build_tick(current_time))
+        tick = storage.create_job_tick(self.build_tick(current_time))
 
         updated_tick = tick.with_status(
-            ScheduleTickStatus.FAILURE,
+            JobTickStatus.FAILURE,
             error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
         )
-        assert updated_tick.status == ScheduleTickStatus.FAILURE
+        assert updated_tick.status == JobTickStatus.FAILURE
 
-        storage.update_schedule_tick(updated_tick)
+        storage.update_job_tick(updated_tick)
 
-        ticks = storage.get_schedule_ticks("my_schedule")
+        ticks = storage.get_job_ticks("my_schedule")
         assert len(ticks) == 1
         tick = ticks[0]
         assert tick.tick_id == 1
-        assert tick.schedule_name == "my_schedule"
-        assert tick.cron_schedule == "* * * * *"
+        assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
-        assert tick.status == ScheduleTickStatus.FAILURE
+        assert tick.status == JobTickStatus.FAILURE
         assert tick.run_id == None
         assert tick.error == SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
 
-    def test_get_schedule_stats(self, storage):
+    def test_get_tick_stats(self, storage):
         assert storage
 
         current_time = time.time()
@@ -280,22 +286,22 @@ class TestScheduleStorage:
 
         # Create ticks
         for x in range(2):
-            storage.create_schedule_tick(self.build_tick(current_time))
+            storage.create_job_tick(self.build_tick(current_time))
 
         for x in range(3):
-            storage.create_schedule_tick(
-                self.build_tick(current_time, ScheduleTickStatus.SUCCESS, run_id=str(x)),
+            storage.create_job_tick(
+                self.build_tick(current_time, JobTickStatus.SUCCESS, run_id=str(x)),
             )
 
         for x in range(4):
-            storage.create_schedule_tick(self.build_tick(current_time, ScheduleTickStatus.SKIPPED),)
+            storage.create_job_tick(self.build_tick(current_time, JobTickStatus.SKIPPED),)
 
         for x in range(5):
-            storage.create_schedule_tick(
-                self.build_tick(current_time, ScheduleTickStatus.FAILURE, error=error),
+            storage.create_job_tick(
+                self.build_tick(current_time, JobTickStatus.FAILURE, error=error),
             )
 
-        stats = storage.get_schedule_tick_stats("my_schedule")
+        stats = storage.get_job_tick_stats("my_schedule")
         assert stats.ticks_started == 2
         assert stats.ticks_succeeded == 3
         assert stats.ticks_skipped == 4

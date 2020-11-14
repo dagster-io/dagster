@@ -14,8 +14,6 @@ from dagster.core.errors import (
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.retries import Retries
 from dagster.core.host_representation import ExternalExecutionPlan
-from dagster.core.scheduler import ScheduleTickStatus
-from dagster.core.scheduler.scheduler import ScheduleTickData
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.system_config.objects import ExecutionConfig

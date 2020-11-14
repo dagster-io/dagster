@@ -7,18 +7,18 @@ import pytest
 from dagster import daily_schedule, pipeline, repository, solid
 from dagster.api.launch_scheduled_execution import sync_launch_scheduled_execution
 from dagster.core.host_representation import (
+    ExternalJobOrigin,
     ExternalRepositoryOrigin,
-    ExternalScheduleOrigin,
     GrpcServerRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import (
-    ScheduleTickStatus,
     ScheduledExecutionFailed,
     ScheduledExecutionSkipped,
     ScheduledExecutionSuccess,
 )
+from dagster.core.scheduler.job import JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.telemetry import get_dir_from_dagster_home
 from dagster.core.test_utils import instance_for_test, today_at_midnight
@@ -110,7 +110,7 @@ def python_schedule_origin(schedule_name):
         "the_repo",
     )
 
-    yield repo_origin.get_schedule_origin(schedule_name)
+    yield repo_origin.get_job_origin(schedule_name)
 
 
 @contextmanager
@@ -127,7 +127,7 @@ def grpc_schedule_origin(schedule_name):
             repository_name="the_repo",
         )
 
-        yield repo_origin.get_schedule_origin(schedule_name)
+        yield repo_origin.get_job_origin(schedule_name)
     server_process.wait()
 
 
@@ -143,8 +143,8 @@ def test_launch_successful_execution(schedule_origin_context):
             run = instance.get_run_by_id(result.run_id)
             assert run is not None
 
-            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
-            assert ticks[0].status == ScheduleTickStatus.SUCCESS
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert ticks[0].status == JobTickStatus.SUCCESS
 
 
 @pytest.mark.parametrize(
@@ -183,8 +183,8 @@ def test_bad_env_fn(schedule_origin_context):
 
             assert not result.run_id
 
-            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
-            assert ticks[0].status == ScheduleTickStatus.FAILURE
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert ticks[0].status == JobTickStatus.FAILURE
             assert (
                 "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule"
                 in ticks[0].error.message
@@ -204,8 +204,8 @@ def test_bad_should_execute(schedule_origin_context):
 
             assert not result.run_id
 
-            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
-            assert ticks[0].status == ScheduleTickStatus.FAILURE
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert ticks[0].status == JobTickStatus.FAILURE
             assert (
                 "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule"
                 in ticks[0].error.message
@@ -220,8 +220,8 @@ def test_skip(schedule_origin_context):
 
             assert isinstance(result, ScheduledExecutionSkipped)
 
-            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
-            assert ticks[0].status == ScheduleTickStatus.SKIPPED
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert ticks[0].status == JobTickStatus.SKIPPED
 
 
 @pytest.mark.parametrize("schedule_origin_context", [python_schedule_origin, grpc_schedule_origin])
@@ -236,8 +236,8 @@ def test_wrong_config(schedule_origin_context):
             run = instance.get_run_by_id(result.run_id)
             assert run.is_failure
 
-            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
-            assert ticks[0].status == ScheduleTickStatus.SUCCESS
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert ticks[0].status == JobTickStatus.SUCCESS
 
 
 def test_bad_load():
@@ -260,14 +260,14 @@ def test_bad_load():
             "doesnt_exist",
         )
 
-        schedule_origin = repo_origin.get_schedule_origin("also_doesnt_exist")
+        schedule_origin = repo_origin.get_job_origin("also_doesnt_exist")
 
         result = sync_launch_scheduled_execution(schedule_origin)
         assert isinstance(result, ScheduledExecutionFailed)
         assert "doesnt_exist not found at module scope in file" in result.errors[0].to_string()
 
-        ticks = instance.get_schedule_ticks(schedule_origin.get_id())
-        assert ticks[0].status == ScheduleTickStatus.FAILURE
+        ticks = instance.get_job_ticks(schedule_origin.get_id())
+        assert ticks[0].status == JobTickStatus.FAILURE
         assert "doesnt_exist not found at module scope in file" in ticks[0].error.message
 
 
@@ -278,8 +278,8 @@ def test_bad_load_grpc():
             assert isinstance(result, ScheduledExecutionFailed)
             assert "Could not find schedule named doesnt_exist" in result.errors[0].to_string()
 
-            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
-            assert ticks[0].status == ScheduleTickStatus.FAILURE
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert ticks[0].status == JobTickStatus.FAILURE
             assert "Could not find schedule named doesnt_exist" in ticks[0].error.message
 
 
@@ -292,7 +292,7 @@ def test_grpc_server_down():
             repository_name="down_repo",
         )
 
-        down_grpc_schedule_origin = down_grpc_repo_origin.get_schedule_origin("down_schedule")
+        down_grpc_schedule_origin = down_grpc_repo_origin.get_job_origin("down_schedule")
 
         instance = DagsterInstance.get()
         result = sync_launch_scheduled_execution(down_grpc_schedule_origin)
@@ -300,8 +300,8 @@ def test_grpc_server_down():
         assert isinstance(result, ScheduledExecutionFailed)
         assert "failed to connect to all addresses" in result.errors[0].to_string()
 
-        ticks = instance.get_schedule_ticks(down_grpc_schedule_origin.get_id())
-        assert ticks[0].status == ScheduleTickStatus.FAILURE
+        ticks = instance.get_job_ticks(down_grpc_schedule_origin.get_id())
+        assert ticks[0].status == JobTickStatus.FAILURE
         assert "failed to connect to all addresses" in ticks[0].error.message
 
 
@@ -323,15 +323,15 @@ def test_launch_failure(schedule_origin_context):
 
             assert run.status == PipelineRunStatus.FAILURE
 
-            ticks = instance.get_schedule_ticks(schedule_origin.get_id())
-            assert ticks[0].status == ScheduleTickStatus.SUCCESS
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert ticks[0].status == JobTickStatus.SUCCESS
 
 
 def test_origin_ids_stable():
     # This test asserts fixed schedule origin IDs to prevent any changes from
     # accidentally shifting these ids that are persisted to ScheduleStorage
 
-    python_origin = ExternalScheduleOrigin(
+    python_origin = ExternalJobOrigin(
         ExternalRepositoryOrigin(
             ManagedGrpcPythonEnvRepositoryLocationOrigin(
                 LoadableTargetOrigin(
@@ -344,13 +344,13 @@ def test_origin_ids_stable():
         ),
         "fake_schedule",
     )
-    assert python_origin.get_id() == "be50189ea5d28dedf78acc475cb46050d780364a"
+    assert python_origin.get_id() == "eb01cc697463ba614a67567fdeaafcccc60f0fc4"
 
-    grpc_origin = ExternalScheduleOrigin(
+    grpc_origin = ExternalJobOrigin(
         ExternalRepositoryOrigin(
             GrpcServerRepositoryLocationOrigin(host="fakehost", port=52618), "repo_name"
         ),
         "fake_schedule",
     )
 
-    assert grpc_origin.get_id() == "db2ef19777de79ca7ccaff32fa6ea47f389260a1"
+    assert grpc_origin.get_id() == "0961ecddbddfc71104adf036ebe8cd97a94dc77b"

@@ -196,10 +196,6 @@ class ExternalRepositoryOrigin(
     def get_pipeline_origin(self, pipeline_name):
         return ExternalPipelineOrigin(self, pipeline_name)
 
-    @abstractmethod
-    def get_schedule_origin(self, schedule_name):
-        return ExternalScheduleOrigin(self, schedule_name)
-
     def get_job_origin(self, job_name):
         return ExternalJobOrigin(self, job_name)
 
@@ -222,30 +218,6 @@ class ExternalPipelineOrigin(
                 external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
             ),
             check.str_param(pipeline_name, "pipeline_name"),
-        )
-
-    def get_repo_cli_args(self):
-        return self.external_repository_origin.get_cli_args()
-
-    def get_id(self):
-        return create_snapshot_id(self)
-
-
-@whitelist_for_serdes
-class ExternalScheduleOrigin(
-    namedtuple("_ExternalScheduleOrigin", "external_repository_origin schedule_name")
-):
-    """Serializable representation of an ExternalSchedule that can be used to
-       uniquely it or reload it in across process boundaries.
-    """
-
-    def __new__(cls, external_repository_origin, schedule_name):
-        return super(ExternalScheduleOrigin, cls).__new__(
-            cls,
-            check.inst_param(
-                external_repository_origin, "external_repository_origin", ExternalRepositoryOrigin,
-            ),
-            check.str_param(schedule_name, "schedule_name"),
         )
 
     def get_repo_cli_args(self):

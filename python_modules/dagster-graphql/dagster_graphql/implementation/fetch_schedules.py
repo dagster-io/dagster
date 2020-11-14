@@ -1,6 +1,7 @@
 from dagster import check
+from dagster.core.definitions.job import JobType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
-from dagster.core.scheduler import ScheduleStatus
+from dagster.core.scheduler.job import JobStatus
 from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_dauphin_error
@@ -72,7 +73,7 @@ def get_schedule_states_or_error(
 
     instance = graphene_info.context.instance
     if not repository_selector:
-        stored_schedule_states = instance.all_stored_schedule_state()
+        stored_schedule_states = instance.all_stored_job_state(job_type=JobType.SCHEDULE)
         external_schedules = [
             schedule
             for repository_location in graphene_info.context.repository_locations
@@ -91,7 +92,9 @@ def get_schedule_states_or_error(
     repository_origin_id = repository.get_external_origin().get_id()
     instance = graphene_info.context.instance
 
-    schedule_states = instance.all_stored_schedule_state(repository_origin_id=repository_origin_id)
+    schedule_states = instance.all_stored_job_state(
+        repository_origin_id=repository_origin_id, job_type=JobType.SCHEDULE
+    )
 
     return _get_schedule_states(
         graphene_info,
@@ -130,7 +133,7 @@ def _get_schedule_states(
                 lambda schedule_state: (
                     schedule_state.schedule_origin_id not in external_schedule_origin_ids
                 )
-                and schedule_state.status == ScheduleStatus.RUNNING,
+                and schedule_state.status == JobStatus.RUNNING,
                 results,
             )
         )

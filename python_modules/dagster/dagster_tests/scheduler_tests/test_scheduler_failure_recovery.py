@@ -1,7 +1,7 @@
 import pendulum
 import pytest
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import ScheduleTickStatus
+from dagster.core.scheduler.job import JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals, get_terminate_signal
@@ -70,9 +70,9 @@ def test_failure_recovery_before_run_created(
 """
             )
 
-            ticks = instance.get_schedule_ticks(external_schedule.get_external_origin_id())
+            ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == ScheduleTickStatus.STARTED
+            assert ticks[0].status == JobTickStatus.STARTED
 
             assert instance.get_runs_count() == 0
 
@@ -94,13 +94,13 @@ def test_failure_recovery_before_run_created(
                 partition_time=pendulum.datetime(2019, 2, 26),
             )
 
-            ticks = instance.get_schedule_ticks(external_schedule.get_external_origin_id())
+            ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                ScheduleTickStatus.SUCCESS,
+                JobTickStatus.SUCCESS,
                 instance.get_runs()[0].run_id,
             )
             captured = capfd.readouterr()
@@ -147,9 +147,9 @@ def test_failure_recovery_after_run_created(
 
             capfd.readouterr()
 
-            ticks = instance.get_schedule_ticks(external_schedule.get_external_origin_id())
+            ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == ScheduleTickStatus.STARTED
+            assert ticks[0].status == JobTickStatus.STARTED
 
             assert instance.get_runs_count() == 1
 
@@ -197,13 +197,13 @@ def test_failure_recovery_after_run_created(
                 instance.get_runs()[0], initial_datetime, pendulum.datetime(2019, 2, 26)
             )
 
-            ticks = instance.get_schedule_ticks(external_schedule.get_external_origin_id())
+            ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                ScheduleTickStatus.SUCCESS,
+                JobTickStatus.SUCCESS,
                 instance.get_runs()[0].run_id,
             )
 
@@ -261,19 +261,19 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
                 instance.get_runs()[0], initial_datetime, pendulum.datetime(2019, 2, 26)
             )
 
-            ticks = instance.get_schedule_ticks(external_schedule.get_external_origin_id())
+            ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
 
             if crash_signal == get_terminate_signal():
                 validate_tick(
-                    ticks[0], external_schedule, initial_datetime, ScheduleTickStatus.STARTED, None,
+                    ticks[0], external_schedule, initial_datetime, JobTickStatus.STARTED, None,
                 )
             else:
                 validate_tick(
                     ticks[0],
                     external_schedule,
                     initial_datetime,
-                    ScheduleTickStatus.SUCCESS,
+                    JobTickStatus.SUCCESS,
                     instance.get_runs()[0].run_id,
                 )
 
@@ -293,12 +293,12 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
                 instance.get_runs()[0], initial_datetime, pendulum.datetime(2019, 2, 26)
             )
 
-            ticks = instance.get_schedule_ticks(external_schedule.get_external_origin_id())
+            ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
             assert len(ticks) == 1
             validate_tick(
                 ticks[0],
                 external_schedule,
                 initial_datetime,
-                ScheduleTickStatus.SUCCESS,
+                JobTickStatus.SUCCESS,
                 instance.get_runs()[0].run_id,
             )

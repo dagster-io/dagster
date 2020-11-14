@@ -17,7 +17,7 @@ from .external_data import (
     ExternalRepositoryData,
     ExternalScheduleData,
 )
-from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle, ScheduleHandle
+from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
 
@@ -382,7 +382,7 @@ class ExternalSchedule:
         self._external_schedule_data = check.inst_param(
             external_schedule_data, "external_schedule_data", ExternalScheduleData
         )
-        self._handle = ScheduleHandle(
+        self._handle = JobHandle(
             self._external_schedule_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 
@@ -432,13 +432,13 @@ class ExternalSchedule:
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
     def get_default_schedule_state(self):
-        from dagster.core.scheduler import ScheduleState, ScheduleStatus
+        from dagster.core.scheduler.job import JobState, JobStatus, ScheduleJobData
 
-        return ScheduleState(
+        return JobState(
             self.get_external_origin(),
-            ScheduleStatus.STOPPED,
-            self.cron_schedule,
-            start_timestamp=None,
+            JobType.SCHEDULE,
+            JobStatus.STOPPED,
+            ScheduleJobData(self.cron_schedule, start_timestamp=None),
         )
 
     def execution_time_iterator(self, start_timestamp):

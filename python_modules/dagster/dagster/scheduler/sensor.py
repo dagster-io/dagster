@@ -18,7 +18,7 @@ from dagster.core.host_representation.external_data import (
     ExternalSensorExecutionErrorData,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobStatus, JobTickData, JobTickStatus
+from dagster.core.scheduler.job import JobStatus, JobTickData, JobTickStatus, SensorJobData
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import EXECUTION_KEY_TAG, check_tags
 from dagster.utils import merge_dicts
@@ -28,7 +28,7 @@ RECORDED_TICK_STATES = [JobTickStatus.SUCCESS, JobTickStatus.FAILURE]
 FULFILLED_TICK_STATES = [JobTickStatus.SKIPPED, JobTickStatus.SUCCESS]
 
 
-class JobTickContext:
+class SensorLaunchContext:
     def __init__(self, job_state, tick, instance, logger):
         self._job_state = job_state
         self._tick = tick
@@ -53,7 +53,9 @@ class JobTickContext:
         for tick in self._to_resolve[1:]:
             self._instance.create_job_tick(tick.job_tick_data)
         if any([tick.status in FULFILLED_TICK_STATES for tick in self._to_resolve]):
-            self._instance.update_job_state(self._job_state.with_timestamp(self._tick.timestamp))
+            self._instance.update_job_state(
+                self._job_state.with_data(SensorJobData(self._tick.timestamp))
+            )
 
     def __enter__(self):
         return self
@@ -141,7 +143,7 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
                 external_sensor = external_repo.get_external_sensor(job_state.job_name)
-                with JobTickContext(job_state, tick, instance, logger) as tick_context:
+                with SensorLaunchContext(job_state, tick, instance, logger) as tick_context:
                     _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
                     _evaluate_sensor(
                         tick_context,
@@ -171,7 +173,12 @@ def _evaluate_sensor(
     sensor_debug_crash_flags=None,
 ):
     sensor_runtime_data = repo_location.get_external_sensor_execution_data(
-        instance, external_repo.handle, external_sensor.name, job_state.last_completed_timestamp,
+        instance,
+        external_repo.handle,
+        external_sensor.name,
+        job_state.job_specific_data.last_completed_timestamp
+        if job_state.job_specific_data
+        else None,
     )
     if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
         context.logger.error(

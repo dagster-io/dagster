@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.core.scheduler import ScheduleState
+from dagster.core.scheduler.job import JobState
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster_graphql import dauphin
 from dagster_graphql.schema.errors import (
@@ -51,14 +51,14 @@ class DauphinScheduleState(dauphin.ObjectType):
     id = dauphin.NonNull(dauphin.ID)
 
     def __init__(self, _graphene_info, schedule_state):
-        self._schedule_state = check.inst_param(schedule_state, "schedule", ScheduleState)
-        self._external_schedule_origin_id = self._schedule_state.schedule_origin_id
+        self._schedule_state = check.inst_param(schedule_state, "schedule_state", JobState)
+        self._external_schedule_origin_id = self._schedule_state.job_origin_id
 
         super(DauphinScheduleState, self).__init__(
-            schedule_origin_id=schedule_state.schedule_origin_id,
-            schedule_name=schedule_state.name,
-            cron_schedule=schedule_state.cron_schedule,
+            schedule_origin_id=schedule_state.job_origin_id,
+            schedule_name=schedule_state.job_name,
             status=schedule_state.status,
+            cron_schedule=schedule_state.job_specific_data.cron_schedule,
         )
 
     def resolve_id(self, _graphene_info):
@@ -71,16 +71,14 @@ class DauphinScheduleState(dauphin.ObjectType):
         return running_schedule_count
 
     def resolve_stats(self, graphene_info):
-        stats = graphene_info.context.instance.get_schedule_tick_stats(
-            self._external_schedule_origin_id
-        )
+        stats = graphene_info.context.instance.get_job_tick_stats(self._external_schedule_origin_id)
         return graphene_info.schema.type_named("ScheduleTickStatsSnapshot")(stats)
 
     def resolve_ticks(self, graphene_info, limit=None):
 
         # TODO: Add cursor limit argument to get_schedule_ticks_by_schedule
         # https://github.com/dagster-io/dagster/issues/2291
-        ticks = graphene_info.context.instance.get_schedule_ticks(self._external_schedule_origin_id)
+        ticks = graphene_info.context.instance.get_job_ticks(self._external_schedule_origin_id)
 
         if not limit:
             tick_subset = ticks
@@ -98,7 +96,7 @@ class DauphinScheduleState(dauphin.ObjectType):
         ]
 
     def resolve_ticks_count(self, graphene_info):
-        ticks = graphene_info.context.instance.get_schedule_ticks(self._external_schedule_origin_id)
+        ticks = graphene_info.context.instance.get_job_ticks(self._external_schedule_origin_id)
         return len(ticks)
 
     def resolve_runs(self, graphene_info, **kwargs):
@@ -116,7 +114,7 @@ class DauphinScheduleState(dauphin.ObjectType):
         )
 
     def resolve_repository_origin_id(self, _graphene_info):
-        return self._schedule_state.repository_origin_id
+        return self._schedule_state.origin.external_repository_origin.get_id()
 
     def resolve_repository_origin(self, graphene_info):
         origin = self._schedule_state.origin.external_repository_origin

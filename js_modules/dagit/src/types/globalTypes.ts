@@ -27,6 +27,13 @@ export enum EvaluationErrorReason {
   SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
 }
 
+export enum JobTickStatus {
+  FAILURE = "FAILURE",
+  SKIPPED = "SKIPPED",
+  STARTED = "STARTED",
+  SUCCESS = "SUCCESS",
+}
+
 export enum LogLevel {
   CRITICAL = "CRITICAL",
   DEBUG = "DEBUG",
@@ -55,13 +62,6 @@ export enum ScheduleStatus {
   ENDED = "ENDED",
   RUNNING = "RUNNING",
   STOPPED = "STOPPED",
-}
-
-export enum ScheduleTickStatus {
-  FAILURE = "FAILURE",
-  SKIPPED = "SKIPPED",
-  STARTED = "STARTED",
-  SUCCESS = "SUCCESS",
 }
 
 export enum StepEventStatus {

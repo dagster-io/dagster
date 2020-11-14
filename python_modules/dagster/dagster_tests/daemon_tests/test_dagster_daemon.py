@@ -21,7 +21,7 @@ def test_scheduler_instance():
         daemons = controller.daemons
 
         assert len(daemons) == 2
-        assert isinstance(daemons[0], SchedulerDaemon)
+        assert any(isinstance(daemon, SchedulerDaemon) for daemon in daemons)
 
 
 def test_run_coordinator_instance():
@@ -38,7 +38,7 @@ def test_run_coordinator_instance():
         daemons = controller.daemons
 
         assert len(daemons) == 2
-        assert isinstance(daemons[1], QueuedRunCoordinatorDaemon)
+        assert any(isinstance(daemon, QueuedRunCoordinatorDaemon) for daemon in daemons)
 
 
 def _scheduler_ran(caplog):

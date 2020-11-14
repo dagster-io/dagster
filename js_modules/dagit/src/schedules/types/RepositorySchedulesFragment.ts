@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { JobTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RepositorySchedulesFragment
@@ -64,7 +64,7 @@ export type RepositorySchedulesFragment_scheduleDefinitions_scheduleState_ticks_
 export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState_ticks {
   __typename: "ScheduleTick";
   tickId: string;
-  status: ScheduleTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   tickSpecificData: RepositorySchedulesFragment_scheduleDefinitions_scheduleState_ticks_tickSpecificData | null;
 }

@@ -31,12 +31,11 @@ from dagster.core.host_representation.external_data import ExternalScheduleExecu
 from dagster.core.host_representation.selector import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler import (
-    ScheduleTickData,
-    ScheduleTickStatus,
     ScheduledExecutionFailed,
     ScheduledExecutionSkipped,
     ScheduledExecutionSuccess,
 )
+from dagster.core.scheduler.job import JobTickData, JobTickStatus, JobType
 from dagster.core.storage.tags import check_tags
 from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -256,7 +255,7 @@ def execute_step_with_structured_logs_command(input_json):
             click.echo(line)
 
 
-class _ScheduleTickHolder:
+class _ScheduleTickContext:
     def __init__(self, tick, instance):
         self._tick = tick
         self._instance = instance
@@ -266,21 +265,21 @@ class _ScheduleTickHolder:
         self._tick = self._tick.with_status(status=status, **kwargs)
 
     def write(self):
-        self._instance.update_schedule_tick(self._tick)
+        self._instance.update_job_tick(self._tick)
 
 
 @contextmanager
 def _schedule_tick_state(instance, stream, tick_data):
-    tick = instance.create_schedule_tick(tick_data)
-    holder = _ScheduleTickHolder(tick=tick, instance=instance)
+    tick = instance.create_job_tick(tick_data)
+    context = _ScheduleTickContext(tick=tick, instance=instance)
     try:
-        yield holder
+        yield context
     except Exception:  # pylint: disable=broad-except
         error_data = serializable_error_info_from_exc_info(sys.exc_info())
-        holder.update_with_status(ScheduleTickStatus.FAILURE, error=error_data)
+        context.update_with_status(JobTickStatus.FAILURE, error=error_data)
         stream.send(ScheduledExecutionFailed(run_id=None, errors=[error_data]))
     finally:
-        holder.write()
+        context.write()
 
 
 @click.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
@@ -463,21 +462,21 @@ def launch_scheduled_execution(output_file, schedule_name, **kwargs):
     with ipc_write_stream(output_file) as stream:
         with DagsterInstance.get() as instance:
             repository_origin = get_repository_origin_from_kwargs(kwargs)
-            schedule_origin = repository_origin.get_schedule_origin(schedule_name)
+            job_origin = repository_origin.get_job_origin(schedule_name)
 
             # open the tick scope before we load any external artifacts so that
             # load errors are stored in DB
             with _schedule_tick_state(
                 instance,
                 stream,
-                ScheduleTickData(
-                    schedule_origin_id=schedule_origin.get_id(),
-                    schedule_name=schedule_name,
+                JobTickData(
+                    job_origin_id=job_origin.get_id(),
+                    job_name=schedule_name,
+                    job_type=JobType.SCHEDULE,
+                    status=JobTickStatus.STARTED,
                     timestamp=time.time(),
-                    cron_schedule=None,  # not yet loaded
-                    status=ScheduleTickStatus.STARTED,
                 ),
-            ) as tick:
+            ) as tick_context:
                 with get_repository_location_from_kwargs(kwargs) as repo_location:
                     repo_dict = repo_location.get_repositories()
                     check.invariant(
@@ -495,18 +494,20 @@ def launch_scheduled_execution(output_file, schedule_name, **kwargs):
                         ),
                     )
                     external_schedule = external_repo.get_external_schedule(schedule_name)
-                    tick.update_with_status(
-                        status=ScheduleTickStatus.STARTED,
-                        cron_schedule=external_schedule.cron_schedule,
-                    )
+                    tick_context.update_with_status(status=JobTickStatus.STARTED)
                     _launch_scheduled_execution(
-                        instance, repo_location, external_repo, external_schedule, tick, stream
+                        instance,
+                        repo_location,
+                        external_repo,
+                        external_schedule,
+                        tick_context,
+                        stream,
                     )
 
 
 @telemetry_wrapper
 def _launch_scheduled_execution(
-    instance, repo_location, external_repo, external_schedule, tick, stream
+    instance, repo_location, external_repo, external_schedule, tick_context, stream
 ):
     pipeline_selector = PipelineSelector(
         location_name=repo_location.name,
@@ -534,12 +535,12 @@ def _launch_scheduled_execution(
 
     if isinstance(schedule_execution_data, ExternalScheduleExecutionErrorData):
         error = schedule_execution_data.error
-        tick.update_with_status(ScheduleTickStatus.FAILURE, error=error)
+        tick_context.update_with_status(JobTickStatus.FAILURE, error=error)
         stream.send(ScheduledExecutionFailed(run_id=None, errors=[error]))
         return
     elif not schedule_execution_data.should_execute:
         # Update tick to skipped state and return
-        tick.update_with_status(ScheduleTickStatus.SKIPPED)
+        tick_context.update_with_status(JobTickStatus.SKIPPED)
         stream.send(ScheduledExecutionSkipped())
         return
     else:
@@ -578,7 +579,9 @@ def _launch_scheduled_execution(
         external_pipeline_origin=external_pipeline.get_external_origin(),
     )
 
-    tick.update_with_status(ScheduleTickStatus.SUCCESS, run_id=possibly_invalid_pipeline_run.run_id)
+    tick_context.update_with_status(
+        JobTickStatus.SUCCESS, run_id=possibly_invalid_pipeline_run.run_id
+    )
 
     # If there were errors, inject them into the event log and fail the run
     if len(errors) > 0:

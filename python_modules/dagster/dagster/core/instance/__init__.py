@@ -1180,39 +1180,41 @@ class DagsterInstance:
         return 0
 
     def scheduler_debug_info(self):
-        from dagster.core.scheduler import SchedulerDebugInfo, ScheduleStatus
+        from dagster.core.scheduler import SchedulerDebugInfo
+        from dagster.core.definitions.job import JobType
+        from dagster.core.scheduler.job import JobStatus
 
         errors = []
 
         schedules = []
-        for schedule_state in self.all_stored_schedule_state():
-            if schedule_state.status == ScheduleStatus.RUNNING and not self.running_schedule_count(
-                schedule_state.schedule_origin_id
+        for schedule_state in self.all_stored_job_state(job_type=JobType.SCHEDULE):
+            if schedule_state.status == JobStatus.RUNNING and not self.running_schedule_count(
+                schedule_state.job_origin_id
             ):
                 errors.append(
                     "Schedule {schedule_name} is set to be running, but the scheduler is not "
-                    "running the schedule.".format(schedule_name=schedule_state.name)
+                    "running the schedule.".format(schedule_name=schedule_state.job_name)
                 )
-            elif schedule_state.status == ScheduleStatus.STOPPED and self.running_schedule_count(
-                schedule_state.schedule_origin_id
+            elif schedule_state.status == JobStatus.STOPPED and self.running_schedule_count(
+                schedule_state.job_origin_id
             ):
                 errors.append(
                     "Schedule {schedule_name} is set to be stopped, but the scheduler is still running "
-                    "the schedule.".format(schedule_name=schedule_state.name)
+                    "the schedule.".format(schedule_name=schedule_state.job_name)
                 )
 
-            if self.running_schedule_count(schedule_state.schedule_origin_id) > 1:
+            if self.running_schedule_count(schedule_state.job_origin_id) > 1:
                 errors.append(
                     "Duplicate jobs found: More than one job for schedule {schedule_name} are "
-                    "running on the scheduler.".format(schedule_name=schedule_state.name)
+                    "running on the scheduler.".format(schedule_name=schedule_state.job_name)
                 )
 
             schedule_info = {
-                schedule_state.name: {
+                schedule_state.job_name: {
                     "status": schedule_state.status.value,
-                    "cron_schedule": schedule_state.cron_schedule,
-                    "repository_pointer": schedule_state.schedule_origin.get_repo_cli_args(),
-                    "schedule_origin_id": schedule_state.schedule_origin_id,
+                    "cron_schedule": schedule_state.job_specific_data.cron_schedule,
+                    "repository_pointer": schedule_state.origin.get_repo_cli_args(),
+                    "schedule_origin_id": schedule_state.job_origin_id,
                     "repository_origin_id": schedule_state.repository_origin_id,
                 }
             }
@@ -1227,36 +1229,6 @@ class DagsterInstance:
         )
 
     # Schedule Storage
-
-    def create_schedule_tick(self, schedule_tick_data):
-        return self._schedule_storage.create_schedule_tick(schedule_tick_data)
-
-    def update_schedule_tick(self, tick):
-        return self._schedule_storage.update_schedule_tick(tick)
-
-    def get_schedule_ticks(self, schedule_origin_id):
-        return self._schedule_storage.get_schedule_ticks(schedule_origin_id)
-
-    def get_latest_tick(self, schedule_origin_id):
-        return self._schedule_storage.get_latest_tick(schedule_origin_id)
-
-    def get_schedule_tick_stats(self, schedule_origin_id):
-        return self._schedule_storage.get_schedule_tick_stats(schedule_origin_id)
-
-    def all_stored_schedule_state(self, repository_origin_id=None):
-        return self._schedule_storage.all_stored_schedule_state(repository_origin_id)
-
-    def get_stored_schedule_state(self, schedule_origin_id):
-        return self._schedule_storage.get_schedule_state(schedule_origin_id)
-
-    def add_schedule_state(self, schedule_state):
-        return self._schedule_storage.add_schedule_state(schedule_state)
-
-    def update_schedule_state(self, schedule_state):
-        return self._schedule_storage.update_schedule_state(schedule_state)
-
-    def delete_schedule_state(self, schedule_origin_id):
-        return self._schedule_storage.delete_schedule_state(schedule_origin_id)
 
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):
         return self._schedule_storage.all_stored_job_state(repository_origin_id, job_type)
@@ -1287,6 +1259,9 @@ class DagsterInstance:
 
     def update_job_tick(self, tick):
         return self._schedule_storage.update_job_tick(tick)
+
+    def get_job_tick_stats(self, job_origin_id):
+        return self._schedule_storage.get_job_tick_stats(job_origin_id)
 
     def wipe_all_schedules(self):
         if self._scheduler:

@@ -29,10 +29,6 @@ class RepositoryPythonOrigin(
         check.str_param(pipeline_name, "pipeline_name")
         return PipelinePythonOrigin(pipeline_name, self)
 
-    def get_schedule_origin(self, schedule_name):
-        check.str_param(schedule_name, "schedule_name")
-        return SchedulePythonOrigin(schedule_name, self)
-
     @property
     def loadable_target_origin(self):
         return self.code_pointer.get_loadable_target_origin(self.executable_path)

@@ -3,7 +3,7 @@ import sys
 
 from dagster import check
 from dagster.core.errors import DagsterSubprocessError
-from dagster.core.host_representation import ExternalScheduleOrigin
+from dagster.core.host_representation import ExternalJobOrigin
 from dagster.core.scheduler import ScheduledExecutionResult
 from dagster.serdes.ipc import IPCErrorMessage, read_unary_response
 from dagster.seven import xplat_shlex_split
@@ -11,13 +11,13 @@ from dagster.utils.temp_file import get_temp_file_name
 
 
 def sync_launch_scheduled_execution(schedule_origin):
-    check.inst_param(schedule_origin, "schedule_origin", ExternalScheduleOrigin)
+    check.inst_param(schedule_origin, "schedule_origin", ExternalJobOrigin)
 
     with get_temp_file_name() as output_file:
         parts = (
             [sys.executable, "-m", "dagster", "api", "launch_scheduled_execution", output_file,]
             + xplat_shlex_split(schedule_origin.get_repo_cli_args())
-            + ["--schedule_name={}".format(schedule_origin.schedule_name)]
+            + ["--schedule_name={}".format(schedule_origin.job_name)]
         )
         subprocess.check_call(parts)
         result = read_unary_response(output_file)

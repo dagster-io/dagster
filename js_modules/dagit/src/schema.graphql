@@ -484,12 +484,12 @@ enum ScheduleStatus {
 
 type ScheduleTick {
   tickId: String!
-  status: ScheduleTickStatus!
+  status: JobTickStatus!
   timestamp: Float!
   tickSpecificData: ScheduleTickSpecificData
 }
 
-enum ScheduleTickStatus {
+enum JobTickStatus {
   STARTED
   SKIPPED
   SUCCESS

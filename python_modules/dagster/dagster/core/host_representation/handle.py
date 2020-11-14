@@ -335,26 +335,6 @@ class PipelineHandle(namedtuple("_PipelineHandle", "pipeline_name repository_han
         return PipelineSelector(self.location_name, self.repository_name, self.pipeline_name, None)
 
 
-class ScheduleHandle(namedtuple("_ScheduleHandle", "schedule_name repository_handle")):
-    def __new__(cls, schedule_name, repository_handle):
-        return super(ScheduleHandle, cls).__new__(
-            cls,
-            check.str_param(schedule_name, "schedule_name"),
-            check.inst_param(repository_handle, "repository_handle", RepositoryHandle),
-        )
-
-    @property
-    def repository_name(self):
-        return self.repository_handle.repository_name
-
-    @property
-    def location_name(self):
-        return self.repository_handle.repository_location_handle.location_name
-
-    def get_external_origin(self):
-        return self.repository_handle.get_external_origin().get_schedule_origin(self.schedule_name)
-
-
 class JobHandle(namedtuple("_JobHandle", "job_name repository_handle")):
     def __new__(cls, job_name, repository_handle):
         return super(JobHandle, cls).__new__(

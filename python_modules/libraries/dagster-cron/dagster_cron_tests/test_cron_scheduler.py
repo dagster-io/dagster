@@ -16,7 +16,7 @@ from dagster.core.host_representation import (
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
-from dagster.core.scheduler import ScheduleState, ScheduleStatus
+from dagster.core.scheduler.job import JobState, JobStatus, JobType, ScheduleJobData
 from dagster.core.scheduler.scheduler import (
     DagsterScheduleDoesNotExist,
     DagsterScheduleReconciliationError,
@@ -170,7 +170,7 @@ def test_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-out
             # Check schedules are saved to disk
             assert "schedules" in os.listdir(tempdir)
 
-            assert instance.all_stored_schedule_state()
+            assert instance.all_stored_job_state(job_type=JobType.SCHEDULE)
 
 
 @freeze_time("2019-02-27")
@@ -185,12 +185,15 @@ def test_re_init(restore_cron_tab):  # pylint:disable=unused-argument,redefined-
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
             )
 
-            assert schedule_state.start_timestamp == get_timestamp_from_utc_datetime(now)
+            assert (
+                schedule_state.job_specific_data.start_timestamp
+                == get_timestamp_from_utc_datetime(now)
+            )
 
             # Check schedules are saved to disk
             assert "schedules" in os.listdir(tempdir)
 
-            schedule_states = instance.all_stored_schedule_state()
+            schedule_states = instance.all_stored_job_state(job_type=JobType.SCHEDULE)
 
             for state in schedule_states:
                 if state.name == "no_config_pipeline_every_min_schedule":
@@ -294,11 +297,11 @@ def test_remove_schedule_def(
         with get_test_external_repo() as external_repo:
             instance.reconcile_scheduler_state(external_repo)
 
-            assert len(instance.all_stored_schedule_state()) == 3
+            assert len(instance.all_stored_job_state(job_type=JobType.SCHEDULE)) == 3
             with get_smaller_external_repo() as smaller_repo:
                 instance.reconcile_scheduler_state(smaller_repo)
 
-            assert len(instance.all_stored_schedule_state()) == 2
+            assert len(instance.all_stored_job_state(job_type=JobType.SCHEDULE)) == 2
 
 
 def test_add_schedule_def(restore_cron_tab):  # pylint:disable=unused-argument,redefined-outer-name
@@ -314,7 +317,7 @@ def test_add_schedule_def(restore_cron_tab):  # pylint:disable=unused-argument,r
                 external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
             )
 
-            assert len(instance.all_stored_schedule_state()) == 2
+            assert len(instance.all_stored_job_state(job_type=JobType.SCHEDULE)) == 2
             assert len(get_cron_jobs()) == 2
             assert len(instance.scheduler_debug_info().errors) == 0
 
@@ -323,7 +326,7 @@ def test_add_schedule_def(restore_cron_tab):  # pylint:disable=unused-argument,r
             # Reconcile with an additional schedule added
             instance.reconcile_scheduler_state(external_repo)
 
-            assert len(instance.all_stored_schedule_state()) == 3
+            assert len(instance.all_stored_job_state(job_type=JobType.SCHEDULE)) == 3
             assert len(get_cron_jobs()) == 2
             assert len(instance.scheduler_debug_info().errors) == 0
 
@@ -331,7 +334,7 @@ def test_add_schedule_def(restore_cron_tab):  # pylint:disable=unused-argument,r
                 external_repo.get_external_schedule("default_config_pipeline_every_min_schedule")
             )
 
-            assert len(instance.all_stored_schedule_state()) == 3
+            assert len(instance.all_stored_job_state(job_type=JobType.SCHEDULE)) == 3
             assert len(get_cron_jobs()) == 3
             assert len(instance.scheduler_debug_info().errors) == 0
 
@@ -485,13 +488,13 @@ def test_start_schedule_fails(
                     external_repo.get_external_schedule("no_config_pipeline_every_min_schedule")
                 )
 
-            schedule = instance.get_stored_schedule_state(
+            schedule = instance.get_job_state(
                 external_repo.get_external_schedule(
                     "no_config_pipeline_every_min_schedule"
                 ).get_external_origin_id()
             )
 
-            assert schedule.status == ScheduleStatus.STOPPED
+            assert schedule.status == JobStatus.STOPPED
 
 
 def test_start_schedule_unsuccessful(
@@ -632,9 +635,9 @@ def test_stop_schedule_fails(
             with pytest.raises(Exception, match="Patch"):
                 instance.stop_schedule_and_update_storage_state(schedule_origin_id)
 
-            schedule = instance.get_stored_schedule_state(schedule_origin_id)
+            schedule = instance.get_job_state(schedule_origin_id)
 
-            assert schedule.status == ScheduleStatus.RUNNING
+            assert schedule.status == JobStatus.RUNNING
 
 
 def test_stop_schedule_unsuccessful(
@@ -681,7 +684,7 @@ def test_wipe(restore_cron_tab):  # pylint:disable=unused-argument,redefined-out
             instance.wipe_all_schedules()
 
             # Check schedules are wiped
-            assert instance.all_stored_schedule_state() == []
+            assert instance.all_stored_job_state(job_type=JobType.SCHEDULE) == []
 
 
 def test_log_directory(restore_cron_tab):  # pylint:disable=unused-argument,redefined-outer-name
@@ -709,7 +712,7 @@ def test_log_directory(restore_cron_tab):  # pylint:disable=unused-argument,rede
             instance.wipe_all_schedules()
 
             # Check schedules are wiped
-            assert instance.all_stored_schedule_state() == []
+            assert instance.all_stored_job_state(job_type=JobType.SCHEDULE) == []
 
 
 def test_reconcile_failure(restore_cron_tab):  # pylint:disable=unused-argument,redefined-outer-name
@@ -748,24 +751,26 @@ def test_reconcile_schedule_without_start_time():
             external_schedule = external_repo.get_external_schedule(
                 "no_config_pipeline_daily_schedule"
             )
-            legacy_schedule_state = ScheduleState(
+
+            legacy_schedule_state = JobState(
                 external_schedule.get_external_origin(),
-                ScheduleStatus.RUNNING,
-                external_schedule.cron_schedule,
-                None,
+                JobType.SCHEDULE,
+                JobStatus.RUNNING,
+                ScheduleJobData(external_schedule.cron_schedule, None),
             )
 
-            instance.add_schedule_state(legacy_schedule_state)
+            instance.add_job_state(legacy_schedule_state)
 
             instance.reconcile_scheduler_state(external_repository=external_repo)
 
-            reconciled_schedule_state = instance.get_stored_schedule_state(
+            reconciled_schedule_state = instance.get_job_state(
                 external_schedule.get_external_origin_id()
             )
 
-            assert reconciled_schedule_state.status == ScheduleStatus.RUNNING
-            assert reconciled_schedule_state.start_timestamp == get_timestamp_from_utc_datetime(
-                get_current_datetime_in_utc()
+            assert reconciled_schedule_state.status == JobStatus.RUNNING
+            assert (
+                reconciled_schedule_state.job_specific_data.start_timestamp
+                == get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
             )
 
 
@@ -778,7 +783,7 @@ def test_reconcile_failure_when_deleting_schedule_def(
 
             instance.reconcile_scheduler_state(external_repo)
 
-            assert len(instance.all_stored_schedule_state()) == 3
+            assert len(instance.all_stored_job_state(job_type=JobType.SCHEDULE)) == 3
 
             def failed_end_job(*_):
                 raise DagsterSchedulerError("Failed to stop")

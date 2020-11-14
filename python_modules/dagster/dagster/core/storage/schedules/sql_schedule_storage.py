@@ -5,12 +5,12 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.definitions.job import JobType
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.scheduler import ScheduleState, ScheduleTick
-from dagster.core.scheduler.job import JobState, JobTick, JobTickData, JobTickStatus
-from dagster.core.scheduler.scheduler import (
-    ScheduleTickData,
-    ScheduleTickStatsSnapshot,
-    ScheduleTickStatus,
+from dagster.core.scheduler.job import (
+    JobState,
+    JobTick,
+    JobTickData,
+    JobTickStatsSnapshot,
+    JobTickStatus,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
@@ -37,182 +37,6 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def _deserialize_rows(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
-
-    def all_stored_schedule_state(self, repository_origin_id=None):
-        base_query = db.select(
-            [ScheduleTable.c.schedule_body, ScheduleTable.c.schedule_origin_id]
-        ).select_from(ScheduleTable)
-
-        if repository_origin_id:
-            query = base_query.where(ScheduleTable.c.repository_origin_id == repository_origin_id)
-        else:
-            query = base_query
-
-        rows = self.execute(query)
-        return self._deserialize_rows(rows)
-
-    def get_schedule_state(self, schedule_origin_id):
-        check.str_param(schedule_origin_id, "schedule_origin_id")
-
-        query = (
-            db.select([ScheduleTable.c.schedule_body])
-            .select_from(ScheduleTable)
-            .where(ScheduleTable.c.schedule_origin_id == schedule_origin_id)
-        )
-
-        rows = self.execute(query)
-        return deserialize_json_to_dagster_namedtuple(rows[0][0]) if len(rows) else None
-
-    def get_latest_tick(self, schedule_origin_id):
-        check.str_param(schedule_origin_id, "schedule_origin_id")
-
-        query = (
-            db.select([ScheduleTickTable.c.id, ScheduleTickTable.c.tick_body])
-            .select_from(ScheduleTickTable)
-            .where(ScheduleTickTable.c.schedule_origin_id == schedule_origin_id)
-            .order_by(ScheduleTickTable.c.timestamp.desc())
-            .limit(1)
-        )
-
-        rows = self.execute(query)
-
-        if len(rows) == 0:
-            return None
-
-        return ScheduleTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
-
-    def get_schedule_ticks(self, schedule_origin_id):
-        check.str_param(schedule_origin_id, "schedule_origin_id")
-
-        query = (
-            db.select([ScheduleTickTable.c.id, ScheduleTickTable.c.tick_body])
-            .select_from(ScheduleTickTable)
-            .where(ScheduleTickTable.c.schedule_origin_id == schedule_origin_id)
-            .order_by(ScheduleTickTable.c.id.desc())
-        )
-
-        rows = self.execute(query)
-        return list(
-            map(lambda r: ScheduleTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
-        )
-
-    def get_schedule_tick_stats(self, schedule_origin_id):
-        check.str_param(schedule_origin_id, "schedule_origin_id")
-
-        query = (
-            db.select([ScheduleTickTable.c.status, db.func.count()])
-            .select_from(ScheduleTickTable)
-            .where(ScheduleTickTable.c.schedule_origin_id == schedule_origin_id)
-            .group_by(ScheduleTickTable.c.status)
-        )
-
-        rows = self.execute(query)
-
-        counts = {}
-        for status, count in rows:
-            counts[status] = count
-
-        return ScheduleTickStatsSnapshot(
-            ticks_started=counts.get(ScheduleTickStatus.STARTED.value, 0),
-            ticks_succeeded=counts.get(ScheduleTickStatus.SUCCESS.value, 0),
-            ticks_skipped=counts.get(ScheduleTickStatus.SKIPPED.value, 0),
-            ticks_failed=counts.get(ScheduleTickStatus.FAILURE.value, 0),
-        )
-
-    def create_schedule_tick(self, schedule_tick_data):
-        check.inst_param(schedule_tick_data, "schedule_tick_data", ScheduleTickData)
-
-        with self.connect() as conn:
-            try:
-                tick_insert = ScheduleTickTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    schedule_origin_id=schedule_tick_data.schedule_origin_id,
-                    status=schedule_tick_data.status.value,
-                    timestamp=utc_datetime_from_timestamp(schedule_tick_data.timestamp),
-                    tick_body=serialize_dagster_namedtuple(schedule_tick_data),
-                )
-                result = conn.execute(tick_insert)
-                tick_id = result.inserted_primary_key[0]
-                return ScheduleTick(tick_id, schedule_tick_data)
-            except db.exc.IntegrityError as exc:
-                six.raise_from(
-                    DagsterInvariantViolationError(
-                        "Unable to insert ScheduleTick for schedule {schedule_name} in storage".format(
-                            schedule_name=schedule_tick_data.schedule_name,
-                        )
-                    ),
-                    exc,
-                )
-
-    def update_schedule_tick(self, tick):
-        check.inst_param(tick, "tick", ScheduleTick)
-
-        with self.connect() as conn:
-            conn.execute(
-                ScheduleTickTable.update()  # pylint: disable=no-value-for-parameter
-                .where(ScheduleTickTable.c.id == tick.tick_id)
-                .values(
-                    status=tick.status.value,
-                    tick_body=serialize_dagster_namedtuple(tick.schedule_tick_data),
-                )
-            )
-
-        return tick
-
-    def add_schedule_state(self, schedule):
-        check.inst_param(schedule, "schedule", ScheduleState)
-        with self.connect() as conn:
-            try:
-                schedule_insert = ScheduleTable.insert().values(  # pylint: disable=no-value-for-parameter
-                    schedule_origin_id=schedule.schedule_origin_id,
-                    repository_origin_id=schedule.repository_origin_id,
-                    status=schedule.status.value,
-                    schedule_body=serialize_dagster_namedtuple(schedule),
-                )
-                conn.execute(schedule_insert)
-            except db.exc.IntegrityError as exc:
-                six.raise_from(
-                    DagsterInvariantViolationError(
-                        "ScheduleState {id} is already present "
-                        "in storage".format(id=schedule.schedule_origin_id,)
-                    ),
-                    exc,
-                )
-
-        return schedule
-
-    def update_schedule_state(self, schedule):
-        check.inst_param(schedule, "schedule", ScheduleState)
-        if not self.get_schedule_state(schedule.schedule_origin_id):
-            raise DagsterInvariantViolationError(
-                "ScheduleState {id} is not present in storage".format(
-                    id=schedule.schedule_origin_id
-                )
-            )
-
-        with self.connect() as conn:
-            conn.execute(
-                ScheduleTable.update()  # pylint: disable=no-value-for-parameter
-                .where(ScheduleTable.c.schedule_origin_id == schedule.schedule_origin_id)
-                .values(
-                    status=schedule.status.value,
-                    schedule_body=serialize_dagster_namedtuple(schedule),
-                )
-            )
-
-    def delete_schedule_state(self, schedule_origin_id):
-        check.str_param(schedule_origin_id, "schedule_origin_id")
-
-        if not self.get_schedule_state(schedule_origin_id):
-            raise DagsterInvariantViolationError(
-                "ScheduleState {id} is not present in storage".format(id=schedule_origin_id)
-            )
-
-        with self.connect() as conn:
-            conn.execute(
-                ScheduleTable.delete().where(  # pylint: disable=no-value-for-parameter
-                    ScheduleTable.c.schedule_origin_id == schedule_origin_id
-                )
-            )
 
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):
         check.opt_inst_param(job_type, "job_type", JobType)
@@ -389,6 +213,29 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
         return tick
+
+    def get_job_tick_stats(self, job_origin_id):
+        check.str_param(job_origin_id, "job_origin_id")
+
+        query = (
+            db.select([JobTickTable.c.status, db.func.count()])
+            .select_from(JobTickTable)
+            .where(JobTickTable.c.job_origin_id == job_origin_id)
+            .group_by(JobTickTable.c.status)
+        )
+
+        rows = self.execute(query)
+
+        counts = {}
+        for status, count in rows:
+            counts[status] = count
+
+        return JobTickStatsSnapshot(
+            ticks_started=counts.get(JobTickStatus.STARTED.value, 0),
+            ticks_succeeded=counts.get(JobTickStatus.SUCCESS.value, 0),
+            ticks_skipped=counts.get(JobTickStatus.SKIPPED.value, 0),
+            ticks_failed=counts.get(JobTickStatus.FAILURE.value, 0),
+        )
 
     def wipe(self):
         """Clears the schedule storage."""

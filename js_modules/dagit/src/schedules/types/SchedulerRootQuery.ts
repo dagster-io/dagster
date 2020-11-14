@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { JobTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulerRootQuery
@@ -64,7 +64,7 @@ export type SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_sc
 export interface SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks {
   __typename: "ScheduleTick";
   tickId: string;
-  status: ScheduleTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   tickSpecificData: SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData | null;
 }
@@ -250,7 +250,7 @@ export type SchedulerRootQuery_unLoadableScheduleStates_ScheduleStates_results_t
 export interface SchedulerRootQuery_unLoadableScheduleStates_ScheduleStates_results_ticks {
   __typename: "ScheduleTick";
   tickId: string;
-  status: ScheduleTickStatus;
+  status: JobTickStatus;
   timestamp: number;
   tickSpecificData: SchedulerRootQuery_unLoadableScheduleStates_ScheduleStates_results_ticks_tickSpecificData | null;
 }

@@ -43,7 +43,7 @@ import {
   StopSchedule,
   StopSchedule_stopRunningSchedule_PythonError,
 } from 'src/schedules/types/StopSchedule';
-import {ScheduleStatus, ScheduleTickStatus} from 'src/types/globalTypes';
+import {ScheduleStatus, JobTickStatus} from 'src/types/globalTypes';
 import {Code} from 'src/ui/Text';
 import {DagsterRepoOption, scheduleSelectorWithRepository} from 'src/workspace/WorkspaceContext';
 import {RepoAddress} from 'src/workspace/types';
@@ -538,17 +538,17 @@ export const ScheduleStateRow: React.FunctionComponent<{
 };
 
 export const TickTag: React.FunctionComponent<{
-  status: ScheduleTickStatus;
+  status: JobTickStatus;
   eventSpecificData: TickSpecificData;
 }> = ({status, eventSpecificData}) => {
   switch (status) {
-    case ScheduleTickStatus.STARTED:
+    case JobTickStatus.STARTED:
       return (
         <Tag minimal={true} intent={Intent.PRIMARY}>
           Started
         </Tag>
       );
-    case ScheduleTickStatus.SUCCESS:
+    case JobTickStatus.SUCCESS:
       if (!eventSpecificData || eventSpecificData.__typename !== 'ScheduleTickSuccessData') {
         return (
           <Tag minimal={true} intent={Intent.SUCCESS}>
@@ -567,13 +567,13 @@ export const TickTag: React.FunctionComponent<{
           </a>
         );
       }
-    case ScheduleTickStatus.SKIPPED:
+    case JobTickStatus.SKIPPED:
       return (
         <Tag minimal={true} intent={Intent.WARNING}>
           Skipped
         </Tag>
       );
-    case ScheduleTickStatus.FAILURE:
+    case JobTickStatus.FAILURE:
       if (!eventSpecificData || eventSpecificData.__typename !== 'ScheduleTickFailureData') {
         return (
           <Tag minimal={true} intent={Intent.DANGER}>
