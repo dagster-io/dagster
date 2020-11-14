@@ -12,8 +12,13 @@ from dagster_test.toys.hammer import hammer_pipeline
 from dagster_test.toys.log_spew import log_spew
 from dagster_test.toys.many_events import many_events
 from dagster_test.toys.pyspark_assets.pyspark_assets_pipeline import pyspark_assets_pipeline
+from dagster_test.toys.repo import toys_repository
 from dagster_test.toys.resources import resource_pipeline
 from dagster_test.toys.sleepy import sleepy_pipeline
+
+
+def test_repo():
+    assert toys_repository
 
 
 def test_many_events_pipeline():
