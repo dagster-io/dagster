@@ -153,7 +153,7 @@ const Container = styled.div`
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
   max-height: 60vh;
   left: calc(50% - 200px);
-  overflow: hidden
+  overflow: hidden;
   width: 400px;
   top: 20vh;
 `;
@@ -165,7 +165,7 @@ interface SearchBoxProps {
 const SearchBox = styled.div<SearchBoxProps>`
   align-items: center;
   border-bottom: ${({hasQueryString}) =>
-    hasQueryString ? `1px solid ${Colors.LIGHT_GRAY2}` : 'none'}
+    hasQueryString ? `1px solid ${Colors.LIGHT_GRAY2}` : 'none'};
   display: flex;
   padding: 12px;
 `;

@@ -45,12 +45,11 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body {
-    font-family: ${FontFamily.default};
     margin: 0;
     padding: 0;
   }
 
-  button, input, select, textarea {
+  body, button, input, select, textarea {
     font-family: ${FontFamily.default};
   }
 
