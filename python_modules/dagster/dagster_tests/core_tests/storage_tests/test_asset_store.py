@@ -41,8 +41,16 @@ def define_asset_pipeline(asset_store, asset_metadata_dict):
 
 
 def test_result_output():
-    # SolidExecutionResult
-    pass
+    with seven.TemporaryDirectory() as tmpdir_path:
+        asset_store = default_filesystem_asset_store.configured({"base_dir": tmpdir_path})
+        pipeline_def = define_asset_pipeline(asset_store, {})
+
+        result = execute_pipeline(pipeline_def)
+        assert result.success
+
+        # test output_value
+        assert result.result_for_solid("solid_a").output_value() == [1, 2, 3]
+        assert result.result_for_solid("solid_b").output_value() == 1
 
 
 def test_fs_asset_store():

@@ -471,13 +471,22 @@ class SolidExecutionResult(object):
             return None
 
     def _get_value(self, context, step_output_data):
-        value = context.intermediate_storage.get_intermediate(
-            context=context,
-            dagster_type=self.solid.output_def_named(step_output_data.output_name).dagster_type,
-            step_output_handle=step_output_data.step_output_handle,
-        )
-        if isinstance(value, ObjectStoreOperation):
-            return value.obj
+        step_output_handle = step_output_data.step_output_handle
+        if context.using_asset_store(step_output_handle):
+            asset_store_handle = context.execution_plan.get_asset_store_handle(step_output_handle)
+            asset_store = context.get_asset_store(asset_store_handle.asset_store_key)
+            asset_store_context = context.for_asset_store(step_output_handle, asset_store_handle)
+
+            return asset_store.get_asset(asset_store_context)
+
+        else:
+            value = context.intermediate_storage.get_intermediate(
+                context=context,
+                dagster_type=self.solid.output_def_named(step_output_data.output_name).dagster_type,
+                step_output_handle=step_output_handle,
+            )
+            if isinstance(value, ObjectStoreOperation):
+                return value.obj
 
         return value
 
