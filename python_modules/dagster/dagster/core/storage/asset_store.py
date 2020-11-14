@@ -61,10 +61,10 @@ class InMemoryAssetStore(AssetStore):
         self.values = {}
 
     def set_asset(self, context, obj):
-        self.values[(context.step_key, context.output_name)] = obj
+        self.values[context.get_run_scoped_output_identifier()] = obj
 
     def get_asset(self, context):
-        return self.values[(context.step_key, context.output_name)]
+        return self.values[context.get_run_scoped_output_identifier()]
 
 
 @resource
@@ -87,21 +87,9 @@ class PickledObjectFilesystemAssetStore(AssetStore):
 
     def _get_path(self, context):
         """Automatically construct filepath."""
+        keys = context.get_run_scoped_output_identifier()
 
-        # resolve run_id as it's part of the file path
-        if (
-            # this is re-execution
-            context.pipeline_run.parent_run_id
-            # only part of the pipeline is being re-executed
-            and context.pipeline_run.step_keys_to_execute
-            # this step is not being executed
-            and context.step_key not in context.pipeline_run.step_keys_to_execute
-        ):
-            run_id = context.pipeline_run.parent_run_id
-        else:
-            run_id = context.run_id
-
-        return os.path.join(self.base_dir, run_id, context.step_key, context.output_name,)
+        return os.path.join(self.base_dir, *keys)
 
     def set_asset(self, context, obj):
         """Pickle the data and store the object to a file.

@@ -426,3 +426,34 @@ class AssetStoreContext:
     @property
     def asset_metadata(self):
         return self._asset_store_handle.asset_metadata
+
+    def get_run_scoped_output_identifier(self):
+        """Utility method to get a collection of identifiers that as a whole represent a unique
+        step output.
+
+        The unique identifier collection consists of
+
+        - ``run_id``: the id for the run which generates the output.
+            Note: This method also handles the re-execution memoization logic. If the step that
+            generates the output is skipped in the re-execution, the ``run_id`` will be the id
+            of its parent run.
+        - ``step_key``: the key for a compute step.
+        - ``output_name``: the name of the output. (default: 'result').
+
+        Returns:
+            List[str, ...]: A list of identifiers, i.e. run id, step key, and output name
+        """
+        # resolve run_id as it's part of the file path
+        if (
+            # this is re-execution
+            self.pipeline_run.parent_run_id
+            # only part of the pipeline is being re-executed
+            and self.pipeline_run.step_keys_to_execute
+            # this step is not being executed
+            and self.step_key not in self.pipeline_run.step_keys_to_execute
+        ):
+            run_id = self.pipeline_run.parent_run_id
+        else:
+            run_id = self.run_id
+
+        return (run_id, self.step_key, self.output_name)
