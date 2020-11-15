@@ -17,7 +17,8 @@ export interface LogFilter {
   stepQuery: string;
   logQuery: LogFilterValue[];
   levels: {[key: string]: boolean};
-  since: number;
+  focusedTime: number;
+  sinceTime: number;
 }
 
 interface LogsFilterProviderProps {
@@ -172,7 +173,7 @@ export class LogsProvider extends React.Component<
       if (!filter.levels[l]) {
         return false;
       }
-      if (filter.since && Number(node.timestamp) < filter.since) {
+      if (filter.sinceTime && Number(node.timestamp) < filter.sinceTime) {
         return false;
       }
       return true;

@@ -106,6 +106,7 @@ export class MetadataEntry extends React.Component<{
               icon="clipboard"
               iconSize={10}
               color={'#a88860'}
+              style={{verticalAlign: 'initial'}}
               onClick={(e) => copyValue(e, entry.path)}
             />
           </>
@@ -126,7 +127,7 @@ export class MetadataEntry extends React.Component<{
               })
             }
           >
-            [Show Metadata]
+            [Show JSON]
           </MetadataEntryLink>
         );
 
@@ -197,7 +198,7 @@ class MarkdownMetadataLink extends React.Component<{
     const {isExpanded} = this.state;
     return (
       <>
-        <MetadataEntryLink onClick={this.onView}>[Show Metadata]</MetadataEntryLink>
+        <MetadataEntryLink onClick={this.onView}>[Show Markdown]</MetadataEntryLink>
         {isExpanded && (
           <Dialog
             icon="info-sign"
@@ -245,6 +246,7 @@ export const MetadataEntryLink = styled.a`
 `;
 
 const StructuredContentTable = styled.table`
+  width: 100%;
   padding: 0;
   margin-top: 4px;
   border-top: 1px solid #dbc5ad;
@@ -253,12 +255,12 @@ const StructuredContentTable = styled.table`
   td:first-child {
     color: #a88860;
   }
-  td {
+  tbody > tr > td {
     padding: 4px;
     padding-right: 8px;
     border-bottom: 1px solid #dbc5ad;
     border-right: 1px solid #dbc5ad;
     vertical-align: top;
+    box-shadow: none !important;
   }
-  width: 100%;
 `;

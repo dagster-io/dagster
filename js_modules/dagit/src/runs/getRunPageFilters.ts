@@ -21,6 +21,7 @@ export const getRunPageFilters = (searchValue: string) => {
 
   const stepQuery = params.get('steps') || '*';
   const logValues = params.getAll('logs') || [];
+  const focusedTime = params.get('timestamp') ? Number(params.get('timestamp')) : null;
   const providers = getRunFilterProviders();
   const logQuery = logValues.map((token) => tokenizedValueFromString(token, providers));
 
@@ -32,7 +33,8 @@ export const getRunPageFilters = (searchValue: string) => {
     .reduce((accum, level) => ({...accum, [level]: true}), {});
 
   return {
-    since: 0,
+    sinceTime: 0,
+    focusedTime,
     stepQuery,
     logQuery,
     levels,

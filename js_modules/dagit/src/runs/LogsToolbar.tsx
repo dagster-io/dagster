@@ -152,7 +152,7 @@ export const LogsToolbar: React.FunctionComponent<ILogsToolbarProps> = (props) =
         text={'Clear'}
         small={true}
         icon={IconNames.ERASER}
-        onClick={() => onSetFilter({...filter, since: Date.now()})}
+        onClick={() => onSetFilter({...filter, sinceTime: Date.now()})}
       />
     </LogsToolbarContainer>
   );

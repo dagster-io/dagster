@@ -79,6 +79,7 @@ export const queryStringToSelection = (
 
 interface GaantChartProps {
   selection: StepSelection;
+  focusedTime: number | null;
   runId: string;
   plan: GaantChartExecutionPlanFragment;
   options?: Partial<GaantChartLayoutOptions>;
@@ -316,6 +317,10 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
   }, [selection]); // eslint-disable-line
 
   const highlightedMs: number[] = [];
+  if (props.focusedTime) {
+    highlightedMs.push(props.focusedTime);
+  }
+
   if (hoveredTime) {
     highlightedMs.push(hoveredTime);
   } else if (selection.keys.length > 0) {

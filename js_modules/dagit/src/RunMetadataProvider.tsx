@@ -135,7 +135,7 @@ function itemsForMetadataEntries(
       case 'EventJsonMetadataEntry':
         items.push({
           text: metadataEntry.label,
-          actionText: '[Show Metadata]',
+          actionText: '[Show JSON]',
           action: IStepDisplayActionType.SHOW_IN_MODAL,
           // take JSON string, parse, and then pretty print
           actionValue: JSON.stringify(JSON.parse(metadataEntry.jsonString), null, 2),
@@ -172,7 +172,7 @@ function itemsForMetadataEntries(
       case 'EventMarkdownMetadataEntry':
         items.push({
           text: metadataEntry.label,
-          actionText: '[Show Metadata]',
+          actionText: '[Show Markdown]',
           action: IStepDisplayActionType.SHOW_IN_MODAL,
           actionValue: metadataEntry.mdStr,
         });

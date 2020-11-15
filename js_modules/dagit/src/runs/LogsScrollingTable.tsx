@@ -12,6 +12,7 @@ import {ColumnWidthsProvider, Headers} from 'src/runs/LogsScrollingTableHeader';
 import {LogsScrollingTableMessageFragment} from 'src/runs/types/LogsScrollingTableMessageFragment';
 
 interface ILogsScrollingTableProps {
+  focusedTime: number;
   filteredNodes?: (LogsScrollingTableMessageFragment & {clientsideKey: string})[];
   textMatchNodes?: (LogsScrollingTableMessageFragment & {clientsideKey: string})[];
   loading: boolean;
@@ -106,6 +107,15 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     if (this.props.filterKey !== prevProps.filterKey) {
       this.list.current.recomputeGridSize();
     }
+
+    if (
+      this.props.focusedTime &&
+      this.props.filteredNodes?.length !== prevProps.filteredNodes?.length
+    ) {
+      window.requestAnimationFrame(() => {
+        this.scrollToTime(this.props.focusedTime);
+      });
+    }
   }
 
   componentWillUnmount() {
@@ -164,11 +174,45 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     (this.list.current as any)._onScroll(e.target as Element);
   };
 
+  scrollToTime = (ms: number) => {
+    if (!this.props.filteredNodes || !this.list.current) {
+      return;
+    }
+
+    // Stop the table from attempting to return to the bottom-of-feed
+    // if more logs arrive.
+    this.isAtBottomOrZero = false;
+
+    // Find the row immediately at or after the provided timestamp
+    const target: {index: number; alignment: 'center'} = {
+      index: this.props.filteredNodes.findIndex((n) => Number(n.timestamp) >= ms),
+      alignment: 'center',
+    };
+    if (target.index === -1) {
+      target.index = this.props.filteredNodes.length - 1;
+    }
+
+    // Move to the offset. For some reason, this takes multiple iterations but not multiple renders.
+    // It seems react-virtualized may be using default row height for rows more than X rows away and
+    // the number gets more accurate as we scroll, which is very annoying.
+    let offset = 0;
+    let iterations = 0;
+    while (offset !== this.list.current.getOffsetForRow(target)) {
+      offset = this.list.current.getOffsetForRow(target);
+      this.list.current.scrollToPosition(offset);
+      iterations += 1;
+      if (iterations > 20) {
+        break;
+      }
+    }
+  };
+
   rowRenderer = ({parent, index, style}: ListRowProps) => {
     if (!this.props.filteredNodes) {
       return;
     }
     const node = this.props.filteredNodes[index];
+    const focusedTimeMatch = Number(node.timestamp) === this.props.focusedTime;
     const textMatch = !!this.props.textMatchNodes?.includes(node);
 
     const metadata = this.props.metadata;
@@ -188,14 +232,14 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
           <LogsRow.Unstructured
             node={node}
             style={{...style, width: this.props.width, ...lastRowStyles}}
-            textMatch={textMatch}
+            highlighted={textMatch || focusedTimeMatch}
           />
         ) : (
           <LogsRow.Structured
             node={node}
             metadata={metadata}
             style={{...style, width: this.props.width, ...lastRowStyles}}
-            textMatch={textMatch}
+            highlighted={textMatch || focusedTimeMatch}
           />
         )}
       </CellMeasurer>
