@@ -1,18 +1,10 @@
-import datetime
 import json
-import time
 
 import boto3
 import pytest
 from dagster import ModeDefinition, execute_pipeline, pipeline, solid
 from dagster_aws.cloudwatch import cloudwatch_logger
-from dagster_aws.cloudwatch.loggers import millisecond_timestamp
 from moto import mock_logs
-
-from .conftest import AWS_REGION, TEST_CLOUDWATCH_LOG_GROUP_NAME, TEST_CLOUDWATCH_LOG_STREAM_NAME
-
-TEN_MINUTES_MS = 10 * 60 * 1000  # in milliseconds
-NUM_POLL_ATTEMPTS = 5
 
 
 @solid
@@ -105,38 +97,24 @@ def test_cloudwatch_logging(region, cloudwatch_client, log_group, log_stream):
                     "config": {
                         "log_group_name": log_group,
                         "log_stream_name": log_stream,
-                        "aws_region": region
+                        "aws_region": region,
                     }
                 }
             }
         },
     )
 
-    now = millisecond_timestamp(datetime.datetime.utcnow())
+    events = cloudwatch_client.get_log_events(logGroupName=log_group, logStreamName=log_stream,)[
+        "events"
+    ]
 
-    attempt_num = 0
+    info_message = json.loads(events[0]["message"])
+    error_message = json.loads(events[1]["message"])
 
-    found_orig_message = False
+    assert info_message["levelname"] == "INFO"
+    assert info_message["dagster_meta"]["run_id"] == res.run_id
+    assert info_message["dagster_meta"]["orig_message"] == "Hello, Cloudwatch!"
 
-    while not found_orig_message and attempt_num < NUM_POLL_ATTEMPTS:
-        # Hack: the get_log_events call below won't include events logged in the pipeline execution
-        # above if we query too soon after completion.
-        time.sleep(1)
-
-        # This is implicitly assuming that we're not running these tests with too much concurrency, etc.
-        events = cloudwatch_client.get_log_events(
-            startTime=now - TEN_MINUTES_MS,
-            logGroupName=log_group,
-            logStreamName=log_stream,
-            limit=100,
-        )["events"]
-
-        for parsed_msg in (json.loads(event["message"]) for event in events):
-            if parsed_msg["dagster_meta"]["run_id"] == res.run_id:
-                if parsed_msg["dagster_meta"]["orig_message"] == "Hello, Cloudwatch!":
-                    found_orig_message = True
-                    break
-
-        attempt_num += 1
-
-    assert found_orig_message
+    assert error_message["levelname"] == "ERROR"
+    assert error_message["dagster_meta"]["run_id"] == res.run_id
+    assert error_message["dagster_meta"]["orig_message"] == "This is an error"
