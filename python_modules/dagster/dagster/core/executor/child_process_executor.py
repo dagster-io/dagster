@@ -70,8 +70,6 @@ def _execute_command_in_child_process(event_queue, command):
                     pid=pid, error_info=serializable_error_info_from_exc_info(sys.exc_info())
                 )
             )
-        finally:
-            event_queue.close()
 
 
 TICK = 20.0 * 1.0 / 1000.0
@@ -129,28 +127,29 @@ def execute_child_process_command(command):
     check.inst_param(command, "command", ChildProcessCommand)
 
     event_queue = multiprocessing.Queue()
+    try:
+        process = multiprocessing.Process(
+            target=_execute_command_in_child_process, args=(event_queue, command)
+        )
+        process.start()
 
-    process = multiprocessing.Process(
-        target=_execute_command_in_child_process, args=(event_queue, command)
-    )
+        completed_properly = False
 
-    process.start()
+        while not completed_properly:
+            event = _poll_for_event(process, event_queue)
 
-    completed_properly = False
+            if event == PROCESS_DEAD_AND_QUEUE_EMPTY:
+                break
 
-    while not completed_properly:
-        event = _poll_for_event(process, event_queue)
+            yield event
 
-        if event == PROCESS_DEAD_AND_QUEUE_EMPTY:
-            break
+            if isinstance(event, (ChildProcessDoneEvent, ChildProcessSystemErrorEvent)):
+                completed_properly = True
 
-        yield event
+        if not completed_properly:
+            # TODO Figure out what to do about stderr/stdout
+            raise ChildProcessCrashException(exit_code=process.exitcode)
 
-        if isinstance(event, (ChildProcessDoneEvent, ChildProcessSystemErrorEvent)):
-            completed_properly = True
-
-    if not completed_properly:
-        # TODO Figure out what to do about stderr/stdout
-        raise ChildProcessCrashException(exit_code=process.exitcode)
-
-    process.join()
+        process.join()
+    finally:
+        event_queue.close()
