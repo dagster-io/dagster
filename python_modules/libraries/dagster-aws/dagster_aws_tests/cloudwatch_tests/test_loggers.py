@@ -2,10 +2,12 @@ import datetime
 import json
 import time
 
+import boto3
 import pytest
 from dagster import ModeDefinition, execute_pipeline, pipeline, solid
 from dagster_aws.cloudwatch import cloudwatch_logger
 from dagster_aws.cloudwatch.loggers import millisecond_timestamp
+from moto import mock_logs
 
 from .conftest import AWS_REGION, TEST_CLOUDWATCH_LOG_GROUP_NAME, TEST_CLOUDWATCH_LOG_STREAM_NAME
 
@@ -24,10 +26,35 @@ def hello_cloudwatch_pipeline():
     hello_cloudwatch()
 
 
-def test_cloudwatch_logging_bad_log_group_name():
+@pytest.fixture
+def region():
+    return "us-east-1"
+
+
+@pytest.fixture
+def cloudwatch_client(region):
+    with mock_logs():
+        yield boto3.client("logs", region_name=region)
+
+
+@pytest.fixture
+def log_group(cloudwatch_client):
+    name = "/dagster-test/test-cloudwatch-logging"
+    cloudwatch_client.create_log_group(logGroupName=name)
+    return name
+
+
+@pytest.fixture
+def log_stream(cloudwatch_client, log_group):
+    name = "test-logging"
+    cloudwatch_client.create_log_stream(logGroupName=log_group, logStreamName=name)
+    return name
+
+
+def test_cloudwatch_logging_bad_log_group_name(region, cloudwatch_client, log_stream):
     with pytest.raises(
         Exception,
-        match="Failed to initialize Cloudwatch logger: Could not find log group with name foo",
+        match="Failed to initialize Cloudwatch logger: Could not find log group with name fake-log-group",
     ):
         execute_pipeline(
             hello_cloudwatch_pipeline,
@@ -35,9 +62,9 @@ def test_cloudwatch_logging_bad_log_group_name():
                 "loggers": {
                     "cloudwatch": {
                         "config": {
-                            "log_group_name": "foo",
-                            "log_stream_name": "bar",
-                            "aws_region": "us-east-1",  # different region
+                            "log_group_name": "fake-log-group",
+                            "log_stream_name": log_stream,
+                            "aws_region": region,
                         }
                     }
                 }
@@ -45,10 +72,10 @@ def test_cloudwatch_logging_bad_log_group_name():
         )
 
 
-def test_cloudwatch_logging_bad_log_stream_name():
+def test_cloudwatch_logging_bad_log_stream_name(region, cloudwatch_client, log_group):
     with pytest.raises(
         Exception,
-        match="Failed to initialize Cloudwatch logger: Could not find log stream with name bar",
+        match="Failed to initialize Cloudwatch logger: Could not find log stream with name fake-log-stream",
     ):
         execute_pipeline(
             hello_cloudwatch_pipeline,
@@ -56,9 +83,9 @@ def test_cloudwatch_logging_bad_log_stream_name():
                 "loggers": {
                     "cloudwatch": {
                         "config": {
-                            "log_group_name": TEST_CLOUDWATCH_LOG_GROUP_NAME,
-                            "log_stream_name": "bar",
-                            "aws_region": AWS_REGION,
+                            "log_group_name": log_group,
+                            "log_stream_name": "fake-log-stream",
+                            "aws_region": region,
                         }
                     }
                 }
@@ -69,16 +96,16 @@ def test_cloudwatch_logging_bad_log_stream_name():
 # TODO: Test bad region
 
 
-def test_cloudwatch_logging(cloudwatch_client):
+def test_cloudwatch_logging(region, cloudwatch_client, log_group, log_stream):
     res = execute_pipeline(
         hello_cloudwatch_pipeline,
         {
             "loggers": {
                 "cloudwatch": {
                     "config": {
-                        "log_group_name": TEST_CLOUDWATCH_LOG_GROUP_NAME,
-                        "log_stream_name": TEST_CLOUDWATCH_LOG_STREAM_NAME,
-                        "aws_region": AWS_REGION,
+                        "log_group_name": log_group,
+                        "log_stream_name": log_stream,
+                        "aws_region": region
                     }
                 }
             }
@@ -99,8 +126,8 @@ def test_cloudwatch_logging(cloudwatch_client):
         # This is implicitly assuming that we're not running these tests with too much concurrency, etc.
         events = cloudwatch_client.get_log_events(
             startTime=now - TEN_MINUTES_MS,
-            logGroupName=TEST_CLOUDWATCH_LOG_GROUP_NAME,
-            logStreamName=TEST_CLOUDWATCH_LOG_STREAM_NAME,
+            logGroupName=log_group,
+            logStreamName=log_stream,
             limit=100,
         )["events"]
 
