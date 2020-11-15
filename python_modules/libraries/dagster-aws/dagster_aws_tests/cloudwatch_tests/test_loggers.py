@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import json
 
 import boto3
@@ -43,7 +44,7 @@ def log_stream(cloudwatch_client, log_group):
     return name
 
 
-def test_cloudwatch_logging_bad_log_group_name(region, cloudwatch_client, log_stream):
+def test_cloudwatch_logging_bad_log_group_name(region, log_stream):
     with pytest.raises(
         Exception,
         match="Failed to initialize Cloudwatch logger: Could not find log group with name fake-log-group",
@@ -64,7 +65,7 @@ def test_cloudwatch_logging_bad_log_group_name(region, cloudwatch_client, log_st
         )
 
 
-def test_cloudwatch_logging_bad_log_stream_name(region, cloudwatch_client, log_group):
+def test_cloudwatch_logging_bad_log_stream_name(region, log_group):
     with pytest.raises(
         Exception,
         match="Failed to initialize Cloudwatch logger: Could not find log stream with name fake-log-stream",
@@ -85,7 +86,7 @@ def test_cloudwatch_logging_bad_log_stream_name(region, cloudwatch_client, log_g
         )
 
 
-def test_cloudwatch_logging_bad_region(cloudwatch_client, log_group, log_stream):
+def test_cloudwatch_logging_bad_region(log_group, log_stream):
     with pytest.raises(
         Exception,
         match=f"Failed to initialize Cloudwatch logger: Could not find log group with name {log_group}",
