@@ -85,7 +85,25 @@ def test_cloudwatch_logging_bad_log_stream_name(region, cloudwatch_client, log_g
         )
 
 
-# TODO: Test bad region
+def test_cloudwatch_logging_bad_region(cloudwatch_client, log_group, log_stream):
+    with pytest.raises(
+        Exception,
+        match=f"Failed to initialize Cloudwatch logger: Could not find log group with name {log_group}",
+    ):
+        execute_pipeline(
+            hello_cloudwatch_pipeline,
+            {
+                "loggers": {
+                    "cloudwatch": {
+                        "config": {
+                            "log_group_name": log_group,
+                            "log_stream_name": log_stream,
+                            "aws_region": "us-west-1",
+                        }
+                    }
+                }
+            },
+        )
 
 
 def test_cloudwatch_logging(region, cloudwatch_client, log_group, log_stream):
