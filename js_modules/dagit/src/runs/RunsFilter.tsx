@@ -1,7 +1,5 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
-import * as querystring from 'query-string';
 import * as React from 'react';
-import {__RouterContext as RouterContext} from 'react-router';
 
 import {
   SuggestionProvider,
@@ -10,6 +8,7 @@ import {
   stringFromValue,
   tokenizedValuesFromString,
 } from 'src/TokenizingField';
+import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 import {RunsSearchSpaceQuery} from 'src/runs/types/RunsSearchSpaceQuery';
 import {PipelineRunStatus, PipelineRunsFilter} from 'src/types/globalTypes';
 import {useRepository, useRepositorySelector} from 'src/workspace/WorkspaceContext';
@@ -48,21 +47,14 @@ export const RUN_PROVIDERS_EMPTY = [
  * be provided (eg pipeline:, which is not relevant within pipeline scoped views.)
  */
 export function useRunFiltering(enabledFilters?: RunFilterTokenType[]) {
-  const {history, location} = React.useContext(RouterContext);
-  const qs = querystring.parse(location.search);
-
-  const filterTokens = tokenizedValuesFromString(
-    (qs.q as string) || '',
-    RUN_PROVIDERS_EMPTY,
-  ).filter(
-    (t) => !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
-  );
-  const setFilterTokens = (tokens: TokenizingFieldValue[]) => {
-    // Note: changing search also clears the cursor so you're back on page 1
-    const params = {...qs, q: stringFromValue(tokens), cursor: undefined};
-    history.push({search: `?${querystring.stringify(params)}`});
-  };
-  return [filterTokens, setFilterTokens] as [typeof filterTokens, typeof setFilterTokens];
+  return useQueryPersistedState<TokenizingFieldValue[]>({
+    encode: (tokens) => ({q: stringFromValue(tokens), cursor: undefined}),
+    decode: ({q = ''}) =>
+      tokenizedValuesFromString(q, RUN_PROVIDERS_EMPTY).filter(
+        (t) =>
+          !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
+      ),
+  });
 }
 
 export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {

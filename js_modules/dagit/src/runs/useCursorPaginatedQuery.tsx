@@ -1,10 +1,9 @@
 import {useQuery} from '@apollo/client';
 import {DocumentNode} from 'graphql';
-import * as querystring from 'query-string';
 import * as React from 'react';
-import {__RouterContext as RouterContext} from 'react-router';
 
 import {CursorPaginationProps} from 'src/CursorControls';
+import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 
 interface CursorPaginationQueryVariables {
   cursor?: string | null;
@@ -30,15 +29,8 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
   pageSize: number;
   getResultArray: (result: T | undefined) => any[];
 }) {
-  const {history, location} = React.useContext(RouterContext);
-  const qs = querystring.parse(location.search);
-
   const [cursorStack, setCursorStack] = React.useState<string[]>([]);
-  const cursor = (qs.cursor as string) || undefined;
-
-  const setCursor = (cursor: string | undefined) => {
-    history.push({search: `?${querystring.stringify({...qs, cursor})}`});
-  };
+  const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
 
   const queryVars: any = {
     ...options.variables,
