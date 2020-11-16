@@ -174,6 +174,7 @@ class DagsterApiServer(DagsterApiServicer):
         heartbeat=False,
         heartbeat_timeout=30,
         lazy_load_user_code=False,
+        fixed_server_id=None,
     ):
         super(DagsterApiServer, self).__init__()
 
@@ -190,7 +191,7 @@ class DagsterApiServer(DagsterApiServicer):
 
         # Each server is initialized with a unique UUID. This UUID is used by clients to track when
         # servers are replaced and is used for cache invalidation and reloading.
-        self._server_id = str(uuid.uuid4())
+        self._server_id = check.opt_str_param(fixed_server_id, "fixed_server_id", str(uuid.uuid4()))
 
         # Client tells the server to shutdown by calling ShutdownServer (or by failing to send a
         # hearbeat, at which point this event is set. The cleanup thread will then set the server
@@ -734,6 +735,7 @@ class DagsterGrpcServer(object):
         heartbeat_timeout=30,
         lazy_load_user_code=False,
         ipc_output_file=None,
+        fixed_server_id=None,
     ):
         check.opt_str_param(host, "host")
         check.opt_int_param(port, "port")
@@ -754,6 +756,7 @@ class DagsterGrpcServer(object):
         check.bool_param(heartbeat, "heartbeat")
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
         self._ipc_output_file = check.opt_str_param(ipc_output_file, "ipc_output_file")
+        check.opt_str_param(fixed_server_id, "fixed_server_id")
 
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.invariant(
@@ -770,6 +773,7 @@ class DagsterGrpcServer(object):
             heartbeat=heartbeat,
             heartbeat_timeout=heartbeat_timeout,
             lazy_load_user_code=lazy_load_user_code,
+            fixed_server_id=fixed_server_id,
         )
 
         # Create a health check servicer
@@ -882,6 +886,7 @@ def open_server_process(
     heartbeat=False,
     heartbeat_timeout=30,
     lazy_load_user_code=False,
+    fixed_server_id=None,
 ):
     check.invariant((port or socket) and not (port and socket), "Set only port or socket")
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
@@ -907,6 +912,7 @@ def open_server_process(
             + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
             + (["--lazy-load-user-code"] if lazy_load_user_code else [])
             + (["--ipc-output-file", output_file])
+            + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
         )
 
         if loadable_target_origin:
@@ -925,7 +931,11 @@ def open_server_process(
 
 
 def open_server_process_on_dynamic_port(
-    max_retries=10, loadable_target_origin=None, max_workers=1, lazy_load_user_code=False
+    max_retries=10,
+    loadable_target_origin=None,
+    max_workers=1,
+    lazy_load_user_code=False,
+    fixed_server_id=None,
 ):
     server_process = None
     retries = 0
@@ -938,6 +948,7 @@ def open_server_process_on_dynamic_port(
                 loadable_target_origin=loadable_target_origin,
                 max_workers=max_workers,
                 lazy_load_user_code=lazy_load_user_code,
+                fixed_server_id=fixed_server_id,
             )
         except CouldNotBindGrpcServerToAddress:
             pass
@@ -967,6 +978,7 @@ class GrpcServerProcess(object):
         heartbeat=False,
         heartbeat_timeout=30,
         lazy_load_user_code=False,
+        fixed_server_id=None,
     ):
         self.port = None
         self.socket = None
@@ -980,6 +992,7 @@ class GrpcServerProcess(object):
         check.int_param(heartbeat_timeout, "heartbeat_timeout")
         check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
         check.bool_param(lazy_load_user_code, "lazy_load_user_code")
+        check.opt_str_param(fixed_server_id, "fixed_server_id")
         check.invariant(
             max_workers > 1 if heartbeat else True,
             "max_workers must be greater than 1 if heartbeat is True",
@@ -991,6 +1004,7 @@ class GrpcServerProcess(object):
                 loadable_target_origin=loadable_target_origin,
                 max_workers=max_workers,
                 lazy_load_user_code=lazy_load_user_code,
+                fixed_server_id=fixed_server_id,
             )
         else:
             self.socket = safe_tempfile_path_unmanaged()
@@ -1003,6 +1017,7 @@ class GrpcServerProcess(object):
                 heartbeat=heartbeat,
                 heartbeat_timeout=heartbeat_timeout,
                 lazy_load_user_code=lazy_load_user_code,
+                fixed_server_id=fixed_server_id,
             )
 
         if self.server_process is None:

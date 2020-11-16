@@ -234,10 +234,10 @@ def float_param(obj, param_name):
     return obj
 
 
-def opt_numeric_param(obj, param_name):
+def opt_numeric_param(obj, param_name, default=None):
     if obj is not None and not isinstance(obj, (int, float)):
         raise_with_traceback(_param_type_mismatch_exception(obj, (int, float), param_name))
-    return obj
+    return default if obj is None else obj
 
 
 def numeric_param(obj, param_name):

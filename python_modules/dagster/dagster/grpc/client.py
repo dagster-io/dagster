@@ -107,7 +107,8 @@ class DagsterGrpcClient(object):
             }
 
     def get_server_id(self):
-        return self._query("GetServerId", api_pb2.Empty)
+        res = self._query("GetServerId", api_pb2.Empty)
+        return res.server_id
 
     def execution_plan_snapshot(self, execution_plan_snapshot_args):
         check.inst_param(

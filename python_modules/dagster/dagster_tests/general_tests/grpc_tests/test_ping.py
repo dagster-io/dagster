@@ -149,6 +149,18 @@ def create_server_process():
     return port, server_process
 
 
+def test_fixed_server_id():
+    port = find_free_port()
+    server_process = open_server_process(port=port, socket=None, fixed_server_id="fixed_id")
+    assert server_process is not None
+
+    try:
+        api_client = DagsterGrpcClient(port=port)
+        assert api_client.get_server_id() == "fixed_id"
+    finally:
+        interrupt_ipc_subprocess_pid(server_process.pid)
+
+
 def test_detect_server_restart():
 
     # Create first server and query ID
