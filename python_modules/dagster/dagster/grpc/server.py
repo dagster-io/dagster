@@ -861,8 +861,8 @@ class CouldNotStartServerProcess(Exception):
         )
 
 
-def wait_for_grpc_server(ipc_output_file, timeout=15):
-    event = read_unary_response(ipc_output_file, timeout=timeout)
+def wait_for_grpc_server(server_process, ipc_output_file, timeout=15):
+    event = read_unary_response(ipc_output_file, timeout=timeout, ipc_process=server_process)
 
     if isinstance(event, GrpcServerFailedToBindEvent):
         raise CouldNotBindGrpcServerToAddress()
@@ -915,7 +915,7 @@ def open_server_process(
         server_process = open_ipc_subprocess(subprocess_args)
 
         try:
-            wait_for_grpc_server(output_file)
+            wait_for_grpc_server(server_process, output_file)
         except:
             if server_process.poll() is None:
                 server_process.terminate()

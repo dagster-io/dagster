@@ -35,8 +35,8 @@ def ipc_write_unary_response(output_file, obj):
         stream.send(obj)
 
 
-def read_unary_response(output_file, timeout=30):
-    messages = list(ipc_read_event_stream(output_file, timeout=timeout))
+def read_unary_response(output_file, timeout=30, ipc_process=None):
+    messages = list(ipc_read_event_stream(output_file, timeout=timeout, ipc_process=ipc_process))
     check.invariant(len(messages) == 1)
     return messages[0]
 
@@ -128,11 +128,23 @@ def _process_line(file_pointer, sleep_interval=0.1):
         sleep(sleep_interval)
 
 
-def ipc_read_event_stream(file_path, timeout=30):
+def _poll_process(ipc_process):
+    if not ipc_process:
+        return
+    if ipc_process.poll() != None:
+        raise DagsterIPCProtocolError(
+            "Process exited with return code {return_code} while waiting for events".format(
+                return_code=ipc_process.returncode
+            )
+        )
+
+
+def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
     # Wait for file to be ready
     sleep_interval = 0.1
     elapsed_time = 0
     while elapsed_time < timeout and not os.path.exists(file_path):
+        _poll_process(ipc_process)
         elapsed_time += sleep_interval
         sleep(sleep_interval)
 
@@ -146,6 +158,7 @@ def ipc_read_event_stream(file_path, timeout=30):
     with open(os.path.abspath(file_path), "r") as file_pointer:
         message = _process_line(file_pointer)
         while elapsed_time < timeout and message == None:
+            _poll_process(ipc_process)
             elapsed_time += sleep_interval
             sleep(sleep_interval)
             message = _process_line(file_pointer)
@@ -159,6 +172,7 @@ def ipc_read_event_stream(file_path, timeout=30):
 
         message = _process_line(file_pointer)
         while not isinstance(message, IPCEndMessage):
+            _poll_process(ipc_process)
             yield message
             message = _process_line(file_pointer)
 
