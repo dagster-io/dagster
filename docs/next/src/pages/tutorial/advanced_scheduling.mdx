@@ -41,10 +41,10 @@ As before, we've defined a solid and a pipeline.
 
 ## Defining the Scheduler on the Instance
 
-We first need to define the `Scheduler` on our <PyObject module="dagster.core.instance"
-object="DagsterInstance" />. For now, the only implemented scheduler is <PyObject
-module="dagster_cron" object="SystemCronScheduler"/>, but this is pluggable (and you can write your
-own). To use the scheduler, add the following lines to your `$DAGSTER_HOME/dagster.yaml`:
+We first need to define the `Scheduler` on our <PyObject module="dagster" object="DagsterInstance" />.
+For now, the only implemented scheduler is <PyObject module="dagster_cron" object="SystemCronScheduler"/>,
+but this is pluggable (and you can write your own). To use the scheduler, add the following lines
+to your `$DAGSTER_HOME/dagster.yaml`:
 
 ```yaml
 scheduler:

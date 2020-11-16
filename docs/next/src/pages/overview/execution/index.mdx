@@ -8,7 +8,7 @@ import PyObject from 'components/PyObject';
 
 # Executing Pipelines
 
-We provide several different ways to do one-off execution of pipelines and solids. For recurring execution, consult the /overview/scheduling-partitions/schedules section.
+We provide several different ways to do one-off execution of pipelines and solids. For recurring execution, consult the [schedules](/overview/scheduling-partitions/schedules) section.
 
 ## Dagit
 
@@ -32,7 +32,7 @@ startAfter:start_exec_pipeline
 endBefore:end_exec_pipeline
 ```
 
-We also provide <PyObject module="dagster" object="execute_solid" /> for executing an individual solid. Under the hood this constructs an ephermal pipeline containing only this solid.
+We also provide < module="dagster" object="execute_solid" /> for executing an individual solid. Under the hood this constructs an ephermal pipeline containing only this solid.
 
 ```python literalinclude caption=test_solid.py
 file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
@@ -40,7 +40,7 @@ startAfter:start_exec_solid
 endBefore:end_exec_solid
 ```
 
-By default the python APIs will use an ephemeral <PyObject module="dagster.core.instance" object="DagsterInstance" /> to avoid reporting test runs to the instance. When using the python API for production runs, set the instance using `instance=DagsterInstance.get()` to use the default loading behavior for the instance.
+By default the python APIs will use an ephemeral <PyObject module="dagster" object="DagsterInstance" /> to avoid reporting test runs to the instance. When using the python API for production runs, set the instance using `instance=DagsterInstance.get()` to use the default loading behavior for the instance.
 
 ```python literalinclude caption=execute.py
 file:/docs_snippets/docs_snippets_tests/overview_tests/execution_tests/test_execute.py
