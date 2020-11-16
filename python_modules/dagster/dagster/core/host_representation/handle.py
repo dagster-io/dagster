@@ -160,6 +160,8 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
         from dagster.grpc.client import client_heartbeat_thread
         from dagster.grpc.server import GrpcServerProcess
 
+        self.client = None
+
         self.origin = check.inst_param(
             origin, "origin", ManagedGrpcPythonEnvRepositoryLocationOrigin
         )
