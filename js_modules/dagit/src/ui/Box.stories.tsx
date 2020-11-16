@@ -5,7 +5,14 @@ import styled from 'styled-components';
 
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
-import {AlignItems, BorderSide, FlexDirection, Spacing} from 'src/ui/types';
+import {
+  AlignItems,
+  BorderSide,
+  BorderWidth,
+  FlexDirection,
+  JustifyContent as JustifyContentType,
+  Spacing,
+} from 'src/ui/types';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -28,50 +35,27 @@ export const Padding = () => {
 
 export const BorderSides = () => {
   const sides: BorderSide[] = ['all', 'horizontal', 'vertical', 'top', 'right', 'bottom', 'left'];
+  const widths: BorderWidth[] = [1, 2];
   return (
     <Group direction="vertical" spacing={16}>
-      <div>Light color:</div>
-      <Group spacing={8} direction="horizontal">
-        {sides.map((side) => (
-          <Box
-            key={side}
-            background={Colors.LIGHT_GRAY5}
-            border={{side, width: 1, color: 'light'}}
-            padding={24}
-            style={{fontSize: '12px', textTransform: 'uppercase'}}
-          >
-            {side}
-          </Box>
-        ))}
-      </Group>
-      <div>Medium color:</div>
-      <Group spacing={8} direction="horizontal">
-        {sides.map((side) => (
-          <Box
-            key={side}
-            background={Colors.LIGHT_GRAY5}
-            border={{side, width: 1, color: 'medium'}}
-            padding={24}
-            style={{fontSize: '12px', textTransform: 'uppercase'}}
-          >
-            {side}
-          </Box>
-        ))}
-      </Group>
-      <div>Dark color:</div>
-      <Group spacing={8} direction="horizontal">
-        {sides.map((side) => (
-          <Box
-            key={side}
-            background={Colors.LIGHT_GRAY5}
-            border={{side, width: 1, color: 'dark'}}
-            padding={24}
-            style={{fontSize: '12px', textTransform: 'uppercase'}}
-          >
-            {side}
-          </Box>
-        ))}
-      </Group>
+      {widths.map((width) => (
+        <Group spacing={8} direction="vertical" key={`width-${width}`}>
+          <div>{`Width ${width}:`}</div>
+          <Group spacing={8} direction="horizontal">
+            {sides.map((side) => (
+              <Box
+                key={side}
+                background={Colors.LIGHT_GRAY5}
+                border={{side, width, color: Colors.GRAY5}}
+                padding={24}
+                style={{fontSize: '12px', textTransform: 'uppercase'}}
+              >
+                {side}
+              </Box>
+            ))}
+          </Group>
+        </Group>
+      ))}
     </Group>
   );
 };
@@ -112,6 +96,41 @@ export const FlexDirections = () => {
               <Box padding={32} background={Colors.BLUE3} />
               <Box padding={4} background={Colors.BLUE4} />
               <Box padding={16} background={Colors.BLUE5} />
+            </Box>
+          </Group>
+        ))}
+      </Group>
+    </Group>
+  );
+};
+
+export const JustifyContent = () => {
+  const justifyContent: JustifyContentType[] = [
+    'space-between',
+    'space-around',
+    'space-evenly',
+    'center',
+    'flex-start',
+    'flex-end',
+  ];
+
+  return (
+    <Group direction="vertical" spacing={16}>
+      <div>Justify content:</div>
+      <Group spacing={24} direction="vertical">
+        {justifyContent.map((option) => (
+          <Group key={option} direction="vertical" spacing={12}>
+            <ExampleText>{option}</ExampleText>
+            <Box
+              background={Colors.LIGHT_GRAY5}
+              flex={{direction: 'row', justifyContent: option}}
+              padding={8}
+            >
+              <Box padding={12} background={Colors.BLUE1} />
+              <Box padding={12} background={Colors.BLUE2} />
+              <Box padding={12} background={Colors.BLUE3} />
+              <Box padding={12} background={Colors.BLUE4} />
+              <Box padding={12} background={Colors.BLUE5} />
             </Box>
           </Group>
         ))}

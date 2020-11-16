@@ -1,7 +1,7 @@
 import styled, {css} from 'styled-components';
 
 import {assertUnreachable} from 'src/Util';
-import {BorderColor, BorderSetting, DirectionalSpacing, FlexProperties} from 'src/ui/types';
+import {BorderSetting, DirectionalSpacing, FlexProperties} from 'src/ui/types';
 
 export interface Props {
   background?: string;
@@ -19,6 +19,7 @@ const flexPropertiesToCSS = (flex: FlexProperties) => {
     ${flex.direction
       ? `flex-direction: ${flex.direction};`
       : null}
+    ${flex.justifyContent ? `justify-content: ${flex.justifyContent};` : null}
   `;
 };
 
@@ -43,50 +44,36 @@ const directionalSpacingToCSS = (property: string, spacing: DirectionalSpacing) 
   `;
 };
 
-const borderColor = (color: BorderColor) => {
-  switch (color) {
-    case 'light':
-      return 'rgba(0, 0, 0, 0.1)';
-    case 'medium':
-      return 'rgba(0, 0, 0, 0.2)';
-    case 'dark':
-      return 'rgba(0, 0, 0, 0.4)';
-    default:
-      assertUnreachable(color);
-  }
-};
-
 const borderSettingToCSS = (border: BorderSetting) => {
   const {side, width, color} = border;
-  const shadowColor = borderColor(color);
   switch (side) {
     case 'all':
       return css`
-        box-shadow: inset 0 0 0 ${width}px ${shadowColor};
+        box-shadow: inset 0 0 0 ${width}px ${color};
       `;
     case 'horizontal':
       return css`
-        box-shadow: inset 0 ${width}px ${shadowColor}, inset 0 -${width}px ${shadowColor};
+        box-shadow: inset 0 ${width}px ${color}, inset 0 -${width}px ${color};
       `;
     case 'vertical':
       return css`
-        box-shadow: inset ${width}px 0 ${shadowColor}, inset -${width}px 0 ${shadowColor};
+        box-shadow: inset ${width}px 0 ${color}, inset -${width}px 0 ${color};
       `;
     case 'top':
       return css`
-        box-shadow: inset 0 ${width}px ${shadowColor};
+        box-shadow: inset 0 ${width}px ${color};
       `;
     case 'bottom':
       return css`
-        box-shadow: inset 0 -${width}px ${shadowColor};
+        box-shadow: inset 0 -${width}px ${color};
       `;
     case 'right':
       return css`
-        box-shadow: inset -${width}px 0 ${shadowColor};
+        box-shadow: inset -${width}px 0 ${color};
       `;
     case 'left':
       return css`
-        box-shadow: inset ${width}px 0 ${shadowColor};
+        box-shadow: inset ${width}px 0 ${color};
       `;
     default:
       assertUnreachable(side);

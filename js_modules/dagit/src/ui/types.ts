@@ -19,6 +19,19 @@ export type AlignItems =
   | 'flex-end'
   | 'baseline';
 
+export type JustifyContent =
+  | 'center'
+  | 'start'
+  | 'end'
+  | 'flex-start'
+  | 'flex-end'
+  | 'left'
+  | 'right'
+  | 'space-between'
+  | 'space-around'
+  | 'space-evenly'
+  | 'stretch';
+
 export type FlexDirection = 'row' | 'row-reverse' | 'column' | 'column-reverse';
 export type FlexProperties = {
   alignItems?: AlignItems;
@@ -26,23 +39,11 @@ export type FlexProperties = {
   direction?: FlexDirection;
   display?: 'flex' | 'inline-flex';
   grow?: number;
-  justifyContent?:
-    | 'center'
-    | 'start'
-    | 'end'
-    | 'flex-start'
-    | 'flex-end'
-    | 'left'
-    | 'right'
-    | 'space-between'
-    | 'space-around'
-    | 'space-evenly'
-    | 'stretch';
+  justifyContent?: JustifyContent;
   shrink?: number;
   wrap?: 'nowrap' | 'wrap' | 'wrap-reverse';
 };
 
 export type BorderSide = 'top' | 'right' | 'bottom' | 'left' | 'horizontal' | 'vertical' | 'all';
 export type BorderWidth = 1 | 2;
-export type BorderColor = 'light' | 'medium' | 'dark';
-export type BorderSetting = {width: BorderWidth; color: BorderColor; side: BorderSide};
+export type BorderSetting = {width: BorderWidth; color: string; side: BorderSide};
