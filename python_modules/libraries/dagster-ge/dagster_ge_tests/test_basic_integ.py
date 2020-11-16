@@ -17,7 +17,7 @@ from pandas import read_csv
 
 @solid
 def pandas_yielder(_):
-    return read_csv("./basic.csv")
+    return read_csv(file_relative_path(__file__, "./basic.csv"))
 
 
 @solid(required_resource_keys={"pyspark"})
@@ -25,7 +25,7 @@ def pyspark_yielder(context):
     return (
         context.resources.pyspark.spark_session.read.format("csv")
         .options(header="true", inferSchema="true")
-        .load("./basic.csv")
+        .load(file_relative_path(__file__, "./basic.csv"))
     )
 
 

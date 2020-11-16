@@ -25,6 +25,11 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["dagster", "dagster-pandas", "pandas", "great_expectations >=0.11.9"],
+        install_requires=[
+            "dagster",
+            "dagster-pandas",
+            "pandas",
+            "great_expectations >=0.11.9, !=0.12.8",
+        ],
         zip_safe=False,
     )
