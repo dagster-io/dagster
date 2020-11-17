@@ -42,7 +42,7 @@ def define_asset_pipeline(asset_store, asset_metadata_dict):
 
 def test_result_output():
     with seven.TemporaryDirectory() as tmpdir_path:
-        asset_store = default_filesystem_asset_store.configured({"base_dir": tmpdir_path})
+        asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
         pipeline_def = define_asset_pipeline(asset_store, {})
 
         result = execute_pipeline(pipeline_def)
