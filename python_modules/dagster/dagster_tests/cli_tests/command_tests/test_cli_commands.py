@@ -165,10 +165,6 @@ def default_cli_test_instance(overrides=None):
             yield instance
 
 
-def managed_grpc_instance():
-    return default_cli_test_instance(overrides={"opt_in": {"local_servers": True}})
-
-
 @contextmanager
 def args_with_instance(gen_instance, *args):
     with gen_instance as instance:
@@ -177,10 +173,6 @@ def args_with_instance(gen_instance, *args):
 
 def args_with_default_cli_test_instance(*args):
     return args_with_instance(default_cli_test_instance(), *args)
-
-
-def args_with_managed_grpc_instance(*args):
-    return args_with_instance(managed_grpc_instance(), *args)
 
 
 @contextmanager
@@ -255,10 +247,7 @@ def grpc_server_bar_pipeline_args():
 def launch_command_contexts():
     for pipeline_target_args in valid_external_pipeline_target_args():
         yield args_with_default_cli_test_instance(*pipeline_target_args)
-        yield pytest.param(
-            args_with_managed_grpc_instance(*pipeline_target_args), marks=pytest.mark.managed_grpc
-        )
-    yield pytest.param(grpc_server_bar_pipeline_args(), marks=pytest.mark.deployed_grpc)
+    yield pytest.param(grpc_server_bar_pipeline_args())
 
 
 def pipeline_python_origin_contexts():
@@ -287,10 +276,6 @@ def scheduler_instance(overrides=None):
             yield instance
 
 
-def managed_grpc_scheduler_instance():
-    return scheduler_instance(overrides={"opt_in": {"local_servers": True}})
-
-
 @contextmanager
 def grpc_server_scheduler_cli_args():
     with scheduler_instance() as instance:
@@ -305,14 +290,7 @@ def schedule_command_contexts():
         args_with_instance(
             scheduler_instance(), ["-w", file_relative_path(__file__, "workspace.yaml")]
         ),
-        pytest.param(
-            args_with_instance(
-                managed_grpc_scheduler_instance(),
-                ["-w", file_relative_path(__file__, "workspace.yaml")],
-            ),
-            marks=pytest.mark.managed_grpc,
-        ),
-        pytest.param(grpc_server_scheduler_cli_args(), marks=pytest.mark.deployed_grpc),
+        pytest.param(grpc_server_scheduler_cli_args()),
     ]
 
 
@@ -325,11 +303,7 @@ def backfill_command_contexts():
     }
     return [
         args_with_instance(default_cli_test_instance(), repo_args, True),
-        pytest.param(
-            args_with_instance(managed_grpc_instance(), repo_args, True),
-            marks=pytest.mark.managed_grpc,
-        ),
-        pytest.param(grpc_server_backfill_args(), marks=pytest.mark.deployed_grpc),
+        grpc_server_backfill_args(),
     ]
 
 

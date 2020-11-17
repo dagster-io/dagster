@@ -75,11 +75,7 @@ def test_launch_pipeline_cli(pipeline_cli_args):
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args",
-    [
-        python_bar_cli_args("foo"),
-        pytest.param(grpc_server_bar_cli_args("foo"), marks=pytest.mark.deployed_grpc),
-    ],
+    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo"),],
 )
 def test_launch_subset_pipeline_single_clause_solid_name(gen_pipeline_args):
     runner = CliRunner()
@@ -97,11 +93,7 @@ def test_launch_subset_pipeline_single_clause_solid_name(gen_pipeline_args):
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args",
-    [
-        python_bar_cli_args("foo"),
-        pytest.param(grpc_server_bar_cli_args("foo"), marks=pytest.mark.deployed_grpc),
-    ],
+    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo"),],
 )
 def test_launch_subset_pipeline_single_clause_dsl_query(gen_pipeline_args):
     runner = CliRunner()
@@ -119,11 +111,7 @@ def test_launch_subset_pipeline_single_clause_dsl_query(gen_pipeline_args):
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args",
-    [
-        python_bar_cli_args("foo"),
-        pytest.param(grpc_server_bar_cli_args("foo"), marks=pytest.mark.deployed_grpc),
-    ],
+    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo"),],
 )
 def test_launch_subset_pipeline_multiple_clauses(gen_pipeline_args):
     runner = CliRunner()
@@ -141,11 +129,7 @@ def test_launch_subset_pipeline_multiple_clauses(gen_pipeline_args):
 
 
 @pytest.mark.parametrize(
-    "gen_pipeline_args",
-    [
-        python_bar_cli_args("foo"),
-        pytest.param(grpc_server_bar_cli_args("foo"), marks=pytest.mark.deployed_grpc),
-    ],
+    "gen_pipeline_args", [python_bar_cli_args("foo"), grpc_server_bar_cli_args("foo")],
 )
 def test_launch_subset_pipeline_invalid_value(gen_pipeline_args):
     runner = CliRunner()

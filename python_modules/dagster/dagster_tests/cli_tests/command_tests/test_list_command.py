@@ -14,8 +14,6 @@ from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path
 
-from .test_cli_commands import managed_grpc_instance
-
 
 def no_print(_):
     return None
@@ -89,7 +87,6 @@ def test_list_command_grpc_socket():
         server_process.wait()
 
 
-@pytest.mark.deployed_grpc
 def test_list_command_deployed_grpc():
     runner = CliRunner()
 
@@ -216,12 +213,8 @@ def test_list_command_cli():
     assert_correct_bar_repository_output(result)
 
 
-@pytest.mark.parametrize(
-    "gen_instance",
-    [instance_for_test(), pytest.param(managed_grpc_instance(), marks=pytest.mark.managed_grpc)],
-)
-def test_list_command(gen_instance):
-    with gen_instance as instance:
+def test_list_command():
+    with instance_for_test() as instance:
         execute_list_command(
             {
                 "repository_yaml": None,
