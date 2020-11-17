@@ -45,5 +45,5 @@ export type FlexProperties = {
 };
 
 export type BorderSide = 'top' | 'right' | 'bottom' | 'left' | 'horizontal' | 'vertical' | 'all';
-export type BorderWidth = 1 | 2;
+export type BorderWidth = 1 | 2 | 4;
 export type BorderSetting = {width: BorderWidth; color: string; side: BorderSide};

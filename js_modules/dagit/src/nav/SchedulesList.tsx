@@ -8,6 +8,8 @@ import styled from 'styled-components/macro';
 import {ShortcutHandler} from 'src/ShortcutHandler';
 import {SchedulesListQuery} from 'src/nav/types/SchedulesListQuery';
 import {ScheduleStatus} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
+import {BorderSetting} from 'src/ui/types';
 import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
 
@@ -121,20 +123,38 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
         </Link>
       </Header>
       <Items>
-        {items.map((p) => (
-          <Item
-            key={p.label}
-            data-tooltip={p.label}
-            data-tooltip-style={p.label === selector ? SelectedItemTooltipStyle : ItemTooltipStyle}
-            className={`${p.label === selector ? 'selected' : ''} ${
-              p.label === focused ? 'focused' : ''
-            }`}
-            to={p.to}
-          >
-            <div>{p.label}</div>
-            <div>{p.status === ScheduleStatus.RUNNING && <ScheduleStatusDot size={9} />}</div>
-          </Item>
-        ))}
+        {items.map((p) => {
+          const isFocused = p.label === focused;
+          const isSelected = p.label === selector;
+          const border: BorderSetting | null =
+            isSelected || isFocused
+              ? {side: 'left', width: 4, color: isSelected ? Colors.COBALT3 : Colors.GRAY3}
+              : null;
+
+          return (
+            <Item
+              key={p.label}
+              data-tooltip={p.label}
+              data-tooltip-style={isSelected ? SelectedItemTooltipStyle : ItemTooltipStyle}
+              className={`${isSelected ? 'selected' : ''} ${isFocused ? 'focused' : ''}`}
+              to={p.to}
+            >
+              <Box
+                background={isSelected ? Colors.BLACK : null}
+                border={border}
+                flex={{alignItems: 'center', justifyContent: 'space-between'}}
+                padding={{vertical: 8, right: 8, left: 12}}
+              >
+                <Label>{p.label}</Label>
+                {p.status === ScheduleStatus.RUNNING ? (
+                  <Box margin={{left: 4}}>
+                    <ScheduleStatusDot size={9} />
+                  </Box>
+                ) : null}
+              </Box>
+            </Item>
+          );
+        })}
       </Items>
     </div>
   );
@@ -148,19 +168,18 @@ const Header = styled.div`
   }
 `;
 
+const Label = styled.div`
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
 const ScheduleStatusDot = styled.div<{
   size: number;
 }>`
-  display: inline-block;
   width: ${({size}) => size}px;
   height: ${({size}) => size}px;
   border-radius: ${({size}) => size / 2}px;
-  align-self: center;
-  transition: background 200ms linear;
   background: ${Colors.GREEN2};
-  &:hover {
-    background: ${Colors.GREEN2};
-  }
 `;
 
 const Items = styled.div`
@@ -186,14 +205,6 @@ const Items = styled.div`
 
 const Item = styled(Link)`
   font-size: 13px;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  padding: 8px 12px;
-  padding-left: 8px;
-  border-left: 4px solid transparent;
-  border-bottom: 1px solid transparent;
-  display: flex;
-  justify-content: space-between;
   color: ${Colors.LIGHT_GRAY3} !important;
   &:hover {
     text-decoration: none;
@@ -202,13 +213,7 @@ const Item = styled(Link)`
   &:focus {
     outline: 0;
   }
-  &.focused {
-    border-left: 4px solid ${Colors.GRAY3};
-  }
   &.selected {
-    border-left: 4px solid ${Colors.COBALT3};
-    border-bottom: 1px solid ${Colors.DARK_GRAY2};
-    background: ${Colors.BLACK};
     font-weight: 600;
     color: ${Colors.WHITE} !important;
   }

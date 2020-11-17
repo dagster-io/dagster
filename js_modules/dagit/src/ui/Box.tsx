@@ -4,11 +4,11 @@ import {assertUnreachable} from 'src/Util';
 import {BorderSetting, DirectionalSpacing, FlexProperties} from 'src/ui/types';
 
 export interface Props {
-  background?: string;
-  border?: BorderSetting;
-  flex?: FlexProperties;
-  margin?: DirectionalSpacing;
-  padding?: DirectionalSpacing;
+  background?: string | null;
+  border?: BorderSetting | null;
+  flex?: FlexProperties | null;
+  margin?: DirectionalSpacing | null;
+  padding?: DirectionalSpacing | null;
 }
 
 const flexPropertiesToCSS = (flex: FlexProperties) => {
