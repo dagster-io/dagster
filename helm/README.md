@@ -1,39 +1,59 @@
-# Dagster
+# Dagster Helm
 
-[Dagster](https://github.com/dagster-io/dagster) is a Python library for building data applications.
+## TL;DR
 
-## Install Chart
-
-To install the Dagster chart into your Kubernetes cluster:
-
+### Installing from remote
 ```bash
-helm install --namespace "dagster" dagster /helm/dagster/
+helm repo add dagster https://dagster-io.github.io/helm
+
+helm install my-release dagster/dagster \
+    --namespace dagster \
+    --create-namespace
 ```
 
-After installation succeeds, you can get the chart status with:
+### Installing from source
+```bash
+helm install my-release . \
+    --namespace dagster \
+    --create-namespace
+```
+## Introduction
+[Dagster](https://github.com/dagster-io/dagster) is a Python library for building data applications. This chart will bootstrap a Dagit web server deployment on a Kubernetes cluster using the Helm package manager.
+
+In addition, our helm chart allows for Dagster configuration such as:
+ - Deploying user code containers separately from Dagster system components
+ - Specifying the Dagster run launcher
+ - Specifying the Dagster scheduler to handle recurring pipeline runs
+
+## Prerequisites
+### Setup a Kubernetes Cluster
+Please refer to the Kubernetes [getting started guide](https://kubernetes.io/docs/setup/) to set up and run a Kubernetes cluster.
+
+### Installing Helm
+We use Helm to manage our Kubernetes application in a configurable, replicable, and sharable way. Helm can be installed by following the [Helm installation guide](https://helm.sh/docs/intro/install/).
+
+### Adding the Dagster Repo
+To download and install the Dagster charts, use the following command:
 
 ```bash
-helm status dagster
+helm repo add dagster https://dagster-io.github.io/helm
 ```
 
-To remove Dagster:
+### Using Helm
+We can now use the Helm client to install the Dagster chart! Refer to the guide on [Using Helm](https://helm.sh/docs/intro/using_helm/) for an explanation of useful Helm concepts.
+
+Here, we install a release of the Dagster chart named `my-release`, under the Kubernetes namespace `dagster`:
 
 ```bash
-helm delete dagster
+helm install my-release dagster/dagster \
+    --namespace dagster \
+    --create-namespace
 ```
 
-The Dagster chart configures a Dagit web host Deployment/Service, Celery worker Deployment, and
-various other Kubernetes objects to support executing Dagster pipelines within a Kubernetes cluster.
+### Customizing the Release
+[Settings can configured](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing) to customize the Dagster release.
 
-Currently, this chart also installs RabbitMQ and PostgreSQL Helm charts as dependencies; a future
-update of this chart will support "bring your own database/queue" configuration.
-
-## Helm Chart Configuration
-
-Full and up-to-date documentation can always be found in the comments of the `values.yaml` file.
-
-See more detailed notes on configuring environment variables in the section below.
-
+To see the full list of configurable settings, check out the `values.yaml` file. Documentation can be found in the comments.
 ## Environment Variables
 
 We support two ways of setting environment variables: either directly add them to `values.yaml`, or
