@@ -33,7 +33,7 @@ export const RunActionsMenu: React.FunctionComponent<{
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
 
-  const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
+  const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {onCompleted: refetch});
   const [cancel] = useMutation(CANCEL_MUTATION, {onCompleted: refetch});
   const [destroy] = useMutation(DELETE_MUTATION, {onCompleted: refetch});
   const [loadEnv, {called, loading, data}] = useLazyQuery(PipelineEnvironmentYamlQuery, {
@@ -100,7 +100,7 @@ export const RunActionsMenu: React.FunctionComponent<{
                       repositoryName: activeRepo?.address.name || '',
                     }),
                   });
-                  handleLaunchResult(run.pipelineName, result, {openInNewWindow: false});
+                  handleLaunchResult(run.pipelineName, result, {openInNewWindow: true});
                 }}
               />
             </Tooltip>
