@@ -87,9 +87,8 @@ def reducer(_, in_1, in_2, in_3, in_4):
     mode_defs=[ModeDefinition(executor_defs=get_executor_defs())]
 )
 def hammer_pipeline():
-
     out_1, out_2, out_3, out_4 = chase_giver()
-    return reducer(
+    reducer(
         in_1=hammer(chase_duration=out_1),
         in_2=hammer(chase_duration=out_2),
         in_3=hammer(chase_duration=out_3),
