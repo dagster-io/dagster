@@ -108,9 +108,6 @@ class GraphDefinition(NodeDefinition):
 
         self._config_mapping = check.opt_inst_param(config_mapping, "config_mapping", ConfigMapping)
 
-        self.__configured_config_mapping_fn = check.opt_callable_param(
-            _configured_config_mapping_fn, "_configured_config_mapping_fn"
-        )
         self.__configured_config_schema = _configured_config_schema
 
         super(GraphDefinition, self).__init__(
@@ -118,6 +115,7 @@ class GraphDefinition(NodeDefinition):
             description=description,
             input_defs=input_defs,
             output_defs=[output_mapping.definition for output_mapping in self._output_mappings],
+            _configured_config_mapping_fn=_configured_config_mapping_fn,
             **kwargs,
         )
 
@@ -313,35 +311,9 @@ class GraphDefinition(NodeDefinition):
         elif self.has_config_mapping:
             return self.config_mapping.config_schema
 
-    @property
-    def _configured_config_mapping_fn(self):
-        return self.__configured_config_mapping_fn
-
-    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        """
-        Returns a new :py:class:`GraphDefinition` (PipelineDefinition or
-        CompositeSolidDefinition depending whether self is a pipeline or a composite
-        solid, respectively) that bundles this definition with the specified config
-        or config function.
-
-        For remainder of docblock "graph" should be interpreted as "pipeline or composite solid"
-
-        Args:
-            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
-                that fully satisfies this graph's config schema or (2) A
-                function that accepts run configuration and returns run configuration that
-                fully satisfies this graph's config schema.  In the latter case,
-                config_schema must be specified.  When passing a function, it's easiest to
-                use :py:func:`configured`.
-            config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
-                that its input must satisfy.
-            name (str): Name of the new (configured) graph. Must be unique within the
-                contained graph.
-            **kwargs: Arbitrary keyword arguments that will be passed to the initializer of the
-                returned graph.
-
-        Returns (GraphDefinition): A configured version of this graph definition.
-        """
+    def copy_for_configured(
+        self, wrapped_config_mapping_fn, config_schema, kwargs, original_config_or_config_fn
+    ):
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
                 "Only composite solids utilizing config mapping can be pre-configured. The solid "
@@ -349,8 +321,13 @@ class GraphDefinition(NodeDefinition):
                 "configured.".format(graph_name=self.name)
             )
 
-        fn_name = config_or_config_fn.__name__ if callable(config_or_config_fn) else None
+        fn_name = (
+            original_config_or_config_fn.__name__
+            if callable(original_config_or_config_fn)
+            else None
+        )
         name = kwargs.get("name", fn_name)
+
         if not name:
             raise DagsterInvalidDefinitionError(
                 'Missing string param "name" while attempting to configure the graph '
@@ -360,10 +337,6 @@ class GraphDefinition(NodeDefinition):
                     graph_name=self.name
                 )
             )
-
-        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
-            config_or_config_fn, config_schema
-        )
 
         return self.construct_configured_copy(
             new_name=name,

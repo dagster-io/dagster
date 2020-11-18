@@ -1,7 +1,7 @@
 from abc import abstractmethod, abstractproperty
 
 from dagster import check
-from dagster.core.definitions.config_mappable import IConfigMappable
+from dagster.core.definitions.config_mappable import ConfiguredMixin
 from dagster.utils import frozendict, frozenlist
 
 from .hook import HookDefinition
@@ -10,9 +10,16 @@ from .utils import check_valid_name, validate_tags
 
 # base class for SolidDefinition and GraphDefinition
 # represents that this is embedable within a graph
-class NodeDefinition(IConfigMappable):
+class NodeDefinition(ConfiguredMixin):
     def __init__(
-        self, name, input_defs, output_defs, description=None, tags=None, positional_inputs=None
+        self,
+        name,
+        input_defs,
+        output_defs,
+        description=None,
+        tags=None,
+        positional_inputs=None,
+        _configured_config_mapping_fn=None,
     ):
         self._name = check_valid_name(name)
         self._description = check.opt_str_param(description, "description")
@@ -31,6 +38,8 @@ class NodeDefinition(IConfigMappable):
             if positional_inputs is not None
             else list(map(lambda inp: inp.name, input_defs))
         )
+
+        super(NodeDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
     def name(self):

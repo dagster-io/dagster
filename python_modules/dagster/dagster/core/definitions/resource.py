@@ -4,14 +4,14 @@ from functools import update_wrapper
 from dagster import check, seven
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.definitions.config_mappable import IConfigMappable
+from dagster.core.definitions.config_mappable import ConfiguredMixin
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
 from dagster.utils.backcompat import experimental_arg_warning, rename_warning
 
 from ..decorator_utils import split_function_parameters, validate_decorated_fn_positionals
 
 
-class ResourceDefinition(IConfigMappable):
+class ResourceDefinition(ConfiguredMixin):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -63,12 +63,11 @@ class ResourceDefinition(IConfigMappable):
         self._resource_fn = check.opt_callable_param(resource_fn, "resource_fn")
         self._config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
         self._description = check.opt_str_param(description, "description")
-        self.__configured_config_mapping_fn = check.opt_callable_param(
-            _configured_config_mapping_fn, "config_mapping_fn"
-        )
         self._version = check.opt_str_param(version, "version")
         if version:
             experimental_arg_warning("version", "ResourceDefinition.__init__")
+
+        super(ResourceDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
     def resource_fn(self):
@@ -139,15 +138,7 @@ class ResourceDefinition(IConfigMappable):
             description=description,
         )
 
-    @property
-    def _configured_config_mapping_fn(self):
-        return self.__configured_config_mapping_fn
-
-    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
-            config_or_config_fn, config_schema
-        )
-
+    def copy_for_configured(self, wrapped_config_mapping_fn, config_schema, kwargs, _):
         return ResourceDefinition(
             config_schema=config_schema,
             description=kwargs.get("description", self.description),

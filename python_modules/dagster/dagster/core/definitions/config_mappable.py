@@ -1,6 +1,5 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod, abstractproperty
 
-import six
 from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.field_utils import check_user_facing_opt_config_param
@@ -8,39 +7,27 @@ from dagster.config.validate import process_config
 from dagster.core.errors import DagsterConfigMappingFunctionError, user_code_error_boundary
 
 
-class IConfigMappable(six.with_metaclass(ABCMeta)):
-    @property
-    def is_preconfigured(self):
-        return self._configured_config_mapping_fn is not None
-
-    @abstractproperty
-    def _configured_config_mapping_fn(self):
-        raise NotImplementedError()
+class ConfiguredMixin(ABC):
+    def __init__(self, _configured_config_mapping_fn, *args, is_nameless=False, **kwargs):
+        self._configured_config_mapping_fn = check.opt_callable_param(
+            _configured_config_mapping_fn, "config_mapping_fn"
+        )
+        self._is_nameless = is_nameless
+        super(ConfiguredMixin, self).__init__(*args, **kwargs)
 
     @abstractproperty
     def config_schema(self):
         raise NotImplementedError()
 
     @abstractmethod
-    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        """
-        Wraps this object in an object of the same type that provides configuration to the inner
-        object.
-
-        Args:
-            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
-                that fully satisfies this object's config schema or (2) A function that accepts run
-                configuration and returns run configuration that fully satisfies this object's
-                config schema.  In the latter case, config_schema must be specified.  When
-                passing a function, it's easiest to use :py:func:`configured`.
-            config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
-                that its input must satisfy.
-            **kwargs: Arbitrary keyword arguments that will be passed to the initializer of the
-                returned object.
-
-        Returns (IConfigMappable): A configured version of this object.
-        """
+    def copy_for_configured(
+        self, wrapped_config_mapping_fn, config_schema, kwargs, original_config_or_config_fn,
+    ):
         raise NotImplementedError()
+
+    @property
+    def is_preconfigured(self):
+        return self._configured_config_mapping_fn is not None
 
     def apply_config_mapping(self, config):
         """
@@ -76,7 +63,7 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
 
     def _get_wrapped_config_mapping_fn(self, config_or_config_fn, config_schema):
         """
-        Returns a config mapping helper function that will be stored on the child `IConfigMappable`
+        Returns a config mapping helper function that will be stored on the child `ConfigurableMixin`
         under `_configured_config_mapping_fn`. Encapsulates the recursiveness of the `configurable`
         pattern by returning a closure that invokes `self.apply_config_mapping` (belonging to this
         parent object) on the mapping function or static config passed into this method.
@@ -95,7 +82,7 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
 
         def wrapped_config_mapping_fn(validated_and_resolved_config):
             """
-            Given validated and resolved configuration for this IConfigMappable, applies the
+            Given validated and resolved configuration for this ConfigurableMixin, applies the
             provided config mapping function, validates its output against the inner resource's
             config_schema, and recursively invoked the `apply_config_mapping` method on the resource
             """
@@ -114,6 +101,31 @@ class IConfigMappable(six.with_metaclass(ABCMeta)):
                 return config_evr  # Bubble up the errors
 
         return wrapped_config_mapping_fn
+
+    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
+        """
+        Wraps this object in an object of the same type that provides configuration to the inner
+        object.
+
+        Args:
+            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
+                that fully satisfies this object's config schema or (2) A function that accepts run
+                configuration and returns run configuration that fully satisfies this object's
+                config schema.  In the latter case, config_schema must be specified.  When
+                passing a function, it's easiest to use :py:func:`configured`.
+            config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
+                that its input must satisfy.
+            name (Optional[str]): Name of the storage mode. If not specified, inherits the name
+                of the storage mode being configured.
+
+        Returns (ConfiguredMixin): A configured version of this object.
+        """
+        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
+            config_or_config_fn, config_schema
+        )
+        return self.copy_for_configured(
+            wrapped_config_mapping_fn, config_schema, kwargs, config_or_config_fn
+        )
 
 
 def _check_configurable_param(configurable):
@@ -134,7 +146,7 @@ def _check_configurable_param(configurable):
     check.inst_param(
         configurable,
         "configurable",
-        IConfigMappable,
+        ConfiguredMixin,
         (
             "Only the following types can be used with the `configured` method: ResourceDefinition, "
             "ExecutorDefinition, CompositeSolidDefinition, SolidDefinition, LoggerDefinition, "
@@ -162,14 +174,14 @@ def configured(configurable, config_schema=None, **kwargs):
     below.
 
     Args:
-        configurable (IConfigMappable): An object that can be configured.
+        configurable (ConfiguredMixin): An object that can be configured.
         config_schema (ConfigSchema): The config schema that the inputs to the decorated function
             must satisfy.
         **kwargs: Arbitrary keyword arguments that will be passed to the initializer of the returned
             object.
 
     Returns:
-        (Callable[[Union[Any, Callable[[Any], Any]]], IConfigMappable])
+        (Callable[[Union[Any, Callable[[Any], Any]]], ConfiguredMixin])
 
     **Examples:**
 

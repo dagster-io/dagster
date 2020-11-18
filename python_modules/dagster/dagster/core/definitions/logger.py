@@ -1,11 +1,11 @@
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.definitions.config_mappable import IConfigMappable
+from dagster.core.definitions.config_mappable import ConfiguredMixin
 from dagster.utils.backcompat import rename_warning
 
 
-class LoggerDefinition(IConfigMappable):
+class LoggerDefinition(ConfiguredMixin):
     """Core class for defining loggers.
 
     Loggers are pipeline-scoped logging handlers, which will be automatically invoked whenever
@@ -31,6 +31,7 @@ class LoggerDefinition(IConfigMappable):
         self.__configured_config_mapping_fn = check.opt_callable_param(
             _configured_config_mapping_fn, "config_mapping_fn"
         )
+        super(LoggerDefinition, self).__init__(_configured_config_mapping_fn, is_nameless=True)
 
     @property
     def logger_fn(self):
@@ -49,15 +50,7 @@ class LoggerDefinition(IConfigMappable):
     def description(self):
         return self._description
 
-    @property
-    def _configured_config_mapping_fn(self):
-        return self.__configured_config_mapping_fn
-
-    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
-            config_or_config_fn, config_schema
-        )
-
+    def copy_for_configured(self, wrapped_config_mapping_fn, config_schema, kwargs, _):
         return LoggerDefinition(
             config_schema=config_schema,
             description=kwargs.get("description", self.description),

@@ -97,6 +97,7 @@ class SolidDefinition(NodeDefinition):
             description=description,
             tags=check.opt_dict_param(tags, "tags", key_type=str),
             positional_inputs=positional_inputs,
+            _configured_config_mapping_fn=_configured_config_mapping_fn,
         )
 
     @property
@@ -139,30 +140,15 @@ class SolidDefinition(NodeDefinition):
     def default_value_for_input(self, input_name):
         return self.input_def_named(input_name).default_value
 
-    @property
-    def _configured_config_mapping_fn(self):
-        return self.__configured_config_mapping_fn
+    def copy_for_configured(
+        self, wrapped_config_mapping_fn, config_schema, kwargs, original_config_or_config_fn
+    ):
 
-    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        """
-        Returns a new :py:class:`SolidDefinition` that bundles this definition with the specified
-        config or config function.
-
-        Args:
-            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
-                that fully satisfies this solid's config schema or (2) A function that accepts run
-                configuration and returns run configuration that fully satisfies this solid's
-                config schema.  In the latter case, config_schema must be specified.  When
-                passing a function, it's easiest to use :py:func:`configured`.
-            config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
-                that its input must satisfy.
-            name (str): Name of the new (configured) solid. Must be unique within any
-                :py:class:`PipelineDefinition` using the solid.
-
-        Returns (SolidDefinition): A configured version of this solid definition.
-        """
-
-        fn_name = config_or_config_fn.__name__ if callable(config_or_config_fn) else None
+        fn_name = (
+            original_config_or_config_fn.__name__
+            if callable(original_config_or_config_fn)
+            else None
+        )
         name = kwargs.get("name", fn_name)
         if not name:
             raise DagsterInvalidDefinitionError(
@@ -173,10 +159,6 @@ class SolidDefinition(NodeDefinition):
                     solid_name=self.name
                 )
             )
-
-        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
-            config_or_config_fn, config_schema
-        )
 
         return SolidDefinition(
             name=name,

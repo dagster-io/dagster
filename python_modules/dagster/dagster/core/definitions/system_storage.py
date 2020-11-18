@@ -2,7 +2,7 @@ from functools import update_wrapper
 
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
-from dagster.core.definitions.config_mappable import IConfigMappable
+from dagster.core.definitions.config_mappable import ConfiguredMixin
 from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.utils.backcompat import rename_warning
@@ -10,7 +10,7 @@ from dagster.utils.backcompat import rename_warning
 from .utils import check_valid_name
 
 
-class SystemStorageDefinition(IConfigMappable):
+class SystemStorageDefinition(ConfiguredMixin):
     """Defines run metadata and intermediate data storage behaviors.
 
     Example storage definitions are the default :py:func:`mem_system_storage`, which stores all
@@ -62,9 +62,8 @@ class SystemStorageDefinition(IConfigMappable):
         self._required_resource_keys = frozenset(
             check.set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
-        self.__configured_config_mapping_fn = check.opt_callable_param(
-            _configured_config_mapping_fn, "config_mapping_fn"
-        )
+
+        super(SystemStorageDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
     def config_field(self):
@@ -91,35 +90,9 @@ class SystemStorageDefinition(IConfigMappable):
     def required_resource_keys(self):
         return self._required_resource_keys
 
-    @property
-    def _configured_config_mapping_fn(self):
-        return self.__configured_config_mapping_fn
-
-    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        """
-        Wraps this object in an object of the same type that provides configuration to the inner
-        object.
-
-        Args:
-            config_or_config_fn (Union[Any, Callable[[Any], Any]]): Either (1) Run configuration
-                that fully satisfies this object's config schema or (2) A function that accepts run
-                configuration and returns run configuration that fully satisfies this object's
-                config schema.  In the latter case, config_schema must be specified.  When
-                passing a function, it's easiest to use :py:func:`configured`.
-            config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
-                that its input must satisfy.
-            name (Optional[str]): Name of the storage mode. If not specified, inherits the name
-                of the storage mode being configured.
-
-        Returns (SystemStorageDefinition): A configured version of this object.
-        """
-        name = check.opt_str_param(kwargs.get("name"), "name", self.name)
-        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
-            config_or_config_fn, config_schema
-        )
-
+    def copy_for_configured(self, wrapped_config_mapping_fn, config_schema, kwargs, _):
         return SystemStorageDefinition(
-            name=name,
+            name=kwargs.get("name", self.name),
             is_persistent=self.is_persistent,
             required_resource_keys=self.required_resource_keys,
             config_schema=config_schema,

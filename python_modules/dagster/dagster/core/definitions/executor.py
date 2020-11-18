@@ -4,14 +4,14 @@ from dagster import check
 from dagster.builtins import Int
 from dagster.config.field import Field
 from dagster.config.field_utils import check_user_facing_opt_config_param
-from dagster.core.definitions.config_mappable import IConfigMappable
+from dagster.core.definitions.config_mappable import ConfiguredMixin
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.retries import Retries, get_retries_config
 from dagster.utils.backcompat import rename_warning
 
 
-class ExecutorDefinition(IConfigMappable):
+class ExecutorDefinition(ConfiguredMixin):
     """
     Args:
         name (Optional[str]): The name of the executor.
@@ -41,9 +41,7 @@ class ExecutorDefinition(IConfigMappable):
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
-        self.__configured_config_mapping_fn = check.opt_callable_param(
-            _configured_config_mapping_fn, "config_mapping_fn"
-        )
+        super(ExecutorDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
     def name(self):
@@ -66,15 +64,7 @@ class ExecutorDefinition(IConfigMappable):
     def required_resource_keys(self):
         return self._required_resource_keys
 
-    @property
-    def _configured_config_mapping_fn(self):
-        return self.__configured_config_mapping_fn
-
-    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
-        wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
-            config_or_config_fn, config_schema
-        )
-
+    def copy_for_configured(self, wrapped_config_mapping_fn, config_schema, kwargs, _):
         return ExecutorDefinition(
             config_schema=config_schema,
             name=kwargs.get("name", self.name),
