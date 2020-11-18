@@ -10,6 +10,7 @@ parameters:
       - api_tests
       - cli_tests
       - core_tests
+      - general_tests
       - daemon_tests
       - scheduler_tests
 jobs:

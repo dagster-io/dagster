@@ -89,7 +89,11 @@ def test_load_with_non_existant_file(capfd):
         )
 
     _, err = capfd.readouterr()
-    assert "No such file or directory" in err
+
+    if seven.IS_WINDOWS:
+        assert "The system cannot find the file specified" in err
+    else:
+        assert "No such file or directory" in err
 
 
 def test_load_with_empty_working_directory(capfd):
