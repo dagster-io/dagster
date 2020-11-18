@@ -2,12 +2,14 @@ import re
 
 import pytest
 from dagster import (
+    Any,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
     InputDefinition,
     Output,
     OutputDefinition,
     execute_pipeline,
+    execute_solid,
     pipeline,
     reconstructable,
     solid,
@@ -184,3 +186,17 @@ def test_missing_non_optional_output_fails():
 
     with pytest.raises(DagsterStepOutputNotFoundError):
         execute_pipeline(missing_non_optional_pipeline)
+
+
+def test_warning_for_conditional_output(capsys):
+    @solid(config_schema={"return": bool}, output_defs=[OutputDefinition(Any, is_required=False)])
+    def maybe(context):
+        if context.solid_config["return"]:
+            return 3
+
+    result = execute_solid(maybe, run_config={"solids": {"maybe": {"config": {"return": False}}}})
+    assert result.success
+    assert (
+        "when you want the downstream solids to execute, and do not yield it when you want downstream solids to skip"
+        in capsys.readouterr().err
+    )

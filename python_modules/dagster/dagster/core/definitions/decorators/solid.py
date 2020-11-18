@@ -243,6 +243,16 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
             if isinstance(result, Output):
                 yield result
             elif len(output_defs) == 1:
+                if result is None and output_defs[0].is_required is False:
+                    context.log.warn(
+                        'Value "None" returned for non-required output "{output_name}". '
+                        "This value will be passed to downstream solids. For conditional execution use\n"
+                        '  yield Output(value, "{output_name}")\n'
+                        "when you want the downstream solids to execute, "
+                        "and do not yield it when you want downstream solids to skip.".format(
+                            output_name=output_defs[0].name
+                        )
+                    )
                 yield Output(value=result, output_name=output_defs[0].name)
             elif result is not None:
                 if not output_defs:
