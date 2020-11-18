@@ -49,13 +49,6 @@ LowercaseString = create_any_type(
 )
 
 
-def aws_credentials_present():
-    return os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY")
-
-
-nettest = pytest.mark.nettest
-
-
 def define_inty_pipeline(should_throw=True):
     @lambda_solid
     def return_one():
@@ -96,11 +89,10 @@ def get_step_output(step_events, step_key, output_name="result"):
     return None
 
 
-@nettest
-def test_using_s3_for_subplan(s3_bucket):
+def test_using_s3_for_subplan(bucket):
     pipeline_def = define_inty_pipeline()
 
-    run_config = {"intermediate_storage": {"s3": {"config": {"s3_bucket": s3_bucket}}}}
+    run_config = {"intermediate_storage": {"s3": {"config": {"s3_bucket": bucket.name}}}}
 
     run_id = make_new_run_id()
 
@@ -132,7 +124,7 @@ def test_using_s3_for_subplan(s3_bucket):
     ) as context:
 
         intermediates_manager = S3IntermediateStorage(
-            s3_bucket,
+            bucket.name,
             run_id,
             s3_session=context.scoped_resources_builder.build(required_resource_keys={"s3"},).s3,
         )
@@ -189,13 +181,12 @@ class FancyStringS3TypeStoragePlugin(TypeStoragePlugin):  # pylint:disable=no-in
         return res["Contents"][0]["Key"].split("/")[-1]
 
 
-@nettest
-def test_s3_intermediate_storage_with_type_storage_plugin(s3_bucket):
+def test_s3_intermediate_storage_with_type_storage_plugin(bucket):
     run_id = make_new_run_id()
 
     intermediate_storage = S3IntermediateStorage(
         run_id=run_id,
-        s3_bucket=s3_bucket,
+        s3_bucket=bucket.name,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
             [(RuntimeString, FancyStringS3TypeStoragePlugin)]
         ),
@@ -220,13 +211,12 @@ def test_s3_intermediate_storage_with_type_storage_plugin(s3_bucket):
             intermediate_storage.rm_intermediate(context, StepOutputHandle("obj_name"))
 
 
-@nettest
-def test_s3_intermediate_storage_with_composite_type_storage_plugin(s3_bucket):
+def test_s3_intermediate_storage_with_composite_type_storage_plugin(bucket):
     run_id = make_new_run_id()
 
     intermediate_storage = S3IntermediateStorage(
         run_id=run_id,
-        s3_bucket=s3_bucket,
+        s3_bucket=bucket.name,
         type_storage_plugin_registry=TypeStoragePluginRegistry(
             [(RuntimeString, FancyStringS3TypeStoragePlugin)]
         ),
@@ -242,11 +232,10 @@ def test_s3_intermediate_storage_with_composite_type_storage_plugin(s3_bucket):
             )
 
 
-@nettest
-def test_s3_intermediate_storage_composite_types_with_custom_serializer_for_inner_type(s3_bucket):
+def test_s3_intermediate_storage_composite_types_with_custom_serializer_for_inner_type(bucket):
     run_id = make_new_run_id()
 
-    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=bucket.name)
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
             intermediate_storage.set_intermediate(
@@ -264,11 +253,10 @@ def test_s3_intermediate_storage_composite_types_with_custom_serializer_for_inne
             intermediate_storage.rm_intermediate(context, StepOutputHandle("list"))
 
 
-@nettest
-def test_s3_intermediate_storage_with_custom_serializer(s3_bucket):
+def test_s3_intermediate_storage_with_custom_serializer(bucket):
     run_id = make_new_run_id()
 
-    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=bucket.name)
 
     with yield_empty_pipeline_context(run_id=run_id) as context:
         try:
@@ -297,13 +285,14 @@ def test_s3_intermediate_storage_with_custom_serializer(s3_bucket):
             intermediate_storage.rm_intermediate(context, StepOutputHandle("foo"))
 
 
-@nettest
-def test_s3_pipeline_with_custom_prefix(s3_bucket):
+def test_s3_pipeline_with_custom_prefix(bucket):
     s3_prefix = "custom_prefix"
 
     pipe = define_inty_pipeline(should_throw=False)
     run_config = {
-        "intermediate_storage": {"s3": {"config": {"s3_bucket": s3_bucket, "s3_prefix": s3_prefix}}}
+        "intermediate_storage": {
+            "s3": {"config": {"s3_bucket": bucket.name, "s3_prefix": s3_prefix}}
+        }
     }
 
     pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)
@@ -316,7 +305,7 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
     with scoped_pipeline_context(execution_plan, run_config, pipeline_run, instance,) as context:
         intermediates_manager = S3IntermediateStorage(
             run_id=result.run_id,
-            s3_bucket=s3_bucket,
+            s3_bucket=bucket.name,
             s3_prefix=s3_prefix,
             s3_session=context.scoped_resources_builder.build(required_resource_keys={"s3"}).s3,
         )
@@ -335,12 +324,11 @@ def test_s3_pipeline_with_custom_prefix(s3_bucket):
         )
 
 
-@nettest
-def test_s3_intermediate_storage_with_custom_prefix(s3_bucket):
+def test_s3_intermediate_storage_with_custom_prefix(bucket):
     run_id = make_new_run_id()
 
     intermediate_storage = S3IntermediateStorage(
-        run_id=run_id, s3_bucket=s3_bucket, s3_prefix="custom_prefix"
+        run_id=run_id, s3_bucket=bucket.name, s3_prefix="custom_prefix"
     )
     assert intermediate_storage.root == "/".join(["custom_prefix", "storage", run_id])
 
@@ -353,22 +341,21 @@ def test_s3_intermediate_storage_with_custom_prefix(s3_bucket):
 
             assert intermediate_storage.has_intermediate(context, StepOutputHandle("true"))
             assert intermediate_storage.uri_for_paths(["true"]).startswith(
-                "s3://%s/custom_prefix" % s3_bucket
+                "s3://%s/custom_prefix" % bucket.name
             )
 
     finally:
         intermediate_storage.rm_intermediate(context, StepOutputHandle("true"))
 
 
-@nettest
-def test_s3_intermediate_storage(s3_bucket):
+def test_s3_intermediate_storage(bucket):
     run_id = make_new_run_id()
     run_id_2 = make_new_run_id()
 
-    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=bucket.name)
     assert intermediate_storage.root == "/".join(["dagster", "storage", run_id])
 
-    intermediate_storage_2 = S3IntermediateStorage(run_id=run_id_2, s3_bucket=s3_bucket)
+    intermediate_storage_2 = S3IntermediateStorage(run_id=run_id_2, s3_bucket=bucket.name)
     assert intermediate_storage_2.root == "/".join(["dagster", "storage", run_id_2])
 
     try:
@@ -428,9 +415,9 @@ class LessSimpleDataFrame(list):
     pass
 
 
-def test_custom_read_write_mode(s3_bucket):
+def test_custom_read_write_mode(bucket):
     run_id = make_new_run_id()
-    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=s3_bucket)
+    intermediate_storage = S3IntermediateStorage(run_id=run_id, s3_bucket=bucket.name)
     data_frame = [OrderedDict({"foo": "1", "bar": "1"}), OrderedDict({"foo": "2", "bar": "2"})]
     try:
         with yield_empty_pipeline_context(run_id=run_id) as context:
