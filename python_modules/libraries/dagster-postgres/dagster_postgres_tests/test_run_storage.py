@@ -4,7 +4,7 @@ from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.utils import make_new_run_id
-from dagster.utils.test.run_storage import TestRunStorage
+from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
 
 TestRunStorage.__test__ = False
 

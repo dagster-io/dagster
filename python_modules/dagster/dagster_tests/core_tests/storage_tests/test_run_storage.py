@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import pytest
 from dagster import seven
 from dagster.core.storage.runs import InMemoryRunStorage, SqliteRunStorage
-from dagster.utils.test.run_storage import TestRunStorage
+from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
 
 
 @contextmanager
