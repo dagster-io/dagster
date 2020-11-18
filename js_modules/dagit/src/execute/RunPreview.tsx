@@ -243,22 +243,25 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
       validation.errors.forEach((e) => {
         const path = errorStackToYamlPath(e.stack.entries);
 
+        errorsAndPaths.push({pathKey: path.join('.'), error: e});
+
         if (e.__typename === 'MissingFieldConfigError') {
           missingNodes.push([...path, e.field.name].join('.'));
         } else if (e.__typename === 'MissingFieldsConfigError') {
           for (const field of e.fields) {
             missingNodes.push([...path, field.name].join('.'));
           }
-        } else {
-          if (e.__typename === 'FieldNotDefinedConfigError') {
-            extraNodes.push([...path, e.fieldName].join('.'));
-          } else if (e.__typename === 'FieldsNotDefinedConfigError') {
-            for (const fieldName of e.fieldNames) {
-              extraNodes.push([...path, fieldName].join('.'));
-            }
+        } else if (e.__typename === 'FieldNotDefinedConfigError') {
+          extraNodes.push([...path, e.fieldName].join('.'));
+        } else if (e.__typename === 'FieldsNotDefinedConfigError') {
+          for (const fieldName of e.fieldNames) {
+            extraNodes.push([...path, fieldName].join('.'));
           }
+        } else if (e.__typename === 'RuntimeMismatchConfigError') {
+          // If an entry at a path is the wrong type,
+          // it is equivalent to it being missing
+          missingNodes.push(path.join('.'));
         }
-        errorsAndPaths.push({pathKey: path.join('.'), error: e});
       });
     }
 
