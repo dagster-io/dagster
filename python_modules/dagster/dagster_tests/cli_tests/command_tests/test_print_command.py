@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-import re
-
 import pytest
 from click.testing import CliRunner
 from dagster.cli.pipeline import execute_print_command, pipeline_print_command
@@ -19,56 +17,25 @@ def no_print(_):
 
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_print_command_verbose(gen_pipeline_args):
-    with gen_pipeline_args as (cli_args, uses_legacy_repository_yaml_format, _instance):
-        if uses_legacy_repository_yaml_format:
-            with pytest.warns(
-                UserWarning,
-                match=re.escape(
-                    "You are using the legacy repository yaml format. Please update your file "
-                ),
-            ):
-                execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
-        else:
-            execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
+    with gen_pipeline_args as (cli_args, _instance):
+        execute_print_command(verbose=True, cli_args=cli_args, print_fn=no_print)
 
 
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_print_command(gen_pipeline_args):
-    with gen_pipeline_args as (cli_args, uses_legacy_repository_yaml_format, _instance):
-        if uses_legacy_repository_yaml_format:
-            with pytest.warns(
-                UserWarning,
-                match=re.escape(
-                    "You are using the legacy repository yaml format. Please update your file "
-                ),
-            ):
-                execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
-        else:
-            execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
+    with gen_pipeline_args as (cli_args, _instance):
+        execute_print_command(verbose=False, cli_args=cli_args, print_fn=no_print)
 
 
 @pytest.mark.parametrize("pipeline_cli_args", valid_external_pipeline_target_cli_args_no_preset())
 def test_print_command_cli(pipeline_cli_args):
     runner = CliRunner()
-    cli_args, uses_legacy_repository_yaml_format = pipeline_cli_args
-    if uses_legacy_repository_yaml_format:
-        with pytest.warns(
-            UserWarning,
-            match=re.escape(
-                "You are using the legacy repository yaml format. Please update your file "
-            ),
-        ):
-            result = runner.invoke(pipeline_print_command, cli_args)
-            assert result.exit_code == 0, result.stdout
 
-            result = runner.invoke(pipeline_print_command, ["--verbose"] + cli_args)
-            assert result.exit_code == 0, result.stdout
-    else:
-        result = runner.invoke(pipeline_print_command, cli_args)
-        assert result.exit_code == 0, result.stdout
+    result = runner.invoke(pipeline_print_command, pipeline_cli_args)
+    assert result.exit_code == 0, result.stdout
 
-        result = runner.invoke(pipeline_print_command, ["--verbose"] + cli_args)
-        assert result.exit_code == 0, result.stdout
+    result = runner.invoke(pipeline_print_command, ["--verbose"] + pipeline_cli_args)
+    assert result.exit_code == 0, result.stdout
 
 
 def test_print_command_baz():

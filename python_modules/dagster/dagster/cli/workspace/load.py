@@ -1,15 +1,13 @@
 import os
 import sys
-import warnings
 from collections import OrderedDict
 
 import six
 from dagster import check
 from dagster.core.code_pointer import rebase_file
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import (
     GrpcServerRepositoryLocationOrigin,
-    InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -54,17 +52,10 @@ def _repo_location_origins_from_config(workspace_config, yaml_path):
     ensure_workspace_config(workspace_config, yaml_path)
 
     if "repository" in workspace_config:
-        warnings.warn(
-            # link to docs once they exist
+        raise DagsterInvariantViolationError(
             "You are using the legacy repository yaml format. Please update your file "
             "to abide by the new workspace file format."
         )
-
-        origin = InProcessRepositoryLocationOrigin(
-            ReconstructableRepository.from_legacy_repository_yaml(yaml_path)
-        )
-
-        return {origin.location_name: origin}
 
     location_origins = OrderedDict()
     for location_config in workspace_config["load_from"]:

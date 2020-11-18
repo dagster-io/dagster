@@ -1,7 +1,5 @@
 from __future__ import print_function
 
-import re
-
 import pytest
 from click.testing import CliRunner
 from dagster.cli.pipeline import execute_launch_command, pipeline_launch_command
@@ -37,17 +35,8 @@ def run_launch_cli(execution_args, instance, expected_count=None):
 
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_launch_pipeline(gen_pipeline_args):
-    with gen_pipeline_args as (cli_args, uses_legacy_repository_yaml_format, instance):
-        if uses_legacy_repository_yaml_format:
-            with pytest.warns(
-                UserWarning,
-                match=re.escape(
-                    "You are using the legacy repository yaml format. Please update your file "
-                ),
-            ):
-                run_launch(cli_args, instance, expected_count=1)
-        else:
-            run_launch(cli_args, instance, expected_count=1)
+    with gen_pipeline_args as (cli_args, instance):
+        run_launch(cli_args, instance, expected_count=1)
 
 
 def test_launch_non_existant_file():
@@ -61,17 +50,7 @@ def test_launch_non_existant_file():
 @pytest.mark.parametrize("pipeline_cli_args", valid_external_pipeline_target_cli_args_with_preset())
 def test_launch_pipeline_cli(pipeline_cli_args):
     with default_cli_test_instance() as instance:
-        cli_args, uses_legacy_repository_yaml_format = pipeline_cli_args
-        if uses_legacy_repository_yaml_format:
-            with pytest.warns(
-                UserWarning,
-                match=re.escape(
-                    "You are using the legacy repository yaml format. Please update your file "
-                ),
-            ):
-                run_launch_cli(cli_args, instance, expected_count=1)
-        else:
-            run_launch_cli(cli_args, instance, expected_count=1)
+        run_launch_cli(pipeline_cli_args, instance, expected_count=1)
 
 
 @pytest.mark.parametrize(

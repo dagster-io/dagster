@@ -162,17 +162,6 @@ def test_list_command_cli():
     )
     assert_correct_bar_repository_output(result)
 
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            "You are using the legacy repository yaml format. Please update your file "
-        ),
-    ):
-        result = runner.invoke(
-            pipeline_list_command, ["-w", file_relative_path(__file__, "repository_module.yaml")]
-        )
-        assert_correct_bar_repository_output(result)
-
     result = runner.invoke(
         pipeline_list_command, ["-w", file_relative_path(__file__, "workspace.yaml")]
     )

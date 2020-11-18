@@ -2,6 +2,14 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+# Migrating to 0.10.0
+
+## Removal: `repository:` key in workspace YAML
+
+We have removed the ability to specify a repository in your workspace using hte `repository:` key.
+Use `load_from:` instead when specifying how to load the repositories in your workspace.
+
+
 # Migrating to 0.9.0
 
 ## Removal: `config` argument

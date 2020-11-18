@@ -239,14 +239,14 @@ def grpc_server_bar_cli_args(pipeline_name=None):
 def grpc_server_bar_pipeline_args():
     with default_cli_test_instance() as instance:
         with grpc_server_bar_kwargs(pipeline_name="foo") as kwargs:
-            yield kwargs, False, instance
+            yield kwargs, instance
 
 
 # This iterates over a list of contextmanagers that can be used to contruct
-# (cli_args, uses_legacy_repository_yaml_format, instance tuples)
+# (cli_args, instance tuples)
 def launch_command_contexts():
     for pipeline_target_args in valid_external_pipeline_target_args():
-        yield args_with_default_cli_test_instance(*pipeline_target_args)
+        yield args_with_default_cli_test_instance(pipeline_target_args)
     yield pytest.param(grpc_server_bar_pipeline_args())
 
 
@@ -295,14 +295,14 @@ def schedule_command_contexts():
 
 
 # This iterates over a list of contextmanagers that can be used to contruct
-# (cli_args, uses_legacy_repository_yaml_format, instance) tuples for backfill calls
+# (cli_args, instance) tuples for backfill calls
 def backfill_command_contexts():
     repo_args = {
         "noprompt": True,
         "workspace": (file_relative_path(__file__, "repository_file.yaml"),),
     }
     return [
-        args_with_instance(default_cli_test_instance(), repo_args, True),
+        args_with_instance(default_cli_test_instance(), repo_args),
         grpc_server_backfill_args(),
     ]
 
@@ -311,7 +311,7 @@ def backfill_command_contexts():
 def grpc_server_backfill_args():
     with default_cli_test_instance() as instance:
         with grpc_server_bar_kwargs() as args:
-            yield merge_dicts(args, {"noprompt": True}), False, instance
+            yield merge_dicts(args, {"noprompt": True}), instance
 
 
 def non_existant_python_origin_target_args():
@@ -394,30 +394,23 @@ def valid_pipeline_python_origin_target_args():
     ]
 
 
-# [(cli_args, uses_legacy_repository_yaml_format)]
 def valid_external_pipeline_target_args():
     return [
-        (
-            {
-                "workspace": (file_relative_path(__file__, "repository_file.yaml"),),
-                "pipeline": "foo",
-                "python_file": None,
-                "module_name": None,
-                "attribute": None,
-            },
-            True,
-        ),
-        (
-            {
-                "workspace": (file_relative_path(__file__, "repository_module.yaml"),),
-                "pipeline": "foo",
-                "python_file": None,
-                "module_name": None,
-                "attribute": None,
-            },
-            True,
-        ),
-    ] + [(args, False) for args in valid_pipeline_python_origin_target_args()]
+        {
+            "workspace": (file_relative_path(__file__, "repository_file.yaml"),),
+            "pipeline": "foo",
+            "python_file": None,
+            "module_name": None,
+            "attribute": None,
+        },
+        {
+            "workspace": (file_relative_path(__file__, "repository_module.yaml"),),
+            "pipeline": "foo",
+            "python_file": None,
+            "module_name": None,
+            "attribute": None,
+        },
+    ] + [args for args in valid_pipeline_python_origin_target_args()]
 
 
 def valid_pipeline_python_origin_target_cli_args():
@@ -454,55 +447,45 @@ def valid_pipeline_python_origin_target_cli_args():
     ]
 
 
-# [(cli_args, uses_legacy_repository_yaml_format)]
 def valid_external_pipeline_target_cli_args_no_preset():
     return [
-        (["-w", file_relative_path(__file__, "repository_file.yaml"), "-p", "foo"], True),
-        (["-w", file_relative_path(__file__, "repository_module.yaml"), "-p", "foo"], True),
-        (["-w", file_relative_path(__file__, "workspace.yaml"), "-p", "foo"], False),
-        (
-            [
-                "-w",
-                file_relative_path(__file__, "override.yaml"),
-                "-w",
-                file_relative_path(__file__, "workspace.yaml"),
-                "-p",
-                "foo",
-            ],
-            False,
-        ),
-    ] + [(args, False) for args in valid_pipeline_python_origin_target_cli_args()]
+        ["-w", file_relative_path(__file__, "repository_file.yaml"), "-p", "foo"],
+        ["-w", file_relative_path(__file__, "repository_module.yaml"), "-p", "foo"],
+        ["-w", file_relative_path(__file__, "workspace.yaml"), "-p", "foo"],
+        [
+            "-w",
+            file_relative_path(__file__, "override.yaml"),
+            "-w",
+            file_relative_path(__file__, "workspace.yaml"),
+            "-p",
+            "foo",
+        ],
+    ] + [args for args in valid_pipeline_python_origin_target_cli_args()]
 
 
 def valid_external_pipeline_target_cli_args_with_preset():
     run_config = {"storage": {"filesystem": {"config": {"base_dir": "/tmp"}}}}
     return valid_external_pipeline_target_cli_args_no_preset() + [
-        (
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-d",
-                os.path.dirname(__file__),
-                "-a",
-                "define_foo_pipeline",
-                "--preset",
-                "test",
-            ],
-            False,
-        ),
-        (
-            [
-                "-f",
-                file_relative_path(__file__, "test_cli_commands.py"),
-                "-d",
-                os.path.dirname(__file__),
-                "-a",
-                "define_foo_pipeline",
-                "--config-json",
-                json.dumps(run_config),
-            ],
-            False,
-        ),
+        [
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-d",
+            os.path.dirname(__file__),
+            "-a",
+            "define_foo_pipeline",
+            "--preset",
+            "test",
+        ],
+        [
+            "-f",
+            file_relative_path(__file__, "test_cli_commands.py"),
+            "-d",
+            os.path.dirname(__file__),
+            "-a",
+            "define_foo_pipeline",
+            "--config-json",
+            json.dumps(run_config),
+        ],
     ]
 
 
