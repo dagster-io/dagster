@@ -12,6 +12,7 @@ from dagster.core.definitions.hook import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
+from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.objects import StepOutputHandle
@@ -288,7 +289,32 @@ class SystemStepExecutionContext(SystemExecutionContext):
         return HookContext(self._execution_context_data, self.log, hook_def, self.step)
 
     def for_asset_store(self, step_output_handle, asset_store_handle):
-        return AssetStoreContext(self.pipeline_run, step_output_handle, asset_store_handle)
+        from dagster.core.storage.asset_store import AssetStoreHandle
+
+        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
+        check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
+
+        # determine if the step is skipped
+        if (
+            # this is re-execution
+            self.pipeline_run.parent_run_id
+            # only part of the pipeline is being re-executed
+            and self.pipeline_run.step_keys_to_execute
+            # this step is not being executed
+            and step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
+        ):
+            source_run_id = self.pipeline_run.parent_run_id
+        else:
+            source_run_id = self.pipeline_run.run_id
+
+        return AssetStoreContext(
+            step_key=step_output_handle.step_key,
+            output_name=step_output_handle.output_name,
+            asset_metadata=asset_store_handle.asset_metadata,
+            pipeline_name=self.pipeline_def.name,
+            solid_def=self.solid_def,
+            source_run_id=source_run_id,
+        )
 
     def get_asset_store(self, asset_store_key):
         from dagster.core.storage.asset_store import AssetStore
@@ -384,48 +410,37 @@ class HookContext(SystemExecutionContext):
         return solid_config.config if solid_config else None
 
 
-class AssetStoreContext:
+class AssetStoreContext(
+    namedtuple(
+        "_AssetStoreContext",
+        "step_key output_name asset_metadata pipeline_name solid_def source_run_id",
+    )
+):
     """The ``context`` object available to :py:class:`AssetStore`.
 
     Attributes:
-        pipeline_run (PipelineRun): This run of the pipeline.
-        run_id (str): The id for this run of the pipeline.
-        step_key (str): The step_key for a compute step.
+        step_key (str): The step_key for the compute step.
         output_name (str): The name of the output. (default: 'result').
         asset_metadata ([Dict[str, Any]]): A dict of the metadata that is used for the asset store
             to store or retrieve the data object.
+        pipeline_name (str): The name of the pipeline.
+        solid_def (SolidDefinition): The definition of the solid that uses the asset store.
+        source_run_id (Optional[str]): The id of the run which generates the output.
     """
 
-    def __init__(self, pipeline_run, step_output_handle, asset_store_handle):
-        from dagster.core.storage.asset_store import AssetStoreHandle
+    def __new__(
+        cls, step_key, output_name, asset_metadata, pipeline_name, solid_def, source_run_id=None
+    ):
 
-        self._pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        self._step_output_handle = check.inst_param(
-            step_output_handle, "step_output_handle", StepOutputHandle
+        return super(AssetStoreContext, cls).__new__(
+            cls,
+            step_key=check.str_param(step_key, "step_key"),
+            output_name=check.str_param(output_name, "output_name"),
+            asset_metadata=check.opt_dict_param(asset_metadata, "asset_metadata", key_type=str),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            solid_def=check.inst_param(solid_def, "solid_def", SolidDefinition),
+            source_run_id=check.opt_str_param(source_run_id, "source_run_id"),
         )
-        self._asset_store_handle = check.inst_param(
-            asset_store_handle, "asset_store_handle", AssetStoreHandle
-        )
-
-    @property
-    def pipeline_run(self):
-        return self._pipeline_run
-
-    @property
-    def run_id(self):
-        return self._pipeline_run.run_id
-
-    @property
-    def step_key(self):
-        return self._step_output_handle.step_key
-
-    @property
-    def output_name(self):
-        return self._step_output_handle.output_name
-
-    @property
-    def asset_metadata(self):
-        return self._asset_store_handle.asset_metadata
 
     def get_run_scoped_output_identifier(self):
         """Utility method to get a collection of identifiers that as a whole represent a unique
@@ -433,7 +448,7 @@ class AssetStoreContext:
 
         The unique identifier collection consists of
 
-        - ``run_id``: the id for the run which generates the output.
+        - ``source_run_id``: the id of the run which generates the output.
             Note: This method also handles the re-execution memoization logic. If the step that
             generates the output is skipped in the re-execution, the ``run_id`` will be the id
             of its parent run.
@@ -443,17 +458,4 @@ class AssetStoreContext:
         Returns:
             List[str, ...]: A list of identifiers, i.e. run id, step key, and output name
         """
-        # resolve run_id as it's part of the file path
-        if (
-            # this is re-execution
-            self.pipeline_run.parent_run_id
-            # only part of the pipeline is being re-executed
-            and self.pipeline_run.step_keys_to_execute
-            # this step is not being executed
-            and self.step_key not in self.pipeline_run.step_keys_to_execute
-        ):
-            run_id = self.pipeline_run.parent_run_id
-        else:
-            run_id = self.run_id
-
-        return (run_id, self.step_key, self.output_name)
+        return [self.source_run_id, self.step_key, self.output_name]

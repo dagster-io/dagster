@@ -61,10 +61,12 @@ class InMemoryAssetStore(AssetStore):
         self.values = {}
 
     def set_asset(self, context, obj):
-        self.values[context.get_run_scoped_output_identifier()] = obj
+        keys = tuple(context.get_run_scoped_output_identifier())
+        self.values[keys] = obj
 
     def get_asset(self, context):
-        return self.values[context.get_run_scoped_output_identifier()]
+        keys = tuple(context.get_run_scoped_output_identifier())
+        return self.values[keys]
 
 
 @resource
@@ -206,9 +208,7 @@ class CustomPathPickledObjectFilesystemAssetStore(AssetStore):
             pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
 
         return AssetMaterialization(
-            asset_key=AssetKey(
-                [context.pipeline_run.pipeline_name, context.step_key, context.output_name,]
-            ),
+            asset_key=AssetKey([context.pipeline_name, context.step_key, context.output_name]),
             metadata_entries=[EventMetadataEntry.fspath(os.path.abspath(filepath))],
         )
 

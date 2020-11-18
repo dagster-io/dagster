@@ -12,6 +12,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
+from dagster.core.execution.context.system import AssetStoreContext
 from dagster.core.system_config.objects import (
     EmptyIntermediateStoreBackcompatConfig,
     EnvironmentConfig,
@@ -452,6 +453,23 @@ class ExecutionPlan(
             self.deps,
             self.artifacts_persisted,
             step_keys_to_execute,
+        )
+
+    def construct_asset_store_context(self, step_output_handle, asset_store_handle):
+        from dagster.core.storage.asset_store import AssetStoreHandle
+
+        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
+        check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
+        step = self.get_step_by_key(step_output_handle.step_key)
+        solid_def = self.pipeline_def.solid_def_named(step.solid_handle.name)
+
+        return AssetStoreContext(
+            step_key=step_output_handle.step_key,
+            output_name=step_output_handle.output_name,
+            asset_metadata=asset_store_handle.asset_metadata,
+            pipeline_name=self.pipeline_def.name,
+            solid_def=solid_def,
+            source_run_id=None,
         )
 
     def start(
