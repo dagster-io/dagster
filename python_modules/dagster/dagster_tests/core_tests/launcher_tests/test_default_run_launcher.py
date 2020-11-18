@@ -146,12 +146,7 @@ def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name)
 def run_configs():
     return [
         None,
-        pytest.param(
-            {"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
-            marks=pytest.mark.skipif(
-                seven.IS_WINDOWS, reason="multiprocessing tests flaky on windows"
-            ),
-        ),
+        {"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
     ]
 
 
