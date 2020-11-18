@@ -105,6 +105,6 @@ compute_logs:
 
         instance = DagsterInstance.from_config(tempdir)
     assert (
-        instance.compute_log_manager._s3_bucket == bucket.name  # pylint: disable=protected_access
+        instance.compute_log_manager._s3_bucket == bucket.name  # pylint: disable=protected-access
     )
     assert instance.compute_log_manager._s3_prefix == s3_prefix  # pylint: disable=protected-access
