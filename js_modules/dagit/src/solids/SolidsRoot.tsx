@@ -106,31 +106,21 @@ export const SolidsRoot: React.FC<Props> = (props) => {
   });
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minWidth: 0,
-        width: '100%',
-        height: '100%',
+    <Loading queryResult={queryResult}>
+      {({repositoryOrError}) => {
+        if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
+          return (
+            <SolidsRootWithData
+              {...props}
+              name={name}
+              repoAddress={repoAddress}
+              usedSolids={repositoryOrError.usedSolids}
+            />
+          );
+        }
+        return null;
       }}
-    >
-      <Loading queryResult={queryResult}>
-        {({repositoryOrError}) => {
-          if (repositoryOrError?.__typename === 'Repository' && repositoryOrError.usedSolids) {
-            return (
-              <SolidsRootWithData
-                {...props}
-                name={name}
-                repoAddress={repoAddress}
-                usedSolids={repositoryOrError.usedSolids}
-              />
-            );
-          }
-          return null;
-        }}
-      </Loading>
-    </div>
+    </Loading>
   );
 };
 
@@ -183,59 +173,61 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   );
 
   return (
-    <SplitPanelContainer
-      identifier={'solids'}
-      firstInitialPercent={40}
-      firstMinSize={420}
-      first={
-        <SolidListColumnContainer>
-          <div
-            style={{
-              padding: '15px 10px',
-              borderBottom: `1px solid ${Colors.LIGHT_GRAY2}`,
-            }}
-          >
-            <TokenizingField
-              values={search}
-              onChange={(search) => onSearch(search)}
-              suggestionProviders={suggestions}
-              placeholder={'Filter by name or input/output type...'}
+    <div style={{height: '100%', display: 'flex'}}>
+      <SplitPanelContainer
+        identifier={'solids'}
+        firstInitialPercent={40}
+        firstMinSize={420}
+        first={
+          <SolidListColumnContainer>
+            <div
+              style={{
+                padding: '15px 10px',
+                borderBottom: `1px solid ${Colors.LIGHT_GRAY2}`,
+              }}
+            >
+              <TokenizingField
+                values={search}
+                onChange={(search) => onSearch(search)}
+                suggestionProviders={suggestions}
+                placeholder={'Filter by name or input/output type...'}
+              />
+            </div>
+            <div style={{flex: 1}}>
+              <AutoSizer>
+                {({height, width}) => (
+                  <SolidList
+                    height={height}
+                    width={width}
+                    selected={selected}
+                    onClickSolid={onClickSolid}
+                    items={filtered.sort((a, b) =>
+                      a.definition.name.localeCompare(b.definition.name),
+                    )}
+                  />
+                )}
+              </AutoSizer>
+            </div>
+          </SolidListColumnContainer>
+        }
+        second={
+          selected ? (
+            <SolidDetailScrollContainer>
+              <UsedSolidDetails
+                name={selected.definition.name}
+                onClickInvocation={onClickInvocation}
+                repoAddress={repoAddress}
+              />
+            </SolidDetailScrollContainer>
+          ) : (
+            <NonIdealState
+              title="No solid selected"
+              description="Select a solid to see its definition and invocations."
             />
-          </div>
-          <div style={{flex: 1}}>
-            <AutoSizer>
-              {({height, width}) => (
-                <SolidList
-                  height={height}
-                  width={width}
-                  selected={selected}
-                  onClickSolid={onClickSolid}
-                  items={filtered.sort((a, b) =>
-                    a.definition.name.localeCompare(b.definition.name),
-                  )}
-                />
-              )}
-            </AutoSizer>
-          </div>
-        </SolidListColumnContainer>
-      }
-      second={
-        selected ? (
-          <SolidDetailScrollContainer>
-            <UsedSolidDetails
-              name={selected.definition.name}
-              onClickInvocation={onClickInvocation}
-              repoAddress={repoAddress}
-            />
-          </SolidDetailScrollContainer>
-        ) : (
-          <NonIdealState
-            title="No solid selected"
-            description="Select a solid to see its definition and invocations."
-          />
-        )
-      }
-    />
+          )
+        }
+      />
+    </div>
   );
 };
 

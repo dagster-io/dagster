@@ -4,9 +4,8 @@ import {Redirect, Route, Switch} from 'react-router-dom';
 
 import {TopNav} from 'src/nav/TopNav';
 import {SchedulesRoot} from 'src/schedules/SchedulesRoot';
-import {Page} from 'src/ui/Page';
+import {SolidsRoot} from 'src/solids/SolidsRoot';
 import {RepositoryPipelinesList} from 'src/workspace/RepositoryPipelinesList';
-import {RepositorySolidsList} from 'src/workspace/RepositorySolidsList';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
@@ -43,17 +42,27 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   };
 
   return (
-    <div style={{height: '100%', width: '100%', overflowY: 'auto'}}>
+    <div
+      style={{
+        height: '100%',
+        width: '100%',
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <TopNav activeTab={activeTab()} breadcrumbs={breadcrumbs} tabs={tabs} />
-      <Page>
+      <div style={{flex: 1}}>
         <Switch>
           <Route
             path="/workspace/:repoPath/schedules"
             render={() => <SchedulesRoot repoAddress={repoAddress} />}
           />
           <Route
-            path="/workspace/:repoPath/solids"
-            render={() => <RepositorySolidsList repoAddress={repoAddress} />}
+            path="/workspace/:repoPath/solids/:name?"
+            render={(props) => (
+              <SolidsRoot name={props.match.params.name} repoAddress={repoAddress} />
+            )}
           />
           <Route
             path="/workspace/:repoPath/pipelines"
@@ -64,7 +73,7 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
             render={() => <Redirect to={workspacePathFromAddress(repoAddress, `/pipelines`)} />}
           />
         </Switch>
-      </Page>
+      </div>
     </div>
   );
 };

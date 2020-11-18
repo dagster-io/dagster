@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {RunStatusWithStats} from 'src/runs/RunStatusDots';
+import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
@@ -68,42 +69,46 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
   const {pipelines} = data?.repositoryOrError;
 
   return (
-    <Table striped style={{width: '100%'}}>
-      <thead>
-        <tr>
-          <th>Pipeline name</th>
-          <th>Recent runs</th>
-        </tr>
-      </thead>
-      <tbody>
-        {pipelines.map((pipeline) => {
-          const {name, runs} = pipeline;
-          return (
-            <tr key={name}>
-              <td style={{width: '60%'}}>
-                <div>
-                  <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${name}`)}>
-                    {name}
-                  </Link>
-                </div>
-                <span style={{fontSize: '12px', color: Colors.GRAY3}}>{pipeline.description}</span>
-              </td>
-              <td>
-                <div style={{display: 'flex', flexDirection: 'row'}}>
-                  {runs.map((run) => (
-                    <RunStatusWithStats
-                      key={run.runId}
-                      runId={run.runId}
-                      status={run.status}
-                      size={16}
-                    />
-                  ))}
-                </div>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </Table>
+    <Page>
+      <Table striped style={{width: '100%'}}>
+        <thead>
+          <tr>
+            <th>Pipeline name</th>
+            <th>Recent runs</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pipelines.map((pipeline) => {
+            const {name, runs} = pipeline;
+            return (
+              <tr key={name}>
+                <td style={{width: '60%'}}>
+                  <div>
+                    <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${name}`)}>
+                      {name}
+                    </Link>
+                  </div>
+                  <span style={{fontSize: '12px', color: Colors.GRAY3}}>
+                    {pipeline.description}
+                  </span>
+                </td>
+                <td>
+                  <div style={{display: 'flex', flexDirection: 'row'}}>
+                    {runs.map((run) => (
+                      <RunStatusWithStats
+                        key={run.runId}
+                        runId={run.runId}
+                        status={run.status}
+                        size={16}
+                      />
+                    ))}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </Table>
+    </Page>
   );
 };

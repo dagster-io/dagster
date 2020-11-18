@@ -13,6 +13,7 @@ import {RepositorySchedulesFragment} from 'src/schedules/types/RepositorySchedul
 import {ScheduleStatesFragment_results} from 'src/schedules/types/ScheduleStatesFragment';
 import {SchedulesRootQuery} from 'src/schedules/types/SchedulesRootQuery';
 import {Group} from 'src/ui/Group';
+import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -36,67 +37,69 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
   });
 
   return (
-    <Loading queryResult={queryResult} allowStaleData={true}>
-      {(result) => {
-        const {repositoryOrError, scheduler, unLoadableScheduleStates} = result;
-        let scheduleDefinitionsSection = null;
-        let unLoadableSchedulesSection = null;
+    <Page>
+      <Loading queryResult={queryResult} allowStaleData={true}>
+        {(result) => {
+          const {repositoryOrError, scheduler, unLoadableScheduleStates} = result;
+          let scheduleDefinitionsSection = null;
+          let unLoadableSchedulesSection = null;
 
-        if (repositoryOrError.__typename === 'PythonError') {
-          scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
-        } else if (unLoadableScheduleStates.__typename === 'PythonError') {
-          scheduleDefinitionsSection = <PythonErrorInfo error={unLoadableScheduleStates} />;
-        } else if (
-          repositoryOrError.__typename === 'RepositoryNotFoundError' ||
-          unLoadableScheduleStates.__typename === 'RepositoryNotFoundError'
-        ) {
-          scheduleDefinitionsSection = (
-            <NonIdealState
-              icon={IconNames.ERROR}
-              title="Repository not found"
-              description="Could not load this repository."
-            />
-          );
-        } else {
-          const scheduleDefinitions = repositoryOrError.scheduleDefinitions;
-          if (!scheduleDefinitions.length) {
+          if (repositoryOrError.__typename === 'PythonError') {
+            scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
+          } else if (unLoadableScheduleStates.__typename === 'PythonError') {
+            scheduleDefinitionsSection = <PythonErrorInfo error={unLoadableScheduleStates} />;
+          } else if (
+            repositoryOrError.__typename === 'RepositoryNotFoundError' ||
+            unLoadableScheduleStates.__typename === 'RepositoryNotFoundError'
+          ) {
             scheduleDefinitionsSection = (
               <NonIdealState
                 icon={IconNames.ERROR}
-                title="No Schedules Found"
-                description={
-                  <p>
-                    This repository does not have any schedules defined. Visit the{' '}
-                    <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
-                      scheduler documentation
-                    </a>{' '}
-                    for more information about scheduling pipeline runs in Dagster. .
-                  </p>
-                }
+                title="Repository not found"
+                description="Could not load this repository."
               />
             );
           } else {
-            scheduleDefinitionsSection = scheduleDefinitions.length > 0 && (
-              <Group direction="vertical" spacing={16}>
-                <SchedulerTimezoneNote schedulerOrError={scheduler} />
-                <SchedulesTable repository={repositoryOrError} />
-              </Group>
+            const scheduleDefinitions = repositoryOrError.scheduleDefinitions;
+            if (!scheduleDefinitions.length) {
+              scheduleDefinitionsSection = (
+                <NonIdealState
+                  icon={IconNames.ERROR}
+                  title="No Schedules Found"
+                  description={
+                    <p>
+                      This repository does not have any schedules defined. Visit the{' '}
+                      <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
+                        scheduler documentation
+                      </a>{' '}
+                      for more information about scheduling pipeline runs in Dagster. .
+                    </p>
+                  }
+                />
+              );
+            } else {
+              scheduleDefinitionsSection = scheduleDefinitions.length > 0 && (
+                <Group direction="vertical" spacing={16}>
+                  <SchedulerTimezoneNote schedulerOrError={scheduler} />
+                  <SchedulesTable repository={repositoryOrError} />
+                </Group>
+              );
+            }
+            unLoadableSchedulesSection = unLoadableScheduleStates.results.length > 0 && (
+              <UnLoadableSchedules unLoadableSchedules={unLoadableScheduleStates.results} />
             );
           }
-          unLoadableSchedulesSection = unLoadableScheduleStates.results.length > 0 && (
-            <UnLoadableSchedules unLoadableSchedules={unLoadableScheduleStates.results} />
-          );
-        }
 
-        return (
-          <Group direction="vertical" spacing={20}>
-            <SchedulerInfo schedulerOrError={scheduler} />
-            {scheduleDefinitionsSection}
-            {unLoadableSchedulesSection}
-          </Group>
-        );
-      }}
-    </Loading>
+          return (
+            <Group direction="vertical" spacing={20}>
+              <SchedulerInfo schedulerOrError={scheduler} />
+              {scheduleDefinitionsSection}
+              {unLoadableSchedulesSection}
+            </Group>
+          );
+        }}
+      </Loading>
+    </Page>
   );
 };
 
