@@ -1,4 +1,5 @@
 import signal
+import sys
 
 import pendulum
 import pytest
@@ -31,9 +32,23 @@ def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, 
             cleanup_test_instance(instance)
 
 
+def _get_terminate_signal():
+    if sys.platform == "win32":
+        return signal.SIGTERM
+    else:
+        return signal.SIGKILL
+
+
+def _get_crash_signals():
+    if sys.platform == "win32":
+        return [_get_terminate_signal()]
+    else:
+        return [_get_terminate_signal(), signal.SIGINT]
+
+
 @pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["TICK_CREATED", "TICK_HELD"])
-@pytest.mark.parametrize("crash_signal", [signal.SIGKILL, signal.SIGINT])
+@pytest.mark.parametrize("crash_signal", _get_crash_signals())
 def test_failure_recovery_before_run_created(
     external_repo_context, crash_location, crash_signal, capfd
 ):
@@ -63,7 +78,7 @@ def test_failure_recovery_before_run_created(
 
             captured = capfd.readouterr()
             assert (
-                captured.out
+                captured.out.replace("\r\n", "\n")
                 == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
 2019-02-26 18:00:00 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
 """
@@ -104,7 +119,7 @@ def test_failure_recovery_before_run_created(
             )
             captured = capfd.readouterr()
             assert (
-                captured.out
+                captured.out.replace("\r\n", "\n")
                 == """2019-02-26 18:05:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
 2019-02-26 18:05:00 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
 2019-02-26 18:05:00 - SchedulerDaemon - INFO - Resuming previously interrupted schedule execution
@@ -117,9 +132,7 @@ def test_failure_recovery_before_run_created(
 
 @pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["RUN_CREATED", "RUN_LAUNCHED"])
-@pytest.mark.parametrize(
-    "crash_signal", [signal.SIGKILL, signal.SIGINT],
-)
+@pytest.mark.parametrize("crash_signal", _get_crash_signals())
 def test_failure_recovery_after_run_created(
     external_repo_context, crash_location, crash_signal, capfd
 ):
@@ -224,7 +237,7 @@ def test_failure_recovery_after_run_created(
 
 @pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["TICK_SUCCESS"])
-@pytest.mark.parametrize("crash_signal", [signal.SIGKILL, signal.SIGINT])
+@pytest.mark.parametrize("crash_signal", _get_crash_signals())
 def test_failure_recovery_after_tick_success(external_repo_context, crash_location, crash_signal):
     # Verify that if the scheduler crashes or is interrupted after a run is created,
     # it will just re-launch the already-created run when it runs again
@@ -259,7 +272,7 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
             ticks = instance.get_schedule_ticks(external_schedule.get_origin_id())
             assert len(ticks) == 1
 
-            if crash_signal == signal.SIGKILL:
+            if crash_signal == _get_terminate_signal():
                 validate_tick(
                     ticks[0], external_schedule, initial_datetime, ScheduleTickStatus.STARTED, None,
                 )

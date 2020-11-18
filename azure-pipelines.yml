@@ -10,6 +10,8 @@ parameters:
       - api_tests
       - cli_tests
       - core_tests
+      - daemon_tests
+      - scheduler_tests
 jobs:
   - job: "dagster"
     pool:
