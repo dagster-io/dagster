@@ -242,13 +242,6 @@ class ManagedGrpcPythonEnvRepositoryLocationHandle(RepositoryLocationHandle):
     def is_cleaned_up(self):
         return not self.client
 
-    def __del__(self):
-        check.invariant(
-            self.is_cleaned_up,
-            "Deleting a ManagedGrpcPythonEnvRepositoryLocationHandle without first cleaning it up."
-            " This may indicate that the handle is not being used as a contextmanager.",
-        )
-
 
 class InProcessRepositoryLocationHandle(RepositoryLocationHandle):
     def __init__(self, origin):
