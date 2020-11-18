@@ -187,7 +187,9 @@ class DauphinPipelineRun(dauphin.ObjectType):
         return self._pipeline_run.step_keys_to_execute
 
     def resolve_runConfigYaml(self, _graphene_info):
-        return yaml.dump(self._pipeline_run.run_config, default_flow_style=False)
+        return yaml.dump(
+            self._pipeline_run.run_config, default_flow_style=False, allow_unicode=True
+        )
 
     def resolve_tags(self, graphene_info):
         return [

@@ -369,7 +369,9 @@ class DauphinPipelinePreset(dauphin.ObjectType):
         return self._active_preset_data.solid_selection
 
     def resolve_runConfigYaml(self, _graphene_info):
-        yaml_str = yaml.safe_dump(self._active_preset_data.run_config, default_flow_style=False)
+        yaml_str = yaml.safe_dump(
+            self._active_preset_data.run_config, default_flow_style=False, allow_unicode=True
+        )
         return yaml_str if yaml_str else ""
 
     def resolve_mode(self, _graphene_info):
