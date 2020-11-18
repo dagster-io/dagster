@@ -1,5 +1,4 @@
-import boto3
-from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, solid
+from dagster import ModeDefinition, execute_pipeline, pipeline, solid
 from dagster.utils.test import get_temp_file_handle_with_data
 from dagster_aws.s3 import file_handle_to_s3, s3_resource
 
