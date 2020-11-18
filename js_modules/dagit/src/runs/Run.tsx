@@ -32,7 +32,7 @@ import {
   RunPipelineRunEventFragment,
   RunPipelineRunEventFragment_ExecutionStepFailureEvent,
 } from 'src/runs/types/RunPipelineRunEventFragment';
-import {useWorkspaceState} from 'src/workspace/WorkspaceContext';
+import {useActiveRepo} from 'src/workspace/WorkspaceContext';
 
 interface RunProps {
   client: ApolloClient<any>;
@@ -153,7 +153,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
     LaunchPipelineReexecution,
     LaunchPipelineReexecutionVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
-  const {activeRepo} = useWorkspaceState();
+  const activeRepo = useActiveRepo();
   const splitPanelContainer = React.createRef<SplitPanelContainer>();
 
   const onLaunch = async (style: ReExecutionStyle) => {

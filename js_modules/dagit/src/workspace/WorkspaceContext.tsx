@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
@@ -12,13 +12,15 @@ import {InstanceExecutableQuery} from 'src/workspace/types/InstanceExecutableQue
 import {
   RootRepositoriesQuery,
   RootRepositoriesQuery_repositoryLocationsOrError_PythonError,
+  RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes,
   RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation,
   RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories,
 } from 'src/workspace/types/RootRepositoriesQuery';
 
-export type Repository = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories;
-export type RepositoryLocation = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation;
-export type RepositoryError = RootRepositoriesQuery_repositoryLocationsOrError_PythonError;
+type Repository = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation_repositories;
+type RepositoryLocation = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes_RepositoryLocation;
+type RepositoryLocationNode = RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes;
+type RepositoryError = RootRepositoriesQuery_repositoryLocationsOrError_PythonError;
 
 export interface DagsterRepoOption {
   repositoryLocation: RepositoryLocation;
@@ -30,16 +32,18 @@ const LAST_REPO_KEY = 'dagit.last-repo';
 type WorkspaceState = {
   error: RepositoryError | null;
   loading: boolean;
+  locations: RepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
   activeRepo: null | {
     repo: DagsterRepoOption;
     address: RepoAddress;
     path: string;
   };
+  refetch: () => Promise<ApolloQueryResult<RootRepositoriesQuery>>;
   repoPath: string | null;
 };
 
-export const WorkspaceContext = React.createContext<WorkspaceState | null>(
+export const WorkspaceContext = React.createContext<WorkspaceState>(
   new Error('WorkspaceContext should never be uninitialized') as any,
 );
 
@@ -90,26 +94,63 @@ const getRepositoryOptionHash = (a: DagsterRepoOption) =>
 export const isRepositoryOptionEqual = (a: DagsterRepoOption, b: DagsterRepoOption) =>
   getRepositoryOptionHash(a) === getRepositoryOptionHash(b);
 
-const useRepositoryLocationsQuery = () => {
-  return useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
+/**
+ * useLocalStorageState vends `[repo, setRepo]` and internally mirrors the current
+ * selection into localStorage so that the default selection in new browser windows
+ * is the repo currently active in your session.
+ */
+const useLocalStorageState = (options: DagsterRepoOption[]) => {
+  const [repoKey, setRepoKey] = React.useState<string | null>(null);
+
+  const setRepo = (next: DagsterRepoOption) => {
+    const key = getRepositoryOptionHash(next);
+    window.localStorage.setItem(LAST_REPO_KEY, key);
+    setRepoKey(key);
+  };
+
+  // If the selection is null or the selected repository cannot be found in the set,
+  // coerce the selection to the last used repo or [0].
+  React.useEffect(() => {
+    if (
+      options.length &&
+      (!repoKey || !options.some((o) => getRepositoryOptionHash(o) === repoKey))
+    ) {
+      const lastKey = window.localStorage.getItem(LAST_REPO_KEY);
+      const last = lastKey && options.find((o) => getRepositoryOptionHash(o) === lastKey);
+      setRepoKey(getRepositoryOptionHash(last || options[0]));
+    }
+  }, [repoKey, options]);
+
+  const repoForKey = options.find((o) => getRepositoryOptionHash(o) === repoKey) || null;
+  return [repoForKey, setRepo] as [typeof repoForKey, typeof setRepo];
 };
 
 /**
- * useRepositoryOptions vends the set of available repositories by fetching them via GraphQL
- * and coercing the response to the DagsterRepoOption[] type.
+ * A hook that supplies the current workspace state of Dagit, including the current
+ * "active" repo based on the URL or localStorage, all fetched repositories available
+ * in the workspace, and loading/error state for the relevant query.
  */
-export const useRepositoryOptions = () => {
-  const {data, loading} = useRepositoryLocationsQuery();
+const useWorkspaceState = () => {
+  const match = useRouteMatch<{repoPath: string}>(['/workspace/:repoPath']);
+  const repoPath: string | null = match?.params?.repoPath || null;
 
-  return React.useMemo(() => {
+  const {data, loading, refetch} = useQuery<RootRepositoriesQuery>(ROOT_REPOSITORIES_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
+
+  const locations = React.useMemo(() => {
+    return data?.repositoryLocationsOrError.__typename === 'RepositoryLocationConnection'
+      ? data?.repositoryLocationsOrError.nodes
+      : [];
+  }, [data]);
+
+  const {options, error} = React.useMemo(() => {
     let options: DagsterRepoOption[] = [];
     if (!data || !data.repositoryLocationsOrError) {
-      return {options, loading, error: null};
+      return {options, error: null};
     }
     if (data.repositoryLocationsOrError.__typename === 'PythonError') {
-      return {options, loading, error: data.repositoryLocationsOrError};
+      return {options, error: data.repositoryLocationsOrError};
     }
 
     options = data.repositoryLocationsOrError.nodes.reduce((accum, repositoryLocation) => {
@@ -122,37 +163,14 @@ export const useRepositoryOptions = () => {
       return [...accum, ...reposForLocation];
     }, []);
 
-    return {error: null, loading, options};
-  }, [data, loading]);
-};
+    return {error: null, options};
+  }, [data]);
 
-/**
- * Retrieve the list of repository locations, including those with load failures.
- */
-export const useRepositoryLocations = () => {
-  const {data, loading, refetch} = useRepositoryLocationsQuery();
-
-  return React.useMemo(() => {
-    const nodes =
-      data?.repositoryLocationsOrError.__typename === 'RepositoryLocationConnection'
-        ? data?.repositoryLocationsOrError.nodes
-        : [];
-    return {nodes, loading, refetch};
-  }, [data, loading, refetch]);
-};
-
-/**
- * A hook that supplies the current workspace state of Dagit, including the current
- * "active" repo based on the URL or localStorage, all fetched repositories available
- * in the workspace, and loading/error state for the relevant query.
- */
-export const useWorkspaceState = () => {
-  const match = useRouteMatch<{repoPath: string}>(['/workspace/:repoPath']);
-  const repoPath: string | null = match?.params?.repoPath || null;
-
-  const repoAddress = repoPath ? repoAddressFromPath(repoPath) : null;
-  const {options, loading, error} = useRepositoryOptions();
   const [localStorageRepo, setLocalStorageRepo] = useLocalStorageState(options);
+
+  const repoAddress = React.useMemo(() => (repoPath ? repoAddressFromPath(repoPath) : null), [
+    repoPath,
+  ]);
 
   // If a repo is identified in the current route and that repo has been loaded,
   // that's our `repoForPath`. It takes priority as the "active" repo.
@@ -191,41 +209,33 @@ export const useWorkspaceState = () => {
   return {
     loading,
     error,
+    locations,
     allRepos: options,
     activeRepo,
+    refetch,
     repoPath,
   };
 };
 
-/**
- * useLocalStorageState vends `[repo, setRepo]` and internally mirrors the current
- * selection into localStorage so that the default selection in new browser windows
- * is the repo currently active in your session.
- */
-const useLocalStorageState = (options: DagsterRepoOption[]) => {
-  const [repoKey, setRepoKey] = React.useState<string | null>(null);
+export const WorkspaceProvider: React.FC = (props) => {
+  const {children} = props;
+  const workspaceState = useWorkspaceState();
+  return <WorkspaceContext.Provider value={workspaceState}>{children}</WorkspaceContext.Provider>;
+};
 
-  const setRepo = (next: DagsterRepoOption) => {
-    const key = getRepositoryOptionHash(next);
-    window.localStorage.setItem(LAST_REPO_KEY, key);
-    setRepoKey(key);
-  };
+export const useRepositoryOptions = () => {
+  const {allRepos: options, loading, error} = React.useContext(WorkspaceContext);
+  return {options, loading, error};
+};
 
-  // If the selection is null or the selected repository cannot be found in the set,
-  // coerce the selection to the last used repo or [0].
-  React.useEffect(() => {
-    if (
-      options.length &&
-      (!repoKey || !options.some((o) => getRepositoryOptionHash(o) === repoKey))
-    ) {
-      const lastKey = window.localStorage.getItem(LAST_REPO_KEY);
-      const last = lastKey && options.find((o) => getRepositoryOptionHash(o) === lastKey);
-      setRepoKey(getRepositoryOptionHash(last || options[0]));
-    }
-  }, [repoKey, options]);
+export const useActiveRepo = () => {
+  const {activeRepo} = React.useContext(WorkspaceContext);
+  return activeRepo;
+};
 
-  const repoForKey = options.find((o) => getRepositoryOptionHash(o) === repoKey) || null;
-  return [repoForKey, setRepo] as [typeof repoForKey, typeof setRepo];
+export const useRepository = () => {
+  const {activeRepo} = React.useContext(WorkspaceContext);
+  return activeRepo?.repo.repository;
 };
 
 export const useRepositorySelector = (): RepositorySelector => {
@@ -234,11 +244,6 @@ export const useRepositorySelector = (): RepositorySelector => {
     repositoryLocationName: repository?.location.name || '',
     repositoryName: repository?.name || '',
   };
-};
-
-export const useRepository = () => {
-  const workspaceState = React.useContext(WorkspaceContext);
-  return workspaceState?.activeRepo?.repo.repository;
 };
 
 export const useActivePipelineForName = (pipelineName: string) => {

@@ -5,6 +5,7 @@ import {MemoryRouter} from 'react-router-dom';
 
 import {LeftNav} from 'src/nav/LeftNav';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
+import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
 
 describe('LeftNav', () => {
   const defaultMocks = {
@@ -19,16 +20,21 @@ describe('LeftNav', () => {
     }),
   };
 
+  const Test: React.FC<{mocks: any}> = ({mocks}) => {
+    return (
+      <MemoryRouter>
+        <ApolloTestProvider mocks={mocks}>
+          <WorkspaceProvider>
+            <LeftNav />
+          </WorkspaceProvider>
+        </ApolloTestProvider>
+      </MemoryRouter>
+    );
+  };
+
   describe('Repo location errors', () => {
     it('shows no errors when there are none', async () => {
-      render(
-        <MemoryRouter>
-          <ApolloTestProvider mocks={defaultMocks}>
-            <LeftNav />
-          </ApolloTestProvider>
-        </MemoryRouter>,
-      );
-
+      render(<Test mocks={defaultMocks} />);
       await waitFor(() => {
         expect(screen.queryByText(/an error occurred while loading a repository/i)).toBeNull();
       });
@@ -42,14 +48,7 @@ describe('LeftNav', () => {
         }),
       };
 
-      render(
-        <MemoryRouter>
-          <ApolloTestProvider mocks={mocks}>
-            <LeftNav />
-          </ApolloTestProvider>
-        </MemoryRouter>,
-      );
-
+      render(<Test mocks={mocks} />);
       await waitFor(() => {
         expect(screen.getByText(/an error occurred while loading a repository/i)).toBeVisible();
         expect(screen.getByRole('link', {name: /view details/i})).toBeVisible();

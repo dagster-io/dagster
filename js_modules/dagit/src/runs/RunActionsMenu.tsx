@@ -26,7 +26,7 @@ import {
 } from 'src/runs/RunUtils';
 import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
 import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
-import {useWorkspaceState} from 'src/workspace/WorkspaceContext';
+import {useRepository} from 'src/workspace/WorkspaceContext';
 
 export const RunActionsMenu: React.FunctionComponent<{
   run: RunTableRunFragment | RunActionMenuFragment;
@@ -41,7 +41,9 @@ export const RunActionsMenu: React.FunctionComponent<{
   });
 
   const runConfigYaml = data?.pipelineRunOrError?.runConfigYaml;
-  const {activeRepo} = useWorkspaceState();
+  const activeRepo = useRepository();
+  const repositoryLocationName = activeRepo?.location.name || '';
+  const repositoryName = activeRepo?.name || '';
 
   const infoReady = called ? !loading : false;
   return (
@@ -96,8 +98,8 @@ export const RunActionsMenu: React.FunctionComponent<{
                     variables: getReexecutionVariables({
                       run: {...run, runConfigYaml},
                       style: {type: 'all'},
-                      repositoryLocationName: activeRepo?.address.location || '',
-                      repositoryName: activeRepo?.address.name || '',
+                      repositoryLocationName,
+                      repositoryName,
                     }),
                   });
                   handleLaunchResult(run.pipelineName, result, {openInNewWindow: true});

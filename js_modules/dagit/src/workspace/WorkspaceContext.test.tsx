@@ -1,16 +1,32 @@
 import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {useWorkspaceState} from 'src/workspace/WorkspaceContext';
+import {WorkspaceContext, WorkspaceProvider} from 'src/workspace/WorkspaceContext';
 
 describe('WorkspaceContext', () => {
-  const Test = () => {
-    const {activeRepo} = useWorkspaceState();
-    return <div>Pipeline count: {activeRepo?.repo.repository.pipelines.length}</div>;
+  const Display = () => {
+    const {activeRepo, refetch} = React.useContext(WorkspaceContext);
+    return (
+      <>
+        <div>Pipeline count: {activeRepo?.repo.repository.pipelines.length}</div>
+        <button onClick={() => refetch()}>Refetch</button>
+      </>
+    );
   };
+
+  const Test: React.FC<{mocks: any}> = ({mocks}) => (
+    <MemoryRouter initialEntries={['/workspace/foo@bar/etc']}>
+      <ApolloTestProvider mocks={mocks}>
+        <WorkspaceProvider>
+          <Display />
+        </WorkspaceProvider>
+      </ApolloTestProvider>
+    </MemoryRouter>
+  );
 
   describe('Repository options', () => {
     const defaultMocks = {
@@ -25,7 +41,7 @@ describe('WorkspaceContext', () => {
       }),
     };
 
-    it('updates the "current repository" state correctly when the repo itself changes', async () => {
+    it('updates the "current repository" state correctly on refetch', async () => {
       let numPipelines = 1;
       const mocks = {
         ...defaultMocks,
@@ -34,39 +50,21 @@ describe('WorkspaceContext', () => {
         }),
       };
 
-      const {rerender} = render(
-        <MemoryRouter initialEntries={['/workspace/foo@bar/etc']}>
-          <ApolloTestProvider mocks={mocks}>
-            <Test key="a" />
-          </ApolloTestProvider>
-        </MemoryRouter>,
-      );
+      render(<Test mocks={mocks} />);
 
       await waitFor(() => {
         expect(screen.getByText(/pipeline count: 1/i)).toBeVisible();
       });
 
       numPipelines++;
-      rerender(
-        <MemoryRouter initialEntries={['/workspace/foo@bar/etc']}>
-          <ApolloTestProvider mocks={mocks}>
-            <Test key="b" />
-          </ApolloTestProvider>
-        </MemoryRouter>,
-      );
+      userEvent.click(screen.getByRole('button'));
 
       await waitFor(() => {
         expect(screen.getByText(/pipeline count: 2/i)).toBeVisible();
       });
 
       numPipelines--;
-      rerender(
-        <MemoryRouter initialEntries={['/workspace/foo@bar/etc']}>
-          <ApolloTestProvider mocks={mocks}>
-            <Test key="c" />
-          </ApolloTestProvider>
-        </MemoryRouter>,
-      );
+      userEvent.click(screen.getByRole('button'));
 
       await waitFor(() => {
         expect(screen.getByText(/pipeline count: 1/i)).toBeVisible();

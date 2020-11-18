@@ -18,7 +18,7 @@ import {
   PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot,
 } from 'src/types/PipelineExplorerRootQuery';
 import {PipelineExplorerSolidHandleFragment} from 'src/types/PipelineExplorerSolidHandleFragment';
-import {useWorkspaceState, usePipelineSelector} from 'src/workspace/WorkspaceContext';
+import {useActiveRepo, usePipelineSelector} from 'src/workspace/WorkspaceContext';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 function explodeComposite(
@@ -137,7 +137,7 @@ export const PipelineExplorerSnapshotRoot: React.FC<RouteComponentProps> = (prop
 
 const PipelineExplorerRoot: React.FC<{explorerPath: PipelineExplorerPath}> = (props) => {
   const history = useHistory();
-  const {activeRepo} = useWorkspaceState();
+  const activeRepo = useActiveRepo();
   const {explorerPath} = props;
   const [options, setOptions] = React.useState<PipelineExplorerOptions>({
     explodeComposites: false,

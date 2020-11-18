@@ -15,7 +15,7 @@ import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {SchedulesList} from 'src/nav/SchedulesList';
 import {Group} from 'src/ui/Group';
 import {Caption} from 'src/ui/Text';
-import {useWorkspaceState, useRepositoryLocations} from 'src/workspace/WorkspaceContext';
+import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
 
 const KEYCODE_FOR_1 = 49;
 
@@ -51,8 +51,7 @@ const LeftNavRepositorySection = () => {
     '/:rootTab?',
   ]);
 
-  const {activeRepo, allRepos, loading} = useWorkspaceState();
-  const {nodes: locations, refetch} = useRepositoryLocations();
+  const {activeRepo, allRepos, loading, locations, refetch} = React.useContext(WorkspaceContext);
 
   const anyErrors = locations.some((node) => node.__typename === 'RepositoryLocationLoadFailure');
 

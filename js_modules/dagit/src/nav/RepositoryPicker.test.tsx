@@ -7,7 +7,7 @@ import {MemoryRouter} from 'react-router-dom';
 import {OnReload} from 'src/nav/ReloadRepositoryLocationButton';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
-import {useRepositoryOptions} from 'src/workspace/WorkspaceContext';
+import {useRepositoryOptions, WorkspaceProvider} from 'src/workspace/WorkspaceContext';
 
 describe('RepositoryPicker', () => {
   const defaultMocks = {
@@ -27,16 +27,27 @@ describe('RepositoryPicker', () => {
     }),
   };
 
-  const Wrapper: React.FC<{onReload?: OnReload}> = (props) => {
+  const Test: React.FC<{onReload?: OnReload}> = (props) => {
     const {loading, options} = useRepositoryOptions();
     return (
+      <RepositoryPicker
+        loading={loading}
+        onReload={props.onReload || jest.fn()}
+        options={options}
+        repo={options[0]}
+      />
+    );
+  };
+
+  const Wrapper: React.FC<{mocks: any; onReload?: OnReload}> = (props) => {
+    const {mocks, onReload} = props;
+    return (
       <MemoryRouter>
-        <RepositoryPicker
-          loading={loading}
-          onReload={props.onReload || jest.fn()}
-          options={options}
-          repo={options[0]}
-        />
+        <ApolloTestProvider mocks={mocks}>
+          <WorkspaceProvider>
+            <Test onReload={onReload} />
+          </WorkspaceProvider>
+        </ApolloTestProvider>
       </MemoryRouter>
     );
   };
@@ -49,11 +60,7 @@ describe('RepositoryPicker', () => {
       }),
     };
 
-    render(
-      <ApolloTestProvider mocks={mocks}>
-        <Wrapper />
-      </ApolloTestProvider>,
-    );
+    render(<Wrapper mocks={mocks} />);
 
     await waitFor(() => {
       expect(screen.getByText(/foo-bar/i)).toBeVisible();
@@ -74,11 +81,7 @@ describe('RepositoryPicker', () => {
 
     const onReload = jest.fn();
 
-    render(
-      <ApolloTestProvider mocks={mocks}>
-        <Wrapper onReload={onReload} />
-      </ApolloTestProvider>,
-    );
+    render(<Wrapper mocks={mocks} onReload={onReload} />);
 
     const button = await screen.findByRole('button', {name: /refresh/i});
     userEvent.click(button);

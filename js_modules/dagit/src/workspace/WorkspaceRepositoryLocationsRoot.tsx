@@ -18,7 +18,7 @@ import {TopNav} from 'src/nav/TopNav';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
-import {useRepositoryLocations} from 'src/workspace/WorkspaceContext';
+import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
 import {RootRepositoriesQuery_repositoryLocationsOrError_RepositoryLocationConnection_nodes as LocationOrError} from 'src/workspace/types/RootRepositoriesQuery';
 
 const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boolean}> = (
@@ -95,14 +95,14 @@ const ReloadButton: React.FC<{location: string; onReload: (location: string) => 
 };
 
 export const WorkspaceRepositoryLocationsRoot = () => {
-  const {nodes, loading, refetch} = useRepositoryLocations();
+  const {locations, loading, refetch} = React.useContext(WorkspaceContext);
   const [reloading, setReloading] = React.useState<string | null>(null);
 
-  if (loading && !nodes.length) {
+  if (loading && !locations.length) {
     return <LoadingWithProgress />;
   }
 
-  if (!nodes.length) {
+  if (!locations.length) {
     return (
       <LoadingContainer>
         <LoadingCentering>
@@ -135,14 +135,17 @@ export const WorkspaceRepositoryLocationsRoot = () => {
             </tr>
           </thead>
           <tbody>
-            {nodes.map((node) => (
-              <tr key={node.name}>
-                <td style={{width: '30%'}}>{node.name}</td>
+            {locations.map((location) => (
+              <tr key={location.name}>
+                <td style={{width: '30%'}}>{location.name}</td>
                 <td style={{width: '20%'}}>
-                  <LocationStatus locationOrError={node} reloading={node.name === reloading} />
+                  <LocationStatus
+                    locationOrError={location}
+                    reloading={location.name === reloading}
+                  />
                 </td>
                 <td style={{width: '100%'}}>
-                  <ReloadButton location={node.name} onReload={onReload} />
+                  <ReloadButton location={location.name} onReload={onReload} />
                 </td>
               </tr>
             ))}

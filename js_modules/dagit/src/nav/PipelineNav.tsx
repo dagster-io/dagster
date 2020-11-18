@@ -8,7 +8,7 @@ import {
   PipelineExplorerPath,
 } from 'src/PipelinePathUtils';
 import {TopNav} from 'src/nav/TopNav';
-import {useWorkspaceState} from 'src/workspace/WorkspaceContext';
+import {useActiveRepo} from 'src/workspace/WorkspaceContext';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
@@ -74,7 +74,7 @@ interface Props {
 
 export const PipelineNav: React.FC<Props> = (props) => {
   const {repoAddress} = props;
-  const {activeRepo} = useWorkspaceState();
+  const activeRepo = useActiveRepo();
   const match = useRouteMatch<{tab?: string; selector: string}>([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
   ]);

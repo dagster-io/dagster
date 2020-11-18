@@ -8,7 +8,7 @@ import {SchedulesRoot} from 'src/schedules/SchedulesRoot';
 import {SolidDetailsRoot} from 'src/solids/SolidDetailsRoot';
 import {SolidsRoot} from 'src/solids/SolidsRoot';
 import {MainContent} from 'src/ui/MainContent';
-import {useWorkspaceState} from 'src/workspace/WorkspaceContext';
+import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
 import {WorkspaceOverviewRoot} from 'src/workspace/WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from 'src/workspace/WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from 'src/workspace/WorkspaceRepoRoot';
@@ -17,8 +17,7 @@ import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
 
 const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
   const {repoPath} = props;
-  const workspaceState = useWorkspaceState();
-
+  const workspaceState = React.useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
 
   // A RepoAddress could not be created for this path, which means it's invalid.

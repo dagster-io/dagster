@@ -11,16 +11,14 @@ import {TimezoneProvider} from 'src/TimeComponents';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {InstanceRoot} from 'src/instance/InstanceRoot';
 import {LeftNav} from 'src/nav/LeftNav';
-import {WorkspaceContext, useWorkspaceState} from 'src/workspace/WorkspaceContext';
+import {WorkspaceProvider} from 'src/workspace/WorkspaceContext';
 import {WorkspaceRoot} from 'src/workspace/WorkspaceRoot';
 
 export const AppContent = () => {
   useDocumentTitle('Dagit');
-  const workspaceState = useWorkspaceState();
-
   return (
     <div style={{display: 'flex', height: '100%'}}>
-      <WorkspaceContext.Provider value={workspaceState}>
+      <WorkspaceProvider>
         <LeftNav />
         <CustomConfirmationProvider>
           <Switch>
@@ -32,7 +30,7 @@ export const AppContent = () => {
           <CustomTooltipProvider />
           <CustomAlertProvider />
         </CustomConfirmationProvider>
-      </WorkspaceContext.Provider>
+      </WorkspaceProvider>
     </div>
   );
 };
