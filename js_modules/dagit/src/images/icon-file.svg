@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="20px" height="14px" viewBox="0 0 350 242" version="1.1">
-  <g stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-    <path d="M-100,96 L0,96" stroke="currentColor" strokeWidth="15" strokeLinecap="square" />
-    <polygon stroke="currentColor" strokeWidth="15" points="5.4296875 236.507812 5.4296875 5.84765625 137.851562 5.84765625 188.003906 56 188.003906 236.507812" />
-    <path d="M187.5,62.5078125 L130.5,62.5078125 M130.5,5.84765625 L130.5,62.5078125" stroke="currentColor" strokeWidth="15" strokeLinecap="square" />
-  </g>
-</svg>
