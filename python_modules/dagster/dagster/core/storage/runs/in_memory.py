@@ -83,7 +83,7 @@ class InMemoryRunStorage(RunStorage):
             if filters.run_ids and run.run_id not in filters.run_ids:
                 return False
 
-            if filters.status and filters.status != run.status:
+            if filters.statuses and run.status not in filters.statuses:
                 return False
 
             if filters.pipeline_name and filters.pipeline_name != run.pipeline_name:

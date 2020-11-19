@@ -267,8 +267,8 @@ class TestRunStorage:
         assert some_runs[0].run_id == two
         assert some_runs[1].run_id == one
 
-        some_runs = storage.get_runs(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
-        count = storage.get_runs_count(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
+        some_runs = storage.get_runs(PipelineRunsFilter(statuses=[PipelineRunStatus.SUCCESS]))
+        count = storage.get_runs_count(PipelineRunsFilter(statuses=[PipelineRunStatus.SUCCESS]))
         assert len(some_runs) == 2
         assert count == 2
         assert some_runs[0].run_id == three
@@ -302,14 +302,14 @@ class TestRunStorage:
             PipelineRunsFilter(
                 pipeline_name="some_pipeline",
                 tags={"tag": "hello"},
-                status=PipelineRunStatus.SUCCESS,
+                statuses=[PipelineRunStatus.SUCCESS],
             )
         )
         count = storage.get_runs_count(
             PipelineRunsFilter(
                 pipeline_name="some_pipeline",
                 tags={"tag": "hello"},
-                status=PipelineRunStatus.SUCCESS,
+                statuses=[PipelineRunStatus.SUCCESS],
             )
         )
         assert len(some_runs) == 1
@@ -322,7 +322,7 @@ class TestRunStorage:
                 run_ids=[one],
                 pipeline_name="some_pipeline",
                 tags={"tag": "hello"},
-                status=PipelineRunStatus.SUCCESS,
+                statuses=[PipelineRunStatus.SUCCESS],
             )
         )
         count = storage.get_runs_count(
@@ -330,7 +330,7 @@ class TestRunStorage:
                 run_ids=[one],
                 pipeline_name="some_pipeline",
                 tags={"tag": "hello"},
-                status=PipelineRunStatus.SUCCESS,
+                statuses=[PipelineRunStatus.SUCCESS],
             )
         )
         assert len(some_runs) == 1
@@ -482,22 +482,24 @@ class TestRunStorage:
 
         assert {
             run.run_id
-            for run in storage.get_runs(PipelineRunsFilter(status=PipelineRunStatus.NOT_STARTED))
+            for run in storage.get_runs(
+                PipelineRunsFilter(statuses=[PipelineRunStatus.NOT_STARTED])
+            )
         } == {one}
 
         assert {
             run.run_id
-            for run in storage.get_runs(PipelineRunsFilter(status=PipelineRunStatus.STARTED))
+            for run in storage.get_runs(PipelineRunsFilter(statuses=[PipelineRunStatus.STARTED]))
         } == {two, three,}
 
         assert {
             run.run_id
-            for run in storage.get_runs(PipelineRunsFilter(status=PipelineRunStatus.FAILURE))
+            for run in storage.get_runs(PipelineRunsFilter(statuses=[PipelineRunStatus.FAILURE]))
         } == {four}
 
         assert {
             run.run_id
-            for run in storage.get_runs(PipelineRunsFilter(status=PipelineRunStatus.SUCCESS))
+            for run in storage.get_runs(PipelineRunsFilter(statuses=[PipelineRunStatus.SUCCESS]))
         } == set()
 
     def test_fetch_by_status_cursored(self, storage):
@@ -528,24 +530,24 @@ class TestRunStorage:
         )
 
         cursor_four_runs = storage.get_runs(
-            PipelineRunsFilter(status=PipelineRunStatus.STARTED), cursor=four
+            PipelineRunsFilter(statuses=[PipelineRunStatus.STARTED]), cursor=four
         )
         assert len(cursor_four_runs) == 2
         assert {run.run_id for run in cursor_four_runs} == {one, two}
 
         cursor_two_runs = storage.get_runs(
-            PipelineRunsFilter(status=PipelineRunStatus.STARTED), cursor=two
+            PipelineRunsFilter(statuses=[PipelineRunStatus.STARTED]), cursor=two
         )
         assert len(cursor_two_runs) == 1
         assert {run.run_id for run in cursor_two_runs} == {one}
 
         cursor_one_runs = storage.get_runs(
-            PipelineRunsFilter(status=PipelineRunStatus.STARTED), cursor=one
+            PipelineRunsFilter(statuses=[PipelineRunStatus.STARTED]), cursor=one
         )
         assert not cursor_one_runs
 
         cursor_four_limit_one = storage.get_runs(
-            PipelineRunsFilter(status=PipelineRunStatus.STARTED), cursor=four, limit=1
+            PipelineRunsFilter(statuses=[PipelineRunStatus.STARTED]), cursor=four, limit=1
         )
         assert len(cursor_four_limit_one) == 1
         assert cursor_four_limit_one[0].run_id == two
@@ -824,7 +826,7 @@ class TestRunStorage:
             storage.add_run(run)
 
         run_groups = storage.get_run_groups(
-            limit=5, filters=PipelineRunsFilter(status=PipelineRunStatus.FAILURE)
+            limit=5, filters=PipelineRunsFilter(statuses=[PipelineRunStatus.FAILURE])
         )
 
         assert len(run_groups) == 3

@@ -66,18 +66,13 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
                 self._instance.launch_run(run.run_id, external_pipeline)
 
     def _get_queued_runs(self, limit=None):
-        queued_runs_filter = PipelineRunsFilter(status=PipelineRunStatus.QUEUED)
+        queued_runs_filter = PipelineRunsFilter(statuses=[PipelineRunStatus.QUEUED])
 
         runs = self._instance.get_runs(filters=queued_runs_filter, limit=limit)
         assert len(runs) <= limit
         return runs
 
     def _count_in_progress_runs(self):
-        num_runs = 0
-
-        # NOTE: this can be reduced to a single query if PipelineRunsFilters can take multiple statuses
-        for status in IN_PROGRESS_STATUSES:
-            runs_filter = PipelineRunsFilter(status=status)
-            num_runs += self._instance.get_runs_count(filters=runs_filter)
-
-        return num_runs
+        return self._instance.get_runs_count(
+            filters=PipelineRunsFilter(statuses=IN_PROGRESS_STATUSES)
+        )

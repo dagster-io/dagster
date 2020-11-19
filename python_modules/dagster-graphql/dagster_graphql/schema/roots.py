@@ -838,9 +838,9 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
 
     def to_selector(self):
         if self.status:
-            status = PipelineRunStatus[self.status]
+            statuses = [PipelineRunStatus[self.status]]
         else:
-            status = None
+            statuses = []
 
         if self.tags:
             # We are wrapping self.tags in a list because dauphin.List is not marked as iterable
@@ -853,7 +853,7 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
             run_ids=run_ids,
             pipeline_name=self.pipeline_name,
             tags=tags,
-            status=status,
+            statuses=statuses,
             snapshot_id=self.snapshot_id,
         )
 

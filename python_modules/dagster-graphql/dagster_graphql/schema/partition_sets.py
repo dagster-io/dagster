@@ -77,7 +77,7 @@ class DauphinPartition(dauphin.ObjectType):
             runs_filter = PipelineRunsFilter(
                 run_ids=filters.run_ids,
                 pipeline_name=filters.pipeline_name,
-                status=filters.status,
+                statuses=filters.statuses,
                 tags=merge_dicts(filters.tags, partition_tags),
             )
         else:
