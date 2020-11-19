@@ -107,6 +107,7 @@
     "react-is": "^16.13.1",
     "react-scripts": "4.0.0",
     "react-test-renderer": "^16.11.0",
+    "source-map-explorer": "^2.5.0",
     "ts-node": "^8.4.1",
     "typescript": "4.0.5"
   },
@@ -128,7 +129,8 @@
     "generate-types": "find src -type d -name types | xargs rm -r && apollo codegen:generate --includes \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql --globalTypesFile ./src/types/globalTypes.ts && python append_generated.py",
     "watch-types": "apollo codegen:generate --includes \"./src/**/*.tsx\" --target typescript types --localSchemaFile ./src/schema.graphql  --globalTypesFile ./src/types/globalTypes.ts --watch",
     "storybook": "start-storybook -p 6006 -s public",
-    "build-storybook": "build-storybook -s public"
+    "build-storybook": "build-storybook -s public",
+    "analyze": "source-map-explorer 'build/static/js/*.js'"
   },
   "jest": {
     "collectCoverageFrom": [
