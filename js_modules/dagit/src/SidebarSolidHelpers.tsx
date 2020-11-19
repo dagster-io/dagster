@@ -1,4 +1,4 @@
-import {Code, Colors, Text} from '@blueprintjs/core';
+import {Colors, Icon, Text} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -6,6 +6,7 @@ import styled from 'styled-components/macro';
 import {SectionHeader} from 'src/SidebarComponents';
 import {titleOfIO} from 'src/Util';
 import {SolidColumn} from 'src/runs/LogsRowComponents';
+import {Code} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 
 export type SolidLinkInfo = {
@@ -37,18 +38,7 @@ export const TypeWrapper = styled.div`
 
 export const SolidLink = (props: SolidLinkInfo) => (
   <Link to={`./${props.solid.name}`}>
-    <Code
-      style={{
-        fontFamily: FontFamily.monospace,
-        display: 'inline-block',
-        verticalAlign: 'middle',
-        textOverflow: 'ellipsis',
-        overflow: 'hidden',
-        maxWidth: '100%',
-      }}
-    >
-      {titleOfIO(props)}
-    </Code>
+    <Code>{titleOfIO(props)}</Code>
   </Link>
 );
 
@@ -85,37 +75,11 @@ export const DependencyRow = ({
 }) => {
   return (
     <tr>
-      <td
-        style={{
-          whiteSpace: 'nowrap',
-          maxWidth: 0,
-          width: '45%',
-        }}
-      >
-        {typeof from === 'string' ? (
-          <DependencyLocalIOName>{from}</DependencyLocalIOName>
-        ) : (
-          <SolidLink {...from} />
-        )}
-      </td>
+      <Cell>{typeof from === 'string' ? <Code>{from}</Code> : <SolidLink {...from} />}</Cell>
       <td>
-        <img alt="arrow" src={require('./images/icon-dependency-arrow.svg')} />
+        <Icon icon="arrow-right" iconSize={12} color={Colors.GRAY1} />
       </td>
-      <td
-        style={{
-          textOverflow: 'ellipsis',
-          overflow: 'hidden',
-          whiteSpace: 'nowrap',
-          maxWidth: 0,
-          width: '60%',
-        }}
-      >
-        {typeof to === 'string' ? (
-          <DependencyLocalIOName>{to}</DependencyLocalIOName>
-        ) : (
-          <SolidLink {...to} />
-        )}
-      </td>
+      <Cell>{typeof to === 'string' ? <Code>{to}</Code> : <SolidLink {...to} />}</Cell>
     </tr>
   );
 };
@@ -136,6 +100,14 @@ export const DependencyHeaderRow: React.FunctionComponent<DependencyHeaderRowPro
 
 export const ResourceHeader = styled(SectionHeader)`
   font-size: 13px;
+`;
+
+const Cell = styled.td`
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 0;
+  width: 48%;
 `;
 
 export const ResourceContainer = styled.div`
