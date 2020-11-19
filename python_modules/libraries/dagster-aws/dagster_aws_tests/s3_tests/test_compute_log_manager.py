@@ -1,7 +1,6 @@
 import os
 import sys
 
-import boto3
 import six
 from dagster import DagsterEventType, execute_pipeline, pipeline, seven, solid
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -12,7 +11,6 @@ from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster_aws.s3 import S3ComputeLogManager
-from moto import mock_s3
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
@@ -23,8 +21,7 @@ EXPECTED_LOGS = [
 ]
 
 
-@mock_s3
-def test_compute_log_manager(s3_bucket):
+def test_compute_log_manager(bucket):
     @pipeline
     def simple():
         @solid
@@ -35,14 +32,10 @@ def test_compute_log_manager(s3_bucket):
 
         easy()
 
-    # Uses mock S3
-    s3 = boto3.client("s3")
-    s3.create_bucket(Bucket=s3_bucket)
-
     with seven.TemporaryDirectory() as temp_dir:
         run_store = SqliteRunStorage.from_local(temp_dir)
         event_store = SqliteEventLogStorage(temp_dir)
-        manager = S3ComputeLogManager(bucket=s3_bucket, prefix="my_prefix", local_dir=temp_dir)
+        manager = S3ComputeLogManager(bucket=bucket.name, prefix="my_prefix", local_dir=temp_dir)
         instance = DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=LocalArtifactStorage(temp_dir),
@@ -69,13 +62,12 @@ def test_compute_log_manager(s3_bucket):
             assert expected in stderr.data
 
         # Check S3 directly
-        s3_object = s3.get_object(
-            Bucket=s3_bucket,
-            Key="{prefix}/storage/{run_id}/compute_logs/easy.compute.err".format(
+        s3_object = bucket.Object(
+            key="{prefix}/storage/{run_id}/compute_logs/easy.compute.err".format(
                 prefix="my_prefix", run_id=result.run_id
             ),
         )
-        stderr_s3 = six.ensure_str(s3_object["Body"].read())
+        stderr_s3 = six.ensure_str(s3_object.get()["Body"].read())
         for expected in EXPECTED_LOGS:
             assert expected in stderr_s3
 
@@ -92,8 +84,7 @@ def test_compute_log_manager(s3_bucket):
             assert expected in stderr.data
 
 
-@mock_s3
-def test_compute_log_manager_from_config(s3_bucket):
+def test_compute_log_manager_from_config(bucket):
     s3_prefix = "foobar"
 
     dagster_yaml = """
@@ -105,7 +96,7 @@ compute_logs:
     local_dir: "/tmp/cool"
     prefix: "{s3_prefix}"
 """.format(
-        s3_bucket=s3_bucket, s3_prefix=s3_prefix
+        s3_bucket=bucket.name, s3_prefix=s3_prefix
     )
 
     with seven.TemporaryDirectory() as tempdir:
@@ -113,5 +104,7 @@ compute_logs:
             f.write(six.ensure_binary(dagster_yaml))
 
         instance = DagsterInstance.from_config(tempdir)
-    assert instance.compute_log_manager._s3_bucket == s3_bucket  # pylint: disable=protected-access
+    assert (
+        instance.compute_log_manager._s3_bucket == bucket.name  # pylint: disable=protected-access
+    )
     assert instance.compute_log_manager._s3_prefix == s3_prefix  # pylint: disable=protected-access
