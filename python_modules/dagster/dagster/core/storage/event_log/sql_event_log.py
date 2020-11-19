@@ -230,6 +230,7 @@ class SqlEventLogStorage(EventLogStorage):
                     SqlEventLogStorageTable.c.step_key,
                     SqlEventLogStorageTable.c.dagster_event_type,
                     db.func.max(SqlEventLogStorageTable.c.timestamp).label("timestamp"),
+                    db.func.count(SqlEventLogStorageTable.c.id).label("count"),
                 ]
             )
             .where(SqlEventLogStorageTable.c.run_id == run_id)
@@ -254,7 +255,15 @@ class SqlEventLogStorage(EventLogStorage):
                 by_step_key[step_key]["start_time"] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
                 )
-                by_step_key[step_key]["attempts"] = 1
+                by_step_key[step_key]["attempts"] = by_step_key[step_key].get("attempts", 0) + 1
+            if result.dagster_event_type == DagsterEventType.STEP_RESTARTED.value:
+                by_step_key[step_key]["attempts"] = (
+                    # In case we see step retarted events but not a step started event, we want to
+                    # only count the restarted events, since the attempt count represents
+                    # the number of times we have successfully started runnning the step
+                    by_step_key[step_key].get("attempts", 0)
+                    + result.count
+                )
             if result.dagster_event_type == DagsterEventType.STEP_FAILURE.value:
                 by_step_key[step_key]["end_time"] = (
                     datetime_as_float(result.timestamp) if result.timestamp else None
@@ -280,7 +289,6 @@ class SqlEventLogStorage(EventLogStorage):
             .where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
                     [
-                        DagsterEventType.STEP_RESTARTED.value,
                         DagsterEventType.STEP_MATERIALIZATION.value,
                         DagsterEventType.STEP_EXPECTATION_RESULT.value,
                     ]
@@ -288,6 +296,11 @@ class SqlEventLogStorage(EventLogStorage):
             )
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
+
+        if step_keys:
+            raw_event_query = raw_event_query.where(
+                SqlEventLogStorageTable.c.step_key.in_(step_keys)
+            )
 
         with self.connect(run_id) as conn:
             results = conn.execute(raw_event_query).fetchall()
@@ -297,11 +310,7 @@ class SqlEventLogStorage(EventLogStorage):
                 event = check.inst_param(
                     deserialize_json_to_dagster_namedtuple(json_str), "event", EventRecord
                 )
-                if event.dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
-                    by_step_key[event.step_key]["attempts"] = (
-                        by_step_key[event.step_key].get("attempts") + 1
-                    )
-                elif event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
+                if event.dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
                     materializations[event.step_key].append(
                         event.dagster_event.event_specific_data.materialization
                     )

@@ -7,6 +7,7 @@ from dagster import (
     DagsterEventType,
     DagsterInvalidConfigError,
     InputDefinition,
+    Output,
     OutputDefinition,
     PipelineRun,
     check,
@@ -197,13 +198,19 @@ def test_run_step_stats():
 
 def test_run_step_stats_with_retries():
     _called = None
+    _count = {"total": 0}
 
     @pipeline
     def simple():
         @solid
-        def should_succeed(context):
-            context.log.info("succeed")
-            return "yay"
+        def should_succeed(_):
+            # This is to have at least one other step that retried to properly test
+            # the step key filter on `get_run_step_stats`
+            if _count["total"] < 2:
+                _count["total"] += 1
+                raise RetryRequested(max_retries=3)
+
+            yield Output("yay")
 
         @solid(input_defs=[InputDefinition("_input", str)], output_defs=[OutputDefinition(str)])
         def should_retry(context, _input):
