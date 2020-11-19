@@ -312,7 +312,12 @@ class GraphDefinition(NodeDefinition):
             return self.config_mapping.config_schema
 
     def copy_for_configured(
-        self, wrapped_config_mapping_fn, config_schema, kwargs, original_config_or_config_fn
+        self,
+        name,
+        description,
+        wrapped_config_mapping_fn,
+        config_schema,
+        original_config_or_config_fn,
     ):
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
@@ -321,31 +326,14 @@ class GraphDefinition(NodeDefinition):
                 "configured.".format(graph_name=self.name)
             )
 
-        fn_name = (
-            original_config_or_config_fn.__name__
-            if callable(original_config_or_config_fn)
-            else None
-        )
-        name = kwargs.get("name", fn_name)
-
-        if not name:
-            raise DagsterInvalidDefinitionError(
-                'Missing string param "name" while attempting to configure the graph '
-                '"{graph_name}". When configuring a solid, you must specify a name for the '
-                "resulting solid definition as a keyword param or use `configured` in decorator "
-                "form. For examples, visit https://docs.dagster.io/overview/configuration#configured.".format(
-                    graph_name=self.name
-                )
-            )
-
-        return self.construct_configured_copy(
-            new_name=name,
-            new_description=kwargs.get("description", self.description),
+        return self.construct_configured_graph_copy(
+            new_name=self._name_for_configured_node(name, original_config_or_config_fn),
+            new_description=description or self.description,
             new_configured_config_schema=config_schema,
             new_configured_config_mapping_fn=wrapped_config_mapping_fn,
         )
 
-    def construct_configured_copy(
+    def construct_configured_graph_copy(
         self,
         new_name,
         new_description,

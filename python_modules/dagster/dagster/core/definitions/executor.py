@@ -31,6 +31,7 @@ class ExecutorDefinition(ConfiguredMixin):
         config_schema=None,
         executor_creation_fn=None,
         required_resource_keys=None,
+        description=None,
         _configured_config_mapping_fn=None,
     ):
         self._name = check.str_param(name, "name")
@@ -41,11 +42,16 @@ class ExecutorDefinition(ConfiguredMixin):
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
+        self._description = check.opt_str_param(description, "description")
         super(ExecutorDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
     def name(self):
         return self._name
+
+    @property
+    def description(self):
+        return self._description
 
     @property
     def config_field(self):
@@ -64,13 +70,14 @@ class ExecutorDefinition(ConfiguredMixin):
     def required_resource_keys(self):
         return self._required_resource_keys
 
-    def copy_for_configured(self, wrapped_config_mapping_fn, config_schema, kwargs, _):
+    def copy_for_configured(self, name, description, wrapped_config_mapping_fn, config_schema, _):
         return ExecutorDefinition(
             config_schema=config_schema,
-            name=kwargs.get("name", self.name),
+            name=name or self.name,
             executor_creation_fn=self.executor_creation_fn,
             required_resource_keys=self.required_resource_keys,
             _configured_config_mapping_fn=wrapped_config_mapping_fn,
+            description=description or self.description,
         )
 
 

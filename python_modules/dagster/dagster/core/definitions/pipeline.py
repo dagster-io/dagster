@@ -234,7 +234,7 @@ class PipelineDefinition(GraphDefinition):
         self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
 
-    def construct_configured_copy(
+    def construct_configured_graph_copy(
         self,
         new_name,
         new_description,

@@ -50,10 +50,11 @@ class LoggerDefinition(ConfiguredMixin):
     def description(self):
         return self._description
 
-    def copy_for_configured(self, wrapped_config_mapping_fn, config_schema, kwargs, _):
+    def copy_for_configured(self, name, description, wrapped_config_mapping_fn, config_schema, _):
+        check.invariant(name is None, "LoggerDefinitions do not have names")
         return LoggerDefinition(
             config_schema=config_schema,
-            description=kwargs.get("description", self.description),
+            description=description or self.description,
             logger_fn=self.logger_fn,
             _configured_config_mapping_fn=wrapped_config_mapping_fn,
         )

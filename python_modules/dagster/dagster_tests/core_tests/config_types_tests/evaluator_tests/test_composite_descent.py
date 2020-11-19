@@ -780,13 +780,13 @@ def test_configuring_solids_without_specifying_name():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Missing string param "name" while attempting to configure the solid "return_int',
+        match='Missing string param "name" while attempting to configure the node "return_int',
     ):
         configured(return_int)(2)
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match='Missing string param "name" while attempting to configure the graph "return_int_composite"',
+        match='Missing string param "name" while attempting to configure the node "return_int_composite"',
     ):
         configured(return_int_composite)({"num": 5})
 

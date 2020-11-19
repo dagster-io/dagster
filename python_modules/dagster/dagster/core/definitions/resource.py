@@ -138,10 +138,11 @@ class ResourceDefinition(ConfiguredMixin):
             description=description,
         )
 
-    def copy_for_configured(self, wrapped_config_mapping_fn, config_schema, kwargs, _):
+    def copy_for_configured(self, name, description, wrapped_config_mapping_fn, config_schema, _):
+        check.invariant(name is None, "ResourceDefintions do not have names")
         return ResourceDefinition(
             config_schema=config_schema,
-            description=kwargs.get("description", self.description),
+            description=description or self.description,
             resource_fn=self.resource_fn,
             _configured_config_mapping_fn=wrapped_config_mapping_fn,
         )

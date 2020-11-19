@@ -4,7 +4,11 @@ from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.config.validate import process_config
-from dagster.core.errors import DagsterConfigMappingFunctionError, user_code_error_boundary
+from dagster.core.errors import (
+    DagsterConfigMappingFunctionError,
+    DagsterInvalidDefinitionError,
+    user_code_error_boundary,
+)
 
 
 class ConfiguredMixin(ABC):
@@ -21,7 +25,12 @@ class ConfiguredMixin(ABC):
 
     @abstractmethod
     def copy_for_configured(
-        self, wrapped_config_mapping_fn, config_schema, kwargs, original_config_or_config_fn,
+        self,
+        name,
+        description,
+        wrapped_config_mapping_fn,
+        config_schema,
+        original_config_or_config_fn,
     ):
         raise NotImplementedError()
 
@@ -102,7 +111,7 @@ class ConfiguredMixin(ABC):
 
         return wrapped_config_mapping_fn
 
-    def configured(self, config_or_config_fn, config_schema=None, **kwargs):
+    def configured(self, config_or_config_fn, config_schema=None, name=None, description=None):
         """
         Wraps this object in an object of the same type that provides configuration to the inner
         object.
@@ -115,17 +124,39 @@ class ConfiguredMixin(ABC):
                 passing a function, it's easiest to use :py:func:`configured`.
             config_schema (ConfigSchema): If config_or_config_fn is a function, the config schema
                 that its input must satisfy.
-            name (Optional[str]): Name of the storage mode. If not specified, inherits the name
-                of the storage mode being configured.
+            name (Optional[str]): Name of the new definition. If not specified, inherits the name
+                of the definition being configured. Note: some definitions (e.g. ResourceDefinition)
+                are unnamed and this will error if a name is passed.
+            description (Optional[str]): Name of the new definition. If not specified, inherits the name
+                of the definition being configured.
 
         Returns (ConfiguredMixin): A configured version of this object.
         """
+
         wrapped_config_mapping_fn = self._get_wrapped_config_mapping_fn(
             config_or_config_fn, config_schema
         )
         return self.copy_for_configured(
-            wrapped_config_mapping_fn, config_schema, kwargs, config_or_config_fn
+            name, description, wrapped_config_mapping_fn, config_schema, config_or_config_fn
         )
+
+    def _name_for_configured_node(self, new_name, original_config_or_config_fn):
+        fn_name = (
+            original_config_or_config_fn.__name__
+            if callable(original_config_or_config_fn)
+            else None
+        )
+        name = new_name or fn_name
+        if not name:
+            raise DagsterInvalidDefinitionError(
+                'Missing string param "name" while attempting to configure the node '
+                '"{node_name}". When configuring a node, you must specify a name for the '
+                "resulting node definition as a keyword param or use `configured` in decorator "
+                "form. For examples, visit https://docs.dagster.io/overview/configuration#configured.".format(
+                    node_name=self.name,
+                )
+            )
+        return name
 
 
 def _check_configurable_param(configurable):

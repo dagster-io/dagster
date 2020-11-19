@@ -34,6 +34,7 @@ class IntermediateStorageDefinition(ConfiguredMixin):
         required_resource_keys,
         config_schema=None,
         intermediate_storage_creation_fn=None,
+        description=None,
         _configured_config_mapping_fn=None,
     ):
         self._name = check_valid_name(name)
@@ -49,6 +50,7 @@ class IntermediateStorageDefinition(ConfiguredMixin):
                 of_type=str,
             )
         )
+        self._description = check.opt_str_param(description, "description")
         super(IntermediateStorageDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
@@ -59,6 +61,10 @@ class IntermediateStorageDefinition(ConfiguredMixin):
     @property
     def name(self):
         return self._name
+
+    @property
+    def description(self):
+        return self._description
 
     @property
     def is_persistent(self):
@@ -76,13 +82,14 @@ class IntermediateStorageDefinition(ConfiguredMixin):
     def required_resource_keys(self):
         return self._required_resource_keys
 
-    def copy_for_configured(self, wrapped_config_mapping_fn, config_schema, kwargs, _):
+    def copy_for_configured(self, name, description, wrapped_config_mapping_fn, config_schema, _):
         return IntermediateStorageDefinition(
-            name=kwargs.get("name", self.name),
+            name=name or self.name,
             is_persistent=self.is_persistent,
             required_resource_keys=self.required_resource_keys,
             config_schema=config_schema,
             intermediate_storage_creation_fn=self.intermediate_storage_creation_fn,
+            description=description or self.description,
             _configured_config_mapping_fn=wrapped_config_mapping_fn,
         )
 

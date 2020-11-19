@@ -1,6 +1,5 @@
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
-from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.backcompat import experimental_arg_warning, rename_warning
 
 from .graph import GraphDefinition
@@ -141,32 +140,20 @@ class SolidDefinition(NodeDefinition):
         return self.input_def_named(input_name).default_value
 
     def copy_for_configured(
-        self, wrapped_config_mapping_fn, config_schema, kwargs, original_config_or_config_fn
+        self,
+        name,
+        description,
+        wrapped_config_mapping_fn,
+        config_schema,
+        original_config_or_config_fn,
     ):
-
-        fn_name = (
-            original_config_or_config_fn.__name__
-            if callable(original_config_or_config_fn)
-            else None
-        )
-        name = kwargs.get("name", fn_name)
-        if not name:
-            raise DagsterInvalidDefinitionError(
-                'Missing string param "name" while attempting to configure the solid '
-                '"{solid_name}". When configuring a solid, you must specify a name for the '
-                "resulting solid definition as a keyword param or use `configured` in decorator "
-                "form. For examples, visit https://docs.dagster.io/overview/configuration#configured.".format(
-                    solid_name=self.name
-                )
-            )
-
         return SolidDefinition(
-            name=name,
+            name=self._name_for_configured_node(name, original_config_or_config_fn),
             input_defs=self.input_defs,
             compute_fn=self.compute_fn,
             output_defs=self.output_defs,
             config_schema=config_schema,
-            description=kwargs.get("description", self.description),
+            description=description or self.description,
             tags=self.tags,
             required_resource_keys=self.required_resource_keys,
             positional_inputs=self.positional_inputs,
@@ -264,7 +251,7 @@ class CompositeSolidDefinition(GraphDefinition):
         for node_def in self._node_defs:
             yield from node_def.all_dagster_types()
 
-    def construct_configured_copy(
+    def construct_configured_graph_copy(
         self,
         new_name,
         new_description,
