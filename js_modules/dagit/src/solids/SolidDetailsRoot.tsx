@@ -1,50 +1,14 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Loading} from 'src/Loading';
 import {SidebarSolidDefinition} from 'src/SidebarSolidDefinition';
 import {SidebarSolidInvocationInfo} from 'src/SidebarSolidHelpers';
-import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {SolidCard} from 'src/solids/SolidCard';
 import {UsedSolidDetailsQuery} from 'src/solids/types/UsedSolidDetailsQuery';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
-import {workspacePathFromAddress} from 'src/workspace/workspacePath';
-
-interface Props {
-  name: string;
-  repoAddress: RepoAddress;
-}
-
-export const SolidDetailsRoot: React.FC<Props> = (props) => {
-  const history = useHistory();
-  const {name, repoAddress} = props;
-
-  const onClickInvocation = React.useCallback(
-    ({pipelineName, handleID}) => {
-      history.push(
-        workspacePathFromAddress(
-          repoAddress,
-          `/pipelines/${pipelineName}/${handleID.split('.').join('/')}`,
-        ),
-      );
-    },
-    [history, repoAddress],
-  );
-
-  useDocumentTitle(`Solid: ${name}`);
-  return (
-    <SolidDetailScrollContainer>
-      <UsedSolidDetails
-        name={name}
-        onClickInvocation={onClickInvocation}
-        repoAddress={repoAddress}
-      />
-    </SolidDetailScrollContainer>
-  );
-};
 
 interface UsedSolidDetailsProps {
   name: string;

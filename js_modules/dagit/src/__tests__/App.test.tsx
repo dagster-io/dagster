@@ -83,23 +83,6 @@ describe('App', () => {
   });
 
   describe('Routes', () => {
-    it('renders solid details', async () => {
-      render(
-        <MemoryRouter initialEntries={['/workspace/my_repository@my_location/solid/foo_solid']}>
-          <ApolloTestProvider mocks={defaultMocks}>
-            <AppContent />
-          </ApolloTestProvider>
-        </MemoryRouter>,
-      );
-
-      await waitFor(() => {
-        expect(screen.getByRole('heading', {name: breakOnUnderscores('foo_solid')})).toBeVisible();
-        expect(screen.getByText(/inputs/i)).toBeVisible();
-        expect(screen.getByText(/outputs/i)).toBeVisible();
-        expect(screen.getByText(/all invocations/i)).toBeVisible();
-      });
-    });
-
     it('renders solids explorer', async () => {
       render(
         <MemoryRouter initialEntries={['/workspace/my_repository@my_location/solids/foo_solid']}>

@@ -147,13 +147,13 @@ const SolidsRootWithData: React.FC<Props & {usedSolids: Solid[]}> = (props) => {
   const selected = usedSolids.find((s) => s.definition.name === name);
 
   const onSearch = (search: TokenizingFieldValue[]) => {
-    history.push({
+    history.replace({
       search: `?${querystring.stringify({q: stringFromValue(search)})}`,
     });
   };
 
   const onClickSolid = (defName: string) => {
-    history.push(
+    history.replace(
       workspacePathFromAddress(repoAddress, `/solids/${defName}?${querystring.stringify({q})}`),
     );
   };
@@ -248,6 +248,7 @@ interface SolidListProps {
 }
 
 const SolidList: React.FunctionComponent<SolidListProps> = (props) => {
+  const {items, selected} = props;
   const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 
   // Reset our cell sizes when the panel's width is changed. This is similar to a useEffect
@@ -258,12 +259,15 @@ const SolidList: React.FunctionComponent<SolidListProps> = (props) => {
     lastWidth.current = props.width;
   }
 
+  const selectedIndex = selected ? items.findIndex((item) => item === selected) : undefined;
+
   return (
     <List
       width={props.width}
       height={props.height}
       rowCount={props.items.length}
       rowHeight={cache.current.rowHeight}
+      scrollToIndex={selectedIndex}
       rowRenderer={({parent, index, key, style}) => {
         const solid = props.items[index];
         return (

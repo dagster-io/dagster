@@ -78,7 +78,7 @@ export const RepositoryContentList: React.FunctionComponent<RepositoryContentLis
               s.invocations.some((i) => iincludes(i.pipeline.name, q)),
           )
           .map(({definition}) => ({
-            to: workspacePath(repoName, repoLocation, `/solid/${definition.name}`),
+            to: workspacePath(repoName, repoLocation, `/solids/${definition.name}`),
             label: definition.name,
           }));
 

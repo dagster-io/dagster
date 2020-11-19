@@ -46,7 +46,7 @@ const LeftNavRepositorySection = () => {
     | {selector: undefined; tab: undefined; rootTab: string}
   >([
     '/workspace/:repoPath/pipelines/:selector/:tab?',
-    '/workspace/:repoPath/solid/:selector',
+    '/workspace/:repoPath/solids/:selector',
     '/workspace/:repoPath/schedules/:selector',
     '/:rootTab?',
   ]);
