@@ -716,6 +716,13 @@ class DauphinStepMaterializationEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinStepEvent)
 
     materialization = dauphin.NonNull(DauphinMaterialization)
+    stepStats = dauphin.NonNull("PipelineRunStepStats")
+
+    def resolve_stepStats(self, graphene_info):
+        run_id = self.runId  # pylint: disable=no-member
+        step_key = self.stepKey  # pylint: disable=no-member
+        stats = get_step_stats(graphene_info, run_id, step_keys=[step_key])
+        return stats[0]
 
 
 class DauphinObjectStoreOperationEvent(dauphin.ObjectType):

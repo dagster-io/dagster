@@ -1,34 +1,29 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, Button, ButtonGroup} from '@blueprintjs/core';
-import {uniq} from 'lodash';
+import {Button, Tab, Tabs, ButtonGroup} from '@blueprintjs/core';
+import {uniq, flatMap} from 'lodash';
 import * as React from 'react';
-import {Line, ChartComponentProps} from 'react-chartjs-2';
-import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {Header} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
-import {Timestamp} from 'src/TimeComponents';
-import {colorHash} from 'src/Util';
-import {AssetPartitionMatrix} from 'src/assets/AssetPartitionMatrix';
+import {AssetMaterializationMatrix} from 'src/assets/AssetMaterializationMatrix';
+import {AssetMaterializationTable} from 'src/assets/AssetMaterializationTable';
+import {AssetValueGraph} from 'src/assets/AssetValueGraph';
 import {
   AssetQuery,
   AssetQueryVariables,
-  AssetQuery_assetOrError_Asset_lastMaterializations,
-  AssetQuery_assetOrError_Asset_historicalMaterializations,
+  AssetQuery_assetOrError_Asset_assetMaterializations,
+  AssetQuery_assetOrError_Asset,
 } from 'src/assets/types/AssetQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {MetadataEntries, MetadataEntry} from 'src/runs/MetadataEntry';
-import {RunStatus} from 'src/runs/RunStatusDots';
-import {RunTable} from 'src/runs/RunTable';
-import {titleForRun} from 'src/runs/RunUtils';
-import {PipelineRunStatus} from 'src/types/globalTypes';
-import {Table} from 'src/ui/Table';
-import {FontFamily} from 'src/ui/styles';
+import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
+import {MetadataEntry} from 'src/runs/MetadataEntry';
 
 interface AssetKey {
   path: string[];
 }
+
+export const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
 
 export const AssetView: React.FunctionComponent<{assetKey: AssetKey}> = ({assetKey}) => {
   const assetPath = assetKey.path.join(' \u203A ');
@@ -44,226 +39,118 @@ export const AssetView: React.FunctionComponent<{assetKey: AssetKey}> = ({assetK
         if (assetOrError.__typename !== 'Asset') {
           return null;
         }
-        if (!assetOrError.lastMaterializations.length) {
+        if (!assetOrError.assetMaterializations.length) {
           return (
             <Container>
-              <TitleHeader>Asset: {assetPath}</TitleHeader>
+              <p>This asset has never been materialized.</p>
             </Container>
           );
         }
-
-        const lastMaterialization = assetOrError.lastMaterializations[0];
-        const partitionsPresent =
-          uniq(assetOrError.historicalMaterializations.map((m) => m.partition)).length > 1;
-
-        return (
-          <Container>
-            <AssetLastMaterialization assetMaterialization={lastMaterialization} />
-            {partitionsPresent && (
-              <div>
-                <Header>Partition Coverage</Header>
-                <AssetPartitionMatrix values={assetOrError.historicalMaterializations} />
-              </div>
-            )}
-            <div>
-              <Header>Recent Runs</Header>
-              <RunTable runs={assetOrError.runs} onSetFilter={(_) => {}} />
-            </div>
-            <AssetValueGraph
-              partitionsPresent={partitionsPresent}
-              assetKey={assetKey}
-              values={assetOrError.historicalMaterializations}
-            />
-          </Container>
-        );
+        return <AssetViewWithData asset={assetOrError} />;
       }}
     </Loading>
   );
 };
 
-const AssetLastMaterialization: React.FunctionComponent<{
-  assetMaterialization: AssetQuery_assetOrError_Asset_lastMaterializations;
-}> = ({assetMaterialization}) => {
-  const run =
-    assetMaterialization.runOrError.__typename === 'PipelineRun'
-      ? assetMaterialization.runOrError
-      : undefined;
-  const {runId, materialization, timestamp} = assetMaterialization.materializationEvent;
-  const metadataEntries = materialization.metadataEntries;
-
-  return (
-    <Section>
-      <Header>Last Materialization Event</Header>
-      <Table striped style={{width: '100%'}}>
-        <thead>
-          <tr>
-            <th style={{width: '32px'}}></th>
-            <th style={{maxWidth: '80px'}}>Run</th>
-            <th style={{width: '20%'}}>Materialization</th>
-            <th style={{width: '100%'}}>Details</th>
-            <th style={{maxWidth: 300}}>Timestamp</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>
-              {run ? (
-                <RunStatus status={run.status} />
-              ) : (
-                <RunStatus status={PipelineRunStatus.NOT_STARTED} />
-              )}
-            </td>
-            <td style={{fontFamily: FontFamily.monospace}}>
-              {run ? <Link to={`/instance/runs/${run.runId}`}>{titleForRun(run)}</Link> : runId}
-            </td>
-            <td>
-              {materialization.label}
-              {materialization.description ? (
-                <div style={{fontSize: '0.8rem', marginTop: 10}}>{materialization.description}</div>
-              ) : null}
-            </td>
-            <td style={{fontSize: 12}}>
-              {metadataEntries && metadataEntries.length ? (
-                <MetadataEntries entries={metadataEntries} />
-              ) : null}
-            </td>
-            <td>
-              <Timestamp ms={parseInt(timestamp)} />
-            </td>
-          </tr>
-        </tbody>
-      </Table>
-    </Section>
-  );
-};
-
-const AssetValueGraph: React.FunctionComponent<{
-  assetKey: AssetKey;
-  partitionsPresent: boolean;
-  values: AssetQuery_assetOrError_Asset_historicalMaterializations[];
-}> = (props) => {
-  const [xAxis, setXAxis] = React.useState<'time' | 'partition'>('time');
-  const dataByLabel = {};
-
-  props.values.forEach((graphMaterialization) => {
-    const timestamp = graphMaterialization.materializationEvent.timestamp;
-    const partition = graphMaterialization.partition;
-    if (xAxis === 'partition' && !partition) {
-      return;
-    }
-
-    graphMaterialization.materializationEvent.materialization.metadataEntries.forEach((entry) => {
-      const x = xAxis === 'time' ? parseInt(timestamp, 10) : partition;
-
-      if (entry.__typename === 'EventFloatMetadataEntry') {
-        dataByLabel[entry.label] = [
-          ...(dataByLabel[entry.label] || []),
-          {x: x, y: entry.floatValue},
-        ];
-      }
-      if (entry.__typename === 'EventIntMetadataEntry') {
-        dataByLabel[entry.label] = [...(dataByLabel[entry.label] || []), {x: x, y: entry.intValue}];
-      }
-    });
+const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError_Asset}> = ({
+  asset,
+}) => {
+  const [xHover, setXHover] = React.useState<string | number | null>(null);
+  const [activeTab = 'graphs', setActiveTab] = useQueryPersistedState<'graphs' | 'list'>({
+    queryKey: 'tab',
+  });
+  const [xAxis = 'time', setXAxis] = useQueryPersistedState<'partition' | 'time'>({
+    queryKey: 'axis',
   });
 
-  if (!Object.keys(dataByLabel).length) {
-    return null;
-  }
+  // Note: We want to show partition columns / options as soon as the user adds a partition,
+  // even if previous materializations have partition=null, so this is determined here and passed
+  // down through the component tree.
+  const isPartitioned = asset.assetMaterializations.some((m) => m.partition);
 
-  const graphData: ChartComponentProps['data'] = {
-    datasets: Object.keys(dataByLabel).map((label) => ({
-      label,
-      data: dataByLabel[label],
-      borderColor: colorHash(label),
-      backgroundColor: 'rgba(0,0,0,0)',
-    })),
-  };
-  const options: ChartComponentProps['options'] = {
-    title: {display: true, text: `${props.assetKey.path.join('.')} values`},
-    scales: {
-      yAxes: [{scaleLabel: {display: true, labelString: 'Value'}}],
-      xAxes: [
-        xAxis === 'time'
-          ? {
-              type: 'time',
-              scaleLabel: {
-                display: true,
-                labelString: 'Execution time',
-              },
-            }
-          : {
-              type: 'series',
-              scaleLabel: {
-                display: true,
-                labelString: 'Partition Name',
-              },
-            },
-      ],
-    },
-    legend: {
-      display: false,
-      onClick: (_e: MouseEvent, _legendItem: any) => {},
-    },
-  };
+  const assetMaterializations = [...asset.assetMaterializations].sort(
+    (a, b) =>
+      (xAxis === 'partition' && (a.partition || '').localeCompare(b.partition || '')) ||
+      Number(a.materializationEvent.timestamp) - Number(b.materializationEvent.timestamp),
+  );
+
+  const graphDataByMetadataLabel = extractNumericData(assetMaterializations, xAxis);
+  const [graphedLabels, setGraphedLabels] = React.useState(() =>
+    Object.keys(graphDataByMetadataLabel).slice(0, 4),
+  );
+
   return (
-    <div style={{marginTop: 30}}>
-      <div style={{display: 'flex'}}>
-        <Header>Recent Values</Header>
+    <Container>
+      <Header>Last Materialization Event</Header>
+      <AssetMaterializationTable
+        materializations={[asset.assetMaterializations[0]]}
+        isPartitioned={isPartitioned}
+      />
+
+      <div style={{display: 'flex', marginTop: 20}}>
+        <Header>Materializations over Time</Header>
         <div style={{flex: 1}} />
         <ButtonGroup>
           <Button active={xAxis === 'time'} onClick={() => setXAxis('time')}>
-            By Execution Time
+            By Timestamp
           </Button>
           <Button
             active={xAxis === 'partition'}
             onClick={() => setXAxis('partition')}
-            disabled={!props.partitionsPresent}
+            disabled={!isPartitioned}
           >
             By Partition
           </Button>
         </ButtonGroup>
       </div>
-      <Line data={graphData} height={100} options={options} />
-    </div>
+
+      <Tabs
+        large={false}
+        selectedTabId={activeTab}
+        onChange={(t) => setActiveTab(t as 'graphs' | 'list')}
+      >
+        <Tab id="graphs" title="Graphs" />
+        <Tab id="list" title="List" />
+      </Tabs>
+
+      {activeTab === 'list' ? (
+        <AssetMaterializationTable
+          isPartitioned={isPartitioned}
+          materializations={[...assetMaterializations].reverse()}
+        />
+      ) : (
+        <>
+          <AssetMaterializationMatrix
+            isPartitioned={isPartitioned}
+            materializations={assetMaterializations}
+            xAxis={xAxis}
+            xHover={xHover}
+            onHoverX={(x) => x !== xHover && setXHover(x)}
+            graphDataByMetadataLabel={graphDataByMetadataLabel}
+            graphedLabels={graphedLabels}
+            setGraphedLabels={setGraphedLabels}
+          />
+          <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between'}}>
+            {[...graphedLabels].sort().map((label) => (
+              <AssetValueGraph
+                key={label}
+                label={label}
+                width={graphedLabels.length === 1 ? '100%' : '48%'}
+                data={graphDataByMetadataLabel[label]}
+                xAxis={xAxis}
+                xHover={xHover}
+                onHoverX={(x) => x !== xHover && setXHover(x)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </Container>
   );
 };
 
-const Section = styled.div`
-  margin-bottom: 30px;
-`;
-const TitleHeader = styled.div`
-  color: ${Colors.BLACK};
-  font-size: 1.3rem;
-  margin-bottom: 30px;
-`;
 const Container = styled.div`
   margin: 20px;
-`;
-
-const AssetValueGraphFragment = gql`
-  fragment AssetValueGraphFragment on AssetMaterialization {
-    materializationEvent {
-      timestamp
-      materialization {
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-    }
-  }
-`;
-
-const AssetPartitionGridFragment = gql`
-  fragment AssetPartitionGridFragment on AssetMaterialization {
-    partition
-    runOrError {
-      ... on PipelineRun {
-        id
-        pipelineSnapshotId
-      }
-    }
-  }
 `;
 
 export const ASSET_QUERY = gql`
@@ -273,22 +160,25 @@ export const ASSET_QUERY = gql`
         key {
           path
         }
-        historicalMaterializations: assetMaterializations {
-          ...AssetValueGraphFragment
-          ...AssetPartitionGridFragment
-        }
-        lastMaterializations: assetMaterializations(limit: 1) {
+        assetMaterializations(limit: 100) {
+          partition
           runOrError {
             ... on PipelineRun {
               id
               runId
               status
               pipelineName
+              pipelineSnapshotId
             }
           }
           materializationEvent {
             runId
             timestamp
+            stepKey
+            stepStats {
+              endTime
+              startTime
+            }
             materialization {
               label
               description
@@ -298,16 +188,112 @@ export const ASSET_QUERY = gql`
             }
           }
         }
-
-        runs(limit: 10) {
-          id
-          ...RunTableRunFragment
-        }
       }
     }
   }
-  ${AssetValueGraphFragment}
-  ${AssetPartitionGridFragment}
   ${MetadataEntry.fragments.MetadataEntryFragment}
-  ${RunTable.fragments.RunTableRunFragment}
 `;
+
+export interface AssetNumericHistoricalData {
+  [metadataEntryLabel: string]: {
+    minY: number;
+    maxY: number;
+    minXNumeric: number;
+    maxXNumeric: number;
+    values: {
+      x: number | string; // time or partition
+      xNumeric: number; // time or partition index
+      y: number;
+    }[];
+  };
+}
+
+/**
+ * Helper function that iterates over the asset materializations and assembles time series data
+ * and stats for all numeric metadata entries. This function makes the following guaruntees:
+ *
+ * - If a metadata entry is sparsely emitted, points are still included for missing x values
+ *   with y = NaN. (For compatiblity with react-chartjs-2)
+ * - If a metadata entry is generated many times for the same partition, and xAxis = partition,
+ *   the MAX value emitted is used as the data point.
+ *
+ * Assumes that the data is pre-sorted in ascending partition order if using xAxis = partition.
+ */
+function extractNumericData(
+  assetMaterializations: AssetQuery_assetOrError_Asset_assetMaterializations[],
+  xAxis: 'time' | 'partition',
+) {
+  const series: AssetNumericHistoricalData = {};
+
+  // Build a set of the numeric metadata entry labels (note they may be sparsely emitted)
+  const numericMetadataLabels = uniq(
+    flatMap(assetMaterializations, (e) =>
+      e.materializationEvent.materialization.metadataEntries
+        .filter(
+          (k) =>
+            k.__typename === 'EventIntMetadataEntry' || k.__typename === 'EventFloatMetadataEntry',
+        )
+        .map((k) => k.label),
+    ),
+  );
+
+  const append = (label: string, {x, y}: {x: number | string; y: number}) => {
+    series[label] = series[label] || {minX: 0, maxX: 0, minY: 0, maxY: 0, values: []};
+
+    if (xAxis === 'partition') {
+      // If the xAxis is partition keys, the graph may only contain one value for each partition.
+      // If the existing sample for the partition was null, replace it. Otherwise take the max.
+      // (We need some sort of approach, might as well make it deterministic.)
+      const existingForPartition = series[label].values.find((v) => v.x === x);
+      if (existingForPartition) {
+        if (!isNaN(y)) {
+          existingForPartition.y = existingForPartition.y ? Math.max(existingForPartition.y, y) : y;
+        }
+        return;
+      }
+    }
+    series[label].values.push({
+      xNumeric: typeof x === 'number' ? x : series[label].values.length,
+      x,
+      y,
+    });
+  };
+
+  for (const {partition, materializationEvent} of assetMaterializations) {
+    const x = xAxis === 'partition' ? partition || '' : Number(materializationEvent.timestamp);
+
+    // Add an entry for every numeric metadata label
+    for (const label of numericMetadataLabels) {
+      const entry = materializationEvent.materialization.metadataEntries.find(
+        (l) => l.label === label,
+      );
+      if (!entry) {
+        append(label, {x, y: NaN});
+        continue;
+      }
+
+      const y =
+        entry.__typename === 'EventIntMetadataEntry'
+          ? entry.intValue
+          : entry.__typename === 'EventFloatMetadataEntry'
+          ? entry.floatValue
+          : NaN; // should only happen if data type of entry has changed in the graphed period
+
+      append(label, {x, y});
+    }
+
+    // Add step execution time as a custom dataset
+    const {startTime, endTime} = materializationEvent.stepStats || {};
+    append(LABEL_STEP_EXECUTION_TIME, {x, y: endTime && startTime ? endTime - startTime : NaN});
+  }
+
+  for (const serie of Object.values(series)) {
+    const xs = serie.values.map((v) => v.xNumeric);
+    const ys = serie.values.map((v) => v.y).filter((v) => !isNaN(v));
+    serie.minXNumeric = Math.min(...xs);
+    serie.maxXNumeric = Math.max(...xs);
+    serie.minY = Math.min(...ys);
+    serie.maxY = Math.max(...ys);
+  }
+  return series;
+}

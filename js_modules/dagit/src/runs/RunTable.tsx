@@ -3,7 +3,7 @@ import {Checkbox, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {explorerPathToString} from 'src/PipelinePathUtils';
+import {PipelineSnapshotLink} from 'src/PipelinePathUtils';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {RunActionsMenu, RunBulkActionsMenu} from 'src/runs/RunActionsMenu';
@@ -136,13 +136,6 @@ const RunRow: React.FunctionComponent<{
   onToggleChecked?: () => void;
   additionalColumns?: React.ReactNode[];
 }> = ({run, onSetFilter, checked, onToggleChecked, additionalColumns}) => {
-  const snapshotLink = `/instance/snapshots/${explorerPathToString({
-    pipelineName: run.pipelineName,
-    snapshotId: run.pipelineSnapshotId || '',
-    solidsQuery: '',
-    pathSolids: [],
-  })}`;
-
   return (
     <tr key={run.runId}>
       <td
@@ -165,9 +158,10 @@ const RunRow: React.FunctionComponent<{
         <RunTags tags={run.tags} onSetFilter={onSetFilter} />
       </td>
       <td style={{width: '90px'}}>
-        <div style={{fontFamily: FontFamily.monospace}}>
-          <Link to={snapshotLink}>{run.pipelineSnapshotId?.slice(0, 8)}</Link>
-        </div>
+        <PipelineSnapshotLink
+          snapshotId={run.pipelineSnapshotId || ''}
+          pipelineName={run.pipelineName}
+        />
       </td>
       <td>
         <div>

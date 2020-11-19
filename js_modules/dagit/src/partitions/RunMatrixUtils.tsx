@@ -18,6 +18,7 @@ const SuccessColorForProps = ({dimSuccesses}: {dimSuccesses?: boolean}) =>
 
 export const GridColumn = styled.div<{
   disabled?: boolean;
+  hovered?: boolean;
   focused?: boolean;
   multiselectFocused?: boolean;
   dimSuccesses?: boolean;
@@ -26,11 +27,11 @@ export const GridColumn = styled.div<{
   flex-direction: column;
   flex-shrink: 0;
 
-  ${({disabled, focused, multiselectFocused}) =>
+  ${({disabled, focused, multiselectFocused, hovered}) =>
     !disabled &&
     !focused &&
     !multiselectFocused &&
-    `&:hover {
+    `&${hovered ? '' : ':hover'} {
     background: ${Colors.LIGHT_GRAY3};
     cursor: default;
     ${TopLabelTilted} {
@@ -78,6 +79,17 @@ export const GridColumn = styled.div<{
       }
     }
   }`}
+
+  .cell {
+    height: 23px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    padding: 2px;
+    box-sizing: border-box;
+  }
 
   .square {
     width: 23px;

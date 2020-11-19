@@ -1,3 +1,8 @@
+import React from 'react';
+import {Link} from 'react-router-dom';
+
+import {FontFamily} from 'src/ui/styles';
+
 export interface PipelineExplorerPath {
   pipelineName: string;
   snapshotId?: string;
@@ -27,3 +32,21 @@ export function explorerPathFromString(path: string) {
     pathSolids,
   };
 }
+
+export const PipelineSnapshotLink: React.FunctionComponent<{
+  pipelineName: string;
+  snapshotId: string;
+}> = (props) => {
+  const snapshotLink = `/instance/snapshots/${explorerPathToString({
+    pipelineName: props.pipelineName,
+    snapshotId: props.snapshotId,
+    solidsQuery: '',
+    pathSolids: [],
+  })}`;
+
+  return (
+    <div style={{fontFamily: FontFamily.monospace}}>
+      <Link to={snapshotLink}>{props.snapshotId.slice(0, 8)}</Link>
+    </div>
+  );
+};

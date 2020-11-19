@@ -402,6 +402,7 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   materialization: Materialization!
+  stepStats: PipelineRunStepStats!
 }
 
 interface MessageEvent {
