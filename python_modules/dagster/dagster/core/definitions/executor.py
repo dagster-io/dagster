@@ -211,7 +211,10 @@ def check_cross_process_constraints(init_context):
     _check_intra_process_pipeline(init_context.pipeline)
     _check_non_ephemeral_instance(init_context.instance)
     _check_persistent_storage_requirement(
-        init_context.intermediate_storage_def, init_context.system_storage_def
+        init_context.pipeline.get_definition(),
+        init_context.mode_def,
+        init_context.intermediate_storage_def,
+        init_context.system_storage_def,
     )
 
 
@@ -228,27 +231,47 @@ def _check_intra_process_pipeline(pipeline):
         )
 
 
-def _check_persistent_storage_requirement(intermediate_storage_def, system_storage_def):
-    if intermediate_storage_def:
-        if not intermediate_storage_def.is_persistent:
-            raise DagsterUnmetExecutorRequirementsError(
-                (
-                    "You have attempted to use an executor that uses multiple processes while using "
-                    "intermediate storage {storage_name} which does not persist intermediates. "
-                    "This means there would be no way to move data between different "
-                    "processes. Please configure your pipeline in the storage config "
-                    "section to use persistent system storage such as the filesystem."
-                ).format(storage_name=intermediate_storage_def.name)
-            )
-    elif not system_storage_def.is_persistent:
+def _all_outputs_non_mem_asset_stores(pipeline_def, mode_def):
+    """Returns true if every output definition in the pipeline uses an asset store that's not
+    the mem_asset_store.
+
+    If true, this indicates that it's OK to execute steps in their own processes, because their
+    outputs will be available to other processes.
+    """
+    # pylint: disable=comparison-with-callable
+    from dagster.core.storage.asset_store import mem_asset_store
+
+    output_defs = [
+        output_def
+        for solid_def in pipeline_def.all_solid_defs
+        for output_def in solid_def.output_defs
+    ]
+    for output_def in output_defs:
+        if mode_def.resource_defs[output_def.asset_store_key] == mem_asset_store:
+            return False
+
+    return True
+
+
+def _check_persistent_storage_requirement(
+    pipeline_def, mode_def, intermediate_storage_def, system_storage_def
+):
+    """We prefer to store outputs with asset stores, but will fall back to intermediate storage
+    if an asset store isn't set and will fall back to system storage if neither an asset
+    store nor an intermediate storage are set.
+    """
+    if not (
+        _all_outputs_non_mem_asset_stores(pipeline_def, mode_def)
+        or (intermediate_storage_def and intermediate_storage_def.is_persistent)
+        or system_storage_def.is_persistent
+    ):
         raise DagsterUnmetExecutorRequirementsError(
-            (
-                "You have attempted to use an executor that uses multiple processes while using system "
-                "storage {storage_name} which does not persist intermediates. "
-                "This means there would be no way to move data between different "
-                "processes. Please configure your pipeline in the storage config "
-                "section to use persistent system storage such as the filesystem."
-            ).format(storage_name=system_storage_def.name)
+            "You have attempted to use an executor that uses multiple processes, but your pipeline "
+            "includes solid outputs that will not be stored somewhere where other processes can"
+            "retrieve them. "
+            "Please make sure that your pipeline definition includes a ModeDefinition whose "
+            'resource_keys assign the "asset_store" key to an AssetStore resource '
+            "that stores outputs outside of the process, such as the fs_asset_store."
         )
 
 
