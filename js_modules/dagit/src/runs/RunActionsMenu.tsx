@@ -57,7 +57,7 @@ export const RunActionsMenu: React.FunctionComponent<{
             onClick={() =>
               showCustomAlert({
                 title: 'Config',
-                body: <HighlightedCodeBlock value={runConfigYaml} languages={['yaml']} />,
+                body: <HighlightedCodeBlock value={runConfigYaml} language="yaml" />,
               })
             }
           />

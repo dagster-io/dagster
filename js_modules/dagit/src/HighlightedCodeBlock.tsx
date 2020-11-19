@@ -1,28 +1,41 @@
 import 'highlight.js/styles/xcode.css';
 
-import {configure, highlightBlock} from 'highlight.js';
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// https://github.com/highlightjs/highlight.js/issues/2682
+
+// @ts-ignore
+import hljs from 'highlight.js/lib/core';
+// @ts-ignore
+import sql from 'highlight.js/lib/languages/sql';
+// @ts-ignore
+import yaml from 'highlight.js/lib/languages/yaml';
 import * as React from 'react';
 
-export class HighlightedCodeBlock extends React.Component<{
+const {configure, highlightBlock} = hljs;
+
+hljs.registerLanguage('sql', sql);
+hljs.registerLanguage('yaml', yaml);
+
+interface Props {
   value: string;
-  languages: string[];
+  language: 'yaml' | 'sql';
   style?: React.CSSProperties;
-}> {
-  _el = React.createRef<HTMLPreElement>();
-
-  componentDidMount() {
-    if (this._el.current) {
-      configure({languages: this.props.languages});
-      highlightBlock(this._el.current);
-    }
-  }
-
-  render() {
-    const {value, ...rest} = this.props;
-    return (
-      <pre ref={this._el} {...rest}>
-        {value}
-      </pre>
-    );
-  }
 }
+
+export const HighlightedCodeBlock = (props: Props) => {
+  const {language, value, ...rest} = props;
+  const node = React.useRef(null);
+
+  React.useEffect(() => {
+    if (node.current) {
+      configure({languages: [language]});
+      highlightBlock(node.current);
+    }
+  }, [language]);
+
+  return (
+    <pre ref={node} {...rest}>
+      {value}
+    </pre>
+  );
+};

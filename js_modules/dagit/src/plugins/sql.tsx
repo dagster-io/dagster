@@ -49,7 +49,7 @@ export class SidebarComponent extends React.Component<IPluginSidebarProps> {
         >
           <div className={Classes.DIALOG_BODY} style={{margin: 0}}>
             <HighlightedCodeBlock
-              languages={['sql']}
+              language="sql"
               value={sql.value}
               style={{
                 height: 510,

@@ -8,7 +8,7 @@ it('correctly renders keywords inside a comment', () => {
   const component = TestRenderer.create(
     <BrowserRouter>
       <HighlightedCodeBlock
-        languages={['sql']}
+        language="sql"
         value={
           '-- this comment contains a dash - do not highlight if drop table\n' +
           'select * from q2_on_time_data\n' +
