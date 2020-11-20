@@ -3,7 +3,6 @@ import os
 import subprocess
 
 from dagster.core.instance import DagsterInstance
-from dagster.core.instance.ref import InstanceRef
 from dagster.core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster.utils import merge_dicts
 from dagster.utils.external import external_pipeline_from_run
@@ -50,9 +49,8 @@ def assert_events_in_order(logs, expected_events):
 def test_queued_runs(tmpdir, foo_pipeline_handle):
     dagster_home_path = tmpdir.strpath
     setup_instance(dagster_home_path)
-    with start_daemon():
-        instance_ref = InstanceRef.from_dir(dagster_home_path)
-        with DagsterInstance.from_ref(instance_ref) as instance:
+    with DagsterInstance.get() as instance:
+        with start_daemon():
 
             run = create_run(instance, foo_pipeline_handle)
             with external_pipeline_from_run(run) as external_pipeline:
