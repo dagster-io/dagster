@@ -1468,11 +1468,3 @@ type EventIntMetadataEntry implements EventMetadataEntry {
   description: String
   intValue: Int!
 }
-
-type PageInfo {
-  lastCursor: Cursor
-  hasNextPage: Boolean
-  hasPreviousPage: Boolean
-  count: Int!
-  totalCount: Int!
-}
