@@ -106,7 +106,7 @@ def test_sensor_preview(gen_sensor_args):
             result = runner.invoke(sensor_preview_command, cli_args + ["foo_sensor"],)
 
             assert result.exit_code == 0
-            assert result.output == "Sensor returning run parameters for 1 run(s):\n\nfoo: FOO\n\n"
+            assert result.output == "Sensor returning run requests for 1 run(s):\n\nfoo: FOO\n\n"
 
 
 @pytest.mark.parametrize("gen_sensor_args", sensor_command_contexts())
@@ -123,5 +123,5 @@ def test_sensor_preview_since(gen_sensor_args):
             assert result.exit_code == 0
             assert (
                 result.output
-                == "Sensor returning run parameters for 1 run(s):\n\nfoo: FOO\nsince: 1.1\n\n"
+                == "Sensor returning run requests for 1 run(s):\n\nfoo: FOO\nsince: 1.1\n\n"
             )

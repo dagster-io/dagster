@@ -10,7 +10,7 @@ from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )
-from dagster.core.definitions.sensor import SensorExecutionContext, SensorRunParams, SensorSkipData
+from dagster.core.definitions.sensor import RunRequest, SensorExecutionContext, SkipReason
 from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterRunNotFoundError,
@@ -272,11 +272,9 @@ def get_external_sensor_execution(recon_repo, instance_ref, sensor_name, last_co
             ):
                 tick_data_list = sensor_def.get_tick_data(sensor_context)
                 return ExternalSensorExecutionData(
-                    run_params=[
-                        tick for tick in tick_data_list if isinstance(tick, SensorRunParams)
-                    ],
+                    run_requests=[tick for tick in tick_data_list if isinstance(tick, RunRequest)],
                     skip_message=tick_data_list[0].skip_message
-                    if tick_data_list and isinstance(tick_data_list[0], SensorSkipData)
+                    if tick_data_list and isinstance(tick_data_list[0], SkipReason)
                     else None,
                 )
 

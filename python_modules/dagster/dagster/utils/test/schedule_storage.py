@@ -412,22 +412,10 @@ class TestScheduleStorage:
             storage.add_job_state(job)
 
     def build_job_tick_data(
-        self,
-        current_time,
-        status=JobTickStatus.STARTED,
-        run_id=None,
-        error=None,
-        execution_key=None,
+        self, current_time, status=JobTickStatus.STARTED, run_id=None, error=None, run_key=None,
     ):
         return JobTickData(
-            "my_sensor",
-            "my_sensor",
-            JobType.SENSOR,
-            status,
-            current_time,
-            run_id,
-            error,
-            execution_key,
+            "my_sensor", "my_sensor", JobType.SENSOR, status, current_time, run_id, error, run_key,
         )
 
     def test_create_job_tick(self, storage):

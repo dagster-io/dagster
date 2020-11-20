@@ -23,7 +23,7 @@ from dagster.cli import ENV_PREFIX, cli
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.cli.run import run_list_command, run_wipe_command
 from dagster.core.definitions.decorators.sensor import sensor
-from dagster.core.definitions.sensor import SensorRunParams
+from dagster.core.definitions.sensor import RunRequest
 from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
@@ -120,7 +120,7 @@ def define_bar_sensors():
         run_config = {"foo": "FOO"}
         if context.last_completion_time:
             run_config["since"] = context.last_completion_time
-        return SensorRunParams(execution_key=None, run_config=run_config)
+        return RunRequest(run_key=None, run_config=run_config)
 
     return {"foo_sensor": foo_sensor}
 

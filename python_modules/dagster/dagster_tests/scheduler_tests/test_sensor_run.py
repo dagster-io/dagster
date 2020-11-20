@@ -8,7 +8,7 @@ import pytest
 from dagster import pipeline, repository, solid
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.job import JobType
-from dagster.core.definitions.sensor import SensorRunParams, SensorSkipData
+from dagster.core.definitions.sensor import RunRequest, SkipReason
 from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
@@ -35,19 +35,19 @@ def the_pipeline():
 @sensor(pipeline_name="the_pipeline")
 def simple_sensor(context):
     if not context.last_completion_time or not int(context.last_completion_time) % 2:
-        return SensorSkipData()
+        return SkipReason()
 
-    return SensorRunParams(execution_key=None, run_config={}, tags={})
+    return RunRequest(run_key=None, run_config={}, tags={})
 
 
 @sensor(pipeline_name="the_pipeline")
 def always_on_sensor(_context):
-    return SensorRunParams(execution_key=None, run_config={}, tags={})
+    return RunRequest(run_key=None, run_config={}, tags={})
 
 
 @sensor(pipeline_name="the_pipeline")
-def execution_key_sensor(_context):
-    return SensorRunParams(execution_key="only_once", run_config={}, tags={})
+def run_key_sensor(_context):
+    return RunRequest(run_key="only_once", run_config={}, tags={})
 
 
 @sensor(pipeline_name="the_pipeline")
@@ -57,7 +57,7 @@ def error_sensor(context):
 
 @repository
 def the_repo():
-    return [the_pipeline, simple_sensor, error_sensor, always_on_sensor, execution_key_sensor]
+    return [the_pipeline, simple_sensor, error_sensor, always_on_sensor, run_key_sensor]
 
 
 @contextmanager
@@ -95,7 +95,7 @@ def validate_tick(
     expected_status,
     expected_run_id=None,
     expected_error=None,
-    expected_execution_key=None,
+    expected_run_key=None,
 ):
     tick_data = tick.job_tick_data
     assert tick_data.job_origin_id == external_sensor.get_external_origin_id()
@@ -104,7 +104,7 @@ def validate_tick(
     assert tick_data.status == expected_status
     assert tick_data.timestamp == expected_datetime.timestamp()
     assert tick_data.run_id == expected_run_id
-    assert tick_data.execution_key == expected_execution_key
+    assert tick_data.run_key == expected_run_key
     if expected_error:
         assert expected_error in tick_data.error.message
 
@@ -273,7 +273,7 @@ def test_launch_once(external_repo_context, capfd):
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(freeze_datetime):
 
-            external_sensor = external_repo.get_external_sensor("execution_key_sensor")
+            external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
                 JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
             )
@@ -294,7 +294,7 @@ def test_launch_once(external_repo_context, capfd):
                 freeze_datetime,
                 JobTickStatus.SUCCESS,
                 expected_run_id=run.run_id,
-                expected_execution_key="only_once",
+                expected_run_key="only_once",
             )
 
             # run again, ensure
@@ -307,10 +307,10 @@ def test_launch_once(external_repo_context, capfd):
                 external_sensor,
                 freeze_datetime,
                 JobTickStatus.SKIPPED,
-                expected_execution_key="only_once",
+                expected_run_key="only_once",
             )
             captured = capfd.readouterr()
             assert (
-                "Found existing run for sensor execution_key_sensor with execution_key `only_once`, skipping."
+                "Found existing run for sensor run_key_sensor with run_key `only_once`, skipping."
                 in captured.out
             )

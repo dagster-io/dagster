@@ -1,7 +1,7 @@
 import inspect
 
 from dagster import check
-from dagster.core.definitions.sensor import SensorDefinition, SensorRunParams, SensorSkipData
+from dagster.core.definitions.sensor import RunRequest, SensorDefinition, SkipReason
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.utils.backcompat import experimental
 
@@ -12,10 +12,9 @@ def sensor(pipeline_name, name=None, solid_selection=None, mode=None):
     Creates a sensor where the decorated function is used as the sensor's evaluation function.  The
     decorated function may:
 
-    1. Return a `SensorRunParams` object.
-    2. Yield a number of `SensorRunParams` objects.
-    3. Return a `SensorSkipData` object, providing a descriptive message of why no runs were
-       requested.
+    1. Return a `RunRequest` object.
+    2. Yield multiple of `RunRequest` objects.
+    3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
     4. Yield nothing (skipping without providing a reason)
 
     Takes a :py:class:`~dagster.SensorExecutionContext`.
@@ -40,15 +39,15 @@ def sensor(pipeline_name, name=None, solid_selection=None, mode=None):
             if inspect.isgenerator(result):
                 for item in result:
                     yield item
-            elif isinstance(result, (SensorSkipData, SensorRunParams)):
+            elif isinstance(result, (SkipReason, RunRequest)):
                 yield result
 
             elif result is not None:
                 raise DagsterInvariantViolationError(
                     (
                         "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                        "{result} of type {type_}.  Should only return SensorSkipData or "
-                        "SensorRunParams objects."
+                        "{result} of type {type_}.  Should only return SkipReason or "
+                        "RunRequest objects."
                     ).format(sensor_name=sensor_name, result=result, type_=type(result))
                 )
 

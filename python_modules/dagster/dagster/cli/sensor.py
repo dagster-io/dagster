@@ -286,7 +286,7 @@ def execute_preview_command(sensor_name, since, cli_args, print_fn, instance=Non
                             error_info=sensor_runtime_data.error.to_string(),
                         )
                     )
-                elif not sensor_runtime_data.run_params:
+                elif not sensor_runtime_data.run_requests:
                     if sensor_runtime_data.skip_message:
                         print_fn(
                             "Sensor returned false for {sensor_name}, skipping: {skip_message}".format(
@@ -302,11 +302,11 @@ def execute_preview_command(sensor_name, since, cli_args, print_fn, instance=Non
                         )
                 else:
                     print_fn(
-                        "Sensor returning run parameters for {num} run(s):\n\n{run_params}".format(
-                            num=len(sensor_runtime_data.run_params),
-                            run_params="\n".join(
-                                yaml.safe_dump(param.run_config, default_flow_style=False)
-                                for param in sensor_runtime_data.run_params
+                        "Sensor returning run requests for {num} run(s):\n\n{run_requests}".format(
+                            num=len(sensor_runtime_data.run_requests),
+                            run_requests="\n".join(
+                                yaml.safe_dump(run_request.run_config, default_flow_style=False)
+                                for run_request in sensor_runtime_data.run_requests
                             ),
                         )
                     )

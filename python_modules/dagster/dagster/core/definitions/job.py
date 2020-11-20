@@ -1,7 +1,6 @@
 from enum import Enum
 
 from dagster import check
-from dagster.core.instance import DagsterInstance
 from dagster.serdes import whitelist_for_serdes
 
 from .mode import DEFAULT_MODE_NAME
@@ -27,6 +26,8 @@ class JobContext:
     __slots__ = ["_instance"]
 
     def __init__(self, instance):
+        from dagster.core.instance import DagsterInstance
+
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
 
     @property

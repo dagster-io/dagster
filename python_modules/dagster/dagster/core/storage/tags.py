@@ -33,7 +33,7 @@ GRPC_INFO_TAG = "{prefix}grpc_info".format(prefix=HIDDEN_TAG_PREFIX)
 
 SCHEDULED_EXECUTION_TIME_TAG = "{prefix}scheduled_execution_time".format(prefix=HIDDEN_TAG_PREFIX)
 
-EXECUTION_KEY_TAG = "{prefix}execution_key".format(prefix=HIDDEN_TAG_PREFIX)
+RUN_KEY_TAG = "{prefix}run_key".format(prefix=HIDDEN_TAG_PREFIX)
 
 
 class TagType(Enum):

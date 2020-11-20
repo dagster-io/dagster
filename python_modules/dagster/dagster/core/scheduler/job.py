@@ -134,8 +134,8 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
         return self.job_tick_data.timestamp
 
     @property
-    def execution_key(self):
-        return self.job_tick_data.execution_key
+    def run_key(self):
+        return self.job_tick_data.run_key
 
     @property
     def status(self):
@@ -153,8 +153,7 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
 @whitelist_for_serdes
 class JobTickData(
     namedtuple(
-        "_JobTickData",
-        "job_origin_id job_name job_type status timestamp run_id error execution_key",
+        "_JobTickData", "job_origin_id job_name job_type status timestamp run_id error run_key",
     )
 ):
     def __new__(
@@ -166,7 +165,7 @@ class JobTickData(
         timestamp,
         run_id=None,
         error=None,
-        execution_key=None,
+        run_key=None,
     ):
         """
         This class defines the data that is serialized and stored in ``JobStorage``. We depend
@@ -185,7 +184,7 @@ class JobTickData(
             run_id (str): The run created by the tick.
             error (SerializableErrorInfo): The error caught during job execution. This is set
                 only when the status is ``JobTickStatus.Failure``
-            execution_key (Optional[str]): A string that uniquely identifies a pipeline execution
+            run_key (Optional[str]): A string that uniquely identifies a pipeline execution
         """
 
         _validate_job_tick_args(job_type, status, run_id, error)
@@ -198,10 +197,10 @@ class JobTickData(
             check.float_param(timestamp, "timestamp"),
             run_id,  # validated in _validate_job_tick_args
             error,  # validated in _validate_job_tick_args
-            check.opt_str_param(execution_key, "execution_key"),
+            check.opt_str_param(run_key, "run_key"),
         )
 
-    def with_status(self, status, run_id=None, error=None, timestamp=None, execution_key=None):
+    def with_status(self, status, run_id=None, error=None, timestamp=None, run_key=None):
         check.inst_param(status, "status", JobTickStatus)
         return JobTickData(
             job_origin_id=self.job_origin_id,
@@ -211,7 +210,7 @@ class JobTickData(
             timestamp=timestamp if timestamp is not None else self.timestamp,
             run_id=run_id if run_id is not None else self.run_id,
             error=error if error is not None else self.error,
-            execution_key=execution_key if execution_key is not None else self.execution_key,
+            run_key=run_key if run_key is not None else self.run_key,
         )
 
 

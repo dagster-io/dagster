@@ -4,7 +4,7 @@ from dagster.core.definitions.job import JobType
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus
 from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import EXECUTION_KEY_TAG, SENSOR_NAME_TAG
+from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster.core.test_utils import cleanup_test_instance, get_crash_signals
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.sensor import execute_sensor_iteration
@@ -129,7 +129,7 @@ def test_failure_after_run_created_before_run_launched(
     ).in_tz("US/Central")
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(frozen_datetime):
-            external_sensor = external_repo.get_external_sensor("execution_key_sensor")
+            external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
                 JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
             )
@@ -154,8 +154,8 @@ def test_failure_after_run_created_before_run_launched(
             run = instance.get_runs()[0]
             # Run was created, but hasn't launched yet
             assert run.status == PipelineRunStatus.NOT_STARTED
-            assert run.tags.get(SENSOR_NAME_TAG) == "execution_key_sensor"
-            assert run.tags.get(EXECUTION_KEY_TAG) == "only_once"
+            assert run.tags.get(SENSOR_NAME_TAG) == "run_key_sensor"
+            assert run.tags.get(RUN_KEY_TAG) == "only_once"
 
             # clear output
             capfd.readouterr()
@@ -175,7 +175,7 @@ def test_failure_after_run_created_before_run_launched(
             captured = capfd.readouterr()
 
             assert (
-                f"Run {run.run_id} already created with the execution key `only_once` for execution_key_sensor"
+                f"Run {run.run_id} already created with the run key `only_once` for run_key_sensor"
                 in captured.out
             )
 
@@ -196,7 +196,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
     ).in_tz("US/Central")
     with instance_with_sensors(external_repo_context) as (instance, external_repo):
         with pendulum.test(frozen_datetime):
-            external_sensor = external_repo.get_external_sensor("execution_key_sensor")
+            external_sensor = external_repo.get_external_sensor("run_key_sensor")
             instance.add_job_state(
                 JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
             )
@@ -220,8 +220,8 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
 
             run = instance.get_runs()[0]
             wait_for_all_runs_to_start(instance)
-            assert run.tags.get(SENSOR_NAME_TAG) == "execution_key_sensor"
-            assert run.tags.get(EXECUTION_KEY_TAG) == "only_once"
+            assert run.tags.get(SENSOR_NAME_TAG) == "run_key_sensor"
+            assert run.tags.get(RUN_KEY_TAG) == "only_once"
             capfd.readouterr()
 
             launch_process = multiprocessing.Process(
@@ -239,7 +239,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
             captured = capfd.readouterr()
 
             assert (
-                f"Run {run.run_id} already completed with the execution key `only_once` for execution_key_sensor"
+                f"Run {run.run_id} already completed with the run key `only_once` for run_key_sensor"
                 in captured.out
             )
 
