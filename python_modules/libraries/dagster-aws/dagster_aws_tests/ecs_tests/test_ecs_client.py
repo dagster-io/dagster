@@ -4,107 +4,92 @@ import boto3
 import pytest
 from dagster.core.test_utils import instance_for_test
 from dagster_aws.ecs import client
-from moto import mock_ecs, mock_logs
+from moto import mock_logs, mock_sts
 
 
-@mock_ecs
 @mock_logs
-def test_set_cluster():
+def test_set_cluster(mock_ecs_client, mock_ecs_cluster):
     log_client = boto3.client("logs", region_name="us-east-2")
-    ecs_client = boto3.client("ecs", region_name="us-east-2")
-    ecs_client.create_cluster(clusterName="test_clust")
     testclient = client.ECSClient(
         key_id="Testing",
         access_key="Testing",
-        starter_client=ecs_client,
+        starter_client=mock_ecs_client,
         starter_log_client=log_client,
     )
-    assert "test_clust" in testclient.cluster
+    assert mock_ecs_cluster in testclient.cluster
 
 
-@mock_ecs
 @mock_logs
-def test_command():
+def test_command(mock_ecs_client, mock_ecs_cluster):
     log_client = boto3.client("logs", region_name="us-east-2")
-    ecs_client = boto3.client("ecs", region_name="us-east-2")
-    ecs_client.create_cluster(clusterName="test_ecs_cluster")
     testclient = client.ECSClient(
         key_id="Testing",
         access_key="Testing",
-        starter_client=ecs_client,
+        starter_client=mock_ecs_client,
         starter_log_client=log_client,
     )
     testclient.set_and_register_task(
         ["echoes"], [""], family=" ",
     )
-    taskdef = ecs_client.describe_task_definition(taskDefinition=testclient.task_definition_arn)[
-        "taskDefinition"
-    ]
+    taskdef = mock_ecs_client.describe_task_definition(
+        taskDefinition=testclient.task_definition_arn
+    )["taskDefinition"]
     assert taskdef["containerDefinitions"][0]["command"][0] == "echoes"
 
 
-@mock_ecs
 @mock_logs
-def test_entry():
+def test_entry(mock_ecs_client, mock_ecs_cluster):
     log_client = boto3.client("logs", region_name="us-east-2")
-    ecs_client = boto3.client("ecs", region_name="us-east-2")
-    ecs_client.create_cluster(clusterName="test_ecs_cluster")
     testclient = client.ECSClient(
         key_id="Testing",
         access_key="Testing",
-        starter_client=ecs_client,
+        starter_client=mock_ecs_client,
         starter_log_client=log_client,
     )
     testclient.set_and_register_task(
         [" "], ["entries"], family=" ",
     )
-    taskdef = ecs_client.describe_task_definition(taskDefinition=testclient.task_definition_arn)[
-        "taskDefinition"
-    ]
+    taskdef = mock_ecs_client.describe_task_definition(
+        taskDefinition=testclient.task_definition_arn
+    )["taskDefinition"]
     assert taskdef["containerDefinitions"][0]["entryPoint"][0] == "entries"
 
 
-@mock_ecs
 @mock_logs
-def test_family():
+def test_family(mock_ecs_client, mock_ecs_cluster):
     log_client = boto3.client("logs", region_name="us-east-2")
-    ecs_client = boto3.client("ecs", region_name="us-east-2")
-    ecs_client.create_cluster(clusterName="test_ecs_cluster")
     testclient = client.ECSClient(
         key_id="Testing",
         access_key="Testing",
-        starter_client=ecs_client,
+        starter_client=mock_ecs_client,
         starter_log_client=log_client,
     )
     testclient.set_and_register_task(
         ["echoes"], [""], family="basefam",
     )
-    taskdef = ecs_client.describe_task_definition(taskDefinition=testclient.task_definition_arn)[
-        "taskDefinition"
-    ]
+    taskdef = mock_ecs_client.describe_task_definition(
+        taskDefinition=testclient.task_definition_arn
+    )["taskDefinition"]
     assert taskdef["family"] == "basefam"
     logger = taskdef["containerDefinitions"][0]["logConfiguration"]["options"]
     assert "basefam" in logger["awslogs-group"]
 
 
-@mock_ecs
 @mock_logs
-def test_region():
+def test_region(mock_ecs_client, mock_ecs_cluster):
     log_client = boto3.client("logs", region_name="us-east-2")
-    ecs_client = boto3.client("ecs", region_name="us-east-2")
-    ecs_client.create_cluster(clusterName="test_ecs_cluster")
     testclient = client.ECSClient(
         key_id="Testing",
         access_key="Testing",
-        starter_client=ecs_client,
+        starter_client=mock_ecs_client,
         starter_log_client=log_client,
     )
     testclient.set_and_register_task(
         ["echoes"], [""], family="basefam",
     )
-    taskdef = ecs_client.describe_task_definition(taskDefinition=testclient.task_definition_arn)[
-        "taskDefinition"
-    ]
+    taskdef = mock_ecs_client.describe_task_definition(
+        taskDefinition=testclient.task_definition_arn
+    )["taskDefinition"]
     assert taskdef["family"] == "basefam"
     logger = taskdef["containerDefinitions"][0]["logConfiguration"]["options"]
     assert "us-east-2" in logger["awslogs-region"]
@@ -161,7 +146,8 @@ def test_one_run():
     assert testclient.logs_messages == {0: ["start"]}
 
 
-def test_ecs_run_launcher_inits():
+@mock_sts
+def test_ecs_run_launcher_inits(mock_ecs_cluster):
     with instance_for_test(
         overrides={
             "run_launcher": {"module": "dagster_aws.ecs.launcher", "class": "ECSRunLauncher"}
