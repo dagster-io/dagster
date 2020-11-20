@@ -4,91 +4,61 @@ import boto3
 import pytest
 from dagster.core.test_utils import instance_for_test
 from dagster_aws.ecs import client
-from moto import mock_logs, mock_sts
+from moto import mock_sts
 
 
-@mock_logs
-def test_set_cluster(mock_ecs_client, mock_ecs_cluster):
-    log_client = boto3.client("logs", region_name="us-east-2")
-    testclient = client.ECSClient(
+@pytest.fixture
+def test_client(mock_ecs_client, mock_ecs_cluster):  # pylint: disable=unused-argument
+    return client.ECSClient(
         key_id="Testing",
         access_key="Testing",
         starter_client=mock_ecs_client,
-        starter_log_client=log_client,
+        starter_log_client=boto3.client("logs", region_name="us-east-2"),
     )
-    assert mock_ecs_cluster in testclient.cluster
 
 
-@mock_logs
-def test_command(mock_ecs_client, mock_ecs_cluster):
-    log_client = boto3.client("logs", region_name="us-east-2")
-    testclient = client.ECSClient(
-        key_id="Testing",
-        access_key="Testing",
-        starter_client=mock_ecs_client,
-        starter_log_client=log_client,
-    )
-    testclient.set_and_register_task(
+def test_set_cluster(test_client, mock_ecs_cluster):  # pylint: disable=redefined-outer-name
+    assert mock_ecs_cluster in test_client.cluster
+
+
+def test_command(test_client, mock_ecs_client):  # pylint: disable=redefined-outer-name
+    test_client.set_and_register_task(
         ["echoes"], [""], family=" ",
     )
     taskdef = mock_ecs_client.describe_task_definition(
-        taskDefinition=testclient.task_definition_arn
+        taskDefinition=test_client.task_definition_arn
     )["taskDefinition"]
     assert taskdef["containerDefinitions"][0]["command"][0] == "echoes"
 
 
-@mock_logs
-def test_entry(mock_ecs_client, mock_ecs_cluster):
-    log_client = boto3.client("logs", region_name="us-east-2")
-    testclient = client.ECSClient(
-        key_id="Testing",
-        access_key="Testing",
-        starter_client=mock_ecs_client,
-        starter_log_client=log_client,
-    )
-    testclient.set_and_register_task(
+def test_entry(test_client, mock_ecs_client):  # pylint: disable=redefined-outer-name
+    test_client.set_and_register_task(
         [" "], ["entries"], family=" ",
     )
     taskdef = mock_ecs_client.describe_task_definition(
-        taskDefinition=testclient.task_definition_arn
+        taskDefinition=test_client.task_definition_arn
     )["taskDefinition"]
     assert taskdef["containerDefinitions"][0]["entryPoint"][0] == "entries"
 
 
-@mock_logs
-def test_family(mock_ecs_client, mock_ecs_cluster):
-    log_client = boto3.client("logs", region_name="us-east-2")
-    testclient = client.ECSClient(
-        key_id="Testing",
-        access_key="Testing",
-        starter_client=mock_ecs_client,
-        starter_log_client=log_client,
-    )
-    testclient.set_and_register_task(
+def test_family(test_client, mock_ecs_client):  # pylint: disable=redefined-outer-name
+    test_client.set_and_register_task(
         ["echoes"], [""], family="basefam",
     )
     taskdef = mock_ecs_client.describe_task_definition(
-        taskDefinition=testclient.task_definition_arn
+        taskDefinition=test_client.task_definition_arn
     )["taskDefinition"]
     assert taskdef["family"] == "basefam"
     logger = taskdef["containerDefinitions"][0]["logConfiguration"]["options"]
     assert "basefam" in logger["awslogs-group"]
 
 
-@mock_logs
-def test_region(mock_ecs_client, mock_ecs_cluster):
-    log_client = boto3.client("logs", region_name="us-east-2")
-    testclient = client.ECSClient(
-        key_id="Testing",
-        access_key="Testing",
-        starter_client=mock_ecs_client,
-        starter_log_client=log_client,
-    )
-    testclient.set_and_register_task(
+def test_region(test_client, mock_ecs_client):  # pylint: disable=redefined-outer-name
+    test_client.set_and_register_task(
         ["echoes"], [""], family="basefam",
     )
     taskdef = mock_ecs_client.describe_task_definition(
-        taskDefinition=testclient.task_definition_arn
+        taskDefinition=test_client.task_definition_arn
     )["taskDefinition"]
     assert taskdef["family"] == "basefam"
     logger = taskdef["containerDefinitions"][0]["logConfiguration"]["options"]
@@ -147,7 +117,7 @@ def test_one_run():
 
 
 @mock_sts
-def test_ecs_run_launcher_inits(mock_ecs_cluster):
+def test_ecs_run_launcher_inits(mock_ecs_cluster):  # pylint: disable=unused-argument
     with instance_for_test(
         overrides={
             "run_launcher": {"module": "dagster_aws.ecs.launcher", "class": "ECSRunLauncher"}

@@ -10,7 +10,7 @@ def mock_ecs_client():
 
 
 @pytest.fixture
-def mock_ecs_cluster(mock_ecs_client):
+def mock_ecs_cluster(mock_ecs_client):  # pylint: disable=redefined-outer-name
     name = "test-cluster"
     mock_ecs_client.create_cluster(clusterName="test-cluster")
     return name
