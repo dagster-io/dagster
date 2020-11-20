@@ -47,8 +47,10 @@ from dagster import (
     weekly_schedule,
 )
 from dagster.cli.workspace.load import location_origin_from_python_file
+from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.partition import last_empty_partition
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.sensor import RunRequest, SkipReason
 from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.tags import RESUME_RETRY_TAG
@@ -1018,6 +1020,31 @@ def define_partitions():
     return [integer_set, enum_set, chained_partition_set]
 
 
+def define_sensors():
+    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    def always_no_config(_):
+        return RunRequest(
+            run_key=None, run_config={"storage": {"filesystem": {}}}, tags={"test": "1234"}
+        )
+
+    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    def once_no_config(_):
+        return RunRequest(
+            run_key="once", run_config={"storage": {"filesystem": {}}}, tags={"test": "1234"}
+        )
+
+    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    def never_no_config(_):
+        return SkipReason("never")
+
+    @sensor(pipeline_name="no_config_pipeline", mode="default")
+    def multi_no_config(_):
+        yield RunRequest(run_key="A")
+        yield RunRequest(run_key="B")
+
+    return [always_no_config, once_no_config, never_no_config, multi_no_config]
+
+
 @pipeline
 def chained_failure_pipeline():
     @lambda_solid
@@ -1084,5 +1111,6 @@ def test_repo():
             chained_failure_pipeline,
         ]
         + define_schedules()
+        + define_sensors()
         + define_partitions()
     )

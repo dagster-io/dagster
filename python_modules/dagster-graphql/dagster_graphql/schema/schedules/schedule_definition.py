@@ -98,7 +98,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         if not self._schedule_state:
             # Also include a ScheduleState for a stopped schedule that may not
             # have a stored database row yet
-            self._schedule_state = self._external_schedule.get_default_schedule_state()
+            self._schedule_state = self._external_schedule.get_default_job_state()
 
         super(DauphinScheduleDefinition, self).__init__(
             name=external_schedule.name,

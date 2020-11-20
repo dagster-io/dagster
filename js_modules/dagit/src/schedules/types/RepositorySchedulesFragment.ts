@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { JobTickStatus, PipelineRunStatus, ScheduleStatus, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RepositorySchedulesFragment
@@ -124,6 +124,41 @@ export interface RepositorySchedulesFragment_scheduleDefinitions {
   futureTicks: RepositorySchedulesFragment_scheduleDefinitions_futureTicks;
 }
 
+export interface RepositorySchedulesFragment_sensors_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+}
+
+export interface RepositorySchedulesFragment_sensors_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RepositorySchedulesFragment_sensors_ticks {
+  __typename: "JobTick";
+  id: string;
+  status: JobTickStatus;
+  timestamp: number;
+  runId: string | null;
+  error: RepositorySchedulesFragment_sensors_ticks_error | null;
+  runKey: string | null;
+}
+
+export interface RepositorySchedulesFragment_sensors {
+  __typename: "Sensor";
+  id: string;
+  name: string;
+  pipelineName: string;
+  solidSelection: (string | null)[] | null;
+  mode: string;
+  status: JobStatus;
+  runs: RepositorySchedulesFragment_sensors_runs[];
+  runsCount: number;
+  ticks: RepositorySchedulesFragment_sensors_ticks[];
+}
+
 export interface RepositorySchedulesFragment_origin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
@@ -148,6 +183,7 @@ export interface RepositorySchedulesFragment {
   name: string;
   id: string;
   scheduleDefinitions: RepositorySchedulesFragment_scheduleDefinitions[];
+  sensors: RepositorySchedulesFragment_sensors[];
   origin: RepositorySchedulesFragment_origin;
   location: RepositorySchedulesFragment_location;
 }

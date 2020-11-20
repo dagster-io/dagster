@@ -44,6 +44,7 @@ class ExternalRepository:
             for external_pipeline_data in external_repository_data.external_pipeline_datas
         )
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+
         self._job_map = OrderedDict(
             (external_job_data.name, external_job_data)
             for external_job_data in external_repository_data.external_job_datas
@@ -103,7 +104,12 @@ class ExternalRepository:
         return job_name in self._job_map
 
     def get_external_job(self, job_name):
-        return self._job_map[job_name]
+        external_job_data = self._job_map[job_name]
+        if external_job_data.job_type == JobType.SENSOR:
+            return ExternalSensor(external_job_data, self._handle)
+        if external_job_data.job_type == JobType.SCHEDULE:
+            return ExternalSchedule(external_job_data, self._handle)
+        return None
 
     def get_external_partition_set(self, partition_set_name):
         return ExternalPartitionSet(
@@ -431,7 +437,7 @@ class ExternalSchedule:
     # ScheduleState that represents the state of the schedule
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
-    def get_default_schedule_state(self):
+    def get_default_job_state(self):
         from dagster.core.scheduler.job import JobState, JobStatus, ScheduleJobData
 
         return JobState(
@@ -497,7 +503,7 @@ class ExternalSensor:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
-    def get_default_sensor_state(self):
+    def get_default_job_state(self):
         from dagster.core.scheduler.job import JobState, JobStatus
 
         return JobState(self.get_external_origin(), JobType.SENSOR, JobStatus.STOPPED)

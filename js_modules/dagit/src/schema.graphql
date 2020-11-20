@@ -9,6 +9,8 @@ type Query {
   scheduleDefinitionOrError(scheduleSelector: ScheduleSelector!): ScheduleDefinitionOrError!
   scheduleDefinitionsOrError(repositorySelector: RepositorySelector!): ScheduleDefinitionsOrError!
   scheduleStatesOrError(repositorySelector: RepositorySelector, withNoScheduleDefinition: Boolean): ScheduleStatesOrError!
+  sensorOrError(jobSelector: SensorSelector!): SensorOrError!
+  sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
@@ -40,6 +42,7 @@ type Repository {
   origin: RepositoryOrigin!
   partitionSets: [PartitionSet!]!
   scheduleDefinitions: [ScheduleDefinition!]!
+  sensors: [Sensor!]!
 }
 
 type RepositoryLocation {
@@ -590,6 +593,33 @@ type SolidInvocationSite {
   solidHandle: SolidHandle!
 }
 
+type Sensor {
+  id: ID!
+  name: String!
+  pipelineName: String!
+  solidSelection: [String]
+  mode: String!
+  status: JobStatus!
+  runs(limit: Int): [PipelineRun!]!
+  runsCount: Int!
+  ticks(limit: Int): [JobTick!]!
+}
+
+enum JobStatus {
+  RUNNING
+  STOPPED
+}
+
+type JobTick {
+  id: ID!
+  status: JobTickStatus!
+  timestamp: Float!
+  runId: String
+  error: PythonError
+  runKey: String
+  run: PipelineRun
+}
+
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
 type RepositoryNotFoundError implements Error {
@@ -689,6 +719,25 @@ union ScheduleStatesOrError = ScheduleStates | RepositoryNotFoundError | PythonE
 
 type ScheduleStates {
   results: [ScheduleState!]!
+}
+
+union SensorOrError = Sensor | SensorNotFoundError | PythonError
+
+type SensorNotFoundError implements Error {
+  message: String!
+  sensorName: String!
+}
+
+input SensorSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  sensorName: String!
+}
+
+union SensorsOrError = Sensors | RepositoryNotFoundError | PythonError
+
+type Sensors {
+  results: [Sensor!]!
 }
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError

@@ -344,6 +344,10 @@ class PipelineRunsFilter(
     def for_partition(partition_set, partition):
         return PipelineRunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))
 
+    @staticmethod
+    def for_sensor(sensor):
+        return PipelineRunsFilter(tags=PipelineRun.tags_for_sensor(sensor))
+
 
 ###################################################################################################
 # GRAVEYARD

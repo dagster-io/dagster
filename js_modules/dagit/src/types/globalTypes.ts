@@ -27,6 +27,11 @@ export enum EvaluationErrorReason {
   SELECTOR_FIELD_ERROR = "SELECTOR_FIELD_ERROR",
 }
 
+export enum JobStatus {
+  RUNNING = "RUNNING",
+  STOPPED = "STOPPED",
+}
+
 export enum JobTickStatus {
   FAILURE = "FAILURE",
   SKIPPED = "SKIPPED",

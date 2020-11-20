@@ -144,7 +144,7 @@ def _get_schedule_states(
             if not schedule_origins.get(external_schedule.get_external_origin_id()):
                 results.append(
                     graphene_info.schema.type_named("ScheduleState")(
-                        graphene_info, external_schedule.get_default_schedule_state(),
+                        graphene_info, external_schedule.get_default_job_state(),
                     )
                 )
 

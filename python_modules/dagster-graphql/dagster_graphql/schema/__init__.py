@@ -13,12 +13,14 @@ def create_schema():
         errors,
         execution,
         external,
+        jobs,
         paging,
         partition_sets,
         pipelines,
         roots,
         runs,
         schedules,
+        sensors,
     )
 
     return dauphin.create_schema()

@@ -7,6 +7,7 @@ from dagster.core.host_representation import (
     RepositorySelector,
     RepresentedPipeline,
     ScheduleSelector,
+    SensorSelector,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
@@ -54,6 +55,7 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_schedule_states_or_error,
     get_scheduler_or_error,
 )
+from dagster_graphql.implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from dagster_graphql.implementation.run_config_schema import (
     resolve_is_run_config_valid,
     resolve_run_config_schema_or_error,
@@ -112,6 +114,13 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull("ScheduleStatesOrError"),
         repositorySelector=dauphin.Argument("RepositorySelector"),
         withNoScheduleDefinition=dauphin.Boolean(),
+    )
+
+    sensorOrError = dauphin.Field(
+        dauphin.NonNull("SensorOrError"), jobSelector=dauphin.NonNull("SensorSelector"),
+    )
+    sensorsOrError = dauphin.Field(
+        dauphin.NonNull("SensorsOrError"), repositorySelector=dauphin.NonNull("RepositorySelector"),
     )
 
     partitionSetsOrError = dauphin.Field(
@@ -243,6 +252,16 @@ class DauphinQuery(dauphin.ObjectType):
             if kwargs.get("repositorySelector")
             else None,
             kwargs.get("withNoScheduleDefinition"),
+        )
+
+    def resolve_sensorOrError(self, graphene_info, sensor_selector):
+        return get_sensor_or_error(
+            graphene_info, SensorSelector.from_graphql_input(sensor_selector)
+        )
+
+    def resolve_sensorsOrError(self, graphene_info, **kwargs):
+        return get_sensors_or_error(
+            graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
@@ -760,6 +779,16 @@ class DauphinPipelineSelector(dauphin.InputObjectType):
     repositoryName = dauphin.NonNull(dauphin.String)
     repositoryLocationName = dauphin.NonNull(dauphin.String)
     solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
+
+
+class DauphinSensorSelector(dauphin.InputObjectType):
+    class Meta:
+        name = "SensorSelector"
+        description = """This type represents the fields necessary to identify a sensor."""
+
+    repositoryName = dauphin.NonNull(dauphin.String)
+    repositoryLocationName = dauphin.NonNull(dauphin.String)
+    sensorName = dauphin.NonNull(dauphin.String)
 
 
 class DauphinScheduleSelector(dauphin.InputObjectType):

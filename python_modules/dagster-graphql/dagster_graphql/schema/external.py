@@ -33,6 +33,7 @@ class DauphinRepository(dauphin.ObjectType):
     origin = dauphin.NonNull("RepositoryOrigin")
     partitionSets = dauphin.non_null_list("PartitionSet")
     scheduleDefinitions = dauphin.non_null_list("ScheduleDefinition")
+    sensors = dauphin.non_null_list("Sensor")
 
     def resolve_id(self, _graphene_info):
         return self._repository.get_external_origin_id()
@@ -54,6 +55,16 @@ class DauphinRepository(dauphin.ObjectType):
                 for schedule in schedules
             ],
             key=lambda schedule: schedule.name,
+        )
+
+    def resolve_sensors(self, graphene_info):
+        sensors = self._repository.get_external_sensors()
+        return sorted(
+            [
+                graphene_info.schema.type_named("Sensor")(graphene_info, sensor)
+                for sensor in sensors
+            ],
+            key=lambda sensor: sensor.name,
         )
 
     def resolve_pipelines(self, graphene_info):

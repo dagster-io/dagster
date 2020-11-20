@@ -612,6 +612,19 @@ class DauphinScheduleDefinitionNotFoundError(dauphin.ObjectType):
         )
 
 
+class DauphinSensorNotFoundError(dauphin.ObjectType):
+    class Meta:
+        name = "SensorNotFoundError"
+        interfaces = (DauphinError,)
+
+    sensor_name = dauphin.NonNull(dauphin.String)
+
+    def __init__(self, sensor_name):
+        super(DauphinSensorNotFoundError, self).__init__()
+        self.name = check.str_param(sensor_name, "sensor_name")
+        self.message = f"Sensor {sensor_name} is not present in the currently loaded repository."
+
+
 class DauphinScheduleStateNotFoundError(dauphin.ObjectType):
     class Meta:
         name = "ScheduleStateNotFoundError"

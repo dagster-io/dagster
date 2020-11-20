@@ -12,6 +12,7 @@ from .external import (
     ExternalPipeline,
     ExternalRepository,
     ExternalSchedule,
+    ExternalSensor,
 )
 from .external_data import (
     ExternalExecutionParamsData,
@@ -58,4 +59,4 @@ from .repository_location import (
     RepositoryLocation,
 )
 from .represented import RepresentedPipeline
-from .selector import PipelineSelector, RepositorySelector, ScheduleSelector
+from .selector import PipelineSelector, RepositorySelector, ScheduleSelector, SensorSelector

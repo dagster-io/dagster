@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, JobTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { RepositorySelector, JobTickStatus, PipelineRunStatus, ScheduleStatus, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
@@ -128,6 +128,41 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinit
   futureTicks: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_futureTicks;
 }
 
+export interface SchedulesRootQuery_repositoryOrError_Repository_sensors_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_sensors_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_sensors_ticks {
+  __typename: "JobTick";
+  id: string;
+  status: JobTickStatus;
+  timestamp: number;
+  runId: string | null;
+  error: SchedulesRootQuery_repositoryOrError_Repository_sensors_ticks_error | null;
+  runKey: string | null;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_sensors {
+  __typename: "Sensor";
+  id: string;
+  name: string;
+  pipelineName: string;
+  solidSelection: (string | null)[] | null;
+  mode: string;
+  status: JobStatus;
+  runs: SchedulesRootQuery_repositoryOrError_Repository_sensors_runs[];
+  runsCount: number;
+  ticks: SchedulesRootQuery_repositoryOrError_Repository_sensors_ticks[];
+}
+
 export interface SchedulesRootQuery_repositoryOrError_Repository_origin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
@@ -152,6 +187,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository {
   id: string;
   name: string;
   scheduleDefinitions: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions[];
+  sensors: SchedulesRootQuery_repositoryOrError_Repository_sensors[];
   origin: SchedulesRootQuery_repositoryOrError_Repository_origin;
   location: SchedulesRootQuery_repositoryOrError_Repository_location;
 }
