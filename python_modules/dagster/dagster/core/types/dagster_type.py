@@ -254,6 +254,17 @@ class DagsterType:
     def is_nothing(self):
         return self.kind == DagsterTypeKind.NOTHING
 
+    @property
+    def supports_fan_in(self):
+        return False
+
+    def get_inner_type_for_fan_in(self):
+        check.invariant(
+            "DagsterType {name} does not support fan-in, should have checked supports_fan_in before calling getter.".format(
+                name=self.display_name
+            )
+        )
+
 
 def _validate_type_check_fn(fn, name):
     from dagster.seven import get_args
@@ -398,6 +409,14 @@ class Anyish(DagsterType):
     def type_check_method(self, _context, _value):
         return TypeCheck(success=True)
 
+    @property
+    def supports_fan_in(self):
+        return True
+
+    def get_inner_type_for_fan_in(self):
+        # Anyish all the way down
+        return self
+
 
 class _Any(Anyish):
     def __init__(self):
@@ -449,6 +468,13 @@ class _Nothing(DagsterType):
             )
 
         return TypeCheck(success=True)
+
+    @property
+    def supports_fan_in(self):
+        return True
+
+    def get_inner_type_for_fan_in(self):
+        return self
 
 
 class PythonObjectDagsterType(DagsterType):
@@ -597,6 +623,13 @@ class OptionalType(DagsterType):
     def type_param_keys(self):
         return [self.inner_type.key]
 
+    @property
+    def supports_fan_in(self):
+        return self.inner_type.supports_fan_in
+
+    def get_inner_type_for_fan_in(self):
+        return self.inner_type.get_inner_type_for_fan_in()
+
 
 class ListInputSchema(DagsterTypeLoader):
     def __init__(self, inner_dagster_type):
@@ -657,6 +690,13 @@ class ListType(DagsterType):
     @property
     def type_param_keys(self):
         return [self.inner_type.key]
+
+    @property
+    def supports_fan_in(self):
+        return True
+
+    def get_inner_type_for_fan_in(self):
+        return self.inner_type
 
 
 class DagsterListApi:

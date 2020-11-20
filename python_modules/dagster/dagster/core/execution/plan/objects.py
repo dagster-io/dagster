@@ -131,72 +131,6 @@ class StepKind(Enum):
     COMPUTE = "COMPUTE"
 
 
-class StepInputSourceType(Enum):
-    SINGLE_OUTPUT = "SINGLE_OUTPUT"
-    MULTIPLE_OUTPUTS = "MULTIPLE_OUTPUTS"
-    CONFIG = "CONFIG"
-    DEFAULT_VALUE = "DEFAULT_VALUE"
-    CACHED_OUTPUT = "CACHED_OUTPUT"
-
-
-class StepInput(
-    namedtuple("_StepInput", "name dagster_type source_type source_handles config_data addresses")
-):
-    def __new__(
-        cls,
-        name,
-        dagster_type=None,
-        source_type=None,
-        source_handles=None,
-        config_data=None,
-        addresses=None,
-    ):
-        return super(StepInput, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            dagster_type=check.inst_param(dagster_type, "dagster_type", DagsterType),
-            source_type=check.inst_param(source_type, "source_type", StepInputSourceType),
-            source_handles=check.opt_list_param(
-                source_handles, "source_handles", of_type=StepOutputHandle
-            ),
-            config_data=config_data,  # can be any type
-            addresses=check.opt_dict_param(
-                addresses, "addresses", key_type=StepOutputHandle, value_type=str
-            ),
-        )
-
-    @property
-    def is_from_output(self):
-        return (
-            self.source_type == StepInputSourceType.SINGLE_OUTPUT
-            or self.source_type == StepInputSourceType.MULTIPLE_OUTPUTS
-        )
-
-    @property
-    def is_from_single_output(self):
-        return self.source_type == StepInputSourceType.SINGLE_OUTPUT
-
-    @property
-    def is_from_config(self):
-        return self.source_type == StepInputSourceType.CONFIG
-
-    @property
-    def is_from_default_value(self):
-        return self.source_type == StepInputSourceType.DEFAULT_VALUE
-
-    @property
-    def is_from_multiple_outputs(self):
-        return self.source_type == StepInputSourceType.MULTIPLE_OUTPUTS
-
-    @property
-    def is_from_cached_output(self):
-        return self.source_type == StepInputSourceType.CACHED_OUTPUT and self.addresses is not None
-
-    @property
-    def dependency_keys(self):
-        return {handle.step_key for handle in self.source_handles}
-
-
 class StepOutput(
     namedtuple("_StepOutput", "name dagster_type optional should_materialize asset_store_handle")
 ):
@@ -243,6 +177,7 @@ class ExecutionStep(
         solid,
         logging_tags=None,
     ):
+        from .inputs import StepInput
 
         return super(ExecutionStep, cls).__new__(
             cls,

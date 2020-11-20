@@ -1,7 +1,8 @@
 from collections import namedtuple
 
 from dagster import check
-from dagster.core.execution.plan.objects import StepInput, StepKind, StepOutput, StepOutputHandle
+from dagster.core.execution.plan.inputs import StepInput
+from dagster.core.execution.plan.objects import StepKind, StepOutput, StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan, ExecutionStep
 from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -113,7 +114,7 @@ def _snapshot_from_step_input(step_input):
     return ExecutionStepInputSnap(
         name=step_input.name,
         dagster_type_key=step_input.dagster_type.key,
-        upstream_output_handles=step_input.source_handles,
+        upstream_output_handles=step_input.source.step_output_handle_dependencies,
     )
 
 

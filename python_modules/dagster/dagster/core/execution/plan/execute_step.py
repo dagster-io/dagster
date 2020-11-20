@@ -25,6 +25,13 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemStepExecutionContext
+from dagster.core.execution.plan.inputs import (
+    FromConfig,
+    FromDefaultValue,
+    FromMultipleSources,
+    FromStepOutput,
+    StepInputSource,
+)
 from dagster.core.execution.plan.objects import (
     StepInputData,
     StepOutputData,
@@ -33,7 +40,7 @@ from dagster.core.execution.plan.objects import (
     TypeCheckData,
 )
 from dagster.core.execution.resolve_versions import resolve_step_output_versions
-from dagster.core.types.dagster_type import DagsterTypeKind
+from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.utils import ensure_gen, iterate_with_context, raise_interrupts_immediately
 from dagster.utils.timing import time_execution_scope
 
@@ -478,14 +485,14 @@ def _user_event_sequence_for_step_compute_fn(step_context, evaluated_inputs):
             yield event
 
 
-def _generate_error_boundary_msg_for_step_input(context, input_):
+def _generate_error_boundary_msg_for_step_input(context, input_name):
     return lambda: """Error occurred during input loading:
-    input name: "{input_}"
+    input name: "{input_name}"
     step key: "{key}"
     solid invocation: "{solid}"
     solid definition: "{solid_def}"
     """.format(
-        input_=input_.name,
+        input_name=input_name,
         key=context.step.key,
         solid_def=context.solid_def.name,
         solid=context.solid.name,
@@ -499,81 +506,69 @@ def _input_values_from_intermediate_storage(step_context):
         if step_input.dagster_type.kind == DagsterTypeKind.NOTHING:
             continue
 
-        if step_input.is_from_multiple_outputs:
-            if (
-                step_input.dagster_type.kind == DagsterTypeKind.LIST
-                or step_input.dagster_type.kind == DagsterTypeKind.NULLABLE
-            ):
-                dagster_type = step_input.dagster_type.inner_type
-            else:  # This is the case where the fan-in is typed Any
-                dagster_type = step_input.dagster_type
+        value = _value_for_input_source(
+            step_context,
+            step_input.name,
+            step_input.dagster_type,
+            step_input.source,
+            check_for_missing=False,
+        )
+        yield step_input.name, value
 
-            input_value = []
-            for source_handle in step_input.source_handles:
-                if step_context.using_asset_store(source_handle):
-                    input_value = _get_addressable_asset(step_context, source_handle)
-                elif (
-                    source_handle in step_input.addresses
-                    and step_context.intermediate_storage.has_intermediate_at_address(
-                        step_input.addresses[source_handle]
-                    )
-                ):
-                    input_value.append(
-                        step_context.intermediate_storage.get_intermediate_from_address(
-                            step_context,
-                            dagster_type=dagster_type,
-                            step_output_handle=source_handle,
-                            address=step_input.addresses[source_handle],
-                        )
-                    )
-                elif step_context.intermediate_storage.has_intermediate(
-                    step_context, source_handle
-                ):
-                    input_value.append(
-                        step_context.intermediate_storage.get_intermediate(
-                            context=step_context,
-                            step_output_handle=source_handle,
-                            dagster_type=dagster_type,
-                        )
-                    )
 
-            # When we're using an object store-backed intermediate store, we wrap the
-            # ObjectStoreOperation[] representing the fan-in values in a MultipleStepOutputsListWrapper
-            # so we can yield the relevant object store events and unpack the values in the caller
-            if all((isinstance(x, ObjectStoreOperation) for x in input_value)):
-                input_value = MultipleStepOutputsListWrapper(input_value)
+class _MISSING_ITEM_SENTINEL:
+    """Marker object for noting a missing item to be filtered from a fan-in input"""
 
-        elif step_input.is_from_single_output:
-            source_handle = step_input.source_handles[0]
-            if step_context.using_asset_store(source_handle):
-                input_value = _get_addressable_asset(step_context, source_handle)
-            elif source_handle in step_input.addresses:
-                input_value = step_context.intermediate_storage.get_intermediate_from_address(
-                    step_context,
-                    dagster_type=step_input.dagster_type,
-                    step_output_handle=source_handle,
-                    address=step_input.addresses[source_handle],
-                )
-            else:
-                input_value = step_context.intermediate_storage.get_intermediate(
-                    context=step_context,
-                    step_output_handle=source_handle,
-                    dagster_type=step_input.dagster_type,
-                )
 
-        elif step_input.is_from_config:
-            with user_code_error_boundary(
-                DagsterTypeLoadingError,
-                msg_fn=_generate_error_boundary_msg_for_step_input(step_context, step_input),
-            ):
-                input_value = step_input.dagster_type.loader.construct_from_config_value(
-                    step_context, step_input.config_data
-                )
+def _value_for_input_source(step_context, input_name, dagster_type, source, check_for_missing):
+    check.inst_param(step_context, "step_context", SystemStepExecutionContext)
+    check.str_param(input_name, "input_name")
+    check.inst_param(source, "source", StepInputSource)
+    check.inst_param(dagster_type, "dagster_type", DagsterType)
+    check.bool_param(check_for_missing, "check_for_missing")
 
-        elif step_input.is_from_default_value:
-            input_value = step_input.config_data
-
+    if isinstance(source, FromStepOutput):
+        source_handle = source.step_output_handle
+        if step_context.using_asset_store(source_handle):
+            return _get_addressable_asset(step_context, source_handle)
         else:
-            check.failed("Unhandled step_input type!")
+            if check_for_missing and not step_context.intermediate_storage.has_intermediate(
+                context=step_context, step_output_handle=source_handle,
+            ):
+                return _MISSING_ITEM_SENTINEL
 
-        yield step_input.name, input_value
+            return step_context.intermediate_storage.get_intermediate(
+                context=step_context, step_output_handle=source_handle, dagster_type=dagster_type,
+            )
+    elif isinstance(source, FromConfig):
+        with user_code_error_boundary(
+            DagsterTypeLoadingError,
+            msg_fn=_generate_error_boundary_msg_for_step_input(step_context, input_name),
+        ):
+            return dagster_type.loader.construct_from_config_value(step_context, source.config_data)
+    elif isinstance(source, FromDefaultValue):
+        return source.value
+    elif isinstance(source, FromMultipleSources):
+
+        values = []
+        for inner_source in source.sources:
+            value = _value_for_input_source(
+                step_context,
+                input_name,
+                dagster_type.get_inner_type_for_fan_in(),
+                inner_source,
+                check_for_missing=True,
+            )
+            if value is not _MISSING_ITEM_SENTINEL:
+                values.append(value)
+
+        # When we're using an object store-backed intermediate store, we wrap the
+        # ObjectStoreOperation[] representing the fan-in values in a MultipleStepOutputsListWrapper
+        # so we can yield the relevant object store events and unpack the values in the caller
+        if all((isinstance(x, ObjectStoreOperation) for x in values)):
+            return MultipleStepOutputsListWrapper(values)
+
+        return values
+
+    else:
+        check.failed("Unhandled step input source type: {}".format(source))

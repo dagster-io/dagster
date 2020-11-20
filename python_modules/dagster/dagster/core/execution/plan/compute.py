@@ -11,7 +11,8 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import SystemComputeExecutionContext
 
-from .objects import ExecutionStep, StepInput, StepKind, StepOutput
+from .inputs import StepInput
+from .objects import ExecutionStep, StepKind, StepOutput
 
 
 def create_compute_step(pipeline_name, environment_config, solid, step_inputs, handle):

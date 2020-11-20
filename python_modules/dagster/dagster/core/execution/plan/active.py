@@ -3,6 +3,7 @@ import time
 from dagster import check
 from dagster.core.errors import DagsterIncompleteExecutionPlanError, DagsterUnknownStepStateError
 from dagster.core.events import DagsterEvent
+from dagster.core.execution.plan.inputs import FromMultipleSources, FromStepOutput
 from dagster.core.execution.retries import Retries
 from dagster.utils import pop_delayed_interrupts
 
@@ -124,13 +125,13 @@ class ActiveExecution:
 
                 # Unless a fan-in input has any successful inputs
                 for inp in step.step_inputs:
-                    if inp.is_from_multiple_outputs:
+                    if isinstance(inp.source, FromMultipleSources):
                         if any([key in self._success for key in inp.dependency_keys]):
                             should_skip = False
 
                 # but no missing regular inputs
                 for inp in step.step_inputs:
-                    if inp.is_from_single_output:
+                    if isinstance(inp.source, FromStepOutput):
                         if any([key not in self._success for key in inp.dependency_keys]):
                             should_skip = True
 

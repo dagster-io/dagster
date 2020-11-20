@@ -96,7 +96,7 @@ def versioned_pipeline_expected_step1_version():
 
 def versioned_pipeline_expected_step1_output_version():
     step1_version = versioned_pipeline_expected_step1_version()
-    return join_and_hash(step1_version + "result")
+    return join_and_hash(step1_version, "result")
 
 
 def versioned_pipeline_expected_step2_version():
@@ -106,7 +106,7 @@ def versioned_pipeline_expected_step2_version():
     solid2_version = join_and_hash(
         solid2_def_version, solid2_config_version, solid2_resources_version
     )
-    step1_outputs_hash = join_and_hash(versioned_pipeline_expected_step1_output_version())
+    step1_outputs_hash = versioned_pipeline_expected_step1_output_version()
 
     step2_version = join_and_hash(step1_outputs_hash, solid2_version)
     return step2_version
@@ -229,9 +229,12 @@ def test_resolve_memoized_execution_plan_yes_stored_results():
         step_key="versioned_solid_no_input.compute", output_name="result"
     )
 
-    assert memoized_execution_plan.step_dict["versioned_solid_takes_input.compute"].step_input_dict[
-        "intput"
-    ].addresses == {expected_handle: "some_address"}
+    assert (
+        memoized_execution_plan.step_dict["versioned_solid_takes_input.compute"]
+        .step_input_dict["intput"]
+        .source.step_output_handle
+        == expected_handle
+    )
 
 
 def test_resolve_memoized_execution_plan_partial_versioning():
@@ -317,7 +320,7 @@ def run_test_with_builtin_type(type_to_test, loader_version, type_value):
     assert versions["versioned_solid_ext_input_builtin_type.compute"] == step1_version
 
     output_version = join_and_hash(step1_version, "result")
-    hashed_input2 = join_and_hash(output_version)
+    hashed_input2 = output_version
 
     solid2_def_version = versioned_solid_takes_input.version
     solid2_config_version = resolve_config_version(None)
@@ -346,11 +349,7 @@ def test_resolve_step_versions_default_value():
     speculative_execution_plan = create_execution_plan(versioned_pipeline_default_value)
     versions = resolve_step_versions_for_test(speculative_execution_plan)
 
-    default_val_version = join_and_hash("DEFAULTVAL")
-
-    input_version = join_and_hash(
-        "String" + default_val_version
-    )  # Since we use the type name as the loader version for default types.
+    input_version = join_and_hash(repr("DEFAULTVAL"))
 
     solid_def_version = versioned_solid_default_value.version
     solid_config_version = resolve_config_version(None)

@@ -5,6 +5,7 @@ from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.errors import DagsterAddressIOError, DagsterObjectStoreError
 from dagster.core.execution.context.system import SystemExecutionContext
+from dagster.core.execution.plan.inputs import FromMultipleSources, FromStepOutput
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental
@@ -41,52 +42,34 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
         pass
 
     def all_inputs_covered(self, context, step):
-        return len(self.uncovered_inputs(context, step)) == 0
+        return len(self.get_missing_input_sources(context, step)) == 0
 
-    def uncovered_inputs(self, context, step):
+    def is_input_source_missing(self, context, source):
+        if isinstance(source, FromStepOutput):
+            if context.using_asset_store(source.step_output_handle):
+                # skip when the source output has asset store configured
+                return False
+
+            return not self.has_intermediate(context, source.step_output_handle)
+        elif isinstance(source, FromMultipleSources):
+            # only report as uncovered if all are missing from a multi-dep input
+            return all(
+                self.is_input_source_missing(context, inner_source)
+                for inner_source in source.sources
+            )
+
+        return False
+
+    def get_missing_input_sources(self, context, step):
         from dagster.core.execution.plan.objects import ExecutionStep
 
         check.inst_param(step, "step", ExecutionStep)
-        uncovered_inputs = []
+        missing_sources = []
         for step_input in step.step_inputs:
+            if self.is_input_source_missing(context, step_input.source):
+                missing_sources.append(step_input.source)
 
-            if step_input.is_from_single_output:
-                for source_handle in step_input.source_handles:
-                    if context.using_asset_store(source_handle):
-                        # skip when the source output has asset store configured
-                        continue
-
-                    if (
-                        source_handle in step_input.addresses
-                        and not self.has_intermediate_at_address(
-                            step_input.addresses[source_handle]
-                        )
-                    ):
-                        uncovered_inputs.append(source_handle)
-                    elif not self.has_intermediate(context, source_handle):
-                        uncovered_inputs.append(source_handle)
-
-            elif step_input.is_from_multiple_outputs:
-                missing_source_handles = []
-                for source_handle in step_input.source_handles:
-                    if context.using_asset_store(source_handle):
-                        # skip when the source output has asset store configured
-                        continue
-
-                    if (
-                        source_handle in step_input.addresses
-                        and not self.has_intermediate_at_address(
-                            step_input.addresses[source_handle]
-                        )
-                    ):
-                        missing_source_handles.append(source_handle)
-                    elif not self.has_intermediate(context, source_handle):
-                        missing_source_handles.append(source_handle)
-                # only report as uncovered if all are missing from a multi-dep input
-                if len(missing_source_handles) == len(step_input.source_handles):
-                    uncovered_inputs = uncovered_inputs + missing_source_handles
-
-        return uncovered_inputs
+        return missing_sources
 
 
 class ObjectStoreIntermediateStorage(IntermediateStorage):

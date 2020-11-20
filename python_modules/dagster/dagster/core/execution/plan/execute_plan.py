@@ -13,6 +13,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemExecutionContext, SystemStepExecutionContext
 from dagster.core.execution.memoization import copy_required_intermediates_for_execution
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
+from dagster.core.execution.plan.inputs import FromMultipleSources, FromStepOutput, StepInputSource
 from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, UserFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
@@ -50,23 +51,24 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
                 ).format(solid_name=step_context.solid.name, missing_resources=missing_resources),
             )
 
+            # capture all of the logs for this step
             with pipeline_context.instance.compute_log_manager.watch(
                 step_context.pipeline_run, step_context.step.key
             ):
-                # capture all of the logs for this step
-                uncovered_inputs = pipeline_context.intermediate_storage.uncovered_inputs(
+                missing_input_sources = pipeline_context.intermediate_storage.get_missing_input_sources(
                     step_context, step
                 )
-                if uncovered_inputs:
+                if missing_input_sources:
                     # In partial pipeline execution, we may end up here without having validated the
                     # missing dependent outputs were optional
-                    _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step.key)
+                    _assert_missing_sources_from_optional_outputs(
+                        missing_input_sources, execution_plan, step.key
+                    )
 
                     step_context.log.info(
                         (
-                            "Not all inputs covered for {step}. Not executing. Output missing for "
-                            "inputs: {uncovered_inputs}"
-                        ).format(uncovered_inputs=uncovered_inputs, step=step.key)
+                            "Not all inputs covered for {step}. Not executing. Sources missing: {missing_input_sources}"
+                        ).format(missing_input_sources=missing_input_sources, step=step.key)
                     )
                     step_event = DagsterEvent.step_skipped_event(step_context)
                     step_event_list.append(step_event)
@@ -140,19 +142,21 @@ def _trigger_hook(step_context, step_event_list):
             yield DagsterEvent.hook_completed(hook_context, hook_def)
 
 
-def _assert_missing_inputs_optional(uncovered_inputs, execution_plan, step_key):
-    nonoptionals = [
-        handle for handle in uncovered_inputs if not execution_plan.get_step_output(handle).optional
-    ]
-    if nonoptionals:
-        raise DagsterStepOutputNotFoundError(
-            (
-                "When executing {step} discovered required outputs missing "
-                "from previous step: {nonoptionals}"
-            ).format(nonoptionals=nonoptionals, step=step_key),
-            step_key=nonoptionals[0].step_key,
-            output_name=nonoptionals[0].output_name,
-        )
+def _assert_missing_sources_from_optional_outputs(missing_sources, execution_plan, step_key):
+    check.list_param(missing_sources, "missing_sources", of_type=StepInputSource)
+    for source in missing_sources:
+        if isinstance(source, FromMultipleSources):
+            _assert_missing_sources_from_optional_outputs(source.sources, execution_plan, step_key)
+        elif isinstance(source, FromStepOutput):
+            if not execution_plan.get_step_output(source.step_output_handle).optional:
+                raise DagsterStepOutputNotFoundError(
+                    (
+                        "When executing {step} discovered required output missing "
+                        "from previous step: {source.step_output_handle}"
+                    ).format(source=source, step=step_key),
+                    step_key=source.step_output_handle.step_key,
+                    output_name=source.step_output_handle.output_name,
+                )
 
 
 def _dagster_event_sequence_for_step(step_context, retries):
