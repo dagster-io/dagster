@@ -130,7 +130,7 @@ experimentation with and debugging of parameterized pipeline executions. As alwa
 dagit -f inputs.py
 ```
 
-Notice that no execution plan appears in the bottom pane of the Playground.
+Notice that the launch execution button is disabled and the solids are red in the bottom right corner of the Playground.
 
 ![inputs_figure_one.png](/assets/images/tutorial/inputs_figure_one.png)
 
@@ -222,6 +222,7 @@ dagster pipeline execute -f config.py -c config_env.yaml
 ```YAML literalinclude showLines caption=config_env.yaml
 file:/docs_snippets/docs_snippets/intro_tutorial/basics/e02_solids/config_env.yaml
 ```
+
 In the console, we'll see the most caloric cereal is Mueslix Crispy Blend.
 
 ```bash

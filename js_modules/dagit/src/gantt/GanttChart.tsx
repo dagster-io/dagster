@@ -536,6 +536,7 @@ const GanttChartViewportContents: React.FunctionComponent<GanttChartViewportCont
           width: useDot ? BOX_DOT_SIZE : box.width,
           ...boxStyleFor(box.state, {metadata, options}),
         }}
+        title="for-screenshots"
       >
         {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : undefined}
       </div>,
