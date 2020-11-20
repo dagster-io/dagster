@@ -456,6 +456,7 @@ type ScheduleDefinition {
   executionTimezone: String
   scheduleState: ScheduleState
   partitionSet: PartitionSet
+  futureTicks(cursor: Float, limit: Int): ScheduleFutureTicks!
 }
 
 type ScheduleState {
@@ -560,6 +561,15 @@ input PipelineRunsFilter {
 input ExecutionTag {
   key: String!
   value: String!
+}
+
+type ScheduleFutureTicks {
+  results: [ScheduleFutureTick!]!
+  cursor: Float!
+}
+
+type ScheduleFutureTick {
+  timestamp: Float!
 }
 
 type PipelinePreset {

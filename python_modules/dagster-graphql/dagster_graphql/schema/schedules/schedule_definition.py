@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule
+from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster_graphql import dauphin
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
@@ -42,6 +43,10 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
 
     partition_set = dauphin.Field("PartitionSet")
 
+    futureTicks = dauphin.NonNull(
+        "ScheduleFutureTicks", cursor=dauphin.Float(), limit=dauphin.Int()
+    )
+
     def resolve_id(self, _):
         return "%s:%s" % (self.name, self.pipeline_name)
 
@@ -59,6 +64,27 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
         return graphene_info.schema.type_named("PartitionSet")(
             external_repository_handle=repository.handle,
             external_partition_set=external_partition_set,
+        )
+
+    def resolve_futureTicks(self, graphene_info, **kwargs):
+        cursor = kwargs.get(
+            "cursor", get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+        )
+        limit = kwargs.get("limit", 10)
+
+        tick_times = []
+        time_iter = self._external_schedule.execution_time_iterator(cursor)
+
+        for _ in range(limit):
+            tick_times.append(next(time_iter).timestamp())
+
+        future_ticks = [
+            graphene_info.schema.type_named("ScheduleFutureTick")(tick_time)
+            for tick_time in tick_times
+        ]
+
+        return graphene_info.schema.type_named("ScheduleFutureTicks")(
+            results=future_ticks, cursor=tick_times[-1] + 1
         )
 
     def __init__(self, graphene_info, external_schedule):

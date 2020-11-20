@@ -50,6 +50,26 @@ class DauphinSchedulerOrError(dauphin.Union):
 DauphinScheduleTickStatus = dauphin.Enum.from_enum(ScheduleTickStatus)
 
 
+class DauphinScheduleFutureTick(dauphin.ObjectType):
+    class Meta(object):
+        name = "ScheduleFutureTick"
+
+    timestamp = dauphin.NonNull(dauphin.Float)
+
+    def __init__(self, timestamp):
+        super(DauphinScheduleFutureTick, self).__init__(
+            timestamp=check.float_param(timestamp, "timestamp"),
+        )
+
+
+class DauphinScheduleFutureTicks(dauphin.ObjectType):
+    class Meta(object):
+        name = "ScheduleFutureTicks"
+
+    results = dauphin.non_null_list("ScheduleFutureTick")
+    cursor = dauphin.NonNull(dauphin.Float)
+
+
 class DauphinScheduleTick(dauphin.ObjectType):
     class Meta:
         name = "ScheduleTick"

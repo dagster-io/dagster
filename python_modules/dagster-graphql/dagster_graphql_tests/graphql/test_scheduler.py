@@ -1,3 +1,4 @@
+import pendulum
 from dagster.core.scheduler.scheduler import ScheduleStatus
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
@@ -73,7 +74,7 @@ query ScheduleDefinitionsQuery($repositorySelector: RepositorySelector!) {
 """
 
 GET_SCHEDULE_DEFINITION = """
-query getScheduleDefinition($scheduleSelector: ScheduleSelector!) {
+query getScheduleDefinition($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
   scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
     __typename
     ... on PythonError {
@@ -86,6 +87,12 @@ query getScheduleDefinition($scheduleSelector: ScheduleSelector!) {
         name
       }
       executionTimezone
+      futureTicks(limit: 3, cursor: $ticksAfter) {
+        results {
+          timestamp
+        }
+        cursor
+      }
     }
   }
 }
@@ -394,11 +401,53 @@ def test_get_single_schedule_definition(graphql_context):
     assert result.data["scheduleDefinitionOrError"]["partitionSet"]
     assert not result.data["scheduleDefinitionOrError"]["executionTimezone"]
 
+    future_ticks = result.data["scheduleDefinitionOrError"]["futureTicks"]
+    assert future_ticks
+    assert len(future_ticks["results"]) == 3
+
     schedule_selector = infer_schedule_selector(context, "timezone_schedule")
+
+    future_ticks_start_time = pendulum.create(2019, 2, 27, tz="US/Central").timestamp()
+
     result = execute_dagster_graphql(
-        context, GET_SCHEDULE_DEFINITION, variables={"scheduleSelector": schedule_selector}
+        context,
+        GET_SCHEDULE_DEFINITION,
+        variables={"scheduleSelector": schedule_selector, "ticksAfter": future_ticks_start_time},
     )
 
     assert result.data
     assert result.data["scheduleDefinitionOrError"]["__typename"] == "ScheduleDefinition"
     assert result.data["scheduleDefinitionOrError"]["executionTimezone"] == "US/Central"
+
+    future_ticks = result.data["scheduleDefinitionOrError"]["futureTicks"]
+    assert future_ticks
+    assert len(future_ticks["results"]) == 3
+    timestamps = [future_tick["timestamp"] for future_tick in future_ticks["results"]]
+
+    assert timestamps == [
+        pendulum.create(2019, 2, 27, tz="US/Central").timestamp(),
+        pendulum.create(2019, 2, 28, tz="US/Central").timestamp(),
+        pendulum.create(2019, 3, 1, tz="US/Central").timestamp(),
+    ]
+
+    cursor = future_ticks["cursor"]
+
+    assert future_ticks["cursor"] == (pendulum.create(2019, 3, 1, tz="US/Central").timestamp() + 1)
+
+    result = execute_dagster_graphql(
+        context,
+        GET_SCHEDULE_DEFINITION,
+        variables={"scheduleSelector": schedule_selector, "ticksAfter": cursor},
+    )
+
+    future_ticks = result.data["scheduleDefinitionOrError"]["futureTicks"]
+
+    assert future_ticks
+    assert len(future_ticks["results"]) == 3
+    timestamps = [future_tick["timestamp"] for future_tick in future_ticks["results"]]
+
+    assert timestamps == [
+        pendulum.create(2019, 3, 2, tz="US/Central").timestamp(),
+        pendulum.create(2019, 3, 3, tz="US/Central").timestamp(),
+        pendulum.create(2019, 3, 4, tz="US/Central").timestamp(),
+    ]
