@@ -1,4 +1,4 @@
-import {useMutation, useQuery, gql} from '@apollo/client';
+import {useMutation, gql} from '@apollo/client';
 import {
   Button,
   Callout,
@@ -10,13 +10,11 @@ import {
   Popover,
   PopoverInteractionKind,
   Position,
-  Spinner,
   Switch,
   Tag,
   Tooltip,
 } from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import * as qs from 'query-string';
 import * as React from 'react';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
@@ -25,7 +23,6 @@ import styled from 'styled-components/macro';
 import {ButtonLink} from 'src/ButtonLink';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {ConfirmationOptions, useConfirmation} from 'src/CustomConfirmationProvider';
-import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryOriginInformation} from 'src/RepositoryInformation';
 import {assertUnreachable} from 'src/Util';
@@ -145,7 +142,7 @@ export const ScheduleRow: React.FC<{
     onCompleted: displayScheduleMutationErrors,
   });
 
-  const {name, cronSchedule, pipelineName, mode, solidSelection, scheduleState} = schedule;
+  const {name, cronSchedule, pipelineName, mode, scheduleState} = schedule;
 
   const scheduleId = scheduleState?.scheduleOriginId;
 
@@ -154,22 +151,6 @@ export const ScheduleRow: React.FC<{
     repositoryName: repoAddress.name,
     scheduleName: name,
   };
-
-  const [configRequested, setConfigRequested] = React.useState(false);
-
-  const {data, loading: yamlLoading} = useQuery(FETCH_SCHEDULE_YAML, {
-    variables: {scheduleSelector},
-    skip: !configRequested,
-  });
-
-  const runConfigError =
-    data?.scheduleDefinitionOrError?.runConfigOrError.__typename === 'PythonError'
-      ? data.scheduleDefinitionOrError.runConfigOrError
-      : null;
-
-  const runConfigYaml = runConfigError
-    ? null
-    : data?.scheduleDefinitionOrError?.runConfigOrError.yaml;
 
   const displayName = (
     <>
@@ -326,73 +307,23 @@ export const ScheduleRow: React.FC<{
           <div>{`Mode: ${mode}`}</div>
           <Popover
             content={
-              yamlLoading ? (
-                <div style={{padding: '16px'}}>
-                  <Spinner size={16} />
-                </div>
-              ) : (
-                <Menu>
+              <Menu>
+                {schedule.partitionSet?.name ? (
                   <MenuItem
-                    text="View Configuration..."
-                    icon="share"
-                    onClick={() => {
-                      if (runConfigError) {
-                        showCustomAlert({
-                          body: <PythonErrorInfo error={runConfigError} />,
-                        });
-                      } else {
-                        showCustomAlert({
-                          title: 'Config',
-                          body: (
-                            <HighlightedCodeBlock
-                              value={runConfigYaml || 'Unable to resolve config'}
-                              languages={['yaml']}
-                            />
-                          ),
-                        });
-                      }
-                    }}
-                  />
-                  <MenuItem
-                    text="Open in Playground..."
-                    icon="edit"
+                    text="View Partition History..."
+                    icon="multi-select"
                     target="_blank"
-                    disabled={!runConfigYaml}
                     href={workspacePathFromAddress(
                       repoAddress,
-                      `/pipelines/${pipelineName}/playground/setup?${qs.stringify({
-                        mode,
-                        solidSelection,
-                        config: runConfigYaml,
-                      })}`,
+                      `/pipelines/${pipelineName}/partitions`,
                     )}
                   />
-
-                  {schedule.partitionSet?.name ? (
-                    <MenuItem
-                      text="View Partition History..."
-                      icon="multi-select"
-                      target="_blank"
-                      href={workspacePathFromAddress(
-                        repoAddress,
-                        `/pipelines/${pipelineName}/partitions`,
-                      )}
-                    />
-                  ) : null}
-                </Menu>
-              )
+                ) : null}
+              </Menu>
             }
-            position={'bottom'}
+            position="bottom"
           >
-            <Button
-              small
-              minimal
-              icon="chevron-down"
-              onClick={() => {
-                setConfigRequested(true);
-              }}
-              style={{marginLeft: '4px'}}
-            />
+            <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
           </Popover>
         </div>
       </td>
@@ -681,25 +612,6 @@ export const TickTag: React.FunctionComponent<{
       return assertUnreachable(status);
   }
 };
-
-export const FETCH_SCHEDULE_YAML = gql`
-  query FetchScheduleYaml($scheduleSelector: ScheduleSelector!) {
-    scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
-      ... on ScheduleDefinition {
-        id
-        runConfigOrError {
-          ... on ScheduleRunConfig {
-            yaml
-          }
-          ... on PythonError {
-            ...PythonErrorFragment
-          }
-        }
-      }
-    }
-  }
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
-`;
 
 export const START_SCHEDULE_MUTATION = gql`
   mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
