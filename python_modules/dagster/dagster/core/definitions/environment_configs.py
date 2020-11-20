@@ -367,12 +367,10 @@ def iterate_node_def_config_types(node_def):
 
     if isinstance(node_def, SolidDefinition):
         if node_def.config_schema:
-            for config_type in iterate_config_types(node_def.config_schema.config_type):
-                yield config_type
+            yield from iterate_config_types(node_def.config_schema.config_type)
     elif isinstance(node_def, GraphDefinition):
         for solid in node_def.solids:
-            for config_type in iterate_node_def_config_types(solid.definition):
-                yield config_type
+            yield from iterate_node_def_config_types(solid.definition)
 
     else:
         check.invariant("Unexpected NodeDefinition type {type}".format(type=type(node_def)))
@@ -382,11 +380,9 @@ def _gather_all_schemas(node_defs):
     dagster_types = construct_dagster_type_dictionary(node_defs)
     for dagster_type in list(dagster_types.values()) + list(ALL_RUNTIME_BUILTINS):
         if dagster_type.loader:
-            for ct in iterate_config_types(dagster_type.loader.schema_type):
-                yield ct
+            yield from iterate_config_types(dagster_type.loader.schema_type)
         if dagster_type.materializer:
-            for ct in iterate_config_types(dagster_type.materializer.schema_type):
-                yield ct
+            yield from iterate_config_types(dagster_type.materializer.schema_type)
 
 
 def _gather_all_config_types(node_defs, environment_type):
@@ -394,11 +390,9 @@ def _gather_all_config_types(node_defs, environment_type):
     check.inst_param(environment_type, "environment_type", ConfigType)
 
     for node_def in node_defs:
-        for config_type in iterate_node_def_config_types(node_def):
-            yield config_type
+        yield from iterate_node_def_config_types(node_def)
 
-    for config_type in iterate_config_types(environment_type):
-        yield config_type
+    yield from iterate_config_types(environment_type)
 
 
 def construct_config_type_dictionary(node_defs, environment_type):

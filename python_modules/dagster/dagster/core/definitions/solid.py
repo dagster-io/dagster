@@ -125,8 +125,7 @@ class SolidDefinition(NodeDefinition):
         return self._version
 
     def all_dagster_types(self):
-        for tt in self.all_input_output_types():
-            yield tt
+        yield from self.all_input_output_types()
 
     def iterate_node_defs(self):
         yield self
@@ -278,12 +277,10 @@ class CompositeSolidDefinition(GraphDefinition):
         )
 
     def all_dagster_types(self):
-        for tt in self.all_input_output_types():
-            yield tt
+        yield from self.all_input_output_types()
 
         for node_def in self._node_defs:
-            for ttype in node_def.all_dagster_types():
-                yield ttype
+            yield from node_def.all_dagster_types()
 
     def construct_configured_copy(
         self,

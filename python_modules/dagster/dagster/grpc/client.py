@@ -78,8 +78,7 @@ class DagsterGrpcClient(object):
         with grpc.insecure_channel(self._server_address) as channel:
             stub = DagsterApiStub(channel)
             response_stream = getattr(stub, method)(request_type(**kwargs))
-            for response in response_stream:
-                yield response
+            yield from response_stream
 
     def ping(self, echo):
         check.str_param(echo, "echo")

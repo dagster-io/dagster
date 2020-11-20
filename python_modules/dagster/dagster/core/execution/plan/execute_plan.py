@@ -25,8 +25,7 @@ def inner_plan_execution_iterator(pipeline_context, execution_plan):
 
     retries = pipeline_context.retries
 
-    for event in copy_required_intermediates_for_execution(pipeline_context, execution_plan):
-        yield event
+    yield from copy_required_intermediates_for_execution(pipeline_context, execution_plan)
 
     with execution_plan.start(retries=retries) as active_execution:
 

@@ -227,8 +227,7 @@ def _create_solid_compute_wrapper(fn, input_defs, output_defs):
         result = fn(context, **kwargs)
 
         if inspect.isgenerator(result):
-            for item in result:
-                yield item
+            yield from result
         else:
             if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
                 raise DagsterInvariantViolationError(

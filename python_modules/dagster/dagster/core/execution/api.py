@@ -718,16 +718,14 @@ class _ExecuteRunWithPlanIterable(object):
         # you can safely add an additional `with delay_interrupts()` at the very beginning of the
         # process that performs the execution
         with delay_interrupts():
-            for event in self.execution_context_manager.prepare_context():
-                yield event
+            yield from self.execution_context_manager.prepare_context()
             self.pipeline_context = self.execution_context_manager.get_context()
             generator_closed = False
             try:
                 if self.pipeline_context:  # False if we had a pipeline init failure
-                    for event in self.iterator(
+                    yield from self.iterator(
                         execution_plan=self.execution_plan, pipeline_context=self.pipeline_context,
-                    ):
-                        yield event
+                    )
             except GeneratorExit:
                 # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
                 # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).

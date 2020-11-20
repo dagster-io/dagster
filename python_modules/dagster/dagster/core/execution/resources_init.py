@@ -107,15 +107,14 @@ def resource_initialization_event_generator(
     resource_managers = deque()
 
     try:
-        for event in _core_resource_initialization_event_generator(
+        yield from _core_resource_initialization_event_generator(
             execution_plan=execution_plan,
             environment_config=environment_config,
             pipeline_run=pipeline_run,
             resource_keys_to_init=resource_keys_to_init,
             resource_log_manager=resource_log_manager,
             resource_managers=resource_managers,
-        ):
-            yield event
+        )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
         # (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
@@ -127,8 +126,7 @@ def resource_initialization_event_generator(
             while len(resource_managers) > 0:
                 manager = resource_managers.pop()
                 try:
-                    for event in manager.generate_teardown_events():
-                        yield event
+                    yield from manager.generate_teardown_events()
                 except DagsterUserCodeExecutionError as dagster_user_error:
                     error = dagster_user_error
             if error:

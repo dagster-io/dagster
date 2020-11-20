@@ -518,8 +518,7 @@ class EventGenerationManager(object):
     def generate_teardown_events(self):
         self.did_teardown = True
         if self.object:
-            for event in self.generator:
-                yield event
+            yield from self.generator
 
 
 def utc_datetime_from_timestamp(timestamp):

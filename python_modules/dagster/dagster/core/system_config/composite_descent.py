@@ -140,8 +140,7 @@ def _composite_descent(parent_stack, solids_config_dict):
             else current_solid_config.get("solids", {})
         )
 
-        for sce in _composite_descent(current_stack, solids_dict):
-            yield sce
+        yield from _composite_descent(current_stack, solids_dict)
 
 
 def _get_mapped_solids_dict(composite, graph_def, current_stack, current_solid_config):

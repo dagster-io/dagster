@@ -203,8 +203,7 @@ class GraphDefinition(NodeDefinition):
     def iterate_node_defs(self):
         yield self
         for outer_node_def in self._node_defs:
-            for node_def in outer_node_def.iterate_node_defs():
-                yield node_def
+            yield from outer_node_def.iterate_node_defs()
 
     @property
     def input_mappings(self):

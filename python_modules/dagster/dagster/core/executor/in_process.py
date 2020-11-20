@@ -33,8 +33,7 @@ class InProcessExecutor(Executor):
         )
 
         with time_execution_scope() as timer_result:
-            for event in inner_plan_execution_iterator(pipeline_context, execution_plan):
-                yield event
+            yield from inner_plan_execution_iterator(pipeline_context, execution_plan)
 
         yield DagsterEvent.engine_event(
             pipeline_context,

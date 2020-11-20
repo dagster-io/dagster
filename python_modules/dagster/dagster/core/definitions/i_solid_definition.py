@@ -128,13 +128,11 @@ class NodeDefinition(IConfigMappable):
     def all_input_output_types(self):
         for input_def in self._input_defs:
             yield input_def.dagster_type
-            for inner_type in input_def.dagster_type.inner_types:
-                yield inner_type
+            yield from input_def.dagster_type.inner_types
 
         for output_def in self._output_defs:
             yield output_def.dagster_type
-            for inner_type in output_def.dagster_type.inner_types:
-                yield inner_type
+            yield from output_def.dagster_type.inner_types
 
     def __call__(self, *args, **kwargs):
         from .composition import CallableNode

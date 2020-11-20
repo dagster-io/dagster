@@ -218,8 +218,7 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
                 log_manager,
                 context_creation_data.resource_keys_to_init,
             )
-            for event in resources_manager.generate_setup_events():
-                yield event
+            yield from resources_manager.generate_setup_events()
             scoped_resources_builder = check.inst(
                 resources_manager.get_object(), ScopedResourcesBuilder
             )
@@ -246,8 +245,7 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
             _validate_plan_with_context(execution_context, execution_plan)
 
             yield execution_context
-            for event in resources_manager.generate_teardown_events():
-                yield event
+            yield from resources_manager.generate_teardown_events()
         except DagsterError as dagster_error:
             if execution_context is None:
                 user_facing_exc_info = (
@@ -267,8 +265,7 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
                     ),
                 )
                 if resources_manager:
-                    for event in resources_manager.generate_teardown_events():
-                        yield event
+                    yield from resources_manager.generate_teardown_events()
             else:
                 # pipeline teardown failure
                 raise dagster_error

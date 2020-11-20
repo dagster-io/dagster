@@ -66,14 +66,13 @@ class InProcessExecutorChildProcessCommand(ChildProcessCommand):
                 self.step_key,
             )
 
-            for step_event in execute_plan_iterator(
+            yield from execute_plan_iterator(
                 execution_plan,
                 self.pipeline_run,
                 run_config=self.run_config,
                 retries=self.retries.for_inner_plan(),
                 instance=instance,
-            ):
-                yield step_event
+            )
 
 
 class MultiprocessExecutor(Executor):
@@ -188,8 +187,7 @@ class MultiprocessExecutor(Executor):
                         active_execution.verify_complete(pipeline_context, key)
 
                     # process skipped and abandoned steps
-                    for event in active_execution.plan_events_iterator(pipeline_context):
-                        yield event
+                    yield from active_execution.plan_events_iterator(pipeline_context)
 
                 errs = {pid: err for pid, err in errors.items() if err}
                 if errs:

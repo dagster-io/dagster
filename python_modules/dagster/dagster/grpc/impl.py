@@ -65,8 +65,7 @@ def _core_execute_run(recon_pipeline, pipeline_run, instance):
     check.inst_param(instance, "instance", DagsterInstance)
 
     try:
-        for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
-            yield event
+        yield from execute_run_iterator(recon_pipeline, pipeline_run, instance)
     except DagsterSubprocessError as err:
         if not all(
             [err_info.cls_name == "KeyboardInterrupt" for err_info in err.subprocess_error_infos]

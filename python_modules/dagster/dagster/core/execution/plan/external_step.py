@@ -69,8 +69,7 @@ class LocalExternalStepLauncher(StepLauncher):
         events_data = file_manager.read_data(events_file_handle)
         events = pickle.loads(events_data)
 
-        for event in events:
-            yield event
+        yield from events
 
 
 def _module_in_package_dir(file_path, package_dir):
