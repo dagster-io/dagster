@@ -191,7 +191,7 @@ class ConstraintWithMetadata(object):
                 self.description
             ),
             type_check_fn=lambda x: self.validate(x, *args),
-            **kwargs
+            **kwargs,
         )
 
 

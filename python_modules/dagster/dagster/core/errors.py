@@ -97,7 +97,7 @@ class DagsterInvalidConfigDefinitionError(DagsterError):
                 current_value=repr(current_value),
                 reason_str=" Reason: {reason}.".format(reason=reason) if reason else "",
             ),
-            **kwargs
+            **kwargs,
         )
 
 

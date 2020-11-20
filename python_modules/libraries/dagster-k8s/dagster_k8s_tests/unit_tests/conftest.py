@@ -1,6 +1,6 @@
 import pytest
 
-MINIMAL_KUBECONFIG_CONTENT = u"""
+MINIMAL_KUBECONFIG_CONTENT = """
 apiVersion: v1
 kind: Config
 

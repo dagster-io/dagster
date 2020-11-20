@@ -191,7 +191,7 @@ def create_shell_script_solid(
         input_defs=input_defs or [InputDefinition("start", Nothing)],
         output_defs=[OutputDefinition(str, "result")],
         config_schema=shell_solid_config(),
-        **kwargs
+        **kwargs,
     )
     def _shell_script_solid(context):
         output, return_code = execute_script_file(

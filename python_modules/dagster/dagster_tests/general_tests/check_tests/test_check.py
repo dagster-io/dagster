@@ -388,7 +388,7 @@ def test_opt_nullable_dict_param():
 def test_str_param():
     assert check.str_param("a", "str_param") == "a"
     assert check.str_param("", "str_param") == ""
-    assert check.str_param(u"a", "unicode_param") == u"a"
+    assert check.str_param("a", "unicode_param") == "a"
 
     with pytest.raises(ParameterCheckError):
         check.str_param(None, "str_param")
@@ -403,7 +403,7 @@ def test_str_param():
 def test_opt_str_param():
     assert check.opt_str_param("a", "str_param") == "a"
     assert check.opt_str_param("", "str_param") == ""
-    assert check.opt_str_param(u"a", "unicode_param") == u"a"
+    assert check.opt_str_param("a", "unicode_param") == "a"
     assert check.opt_str_param(None, "str_param") is None
     assert check.opt_str_param(None, "str_param", "foo") == "foo"
 
@@ -418,7 +418,7 @@ def test_opt_nonempty_str_param():
     assert check.opt_nonempty_str_param("a", "str_param") == "a"
     assert check.opt_nonempty_str_param("", "str_param") is None
     assert check.opt_nonempty_str_param("", "str_param", "foo") == "foo"
-    assert check.opt_nonempty_str_param(u"a", "unicode_param") == u"a"
+    assert check.opt_nonempty_str_param("a", "unicode_param") == "a"
     assert check.opt_nonempty_str_param(None, "str_param") is None
     assert check.opt_nonempty_str_param(None, "str_param", "foo") == "foo"
 

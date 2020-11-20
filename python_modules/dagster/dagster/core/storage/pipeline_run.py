@@ -170,7 +170,7 @@ class PipelineRun(
         solid_subset=None,
         reexecution_config=None,  # pylint: disable=unused-argument
         external_pipeline_origin=None,
-        **kwargs
+        **kwargs,
     ):
 
         # serdes log

@@ -83,7 +83,7 @@ class DauphinAssetMaterialization(dauphin.ObjectType):
     def resolve_materializationEvent(self, graphene_info):
         return graphene_info.schema.type_named("StepMaterializationEvent")(
             materialization=self._event.dagster_event.step_materialization_data.materialization,
-            **construct_basic_params(self._event)
+            **construct_basic_params(self._event),
         )
 
     def resolve_runOrError(self, graphene_info):

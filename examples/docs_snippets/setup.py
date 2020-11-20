@@ -8,7 +8,6 @@ if __name__ == "__main__":
         license="Apache-2.0",
         url="https://github.com/dagster-io/dagster/tree/master/examples/docs_snippets",
         classifiers=[
-            "Programming Language :: Python :: 2.7",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",

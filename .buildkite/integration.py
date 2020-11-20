@@ -1,7 +1,7 @@
 import os
 
 import yaml
-from defines import SupportedPython3s
+from defines import SupportedPythons
 from module_build_spec import ModuleBuildSpec
 from pipeline import GCP_CREDS_LOCAL_FILE, publish_test_images, test_image_depends_fn
 from utils import connect_sibling_docker_container, network_buildkite_container
@@ -36,7 +36,7 @@ def integration_tests():
     tests += publish_test_images()
     tests += ModuleBuildSpec(
         os.path.join("integration_tests", "python_modules", "dagster-k8s-test-infra"),
-        supported_pythons=SupportedPython3s,
+        supported_pythons=SupportedPythons,
         upload_coverage=True,
     ).get_tox_build_steps()
 
@@ -67,7 +67,7 @@ def integration_tests():
                 "BUILDKITE_SECRETS_BUCKET",
                 "GOOGLE_APPLICATION_CREDENTIALS",
             ],
-            supported_pythons=SupportedPython3s,
+            supported_pythons=SupportedPythons,
             upload_coverage=True,
             extra_cmds_fn=integration_suite_extra_cmds_fn,
             depends_on_fn=test_image_depends_fn,

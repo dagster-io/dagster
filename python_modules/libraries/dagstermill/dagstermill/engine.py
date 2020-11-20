@@ -47,7 +47,7 @@ class DagstermillNBConvertEngine(NBConvertEngine):
         stderr_file=None,
         start_timeout=60,
         execution_timeout=None,
-        **kwargs
+        **kwargs,
     ):
         # Nicely handle preprocessor arguments prioritizing values set by engine
         preprocessor = DagstermillExecutePreprocessor(

@@ -863,7 +863,7 @@ class ObjectStoreOperation(
                     "value_name": inst.value_name,
                     "version": inst.version,
                 },
-                **kwargs
+                **kwargs,
             )
         )
 

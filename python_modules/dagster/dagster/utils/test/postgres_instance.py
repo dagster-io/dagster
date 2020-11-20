@@ -40,7 +40,7 @@ class TestPostgresInstance:
                     hostname=TestPostgresInstance.get_hostname(),
                     db_name="test",
                 ),
-                **kwargs
+                **kwargs,
             )
         )
 

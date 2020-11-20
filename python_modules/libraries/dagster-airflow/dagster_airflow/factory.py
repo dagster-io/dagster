@@ -179,7 +179,7 @@ def _make_airflow_dag(
 
     dag_kwargs = dict(
         {"default_args": DEFAULT_ARGS},
-        **check.opt_dict_param(dag_kwargs, "dag_kwargs", key_type=str)
+        **check.opt_dict_param(dag_kwargs, "dag_kwargs", key_type=str),
     )
 
     op_kwargs = check.opt_dict_param(op_kwargs, "op_kwargs", key_type=str)

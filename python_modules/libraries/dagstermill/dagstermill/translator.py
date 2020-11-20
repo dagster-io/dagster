@@ -40,7 +40,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
             pipeline_run_dict=parameters["__dm_pipeline_run_dict"],
             solid_handle_kwargs=parameters["__dm_solid_handle_kwargs"],
             instance_ref_dict=parameters["__dm_instance_ref_dict"],
-            **context_args
+            **context_args,
         )
 
         for key in pipeline_context_args:

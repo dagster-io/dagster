@@ -23,7 +23,7 @@ def create_run(instance, **kwargs):  # pylint: disable=redefined-outer-name
             instance,
             external_pipeline_origin=pipeline_handle.get_external_origin(),
             pipeline_name="foo",
-            **kwargs
+            **kwargs,
         )
 
 

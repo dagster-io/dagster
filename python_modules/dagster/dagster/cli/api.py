@@ -363,7 +363,7 @@ def grpc_command(
     lazy_load_user_code=False,
     ipc_output_file=None,
     fixed_server_id=None,
-    **kwargs
+    **kwargs,
 ):
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(

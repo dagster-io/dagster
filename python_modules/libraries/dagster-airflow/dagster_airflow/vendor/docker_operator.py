@@ -149,7 +149,7 @@ class DockerOperator(BaseOperator):
         auto_remove=False,
         shm_size=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
 
         super(DockerOperator, self).__init__(*args, **kwargs)

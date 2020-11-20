@@ -181,7 +181,7 @@ class KubernetesPodOperator(BaseOperator):
         configmaps=None,
         security_context=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super(KubernetesPodOperator, self).__init__(*args, **kwargs)
         self.image = image

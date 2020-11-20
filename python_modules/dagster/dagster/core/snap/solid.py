@@ -215,7 +215,7 @@ class CompositeSolidDefSnap(
                 tags,
                 required_resource_keys,
                 config_field_snap,
-            )
+            ),
         )
 
     def get_input_mapping_snap(self, name):
@@ -261,7 +261,7 @@ class SolidDefSnap(namedtuple("_SolidDefMeta", SOLID_DEF_HEADER_PROPS)):
                 tags,
                 required_resource_keys,
                 config_field_snap,
-            )
+            ),
         )
 
     def get_input_snap(self, name):

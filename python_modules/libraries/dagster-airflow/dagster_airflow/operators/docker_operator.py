@@ -72,9 +72,9 @@ class DagsterDockerOperator(DockerOperator):
                                 )
                                 or {}
                             ),
-                            **{"base_dir": tmp_dir}
+                            **{"base_dir": tmp_dir},
                         )
-                    }
+                    },
                 )
 
         self.docker_conn_id_set = kwargs.get("docker_conn_id") is not None
@@ -116,7 +116,7 @@ class DagsterDockerOperator(DockerOperator):
             # just check the last log line to see if it's JSON.
             xcom_all=True,
             *args,
-            **kwargs
+            **kwargs,
         )
 
     @contextmanager

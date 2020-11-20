@@ -457,7 +457,7 @@ def construct_dagster_k8s_job(
                 sub_path="dagster.yaml",
             )
         ],
-        **user_defined_k8s_config.container_config
+        **user_defined_k8s_config.container_config,
     )
 
     config_map_volume = kubernetes.client.V1Volume(
@@ -475,7 +475,7 @@ def construct_dagster_k8s_job(
         metadata=kubernetes.client.V1ObjectMeta(
             name=pod_name,
             labels=merge_dicts(dagster_labels, user_defined_pod_template_labels),
-            **user_defined_k8s_config.pod_template_spec_metadata
+            **user_defined_k8s_config.pod_template_spec_metadata,
         ),
         spec=kubernetes.client.V1PodSpec(
             image_pull_secrets=[
@@ -486,7 +486,7 @@ def construct_dagster_k8s_job(
             restart_policy="Never",
             containers=[job_container],
             volumes=[config_map_volume],
-            **user_defined_k8s_config.pod_spec_config
+            **user_defined_k8s_config.pod_spec_config,
         ),
     )
 
@@ -500,9 +500,9 @@ def construct_dagster_k8s_job(
             template=template,
             backoff_limit=K8S_JOB_BACKOFF_LIMIT,
             ttl_seconds_after_finished=K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
-            **user_defined_k8s_config.job_spec_config
+            **user_defined_k8s_config.job_spec_config,
         ),
-        **user_defined_k8s_config.job_config
+        **user_defined_k8s_config.job_config,
     )
     return job
 

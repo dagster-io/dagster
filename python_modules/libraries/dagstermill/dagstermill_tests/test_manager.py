@@ -26,7 +26,7 @@ def in_pipeline_manager(
     solid_handle=SolidHandle("hello_world", None),
     executable_dict=None,
     mode=None,
-    **kwargs
+    **kwargs,
 ):
     manager = Manager()
 

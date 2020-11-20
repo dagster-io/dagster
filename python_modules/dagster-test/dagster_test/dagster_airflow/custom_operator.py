@@ -26,5 +26,5 @@ class CustomOperator(PythonOperator):
             python_callable=python_callable,
             dag=dagster_operator_parameters.dag,
             *args,
-            **kwargs
+            **kwargs,
         )

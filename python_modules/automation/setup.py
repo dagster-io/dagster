@@ -9,7 +9,6 @@ setup(
     description="Tools for infrastructure automation",
     url="https://github.com/dagster-io/dagster/tree/master/python_modules/automation",
     classifiers=[
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "License :: OSI Approved :: Apache Software License",

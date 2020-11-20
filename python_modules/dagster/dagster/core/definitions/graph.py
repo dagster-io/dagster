@@ -81,7 +81,7 @@ class GraphDefinition(NodeDefinition):
         config_mapping,
         _configured_config_mapping_fn,
         _configured_config_schema,
-        **kwargs
+        **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
         # TODO: backcompat for now
@@ -118,7 +118,7 @@ class GraphDefinition(NodeDefinition):
             description=description,
             input_defs=input_defs,
             output_defs=[output_mapping.definition for output_mapping in self._output_mappings],
-            **kwargs
+            **kwargs,
         )
 
         # must happen after base class construction as properties are assumed to be there

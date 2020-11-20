@@ -279,7 +279,7 @@ class BuiltinScalarDagsterType(DagsterType):
             type_check_fn=type_check_fn,
             is_builtin=True,
             *args,
-            **kwargs
+            **kwargs,
         )
 
     def type_check_fn(self, _context, value):
@@ -676,7 +676,7 @@ class Stringish(DagsterType):
             type_check_fn=self.type_check_method,
             loader=BuiltinSchemas.STRING_INPUT,
             materializer=BuiltinSchemas.STRING_OUTPUT,
-            **kwargs
+            **kwargs,
         )
 
     def type_check_method(self, _context, value):

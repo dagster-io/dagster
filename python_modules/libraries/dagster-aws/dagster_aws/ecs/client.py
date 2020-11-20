@@ -74,7 +74,7 @@ class ECSClient:
                 aws_access_key_id=self.key_id,
                 aws_secret_access_key=self.access_key,
                 region_name=self.region_name,
-                **kwargs
+                **kwargs,
             )
         else:
             clients = boto3.client(client_type, region_name=self.region_name, **kwargs)
@@ -160,7 +160,7 @@ class ECSClient:
             taskDefinition=self.task_definition_arn,
             launchType=self.launch_type,
             cluster=self.cluster,
-            **kwargs
+            **kwargs,
         )
         task = taskdict["tasks"][0]
         container = task["containers"][0]

@@ -78,7 +78,7 @@ class PythonOperator(BaseOperator):
         templates_dict=None,
         templates_exts=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super(PythonOperator, self).__init__(*args, **kwargs)
         if not callable(python_callable):

@@ -821,7 +821,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         return DauphinExecutionStepUpForRetryEvent(
             error=dagster_event.step_retry_data.error,
             secondsToWait=dagster_event.step_retry_data.seconds_to_wait,
-            **basic_params
+            **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.STEP_RESTARTED:
         return DauphinExecutionStepRestartEvent(**basic_params)
@@ -837,7 +837,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         return DauphinExecutionStepOutputEvent(
             output_name=output_data.output_name,
             type_check=output_data.type_check_data,
-            **basic_params
+            **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.STEP_MATERIALIZATION:
         materialization = dagster_event.step_materialization_data.materialization
@@ -852,7 +852,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         return DauphinExecutionStepFailureEvent(
             error=DauphinPythonError(dagster_event.step_failure_data.error),
             failureMetadata=dagster_event.step_failure_data.user_failure_data,
-            **basic_params
+            **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.PIPELINE_ENQUEUED:
         return DauphinPipelineEnqueuedEvent(pipelineName=pipeline_name, **basic_params)
@@ -868,14 +868,14 @@ def from_dagster_event_record(event_record, pipeline_name):
             error=DauphinPythonError(dagster_event.pipeline_failure_data.error)
             if (dagster_event.pipeline_failure_data and dagster_event.pipeline_failure_data.error)
             else None,
-            **basic_params
+            **basic_params,
         )
 
     elif dagster_event.event_type == DagsterEventType.PIPELINE_INIT_FAILURE:
         return DauphinPipelineInitFailureEvent(
             pipelineName=pipeline_name,
             error=DauphinPythonError(dagster_event.pipeline_init_failure_data.error),
-            **basic_params
+            **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION:
         operation_result = dagster_event.event_specific_data
@@ -895,7 +895,7 @@ def from_dagster_event_record(event_record, pipeline_name):
             else None,
             marker_start=dagster_event.engine_event_data.marker_start,
             marker_end=dagster_event.engine_event_data.marker_end,
-            **basic_params
+            **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.HOOK_COMPLETED:
         return DauphinHookCompletedEvent(**basic_params)

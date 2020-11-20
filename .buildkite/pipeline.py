@@ -1,7 +1,7 @@
 import os
 
 import yaml
-from defines import TOX_MAP, SupportedPython, SupportedPython3s
+from defines import TOX_MAP, SupportedPython, SupportedPythons
 from images import publish_test_images, test_image_depends_fn
 from module_build_spec import ModuleBuildSpec
 from step_builder import StepBuilder, wait_step
@@ -204,13 +204,13 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     # Examples: Airline Demo
     ModuleBuildSpec(
         "examples/airline_demo",
-        supported_pythons=SupportedPython3s,
+        supported_pythons=SupportedPythons,
         extra_cmds_fn=airline_demo_extra_cmds_fn,
         buildkite_label="airline-demo",
     ),
     ModuleBuildSpec(
         "examples/dbt_example",
-        supported_pythons=SupportedPython3s,
+        supported_pythons=SupportedPythons,
         extra_cmds_fn=dbt_example_extra_cmds_fn,
         buildkite_label="dbt_example",
     ),
@@ -219,24 +219,24 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     # ModuleBuildSpec(
     #     'examples',
     #     env_vars=['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION'],
-    #     supported_pythons=SupportedPython3s,
+    #     supported_pythons=SupportedPythons,
     #     tox_file='tox_events.ini',
     #     buildkite_label='events-demo',
     # ),
     # Examples
     ModuleBuildSpec(
         "examples/legacy_examples",
-        supported_pythons=SupportedPython3s,
+        supported_pythons=SupportedPythons,
         extra_cmds_fn=legacy_examples_extra_cmds_fn,
     ),
     ModuleBuildSpec(
         "examples/docs_snippets",
         extra_cmds_fn=legacy_examples_extra_cmds_fn,
         upload_coverage=False,
-        supported_pythons=SupportedPython3s,
+        supported_pythons=SupportedPythons,
     ),
     ModuleBuildSpec("python_modules/dagit", extra_cmds_fn=dagit_extra_cmds_fn),
-    ModuleBuildSpec("python_modules/automation", supported_pythons=SupportedPython3s),
+    ModuleBuildSpec("python_modules/automation", supported_pythons=SupportedPythons),
     ModuleBuildSpec(
         "python_modules/dagster",
         extra_cmds_fn=dagster_extra_cmds_fn,
@@ -278,7 +278,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-dbt",
-        supported_pythons=SupportedPython3s,
+        supported_pythons=SupportedPythons,
         extra_cmds_fn=dbt_extra_cmds_fn,
     ),
     ModuleBuildSpec(
@@ -317,7 +317,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         "python_modules/libraries/dagster-dask",
         env_vars=["AWS_SECRET_ACCESS_KEY", "AWS_ACCESS_KEY_ID", "AWS_DEFAULT_REGION"],
-        supported_pythons=SupportedPython3s,
+        supported_pythons=SupportedPythons,
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-gcp",
@@ -331,7 +331,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
-    ModuleBuildSpec("python_modules/libraries/dagster-ge", supported_pythons=SupportedPython3s),
+    ModuleBuildSpec("python_modules/libraries/dagster-ge", supported_pythons=SupportedPythons),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-k8s",
         env_vars=[
@@ -346,17 +346,15 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         "python_modules/libraries/dagster-postgres", extra_cmds_fn=postgres_extra_cmds_fn
     ),
-    ModuleBuildSpec("python_modules/libraries/dagster-slack", supported_pythons=SupportedPython3s),
+    ModuleBuildSpec("python_modules/libraries/dagster-slack", supported_pythons=SupportedPythons),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-twilio",
         env_vars=["TWILIO_TEST_ACCOUNT_SID", "TWILIO_TEST_AUTH_TOKEN"],
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
-    ModuleBuildSpec(
-        "python_modules/libraries/dagster-pyspark", supported_pythons=SupportedPython3s
-    ),
-    ModuleBuildSpec("python_modules/libraries/lakehouse", supported_pythons=SupportedPython3s),
+    ModuleBuildSpec("python_modules/libraries/dagster-pyspark", supported_pythons=SupportedPythons),
+    ModuleBuildSpec("python_modules/libraries/lakehouse", supported_pythons=SupportedPythons),
 ]
 
 
@@ -398,7 +396,7 @@ def examples_tests():
     tests = []
     for example in examples_packages:
         tests += ModuleBuildSpec(
-            example, supported_pythons=SupportedPython3s, upload_coverage=False
+            example, supported_pythons=SupportedPythons, upload_coverage=False
         ).get_tox_build_steps()
     return tests
 
@@ -420,7 +418,7 @@ def pipenv_smoke_tests():
         .run(*smoke_test_steps)
         .on_unit_image(version)
         .build()
-        for version in SupportedPython3s
+        for version in SupportedPythons
     ]
 
 

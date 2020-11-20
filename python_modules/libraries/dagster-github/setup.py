@@ -19,7 +19,6 @@ if __name__ == "__main__":
         description="A Github client resource for interacting with the github API with a github App",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-github",
         classifiers=[
-            "Programming Language :: Python :: 2.7",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "License :: OSI Approved :: Apache Software License",

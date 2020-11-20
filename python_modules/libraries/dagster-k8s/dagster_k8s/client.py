@@ -41,7 +41,7 @@ class DagsterK8sAPIRetryLimitExceeded(Exception):
         super(DagsterK8sAPIRetryLimitExceeded, self).__init__(
             "Retry limit of {max_retries} exceeded: ".format(max_retries=max_retries) + msg,
             *args[1:],
-            **kwargs
+            **kwargs,
         )
 
         self.k8s_api_exception = check.opt_inst_param(

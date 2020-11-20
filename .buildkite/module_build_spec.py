@@ -41,8 +41,8 @@ class ModuleBuildSpec(
             file).
         tox_env_suffixes: (List[str], optional): List of additional tox env suffixes to provide
             when invoking tox. When provided, a separate test run will be invoked per
-            env x env_suffix string. For example, given Python tox version py27, the
-            tox_env_suffixes ["-a", "-b"] will result in running "tox -e py27-a" and "tox -e py27-b"
+            env x env_suffix string. For example, given Python tox version py38, the
+            tox_env_suffixes ["-a", "-b"] will result in running "tox -e py38-a" and "tox -e py38-b"
             as two build steps. Defaults to None.
         buildkite_label (str, optional): Optional label to override what's shown in Buildkite.
             Defaults to None (uses the package name as the label).

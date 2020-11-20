@@ -19,7 +19,6 @@ if __name__ == "__main__":
         description="Package for datadog Dagster framework components.",
         url="https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-datadog",
         classifiers=[
-            "Programming Language :: Python :: 2.7",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "License :: OSI Approved :: Apache Software License",

@@ -111,7 +111,7 @@ def ui(host, port, path_prefix, storage_fallback, db_statement_timeout, **kwargs
                 storage_fallback,
                 db_statement_timeout,
                 port_lookup,
-                **kwargs
+                **kwargs,
             )
     else:
         host_dagit_ui(

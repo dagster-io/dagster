@@ -3,18 +3,9 @@ class SupportedPython:
     V3_8 = "3.8.3"
     V3_7 = "3.7.8"
     V3_6 = "3.6.11"
-    V2_7 = "2.7.18"
 
 
 SupportedPythons = [
-    SupportedPython.V2_7,
-    SupportedPython.V3_6,
-    SupportedPython.V3_7,
-    SupportedPython.V3_8,
-]
-
-
-SupportedPython3s = [
     SupportedPython.V3_6,
     SupportedPython.V3_7,
     SupportedPython.V3_8,
@@ -25,7 +16,6 @@ TOX_MAP = {
     SupportedPython.V3_8: "py38",
     SupportedPython.V3_7: "py37",
     SupportedPython.V3_6: "py36",
-    SupportedPython.V2_7: "py27",
 }
 
 ####################################################################################################

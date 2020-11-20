@@ -74,15 +74,6 @@ python -m pytest python_modules/dagster/dagster_tests
 
 Some notes on developing in Dagster:
 
-- **Python 2**: We plan to continue supporting Python 2 for some time;
-  it is worth testing your changes with Python 2 to ensure
-  compatibility. You can use _tox_ for this, from within
-  any of the Python packages:
-
-```bash
-PYENV=py27 tox
-```
-
 - **Black/Pylint**: We use [black](https://github.com/python/black) to
   enforce a consistent code style, along with
   [pylint](https://www.pylint.org/). We test these in our CI/CD
