@@ -5,15 +5,11 @@ from dagster.core.host_representation.external_data import (
     ExternalScheduleExecutionErrorData,
 )
 from dagster.core.host_representation.handle import RepositoryHandle
-from dagster.grpc.types import ExternalScheduleExecutionArgs, ScheduleExecutionDataMode
+from dagster.grpc.types import ExternalScheduleExecutionArgs
 
 
 def sync_get_external_schedule_execution_data_ephemeral_grpc(
-    instance,
-    repository_handle,
-    schedule_name,
-    schedule_execution_data_mode,
-    scheduled_execution_time,
+    instance, repository_handle, schedule_name, scheduled_execution_time,
 ):
     from dagster.grpc.client import ephemeral_grpc_api_client
 
@@ -22,28 +18,15 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
         origin.repository_location_origin.loadable_target_origin
     ) as api_client:
         return sync_get_external_schedule_execution_data_grpc(
-            api_client,
-            instance,
-            repository_handle,
-            schedule_name,
-            schedule_execution_data_mode,
-            scheduled_execution_time,
+            api_client, instance, repository_handle, schedule_name, scheduled_execution_time,
         )
 
 
 def sync_get_external_schedule_execution_data_grpc(
-    api_client,
-    instance,
-    repository_handle,
-    schedule_name,
-    schedule_execution_data_mode,
-    scheduled_execution_time,
+    api_client, instance, repository_handle, schedule_name, scheduled_execution_time,
 ):
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(schedule_name, "schedule_name")
-    check.inst_param(
-        schedule_execution_data_mode, "schedule_execution_data_mode", ScheduleExecutionDataMode
-    )
     check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", pendulum.Pendulum)
 
     origin = repository_handle.get_external_origin()
@@ -54,7 +37,6 @@ def sync_get_external_schedule_execution_data_grpc(
                 repository_origin=origin,
                 instance_ref=instance.get_ref(),
                 schedule_name=schedule_name,
-                schedule_execution_data_mode=schedule_execution_data_mode,
                 scheduled_execution_timestamp=scheduled_execution_time.timestamp()
                 if scheduled_execution_time
                 else None,

@@ -66,12 +66,6 @@ query ScheduleDefinitionsQuery($repositorySelector: RepositorySelector!) {
         solidSelection
         mode
         executionTimezone
-        runConfigOrError {
-          __typename
-          ... on ScheduleRunConfig {
-            yaml
-          }
-        }
       }
     }
   }
@@ -187,20 +181,8 @@ def test_get_schedule_definitions_for_repository(graphql_context):
     assert len(results) == len(external_repository.get_external_schedules())
 
     for schedule in results:
-        if (
-            schedule["name"] == "run_config_error_schedule"
-            or schedule["name"] == "tags_error_schedule"
-        ):
-            assert schedule["runConfigOrError"]["__typename"] == "PythonError"
-        elif schedule["name"] == "invalid_config_schedule":
-            assert (
-                schedule["runConfigOrError"]["yaml"]
-                == "solids:\n  takes_an_enum:\n    config: invalid\n"
-            )
-        elif schedule["name"] == "timezone_schedule":
+        if schedule["name"] == "timezone_schedule":
             assert schedule["executionTimezone"] == "US/Central"
-        else:
-            assert schedule["runConfigOrError"]["yaml"] == "storage:\n  filesystem: {}\n"
 
 
 def test_get_schedule_states_for_repository(graphql_context):

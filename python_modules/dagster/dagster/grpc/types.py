@@ -1,5 +1,4 @@
 from collections import namedtuple
-from enum import Enum
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
@@ -222,19 +221,10 @@ class PipelineSubsetSnapshotArgs(
 
 
 @whitelist_for_serdes
-class ScheduleExecutionDataMode(Enum):
-    # Just return the schedule data and tags, don't check whether we should excute the schedule or return it
-    PREVIEW = "PREVIEW"
-
-    # Return schedule data, tags, and whether we should execute the schedule
-    LAUNCH_SCHEDULED_EXECUTION = "LAUNCH_SCHEDULED_EXECUTION"
-
-
-@whitelist_for_serdes
 class ExternalScheduleExecutionArgs(
     namedtuple(
         "_ExternalScheduleExecutionArgs",
-        "repository_origin instance_ref schedule_name schedule_execution_data_mode "
+        "repository_origin instance_ref schedule_name "
         "scheduled_execution_timestamp scheduled_execution_timezone",
     )
 ):
@@ -243,7 +233,6 @@ class ExternalScheduleExecutionArgs(
         repository_origin,
         instance_ref,
         schedule_name,
-        schedule_execution_data_mode,
         scheduled_execution_timestamp=None,
         scheduled_execution_timezone=None,
     ):
@@ -254,11 +243,6 @@ class ExternalScheduleExecutionArgs(
             ),
             instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
             schedule_name=check.str_param(schedule_name, "schedule_name"),
-            schedule_execution_data_mode=check.inst_param(
-                schedule_execution_data_mode,
-                "schedule_execution_data_mode",
-                ScheduleExecutionDataMode,
-            ),
             scheduled_execution_timestamp=check.opt_float_param(
                 scheduled_execution_timestamp, "scheduled_execution_timestamp"
             ),

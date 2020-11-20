@@ -498,7 +498,6 @@ class DagsterApiServer(DagsterApiServicer):
                     recon_repo,
                     args.instance_ref,
                     args.schedule_name,
-                    args.schedule_execution_data_mode,
                     args.scheduled_execution_timestamp,
                     args.scheduled_execution_timezone,
                 )

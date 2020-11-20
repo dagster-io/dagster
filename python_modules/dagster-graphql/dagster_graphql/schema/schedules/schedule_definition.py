@@ -1,7 +1,6 @@
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule
 from dagster_graphql import dauphin
-from dagster_graphql.implementation.fetch_schedules import get_schedule_config
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
     DauphinRepositoryNotFoundError,
@@ -41,14 +40,10 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
     execution_timezone = dauphin.Field(dauphin.String)
     schedule_state = dauphin.Field("ScheduleState")
 
-    runConfigOrError = dauphin.Field("ScheduleRunConfigOrError")
     partition_set = dauphin.Field("PartitionSet")
 
     def resolve_id(self, _):
         return "%s:%s" % (self.name, self.pipeline_name)
-
-    def resolve_runConfigOrError(self, graphene_info):
-        return get_schedule_config(graphene_info, self._external_schedule)
 
     def resolve_partition_set(self, graphene_info):
         if self._external_schedule.partition_set_name is None:
@@ -92,16 +87,3 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
             else None,
             execution_timezone=self._external_schedule.execution_timezone,
         )
-
-
-class DauphinScheduleRunConfig(dauphin.ObjectType):
-    class Meta(object):
-        name = "ScheduleRunConfig"
-
-    yaml = dauphin.NonNull(dauphin.String)
-
-
-class DauphinScheduleRunConfigOrError(dauphin.Union):
-    class Meta(object):
-        name = "ScheduleRunConfigOrError"
-        types = (DauphinScheduleRunConfig, DauphinPythonError)

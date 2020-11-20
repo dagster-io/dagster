@@ -24,7 +24,6 @@ from dagster.core.scheduler import (
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG, check_tags
-from dagster.grpc.types import ScheduleExecutionDataMode
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -376,7 +375,6 @@ def _create_scheduler_run(
         instance=instance,
         repository_handle=external_repo.handle,
         schedule_name=external_schedule.name,
-        schedule_execution_data_mode=ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
         scheduled_execution_time=schedule_time,
     )
 

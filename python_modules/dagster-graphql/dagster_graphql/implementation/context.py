@@ -6,7 +6,6 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateSubscriber,
 )
 from dagster.core.instance import DagsterInstance
-from dagster.grpc.types import ScheduleExecutionDataMode
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.errors import DauphinInvalidSubsetError
 from dagster_graphql.schema.pipelines import DauphinPipeline
@@ -174,13 +173,6 @@ class DagsterGraphQLContext:
         return self._repository_locations[
             repository_handle.repository_location_handle.location_name
         ].get_external_partition_names(repository_handle, partition_set_name)
-
-    def get_external_schedule_execution_data(self, repository_handle, schedule_name):
-        return self._repository_locations[
-            repository_handle.repository_location_handle.location_name
-        ].get_external_schedule_execution_data(
-            self.instance, repository_handle, schedule_name, ScheduleExecutionDataMode.PREVIEW, None
-        )
 
     def get_external_job_param_data(self, repository_handle, job_name):
         return self._repository_locations[

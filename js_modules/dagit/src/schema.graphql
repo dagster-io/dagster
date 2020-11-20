@@ -443,7 +443,6 @@ type ScheduleDefinition {
   mode: String!
   executionTimezone: String
   scheduleState: ScheduleState
-  runConfigOrError: ScheduleRunConfigOrError
   partitionSet: PartitionSet
 }
 
@@ -515,12 +514,6 @@ type RepositoryMetadata {
 
 type GrpcRepositoryOrigin {
   grpcUrl: String!
-}
-
-union ScheduleRunConfigOrError = ScheduleRunConfig | PythonError
-
-type ScheduleRunConfig {
-  yaml: String!
 }
 
 type PartitionSet {

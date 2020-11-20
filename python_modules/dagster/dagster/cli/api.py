@@ -41,7 +41,7 @@ from dagster.core.storage.tags import check_tags
 from dagster.core.telemetry import telemetry_wrapper
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
-from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs, ScheduleExecutionDataMode
+from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -524,7 +524,6 @@ def _launch_scheduled_execution(
         instance=instance,
         repository_handle=external_repo.handle,
         schedule_name=external_schedule.name,
-        schedule_execution_data_mode=ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION,
         scheduled_execution_time=None,  # No way to know this in general for this scheduler
     )
 

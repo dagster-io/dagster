@@ -42,7 +42,7 @@ from dagster.core.snap.execution_plan_snapshot import (
     snapshot_from_execution_plan,
 )
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.grpc.types import ExecutionPlanSnapshotArgs, ScheduleExecutionDataMode
+from dagster.grpc.types import ExecutionPlanSnapshotArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.serdes.ipc import IPCErrorMessage
 from dagster.utils import delay_interrupts, start_termination_thread
@@ -199,7 +199,6 @@ def get_external_schedule_execution(
     recon_repo,
     instance_ref,
     schedule_name,
-    schedule_execution_data_mode,
     scheduled_execution_timestamp,
     scheduled_execution_timezone,
 ):
@@ -224,16 +223,10 @@ def get_external_schedule_execution(
                 lambda: "Error occurred during the execution of should_execute for schedule "
                 "{schedule_name}".format(schedule_name=schedule_def.name),
             ):
-                should_execute = None
-                if (
-                    schedule_execution_data_mode
-                    == ScheduleExecutionDataMode.LAUNCH_SCHEDULED_EXECUTION
-                ):
-                    should_execute = schedule_def.should_execute(schedule_context)
-                    if not should_execute:
-                        return ExternalScheduleExecutionData(
-                            should_execute=False, run_config=None, tags=None
-                        )
+                if not schedule_def.should_execute(schedule_context):
+                    return ExternalScheduleExecutionData(
+                        should_execute=False, run_config=None, tags=None
+                    )
 
             with user_code_error_boundary(
                 ScheduleExecutionError,
@@ -250,7 +243,7 @@ def get_external_schedule_execution(
                 tags = schedule_def.get_tags(schedule_context)
 
             return ExternalScheduleExecutionData(
-                run_config=run_config, tags=tags, should_execute=should_execute
+                run_config=run_config, tags=tags, should_execute=True
             )
         except ScheduleExecutionError:
             return ExternalScheduleExecutionErrorData(
