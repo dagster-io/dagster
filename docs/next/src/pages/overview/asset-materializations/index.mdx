@@ -2,24 +2,30 @@ import { DynamicMetaTags } from 'components/MetaTags';
 import PyObject from 'components/PyObject';
 
 <DynamicMetaTags
-  title="Assets & Materializations | Dagster"
+  title="Asset Catalog | Dagster"
   description="Dagster provides a data-aware orchestration graph."
 />
 
-# Assets & Materializations
+# Asset Catalog
 
-In Dagster, an `Asset` is the abstract representation of a data artifact produced and persisted by
-a solid. These assets are generally persisted to storage external to Dagster (e.g. database table,
-analytics dashboard) as a side-effect of the solid's computation. The act of persisting an asset
-is called a "materialization" and solids can express materializations by yielding an asset
-materialization event.
+"Asset" is Dagster's word for an entity, external to solids, that is mutated or created by solids.  An asset might be a table in a database that solids append to, an ML model in a model store that solids overwrite, or even slack channel that solids write messages to.
 
-## Materializing an Asset
+The Asset Catalog is an interface inside [Dagit](/overview/dagit) that centers on assets.  Each entry in the catalog is an asset and includes:
+* Runs that mutated or created the asset
+* Metadata logged by developers about the asset
 
-To generate an asset materialization, we can yield an <PyObject module="dagster" object="AssetMaterialization" /> event in our solid.
+Developers place entries in the Asset Catalog by yielding <PyObject module="dagster" object="AssetMaterialization" /> events from inside their solids or [asset stores](/overview/asset-stores/asset-stores).  The act of mutating or creating an asset is called a "materialization".  <PyObject module="dagster" object="AssetMaterialization" /> events may include arbitrary metadata that describes the asset at the time of the materialization.
+
+There are two general patterns for dealing with assets when using Dagster:
+* Materialize assets from inside the body of a solid.
+* Restrict solids to pure business logic, and delegate the materialization of assets to AssetStores.
+
+## Recording Asset Materializations in Solids
+
+To make the Asset Catalog aware that we materialized an asset in our solid, we can yield an <PyObject module="dagster" object="AssetMaterialization" /> event.
 This would involve changing the following solid:
 
-```python literalinclude caption=materialization.py
+```python literalinclude caption=materialization_solids.py
 file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
 startAfter:start_materialization_solids_marker_0
 endBefore:end_materialization_solids_marker_0
@@ -27,7 +33,7 @@ endBefore:end_materialization_solids_marker_0
 
 into something like this:
 
-```python literalinclude caption=materialization.py
+```python literalinclude caption=materialization_solids.py
 file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
 startAfter:start_materialization_solids_marker_1
 endBefore:end_materialization_solids_marker_1
@@ -37,13 +43,25 @@ Note: Our materialization solid must now explicitly yield an <PyObject module="d
 event instead of relying on the implicit conversion of the return value into an <PyObject module="dagster" object="Output" />
 event.
 
-We should now see a materialization event in the event log when we execute this solid.
+We should now see a materialization event in the event log when we execute this solid, as well as an entry in the asset catalog.
+
+## Recording Asset Materializations in Asset Stores
+
+If an AssetStore is responsible for mutating or creating an asset, then we can yield an <PyObject module="dagster" object="AssetMaterialization" /> event from its `set_asset` method.
+
+```python literalinclude caption=materialization_asset_stores.py
+file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_asset_stores.py
+startAfter:start_marker_0
+endBefore:end_marker_0
+```
 
 ## Attaching Metadata to the Asset Materialization
 
 There are a variety of types of metadata that can be associated with a materialization event, all
 through the <PyObject module="dagster" object="EventMetadataEntry" /> class. Each materialization
-event optionally takes a list of metadata entries that are then displayed in the event log.
+event optionally takes a list of metadata entries that are then displayed in the event log and the asset catalog.
+
+Example with a solid:
 
 ```python literalinclude caption=materialization.py
 file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
@@ -51,23 +69,13 @@ startAfter:start_materialization_solids_marker_2
 endBefore:end_materialization_solids_marker_2
 ```
 
-Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details
-on they types of event metadata available.
+Example with an AssetStore:
 
-## Indexing with Asset Keys
-
-Asset materializations can be indexed by adding an <PyObject module="dagster" object="AssetKey" />
-to the materialization event. The <PyObject module="dagster" object="AssetKey" /> is a normalized,
-structured identifier for an Asset.
-
-```python literalinclude caption=materialization.py
-file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_solids.py
-startAfter:start_materialization_solids_marker_3
-endBefore:end_materialization_solids_marker_3
+```python literalinclude caption=materialization_asset_stores.py
+file:/docs_snippets/docs_snippets/overview/asset_materializations/materialization_asset_stores.py
+startAfter:start_marker_1
+endBefore:end_marker_1
 ```
 
-As soon as materialization events with asset keys are generated during pipeline execution, those
-assets should appear in the `Assets` dashboard in `dagit`. With these indexed assets, we can now
-explore the relationship between our units of computation (e.g. solids, pipelines) and the data they
-produce (e.g. assets). Specifically, that exploration can begin with the starting point of the
-asset rather than from the pipeline.
+Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details
+on they types of event metadata available.

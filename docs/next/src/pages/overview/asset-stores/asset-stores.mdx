@@ -10,7 +10,9 @@ import PyObject from 'components/PyObject';
 
 Dagster solids have [inputs and outputs](/overview/solids-pipelines/solids#solid-inputs-and-outputs).  When a solid produces an output, where and how is it stored?  AssetStores let the developer decide.
 
-<PyObject module="dagster" object="AssetStore" />s are user-provided objects that know how to store solid outputs and retrieve solid inputs.  Each solid output can have its own AssetStore, or multiple solid outputs can share an AssetStore.  The AssetStore that’s used for storing a particular solid output is automatically used for retrieving it in subsequent solids.
+"Asset" is Dagster's word for an entity, external to solids, that is mutated or created by solids.  For example, a file in a filesystem and a table in a database are both assets.
+
+<PyObject module="dagster" object="AssetStore" />s are user-provided objects that know how to translate between assets and the objects produced and consumed by solids.  For example, an AssetStore might store and retrieve solid outputs and inputs from files on a filesystem.  Each solid output can have its own AssetStore, or multiple solid outputs can share an AssetStore.  The AssetStore that’s used for storing a particular solid output is automatically used for retrieving it in subsequent solids.
 
 I.e. an AssetStore handles the teal boxes:
 
