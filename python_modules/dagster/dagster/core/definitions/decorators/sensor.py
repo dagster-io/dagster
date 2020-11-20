@@ -14,8 +14,9 @@ def sensor(pipeline_name, name=None, solid_selection=None, mode=None):
 
     1. Return a `RunRequest` object.
     2. Yield multiple of `RunRequest` objects.
-    3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
-    4. Yield nothing (skipping without providing a reason)
+    3. Return or yield a `SkipReason` object, providing a descriptive message of why no runs were
+       requested.
+    4. Return or yield nothing (skipping without providing a reason)
 
     Takes a :py:class:`~dagster.SensorExecutionContext`.
 
