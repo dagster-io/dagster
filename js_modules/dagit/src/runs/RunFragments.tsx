@@ -6,6 +6,20 @@ import {GaantChart} from 'src/gaant/GaantChart';
 import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
 import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
 
+export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
+  fragment RunFragmentForRepositoryMatch on PipelineRun {
+    id
+    pipeline {
+      name
+    }
+    pipelineSnapshotId
+    repositoryOrigin {
+      repositoryName
+      repositoryLocationName
+    }
+  }
+`;
+
 export const RunFragments = {
   RunFragment: gql`
     fragment RunFragment on PipelineRun {
@@ -50,10 +64,12 @@ export const RunFragments = {
         ...GaantChartExecutionPlanFragment
       }
       stepKeysToExecute
+      ...RunFragmentForRepositoryMatch
     }
 
     ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
     ${GaantChart.fragments.GaantChartExecutionPlanFragment}
+    ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
   `,
   RunPipelineRunEventFragment: gql`
     fragment RunPipelineRunEventFragment on PipelineRunEvent {

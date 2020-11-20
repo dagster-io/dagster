@@ -7,29 +7,9 @@ import {explorerPathFromString} from 'src/PipelinePathUtils';
 import {TopNav} from 'src/nav/TopNav';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
-import {
-  DagsterRepoOption,
-  optionToRepoAddress,
-  useRepositoryOptions,
-} from 'src/workspace/WorkspaceContext';
+import {optionToRepoAddress, useRepositoryOptions} from 'src/workspace/WorkspaceContext';
+import {findRepoContainingPipeline} from 'src/workspace/findRepoContainingPipeline';
 import {workspacePath, workspacePathFromAddress} from 'src/workspace/workspacePath';
-
-const findMatches = (
-  options: DagsterRepoOption[],
-  pipelineName: string,
-  snapshotId: string | null,
-) => {
-  if (options.length) {
-    return options.filter((repo) => {
-      return repo.repository.pipelines.find(
-        (pipeline) =>
-          pipeline.name === pipelineName &&
-          (!snapshotId || pipeline.pipelineSnapshotId === snapshotId),
-      );
-    });
-  }
-  return [];
-};
 
 interface Props {
   pipelinePath: string;
@@ -43,14 +23,14 @@ export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
   const toAppend = entireMatch!.params[0];
   const {search} = location;
 
-  const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);
+  const {pipelineName} = explorerPathFromString(pipelinePath);
   const {loading, options} = useRepositoryOptions();
 
   if (loading) {
     return <LoadingWithProgress />;
   }
 
-  const reposWithMatch = findMatches(options, pipelineName, snapshotId);
+  const reposWithMatch = findRepoContainingPipeline(options, pipelineName);
   if (reposWithMatch.length === 0) {
     return (
       <NonIdealState

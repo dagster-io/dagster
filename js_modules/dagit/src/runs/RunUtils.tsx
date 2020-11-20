@@ -8,6 +8,7 @@ import {showCustomAlert} from 'src/CustomAlertProvider';
 import {APP_PATH_PREFIX} from 'src/DomUtils';
 import {filterByQuery} from 'src/GraphQueryImpl';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {Timestamp, TimezoneContext, timestampToString} from 'src/TimeComponents';
 import {formatElapsedTime} from 'src/Util';
 import {toGraphQueryItems} from 'src/gaant/toGraphQueryItems';
@@ -393,6 +394,10 @@ export const RunComponentFragments = {
         key
         value
       }
+      repositoryOrigin {
+        ...RepositoryOriginFragment
+      }
     }
+    ${REPOSITORY_ORIGIN_FRAGMENT}
   `,
 };

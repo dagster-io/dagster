@@ -14,6 +14,19 @@ export interface RunActionMenuFragment_tags {
   value: string;
 }
 
+export interface RunActionMenuFragment_repositoryOrigin_repositoryLocationMetadata {
+  __typename: "RepositoryMetadata";
+  key: string;
+  value: string;
+}
+
+export interface RunActionMenuFragment_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: RunActionMenuFragment_repositoryOrigin_repositoryLocationMetadata[];
+}
+
 export interface RunActionMenuFragment {
   __typename: "PipelineRun";
   id: string;
@@ -25,4 +38,5 @@ export interface RunActionMenuFragment {
   mode: string;
   canTerminate: boolean;
   tags: RunActionMenuFragment_tags[];
+  repositoryOrigin: RunActionMenuFragment_repositoryOrigin | null;
 }

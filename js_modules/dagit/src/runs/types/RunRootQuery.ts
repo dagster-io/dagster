@@ -61,6 +61,12 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan {
   artifactsPersisted: boolean;
 }
 
+export interface RunRootQuery_pipelineRunOrError_PipelineRun_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   __typename: "PipelineRun";
   id: string;
@@ -76,6 +82,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   pipelineSnapshotId: string | null;
   executionPlan: RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan | null;
   stepKeysToExecute: string[] | null;
+  repositoryOrigin: RunRootQuery_pipelineRunOrError_PipelineRun_repositoryOrigin | null;
 }
 
 export type RunRootQuery_pipelineRunOrError = RunRootQuery_pipelineRunOrError_PipelineRunNotFoundError | RunRootQuery_pipelineRunOrError_PipelineRun;

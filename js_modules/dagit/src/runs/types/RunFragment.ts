@@ -57,6 +57,12 @@ export interface RunFragment_executionPlan {
   artifactsPersisted: boolean;
 }
 
+export interface RunFragment_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
 export interface RunFragment {
   __typename: "PipelineRun";
   id: string;
@@ -72,4 +78,5 @@ export interface RunFragment {
   pipelineSnapshotId: string | null;
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;
+  repositoryOrigin: RunFragment_repositoryOrigin | null;
 }

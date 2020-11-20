@@ -16,6 +16,7 @@ import {showCustomAlert} from 'src/CustomAlertProvider';
 import {SharedToaster, ROOT_SERVER_URI} from 'src/DomUtils';
 import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
 import {REEXECUTE_PIPELINE_UNKNOWN} from 'src/runs/RunActionButtons';
+import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from 'src/runs/RunFragments';
 import {
   CANCEL_MUTATION,
   DELETE_MUTATION,
@@ -24,11 +25,12 @@ import {
   getReexecutionVariables,
   handleLaunchResult,
 } from 'src/runs/RunUtils';
+import {PipelineEnvironmentYamlQuery} from 'src/runs/types/PipelineEnvironmentYamlQuery';
 import {RunActionMenuFragment} from 'src/runs/types/RunActionMenuFragment';
 import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
-import {useRepository} from 'src/workspace/WorkspaceContext';
+import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
 
-export const RunActionsMenu: React.FunctionComponent<{
+export const RunActionsMenu: React.FC<{
   run: RunTableRunFragment | RunActionMenuFragment;
 }> = React.memo(({run}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
@@ -36,14 +38,18 @@ export const RunActionsMenu: React.FunctionComponent<{
   const [reexecute] = useMutation(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {onCompleted: refetch});
   const [cancel] = useMutation(CANCEL_MUTATION, {onCompleted: refetch});
   const [destroy] = useMutation(DELETE_MUTATION, {onCompleted: refetch});
-  const [loadEnv, {called, loading, data}] = useLazyQuery(PipelineEnvironmentYamlQuery, {
-    variables: {runId: run.runId},
-  });
+  const [loadEnv, {called, loading, data}] = useLazyQuery<PipelineEnvironmentYamlQuery>(
+    PIPELINE_ENVIRONMENT_YAML_QUERY,
+    {
+      variables: {runId: run.runId},
+    },
+  );
 
-  const runConfigYaml = data?.pipelineRunOrError?.runConfigYaml;
-  const activeRepo = useRepository();
-  const repositoryLocationName = activeRepo?.location.name || '';
-  const repositoryName = activeRepo?.name || '';
+  const pipelineRun =
+    data?.pipelineRunOrError?.__typename === 'PipelineRun' ? data?.pipelineRunOrError : null;
+  const runConfigYaml = pipelineRun?.runConfigYaml;
+
+  const repoMatch = useRepositoryForRun(pipelineRun);
 
   const infoReady = called ? !loading : false;
   return (
@@ -52,12 +58,12 @@ export const RunActionsMenu: React.FunctionComponent<{
         <Menu>
           <MenuItem
             text={loading ? 'Loading Configuration...' : 'View Configuration...'}
-            disabled={runConfigYaml == null}
+            disabled={!runConfigYaml}
             icon="share"
             onClick={() =>
               showCustomAlert({
                 title: 'Config',
-                body: <HighlightedCodeBlock value={runConfigYaml} language="yaml" />,
+                body: <HighlightedCodeBlock value={runConfigYaml || ''} language="yaml" />,
               })
             }
           />
@@ -85,24 +91,26 @@ export const RunActionsMenu: React.FunctionComponent<{
             <Tooltip
               content={REEXECUTE_PIPELINE_UNKNOWN}
               position={Position.BOTTOM}
-              disabled={infoReady}
+              disabled={infoReady && !!repoMatch}
               wrapperTagName="div"
               targetTagName="div"
             >
               <MenuItem
                 text="Re-execute"
-                disabled={!infoReady}
+                disabled={!infoReady || !repoMatch}
                 icon="repeat"
                 onClick={async () => {
-                  const result = await reexecute({
-                    variables: getReexecutionVariables({
-                      run: {...run, runConfigYaml},
-                      style: {type: 'all'},
-                      repositoryLocationName,
-                      repositoryName,
-                    }),
-                  });
-                  handleLaunchResult(run.pipelineName, result, {openInNewWindow: true});
+                  if (repoMatch && runConfigYaml) {
+                    const result = await reexecute({
+                      variables: getReexecutionVariables({
+                        run: {...run, runConfigYaml},
+                        style: {type: 'all'},
+                        repositoryLocationName: repoMatch.match.repositoryLocation.name,
+                        repositoryName: repoMatch.match.repository.name,
+                      }),
+                    });
+                    handleLaunchResult(run.pipelineName, result, {openInNewWindow: true});
+                  }
                 }}
               />
             </Tooltip>
@@ -219,13 +227,19 @@ function showToastFor(
 }
 
 // Avoid fetching envYaml on load in Runs page. It is slow.
-const PipelineEnvironmentYamlQuery = gql`
+const PIPELINE_ENVIRONMENT_YAML_QUERY = gql`
   query PipelineEnvironmentYamlQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       ... on PipelineRun {
         id
+        pipeline {
+          name
+        }
+        pipelineSnapshotId
         runConfigYaml
+        ...RunFragmentForRepositoryMatch
       }
     }
   }
+  ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
 `;

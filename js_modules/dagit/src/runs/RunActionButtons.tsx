@@ -8,30 +8,20 @@ import {IStepState} from 'src/RunMetadataProvider';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
 import {CANCEL_MUTATION, ReExecutionStyle} from 'src/runs/RunUtils';
 import {StepSelection} from 'src/runs/StepSelection';
+import {RunFragment} from 'src/runs/types/RunFragment';
 import {PipelineRunStatus} from 'src/types/globalTypes';
-import {useRepository, useRepositoryOptions} from 'src/workspace/WorkspaceContext';
+import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
 
 // Descriptions of re-execute options
 export const REEXECUTE_PIPELINE_UNKNOWN =
-  'Re-execute is unavailable because the pipeline is not present in the current repository.';
+  'Re-execute is unavailable because the pipeline is not present in the current workspace.';
 const REEXECUTE_SUBSET = 'Re-run the following steps with existing configuration:';
 const REEXECUTE_SUBSET_NO_SELECTION =
   'Re-execute is only enabled when steps are selected. Try selecting a step or typing a step subset to re-execute.';
 const REEXECUTE_SUBSET_NOT_DONE = 'Wait for the selected steps to finish to re-execute it.';
 
-interface RunActionButtonsRun {
-  runId: string;
-  status: PipelineRunStatus;
-  pipeline: {
-    __typename: string;
-    name: string;
-  };
-  pipelineSnapshotId: string | null;
-  canTerminate: boolean;
-}
-
 interface RunActionButtonsProps {
-  run?: RunActionButtonsRun;
+  run?: RunFragment;
   selection: StepSelection;
   selectionStates: IStepState[];
   artifactsPersisted: boolean;
@@ -41,9 +31,7 @@ interface RunActionButtonsProps {
   onLaunch: (style: ReExecutionStyle) => Promise<void>;
 }
 
-const CancelRunButton: React.FunctionComponent<{
-  run: RunActionButtonsRun;
-}> = ({run}) => {
+const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
   const [cancel] = useMutation(CANCEL_MUTATION);
   const [inFlight, setInFlight] = React.useState(false);
   return (
@@ -72,7 +60,7 @@ const CancelRunButton: React.FunctionComponent<{
   );
 };
 
-export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = ({
+export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
   selection,
   selectionStates,
   artifactsPersisted,
@@ -174,41 +162,33 @@ export const RunActionButtons: React.FunctionComponent<RunActionButtonsProps> = 
 };
 
 function usePipelineAvailabilityErrorForRun(
-  run?: RunActionButtonsRun,
+  run: RunFragment | null | undefined,
 ): null | {tooltip?: string; icon?: IconName; disabled: boolean} {
-  const currentRepository = useRepository();
-  const {options: repositoryOptions} = useRepositoryOptions();
+  const repoMatch = useRepositoryForRun(run);
 
-  if (!run || !currentRepository) {
+  // The run hasn't loaded, so no error.
+  if (!run) {
     return null;
   }
 
-  const currentRepositorySnapshots: {[name: string]: string} = {};
-  currentRepository.pipelines.forEach((pipeline) => {
-    currentRepositorySnapshots[pipeline.name] = pipeline.pipelineSnapshotId;
-  });
-
-  if (!currentRepositorySnapshots[run.pipeline.name]) {
-    const otherReposWithSnapshot = repositoryOptions
-      .map((x) => x.repository)
-      .filter(
-        (x) =>
-          x.name !== currentRepository.name &&
-          x.pipelines.map((p) => p.name).includes(run.pipeline.name),
-      )
-      .map((x) => x.name);
-
+  if (run?.pipeline.__typename === 'UnknownPipeline') {
     return {
       icon: IconNames.ERROR,
-      tooltip:
-        `"${run.pipeline.name}" is not in the current repository.` +
-        (otherReposWithSnapshot.length
-          ? ` It is available in the following repositories: ${otherReposWithSnapshot.join(', ')}.`
-          : ''),
+      tooltip: `"${run.pipeline.name}" could not be found.`,
       disabled: true,
     };
   }
-  if (currentRepositorySnapshots[run.pipeline.name] !== run.pipelineSnapshotId) {
+
+  if (repoMatch) {
+    const {type: matchType} = repoMatch;
+
+    // The run matches the active snapshot ID for the pipeline, so we're safe to execute the run.
+    if (matchType === 'snapshot') {
+      return null;
+    }
+
+    // A repo was found, but only because the pipeline name matched. The run might not work
+    // as expected.
     return {
       icon: IconNames.WARNING_SIGN,
       tooltip:
@@ -218,9 +198,10 @@ function usePipelineAvailabilityErrorForRun(
     };
   }
 
-  if (run?.pipeline.__typename === 'UnknownPipeline') {
-    return {icon: IconNames.ERROR, tooltip: `"${run.pipeline.name}" is unknown.`, disabled: true};
-  }
-
-  return null;
+  // We could not find a repo that contained this pipeline.
+  return {
+    icon: IconNames.ERROR,
+    tooltip: `"${run.pipeline.name}" is not available in the current workspace.`,
+    disabled: true,
+  };
 }
