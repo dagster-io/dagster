@@ -3,7 +3,8 @@ import * as React from 'react';
 import {RouteComponentProps} from 'react-router-dom';
 
 import {AssetsCatalogTable} from 'src/assets/AssetsCatalogTable';
-import {TopNav} from 'src/nav/TopNav';
+import {Page} from 'src/ui/Page';
+import {PageHeader} from 'src/ui/PageHeader';
 
 export const AssetsCatalogRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {
   const currentPath = (match.params['0'] || '')
@@ -23,9 +24,9 @@ export const AssetsCatalogRoot: React.FunctionComponent<RouteComponentProps> = (
   }
 
   return (
-    <div style={{display: 'flex', flexDirection: 'column', width: '100%', overflow: 'auto'}}>
-      <TopNav breadcrumbs={breadcrumbs} />
+    <Page>
+      <PageHeader text="Assets" />
       <AssetsCatalogTable prefixPath={currentPath} />
-    </div>
+    </Page>
   );
 };

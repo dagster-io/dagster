@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import React from 'react';
 
-import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
@@ -16,7 +15,9 @@ import {JOB_STATE_FRAGMENT, SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {SensorsTable} from 'src/sensors/SensorsTable';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
-import {Heading, Subheading} from 'src/ui/Text';
+import {Page} from 'src/ui/Page';
+import {PageHeader} from 'src/ui/PageHeader';
+import {Subheading} from 'src/ui/Text';
 
 export const InstanceJobsRoot = () => {
   useDocumentTitle('Scheduler');
@@ -26,8 +27,9 @@ export const InstanceJobsRoot = () => {
   });
 
   return (
-    <ScrollContainer>
-      <div style={{padding: '16px'}}>
+    <Page>
+      <PageHeader text="Scheduler" />
+      <Group direction="vertical" spacing={12}>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {(result) => {
             const {scheduler, repositoriesOrError, unloadableJobStatesOrError} = result;
@@ -48,18 +50,18 @@ export const InstanceJobsRoot = () => {
             );
 
             const scheduleDefinitionsSection = hasSchedules ? (
-              <Group direction="vertical" spacing={32}>
+              <Group direction="vertical" spacing={12}>
                 <Box
                   flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
-                  padding={{bottom: 12}}
+                  padding={{bottom: 8}}
                   border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
                 >
-                  <Heading>Schedules</Heading>
+                  <Subheading>Schedules</Subheading>
                   <SchedulerTimezoneNote schedulerOrError={scheduler} />
                 </Box>
                 {repositoriesOrError.nodes.map((repository) => (
                   <Group direction="vertical" spacing={12} key={repository.name}>
-                    <Subheading>{`${repository.name}@${repository.location.name}`}</Subheading>
+                    <strong>{`${repository.name}@${repository.location.name}`}</strong>
                     <SchedulesTable repository={repository} />
                   </Group>
                 ))}
@@ -67,18 +69,18 @@ export const InstanceJobsRoot = () => {
             ) : null;
 
             const sensorDefinitionsSection = hasSensors ? (
-              <Group direction="vertical" spacing={32}>
+              <Group direction="vertical" spacing={12}>
                 <Box
                   flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
                   padding={{bottom: 12}}
                   border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
                 >
-                  <Heading>Sensors</Heading>
+                  <Subheading>Sensors</Subheading>
                 </Box>
                 {repositoriesOrError.nodes.map((repository) =>
                   repository.sensors.length ? (
                     <Group direction="vertical" spacing={12} key={repository.name}>
-                      <Subheading>{`${repository.name}@${repository.location.name}`}</Subheading>
+                      <strong>{`${repository.name}@${repository.location.name}`}</strong>
                       <SensorsTable
                         repoAddress={{name: repository.name, location: repository.location.name}}
                         sensors={repository.sensors}
@@ -99,8 +101,8 @@ export const InstanceJobsRoot = () => {
             );
           }}
         </Loading>
-      </div>
-    </ScrollContainer>
+      </Group>
+    </Page>
   );
 };
 

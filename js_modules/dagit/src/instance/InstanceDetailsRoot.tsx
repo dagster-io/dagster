@@ -4,11 +4,12 @@ import * as React from 'react';
 import {UnControlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 
-import {Header} from 'src/ListComponents';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {InstanceDetailsQuery} from 'src/instance/types/InstanceDetailsQuery';
-import {TopNav} from 'src/nav/TopNav';
+import {Box} from 'src/ui/Box';
 import {Page} from 'src/ui/Page';
+import {PageHeader} from 'src/ui/PageHeader';
+import {Subheading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 
 const CodeMirrorShimStyle = createGlobalStyle`
@@ -29,16 +30,18 @@ const CodeMirrorShimStyle = createGlobalStyle`
 `;
 
 export const InstanceDetailsRoot: React.FunctionComponent = () => {
-  useDocumentTitle('Instance Details');
+  useDocumentTitle('Instance details');
   const {data} = useQuery<InstanceDetailsQuery>(INSTANCE_DETAILS_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
 
   return data ? (
     <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-      <TopNav breadcrumbs={[{text: 'Instance Details', icon: 'database'}]} />
       <Page style={{flexGrow: 1}}>
-        <Header>{`Dagster ${data.version}`}</Header>
+        <PageHeader text="Instance details" />
+        <Box margin={{bottom: 12}}>
+          <Subheading>{`Dagster ${data.version}`}</Subheading>
+        </Box>
         <CodeMirrorShimStyle />
         <CodeMirrorReact
           value={data?.instance.info}

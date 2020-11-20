@@ -9,6 +9,7 @@ import {AssetView} from 'src/assets/AssetView';
 import {AssetsCatalogTable} from 'src/assets/AssetsCatalogTable';
 import {AssetEntryRootQuery} from 'src/assets/types/AssetEntryRootQuery';
 import {TopNav} from 'src/nav/TopNav';
+import {Page} from 'src/ui/Page';
 
 export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {
   const currentPath = (match.params['0'] || '')
@@ -34,7 +35,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
   return (
     <div style={{display: 'flex', flexDirection: 'column', width: '100%', overflow: 'auto'}}>
       <TopNav breadcrumbs={breadcrumbs} />
-      <div style={{flexGrow: 1}}>
+      <Page style={{flexGrow: 1}}>
         <Loading queryResult={queryResult}>
           {({assetOrError}) => {
             if (assetOrError.__typename === 'AssetsNotSupportedError') {
@@ -70,7 +71,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
             );
           }}
         </Loading>
-      </div>
+      </Page>
     </div>
   );
 };

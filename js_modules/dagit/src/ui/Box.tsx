@@ -19,7 +19,10 @@ const flexPropertiesToCSS = (flex: FlexProperties) => {
     ${flex.direction
       ? `flex-direction: ${flex.direction};`
       : null}
-    ${flex.justifyContent ? `justify-content: ${flex.justifyContent};` : null}
+    ${flex.justifyContent
+      ? `justify-content: ${flex.justifyContent};`
+      : null}
+    ${flex.grow ? `flex-grow: ${flex.grow}` : null}
   `;
 };
 

@@ -68,7 +68,7 @@ describe('App', () => {
       </ApolloTestProvider>,
     );
 
-    const details = await screen.findByText('Instance Details');
+    const details = await screen.findByText('Instance details');
     expect(details).toBeVisible();
 
     const [runsLink] = screen.getAllByText('Runs');

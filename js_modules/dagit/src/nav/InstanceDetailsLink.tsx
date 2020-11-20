@@ -20,7 +20,7 @@ export const InstanceDetailsLink: React.FunctionComponent = () => {
       {data.instance && data.instance.info && ' | '}
       {data.instance && data.instance.info && (
         <Link to="/instance/details" style={{color: Colors.GRAY5, textDecoration: 'underline'}}>
-          Instance Details
+          Instance details
         </Link>
       )}
     </div>

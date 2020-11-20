@@ -217,7 +217,7 @@ const AssetsTable = ({assets, currentPath}: {assets: Asset[]; currentPath: strin
   const pathKeys = Object.keys(pathMap).sort();
 
   return (
-    <div style={{margin: '16px'}}>
+    <div>
       {currentPath.length ? null : (
         <div style={{marginBottom: '12px'}}>
           <AssetSearch assets={assets} />

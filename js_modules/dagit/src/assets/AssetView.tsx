@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import {Button, Tab, Tabs, ButtonGroup, Colors} from '@blueprintjs/core';
 import {uniq, flatMap} from 'lodash';
 import * as React from 'react';
-import styled from 'styled-components';
 
 import {Header} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
@@ -40,11 +39,7 @@ export const AssetView: React.FunctionComponent<{assetKey: AssetKey}> = ({assetK
           return null;
         }
         if (!assetOrError.assetMaterializations.length) {
-          return (
-            <Container>
-              <p>This asset has never been materialized.</p>
-            </Container>
-          );
+          return <p>This asset has never been materialized.</p>;
         }
         return <AssetViewWithData asset={assetOrError} />;
       }}
@@ -80,7 +75,7 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
   );
 
   return (
-    <Container>
+    <div>
       <Header>Last Materialization Event</Header>
       <AssetMaterializationTable
         materializations={[asset.assetMaterializations[0]]}
@@ -151,13 +146,9 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
           )}
         </>
       )}
-    </Container>
+    </div>
   );
 };
-
-const Container = styled.div`
-  margin: 20px;
-`;
 
 export const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!) {

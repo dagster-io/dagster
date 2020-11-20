@@ -8,15 +8,19 @@ interface TextProps {
 }
 
 export const Heading = styled.span<TextProps>`
+  color: ${Colors.DARK_GRAY3};
   font-size: 28px;
   font-weight: 700;
   line-height: 1;
+  -webkit-font-smoothing: antialiased;
 `;
 
 export const Subheading = styled.span<TextProps>`
+  color: ${Colors.DARK_GRAY3};
   font-size: 20px;
   font-weight: 700;
   line-height: 1;
+  -webkit-font-smoothing: antialiased;
 `;
 
 export const Body = styled.span<TextProps>`
