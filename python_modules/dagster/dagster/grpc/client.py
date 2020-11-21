@@ -22,6 +22,7 @@ from .types import (
     CancelExecutionRequest,
     ExecuteExternalPipelineArgs,
     ExecutionPlanSnapshotArgs,
+    ExternalJobArgs,
     ExternalScheduleExecutionArgs,
     PartitionArgs,
     PartitionNamesArgs,
@@ -253,6 +254,21 @@ class DagsterGrpcClient(object):
 
         return deserialize_json_to_dagster_namedtuple(
             res.serialized_external_schedule_execution_data_or_external_schedule_execution_error
+        )
+
+    def external_job_params(self, external_job_args):
+        check.inst_param(
+            external_job_args, "external_job_args", ExternalJobArgs,
+        )
+
+        res = self._query(
+            "ExternalJobParams",
+            api_pb2.ExternalJobParamsRequest,
+            serialized_external_job_args=serialize_dagster_namedtuple(external_job_args),
+        )
+
+        return deserialize_json_to_dagster_namedtuple(
+            res.serialized_external_job_params_or_external_job_params_error_data
         )
 
     def shutdown_server(self, timeout=15):

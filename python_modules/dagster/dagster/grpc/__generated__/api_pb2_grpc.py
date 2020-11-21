@@ -92,6 +92,11 @@ class DagsterApiStub(object):
             request_serializer=api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             response_deserializer=api__pb2.ExternalScheduleExecutionReply.FromString,
         )
+        self.ExternalJobParams = channel.unary_unary(
+            "/api.DagsterApi/ExternalJobParams",
+            request_serializer=api__pb2.ExternalJobParamsRequest.SerializeToString,
+            response_deserializer=api__pb2.ExternalJobParamsReply.FromString,
+        )
         self.ShutdownServer = channel.unary_unary(
             "/api.DagsterApi/ShutdownServer",
             request_serializer=api__pb2.Empty.SerializeToString,
@@ -206,6 +211,12 @@ class DagsterApiServicer(object):
         context.set_details("Method not implemented!")
         raise NotImplementedError("Method not implemented!")
 
+    def ExternalJobParams(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details("Method not implemented!")
+        raise NotImplementedError("Method not implemented!")
+
     def ShutdownServer(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -308,6 +319,11 @@ def add_DagsterApiServicer_to_server(servicer, server):
             servicer.ExternalScheduleExecution,
             request_deserializer=api__pb2.ExternalScheduleExecutionRequest.FromString,
             response_serializer=api__pb2.ExternalScheduleExecutionReply.SerializeToString,
+        ),
+        "ExternalJobParams": grpc.unary_unary_rpc_method_handler(
+            servicer.ExternalJobParams,
+            request_deserializer=api__pb2.ExternalJobParamsRequest.FromString,
+            response_serializer=api__pb2.ExternalJobParamsReply.SerializeToString,
         ),
         "ShutdownServer": grpc.unary_unary_rpc_method_handler(
             servicer.ShutdownServer,
@@ -739,6 +755,35 @@ class DagsterApi(object):
             "/api.DagsterApi/ExternalScheduleExecution",
             api__pb2.ExternalScheduleExecutionRequest.SerializeToString,
             api__pb2.ExternalScheduleExecutionReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+        )
+
+    @staticmethod
+    def ExternalJobParams(
+        request,
+        target,
+        options=(),
+        channel_credentials=None,
+        call_credentials=None,
+        insecure=False,
+        compression=None,
+        wait_for_ready=None,
+        timeout=None,
+        metadata=None,
+    ):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            "/api.DagsterApi/ExternalJobParams",
+            api__pb2.ExternalJobParamsRequest.SerializeToString,
+            api__pb2.ExternalJobParamsReply.FromString,
             options,
             channel_credentials,
             insecure,

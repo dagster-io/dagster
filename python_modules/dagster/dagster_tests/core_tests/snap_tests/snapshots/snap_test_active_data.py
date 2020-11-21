@@ -9,18 +9,7 @@ snapshots = Snapshot()
 snapshots['test_external_repository_data 1'] = '''{
   "__class__": "ExternalRepositoryData",
   "external_executable_datas": [],
-  "external_job_datas": [
-    {
-      "__class__": "ExternalJobData",
-      "job_type": {
-        "__enum__": "JobType.SCHEDULE"
-      },
-      "mode": "default",
-      "name": "a_schedule",
-      "pipeline_name": "a_pipeline",
-      "solid_selection": null
-    }
-  ],
+  "external_job_datas": [],
   "external_partition_set_datas": [
     {
       "__class__": "ExternalPartitionSetData",
