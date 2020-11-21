@@ -1,4 +1,3 @@
-import pytest
 from dagster import Field, execute_solid, solid
 
 
@@ -7,7 +6,7 @@ def test_default_implies_not_required_field_correct():
     def return_default_to_one(context):
         return context.solid_config["default_to_one"]
 
-    default_to_one_field = return_default_to_one.config_field.config_type.fields["default_to_one"]
+    default_to_one_field = return_default_to_one.config_schema.config_type.fields["default_to_one"]
     assert default_to_one_field.is_required is False
 
 

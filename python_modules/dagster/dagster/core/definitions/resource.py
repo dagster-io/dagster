@@ -6,7 +6,7 @@ from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.config_mappable import ConfiguredMixin
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
-from dagster.utils.backcompat import experimental_arg_warning, rename_warning
+from dagster.utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import split_function_parameters, validate_decorated_fn_positionals
 
@@ -72,11 +72,6 @@ class ResourceDefinition(ConfiguredMixin):
     @property
     def resource_fn(self):
         return self._resource_fn
-
-    @property
-    def config_field(self):
-        rename_warning("config_schema", "config_field", "0.9.0")
-        return self._config_schema
 
     @property
     def config_schema(self):

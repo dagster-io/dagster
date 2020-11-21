@@ -9,6 +9,9 @@ When new releases include breaking changes or deprecations, this document descri
 We have removed the ability to specify a repository in your workspace using hte `repository:` key.
 Use `load_from:` instead when specifying how to load the repositories in your workspace.
 
+## Removal: `config_field` property on definition classes
+
+We have removed the property `config_field` on definition classes. Use `config_schema` instead.
 
 # Migrating to 0.9.0
 
@@ -32,16 +35,17 @@ to work as before, though the `Materialization` event will be removed in a futur
 We are starting to deprecate "system storages" - instead of pipelines having a system storage
 definition which creates an intermediate storage, pipelines now directly have an intermediate
 storage definition.
+
 - We have added an `intermediate_storage_defs` argument to `ModeDefinition`, which accepts a
   list of `IntermediateStorageDefinition`s, e.g. `s3_plus_default_intermediate_storage_defs`.
   As before, the default includes an in-memory intermediate and a local filesystem intermediate
   storage.
 - We have deprecated `system_storage_defs` argument to `ModeDefinition` in favor of
-  `intermediate_storage_defs`.  `system_storage_defs` will be removed in 0.10.0 at the earliest.
+  `intermediate_storage_defs`. `system_storage_defs` will be removed in 0.10.0 at the earliest.
 - We have added an `@intermediate_storage` decorator, which makes it easy to define intermediate
   storages.
 - We have added `s3_file_manager` and `local_file_manager` resources to replace the file managers
-  that previously lived inside system storages.  The airline demo has been updated to include
+  that previously lived inside system storages. The airline demo has been updated to include
   an example of how to do this:
   https://github.com/dagster-io/dagster/blob/0.8.8/examples/airline_demo/airline_demo/solids.py#L171.
 
@@ -140,9 +144,11 @@ MyType = DagsterType(
 # Migrating to 0.8.5
 
 ## Python 3.5
+
 Python 3.5 is no longer under test.
 
 ## `Engine` and `ExecutorConfig` -> `Executor`
+
 `Engine` and `ExecutorConfig` have been deleted in favor of `Executor`. Instead of the `@executor` decorator decorating a function that returns an `ExecutorConfig` it should now decorate a function that returns an `Executor`.
 
 # Migrating to 0.8.3
@@ -151,17 +157,17 @@ Python 3.5 is no longer under test.
 
 Previously, the `gcs_resource` returned a `GCSResource` wrapper which had a single `client` property that returned a `google.cloud.storage.client.Client`. Now, the `gcs_resource` returns the client directly.
 
-  To update solids that use the `gcp_resource`, change:
+To update solids that use the `gcp_resource`, change:
 
-  ```
-  context.resources.gcs.client
-  ```
+```
+context.resources.gcs.client
+```
 
-  To:
+To:
 
-  ```
-  context.resources.gcs
-  ```
+```
+context.resources.gcs
+```
 
 # Migrating to 0.8.0
 

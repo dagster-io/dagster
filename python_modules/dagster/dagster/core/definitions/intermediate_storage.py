@@ -3,7 +3,6 @@ from functools import update_wrapper
 from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config_mappable import ConfiguredMixin
-from dagster.utils.backcompat import rename_warning
 
 from .utils import check_valid_name
 
@@ -52,11 +51,6 @@ class IntermediateStorageDefinition(ConfiguredMixin):
         )
         self._description = check.opt_str_param(description, "description")
         super(IntermediateStorageDefinition, self).__init__(_configured_config_mapping_fn)
-
-    @property
-    def config_field(self):
-        rename_warning("config_schema", "config_field", "0.9.0")
-        return self.config_schema
 
     @property
     def name(self):

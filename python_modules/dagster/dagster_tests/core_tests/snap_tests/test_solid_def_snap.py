@@ -1,6 +1,3 @@
-import re
-
-import pytest
 from dagster import InputDefinition, OutputDefinition, solid
 from dagster.core.snap.solid import build_core_solid_def_snap
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
@@ -67,18 +64,6 @@ def test_solid_definition_kitchen_sink():
 
     assert kitchen_sink_solid_snap.get_output_snap("output_two").description == "desc2"
     assert kitchen_sink_solid_snap.get_output_snap("output_two").is_required is False
-
-    with pytest.warns(
-        UserWarning,
-        match=re.escape(
-            '"config_field" is deprecated and will be removed in 0.9.0, use "config_schema" '
-            "instead."
-        ),
-    ):
-        assert (
-            kitchen_sink_solid_snap.config_field_snap.type_key
-            == kitchen_sink_solid.config_field.config_type.key
-        )
 
     assert kitchen_sink_solid_snap.required_resource_keys == ["a_resource", "b_resource"]
     assert kitchen_sink_solid_snap.tags == {"a_tag": "yup"}

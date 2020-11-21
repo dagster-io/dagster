@@ -8,7 +8,6 @@ from dagster.core.definitions.config_mappable import ConfiguredMixin
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.retries import Retries, get_retries_config
-from dagster.utils.backcompat import rename_warning
 
 
 class ExecutorDefinition(ConfiguredMixin):
@@ -52,11 +51,6 @@ class ExecutorDefinition(ConfiguredMixin):
     @property
     def description(self):
         return self._description
-
-    @property
-    def config_field(self):
-        rename_warning("config_schema", "config_field", "0.9.0")
-        return self._config_schema
 
     @property
     def config_schema(self):

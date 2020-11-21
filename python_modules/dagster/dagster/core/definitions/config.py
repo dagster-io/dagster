@@ -4,7 +4,6 @@ from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.primitive_mapping import is_supported_config_python_builtin
-from dagster.utils.backcompat import rename_warning
 
 
 def is_callable_valid_config_arg(config):
@@ -34,8 +33,3 @@ class ConfigMapping(namedtuple("_ConfigMapping", "config_fn config_schema")):
             config_fn=check.callable_param(config_fn, "config_fn"),
             config_schema=check_user_facing_opt_config_param(config_schema, "config_schema"),
         )
-
-    @property
-    def config_field(self):
-        rename_warning("config_schema", "config_field", "0.9.0")
-        return self.config_schema

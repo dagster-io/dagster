@@ -2,7 +2,6 @@ from dagster import check
 from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.config_mappable import ConfiguredMixin
-from dagster.utils.backcompat import rename_warning
 
 
 class LoggerDefinition(ConfiguredMixin):
@@ -36,11 +35,6 @@ class LoggerDefinition(ConfiguredMixin):
     @property
     def logger_fn(self):
         return self._logger_fn
-
-    @property
-    def config_field(self):
-        rename_warning("config_schema", "config_field", "0.9.0")
-        return self._config_schema
 
     @property
     def config_schema(self):

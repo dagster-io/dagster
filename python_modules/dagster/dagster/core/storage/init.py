@@ -89,7 +89,7 @@ class InitIntermediateStorageContext(
 
     Attributes:
         pipeline_def (PipelineDefinition): The definition of the pipeline in context.
-        mode_def (ModeDefinition): The definition of the mode in contxt.
+        mode_def (ModeDefinition): The definition of the mode in context.
         intermediate_storage_def (IntermediateStorageDefinition): The definition of the intermediate storage to be
             constructed.
         pipeline_run (PipelineRun): The pipeline run in context.
@@ -100,7 +100,7 @@ class InitIntermediateStorageContext(
         resources (Any): Resources available in context.
         intermediate_storage_config (Dict[str, Any]): The intermediate storage-specific configuration data
             provided by the environment config. The schema for this data is defined by the
-            ``config_field`` argument to :py:class:`IntermediateStorageDefinition`.
+            ``config_schema`` argument to :py:class:`IntermediateStorageDefinition`.
     """
 
     def __new__(
