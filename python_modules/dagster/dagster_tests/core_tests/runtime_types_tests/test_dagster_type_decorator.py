@@ -6,15 +6,15 @@ from dagster.core.types.dagster_type import resolve_dagster_type
 
 def test_dagster_type_decorator():
     @usable_as_dagster_type(name=None)
-    class Foo(object):
+    class Foo:
         pass
 
     @usable_as_dagster_type()
-    class Bar(object):
+    class Bar:
         pass
 
     @usable_as_dagster_type
-    class Baaz(object):
+    class Baaz:
         pass
 
     assert resolve_dagster_type(Foo).unique_name == "Foo"
@@ -24,7 +24,7 @@ def test_dagster_type_decorator():
 
 def test_dagster_type_decorator_name_desc():
     @usable_as_dagster_type(name="DifferentName", description="desc")
-    class Something(object):
+    class Something:
         pass
 
     dagster_type = resolve_dagster_type(Something)

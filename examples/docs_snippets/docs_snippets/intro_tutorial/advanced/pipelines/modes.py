@@ -19,7 +19,7 @@ from dagster import (
 )
 
 
-class LocalSQLiteWarehouse(object):
+class LocalSQLiteWarehouse:
     def __init__(self, conn_str):
         self._conn_str = conn_str
 
@@ -74,7 +74,7 @@ class NormalizedCereal(Base):
 
 
 # start_modes_marker_0
-class SqlAlchemyPostgresWarehouse(object):
+class SqlAlchemyPostgresWarehouse:
     def __init__(self, conn_str):
         self._conn_str = conn_str
         self._engine = sqlalchemy.create_engine(self._conn_str)

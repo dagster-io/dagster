@@ -37,7 +37,7 @@ class BuildkiteQueue(Enum):
         return isinstance(value, cls)
 
 
-class StepBuilder(object):
+class StepBuilder:
     def __init__(self, label, key=None):
         self._step = {
             # use Pulumi-managed medium queue by default

@@ -34,7 +34,7 @@ class JobContext(object):
         return self._instance
 
 
-class JobDefinition(object):
+class JobDefinition:
     """Defines a job, which describes a series of runs for a particular pipeline.  These runs are
     grouped by job_name, using tags.
 

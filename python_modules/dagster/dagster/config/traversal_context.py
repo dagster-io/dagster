@@ -15,7 +15,7 @@ class TraversalType(Enum):
     RESOLVE_DEFAULTS_AND_POSTPROCESS = "RESOLVE_DEFAULTS_AND_POSTPROCESS"
 
 
-class ContextData(object):
+class ContextData:
     __slots__ = ["_config_schema_snapshot", "_config_type_snap", "_stack"]
 
     def __init__(self, config_schema_snapshot, config_type_snap, stack):

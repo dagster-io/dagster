@@ -87,7 +87,7 @@ def test_out_of_pipeline_manager_yield_result():
 
 
 def test_out_of_pipeline_manager_yield_complex_result():
-    class Foo(object):
+    class Foo:
         pass
 
     manager = Manager()

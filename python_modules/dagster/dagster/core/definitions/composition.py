@@ -71,7 +71,7 @@ def _is_in_composition():
     return _composition_stack
 
 
-class InProgressCompositionContext(object):
+class InProgressCompositionContext:
     """This context captures invocations of solids within a
     composition function such as @composite_solid or @pipeline
     """
@@ -184,7 +184,7 @@ class CompleteCompositionContext(
         )
 
 
-class CallableNode(object):
+class CallableNode:
     """An intermediate object in composition to allow for binding information such as
     an alias before invoking.
     """
@@ -382,7 +382,7 @@ class InvokedNode(
         )
 
 
-class InvokedSolidOutputHandle(object):
+class InvokedSolidOutputHandle:
     """The return value for an output when invoking a solid in a composition function.
     """
 
@@ -435,7 +435,7 @@ class InvokedSolidOutputHandle(object):
         )
 
 
-class InputMappingNode(object):
+class InputMappingNode:
     def __init__(self, input_def):
         self.input_def = input_def
 

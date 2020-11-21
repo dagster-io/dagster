@@ -128,7 +128,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
         self._subscription_manager.dispose()
 
 
-class LocalComputeLogSubscriptionManager(object):
+class LocalComputeLogSubscriptionManager:
     def __init__(self, manager):
         self._manager = manager
         self._subscriptions = defaultdict(list)

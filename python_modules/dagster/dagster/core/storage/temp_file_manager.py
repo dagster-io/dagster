@@ -6,7 +6,7 @@ import tempfile
 from dagster.core.definitions import resource
 
 
-class TempfileManager(object):
+class TempfileManager:
     def __init__(self):
         self.paths = []
         self.files = []

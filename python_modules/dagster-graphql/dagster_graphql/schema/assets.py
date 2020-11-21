@@ -12,14 +12,14 @@ from .errors import DauphinError
 
 
 class DauphinAssetKey(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "AssetKey"
 
     path = dauphin.non_null_list(dauphin.String)
 
 
 class DauphinAsset(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Asset"
 
     key = dauphin.NonNull("AssetKey")
@@ -67,7 +67,7 @@ class DauphinAsset(dauphin.ObjectType):
 
 
 class DauphinAssetMaterialization(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "AssetMaterialization"
 
     def __init__(self, event):
@@ -94,13 +94,13 @@ class DauphinAssetMaterialization(dauphin.ObjectType):
 
 
 class DauphinAssetsNotSupportedError(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "AssetsNotSupportedError"
         interfaces = (DauphinError,)
 
 
 class DauphinAssetNotFoundError(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "AssetNotFoundError"
         interfaces = (DauphinError,)
 
@@ -110,19 +110,19 @@ class DauphinAssetNotFoundError(dauphin.ObjectType):
 
 
 class DauphinAssetsOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "AssetsOrError"
         types = ("AssetConnection", "AssetsNotSupportedError", "PythonError")
 
 
 class DauphinAssetConnection(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "AssetConnection"
 
     nodes = dauphin.non_null_list("Asset")
 
 
 class DauphinAssetOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "AssetOrError"
         types = ("Asset", "AssetsNotSupportedError", "AssetNotFoundError")

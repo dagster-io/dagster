@@ -181,7 +181,7 @@ class SparkConfig(namedtuple("_SparkConfig", "path default meaning")):
         printer.append(")")
 
 
-class SparkConfigNode(object):
+class SparkConfigNode:
     def __init__(self, value=None):
         self.value = value
         self.children = {}

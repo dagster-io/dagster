@@ -138,7 +138,7 @@ def resource_initialization_event_generator(
                 )
 
 
-class InitializedResource(object):
+class InitializedResource:
     """ Utility class to wrap the untyped resource object emitted from the user-supplied
     resource function.  Used for distinguishing from the framework-yielded events in an
     `EventGenerationManager`-wrapped event stream.

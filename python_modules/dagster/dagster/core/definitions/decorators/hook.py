@@ -8,7 +8,7 @@ from ..events import HookExecutionResult
 from ..hook import HookDefinition
 
 
-class _Hook(object):
+class _Hook:
     def __init__(self, name=None, required_resource_keys=None):
         self.name = check.opt_str_param(name, "name")
         self.required_resource_keys = check.opt_set_param(

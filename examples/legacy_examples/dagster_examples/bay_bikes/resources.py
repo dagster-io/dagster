@@ -7,7 +7,7 @@ from dagster.utils import mkdir_p
 from google.cloud import storage
 
 
-class CredentialsVault(object):
+class CredentialsVault:
     def __init__(self, credentials):
         self.credentials = credentials
 

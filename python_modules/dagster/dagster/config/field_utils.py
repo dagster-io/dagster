@@ -26,11 +26,11 @@ def all_optional_type(config_type):
     return False
 
 
-class __FieldValueSentinel(object):
+class __FieldValueSentinel:
     pass
 
 
-class __InferOptionalCompositeFieldSentinel(object):
+class __InferOptionalCompositeFieldSentinel:
     pass
 
 

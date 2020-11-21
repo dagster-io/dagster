@@ -24,7 +24,7 @@ class LocationStateChangeEvent(
         )
 
 
-class LocationStateSubscriber(object):
+class LocationStateSubscriber:
     def __init__(self, callback):
         check.callable_param(callback, "callback")
         self._callback = callback

@@ -45,7 +45,7 @@ class ConfigTypeKind(PythonEnum):
         return kind == ConfigTypeKind.SELECTOR
 
 
-class ConfigType(object):
+class ConfigType:
     """
     The class backing DagsterTypes as they are used processing configuration data.
     """
@@ -195,7 +195,7 @@ class Array(ConfigType):
         return "List of {inner_type}".format(inner_type=self.key)
 
 
-class EnumValue(object):
+class EnumValue:
     """Define an entry in a :py:class:`Enum`.
 
     Args:

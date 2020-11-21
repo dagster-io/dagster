@@ -18,7 +18,7 @@ from dagster import (
 from dagster.utils import segfault
 
 
-class ErrorableResource(object):
+class ErrorableResource:
     pass
 
 

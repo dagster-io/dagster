@@ -1,7 +1,7 @@
 import typing
 
 
-class BuiltinEnum(object):
+class BuiltinEnum:
 
     ANY = typing.Any
     BOOL = typing.NewType("Bool", bool)

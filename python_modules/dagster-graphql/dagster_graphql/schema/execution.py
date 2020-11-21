@@ -14,7 +14,7 @@ from .dagster_types import to_dauphin_dagster_type
 
 
 class DauphinExecutionPlan(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ExecutionPlan"
 
     steps = dauphin.non_null_list("ExecutionStep")
@@ -40,7 +40,7 @@ class DauphinExecutionPlan(dauphin.ObjectType):
 
 
 class DauphinExecutionStepOutput(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ExecutionStepOutput"
 
     name = dauphin.NonNull(dauphin.String)
@@ -65,7 +65,7 @@ class DauphinExecutionStepOutput(dauphin.ObjectType):
 
 
 class DauphinExecutionStepInput(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ExecutionStepInput"
 
     name = dauphin.NonNull(dauphin.String)
@@ -106,7 +106,7 @@ class DauphinExecutionStepInput(dauphin.ObjectType):
 
 
 class DauphinStepKind(dauphin.Enum):
-    class Meta(object):
+    class Meta:
         name = "StepKind"
 
     COMPUTE = "COMPUTE"
@@ -122,7 +122,7 @@ class DauphinStepKind(dauphin.Enum):
 
 
 class DauphinExecutionStep(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ExecutionStep"
 
     key = dauphin.NonNull(dauphin.String)

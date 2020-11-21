@@ -18,7 +18,7 @@ def _construct_events_by_step_key(event_list):
     return dict(events_by_step_key)
 
 
-class GraphExecutionResult(object):
+class GraphExecutionResult:
     def __init__(self, container, event_list, reconstruct_context, handle=None):
         self.container = check.inst_param(container, "container", GraphDefinition)
         self.event_list = check.list_param(event_list, "step_event_list", of_type=DagsterEvent)
@@ -245,7 +245,7 @@ class CompositeSolidExecutionResult(GraphExecutionResult):
         ).output_value(output_mapping.output_name)
 
 
-class SolidExecutionResult(object):
+class SolidExecutionResult:
     """Execution result for a leaf solid in a pipeline.
 
     Users should not instantiate this class.

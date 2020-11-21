@@ -14,7 +14,7 @@ def spark_session_from_config(spark_conf=None):
     return builder.getOrCreate()
 
 
-class PySparkResource(object):
+class PySparkResource:
     def __init__(self, spark_conf):
         self._spark_session = spark_session_from_config(spark_conf)
 

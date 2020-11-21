@@ -3,7 +3,7 @@ from dagster import Field, check, resource
 from prometheus_client.exposition import default_handler
 
 
-class PrometheusResource(object):
+class PrometheusResource:
     """Integrates with Prometheus via the prometheus_client library.
     """
 

@@ -8,7 +8,7 @@ from dagster_examples.event_pipeline_demo.pipelines import event_ingest_pipeline
 
 
 @pytest.mark.skip
-class TestAirflowizedEventPipeline(object):
+class TestAirflowizedEventPipeline:
     config_yaml = [
         script_relative_path("../../dagster_examples/airline_demo/environments/default.yaml")
     ]

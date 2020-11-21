@@ -98,7 +98,7 @@ def executor(name=None, config_schema=None, required_resource_keys=None):
     )
 
 
-class _ExecutorDecoratorCallable(object):
+class _ExecutorDecoratorCallable:
     def __init__(self, name=None, config_schema=None, required_resource_keys=None):
         self.name = check.opt_str_param(name, "name")
         self.config_schema = config_schema  # type check in definition

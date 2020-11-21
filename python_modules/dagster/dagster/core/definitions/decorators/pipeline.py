@@ -11,7 +11,7 @@ from ..pipeline import PipelineDefinition
 from ..preset import PresetDefinition
 
 
-class _Pipeline(object):
+class _Pipeline:
     def __init__(
         self,
         name=None,

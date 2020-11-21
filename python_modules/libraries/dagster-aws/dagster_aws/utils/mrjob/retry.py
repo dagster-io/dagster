@@ -34,7 +34,7 @@ _DEFAULT_MAX_TRIES = 10
 _DEFAULT_MAX_BACKOFF = 1200  # 20 minutes
 
 
-class RetryWrapper(object):
+class RetryWrapper:
     """Handle transient errors, with configurable backoff.
 
     This class can wrap any object. The wrapped object will behave like

@@ -13,7 +13,7 @@ def _default_sort_key(step):
     return int(step.tags.get("dagster/priority", 0)) * -1
 
 
-class ActiveExecution(object):
+class ActiveExecution:
     """State machine used to track progress through execution of an ExecutionPlan
     """
 

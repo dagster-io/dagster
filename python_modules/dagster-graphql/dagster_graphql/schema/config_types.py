@@ -38,7 +38,7 @@ def _ctor_kwargs_for_snap(config_type_snap):
 
 
 class DauphinConfigType(dauphin.Interface):
-    class Meta(object):
+    class Meta:
         name = "ConfigType"
 
     key = dauphin.NonNull(dauphin.String)
@@ -74,7 +74,7 @@ navigating the full schema client-side and not innerTypes.
     is_selector = dauphin.NonNull(dauphin.Boolean)
 
 
-class ConfigTypeMixin(object):
+class ConfigTypeMixin:
     def __init__(self, config_schema_snapshot, config_type_snap):
         self._config_type_snap = check.inst_param(
             config_type_snap, "config_type_snap", ConfigTypeSnap
@@ -94,7 +94,7 @@ class ConfigTypeMixin(object):
 
 
 class DauphinRegularConfigType(ConfigTypeMixin, dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "RegularConfigType"
         interfaces = [DauphinConfigType]
         description = "Regular is an odd name in this context. It really means Scalar or Any."
@@ -106,14 +106,14 @@ class DauphinRegularConfigType(ConfigTypeMixin, dauphin.ObjectType):
 
 
 class DauphinWrappingConfigType(dauphin.Interface):
-    class Meta(object):
+    class Meta:
         name = "WrappingConfigType"
 
     of_type = dauphin.Field(dauphin.NonNull(DauphinConfigType))
 
 
 class DauphinArrayConfigType(ConfigTypeMixin, dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ArrayConfigType"
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
@@ -124,7 +124,7 @@ class DauphinArrayConfigType(ConfigTypeMixin, dauphin.ObjectType):
 
 
 class DauphinScalarUnionConfigType(ConfigTypeMixin, dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ScalarUnionConfigType"
         interfaces = [DauphinConfigType]
 
@@ -154,7 +154,7 @@ class DauphinScalarUnionConfigType(ConfigTypeMixin, dauphin.ObjectType):
 
 
 class DauphinNullableConfigType(ConfigTypeMixin, dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "NullableConfigType"
         interfaces = [DauphinConfigType, DauphinWrappingConfigType]
 
@@ -165,7 +165,7 @@ class DauphinNullableConfigType(ConfigTypeMixin, dauphin.ObjectType):
 
 
 class DauphinEnumConfigType(ConfigTypeMixin, dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "EnumConfigType"
         interfaces = [DauphinConfigType]
 
@@ -183,7 +183,7 @@ class DauphinEnumConfigType(ConfigTypeMixin, dauphin.ObjectType):
 
 
 class DauphinEnumConfigValue(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "EnumConfigValue"
 
     value = dauphin.NonNull(dauphin.String)
@@ -191,7 +191,7 @@ class DauphinEnumConfigValue(dauphin.ObjectType):
 
 
 class DauphinCompositeConfigType(ConfigTypeMixin, dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "CompositeConfigType"
         interfaces = [DauphinConfigType]
 
@@ -210,7 +210,7 @@ class DauphinCompositeConfigType(ConfigTypeMixin, dauphin.ObjectType):
 
 
 class DauphinConfigTypeField(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ConfigTypeField"
 
     name = dauphin.NonNull(dauphin.String)

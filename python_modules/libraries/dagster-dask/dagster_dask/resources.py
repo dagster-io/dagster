@@ -21,7 +21,7 @@ DaskClusterTypes = {
 }
 
 
-class DaskResource(object):
+class DaskResource:
     def __init__(self, context):
         # Create a Dask cluster if a cluster config is specified.
         # This will be passed as the address value to the Client.

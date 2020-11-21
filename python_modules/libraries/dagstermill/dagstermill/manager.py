@@ -53,7 +53,7 @@ class DagstermillResourceEventGenerationManager(EventGenerationManager):
         ]
 
 
-class Manager(object):
+class Manager:
     def __init__(self):
         self.pipeline = None
         self.solid_def = None

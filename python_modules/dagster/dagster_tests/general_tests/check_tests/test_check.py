@@ -109,10 +109,10 @@ def test_set_param():
 
 
 def test_typed_list_param():
-    class Foo(object):
+    class Foo:
         pass
 
-    class Bar(object):
+    class Bar:
         pass
 
     assert check.list_param([], "list_param", Foo) == []
@@ -140,10 +140,10 @@ def test_is_tuple():
 
 
 def test_typed_is_tuple():
-    class Foo(object):
+    class Foo:
         pass
 
-    class Bar(object):
+    class Bar:
         pass
 
     assert check.is_tuple((), Foo) == ()
@@ -158,10 +158,10 @@ def test_typed_is_tuple():
 
 
 def test_typed_is_list():
-    class Foo(object):
+    class Foo:
         pass
 
-    class Bar(object):
+    class Bar:
         pass
 
     assert check.is_list([], Foo) == []
@@ -226,10 +226,10 @@ def test_opt_nullable_list_param():
 
 
 def test_opt_typed_list_param():
-    class Foo(object):
+    class Foo:
         pass
 
-    class Bar(object):
+    class Bar:
         pass
 
     assert check.opt_list_param(None, "list_param", Foo) == []
@@ -281,7 +281,7 @@ def test_dict_param_with_type():
     assert check.dict_param({}, "str_to_int", key_type=str) == {}
     assert check.dict_param({}, "str_to_int") == {}
 
-    class Wrong(object):
+    class Wrong:
         pass
 
     with pytest.raises(CheckError):
@@ -317,7 +317,7 @@ def test_opt_dict_param_with_type():
     assert check.opt_dict_param(None, "str_to_int", key_type=str) == {}
     assert check.opt_dict_param(None, "str_to_int") == {}
 
-    class Wrong(object):
+    class Wrong:
         pass
 
     with pytest.raises(CheckError):
@@ -366,7 +366,7 @@ def test_opt_nullable_dict_param():
     ddict = {"a": 2}
     assert check.opt_nullable_dict_param(ddict, "opt_nullable_dict_param") == ddict
 
-    class Foo(object):
+    class Foo:
         pass
 
     class Bar(Foo):
@@ -655,10 +655,10 @@ def test_not_implemented():
 
 
 def test_inst():
-    class Foo(object):
+    class Foo:
         pass
 
-    class Bar(object):
+    class Bar:
         pass
 
     obj = Foo()
@@ -673,13 +673,13 @@ def test_inst():
 
 
 def test_inst_param():
-    class Foo(object):
+    class Foo:
         pass
 
-    class Bar(object):
+    class Bar:
         pass
 
-    class Baaz(object):
+    class Baaz:
         pass
 
     obj = Foo()
@@ -703,13 +703,13 @@ def test_inst_param():
 
 
 def test_opt_inst_param():
-    class Foo(object):
+    class Foo:
         pass
 
-    class Bar(object):
+    class Bar:
         pass
 
-    class Baaz(object):
+    class Baaz:
         pass
 
     obj = Foo()
@@ -917,7 +917,7 @@ def test_opt_tuple_param():
 
 
 def test_opt_type_param():
-    class Foo(object):
+    class Foo:
         pass
 
     assert check.opt_type_param(int, "foo")
@@ -940,7 +940,7 @@ def test_opt_type_param():
 
 
 def test_type_param():
-    class Bar(object):
+    class Bar:
         pass
 
     assert check.type_param(int, "foo")
@@ -963,13 +963,13 @@ def test_type_param():
 
 
 def test_subclass_param():
-    class Super(object):
+    class Super:
         pass
 
     class Sub(Super):
         pass
 
-    class Alone(object):
+    class Alone:
         pass
 
     assert check.subclass_param(Sub, "foo", Super)

@@ -1,4 +1,4 @@
-class ConfigSchema(object):
+class ConfigSchema:
     """This is a placeholder type. Any time that it appears in documentation, it means that any of
     the following types are acceptable:
 

@@ -143,7 +143,7 @@ class ResourceDefinition(ConfiguredMixin):
         )
 
 
-class _ResourceDecoratorCallable(object):
+class _ResourceDecoratorCallable:
     def __init__(self, config_schema=None, description=None, version=None):
         self.config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
         self.description = check.opt_str_param(description, "description")

@@ -6,7 +6,7 @@ from dagster.core.types.dagster_type import resolve_dagster_type
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
 
-class OutputDefinition(object):
+class OutputDefinition:
     """Defines an output from a solid's compute function.
 
     Solids can have multiple outputs, in which case outputs cannot be anonymous.

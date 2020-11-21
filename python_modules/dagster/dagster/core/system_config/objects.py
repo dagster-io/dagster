@@ -28,7 +28,7 @@ class SolidConfig(namedtuple("_SolidConfig", "config inputs outputs")):
         )
 
 
-class EmptyIntermediateStoreBackcompatConfig(object):
+class EmptyIntermediateStoreBackcompatConfig:
     """
     This class is a sentinel object indicating that no intermediate stores have been passed in
     and that the pipeline should instead use system storage to define an intermediate store.

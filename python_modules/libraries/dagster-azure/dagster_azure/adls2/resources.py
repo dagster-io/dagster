@@ -96,7 +96,7 @@ def adls2_file_manager(context):
     )
 
 
-class ADLS2Resource(object):
+class ADLS2Resource:
     """Resource containing clients to access Azure Data Lake Storage Gen2.
 
     Contains a client for both the Data Lake and Blob APIs, to work around the limitations

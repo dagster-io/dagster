@@ -19,7 +19,7 @@ from ..output import OutputDefinition
 from ..solid import SolidDefinition
 
 
-class _Solid(object):
+class _Solid:
     def __init__(
         self,
         name=None,

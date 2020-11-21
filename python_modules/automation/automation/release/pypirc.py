@@ -17,7 +17,7 @@ class ConfigFileError(Exception):
     """Raised when a PyPI config file does not exist."""
 
 
-class RCParser(object):
+class RCParser:
 
     """Parser for the ``~/.pypirc`` file.
 

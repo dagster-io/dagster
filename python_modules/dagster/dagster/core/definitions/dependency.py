@@ -62,7 +62,7 @@ class SolidInvocation(namedtuple("Solid", "name alias tags hook_defs")):
         return super(cls, SolidInvocation).__new__(cls, name, alias, tags, hook_defs)
 
 
-class Solid(object):
+class Solid:
     """
     Solid invocation within a pipeline. Defined by its name inside the pipeline.
 
@@ -394,7 +394,7 @@ def _create_handle_dict(solid_dict, dep_dict):
     return handle_dict
 
 
-class DependencyStructure(object):
+class DependencyStructure:
     @staticmethod
     def from_definitions(solids, dep_dict):
         return DependencyStructure(list(dep_dict.keys()), _create_handle_dict(solids, dep_dict))

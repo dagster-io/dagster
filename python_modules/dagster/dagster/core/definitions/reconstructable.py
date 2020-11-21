@@ -348,7 +348,7 @@ def build_reconstructable_pipeline(
 
         from dagster import PipelineDefinition, pipeline, build_reconstructable_pipeline
 
-        class PipelineFactory(object):
+        class PipelineFactory:
             def make_pipeline(*args, **kwargs):
 
                 @pipeline

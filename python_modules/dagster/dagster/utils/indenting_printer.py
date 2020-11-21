@@ -9,7 +9,7 @@ from six import StringIO
 LINE_LENGTH = 100
 
 
-class IndentingPrinter(object):
+class IndentingPrinter:
     def __init__(self, indent_level=2, printer=print, current_indent=0, line_length=LINE_LENGTH):
         self.current_indent = current_indent
         self.indent_level = check.int_param(indent_level, "indent_level")

@@ -39,7 +39,7 @@ def format_duration(milliseconds):
         return "{hours}h{minutes}m".format(hours=hours, minutes=minutes)
 
 
-class TimerResult(object):
+class TimerResult:
     def __init__(self):
         self.start_time = seven.time_fn()
         self.end_time = None

@@ -20,7 +20,7 @@ def key_from_str(key_str):
     return result
 
 
-class SSHResource(object):
+class SSHResource:
     """
     Resource for ssh remote execution using Paramiko.
     ref: https://github.com/paramiko/paramiko

@@ -13,7 +13,7 @@ from dagster.utils import delay_interrupts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
-class ChildProcessEvent(object):
+class ChildProcessEvent:
     pass
 
 

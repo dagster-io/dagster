@@ -12,7 +12,7 @@ TWENTY_MINUTES = 20 * 60
 DEFAULT_ITER_TIME_SEC = 5
 
 
-class DataprocResource(object):
+class DataprocResource:
     """Builds a client to the dataproc API."""
 
     def __init__(self, config):

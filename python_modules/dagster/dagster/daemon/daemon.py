@@ -28,7 +28,7 @@ def get_default_daemon_logger(daemon_name):
     return logger
 
 
-class DagsterDaemon(object):
+class DagsterDaemon:
     def __init__(self, instance, interval_seconds):
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._logger = get_default_daemon_logger(type(self).__name__)

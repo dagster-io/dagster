@@ -75,7 +75,7 @@ from .schedules import (
 
 
 class DauphinQuery(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Query"
 
     version = dauphin.NonNull(dauphin.String)
@@ -327,7 +327,7 @@ class DauphinQuery(dauphin.ObjectType):
 
 
 class DauphinStepOutputHandle(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "StepOutputHandle"
 
     stepKey = dauphin.NonNull(dauphin.String)
@@ -335,23 +335,23 @@ class DauphinStepOutputHandle(dauphin.InputObjectType):
 
 
 class DauphinDeletePipelineRunSuccess(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "DeletePipelineRunSuccess"
 
     runId = dauphin.NonNull(dauphin.String)
 
 
 class DauphinDeletePipelineRunResult(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "DeletePipelineRunResult"
         types = ("DeletePipelineRunSuccess", "PythonError", "PipelineRunNotFoundError")
 
 
 class DauphinDeleteRunMutation(dauphin.Mutation):
-    class Meta(object):
+    class Meta:
         name = "DeletePipelineRun"
 
-    class Arguments(object):
+    class Arguments:
         runId = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull("DeletePipelineRunResult")
@@ -362,14 +362,14 @@ class DauphinDeleteRunMutation(dauphin.Mutation):
 
 
 class DauphinTerminatePipelineExecutionSuccess(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "TerminatePipelineExecutionSuccess"
 
     run = dauphin.Field(dauphin.NonNull("PipelineRun"))
 
 
 class DauphinTerminatePipelineExecutionFailure(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "TerminatePipelineExecutionFailure"
 
     run = dauphin.NonNull("PipelineRun")
@@ -377,7 +377,7 @@ class DauphinTerminatePipelineExecutionFailure(dauphin.ObjectType):
 
 
 class DauphinTerminatePipelineExecutionResult(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "TerminatePipelineExecutionResult"
         types = (
             "TerminatePipelineExecutionSuccess",
@@ -399,11 +399,11 @@ def create_execution_params_and_launch_pipeline_exec(graphene_info, execution_pa
 
 
 class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
-    class Meta(object):
+    class Meta:
         name = "LaunchPipelineExecutionMutation"
         description = "Launch a pipeline run via the run launcher configured on the instance."
 
-    class Arguments(object):
+    class Arguments:
         executionParams = dauphin.NonNull("ExecutionParams")
 
     Output = dauphin.NonNull("LaunchPipelineExecutionResult")
@@ -415,11 +415,11 @@ class DauphinLaunchPipelineExecutionMutation(dauphin.Mutation):
 
 
 class DauphinLaunchPartitionBackfillMutation(dauphin.Mutation):
-    class Meta(object):
+    class Meta:
         name = "LaunchPartitionBackfillMutation"
         description = "Launches a set of partition backfill runs via the run launcher configured on the instance."
 
-    class Arguments(object):
+    class Arguments:
         backfillParams = dauphin.NonNull("PartitionBackfillParams")
 
     Output = dauphin.NonNull("PartitionBackfillResult")
@@ -440,11 +440,11 @@ def create_execution_params_and_launch_pipeline_reexec(graphene_info, execution_
 
 
 class DauphinLaunchPipelineReexecutionMutation(dauphin.Mutation):
-    class Meta(object):
+    class Meta:
         name = "DauphinLaunchPipelineReexecutionMutation"
         description = "Re-launch a pipeline run via the run launcher configured on the instance"
 
-    class Arguments(object):
+    class Arguments:
         executionParams = dauphin.NonNull("ExecutionParams")
 
     Output = dauphin.NonNull("LaunchPipelineReexecutionResult")
@@ -456,10 +456,10 @@ class DauphinLaunchPipelineReexecutionMutation(dauphin.Mutation):
 
 
 class DauphinTerminatePipelineExecutionMutation(dauphin.Mutation):
-    class Meta(object):
+    class Meta:
         name = "TerminatePipelineExecutionMutation"
 
-    class Arguments(object):
+    class Arguments:
         runId = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull("TerminatePipelineExecutionResult")
@@ -469,7 +469,7 @@ class DauphinTerminatePipelineExecutionMutation(dauphin.Mutation):
 
 
 class DauphinReloadRepositoryLocationMutationResult(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "ReloadRepositoryLocationMutationResult"
         types = (
             "RepositoryLocation",
@@ -480,10 +480,10 @@ class DauphinReloadRepositoryLocationMutationResult(dauphin.Union):
 
 
 class DauphinReloadRepositoryLocationMutation(dauphin.Mutation):
-    class Meta(object):
+    class Meta:
         name = "ReloadRepositoryLocationMutation"
 
-    class Arguments(object):
+    class Arguments:
         repositoryLocationName = dauphin.NonNull(dauphin.String)
 
     Output = dauphin.NonNull("ReloadRepositoryLocationMutationResult")
@@ -512,7 +512,7 @@ class DauphinReloadRepositoryLocationMutation(dauphin.Mutation):
 
 
 class DauphinExecutionTag(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "ExecutionTag"
 
     key = dauphin.NonNull(dauphin.String)
@@ -520,7 +520,7 @@ class DauphinExecutionTag(dauphin.InputObjectType):
 
 
 class DauphinMarshalledInput(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "MarshalledInput"
 
     input_name = dauphin.NonNull(dauphin.String)
@@ -528,7 +528,7 @@ class DauphinMarshalledInput(dauphin.InputObjectType):
 
 
 class DauphinMarshalledOutput(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "MarshalledOutput"
 
     output_name = dauphin.NonNull(dauphin.String)
@@ -536,7 +536,7 @@ class DauphinMarshalledOutput(dauphin.InputObjectType):
 
 
 class DauphinStepExecution(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "StepExecution"
 
     stepKey = dauphin.NonNull(dauphin.String)
@@ -545,7 +545,7 @@ class DauphinStepExecution(dauphin.InputObjectType):
 
 
 class DauphinExecutionMetadata(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "ExecutionMetadata"
 
     runId = dauphin.String()
@@ -639,7 +639,7 @@ def create_execution_metadata(graphql_execution_metadata):
 
 
 class DauphinRetriesPreviousAttempts(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "RetriesPreviousAttempts"
 
     key = dauphin.String()
@@ -647,7 +647,7 @@ class DauphinRetriesPreviousAttempts(dauphin.InputObjectType):
 
 
 class DauphinRetries(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "Retries"
 
     mode = dauphin.Field(dauphin.String)
@@ -659,7 +659,7 @@ def create_retries_params(retries_config):
 
 
 class DauphinMutation(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Mutation"
 
     launch_pipeline_execution = DauphinLaunchPipelineExecutionMutation.Field()
@@ -677,7 +677,7 @@ DauphinComputeIOType = dauphin.Enum.from_enum(ComputeIOType)
 
 
 class DauphinSubscription(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Subscription"
 
     pipelineRunLogs = dauphin.Field(
@@ -705,7 +705,7 @@ class DauphinSubscription(dauphin.ObjectType):
 
 
 class DauphinRunConfigData(dauphin.GenericScalar, dauphin.Scalar):
-    class Meta(object):
+    class Meta:
         name = "RunConfigData"
         description = """This type is used when passing in a configuration object
         for pipeline configuration. This is any-typed in the GraphQL type system,
@@ -713,7 +713,7 @@ class DauphinRunConfigData(dauphin.GenericScalar, dauphin.Scalar):
 
 
 class DauphinExecutionParams(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "ExecutionParams"
 
     selector = dauphin.NonNull(
@@ -742,7 +742,7 @@ class DauphinExecutionParams(dauphin.InputObjectType):
 
 
 class DauphinRepositorySelector(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "RepositorySelector"
         description = """This type represents the fields necessary to identify a repository."""
 
@@ -751,7 +751,7 @@ class DauphinRepositorySelector(dauphin.InputObjectType):
 
 
 class DauphinPipelineSelector(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "PipelineSelector"
         description = """This type represents the fields necessary to identify a
         pipeline or pipeline subset."""
@@ -763,7 +763,7 @@ class DauphinPipelineSelector(dauphin.InputObjectType):
 
 
 class DauphinScheduleSelector(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "ScheduleSelector"
         description = """This type represents the fields necessary to identify a schedule."""
 
@@ -773,7 +773,7 @@ class DauphinScheduleSelector(dauphin.InputObjectType):
 
 
 class DauphinPartitionSetSelector(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "PartitionSetSelector"
         description = """This type represents the fields necessary to identify a
         pipeline or pipeline subset."""
@@ -783,7 +783,7 @@ class DauphinPartitionSetSelector(dauphin.InputObjectType):
 
 
 class DauphinPartitionBackfillParams(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "PartitionBackfillParams"
 
     selector = dauphin.NonNull("PartitionSetSelector")
@@ -794,7 +794,7 @@ class DauphinPartitionBackfillParams(dauphin.InputObjectType):
 
 
 class DauphinPipelineRunsFilter(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "PipelineRunsFilter"
         description = """This type represents a filter on pipeline runs.
         Currently, you may only pass one of the filter options."""
@@ -829,7 +829,7 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
 
 
 class DauphinPipelineTagAndValues(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "PipelineTagAndValues"
         description = """A run tag and the free-form values that have been associated
         with it so far."""
@@ -848,7 +848,7 @@ class DauphinRunConfigSchema(dauphin.ObjectType):
         )
         self._mode = check.str_param(mode, "mode")
 
-    class Meta(object):
+    class Meta:
         name = "RunConfigSchema"
         description = """The run config schema represents the all the config type
         information given a certain execution selection and mode of execution of that
@@ -906,7 +906,7 @@ class DauphinRunConfigSchema(dauphin.ObjectType):
 
 
 class DauphinRunConfigSchemaOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "RunConfigSchemaOrError"
         types = (
             "RunConfigSchema",
@@ -918,7 +918,7 @@ class DauphinRunConfigSchemaOrError(dauphin.Union):
 
 
 class DauphinRunLauncher(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "RunLauncher"
 
     name = dauphin.NonNull(dauphin.String)
@@ -931,7 +931,7 @@ class DauphinRunLauncher(dauphin.ObjectType):
 
 
 class DauphinInstance(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Instance"
 
     info = dauphin.NonNull(dauphin.String)
@@ -958,7 +958,7 @@ class DauphinInstance(dauphin.ObjectType):
 
 
 class DauphinAssetKeyInput(dauphin.InputObjectType):
-    class Meta(object):
+    class Meta:
         name = "AssetKeyInput"
 
     path = dauphin.non_null_list(dauphin.String)

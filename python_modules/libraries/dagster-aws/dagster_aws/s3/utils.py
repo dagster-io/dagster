@@ -6,7 +6,7 @@ from dagster import check
 from packaging import version
 
 
-class S3Callback(object):
+class S3Callback:
     def __init__(self, logger, bucket, key, filename, size):
         self._logger = logger
         self._bucket = bucket

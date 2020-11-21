@@ -2,7 +2,7 @@ import pypd
 from dagster import Field, resource
 
 
-class PagerDutyService(object):
+class PagerDutyService:
     """Integrates with PagerDuty via the pypd library.
 
     See:

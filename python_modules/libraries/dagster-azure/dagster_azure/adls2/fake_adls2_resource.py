@@ -23,7 +23,7 @@ class FakeADLS2Resource(ADLS2Resource):
         self._blob_client = FakeBlobServiceClient(account_name)
 
 
-class FakeADLS2ServiceClient(object):
+class FakeADLS2ServiceClient:
     """Stateful mock of an ADLS2 service client for testing.
 
     Wraps a ``mock.MagicMock``. Containers are implemented using an in-memory dict.
@@ -57,7 +57,7 @@ class FakeADLS2ServiceClient(object):
         return self.get_file_system_client(file_system).get_file_client(file_path)
 
 
-class FakeADLS2FilesystemClient(object):
+class FakeADLS2FilesystemClient:
     """Stateful mock of an ADLS2 filesystem client for testing."""
 
     def __init__(self, account_name, file_system_name):
@@ -94,7 +94,7 @@ class FakeADLS2FilesystemClient(object):
                 del self._file_system[k]
 
 
-class FakeADLS2FileClient(object):
+class FakeADLS2FileClient:
     """Stateful mock of an ADLS2 file client for testing."""
 
     def __init__(self):
@@ -139,7 +139,7 @@ class FakeADLS2FileClient(object):
         return FakeADLS2FileDownloader(contents=self.contents)
 
 
-class FakeADLS2FileDownloader(object):
+class FakeADLS2FileDownloader:
     """Mock of an ADLS2 file downloader for testing."""
 
     def __init__(self, contents):

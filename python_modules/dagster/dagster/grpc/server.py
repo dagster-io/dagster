@@ -721,7 +721,7 @@ def server_termination_target(termination_event, server):
     server.stop(grace=5)
 
 
-class DagsterGrpcServer(object):
+class DagsterGrpcServer:
     def __init__(
         self,
         host="localhost",
@@ -970,7 +970,7 @@ def cleanup_server_process(server_process, timeout=3):
         server_process.wait()
 
 
-class GrpcServerProcess(object):
+class GrpcServerProcess:
     def __init__(
         self,
         loadable_target_origin=None,

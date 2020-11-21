@@ -224,7 +224,7 @@ def watcher_thread(conn_string, run_id_dict, handlers_dict, dict_lock, watcher_t
         pass
 
 
-class PostgresEventWatcher(object):
+class PostgresEventWatcher:
     def __init__(self, conn_string):
         self._run_id_dict = {}
         self._handlers_dict = {}

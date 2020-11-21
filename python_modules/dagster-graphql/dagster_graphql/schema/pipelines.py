@@ -27,7 +27,7 @@ class DauphinPipelineReference(dauphin.Interface):
     that a pipeline exists/existed thanks to materialized data such as logs and run metadata, but
     where we can't look the concrete pipeline up."""
 
-    class Meta(object):
+    class Meta:
         name = "PipelineReference"
 
     name = dauphin.NonNull(dauphin.String)
@@ -35,7 +35,7 @@ class DauphinPipelineReference(dauphin.Interface):
 
 
 class DauphinUnknownPipeline(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "UnknownPipeline"
         interfaces = (DauphinPipelineReference,)
 
@@ -43,7 +43,7 @@ class DauphinUnknownPipeline(dauphin.ObjectType):
     solidSelection = dauphin.List(dauphin.NonNull(dauphin.String))
 
 
-class DauphinIPipelineSnapshotMixin(object):
+class DauphinIPipelineSnapshotMixin:
     # Mixin this class to implement IPipelineSnapshot
     #
     # Graphene has some strange properties that make it so that you cannot
@@ -188,7 +188,7 @@ class DauphinIPipelineSnapshotMixin(object):
 
 
 class DauphinIPipelineSnapshot(dauphin.Interface):
-    class Meta(object):
+    class Meta:
         name = "IPipelineSnapshot"
 
     name = dauphin.NonNull(dauphin.String)
@@ -211,7 +211,7 @@ class DauphinIPipelineSnapshot(dauphin.Interface):
 
 
 class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Pipeline"
         interfaces = (DauphinSolidContainer, DauphinIPipelineSnapshot)
 
@@ -249,7 +249,7 @@ def _get_solid_handles(represented_pipeline):
 
 
 class DauphinResource(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Resource"
 
     def __init__(self, config_schema_snapshot, resource_def_snap):
@@ -278,7 +278,7 @@ class DauphinResource(dauphin.ObjectType):
 
 
 class DauphinLogger(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Logger"
 
     def __init__(self, config_schema_snapshot, logger_def_snap):
@@ -311,7 +311,7 @@ class DauphinMode(dauphin.ObjectType):
             config_schema_snapshot, "config_schema_snapshot", ConfigSchemaSnapshot
         )
 
-    class Meta(object):
+    class Meta:
         name = "Mode"
 
     name = dauphin.NonNull(dauphin.String)
@@ -339,7 +339,7 @@ class DauphinMode(dauphin.ObjectType):
 
 
 class DauphinMetadataItemDefinition(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "MetadataItemDefinition"
 
     key = dauphin.NonNull(dauphin.String)
@@ -347,7 +347,7 @@ class DauphinMetadataItemDefinition(dauphin.ObjectType):
 
 
 class DauphinPipelinePreset(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "PipelinePreset"
 
     name = dauphin.NonNull(dauphin.String)
@@ -391,7 +391,7 @@ class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType)
             represented_pipeline, "represented_pipeline", RepresentedPipeline
         )
 
-    class Meta(object):
+    class Meta:
         name = "PipelineSnapshot"
         interfaces = (DauphinIPipelineSnapshot, DauphinPipelineReference)
 
@@ -400,7 +400,7 @@ class DauphinPipelineSnapshot(DauphinIPipelineSnapshotMixin, dauphin.ObjectType)
 
 
 class DauphinPipelineSnapshotOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "PipelineSnapshotOrError"
         types = (
             "PipelineSnapshot",

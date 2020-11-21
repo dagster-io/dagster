@@ -45,7 +45,7 @@ def client_heartbeat_thread(client, shutdown_event):
             continue
 
 
-class DagsterGrpcClient(object):
+class DagsterGrpcClient:
     def __init__(self, port=None, socket=None, host="localhost"):
         self.port = check.opt_int_param(port, "port")
         self.socket = check.opt_str_param(socket, "socket")

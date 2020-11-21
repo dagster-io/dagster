@@ -3,7 +3,7 @@ from dagster import check
 from .system import SystemStepExecutionContext
 
 
-class StepExecutionContext(object):
+class StepExecutionContext:
     __slots__ = ["_system_step_execution_context"]
 
     def __init__(self, system_step_execution_context):

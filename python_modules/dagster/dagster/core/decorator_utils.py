@@ -2,7 +2,7 @@ from dagster import check
 from dagster.seven import funcsigs
 
 
-class InvalidDecoratedFunctionInfo(object):
+class InvalidDecoratedFunctionInfo:
     TYPES = {"vararg": 1, "missing_name": 2, "extra": 3}
 
     def __init__(self, error_type, param=None, missing_names=None):

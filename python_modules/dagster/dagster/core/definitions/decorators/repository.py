@@ -10,7 +10,7 @@ from ..repository import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryData, Reposi
 from ..schedule import ScheduleDefinition
 
 
-class _Repository(object):
+class _Repository:
     def __init__(self, name=None, description=None):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")

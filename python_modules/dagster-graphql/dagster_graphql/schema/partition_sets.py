@@ -18,7 +18,7 @@ from dagster_graphql.schema.errors import (
 
 
 class DauphinPartition(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Partition"
 
     name = dauphin.NonNull(dauphin.String)
@@ -89,14 +89,14 @@ class DauphinPartition(dauphin.ObjectType):
 
 
 class DauphinPartitions(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Partitions"
 
     results = dauphin.non_null_list("Partition")
 
 
 class DauphinPartitionSet(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "PartitionSet"
 
     name = dauphin.NonNull(dauphin.String)
@@ -146,51 +146,51 @@ class DauphinPartitionSet(dauphin.ObjectType):
 
 
 class DapuphinPartitionSetOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "PartitionSetOrError"
         types = ("PartitionSet", DauphinPartitionSetNotFoundError, DauphinPythonError)
 
 
 class DauphinPartitionSets(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "PartitionSets"
 
     results = dauphin.non_null_list("PartitionSet")
 
 
 class DauphinPartitionTags(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "PartitionTags"
 
     results = dauphin.non_null_list("PipelineTag")
 
 
 class DauphinPartitionRunConfig(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "PartitionRunConfig"
 
     yaml = dauphin.NonNull(dauphin.String)
 
 
 class DauphinPartitionSetsOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "PartitionSetsOrError"
         types = (DauphinPartitionSets, DauphinPipelineNotFoundError, DauphinPythonError)
 
 
 class DauphinPartitionsOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "PartitionsOrError"
         types = (DauphinPartitions, DauphinPythonError)
 
 
 class DauphinPartitionTagsOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "PartitionTagsOrError"
         types = (DauphinPartitionTags, DauphinPythonError)
 
 
 class DauphinPartitionRunConfigOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "PartitionRunConfigOrError"
         types = (DauphinPartitionRunConfig, DauphinPythonError)

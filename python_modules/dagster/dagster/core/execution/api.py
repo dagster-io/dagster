@@ -693,7 +693,7 @@ def _pipeline_execution_iterator(pipeline_context, execution_plan):
             yield event
 
 
-class _ExecuteRunWithPlanIterable(object):
+class _ExecuteRunWithPlanIterable:
     """Utility class to consolidate execution logic.
 
     This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`

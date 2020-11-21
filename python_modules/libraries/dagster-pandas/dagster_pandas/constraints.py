@@ -115,7 +115,7 @@ class ColumnWithMetadataException(ConstraintWithMetadataException):
         )
 
 
-class Constraint(object):
+class Constraint:
     """
     Base constraint object that all constraints inherit from.
 
@@ -130,7 +130,7 @@ class Constraint(object):
         self.error_description = check.str_param(error_description, "error_description")
 
 
-class ConstraintWithMetadata(object):
+class ConstraintWithMetadata:
     """
     This class defines a base constraint over pandas DFs with organized metadata
 

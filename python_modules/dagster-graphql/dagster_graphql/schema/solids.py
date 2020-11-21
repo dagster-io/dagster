@@ -12,14 +12,14 @@ from .dagster_types import to_dauphin_dagster_type
 
 
 class DauphinSolidContainer(dauphin.Interface):
-    class Meta(object):
+    class Meta:
         name = "SolidContainer"
 
     solids = dauphin.non_null_list("Solid")
 
 
 class DauphinISolidDefinition(dauphin.Interface):
-    class Meta(object):
+    class Meta:
         name = "ISolidDefinition"
 
     name = dauphin.NonNull(dauphin.String)
@@ -30,7 +30,7 @@ class DauphinISolidDefinition(dauphin.Interface):
     required_resources = dauphin.non_null_list("ResourceRequirement")
 
 
-class IDauphinSolidDefinitionMixin(object):
+class IDauphinSolidDefinitionMixin:
     def __init__(self, represented_pipeline, solid_def_name):
         self._represented_pipeline = check.inst_param(
             represented_pipeline, "represented_pipeline", RepresentedPipeline
@@ -91,7 +91,7 @@ class _ArgNotPresentSentinel:
 
 
 class DauphinSolid(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Solid"
 
     name = dauphin.NonNull(dauphin.String)
@@ -147,7 +147,7 @@ class DauphinSolid(dauphin.ObjectType):
 
 
 class DauphinSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitionMixin):
-    class Meta(object):
+    class Meta:
         name = "SolidDefinition"
         interfaces = [DauphinISolidDefinition]
 
@@ -173,7 +173,7 @@ class DauphinSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitionMixin):
 
 
 class DauphinCompositeSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitionMixin):
-    class Meta(object):
+    class Meta:
         name = "CompositeSolidDefinition"
         interfaces = [DauphinISolidDefinition, DauphinSolidContainer]
 
@@ -219,7 +219,7 @@ class DauphinCompositeSolidDefinition(dauphin.ObjectType, IDauphinSolidDefinitio
 
 
 class DauphinSolidHandle(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "SolidHandle"
 
     handleID = dauphin.NonNull(dauphin.String)
@@ -233,7 +233,7 @@ class DauphinSolidHandle(dauphin.ObjectType):
 
 
 class DauphinInputDefinition(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "InputDefinition"
 
     solid_definition = dauphin.NonNull("SolidDefinition")
@@ -265,7 +265,7 @@ class DauphinInputDefinition(dauphin.ObjectType):
 
 
 class DauphinOutputDefinition(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "OutputDefinition"
 
     solid_definition = dauphin.NonNull("SolidDefinition")
@@ -297,7 +297,7 @@ class DauphinOutputDefinition(dauphin.ObjectType):
 
 
 class DauphinInput(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Input"
 
     solid = dauphin.NonNull("Solid")
@@ -346,7 +346,7 @@ class DauphinInput(dauphin.ObjectType):
 
 
 class DauphinOutput(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "Output"
 
     solid = dauphin.NonNull("Solid")
@@ -394,7 +394,7 @@ class DauphinOutput(dauphin.ObjectType):
 
 
 class DauphinInputMapping(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "InputMapping"
 
     mapped_input = dauphin.NonNull("Input")
@@ -430,7 +430,7 @@ class DauphinInputMapping(dauphin.ObjectType):
 
 
 class DauphinOutputMapping(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "OutputMapping"
 
     mapped_output = dauphin.NonNull("Output")
@@ -466,7 +466,7 @@ class DauphinOutputMapping(dauphin.ObjectType):
 
 
 class DauphinResourceRequirement(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ResourceRequirement"
 
     resource_key = dauphin.NonNull(dauphin.String)
@@ -476,7 +476,7 @@ class DauphinResourceRequirement(dauphin.ObjectType):
 
 
 class DauphinUsedSolid(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "UsedSolid"
         description = """A solid definition and it's invocations within the repo."""
 
@@ -485,7 +485,7 @@ class DauphinUsedSolid(dauphin.ObjectType):
 
 
 class DauphinSolidInvocationSite(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "SolidInvocationSite"
         description = """An invocation of a solid within a repo."""
 

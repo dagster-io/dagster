@@ -12,26 +12,26 @@ from .ticks import tick_specific_data_from_dagster_tick
 
 
 class DapuphinScheduleStateOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "ScheduleStateOrError"
         types = ("ScheduleState", DauphinScheduleStateNotFoundError, DauphinPythonError)
 
 
 class DauphinScheduleStates(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ScheduleStates"
 
     results = dauphin.non_null_list("ScheduleState")
 
 
 class DauphinScheduleStatesOrError(dauphin.Union):
-    class Meta(object):
+    class Meta:
         name = "ScheduleStatesOrError"
         types = (DauphinScheduleStates, DauphinRepositoryNotFoundError, DauphinPythonError)
 
 
 class DauphinScheduleState(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ScheduleState"
 
     schedule_origin_id = dauphin.NonNull(dauphin.String)

@@ -97,7 +97,7 @@ def create_typed_runtime_dict(key_dagster_type, value_dagster_type):
     return _TypedPythonDict(key_type, value_type)
 
 
-class DagsterDictApi(object):
+class DagsterDictApi:
     def __getitem__(self, *args):
         check.param_invariant(len(args[0]) == 2, "args", "Must be two parameters")
         return create_typed_runtime_dict(args[0][0], args[0][1])

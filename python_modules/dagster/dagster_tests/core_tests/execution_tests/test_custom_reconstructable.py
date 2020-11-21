@@ -12,7 +12,7 @@ def top_scope_solid(_context):
     pass
 
 
-class PipelineFactory(object):
+class PipelineFactory:
     def __init__(self, prefix=None):
         self.prefix = prefix
 

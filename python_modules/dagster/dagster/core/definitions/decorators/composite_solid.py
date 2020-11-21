@@ -8,7 +8,7 @@ from ..output import OutputDefinition
 from ..solid import CompositeSolidDefinition
 
 
-class _CompositeSolid(object):
+class _CompositeSolid:
     def __init__(
         self,
         name=None,

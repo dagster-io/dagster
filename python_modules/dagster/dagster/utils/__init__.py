@@ -470,7 +470,7 @@ class frozentags(frozendict):
         return frozentags(updated)
 
 
-class EventGenerationManager(object):
+class EventGenerationManager:
     """ Utility class that wraps an event generator function, that also yields a single instance of
     a typed object.  All events yielded before the typed object are yielded through the method
     `generate_setup_events` and all events yielded after the typed object are yielded through the

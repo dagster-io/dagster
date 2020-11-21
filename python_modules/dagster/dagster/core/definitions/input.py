@@ -11,7 +11,7 @@ from dagster.core.types.dagster_type import (
 from .utils import check_valid_name
 
 
-class _NoValueSentinel(object):
+class _NoValueSentinel:
     pass
 
 
@@ -43,7 +43,7 @@ def _check_default_value(input_name, dagster_type, default_value):
     return default_value
 
 
-class InputDefinition(object):
+class InputDefinition:
     """Defines an argument to a solid's compute function.
 
     Inputs may flow from previous solids' outputs, or be stubbed using config. They may optionally

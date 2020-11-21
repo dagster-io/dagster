@@ -168,7 +168,7 @@ def test_deep_graph():
 
 def test_unconfigurable_inputs_pipeline():
     @usable_as_dagster_type
-    class NewType(object):
+    class NewType:
         pass
 
     @lambda_solid(input_defs=[InputDefinition("_", NewType)])

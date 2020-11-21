@@ -101,7 +101,7 @@ class SystemExecutionContextData(
         return self.pipeline.get_definition()
 
 
-class SystemExecutionContext(object):
+class SystemExecutionContext:
     __slots__ = ["_execution_context_data", "_log_manager"]
 
     def __init__(self, execution_context_data, log_manager):

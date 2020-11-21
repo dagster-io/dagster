@@ -291,7 +291,7 @@ def test_io_error_is_decent(composition_class):
 )
 def test_types_descent(composition_decorator):
     @usable_as_dagster_type
-    class Foo(object):
+    class Foo:
         pass
 
     @solid(output_defs=[OutputDefinition(Foo)])

@@ -8,7 +8,7 @@ from dagster.seven import mock
 from .utils import ResourceNotFoundError
 
 
-class FakeBlobServiceClient(object):
+class FakeBlobServiceClient:
     """Stateful mock of an Blob service client for testing.
 
     Wraps a ``mock.MagicMock``. Containers are implemented using an in-memory dict.
@@ -42,7 +42,7 @@ class FakeBlobServiceClient(object):
         return self.get_container_client(container).get_blob_client(blob)
 
 
-class FakeBlobContainerClient(object):
+class FakeBlobContainerClient:
     """Stateful mock of an Blob container client for testing."""
 
     def __init__(self, account_name, container_name):
@@ -90,7 +90,7 @@ class FakeBlobContainerClient(object):
                 del self._container[k]
 
 
-class FakeBlobClient(object):
+class FakeBlobClient:
     """Stateful mock of an Blob blob client for testing."""
 
     def __init__(self):
@@ -145,7 +145,7 @@ class FakeBlobClient(object):
         return FakeBlobDownloader(contents=self.contents)
 
 
-class FakeBlobDownloader(object):
+class FakeBlobDownloader:
     """Mock of a Blob file downloader for testing."""
 
     def __init__(self, contents):

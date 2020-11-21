@@ -15,7 +15,7 @@ from dagster.utils.backcompat import (
 )
 
 
-class DagsterTypeLoader(object):
+class DagsterTypeLoader:
     @property
     def schema_type(self):
         check.not_implemented(
@@ -45,7 +45,7 @@ class InputHydrationConfig(DagsterTypeLoader):
         super(InputHydrationConfig, self).__init__()
 
 
-class DagsterTypeMaterializer(object):
+class DagsterTypeMaterializer:
     @property
     def schema_type(self):
         check.not_implemented(

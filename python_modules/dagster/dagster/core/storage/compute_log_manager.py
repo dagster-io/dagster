@@ -193,7 +193,7 @@ class ComputeLogManager(six.with_metaclass(ABCMeta)):
         pass
 
 
-class ComputeLogSubscription(object):
+class ComputeLogSubscription:
     """Observable object that generates ComputeLogFileData objects as compute step execution logs
     are written
     """

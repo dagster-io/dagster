@@ -30,7 +30,7 @@ from dagster.core.types.dagster_type import (
 )
 
 
-class BarObj(object):
+class BarObj:
     pass
 
 

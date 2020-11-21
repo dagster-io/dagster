@@ -34,7 +34,7 @@ class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
         return frozenset()
 
 
-class TypeStoragePluginRegistry(object):
+class TypeStoragePluginRegistry:
     def __init__(self, types_to_register):
         from dagster.core.types.dagster_type import DagsterType
 

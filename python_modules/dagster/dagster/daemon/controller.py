@@ -8,7 +8,7 @@ def _sorted_quoted(strings):
     return "[" + ", ".join(["'{}'".format(s) for s in sorted(list(strings))]) + "]"
 
 
-class DagsterDaemonController(object):
+class DagsterDaemonController:
     def __init__(self, instance):
         self._instance = instance
 

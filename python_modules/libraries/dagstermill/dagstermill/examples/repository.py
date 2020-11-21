@@ -291,7 +291,7 @@ def hello_world_resource_with_exception_solid():
     )
 
 
-class FilePickleList(object):
+class FilePickleList:
     # This is not thread- or anything else-safe
     def __init__(self, path):
         self.closed = False
@@ -397,7 +397,7 @@ def yield_3_pipeline():
     yield_3_solid()
 
 
-class BasicTest(object):
+class BasicTest:
     def __init__(self, x):
         self.x = x
 

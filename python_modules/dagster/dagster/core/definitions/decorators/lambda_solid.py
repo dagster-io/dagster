@@ -11,7 +11,7 @@ from ..solid import SolidDefinition
 from .solid import validate_solid_fn
 
 
-class _LambdaSolid(object):
+class _LambdaSolid:
     def __init__(self, name=None, input_defs=None, output_def=None, description=None):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_nullable_list_param(input_defs, "input_defs", InputDefinition)

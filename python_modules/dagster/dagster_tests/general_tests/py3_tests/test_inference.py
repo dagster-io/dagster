@@ -112,7 +112,7 @@ def test_wrapped_input_and_output_lambda():
 
 def test_kitchen_sink():
     @usable_as_dagster_type
-    class Custom(object):
+    class Custom:
         pass
 
     @lambda_solid

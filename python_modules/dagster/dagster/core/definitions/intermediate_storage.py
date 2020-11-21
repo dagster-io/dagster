@@ -121,7 +121,7 @@ def intermediate_storage(
     )
 
 
-class _IntermediateStorageDecoratorCallable(object):
+class _IntermediateStorageDecoratorCallable:
     def __init__(
         self, name=None, is_persistent=True, config_schema=None, required_resource_keys=None
     ):

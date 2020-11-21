@@ -142,7 +142,7 @@ def resolve_to_config_type(dagster_type):
     return False
 
 
-class Field(object):
+class Field:
     """Defines the schema for a configuration field.
 
     Fields are used in config schema instead of bare types when one wants to add a description,

@@ -24,7 +24,7 @@ class EvaluationStack(namedtuple("_EvaluationStack", "entries")):
         return EvaluationStack(entries=self.entries + [EvaluationStackListItemEntry(list_index)])
 
 
-class EvaluationStackEntry(object):  # marker interface
+class EvaluationStackEntry:  # marker interface
     pass
 
 

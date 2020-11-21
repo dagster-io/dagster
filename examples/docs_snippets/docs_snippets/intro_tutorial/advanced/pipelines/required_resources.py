@@ -14,7 +14,7 @@ from dagster import (
 )
 
 
-class LocalSQLiteWarehouse(object):
+class LocalSQLiteWarehouse:
     def __init__(self, conn_str):
         self._conn_str = conn_str
 

@@ -112,7 +112,7 @@ def define_builtin_scalar_output_schema(scalar_name):
     return _buildint_materializer
 
 
-class BuiltinSchemas(object):
+class BuiltinSchemas:
     ANY_INPUT = define_any_input_schema()
     ANY_OUTPUT = define_builtin_scalar_output_schema("Any")
 

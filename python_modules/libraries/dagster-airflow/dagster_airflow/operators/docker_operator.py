@@ -237,7 +237,7 @@ class DagsterDockerOperator(DockerOperator):
         if self.docker_conn_id_set:
             return super(DagsterDockerOperator, self).get_hook()
 
-        class _DummyHook(object):
+        class _DummyHook:
             def get_conn(self):
                 return from_env().api
 

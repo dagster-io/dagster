@@ -9,7 +9,7 @@ DEFAULT_CONFIG = {
 }
 
 
-class dict_wrapper(object):
+class dict_wrapper:
     """Wraps a dict to convert `obj['attr']` to `obj.attr`."""
 
     def __init__(self, dictionary):

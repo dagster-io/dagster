@@ -59,7 +59,7 @@ def get_meta(graphene_type):
     return graphene_type._meta  # pylint: disable=W0212
 
 
-class DauphinRegistry(object):
+class DauphinRegistry:
     def __init__(self):
         self._typeMap = {}
         self.Field = create_registry_field(self)

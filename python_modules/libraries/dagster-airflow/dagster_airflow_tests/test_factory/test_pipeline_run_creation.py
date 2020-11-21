@@ -3,7 +3,7 @@ from dagster.core.errors import DagsterRunAlreadyExists
 from dagster.core.test_utils import instance_for_test, register_managed_run_for_test
 
 
-class Spy(object):
+class Spy:
     def __init__(self, func):
         self.func = func
         self.return_values = []

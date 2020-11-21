@@ -60,7 +60,7 @@ def to_dauphin_dagster_type(pipeline_snapshot, dagster_type_key):
 
 
 class DauphinDagsterType(dauphin.Interface):
-    class Meta(object):
+    class Meta:
         name = "DagsterType"
 
     key = dauphin.NonNull(dauphin.String)
@@ -80,25 +80,25 @@ class DauphinDagsterType(dauphin.Interface):
 
 
 class DauphinRegularDagsterType(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "RegularDagsterType"
         interfaces = [DauphinDagsterType]
 
 
 class DauphinWrappingDagsterType(dauphin.Interface):
-    class Meta(object):
+    class Meta:
         name = "WrappingDagsterType"
 
     of_type = dauphin.Field(dauphin.NonNull(DauphinDagsterType))
 
 
 class DauphinListDagsterType(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "ListDagsterType"
         interfaces = [DauphinDagsterType, DauphinWrappingDagsterType]
 
 
 class DauphinNullableDagsterType(dauphin.ObjectType):
-    class Meta(object):
+    class Meta:
         name = "NullableDagsterType"
         interfaces = [DauphinDagsterType, DauphinWrappingDagsterType]

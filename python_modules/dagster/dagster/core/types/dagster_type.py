@@ -28,7 +28,7 @@ class DagsterTypeKind(PythonEnum):
     REGULAR = "REGULAR"
 
 
-class DagsterType(object):
+class DagsterType:
     """Define a type in dagster. These can be used in the inputs and outputs of solids.
 
     Args:

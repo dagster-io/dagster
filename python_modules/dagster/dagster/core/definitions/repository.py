@@ -16,7 +16,7 @@ VALID_REPOSITORY_DATA_DICT_KEYS = {
 }
 
 
-class _CacheingDefinitionIndex(object):
+class _CacheingDefinitionIndex:
     def __init__(self, definition_class, definition_class_name, definition_kind, definitions):
 
         for key, definition in definitions.items():
@@ -116,7 +116,7 @@ class _CacheingDefinitionIndex(object):
             return definition
 
 
-class RepositoryData(object):
+class RepositoryData:
     """Contains definitions belonging to a repository.
 
     Users should usually rely on the :py:func:`@repository <repository>` decorator to create new
@@ -504,7 +504,7 @@ class RepositoryData(object):
         return self._all_solids[name]
 
 
-class RepositoryDefinition(object):
+class RepositoryDefinition:
     """Define a repository that contains a collection of definitions.
 
     Users should typically not create objects of this class directly. Instead, use the

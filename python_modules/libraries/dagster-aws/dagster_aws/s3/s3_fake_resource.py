@@ -9,7 +9,7 @@ def create_s3_fake_resource(buckets=None):
     return S3FakeSession(buckets=buckets)
 
 
-class S3FakeSession(object):
+class S3FakeSession:
     """Stateful mock of a boto3 s3 session for test.
 
     Wraps a ``mock.MagicMock``. Buckets are implemented using an in-memory dict.
