@@ -33,15 +33,12 @@ def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, 
 
 
 def _get_terminate_signal():
-    if sys.platform == "win32":
-        return signal.SIGTERM
-    else:
-        return signal.SIGKILL
+    return signal.SIGKILL
 
 
 def _get_crash_signals():
     if sys.platform == "win32":
-        return [_get_terminate_signal()]
+        return []  # Windows keeps resources open after termination in a way that messes up tests
     else:
         return [_get_terminate_signal(), signal.SIGINT]
 
