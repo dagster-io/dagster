@@ -4,7 +4,20 @@ import boto3
 import pytest
 from dagster.core.test_utils import instance_for_test
 from dagster_aws.ecs import client
-from moto import mock_sts
+from moto import mock_ecs, mock_sts
+
+
+@pytest.fixture
+def mock_ecs_client():
+    with mock_ecs():
+        yield boto3.client("ecs", region_name="us-east-2")
+
+
+@pytest.fixture
+def mock_ecs_cluster(mock_ecs_client):  # pylint: disable=redefined-outer-name
+    name = "test-cluster"
+    mock_ecs_client.create_cluster(clusterName=name)
+    return name
 
 
 @pytest.fixture
