@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import os
 
 import boto3
@@ -14,7 +15,7 @@ def mock_ecs_client():
 
 
 @pytest.fixture
-def mock_ecs_cluster(mock_ecs_client):  # pylint: disable=redefined-outer-name
+def mock_ecs_cluster(mock_ecs_client):
     name = "test-cluster"
     mock_ecs_client.create_cluster(clusterName=name)
     return name
@@ -30,11 +31,11 @@ def test_client(mock_ecs_client, mock_ecs_cluster):  # pylint: disable=unused-ar
     )
 
 
-def test_set_cluster(test_client, mock_ecs_cluster):  # pylint: disable=redefined-outer-name
+def test_set_cluster(test_client, mock_ecs_cluster):
     assert mock_ecs_cluster in test_client.cluster
 
 
-def test_command(test_client, mock_ecs_client):  # pylint: disable=redefined-outer-name
+def test_command(test_client, mock_ecs_client):
     test_client.set_and_register_task(
         ["echoes"], [""], family=" ",
     )
@@ -44,7 +45,7 @@ def test_command(test_client, mock_ecs_client):  # pylint: disable=redefined-out
     assert taskdef["containerDefinitions"][0]["command"][0] == "echoes"
 
 
-def test_entry(test_client, mock_ecs_client):  # pylint: disable=redefined-outer-name
+def test_entry(test_client, mock_ecs_client):
     test_client.set_and_register_task(
         [" "], ["entries"], family=" ",
     )
@@ -54,7 +55,7 @@ def test_entry(test_client, mock_ecs_client):  # pylint: disable=redefined-outer
     assert taskdef["containerDefinitions"][0]["entryPoint"][0] == "entries"
 
 
-def test_family(test_client, mock_ecs_client):  # pylint: disable=redefined-outer-name
+def test_family(test_client, mock_ecs_client):
     test_client.set_and_register_task(
         ["echoes"], [""], family="basefam",
     )
@@ -66,7 +67,7 @@ def test_family(test_client, mock_ecs_client):  # pylint: disable=redefined-oute
     assert "basefam" in logger["awslogs-group"]
 
 
-def test_region(test_client, mock_ecs_client):  # pylint: disable=redefined-outer-name
+def test_region(test_client, mock_ecs_client):
     test_client.set_and_register_task(
         ["echoes"], [""], family="basefam",
     )
