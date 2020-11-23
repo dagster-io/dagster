@@ -45,7 +45,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <ScrollContainer>
-        <TopNav breadcrumbs={[{icon: 'outdated', text: 'Runs'}]} />
+        <TopNav breadcrumbs={[{icon: 'history', text: 'Runs'}]} />
         <div style={{padding: '16px'}}>
           <div
             style={{
