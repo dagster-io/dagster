@@ -125,7 +125,7 @@ def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket
             "SlaveInstanceType": "c3.xlarge",
         },
         JobFlowRole="EMR_EC2_DefaultRole",
-        LogUri="s3://my/log",
+        LogUri="s3://{bucket}/log".format(bucket=mock_s3_bucket.name),
         Name="cluster",
         ServiceRole="EMR_DefaultRole",
         VisibleToAllUsers=True,
