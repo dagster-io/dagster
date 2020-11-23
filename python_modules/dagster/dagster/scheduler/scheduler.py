@@ -4,7 +4,6 @@ import sys
 import time
 
 import pendulum
-from croniter import croniter
 from dagster import check
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import EngineEventData
@@ -161,24 +160,13 @@ def launch_scheduled_runs_for_schedule(
         return
 
     end_datetime = end_datetime_utc.in_tz(timezone_str)
-    start_datetime = pendulum.from_timestamp(start_timestamp_utc, tz=timezone_str)
 
-    date_iter = croniter(external_schedule.cron_schedule, start_datetime)
     tick_times = []
-
-    # Go back one iteration so that the next iteration is the first time that is >= start_datetime
-    # and matches the cron schedule
-    date_iter.get_prev(datetime.datetime)
-
-    while True:
-        next_date = pendulum.instance(date_iter.get_next(datetime.datetime)).in_tz(timezone_str)
-        if next_date.timestamp() > end_datetime.timestamp():
+    for next_time in external_schedule.execution_time_iterator(start_timestamp_utc):
+        if next_time.timestamp() > end_datetime.timestamp():
             break
 
-        # During DST transitions, croniter returns datetimes that don't actually match the
-        # cron schedule, so add a guard here
-        if croniter.match(external_schedule.cron_schedule, next_date):
-            tick_times.append(next_date)
+        tick_times.append(next_time)
 
     if not tick_times:
         logger.info("No new runs for {schedule_name}".format(schedule_name=schedule_name))

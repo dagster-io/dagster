@@ -1,6 +1,9 @@
+import datetime
 import warnings
 from collections import OrderedDict
 
+import pendulum
+from croniter import croniter
 from dagster import check
 from dagster.core.definitions.job import JobType
 from dagster.core.origin import PipelinePythonOrigin
@@ -418,6 +421,29 @@ class ExternalSchedule:
             self.cron_schedule,
             start_timestamp=None,
         )
+
+    def execution_time_iterator(self, start_timestamp):
+        check.float_param(start_timestamp, "start_timestamp")
+
+        timezone_str = (
+            self.execution_timezone if self.execution_timezone else pendulum.now().timezone.name
+        )
+
+        start_datetime = pendulum.from_timestamp(start_timestamp, tz=timezone_str)
+
+        date_iter = croniter(self.cron_schedule, start_datetime)
+
+        # Go back one iteration so that the next iteration is the first time that is >= start_datetime
+        # and matches the cron schedule
+        date_iter.get_prev(datetime.datetime)
+
+        while True:
+            next_date = pendulum.instance(date_iter.get_next(datetime.datetime)).in_tz(timezone_str)
+
+            # During DST transitions, croniter returns datetimes that don't actually match the
+            # cron schedule, so add a guard here
+            if croniter.match(self.cron_schedule, next_date):
+                yield next_date
 
 
 class ExternalSensor:
