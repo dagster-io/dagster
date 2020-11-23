@@ -71,4 +71,5 @@ export interface PreviousRunsForScheduleQuery {
 
 export interface PreviousRunsForScheduleQueryVariables {
   filter?: PipelineRunsFilter | null;
+  limit?: number | null;
 }

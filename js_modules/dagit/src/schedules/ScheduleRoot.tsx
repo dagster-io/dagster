@@ -89,6 +89,8 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
   );
 };
 
+const RUNS_LIMIT = 20;
+
 interface SchedulePreviousRunsProps {
   repoAddress: RepoAddress;
   runTab?: string;
@@ -100,6 +102,7 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
   const {data, loading} = useQuery<PreviousRunsForScheduleQuery>(PREVIOUS_RUNS_FOR_SCHEDULE_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {
+      limit: RUNS_LIMIT,
       filter: {
         pipelineName: schedule.pipelineName,
         tags: [{key: 'dagster/schedule_name', value: schedule.name}],
@@ -125,7 +128,7 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
         border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
         flex={{direction: 'row'}}
       >
-        <Subheading>Runs</Subheading>
+        <Subheading>Latest runs</Subheading>
       </Box>
       <div style={{color: Colors.GRAY3}}>{content()}</div>
     </Group>
@@ -157,8 +160,8 @@ export const SCHEDULE_ROOT_QUERY = gql`
 `;
 
 const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
-  query PreviousRunsForScheduleQuery($filter: PipelineRunsFilter) {
-    pipelineRunsOrError(filter: $filter) {
+  query PreviousRunsForScheduleQuery($filter: PipelineRunsFilter, $limit: Int) {
+    pipelineRunsOrError(filter: $filter, limit: $limit) {
       __typename
       ... on PipelineRuns {
         results {
