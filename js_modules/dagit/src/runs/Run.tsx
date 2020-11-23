@@ -102,10 +102,11 @@ export const Run = (props: RunProps) => {
         filter={logsFilter}
         selectedSteps={selectedKeysForFilter}
       >
-        {({filteredNodes, hasTextFilter, textMatchNodes, loaded}) => (
+        {({allNodes, filteredNodes, hasTextFilter, textMatchNodes, loaded}) => (
           <RunWithData
             run={run}
             runId={runId}
+            allNodes={allNodes}
             filteredNodes={filteredNodes}
             hasTextFilter={hasTextFilter}
             textMatchNodes={textMatchNodes}
@@ -126,6 +127,7 @@ interface RunWithDataProps {
   run?: RunFragment;
   runId: string;
   selection: StepSelection;
+  allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
   filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
   hasTextFilter: boolean;
   textMatchNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
@@ -139,6 +141,7 @@ interface RunWithDataProps {
 const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   run,
   runId,
+  allNodes,
   filteredNodes,
   hasTextFilter,
   textMatchNodes,
@@ -204,7 +207,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const onHideNonMatches = (checked: boolean) => setHideNonMatches(checked);
 
   return (
-    <RunMetadataProvider logs={filteredNodes}>
+    <RunMetadataProvider logs={allNodes}>
       {(metadata) => (
         <SplitPanelContainer
           ref={splitPanelContainer}

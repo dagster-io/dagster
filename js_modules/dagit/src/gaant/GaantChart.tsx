@@ -280,7 +280,7 @@ const GaantChartInner = (props: GaantChartInnerProps) => {
     const timeUntilIntervalElasped = renderInterval - (Date.now() - nowMs);
     const timeout = setTimeout(() => setNowMs(Date.now()), timeUntilIntervalElasped);
     return () => clearTimeout(timeout);
-  }, [scale, setNowMs, metadata, nowMs]);
+  }, [scale, metadata, nowMs]);
 
   // Listen for events specifying hover time (eg: a marker at a particular timestamp)
   // and sync them to our React state for display.

@@ -28,6 +28,7 @@ interface LogsFilterProviderProps {
   selectedSteps: string[];
   children: (props: {
     hasTextFilter: boolean;
+    allNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
     filteredNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
     textMatchNodes: (RunPipelineRunEventFragment & {clientsideKey: string})[];
     loaded: boolean;
@@ -160,6 +161,7 @@ export class LogsProvider extends React.Component<
     if (nodes === null) {
       return this.props.children({
         hasTextFilter: false,
+        allNodes: [],
         filteredNodes: [],
         textMatchNodes: [],
         loaded: false,
@@ -203,6 +205,7 @@ export class LogsProvider extends React.Component<
 
     return this.props.children({
       hasTextFilter,
+      allNodes: nodes,
       filteredNodes,
       textMatchNodes,
       loaded: true,
