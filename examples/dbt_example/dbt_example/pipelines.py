@@ -1,4 +1,4 @@
-from dagster import ModeDefinition, pipeline
+from dagster import ModeDefinition, PresetDefinition, pipeline
 from dagster_slack import slack_resource
 
 from .resources import mock_slack_resource, postgres
@@ -11,12 +11,56 @@ from .solids import (
     test_cereals_models,
 )
 
+CEREALS_DATASET_URL = "https://gist.githubusercontent.com/mgasner/bd2c0f66dff4a9f01855cfa6870b1fce/raw/2de62a57fb08da7c58d6480c987077cf91c783a1/cereal.csv"
+
 
 @pipeline(
     mode_defs=[
         ModeDefinition(name="prod", resource_defs={"db": postgres, "slack": slack_resource}),
         ModeDefinition(name="dev", resource_defs={"db": postgres, "slack": mock_slack_resource}),
-    ]
+    ],
+    preset_defs=[
+        PresetDefinition(
+            name="dev",
+            run_config={
+                "solids": {
+                    "download_file": {
+                        "config": {"url": CEREALS_DATASET_URL, "target_path": "cereals.csv"}
+                    },
+                    "post_plot_to_slack": {"config": {"channels": ["foo_channel"]}},
+                },
+                "resources": {
+                    "db": {
+                        "config": {
+                            "db_url": "postgresql://dbt_example:dbt_example@localhost:5432/dbt_example"
+                        }
+                    },
+                    "slack": {"config": {"token": "nonce"}},
+                },
+            },
+            mode="dev",
+        ),
+        PresetDefinition(
+            name="prod",
+            run_config={
+                "solids": {
+                    "download_file": {
+                        "config": {"url": CEREALS_DATASET_URL, "target_path": "cereals.csv"}
+                    },
+                    "post_plot_to_slack": {"config": {"channels": ["foo_channel"]}},
+                },
+                "resources": {
+                    "db": {
+                        "config": {
+                            "db_url": "postgresql://dbt_example:dbt_example@localhost:5432/dbt_example"
+                        }
+                    },
+                    "slack": {"config": {"token": "nonce"}},
+                },
+            },
+            mode="prod",
+        ),
+    ],
 )
 def dbt_example_pipeline():
     loaded = load_cereals_from_csv(download_file())
