@@ -25,7 +25,6 @@ from moto import mock_emr
 from pyspark.sql import Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-
 S3_BUCKET = "dagster-scratch-80542c2"
 
 
