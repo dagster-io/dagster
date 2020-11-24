@@ -8,17 +8,15 @@ from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 
 class LocalParquetStore(AssetStore):
-    def _get_path(self, context, step_output_handle):
-        return os.path.join(
-            context.run_id, step_output_handle.step_key, step_output_handle.output_name,
-        )
+    def _get_path(self, context):
+        return os.path.join(context.source_run_id, context.step_key, context.output_name)
 
-    def set_asset(self, context, step_output_handle, obj, _asset_metadata):
-        obj.write.parquet(self._get_path(context, step_output_handle))
+    def set_asset(self, context, obj):
+        obj.write.parquet(self._get_path(context))
 
-    def get_asset(self, context, step_output_handle, _asset_metadata):
+    def get_asset(self, context):
         spark = SparkSession.builder.getOrCreate()
-        return spark.read.parquet(self._get_path(context, step_output_handle))
+        return spark.read.parquet(self._get_path(context))
 
 
 @resource
