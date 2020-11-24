@@ -163,10 +163,6 @@ def create_execution_structure(solid_defs, dependencies_dict, graph_definition):
         alias_to_name[alias] = solid_key.name
         aliased_dependencies_dict[alias] = input_dep_dict
 
-        for dependency in input_dep_dict.values():
-            for dep in dependency.get_definitions():
-                name_to_aliases[dep.solid].add(dep.solid)
-
     pipeline_solid_dict = _build_pipeline_solid_dict(
         solid_defs, name_to_aliases, alias_to_solid_instance, graph_definition
     )
