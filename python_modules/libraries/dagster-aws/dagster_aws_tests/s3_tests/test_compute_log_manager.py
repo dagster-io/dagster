@@ -21,7 +21,7 @@ EXPECTED_LOGS = [
 ]
 
 
-def test_compute_log_manager(bucket):
+def test_compute_log_manager(mock_s3_bucket):
     @pipeline
     def simple():
         @solid
@@ -35,7 +35,9 @@ def test_compute_log_manager(bucket):
     with seven.TemporaryDirectory() as temp_dir:
         run_store = SqliteRunStorage.from_local(temp_dir)
         event_store = SqliteEventLogStorage(temp_dir)
-        manager = S3ComputeLogManager(bucket=bucket.name, prefix="my_prefix", local_dir=temp_dir)
+        manager = S3ComputeLogManager(
+            bucket=mock_s3_bucket.name, prefix="my_prefix", local_dir=temp_dir
+        )
         instance = DagsterInstance(
             instance_type=InstanceType.PERSISTENT,
             local_artifact_storage=LocalArtifactStorage(temp_dir),
@@ -62,7 +64,7 @@ def test_compute_log_manager(bucket):
             assert expected in stderr.data
 
         # Check S3 directly
-        s3_object = bucket.Object(
+        s3_object = mock_s3_bucket.Object(
             key="{prefix}/storage/{run_id}/compute_logs/easy.compute.err".format(
                 prefix="my_prefix", run_id=result.run_id
             ),
@@ -84,7 +86,7 @@ def test_compute_log_manager(bucket):
             assert expected in stderr.data
 
 
-def test_compute_log_manager_from_config(bucket):
+def test_compute_log_manager_from_config(mock_s3_bucket):
     s3_prefix = "foobar"
 
     dagster_yaml = """
@@ -96,7 +98,7 @@ compute_logs:
     local_dir: "/tmp/cool"
     prefix: "{s3_prefix}"
 """.format(
-        s3_bucket=bucket.name, s3_prefix=s3_prefix
+        s3_bucket=mock_s3_bucket.name, s3_prefix=s3_prefix
     )
 
     with seven.TemporaryDirectory() as tempdir:
@@ -105,6 +107,7 @@ compute_logs:
 
         instance = DagsterInstance.from_config(tempdir)
     assert (
-        instance.compute_log_manager._s3_bucket == bucket.name  # pylint: disable=protected-access
+        instance.compute_log_manager._s3_bucket  # pylint: disable=protected-access
+        == mock_s3_bucket.name
     )
     assert instance.compute_log_manager._s3_prefix == s3_prefix  # pylint: disable=protected-access

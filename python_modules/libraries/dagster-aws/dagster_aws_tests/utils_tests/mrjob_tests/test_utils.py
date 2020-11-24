@@ -3,7 +3,6 @@ import ssl
 import time
 from datetime import datetime, timedelta
 
-import boto3
 import botocore
 from dagster_aws.utils.mrjob.utils import (
     _boto3_now,
@@ -14,7 +13,6 @@ from dagster_aws.utils.mrjob.utils import (
     strip_microseconds,
 )
 from dateutil.tz import tzutc
-from moto import mock_s3
 
 EPS = 10.0
 
@@ -57,9 +55,8 @@ def test_is_retriable_client_error():
     assert not _is_retriable_client_error(socket.error(12345, "Unknown error"))
 
 
-@mock_s3
-def test_wrap_aws_client():
-    client = _wrap_aws_client(boto3.client("s3"), min_backoff=1000)
+def test_wrap_aws_client(mock_s3_resource):
+    client = _wrap_aws_client(mock_s3_resource.meta.client, min_backoff=1000)
     res = client.list_buckets()
     assert res["ResponseMetadata"]["HTTPStatusCode"] == 200
     assert res["Buckets"] == []
