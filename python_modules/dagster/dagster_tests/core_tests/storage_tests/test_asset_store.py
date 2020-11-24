@@ -103,17 +103,11 @@ def test_default_asset_store_reexecution():
         pipeline_def = define_asset_pipeline(default_asset_store, {})
         instance = DagsterInstance.ephemeral()
 
-        result = execute_pipeline(
-            pipeline_def, run_config={"storage": {"filesystem": {}}}, instance=instance
-        )
+        result = execute_pipeline(pipeline_def, instance=instance)
         assert result.success
 
         re_result = reexecute_pipeline(
-            pipeline_def,
-            result.run_id,
-            run_config={"storage": {"filesystem": {}}},
-            instance=instance,
-            step_selection=["solid_b.compute"],
+            pipeline_def, result.run_id, instance=instance, step_selection=["solid_b.compute"],
         )
 
         # re-execution should yield asset_store_operation events instead of intermediate events

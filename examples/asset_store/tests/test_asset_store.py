@@ -14,7 +14,6 @@ def test_builtin_default():
 
         run_config = {
             "resources": {"fs_asset_store": {"config": {"base_dir": tmpdir_path}}},
-            "storage": {"filesystem": None},
         }
 
         result = execute_pipeline(
@@ -50,7 +49,6 @@ def test_custom_path_asset_store():
 
         run_config = {
             "resources": {"fs_asset_store": {"config": {"base_dir": tmpdir_path}}},
-            "storage": {"filesystem": None},
         }
 
         result = execute_pipeline(

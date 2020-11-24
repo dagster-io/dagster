@@ -577,7 +577,7 @@ class TestRetryExecutionSyncOnlyBehavior(
         assert retry_one.data
         assert retry_one.data["launchPipelineReexecution"]["__typename"] == "PythonError"
         assert (
-            "Cannot perform reexecution with non persistent intermediates manager"
+            "Cannot perform reexecution with in-memory asset stores"
             in retry_one.data["launchPipelineReexecution"]["message"]
         )
 

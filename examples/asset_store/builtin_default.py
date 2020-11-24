@@ -2,7 +2,6 @@ from dagster import (
     DagsterInstance,
     ModeDefinition,
     OutputDefinition,
-    PresetDefinition,
     execute_pipeline,
     pipeline,
     reexecute_pipeline,
@@ -42,10 +41,7 @@ def train_model(context, df):
     mode_defs=[
         ModeDefinition("test", resource_defs={"fs_asset_store": fs_asset_store}),
         ModeDefinition("local", resource_defs={"fs_asset_store": local_asset_store}),
-    ],
-    preset_defs=[
-        PresetDefinition("local", run_config={"storage": {"filesystem": {}}}, mode="local"),
-    ],
+    ]
 )
 def model_pipeline():
     train_model(parse_df(call_api()))
@@ -58,11 +54,11 @@ def builtin_default_repo():
 
 if __name__ == "__main__":
     instance = DagsterInstance.ephemeral()
-    result = execute_pipeline(model_pipeline, preset="local", instance=instance)
+    result = execute_pipeline(model_pipeline, mode="local", instance=instance)
     result_a = reexecute_pipeline(
         model_pipeline,
         parent_run_id=result.run_id,
-        preset="local",
+        mode="local",
         instance=instance,
         step_selection=["parse_df.compute*"],
     )

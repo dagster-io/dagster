@@ -8,6 +8,7 @@ from dagster.core.events.log import EventRecord
 from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.storage.asset_store import mem_asset_store
 
 
 def validate_reexecution_memoization(pipeline_context, execution_plan):
@@ -30,12 +31,45 @@ def validate_reexecution_memoization(pipeline_context, execution_plan):
     if len(execution_plan.step_keys_to_execute) == len(execution_plan.steps):
         return
 
-    if not pipeline_context.intermediate_storage.is_persistent:
+    # remove this once intermediate storage is fully deprecated
+    # https://github.com/dagster-io/dagster/issues/3043
+    if pipeline_context.intermediate_storage.is_persistent:
+        return
+
+    # exclude the case where non-in-memory asset stores are configured on the required steps
+    if check_all_asset_stores_non_mem_for_reexecution(pipeline_context, execution_plan) is False:
         raise DagsterInvariantViolationError(
-            "Cannot perform reexecution with non persistent intermediates manager `{}`.".format(
+            "Cannot perform reexecution with in-memory asset stores.\n"
+            "You may have configured non persistent intermediate storage `{}` for reexecution. "
+            "Intermediate Storage is deprecated in 0.10.0 and will be removed in 0.11.0.".format(
                 pipeline_context.intermediate_storage.__class__.__name__
             )
         )
+
+
+def check_all_asset_stores_non_mem_for_reexecution(pipeline_context, execution_plan):
+    """
+    Check if all the border steps of the current run have non-in-memory asset stores for reexecution.
+
+    Border steps: all the steps that don't have upstream steps to execute, i.e. indegree is 0).
+    """
+    check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+
+    for step in execution_plan.execution_step_levels()[0]:
+        # check if all its inputs' upstream step outputs have non-in-memory asset store configured
+        for step_input in step.step_inputs:
+            for step_output_handle in step_input.source.step_output_handle_dependencies:
+                asset_store_key = execution_plan.get_asset_store_key(step_output_handle)
+                asset_store = pipeline_context.mode_def.resource_defs.get(asset_store_key)
+                if (
+                    # no asset store is configured
+                    not asset_store
+                    # asset store is non persistent
+                    or asset_store == mem_asset_store  # pylint: disable=comparison-with-callable
+                ):
+                    return False
+    return True
 
 
 def copy_required_intermediates_for_execution(pipeline_context, execution_plan):
