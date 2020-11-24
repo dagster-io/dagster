@@ -1,9 +1,3 @@
-2.7.18:
-  base_image:
-    name: buildkite-integration-base
-    source: aws
-  docker_args:
-    PYTHON_VERSION: 2.7.18
 3.6.11:
   base_image:
     name: buildkite-integration-base
