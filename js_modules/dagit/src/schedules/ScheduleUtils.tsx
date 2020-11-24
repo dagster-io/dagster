@@ -77,6 +77,7 @@ export const SCHEDULE_DEFINITION_FRAGMENT = gql`
     id
     name
     cronSchedule
+    executionTimezone
     pipelineName
     solidSelection
     mode
@@ -86,6 +87,11 @@ export const SCHEDULE_DEFINITION_FRAGMENT = gql`
     scheduleState {
       id
       ...ScheduleStateFragment
+    }
+    futureTicks(limit: 1) {
+      results {
+        timestamp
+      }
     }
   }
   ${SCHEDULE_STATE_FRAGMENT}

@@ -45,7 +45,6 @@ import {
 } from 'src/schedules/types/StopSchedule';
 import {ScheduleStatus, ScheduleTickStatus} from 'src/types/globalTypes';
 import {Code} from 'src/ui/Text';
-import {FontFamily} from 'src/ui/styles';
 import {DagsterRepoOption, scheduleSelectorWithRepository} from 'src/workspace/WorkspaceContext';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePath, workspacePathFromAddress} from 'src/workspace/workspacePath';
@@ -144,8 +143,6 @@ export const ScheduleRow: React.FC<{
 
   const {name, cronSchedule, pipelineName, mode, scheduleState} = schedule;
 
-  const scheduleId = scheduleState?.scheduleOriginId;
-
   const scheduleSelector = {
     repositoryLocationName: repoAddress.location,
     repositoryName: repoAddress.name,
@@ -153,16 +150,7 @@ export const ScheduleRow: React.FC<{
   };
 
   const displayName = (
-    <>
-      <div>
-        <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
-      </div>
-      {scheduleId && (
-        <span style={{fontSize: '12px'}}>
-          Schedule ID: <span style={{fontFamily: FontFamily.monospace}}>{scheduleId}</span>
-        </span>
-      )}
-    </>
+    <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
   );
 
   if (!scheduleState) {

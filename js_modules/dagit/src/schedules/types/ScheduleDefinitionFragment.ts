@@ -100,14 +100,26 @@ export interface ScheduleDefinitionFragment_scheduleState {
   status: ScheduleStatus;
 }
 
+export interface ScheduleDefinitionFragment_futureTicks_results {
+  __typename: "ScheduleFutureTick";
+  timestamp: number;
+}
+
+export interface ScheduleDefinitionFragment_futureTicks {
+  __typename: "ScheduleFutureTicks";
+  results: ScheduleDefinitionFragment_futureTicks_results[];
+}
+
 export interface ScheduleDefinitionFragment {
   __typename: "ScheduleDefinition";
   id: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
   partitionSet: ScheduleDefinitionFragment_partitionSet | null;
   scheduleState: ScheduleDefinitionFragment_scheduleState | null;
+  futureTicks: ScheduleDefinitionFragment_futureTicks;
 }

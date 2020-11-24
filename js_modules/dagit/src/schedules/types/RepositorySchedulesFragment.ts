@@ -100,16 +100,28 @@ export interface RepositorySchedulesFragment_scheduleDefinitions_scheduleState {
   status: ScheduleStatus;
 }
 
+export interface RepositorySchedulesFragment_scheduleDefinitions_futureTicks_results {
+  __typename: "ScheduleFutureTick";
+  timestamp: number;
+}
+
+export interface RepositorySchedulesFragment_scheduleDefinitions_futureTicks {
+  __typename: "ScheduleFutureTicks";
+  results: RepositorySchedulesFragment_scheduleDefinitions_futureTicks_results[];
+}
+
 export interface RepositorySchedulesFragment_scheduleDefinitions {
   __typename: "ScheduleDefinition";
   id: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
   partitionSet: RepositorySchedulesFragment_scheduleDefinitions_partitionSet | null;
   scheduleState: RepositorySchedulesFragment_scheduleDefinitions_scheduleState | null;
+  futureTicks: RepositorySchedulesFragment_scheduleDefinitions_futureTicks;
 }
 
 export interface RepositorySchedulesFragment_origin_repositoryLocationMetadata {

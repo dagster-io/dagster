@@ -104,16 +104,28 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinit
   status: ScheduleStatus;
 }
 
+export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_futureTicks_results {
+  __typename: "ScheduleFutureTick";
+  timestamp: number;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_futureTicks {
+  __typename: "ScheduleFutureTicks";
+  results: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_futureTicks_results[];
+}
+
 export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions {
   __typename: "ScheduleDefinition";
   id: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
   partitionSet: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_partitionSet | null;
   scheduleState: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_scheduleState | null;
+  futureTicks: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_futureTicks;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_origin_repositoryLocationMetadata {

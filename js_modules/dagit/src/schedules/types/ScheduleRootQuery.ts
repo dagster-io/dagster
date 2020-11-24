@@ -125,16 +125,28 @@ export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_
   status: ScheduleStatus;
 }
 
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_futureTicks_results {
+  __typename: "ScheduleFutureTick";
+  timestamp: number;
+}
+
+export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_futureTicks {
+  __typename: "ScheduleFutureTicks";
+  results: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_futureTicks_results[];
+}
+
 export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition {
   __typename: "ScheduleDefinition";
   id: string;
   name: string;
   cronSchedule: string;
+  executionTimezone: string | null;
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
   partitionSet: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_partitionSet | null;
   scheduleState: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_scheduleState | null;
+  futureTicks: ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition_futureTicks;
 }
 
 export interface ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinitionNotFoundError {

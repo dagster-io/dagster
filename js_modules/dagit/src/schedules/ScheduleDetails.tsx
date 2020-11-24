@@ -1,8 +1,9 @@
 import {useMutation} from '@apollo/client';
-import {Colors, NonIdealState, Switch} from '@blueprintjs/core';
+import {NonIdealState, Switch} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {timestampToString, TimezoneContext} from 'src/TimeComponents';
 import {
   displayScheduleMutationErrors,
   START_SCHEDULE_MUTATION,
@@ -22,12 +23,28 @@ import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
+interface TimestampDisplayProps {
+  timestamp: number;
+  timezone: string | null;
+}
+
+const TimestampDisplay = (props: TimestampDisplayProps) => {
+  const {timestamp, timezone} = props;
+  const [userTimezone] = React.useContext(TimezoneContext);
+
+  return (
+    <span>
+      {timestampToString({unix: timestamp, format: 'MMM DD, h:mm A z'}, timezone || userTimezone)}
+    </span>
+  );
+};
+
 export const ScheduleDetails: React.FC<{
   schedule: ScheduleDefinitionFragment;
   repoAddress: RepoAddress;
 }> = (props) => {
   const {repoAddress, schedule} = props;
-  const {cronSchedule, name, partitionSet, pipelineName} = schedule;
+  const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
 
   const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
@@ -114,14 +131,6 @@ export const ScheduleDetails: React.FC<{
             ),
           },
           {
-            key: 'Latest tick',
-            value: latestTick ? (
-              <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
-            ) : (
-              <span style={{color: Colors.GRAY4}}>None</span>
-            ),
-          },
-          {
             key: 'Mode',
             value: schedule.mode,
           },
@@ -133,6 +142,31 @@ export const ScheduleDetails: React.FC<{
               >
                 {partitionSet.name}
               </Link>
+            ) : (
+              'None'
+            ),
+          },
+          {
+            key: 'Latest tick',
+            value: latestTick ? (
+              <Group direction="horizontal" spacing={8} alignItems="center">
+                <TimestampDisplay timestamp={latestTick.timestamp} timezone={executionTimezone} />
+                <TickTag
+                  status={latestTick.status}
+                  eventSpecificData={latestTick.tickSpecificData}
+                />
+              </Group>
+            ) : (
+              'None'
+            ),
+          },
+          {
+            key: 'Next tick',
+            value: futureTicks.results.length ? (
+              <TimestampDisplay
+                timestamp={futureTicks.results[0].timestamp}
+                timezone={executionTimezone}
+              />
             ) : (
               'None'
             ),
