@@ -10,7 +10,7 @@ from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )
-from dagster.core.definitions.sensor import SensorExecutionContext, SensorRunParams, SensorSkipData
+from dagster.core.definitions.sensor import SensorExecutionContext
 from dagster.core.errors import (
     DagsterInvalidSubsetError,
     DagsterRunNotFoundError,
@@ -251,7 +251,7 @@ def get_external_schedule_execution(
             )
 
 
-def get_external_sensor_execution(recon_repo, instance_ref, sensor_name, last_completion_timestamp):
+def get_external_sensor_execution(recon_repo, instance_ref, sensor_name, last_evaluation_timestamp):
     check.inst_param(
         recon_repo, "recon_repo", ReconstructableRepository,
     )
@@ -261,25 +261,37 @@ def get_external_sensor_execution(recon_repo, instance_ref, sensor_name, last_co
 
     with DagsterInstance.from_ref(instance_ref) as instance:
         sensor_context = SensorExecutionContext(
-            instance, last_completion_time=last_completion_timestamp
+            instance, last_evaluation_time=last_evaluation_timestamp
         )
 
         try:
             with user_code_error_boundary(
                 SensorExecutionError,
-                lambda: "Error occurred during the execution of evaluation_fn for sensor "
+                lambda: "Error occurred during the execution of should_execute for sensor "
                 "{sensor_name}".format(sensor_name=sensor_def.name),
             ):
-                tick_data_list = sensor_def.get_tick_data(sensor_context)
-                return ExternalSensorExecutionData(
-                    run_params=[
-                        tick for tick in tick_data_list if isinstance(tick, SensorRunParams)
-                    ],
-                    skip_message=tick_data_list[0].skip_message
-                    if tick_data_list and isinstance(tick_data_list[0], SensorSkipData)
-                    else None,
-                )
+                if not sensor_def.should_execute(sensor_context):
+                    return ExternalSensorExecutionData(
+                        should_execute=False, run_config=None, tags=None
+                    )
 
+            with user_code_error_boundary(
+                SensorExecutionError,
+                lambda: "Error occurred during the execution of run_config_fn for sensor "
+                "{sensor_name}".format(sensor_name=sensor_def.name),
+            ):
+                run_config = sensor_def.get_run_config(sensor_context)
+
+            with user_code_error_boundary(
+                SensorExecutionError,
+                lambda: "Error occurred during the execution of tags_fn for sensor "
+                "{sensor_name}".format(sensor_name=sensor_def.name),
+            ):
+                tags = sensor_def.get_tags(sensor_context)
+
+            return ExternalSensorExecutionData(
+                should_execute=True, run_config=run_config, tags=tags
+            )
         except SensorExecutionError:
             return ExternalSensorExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())

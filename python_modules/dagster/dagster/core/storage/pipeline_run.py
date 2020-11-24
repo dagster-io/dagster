@@ -13,7 +13,6 @@ from .tags import (
     PARTITION_SET_TAG,
     RESUME_RETRY_TAG,
     SCHEDULE_NAME_TAG,
-    SENSOR_NAME_TAG,
 )
 
 
@@ -308,10 +307,6 @@ class PipelineRun(
     @staticmethod
     def tags_for_schedule(schedule):
         return {SCHEDULE_NAME_TAG: schedule.name}
-
-    @staticmethod
-    def tags_for_sensor(sensor):
-        return {SENSOR_NAME_TAG: sensor.name}
 
     @staticmethod
     def tags_for_backfill_id(backfill_id):

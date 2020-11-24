@@ -44,10 +44,6 @@ class ExternalRepository:
             for external_pipeline_data in external_repository_data.external_pipeline_datas
         )
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
-        self._job_map = OrderedDict(
-            (external_job_data.name, external_job_data)
-            for external_job_data in external_repository_data.external_job_datas
-        )
 
     @property
     def name(self):
@@ -89,21 +85,6 @@ class ExternalRepository:
             for external_job_data in self.external_repository_data.external_job_datas
             if external_job_data.job_type == JobType.SENSOR
         ]
-
-    def get_external_jobs(self):
-        external = []
-        for external_job_data in self.external_repository_data.external_job_datas:
-            if external_job_data.job_type == JobType.SENSOR:
-                external.append(ExternalSensor(external_job_data, self._handle))
-            elif external_job_data.job_type == JobType.SCHEDULE:
-                external.append(ExternalSchedule(external_job_data, self._handle))
-        return external
-
-    def has_external_job(self, job_name):
-        return job_name in self._job_map
-
-    def get_external_job(self, job_name):
-        return self._job_map[job_name]
 
     def get_external_partition_set(self, partition_set_name):
         return ExternalPartitionSet(

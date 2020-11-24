@@ -8,7 +8,6 @@ import pytest
 from dagster import pipeline, repository, solid
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.job import JobType
-from dagster.core.definitions.sensor import SensorRunParams, SensorSkipData
 from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
@@ -34,20 +33,15 @@ def the_pipeline():
 
 @sensor(pipeline_name="the_pipeline")
 def simple_sensor(context):
-    if not context.last_completion_time or not int(context.last_completion_time) % 2:
-        return SensorSkipData()
+    if not context.last_evaluation_time:
+        return False
 
-    return SensorRunParams(execution_key=None, run_config={}, tags={})
+    return int(context.last_evaluation_time) % 2 == 1
 
 
 @sensor(pipeline_name="the_pipeline")
 def always_on_sensor(_context):
-    return SensorRunParams(execution_key=None, run_config={}, tags={})
-
-
-@sensor(pipeline_name="the_pipeline")
-def execution_key_sensor(_context):
-    return SensorRunParams(execution_key="only_once", run_config={}, tags={})
+    return True
 
 
 @sensor(pipeline_name="the_pipeline")
@@ -57,7 +51,7 @@ def error_sensor(context):
 
 @repository
 def the_repo():
-    return [the_pipeline, simple_sensor, error_sensor, always_on_sensor, execution_key_sensor]
+    return [the_pipeline, simple_sensor, error_sensor, always_on_sensor]
 
 
 @contextmanager
@@ -95,7 +89,6 @@ def validate_tick(
     expected_status,
     expected_run_id=None,
     expected_error=None,
-    expected_execution_key=None,
 ):
     tick_data = tick.job_tick_data
     assert tick_data.job_origin_id == external_sensor.get_external_origin_id()
@@ -104,7 +97,6 @@ def validate_tick(
     assert tick_data.status == expected_status
     assert tick_data.timestamp == expected_datetime.timestamp()
     assert tick_data.run_id == expected_run_id
-    assert tick_data.execution_key == expected_execution_key
     if expected_error:
         assert expected_error in tick_data.error.message
 
@@ -146,6 +138,7 @@ def test_simple_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
+            # launch_scheduled_runs does nothing before the first tick
             execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
 
             assert instance.get_runs_count() == 0
@@ -206,6 +199,7 @@ def test_error_sensor(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
+            # launch_scheduled_runs does nothing before the first tick
             execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
 
             assert instance.get_runs_count() == 0
@@ -217,14 +211,14 @@ def test_error_sensor(external_repo_context, capfd):
                 freeze_datetime,
                 JobTickStatus.FAILURE,
                 None,
-                "Error occurred during the execution of evaluation_fn for sensor error_sensor",
+                "Error occurred during the execution of should_execute for sensor error_sensor",
             )
 
             captured = capfd.readouterr()
             assert ("Failed to resolve sensor for error_sensor : ") in captured.out
 
             assert (
-                "Error occurred during the execution of evaluation_fn for sensor error_sensor"
+                "Error occurred during the execution of should_execute for sensor error_sensor"
             ) in captured.out
 
 
@@ -249,6 +243,7 @@ def test_launch_failure(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
 
+            # launch_scheduled_runs does nothing before the first tick
             execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
 
             assert instance.get_runs_count() == 1
@@ -263,54 +258,3 @@ def test_launch_failure(external_repo_context, capfd):
             assert (
                 "Run {run_id} created successfully but failed to launch.".format(run_id=run.run_id)
             ) in captured.out
-
-
-@pytest.mark.parametrize("external_repo_context", repos())
-def test_launch_once(external_repo_context, capfd):
-    freeze_datetime = pendulum.datetime(
-        year=2019, month=2, day=27, hour=23, minute=59, second=59,
-    ).in_tz("US/Central")
-    with instance_with_sensors(external_repo_context) as (instance, external_repo):
-        with pendulum.test(freeze_datetime):
-
-            external_sensor = external_repo.get_external_sensor("execution_key_sensor")
-            instance.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
-            )
-            assert instance.get_runs_count() == 0
-            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
-            assert len(ticks) == 0
-
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
-            wait_for_all_runs_to_start(instance)
-
-            assert instance.get_runs_count() == 1
-            run = instance.get_runs()[0]
-            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
-            assert len(ticks) == 1
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                JobTickStatus.SUCCESS,
-                expected_run_id=run.run_id,
-                expected_execution_key="only_once",
-            )
-
-            # run again, ensure
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"))
-            assert instance.get_runs_count() == 1
-            ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
-            assert len(ticks) == 2
-            validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                JobTickStatus.SKIPPED,
-                expected_execution_key="only_once",
-            )
-            captured = capfd.readouterr()
-            assert (
-                "Found existing run for sensor execution_key_sensor with execution_key `only_once`, skipping."
-                in captured.out
-            )

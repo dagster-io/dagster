@@ -13,7 +13,6 @@ from dagster import (
     usable_as_dagster_type,
 )
 from dagster.core.definitions.decorators.sensor import sensor
-from dagster.core.definitions.sensor import SensorRunParams
 
 
 @lambda_solid
@@ -133,10 +132,9 @@ def define_baz_partitions():
     }
 
 
-@sensor(pipeline_name="foo_pipeline")
+@sensor(pipeline_name="foo_pipeline", run_config_fn=lambda _: {"foo": "FOO"})
 def sensor_foo(_):
-    yield SensorRunParams(execution_key=None, run_config={"foo": "FOO"}, tags={"foo": "foo_tag"})
-    yield SensorRunParams(execution_key=None, run_config={"foo": "FOO"})
+    return True
 
 
 @sensor(pipeline_name="foo_pipeline")
