@@ -13,6 +13,7 @@ from dagster.core.storage.system_storage import (
 from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster.utils import check, ensure_single_item
 
+from .config_mappable import ConfiguredMixin
 from .dependency import DependencyStructure, Solid, SolidHandle, SolidInputHandle
 from .graph import GraphDefinition
 from .logger import LoggerDefinition
@@ -36,7 +37,7 @@ def define_resource_dictionary_cls(resource_defs):
     fields = {}
     for resource_name, resource_def in resource_defs.items():
         if resource_def.config_schema:
-            fields[resource_name] = Field(Shape({"config": resource_def.config_schema}))
+            fields[resource_name] = def_config_field(resource_def)
 
     return Shape(fields=fields)
 
@@ -54,6 +55,14 @@ def define_solid_config_cls(config_schema, inputs_field, outputs_field):
         remove_none_entries(
             {"config": config_schema, "inputs": inputs_field, "outputs": outputs_field}
         ),
+    )
+
+
+def def_config_field(configurable_def, is_required=None):
+    check.inst_param(configurable_def, "configurable_def", ConfiguredMixin)
+    return Field(
+        Shape({"config": configurable_def.config_schema} if configurable_def.config_schema else {}),
+        is_required=is_required,
     )
 
 
@@ -90,24 +99,20 @@ class EnvironmentClassCreationData(
 def define_logger_dictionary_cls(creation_data):
     check.inst_param(creation_data, "creation_data", EnvironmentClassCreationData)
 
-    fields = {}
-
-    for logger_name, logger_definition in creation_data.logger_defs.items():
-        fields[logger_name] = Field(
-            Shape(remove_none_entries({"config": logger_definition.config_schema}),),
-            is_required=False,
-        )
-
-    return Shape(fields)
+    return Shape(
+        {
+            logger_name: def_config_field(logger_definition, is_required=False)
+            for logger_name, logger_definition in creation_data.logger_defs.items()
+        }
+    )
 
 
-def define_storage_field(mode_definition, config_cls_fn, storage_names, defaults):
+def define_storage_field(storage_selector, storage_names, defaults):
     """Define storage field using default options, if additional storage options have been provided."""
-    storage_selector = config_cls_fn(mode_definition)
     # If no custom storage options have been provided,
     # then users do not need to provide any configuration.
     if set(storage_names) == defaults:
-        return Field(config_cls_fn(mode_definition), is_required=False)
+        return Field(storage_selector, is_required=False)
     else:
         default_storage = FIELD_NO_DEFAULT_PROVIDED
         if len(storage_names) > 0:
@@ -122,15 +127,13 @@ def define_environment_cls(creation_data):
     check.inst_param(creation_data, "creation_data", EnvironmentClassCreationData)
 
     intermediate_storage_field = define_storage_field(
-        creation_data.mode_definition,
-        define_intermediate_storage_config_cls,
+        selector_for_named_defs(creation_data.mode_definition.intermediate_storage_defs),
         storage_names=[dfn.name for dfn in creation_data.mode_definition.intermediate_storage_defs],
         defaults=set([storage.name for storage in default_intermediate_storage_defs]),
     )
     if not (intermediate_storage_field.is_required or intermediate_storage_field.default_provided):
         storage_field = define_storage_field(
-            creation_data.mode_definition,
-            define_storage_config_cls,
+            selector_for_named_defs(creation_data.mode_definition.system_storage_defs),
             storage_names=[dfn.name for dfn in creation_data.mode_definition.system_storage_defs],
             defaults=set([storage.name for storage in default_system_storage_defs]),
         )
@@ -150,7 +153,8 @@ def define_environment_cls(creation_data):
                 "storage": storage_field,
                 "intermediate_storage": intermediate_storage_field,
                 "execution": Field(
-                    define_executor_config_cls(creation_data.mode_definition), is_required=False,
+                    selector_for_named_defs(creation_data.mode_definition.executor_defs),
+                    is_required=False,
                 ),
                 "loggers": Field(define_logger_dictionary_cls(creation_data)),
                 "resources": Field(
@@ -161,51 +165,10 @@ def define_environment_cls(creation_data):
     )
 
 
-def define_storage_config_cls(mode_definition):
-    check.inst_param(mode_definition, "mode_definition", ModeDefinition)
-
-    fields = {}
-
-    for storage_def in mode_definition.system_storage_defs:
-        fields[storage_def.name] = Field(
-            Shape(
-                fields={"config": storage_def.config_schema} if storage_def.config_schema else {},
-            )
-        )
-
-    return Selector(fields)
-
-
-def define_intermediate_storage_config_cls(mode_definition):
-    check.inst_param(mode_definition, "mode_definition", ModeDefinition)
-
-    fields = {}
-
-    for intermediate_storage_def in mode_definition.intermediate_storage_defs:
-        fields[intermediate_storage_def.name] = Field(
-            Shape(
-                fields={"config": intermediate_storage_def.config_schema}
-                if intermediate_storage_def.config_schema
-                else {},
-            )
-        )
-
-    return Selector(fields)
-
-
-def define_executor_config_cls(mode_definition):
-    check.inst_param(mode_definition, "mode_definition", ModeDefinition)
-
-    fields = {}
-
-    for executor_def in mode_definition.executor_defs:
-        fields[executor_def.name] = Field(
-            Shape(
-                fields={"config": executor_def.config_schema} if executor_def.config_schema else {},
-            )
-        )
-
-    return Selector(fields)
+# Common pattern for a set of named definitions (e.g. executors, intermediate storage)
+# to build a selector so that one of them is selected
+def selector_for_named_defs(named_defs):
+    return Selector({named_def.name: def_config_field(named_def) for named_def in named_defs})
 
 
 def get_inputs_field(solid, handle, dependency_structure):
