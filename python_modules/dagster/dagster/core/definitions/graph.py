@@ -79,8 +79,6 @@ class GraphDefinition(NodeDefinition):
         input_mappings,
         output_mappings,
         config_mapping,
-        _configured_config_mapping_fn,
-        _configured_config_schema,
         **kwargs,
     ):
         self._node_defs = _check_node_defs_arg(name, node_defs)
@@ -108,14 +106,11 @@ class GraphDefinition(NodeDefinition):
 
         self._config_mapping = check.opt_inst_param(config_mapping, "config_mapping", ConfigMapping)
 
-        self.__configured_config_schema = _configured_config_schema
-
         super(GraphDefinition, self).__init__(
             name=name,
             description=description,
             input_defs=input_defs,
             output_defs=[output_mapping.definition for output_mapping in self._output_mappings],
-            _configured_config_mapping_fn=_configured_config_mapping_fn,
             **kwargs,
         )
 
@@ -306,41 +301,7 @@ class GraphDefinition(NodeDefinition):
 
     @property
     def config_schema(self):
-        if self.is_preconfigured:
-            return self.__configured_config_schema
-        elif self.has_config_mapping:
-            return self.config_mapping.config_schema
-
-    def copy_for_configured(
-        self,
-        name,
-        description,
-        wrapped_config_mapping_fn,
-        config_schema,
-        original_config_or_config_fn,
-    ):
-        if not self.has_config_mapping:
-            raise DagsterInvalidDefinitionError(
-                "Only composite solids utilizing config mapping can be pre-configured. The solid "
-                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
-                "configured.".format(graph_name=self.name)
-            )
-
-        return self.construct_configured_graph_copy(
-            new_name=self._name_for_configured_node(name, original_config_or_config_fn),
-            new_description=description or self.description,
-            new_configured_config_schema=config_schema,
-            new_configured_config_mapping_fn=wrapped_config_mapping_fn,
-        )
-
-    def construct_configured_graph_copy(
-        self,
-        new_name,
-        new_description,
-        new_configured_config_schema,
-        new_configured_config_mapping_fn,
-    ):
-        raise NotImplementedError()
+        return self.config_mapping.config_schema if self.has_config_mapping else None
 
 
 def _validate_in_mappings(input_mappings, solid_dict, name, class_name):

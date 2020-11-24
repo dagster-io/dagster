@@ -2,16 +2,16 @@ from collections import namedtuple
 from functools import update_wrapper
 
 from dagster import check, seven
-from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.definitions.config_mappable import ConfiguredMixin
+from dagster.core.definitions.configurable import ConfigurableDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterUnknownResourceError
 from dagster.utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import split_function_parameters, validate_decorated_fn_positionals
+from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
-class ResourceDefinition(ConfiguredMixin):
+class ResourceDefinition(ConfigurableDefinition):
     """Core class for defining resources.
 
     Resources are scoped ways to make external resources (like database connections) available to
@@ -32,20 +32,13 @@ class ResourceDefinition(ConfiguredMixin):
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
             available in `init_context.resource_config`.
         description (Optional[str]): A human-readable description of the resource.
-        _configured_config_mapping_fn: This argument is for internal use only. Users should not
-            specify this field. To preconfigure a resource, use the :py:func:`configured` API.
         version (Optional[str]): (Experimental) The version of the resource's definition fn. Two
             wrapped resource functions should only have the same version if they produce the same
             resource definition when provided with the same inputs.
     """
 
     def __init__(
-        self,
-        resource_fn=None,
-        config_schema=None,
-        description=None,
-        _configured_config_mapping_fn=None,
-        version=None,
+        self, resource_fn=None, config_schema=None, description=None, version=None,
     ):
         EXPECTED_POSITIONALS = ["*"]
         fn_positionals, _ = split_function_parameters(resource_fn, EXPECTED_POSITIONALS)
@@ -61,13 +54,11 @@ class ResourceDefinition(ConfiguredMixin):
             )
 
         self._resource_fn = check.opt_callable_param(resource_fn, "resource_fn")
-        self._config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
+        self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
         self._version = check.opt_str_param(version, "version")
         if version:
             experimental_arg_warning("version", "ResourceDefinition.__init__")
-
-        super(ResourceDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
     def resource_fn(self):
@@ -133,19 +124,18 @@ class ResourceDefinition(ConfiguredMixin):
             description=description,
         )
 
-    def copy_for_configured(self, name, description, wrapped_config_mapping_fn, config_schema, _):
+    def copy_for_configured(self, name, description, config_schema, _):
         check.invariant(name is None, "ResourceDefintions do not have names")
         return ResourceDefinition(
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
-            _configured_config_mapping_fn=wrapped_config_mapping_fn,
         )
 
 
 class _ResourceDecoratorCallable:
     def __init__(self, config_schema=None, description=None, version=None):
-        self.config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
+        self.config_schema = config_schema  # checked by underlying definition
         self.description = check.opt_str_param(description, "description")
         self.version = check.opt_str_param(version, "version")
 

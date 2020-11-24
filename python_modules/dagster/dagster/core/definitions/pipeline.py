@@ -13,6 +13,7 @@ from dagster.core.types.dagster_type import DagsterTypeKind, construct_dagster_t
 from dagster.core.utils import str_format_set
 from dagster.utils.backcompat import experimental_arg_warning
 
+from .config import ConfigMapping
 from .dependency import (
     DependencyDefinition,
     MultiDependencyDefinition,
@@ -132,8 +133,6 @@ class PipelineDefinition(GraphDefinition):
         config_mapping=None,
         positional_inputs=None,
         _parent_pipeline_def=None,  # https://github.com/dagster-io/dagster/issues/2115
-        _configured_config_mapping_fn=None,
-        _configured_config_schema=None,
     ):
         if not name:
             warnings.warn(
@@ -166,8 +165,6 @@ class PipelineDefinition(GraphDefinition):
             input_mappings=input_mappings,
             output_mappings=output_mappings,
             config_mapping=config_mapping,
-            _configured_config_mapping_fn=_configured_config_mapping_fn,
-            _configured_config_schema=_configured_config_schema,
         )
 
         self._current_level_node_defs = solid_defs
@@ -234,28 +231,29 @@ class PipelineDefinition(GraphDefinition):
         self._cached_run_config_schemas = {}
         self._cached_external_pipeline = None
 
-    def construct_configured_graph_copy(
-        self,
-        new_name,
-        new_description,
-        new_configured_config_schema,
-        new_configured_config_mapping_fn,
-    ):
+    def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
+        if not self.has_config_mapping:
+            raise DagsterInvalidDefinitionError(
+                "Only pipelines utilizing config mapping can be pre-configured. The pipeline "
+                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
+                "configured.".format(graph_name=self.name)
+            )
+
         return PipelineDefinition(
             solid_defs=self._solid_defs,
-            name=new_name,
-            description=new_description,
+            name=self._name_for_configured_node(self.name, name, config_or_config_fn),
+            description=description or self.description,
             dependencies=self._dependencies,
             mode_defs=self._mode_definitions,
             preset_defs=self.preset_defs,
             hook_defs=self.hook_defs,
             input_mappings=self._input_mappings,
             output_mappings=self._output_mappings,
-            config_mapping=self._config_mapping,
+            config_mapping=ConfigMapping(
+                self._config_mapping.config_fn, config_schema=config_schema
+            ),
             positional_inputs=self.positional_inputs,
             _parent_pipeline_def=self._parent_pipeline_def,
-            _configured_config_schema=new_configured_config_schema,
-            _configured_config_mapping_fn=new_configured_config_mapping_fn,
         )
 
     def get_run_config_schema(self, mode=None):

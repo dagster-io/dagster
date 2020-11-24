@@ -65,7 +65,7 @@ from dagster.core.definitions import (
     system_storage,
     weekly_schedule,
 )
-from dagster.core.definitions.config_mappable import configured
+from dagster.core.definitions.configurable import configured
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,

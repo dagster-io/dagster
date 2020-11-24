@@ -2,8 +2,9 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.builtins import BuiltinEnum
-from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.primitive_mapping import is_supported_config_python_builtin
+
+from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
 def is_callable_valid_config_arg(config):
@@ -31,5 +32,5 @@ class ConfigMapping(namedtuple("_ConfigMapping", "config_fn config_schema")):
         return super(ConfigMapping, cls).__new__(
             cls,
             config_fn=check.callable_param(config_fn, "config_fn"),
-            config_schema=check_user_facing_opt_config_param(config_schema, "config_schema"),
+            config_schema=convert_user_facing_definition_config_schema(config_schema),
         )

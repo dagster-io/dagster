@@ -161,7 +161,7 @@ class EnvironmentConfig(
 
 
 def config_map_resources(pipeline_def, config_value, mode):
-    """This function executes the config mappings for resources with respect to ConfiguredMixin.
+    """This function executes the config mappings for resources with respect to ConfigurableDefinition.
     It iterates over resource_defs and looks up the corresponding config because resources need to
     be mapped regardless of whether they receive config from run_config."""
 
@@ -184,7 +184,7 @@ def config_map_resources(pipeline_def, config_value, mode):
 
 
 def config_map_loggers(pipeline_def, config_value, mode):
-    """This function executes the config mappings for loggers with respect to ConfiguredMixin.
+    """This function executes the config mappings for loggers with respect to ConfigurableDefinition.
     It uses the `loggers` key on the run_config to determine which loggers will be initialized (and
     thus which ones need config mapping) and then iterates over each, looking up the corresponding
     LoggerDefinition in `mode_def.loggers`.
@@ -228,7 +228,7 @@ def config_map_loggers(pipeline_def, config_value, mode):
 
 def config_map_objects(config_value, defs, keyed_by, def_type, name_of_def_type):
     """This function executes the config mappings for executors and {system, intermediate} storage
-    definitions with respect to ConfiguredMixin. It calls the ensure_single_item macro on the
+    definitions with respect to ConfigurableDefinition. It calls the ensure_single_item macro on the
     incoming config and then applies config mapping to the result and the first executor_def with
     the same name on the mode_def."""
 

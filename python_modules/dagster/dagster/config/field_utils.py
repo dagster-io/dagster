@@ -39,12 +39,6 @@ FIELD_NO_DEFAULT_PROVIDED = __FieldValueSentinel
 INFER_OPTIONAL_COMPOSITE_FIELD = __InferOptionalCompositeFieldSentinel
 
 
-def check_user_facing_opt_config_param(potential_field, param_name):
-    check.str_param(param_name, "param_name")
-
-    return None if potential_field is None else convert_potential_field(potential_field)
-
-
 class _ConfigHasFields(ConfigType):
     def __init__(self, fields, **kwargs):
         self.fields = expand_fields_dict(fields)

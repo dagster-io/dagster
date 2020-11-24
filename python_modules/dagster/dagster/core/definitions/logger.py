@@ -1,10 +1,11 @@
 from dagster import check
-from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.config import is_callable_valid_config_arg
-from dagster.core.definitions.config_mappable import ConfiguredMixin
+from dagster.core.definitions.configurable import ConfigurableDefinition
+
+from .definition_config_schema import convert_user_facing_definition_config_schema
 
 
-class LoggerDefinition(ConfiguredMixin):
+class LoggerDefinition(ConfigurableDefinition):
     """Core class for defining loggers.
 
     Loggers are pipeline-scoped logging handlers, which will be automatically invoked whenever
@@ -17,20 +18,14 @@ class LoggerDefinition(ConfiguredMixin):
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.logger_config`.
         description (Optional[str]): A human-readable description of this logger.
-        _configured_config_mapping_fn: This argument is for internal use only. Users should not
-            specify this field. To preconfigure a resource, use the :py:func:`configured` API.
     """
 
     def __init__(
-        self, logger_fn, config_schema=None, description=None, _configured_config_mapping_fn=None,
+        self, logger_fn, config_schema=None, description=None,
     ):
         self._logger_fn = check.callable_param(logger_fn, "logger_fn")
-        self._config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
+        self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
-        self.__configured_config_mapping_fn = check.opt_callable_param(
-            _configured_config_mapping_fn, "config_mapping_fn"
-        )
-        super(LoggerDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
     def logger_fn(self):
@@ -44,13 +39,12 @@ class LoggerDefinition(ConfiguredMixin):
     def description(self):
         return self._description
 
-    def copy_for_configured(self, name, description, wrapped_config_mapping_fn, config_schema, _):
+    def copy_for_configured(self, name, description, config_schema, _):
         check.invariant(name is None, "LoggerDefinitions do not have names")
         return LoggerDefinition(
             config_schema=config_schema,
             description=description or self.description,
             logger_fn=self.logger_fn,
-            _configured_config_mapping_fn=wrapped_config_mapping_fn,
         )
 
 

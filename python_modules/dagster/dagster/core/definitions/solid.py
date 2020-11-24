@@ -1,7 +1,9 @@
 from dagster import check
-from dagster.config.field_utils import check_user_facing_opt_config_param
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils.backcompat import experimental_arg_warning
 
+from .config import ConfigMapping
+from .definition_config_schema import convert_user_facing_definition_config_schema
 from .graph import GraphDefinition
 from .i_solid_definition import NodeDefinition
 from .input import InputDefinition
@@ -45,8 +47,6 @@ class SolidDefinition(NodeDefinition):
         version (Optional[str]): (Experimental) The version of the solid's compute_fn. Two solids should have
             the same version if and only if they deterministically produce the same outputs when
             provided the same inputs.
-        _configured_config_mapping_fn: This argument is for internal use only. Users should not
-            specify this field. To preconfigure a resource, use the :py:func:`configured` API.
 
 
     Examples:
@@ -75,15 +75,11 @@ class SolidDefinition(NodeDefinition):
         required_resource_keys=None,
         positional_inputs=None,
         version=None,
-        _configured_config_mapping_fn=None,
     ):
         self._compute_fn = check.callable_param(compute_fn, "compute_fn")
-        self._config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
+        self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._required_resource_keys = frozenset(
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
-        )
-        self.__configured_config_mapping_fn = check.opt_callable_param(
-            _configured_config_mapping_fn, "config_mapping_fn"
         )
         self._version = check.opt_str_param(version, "version")
         if version:
@@ -96,7 +92,6 @@ class SolidDefinition(NodeDefinition):
             description=description,
             tags=check.opt_dict_param(tags, "tags", key_type=str),
             positional_inputs=positional_inputs,
-            _configured_config_mapping_fn=_configured_config_mapping_fn,
         )
 
     @property
@@ -134,16 +129,9 @@ class SolidDefinition(NodeDefinition):
     def default_value_for_input(self, input_name):
         return self.input_def_named(input_name).default_value
 
-    def copy_for_configured(
-        self,
-        name,
-        description,
-        wrapped_config_mapping_fn,
-        config_schema,
-        original_config_or_config_fn,
-    ):
+    def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
         return SolidDefinition(
-            name=self._name_for_configured_node(name, original_config_or_config_fn),
+            name=self._name_for_configured_node(self.name, name, config_or_config_fn),
             input_defs=self.input_defs,
             compute_fn=self.compute_fn,
             output_defs=self.output_defs,
@@ -153,7 +141,6 @@ class SolidDefinition(NodeDefinition):
             required_resource_keys=self.required_resource_keys,
             positional_inputs=self.positional_inputs,
             version=self.version,
-            _configured_config_mapping_fn=wrapped_config_mapping_fn,
         )
 
 
@@ -223,8 +210,6 @@ class CompositeSolidDefinition(GraphDefinition):
         description=None,
         tags=None,
         positional_inputs=None,
-        _configured_config_mapping_fn=None,
-        _configured_config_schema=None,
     ):
         super(CompositeSolidDefinition, self).__init__(
             name=name,
@@ -236,8 +221,6 @@ class CompositeSolidDefinition(GraphDefinition):
             input_mappings=input_mappings,
             output_mappings=output_mappings,
             config_mapping=config_mapping,
-            _configured_config_mapping_fn=_configured_config_mapping_fn,
-            _configured_config_schema=_configured_config_schema,
         )
 
     def all_dagster_types(self):
@@ -246,23 +229,24 @@ class CompositeSolidDefinition(GraphDefinition):
         for node_def in self._node_defs:
             yield from node_def.all_dagster_types()
 
-    def construct_configured_graph_copy(
-        self,
-        new_name,
-        new_description,
-        new_configured_config_schema,
-        new_configured_config_mapping_fn,
-    ):
+    def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
+        if not self.has_config_mapping:
+            raise DagsterInvalidDefinitionError(
+                "Only composite solids utilizing config mapping can be pre-configured. The solid "
+                '"{graph_name}" does not have a config mapping, and thus has nothing to be '
+                "configured.".format(graph_name=self.name)
+            )
+
         return CompositeSolidDefinition(
-            name=new_name,
+            name=self._name_for_configured_node(self.name, name, config_or_config_fn),
             solid_defs=self._node_defs,
             input_mappings=self.input_mappings,
             output_mappings=self.output_mappings,
-            config_mapping=self.config_mapping,
+            config_mapping=ConfigMapping(
+                self._config_mapping.config_fn, config_schema=config_schema,
+            ),
             dependencies=self.dependencies,
-            description=new_description,
+            description=description or self.description,
             tags=self.tags,
             positional_inputs=self.positional_inputs,
-            _configured_config_schema=new_configured_config_schema,
-            _configured_config_mapping_fn=new_configured_config_mapping_fn,
         )

@@ -16,7 +16,6 @@ from dagster import (
     check,
     seven,
 )
-from dagster.config.field_utils import check_user_facing_opt_config_param
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import user_code_error_boundary
 from dagster.core.execution.context.compute import SolidExecutionContext
@@ -316,7 +315,7 @@ def define_dagstermill_solid(
             if output_notebook
             else []
         ),
-        config_schema=check_user_facing_opt_config_param(config_schema, "config_schema"),
+        config_schema=config_schema,
         required_resource_keys=required_resource_keys,
         description="This solid is backed by the notebook at {path}".format(path=notebook_path),
         tags={"notebook_path": notebook_path, "kind": "ipynb"},

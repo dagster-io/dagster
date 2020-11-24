@@ -61,8 +61,8 @@ def build_resource_def_snap(name, resource_def):
     return ResourceDefSnap(
         name=name,
         description=resource_def.description,
-        config_field_snap=snap_from_field("config", resource_def.config_schema)
-        if resource_def.config_schema
+        config_field_snap=snap_from_field("config", resource_def.config_field)
+        if resource_def.has_config_field
         else None,
     )
 
@@ -86,8 +86,8 @@ def build_logger_def_snap(name, logger_def):
     return LoggerDefSnap(
         name=name,
         description=logger_def.description,
-        config_field_snap=snap_from_field("config", logger_def.config_schema)
-        if logger_def.config_schema
+        config_field_snap=snap_from_field("config", logger_def.config_field)
+        if logger_def.has_config_field
         else None,
     )
 

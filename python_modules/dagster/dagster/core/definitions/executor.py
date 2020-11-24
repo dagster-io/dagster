@@ -3,14 +3,15 @@ from functools import update_wrapper
 from dagster import check
 from dagster.builtins import Int
 from dagster.config.field import Field
-from dagster.config.field_utils import check_user_facing_opt_config_param
-from dagster.core.definitions.config_mappable import ConfiguredMixin
+from dagster.core.definitions.configurable import ConfigurableDefinition
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.execution.retries import Retries, get_retries_config
 
+from .definition_config_schema import convert_user_facing_definition_config_schema
 
-class ExecutorDefinition(ConfiguredMixin):
+
+class ExecutorDefinition(ConfigurableDefinition):
     """
     Args:
         name (Optional[str]): The name of the executor.
@@ -20,8 +21,6 @@ class ExecutorDefinition(ConfiguredMixin):
             and return an instance of :py:class:`Executor`
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
             executor.
-        _configured_config_mapping_fn: This argument is for internal use only. Users should not
-            specify this field. To preconfigure a resource, use the :py:func:`configured` API.
     """
 
     def __init__(
@@ -31,10 +30,9 @@ class ExecutorDefinition(ConfiguredMixin):
         executor_creation_fn=None,
         required_resource_keys=None,
         description=None,
-        _configured_config_mapping_fn=None,
     ):
         self._name = check.str_param(name, "name")
-        self._config_schema = check_user_facing_opt_config_param(config_schema, "config_schema")
+        self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, "executor_creation_fn"
         )
@@ -42,7 +40,6 @@ class ExecutorDefinition(ConfiguredMixin):
             check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
         self._description = check.opt_str_param(description, "description")
-        super(ExecutorDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
     def name(self):
@@ -64,13 +61,12 @@ class ExecutorDefinition(ConfiguredMixin):
     def required_resource_keys(self):
         return self._required_resource_keys
 
-    def copy_for_configured(self, name, description, wrapped_config_mapping_fn, config_schema, _):
+    def copy_for_configured(self, name, description, config_schema, _):
         return ExecutorDefinition(
-            config_schema=config_schema,
             name=name or self.name,
+            config_schema=config_schema,
             executor_creation_fn=self.executor_creation_fn,
             required_resource_keys=self.required_resource_keys,
-            _configured_config_mapping_fn=wrapped_config_mapping_fn,
             description=description or self.description,
         )
 
