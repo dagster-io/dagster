@@ -4,13 +4,12 @@ import io
 import threading
 import time
 
-import boto3
 import pytest
 from dagster.seven import mock
 from dagster.utils.test import create_test_pipeline_execution_context
 from dagster_aws.emr import EmrClusterState, EmrError, EmrJobRunner
 from dagster_aws.utils.mrjob.utils import _boto3_now
-from moto import mock_emr, mock_s3
+from moto import mock_emr
 
 REGION = "us-west-1"
 
@@ -80,11 +79,11 @@ def test_emr_construct_step_dict():
 
 
 @mock_emr
-def test_emr_log_location_for_cluster(emr_cluster_config):
+def test_emr_log_location_for_cluster(emr_cluster_config, mock_s3_bucket):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION)
     cluster_id = emr.run_job_flow(context.log, emr_cluster_config)
-    assert emr.log_location_for_cluster(cluster_id) == ("emr-cluster-logs", "elasticmapreduce/")
+    assert emr.log_location_for_cluster(cluster_id) == (mock_s3_bucket.name, "elasticmapreduce/")
 
     # Should raise when the log URI is missing
     emr_cluster_config = copy.deepcopy(emr_cluster_config)
@@ -97,15 +96,11 @@ def test_emr_log_location_for_cluster(emr_cluster_config):
 
 
 @mock_emr
-@mock_s3
-def test_emr_retrieve_logs(emr_cluster_config):
+def test_emr_retrieve_logs(emr_cluster_config, mock_s3_bucket):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION)
     cluster_id = emr.run_job_flow(context.log, emr_cluster_config)
-    assert emr.log_location_for_cluster(cluster_id) == ("emr-cluster-logs", "elasticmapreduce/")
-
-    s3 = boto3.resource("s3", region_name=REGION)
-    s3.create_bucket(Bucket="emr-cluster-logs")  # pylint: disable=no-member
+    assert emr.log_location_for_cluster(cluster_id) == (mock_s3_bucket.name, "elasticmapreduce/")
 
     def create_log():
         time.sleep(0.5)
@@ -118,7 +113,7 @@ def test_emr_retrieve_logs(emr_cluster_config):
         )
 
         for name in ["stdout.gz", "stderr.gz"]:
-            s3.Object("emr-cluster-logs", prefix + "/" + name).put(  # pylint: disable=no-member
+            mock_s3_bucket.Object(prefix + "/" + name).put(  # pylint: disable=no-member
                 Body=out.getvalue()
             )
 
@@ -133,20 +128,14 @@ def test_emr_retrieve_logs(emr_cluster_config):
     assert stderr_log == "some log"
 
 
-@mock_s3
-def test_wait_for_log():
-    s3 = boto3.resource("s3", region_name=REGION)
-    s3.create_bucket(Bucket="log_bucket")  # pylint: disable=no-member
-
+def test_wait_for_log(mock_s3_bucket):
     def create_log():
         time.sleep(0.5)
         out = io.BytesIO()
         with gzip.GzipFile(fileobj=out, mode="w") as fo:
             fo.write("foo bar".encode())
 
-        s3.Object("log_bucket", "some_log_file").put(  # pylint: disable=no-member
-            Body=out.getvalue()
-        )
+        mock_s3_bucket.Object("some_log_file").put(Body=out.getvalue())  # pylint: disable=no-member
 
     thread = threading.Thread(target=create_log, args=())
     thread.daemon = True
@@ -156,7 +145,7 @@ def test_wait_for_log():
     emr = EmrJobRunner(region=REGION)
     res = emr.wait_for_log(
         context.log,
-        log_bucket="log_bucket",
+        log_bucket=mock_s3_bucket.name,
         log_key="some_log_file",
         waiter_delay=1,
         waiter_max_attempts=2,
@@ -166,7 +155,7 @@ def test_wait_for_log():
     with pytest.raises(EmrError) as exc_info:
         emr.wait_for_log(
             context.log,
-            log_bucket="log_bucket",
+            log_bucket=mock_s3_bucket.name,
             log_key="does_not_exist",
             waiter_delay=1,
             waiter_max_attempts=1,
