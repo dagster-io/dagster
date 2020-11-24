@@ -12,11 +12,10 @@ from dagster.core.errors import (
 
 
 class ConfiguredMixin(ABC):
-    def __init__(self, _configured_config_mapping_fn, *args, is_nameless=False, **kwargs):
+    def __init__(self, _configured_config_mapping_fn, *args, **kwargs):
         self._configured_config_mapping_fn = check.opt_callable_param(
             _configured_config_mapping_fn, "config_mapping_fn"
         )
-        self._is_nameless = is_nameless
         super(ConfiguredMixin, self).__init__(*args, **kwargs)
 
     @abstractproperty

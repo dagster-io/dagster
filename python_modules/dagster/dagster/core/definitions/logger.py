@@ -30,7 +30,7 @@ class LoggerDefinition(ConfiguredMixin):
         self.__configured_config_mapping_fn = check.opt_callable_param(
             _configured_config_mapping_fn, "config_mapping_fn"
         )
-        super(LoggerDefinition, self).__init__(_configured_config_mapping_fn, is_nameless=True)
+        super(LoggerDefinition, self).__init__(_configured_config_mapping_fn)
 
     @property
     def logger_fn(self):
