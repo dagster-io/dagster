@@ -25,13 +25,7 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=[
-            "dagster",
-            "dagster_graphql",
-            "kubernetes<=11.0.0",  # breaking changes in kubernetes 12.0
-            # RSA 4.1+ is incompatible with py2.7
-            'rsa<=4.0; python_version<"3"',
-        ],
+        install_requires=["dagster", "dagster_graphql", "kubernetes"],
         tests_require=[],
         zip_safe=False,
     )
