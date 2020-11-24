@@ -1,11 +1,21 @@
+# pylint: disable=cell-var-from-loop
+
 import time
 
-import pytest
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import open_server_process
 from dagster.grpc.server_watcher import create_grpc_watch_thread
 from dagster.serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster.utils import find_free_port
+
+
+def wait_for_condition(fn, interval, timeout=30):
+    start_time = time.time()
+    while not fn():
+        if time.time() - start_time > timeout:
+            raise Exception("Timeout of {} seconds exceeded for condition {}".format(timeout, fn))
+
+        time.sleep(interval)
 
 
 def test_run_grpc_watch_thread():
@@ -31,12 +41,12 @@ def test_grpc_watch_thread_server_update():
     try:
         # Start watch thread
         client = DagsterGrpcClient(port=port)
-        watch_interval = 4
+        watch_interval = 1
         shutdown_event, watch_thread = create_grpc_watch_thread(
-            client, on_updated=on_updated, watch_interval=watch_interval
+            client, on_updated=on_updated, watch_interval=watch_interval,
         )
         watch_thread.start()
-        time.sleep(watch_interval * 2)
+        time.sleep(watch_interval * 3)
     finally:
         interrupt_ipc_subprocess_pid(server_process.pid)
 
@@ -46,7 +56,7 @@ def test_grpc_watch_thread_server_update():
     server_process = open_server_process(port=port, socket=None)
 
     try:
-        time.sleep(watch_interval * 2)
+        wait_for_condition(lambda: called, interval=watch_interval)
     finally:
         interrupt_ipc_subprocess_pid(server_process.pid)
 
@@ -85,19 +95,17 @@ def test_grpc_watch_thread_server_reconnect():
         watch_interval=watch_interval,
     )
     watch_thread.start()
+    time.sleep(watch_interval * 3)
 
     # Wait three seconds, simulate restart server, wait three seconds
-    time.sleep(watch_interval * 3)
     interrupt_ipc_subprocess_pid(server_process.pid)
-    time.sleep(watch_interval * 3)
+    wait_for_condition(lambda: called.get("on_disconnect"), watch_interval)
+
     server_process = open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
-    time.sleep(watch_interval * 3)
+    wait_for_condition(lambda: called.get("on_reconnected"), watch_interval)
 
     shutdown_event.set()
     watch_thread.join()
-
-    assert called["on_disconnect"]
-    assert called["on_reconnected"]
 
 
 def test_grpc_watch_thread_server_error():
@@ -132,18 +140,12 @@ def test_grpc_watch_thread_server_error():
         max_reconnect_attempts=max_reconnect_attempts,
     )
     watch_thread.start()
-
-    # Wait three seconds, simulate restart failure
     time.sleep(watch_interval * 3)
-    interrupt_ipc_subprocess_pid(server_process.pid)
 
+    # Simulate restart failure
     # Wait for reconnect attempts to exhaust and on_error callback to be called
-    start_time = time.time()
-    while not called.get("on_error"):
-        if time.time() - start_time > 30:
-            break
-
-        time.sleep(1)
+    interrupt_ipc_subprocess_pid(server_process.pid)
+    wait_for_condition(lambda: called.get("on_error"), watch_interval)
 
     shutdown_event.set()
     watch_thread.join()
@@ -152,7 +154,6 @@ def test_grpc_watch_thread_server_error():
     assert called["on_error"]
 
 
-@pytest.mark.skip("Temporarily skip due to flakiness")
 def test_grpc_watch_thread_server_complex_cycle():
     # Server goes down, comes back up as the same server three times, then goes away and comes
     # back as a new server
@@ -193,18 +194,19 @@ def test_grpc_watch_thread_server_complex_cycle():
     watch_thread.start()
     time.sleep(watch_interval * 3)
 
-    for _ in range(3):
+    cycles = 3
+    for x in range(1, cycles + 1):
         # Simulate server restart three times with same server ID
         client.shutdown_server()
-        time.sleep(watch_interval * 3)
+        wait_for_condition(lambda: events.count("on_disconnect") == x, watch_interval)
         open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
-        time.sleep(watch_interval * 3)
+        wait_for_condition(lambda: events.count("on_reconnected") == x, watch_interval)
 
     # SImulate server update
     client.shutdown_server()
-    time.sleep(watch_interval * 3)
+    wait_for_condition(lambda: events.count("on_disconnect") == cycles + 1, watch_interval)
     open_server_process(port=port, socket=None)
-    time.sleep(watch_interval * 5)
+    wait_for_condition(lambda: "on_updated" in events, watch_interval)
 
     shutdown_event.set()
     watch_thread.join()
@@ -256,29 +258,23 @@ def test_grpc_watch_thread_server_complex_cycle_2():
     watch_thread.start()
     time.sleep(watch_interval * 3)
 
-    for _ in range(3):
+    cycles = 3
+    for x in range(1, cycles + 1):
         # Simulate server restart three times with same server ID
         client.shutdown_server()
-        time.sleep(watch_interval * 3)
+        wait_for_condition(lambda: events.count("on_disconnect") == x, watch_interval)
         open_server_process(port=port, socket=None, fixed_server_id=fixed_server_id)
-        time.sleep(watch_interval * 3)
+        wait_for_condition(lambda: events.count("on_reconnected") == x, watch_interval)
 
     # Simulate server failure
     client.shutdown_server()
 
     # Wait for reconnect attempts to exhaust and on_error callback to be called
-    start_time = time.time()
-    while not called.get("on_error"):
-        if time.time() - start_time > 30:
-            break
-
-        time.sleep(1)
+    wait_for_condition(lambda: called.get("on_error"), watch_interval)
 
     shutdown_event.set()
     watch_thread.join()
 
-    assert "on_disconnect" in events
-    assert "on_reconnected" in events
     assert events[-1] == "on_error"
 
 
@@ -314,15 +310,9 @@ def test_run_grpc_watch_without_server():
     time.sleep(watch_interval * 3)
 
     # Wait for reconnect attempts to exhaust and on_error callback to be called
-    start_time = time.time()
-    while not called.get("on_error"):
-        if time.time() - start_time > 30:
-            break
-
-        time.sleep(1)
+    wait_for_condition(lambda: called.get("on_error"), watch_interval)
 
     shutdown_event.set()
     watch_thread.join()
 
     assert called["on_disconnect"]
-    assert called["on_error"]
