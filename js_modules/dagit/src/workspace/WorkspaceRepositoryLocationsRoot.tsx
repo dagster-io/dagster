@@ -119,7 +119,11 @@ export const WorkspaceRepositoryLocationsRoot = () => {
 
   const onReload = async (name: string) => {
     setReloading(name);
-    await refetch();
+    // This is to prevent a race condition with resetting the apollo store. By delaying the refetch,
+    // we make sure that the store isn't being reset while a query is being made.
+    setTimeout(() => {
+      refetch();
+    }, 100);
     setReloading(null);
   };
 

@@ -4,23 +4,17 @@ import {useHistory} from 'react-router';
 import styled from 'styled-components/macro';
 
 import {RepositoryInformation} from 'src/RepositoryInformation';
-import {ReloadRepositoryLocationButton, ReloadResult} from 'src/nav/ReloadRepositoryLocationButton';
+import {ReloadRepositoryLocationButton} from 'src/nav/ReloadRepositoryLocationButton';
 import {DagsterRepoOption, isRepositoryOptionEqual} from 'src/workspace/WorkspaceContext';
 import {workspacePath} from 'src/workspace/workspacePath';
 
 interface RepositoryPickerProps {
   loading: boolean;
-  onReload: (location: string, result: ReloadResult) => void;
   options: DagsterRepoOption[];
   repo: DagsterRepoOption | null;
 }
 
-export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({
-  loading,
-  repo,
-  options,
-  onReload,
-}) => {
+export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({loading, repo, options}) => {
   const history = useHistory();
   const [open, setOpen] = React.useState(false);
 
@@ -72,10 +66,7 @@ export const RepositoryPicker: React.FC<RepositoryPickerProps> = ({
           <RepoTitle>{titleContents()}</RepoTitle>
         </div>
         {repo?.repositoryLocation.isReloadSupported && (
-          <ReloadRepositoryLocationButton
-            location={repo.repositoryLocation.name}
-            onReload={onReload}
-          />
+          <ReloadRepositoryLocationButton location={repo.repositoryLocation.name} />
         )}
       </RepositoryPickerFlexContainer>
     </Popover>

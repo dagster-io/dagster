@@ -12,7 +12,7 @@ import {
 export type ReloadResult = {type: 'success'} | {type: 'error'; message: string};
 export type OnReload = (location: string, result: ReloadResult) => void;
 
-export const useRepositoryLocationReload = (location: string, onReload: OnReload) => {
+export const useRepositoryLocationReload = (location: string, onReload: OnReload = () => {}) => {
   const apollo = useApolloClient();
   const [reload] = useMutation<
     ReloadRepositoryLocationMutation,
@@ -42,6 +42,12 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
     }
 
     if (loadFailure) {
+      SharedToaster.show({
+        message: 'Repository Location Reloaded with Errors',
+        timeout: 3000,
+        icon: 'refresh',
+        intent: Intent.DANGER,
+      });
       onReload(location, {type: 'error', message: loadFailure});
     } else {
       SharedToaster.show({
@@ -62,12 +68,11 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
 
 interface Props {
   location: string;
-  onReload: (location: string, result: ReloadResult) => void;
 }
 
 export const ReloadRepositoryLocationButton: React.FC<Props> = (props) => {
-  const {location, onReload} = props;
-  const {reloading, onClick} = useRepositoryLocationReload(location, onReload);
+  const {location} = props;
+  const {reloading, onClick} = useRepositoryLocationReload(location);
 
   return (
     <ShortcutHandler

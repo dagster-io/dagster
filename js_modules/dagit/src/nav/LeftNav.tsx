@@ -53,13 +53,9 @@ const LeftNavRepositorySection = () => {
     '/:rootTab?',
   ]);
 
-  const {activeRepo, allRepos, loading, locations, refetch} = React.useContext(WorkspaceContext);
+  const {activeRepo, allRepos, loading, locations} = React.useContext(WorkspaceContext);
 
   const anyErrors = locations.some((node) => node.__typename === 'RepositoryLocationLoadFailure');
-
-  const onReload = () => {
-    refetch();
-  };
 
   return (
     <div
@@ -74,14 +70,9 @@ const LeftNavRepositorySection = () => {
         minHeight: 0,
       }}
     >
-      <RepositoryPicker
-        loading={loading}
-        options={allRepos}
-        repo={activeRepo?.repo || null}
-        onReload={onReload}
-      />
+      <RepositoryPicker loading={loading} options={allRepos} repo={activeRepo?.repo || null} />
       <ApolloConsumer>
-        {(client) => <RepositoryLocationStateObserver onReload={onReload} client={client} />}
+        {(client) => <RepositoryLocationStateObserver client={client} />}
       </ApolloConsumer>
       {anyErrors ? (
         <Group

@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
-import {OnReload} from 'src/nav/ReloadRepositoryLocationButton';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
 import {ApolloTestProvider} from 'src/testing/ApolloTestProvider';
 import {useRepositoryOptions, WorkspaceProvider} from 'src/workspace/WorkspaceContext';
@@ -27,25 +26,18 @@ describe('RepositoryPicker', () => {
     }),
   };
 
-  const Test: React.FC<{onReload?: OnReload}> = (props) => {
+  const Test: React.FC = () => {
     const {loading, options} = useRepositoryOptions();
-    return (
-      <RepositoryPicker
-        loading={loading}
-        onReload={props.onReload || jest.fn()}
-        options={options}
-        repo={options[0]}
-      />
-    );
+    return <RepositoryPicker loading={loading} options={options} repo={options[0]} />;
   };
 
-  const Wrapper: React.FC<{mocks: any; onReload?: OnReload}> = (props) => {
-    const {mocks, onReload} = props;
+  const Wrapper: React.FC<{mocks: any}> = (props) => {
+    const {mocks} = props;
     return (
       <MemoryRouter>
         <ApolloTestProvider mocks={mocks}>
           <WorkspaceProvider>
-            <Test onReload={onReload} />
+            <Test />
           </WorkspaceProvider>
         </ApolloTestProvider>
       </MemoryRouter>
@@ -79,19 +71,9 @@ describe('RepositoryPicker', () => {
       }),
     };
 
-    const onReload = jest.fn();
-
-    render(<Wrapper mocks={mocks} onReload={onReload} />);
+    render(<Wrapper mocks={mocks} />);
 
     const button = await screen.findByRole('button', {name: /refresh/i});
     userEvent.click(button);
-
-    await waitFor(() => {
-      expect(onReload.mock.calls.length).toBe(1);
-      expect(onReload.mock.calls[0]).toEqual([
-        'undisclosed-location',
-        {type: 'error', message: 'oh no rofl'},
-      ]);
-    });
   });
 });

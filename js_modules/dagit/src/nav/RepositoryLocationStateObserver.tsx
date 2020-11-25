@@ -28,7 +28,6 @@ const LOCATION_STATE_CHANGE_SUBSCRIPTION = gql`
 
 interface StateObserverProps {
   client: ApolloClient<any>;
-  onReload: () => void;
 }
 
 export const RepositoryLocationStateObserver = ({client}: StateObserverProps) => {
