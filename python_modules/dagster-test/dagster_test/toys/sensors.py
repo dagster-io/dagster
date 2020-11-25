@@ -41,6 +41,7 @@ def directory_file_sensor(
             since = context.last_completion_time if context.last_completion_time else 0
             if not os.path.isdir(directory_name):
                 yield SkipReason(f"Could not find directory named {directory_name}.")
+                return
 
             fileinfo_since = []
             for filename in os.listdir(directory_name):
