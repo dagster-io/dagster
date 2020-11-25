@@ -75,6 +75,7 @@ from .schedules import (
     DauphinStartScheduleMutation,
     DauphinStopRunningScheduleMutation,
 )
+from .sensors import DauphinStartSensorMutation, DauphinStopSensorMutation
 
 
 class DauphinQuery(dauphin.ObjectType):
@@ -255,10 +256,8 @@ class DauphinQuery(dauphin.ObjectType):
             kwargs.get("withNoScheduleDefinition"),
         )
 
-    def resolve_sensorOrError(self, graphene_info, sensor_selector):
-        return get_sensor_or_error(
-            graphene_info, SensorSelector.from_graphql_input(sensor_selector)
-        )
+    def resolve_sensorOrError(self, graphene_info, sensorSelector):
+        return get_sensor_or_error(graphene_info, SensorSelector.from_graphql_input(sensorSelector))
 
     def resolve_sensorsOrError(self, graphene_info, **kwargs):
         return get_sensors_or_error(
@@ -687,6 +686,8 @@ class DauphinMutation(dauphin.ObjectType):
     reconcile_scheduler_state = DauphinReconcileSchedulerStateMutation.Field()
     start_schedule = DauphinStartScheduleMutation.Field()
     stop_running_schedule = DauphinStopRunningScheduleMutation.Field()
+    start_sensor = DauphinStartSensorMutation.Field()
+    stop_sensor = DauphinStopSensorMutation.Field()
     terminate_pipeline_execution = DauphinTerminatePipelineExecutionMutation.Field()
     delete_pipeline_run = DauphinDeleteRunMutation.Field()
     reload_repository_location = DauphinReloadRepositoryLocationMutation.Field()

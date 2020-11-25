@@ -1022,27 +1022,32 @@ def define_partitions():
 
 def define_sensors():
     @sensor(pipeline_name="no_config_pipeline", mode="default")
-    def always_no_config(_):
+    def always_no_config_sensor(_):
         return RunRequest(
             run_key=None, run_config={"storage": {"filesystem": {}}}, tags={"test": "1234"}
         )
 
     @sensor(pipeline_name="no_config_pipeline", mode="default")
-    def once_no_config(_):
+    def once_no_config_sensor(_):
         return RunRequest(
             run_key="once", run_config={"storage": {"filesystem": {}}}, tags={"test": "1234"}
         )
 
     @sensor(pipeline_name="no_config_pipeline", mode="default")
-    def never_no_config(_):
+    def never_no_config_sensor(_):
         return SkipReason("never")
 
     @sensor(pipeline_name="no_config_pipeline", mode="default")
-    def multi_no_config(_):
+    def multi_no_config_sensor(_):
         yield RunRequest(run_key="A")
         yield RunRequest(run_key="B")
 
-    return [always_no_config, once_no_config, never_no_config, multi_no_config]
+    return [
+        always_no_config_sensor,
+        once_no_config_sensor,
+        never_no_config_sensor,
+        multi_no_config_sensor,
+    ]
 
 
 @pipeline

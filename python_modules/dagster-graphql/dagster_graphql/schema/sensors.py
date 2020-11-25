@@ -1,7 +1,8 @@
 from dagster import check
-from dagster.core.host_representation import ExternalSensor
+from dagster.core.host_representation import ExternalSensor, SensorSelector
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster_graphql import dauphin
+from dagster_graphql.implementation.fetch_sensors import start_sensor, stop_sensor
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
     DauphinRepositoryNotFoundError,
@@ -94,3 +95,29 @@ class DauphinSensorsOrError(dauphin.Union):
     class Meta:
         name = "SensorsOrError"
         types = (DauphinSensors, DauphinRepositoryNotFoundError, DauphinPythonError)
+
+
+class DauphinStartSensorMutation(dauphin.Mutation):
+    class Meta:
+        name = "StartSensorMutation"
+
+    class Arguments:
+        sensor_selector = dauphin.NonNull("SensorSelector")
+
+    Output = dauphin.NonNull("SensorOrError")
+
+    def mutate(self, graphene_info, sensor_selector):
+        return start_sensor(graphene_info, SensorSelector.from_graphql_input(sensor_selector))
+
+
+class DauphinStopSensorMutation(dauphin.Mutation):
+    class Meta:
+        name = "StopSensorMutation"
+
+    class Arguments:
+        sensor_selector = dauphin.NonNull("SensorSelector")
+
+    Output = dauphin.NonNull("SensorOrError")
+
+    def mutate(self, graphene_info, sensor_selector):
+        return stop_sensor(graphene_info, SensorSelector.from_graphql_input(sensor_selector))

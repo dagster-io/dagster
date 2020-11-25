@@ -123,3 +123,9 @@ def infer_schedule_selector(graphql_context, schedule_name):
     selector = infer_repository_selector(graphql_context)
     selector.update({"scheduleName": schedule_name})
     return selector
+
+
+def infer_sensor_selector(graphql_context, sensor_name):
+    selector = infer_repository_selector(graphql_context)
+    selector.update({"sensorName": sensor_name})
+    return selector
