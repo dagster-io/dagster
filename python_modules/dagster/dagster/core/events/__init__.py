@@ -540,10 +540,7 @@ class DagsterEvent(
             step_context=step_context,
             event_specific_data=success,
             message='Finished execution of step "{step_key}" in {duration}.'.format(
-                # TODO: Make duration human readable
-                # See: https://github.com/dagster-io/dagster/issues/1602
-                step_key=step_context.step.key,
-                duration=format_duration(success.duration_ms),
+                step_key=step_context.step.key, duration=format_duration(success.duration_ms),
             ),
         )
 
