@@ -70,7 +70,6 @@ class TestRunVariantTermination(
             result = execute_dagster_graphql(
                 graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
             )
-
             assert (
                 result.data["terminatePipelineExecution"]["__typename"]
                 == "TerminatePipelineExecutionSuccess"
@@ -155,6 +154,6 @@ class TestRunVariantTermination(
             == "TerminatePipelineExecutionFailure"
         )
         assert (
-            "is not in a started state. Current status is SUCCESS"
+            "is not in a started or queued state. Current status is SUCCESS"
             in result.data["terminatePipelineExecution"]["message"]
         )

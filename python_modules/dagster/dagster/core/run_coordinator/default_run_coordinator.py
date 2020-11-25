@@ -45,7 +45,7 @@ class DefaultRunCoordinator(RunCoordinator, ConfigurableClass):
         return self._instance.launch_run(pipeline_run.run_id, external_pipeline)
 
     def can_cancel_run(self, run_id):
-        raise NotImplementedError()
+        return self._instance.run_launcher.can_terminate(run_id)
 
     def cancel_run(self, run_id):
-        raise NotImplementedError()
+        return self._instance.run_launcher.terminate(run_id)

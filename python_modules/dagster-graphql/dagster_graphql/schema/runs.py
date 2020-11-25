@@ -222,7 +222,7 @@ class DauphinPipelineRun(dauphin.ObjectType):
         # short circuit if the pipeline run is in a terminal state
         if self._pipeline_run.is_finished:
             return False
-        return graphene_info.context.instance.run_launcher.can_terminate(self.run_id)
+        return graphene_info.context.instance.run_coordinator.can_cancel_run(self.run_id)
 
     def resolve_assets(self, graphene_info):
         return get_assets_for_run_id(graphene_info, self.run_id)
