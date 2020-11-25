@@ -19,6 +19,27 @@ Use `load_from:` instead when specifying how to load the repositories in your wo
 
 We have removed the property `config_field` on definition classes. Use `config_schema` instead.
 
+## Removal: `system_storage_defs`
+
+- As we have removed the system storages, if you are using file managers which live inside system
+  storages, you should update it to be configured on resources via the `"file_manager"` resource key.
+  Similarly, you should configure solids using file managers to require the `"file_manager"`
+  resource key and replace the `context.file_manager` with `context.resources.file_manager`.
+
+  For example, if you solid look like this:
+  ```python
+  @solid
+  def emit_file(context):
+      return context.file_manager.write_data(data_bytes)
+  ```
+
+  it is recommended to make it look like this:
+  ```python
+  @solid(required_resource_keys={"file_manager"})
+  def emit_file(context):
+      return context.resources.file_manager.write_data(data_bytes)
+  ```
+
 # Migrating to 0.9.0
 
 ## Removal: `config` argument

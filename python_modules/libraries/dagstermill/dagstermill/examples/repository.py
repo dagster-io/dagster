@@ -25,6 +25,7 @@ from dagster import (
     resource,
     solid,
 )
+from dagster.core.storage.file_manager import local_file_manager
 from dagster.utils import PICKLE_PROTOCOL
 
 try:
@@ -56,11 +57,17 @@ def nb_test_path(name):
 
 
 def define_hello_world_pipeline():
-    return PipelineDefinition(name="hello_world_pipeline", solid_defs=[define_hello_world_solid()])
+    return PipelineDefinition(
+        name="hello_world_pipeline",
+        solid_defs=[define_hello_world_solid()],
+        mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})],
+    )
 
 
 def define_hello_world_solid():
-    return dagstermill.define_dagstermill_solid("hello_world", nb_test_path("hello_world"))
+    return dagstermill.define_dagstermill_solid(
+        "hello_world", nb_test_path("hello_world"), required_resource_keys={"file_manager"}
+    )
 
 
 def define_hello_world_config_solid():
@@ -88,7 +95,10 @@ def define_hello_world_config_pipeline():
 
 def define_hello_world_with_output_notebook_solid():
     return dagstermill.define_dagstermill_solid(
-        "hello_world_with_output_notebook", nb_test_path("hello_world"), output_notebook="notebook",
+        "hello_world_with_output_notebook",
+        nb_test_path("hello_world"),
+        output_notebook="notebook",
+        required_resource_keys={"file_manager"},
     )
 
 
@@ -100,6 +110,7 @@ def define_hello_world_with_output_notebook_pipeline():
     return PipelineDefinition(
         name="hello_world_with_output_notebook_pipeline",
         solid_defs=[define_hello_world_with_output_notebook_solid(), load_notebook_solid],
+        mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})],
         dependencies={
             "load_notebook_solid": {
                 "notebook": DependencyDefinition("hello_world_with_output_notebook", "notebook")

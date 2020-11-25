@@ -236,6 +236,7 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
             execution_context = self.construct_context(
                 context_creation_data=context_creation_data,
                 scoped_resources_builder=scoped_resources_builder,
+                # TODO https://github.com/dagster-io/dagster/issues/2705
                 system_storage_data=system_storage_data,
                 log_manager=log_manager,
                 intermediate_storage=intermediate_storage,
@@ -299,6 +300,7 @@ class PipelineExecutionContextManager(ExecutionContextManager):
             construct_execution_context_data(
                 context_creation_data=context_creation_data,
                 scoped_resources_builder=scoped_resources_builder,
+                # TODO https://github.com/dagster-io/dagster/issues/2705
                 system_storage_data=system_storage_data,
                 intermediate_storage=intermediate_storage,
                 log_manager=log_manager,
@@ -485,7 +487,6 @@ def construct_execution_context_data(
         environment_config=context_creation_data.environment_config,
         instance=context_creation_data.instance,
         intermediate_storage=intermediate_storage,
-        file_manager=system_storage_data.file_manager,
         raise_on_error=raise_on_error,
         retries=retries,
         execution_plan=context_creation_data.execution_plan,

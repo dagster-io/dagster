@@ -62,13 +62,13 @@ def last_key(key):
     input_defs=[InputDefinition("file_handle", FileHandle, description="The file to upload.")],
     output_defs=[OutputDefinition(name="s3_file_handle", dagster_type=S3FileHandle)],
     description="""Take a file handle and upload it to s3. Returns an S3FileHandle.""",
-    required_resource_keys={"s3"},
+    required_resource_keys={"s3", "file_manager"},
 )
 def file_handle_to_s3(context, file_handle):
     bucket = context.solid_config["Bucket"]
     key = context.solid_config["Key"]
 
-    with context.file_manager.read(file_handle, "rb") as fileobj:
+    with context.resources.file_manager.read(file_handle, "rb") as fileobj:
         context.resources.s3.upload_fileobj(fileobj, bucket, key)
         s3_file_handle = S3FileHandle(bucket, key)
 

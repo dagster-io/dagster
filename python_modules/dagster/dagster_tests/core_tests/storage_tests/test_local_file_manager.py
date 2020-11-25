@@ -1,13 +1,13 @@
 from contextlib import contextmanager
 
-from dagster import LocalFileHandle, execute_solid, solid
+from dagster import LocalFileHandle, ModeDefinition, execute_pipeline, pipeline, solid
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.file_manager import LocalFileManager
+from dagster.core.storage.file_manager import LocalFileManager, local_file_manager
 from dagster.utils.temp_file import get_temp_file_handle_with_data
 
 
 @contextmanager
-def local_file_manager(instance, run_id):
+def my_local_file_manager(instance, run_id):
     manager = None
     try:
         manager = LocalFileManager.for_instance(instance, run_id)
@@ -21,7 +21,7 @@ def test_basic_file_manager_copy_handle_to_local_temp():
     instance = DagsterInstance.ephemeral()
     foo_data = "foo".encode()
     with get_temp_file_handle_with_data(foo_data) as foo_handle:
-        with local_file_manager(instance, "0") as manager:
+        with my_local_file_manager(instance, "0") as manager:
             local_temp = manager.copy_handle_to_local_temp(foo_handle)
             assert local_temp != foo_handle.path
             with open(local_temp, "rb") as ff:
@@ -31,29 +31,33 @@ def test_basic_file_manager_copy_handle_to_local_temp():
 def test_basic_file_manager_execute():
     called = {}
 
-    @solid
+    @solid(required_resource_keys={"file_manager"})
     def file_handle(context):
         foo_bytes = "foo".encode()
-        file_handle = context.file_manager.write_data(foo_bytes)
+        file_handle = context.resources.file_manager.write_data(foo_bytes)
         assert isinstance(file_handle, LocalFileHandle)
         with open(file_handle.path, "rb") as handle_obj:
             assert foo_bytes == handle_obj.read()
 
-        with context.file_manager.read(file_handle) as handle_obj:
+        with context.resources.file_manager.read(file_handle) as handle_obj:
             assert foo_bytes == handle_obj.read()
 
-        file_handle = context.file_manager.write_data(foo_bytes, ext="foo")
+        file_handle = context.resources.file_manager.write_data(foo_bytes, ext="foo")
         assert isinstance(file_handle, LocalFileHandle)
         assert file_handle.path[-4:] == ".foo"
 
         with open(file_handle.path, "rb") as handle_obj:
             assert foo_bytes == handle_obj.read()
 
-        with context.file_manager.read(file_handle) as handle_obj:
+        with context.resources.file_manager.read(file_handle) as handle_obj:
             assert foo_bytes == handle_obj.read()
 
         called["yup"] = True
 
-    result = execute_solid(file_handle)
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"file_manager": local_file_manager})])
+    def pipe():
+        return file_handle()
+
+    result = execute_pipeline(pipe)
     assert result.success
     assert called["yup"]

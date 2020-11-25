@@ -151,7 +151,9 @@ def test_hello_world_with_config_escape():
 
 @pytest.mark.notebook_test
 def test_reexecute_result_notebook():
-    with exec_for_test("define_hello_world_pipeline") as result:
+    with exec_for_test(
+        "define_hello_world_pipeline", {"loggers": {"console": {"config": {"log_level": "ERROR"}}}}
+    ) as result:
         assert result.success
 
         materialization_events = [

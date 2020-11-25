@@ -192,7 +192,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
                     except Exception as exc:  # pylint: disable=broad-except
                         try:
                             with open(executed_notebook_path, "rb") as fd:
-                                executed_notebook_file_handle = compute_context.file_manager.write(
+                                executed_notebook_file_handle = compute_context.resources.file_manager.write(
                                     fd, mode="wb", ext="ipynb"
                                 )
                                 executed_notebook_materialization_path = (
@@ -226,7 +226,7 @@ def _dm_solid_compute(name, notebook_path, output_notebook=None):
                 # use binary mode when when moving the file since certain file_managers such as S3
                 # may try to hash the contents
                 with open(executed_notebook_path, "rb") as fd:
-                    executed_notebook_file_handle = compute_context.file_manager.write(
+                    executed_notebook_file_handle = compute_context.resources.file_manager.write(
                         fd, mode="wb", ext="ipynb"
                     )
                     executed_notebook_materialization_path = executed_notebook_file_handle.path_desc
@@ -291,8 +291,9 @@ def define_dagstermill_solid(
             type :py:class:`~dagster.FileHandle` that will point to the executed notebook (in
             addition to the :py:class:`~dagster.AssetMaterialization` that is always created). This
             respects the :py:class:`~dagster.core.storage.file_manager.FileManager` configured on
-            the pipeline system storage, so, e.g., if :py:class:`~dagster_aws.s3.s3_system_storage`
-            is configured, the output will be a :py:class:`~dagster_aws.s3.S3FileHandle`.
+            the pipeline resources via the "file_manager" resource key, so, e.g.,
+            if :py:class:`~dagster_aws.s3.s3_file_manager` is configured, the output will be a :
+            py:class:`~dagster_aws.s3.S3FileHandle`.
 
     Returns:
         :py:class:`~dagster.SolidDefinition`

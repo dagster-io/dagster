@@ -14,12 +14,11 @@ from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.execution.retries import Retries
 from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.file_manager import FileManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
 
@@ -29,7 +28,7 @@ class SystemExecutionContextData(
         "_SystemExecutionContextData",
         (
             "pipeline_run scoped_resources_builder environment_config pipeline "
-            "mode_def system_storage_def intermediate_storage_def instance intermediate_storage file_manager "
+            "mode_def system_storage_def intermediate_storage_def instance intermediate_storage "
             "raise_on_error retries execution_plan"
         ),
     )
@@ -50,7 +49,6 @@ class SystemExecutionContextData(
         intermediate_storage_def,
         instance,
         intermediate_storage,
-        file_manager,
         raise_on_error,
         retries,
         execution_plan,
@@ -82,7 +80,6 @@ class SystemExecutionContextData(
             intermediate_storage=check.inst_param(
                 intermediate_storage, "intermediate_storage", IntermediateStorage
             ),
-            file_manager=check.inst_param(file_manager, "file_manager", FileManager),
             raise_on_error=check.bool_param(raise_on_error, "raise_on_error"),
             retries=check.inst_param(retries, "retries", Retries),
             execution_plan=check.inst_param(execution_plan, "execution_plan", ExecutionPlan),
@@ -160,7 +157,10 @@ class SystemExecutionContext:
 
     @property
     def file_manager(self):
-        return self._execution_context_data.file_manager
+        raise DagsterInvalidPropertyError(
+            "You have attempted to access the file manager which has been moved to resources in 0.10.0. "
+            "Please access it via `context.resources.file_manager` instead."
+        )
 
     @property
     def raise_on_error(self):

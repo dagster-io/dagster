@@ -188,8 +188,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
             instance,
             intermediate_storage=pipeline_context.intermediate_storage,
             system_storage_data=SystemStorageData(
-                intermediate_storage=pipeline_context.intermediate_storage,
-                file_manager=pipeline_context.file_manager,
+                intermediate_storage=pipeline_context.intermediate_storage
             ),
         ),
     )

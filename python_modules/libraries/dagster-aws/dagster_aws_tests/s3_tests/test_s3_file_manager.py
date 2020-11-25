@@ -97,20 +97,24 @@ def test_depends_on_s3_resource_intermediates(mock_s3_bucket):
 def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
     bar_bytes = "bar".encode()
 
-    @solid(output_defs=[OutputDefinition(S3FileHandle)])
+    @solid(output_defs=[OutputDefinition(S3FileHandle)], required_resource_keys={"file_manager"})
     def emit_file(context):
-        return context.file_manager.write_data(bar_bytes)
+        return context.resources.file_manager.write_data(bar_bytes)
 
-    @solid(input_defs=[InputDefinition("file_handle", S3FileHandle)])
+    @solid(
+        input_defs=[InputDefinition("file_handle", S3FileHandle)],
+        required_resource_keys={"file_manager"},
+    )
     def accept_file(context, file_handle):
-        local_path = context.file_manager.copy_handle_to_local_temp(file_handle)
+        local_path = context.resources.file_manager.copy_handle_to_local_temp(file_handle)
         assert isinstance(local_path, str)
         assert open(local_path, "rb").read() == bar_bytes
 
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                system_storage_defs=s3_plus_default_storage_defs, resource_defs={"s3": s3_resource},
+                system_storage_defs=s3_plus_default_storage_defs,
+                resource_defs={"s3": s3_resource, "file_manager": s3_file_manager},
             )
         ]
     )
@@ -119,7 +123,14 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
 
     result = execute_pipeline(
         s3_file_manager_test,
-        run_config={"storage": {"s3": {"config": {"s3_bucket": mock_s3_bucket.name}}}},
+        run_config={
+            "resources": {
+                "file_manager": {
+                    "config": {"s3_bucket": mock_s3_bucket.name, "s3_prefix": "some-prefix"}
+                }
+            },
+            "storage": {"s3": {"config": {"s3_bucket": mock_s3_bucket.name}}},
+        },
     )
 
     assert result.success
@@ -137,14 +148,14 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
     file_key = list(keys_in_bucket)[0]
     comps = file_key.split("/")
 
-    assert "/".join(comps[:-1]) == "dagster/storage/{run_id}/files".format(run_id=result.run_id)
+    assert "/".join(comps[:-1]) == "some-prefix"
 
     assert uuid.UUID(comps[-1])
 
 
 @mock.patch("boto3.resource")
 @mock.patch("dagster_aws.s3.resources.S3FileManager")
-def test_s3_file_manger_resource(MockS3FileManager, mock_boto3_resource):
+def test_s3_file_manager_resource(MockS3FileManager, mock_boto3_resource):
     did_it_run = dict(it_ran=False)
 
     resource_config = {

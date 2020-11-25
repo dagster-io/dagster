@@ -81,7 +81,6 @@ def create_test_pipeline_execution_context(logger_defs=None):
             intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
             system_storage_data=SystemStorageData(
                 intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
-                file_manager=LocalFileManager.for_instance(instance, pipeline_run.run_id),
             ),
             log_manager=log_manager,
             retries=executor.retries,

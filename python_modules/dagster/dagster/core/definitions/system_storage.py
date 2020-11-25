@@ -102,14 +102,15 @@ class SystemStorageData:
 
     Attributes:
         intermediate_storage (IntermediateStorage): An intermediates manager.
-        file_manager (FileManager): A file manager.
+        file_manager (Optional[FileManager]): A file manager.
     """
 
-    def __init__(self, intermediate_storage, file_manager):
+    def __init__(self, intermediate_storage, file_manager=None):
         self.intermediate_storage = check.inst_param(
             intermediate_storage, "intermediate_storage", IntermediateStorage
         )
-        self.file_manager = check.inst_param(file_manager, "file_manager", FileManager)
+        # TODO https://github.com/dagster-io/dagster/issues/2705
+        self.file_manager = check.opt_inst_param(file_manager, "file_manager", FileManager)
 
 
 def system_storage(required_resource_keys, name=None, is_persistent=True, config_schema=None):

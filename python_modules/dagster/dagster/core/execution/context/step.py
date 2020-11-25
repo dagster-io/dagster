@@ -1,4 +1,5 @@
 from dagster import check
+from dagster.core.errors import DagsterInvalidPropertyError
 
 from .system import SystemStepExecutionContext
 
@@ -15,7 +16,10 @@ class StepExecutionContext:
 
     @property
     def file_manager(self):
-        return self._system_step_execution_context.file_manager
+        raise DagsterInvalidPropertyError(
+            "You have attempted to access the file manager which has been moved to resources in 0.10.0. "
+            "Please access it via `context.resources.file_manager` instead."
+        )
 
     @property
     def resources(self):
