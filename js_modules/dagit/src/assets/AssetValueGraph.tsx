@@ -29,6 +29,7 @@ export const AssetValueGraph: React.FunctionComponent<{
     datasets: [
       {
         label: props.label,
+        lineTension: 0,
         data: props.data.values.map((v) => ({x: v.xNumeric, y: v.y})),
         borderColor: Colors.BLUE3,
         backgroundColor: 'rgba(0,0,0,0)',
