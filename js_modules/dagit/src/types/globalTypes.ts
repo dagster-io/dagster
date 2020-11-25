@@ -150,6 +150,12 @@ export interface ScheduleSelector {
   scheduleName: string;
 }
 
+export interface SensorSelector {
+  repositoryName: string;
+  repositoryLocationName: string;
+  sensorName: string;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================

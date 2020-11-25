@@ -4,6 +4,7 @@ import {Redirect, Route, Switch} from 'react-router-dom';
 
 import {TopNav} from 'src/nav/TopNav';
 import {SchedulesRoot} from 'src/schedules/SchedulesRoot';
+import {SensorsRoot} from 'src/sensors/SensorsRoot';
 import {SolidsRoot} from 'src/solids/SolidsRoot';
 import {RepositoryPipelinesList} from 'src/workspace/RepositoryPipelinesList';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
@@ -28,12 +29,15 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
     {text: 'Pipelines', href: workspacePathFromAddress(repoAddress, '/pipelines')},
     {text: 'Solids', href: workspacePathFromAddress(repoAddress, '/solids')},
     {text: 'Schedules', href: workspacePathFromAddress(repoAddress, '/schedules')},
+    {text: 'Sensors', href: workspacePathFromAddress(repoAddress, '/sensors')},
   ];
 
   const activeTab = () => {
     switch (tab) {
       case 'schedules':
         return 'Schedules';
+      case 'sensors':
+        return 'Sensors';
       case 'solids':
         return 'Solids';
       default:
@@ -57,6 +61,10 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
           <Route
             path="/workspace/:repoPath/schedules"
             render={() => <SchedulesRoot repoAddress={repoAddress} />}
+          />
+          <Route
+            path="/workspace/:repoPath/sensors"
+            render={() => <SensorsRoot repoAddress={repoAddress} />}
           />
           <Route
             path="/workspace/:repoPath/solids/:name?"

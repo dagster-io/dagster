@@ -4,6 +4,7 @@ import {Route, RouteComponentProps, Switch} from 'react-router-dom';
 
 import {PipelineRoot} from 'src/pipelines/PipelineRoot';
 import {ScheduleRoot} from 'src/schedules/ScheduleRoot';
+import {SensorRoot} from 'src/sensors/SensorRoot';
 import {MainContent} from 'src/ui/MainContent';
 import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
 import {WorkspaceOverviewRoot} from 'src/workspace/WorkspaceOverviewRoot';
@@ -74,6 +75,12 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
             repoAddress={addressForPath}
             runTab={props.match.params.runTab}
           />
+        )}
+      />
+      <Route
+        path="/workspace/:repoPath/sensors/:sensorName"
+        render={(props: RouteComponentProps<{sensorName: string}>) => (
+          <SensorRoot sensorName={props.match.params.sensorName} repoAddress={addressForPath} />
         )}
       />
       <Route

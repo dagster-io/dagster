@@ -1,12 +1,11 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, IBreadcrumbProps} from '@blueprintjs/core';
+import {IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
-import {RunTable} from 'src/runs/RunTable';
 import {ScheduleDetails} from 'src/schedules/ScheduleDetails';
 import {SCHEDULE_DEFINITION_FRAGMENT} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
@@ -15,9 +14,8 @@ import {
   ScheduleRootQuery,
   ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition as ScheduleDefinition,
 } from 'src/schedules/types/ScheduleRootQuery';
-import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
-import {Subheading} from 'src/ui/Text';
+import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -110,29 +108,7 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
     },
   });
 
-  const content = () => {
-    if (loading) {
-      return <Box margin={{top: 8}}>Loading...</Box>;
-    }
-    if (!data?.pipelineRunsOrError || data?.pipelineRunsOrError.__typename !== 'PipelineRuns') {
-      return <Box margin={{top: 8}}>Error!</Box>;
-    }
-    const runs = data?.pipelineRunsOrError.results;
-    return <RunTable onSetFilter={() => {}} runs={runs} />;
-  };
-
-  return (
-    <Group direction="vertical" spacing={4}>
-      <Box
-        padding={{bottom: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
-        flex={{direction: 'row'}}
-      >
-        <Subheading>Latest runs</Subheading>
-      </Box>
-      <div style={{color: Colors.GRAY3}}>{content()}</div>
-    </Group>
-  );
+  return <PreviousRunsSection loading={loading} data={data?.pipelineRunsOrError} />;
 };
 
 export const SCHEDULE_ROOT_QUERY = gql`
@@ -163,15 +139,8 @@ const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
   query PreviousRunsForScheduleQuery($filter: PipelineRunsFilter, $limit: Int) {
     pipelineRunsOrError(filter: $filter, limit: $limit) {
       __typename
-      ... on PipelineRuns {
-        results {
-          id
-          ... on PipelineRun {
-            ...RunTableRunFragment
-          }
-        }
-      }
+      ...PreviousRunsFragment
     }
   }
-  ${RunTable.fragments.RunTableRunFragment}
+  ${PREVIOUS_RUNS_FRAGMENT}
 `;
