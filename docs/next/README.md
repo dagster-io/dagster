@@ -1,4 +1,4 @@
-# Instructions:
+# Instructions
 
 In the parent directory (`/docs`), run:
 
@@ -38,7 +38,7 @@ Now:
 <PyObject module="dagster" object="composite_solid" displayText="@composite_solid" />
 ```
 
-## Inline Code:
+## Inline Code
 
 Previously:
 
@@ -56,7 +56,7 @@ $ dagit -f config.py -n config_pipeline
 ```
 </pre>
 
-## Literal includes:
+## Literal includes
 
 Previously:
 
@@ -105,3 +105,27 @@ def included_func():
 excluded_bool = True
 
 ```
+
+# Screenshots
+
+Use [generate_screenshots.test.js](https://github.com/dagster-io/dagster/issues/3292#issue-751044712) to add or update screenshots in the documentation. 
+
+## Update screenshots
+
+To update the screenshots, in the `/docs` directory, run:
+
+```
+npm run screenshots
+```
+
+When there is any change of the path of a screenshot or change of Dagit URLs, edit the generate_screenshots test. To update the changes, run:
+
+```
+npm run screenshots -- -u
+```
+
+## Add screenshots
+
+Create a new test in [generate_screenshots.test.js](https://github.com/dagster-io/dagster/issues/3292#issue-751044712) to generate new screenshots.
+
+Then, run `npm run screenshots -- -u`.
