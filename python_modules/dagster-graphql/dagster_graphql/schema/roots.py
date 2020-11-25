@@ -118,7 +118,7 @@ class DauphinQuery(dauphin.ObjectType):
     )
 
     sensorOrError = dauphin.Field(
-        dauphin.NonNull("SensorOrError"), jobSelector=dauphin.NonNull("SensorSelector"),
+        dauphin.NonNull("SensorOrError"), sensorSelector=dauphin.NonNull("SensorSelector"),
     )
     sensorsOrError = dauphin.Field(
         dauphin.NonNull("SensorsOrError"), repositorySelector=dauphin.NonNull("RepositorySelector"),
