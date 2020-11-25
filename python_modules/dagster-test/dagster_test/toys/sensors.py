@@ -49,7 +49,7 @@ def directory_file_sensor(
                     continue
                 fstats = os.stat(filepath)
                 if fstats.st_mtime > since:
-                    fileinfo_since.append(filename, fstats.st_mtime)
+                    fileinfo_since.append((filename, fstats.st_mtime))
 
             result = fn(context, fileinfo_since)
 
