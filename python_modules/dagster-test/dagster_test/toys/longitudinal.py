@@ -63,7 +63,7 @@ def _base_compute(context):
         if context.solid_config.get("materialization_path") is not None:
             metadata_entries.append(
                 EventMetadataEntry.path(
-                    context.solid_config.get("materialization_url"), context.solid.name,
+                    context.solid_config.get("materialization_path"), context.solid.name,
                 )
             )
 

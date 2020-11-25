@@ -3,6 +3,7 @@ import {Button, Classes, Colors, Dialog, Icon, Position, Tooltip} from '@bluepri
 import CSS from 'csstype';
 import * as React from 'react';
 import ReactMarkdown from 'react-markdown';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
@@ -96,12 +97,12 @@ export class MetadataEntry extends React.Component<{
       case 'EventPathMetadataEntry':
         return (
           <>
-            <MetadataEntryLink
+            <MetadataEntryAction
               title={'Copy to clipboard'}
               onClick={(e) => copyValue(e, entry.path)}
             >
               {entry.path}
-            </MetadataEntryLink>{' '}
+            </MetadataEntryAction>{' '}
             <Icon
               icon="clipboard"
               iconSize={10}
@@ -114,7 +115,7 @@ export class MetadataEntry extends React.Component<{
 
       case 'EventJsonMetadataEntry':
         return (
-          <MetadataEntryLink
+          <MetadataEntryAction
             title="Show full value"
             onClick={() =>
               showCustomAlert({
@@ -128,15 +129,15 @@ export class MetadataEntry extends React.Component<{
             }
           >
             [Show JSON]
-          </MetadataEntryLink>
+          </MetadataEntryAction>
         );
 
       case 'EventUrlMetadataEntry':
         return (
           <>
-            <MetadataEntryLink href={entry.url} title={`Open in a new tab`} target="__blank">
+            <MetadataEntryAction href={entry.url} title={`Open in a new tab`} target="__blank">
               {entry.url}
-            </MetadataEntryLink>{' '}
+            </MetadataEntryAction>{' '}
             <a href={entry.url} target="__blank">
               <Icon icon="link" iconSize={10} color={'#a88860'} />
             </a>
@@ -198,7 +199,7 @@ class MarkdownMetadataLink extends React.Component<{
     const {isExpanded} = this.state;
     return (
       <>
-        <MetadataEntryLink onClick={this.onView}>[Show Markdown]</MetadataEntryLink>
+        <MetadataEntryAction onClick={this.onView}>[Show Markdown]</MetadataEntryAction>
         {isExpanded && (
           <Dialog
             icon="info-sign"
@@ -237,7 +238,15 @@ const MarkdownMetadataExpanded = styled.div`
   margin-bottom: 20px;
 `;
 
-export const MetadataEntryLink = styled.a`
+export const MetadataEntryAction = styled.a`
+  text-decoration: underline;
+  color: inherit;
+  &:hover {
+    color: inherit;
+  }
+`;
+
+export const MetadataEntryLink = styled(Link)`
   text-decoration: underline;
   color: inherit;
   &:hover {

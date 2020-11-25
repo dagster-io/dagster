@@ -9,6 +9,7 @@ import {EventTypeColumn} from 'src/runs/LogsRowComponents';
 import {
   LogRowStructuredContentTable,
   MetadataEntries,
+  MetadataEntryAction,
   MetadataEntryLink,
 } from 'src/runs/MetadataEntry';
 import {
@@ -64,7 +65,7 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
                       stepKey={node.stepKey}
                       runState={metadata.steps[node.stepKey]?.state}
                     >
-                      <MetadataEntryLink>View Raw Step Output</MetadataEntryLink>
+                      <MetadataEntryAction>View Raw Step Output</MetadataEntryAction>
                     </ComputeLogLink>
                   ),
                 },
@@ -311,7 +312,7 @@ const MaterializationContent: React.FunctionComponent<{
   const assetDashboardLink = assetsSupported ? (
     <span style={{marginLeft: 10}}>
       [
-      <MetadataEntryLink href={`/instance/assets/${materialization.assetKey.path.join('/')}`}>
+      <MetadataEntryLink to={`/instance/assets/${materialization.assetKey.path.join('/')}`}>
         View Asset Dashboard
       </MetadataEntryLink>
       ]
