@@ -6,7 +6,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from 'src/ShortcutHandler';
-import {SchedulesListQuery} from 'src/nav/types/SchedulesListQuery';
+import {JobsListQuery} from 'src/nav/types/JobsListQuery';
 import {JobStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {BorderSetting} from 'src/ui/types';
@@ -16,12 +16,12 @@ import {workspacePath} from 'src/workspace/workspacePath';
 const iincludes = (haystack: string, needle: string) =>
   haystack.toLowerCase().includes(needle.toLowerCase());
 
-interface SchedulesListProps {
+interface JobsListProps {
   selector?: string;
   repo: DagsterRepoOption;
 }
 
-export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo, selector}) => {
+export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector}) => {
   const [focused, setFocused] = React.useState<string | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const history = useHistory();
@@ -30,7 +30,7 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
 
   const [q, setQ] = React.useState<string>('');
 
-  const schedules = useQuery<SchedulesListQuery>(SCHEDULES_LIST_QUERY, {
+  const jobs = useQuery<JobsListQuery>(JOBS_LIST_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {
       repositorySelector: {
@@ -41,17 +41,31 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
   });
 
   const repoSchedules =
-    schedules.data?.schedulesOrError?.__typename === 'Schedules'
-      ? schedules.data.schedulesOrError.results
+    jobs.data?.schedulesOrError?.__typename === 'Schedules'
+      ? jobs.data.schedulesOrError.results
       : [];
 
-  const items = repoSchedules
-    .filter(({name}) => !q || iincludes(name, q))
-    .map(({name, scheduleState}) => ({
-      to: workspacePath(repoName, repoLocation, `/schedules/${name}`),
-      label: name,
-      status: scheduleState?.status,
-    }));
+  const repoSensors =
+    jobs.data?.sensorsOrError?.__typename === 'Sensors' ? jobs.data.sensorsOrError.results : [];
+
+  const items = [
+    ...repoSchedules
+      .filter(({name}) => !q || iincludes(name, q))
+      .map(({name, scheduleState}) => ({
+        to: workspacePath(repoName, repoLocation, `/schedules/${name}`),
+        label: name,
+        jobType: 'schedule',
+        status: scheduleState?.status,
+      })),
+    ...repoSensors
+      .filter(({name}) => !q || iincludes(name, q))
+      .map(({name, sensorState}) => ({
+        to: workspacePath(repoName, repoLocation, `/sensors/${name}`),
+        label: name,
+        jobType: 'sensor',
+        status: sensorState?.status,
+      })),
+  ];
 
   const onShiftFocus = (dir: 1 | -1) => {
     const idx = items.findIndex((p) => p.label === focused);
@@ -96,7 +110,7 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
             inputRef={(c) => (inputRef.current = c)}
             value={q}
             small
-            placeholder={`Search schedules...`}
+            placeholder={`Search ...`}
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') {
                 onShiftFocus(1);
@@ -116,7 +130,7 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
           />
         </ShortcutHandler>
         <div style={{width: 4}} />
-        <Link to={workspacePath(repoName, repoLocation, '/schedules')}>
+        <Link to={workspacePath(repoName, repoLocation, '/jobs')}>
           <Button small={true} icon={<Icon icon="diagram-tree" iconSize={13} />}>
             View All
           </Button>
@@ -130,6 +144,7 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
             isSelected || isFocused
               ? {side: 'left', width: 4, color: isSelected ? Colors.COBALT3 : Colors.GRAY3}
               : null;
+          const icon = p.jobType === 'schedule' ? 'time' : 'automatic-updates';
 
           return (
             <Item
@@ -145,10 +160,13 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
                 flex={{alignItems: 'center', justifyContent: 'space-between'}}
                 padding={{vertical: 8, right: 8, left: 12}}
               >
-                <Label>{p.label}</Label>
+                <Box flex={{alignItems: 'center', justifyContent: 'flex-start'}}>
+                  <Icon icon={icon} iconSize={14} />
+                  <Label>{p.label}</Label>
+                </Box>
                 {p.status === JobStatus.RUNNING ? (
                   <Box margin={{left: 4}}>
-                    <ScheduleStatusDot size={9} />
+                    <StatusDot size={9} />
                   </Box>
                 ) : null}
               </Box>
@@ -171,9 +189,10 @@ const Header = styled.div`
 const Label = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-left: 8px;
 `;
 
-const ScheduleStatusDot = styled.div<{
+const StatusDot = styled.div<{
   size: number;
 }>`
   width: ${({size}) => size}px;
@@ -245,14 +264,26 @@ const SelectedItemTooltipStyle = JSON.stringify({
   fontWeight: 600,
 });
 
-export const SCHEDULES_LIST_QUERY = gql`
-  query SchedulesListQuery($repositorySelector: RepositorySelector!) {
+export const JOBS_LIST_QUERY = gql`
+  query JobsListQuery($repositorySelector: RepositorySelector!) {
     schedulesOrError(repositorySelector: $repositorySelector) {
       ... on Schedules {
         results {
           id
           name
           scheduleState {
+            id
+            status
+          }
+        }
+      }
+    }
+    sensorsOrError(repositorySelector: $repositorySelector) {
+      ... on Sensors {
+        results {
+          id
+          name
+          sensorState {
             id
             status
           }

@@ -11,10 +11,10 @@ import {WebsocketStatus} from 'src/WebsocketStatus';
 import navBarImage from 'src/images/nav-logo-icon.png';
 import navTitleImage from 'src/images/nav-title.png';
 import {InstanceDetailsLink} from 'src/nav/InstanceDetailsLink';
+import {JobsList} from 'src/nav/JobsList';
 import {RepositoryContentList} from 'src/nav/RepositoryContentList';
 import {RepositoryLocationStateObserver} from 'src/nav/RepositoryLocationStateObserver';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
-import {SchedulesList} from 'src/nav/SchedulesList';
 import {Group} from 'src/ui/Group';
 import {Caption} from 'src/ui/Text';
 import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
@@ -92,8 +92,8 @@ const LeftNavRepositorySection = () => {
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
           <ItemHeader>{'Pipelines & Solids:'}</ItemHeader>
           <RepositoryContentList {...match?.params} repo={activeRepo.repo} />
-          <ItemHeader>Schedules:</ItemHeader>
-          <SchedulesList {...match?.params} repo={activeRepo.repo} />
+          <ItemHeader>Schedules and Sensors:</ItemHeader>
+          <JobsList {...match?.params} repo={activeRepo.repo} />
         </div>
       ) : null}
     </div>
