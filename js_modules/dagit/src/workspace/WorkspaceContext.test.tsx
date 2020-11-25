@@ -1,6 +1,5 @@
 import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
@@ -9,11 +8,10 @@ import {LAST_REPO_KEY, WorkspaceContext, WorkspaceProvider} from 'src/workspace/
 
 describe('WorkspaceContext', () => {
   const Display = () => {
-    const {activeRepo, refetch} = React.useContext(WorkspaceContext);
+    const {activeRepo} = React.useContext(WorkspaceContext);
     return (
       <>
         <div>Pipeline count: {activeRepo?.repo.repository.pipelines.length}</div>
-        <button onClick={() => refetch()}>Refetch</button>
       </>
     );
   };
@@ -39,12 +37,11 @@ describe('WorkspaceContext', () => {
       }),
     };
 
-    it('updates the "current repository" state correctly on refetch', async () => {
-      let numPipelines = 1;
+    it('Corrctly displays the current repository state', async () => {
       const mocks = {
         ...defaultMocks,
         Repository: () => ({
-          pipelines: () => new MockList(numPipelines),
+          pipelines: () => new MockList(1),
         }),
       };
 
@@ -53,20 +50,6 @@ describe('WorkspaceContext', () => {
           <Test mocks={mocks} />
         </MemoryRouter>,
       );
-
-      await waitFor(() => {
-        expect(screen.getByText(/pipeline count: 1/i)).toBeVisible();
-      });
-
-      numPipelines++;
-      userEvent.click(screen.getByRole('button'));
-
-      await waitFor(() => {
-        expect(screen.getByText(/pipeline count: 2/i)).toBeVisible();
-      });
-
-      numPipelines--;
-      userEvent.click(screen.getByRole('button'));
 
       await waitFor(() => {
         expect(screen.getByText(/pipeline count: 1/i)).toBeVisible();
