@@ -568,6 +568,9 @@ def _value_for_input_source(step_context, input_name, dagster_type, source, chec
         if all((isinstance(x, ObjectStoreOperation) for x in values)):
             return MultipleStepOutputsListWrapper(values)
 
+        if all((isinstance(x, AssetStoreOperation) for x in values)):
+            return MultipleStepOutputsListWrapper(values)
+
         return values
 
     else:

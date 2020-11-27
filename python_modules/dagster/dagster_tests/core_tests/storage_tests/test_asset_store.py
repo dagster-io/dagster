@@ -284,3 +284,26 @@ def test_asset_store_context_from_execution_plan():
         pipeline_name=pipeline_def.name,
         solid_def=pipeline_def.solid_def_named("solid_a"),
     )
+
+
+def test_fan_in():
+    with seven.TemporaryDirectory() as tmpdir_path:
+        asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
+
+        @solid
+        def input_solid1(_):
+            return 1
+
+        @solid
+        def input_solid2(_):
+            return 2
+
+        @solid
+        def solid1(_, input1):
+            assert input1 == [1, 2]
+
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": asset_store})])
+        def my_pipeline():
+            solid1(input1=[input_solid1(), input_solid2()])
+
+        execute_pipeline(my_pipeline)
