@@ -1,3 +1,4 @@
+import hashlib
 from abc import ABC, abstractmethod
 from collections import namedtuple
 
@@ -8,6 +9,15 @@ from dagster.core.definitions.events import (
     ObjectStoreOperation,
 )
 from dagster.core.errors import DagsterTypeLoadingError, user_code_error_boundary
+
+
+def join_and_hash(*args):
+    lst = [check.opt_str_param(elem, "elem") for elem in args]
+    if None in lst:
+        return None
+    else:
+        unhashed = "".join(sorted(lst))
+        return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
 
 
 class _MISSING_ITEM_SENTINEL:
@@ -47,6 +57,11 @@ class StepInputSource(ABC):
 
     def required_resource_keys(self):
         return set()
+
+    @abstractmethod
+    def compute_version(self, step_versions):
+        """See resolve_step_versions in resolve_versions.py for explanation of step_versions"""
+        raise NotImplementedError()
 
 
 class FromStepOutput(
@@ -91,6 +106,17 @@ class FromStepOutput(
                 dagster_type=self.dagster_type,
             )
 
+    def compute_version(self, step_versions):
+        if (
+            self.step_output_handle.step_key not in step_versions
+            or not step_versions[self.step_output_handle.step_key]
+        ):
+            return None
+        else:
+            return join_and_hash(
+                step_versions[self.step_output_handle.step_key], self.step_output_handle.output_name
+            )
+
 
 def _generate_error_boundary_msg_for_step_input(context, input_name):
     return lambda: """Error occurred during input loading:
@@ -128,6 +154,9 @@ class FromConfig(namedtuple("_FromConfig", "config_data dagster_type input_name"
             self.dagster_type.loader.required_resource_keys() if self.dagster_type.loader else set()
         )
 
+    def compute_version(self, step_versions):
+        return self.dagster_type.loader.compute_loaded_input_version(self.config_data)
+
 
 class FromDefaultValue(namedtuple("_FromDefaultValue", "value"), StepInputSource):
     """This step input source is the default value declared on the InputDefinition"""
@@ -139,6 +168,9 @@ class FromDefaultValue(namedtuple("_FromDefaultValue", "value"), StepInputSource
 
     def load_input_object(self, step_context):
         return self.value
+
+    def compute_version(self, step_versions):
+        return join_and_hash(repr(self.value))
 
 
 class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInputSource):
@@ -192,6 +224,11 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
         for source in self.sources:
             resource_keys.union(source.required_resource_keys())
         return resource_keys
+
+    def compute_version(self, step_versions):
+        return join_and_hash(
+            *[inner_source.compute_version(step_versions) for inner_source in self.sources]
+        )
 
 
 class StepInput(namedtuple("_StepInput", "name dagster_type source")):

@@ -1,78 +1,8 @@
-import hashlib
-
 from dagster import check
 from dagster.core.definitions.mode import ModeDefinition
-from dagster.core.execution.plan.inputs import (
-    FromConfig,
-    FromDefaultValue,
-    FromMultipleSources,
-    FromStepOutput,
-)
 from dagster.core.system_config.objects import EnvironmentConfig
 
-
-def _resolve_step_input_versions(step, step_versions):
-    """Computes and returns the versions for each input defined for a given step.
-
-    If an input is constructed from outputs of other steps, the input version is computed by
-    sorting, concatenating, and hashing the versions of each output it is constructed from.
-
-    If an input is constructed from externally loaded input (via run config) or a default value (no
-    run config provided), the input version is the version of the provided type loader for that
-    input.
-
-    Args:
-        step (ExecutionStep): The step for which to compute input versions.
-        step_versions (Dict[str, Optional[str]]): Each key is a step key, and the value is the
-            version of the corresponding step.
-
-    Returns:
-        Dict[str, Optional[str]]: A dictionary that maps the names of the inputs to the provided
-            step to their computed versions.
-    """
-
-    def _resolve_output_version(step_output_handle):
-        """Returns version of step output.
-
-        Step output version is computed by sorting, concatenating, and hashing together the version
-        of the step corresponding to the provided step output handle and the name of the output.
-        """
-        if (
-            step_output_handle.step_key not in step_versions
-            or not step_versions[step_output_handle.step_key]
-        ):
-            return None
-        else:
-            return join_and_hash(
-                step_versions[step_output_handle.step_key], step_output_handle.output_name
-            )
-
-    def _resolve_source_version(input_source, dagster_type):
-        if isinstance(input_source, FromMultipleSources):
-            return join_and_hash(
-                *[
-                    _resolve_source_version(inner_source, dagster_type.get_inner_type_for_fan_in(),)
-                    for inner_source in input_source.sources
-                ]
-            )
-        elif isinstance(input_source, FromStepOutput):
-            return _resolve_output_version(input_source.step_output_handle)
-        elif isinstance(input_source, FromConfig):
-            return dagster_type.loader.compute_loaded_input_version(input_source.config_data)
-        elif isinstance(input_source, FromDefaultValue):
-            return join_and_hash(repr(input_source.value))
-        else:
-            check.failed(
-                "Unhandled step input source type for version calculation: {}".format(input_source)
-            )
-
-    input_versions = {}
-    for input_name, step_input in step.step_input_dict.items():
-        input_versions[input_name] = _resolve_source_version(
-            step_input.source, step_input.dagster_type,
-        )
-
-    return input_versions
+from .plan.inputs import join_and_hash
 
 
 def resolve_resource_versions(environment_config, mode_def):
@@ -153,7 +83,10 @@ def resolve_step_versions(execution_plan, environment_config, mode_def):
     step_versions = {}  # step_key (str) -> version (str)
 
     for step in execution_plan.topological_steps():
-        input_version_dict = _resolve_step_input_versions(step, step_versions)
+        input_version_dict = {
+            input_name: step_input.source.compute_version(step_versions)
+            for input_name, step_input in step.step_input_dict.items()
+        }
         input_versions = [version for version in input_version_dict.values()]
 
         solid_name = str(step.solid_handle)
@@ -191,15 +124,6 @@ def resolve_step_output_versions(execution_plan, environment_config, mode_def):
         for step in execution_plan.steps
         for output_name in step.step_output_dict.keys()
     }
-
-
-def join_and_hash(*args):
-    lst = [check.opt_str_param(elem, "elem") for elem in args]
-    if None in lst:
-        return None
-    else:
-        unhashed = "".join(sorted(lst))
-        return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
 
 
 def resolve_config_version(config_value):
