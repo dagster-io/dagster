@@ -214,7 +214,11 @@ def get_step_input(
         return StepInput(
             name=input_name,
             dagster_type=input_def.dagster_type,
-            source=FromConfig(solid_config.inputs[input_name]),
+            source=FromConfig(
+                solid_config.inputs[input_name],
+                dagster_type=input_def.dagster_type,
+                input_name=input_name,
+            ),
         )
 
     input_handle = solid.input_handle(input_name)
@@ -223,7 +227,11 @@ def get_step_input(
         return StepInput(
             name=input_name,
             dagster_type=input_def.dagster_type,
-            source=FromStepOutput(plan_builder.get_output_handle(solid_output_handle)),
+            source=FromStepOutput(
+                step_output_handle=plan_builder.get_output_handle(solid_output_handle),
+                dagster_type=input_def.dagster_type,
+                check_for_missing=False,
+            ),
         )
 
     if dependency_structure.has_multi_deps(input_handle):
@@ -233,7 +241,11 @@ def get_step_input(
             dagster_type=input_def.dagster_type,
             source=FromMultipleSources(
                 [
-                    FromStepOutput(plan_builder.get_output_handle(solid_output_handle))
+                    FromStepOutput(
+                        step_output_handle=plan_builder.get_output_handle(solid_output_handle),
+                        dagster_type=input_def.dagster_type.get_inner_type_for_fan_in(),
+                        check_for_missing=True,
+                    )
                     for solid_output_handle in solid_output_handles
                 ]
             ),
