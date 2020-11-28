@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from collections import namedtuple
 
 from dagster import check
@@ -29,7 +30,7 @@ def _get_addressable_asset(step_context, step_output_handle):
     )
 
 
-class StepInputSource:
+class StepInputSource(ABC):
     """How to load the data for a step input"""
 
     @property
@@ -40,8 +41,12 @@ class StepInputSource:
     def step_output_handle_dependencies(self):
         return []
 
+    @abstractmethod
     def load_input_object(self, step_context):
-        pass
+        raise NotImplementedError()
+
+    def required_resource_keys(self):
+        return set()
 
 
 class FromStepOutput(
@@ -118,6 +123,11 @@ class FromConfig(namedtuple("_FromConfig", "config_data dagster_type input_name"
                 step_context, self.config_data
             )
 
+    def required_resource_keys(self):
+        return (
+            self.dagster_type.loader.required_resource_keys() if self.dagster_type.loader else set()
+        )
+
 
 class FromDefaultValue(namedtuple("_FromDefaultValue", "value"), StepInputSource):
     """This step input source is the default value declared on the InputDefinition"""
@@ -176,6 +186,12 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
             return MultipleStepOutputsListWrapper(values)
 
         return values
+
+    def required_resource_keys(self):
+        resource_keys = set()
+        for source in self.sources:
+            resource_keys.union(source.required_resource_keys())
+        return resource_keys
 
 
 class StepInput(namedtuple("_StepInput", "name dagster_type source")):

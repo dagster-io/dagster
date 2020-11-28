@@ -8,7 +8,6 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
-from dagster.core.execution.plan.inputs import FromConfig, FromMultipleSources
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -227,18 +226,7 @@ def get_required_resource_keys_for_step(
     for step_input in execution_step.step_inputs:
         resource_keys = resource_keys.union(step_input.dagster_type.required_resource_keys)
 
-        if isinstance(step_input.source, FromConfig) and step_input.dagster_type.loader:
-            resource_keys = resource_keys.union(
-                step_input.dagster_type.loader.required_resource_keys()
-            )
-
-        elif isinstance(step_input.source, FromMultipleSources):
-            inner_type = step_input.dagster_type.get_inner_type_for_fan_in()
-            for inner_source in step_input.source.sources:
-                if isinstance(inner_source, FromConfig) and inner_type.loader:
-                    resource_keys = resource_keys.union(
-                        step_input.dagster_type.loader.required_resource_keys()
-                    )
+        resource_keys = resource_keys.union(step_input.source.required_resource_keys())
 
         for source_handle in step_input.source.step_output_handle_dependencies:
             source_asset_store_key = execution_plan.get_asset_store_key(source_handle)
