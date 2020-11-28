@@ -5,7 +5,12 @@ from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
 from dagster.core.errors import DagsterAddressIOError, DagsterObjectStoreError
 from dagster.core.execution.context.system import SystemExecutionContext
-from dagster.core.execution.plan.inputs import FromMultipleSources, FromStepOutput
+from dagster.core.execution.plan.inputs import (
+    FromConfig,
+    FromDefaultValue,
+    FromMultipleSources,
+    FromStepOutput,
+)
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental
@@ -57,6 +62,10 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
                 self.is_input_source_missing(context, inner_source)
                 for inner_source in source.sources
             )
+        elif isinstance(source, (FromConfig, FromDefaultValue)):
+            pass  # value is sourced directly
+        else:
+            check.failed(f"Unhandled step input source: {source}")
 
         return False
 

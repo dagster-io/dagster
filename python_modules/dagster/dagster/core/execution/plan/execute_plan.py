@@ -13,7 +13,13 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemExecutionContext, SystemStepExecutionContext
 from dagster.core.execution.memoization import copy_required_intermediates_for_execution
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
-from dagster.core.execution.plan.inputs import FromMultipleSources, FromStepOutput, StepInputSource
+from dagster.core.execution.plan.inputs import (
+    FromConfig,
+    FromDefaultValue,
+    FromMultipleSources,
+    FromStepOutput,
+    StepInputSource,
+)
 from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, UserFailureData
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import Retries
@@ -157,6 +163,10 @@ def _assert_missing_sources_from_optional_outputs(missing_sources, execution_pla
                     step_key=source.step_output_handle.step_key,
                     output_name=source.step_output_handle.output_name,
                 )
+        elif isinstance(source, (FromConfig, FromDefaultValue)):
+            pass  # value is sourced directly
+        else:
+            check.failed(f"Unhandled step input source {source}")
 
 
 def _dagster_event_sequence_for_step(step_context, retries):
