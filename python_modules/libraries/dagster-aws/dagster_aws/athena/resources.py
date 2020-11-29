@@ -10,7 +10,7 @@ except ImportError:
 
 import boto3
 from botocore.stub import Stubber
-from dagster import check
+from dagster import Field, StringSource, check, resource
 
 
 class AthenaError(Exception):
@@ -22,11 +22,11 @@ class AthenaTimeout(AthenaError):
 
 
 class AthenaResource:
-    def __init__(self, client, workgroup_name="primary", retry_interval=5, max_retries=120):
+    def __init__(self, client, workgroup="primary", polling_interval=5, max_polls=120):
         self.client = client
-        self.workgroup_name = workgroup_name
-        self.max_retries = max_retries
-        self.retry_interval = retry_interval
+        self.workgroup = workgroup
+        self.max_polls = max_polls
+        self.polling_interval = polling_interval
 
     def execute_query(self, query, fetch_results=False):
         """Synchronously execute a single query against Athena. Will return a list of rows, where
@@ -46,14 +46,14 @@ class AthenaResource:
         check.str_param(query, "query")
         check.bool_param(fetch_results, "fetch_results")
         execution_id = self.client.start_query_execution(
-            QueryString=query, WorkGroup=self.workgroup_name
+            QueryString=query, WorkGroup=self.workgroup
         )["QueryExecutionId"]
         self._poll(execution_id)
         if fetch_results:
             return self._results(execution_id)
 
     def _poll(self, execution_id):
-        retries = self.max_retries
+        retries = self.max_polls
         state = "QUEUED"
 
         while retries >= 0 and state in ["QUEUED", "RUNNING"]:
@@ -61,7 +61,7 @@ class AthenaResource:
                 "QueryExecution"
             ]
             state = execution["Status"]["State"]
-            if self.max_retries > 0:
+            if self.max_polls > 0:
                 retries -= 1
 
         if retries < 0:
@@ -89,7 +89,7 @@ class AthenaResource:
 class FakeAthenaResource(AthenaResource):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.retry_interval = 0
+        self.polling_interval = 0
         self.stubber = Stubber(self.client)
 
         s3 = boto3.resource("s3")
@@ -142,7 +142,7 @@ class FakeAthenaResource(AthenaResource):
         self.stubber.add_response(
             method="start_query_execution",
             service_response={"QueryExecutionId": execution_id},
-            expected_params={"QueryString": query, "WorkGroup": self.workgroup_name},
+            expected_params={"QueryString": query, "WorkGroup": self.workgroup},
         )
 
     def _stub_get_query_execution(self, execution_id, states):
@@ -181,3 +181,79 @@ class FakeAthenaResource(AthenaResource):
             },
             expected_params={"QueryExecutionId": execution_id},
         )
+
+
+def athena_config():
+    """Athena configuration."""
+
+    return {
+        "workgroup": Field(
+            str,
+            description="The Athena WorkGroup. https://docs.aws.amazon.com/athena/latest/ug/manage-queries-control-costs-with-workgroups.html",
+            is_required=False,
+            default_value="primary",
+        ),
+        "polling_interval": Field(
+            int,
+            description="Time in seconds between checks to see if a query execution is finished. 5 seconds by default.",
+            is_required=False,
+            default_value=5,
+        ),
+        "max_polls": Field(
+            int,
+            description="Number of times to poll before timing out. 120 attempts by default. When coupled with the default polling_interval, queries will timeout after 10 minutes (120 * 5 seconds).",
+            is_required=False,
+            default_value=120,
+        ),
+        "aws_access_key_id": Field(StringSource, is_required=False),
+        "aws_secret_access_key": Field(StringSource, is_required=False),
+    }
+
+
+@resource(
+    config_schema=athena_config(), description="Resource for connecting to AWS Athena",
+)
+def athena_resource(context):
+    """This resource enables connecting to AWS Athena and issuing queries against it.
+
+    Example:
+
+        .. code-block:: python
+
+                from dagster import ModeDefinition, execute_solid, solid
+                from dagster_aws.athena import athena_resource
+
+                @solid(required_resource_keys={"athena"})
+                def example_athena_solid(context):
+                    return context.resources.athena.execute_query("SELECT 1", fetch_results=True)
+
+                result = execute_solid(
+                    example_athena_solid, mode_def=ModeDefinition(resource_defs={"athena": athena_resource}),
+                )
+
+                assert result.output_value() == [("1",)]
+
+    """
+    client = boto3.client(
+        "athena",
+        aws_access_key_id=context.resource_config.get("aws_access_key_id"),
+        aws_secret_access_key=context.resource_config.get("aws_secret_access_key"),
+    )
+    return AthenaResource(
+        client=client,
+        workgroup=context.resource_config.get("workgroup"),
+        polling_interval=context.resource_config.get("polling_interval"),
+        max_polls=context.resource_config.get("max_polls"),
+    )
+
+
+@resource(
+    config_schema=athena_config(), description="Fake resource for connecting to AWS Athena",
+)
+def fake_athena_resource(context):
+    return FakeAthenaResource(
+        client=boto3.client("athena"),
+        workgroup=context.resource_config.get("workgroup"),
+        polling_interval=context.resource_config.get("polling_interval"),
+        max_polls=context.resource_config.get("max_polls"),
+    )

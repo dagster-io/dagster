@@ -9,7 +9,7 @@ from moto import mock_athena
 @pytest.fixture
 def mock_athena_client(mock_s3_resource):  # pylint: disable=unused-argument
     with mock_athena():
-        yield boto3.client("athena", region_name="us-east-1")
+        yield boto3.client("athena")
 
 
 def test_execute_query(mock_athena_client):
@@ -53,6 +53,22 @@ def test_execute_query_raises(mock_athena_client, expected_states):
 
 
 def test_execute_query_timeout(mock_athena_client):
-    athena = FakeAthenaResource(client=mock_athena_client, max_retries=1)
+    athena = FakeAthenaResource(client=mock_athena_client, max_polls=1)
     with pytest.raises(AthenaTimeout):
         athena.execute_query("SELECT 1")
+
+
+def test_solid(mock_athena_client):  # pylint: disable=unused-argument
+    from dagster import ModeDefinition, execute_solid, solid
+    from dagster_aws.athena import fake_athena_resource
+
+    @solid(required_resource_keys={"athena"})
+    def example_athena_solid(context):
+        return context.resources.athena.execute_query("SELECT 1", fetch_results=True)
+
+    result = execute_solid(
+        example_athena_solid,
+        mode_def=ModeDefinition(resource_defs={"athena": fake_athena_resource}),
+    )
+
+    assert result.output_value() == [("1",)]
