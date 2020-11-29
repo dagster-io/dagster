@@ -74,18 +74,16 @@ def _param_subclass_mismatch_exception(obj, superclass, param_name):
 
 
 def _type_mismatch_error(obj, ttype, desc=None):
-    if desc:
-        return CheckError(
-            "Object {obj} is not a {type}. Got {obj} with type {obj_type}. Desc: {desc}".format(
-                obj=repr(obj), type=ttype.__name__, obj_type=type(obj), desc=desc
-            )
-        )
-    else:
-        return CheckError(
-            "Object {obj} is not a {type}. Got {obj} with type {obj_type}.".format(
-                obj=repr(obj), type=ttype.__name__, obj_type=type(obj)
-            )
-        )
+    type_message = (
+        f"not one of {sorted([t.__name__ for t in ttype])}"
+        if isinstance(ttype, tuple)
+        else f"not a {ttype.__name__}"
+    )
+    repr_obj = repr(obj)
+    desc_str = f" Desc: {desc}" if desc else ""
+    return CheckError(
+        f"Object {repr_obj} is {type_message}. Got {repr_obj} with type {type(obj)}.{desc_str}"
+    )
 
 
 def _not_callable_exception(obj, param_name):

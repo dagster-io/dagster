@@ -1,3 +1,4 @@
+import re
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
@@ -166,13 +167,18 @@ def test_typed_is_list():
 
     assert check.is_list([], Foo) == []
     foo_list = [Foo()]
-    assert check.is_list(foo_list, Foo) == foo_list
+    assert check.is_list(foo_list, of_type=Foo) == foo_list
+
+    assert check.is_list([Foo(), Bar()], of_type=(Foo, Bar))
 
     with pytest.raises(CheckError):
-        check.is_list([Bar()], Foo)
+        check.is_list([Bar()], of_type=Foo)
 
     with pytest.raises(CheckError):
-        check.is_list([None], Foo)
+        check.is_list([None], of_type=Foo)
+
+    with pytest.raises(CheckError):
+        check.is_list([Foo(), Bar(), ""], of_type=(Foo, Bar))
 
 
 def test_opt_list_param():
@@ -281,6 +287,13 @@ def test_dict_param_with_type():
     assert check.dict_param({}, "str_to_int", key_type=str) == {}
     assert check.dict_param({}, "str_to_int") == {}
 
+    assert check.dict_param(
+        {"str": 1, "str2": "str", 1: "str", 2: "str"},
+        "multi_type_dict",
+        key_type=(str, int),
+        value_type=(str, int),
+    )
+
     class Wrong:
         pass
 
@@ -296,8 +309,14 @@ def test_dict_param_with_type():
     with pytest.raises(CheckError):
         assert check.dict_param(str_to_int, "str_to_int", key_type=Wrong)
 
+    class AlsoWrong:
+        pass
+
     with pytest.raises(CheckError):
-        assert check.dict_param(str_to_int, "str_to_int", value_type=Wrong)
+        assert check.dict_param(str_to_int, "str_to_int", key_type=(Wrong, AlsoWrong))
+
+    with pytest.raises(CheckError):
+        assert check.dict_param(str_to_int, "str_to_int", value_type=(Wrong, AlsoWrong))
 
 
 def test_opt_dict_param_with_type():
@@ -317,6 +336,13 @@ def test_opt_dict_param_with_type():
     assert check.opt_dict_param(None, "str_to_int", key_type=str) == {}
     assert check.opt_dict_param(None, "str_to_int") == {}
 
+    assert check.opt_dict_param(
+        {"str": 1, "str2": "str", 1: "str", 2: "str"},
+        "multi_type_dict",
+        key_type=(str, int),
+        value_type=(str, int),
+    )
+
     class Wrong:
         pass
 
@@ -334,6 +360,15 @@ def test_opt_dict_param_with_type():
 
     with pytest.raises(CheckError):
         assert check.opt_dict_param(str_to_int, "str_to_int", value_type=Wrong)
+
+    class AlsoWrong:
+        pass
+
+    with pytest.raises(CheckError):
+        assert check.dict_param(str_to_int, "str_to_int", key_type=(Wrong, AlsoWrong))
+
+    with pytest.raises(CheckError):
+        assert check.dict_param(str_to_int, "str_to_int", value_type=(Wrong, AlsoWrong))
 
 
 def test_opt_dict_param():
@@ -670,6 +705,15 @@ def test_inst():
 
     with pytest.raises(CheckError, match="Desc: Expected only a Bar"):
         check.inst(Foo(), Bar, "Expected only a Bar")
+
+    with pytest.raises(CheckError, match=re.escape("not one of ['Bar', 'Foo']")):
+        check.inst(1, (Foo, Bar))
+
+    with pytest.raises(CheckError, match=re.escape("not one of ['Bar', 'Foo']")):
+        check.inst(1, (Foo, Bar), desc="a desc")
+
+    with pytest.raises(CheckError, match=re.escape("Desc: a desc")):
+        check.inst(1, (Foo, Bar), desc="a desc")
 
 
 def test_inst_param():
