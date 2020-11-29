@@ -7,9 +7,17 @@ from moto import mock_athena
 
 
 @pytest.fixture
-def mock_athena_client():
+def mock_athena_client(mock_s3_resource):  # pylint: disable=unused-argument
     with mock_athena():
         yield boto3.client("athena", region_name="us-east-1")
+
+
+def test_execute_query(mock_athena_client):
+    athena = FakeAthenaResource(client=mock_athena_client)
+    assert athena.execute_query("SELECT 1", fetch_results=True) == [("1",)]
+    assert athena.execute_query(
+        "SELECT * FROM foo", fetch_results=True, expected_results=[(1, None), (2, 3)]
+    ) == [("1",), ("2", "3")]
 
 
 @pytest.mark.parametrize(
@@ -22,9 +30,9 @@ def mock_athena_client():
         ["QUEUED", "RUNNING", "RUNNING", "SUCCEEDED"],
     ],
 )
-def test_execute_query(mock_athena_client, expected_states):
+def test_execute_query_state_transitions(mock_athena_client, expected_states):
     athena = FakeAthenaResource(client=mock_athena_client)
-    assert athena.execute_query("SELECT 1", expected_states=expected_states)
+    athena.execute_query("SELECT 1", expected_states=expected_states)
 
 
 @pytest.mark.parametrize(
