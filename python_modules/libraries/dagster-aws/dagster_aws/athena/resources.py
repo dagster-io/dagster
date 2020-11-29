@@ -80,6 +80,7 @@ class AthenaResource:
         results = []
         rows = s3.Bucket(bucket).Object(prefix).get()["Body"].read().decode().splitlines()
         reader = csv.reader(rows)
+        next(reader) # Skip the CSV's header row
         for row in reader:
             results.append(tuple(row))
 
@@ -160,6 +161,8 @@ class FakeAthenaResource(AthenaResource):
     def _fake_results(self, execution_id, expected_results):
         with io.StringIO() as results:
             writer = csv.writer(results)
+            # Athena adds a header row to its CSV output
+            writer.writerow([])
             for row in expected_results:
                 # Athena writes all non-null columns as strings in its CSV output
                 stringified = tuple([str(item) for item in row if item])
