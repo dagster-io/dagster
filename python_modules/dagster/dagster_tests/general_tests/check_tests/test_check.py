@@ -901,6 +901,26 @@ def test_tuple_param():
         check.tuple_param((3, 4), "something", of_type=(str, str))
 
 
+@pytest.mark.xfail(reason="https://github.com/dagster-io/dagster/issues/3299")
+def test_non_variadic_union_type_is_tuple():
+    class Foo:
+        pass
+
+    class Bar:
+        pass
+
+    # this is the behavior of isinstance
+    foo_tuple = (Foo(),)
+    for item in foo_tuple:
+        assert isinstance(item, (Foo, Bar))
+
+    # This call fails:
+    # This does not call isinstance on tuple member and instead does
+    # non-variadic typing. It is impossible to check that each
+    # member is Foo or Bar given current API design
+    check.is_tuple(foo_tuple, of_type=(Foo, Bar))
+
+
 def test_matrix_param():
     assert check.matrix_param([[1, 2], [2, 3]], "something")
 
