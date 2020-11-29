@@ -10,6 +10,7 @@ except ImportError:
 
 import boto3
 from botocore.stub import Stubber
+from dagster import check
 
 
 class AthenaError(Exception):
@@ -27,9 +28,25 @@ class AthenaResource:
         self.max_retries = max_retries
         self.retry_interval = retry_interval
 
-    def execute_query(self, query_string, fetch_results=False):
+    def execute_query(self, query, fetch_results=False):
+        """Synchronously execute a single query against Athena. Will return a list of rows, where
+        each row is a tuple of stringified values, e.g. SELECT 1 will return [("1",)].
+
+        Args:
+            query (str): The query to execute.
+            fetch_results (Optional[bool]): Whether to return the results of executing the query.
+                Defaults to False, in which case the query will be executed without retrieving the
+                results.
+
+        Returns:
+            Optional[List[Tuple[Optional[str], ...]]]: Results of the query, as a list of tuples,
+                when fetch_results is set. Otherwise, return None. All items in the tuple are
+                represented as strings except for empty columns which are represented as None.
+        """
+        check.str_param(query, "query")
+        check.bool_param(fetch_results, "fetch_results")
         execution_id = self.client.start_query_execution(
-            QueryString=query_string, WorkGroup=self.workgroup_name
+            QueryString=query, WorkGroup=self.workgroup_name
         )["QueryExecutionId"]
         self._poll(execution_id)
         if fetch_results:
@@ -80,8 +97,27 @@ class FakeAthenaResource(AthenaResource):
         self.bucket.create()
 
     def execute_query(
-        self, query_string, fetch_results=False, expected_states=None, expected_results=None
+        self, query, fetch_results=False, expected_states=None, expected_results=None
     ):  # pylint: disable=arguments-differ
+        """Fake for execute_query; stubs the expected Athena endpoints, polls against the provided
+        expected query execution states, and returns the provided results as a list of tuples.
+
+        Args:
+            query (str): The query to execute.
+            fetch_results (Optional[bool]): Whether to return the results of executing the query.
+                Defaults to False, in which case the query will be executed without retrieving the
+                results.
+            expected_states (list[str]): The expected query execution states.
+                Defaults to successfully passing through QUEUED, RUNNING, and SUCCEEDED.
+            expected_results ([List[Tuple[Any, ...]]]): The expected results. All non-None items
+                are cast to strings.
+                Defaults to [(1,)].
+
+        Returns:
+            Optional[List[Tuple[Optional[str], ...]]]: The expected_resutls when fetch_resutls is
+                set. Otherwise, return None. All items in the tuple are represented as strings except
+                for empty columns which are represented as None.
+        """
         if not expected_states:
             expected_states = ["QUEUED", "RUNNING", "SUCCEEDED"]
         if not expected_results:
@@ -90,23 +126,23 @@ class FakeAthenaResource(AthenaResource):
         self.stubber.activate()
 
         execution_id = str(uuid.uuid4())
-        self._stub_start_query_execution(execution_id, query_string)
+        self._stub_start_query_execution(execution_id, query)
         self._stub_get_query_execution(execution_id, expected_states)
         if expected_states[-1] == "SUCCEEDED" and fetch_results:
             self._fake_results(execution_id, expected_results)
 
-        result = super().execute_query(query_string, fetch_results=fetch_results)
+        result = super().execute_query(query, fetch_results=fetch_results)
 
         self.stubber.deactivate()
         self.stubber.assert_no_pending_responses()
 
         return result
 
-    def _stub_start_query_execution(self, execution_id, query_string):
+    def _stub_start_query_execution(self, execution_id, query):
         self.stubber.add_response(
             method="start_query_execution",
             service_response={"QueryExecutionId": execution_id},
-            expected_params={"QueryString": query_string, "WorkGroup": self.workgroup_name},
+            expected_params={"QueryString": query, "WorkGroup": self.workgroup_name},
         )
 
     def _stub_get_query_execution(self, execution_id, states):
