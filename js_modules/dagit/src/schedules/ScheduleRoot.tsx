@@ -106,6 +106,8 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
         tags: [{key: 'dagster/schedule_name', value: schedule.name}],
       },
     },
+    partialRefetch: true,
+    pollInterval: 15 * 1000,
   });
 
   return <PreviousRunsSection loading={loading} data={data?.pipelineRunsOrError} />;

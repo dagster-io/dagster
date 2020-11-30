@@ -1,5 +1,5 @@
 import {useMutation} from '@apollo/client';
-import {NonIdealState, Switch} from '@blueprintjs/core';
+import {Colors, NonIdealState, Switch, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -14,6 +14,7 @@ import {humanCronString} from 'src/schedules/humanCronString';
 import {ScheduleDefinitionFragment} from 'src/schedules/types/ScheduleDefinitionFragment';
 import {ScheduleStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
+import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {MetadataTable} from 'src/ui/MetadataTable';
 import {Code, Heading} from 'src/ui/Text';
@@ -46,6 +47,8 @@ export const ScheduleDetails: React.FC<{
   const {repoAddress, schedule} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
 
+  const [copyText, setCopyText] = React.useState('Click to copy');
+
   const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
     onCompleted: displayScheduleMutationErrors,
   });
@@ -54,6 +57,19 @@ export const ScheduleDetails: React.FC<{
   });
 
   const scheduleSelector = useScheduleSelector(name);
+
+  // Restore the tooltip text after a delay.
+  React.useEffect(() => {
+    let token: any;
+    if (copyText === 'Copied!') {
+      token = setTimeout(() => {
+        setCopyText('Click to copy');
+      }, 2000);
+    }
+    return () => {
+      token && clearTimeout(token);
+    };
+  }, [copyText]);
 
   const {scheduleState} = schedule;
 
@@ -88,91 +104,107 @@ export const ScheduleDetails: React.FC<{
     }
   };
 
+  const copyId = () => {
+    navigator.clipboard.writeText(scheduleOriginId);
+    setCopyText('Copied!');
+  };
+
+  const running = status === ScheduleStatus.RUNNING;
+
   return (
-    <Group direction="vertical" spacing={12}>
-      <Group alignItems="center" direction="horizontal" spacing={8}>
-        <Heading>{name}</Heading>
-        <Box margin={{left: 4}}>
-          <Switch
-            checked={status === ScheduleStatus.RUNNING}
-            inline
-            large
-            disabled={toggleOffInFlight || toggleOnInFlight}
-            innerLabelChecked="on"
-            innerLabel="off"
-            onChange={onChangeSwitch}
-            style={{margin: '4px 0 0 0'}}
-          />
-        </Box>
-      </Group>
-      <MetadataTable
-        rows={[
-          {
-            key: 'Schedule ID',
-            value: <div style={{fontFamily: FontFamily.monospace}}>{scheduleOriginId}</div>,
-          },
-          {
-            key: 'Pipeline',
-            value: (
-              <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
-                {pipelineName}
-              </Link>
-            ),
-          },
-          {
-            key: 'Schedule',
-            value: cronSchedule ? (
-              <Group direction="horizontal" spacing={8}>
-                <span>{humanCronString(cronSchedule)}</span>
-                <Code>({cronSchedule})</Code>
-              </Group>
-            ) : (
-              <div>-</div>
-            ),
-          },
-          {
-            key: 'Mode',
-            value: schedule.mode,
-          },
-          {
-            key: 'Partition set',
-            value: partitionSet ? (
-              <Link
-                to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/partitions`)}
-              >
-                {partitionSet.name}
-              </Link>
-            ) : (
-              'None'
-            ),
-          },
-          {
-            key: 'Latest tick',
-            value: latestTick ? (
-              <Group direction="horizontal" spacing={8} alignItems="center">
-                <TimestampDisplay timestamp={latestTick.timestamp} timezone={executionTimezone} />
-                <TickTag
-                  status={latestTick.status}
-                  eventSpecificData={latestTick.tickSpecificData}
-                />
-              </Group>
-            ) : (
-              'None'
-            ),
-          },
-          {
-            key: 'Next tick',
-            value: futureTicks.results.length ? (
+    <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+      <Group direction="vertical" spacing={12}>
+        <Group alignItems="center" direction="horizontal" spacing={4}>
+          <Heading>{name}</Heading>
+          <Box margin={{left: 12}}>
+            <Switch
+              checked={running}
+              inline
+              large
+              disabled={toggleOffInFlight || toggleOnInFlight}
+              innerLabelChecked="on"
+              innerLabel="off"
+              onChange={onChangeSwitch}
+              style={{margin: '2px 0 0 0'}}
+            />
+          </Box>
+          {futureTicks.results.length && running ? (
+            <Group direction="horizontal" spacing={4}>
+              <div>Next tick:</div>
               <TimestampDisplay
                 timestamp={futureTicks.results[0].timestamp}
                 timezone={executionTimezone}
               />
-            ) : (
-              'None'
-            ),
-          },
-        ]}
-      />
-    </Group>
+            </Group>
+          ) : null}
+        </Group>
+        <MetadataTable
+          rows={[
+            {
+              key: 'Latest tick',
+              value: latestTick ? (
+                <Group direction="horizontal" spacing={8} alignItems="center">
+                  <TimestampDisplay timestamp={latestTick.timestamp} timezone={executionTimezone} />
+                  <TickTag
+                    status={latestTick.status}
+                    eventSpecificData={latestTick.tickSpecificData}
+                  />
+                </Group>
+              ) : (
+                'None'
+              ),
+            },
+            {
+              key: 'Pipeline',
+              value: (
+                <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
+                  {pipelineName}
+                </Link>
+              ),
+            },
+            {
+              key: 'Schedule',
+              value: cronSchedule ? (
+                <Group direction="horizontal" spacing={8}>
+                  <span>{humanCronString(cronSchedule)}</span>
+                  <Code>({cronSchedule})</Code>
+                </Group>
+              ) : (
+                <div>-</div>
+              ),
+            },
+            {
+              key: 'Mode',
+              value: schedule.mode,
+            },
+            {
+              key: 'Partition set',
+              value: partitionSet ? (
+                <Link
+                  to={workspacePathFromAddress(
+                    repoAddress,
+                    `/pipelines/${pipelineName}/partitions`,
+                  )}
+                >
+                  {partitionSet.name}
+                </Link>
+              ) : (
+                'None'
+              ),
+            },
+          ]}
+        />
+      </Group>
+      <Box margin={{top: 4}}>
+        <Tooltip content={copyText}>
+          <ButtonLink color={{link: Colors.GRAY3, hover: Colors.GRAY1}} onClick={copyId}>
+            <span style={{fontFamily: FontFamily.monospace}}>{`id: ${scheduleOriginId.slice(
+              0,
+              8,
+            )}`}</span>
+          </ButtonLink>
+        </Tooltip>
+      </Box>
+    </Box>
   );
 };
