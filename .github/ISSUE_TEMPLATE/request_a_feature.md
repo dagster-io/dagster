@@ -25,4 +25,4 @@ assignees: ''
 
 ---
 #### Message from the maintainers:
-If you wish to see this feature implemented, please add a 👍 reaction to this issue! We prioritize the issues with the most 👍.
+Excited about this feature? Give it a :thumbsup:. We factor engagement into prioritization.
