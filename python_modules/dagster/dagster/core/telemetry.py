@@ -24,7 +24,6 @@ from logging.handlers import RotatingFileHandler
 
 import click
 import requests
-import six
 import yaml
 from dagster import check
 from dagster.core.definitions.pipeline_base import IPipeline
@@ -311,7 +310,7 @@ def _get_telemetry_instance_id():
     with open(telemetry_id_path, "r") as telemetry_id_file:
         telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
         if INSTANCE_ID_STR in telemetry_id_yaml and isinstance(
-            telemetry_id_yaml[INSTANCE_ID_STR], six.string_types
+            telemetry_id_yaml[INSTANCE_ID_STR], str
         ):
             return telemetry_id_yaml[INSTANCE_ID_STR]
     return None

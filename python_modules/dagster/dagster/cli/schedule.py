@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 
 import click
-import six
 from dagster import DagsterInvariantViolationError, check
 from dagster.cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
@@ -276,7 +275,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 
 
 def extract_schedule_name(schedule_name):
-    if schedule_name and not isinstance(schedule_name, six.string_types):
+    if schedule_name and not isinstance(schedule_name, str):
         if len(schedule_name) == 1:
             return schedule_name[0]
         else:

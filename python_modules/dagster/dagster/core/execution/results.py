@@ -1,6 +1,5 @@
 from collections import defaultdict
 
-import six
 from dagster import check
 from dagster.core.definitions import GraphDefinition, PipelineDefinition, Solid, SolidHandle
 from dagster.core.definitions.events import ObjectStoreOperation
@@ -126,7 +125,7 @@ class GraphExecutionResult:
             Union[CompositeSolidExecutionResult, SolidExecutionResult]: The result of the given
             solid.
         """
-        if isinstance(handle, six.string_types):
+        if isinstance(handle, str):
             handle = SolidHandle.from_string(handle)
         else:
             check.inst_param(handle, "handle", SolidHandle)

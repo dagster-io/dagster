@@ -4,7 +4,6 @@ import gzip
 import os
 import shutil
 
-import six
 from dagster import (
     Bool,
     DagsterType,
@@ -27,7 +26,7 @@ from dagster_spark import create_spark_solid, spark_resource
 
 
 def file_exists_at_path_type_check(_, value):
-    if not isinstance(value, six.string_types):
+    if not isinstance(value, str):
         return TypeCheck(
             success=False,
             description="FileExistsAtPath must be a string in memory. Got {value}".format(

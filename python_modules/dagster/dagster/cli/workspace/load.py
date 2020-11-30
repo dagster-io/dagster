@@ -2,7 +2,6 @@ import os
 import sys
 from collections import OrderedDict
 
-import six
 from dagster import check
 from dagster.core.code_pointer import rebase_file
 from dagster.core.errors import DagsterInvariantViolationError
@@ -80,7 +79,7 @@ def _location_origin_from_module_config(python_module_config, executable_path=sy
 def _get_module_config_data(python_module_config):
     return (
         (python_module_config, None, None)
-        if isinstance(python_module_config, six.string_types)
+        if isinstance(python_module_config, str)
         else (
             python_module_config["module_name"],
             python_module_config.get("attribute"),
@@ -120,7 +119,7 @@ def _location_origin_from_package_config(python_package_config, executable_path=
 def _get_package_config_data(python_package_config):
     return (
         (python_package_config, None, None)
-        if isinstance(python_package_config, six.string_types)
+        if isinstance(python_package_config, str)
         else (
             python_package_config["package_name"],
             python_package_config.get("attribute"),
@@ -164,7 +163,7 @@ def _location_origin_from_python_file_config(
 def _get_python_file_config_data(python_file_config, yaml_path):
     return (
         (rebase_file(python_file_config, yaml_path), None, None, None)
-        if isinstance(python_file_config, six.string_types)
+        if isinstance(python_file_config, str)
         else (
             rebase_file(python_file_config["relative_path"], yaml_path),
             python_file_config.get("attribute"),

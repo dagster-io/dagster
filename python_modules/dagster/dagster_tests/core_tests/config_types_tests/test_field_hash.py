@@ -1,6 +1,5 @@
 from dagster import Field, Permissive, Selector, Shape
 from dagster.config.field_utils import _compute_fields_hash
-from six import string_types
 
 
 def _hash(fields):
@@ -8,7 +7,7 @@ def _hash(fields):
 
 
 def test_compute_fields_hash():
-    assert isinstance(_hash({"some_int": Field(int)}), string_types)
+    assert isinstance(_hash({"some_int": Field(int)}), str)
 
 
 def test_hash_diff():

@@ -324,7 +324,7 @@ class _String(BuiltinScalarDagsterType):
         )
 
     def type_check_scalar_value(self, value):
-        return _fail_if_not_of_type(value, six.string_types, "string")
+        return _fail_if_not_of_type(value, str, "string")
 
 
 class _Float(BuiltinScalarDagsterType):
@@ -706,7 +706,7 @@ class Stringish(DagsterType):
         )
 
     def type_check_method(self, _context, value):
-        return _fail_if_not_of_type(value, six.string_types, "string")
+        return _fail_if_not_of_type(value, str, "string")
 
 
 def create_string_type(name, description=None):

@@ -2,9 +2,7 @@ import inspect
 import sys
 
 from future.utils import raise_with_traceback
-from six import integer_types, string_types
-
-from .utils import is_str
+from six import integer_types
 
 if sys.version_info[0] >= 3:
     type_types = type
@@ -103,14 +101,14 @@ def _param_invariant_exception(param_name, desc):
 
 
 def failed(desc):
-    if not is_str(desc):
+    if not isinstance(desc, str):
         raise_with_traceback(CheckError("desc argument must be a string"))
 
     raise_with_traceback(CheckError("Failure condition: {desc}".format(desc=desc)))
 
 
 def not_implemented(desc):
-    if not is_str(desc):
+    if not isinstance(desc, str):
         raise_with_traceback(CheckError("desc argument must be a string"))
 
     raise_with_traceback(NotImplementedCheckError("Not implemented: {desc}".format(desc=desc)))
@@ -251,19 +249,19 @@ def opt_float_param(obj, param_name):
 
 
 def str_param(obj, param_name):
-    if not is_str(obj):
+    if not isinstance(obj, str):
         raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
     return obj
 
 
 def opt_str_param(obj, param_name, default=None):
-    if obj is not None and not isinstance(obj, string_types):
+    if obj is not None and not isinstance(obj, str):
         raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
     return default if obj is None else obj
 
 
 def opt_nonempty_str_param(obj, param_name, default=None):
-    if obj is not None and not isinstance(obj, string_types):
+    if obj is not None and not isinstance(obj, str):
         raise_with_traceback(_param_type_mismatch_exception(obj, str, param_name))
     return default if obj is None or obj == "" else obj
 
@@ -359,9 +357,6 @@ def opt_tuple_param(obj, param_name, default=None, of_type=None):
 
 
 def _check_list_items(obj_list, of_type):
-    if of_type is str:
-        of_type = string_types
-
     for obj in obj_list:
 
         if not isinstance(obj, of_type):
@@ -386,9 +381,6 @@ def _check_list_items(obj_list, of_type):
 
 
 def _check_set_items(obj_set, of_type):
-    if of_type is str:
-        of_type = string_types
-
     for obj in obj_set:
 
         if not isinstance(obj, of_type):
@@ -425,8 +417,6 @@ def _check_tuple_items(obj_tuple, of_type):
             )
         for (i, obj) in enumerate(obj_tuple):
             of_type_i = of_type[i]
-            if of_type_i is str:
-                of_type_i = string_types
             if not isinstance(obj, of_type_i):
                 if isinstance(obj, type):
                     additional_message = (
@@ -447,9 +437,6 @@ def _check_tuple_items(obj_tuple, of_type):
                     )
                 )
     else:
-        if of_type is str:
-            of_type = string_types
-
         for (i, obj) in enumerate(obj_tuple):
             if not isinstance(obj, of_type):
                 if isinstance(obj, type):
@@ -539,12 +526,6 @@ def _check_key_value_types(obj, key_type, value_type, key_check=isinstance, valu
     if not isinstance(obj, dict):
         raise_with_traceback(_type_mismatch_error(obj, dict))
 
-    if key_type is str:
-        key_type = string_types
-
-    if value_type is str:
-        value_type = string_types
-
     for key, value in obj.items():
         if key_type and not key_check(key, key_type):
             raise_with_traceback(
@@ -627,14 +608,14 @@ def _check_two_dim_key_value_types(obj, key_type, _param_name, value_type):
     return obj
 
 
-def two_dim_dict_param(obj, param_name, key_type=string_types, value_type=None):
+def two_dim_dict_param(obj, param_name, key_type=str, value_type=None):
     if not isinstance(obj, dict):
         raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
 
     return _check_two_dim_key_value_types(obj, key_type, param_name, value_type)
 
 
-def opt_two_dim_dict_param(obj, param_name, key_type=string_types, value_type=None):
+def opt_two_dim_dict_param(obj, param_name, key_type=str, value_type=None):
     if obj is not None and not isinstance(obj, dict):
         raise_with_traceback(_param_type_mismatch_exception(obj, dict, param_name))
 
@@ -841,7 +822,7 @@ def opt_str_elem(ddict, key):
     value = ddict.get(key)
     if value is None:
         return None
-    if not is_str(value):
+    if not isinstance(value, str):
         raise_with_traceback(_element_check_error(key, value, ddict, str))
     return value
 
@@ -851,7 +832,7 @@ def str_elem(ddict, key):
     str_param(key, "key")
 
     value = ddict[key]
-    if not is_str(value):
+    if not isinstance(value, str):
         raise_with_traceback(_element_check_error(key, value, ddict, str))
     return value
 

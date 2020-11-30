@@ -1,13 +1,12 @@
 import os
 
-import six
 from dagster import check
 
 from .config_type import ScalarUnion
 from .errors import PostProcessingError
 from .field_utils import Selector
 
-VALID_STRING_SOURCE_TYPES = six.string_types + (dict,)
+VALID_STRING_SOURCE_TYPES = (str, dict)
 
 
 def _ensure_env_variable(var):

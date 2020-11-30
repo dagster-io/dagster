@@ -1097,7 +1097,7 @@ def test_two_dim_dict():
     with raises_with_message(
         CheckError,
         "Value in dictionary mismatches expected type for key level_two_value_mismatch. "
-        "Expected value of type (<class 'str'>,). Got value 2 of type <class 'int'>."
+        "Expected value of type <class 'str'>. Got value 2 of type <class 'int'>."
         if is_python_three()
         else "Value in dictionary mismatches expected type for key level_two_value_mismatch. "
         "Expected value of type (<type 'basestring'>,). Got value 2 of type <type 'int'>.",

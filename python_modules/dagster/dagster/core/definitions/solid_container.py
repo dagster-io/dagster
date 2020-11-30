@@ -48,7 +48,7 @@ def validate_dependency_dict(dependencies):
         )
 
     for key, dep_dict in dependencies.items():
-        if not (isinstance(key, six.string_types) or isinstance(key, SolidInvocation)):
+        if not (isinstance(key, str) or isinstance(key, SolidInvocation)):
             raise DagsterInvalidDefinitionError(
                 prelude + "Expected str or SolidInvocation key in the top level dict. "
                 "Received value {val} of type {type}".format(val=key, type=type(key))
@@ -70,7 +70,7 @@ def validate_dependency_dict(dependencies):
                 )
 
         for input_key, dep in dep_dict.items():
-            if not isinstance(input_key, six.string_types):
+            if not isinstance(input_key, str):
                 raise DagsterInvalidDefinitionError(
                     prelude
                     + "Received non-sting key in the inner dict for key {key}.".format(key=key)
@@ -134,10 +134,7 @@ def create_execution_structure(solid_defs, dependencies_dict, graph_definition):
 
     check.list_param(solid_defs, "solid_defs", of_type=NodeDefinition)
     check.dict_param(
-        dependencies_dict,
-        "dependencies_dict",
-        key_type=six.string_types + (SolidInvocation,),
-        value_type=dict,
+        dependencies_dict, "dependencies_dict", key_type=(str, SolidInvocation), value_type=dict,
     )
     # graph_definition is none in the context of a pipeline
     check.inst_param(graph_definition, "graph_definition", GraphDefinition)

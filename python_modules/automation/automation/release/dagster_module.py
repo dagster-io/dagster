@@ -5,7 +5,6 @@ import subprocess
 from collections import namedtuple
 
 import click
-import six
 from automation.git import git_repo_root
 
 # We don't want to accidentally publish cruft in these directories
@@ -104,7 +103,7 @@ class DagsterModule(namedtuple("_DagsterModule", "name is_library additional_ste
         Returns:
             Dict[str, str]: Dictionary of version information.
         """
-        assert isinstance(new_version, six.string_types)
+        assert isinstance(new_version, str)
 
         output = '__version__ = "{}"\n'.format(new_version)
 

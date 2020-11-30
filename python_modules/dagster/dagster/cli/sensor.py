@@ -3,7 +3,6 @@ from __future__ import print_function
 import os
 
 import click
-import six
 import yaml
 from dagster import DagsterInvariantViolationError, check
 from dagster.cli.workspace.cli_target import (
@@ -103,7 +102,7 @@ def check_repo_and_scheduler(repository, instance):
 
 
 def extract_sensor_name(sensor_name):
-    if sensor_name and not isinstance(sensor_name, six.string_types):
+    if sensor_name and not isinstance(sensor_name, str):
         if len(sensor_name) == 1:
             return sensor_name[0]
         else:

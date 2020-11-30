@@ -5,7 +5,6 @@ import uuid
 
 import nbformat
 import papermill
-import six
 from dagster import (
     AssetMaterialization,
     EventMetadataEntry,
@@ -91,7 +90,7 @@ def get_papermill_parameters(compute_context, inputs, output_log_path):
         "compute_context",
         "SystemComputeExecutionContext must have valid run_config",
     )
-    check.dict_param(inputs, "inputs", key_type=six.string_types)
+    check.dict_param(inputs, "inputs", key_type=str)
 
     run_id = compute_context.run_id
 

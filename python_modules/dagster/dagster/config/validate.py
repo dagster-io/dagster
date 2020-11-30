@@ -36,7 +36,7 @@ def is_config_scalar_valid(config_type_snap, config_value):
     if config_type_snap.scalar_kind == ConfigScalarKind.INT:
         return not isinstance(config_value, bool) and isinstance(config_value, six.integer_types)
     elif config_type_snap.scalar_kind == ConfigScalarKind.STRING:
-        return isinstance(config_value, six.string_types)
+        return isinstance(config_value, str)
     elif config_type_snap.scalar_kind == ConfigScalarKind.BOOL:
         return isinstance(config_value, bool)
     elif config_type_snap.scalar_kind == ConfigScalarKind.FLOAT:
@@ -318,7 +318,7 @@ def validate_enum_config(context, config_value):
     check.invariant(context.config_type_snap.kind == ConfigTypeKind.ENUM)
     check.not_none_param(config_value, "config_value")
 
-    if not isinstance(config_value, six.string_types):
+    if not isinstance(config_value, str):
         return EvaluateValueResult.for_error(create_enum_type_mismatch_error(context, config_value))
 
     if not context.config_type_snap.has_enum_value(config_value):

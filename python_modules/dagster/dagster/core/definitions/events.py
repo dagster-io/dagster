@@ -7,7 +7,6 @@ from enum import Enum
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import Persistable, whitelist_for_persistence, whitelist_for_serdes
-from dagster.utils import is_str
 from dagster.utils.backcompat import experimental_arg_warning
 
 from .utils import DEFAULT_OUTPUT
@@ -75,7 +74,7 @@ class AssetKey(namedtuple("_AssetKey", "path"), Persistable):
     """
 
     def __new__(cls, path=None):
-        if is_str(path):
+        if isinstance(path, str):
             path = [path]
         elif isinstance(path, list):
             path = check.list_param(path, "path", of_type=str)
@@ -530,7 +529,7 @@ class AssetMaterialization(
     def __new__(cls, asset_key, description=None, metadata_entries=None, partition=None):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
-        elif is_str(asset_key):
+        elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
             check.is_list(asset_key, of_type=str)
@@ -605,7 +604,7 @@ class Materialization(
         partition=None,
         skip_deprecation_warning=False,
     ):
-        if asset_key and is_str(asset_key):
+        if asset_key and isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         else:
             check.opt_inst_param(asset_key, "asset_key", AssetKey)

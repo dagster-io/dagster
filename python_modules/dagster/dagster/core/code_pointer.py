@@ -381,7 +381,7 @@ class CustomPointer(
         check.list_param(reconstructable_kwargs, "reconstructable_kwargs")
         for reconstructable_kwarg in reconstructable_kwargs:
             check.list_param(reconstructable_kwarg, "reconstructable_kwarg")
-            check.invariant(check.is_str(reconstructable_kwarg[0]), "Bad kwarg key")
+            check.invariant(isinstance(reconstructable_kwarg[0], str), "Bad kwarg key")
             check.invariant(
                 len(reconstructable_kwarg) == 2,
                 "Bad kwarg of length {length}, should be 2".format(

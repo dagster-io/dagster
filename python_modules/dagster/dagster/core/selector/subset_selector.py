@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterInvalidSubsetError
-from dagster.utils import check, is_str
+from dagster.utils import check
 
 MAX_NUM = sys.maxsize
 
@@ -126,7 +126,7 @@ def clause_to_subset(traverser, graph, clause):
             invalid.
     """
     # parse cluase
-    if not is_str(clause):
+    if not isinstance(clause, str):
         return []
     parts = parse_clause(clause)
     if parts is None:
