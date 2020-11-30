@@ -15,6 +15,7 @@ import * as React from 'react';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {SharedToaster, ROOT_SERVER_URI} from 'src/DomUtils';
 import {HighlightedCodeBlock} from 'src/HighlightedCodeBlock';
+import {DeletionDialog} from 'src/runs/DeletionDialog';
 import {REEXECUTE_PIPELINE_UNKNOWN} from 'src/runs/RunActionButtons';
 import {RUN_FRAGMENT_FOR_REPOSITORY_MATCH} from 'src/runs/RunFragments';
 import {
@@ -25,6 +26,7 @@ import {
   getReexecutionVariables,
   handleLaunchResult,
 } from 'src/runs/RunUtils';
+import {TerminationDialog} from 'src/runs/TerminationDialog';
 import {Cancel} from 'src/runs/types/Cancel';
 import {Delete} from 'src/runs/types/Delete';
 import {LaunchPipelineReexecution} from 'src/runs/types/LaunchPipelineReexecution';
@@ -172,56 +174,64 @@ export const RunBulkActionsMenu: React.FunctionComponent<{
   onChangeSelection: (runs: RunTableRunFragment[]) => void;
 }> = React.memo(({selected, onChangeSelection}) => {
   const {refetch} = React.useContext(RunsQueryRefetchContext);
-  const [cancel] = useMutation<Cancel>(CANCEL_MUTATION, {onCompleted: refetch});
-  const [destroy] = useMutation<Delete>(DELETE_MUTATION, {onCompleted: refetch});
+  const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
 
-  const cancelable = selected.filter((r) => r.canTerminate);
-  const deletable = selected.filter((r) => !r.canTerminate);
+  const terminatableIDs = selected.filter((r) => r.canTerminate).map((run) => run.runId);
+  const deletableIDs = selected.map((run) => run.runId);
+
+  const closeDialogs = () => {
+    setVisibleDialog('none');
+  };
+
+  const onComplete = () => {
+    onChangeSelection([]);
+    refetch();
+  };
 
   return (
-    <Popover
-      content={
-        <Menu>
-          <MenuItem
-            icon="stop"
-            text={`Cancel ${cancelable.length} ${cancelable.length === 1 ? 'run' : 'runs'}`}
-            disabled={cancelable.length === 0}
-            onClick={async () => {
-              for (const run of cancelable) {
-                const result = await cancel({variables: {runId: run.runId}});
-                showToastFor(
-                  result.data?.terminatePipelineExecution,
-                  `Run ${run.runId} cancelled.`,
-                  `Something went wrong when trying to cancel Run ${run.runId}`,
-                );
-              }
-              onChangeSelection([]);
-            }}
-          />
-          <MenuItem
-            icon="trash"
-            text={`Delete ${deletable.length} ${deletable.length === 1 ? 'run' : 'runs'}`}
-            disabled={deletable.length === 0}
-            onClick={async () => {
-              for (const run of deletable) {
-                const result = await destroy({variables: {runId: run.runId}});
-                showToastFor(
-                  result.data?.deletePipelineRun,
-                  `Run ${run.runId} deleted.`,
-                  `Something went wrong when trying to delete Run ${run.runId}`,
-                );
-              }
-              // we could remove just the runs that are deleted and leave the others, but we may
-              // need to test it for a while and see what seems natural.
-              onChangeSelection([]);
-            }}
-          />
-        </Menu>
-      }
-      position={'bottom'}
-    >
-      <Button disabled={selected.length === 0} text="Actions" rightIcon="caret-down" small />
-    </Popover>
+    <>
+      <Popover
+        content={
+          <Menu>
+            <MenuItem
+              icon="stop"
+              text={`Cancel ${terminatableIDs.length} ${
+                terminatableIDs.length === 1 ? 'run' : 'runs'
+              }`}
+              disabled={terminatableIDs.length === 0}
+              onClick={() => {
+                setVisibleDialog('terminate');
+              }}
+            />
+            <MenuItem
+              icon="trash"
+              text={`Delete ${deletableIDs.length} ${deletableIDs.length === 1 ? 'run' : 'runs'}`}
+              disabled={deletableIDs.length === 0}
+              onClick={() => {
+                setVisibleDialog('delete');
+              }}
+            />
+          </Menu>
+        }
+        position={'bottom'}
+      >
+        <Button disabled={selected.length === 0} text="Actions" rightIcon="caret-down" small />
+      </Popover>
+      <TerminationDialog
+        isOpen={visibleDialog === 'terminate'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        selectedIDs={terminatableIDs}
+      />
+      <DeletionDialog
+        isOpen={visibleDialog === 'delete'}
+        onClose={closeDialogs}
+        onComplete={onComplete}
+        onTerminateInstead={() => setVisibleDialog('terminate')}
+        selectedIDs={deletableIDs}
+        terminatableIDs={terminatableIDs}
+      />
+    </>
   );
 });
 
