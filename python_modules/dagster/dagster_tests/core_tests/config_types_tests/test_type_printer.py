@@ -106,7 +106,7 @@ def test_single_level_dict_lists_and_nullable():
     )
 
     expected = """{
-  nullable_int_field: Int?
+  nullable_int_field?: Int?
   optional_int_field?: Int
   string_list_field: [String]
 }"""

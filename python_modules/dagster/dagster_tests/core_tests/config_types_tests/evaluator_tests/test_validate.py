@@ -449,14 +449,14 @@ def test_nullable_dict():
     dict_with_nullable_int = Shape({"int_field": Field(Noneable(int))})
 
     assert not validate_config(dict_with_nullable_int, None).success
-    assert not validate_config(dict_with_nullable_int, {}).success
+    assert validate_config(dict_with_nullable_int, {}).success
     assert validate_config(dict_with_nullable_int, {"int_field": None}).success
     assert validate_config(dict_with_nullable_int, {"int_field": 1}).success
 
     nullable_dict_with_nullable_int = Noneable(Shape({"int_field": Field(Noneable(int))}))
 
     assert validate_config(nullable_dict_with_nullable_int, None).success
-    assert not validate_config(nullable_dict_with_nullable_int, {}).success
+    assert validate_config(nullable_dict_with_nullable_int, {}).success
     assert validate_config(nullable_dict_with_nullable_int, {"int_field": None}).success
     assert validate_config(nullable_dict_with_nullable_int, {"int_field": 1}).success
 

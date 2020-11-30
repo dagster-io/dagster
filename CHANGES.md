@@ -2,6 +2,10 @@
 
 ## Upcoming 0.10.0
 
+**Bugfixes**
+
+- Noneable config fields and no longer required, default to `None`.
+
 **Breaking Changes**
 
 - Eliminated public field `config_field` on definition classes.

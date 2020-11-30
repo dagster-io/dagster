@@ -2283,7 +2283,7 @@ snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
       "description": null,
       "is_required": true,
       "name": "bar",
-      "type_key": "Selector.2d70a477fddef640dd26e7ded5d4317d66155b7f"
+      "type_key": "Selector.c12ab659793f168246640a294e913ac9d90a242a"
     },
     {
       "__class__": "ConfigFieldSnap",
@@ -2296,7 +2296,7 @@ snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
     }
   ],
   "given_name": null,
-  "key": "Permissive.2922420c806e6864670c535462c974f498260ac4",
+  "key": "Permissive.bda2965be6725b48329d76783336ed442951fd54",
   "kind": {
     "__enum__": "ConfigTypeKind.PERMISSIVE_SHAPE"
   },

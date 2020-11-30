@@ -499,14 +499,21 @@ def test_nullable_dict():
     dict_with_nullable_int = Shape({"int_field": Field(Noneable(int))})
 
     assert not eval_config_value_from_dagster_type(dict_with_nullable_int, None).success
-    assert not eval_config_value_from_dagster_type(dict_with_nullable_int, {}).success
+    assert eval_config_value_from_dagster_type(dict_with_nullable_int, {}).success
+    assert eval_config_value_from_dagster_type(dict_with_nullable_int, {}).value == {
+        "int_field": None
+    }
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {"int_field": None}).success
     assert eval_config_value_from_dagster_type(dict_with_nullable_int, {"int_field": 1}).success
 
     nullable_dict_with_nullable_int = Noneable(Shape({"int_field": Field(Noneable(int))}))
 
     assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, None).success
-    assert not eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, {}).success
+    assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, None).value is None
+    assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, {}).success
+    assert eval_config_value_from_dagster_type(nullable_dict_with_nullable_int, {}).value == {
+        "int_field": None
+    }
     assert eval_config_value_from_dagster_type(
         nullable_dict_with_nullable_int, {"int_field": None}
     ).success

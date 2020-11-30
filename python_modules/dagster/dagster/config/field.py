@@ -142,6 +142,13 @@ def resolve_to_config_type(dagster_type):
     return False
 
 
+def has_implicit_default(config_type):
+    if config_type.kind == ConfigTypeKind.NONEABLE:
+        return True
+
+    return all_optional_type(config_type)
+
+
 class Field:
     """Defines the schema for a configuration field.
 
@@ -275,12 +282,12 @@ class Field:
                 )
 
         if is_required is None:
-            is_optional = all_optional_type(self.config_type) or self.default_provided
+            is_optional = has_implicit_default(self.config_type) or self.default_provided
             is_required = not is_optional
 
             # on implicitly optional - set the default value
             # by resolving the defaults of the type
-            if not is_required and not self.default_provided:
+            if is_optional and not self.default_provided:
                 evr = resolve_defaults(self.config_type, None)
                 if not evr.success:
                     raise DagsterInvalidConfigError(
