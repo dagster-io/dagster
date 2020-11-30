@@ -1,8 +1,13 @@
 import sys
 
+import pytest
 import yaml
 from dagster.cli.workspace import Workspace
-from dagster.cli.workspace.load import load_workspace_from_config, load_workspace_from_yaml_paths
+from dagster.cli.workspace.load import (
+    load_workspace_from_config,
+    load_workspace_from_yaml_paths,
+    location_origins_from_config,
+)
 from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationHandle,
     RepositoryLocation,
@@ -122,7 +127,47 @@ def test_multi_file_extend_and_override_workspace():
         assert "extra_repository" in external_repositories
 
 
-def _get_multi_location_workspace_yaml():
+def _get_multi_location_workspace_yaml(executable):
+    return """
+load_from:
+    - python_file:
+        executable_path: {executable}
+        relative_path: hello_world_repository.py
+        location_name: loaded_from_file
+
+    - python_module:
+        executable_path: {executable}
+        module_name: dagster.utils.test.hello_world_repository
+        location_name: loaded_from_module
+
+    - python_file:
+        executable_path: {executable}
+        relative_path: named_hello_world_repository.py
+        location_name: named_loaded_from_file
+
+    - python_module:
+        executable_path: {executable}
+        module_name: dagster.utils.test.named_hello_world_repository
+        location_name: named_loaded_from_module
+
+    - python_module:
+        executable_path: {executable}
+        module_name: dagster.utils.test.named_hello_world_repository
+        attribute: named_hello_world_repository
+        location_name: named_loaded_from_module_attribute
+
+    - python_file:
+        executable_path: {executable}
+        relative_path: named_hello_world_repository.py
+        attribute: named_hello_world_repository
+        location_name: named_loaded_from_file_attribute
+
+    """.format(
+        executable=executable
+    )
+
+
+def _get_multi_location_python_env_workspace_yaml(executable):
     return """
 load_from:
     - python_environment:
@@ -170,13 +215,67 @@ load_from:
                 location_name: named_loaded_from_file_attribute
 
     """.format(
-        executable=sys.executable
+        executable=executable
     )
 
 
-def test_grpc_multi_location_workspace():
+@pytest.mark.parametrize(
+    "config_source",
+    [_get_multi_location_workspace_yaml, _get_multi_location_python_env_workspace_yaml],
+)
+def test_multi_location_origins(config_source):
+    fake_executable = "/var/fake/executable"
+
+    origins = location_origins_from_config(
+        yaml.safe_load(config_source(fake_executable)),
+        file_relative_path(__file__, "not_a_real.yaml"),
+    )
+
+    assert len(origins) == 6
+
+    assert sorted(origins.keys()) == sorted(
+        [
+            "loaded_from_file",
+            "loaded_from_module",
+            "named_loaded_from_file",
+            "named_loaded_from_module",
+            "named_loaded_from_module_attribute",
+            "named_loaded_from_file_attribute",
+        ]
+    )
+
+    assert all(
+        [
+            origin.loadable_target_origin.executable_path == fake_executable
+            for origin in origins.values()
+        ]
+    )
+
+    assert origins["loaded_from_file"].loadable_target_origin.python_file == file_relative_path(
+        __file__, "hello_world_repository.py"
+    )
+    assert (
+        origins["loaded_from_module"].loadable_target_origin.module_name
+        == "dagster.utils.test.hello_world_repository"
+    )
+
+    assert (
+        origins["named_loaded_from_file_attribute"].loadable_target_origin.attribute
+        == "named_hello_world_repository"
+    )
+    assert (
+        origins["named_loaded_from_module_attribute"].loadable_target_origin.attribute
+        == "named_hello_world_repository"
+    )
+
+
+@pytest.mark.parametrize(
+    "config_source",
+    [_get_multi_location_workspace_yaml, _get_multi_location_python_env_workspace_yaml],
+)
+def test_grpc_multi_location_workspace(config_source):
     with load_workspace_from_config(
-        yaml.safe_load(_get_multi_location_workspace_yaml()),
+        yaml.safe_load(config_source(sys.executable)),
         # fake out as if it were loaded by a yaml file in this directory
         file_relative_path(__file__, "not_a_real.yaml"),
     ) as workspace:

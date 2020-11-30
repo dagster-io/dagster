@@ -57,6 +57,14 @@ load_from:
 """
     assert _validate_yaml_contents(nested_workspace_yaml_with_def_name_and_location).success
 
+    workspace_yaml_with_executable_path = """
+load_from:
+    - python_file:
+        relative_path: a_file.py
+        executable_path: /path/to/venv/bin/python
+"""
+    assert _validate_yaml_contents(workspace_yaml_with_executable_path).success
+
 
 def test_python_module():
     terse_workspace_yaml = """
@@ -90,6 +98,41 @@ load_from:
         location_name: some_location
 """
     assert _validate_yaml_contents(nested_workspace_yaml_with_def_name_and_location).success
+
+    workspace_yaml_with_executable_path = """
+load_from:
+    - python_module:
+        module_name: a_module
+        executable_path: /path/to/venv/bin/python
+"""
+
+    assert _validate_yaml_contents(workspace_yaml_with_executable_path).success
+
+
+def test_python_package():
+    workspace_yaml = """
+load_from:
+    - python_package: a_package
+"""
+
+    assert _validate_yaml_contents(workspace_yaml).success
+
+    nested_workspace_yaml = """
+load_from:
+    - python_package:
+        package_name: a_package
+"""
+
+    assert _validate_yaml_contents(nested_workspace_yaml).success
+
+    workspace_yaml_with_executable_path = """
+load_from:
+    - python_package:
+        package_name: a_package
+        executable_path: /path/to/venv/bin/python
+"""
+
+    assert _validate_yaml_contents(workspace_yaml_with_executable_path).success
 
 
 def test_cannot_do_both():
@@ -151,6 +194,51 @@ def test_load_python_environment_with_env_var():
     """
 
         validation_result = _validate_yaml_contents(python_environment_yaml_with_file)
+
+        assert validation_result.success
+
+
+def test_load_python_file_with_env_var():
+    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
+        workspace_yaml = """
+    load_from:
+        - python_file:
+            relative_path: file_valid_in_that_env.py
+            executable_path:
+                env: TEST_EXECUTABLE_PATH
+    """
+
+        validation_result = _validate_yaml_contents(workspace_yaml)
+
+        assert validation_result.success
+
+
+def test_load_python_module_with_env_var():
+    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
+        workspace_yaml = """
+    load_from:
+        - python_module:
+            module_name: module_valid_in_that_env
+            executable_path:
+                env: TEST_EXECUTABLE_PATH
+    """
+
+        validation_result = _validate_yaml_contents(workspace_yaml)
+
+        assert validation_result.success
+
+
+def test_load_python_package_with_env_var():
+    with environ({"TEST_EXECUTABLE_PATH": "executable/path/bin/python"}):
+        workspace_yaml = """
+    load_from:
+        - python_package:
+            package_name: package_valid_in_that_env
+            executable_path:
+                env: TEST_EXECUTABLE_PATH
+    """
+
+        validation_result = _validate_yaml_contents(workspace_yaml)
 
         assert validation_result.success
 

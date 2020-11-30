@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 from collections import OrderedDict
 
 from dagster import check
@@ -35,19 +36,17 @@ def location_origins_from_yaml_paths(yaml_paths):
         )
 
         origins_by_name = merge_dicts(
-            origins_by_name, _repo_location_origins_from_config(workspace_config, yaml_path),
+            origins_by_name, location_origins_from_config(workspace_config, yaml_path),
         )
 
     return list(origins_by_name.values())
 
 
 def load_workspace_from_config(workspace_config, yaml_path):
-    return Workspace(
-        list(_repo_location_origins_from_config(workspace_config, yaml_path,).values()),
-    )
+    return Workspace(list(location_origins_from_config(workspace_config, yaml_path,).values()),)
 
 
-def _repo_location_origins_from_config(workspace_config, yaml_path):
+def location_origins_from_config(workspace_config, yaml_path):
     ensure_workspace_config(workspace_config, yaml_path)
 
     if "repository" in workspace_config:
@@ -71,19 +70,26 @@ def _repo_location_origins_from_config(workspace_config, yaml_path):
     return location_origins
 
 
-def _location_origin_from_module_config(python_module_config, executable_path=sys.executable):
-    module_name, attribute, location_name = _get_module_config_data(python_module_config)
+def _location_origin_from_module_config(
+    python_module_config, default_executable_path=sys.executable
+):
+    module_name, attribute, location_name, executable_path = _get_module_config_data(
+        python_module_config, default_executable_path
+    )
     return location_origin_from_module_name(module_name, attribute, location_name, executable_path)
 
 
-def _get_module_config_data(python_module_config):
+def _get_module_config_data(python_module_config, default_executable_path):
     return (
-        (python_module_config, None, None)
+        (python_module_config, None, None, default_executable_path)
         if isinstance(python_module_config, str)
         else (
             python_module_config["module_name"],
             python_module_config.get("attribute"),
             python_module_config.get("location_name"),
+            _get_executable_path(
+                python_module_config.get("executable_path"), default_executable_path
+            ),
         )
     )
 
@@ -111,19 +117,26 @@ def location_origin_from_module_name(
     return _create_python_env_location_origin(loadable_target_origin, location_name)
 
 
-def _location_origin_from_package_config(python_package_config, executable_path=sys.executable):
-    module_name, attribute, location_name = _get_package_config_data(python_package_config)
+def _location_origin_from_package_config(
+    python_package_config, default_executable_path=sys.executable
+):
+    module_name, attribute, location_name, executable_path = _get_package_config_data(
+        python_package_config, default_executable_path
+    )
     return location_origin_from_package_name(module_name, attribute, location_name, executable_path)
 
 
-def _get_package_config_data(python_package_config):
+def _get_package_config_data(python_package_config, default_executable_path):
     return (
-        (python_package_config, None, None)
+        (python_package_config, None, None, default_executable_path)
         if isinstance(python_package_config, str)
         else (
             python_package_config["package_name"],
             python_package_config.get("attribute"),
             python_package_config.get("location_name"),
+            _get_executable_path(
+                python_package_config.get("executable_path"), default_executable_path
+            ),
         )
     )
 
@@ -147,22 +160,26 @@ def location_origin_from_package_name(
 
 
 def _location_origin_from_python_file_config(
-    python_file_config, yaml_path, executable_path=sys.executable
+    python_file_config, yaml_path, default_executable_path=sys.executable,
 ):
     check.str_param(yaml_path, "yaml_path")
 
-    absolute_path, attribute, location_name, working_directory = _get_python_file_config_data(
-        python_file_config, yaml_path
-    )
+    (
+        absolute_path,
+        attribute,
+        location_name,
+        working_directory,
+        executable_path,
+    ) = _get_python_file_config_data(python_file_config, yaml_path, default_executable_path)
 
     return location_origin_from_python_file(
         absolute_path, attribute, working_directory, location_name, executable_path,
     )
 
 
-def _get_python_file_config_data(python_file_config, yaml_path):
+def _get_python_file_config_data(python_file_config, yaml_path, default_executable_path):
     return (
-        (rebase_file(python_file_config, yaml_path), None, None, None)
+        (rebase_file(python_file_config, yaml_path), None, None, None, default_executable_path)
         if isinstance(python_file_config, str)
         else (
             rebase_file(python_file_config["relative_path"], yaml_path),
@@ -171,6 +188,9 @@ def _get_python_file_config_data(python_file_config, yaml_path):
             rebase_file(python_file_config.get("working_directory"), yaml_path)
             if python_file_config.get("working_directory")
             else rebase_file(os.path.dirname(yaml_path), yaml_path),
+            _get_executable_path(
+                python_file_config.get("executable_path"), default_executable_path
+            ),
         )
     )
 
@@ -217,13 +237,17 @@ def _location_origin_from_grpc_server_config(grpc_server_config, yaml_path):
     )
 
 
+def _get_executable_path(executable_path, default):
+    # do shell expansion on path
+    return os.path.expanduser(executable_path) if executable_path else default
+
+
 def _location_origin_from_python_environment_config(python_environment_config, yaml_path):
     check.dict_param(python_environment_config, "python_environment_config")
     check.str_param(yaml_path, "yaml_path")
 
     executable_path, target_config = (
-        # do shell expansion on path
-        os.path.expanduser(python_environment_config["executable_path"]),
+        _get_executable_path(python_environment_config["executable_path"], None),
         python_environment_config["target"],
     )
 
@@ -257,10 +281,14 @@ def _location_origin_from_location_config(location_config, yaml_path):
         return _location_origin_from_grpc_server_config(location_config["grpc_server"], yaml_path)
 
     elif "python_environment" in location_config:
+        warnings.warn(
+            "The `python_environment` key is deprecated. Use `python_file`, `python_package`, or "
+            "`python_module` with the `executable_path` attribute set if you want to load a "
+            "repository in a different python environment."
+        )
         return _location_origin_from_python_environment_config(
             location_config["python_environment"], yaml_path
         )
-
     else:
         check.not_implemented("Unsupported location config: {}".format(location_config))
 
