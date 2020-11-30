@@ -2,7 +2,7 @@
 name: Report a bug
 about: "Something is not working."
 title: ''
-labels: ''
+labels: bug
 assignees: ''
 
 ---
@@ -33,4 +33,4 @@ assignees: ''
 
 ---
 #### Message from the maintainers:
-Impacted by this bug? Give it a 👍. We prioritize the issues with the most 👍.
+Impacted by this bug? Give it a 👍. We factor engagement into prioritization.
