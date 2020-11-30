@@ -47,12 +47,3 @@ SnapshotsTable = db.Table(
     db.Column("snapshot_body", db.LargeBinary, nullable=False),
     db.Column("snapshot_type", db.String(63), nullable=False),
 )
-
-DaemonHeartbeatsTable = db.Table(
-    "daemon_heartbeats",
-    RunStorageSqlMetadata,
-    db.Column("daemon_type", db.String(255), unique=True, nullable=False),
-    db.Column("daemon_id", db.String(255)),
-    db.Column("timestamp", db.DateTime, nullable=False),
-    db.Column("info", db.String),
-)

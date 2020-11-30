@@ -5,7 +5,6 @@ from dagster.core.snap import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import serialize_pp
 
 
@@ -877,37 +876,3 @@ class TestRunStorage:
 
         assert first_root_run.run_id in run_groups
         assert second_root_run.run_id not in run_groups
-
-    def _skip_in_memory(self, storage):
-        from dagster.core.storage.runs import InMemoryRunStorage
-
-        if isinstance(storage, InMemoryRunStorage):
-            pytest.skip()
-
-    def test_empty_heartbeat(self, storage):
-        self._skip_in_memory(storage)
-
-        assert storage.get_daemon_heartbeats() == {}
-
-    def test_add_heartbeat(self, storage):
-        import pendulum
-
-        self._skip_in_memory(storage)
-
-        # test insert
-        added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(1000), daemon_type="foobar", daemon_id=None, info=None
-        )
-        storage.add_daemon_heartbeat(added_heartbeat)
-        assert len(storage.get_daemon_heartbeats()) == 1
-        stored_heartbeat = storage.get_daemon_heartbeats()["foobar"]
-        assert stored_heartbeat == added_heartbeat
-
-        # test update
-        second_added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(2000), daemon_type="foobar", daemon_id=None, info=None
-        )
-        storage.add_daemon_heartbeat(second_added_heartbeat)
-        assert len(storage.get_daemon_heartbeats()) == 1
-        stored_heartbeat = storage.get_daemon_heartbeats()["foobar"]
-        assert stored_heartbeat == second_added_heartbeat

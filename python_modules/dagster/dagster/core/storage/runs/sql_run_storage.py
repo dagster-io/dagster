@@ -17,14 +17,13 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster.core.storage.tags import ROOT_RUN_ID_TAG
-from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts
 
 from ..pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from .base import RunStorage
-from .schema import DaemonHeartbeatsTable, RunTagsTable, RunsTable, SnapshotsTable
+from .schema import RunTagsTable, RunsTable, SnapshotsTable
 
 
 class SnapshotType(Enum):
@@ -529,45 +528,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
 
-    # Daemon heartbeats
-
-    def add_daemon_heartbeat(self, daemon_heartbeat):
-        with self.connect() as conn:
-
-            # insert, or update if already present
-            try:
-                conn.execute(
-                    DaemonHeartbeatsTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        timestamp=daemon_heartbeat.timestamp,
-                        daemon_type=daemon_heartbeat.daemon_type,
-                        daemon_id=daemon_heartbeat.daemon_id,
-                        info=daemon_heartbeat.info,
-                    )
-                )
-            except db.exc.IntegrityError:
-                conn.execute(
-                    DaemonHeartbeatsTable.update()  # pylint: disable=no-value-for-parameter
-                    .where(DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type)
-                    .values(  # pylint: disable=no-value-for-parameter
-                        timestamp=daemon_heartbeat.timestamp,
-                        daemon_id=daemon_heartbeat.daemon_id,
-                        info=daemon_heartbeat.info,
-                    )
-                )
-
-    def get_daemon_heartbeats(self):
-        with self.connect() as conn:
-            rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
-            return {
-                row.daemon_type: DaemonHeartbeat(
-                    timestamp=row.timestamp,
-                    daemon_type=row.daemon_type,
-                    daemon_id=row.daemon_id,
-                    info=row.info,
-                )
-                for row in rows
-            }
-
     def wipe(self):
         """Clears the run storage."""
         with self.connect() as conn:
@@ -575,7 +535,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(RunsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(RunTagsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(SnapshotsTable.delete())  # pylint: disable=no-value-for-parameter
-            conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
 
 
 GET_PIPELINE_SNAPSHOT_QUERY_ID = "get-pipeline-snapshot"

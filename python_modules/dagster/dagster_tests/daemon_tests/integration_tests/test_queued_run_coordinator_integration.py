@@ -1,8 +1,30 @@
+import contextlib
+import os
+import subprocess
+
+from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster.utils import merge_dicts
 from dagster.utils.external import external_pipeline_from_run
 
-from .utils import setup_instance, start_daemon
+
+def setup_instance(dagster_home):
+    os.environ["DAGSTER_HOME"] = dagster_home
+    config = """run_coordinator:
+    module: dagster.core.run_coordinator
+    class: QueuedRunCoordinator
+    config:
+        dequeue_interval_seconds: 1
+    """
+    with open(os.path.join(dagster_home, "dagster.yaml"), "w") as file:
+        file.write(config)
+
+
+@contextlib.contextmanager
+def start_daemon():
+    p = subprocess.Popen(["dagster-daemon", "run"])
+    yield
+    p.kill()
 
 
 def create_run(instance, pipeline_handle, **kwargs):  # pylint: disable=redefined-outer-name
@@ -26,23 +48,17 @@ def assert_events_in_order(logs, expected_events):
 
 def test_queued_runs(tmpdir, foo_pipeline_handle):
     dagster_home_path = tmpdir.strpath
-    with setup_instance(
-        dagster_home_path,
-        """run_coordinator:
-    module: dagster.core.run_coordinator
-    class: QueuedRunCoordinator
-    config:
-        dequeue_interval_seconds: 1
-    """,
-    ) as instance:
+    setup_instance(dagster_home_path)
+    with DagsterInstance.get() as instance:
         with start_daemon():
+
             run = create_run(instance, foo_pipeline_handle)
             with external_pipeline_from_run(run) as external_pipeline:
                 instance.submit_run(run.run_id, external_pipeline)
 
-                poll_for_finished_run(instance, run.run_id)
+            poll_for_finished_run(instance, run.run_id)
 
-                logs = instance.all_logs(run.run_id)
-                assert_events_in_order(
-                    logs, ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_SUCCESS"],
-                )
+            logs = instance.all_logs(run.run_id)
+            assert_events_in_order(
+                logs, ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_SUCCESS"],
+            )
