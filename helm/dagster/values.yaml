@@ -484,6 +484,29 @@ dagsterDaemon:
   securityContext: {}
   resources: {}
 
+  livenessProbe:
+    exec:
+      command:
+        - "dagster-daemon"
+        - "health-check"
+    # initialDelaySeconds: 60
+    periodSeconds: 30
+    failureThreshold: 3
+    timeoutSeconds: 3
+  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+  # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
+  # on workspace load times.
+  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
+  # `initialDelaySeconds: 60` under `livenessProbe`
+  startupProbe:
+    exec:
+      command:
+        - "dagster-daemon"
+        - "health-check"
+    periodSeconds: 10
+    failureThreshold: 12
+    timeoutSeconds: 3
+
 ####################################################################################################
 # Extra Manifests: (Optional) Create additional k8s resources within this chart
 ####################################################################################################

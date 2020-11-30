@@ -76,6 +76,14 @@ spec:
               subPath: dagster.yaml
           resources:
             {{- toYaml .Values.dagsterDaemon.resources | nindent 12 }}
+          {{- if .Values.dagsterDaemon.livenessProbe }}
+          livenessProbe:
+            {{- toYaml .Values.dagsterDaemon.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.dagsterDaemon.startupProbe }}
+          startupProbe:
+            {{- toYaml .Values.dagsterDaemon.startupProbe | nindent 12 }}
+          {{- end }}
       nodeSelector:
         {{- toYaml .Values.dagsterDaemon.nodeSelector | nindent 8 }}
       volumes:
