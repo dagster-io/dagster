@@ -12,6 +12,7 @@ import {
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
+import {showCustomAlert} from 'src/CustomAlertProvider';
 import {SharedToaster} from 'src/DomUtils';
 import {filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
@@ -33,6 +34,7 @@ import {LaunchPartitionBackfill} from 'src/partitions/types/LaunchPartitionBackf
 import {PartitionsBackfillSelectorQuery} from 'src/partitions/types/PartitionsBackfillSelectorQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
 import {ButtonLink} from 'src/ui/ButtonLink';
+import {Group} from 'src/ui/Group';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
@@ -190,6 +192,34 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
       intent: Intent.SUCCESS,
     });
     onLaunch?.(backfillId);
+  };
+
+  const onError = (data: LaunchPartitionBackfill | null | undefined) => {
+    const result = data?.launchPartitionBackfill;
+    const message = (
+      <Group direction="vertical" spacing={4}>
+        <div>An unexpected error occurred. This backfill was not launched.</div>
+        {result && 'message' in result ? (
+          <ButtonLink
+            color={Colors.WHITE}
+            underline="always"
+            onClick={() => {
+              showCustomAlert({
+                body: <PythonErrorInfo error={result} />,
+              });
+            }}
+          >
+            View error
+          </ButtonLink>
+        ) : null}
+      </Group>
+    );
+
+    SharedToaster.show({
+      message,
+      icon: 'error',
+      intent: Intent.DANGER,
+    });
   };
 
   const {
@@ -435,7 +465,11 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
               <TagContainer tags={tags} onRequestEdit={() => setTagEditorOpen(true)} />
             </div>
           ) : (
-            <ButtonLink onClick={() => setTagEditorOpen(true)} style={{margin: '9px  9px 0 9px'}}>
+            <ButtonLink
+              color="#106ba3"
+              onClick={() => setTagEditorOpen(true)}
+              style={{margin: '9px  9px 0 9px'}}
+            >
               + Add tags to backfill runs
             </ButtonLink>
           )}
@@ -448,6 +482,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
             fromFailure={options.fromFailure}
             tags={tags}
             onSuccess={onSuccess}
+            onError={onError}
             repoAddress={repoAddress}
           />
         </div>
@@ -463,7 +498,7 @@ const LaunchBackfillButton: React.FC<{
   fromFailure?: boolean;
   tags?: PipelineRunTag[];
   onSuccess?: (backfillId: string) => void;
-  onError?: () => void;
+  onError: (data: LaunchPartitionBackfill | null | undefined) => void;
   repoAddress: RepoAddress;
 }> = ({
   partitionSetName,
@@ -507,7 +542,7 @@ const LaunchBackfillButton: React.FC<{
     if (data && data.launchPartitionBackfill.__typename === 'PartitionBackfillSuccess') {
       onSuccess?.(data.launchPartitionBackfill.backfillId);
     } else {
-      onError?.();
+      onError?.(data);
     }
   };
 
