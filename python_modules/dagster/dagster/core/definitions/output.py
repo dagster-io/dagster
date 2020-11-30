@@ -25,6 +25,7 @@ class OutputDefinition:
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
         asset_store_key (Optional[str]): The resource key of the asset store used for this output.
+            (default: "asset_store").
         asset_metadata (Optional[Dict[str, Any]]): A dict of the metadata that is used for the
             output to store the given data object. For example, users can provide a file path if
             the data object will be stored in a filesystem, or provide information of a database
@@ -37,14 +38,16 @@ class OutputDefinition:
         name=None,
         description=None,
         is_required=None,
-        asset_store_key="asset_store",
+        asset_store_key=None,
         asset_metadata=None,
     ):
         self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, "description")
         self._is_required = check.opt_bool_param(is_required, "is_required", default=True)
-        self._asset_store_key = asset_store_key
+        self._asset_store_key = check.opt_str_param(
+            asset_store_key, "asset_store_key", default="asset_store"
+        )
         self._asset_metadata = asset_metadata
 
     @property
