@@ -1,8 +1,7 @@
 # pylint: disable=redefined-outer-name
-import pytest
-
 import boto3
-from dagster_aws.athena.resources import FakeAthenaResource, AthenaError, AthenaTimeout
+import pytest
+from dagster_aws.athena.resources import AthenaError, AthenaTimeout, FakeAthenaResource
 from moto import mock_athena
 
 

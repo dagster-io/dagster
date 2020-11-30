@@ -3,14 +3,14 @@ import io
 import os
 import uuid
 
+import boto3
+from botocore.stub import Stubber
+from dagster import Field, StringSource, check, resource
+
 try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
-
-import boto3
-from botocore.stub import Stubber
-from dagster import Field, StringSource, check, resource
 
 
 class AthenaError(Exception):
@@ -80,7 +80,7 @@ class AthenaResource:
         results = []
         rows = s3.Bucket(bucket).Object(prefix).get()["Body"].read().decode().splitlines()
         reader = csv.reader(rows)
-        next(reader) # Skip the CSV's header row
+        next(reader)  # Skip the CSV's header row
         for row in reader:
             results.append(tuple(row))
 
