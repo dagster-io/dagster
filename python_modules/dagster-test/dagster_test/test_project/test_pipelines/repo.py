@@ -67,6 +67,24 @@ def error_solid():
     raise Exception("Unusual error")
 
 
+@solid
+def hanging_solid(_):
+    while True:
+        time.sleep(0.1)
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            intermediate_storage_defs=s3_plus_default_intermediate_storage_defs,
+            resource_defs={"s3": s3_resource},
+        )
+    ]
+)
+def hanging_pipeline():
+    hanging_solid()
+
+
 @pipeline(
     mode_defs=[
         ModeDefinition(
@@ -458,6 +476,7 @@ def define_demo_execution_repo():
                 "resource_pipeline": define_resource_pipeline,
                 "docker_celery_pipeline": define_docker_celery_pipeline,
                 "demo_airflow_execution_date_pipeline": demo_airflow_execution_date_pipeline,
+                "hanging_pipeline": hanging_pipeline,
                 "hard_failer": define_hard_failer,
             },
             "schedules": define_schedules(),
