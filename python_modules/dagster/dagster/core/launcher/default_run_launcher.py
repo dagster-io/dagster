@@ -63,8 +63,6 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         self._instance_weakref = weakref.ref(instance)
 
     def launch_run(self, instance, run, external_pipeline):
-        """Subclasses must implement this method."""
-
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 

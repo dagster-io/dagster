@@ -1,3 +1,4 @@
+import base64
 import os
 import subprocess
 import sys
@@ -30,6 +31,37 @@ def test_repo_path():
 
 def test_project_environments_path():
     return os.path.join(test_repo_path(), "environments")
+
+
+def get_buildkite_registry_config():
+    import boto3
+
+    ecr_client = boto3.client("ecr", region_name="us-west-1")
+    token = ecr_client.get_authorization_token()
+    username, password = (
+        base64.b64decode(token["authorizationData"][0]["authorizationToken"]).decode().split(":")
+    )
+    registry = token["authorizationData"][0]["proxyEndpoint"]
+
+    return {
+        "url": registry,
+        "username": username,
+        "password": password,
+    }
+
+
+def find_local_test_image(docker_image):
+    import docker
+
+    try:
+        client = docker.from_env()
+        client.images.get(docker_image)
+        print(  # pylint: disable=print-call
+            "Found existing image tagged {image}, skipping image build. To rebuild, first run: "
+            "docker rmi {image}".format(image=docker_image)
+        )
+    except docker.errors.ImageNotFound:
+        build_and_tag_test_image(docker_image)
 
 
 def build_and_tag_test_image(tag):
@@ -86,8 +118,9 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
 
 class ReOriginatedExternalPipelineForTest(ExternalPipeline):
     def __init__(
-        self, external_pipeline,
+        self, external_pipeline, container_image=None,
     ):
+        self._container_image = container_image
         super(ReOriginatedExternalPipelineForTest, self).__init__(
             external_pipeline.external_pipeline_data, external_pipeline.repository_handle,
         )
@@ -108,6 +141,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                     "/dagster_test/test_project/test_pipelines/repo.py",
                     "define_demo_execution_repo",
                 ),
+                container_image=self._container_image,
             ),
         )
 
@@ -135,7 +169,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         )
 
 
-def get_test_project_external_pipeline(pipeline_name):
+def get_test_project_external_pipeline(pipeline_name, container_image=None):
     return (
         RepositoryLocation.from_handle(
             RepositoryLocationHandle.create_from_repository_location_origin(
@@ -143,6 +177,7 @@ def get_test_project_external_pipeline(pipeline_name):
                     ReconstructableRepository.for_file(
                         file_relative_path(__file__, "test_pipelines/repo.py"),
                         "define_demo_execution_repo",
+                        container_image=container_image,
                     )
                 )
             )
