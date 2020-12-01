@@ -103,7 +103,7 @@ def test_user_error_boundary_resource_init():
 def test_user_error_boundary_storage_plugin():
     class CustomStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
         @classmethod
-        def compatible_with_storage_def(cls, system_storage_def):
+        def compatible_with_storage_def(cls, intermediate_storage_def):
             return True
 
         @classmethod

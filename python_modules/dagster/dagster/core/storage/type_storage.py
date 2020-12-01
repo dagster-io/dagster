@@ -7,12 +7,12 @@ from dagster import check
 class TypeStoragePlugin(six.with_metaclass(ABCMeta)):  # pylint: disable=no-init
     """Base class for storage plugins.
 
-    Extend this class for (system_storage_name, dagster_type) pairs that need special handling.
+    Extend this class for (intermediate_storage_name, dagster_type) pairs that need special handling.
     """
 
     @classmethod
     @abstractmethod
-    def compatible_with_storage_def(self, system_storage_def):
+    def compatible_with_storage_def(self, intermediate_storage_def):
         raise NotImplementedError()
 
     @classmethod
@@ -108,25 +108,19 @@ class TypeStoragePluginRegistry:
             )
 
 
-def construct_type_storage_plugin_registry(pipeline_def, system_storage_def):
+def construct_type_storage_plugin_registry(pipeline_def, intermediate_storage_def):
     # Needed to avoid circular dep
-    from dagster.core.definitions import (
-        PipelineDefinition,
-        SystemStorageDefinition,
-        IntermediateStorageDefinition,
-    )
+    from dagster.core.definitions import PipelineDefinition, IntermediateStorageDefinition
 
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.inst_param(
-        system_storage_def,
-        "system_storage_def",
-        (SystemStorageDefinition, IntermediateStorageDefinition),
+        intermediate_storage_def, "intermediate_storage_def", IntermediateStorageDefinition,
     )
 
     type_plugins = []
     for type_obj in pipeline_def.all_dagster_types():
         for auto_plugin in type_obj.auto_plugins:
-            if auto_plugin.compatible_with_storage_def(system_storage_def):
+            if auto_plugin.compatible_with_storage_def(intermediate_storage_def):
                 type_plugins.append((type_obj, auto_plugin))
 
     return TypeStoragePluginRegistry(type_plugins)

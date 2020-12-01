@@ -397,7 +397,7 @@ def define_plugin_pipeline(
 
     class CustomStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
         @classmethod
-        def compatible_with_storage_def(cls, system_storage_def):
+        def compatible_with_storage_def(cls, _):
             return compatible_storage
 
         @classmethod

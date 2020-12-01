@@ -17,7 +17,7 @@ from dagster import (
     dagster_type_materializer,
 )
 from dagster.config.field_utils import Selector
-from dagster.core.storage.system_storage import fs_intermediate_storage, fs_system_storage
+from dagster.core.storage.system_storage import fs_intermediate_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.utils import dict_without_keys
 from pyspark.sql import DataFrame as NativeSparkDataFrame
@@ -956,8 +956,8 @@ def dataframe_loader(_context, config):
 
 class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
-    def compatible_with_storage_def(cls, system_storage_def):
-        return system_storage_def.required_resource_keys == {"s3"}
+    def compatible_with_storage_def(cls, intermediate_storage_def):
+        return intermediate_storage_def.required_resource_keys == {"s3"}
 
     @classmethod
     def set_intermediate_object(
@@ -998,14 +998,11 @@ class SparkDataFrameS3StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-in
 
 class SparkDataFrameADLS2StoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
-    def compatible_with_storage_def(cls, system_storage_def):
+    def compatible_with_storage_def(cls, intermediate_storage_def):
         try:
-            from dagster_azure.adls2 import adls2_system_storage, adls2_intermediate_storage
+            from dagster_azure.adls2 import adls2_intermediate_storage
 
-            return (
-                system_storage_def is adls2_system_storage
-                or system_storage_def is adls2_intermediate_storage
-            )
+            return intermediate_storage_def is adls2_intermediate_storage
         except ImportError:
             return False
 
@@ -1040,10 +1037,8 @@ class SparkDataFrameADLS2StoragePlugin(TypeStoragePlugin):  # pylint: disable=no
 
 class SparkDataFrameFilesystemStoragePlugin(TypeStoragePlugin):  # pylint: disable=no-init
     @classmethod
-    def compatible_with_storage_def(cls, system_storage_def):
-        return (
-            system_storage_def is fs_system_storage or system_storage_def is fs_intermediate_storage
-        )
+    def compatible_with_storage_def(cls, intermediate_storage_def):
+        return intermediate_storage_def is fs_intermediate_storage
 
     @classmethod
     def set_intermediate_object(
