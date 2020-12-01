@@ -50,7 +50,7 @@ const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boo
           isOpen={showDialog}
           title="Repository location error"
           onClose={() => setShowDialog(false)}
-          style={{width: '700px'}}
+          style={{width: '90%'}}
         >
           <div className={Classes.DIALOG_BODY}>
             <div style={{marginBottom: '12px'}}>
@@ -165,7 +165,7 @@ const Trace = styled.div`
   color: rgb(41, 50, 56);
   font-family: ${FontFamily.monospace};
   font-size: 12px;
-  max-height: 60vh;
+  max-height: 90vh;
   overflow: auto;
   white-space: pre;
   padding: 16px;
