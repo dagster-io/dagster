@@ -570,7 +570,6 @@ const LoadingOverlayContainer = styled.div<{isLoading: boolean}>`
   opacity: ${({isLoading}) => (isLoading ? '0.7' : '0')};
   transition: opacity 150ms linear;
   transition-delay: 300ms;
-  pointer-events: none;
 `;
 
 const LoadingOverlay: React.FunctionComponent<{
