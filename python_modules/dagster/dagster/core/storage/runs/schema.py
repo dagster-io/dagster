@@ -56,3 +56,5 @@ DaemonHeartbeatsTable = db.Table(
     db.Column("timestamp", db.DateTime, nullable=False),
     db.Column("info", db.String),
 )
+
+db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value)
