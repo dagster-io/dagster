@@ -57,6 +57,11 @@ def test_execute_query_timeout(mock_athena_client):
         athena.execute_query("SELECT 1")
 
 
+def test_execute_query_succeeds_on_last_poll(mock_athena_client):
+    athena = FakeAthenaResource(client=mock_athena_client, max_polls=1)
+    athena.execute_query("SELECT 1", expected_states=["SUCCEEDED"])
+
+
 def test_solid(mock_athena_client):  # pylint: disable=unused-argument
     from dagster import ModeDefinition, execute_solid, solid
     from dagster_aws.athena import fake_athena_resource

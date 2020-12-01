@@ -1,6 +1,7 @@
 import csv
 import io
 import os
+import time
 import uuid
 
 import boto3
@@ -56,15 +57,18 @@ class AthenaResource:
         retries = self.max_polls
         state = "QUEUED"
 
-        while retries >= 0 and state in ["QUEUED", "RUNNING"]:
+        while retries > 0:
             execution = self.client.get_query_execution(QueryExecutionId=execution_id)[
                 "QueryExecution"
             ]
             state = execution["Status"]["State"]
-            if self.max_polls > 0:
-                retries -= 1
+            if state not in ["QUEUED", "RUNNING"]:
+                break
 
-        if retries < 0:
+            retries -= 1
+            time.sleep(self.polling_interval)
+
+        if retries <= 0:
             raise AthenaTimeout()
 
         if state != "SUCCEEDED":
