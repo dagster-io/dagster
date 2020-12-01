@@ -60,6 +60,8 @@ def library(name):
     version = get_most_recent_git_tag()
 
     for dname, _, files in os.walk(new_template_library_path):
+        new_dname = dname.replace("library-tmpl", name)
+
         for fname in files:
             fpath = os.path.join(dname, fname)
             with open(fpath) as f:
@@ -71,10 +73,10 @@ def library(name):
 
             new_fname = fname.replace(".tmpl", "")
             new_fpath = os.path.join(dname, new_fname)
-            shutil.move(fpath, new_fpath)
-            print("Created {path}".format(path=new_fpath))
 
-        new_dname = dname.replace("library-tmpl", name)
+            shutil.move(fpath, new_fpath)
+            print("Created {path}".format(path=os.path.join(new_dname, new_fname)))
+
         shutil.move(dname, new_dname)
 
     print("Library created at {path}".format(path=new_template_library_path))
