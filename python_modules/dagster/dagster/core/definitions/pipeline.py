@@ -608,19 +608,6 @@ def _validate_resource_dependencies(
 
         _validate_type_resource_deps_for_mode(mode_def, mode_resources, dagster_type_dict)
 
-        for system_storage_def in mode_def.system_storage_defs:
-            for required_resource in system_storage_def.required_resource_keys:
-                if required_resource not in mode_resources:
-                    raise DagsterInvalidDefinitionError(
-                        (
-                            "Resource '{resource}' is required by system storage "
-                            "'{storage_name}', but is not provided by mode '{mode_name}'."
-                        ).format(
-                            resource=required_resource,
-                            storage_name=system_storage_def.name,
-                            mode_name=mode_def.name,
-                        )
-                    )
         for intermediate_storage in mode_def.intermediate_storage_defs or []:
             for required_resource in intermediate_storage.required_resource_keys:
                 if required_resource not in mode_resources:
@@ -708,11 +695,6 @@ def _validate_type_resource_deps_for_mode(mode_def, mode_resources, dagster_type
         for plugin in dagster_type.auto_plugins:
             used_by_storage = set(
                 [
-                    storage_def.name
-                    for storage_def in mode_def.system_storage_defs
-                    if plugin.compatible_with_storage_def(storage_def)
-                ]
-                + [
                     intermediate_storage_def.name
                     for intermediate_storage_def in mode_def.intermediate_storage_defs
                     if plugin.compatible_with_storage_def(intermediate_storage_def)

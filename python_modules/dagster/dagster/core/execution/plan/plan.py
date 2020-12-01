@@ -13,10 +13,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster.core.execution.context.system import AssetStoreContext
-from dagster.core.system_config.objects import (
-    EmptyIntermediateStoreBackcompatConfig,
-    EnvironmentConfig,
-)
+from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
 
@@ -115,14 +112,6 @@ class _PlanBuilder:
         )
 
     def storage_is_persistent(self):
-        if isinstance(
-            self.environment_config.intermediate_storage.intermediate_storage_name,
-            EmptyIntermediateStoreBackcompatConfig,
-        ):
-            return self.mode_definition.get_system_storage_def(
-                self.environment_config.storage.system_storage_name
-            ).is_persistent
-
         return self.mode_definition.get_intermediate_storage_def(
             self.environment_config.intermediate_storage.intermediate_storage_name
         ).is_persistent

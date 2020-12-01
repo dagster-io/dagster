@@ -31,7 +31,7 @@ from dagster.core.utils import make_new_run_id
 from dagster.utils.test import yield_empty_pipeline_context
 from dagster_azure.adls2 import (
     ADLS2IntermediateStorage,
-    adls2_plus_default_storage_defs,
+    adls2_plus_default_intermediate_storage_defs,
     adls2_resource,
     create_adls2_client,
 )
@@ -70,7 +70,7 @@ def define_inty_pipeline(should_throw=True):
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                system_storage_defs=adls2_plus_default_storage_defs,
+                intermediate_storage_defs=adls2_plus_default_intermediate_storage_defs,
                 resource_defs={"adls2": adls2_resource},
             )
         ]

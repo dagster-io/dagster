@@ -32,7 +32,7 @@ from dagster.core.utils import make_new_run_id
 from dagster.utils.test import yield_empty_pipeline_context
 from dagster_gcp.gcs.intermediate_storage import GCSIntermediateStorage
 from dagster_gcp.gcs.resources import gcs_resource
-from dagster_gcp.gcs.system_storage import gcs_plus_default_storage_defs
+from dagster_gcp.gcs.system_storage import gcs_plus_default_intermediate_storage_defs
 
 
 class UppercaseSerializationStrategy(SerializationStrategy):  # pylint: disable=no-init
@@ -67,7 +67,7 @@ def define_inty_pipeline(should_throw=True):
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                system_storage_defs=gcs_plus_default_storage_defs,
+                intermediate_storage_defs=gcs_plus_default_intermediate_storage_defs,
                 resource_defs={"gcs": gcs_resource},
             )
         ]

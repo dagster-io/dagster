@@ -6,10 +6,7 @@ from dagster.config.field import check_opt_field_param
 from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Shape, all_optional_type
 from dagster.config.iterate_types import iterate_config_types
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.storage.system_storage import (
-    default_intermediate_storage_defs,
-    default_system_storage_defs,
-)
+from dagster.core.storage.system_storage import default_intermediate_storage_defs
 from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster.utils import check, ensure_single_item
 
@@ -134,14 +131,13 @@ def define_environment_cls(creation_data):
         storage_names=[dfn.name for dfn in creation_data.mode_definition.intermediate_storage_defs],
         defaults=set([storage.name for storage in default_intermediate_storage_defs]),
     )
-    if not (intermediate_storage_field.is_required or intermediate_storage_field.default_provided):
-        storage_field = define_storage_field(
-            selector_for_named_defs(creation_data.mode_definition.system_storage_defs),
-            storage_names=[dfn.name for dfn in creation_data.mode_definition.system_storage_defs],
-            defaults=set([storage.name for storage in default_system_storage_defs]),
-        )
-    else:
-        storage_field = None
+    # TODO: remove "storage" entry in run_config as part of system storage removal
+    # currently we treat "storage" as an alias to "intermediate_storage" and storage field is optional
+    # tracking https://github.com/dagster-io/dagster/issues/3280
+    storage_field = Field(
+        selector_for_named_defs(creation_data.mode_definition.intermediate_storage_defs),
+        is_required=False,
+    )
 
     return Shape(
         fields=remove_none_entries(

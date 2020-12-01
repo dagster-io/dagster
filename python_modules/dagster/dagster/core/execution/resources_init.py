@@ -183,12 +183,9 @@ def single_resource_event_generator(context, resource_name, resource_def):
             )
 
 
-def get_required_resource_keys_to_init(
-    execution_plan, system_storage_def, intermediate_storage_def
-):
+def get_required_resource_keys_to_init(execution_plan, intermediate_storage_def):
     resource_keys = set()
 
-    resource_keys = resource_keys.union(system_storage_def.required_resource_keys)
     if intermediate_storage_def is not None:
         resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
 
@@ -196,9 +193,7 @@ def get_required_resource_keys_to_init(
         if step_key not in execution_plan.step_keys_to_execute:
             continue
         resource_keys = resource_keys.union(
-            get_required_resource_keys_for_step(
-                step, execution_plan, system_storage_def, intermediate_storage_def,
-            )
+            get_required_resource_keys_for_step(step, execution_plan, intermediate_storage_def)
         )
     for hook_def in execution_plan.get_all_hook_defs():
         resource_keys = resource_keys.union(hook_def.required_resource_keys)
@@ -206,13 +201,8 @@ def get_required_resource_keys_to_init(
     return frozenset(resource_keys)
 
 
-def get_required_resource_keys_for_step(
-    execution_step, execution_plan, system_storage_def, intermediate_storage_def
-):
+def get_required_resource_keys_for_step(execution_step, execution_plan, intermediate_storage_def):
     resource_keys = set()
-
-    # add all the system storage resource keys
-    resource_keys = resource_keys.union(system_storage_def.required_resource_keys)
 
     # add all the intermediate storage resource keys
     if intermediate_storage_def is not None:
@@ -246,8 +236,6 @@ def get_required_resource_keys_for_step(
     # add all the storage-compatible plugin resource keys
     for dagster_type in solid_def.all_dagster_types():
         for auto_plugin in dagster_type.auto_plugins:
-            if auto_plugin.compatible_with_storage_def(system_storage_def):
-                resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
             if intermediate_storage_def is not None:
                 if auto_plugin.compatible_with_storage_def(intermediate_storage_def):
                     resource_keys = resource_keys.union(auto_plugin.required_resource_keys())

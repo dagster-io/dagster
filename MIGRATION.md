@@ -21,12 +21,24 @@ We have removed the property `config_field` on definition classes. Use `config_s
 
 ## Removal: `system_storage_defs`
 
+- We have removed the argument `system_storage_defs` to the `ModeDefinition`, which we deprecated in
+  0.9.0, in favor of `intermediate_storage_defs`, as described [here](##deprecation-system_storage_defs).
+
+- We have deprecated the field `"storage"` on run config, in favor of `"intermediate_storage"`.
+
+  For example, if your run config yaml look like this:
+  `{"storage": {"filesystem": {}}}` or `{"storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket}}}}`
+
+  it is recommended to make it look like this:
+  `{"intermediate_storage": {"filesystem": {}}}` or `{"intermediate_storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket}}}}`
+
+
 - As we have removed the system storages, if you are using file managers which live inside system
   storages, you should update it to be configured on resources via the `"file_manager"` resource key.
   Similarly, you should configure solids using file managers to require the `"file_manager"`
   resource key and replace the `context.file_manager` with `context.resources.file_manager`.
 
-  For example, if you solid look like this:
+  For example, if your solid look like this:
   ```python
   @solid
   def emit_file(context):

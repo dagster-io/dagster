@@ -210,7 +210,6 @@ def check_cross_process_constraints(init_context):
         init_context.pipeline.get_definition(),
         init_context.mode_def,
         init_context.intermediate_storage_def,
-        init_context.system_storage_def,
     )
 
 
@@ -249,9 +248,7 @@ def _all_outputs_non_mem_asset_stores(pipeline_def, mode_def):
     return True
 
 
-def _check_persistent_storage_requirement(
-    pipeline_def, mode_def, intermediate_storage_def, system_storage_def
-):
+def _check_persistent_storage_requirement(pipeline_def, mode_def, intermediate_storage_def):
     """We prefer to store outputs with asset stores, but will fall back to intermediate storage
     if an asset store isn't set and will fall back to system storage if neither an asset
     store nor an intermediate storage are set.
@@ -259,7 +256,6 @@ def _check_persistent_storage_requirement(
     if not (
         _all_outputs_non_mem_asset_stores(pipeline_def, mode_def)
         or (intermediate_storage_def and intermediate_storage_def.is_persistent)
-        or system_storage_def.is_persistent
     ):
         raise DagsterUnmetExecutorRequirementsError(
             "You have attempted to use an executor that uses multiple processes, but your pipeline "

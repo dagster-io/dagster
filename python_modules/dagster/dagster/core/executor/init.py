@@ -6,7 +6,6 @@ from dagster.core.definitions import (
     IPipeline,
     IntermediateStorageDefinition,
     ModeDefinition,
-    SystemStorageDefinition,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -17,7 +16,7 @@ class InitExecutorContext(
     namedtuple(
         "InitExecutorContext",
         "pipeline mode_def executor_def pipeline_run environment_config "
-        "executor_config system_storage_def intermediate_storage_def instance",
+        "executor_config intermediate_storage_def instance",
     )
 ):
     """Executor-specific initialization context.
@@ -31,7 +30,6 @@ class InitExecutorContext(
         environment_config (EnvironmentConfig): The parsed environment configuration for this
             pipeline run.
         executor_config (dict): The parsed config passed to the executor.
-        system_storage_def (SystemStorageDefinition): The system storage definition.
         intermediate_storage_def (Optional[IntermediateStorageDefinition]): The intermediate storage definition.
         instance (DagsterInstance): The current instance.
     """
@@ -44,7 +42,6 @@ class InitExecutorContext(
         pipeline_run,
         environment_config,
         executor_config,
-        system_storage_def,
         instance,
         intermediate_storage_def=None,
     ):
@@ -58,9 +55,6 @@ class InitExecutorContext(
                 environment_config, "environment_config", EnvironmentConfig
             ),
             executor_config=check.dict_param(executor_config, executor_config, key_type=str),
-            system_storage_def=check.inst_param(
-                system_storage_def, "system_storage_def", SystemStorageDefinition
-            ),
             intermediate_storage_def=check.opt_inst_param(
                 intermediate_storage_def, "intermediate_storage_def", IntermediateStorageDefinition
             ),

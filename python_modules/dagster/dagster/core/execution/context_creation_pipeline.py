@@ -20,7 +20,7 @@ from dagster.core.executor.base import Executor
 from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.init import InitIntermediateStorageContext, InitSystemStorageContext
+from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.intermediate_storage import IntermediateStorage
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.type_storage import construct_type_storage_plugin_registry
@@ -35,22 +35,6 @@ from .context.system import (
     SystemExecutionContextData,
     SystemPipelineExecutionContext,
 )
-
-
-def construct_system_storage_data(storage_init_context):
-    return storage_init_context.system_storage_def.system_storage_creation_fn(storage_init_context)
-
-
-def system_storage_def_from_config(mode_definition, environment_config):
-    for system_storage_def in mode_definition.system_storage_defs:
-        if system_storage_def.name == environment_config.storage.system_storage_name:
-            return system_storage_def
-
-    check.failed(
-        "Could not find storage mode {}. Should have be caught by config system".format(
-            environment_config.storage.system_storage_name
-        )
-    )
 
 
 def construct_intermediate_storage_data(storage_init_context):
@@ -80,7 +64,7 @@ def executor_def_from_config(mode_definition, environment_config):
 class ContextCreationData(
     namedtuple(
         "_ContextCreationData",
-        "pipeline environment_config pipeline_run mode_def system_storage_def "
+        "pipeline environment_config pipeline_run mode_def "
         "intermediate_storage_def executor_def instance resource_keys_to_init "
         "execution_plan",
     )
@@ -97,7 +81,6 @@ def create_context_creation_data(
     environment_config = EnvironmentConfig.build(pipeline_def, run_config, mode=pipeline_run.mode)
 
     mode_def = pipeline_def.get_mode_definition(pipeline_run.mode)
-    system_storage_def = system_storage_def_from_config(mode_def, environment_config)
     intermediate_storage_def = environment_config.intermediate_storage_def_for_mode(mode_def)
     executor_def = executor_def_from_config(mode_def, environment_config)
 
@@ -106,12 +89,11 @@ def create_context_creation_data(
         environment_config=environment_config,
         pipeline_run=pipeline_run,
         mode_def=mode_def,
-        system_storage_def=system_storage_def,
         intermediate_storage_def=intermediate_storage_def,
         executor_def=executor_def,
         instance=instance,
         resource_keys_to_init=get_required_resource_keys_to_init(
-            execution_plan, system_storage_def, intermediate_storage_def
+            execution_plan, intermediate_storage_def
         ),
         execution_plan=execution_plan,
     )
@@ -214,15 +196,10 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
             scoped_resources_builder = check.inst(
                 resources_manager.get_object(), ScopedResourcesBuilder
             )
-            if intermediate_storage or context_creation_data.intermediate_storage_def:
-                intermediate_storage = create_intermediate_storage(
-                    context_creation_data, intermediate_storage, scoped_resources_builder,
-                )
-            else:
-                # remove this as part of https://github.com/dagster-io/dagster/issues/2705
-                intermediate_storage = create_system_storage_data(
-                    context_creation_data, scoped_resources_builder
-                ).intermediate_storage
+
+            intermediate_storage = create_intermediate_storage(
+                context_creation_data, intermediate_storage, scoped_resources_builder,
+            )
 
             execution_context = self.construct_context(
                 context_creation_data=context_creation_data,
@@ -349,36 +326,6 @@ def _validate_plan_with_context(pipeline_context, execution_plan):
     validate_reexecution_memoization(pipeline_context, execution_plan)
 
 
-def create_system_storage_data(context_creation_data, scoped_resources_builder):
-    check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
-
-    environment_config, pipeline_def, system_storage_def, pipeline_run = (
-        context_creation_data.environment_config,
-        context_creation_data.pipeline_def,
-        context_creation_data.system_storage_def,
-        context_creation_data.pipeline_run,
-    )
-
-    system_storage_data = construct_system_storage_data(
-        InitSystemStorageContext(
-            pipeline_def=pipeline_def,
-            mode_def=context_creation_data.mode_def,
-            system_storage_def=system_storage_def,
-            system_storage_config=environment_config.storage.system_storage_config,
-            pipeline_run=pipeline_run,
-            instance=context_creation_data.instance,
-            environment_config=environment_config,
-            type_storage_plugin_registry=construct_type_storage_plugin_registry(
-                pipeline_def, system_storage_def
-            ),
-            resources=scoped_resources_builder.build(
-                context_creation_data.system_storage_def.required_resource_keys,
-            ),
-        )
-    )
-    return system_storage_data
-
-
 def create_intermediate_storage(
     context_creation_data, intermediate_storage_data, scoped_resources_builder,
 ):
@@ -425,7 +372,6 @@ def create_executor(context_creation_data):
             pipeline_run=context_creation_data.pipeline_run,
             environment_config=context_creation_data.environment_config,
             executor_config=context_creation_data.environment_config.execution.execution_engine_config,
-            system_storage_def=context_creation_data.system_storage_def,
             intermediate_storage_def=context_creation_data.intermediate_storage_def,
             instance=context_creation_data.instance,
         )
@@ -453,7 +399,6 @@ def construct_execution_context_data(
     return SystemExecutionContextData(
         pipeline=context_creation_data.pipeline,
         mode_def=context_creation_data.mode_def,
-        system_storage_def=context_creation_data.system_storage_def,
         intermediate_storage_def=context_creation_data.intermediate_storage_def,
         pipeline_run=context_creation_data.pipeline_run,
         scoped_resources_builder=scoped_resources_builder,

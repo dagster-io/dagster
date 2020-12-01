@@ -17,7 +17,7 @@ from dagster_azure.adls2 import (
     ADLS2FileManager,
     FakeADLS2Resource,
     adls2_file_manager,
-    adls2_plus_default_storage_defs,
+    adls2_plus_default_intermediate_storage_defs,
 )
 
 # For deps
@@ -104,7 +104,7 @@ def test_depends_on_adls2_resource_intermediates(storage_account, file_system):
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                system_storage_defs=adls2_plus_default_storage_defs,
+                intermediate_storage_defs=adls2_plus_default_intermediate_storage_defs,
                 resource_defs={"adls2": ResourceDefinition.hardcoded_resource(adls2_fake_resource)},
             )
         ]
@@ -166,7 +166,7 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                system_storage_defs=adls2_plus_default_storage_defs,
+                intermediate_storage_defs=adls2_plus_default_intermediate_storage_defs,
                 resource_defs={
                     "adls2": ResourceDefinition.hardcoded_resource(adls2_fake_resource),
                     "file_manager": ResourceDefinition.hardcoded_resource(adls2_fake_file_manager),
