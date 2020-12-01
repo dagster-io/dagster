@@ -13,9 +13,7 @@ from .memoized_dev_loop_pipeline import basic_pipeline
 
 def get_step_keys_to_execute(instance, pipeline, run_config, mode):
     memoized_execution_plan = instance.resolve_memoized_execution_plan(
-        create_execution_plan(pipeline, run_config=run_config, mode=mode),
-        run_config=run_config,
-        mode=mode,
+        create_execution_plan(pipeline, run_config=run_config, mode=mode)
     )
     return memoized_execution_plan.step_keys_to_execute
 

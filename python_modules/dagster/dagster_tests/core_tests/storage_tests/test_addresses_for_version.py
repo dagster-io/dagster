@@ -6,7 +6,6 @@ from dagster import Int, execute_pipeline, pipeline, seven, solid
 from dagster.core.errors import DagsterAddressIOError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.objects import StepOutputHandle
-from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -19,7 +18,6 @@ from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.system_config.objects import EnvironmentConfig
 
 
 def get_instance(temp_dir, event_log_storage):
@@ -57,11 +55,9 @@ versioned_storage_test = pytest.mark.parametrize(
 
 
 def default_mode_output_versions(pipeline_def):
-    return resolve_step_output_versions(
-        create_execution_plan(pipeline_def),
-        EnvironmentConfig.build(pipeline_def, {}, "default"),
-        pipeline_def.get_mode_definition("default"),
-    )
+    return create_execution_plan(
+        pipeline_def, run_config={}, mode="default"
+    ).resolve_step_output_versions()
 
 
 @versioned_storage_test

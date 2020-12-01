@@ -33,7 +33,7 @@ class SolidConfig(namedtuple("_SolidConfig", "config inputs outputs")):
 class EnvironmentConfig(
     namedtuple(
         "_EnvironmentConfig",
-        "solids execution intermediate_storage resources loggers original_config_dict",
+        "solids execution intermediate_storage resources loggers original_config_dict mode",
     )
 ):
     def __new__(
@@ -44,6 +44,7 @@ class EnvironmentConfig(
         resources=None,
         loggers=None,
         original_config_dict=None,
+        mode=None,
     ):
         check.opt_inst_param(execution, "execution", ExecutionConfig)
         check.opt_inst_param(
@@ -51,6 +52,7 @@ class EnvironmentConfig(
         )
         check.opt_dict_param(original_config_dict, "original_config_dict")
         check.opt_dict_param(resources, "resources", key_type=str)
+        check.opt_str_param(mode, "mode")
 
         if execution is None:
             execution = ExecutionConfig(None, None)
@@ -63,6 +65,7 @@ class EnvironmentConfig(
             resources=resources,
             loggers=check.opt_dict_param(loggers, "loggers", key_type=str, value_type=dict),
             original_config_dict=original_config_dict,
+            mode=mode,
         )
 
     @staticmethod
@@ -124,6 +127,7 @@ class EnvironmentConfig(
             loggers=config_mapped_logger_configs,
             original_config_dict=run_config,
             resources=config_mapped_resource_configs,
+            mode=mode,
         )
 
     def intermediate_storage_def_for_mode(self, mode_definition):

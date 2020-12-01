@@ -28,7 +28,6 @@ from dagster.core.errors import (
     DagsterLaunchFailedError,
 )
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.host_representation import (
     ExternalPipeline,
     ExternalRepository,
@@ -44,7 +43,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.snap.execution_plan_snapshot import ExecutionPlanSnapshotErrorData
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster.core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
@@ -271,11 +269,7 @@ def execute_list_versions_command(instance, kwargs):
     execution_plan = create_execution_plan(
         pipeline.get_definition(), run_config=run_config, mode=mode
     )
-    step_output_versions = resolve_step_output_versions(
-        execution_plan,
-        environment_config=EnvironmentConfig.build(pipeline_def, run_config=run_config, mode=mode),
-        mode_def=pipeline_def.get_mode_definition(mode),
-    )
+    step_output_versions = execution_plan.resolve_step_output_versions()
     step_output_addresses = instance.get_addresses_for_step_output_versions(
         {
             (pipeline_name, step_output_handle): version

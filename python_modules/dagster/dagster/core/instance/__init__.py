@@ -15,7 +15,6 @@ from dagster.core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster.core.execution.resolve_versions import resolve_step_output_versions
 from dagster.core.storage.migration.utils import upgrading_instance
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
@@ -530,7 +529,7 @@ class DagsterInstance:
     def get_run_group(self, run_id):
         return self._run_storage.get_run_group(run_id)
 
-    def resolve_memoized_execution_plan(self, execution_plan, run_config, mode):
+    def resolve_memoized_execution_plan(self, execution_plan):
         """
         Returns:
             ExecutionPlan: Execution plan configured to only run unmemoized steps.
@@ -538,11 +537,7 @@ class DagsterInstance:
         pipeline_def = execution_plan.pipeline.get_definition()
         pipeline_name = pipeline_def.name
 
-        step_output_versions = resolve_step_output_versions(
-            execution_plan,
-            EnvironmentConfig.build(pipeline_def, run_config, mode),
-            pipeline_def.get_mode_definition(mode),
-        )
+        step_output_versions = execution_plan.resolve_step_output_versions()
         if all(version is None for version in step_output_versions.values()):
             raise DagsterInvariantViolationError(
                 "While creating a memoized pipeline run, no steps have versions. At least one step "
@@ -629,7 +624,7 @@ class DagsterInstance:
                 )
 
             subsetted_execution_plan = self.resolve_memoized_execution_plan(
-                full_execution_plan, run_config=run_config, mode=mode,
+                full_execution_plan
             )  # TODO: tighter integration with existing step_keys_to_execute functionality
             step_keys_to_execute = subsetted_execution_plan.step_keys_to_execute
         else:
