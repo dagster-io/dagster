@@ -24,20 +24,12 @@ class ExecutorDefinition(ConfigurableDefinition):
     """
 
     def __init__(
-        self,
-        name,
-        config_schema=None,
-        executor_creation_fn=None,
-        required_resource_keys=None,
-        description=None,
+        self, name, config_schema=None, executor_creation_fn=None, description=None,
     ):
         self._name = check.str_param(name, "name")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._executor_creation_fn = check.opt_callable_param(
             executor_creation_fn, "executor_creation_fn"
-        )
-        self._required_resource_keys = frozenset(
-            check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
         )
         self._description = check.opt_str_param(description, "description")
 
@@ -57,21 +49,16 @@ class ExecutorDefinition(ConfigurableDefinition):
     def executor_creation_fn(self):
         return self._executor_creation_fn
 
-    @property
-    def required_resource_keys(self):
-        return self._required_resource_keys
-
     def copy_for_configured(self, name, description, config_schema, _):
         return ExecutorDefinition(
             name=name or self.name,
             config_schema=config_schema,
             executor_creation_fn=self.executor_creation_fn,
-            required_resource_keys=self.required_resource_keys,
             description=description or self.description,
         )
 
 
-def executor(name=None, config_schema=None, required_resource_keys=None):
+def executor(name=None, config_schema=None):
     """Define an executor.
 
     The decorated function should accept an :py:class:`InitExecutorContext` and return an instance
@@ -81,24 +68,18 @@ def executor(name=None, config_schema=None, required_resource_keys=None):
         name (Optional[str]): The name of the executor.
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.executor_config`.
-        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the
-            executor.
     """
     if callable(name):
         check.invariant(config_schema is None)
-        check.invariant(required_resource_keys is None)
         return _ExecutorDecoratorCallable()(name)
 
-    return _ExecutorDecoratorCallable(
-        name=name, config_schema=config_schema, required_resource_keys=required_resource_keys,
-    )
+    return _ExecutorDecoratorCallable(name=name, config_schema=config_schema)
 
 
 class _ExecutorDecoratorCallable:
-    def __init__(self, name=None, config_schema=None, required_resource_keys=None):
+    def __init__(self, name=None, config_schema=None):
         self.name = check.opt_str_param(name, "name")
         self.config_schema = config_schema  # type check in definition
-        self.required_resource_keys = required_resource_keys  # type check in definition
 
     def __call__(self, fn):
         check.callable_param(fn, "fn")
@@ -107,10 +88,7 @@ class _ExecutorDecoratorCallable:
             self.name = fn.__name__
 
         executor_def = ExecutorDefinition(
-            name=self.name,
-            config_schema=self.config_schema,
-            executor_creation_fn=fn,
-            required_resource_keys=self.required_resource_keys,
+            name=self.name, config_schema=self.config_schema, executor_creation_fn=fn,
         )
 
         update_wrapper(executor_def, wrapped=fn)
