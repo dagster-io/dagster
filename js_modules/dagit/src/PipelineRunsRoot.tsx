@@ -15,7 +15,7 @@ import {
   RunFilterTokenType,
   RunsFilter,
   runsFilterForSearchTokens,
-  useRunFiltering,
+  useQueryPersistedRunFilters,
 } from 'src/runs/RunsFilter';
 import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {
@@ -35,7 +35,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
   const {pipelineName, snapshotId} = explorerPathFromString(pipelinePath);
 
   useDocumentTitle(`Pipeline: ${pipelineName}`);
-  const [filterTokens, setFilterTokens] = useRunFiltering(ENABLED_FILTERS);
+  const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters(ENABLED_FILTERS);
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     PipelineRunsRootQuery,

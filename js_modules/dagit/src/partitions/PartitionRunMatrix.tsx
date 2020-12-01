@@ -7,6 +7,7 @@ import {GraphQueryInput} from 'src/GraphQueryInput';
 import {TokenizingFieldValue} from 'src/TokenizingField';
 import {OptionsDivider} from 'src/VizComponents';
 import {useViewport} from 'src/gaant/useViewport';
+import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 import {PartitionRunListForStep} from 'src/partitions/PartitionRunListForStep';
 import {
   GridColumn,
@@ -56,19 +57,33 @@ interface PartitionRunMatrixProps {
   repoAddress: RepoAddress;
   runTags: TokenizingFieldValue[];
   setRunTags: (val: TokenizingFieldValue[]) => void;
+  stepQuery: string;
+  setStepQuery: (val: string) => void;
 }
 
 export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => {
   const {viewport, containerProps} = useViewport();
-  const [focused, setFocused] = React.useState<PartitionRunSelection | null>(null);
-  const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
-  const [stepQuery, setStepQuery] = React.useState<string>('');
   const [colorizeSliceUnix, setColorizeSliceUnix] = React.useState(0);
-  const [stepSortOrder, setSortBy] = React.useState<string>('');
-  const [options, setOptions] = React.useState<DisplayOptions>({
-    showPrevious: false,
-    showFailuresAndGapsOnly: false,
-    colorizeByAge: false,
+  const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
+  const [focused, setFocused] = useQueryPersistedState<PartitionRunSelection | null>({
+    encode: (val) => ({partitionName: val?.partitionName, stepName: val?.stepName}),
+    decode: (qs) =>
+      qs.partitionName && qs.stepName
+        ? {partitionName: qs.partitionName, stepName: qs.stepName}
+        : null,
+  });
+  const [stepSort = '', setStepSort] = useQueryPersistedState<string>({queryKey: 'stepSort'});
+  const [options, setOptions] = useQueryPersistedState<DisplayOptions>({
+    decode: (qs) => ({
+      showPrevious: qs.showPrevious === 'true',
+      colorizeByAge: qs.colorizeByAge === 'true',
+      showFailuresAndGapsOnly: qs.showFailuresAndGapsOnly === 'true',
+    }),
+    defaults: {
+      showPrevious: false,
+      colorizeByAge: false,
+      showFailuresAndGapsOnly: false,
+    },
   });
 
   // Retrieve the pipeline's structure
@@ -87,8 +102,8 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
 
   const data = useMatrixData({
     partitions: props.partitions,
+    stepQuery: props.stepQuery,
     solidHandles,
-    stepQuery,
     options,
   });
 
@@ -97,13 +112,13 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
   }
 
   const {stepRows, partitionColumns, partitions} = data;
-  if (stepSortOrder === SORT_FINAL_ASC) {
+  if (stepSort === SORT_FINAL_ASC) {
     stepRows.sort((a, b) => a.finalFailurePercent - b.finalFailurePercent);
-  } else if (stepSortOrder === SORT_FINAL_DESC) {
+  } else if (stepSort === SORT_FINAL_DESC) {
     stepRows.sort((a, b) => b.finalFailurePercent - a.finalFailurePercent);
-  } else if (stepSortOrder === SORT_TOTAL_ASC) {
+  } else if (stepSort === SORT_TOTAL_ASC) {
     stepRows.sort((a, b) => a.totalFailurePercent - b.totalFailurePercent);
-  } else if (stepSortOrder === SORT_TOTAL_DESC) {
+  } else if (stepSort === SORT_TOTAL_DESC) {
     stepRows.sort((a, b) => b.totalFailurePercent - a.totalFailurePercent);
   }
 
@@ -220,9 +235,9 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 small
                 width={260}
                 items={solidHandles.map((h) => h.solid)}
-                value={stepQuery}
+                value={props.stepQuery}
                 placeholder="Type a Step Subset"
-                onChange={setStepQuery}
+                onChange={props.setStepQuery}
               />
             </TopLabel>
             {stepRows.map((step) => (
@@ -245,7 +260,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 className="square failure-blank"
                 title={TITLE_TOTAL_FAILURES}
                 onClick={() =>
-                  setSortBy(stepSortOrder === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
+                  setStepSort(stepSort === SORT_TOTAL_DESC ? SORT_TOTAL_ASC : SORT_TOTAL_DESC)
                 }
               />
             </TopLabel>
@@ -268,7 +283,7 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                 className="square failure"
                 title={TITLE_FINAL_FAILURES}
                 onClick={() =>
-                  setSortBy(stepSortOrder === SORT_FINAL_DESC ? SORT_FINAL_ASC : SORT_FINAL_DESC)
+                  setStepSort(stepSort === SORT_FINAL_DESC ? SORT_FINAL_ASC : SORT_FINAL_DESC)
                 }
               />
             </TopLabel>

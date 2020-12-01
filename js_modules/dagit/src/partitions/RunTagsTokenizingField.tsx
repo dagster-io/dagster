@@ -7,12 +7,18 @@ import {
   stringFromValue,
   tokenizedValuesFromString,
 } from 'src/TokenizingField';
+import {RunFilterTokenType} from 'src/runs/RunsFilter';
 
 interface RunTagsTokenizingFieldProps {
   runs: {tags: {key: string; value: string}[]}[];
   tokens: TokenizingFieldValue[];
   onChange: (tokens: TokenizingFieldValue[]) => void;
 }
+
+// BG TODO: This should most likely be folded into RunsFilter, but that component loads autocompletions
+// from all runs in the repo and doesn't support being scoped to a particular pipeline.
+
+export const RunTagsSupportedTokens: RunFilterTokenType[] = ['tag'];
 
 export const RunTagsTokenizingField: React.FunctionComponent<RunTagsTokenizingFieldProps> = ({
   runs,

@@ -4,14 +4,16 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {CursorHistoryControls} from 'src/CursorControls';
-import {TokenizingFieldValue} from 'src/TokenizingField';
+import {useQueryPersistedState} from 'src/hooks/useQueryPersistedState';
 import {PartitionGraphSet} from 'src/partitions/PartitionGraphSet';
 import {PartitionPageSizeSelector} from 'src/partitions/PartitionPageSizeSelector';
 import {PartitionRunMatrix} from 'src/partitions/PartitionRunMatrix';
 import {PartitionSetSelector} from 'src/partitions/PartitionSetSelector';
 import {PartitionsBackfillPartitionSelector} from 'src/partitions/PartitionsBackfill';
+import {RunTagsSupportedTokens} from 'src/partitions/RunTagsTokenizingField';
 import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from 'src/partitions/types/PipelinePartitionsRootQuery';
 import {useChunkedPartitionsQuery} from 'src/partitions/useChunkedPartitionsQuery';
+import {useQueryPersistedRunFilters} from 'src/runs/RunsFilter';
 import {RepoAddress} from 'src/workspace/types';
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
@@ -31,8 +33,12 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
   onChangePartitionSet,
   repoAddress,
 }) => {
-  const [pageSize, setPageSize] = React.useState<number | 'all'>(30);
-  const [runTags, setRunTags] = React.useState<TokenizingFieldValue[]>([]);
+  const [runTags, setRunTags] = useQueryPersistedRunFilters(RunTagsSupportedTokens);
+  const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
+  const [pageSize, setPageSize] = useQueryPersistedState<number | 'all'>({
+    encode: (val) => ({pageSize: val}),
+    decode: (qs) => Number(qs.pageSize || 30),
+  });
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const {loading, partitions, paginationProps} = useChunkedPartitionsQuery(
     partitionSet.name,
@@ -65,7 +71,8 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
           <PartitionsBackfillPartitionSelector
             partitionSetName={partitionSet.name}
             pipelineName={pipelineName}
-            onLaunch={(backfillId: string) => {
+            onLaunch={(backfillId, stepQuery) => {
+              setStepQuery(stepQuery);
               setRunTags([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
               setShowBackfillSetup(false);
             }}
@@ -112,6 +119,8 @@ export const PartitionView: React.FunctionComponent<PartitionViewProps> = ({
           repoAddress={repoAddress}
           runTags={runTags}
           setRunTags={setRunTags}
+          stepQuery={stepQuery}
+          setStepQuery={setStepQuery}
         />
         <PartitionGraphSet partitions={partitions} allStepKeys={Object.keys(allStepKeys)} />
       </div>

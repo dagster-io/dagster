@@ -12,6 +12,7 @@ import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {Timestamp, TimezoneContext, timestampToString} from 'src/TimeComponents';
 import {formatElapsedTime} from 'src/Util';
 import {toGraphQueryItems} from 'src/gaant/toGraphQueryItems';
+import {DagsterTag} from 'src/runs/RunTag';
 import {StepSelection} from 'src/runs/StepSelection';
 import {LaunchPipelineExecution} from 'src/runs/types/LaunchPipelineExecution';
 import {LaunchPipelineReexecution} from 'src/runs/types/LaunchPipelineReexecution';
@@ -22,7 +23,7 @@ import {RunTimeFragment} from 'src/runs/types/RunTimeFragment';
 import {ExecutionParams} from 'src/types/globalTypes';
 
 export function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
-  const stepsTag = run.tags.find((t) => t.key === 'dagster/step_selection');
+  const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
   return stepsTag ? stepsTag.value : 'Full Pipeline';
 }
 
@@ -86,6 +87,8 @@ export function openRunInBrowser(
 }
 
 function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunActionMenuFragment) {
+  const hiddenTagKeys: string[] = [DagsterTag.IsResumeRetry, DagsterTag.StepSelection];
+
   return {
     parentRunId: run.runId,
     rootRunId: run.rootRunId ? run.rootRunId : run.runId,
@@ -93,7 +96,7 @@ function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunAc
       // Clean up tags related to run grouping once we decide its persistence
       // https://github.com/dagster-io/dagster/issues/2495
       ...run.tags
-        .filter((tag) => !['dagster/is_resume_retry', 'dagster/step_selection'].includes(tag.key))
+        .filter((tag) => !hiddenTagKeys.includes(tag.key))
         .map((tag) => ({
           key: tag.key,
           value: tag.value,
@@ -101,11 +104,11 @@ function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment | RunAc
       // pass resume/retry indicator via tags
       // pass run group info via tags
       {
-        key: 'dagster/parent_run_id',
+        key: DagsterTag.ParentRunId,
         value: run.runId,
       },
       {
-        key: 'dagster/root_run_id',
+        key: DagsterTag.RootRunId,
         value: run.rootRunId ? run.rootRunId : run.runId,
       },
     ],
@@ -144,14 +147,14 @@ export function getReexecutionVariables(input: {
 
   if (style.type === 'from-failure') {
     executionParams.executionMetadata?.tags?.push({
-      key: 'dagster/is_resume_retry',
+      key: DagsterTag.IsResumeRetry,
       value: 'true',
     });
   }
   if (style.type === 'selection') {
     executionParams.stepKeys = style.selection.keys;
     executionParams.executionMetadata?.tags?.push({
-      key: 'dagster/step_selection',
+      key: DagsterTag.StepSelection,
       value: style.selection.query,
     });
   }
@@ -166,7 +169,7 @@ export function getReexecutionVariables(input: {
 
     executionParams.stepKeys = graphFiltered.all.map((node) => node.name);
     executionParams.executionMetadata?.tags?.push({
-      key: 'dagster/step_selection',
+      key: DagsterTag.StepSelection,
       value: selectionAndDownstreamQuery,
     });
   }

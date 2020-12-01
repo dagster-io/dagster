@@ -24,6 +24,7 @@ import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RepositoryOriginInformation} from 'src/RepositoryInformation';
 import {assertUnreachable} from 'src/Util';
 import {RunStatus} from 'src/runs/RunStatusDots';
+import {DagsterTag} from 'src/runs/RunTag';
 import {titleForRun} from 'src/runs/RunUtils';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {humanCronString} from 'src/schedules/humanCronString';
@@ -253,7 +254,7 @@ export const ScheduleRow: React.FC<{
         <div style={{display: 'flex'}}>
           {runs.map((run) => {
             const [partition] = run.tags
-              .filter((tag) => tag.key === 'dagster/partition')
+              .filter((tag) => tag.key === DagsterTag.Partition)
               .map((tag) => tag.value);
             const runLabel = partition ? (
               <>

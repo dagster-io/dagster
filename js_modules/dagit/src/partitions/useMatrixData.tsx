@@ -106,17 +106,19 @@ function buildMatrixData(
     }),
   }));
 
+  const partitionsWithARun = partitionColumns.filter((p) => p.runs.length > 0).length;
+
   const stepRows = layout.boxes.map((box, idx) => {
     const totalFailures = partitionColumns.filter((p) => p.steps[idx].color.includes('FAILURE'));
     const finalFailures = partitionColumns.filter((p) => p.steps[idx].color.endsWith('FAILURE'));
     return {
       x: box.x,
       name: box.node.name,
-      totalFailurePercent: partitionColumns.length
-        ? Math.round((totalFailures.length / partitionColumns.length) * 100)
+      totalFailurePercent: partitionsWithARun
+        ? Math.round((totalFailures.length / partitionsWithARun) * 100)
         : 0,
-      finalFailurePercent: partitionColumns.length
-        ? Math.round((finalFailures.length / partitionColumns.length) * 100)
+      finalFailurePercent: partitionsWithARun
+        ? Math.round((finalFailures.length / partitionsWithARun) * 100)
         : 0,
     };
   });

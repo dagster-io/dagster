@@ -40,6 +40,7 @@ import {
   PreviewConfigQuery,
   PreviewConfigQueryVariables,
 } from 'src/execute/types/PreviewConfigQuery';
+import {DagsterTag} from 'src/runs/RunTag';
 import {PipelineSelector} from 'src/types/globalTypes';
 import {RepoAddress} from 'src/workspace/types';
 
@@ -247,7 +248,7 @@ export class ExecutionSessionContainer extends React.Component<
             ...(currentSession.solidSelectionQuery
               ? [
                   {
-                    key: 'dagster/solid_selection',
+                    key: DagsterTag.SolidSelection,
                     value: currentSession.solidSelectionQuery,
                   },
                 ]
@@ -255,7 +256,7 @@ export class ExecutionSessionContainer extends React.Component<
             ...(currentSession?.base?.['presetName']
               ? [
                   {
-                    key: 'dagster/preset_name',
+                    key: DagsterTag.PresetName,
                     value: currentSession?.base?.['presetName'],
                   },
                 ]

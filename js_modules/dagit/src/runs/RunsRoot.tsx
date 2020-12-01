@@ -12,7 +12,11 @@ import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
 import {RunTable} from 'src/runs/RunTable';
 import {RunsQueryRefetchContext} from 'src/runs/RunUtils';
-import {RunsFilter, runsFilterForSearchTokens, useRunFiltering} from 'src/runs/RunsFilter';
+import {
+  RunsFilter,
+  runsFilterForSearchTokens,
+  useQueryPersistedRunFilters,
+} from 'src/runs/RunsFilter';
 import {RunsRootQuery, RunsRootQueryVariables} from 'src/runs/types/RunsRootQuery';
 import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 
@@ -20,7 +24,7 @@ const PAGE_SIZE = 25;
 
 export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
   useDocumentTitle('All Runs');
-  const [filterTokens, setFilterTokens] = useRunFiltering();
+  const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
     RunsRootQueryVariables

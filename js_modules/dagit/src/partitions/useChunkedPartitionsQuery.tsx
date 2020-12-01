@@ -14,6 +14,7 @@ import {
   PartitionSetNamesQuery,
   PartitionSetNamesQueryVariables,
 } from 'src/partitions/types/PartitionSetNamesQuery';
+import {DagsterTag} from 'src/runs/RunTag';
 import {PipelineRunStatus} from 'src/types/globalTypes';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -105,8 +106,8 @@ export function useChunkedPartitionsQuery(
               filter: {
                 tags: [
                   ...runTags,
-                  {key: 'dagster/partition_set', value: partitionSetName},
-                  {key: 'dagster/partition', value: partitionName},
+                  {key: DagsterTag.PartitionSet, value: partitionSetName},
+                  {key: DagsterTag.Partition, value: partitionName},
                 ],
               },
             }),
@@ -139,7 +140,7 @@ export function useChunkedPartitionsQuery(
         const recent = await fetchRunsForFilter(client, {
           limit: 10,
           filter: {
-            tags: [...runTags, {key: 'dagster/partition_set', value: partitionSetName}],
+            tags: [...runTags, {key: DagsterTag.PartitionSet, value: partitionSetName}],
           },
         });
 
@@ -147,7 +148,7 @@ export function useChunkedPartitionsQuery(
         const pending = await fetchRunsForFilter(client, {
           filter: {
             status: PipelineRunStatus.STARTED,
-            tags: [...runTags, {key: 'dagster/partition_set', value: partitionSetName}],
+            tags: [...runTags, {key: DagsterTag.PartitionSet, value: partitionSetName}],
           },
         });
 
@@ -158,7 +159,7 @@ export function useChunkedPartitionsQuery(
         // Filter detected changes to just runs in our visible range of partitions, and then update
         // local state if changes have been found.
         const relevant = [...pending, ...recent].filter((run) =>
-          run.tags.find((t) => t.key === 'dagster/partition' && partitionNames.includes(t.value)),
+          run.tags.find((t) => t.key === DagsterTag.Partition && partitionNames.includes(t.value)),
         );
         setDataState((state) => {
           const updated = state.runs
@@ -244,7 +245,7 @@ function assemblePartitions(data: {
       __typename: 'Partition',
       name,
       runs: data.runs.filter((r) =>
-        r.tags.some((t) => t.key === 'dagster/partition' && t.value === name),
+        r.tags.some((t) => t.key === DagsterTag.Partition && t.value === name),
       ),
     });
   }

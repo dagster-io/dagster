@@ -1,6 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
+import {DagsterTag} from 'src/runs/RunTag';
 import {PreviousRunsForSensorQuery} from 'src/sensors/types/PreviousRunsForSensorQuery';
 import {SensorFragment} from 'src/sensors/types/SensorFragment';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
@@ -21,7 +22,7 @@ export const SensorPreviousRuns = (props: Props) => {
       limit: RUNS_LIMIT,
       filter: {
         pipelineName: sensor.pipelineName,
-        tags: [{key: 'dagster/sensor_name', value: sensor.name}],
+        tags: [{key: DagsterTag.SensorName, value: sensor.name}],
       },
     },
   });

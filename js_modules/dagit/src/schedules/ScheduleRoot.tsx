@@ -6,6 +6,7 @@ import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
+import {DagsterTag} from 'src/runs/RunTag';
 import {ScheduleDetails} from 'src/schedules/ScheduleDetails';
 import {SCHEDULE_DEFINITION_FRAGMENT} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
@@ -103,7 +104,7 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
       limit: RUNS_LIMIT,
       filter: {
         pipelineName: schedule.pipelineName,
-        tags: [{key: 'dagster/schedule_name', value: schedule.name}],
+        tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
       },
     },
     partialRefetch: true,

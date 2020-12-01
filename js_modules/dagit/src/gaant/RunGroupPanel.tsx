@@ -9,10 +9,11 @@ import {
   RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
 } from 'src/gaant/types/RunGroupPanelQuery';
 import {RunStatus} from 'src/runs/RunStatusDots';
+import {DagsterTag} from 'src/runs/RunTag';
 import {RunComponentFragments, RunElapsed, RunTime} from 'src/runs/RunUtils';
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
-  const stepsTag = run.tags.find((t) => t.key === 'dagster/step_selection');
+  const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
   return stepsTag ? stepsTag.value : '*';
 }
 

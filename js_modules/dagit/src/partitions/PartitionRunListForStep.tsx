@@ -11,6 +11,7 @@ import {
   PartitionRunListForStepQueryVariables,
 } from 'src/partitions/types/PartitionRunListForStepQuery';
 import {RunTable} from 'src/runs/RunTable';
+import {DagsterTag} from 'src/runs/RunTag';
 import {openRunInBrowser} from 'src/runs/RunUtils';
 import {StepEventStatus} from 'src/types/globalTypes';
 
@@ -41,7 +42,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
     variables: {
       filter: {
         pipelineName: props.pipelineName,
-        tags: [{key: 'dagster/partition', value: props.partitionName}],
+        tags: [{key: DagsterTag.Partition, value: props.partitionName}],
       },
     },
   });

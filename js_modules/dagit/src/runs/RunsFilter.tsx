@@ -46,7 +46,7 @@ export const RUN_PROVIDERS_EMPTY = [
  * @param enabledFilters: This is useful if you want to ignore some filters that could
  * be provided (eg pipeline:, which is not relevant within pipeline scoped views.)
  */
-export function useRunFiltering(enabledFilters?: RunFilterTokenType[]) {
+export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[]) {
   return useQueryPersistedState<TokenizingFieldValue[]>({
     encode: (tokens) => ({q: stringFromValue(tokens), cursor: undefined}),
     decode: ({q = ''}) =>
@@ -88,7 +88,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
 
 function searchSuggestionsForRuns(
   result?: QueryResult<RunsSearchSpaceQuery>,
-  enabledFilters?: string[],
+  enabledFilters?: RunFilterTokenType[],
 ): SuggestionProvider[] {
   const tags = result?.data?.pipelineRunTags || [];
   const pipelineNames =
@@ -96,7 +96,7 @@ function searchSuggestionsForRuns(
       ? result.data.repositoryOrError.pipelines.map((n) => n.name)
       : [];
 
-  const suggestions = [
+  const suggestions: {token: RunFilterTokenType; values: () => string[]}[] = [
     {
       token: 'id',
       values: () => [],
