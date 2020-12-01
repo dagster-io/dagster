@@ -1,4 +1,7 @@
+import inspect
+
 from dagster import check
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
 from dagster.utils import ensure_gen
 
@@ -80,3 +83,19 @@ class SensorDefinition(JobDefinition):
             return check.is_list(result, of_type=(RunRequest, SkipReason))
 
         return check.is_list(result, of_type=RunRequest)
+
+
+def wrap_sensor_evaluation(sensor_name, result):
+    if inspect.isgenerator(result):
+        for item in result:
+            yield item
+
+    elif isinstance(result, (SkipReason, RunRequest)):
+        yield result
+
+    elif result is not None:
+        raise DagsterInvariantViolationError(
+            f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
+            f"{result} of type {type(result)}.  Should only return SkipReason or "
+            "RunRequest objects."
+        )

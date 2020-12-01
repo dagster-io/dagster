@@ -1,6 +1,6 @@
 import os
 
-from dagster import RunRequest, SkipReason, check, sensor
+from dagster import AssetKey, RunRequest, SkipReason, check, sensor
 
 
 def get_directory_files(directory_name):
@@ -50,4 +50,27 @@ def get_toys_sensors():
                 },
             )
 
-    return [toy_file_sensor]
+    @sensor(pipeline_name="log_asset_pipeline")
+    def toy_asset_sensor(context):
+        events = context.instance.events_for_asset_key(
+            AssetKey(["model"]), cursor=context.last_run_key, ascending=True
+        )
+
+        if not events:
+            return
+
+        record_id, event = events[-1]  # take the most recent materialization
+        from_pipeline = event.pipeline_name
+
+        yield RunRequest(
+            run_key=str(record_id),
+            run_config={
+                "solids": {
+                    "read_materialization": {
+                        "config": {"asset_key": ["model"], "pipeline": from_pipeline}
+                    }
+                }
+            },
+        )
+
+    return [toy_file_sensor, toy_asset_sensor]

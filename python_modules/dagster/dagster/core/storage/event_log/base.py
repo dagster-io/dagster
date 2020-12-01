@@ -118,7 +118,15 @@ class AssetAwareEventLogStorage(ABC):
         pass
 
     @abstractmethod
-    def get_asset_events(self, asset_key, partitions=None, cursor=None, limit=None):
+    def get_asset_events(
+        self,
+        asset_key,
+        partitions=None,
+        cursor=None,
+        limit=None,
+        ascending=False,
+        include_cursor=False,
+    ):
         pass
 
     @abstractmethod
