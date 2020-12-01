@@ -321,7 +321,7 @@ def _create_sensor_run(
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(
-        merge_dicts(pipeline_tags, run_request.tags), PipelineRun.tags_for_sensor(external_sensor)
+        merge_dicts(pipeline_tags, run_request.tags), PipelineRun.tags_for_sensor(external_sensor),
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key

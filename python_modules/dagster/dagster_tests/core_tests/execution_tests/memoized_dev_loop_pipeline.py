@@ -1,85 +1,48 @@
-import os
-
-from dagster import Field, InputDefinition, ModeDefinition, Output, String, pipeline, solid
-from dagster.core.storage.system_storage import fs_intermediate_storage
+from dagster import (
+    Field,
+    InputDefinition,
+    ModeDefinition,
+    OutputDefinition,
+    String,
+    pipeline,
+    repository,
+    solid,
+)
+from dagster.core.storage.asset_store import versioned_filesystem_asset_store
 
 
 @solid(
     version="create_string_version",
-    config_schema={"input_str": Field(String), "base_dir": Field(String)},
+    config_schema={"input_str": Field(String)},
+    output_defs=[
+        OutputDefinition(name="created_string", asset_store_key="asset_store", asset_metadata={})
+    ],
 )
-def create_string_1(context):
-    yield Output(
-        context.solid_config["input_str"],
-        address=os.path.join(
-            context.solid_config["base_dir"], "intermediates/create_string_1.compute/result"
-        ),
-    )
-
-
-@solid(
-    version="create_string_version_2",
-    config_schema={"input_str": Field(String), "base_dir": Field(String)},
-)
-def create_string_2(context):
-    yield Output(
-        context.solid_config["input_str"],
-        address=os.path.join(
-            context.solid_config["base_dir"], "intermediates/create_string_2.compute/result"
-        ),
-    )
+def create_string_1_asset(context):
+    return context.solid_config["input_str"]
 
 
 @solid(
     input_defs=[InputDefinition("_string_input", String)],
     version="take_string_version",
-    config_schema={"input_str": Field(String), "base_dir": Field(String)},
-)
-def take_string_1(context, _string_input):
-    yield Output(
-        context.solid_config["input_str"],
-        address=os.path.join(
-            context.solid_config["base_dir"], "intermediates/take_string_1.compute/result"
-        ),
-    )
-
-
-@solid(
-    input_defs=[InputDefinition("_string_input", String)],
-    version="take_string_version_2",
-    config_schema={"input_str": Field(String), "base_dir": Field(String)},
-)
-def take_string_2(context, _string_input):
-    yield Output(
-        context.solid_config["input_str"],
-        address=os.path.join(
-            context.solid_config["base_dir"], "intermediates/take_string_2.compute/result"
-        ),
-    )
-
-
-@solid(
-    input_defs=[
-        InputDefinition("_string_input_1", String),
-        InputDefinition("_string_input_2", String),
+    config_schema={"input_str": Field(String)},
+    output_defs=[
+        OutputDefinition(name="taken_string", asset_store_key="asset_store", asset_metadata={})
     ],
-    version="take_string_two_inputs_version",
-    config_schema={"input_str": Field(String), "base_dir": Field(String)},
 )
-def take_string_two_inputs(context, _string_input_1, _string_input_2):
-    yield Output(
-        context.solid_config["input_str"],
-        address=os.path.join(
-            context.solid_config["base_dir"], "intermediates/take_string_two_inputs.compute/result"
-        ),
-    )
+def take_string_1_asset(context, _string_input):
+    return context.solid_config["input_str"] + _string_input
 
 
 @pipeline(
-    mode_defs=[ModeDefinition("only_mode", intermediate_storage_defs=[fs_intermediate_storage])]
+    mode_defs=[
+        ModeDefinition("only_mode", resource_defs={"asset_store": versioned_filesystem_asset_store})
+    ]
 )
-def basic_pipeline():
-    take_string_two_inputs(
-        _string_input_1=take_string_1(create_string_1()),
-        _string_input_2=take_string_2(create_string_2()),
-    )
+def asset_pipeline():
+    return take_string_1_asset(create_string_1_asset())
+
+
+@repository
+def memoized_dev_repo():
+    return [asset_pipeline]

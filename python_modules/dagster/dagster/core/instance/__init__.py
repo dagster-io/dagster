@@ -529,39 +529,6 @@ class DagsterInstance:
     def get_run_group(self, run_id):
         return self._run_storage.get_run_group(run_id)
 
-    def resolve_memoized_execution_plan(self, execution_plan):
-        """
-        Returns:
-            ExecutionPlan: Execution plan configured to only run unmemoized steps.
-        """
-        pipeline_def = execution_plan.pipeline.get_definition()
-        pipeline_name = pipeline_def.name
-
-        step_output_versions = execution_plan.resolve_step_output_versions()
-        if all(version is None for version in step_output_versions.values()):
-            raise DagsterInvariantViolationError(
-                "While creating a memoized pipeline run, no steps have versions. At least one step "
-                "must have a version."
-            )
-
-        step_output_addresses = self.get_addresses_for_step_output_versions(
-            {
-                (pipeline_name, step_output_handle): version
-                for step_output_handle, version in step_output_versions.items()
-                if version
-            }
-        )
-
-        step_keys_to_execute = list(
-            {
-                step_output_handle.step_key
-                for step_output_handle in step_output_versions.keys()
-                if (pipeline_name, step_output_handle) not in step_output_addresses
-            }
-        )
-
-        return execution_plan.build_subset_plan(step_keys_to_execute)
-
     def create_run_for_pipeline(
         self,
         pipeline_def,
@@ -617,13 +584,15 @@ class DagsterInstance:
         )
 
         if is_memoized_run(tags):
+            from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
+
             if step_keys_to_execute:
                 raise DagsterInvariantViolationError(
                     "step_keys_to_execute parameter cannot be used in conjunction with memoized "
                     "pipeline runs."
                 )
 
-            subsetted_execution_plan = self.resolve_memoized_execution_plan(
+            subsetted_execution_plan = resolve_memoized_execution_plan(
                 full_execution_plan
             )  # TODO: tighter integration with existing step_keys_to_execute functionality
             step_keys_to_execute = subsetted_execution_plan.step_keys_to_execute

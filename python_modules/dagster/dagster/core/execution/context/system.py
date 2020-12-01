@@ -297,6 +297,13 @@ class SystemStepExecutionContext(SystemExecutionContext):
         else:
             source_run_id = self.pipeline_run.run_id
 
+        step_output_versions = self.execution_plan.resolve_step_output_versions()
+        version = (
+            step_output_versions[step_output_handle]
+            if step_output_handle in step_output_versions
+            else None
+        )
+
         return AssetStoreContext(
             step_key=step_output_handle.step_key,
             output_name=step_output_handle.output_name,
@@ -304,6 +311,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
             pipeline_name=self.pipeline_def.name,
             solid_def=self.solid_def,
             source_run_id=source_run_id,
+            version=version,
         )
 
     def get_asset_store(self, asset_store_key):

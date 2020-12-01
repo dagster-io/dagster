@@ -24,10 +24,39 @@ from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.execution.resolve_versions import (
     join_and_hash,
     resolve_config_version,
+    resolve_memoized_execution_plan,
     resolve_resource_versions,
 )
+from dagster.core.storage.asset_store import VersionedAssetStore
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.seven import mock
+
+
+class VersionedInMemoryAssetStore(VersionedAssetStore):
+    def __init__(self):
+        self.values = {}
+
+    def _get_keys(self, context):
+        return (context.step_key, context.output_name, context.version)
+
+    def set_asset(self, context, obj):
+        keys = self._get_keys(context)
+        self.values[keys] = obj
+
+    def get_asset(self, context):
+        keys = self._get_keys(context)
+        return self.values[keys]
+
+    def has_asset(self, context):
+        keys = self._get_keys(context)
+        return keys in self.values
+
+
+def asset_store_factory(asset_store):
+    @resource
+    def _asset_store_resource(_):
+        return asset_store
+
+    return _asset_store_resource
 
 
 def test_join_and_hash():
@@ -66,9 +95,21 @@ def versioned_solid_takes_input(_, intput):
     return 2 * intput
 
 
-@pipeline
-def versioned_pipeline():
-    versioned_solid_takes_input(versioned_solid_no_input())
+def versioned_pipeline_factory(asset_store=None):
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                name="main",
+                resource_defs=(
+                    {"asset_store": asset_store_factory(asset_store)} if asset_store else {}
+                ),
+            )
+        ]
+    )
+    def versioned_pipeline():
+        versioned_solid_takes_input(versioned_solid_no_input())
+
+    return versioned_pipeline
 
 
 @solid
@@ -76,9 +117,21 @@ def solid_takes_input(_, intput):
     return 2 * intput
 
 
-@pipeline
-def partially_versioned_pipeline():
-    solid_takes_input(versioned_solid_no_input())
+def partially_versioned_pipeline_factory(asset_store=None):
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                name="main",
+                resource_defs=(
+                    {"asset_store": asset_store_factory(asset_store)} if asset_store else {}
+                ),
+            )
+        ]
+    )
+    def partially_versioned_pipeline():
+        solid_takes_input(versioned_solid_no_input())
+
+    return partially_versioned_pipeline
 
 
 def versioned_pipeline_expected_step1_version():
@@ -115,6 +168,7 @@ def versioned_pipeline_expected_step2_output_version():
 
 
 def test_resolve_step_versions_no_external_dependencies():
+    versioned_pipeline = versioned_pipeline_factory()
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
     versions = speculative_execution_plan.resolve_step_versions()
 
@@ -129,8 +183,9 @@ def test_resolve_step_versions_no_external_dependencies():
 
 
 def test_resolve_step_output_versions_no_external_dependencies():
+    versioned_pipeline = versioned_pipeline_factory()
     speculative_execution_plan = create_execution_plan(
-        versioned_pipeline, run_config={}, mode="default"
+        versioned_pipeline, run_config={}, mode="main"
     )
     versions = speculative_execution_plan.resolve_step_output_versions()
 
@@ -162,7 +217,6 @@ def no_version_pipeline():
 def test_default_unmemoized_steps():
     speculative_execution_plan = create_execution_plan(no_version_pipeline)
 
-    instance = DagsterInstance.ephemeral()
     with pytest.raises(
         DagsterInvariantViolationError,
         match=(
@@ -170,16 +224,14 @@ def test_default_unmemoized_steps():
             "must have a version."
         ),
     ):
-        instance.resolve_memoized_execution_plan(speculative_execution_plan)
+        resolve_memoized_execution_plan(speculative_execution_plan)
 
 
 def test_resolve_memoized_execution_plan_no_stored_results():
+    versioned_pipeline = versioned_pipeline_factory(VersionedInMemoryAssetStore())
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
 
-    instance = DagsterInstance.ephemeral()
-    instance.get_addresses_for_step_output_versions = mock.MagicMock(return_value={})
-
-    memoized_execution_plan = instance.resolve_memoized_execution_plan(speculative_execution_plan)
+    memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan)
 
     assert set(memoized_execution_plan.step_keys_to_execute) == {
         "versioned_solid_no_input.compute",
@@ -188,15 +240,18 @@ def test_resolve_memoized_execution_plan_no_stored_results():
 
 
 def test_resolve_memoized_execution_plan_yes_stored_results():
+    asset_store = VersionedInMemoryAssetStore()
+    versioned_pipeline = versioned_pipeline_factory(asset_store)
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
     step_output_handle = StepOutputHandle("versioned_solid_no_input.compute", "result")
+    step_output_version = speculative_execution_plan.resolve_step_output_versions()[
+        step_output_handle
+    ]
+    asset_store.values[
+        (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
+    ] = 4
 
-    instance = DagsterInstance.ephemeral()
-    instance.get_addresses_for_step_output_versions = mock.MagicMock(
-        return_value={(versioned_pipeline.name, step_output_handle): "some_address"}
-    )
-
-    memoized_execution_plan = instance.resolve_memoized_execution_plan(speculative_execution_plan)
+    memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan)
 
     assert memoized_execution_plan.step_keys_to_execute == ["versioned_solid_takes_input.compute"]
 
@@ -213,27 +268,22 @@ def test_resolve_memoized_execution_plan_yes_stored_results():
 
 
 def test_resolve_memoized_execution_plan_partial_versioning():
+    asset_store = VersionedInMemoryAssetStore()
+
+    partially_versioned_pipeline = partially_versioned_pipeline_factory(asset_store)
     speculative_execution_plan = create_execution_plan(partially_versioned_pipeline)
     step_output_handle = StepOutputHandle("versioned_solid_no_input.compute", "result")
 
-    instance = DagsterInstance.ephemeral()
-    instance.get_addresses_for_step_output_versions = mock.MagicMock(
-        return_value={(partially_versioned_pipeline.name, step_output_handle): "some_address"}
-    )
+    step_output_version = speculative_execution_plan.resolve_step_output_versions()[
+        step_output_handle
+    ]
+    asset_store.values[
+        (step_output_handle.step_key, step_output_handle.output_name, step_output_version)
+    ] = 4
 
-    assert instance.resolve_memoized_execution_plan(
-        speculative_execution_plan
-    ).step_keys_to_execute == ["solid_takes_input.compute"]
-
-
-def test_versioned_execution_plan_no_external_dependencies():  # TODO: flesh out this test once version storage has been implemented
-    instance = DagsterInstance.ephemeral()
-    pipeline_run = instance.create_run_for_pipeline(
-        pipeline_def=versioned_pipeline, tags={MEMOIZED_RUN_TAG: "true"}
-    )
-    assert "versioned_solid_no_input.compute" in pipeline_run.step_keys_to_execute
-    assert "versioned_solid_takes_input.compute" in pipeline_run.step_keys_to_execute
-    assert len(pipeline_run.step_keys_to_execute) == 2
+    assert resolve_memoized_execution_plan(speculative_execution_plan).step_keys_to_execute == [
+        "solid_takes_input.compute"
+    ]
 
 
 def _get_ext_version(config_value):

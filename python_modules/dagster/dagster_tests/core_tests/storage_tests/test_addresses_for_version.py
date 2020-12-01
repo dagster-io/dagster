@@ -2,7 +2,7 @@ import os
 from contextlib import contextmanager
 
 import pytest
-from dagster import Int, execute_pipeline, pipeline, seven, solid
+from dagster import Int, seven
 from dagster.core.errors import DagsterAddressIOError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.objects import StepOutputHandle
@@ -17,7 +17,6 @@ from dagster.core.storage.intermediate_storage import build_fs_intermediate_stor
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 
 
 def get_instance(temp_dir, event_log_storage):
@@ -58,67 +57,6 @@ def default_mode_output_versions(pipeline_def):
     return create_execution_plan(
         pipeline_def, run_config={}, mode="default"
     ).resolve_step_output_versions()
-
-
-@versioned_storage_test
-def test_addresses_for_version(version_storing_context):
-    @solid(version="abc")
-    def solid1(_):
-        return 5
-
-    @solid(version="123")
-    def solid2(_, _input1):
-        pass
-
-    @pipeline
-    def my_pipeline():
-        solid2(solid1())
-
-    with version_storing_context() as ctx:
-        instance, _ = ctx
-        execute_pipeline(instance=instance, pipeline=my_pipeline)
-
-        step_output_handle = StepOutputHandle("solid1.compute", "result")
-        output_version = default_mode_output_versions(my_pipeline)[step_output_handle]
-        assert instance.get_addresses_for_step_output_versions(
-            {("my_pipeline", step_output_handle): output_version}
-        ) == {("my_pipeline", step_output_handle): "/intermediates/solid1.compute/result"}
-
-
-@versioned_storage_test
-def test_version_based_memoization(version_storing_context):
-    with seven.TemporaryDirectory() as tmpdir:
-
-        def define_pipeline(solid2_version):
-            @solid(version="abc")
-            def solid1(_):
-                return 5
-
-            @solid(version=solid2_version)
-            def solid2(_, input1):
-                return input1 + 1
-
-            @pipeline
-            def my_pipeline():
-                solid2(solid1())
-
-            return my_pipeline
-
-        run_config = {"storage": {"filesystem": {"config": {"base_dir": tmpdir}}}}
-
-        with version_storing_context() as ctx:
-            instance, _ = ctx
-            execute_pipeline(
-                instance=instance, pipeline=define_pipeline("1"), run_config=run_config
-            )
-            result = execute_pipeline(
-                instance=instance,
-                pipeline=define_pipeline("2"),
-                run_config=run_config,
-                tags={MEMOIZED_RUN_TAG: "true"},
-            )
-            assert result.result_for_solid("solid2").output_values["result"] == 6
-            assert "solid1" not in result.events_by_step_key
 
 
 def test_address_operation_using_intermediates_file_system():

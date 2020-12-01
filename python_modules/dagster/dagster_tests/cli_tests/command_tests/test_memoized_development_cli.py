@@ -14,7 +14,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.utils import file_relative_path
 
-from ...core_tests.execution_tests.memoized_dev_loop_pipeline import basic_pipeline
+from ...core_tests.execution_tests.memoized_dev_loop_pipeline import asset_pipeline
 
 
 class Capturing(list):
@@ -46,13 +46,10 @@ def test_execute_display_command():
         )
         run_config = {
             "solids": {
-                "create_string_1": {"config": {"input_str": "apple", "base_dir": temp_dir}},
-                "create_string_2": {"config": {"input_str": "apple", "base_dir": temp_dir}},
-                "take_string_1": {"config": {"input_str": "apple", "base_dir": temp_dir}},
-                "take_string_2": {"config": {"input_str": "apple", "base_dir": temp_dir}},
-                "take_string_two_inputs": {"config": {"input_str": "apple", "base_dir": temp_dir}},
+                "create_string_1_asset": {"config": {"input_str": "apple"}},
+                "take_string_1_asset": {"config": {"input_str": "apple"}},
             },
-            "intermediate_storage": {"filesystem": {"config": {"base_dir": temp_dir}}},
+            "resources": {"asset_store": {"config": {"base_dir": temp_dir}}},
         }
 
         # write run config to temp file
@@ -62,7 +59,7 @@ def test_execute_display_command():
 
         kwargs = {
             "config": (os.path.join(temp_dir, "pipeline_config.yaml"),),
-            "pipeline": "basic_pipeline",
+            "pipeline": "asset_pipeline",
             "python_file": file_relative_path(
                 __file__, "../../core_tests/execution_tests/memoized_dev_loop_pipeline.py"
             ),
@@ -77,7 +74,7 @@ def test_execute_display_command():
         # execute the pipeline once so that addresses have been populated.
 
         result = execute_pipeline(
-            basic_pipeline,
+            asset_pipeline,
             run_config=run_config,
             mode="only_mode",
             tags={"dagster/is_memoized_run": "true"},

@@ -10,6 +10,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.execution.retries import Retries
 from dagster.core.instance import DagsterInstance, is_memoized_run
 from dagster.core.selector import parse_step_selection
@@ -159,7 +160,7 @@ def execute_run(pipeline, pipeline_run, instance, raise_on_error=False):
     )
 
     if is_memoized_run(pipeline_run.tags):
-        execution_plan = instance.resolve_memoized_execution_plan(execution_plan)
+        execution_plan = resolve_memoized_execution_plan(execution_plan)
 
     _execute_run_iterable = _ExecuteRunWithPlanIterable(
         execution_plan=execution_plan,
