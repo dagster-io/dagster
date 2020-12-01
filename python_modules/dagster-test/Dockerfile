@@ -27,6 +27,7 @@ RUN pip install \
     -e modules/dagster-k8s \
     -e modules/dagster-celery-k8s \
     -e modules/dagster-celery-docker \
+    -e modules/dagster-docker \
     -e modules/dagster-airflow \
     -e .
 
