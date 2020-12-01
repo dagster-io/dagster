@@ -116,13 +116,13 @@ class DauphinSensorJobData(dauphin.ObjectType):
     class Meta:
         name = "SensorJobData"
 
-    lastCompletedTimestamp = dauphin.Float()
+    lastTickTimestamp = dauphin.Float()
     lastRunKey = dauphin.String()
 
     def __init__(self, _graphene_info, job_specific_data):
         check.inst_param(job_specific_data, "job_specific_data", SensorJobData)
         super(DauphinSensorJobData, self).__init__(
-            lastCompletedTimestamp=job_specific_data.last_completed_timestamp,
+            lastTickTimestamp=job_specific_data.last_tick_timestamp,
             lastRunKey=job_specific_data.last_run_key,
         )
 

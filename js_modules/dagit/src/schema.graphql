@@ -629,7 +629,7 @@ enum JobStatus {
 union JobSpecificData = SensorJobData | ScheduleJobData
 
 type SensorJobData {
-  lastCompletedTimestamp: Float
+  lastTickTimestamp: Float
   lastRunKey: String
 }
 

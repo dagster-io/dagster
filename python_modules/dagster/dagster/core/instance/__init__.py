@@ -1196,16 +1196,27 @@ class DagsterInstance:
     # Schedule Storage
 
     def start_sensor(self, external_sensor):
-        from dagster.core.scheduler.job import JobState, JobStatus
+        from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
         from dagster.core.definitions.job import JobType
 
         job_state = self.get_job_state(external_sensor.get_external_origin_id())
+
         if not job_state:
             self.add_job_state(
-                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+                JobState(
+                    external_sensor.get_external_origin(),
+                    JobType.SENSOR,
+                    JobStatus.RUNNING,
+                    SensorJobData(datetime.utcnow().timestamp()),
+                )
             )
-        else:
-            self.update_job_state(job_state.with_status(JobStatus.RUNNING))
+        elif job_state.status != JobStatus.RUNNING:
+            # set the last completed time to the modified state time
+            self.update_job_state(
+                job_state.with_status(JobStatus.RUNNING).with_data(
+                    SensorJobData(datetime.utcnow().timestamp())
+                )
+            )
 
     def stop_sensor(self, job_origin_id):
         job_state = self.get_job_state(job_origin_id)

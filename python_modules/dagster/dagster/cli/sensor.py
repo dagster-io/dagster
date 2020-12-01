@@ -15,7 +15,7 @@ from dagster.core.definitions.job import JobType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import ExternalSensorExecutionErrorData
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobState, JobStatus
+from dagster.core.scheduler.job import JobStatus
 
 
 def create_sensor_cli_group():
@@ -178,16 +178,6 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 print_fn(job_title)
 
 
-def _add_or_update_job_state(instance, external_sensor, status):
-    existing_job_state = instance.get_job_state(external_sensor.get_external_origin_id())
-    if not existing_job_state:
-        instance.add_job_state(
-            JobState(external_sensor.get_external_origin(), JobType.SENSOR, status)
-        )
-    else:
-        instance.update_job_state(existing_job_state.with_status(status))
-
-
 @click.command(name="start", help="Start an existing sensor")
 @click.argument("sensor_name", nargs=-1)  # , required=True)
 @click.option("--start-all", help="start all sensors", is_flag=True, default=False)
@@ -212,7 +202,7 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
             if all_flag:
                 try:
                     for external_sensor in external_repo.get_external_sensors():
-                        _add_or_update_job_state(instance, external_sensor, JobStatus.RUNNING)
+                        instance.start_sensor(external_sensor)
                     print_fn(
                         "Started all sensors for repository {repository_name}".format(
                             repository_name=repository_name
@@ -223,7 +213,7 @@ def execute_start_command(sensor_name, all_flag, cli_args, print_fn):
             else:
                 try:
                     external_sensor = external_repo.get_external_sensor(sensor_name)
-                    _add_or_update_job_state(instance, external_sensor, JobStatus.RUNNING)
+                    instance.start_sensor(external_sensor)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
@@ -244,7 +234,7 @@ def execute_stop_command(sensor_name, cli_args, print_fn, instance=None):
             check_repo_and_scheduler(external_repo, instance)
             try:
                 external_sensor = external_repo.get_external_sensor(sensor_name)
-                _add_or_update_job_state(instance, external_sensor, JobStatus.STOPPED)
+                instance.stop_sensor(external_sensor.get_external_origin_id())
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
 

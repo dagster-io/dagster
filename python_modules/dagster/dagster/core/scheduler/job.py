@@ -15,11 +15,11 @@ class JobStatus(Enum):
 
 
 @whitelist_for_serdes
-class SensorJobData(namedtuple("_SensorJobData", "last_completed_timestamp last_run_key")):
-    def __new__(cls, last_completed_timestamp=None, last_run_key=None):
+class SensorJobData(namedtuple("_SensorJobData", "last_tick_timestamp last_run_key")):
+    def __new__(cls, last_tick_timestamp=None, last_run_key=None):
         return super(SensorJobData, cls).__new__(
             cls,
-            check.opt_float_param(last_completed_timestamp, "last_completed_timestamp"),
+            check.opt_float_param(last_tick_timestamp, "last_tick_timestamp"),
             check.opt_str_param(last_run_key, "last_run_key"),
         )
 

@@ -182,9 +182,7 @@ def _evaluate_sensor(
         instance,
         external_repo.handle,
         external_sensor.name,
-        job_state.job_specific_data.last_completed_timestamp
-        if job_state.job_specific_data
-        else None,
+        job_state.job_specific_data.last_tick_timestamp if job_state.job_specific_data else None,
         job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
     )
     if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
