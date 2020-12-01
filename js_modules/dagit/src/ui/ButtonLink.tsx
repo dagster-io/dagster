@@ -1,3 +1,4 @@
+import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled, {css} from 'styled-components';
 
@@ -78,3 +79,8 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
   ${({color}) => fontColor(color)}
   ${({underline}) => textDecoration(underline)}
 `;
+
+ButtonLink.defaultProps = {
+  color: Colors.BLUE2,
+  underline: 'hover',
+};

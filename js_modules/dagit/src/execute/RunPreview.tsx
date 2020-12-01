@@ -3,7 +3,6 @@ import {Button, Checkbox, Code, Colors, Icon, Intent, Position, Tooltip} from '@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ButtonLink} from 'src/ButtonLink';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {useConfirmation} from 'src/CustomConfirmationProvider';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
@@ -17,6 +16,7 @@ import {
   RunPreviewValidationFragment,
   RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors,
 } from 'src/execute/types/RunPreviewValidationFragment';
+import {ButtonLink} from 'src/ui/ButtonLink';
 
 type ValidationError = RunPreviewValidationFragment_PipelineConfigValidationInvalid_errors;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;
@@ -629,7 +629,7 @@ const ErrorRow: React.FunctionComponent<{
                 })
               }
             >
-              View&nbsp;All&nbsp;&gt;
+              View all
             </ButtonLink>
           </>
         )}

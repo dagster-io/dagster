@@ -5,10 +5,10 @@ import {useEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {ButtonLink} from 'src/ButtonLink';
 import {DirectGraphQLSubscription} from 'src/DirectGraphQLSubscription';
 import {LocationStateChangeSubscription} from 'src/nav/types/LocationStateChangeSubscription';
 import {LocationStateChangeEventType} from 'src/types/globalTypes';
+import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {Caption} from 'src/ui/Text';
 import {useNetworkedRepositoryLocations} from 'src/workspace/WorkspaceContext';
@@ -94,8 +94,10 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
             {updatedLocations.length == 1
               ? `Repository location ${updatedLocations[0]} has been updated,` // Be specific when there's only one repository location updated
               : 'One or more repository locations have been updated,'}{' '}
-            and new data is available.
-            <SmallButtonLink
+            and new data is available.{' '}
+            <ButtonLink
+              color={{link: Colors.DARK_GRAY3, hover: Colors.DARK_GRAY1, active: Colors.DARK_GRAY1}}
+              underline="always"
               onClick={() => {
                 setUpdatedLocations([]);
                 setErroredLocations([]);
@@ -104,7 +106,7 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
               }}
             >
               Update data
-            </SmallButtonLink>
+            </ButtonLink>
           </Caption>
         </Group>
       ) : null}
@@ -123,20 +125,6 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
 };
 
 const DetailLink = styled(Link)`
-  color: ${Colors.DARK_GRAY3};
-  text-decoration: underline;
-
-  && :hover,
-  :active,
-  :visited {
-    color: ${Colors.DARK_GRAY1};
-  }
-`;
-
-const SmallButtonLink = styled(ButtonLink)`
-  font-size: 12px;
-  padding: 0;
-  margin: 0;
   color: ${Colors.DARK_GRAY3};
   text-decoration: underline;
 

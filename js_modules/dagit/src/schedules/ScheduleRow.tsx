@@ -3,7 +3,6 @@ import {
   Button,
   Callout,
   Colors,
-  Icon,
   Intent,
   Menu,
   MenuItem,
@@ -14,13 +13,11 @@ import {
   Tag,
   Tooltip,
 } from '@blueprintjs/core';
-import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ButtonLink} from 'src/ButtonLink';
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {ConfirmationOptions, useConfirmation} from 'src/CustomConfirmationProvider';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
@@ -44,6 +41,8 @@ import {
   StopSchedule_stopRunningSchedule_PythonError,
 } from 'src/schedules/types/StopSchedule';
 import {ScheduleStatus, JobTickStatus} from 'src/types/globalTypes';
+import {ButtonLink} from 'src/ui/ButtonLink';
+import {Group} from 'src/ui/Group';
 import {Code} from 'src/ui/Text';
 import {DagsterRepoOption, scheduleSelectorWithRepository} from 'src/workspace/WorkspaceContext';
 import {RepoAddress} from 'src/workspace/types';
@@ -445,15 +444,16 @@ export const ScheduleStateRow: React.FunctionComponent<{
         </td>
       ) : (
         <td>
-          <div style={{display: 'flex', alignItems: 'base'}}>
+          <Group direction="horizontal" spacing={8} alignItems="center">
             <div>{scheduleName}</div>
-            <ButtonLink onClick={() => setShowRepositoryOrigin(!showRepositoryOrigin)}>
-              show info{' '}
-              <Icon
-                icon={showRepositoryOrigin ? IconNames.CHEVRON_DOWN : IconNames.CHEVRON_RIGHT}
-              />
+            <ButtonLink
+              onClick={() => {
+                setShowRepositoryOrigin(!showRepositoryOrigin);
+              }}
+            >
+              show info
             </ButtonLink>
-          </div>
+          </Group>
           {showRepositoryOrigin && (
             <Callout style={{marginTop: 10}}>
               <RepositoryOriginInformation origin={repositoryOrigin} />

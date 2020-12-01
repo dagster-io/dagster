@@ -11,10 +11,11 @@ import {
 import React from 'react';
 import styled from 'styled-components';
 
-import {ButtonLink} from 'src/ButtonLink';
 import {LoadingCentering, LoadingContainer, LoadingWithProgress} from 'src/Loading';
 import {useRepositoryLocationReload} from 'src/nav/ReloadRepositoryLocationButton';
 import {TopNav} from 'src/nav/TopNav';
+import {ButtonLink} from 'src/ui/ButtonLink';
+import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
@@ -43,7 +44,7 @@ const LocationStatus: React.FC<{locationOrError: LocationOrError; reloading: boo
             Failed
           </Tag>
           <div style={{fontSize: '14px', marginLeft: '8px'}}>
-            <SmallButtonLink onClick={() => setShowDialog(true)}>View error</SmallButtonLink>
+            <ButtonLink onClick={() => setShowDialog(true)}>View error</ButtonLink>
           </div>
         </div>
         <Dialog
@@ -81,16 +82,12 @@ const ReloadButton: React.FC<{location: string; onReload: (location: string) => 
   const {location, onReload} = props;
   const {reloading, onClick} = useRepositoryLocationReload(location, () => onReload(location));
   return (
-    <SmallButtonLink onClick={onClick}>
-      <div style={{display: 'flex', alignItems: 'center'}}>
+    <ButtonLink onClick={onClick}>
+      <Group direction="horizontal" spacing={4} alignItems="center">
         Reload
-        {reloading ? (
-          <div style={{marginLeft: '4px'}}>
-            <Spinner size={12} />
-          </div>
-        ) : null}
-      </div>
-    </SmallButtonLink>
+        {reloading ? <Spinner size={12} /> : null}
+      </Group>
+    </ButtonLink>
   );
 };
 
@@ -169,15 +166,4 @@ const Trace = styled.div`
   overflow: auto;
   white-space: pre;
   padding: 16px;
-`;
-
-const SmallButtonLink = styled(ButtonLink)`
-  font-size: 14px;
-  margin: 0;
-  padding: 0;
-
-  &:active,
-  :focus {
-    outline: none;
-  }
 `;

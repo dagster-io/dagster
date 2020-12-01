@@ -12,7 +12,6 @@ import {
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 
-import {ButtonLink} from 'src/ButtonLink';
 import {SharedToaster} from 'src/DomUtils';
 import {filterByQuery} from 'src/GraphQueryImpl';
 import {GraphQueryInput} from 'src/GraphQueryInput';
@@ -32,6 +31,7 @@ import {
 } from 'src/partitions/RunMatrixUtils';
 import {PartitionsBackfillSelectorQuery} from 'src/partitions/types/PartitionsBackfillSelectorQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
+import {ButtonLink} from 'src/ui/ButtonLink';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
