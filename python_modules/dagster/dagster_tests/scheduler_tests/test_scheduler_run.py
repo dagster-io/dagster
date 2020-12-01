@@ -6,7 +6,16 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import DagsterEventType, daily_schedule, hourly_schedule, pipeline, repository, solid
+from dagster import (
+    DagsterEventType,
+    ScheduleDefinition,
+    daily_schedule,
+    hourly_schedule,
+    pipeline,
+    repository,
+    solid,
+)
+from dagster.core.definitions.job import RunRequest
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
@@ -183,6 +192,25 @@ def wrong_config_schedule(_date):
     return {}
 
 
+def define_multi_run_schedule():
+    def gen_runs(context):
+        if not context.scheduled_execution_time:
+            date = pendulum.now().subtract(days=1)
+        else:
+            date = pendulum.instance(context.scheduled_execution_time).subtract(days=1)
+
+        yield RunRequest(run_key="A", run_config=_solid_config(date), tags={"label": "A"})
+        yield RunRequest(run_key="B", run_config=_solid_config(date), tags={"label": "B"})
+
+    return ScheduleDefinition(
+        name="multi_run_schedule",
+        cron_schedule="0 0 * * *",
+        pipeline_name="the_pipeline",
+        execution_timezone="UTC",
+        execution_fn=gen_runs,
+    )
+
+
 @repository
 def the_repo():
     return [
@@ -202,6 +230,7 @@ def the_repo():
         bad_should_execute_schedule_on_odd_days,
         skip_schedule,
         wrong_config_schedule,
+        define_multi_run_schedule(),
     ]
 
 
@@ -256,7 +285,7 @@ def validate_tick(
     external_schedule,
     expected_datetime,
     expected_status,
-    expected_run_id,
+    expected_run_ids,
     expected_error=None,
 ):
     tick_data = tick.job_tick_data
@@ -264,21 +293,28 @@ def validate_tick(
     assert tick_data.job_name == external_schedule.name
     assert tick_data.timestamp == expected_datetime.timestamp()
     assert tick_data.status == expected_status
-    assert tick_data.run_id == expected_run_id
+    assert set(tick_data.run_ids) == set(expected_run_ids)
     if expected_error:
         assert expected_error in tick_data.error.message
 
 
 def validate_run_started(
-    run, execution_time, partition_time, partition_fmt=DEFAULT_DATE_FORMAT, expected_success=True,
+    run,
+    execution_time,
+    partition_time=None,
+    partition_fmt=DEFAULT_DATE_FORMAT,
+    expected_success=True,
 ):
     assert run.tags[SCHEDULED_EXECUTION_TIME_TAG] == execution_time.in_tz("UTC").isoformat()
 
-    assert run.tags[PARTITION_NAME_TAG] == partition_time.strftime(partition_fmt)
+    if partition_time:
+        assert run.tags[PARTITION_NAME_TAG] == partition_time.strftime(partition_fmt)
 
     if expected_success:
-        assert run.run_config == _solid_config(partition_time)
         assert run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.SUCCESS
+
+        if partition_time:
+            assert run.run_config == _solid_config(partition_time)
     else:
         assert run.status == PipelineRunStatus.FAILURE
 
@@ -349,7 +385,7 @@ def test_simple_schedule(external_repo_context, capfd):
                 external_schedule,
                 expected_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [run.run_id for run in instance.get_runs()],
             )
 
             wait_for_all_runs_to_start(instance)
@@ -364,7 +400,7 @@ def test_simple_schedule(external_repo_context, capfd):
             assert (
                 captured.out
                 == """2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-28 00:00:00+0000
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-28 00:00:00+0000
 2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule
 """.format(
                     run_id=instance.get_runs()[0].run_id
@@ -414,7 +450,7 @@ def test_simple_schedule(external_repo_context, capfd):
             assert (
                 captured.out
                 == """2019-03-01 18:00:03 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-03-01 18:00:03 - SchedulerDaemon - INFO - Launching 2 runs for simple_schedule at the following times: 2019-03-01 00:00:00+0000, 2019-03-02 00:00:00+0000
+2019-03-01 18:00:03 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at the following times: 2019-03-01 00:00:00+0000, 2019-03-02 00:00:00+0000
 2019-03-01 18:00:03 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
 2019-03-01 18:00:03 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule
 """.format(
@@ -501,9 +537,8 @@ def test_bad_env_fn(external_repo_context, capfd):
                 external_schedule,
                 initial_datetime,
                 JobTickStatus.FAILURE,
-                None,
-                "Error occurred during the execution of run_config_fn for "
-                "schedule bad_env_fn_schedule",
+                [run.run_id for run in instance.get_runs()],
+                "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule",
             )
 
             captured = capfd.readouterr()
@@ -511,8 +546,8 @@ def test_bad_env_fn(external_repo_context, capfd):
             assert "Failed to fetch schedule data for bad_env_fn_schedule: " in captured.out
 
             assert (
-                "Error occurred during the execution of run_config_fn for "
-                "schedule bad_env_fn_schedule" in captured.out
+                "Error occurred during the execution of run_config_fn for schedule bad_env_fn_schedule"
+                in captured.out
             )
 
 
@@ -538,9 +573,8 @@ def test_bad_should_execute(external_repo_context, capfd):
                 external_schedule,
                 initial_datetime,
                 JobTickStatus.FAILURE,
-                None,
-                "Error occurred during the execution of should_execute for "
-                "schedule bad_should_execute_schedule",
+                [run.run_id for run in instance.get_runs()],
+                "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule",
             )
 
             captured = capfd.readouterr()
@@ -549,8 +583,8 @@ def test_bad_should_execute(external_repo_context, capfd):
             ) in captured.out
 
             assert (
-                "Error occurred during the execution of should_execute "
-                "for schedule bad_should_execute_schedule" in captured.out
+                "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule"
+                in captured.out
             )
 
             assert "Exception: bananas" in captured.out
@@ -573,15 +607,19 @@ def test_skip(external_repo_context, capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
             validate_tick(
-                ticks[0], external_schedule, initial_datetime, JobTickStatus.SKIPPED, None,
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                JobTickStatus.SKIPPED,
+                [run.run_id for run in instance.get_runs()],
             )
 
             captured = capfd.readouterr()
             assert (
                 captured.out
                 == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: skip_schedule
-2019-02-26 18:00:00 - SchedulerDaemon - INFO - Launching run for skip_schedule at 2019-02-27 00:00:00+0000
-2019-02-26 18:00:00 - SchedulerDaemon - INFO - should_execute returned False for skip_schedule, skipping
+2019-02-26 18:00:00 - SchedulerDaemon - INFO - Evaluating schedule `skip_schedule` at 2019-02-27 00:00:00+0000
+2019-02-26 18:00:00 - SchedulerDaemon - INFO - No run requests returned for skip_schedule, skipping
 """
             )
 
@@ -613,7 +651,11 @@ def test_wrong_config(external_repo_context, capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
             validate_tick(
-                ticks[0], external_schedule, initial_datetime, JobTickStatus.SUCCESS, run.run_id,
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                JobTickStatus.SUCCESS,
+                [run.run_id for run in instance.get_runs()],
             )
 
             run_logs = instance.all_logs(run.run_id)
@@ -690,7 +732,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 good_schedule,
                 initial_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [run.run_id for run in instance.get_runs()],
             )
 
             bad_ticks = instance.get_job_ticks(bad_origin.get_id())
@@ -699,8 +741,8 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
             assert bad_ticks[0].status == JobTickStatus.FAILURE
 
             assert (
-                "Error occurred during the execution of should_execute "
-                "for schedule bad_should_execute_schedule" in bad_ticks[0].error.message
+                "Error occurred during the execution of should_execute for schedule bad_should_execute_schedule"
+                in bad_ticks[0].error.message
             )
 
             unloadable_ticks = instance.get_job_ticks(unloadable_origin.get_id())
@@ -735,7 +777,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 good_schedule,
                 new_now,
                 JobTickStatus.SUCCESS,
-                good_schedule_runs[0].run_id,
+                [good_schedule_runs[0].run_id],
             )
 
             bad_schedule_runs = instance.get_runs(
@@ -755,7 +797,7 @@ def test_bad_schedules_mixed_with_good_schedule(external_repo_context, capfd):
                 bad_schedule,
                 new_now,
                 JobTickStatus.SUCCESS,
-                bad_schedule_runs[0].run_id,
+                [bad_schedule_runs[0].run_id],
             )
 
             unloadable_ticks = instance.get_job_ticks(unloadable_origin.get_id())
@@ -856,9 +898,9 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
             assert (
                 captured.out
                 == """2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule, simple_hourly_schedule
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-28 00:00:00+0000
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-28 00:00:00+0000
 2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
-2019-02-27 18:00:01 - SchedulerDaemon - INFO - Launching run for simple_hourly_schedule at 2019-02-28 00:00:00+0000
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `simple_hourly_schedule` at 2019-02-28 00:00:00+0000
 2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_hourly_schedule
 """.format(
                     first_run_id=instance.get_runs()[1].run_id,
@@ -885,7 +927,7 @@ def test_multiple_schedules_on_different_time_ranges(external_repo_context, capf
                 captured.out
                 == """2019-02-27 19:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule, simple_hourly_schedule
 2019-02-27 19:00:01 - SchedulerDaemon - INFO - No new runs for simple_schedule
-2019-02-27 19:00:01 - SchedulerDaemon - INFO - Launching run for simple_hourly_schedule at 2019-02-28 01:00:00+0000
+2019-02-27 19:00:01 - SchedulerDaemon - INFO - Evaluating schedule `simple_hourly_schedule` at 2019-02-28 01:00:00+0000
 2019-02-27 19:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {third_run_id} for simple_hourly_schedule
 """.format(
                     third_run_id=instance.get_runs()[0].run_id
@@ -927,14 +969,18 @@ def test_launch_failure(external_repo_context, capfd):
             ticks = instance.get_job_ticks(schedule_origin.get_id())
             assert len(ticks) == 1
             validate_tick(
-                ticks[0], external_schedule, initial_datetime, JobTickStatus.SUCCESS, run.run_id,
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                JobTickStatus.SUCCESS,
+                [run.run_id for run in instance.get_runs()],
             )
 
             captured = capfd.readouterr()
             assert (
                 captured.out
                 == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:00:00 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
+2019-02-26 18:00:00 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00+0000
 2019-02-26 18:00:00 - SchedulerDaemon - ERROR - Run {run_id} created successfully but failed to launch.
 """.format(
                     run_id=instance.get_runs()[0].run_id
@@ -972,7 +1018,7 @@ def test_max_catchup_runs(capfd):
                 external_schedule,
                 first_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [instance.get_runs()[0].run_id],
             )
             validate_run_started(
                 instance.get_runs()[0],
@@ -987,7 +1033,7 @@ def test_max_catchup_runs(capfd):
                 external_schedule,
                 second_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[1].run_id,
+                [instance.get_runs()[1].run_id],
             )
 
             validate_run_started(
@@ -1001,11 +1047,108 @@ def test_max_catchup_runs(capfd):
                 captured.out
                 == """2019-03-04 17:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
 2019-03-04 17:59:59 - SchedulerDaemon - WARNING - simple_schedule has fallen behind, only launching 2 runs
-2019-03-04 17:59:59 - SchedulerDaemon - INFO - Launching 2 runs for simple_schedule at the following times: 2019-03-03 00:00:00+0000, 2019-03-04 00:00:00+0000
+2019-03-04 17:59:59 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at the following times: 2019-03-03 00:00:00+0000, 2019-03-04 00:00:00+0000
 2019-03-04 17:59:59 - SchedulerDaemon - INFO - Completed scheduled launch of run {first_run_id} for simple_schedule
 2019-03-04 17:59:59 - SchedulerDaemon - INFO - Completed scheduled launch of run {second_run_id} for simple_schedule
 """.format(
                     first_run_id=instance.get_runs()[1].run_id,
                     second_run_id=instance.get_runs()[0].run_id,
                 )
+            )
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_multi_runs(external_repo_context, capfd):
+    freeze_datetime = pendulum.datetime(
+        year=2019, month=2, day=27, hour=23, minute=59, second=59,
+    ).in_tz("US/Central")
+    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule("multi_run_schedule")
+            schedule_origin = external_schedule.get_external_origin()
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 0
+
+            # launch_scheduled_runs does nothing before the first tick
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 0
+
+            captured = capfd.readouterr()
+
+            assert (
+                captured.out
+                == """2019-02-27 17:59:59 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
+2019-02-27 17:59:59 - SchedulerDaemon - INFO - No new runs for multi_run_schedule
+"""
+            )
+
+        freeze_datetime = freeze_datetime.add(seconds=2)
+        with pendulum.test(freeze_datetime):
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            assert instance.get_runs_count() == 2
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 1
+
+            expected_datetime = pendulum.datetime(year=2019, month=2, day=28)
+
+            runs = instance.get_runs()
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                expected_datetime,
+                JobTickStatus.SUCCESS,
+                [run.run_id for run in runs],
+            )
+
+            wait_for_all_runs_to_start(instance)
+            runs = instance.get_runs()
+            validate_run_started(runs[0], execution_time=pendulum.datetime(2019, 2, 28))
+            validate_run_started(runs[1], execution_time=pendulum.datetime(2019, 2, 28))
+
+            captured = capfd.readouterr()
+
+            assert (
+                captured.out
+                == f"""2019-02-27 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `multi_run_schedule` at 2019-02-28 00:00:00+0000
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[1].run_id} for multi_run_schedule
+2019-02-27 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[0].run_id} for multi_run_schedule
+"""
+            )
+
+            # Verify idempotence
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            assert instance.get_runs_count() == 2
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 1
+            assert ticks[0].status == JobTickStatus.SUCCESS
+
+        freeze_datetime = freeze_datetime.add(days=2)
+        with pendulum.test(freeze_datetime):
+            capfd.readouterr()
+
+            # Traveling two more days in the future before running results in two new ticks
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            assert instance.get_runs_count() == 6
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 3
+            assert len([tick for tick in ticks if tick.status == JobTickStatus.SUCCESS]) == 3
+            runs = instance.get_runs()
+
+            captured = capfd.readouterr()
+
+            assert (
+                captured.out
+                == f"""2019-03-01 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
+2019-03-01 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `multi_run_schedule` at the following times: 2019-03-01 00:00:00+0000, 2019-03-02 00:00:00+0000
+2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[3].run_id} for multi_run_schedule
+2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[2].run_id} for multi_run_schedule
+2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[1].run_id} for multi_run_schedule
+2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[0].run_id} for multi_run_schedule
+"""
             )

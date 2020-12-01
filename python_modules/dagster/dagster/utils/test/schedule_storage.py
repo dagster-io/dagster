@@ -196,7 +196,14 @@ class TestScheduleStorage:
 
     def build_tick(self, current_time, status=JobTickStatus.STARTED, run_id=None, error=None):
         return JobTickData(
-            "my_schedule", "my_schedule", JobType.SCHEDULE, status, current_time, run_id, error
+            "my_schedule",
+            "my_schedule",
+            JobType.SCHEDULE,
+            status,
+            current_time,
+            [run_id] if run_id else [],
+            [],
+            error,
         )
 
     def test_create_tick(self, storage):
@@ -210,7 +217,7 @@ class TestScheduleStorage:
         assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.STARTED
-        assert tick.run_id == None
+        assert tick.run_ids == []
         assert tick.error == None
 
     def test_update_tick_to_success(self, storage):
@@ -219,7 +226,7 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_job_tick(self.build_tick(current_time))
 
-        updated_tick = tick.with_status(JobTickStatus.SUCCESS, run_id="1234")
+        updated_tick = tick.with_status(JobTickStatus.SUCCESS).with_run(run_id="1234")
         assert updated_tick.status == JobTickStatus.SUCCESS
 
         storage.update_job_tick(updated_tick)
@@ -230,7 +237,7 @@ class TestScheduleStorage:
         assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.SUCCESS
-        assert tick.run_id == "1234"
+        assert tick.run_ids == ["1234"]
         assert tick.error == None
 
     def test_update_tick_to_skip(self, storage):
@@ -250,7 +257,7 @@ class TestScheduleStorage:
         assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.SKIPPED
-        assert tick.run_id == None
+        assert tick.run_ids == []
         assert tick.error == None
 
     def test_update_tick_to_failure(self, storage):
@@ -274,7 +281,7 @@ class TestScheduleStorage:
         assert tick.job_name == "my_schedule"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.FAILURE
-        assert tick.run_id == None
+        assert tick.run_ids == []
         assert tick.error == SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
 
     def test_get_tick_stats(self, storage):
@@ -411,18 +418,24 @@ class TestScheduleStorage:
         with pytest.raises(DagsterInvariantViolationError):
             storage.add_job_state(job)
 
-    def build_job_tick_data(
-        self, current_time, status=JobTickStatus.STARTED, run_id=None, error=None, run_key=None,
+    def build_sensor_tick(
+        self, current_time, status=JobTickStatus.STARTED, run_id=None, error=None
     ):
         return JobTickData(
-            "my_sensor", "my_sensor", JobType.SENSOR, status, current_time, run_id, error, run_key,
+            "my_sensor",
+            "my_sensor",
+            JobType.SENSOR,
+            status,
+            current_time,
+            [run_id] if run_id else [],
+            error,
         )
 
     def test_create_job_tick(self, storage):
         assert storage
 
         current_time = time.time()
-        tick = storage.create_job_tick(self.build_job_tick_data(current_time))
+        tick = storage.create_job_tick(self.build_sensor_tick(current_time))
         assert tick.tick_id == 1
 
         ticks = storage.get_job_ticks("my_sensor")
@@ -432,16 +445,16 @@ class TestScheduleStorage:
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.STARTED
-        assert tick.run_id == None
+        assert tick.run_ids == []
         assert tick.error == None
 
     def test_update_job_tick_to_success(self, storage):
         assert storage
 
         current_time = time.time()
-        tick = storage.create_job_tick(self.build_job_tick_data(current_time))
+        tick = storage.create_job_tick(self.build_sensor_tick(current_time))
 
-        updated_tick = tick.with_status(JobTickStatus.SUCCESS, run_id="1234")
+        updated_tick = tick.with_status(JobTickStatus.SUCCESS).with_run(run_id="1234")
         assert updated_tick.status == JobTickStatus.SUCCESS
 
         storage.update_job_tick(updated_tick)
@@ -453,14 +466,14 @@ class TestScheduleStorage:
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.SUCCESS
-        assert tick.run_id == "1234"
+        assert tick.run_ids == ["1234"]
         assert tick.error == None
 
     def test_update_job_tick_to_skip(self, storage):
         assert storage
 
         current_time = time.time()
-        tick = storage.create_job_tick(self.build_job_tick_data(current_time))
+        tick = storage.create_job_tick(self.build_sensor_tick(current_time))
 
         updated_tick = tick.with_status(JobTickStatus.SKIPPED)
         assert updated_tick.status == JobTickStatus.SKIPPED
@@ -474,14 +487,14 @@ class TestScheduleStorage:
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.SKIPPED
-        assert tick.run_id == None
+        assert tick.run_ids == []
         assert tick.error == None
 
     def test_update_job_tick_to_failure(self, storage):
         assert storage
 
         current_time = time.time()
-        tick = storage.create_job_tick(self.build_job_tick_data(current_time))
+        tick = storage.create_job_tick(self.build_sensor_tick(current_time))
         error = SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
 
         updated_tick = tick.with_status(JobTickStatus.FAILURE, error=error)
@@ -496,5 +509,5 @@ class TestScheduleStorage:
         assert tick.job_name == "my_sensor"
         assert tick.timestamp == current_time
         assert tick.status == JobTickStatus.FAILURE
-        assert tick.run_id == None
+        assert tick.run_ids == []
         assert tick.error == error

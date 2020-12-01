@@ -124,28 +124,6 @@ export interface RepositorySchedulesFragment_scheduleDefinitions {
   futureTicks: RepositorySchedulesFragment_scheduleDefinitions_futureTicks;
 }
 
-export interface RepositorySchedulesFragment_sensors_runs {
-  __typename: "PipelineRun";
-  id: string;
-  runId: string;
-}
-
-export interface RepositorySchedulesFragment_sensors_ticks_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RepositorySchedulesFragment_sensors_ticks {
-  __typename: "JobTick";
-  id: string;
-  status: JobTickStatus;
-  timestamp: number;
-  runId: string | null;
-  error: RepositorySchedulesFragment_sensors_ticks_error | null;
-  runKey: string | null;
-}
-
 export interface RepositorySchedulesFragment_sensors {
   __typename: "Sensor";
   id: string;
@@ -154,9 +132,6 @@ export interface RepositorySchedulesFragment_sensors {
   solidSelection: (string | null)[] | null;
   mode: string;
   status: JobStatus;
-  runs: RepositorySchedulesFragment_sensors_runs[];
-  runsCount: number;
-  ticks: RepositorySchedulesFragment_sensors_ticks[];
 }
 
 export interface RepositorySchedulesFragment_origin_repositoryLocationMetadata {

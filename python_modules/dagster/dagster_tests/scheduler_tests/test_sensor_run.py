@@ -93,9 +93,8 @@ def validate_tick(
     external_sensor,
     expected_datetime,
     expected_status,
-    expected_run_id=None,
+    expected_run_ids=None,
     expected_error=None,
-    expected_run_key=None,
 ):
     tick_data = tick.job_tick_data
     assert tick_data.job_origin_id == external_sensor.get_external_origin_id()
@@ -103,8 +102,7 @@ def validate_tick(
     assert tick_data.job_type == JobType.SENSOR
     assert tick_data.status == expected_status
     assert tick_data.timestamp == expected_datetime.timestamp()
-    assert tick_data.run_id == expected_run_id
-    assert tick_data.run_key == expected_run_key
+    assert set(tick_data.run_ids) == set(expected_run_ids if expected_run_ids else [])
     if expected_error:
         assert expected_error in tick_data.error.message
 
@@ -176,7 +174,7 @@ def test_simple_sensor(external_repo_context, capfd):
 
             expected_datetime = pendulum.datetime(year=2019, month=2, day=28)
             validate_tick(
-                ticks[0], external_sensor, expected_datetime, JobTickStatus.SUCCESS, run.run_id,
+                ticks[0], external_sensor, expected_datetime, JobTickStatus.SUCCESS, [run.run_id],
             )
 
             captured = capfd.readouterr()
@@ -216,7 +214,7 @@ def test_error_sensor(external_repo_context, capfd):
                 external_sensor,
                 freeze_datetime,
                 JobTickStatus.FAILURE,
-                None,
+                [],
                 "Error occurred during the execution of evaluation_fn for sensor error_sensor",
             )
 
@@ -256,7 +254,7 @@ def test_launch_failure(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
             validate_tick(
-                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SUCCESS, run.run_id
+                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SUCCESS, [run.run_id]
             )
 
             captured = capfd.readouterr()
@@ -293,8 +291,7 @@ def test_launch_once(external_repo_context, capfd):
                 external_sensor,
                 freeze_datetime,
                 JobTickStatus.SUCCESS,
-                expected_run_id=run.run_id,
-                expected_run_key="only_once",
+                expected_run_ids=[run.run_id],
             )
 
             # run again, ensure
@@ -303,14 +300,7 @@ def test_launch_once(external_repo_context, capfd):
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 2
             validate_tick(
-                ticks[0],
-                external_sensor,
-                freeze_datetime,
-                JobTickStatus.SKIPPED,
-                expected_run_key="only_once",
+                ticks[0], external_sensor, freeze_datetime, JobTickStatus.SKIPPED,
             )
             captured = capfd.readouterr()
-            assert (
-                "Found existing run for sensor run_key_sensor with run_key `only_once`, skipping."
-                in captured.out
-            )
+            assert f"Run {run.run_id} already completed with the run key `only_once` for run_key_sensor"

@@ -165,8 +165,8 @@ def test_launch_successful_execution_telemetry(schedule_origin_context):
                 message_start = json.loads(event_log[0])
                 message_end = json.loads(event_log[1])
 
-                assert message_start.get("action") == "_launch_scheduled_execution_started"
-                assert message_end.get("action") == "_launch_scheduled_execution_ended"
+                assert message_start.get("action") == "_launch_scheduled_executions_started"
+                assert message_end.get("action") == "_launch_scheduled_executions_ended"
 
 
 @pytest.mark.parametrize("schedule_origin_context", [python_schedule_origin, grpc_schedule_origin])

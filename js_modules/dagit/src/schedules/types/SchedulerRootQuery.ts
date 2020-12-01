@@ -124,28 +124,6 @@ export interface SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nod
   futureTicks: SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_futureTicks;
 }
 
-export interface SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_runs {
-  __typename: "PipelineRun";
-  id: string;
-  runId: string;
-}
-
-export interface SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_ticks_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_ticks {
-  __typename: "JobTick";
-  id: string;
-  status: JobTickStatus;
-  timestamp: number;
-  runId: string | null;
-  error: SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_ticks_error | null;
-  runKey: string | null;
-}
-
 export interface SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors {
   __typename: "Sensor";
   id: string;
@@ -154,9 +132,6 @@ export interface SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nod
   solidSelection: (string | null)[] | null;
   mode: string;
   status: JobStatus;
-  runs: SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_runs[];
-  runsCount: number;
-  ticks: SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_ticks[];
 }
 
 export interface SchedulerRootQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata {

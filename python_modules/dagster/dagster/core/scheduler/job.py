@@ -15,10 +15,12 @@ class JobStatus(Enum):
 
 
 @whitelist_for_serdes
-class SensorJobData(namedtuple("_SensorJobData", "last_completed_timestamp")):
-    def __new__(cls, last_completed_timestamp=None):
+class SensorJobData(namedtuple("_SensorJobData", "last_completed_timestamp last_run_key")):
+    def __new__(cls, last_completed_timestamp=None, last_run_key=None):
         return super(SensorJobData, cls).__new__(
-            cls, check.opt_float_param(last_completed_timestamp, "last_completed_timestamp"),
+            cls,
+            check.opt_float_param(last_completed_timestamp, "last_completed_timestamp"),
+            check.opt_str_param(last_run_key, "last_run_key"),
         )
 
 
@@ -117,6 +119,9 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
         check.inst_param(status, "status", JobTickStatus)
         return self._replace(job_tick_data=self.job_tick_data.with_status(status, **kwargs))
 
+    def with_run(self, run_id, run_key=None):
+        return self._replace(job_tick_data=self.job_tick_data.with_run(run_id, run_key))
+
     @property
     def job_origin_id(self):
         return self.job_tick_data.job_origin_id
@@ -134,16 +139,16 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
         return self.job_tick_data.timestamp
 
     @property
-    def run_key(self):
-        return self.job_tick_data.run_key
-
-    @property
     def status(self):
         return self.job_tick_data.status
 
     @property
-    def run_id(self):
-        return self.job_tick_data.run_id
+    def run_ids(self):
+        return self.job_tick_data.run_ids
+
+    @property
+    def run_keys(self):
+        return self.job_tick_data.run_keys
 
     @property
     def error(self):
@@ -153,7 +158,7 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
 @whitelist_for_serdes
 class JobTickData(
     namedtuple(
-        "_JobTickData", "job_origin_id job_name job_type status timestamp run_id error run_key",
+        "_JobTickData", "job_origin_id job_name job_type status timestamp run_ids run_keys error"
     )
 ):
     def __new__(
@@ -163,9 +168,9 @@ class JobTickData(
         job_type,
         status,
         timestamp,
-        run_id=None,
+        run_ids=None,
+        run_keys=None,
         error=None,
-        run_key=None,
     ):
         """
         This class defines the data that is serialized and stored in ``JobStorage``. We depend
@@ -184,10 +189,9 @@ class JobTickData(
             run_id (str): The run created by the tick.
             error (SerializableErrorInfo): The error caught during job execution. This is set
                 only when the status is ``JobTickStatus.Failure``
-            run_key (Optional[str]): A string that uniquely identifies a pipeline execution
         """
 
-        _validate_job_tick_args(job_type, status, run_id, error)
+        _validate_job_tick_args(job_type, status, run_ids, error)
         return super(JobTickData, cls).__new__(
             cls,
             check.str_param(job_origin_id, "job_origin_id"),
@@ -195,12 +199,12 @@ class JobTickData(
             check.inst_param(job_type, "job_type", JobType),
             check.inst_param(status, "status", JobTickStatus),
             check.float_param(timestamp, "timestamp"),
-            run_id,  # validated in _validate_job_tick_args
+            check.opt_list_param(run_ids, "run_ids", of_type=str),
+            check.opt_list_param(run_keys, "run_keys", of_type=str),
             error,  # validated in _validate_job_tick_args
-            check.opt_str_param(run_key, "run_key"),
         )
 
-    def with_status(self, status, run_id=None, error=None, timestamp=None, run_key=None):
+    def with_status(self, status, error=None, timestamp=None):
         check.inst_param(status, "status", JobTickStatus)
         return JobTickData(
             job_origin_id=self.job_origin_id,
@@ -208,18 +212,31 @@ class JobTickData(
             job_type=self.job_type,
             status=status,
             timestamp=timestamp if timestamp is not None else self.timestamp,
-            run_id=run_id if run_id is not None else self.run_id,
+            run_ids=self.run_ids,
+            run_keys=self.run_keys,
             error=error if error is not None else self.error,
-            run_key=run_key if run_key is not None else self.run_key,
+        )
+
+    def with_run(self, run_id, run_key=None):
+        check.str_param(run_id, "run_id")
+        return JobTickData(
+            job_origin_id=self.job_origin_id,
+            job_name=self.job_name,
+            job_type=self.job_type,
+            status=self.status,
+            timestamp=self.timestamp,
+            run_ids=[*self.run_ids, run_id],
+            run_keys=[*self.run_keys, run_key] if run_key else self.run_keys,
+            error=self.error,
         )
 
 
-def _validate_job_tick_args(job_type, status, run_id=None, error=None):
+def _validate_job_tick_args(job_type, status, run_ids=None, error=None):
     check.inst_param(job_type, "job_type", JobType)
     check.inst_param(status, "status", JobTickStatus)
 
     if status == JobTickStatus.SUCCESS:
-        check.str_param(run_id, "run_id")
+        check.list_param(run_ids, "run_ids", of_type=str)
         check.invariant(error is None, desc="Job tick status is SUCCESS, but error was provided")
     elif status == JobTickStatus.FAILURE:
         check.inst_param(error, "error", SerializableErrorInfo)

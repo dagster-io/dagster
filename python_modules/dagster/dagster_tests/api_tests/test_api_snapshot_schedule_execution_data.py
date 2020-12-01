@@ -13,9 +13,10 @@ def test_external_schedule_execution_data_api_grpc():
                 instance, repository_handle, "foo_schedule", None,
             )
             assert isinstance(execution_data, ExternalScheduleExecutionData)
-            assert execution_data.run_config == {"fizz": "buzz"}
-            assert execution_data.tags == {"dagster/schedule_name": "foo_schedule"}
-            assert execution_data.should_execute == True
+            assert len(execution_data.run_requests) == 1
+            to_launch = execution_data.run_requests[0]
+            assert to_launch.run_config == {"fizz": "buzz"}
+            assert to_launch.tags == {"dagster/schedule_name": "foo_schedule"}
 
 
 def test_external_schedule_execution_data_api_never_execute_grpc():
@@ -25,9 +26,7 @@ def test_external_schedule_execution_data_api_never_execute_grpc():
                 instance, repository_handle, "foo_schedule_never_execute", None,
             )
             assert isinstance(execution_data, ExternalScheduleExecutionData)
-            assert execution_data.run_config == {}
-            assert execution_data.tags == {}
-            assert execution_data.should_execute == False
+            assert len(execution_data.run_requests) == 0
 
 
 def test_include_execution_time_grpc():
@@ -39,6 +38,7 @@ def test_include_execution_time_grpc():
             )
 
             assert isinstance(execution_data, ExternalScheduleExecutionData)
-            assert execution_data.run_config == {"passed_in_time": execution_time.isoformat()}
-            assert execution_data.tags == {"dagster/schedule_name": "foo_schedule_echo_time"}
-            assert execution_data.should_execute == True
+            assert len(execution_data.run_requests) == 1
+            to_launch = execution_data.run_requests[0]
+            assert to_launch.run_config == {"passed_in_time": execution_time.isoformat()}
+            assert to_launch.tags == {"dagster/schedule_name": "foo_schedule_echo_time"}

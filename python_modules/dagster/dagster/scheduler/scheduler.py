@@ -17,23 +17,22 @@ from dagster.core.host_representation import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickData, JobTickStatus, JobType
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
-from dagster.core.storage.tags import SCHEDULED_EXECUTION_TIME_TAG, check_tags
+from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
-class ScheduleTickHolder:
+class _ScheduleLaunchContext:
     def __init__(self, tick, instance, logger):
-        self._tick = tick
         self._instance = instance
         self._logger = logger
+        self._tick = tick
 
-    @property
-    def status(self):
-        return self._tick.status
-
-    def update_with_status(self, status, **kwargs):
+    def update_state(self, status, **kwargs):
         self._tick = self._tick.with_status(status=status, **kwargs)
+
+    def add_run(self, run_id, run_key=None):
+        self._tick = self._tick.with_run(run_id, run_key)
 
     def _write(self):
         self._instance.update_job_tick(self._tick)
@@ -44,13 +43,9 @@ class ScheduleTickHolder:
     def __exit__(self, exception_type, exception_value, traceback):
         if exception_value and not isinstance(exception_value, KeyboardInterrupt):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
-            self.update_with_status(JobTickStatus.FAILURE, error=error_data)
+            self.update_state(JobTickStatus.FAILURE, error=error_data)
             self._write()
-            self._logger.error(
-                "Error launching scheduled run: {error_info}".format(
-                    error_info=error_data.to_string()
-                ),
-            )
+            self._logger.error(f"Error launching scheduled run: {error_data.to_string()}")
             return True  # Swallow the exception after logging in the tick DB
 
         self._write()
@@ -83,11 +78,8 @@ def launch_scheduled_runs(
         logger.info("Not checking for any runs since no schedules have been started.")
         return
 
-    logger.info(
-        "Checking for new runs for the following schedules: {schedule_names}".format(
-            schedule_names=", ".join([schedule.job_name for schedule in schedules]),
-        )
-    )
+    schedule_names = ", ".join([schedule.job_name for schedule in schedules])
+    logger.info(f"Checking for new runs for the following schedules: {schedule_names}")
 
     for schedule_state in schedules:
         try:
@@ -106,12 +98,8 @@ def launch_scheduled_runs(
                     (debug_crash_flags.get(schedule_state.job_name) if debug_crash_flags else None),
                 )
         except Exception:  # pylint: disable=broad-except
-            logger.error(
-                "Scheduler failed for {schedule_name} : {error_info}".format(
-                    schedule_name=schedule_state.job_name,
-                    error_info=serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
-                )
-            )
+            error_info = serializable_error_info_from_exc_info(sys.exc_info()).to_string()
+            logger.error(f"Scheduler failed for {schedule_state.job_name} : {error_info}")
 
 
 def launch_scheduled_runs_for_schedule(
@@ -151,8 +139,8 @@ def launch_scheduled_runs_for_schedule(
     timezone_str = external_schedule.execution_timezone
     if not timezone_str:
         logger.error(
-            "Scheduler could not run for {schedule_name} as it did not specify "
-            "an execution_timezone in its definition.".format(schedule_name=schedule_name)
+            f"Scheduler could not run for {schedule_name} as it did not specify "
+            "an execution_timezone in its definition."
         )
         return
 
@@ -166,32 +154,19 @@ def launch_scheduled_runs_for_schedule(
         tick_times.append(next_time)
 
     if not tick_times:
-        logger.info("No new runs for {schedule_name}".format(schedule_name=schedule_name))
+        logger.info(f"No new runs for {schedule_name}")
         return
 
     if len(tick_times) > max_catchup_runs:
-        logger.warning(
-            "{schedule_name} has fallen behind, only launching {max_catchup_runs} runs".format(
-                schedule_name=schedule_name, max_catchup_runs=max_catchup_runs
-            )
-        )
+        logger.warning(f"{schedule_name} has fallen behind, only launching {max_catchup_runs} runs")
         tick_times = tick_times[-max_catchup_runs:]
 
     if len(tick_times) == 1:
-        logger.info(
-            "Launching run for {schedule_name} at {time}".format(
-                schedule_name=schedule_name,
-                time=tick_times[0].strftime(_SCHEDULER_DATETIME_FORMAT),
-            )
-        )
+        tick_time = tick_times[0].strftime(_SCHEDULER_DATETIME_FORMAT)
+        logger.info(f"Evaluating schedule `{schedule_name}` at {tick_time}")
     else:
-        logger.info(
-            "Launching {num_runs} runs for {schedule_name} at the following times: {times}".format(
-                num_runs=len(tick_times),
-                schedule_name=schedule_name,
-                times=", ".join([time.strftime(_SCHEDULER_DATETIME_FORMAT) for time in tick_times]),
-            )
-        )
+        times = ", ".join([time.strftime(_SCHEDULER_DATETIME_FORMAT) for time in tick_times])
+        logger.info(f"Evaluating schedule `{schedule_name}` at the following times: {times}")
 
     for tick_time in tick_times:
         schedule_time = pendulum.instance(tick_time).in_tz(timezone_str)
@@ -214,18 +189,18 @@ def launch_scheduled_runs_for_schedule(
 
             _check_for_debug_crash(debug_crash_flags, "TICK_CREATED")
 
-        with ScheduleTickHolder(tick, instance, logger) as tick_holder:
+        with _ScheduleLaunchContext(tick, instance, logger) as tick_context:
 
             _check_for_debug_crash(debug_crash_flags, "TICK_HELD")
 
-            _schedule_run_at_time(
+            _schedule_runs_at_time(
                 instance,
                 logger,
                 repo_location,
                 external_repo,
                 external_schedule,
                 schedule_time,
-                tick_holder,
+                tick_context,
                 debug_crash_flags,
             )
 
@@ -243,14 +218,14 @@ def _check_for_debug_crash(debug_crash_flags, key):
     raise Exception("Process didn't terminate after sending crash signal")
 
 
-def _schedule_run_at_time(
+def _schedule_runs_at_time(
     instance,
     logger,
     repo_location,
     external_repo,
     external_schedule,
     schedule_time,
-    tick_holder,
+    tick_context,
     debug_crash_flags,
 ):
     schedule_name = external_schedule.name
@@ -267,95 +242,6 @@ def _schedule_run_at_time(
         subset_pipeline_result.external_pipeline_data, external_repo.handle,
     )
 
-    # Rule out the case where the scheduler crashed between creating a run for this time
-    # and launching it
-    runs_filter = PipelineRunsFilter(
-        tags=merge_dicts(
-            PipelineRun.tags_for_schedule(external_schedule),
-            {SCHEDULED_EXECUTION_TIME_TAG: schedule_time.in_tz("UTC").isoformat()},
-        )
-    )
-    existing_runs = instance.get_runs(runs_filter)
-
-    run_to_launch = None
-
-    if len(existing_runs):
-        check.invariant(len(existing_runs) == 1)
-
-        run = existing_runs[0]
-
-        if run.status != PipelineRunStatus.NOT_STARTED:
-            # A run already exists and was launched for this time period,
-            # but the scheduler must have crashed before the tick could be put
-            # into a SUCCESS state
-
-            logger.info(
-                "Run {run_id} already completed for this execution of {schedule_name}".format(
-                    run_id=run.run_id, schedule_name=schedule_name
-                )
-            )
-            tick_holder.update_with_status(JobTickStatus.SUCCESS, run_id=run.run_id)
-
-            return
-        else:
-            logger.info(
-                "Run {run_id} already created for this execution of {schedule_name}".format(
-                    run_id=run.run_id, schedule_name=schedule_name
-                )
-            )
-            run_to_launch = run
-    else:
-        run_to_launch = _create_scheduler_run(
-            instance,
-            logger,
-            schedule_time,
-            repo_location,
-            external_repo,
-            external_schedule,
-            external_pipeline,
-            tick_holder,
-        )
-
-        _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
-
-    if not run_to_launch:
-        check.invariant(
-            tick_holder.status != JobTickStatus.STARTED
-            and tick_holder.status != JobTickStatus.SUCCESS
-        )
-        return
-
-    if run_to_launch.status != PipelineRunStatus.FAILURE:
-        try:
-            instance.submit_run(run_to_launch.run_id, external_pipeline)
-            logger.info(
-                "Completed scheduled launch of run {run_id} for {schedule_name}".format(
-                    run_id=run_to_launch.run_id, schedule_name=schedule_name
-                )
-            )
-        except Exception:  # pylint: disable=broad-except
-            logger.error(
-                "Run {run_id} created successfully but failed to launch.".format(
-                    run_id=run_to_launch.run_id
-                )
-            )
-
-    _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
-
-    tick_holder.update_with_status(JobTickStatus.SUCCESS, run_id=run_to_launch.run_id)
-    _check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
-
-
-def _create_scheduler_run(
-    instance,
-    logger,
-    schedule_time,
-    repo_location,
-    external_repo,
-    external_schedule,
-    external_pipeline,
-    tick_holder,
-):
     schedule_execution_data = repo_location.get_external_schedule_execution_data(
         instance=instance,
         repository_handle=external_repo.handle,
@@ -366,24 +252,88 @@ def _create_scheduler_run(
     if isinstance(schedule_execution_data, ExternalScheduleExecutionErrorData):
         error = schedule_execution_data.error
         logger.error(
-            "Failed to fetch schedule data for {schedule_name}: {error}".format(
-                schedule_name=external_schedule.name, error=error.to_string()
-            ),
+            f"Failed to fetch schedule data for {external_schedule.name}: {error.to_string()}"
         )
-        tick_holder.update_with_status(JobTickStatus.FAILURE, error=error)
-        return None
-    elif not schedule_execution_data.should_execute:
-        logger.info(
-            "should_execute returned False for {schedule_name}, skipping".format(
-                schedule_name=external_schedule.name
-            )
-        )
-        # Update tick to skipped state and return
-        tick_holder.update_with_status(JobTickStatus.SKIPPED)
-        return None
+        tick_context.update_state(JobTickStatus.FAILURE, error=error)
+        return
 
-    run_config = schedule_execution_data.run_config
-    schedule_tags = schedule_execution_data.tags
+    if not schedule_execution_data.run_requests:
+        logger.info(f"No run requests returned for {external_schedule.name}, skipping")
+
+        # Update tick to skipped state and return
+        tick_context.update_state(JobTickStatus.SKIPPED)
+        return
+
+    for run_request in schedule_execution_data.run_requests:
+        run = _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request)
+        if run:
+            if run.status != PipelineRunStatus.NOT_STARTED:
+                # A run already exists and was launched for this time period,
+                # but the scheduler must have crashed before the tick could be put
+                # into a SUCCESS state
+
+                logger.info(
+                    f"Run {run.run_id} already completed for this execution of {external_schedule.name}"
+                )
+                tick_context.add_run(run_id=run.run_id, run_key=run_request.run_key)
+                continue
+            else:
+                logger.info(
+                    f"Run {run.run_id} already created for this execution of {external_schedule.name}"
+                )
+        else:
+            run = _create_scheduler_run(
+                instance,
+                logger,
+                schedule_time,
+                repo_location,
+                external_schedule,
+                external_pipeline,
+                run_request,
+            )
+
+        _check_for_debug_crash(debug_crash_flags, "RUN_CREATED")
+
+        if run.status != PipelineRunStatus.FAILURE:
+            try:
+                instance.launch_run(run.run_id, external_pipeline)
+                logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
+            except Exception:  # pylint: disable=broad-except
+                logger.error(f"Run {run.run_id} created successfully but failed to launch.")
+
+        _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
+        tick_context.add_run(run_id=run.run_id, run_key=run_request.run_key)
+        _check_for_debug_crash(debug_crash_flags, "RUN_ADDED")
+
+    _check_for_debug_crash(debug_crash_flags, "TICK_SUCCESS")
+    tick_context.update_state(JobTickStatus.SUCCESS)
+
+
+def _get_existing_run_for_request(instance, external_schedule, schedule_time, run_request):
+    tags = merge_dicts(
+        PipelineRun.tags_for_schedule(external_schedule),
+        {SCHEDULED_EXECUTION_TIME_TAG: schedule_time.in_tz("UTC").isoformat(),},
+    )
+    if run_request.run_key:
+        tags[RUN_KEY_TAG] = run_request.run_key
+    runs_filter = PipelineRunsFilter(tags=tags)
+    existing_runs = instance.get_runs(runs_filter)
+    if not len(existing_runs):
+        return None
+    return existing_runs[0]
+
+
+def _create_scheduler_run(
+    instance,
+    logger,
+    schedule_time,
+    repo_location,
+    external_schedule,
+    external_pipeline,
+    run_request,
+):
+    run_config = run_request.run_config
+    schedule_tags = run_request.tags
 
     execution_plan_errors = []
     execution_plan_snapshot = None
@@ -403,6 +353,8 @@ def _create_scheduler_run(
     tags = merge_dicts(pipeline_tags, schedule_tags)
 
     tags[SCHEDULED_EXECUTION_TIME_TAG] = schedule_time.in_tz("UTC").isoformat()
+    if run_request.run_key:
+        tags[RUN_KEY_TAG] = run_request.run_key
 
     # If the run was scheduled correctly but there was an error creating its
     # run config, enter it into the run DB with a FAILURE status
@@ -434,10 +386,6 @@ def _create_scheduler_run(
                 error.message, possibly_invalid_pipeline_run, EngineEventData.engine_error(error),
             )
         instance.report_run_failed(possibly_invalid_pipeline_run)
-        logger.error(
-            "Failed to fetch execution plan for {schedule_name}: {error_string}".format(
-                schedule_name=external_schedule.name,
-                error_string="\n".join([error.to_string() for error in execution_plan_errors]),
-            ),
-        )
+        error_string = "\n".join([error.to_string() for error in execution_plan_errors])
+        logger.error(f"Failed to fetch execution plan for {external_schedule.name}: {error_string}")
     return possibly_invalid_pipeline_run

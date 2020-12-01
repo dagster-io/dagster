@@ -255,28 +255,35 @@ def execute_step_with_structured_logs_command(input_json):
             click.echo(line)
 
 
-class _ScheduleTickContext:
-    def __init__(self, tick, instance):
-        self._tick = tick
+class _ScheduleLaunchContext:
+    def __init__(self, tick, instance, stream):
         self._instance = instance
-        self._set = False
+        self._tick = tick  # placeholder for the current tick
+        self._stream = stream
 
-    def update_with_status(self, status, **kwargs):
+    def update_state(self, status, **kwargs):
         self._tick = self._tick.with_status(status=status, **kwargs)
+
+    def add_run(self, run_id, run_key=None):
+        self._tick = self._tick.with_run(run_id, run_key)
+
+    @property
+    def stream(self):
+        return self._stream
 
     def write(self):
         self._instance.update_job_tick(self._tick)
 
 
 @contextmanager
-def _schedule_tick_state(instance, stream, tick_data):
+def _schedule_tick_context(instance, stream, tick_data):
     tick = instance.create_job_tick(tick_data)
-    context = _ScheduleTickContext(tick=tick, instance=instance)
+    context = _ScheduleLaunchContext(tick=tick, instance=instance, stream=stream)
     try:
         yield context
     except Exception:  # pylint: disable=broad-except
         error_data = serializable_error_info_from_exc_info(sys.exc_info())
-        context.update_with_status(JobTickStatus.FAILURE, error=error_data)
+        context.update_state(JobTickStatus.FAILURE, error=error_data)
         stream.send(ScheduledExecutionFailed(run_id=None, errors=[error_data]))
     finally:
         context.write()
@@ -466,7 +473,7 @@ def launch_scheduled_execution(output_file, schedule_name, **kwargs):
 
             # open the tick scope before we load any external artifacts so that
             # load errors are stored in DB
-            with _schedule_tick_state(
+            with _schedule_tick_context(
                 instance,
                 stream,
                 JobTickData(
@@ -494,20 +501,14 @@ def launch_scheduled_execution(output_file, schedule_name, **kwargs):
                         ),
                     )
                     external_schedule = external_repo.get_external_schedule(schedule_name)
-                    tick_context.update_with_status(status=JobTickStatus.STARTED)
-                    _launch_scheduled_execution(
-                        instance,
-                        repo_location,
-                        external_repo,
-                        external_schedule,
-                        tick_context,
-                        stream,
+                    _launch_scheduled_executions(
+                        instance, repo_location, external_repo, external_schedule, tick_context
                     )
 
 
 @telemetry_wrapper
-def _launch_scheduled_execution(
-    instance, repo_location, external_repo, external_schedule, tick_context, stream
+def _launch_scheduled_executions(
+    instance, repo_location, external_repo, external_schedule, tick_context
 ):
     pipeline_selector = PipelineSelector(
         location_name=repo_location.name,
@@ -528,33 +529,43 @@ def _launch_scheduled_execution(
         scheduled_execution_time=None,  # No way to know this in general for this scheduler
     )
 
-    run_config = {}
-    schedule_tags = {}
-    execution_plan_snapshot = None
-    errors = []
-
     if isinstance(schedule_execution_data, ExternalScheduleExecutionErrorData):
         error = schedule_execution_data.error
-        tick_context.update_with_status(JobTickStatus.FAILURE, error=error)
-        stream.send(ScheduledExecutionFailed(run_id=None, errors=[error]))
+        tick_context.update_state(JobTickStatus.FAILURE, error=error)
+        tick_context.stream.send(ScheduledExecutionFailed(run_id=None, errors=[error]))
         return
-    elif not schedule_execution_data.should_execute:
+
+    if not schedule_execution_data.run_requests:
         # Update tick to skipped state and return
-        tick_context.update_with_status(JobTickStatus.SKIPPED)
-        stream.send(ScheduledExecutionSkipped())
+        tick_context.update_state(JobTickStatus.SKIPPED)
+        tick_context.stream.send(ScheduledExecutionSkipped())
         return
-    else:
-        run_config = schedule_execution_data.run_config
-        schedule_tags = schedule_execution_data.tags
-        try:
-            external_execution_plan = repo_location.get_external_execution_plan(
-                external_pipeline, run_config, external_schedule.mode, step_keys_to_execute=None,
-            )
-            execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-        except DagsterSubprocessError as e:
-            errors.extend(e.subprocess_error_infos)
-        except Exception as e:  # pylint: disable=broad-except
-            errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
+
+    for run_request in schedule_execution_data.run_requests:
+        _launch_run(
+            instance, repo_location, external_schedule, external_pipeline, tick_context, run_request
+        )
+
+    tick_context.update_state(JobTickStatus.SUCCESS)
+
+
+def _launch_run(
+    instance, repo_location, external_schedule, external_pipeline, tick_context, run_request
+):
+    run_config = run_request.run_config
+    schedule_tags = run_request.tags
+
+    execution_plan_snapshot = None
+    errors = []
+    try:
+        external_execution_plan = repo_location.get_external_execution_plan(
+            external_pipeline, run_config, external_schedule.mode, step_keys_to_execute=None,
+        )
+        execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
+    except DagsterSubprocessError as e:
+        errors.extend(e.subprocess_error_infos)
+    except Exception as e:  # pylint: disable=broad-except
+        errors.append(serializable_error_info_from_exc_info(sys.exc_info()))
 
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, "pipeline_tags")
@@ -579,9 +590,7 @@ def _launch_scheduled_execution(
         external_pipeline_origin=external_pipeline.get_external_origin(),
     )
 
-    tick_context.update_with_status(
-        JobTickStatus.SUCCESS, run_id=possibly_invalid_pipeline_run.run_id
-    )
+    tick_context.add_run(run_id=possibly_invalid_pipeline_run.run_id, run_key=run_request.run_key)
 
     # If there were errors, inject them into the event log and fail the run
     if len(errors) > 0:
@@ -590,7 +599,7 @@ def _launch_scheduled_execution(
                 error.message, possibly_invalid_pipeline_run, EngineEventData.engine_error(error),
             )
         instance.report_run_failed(possibly_invalid_pipeline_run)
-        stream.send(
+        tick_context.stream.send(
             ScheduledExecutionFailed(run_id=possibly_invalid_pipeline_run.run_id, errors=errors)
         )
         return
@@ -598,7 +607,7 @@ def _launch_scheduled_execution(
     try:
         launched_run = instance.submit_run(possibly_invalid_pipeline_run.run_id, external_pipeline)
     except Exception:  # pylint: disable=broad-except
-        stream.send(
+        tick_context.stream.send(
             ScheduledExecutionFailed(
                 run_id=possibly_invalid_pipeline_run.run_id,
                 errors=[serializable_error_info_from_exc_info(sys.exc_info())],
@@ -606,8 +615,7 @@ def _launch_scheduled_execution(
         )
         return
 
-    stream.send(ScheduledExecutionSuccess(run_id=launched_run.run_id))
-    return
+    tick_context.stream.send(ScheduledExecutionSuccess(run_id=launched_run.run_id))
 
 
 def create_api_cli_group():

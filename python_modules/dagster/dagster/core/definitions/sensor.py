@@ -1,11 +1,9 @@
-from collections import namedtuple
-
 from dagster import check
-from dagster.core.definitions.job import JobContext, JobDefinition, JobType
 from dagster.core.instance import DagsterInstance
-from dagster.serdes import whitelist_for_serdes
 from dagster.utils import ensure_gen
 from dagster.utils.backcompat import experimental_class_warning
+
+from .job import JobContext, JobDefinition, JobType, RunRequest, SkipReason
 
 
 class SensorExecutionContext(JobContext):
@@ -19,54 +17,24 @@ class SensorExecutionContext(JobContext):
         last_completion_time (float): The last time that the sensor was evaluated (UTC).
     """
 
-    __slots__ = ["_last_completion_time"]
+    __slots__ = ["_last_completion_time", "_last_run_key"]
 
-    def __init__(self, instance, last_completion_time):
+    def __init__(self, instance, last_completion_time, last_run_key):
         super(SensorExecutionContext, self).__init__(
             check.inst_param(instance, "instance", DagsterInstance),
         )
         self._last_completion_time = check.opt_float_param(
             last_completion_time, "last_completion_time"
         )
+        self._last_run_key = check.opt_str_param(last_run_key, "last_run_key")
 
     @property
     def last_completion_time(self):
         return self._last_completion_time
 
-
-@whitelist_for_serdes
-class SkipReason(namedtuple("_SkipReason", "skip_message")):
-    def __new__(cls, skip_message=None):
-        return super(SkipReason, cls).__new__(
-            cls, skip_message=check.opt_str_param(skip_message, "skip_message")
-        )
-
-
-@whitelist_for_serdes
-class RunRequest(namedtuple("_RunRequest", "run_key run_config tags")):
-    """
-    Represents all the information required to launch a single run instigated by a sensor body.
-    Must be returned by a SensorDefinition's evaluation function for a run to be launched.
-
-    Attributes:
-        run_key (str | None): A string key to identify this launched run. The sensor will
-            ensure that exactly one run is created for each run key, and will not create
-            another run if the same run key is requested in a later evaluation.  Passing in
-            a `None` value means that the sensor will attempt to create and launch every run
-            requested for every sensor evaluation.
-        run_config (Optional[Dict]): The environment config that parameterizes the run execution to
-            be launched, as a dict.
-        tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
-            to the launched run.
-    """
-
-    def __new__(cls, run_key, run_config=None, tags=None):
-        return super(RunRequest, cls).__new__(
-            cls,
-            run_key=check.opt_str_param(run_key, "run_key"),
-            run_config=check.opt_dict_param(run_config, "run_config"),
-            tags=check.opt_dict_param(tags, "tags"),
-        )
+    @property
+    def last_run_key(self):
+        return self._last_run_key
 
 
 class SensorDefinition(JobDefinition):
@@ -103,7 +71,7 @@ class SensorDefinition(JobDefinition):
         )
         self._evaluation_fn = check.callable_param(evaluation_fn, "evaluation_fn")
 
-    def get_tick_data(self, context):
+    def get_execution_data(self, context):
         check.inst_param(context, "context", SensorExecutionContext)
         result = list(ensure_gen(self._evaluation_fn(context)))
 

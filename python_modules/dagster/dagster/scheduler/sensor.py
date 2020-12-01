@@ -30,11 +30,10 @@ FULFILLED_TICK_STATES = [JobTickStatus.SKIPPED, JobTickStatus.SUCCESS]
 
 class SensorLaunchContext:
     def __init__(self, job_state, tick, instance, logger):
-        self._job_state = job_state
-        self._tick = tick
         self._instance = instance
         self._logger = logger
-        self._to_resolve = []
+        self._job_state = job_state
+        self._tick = tick
 
     @property
     def status(self):
@@ -44,17 +43,26 @@ class SensorLaunchContext:
     def logger(self):
         return self._logger
 
-    def add_state(self, status, **kwargs):
-        self._to_resolve.append(self._tick.with_status(status=status, **kwargs))
+    @property
+    def run_count(self):
+        return len(self._tick.run_ids)
+
+    def update_state(self, status, **kwargs):
+        self._tick = self._tick.with_status(status=status, **kwargs)
+
+    def add_run(self, run_id, run_key=None):
+        self._tick = self._tick.with_run(run_id, run_key)
 
     def _write(self):
-        to_update = self._to_resolve[0] if self._to_resolve else self._tick
-        self._instance.update_job_tick(to_update)
-        for tick in self._to_resolve[1:]:
-            self._instance.create_job_tick(tick.job_tick_data)
-        if any([tick.status in FULFILLED_TICK_STATES for tick in self._to_resolve]):
+        self._instance.update_job_tick(self._tick)
+        if self._tick.status in FULFILLED_TICK_STATES:
+            last_run_key = None
+            if self._tick.run_keys:
+                last_run_key = self._tick.run_keys[-1]
+            elif self._job_state.job_specific_data:
+                last_run_key = self._job_state.job_specific_data.last_run_key
             self._instance.update_job_state(
-                self._job_state.with_data(SensorJobData(self._tick.timestamp))
+                self._job_state.with_data(SensorJobData(self._tick.timestamp, last_run_key))
             )
 
     def __enter__(self):
@@ -63,7 +71,7 @@ class SensorLaunchContext:
     def __exit__(self, exception_type, exception_value, traceback):
         if exception_value and not isinstance(exception_value, KeyboardInterrupt):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
-            self.add_state(JobTickStatus.FAILURE, error=error_data)
+            self.update_state(JobTickStatus.FAILURE, error=error_data)
             self._write()
             self._logger.error(
                 "Error launching sensor run: {error_info}".format(
@@ -135,9 +143,7 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                         )
                     )
                 else:
-                    tick = latest_tick.with_status(
-                        JobTickStatus.STARTED, timestamp=now.timestamp(), run_key=None,
-                    )
+                    tick = latest_tick.with_status(JobTickStatus.STARTED, timestamp=now.timestamp())
                     instance.update_job_tick(tick)
 
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
@@ -179,6 +185,7 @@ def _evaluate_sensor(
         job_state.job_specific_data.last_completed_timestamp
         if job_state.job_specific_data
         else None,
+        job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
     )
     if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
         context.logger.error(
@@ -186,7 +193,7 @@ def _evaluate_sensor(
                 sensor_name=external_sensor.name, error_info=sensor_runtime_data.error.to_string(),
             )
         )
-        context.add_state(JobTickStatus.FAILURE, error=sensor_runtime_data.error)
+        context.update_state(JobTickStatus.FAILURE, error=sensor_runtime_data.error)
         return
 
     assert isinstance(sensor_runtime_data, ExternalSensorExecutionData)
@@ -198,7 +205,7 @@ def _evaluate_sensor(
             )
         else:
             context.logger.info(f"Sensor returned false for {external_sensor.name}, skipping")
-        context.add_state(JobTickStatus.SKIPPED)
+        context.update_state(JobTickStatus.SKIPPED)
         return
 
     pipeline_selector = PipelineSelector(
@@ -213,17 +220,6 @@ def _evaluate_sensor(
     )
 
     for run_request in sensor_runtime_data.run_requests:
-        if run_request.run_key and instance.has_job_tick(
-            external_sensor.get_external_origin_id(), run_request.run_key, [JobTickStatus.SUCCESS],
-        ):
-            context.logger.info(
-                "Found existing run for sensor {sensor_name} with run_key `{run_key}`, skipping.".format(
-                    sensor_name=external_sensor.name, run_key=run_request.run_key
-                )
-            )
-            context.add_state(JobTickStatus.SKIPPED, run_key=run_request.run_key)
-            continue
-
         run = _get_or_create_sensor_run(
             context, instance, repo_location, external_sensor, external_pipeline, run_request
         )
@@ -251,9 +247,12 @@ def _evaluate_sensor(
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
 
-        context.add_state(
-            JobTickStatus.SUCCESS, run_id=run.run_id, run_key=run_request.run_key,
-        )
+        context.add_run(run_id=run.run_id, run_key=run_request.run_key)
+
+    if context.run_count:
+        context.update_state(JobTickStatus.SUCCESS)
+    else:
+        context.update_state(JobTickStatus.SKIPPED)
 
 
 def _get_or_create_sensor_run(
@@ -284,9 +283,6 @@ def _get_or_create_sensor_run(
             context.logger.info(
                 f"Run {run.run_id} already completed with the run key "
                 f"`{run_request.run_key}` for {external_sensor.name}"
-            )
-            context.add_state(
-                JobTickStatus.SUCCESS, run_id=run.run_id, run_key=run_request.run_key,
             )
 
             return None

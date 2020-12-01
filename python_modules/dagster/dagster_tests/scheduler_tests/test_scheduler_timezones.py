@@ -69,7 +69,7 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
                 external_schedule,
                 expected_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [run.run_id for run in instance.get_runs()],
             )
 
             wait_for_all_runs_to_start(instance)
@@ -84,7 +84,7 @@ def test_non_utc_timezone_run(external_repo_context, capfd):
             assert (
                 captured.out
                 == """2019-02-27 22:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: daily_central_time_schedule
-2019-02-27 22:00:01 - SchedulerDaemon - INFO - Launching run for daily_central_time_schedule at 2019-02-28 00:00:00-0600
+2019-02-27 22:00:01 - SchedulerDaemon - INFO - Evaluating schedule `daily_central_time_schedule` at 2019-02-28 00:00:00-0600
 2019-02-27 22:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for daily_central_time_schedule
 """.format(
                     run_id=instance.get_runs()[0].run_id
@@ -160,7 +160,7 @@ def test_differing_timezones(external_repo_context):
                 external_eastern_schedule,
                 expected_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [run.run_id for run in instance.get_runs()],
             )
 
             ticks = instance.get_job_ticks(schedule_origin.get_id())
@@ -197,7 +197,7 @@ def test_differing_timezones(external_repo_context):
                 external_schedule,
                 expected_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [instance.get_runs()[0].run_id],
             )
 
             wait_for_all_runs_to_start(instance)
@@ -268,7 +268,7 @@ def test_different_days_in_different_timezones(external_repo_context):
                 external_schedule,
                 expected_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [instance.get_runs()[0].run_id],
             )
 
             wait_for_all_runs_to_start(instance)
@@ -334,7 +334,7 @@ def test_hourly_dst_spring_forward(external_repo_context):
                     external_schedule,
                     expected_datetimes_utc[i],
                     JobTickStatus.SUCCESS,
-                    instance.get_runs()[i].run_id,
+                    [instance.get_runs()[i].run_id],
                 )
 
                 validate_run_started(
@@ -414,7 +414,7 @@ def test_hourly_dst_fall_back(external_repo_context):
                     external_schedule,
                     expected_datetimes_utc[i],
                     JobTickStatus.SUCCESS,
-                    instance.get_runs()[i].run_id,
+                    [instance.get_runs()[i].run_id],
                 )
 
                 validate_run_started(
@@ -485,7 +485,7 @@ def test_daily_dst_spring_forward(external_repo_context):
                     external_schedule,
                     expected_datetimes_utc[i],
                     JobTickStatus.SUCCESS,
-                    instance.get_runs()[i].run_id,
+                    [instance.get_runs()[i].run_id],
                 )
 
                 validate_run_started(
@@ -555,7 +555,7 @@ def test_daily_dst_fall_back(external_repo_context):
                     external_schedule,
                     expected_datetimes_utc[i],
                     JobTickStatus.SUCCESS,
-                    instance.get_runs()[i].run_id,
+                    [instance.get_runs()[i].run_id],
                 )
 
                 validate_run_started(
@@ -625,7 +625,7 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
                     external_schedule,
                     expected_datetimes_utc[i],
                     JobTickStatus.SUCCESS,
-                    instance.get_runs()[i].run_id,
+                    [instance.get_runs()[i].run_id],
                 )
 
                 validate_run_started(
@@ -695,7 +695,7 @@ def test_execute_during_dst_transition_fall_back(external_repo_context):
                     external_schedule,
                     expected_datetimes_utc[i],
                     JobTickStatus.SUCCESS,
-                    instance.get_runs()[i].run_id,
+                    [instance.get_runs()[i].run_id],
                 )
 
                 validate_run_started(

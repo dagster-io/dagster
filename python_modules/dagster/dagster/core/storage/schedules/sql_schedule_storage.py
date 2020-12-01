@@ -152,24 +152,6 @@ class SqlScheduleStorage(ScheduleStorage):
             map(lambda r: JobTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
         )
 
-    def has_job_tick(self, job_origin_id, run_key, statuses=None):
-        check.str_param(job_origin_id, "job_origin_id")
-        check.str_param(run_key, "run_key")
-        check.opt_list_param(statuses, "statuses", of_type=JobTickStatus)
-
-        query = (
-            db.select([1])
-            .select_from(JobTickTable)
-            .where(JobTickTable.c.job_origin_id == job_origin_id)
-            .where(JobTickTable.c.run_key == run_key)
-        )
-        if statuses:
-            query = query.where(JobTickTable.c.status.in_([status.value for status in statuses]))
-        query = query.limit(1)
-
-        rows = self.execute(query)
-        return len(rows) > 0
-
     def create_job_tick(self, job_tick_data):
         check.inst_param(job_tick_data, "job_tick_data", JobTickData)
 
@@ -179,7 +161,6 @@ class SqlScheduleStorage(ScheduleStorage):
                     job_origin_id=job_tick_data.job_origin_id,
                     status=job_tick_data.status.value,
                     type=job_tick_data.job_type.value,
-                    run_key=job_tick_data.run_key,
                     timestamp=utc_datetime_from_timestamp(job_tick_data.timestamp),
                     tick_body=serialize_dagster_namedtuple(job_tick_data),
                 )
@@ -206,7 +187,6 @@ class SqlScheduleStorage(ScheduleStorage):
                 .values(
                     status=tick.status.value,
                     type=tick.job_type.value,
-                    run_key=tick.run_key,
                     timestamp=utc_datetime_from_timestamp(tick.timestamp),
                     tick_body=serialize_dagster_namedtuple(tick.job_tick_data),
                 )

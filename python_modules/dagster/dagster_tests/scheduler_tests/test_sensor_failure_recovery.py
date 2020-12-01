@@ -245,4 +245,4 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 1
-            assert ticks[0].status == JobTickStatus.SUCCESS
+            assert ticks[0].status == JobTickStatus.SKIPPED

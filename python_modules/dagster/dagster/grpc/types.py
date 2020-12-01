@@ -255,10 +255,13 @@ class ExternalScheduleExecutionArgs(
 @whitelist_for_serdes
 class SensorExecutionArgs(
     namedtuple(
-        "_SensorExecutionArgs", "repository_origin instance_ref sensor_name last_completion_time"
+        "_SensorExecutionArgs",
+        "repository_origin instance_ref sensor_name last_completion_time last_run_key",
     )
 ):
-    def __new__(cls, repository_origin, instance_ref, sensor_name, last_completion_time):
+    def __new__(
+        cls, repository_origin, instance_ref, sensor_name, last_completion_time, last_run_key
+    ):
         return super(SensorExecutionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
@@ -269,6 +272,7 @@ class SensorExecutionArgs(
             last_completion_time=check.opt_float_param(
                 last_completion_time, "last_completion_time"
             ),
+            last_run_key=check.opt_str_param(last_run_key, "last_run_key"),
         )
 
 

@@ -123,7 +123,7 @@ class RepositoryLocation(six.with_metaclass(ABCMeta)):
 
     @abstractmethod
     def get_external_sensor_execution_data(
-        self, instance, repository_handle, name, last_completion_time
+        self, instance, repository_handle, name, last_completion_time, last_run_key
     ):
         pass
 
@@ -283,10 +283,10 @@ class InProcessRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_sensor_execution_data(
-        self, instance, repository_handle, name, last_completion_time
+        self, instance, repository_handle, name, last_completion_time, last_run_key
     ):
         return get_external_sensor_execution(
-            self._recon_repo, instance.get_ref(), name, last_completion_time
+            self._recon_repo, instance.get_ref(), name, last_completion_time, last_run_key
         )
 
     def get_external_partition_set_execution_param_data(
@@ -427,10 +427,15 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         )
 
     def get_external_sensor_execution_data(
-        self, instance, repository_handle, name, last_completion_time
+        self, instance, repository_handle, name, last_completion_time, last_run_key
     ):
         return sync_get_external_sensor_execution_data_grpc(
-            self._handle.client, instance, repository_handle, name, last_completion_time
+            self._handle.client,
+            instance,
+            repository_handle,
+            name,
+            last_completion_time,
+            last_run_key,
         )
 
     def get_external_partition_set_execution_param_data(

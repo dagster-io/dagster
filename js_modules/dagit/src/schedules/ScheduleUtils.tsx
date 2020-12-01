@@ -74,22 +74,6 @@ export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
       solidSelection
       mode
       status
-      runs {
-        id
-        runId
-      }
-      runsCount
-      ticks {
-        id
-        status
-        timestamp
-        runId
-        error {
-          message
-          stack
-        }
-        runKey
-      }
     }
     ...RepositoryInfoFragment
   }

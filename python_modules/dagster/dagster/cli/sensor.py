@@ -259,15 +259,18 @@ def execute_stop_command(sensor_name, cli_args, print_fn, instance=None):
     help="Set the last_completion_time value as a timestamp float for the sensor context",
     default=None,
 )
+@click.option(
+    "--last_run_key", help="Set the last_run_key value for the sensor context", default=None,
+)
 @repository_target_argument
-def sensor_preview_command(sensor_name, since, **kwargs):
+def sensor_preview_command(sensor_name, since, last_run_key, **kwargs):
     sensor_name = extract_sensor_name(sensor_name)
     if since:
         since = float(since)
-    return execute_preview_command(sensor_name, since, kwargs, click.echo)
+    return execute_preview_command(sensor_name, since, last_run_key, kwargs, click.echo)
 
 
-def execute_preview_command(sensor_name, since, cli_args, print_fn, instance=None):
+def execute_preview_command(sensor_name, since, last_run_key, cli_args, print_fn, instance=None):
     with DagsterInstance.get() as instance:
         with get_repository_location_from_kwargs(cli_args) as repo_location:
             try:
@@ -277,7 +280,7 @@ def execute_preview_command(sensor_name, since, cli_args, print_fn, instance=Non
                 check_repo_and_scheduler(external_repo, instance)
                 external_sensor = external_repo.get_external_sensor(sensor_name)
                 sensor_runtime_data = repo_location.get_external_sensor_execution_data(
-                    instance, external_repo.handle, external_sensor.name, since,
+                    instance, external_repo.handle, external_sensor.name, since, last_run_key
                 )
                 if isinstance(sensor_runtime_data, ExternalSensorExecutionErrorData):
                     print_fn(

@@ -17,8 +17,8 @@ from dagster.core.definitions import (
     RepositoryDefinition,
     ScheduleDefinition,
 )
+from dagster.core.definitions.job import RunRequest, SkipReason
 from dagster.core.definitions.partition import PartitionScheduleDefinition
-from dagster.core.definitions.sensor import RunRequest
 from dagster.core.snap import PipelineSnapshot
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
@@ -195,14 +195,23 @@ class ExternalScheduleData(
 
 @whitelist_for_serdes
 class ExternalScheduleExecutionData(
-    namedtuple("_ExternalScheduleExecutionData", "run_config tags should_execute")
+    namedtuple("_ExternalScheduleExecutionData", "run_requests skip_message")
 ):
-    def __new__(cls, run_config=None, tags=None, should_execute=None):
+    def __new__(cls, run_requests=None, skip_message=None):
         return super(ExternalScheduleExecutionData, cls).__new__(
             cls,
-            run_config=check.opt_dict_param(run_config, "run_config"),
-            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
-            should_execute=check.opt_bool_param(should_execute, "should_execute"),
+            run_requests=check.opt_list_param(run_requests, "run_requests", RunRequest),
+            skip_message=check.opt_str_param(skip_message, "skip_message"),
+        )
+
+    @staticmethod
+    def from_execution_data(execution_data):
+        check.opt_list_param(execution_data, "execution_data", (SkipReason, RunRequest))
+        return ExternalScheduleExecutionData(
+            run_requests=[datum for datum in execution_data if isinstance(datum, RunRequest)],
+            skip_message=execution_data[0].skip_message
+            if execution_data and isinstance(execution_data[0], SkipReason)
+            else None,
         )
 
 
@@ -245,6 +254,16 @@ class ExternalSensorExecutionData(
         )
         return super(ExternalSensorExecutionData, cls).__new__(
             cls, run_requests=run_requests, skip_message=skip_message,
+        )
+
+    @staticmethod
+    def from_execution_data(tick_data):
+        check.opt_list_param(tick_data, "tick_data", (SkipReason, RunRequest))
+        return ExternalSensorExecutionData(
+            run_requests=[datum for datum in tick_data if isinstance(datum, RunRequest)],
+            skip_message=tick_data[0].skip_message
+            if tick_data and isinstance(tick_data[0], SkipReason)
+            else None,
         )
 
 

@@ -516,7 +516,11 @@ class DagsterApiServer(DagsterApiServicer):
         return api_pb2.ExternalSensorExecutionReply(
             serialized_external_sensor_execution_data_or_external_sensor_execution_error=serialize_dagster_namedtuple(
                 get_external_sensor_execution(
-                    recon_repo, args.instance_ref, args.sensor_name, args.last_completion_time
+                    recon_repo,
+                    args.instance_ref,
+                    args.sensor_name,
+                    args.last_completion_time,
+                    args.last_run_key,
                 )
             )
         )

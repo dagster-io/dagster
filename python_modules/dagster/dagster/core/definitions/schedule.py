@@ -2,13 +2,17 @@ from datetime import datetime
 
 import pendulum
 from dagster import check
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster.core.errors import (
+    DagsterInvalidDefinitionError,
+    ScheduleExecutionError,
+    user_code_error_boundary,
+)
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
-from dagster.utils import merge_dicts
+from dagster.utils import ensure_gen, merge_dicts
 
-from .job import JobContext, JobDefinition, JobType
+from .job import JobContext, JobDefinition, JobType, RunRequest, SkipReason
 from .mode import DEFAULT_MODE_NAME
 from .utils import check_valid_name
 
@@ -50,6 +54,12 @@ class ScheduleDefinition(JobDefinition):
         cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
             '45 23 * * 6' for a schedule that runs at 11:45 PM every Saturday.
         pipeline_name (str): The name of the pipeline to execute when the schedule runs.
+        execution_fn (Callable[ScheduleExecutionContext]): The core evaluation function for the
+            schedule, which is run at an interval to determine whether a run should be launched or
+            not. Takes a :py:class:`~dagster.ScheduleExecutionContext`.
+
+            This function must return a generator, which must yield either a single SkipReason
+            or one or more RunRequest objects.
         run_config (Optional[Dict]): The environment config that parameterizes this execution,
             as a dict.
         run_config_fn (Callable[[ScheduleExecutionContext], [Dict]]): A function that takes a
@@ -77,11 +87,8 @@ class ScheduleDefinition(JobDefinition):
 
     __slots__ = [
         "_cron_schedule",
-        "_run_config_fn",
-        "_tags_fn",
-        "_execution_params",
-        "_should_execute",
         "_environment_vars",
+        "_execution_fn",
         "_execution_timezone",
     ]
 
@@ -99,6 +106,7 @@ class ScheduleDefinition(JobDefinition):
         should_execute=None,
         environment_vars=None,
         execution_timezone=None,
+        execution_fn=None,
     ):
 
         super(ScheduleDefinition, self).__init__(
@@ -112,37 +120,73 @@ class ScheduleDefinition(JobDefinition):
         )
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
-        if run_config_fn and run_config:
-            raise DagsterInvalidDefinitionError(
-                "Attempted to provide both run_config_fn and run_config as arguments"
-                " to ScheduleDefinition. Must provide only one of the two."
-            )
-        self._run_config_fn = check.opt_callable_param(
-            run_config_fn,
-            "run_config_fn",
-            default=lambda _context: check.opt_dict_param(run_config, "run_config"),
-        )
-
-        if tags_fn and tags:
-            raise DagsterInvalidDefinitionError(
-                "Attempted to provide both tags_fn and tags as arguments"
-                " to ScheduleDefinition. Must provide only one of the two."
-            )
-        elif tags:
-            check_tags(tags, "tags")
-            self._tags_fn = lambda _context: tags
-        else:
-            self._tags_fn = check.opt_callable_param(
-                tags_fn, "tags_fn", default=lambda _context: {}
-            )
-
-        self._should_execute = check.opt_callable_param(
-            should_execute, "should_execute", lambda _context: True
-        )
         self._environment_vars = check.opt_dict_param(
             environment_vars, "environment_vars", key_type=str, value_type=str
         )
         self._execution_timezone = check.opt_str_param(execution_timezone, "execution_timezone")
+
+        if execution_fn and (run_config_fn or tags_fn or should_execute or tags or run_config):
+            raise DagsterInvalidDefinitionError(
+                "Attempted to provide both execution_fn and individual run_config/tags arguments "
+                "to ScheduleDefinition. Must provide only one of the two."
+            )
+        elif execution_fn:
+            self._execution_fn = check.opt_callable_param(execution_fn, "execution_fn")
+        else:
+            if run_config_fn and run_config:
+                raise DagsterInvalidDefinitionError(
+                    "Attempted to provide both run_config_fn and run_config as arguments"
+                    " to ScheduleDefinition. Must provide only one of the two."
+                )
+            run_config_fn = check.opt_callable_param(
+                run_config_fn,
+                "run_config_fn",
+                default=lambda _context: check.opt_dict_param(run_config, "run_config"),
+            )
+
+            if tags_fn and tags:
+                raise DagsterInvalidDefinitionError(
+                    "Attempted to provide both tags_fn and tags as arguments"
+                    " to ScheduleDefinition. Must provide only one of the two."
+                )
+            elif tags:
+                check_tags(tags, "tags")
+                tags_fn = lambda _context: tags
+            else:
+                tags_fn = check.opt_callable_param(tags_fn, "tags_fn", default=lambda _context: {})
+
+            should_execute = check.opt_callable_param(
+                should_execute, "should_execute", default=lambda _context: True
+            )
+
+            def _execution_fn(context):
+                with user_code_error_boundary(
+                    ScheduleExecutionError,
+                    lambda: f"Error occurred during the execution of should_execute for schedule {name}",
+                ):
+                    if not should_execute(context):
+                        return
+
+                with user_code_error_boundary(
+                    ScheduleExecutionError,
+                    lambda: f"Error occurred during the execution of run_config_fn for schedule {name}",
+                ):
+                    evaluated_run_config = run_config_fn(context)
+
+                with user_code_error_boundary(
+                    ScheduleExecutionError,
+                    lambda: f"Error occurred during the execution of tags_fn for schedule {name}",
+                ):
+                    evaluated_tags = tags_fn(context)
+
+                yield RunRequest(
+                    run_key=str(context.scheduled_execution_time),
+                    run_config=evaluated_run_config,
+                    tags=evaluated_tags,
+                )
+
+            self._execution_fn = _execution_fn
+
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
@@ -166,15 +210,36 @@ class ScheduleDefinition(JobDefinition):
     def execution_timezone(self):
         return self._execution_timezone
 
-    def get_run_config(self, context):
+    def get_execution_data(self, context):
         check.inst_param(context, "context", ScheduleExecutionContext)
-        return self._run_config_fn(context)
+        result = list(ensure_gen(self._execution_fn(context)))
 
-    def get_tags(self, context):
-        check.inst_param(context, "context", ScheduleExecutionContext)
-        tags = self._tags_fn(context)
-        return merge_dicts(tags, PipelineRun.tags_for_schedule(self))
+        if not result:
+            return []
 
-    def should_execute(self, context):
-        check.inst_param(context, "context", ScheduleExecutionContext)
-        return self._should_execute(context)
+        if len(result) == 1:
+            check.is_list(result, of_type=(RunRequest, SkipReason))
+            data = result[0]
+
+            if isinstance(data, SkipReason):
+                return result
+            check.inst(data, RunRequest)
+            return [
+                RunRequest(
+                    run_key=data.run_key,
+                    run_config=data.run_config,
+                    tags=merge_dicts(data.tags, PipelineRun.tags_for_schedule(self)),
+                )
+            ]
+
+        check.is_list(result, of_type=RunRequest)
+
+        # clone all the run requests with the required schedule tags
+        return [
+            RunRequest(
+                run_key=data.run_key,
+                run_config=data.run_config,
+                tags=merge_dicts(data.tags, PipelineRun.tags_for_schedule(self)),
+            )
+            for data in result
+        ]

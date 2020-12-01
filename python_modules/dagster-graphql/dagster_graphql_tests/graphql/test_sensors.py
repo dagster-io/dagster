@@ -35,12 +35,11 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
             id
             status
             timestamp
-            runId
+            runIds
             error {
                 message
                 stack
             }
-            runKey
         }
       }
     }
@@ -72,12 +71,11 @@ query SensorQuery($sensorSelector: SensorSelector!) {
           id
           status
           timestamp
-          runId
+          runIds
           error {
               message
               stack
           }
-          runKey
       }
     }
   }

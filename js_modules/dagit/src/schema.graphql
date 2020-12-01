@@ -615,10 +615,9 @@ type JobTick {
   id: ID!
   status: JobTickStatus!
   timestamp: Float!
-  runId: String
+  runIds: [String!]!
   error: PythonError
-  runKey: String
-  run: PipelineRun
+  run: [PipelineRun!]!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError

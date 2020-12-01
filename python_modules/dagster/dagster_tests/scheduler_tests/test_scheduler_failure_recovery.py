@@ -66,7 +66,7 @@ def test_failure_recovery_before_run_created(
             assert (
                 captured.out.replace("\r\n", "\n")
                 == """2019-02-26 18:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:00:00 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
+2019-02-26 18:00:00 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00+0000
 """
             )
 
@@ -101,13 +101,13 @@ def test_failure_recovery_before_run_created(
                 external_schedule,
                 initial_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [instance.get_runs()[0].run_id],
             )
             captured = capfd.readouterr()
             assert (
                 captured.out.replace("\r\n", "\n")
                 == """2019-02-26 18:05:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: simple_schedule
-2019-02-26 18:05:00 - SchedulerDaemon - INFO - Launching run for simple_schedule at 2019-02-27 00:00:00+0000
+2019-02-26 18:05:00 - SchedulerDaemon - INFO - Evaluating schedule `simple_schedule` at 2019-02-27 00:00:00+0000
 2019-02-26 18:05:00 - SchedulerDaemon - INFO - Resuming previously interrupted schedule execution
 2019-02-26 18:05:00 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for simple_schedule
 """.format(
@@ -204,7 +204,7 @@ def test_failure_recovery_after_run_created(
                 external_schedule,
                 initial_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [instance.get_runs()[0].run_id],
             )
 
             captured = capfd.readouterr()
@@ -265,17 +265,13 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
             assert len(ticks) == 1
 
             if crash_signal == get_terminate_signal():
-                validate_tick(
-                    ticks[0], external_schedule, initial_datetime, JobTickStatus.STARTED, None,
-                )
+                run_ids = []
             else:
-                validate_tick(
-                    ticks[0],
-                    external_schedule,
-                    initial_datetime,
-                    JobTickStatus.SUCCESS,
-                    instance.get_runs()[0].run_id,
-                )
+                run_ids = [run.run_id for run in instance.get_runs()]
+
+            validate_tick(
+                ticks[0], external_schedule, initial_datetime, JobTickStatus.STARTED, run_ids
+            )
 
         frozen_datetime = frozen_datetime.add(minutes=1)
         with pendulum.test(frozen_datetime):
@@ -300,5 +296,59 @@ def test_failure_recovery_after_tick_success(external_repo_context, crash_locati
                 external_schedule,
                 initial_datetime,
                 JobTickStatus.SUCCESS,
-                instance.get_runs()[0].run_id,
+                [instance.get_runs()[0].run_id],
+            )
+
+
+@pytest.mark.skipif(
+    IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
+)
+@pytest.mark.parametrize("external_repo_context", repos())
+@pytest.mark.parametrize("crash_location", ["RUN_ADDED"])
+@pytest.mark.parametrize("crash_signal", get_crash_signals())
+def test_failure_recovery_between_multi_runs(external_repo_context, crash_location, crash_signal):
+    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+        initial_datetime = pendulum.datetime(year=2019, month=2, day=28, hour=0, minute=0, second=0)
+        frozen_datetime = initial_datetime.add()
+        external_schedule = external_repo.get_external_schedule("multi_run_schedule")
+        with pendulum.test(frozen_datetime):
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
+
+            scheduler_process = multiprocessing.Process(
+                target=_test_launch_scheduled_runs_in_subprocess,
+                args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
+            )
+            scheduler_process.start()
+            scheduler_process.join(timeout=60)
+
+            assert scheduler_process.exitcode != 0
+
+            wait_for_all_runs_to_start(instance)
+            assert instance.get_runs_count() == 1
+            validate_run_started(instance.get_runs()[0], initial_datetime)
+
+            ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+            assert len(ticks) == 1
+
+        frozen_datetime = frozen_datetime.add(minutes=1)
+        with pendulum.test(frozen_datetime):
+            scheduler_process = multiprocessing.Process(
+                target=_test_launch_scheduled_runs_in_subprocess,
+                args=[instance.get_ref(), frozen_datetime, None],
+            )
+            scheduler_process.start()
+            scheduler_process.join(timeout=60)
+            assert scheduler_process.exitcode == 0
+            assert instance.get_runs_count() == 2
+            validate_run_started(instance.get_runs()[0], initial_datetime)
+            ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                initial_datetime,
+                JobTickStatus.SUCCESS,
+                [run.run_id for run in instance.get_runs()],
             )

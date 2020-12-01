@@ -62,16 +62,6 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         """
 
     @abc.abstractmethod
-    def has_job_tick(self, job_origin_id, run_key, statuses=None):
-        """Checks if there is a job tick for a given job / run_key in storage.
-
-        Args:
-            job_origin_id (str): The id of the ExternalJob target
-            run_key (str): User-provided key that identifies a given job execution
-            statuses (Optional[List[JobTickStatus]]): List of statuses to filter ticks by
-        """
-
-    @abc.abstractmethod
     def get_latest_job_tick(self, job_origin_id):
         """Get the most recent tick for a given job.
 
