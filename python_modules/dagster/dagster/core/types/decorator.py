@@ -1,5 +1,4 @@
 from dagster import check
-from dagster.utils.backcompat import canonicalize_backcompat_args
 
 from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_dagster_type
 
@@ -11,9 +10,6 @@ def usable_as_dagster_type(
     materializer=None,
     serialization_strategy=None,
     auto_plugins=None,
-    # Graveyard is below
-    input_hydration_config=None,
-    output_materialization_config=None,
 ):
     """Decorate a Python class to make it usable as a Dagster Type.
 
@@ -85,16 +81,8 @@ def usable_as_dagster_type(
                 name=new_name,
                 description=description,
                 python_type=bare_cls,
-                loader=canonicalize_backcompat_args(
-                    loader, "loader", input_hydration_config, "input_hydration_config", "0.10.0",
-                ),
-                materializer=canonicalize_backcompat_args(
-                    materializer,
-                    "materializer",
-                    output_materialization_config,
-                    "output_materialization_config",
-                    "0.10.0",
-                ),
+                loader=loader,
+                materializer=materializer,
                 serialization_strategy=serialization_strategy,
                 auto_plugins=auto_plugins,
             ),

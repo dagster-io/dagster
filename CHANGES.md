@@ -5,6 +5,8 @@
 **Breaking Changes**
 
 - Eliminated public field `config_field` on definition classes.
+- Eliminated `input_hydration_config` and `output_materialization_config` top-level includes.
+- Eliminated `input_hydration_config` and `output_materialization_config` arguments on type constructors.
 
 ## 0.9.20
 

@@ -4,6 +4,12 @@ When new releases include breaking changes or deprecations, this document descri
 
 # Migrating to 0.10.0
 
+## Removal: Removed `input_hydration_config` and `output_materialization_config`
+
+Use `dagster_type_loader` instead of `input_hydration_config` and `dagster_type_materializer` instead of `output_materialization_config`.
+
+On `DagsterType` and type constructors in `dagster_pandas` use the `loader` argument instead of `input_hydration_config` and the `materializer` argument instead of `dagster_type_materializer` argument.
+
 ## Removal: `repository:` key in workspace YAML
 
 We have removed the ability to specify a repository in your workspace using hte `repository:` key.

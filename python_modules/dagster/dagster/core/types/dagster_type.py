@@ -11,7 +11,7 @@ from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.storage.type_storage import TypeStoragePlugin
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils.backcompat import canonicalize_backcompat_args, rename_warning
+from dagster.utils.backcompat import rename_warning
 
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
@@ -95,9 +95,6 @@ class DagsterType:
         auto_plugins=None,
         required_resource_keys=None,
         kind=DagsterTypeKind.REGULAR,
-        # Graveyard is below
-        input_hydration_config=None,
-        output_materialization_config=None,
     ):
         check.opt_str_param(key, "key")
         check.opt_str_param(name, "name")
@@ -119,26 +116,11 @@ class DagsterType:
             self.key, self._name = key, name
 
         self.description = check.opt_str_param(description, "description")
-        self.loader = canonicalize_backcompat_args(
-            check.opt_inst_param(loader, "loader", DagsterTypeLoader),
-            "loader",
-            check.opt_inst_param(
-                input_hydration_config, "input_hydration_config", DagsterTypeLoader
-            ),
-            "input_hydration_config",
-            "0.10.0",
+        self.loader = check.opt_inst_param(loader, "loader", DagsterTypeLoader)
+        self.materializer = check.opt_inst_param(
+            materializer, "materializer", DagsterTypeMaterializer
         )
-        self.materializer = canonicalize_backcompat_args(
-            check.opt_inst_param(materializer, "materializer", DagsterTypeMaterializer),
-            "materializer",
-            check.opt_inst_param(
-                output_materialization_config,
-                "output_materialization_config",
-                DagsterTypeMaterializer,
-            ),
-            "output_materialization_config",
-            "0.10.0",
-        )
+
         self.serialization_strategy = check.opt_inst_param(
             serialization_strategy,
             "serialization_strategy",
@@ -217,16 +199,6 @@ class DagsterType:
     @property
     def inner_types(self):
         return []
-
-    @property
-    def input_hydration_config(self):
-        rename_warning("loader", "input_hydration_config", "0.10.0")
-        return self.loader
-
-    @property
-    def output_materialization_config(self):
-        rename_warning("materializer", "output_materialization_config", "0.10.0")
-        return self.materializer
 
     @property
     def input_hydration_schema_key(self):

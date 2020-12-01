@@ -8,11 +8,7 @@ from dagster.core.decorator_utils import (
 )
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import ensure_gen, ensure_single_item
-from dagster.utils.backcompat import (
-    canonicalize_backcompat_args,
-    experimental_arg_warning,
-    rename_warning,
-)
+from dagster.utils.backcompat import experimental_arg_warning, rename_warning
 
 
 class DagsterTypeLoader:
@@ -138,15 +134,6 @@ def _create_type_loader_for_decorator(
     )
 
 
-def input_hydration_config(config_schema=None, required_resource_keys=None, config_cls=None):
-    """Deprecated in favor of dagster_type_loader"""
-    rename_warning("dagster_type_loader", "input_hydration_config", "0.10.0")
-    config_schema = canonicalize_backcompat_args(
-        config_schema, "config_schema", config_cls, "config_cls", "0.10.0",
-    )
-    return dagster_type_loader(config_schema, required_resource_keys)
-
-
 def dagster_type_loader(
     config_schema, required_resource_keys=None, loader_version=None, external_version_fn=None,
 ):
@@ -244,15 +231,6 @@ class DagsterTypeMaterializerForDecorator(DagsterTypeMaterializer):
 
 def _create_output_materializer_for_decorator(config_type, func, required_resource_keys):
     return DagsterTypeMaterializerForDecorator(config_type, func, required_resource_keys)
-
-
-def output_materialization_config(config_schema=None, required_resource_keys=None, config_cls=None):
-    """Deprecated in favor of dagster_type_materializer"""
-    rename_warning("dagster_type_materializer", "output_materialization_config", "0.10.0")
-    config_schema = canonicalize_backcompat_args(
-        config_schema, "config_schema", config_cls, "config_cls", "0.10.0",
-    )
-    return dagster_type_materializer(config_schema, required_resource_keys)
 
 
 def dagster_type_materializer(config_schema, required_resource_keys=None):

@@ -68,6 +68,7 @@ class DagsterTypeSnap(
         type_param_keys,
         loader_schema_key=None,
         materializer_schema_key=None,
+        # Graveyard
         input_hydration_schema_key=None,
         output_materialization_schema_key=None,
     ):
