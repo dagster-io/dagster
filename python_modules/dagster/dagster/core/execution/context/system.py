@@ -403,7 +403,7 @@ class HookContext(SystemExecutionContext):
 class AssetStoreContext(
     namedtuple(
         "_AssetStoreContext",
-        "step_key output_name asset_metadata pipeline_name solid_def source_run_id",
+        "step_key output_name asset_metadata pipeline_name solid_def source_run_id version",
     )
 ):
     """The ``context`` object available to :py:class:`AssetStore`.
@@ -416,10 +416,18 @@ class AssetStoreContext(
         pipeline_name (str): The name of the pipeline.
         solid_def (SolidDefinition): The definition of the solid that uses the asset store.
         source_run_id (Optional[str]): The id of the run which generates the output.
+        version (Optional[str]): The version corresponding to the provided step output.
     """
 
     def __new__(
-        cls, step_key, output_name, asset_metadata, pipeline_name, solid_def, source_run_id=None
+        cls,
+        step_key,
+        output_name,
+        asset_metadata,
+        pipeline_name,
+        solid_def,
+        source_run_id=None,
+        version=None,
     ):
 
         return super(AssetStoreContext, cls).__new__(
@@ -430,6 +438,7 @@ class AssetStoreContext(
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_def=check.inst_param(solid_def, "solid_def", SolidDefinition),
             source_run_id=check.opt_str_param(source_run_id, "source_run_id"),
+            version=check.opt_str_param(version, "version"),
         )
 
     def get_run_scoped_output_identifier(self):

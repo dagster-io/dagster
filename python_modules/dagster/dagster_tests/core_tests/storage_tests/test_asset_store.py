@@ -21,6 +21,7 @@ from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.storage.asset_store import (
     AssetStore,
     AssetStoreHandle,
+    VersionedPickledObjectFilesystemAssetStore,
     custom_path_fs_asset_store,
     fs_asset_store,
     mem_asset_store,
@@ -185,6 +186,10 @@ def test_asset_store_multi_materialization():
             keys = tuple(context.get_run_scoped_output_identifier())
             return self.values[keys]
 
+        def has_asset(self, context):
+            keys = tuple(context.get_run_scoped_output_identifier())
+            return keys in self.values
+
     @resource
     def dummy_asset_store(_):
         return DummyAssetStore()
@@ -301,3 +306,38 @@ def test_fan_in():
             solid1(input1=[input_solid1(), input_solid2()])
 
         execute_pipeline(my_pipeline)
+
+
+def get_fake_solid():
+    @solid
+    def fake_solid(_):
+        pass
+
+    return fake_solid
+
+
+def test_versioned_asset_store():
+    with seven.TemporaryDirectory() as temp_dir:
+        store = VersionedPickledObjectFilesystemAssetStore(temp_dir)
+        context = AssetStoreContext(
+            step_key="foo",
+            output_name="bar",
+            asset_metadata={},
+            pipeline_name="fake",
+            solid_def=get_fake_solid(),
+            source_run_id=None,
+            version="version1",
+        )
+        store.set_asset(context, "cat")
+        assert store.has_asset(context)
+        assert store.get_asset(context) == "cat"
+        context_diff_version = AssetStoreContext(
+            step_key="foo",
+            output_name="bar",
+            asset_metadata={},
+            pipeline_name="fake",
+            solid_def=get_fake_solid(),
+            source_run_id=None,
+            version="version2",
+        )
+        assert not store.has_asset(context_diff_version)

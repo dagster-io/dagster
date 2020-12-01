@@ -414,6 +414,12 @@ class ExecutionPlan(
         check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
         step = self.get_step_by_key(step_output_handle.step_key)
         solid_def = self.pipeline_def.solid_def_named(step.solid_handle.name)
+        step_output_versions = self.resolve_step_output_versions()
+        version = (
+            step_output_versions[step_output_handle]
+            if step_output_handle in step_output_versions
+            else None
+        )
 
         return AssetStoreContext(
             step_key=step_output_handle.step_key,
@@ -422,6 +428,7 @@ class ExecutionPlan(
             pipeline_name=self.pipeline_def.name,
             solid_def=solid_def,
             source_run_id=None,
+            version=version,
         )
 
     def resolve_step_versions(self):
