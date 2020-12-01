@@ -7,7 +7,6 @@ import six
 from dagster import check
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.definitions.resource import ScopedResourcesBuilder
-from dagster.core.definitions.system_storage import SystemStorageData
 from dagster.core.errors import DagsterError
 from dagster.core.events import DagsterEvent, PipelineInitFailureData
 from dagster.core.execution.memoization import validate_reexecution_memoization
@@ -126,7 +125,6 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
         pipeline_run,
         instance,
         scoped_resources_builder_cm=None,
-        system_storage_data=None,
         intermediate_storage=None,
         raise_on_error=False,
     ):
@@ -141,7 +139,6 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
             pipeline_run,
             instance,
             scoped_resources_builder_cm,
-            system_storage_data,
             intermediate_storage,
             raise_on_error,
         )
@@ -157,7 +154,6 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
         self,
         context_creation_data,
         scoped_resources_builder,
-        system_storage_data,
         intermediate_storage,
         log_manager,
         raise_on_error,
@@ -180,7 +176,6 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
         pipeline_run,
         instance,
         scoped_resources_builder_cm,
-        system_storage_data=None,
         intermediate_storage=None,
         raise_on_error=False,
     ):
@@ -193,9 +188,6 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
 
         scoped_resources_builder_cm = check.callable_param(
             scoped_resources_builder_cm, "scoped_resources_builder_cm"
-        )
-        system_storage_data = check.opt_inst_param(
-            system_storage_data, "system_storage_data", SystemStorageData
         )
         intermediate_storage = check.opt_inst_param(
             intermediate_storage, "intermediate_storage_data", IntermediateStorage
@@ -222,22 +214,19 @@ class ExecutionContextManager(six.with_metaclass(ABCMeta)):
             scoped_resources_builder = check.inst(
                 resources_manager.get_object(), ScopedResourcesBuilder
             )
-            system_storage_data = create_system_storage_data(
-                context_creation_data, system_storage_data, scoped_resources_builder
-            )
             if intermediate_storage or context_creation_data.intermediate_storage_def:
                 intermediate_storage = create_intermediate_storage(
                     context_creation_data, intermediate_storage, scoped_resources_builder,
                 )
             else:
                 # remove this as part of https://github.com/dagster-io/dagster/issues/2705
-                intermediate_storage = system_storage_data.intermediate_storage
+                intermediate_storage = create_system_storage_data(
+                    context_creation_data, scoped_resources_builder
+                ).intermediate_storage
 
             execution_context = self.construct_context(
                 context_creation_data=context_creation_data,
                 scoped_resources_builder=scoped_resources_builder,
-                # TODO https://github.com/dagster-io/dagster/issues/2705
-                system_storage_data=system_storage_data,
                 log_manager=log_manager,
                 intermediate_storage=intermediate_storage,
                 raise_on_error=raise_on_error,
@@ -287,7 +276,6 @@ class PipelineExecutionContextManager(ExecutionContextManager):
         self,
         context_creation_data,
         scoped_resources_builder,
-        system_storage_data,
         intermediate_storage,
         log_manager,
         raise_on_error,
@@ -300,8 +288,6 @@ class PipelineExecutionContextManager(ExecutionContextManager):
             construct_execution_context_data(
                 context_creation_data=context_creation_data,
                 scoped_resources_builder=scoped_resources_builder,
-                # TODO https://github.com/dagster-io/dagster/issues/2705
-                system_storage_data=system_storage_data,
                 intermediate_storage=intermediate_storage,
                 log_manager=log_manager,
                 retries=executor.retries,
@@ -321,7 +307,6 @@ class PlanExecutionContextManager(ExecutionContextManager):
         pipeline_run,
         instance,
         scoped_resources_builder_cm=None,
-        system_storage_data=None,
         raise_on_error=False,
     ):
         self._retries = check.inst_param(retries, "retries", Retries)
@@ -331,7 +316,6 @@ class PlanExecutionContextManager(ExecutionContextManager):
             pipeline_run=pipeline_run,
             instance=instance,
             scoped_resources_builder_cm=scoped_resources_builder_cm,
-            system_storage_data=system_storage_data,
             raise_on_error=raise_on_error,
         )
 
@@ -343,7 +327,6 @@ class PlanExecutionContextManager(ExecutionContextManager):
         self,
         context_creation_data,
         scoped_resources_builder,
-        system_storage_data,
         intermediate_storage,
         log_manager,
         raise_on_error,
@@ -352,7 +335,6 @@ class PlanExecutionContextManager(ExecutionContextManager):
             construct_execution_context_data(
                 context_creation_data=context_creation_data,
                 scoped_resources_builder=scoped_resources_builder,
-                system_storage_data=system_storage_data,
                 intermediate_storage=intermediate_storage,
                 log_manager=log_manager,
                 retries=self._retries,
@@ -367,9 +349,7 @@ def _validate_plan_with_context(pipeline_context, execution_plan):
     validate_reexecution_memoization(pipeline_context, execution_plan)
 
 
-def create_system_storage_data(
-    context_creation_data, system_storage_data, scoped_resources_builder
-):
+def create_system_storage_data(context_creation_data, scoped_resources_builder):
     check.inst_param(context_creation_data, "context_creation_data", ContextCreationData)
 
     environment_config, pipeline_def, system_storage_def, pipeline_run = (
@@ -379,28 +359,23 @@ def create_system_storage_data(
         context_creation_data.pipeline_run,
     )
 
-    system_storage_data = (
-        system_storage_data
-        if system_storage_data
-        else construct_system_storage_data(
-            InitSystemStorageContext(
-                pipeline_def=pipeline_def,
-                mode_def=context_creation_data.mode_def,
-                system_storage_def=system_storage_def,
-                system_storage_config=environment_config.storage.system_storage_config,
-                pipeline_run=pipeline_run,
-                instance=context_creation_data.instance,
-                environment_config=environment_config,
-                type_storage_plugin_registry=construct_type_storage_plugin_registry(
-                    pipeline_def, system_storage_def
-                ),
-                resources=scoped_resources_builder.build(
-                    context_creation_data.system_storage_def.required_resource_keys,
-                ),
-            )
+    system_storage_data = construct_system_storage_data(
+        InitSystemStorageContext(
+            pipeline_def=pipeline_def,
+            mode_def=context_creation_data.mode_def,
+            system_storage_def=system_storage_def,
+            system_storage_config=environment_config.storage.system_storage_config,
+            pipeline_run=pipeline_run,
+            instance=context_creation_data.instance,
+            environment_config=environment_config,
+            type_storage_plugin_registry=construct_type_storage_plugin_registry(
+                pipeline_def, system_storage_def
+            ),
+            resources=scoped_resources_builder.build(
+                context_creation_data.system_storage_def.required_resource_keys,
+            ),
         )
     )
-
     return system_storage_data
 
 
@@ -460,7 +435,6 @@ def create_executor(context_creation_data):
 def construct_execution_context_data(
     context_creation_data,
     scoped_resources_builder,
-    system_storage_data,
     intermediate_storage,
     log_manager,
     retries,
@@ -472,7 +446,6 @@ def construct_execution_context_data(
         "scoped_resources_builder",
         ScopedResourcesBuilder,
     )
-    check.inst_param(system_storage_data, "system_storage_data", SystemStorageData)
     check.inst_param(intermediate_storage, "intermediate_storage", IntermediateStorage)
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     check.inst_param(retries, "retries", Retries)
@@ -501,7 +474,6 @@ def scoped_pipeline_context(
     instance,
     scoped_resources_builder_cm=resource_initialization_manager,
     intermediate_storage=None,
-    system_storage_data=None,
     raise_on_error=False,
 ):
     """ Utility context manager which acts as a very thin wrapper around
@@ -516,7 +488,6 @@ def scoped_pipeline_context(
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
     check.callable_param(scoped_resources_builder_cm, "scoped_resources_builder_cm")
-    check.opt_inst_param(system_storage_data, "system_storage_data", SystemStorageData)
     check.opt_inst_param(intermediate_storage, "intermediate_storage", IntermediateStorage)
 
     initialization_manager = PipelineExecutionContextManager(
@@ -525,7 +496,6 @@ def scoped_pipeline_context(
         pipeline_run,
         instance,
         scoped_resources_builder_cm=scoped_resources_builder_cm,
-        system_storage_data=system_storage_data,
         intermediate_storage=intermediate_storage,
         raise_on_error=raise_on_error,
     )

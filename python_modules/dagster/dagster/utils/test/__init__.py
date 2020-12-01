@@ -13,7 +13,6 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     SolidInvocation,
-    SystemStorageData,
     TypeCheck,
     check,
     execute_pipeline,
@@ -79,9 +78,6 @@ def create_test_pipeline_execution_context(logger_defs=None):
             context_creation_data=creation_data,
             scoped_resources_builder=scoped_resources_builder,
             intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
-            system_storage_data=SystemStorageData(
-                intermediate_storage=build_in_mem_intermediates_storage(pipeline_run.run_id),
-            ),
             log_manager=log_manager,
             retries=executor.retries,
             raise_on_error=True,
