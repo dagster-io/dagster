@@ -8,6 +8,7 @@ import {IStepState} from 'src/RunMetadataProvider';
 import {LaunchButtonConfiguration, LaunchButtonDropdown} from 'src/execute/LaunchButton';
 import {CANCEL_MUTATION, ReExecutionStyle} from 'src/runs/RunUtils';
 import {StepSelection} from 'src/runs/StepSelection';
+import {Cancel} from 'src/runs/types/Cancel';
 import {RunFragment} from 'src/runs/types/RunFragment';
 import {PipelineRunStatus} from 'src/types/globalTypes';
 import {useRepositoryForRun} from 'src/workspace/useRepositoryForRun';
@@ -32,7 +33,7 @@ interface RunActionButtonsProps {
 }
 
 const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
-  const [cancel] = useMutation(CANCEL_MUTATION);
+  const [cancel] = useMutation<Cancel>(CANCEL_MUTATION);
   const [inFlight, setInFlight] = React.useState(false);
   return (
     <Button
@@ -46,7 +47,8 @@ const CancelRunButton: React.FC<{run: RunFragment}> = ({run}) => {
         const {data} = await cancel({
           variables: {runId: run.runId},
         });
-        const message = data?.terminatePipelineExecution?.message;
+        const execution = data?.terminatePipelineExecution;
+        const message = execution && 'message' in execution ? execution.message : null;
         if (message) {
           SharedToaster.show({
             message,

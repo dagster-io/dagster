@@ -133,12 +133,18 @@ export const ScheduleRow: React.FC<{
 }> = (props) => {
   const {repoAddress, schedule} = props;
 
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors,
-  });
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors,
-  });
+  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<StartSchedule>(
+    START_SCHEDULE_MUTATION,
+    {
+      onCompleted: displayScheduleMutationErrors,
+    },
+  );
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
+    STOP_SCHEDULE_MUTATION,
+    {
+      onCompleted: displayScheduleMutationErrors,
+    },
+  );
 
   const {name, cronSchedule, pipelineName, mode, scheduleState} = schedule;
 
@@ -350,12 +356,18 @@ export const ScheduleStateRow: React.FunctionComponent<{
   showStatus?: boolean;
   dagsterRepoOption?: DagsterRepoOption;
 }> = ({scheduleState, showStatus = false, dagsterRepoOption}) => {
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation(START_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors,
-  });
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation(STOP_SCHEDULE_MUTATION, {
-    onCompleted: displayScheduleMutationErrors,
-  });
+  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<StartSchedule>(
+    START_SCHEDULE_MUTATION,
+    {
+      onCompleted: displayScheduleMutationErrors,
+    },
+  );
+  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
+    STOP_SCHEDULE_MUTATION,
+    {
+      onCompleted: displayScheduleMutationErrors,
+    },
+  );
 
   const confirm = useConfirmation();
   const [showRepositoryOrigin, setShowRepositoryOrigin] = useState(false);

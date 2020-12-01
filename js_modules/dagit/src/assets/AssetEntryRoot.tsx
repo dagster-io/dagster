@@ -7,6 +7,7 @@ import styled from 'styled-components';
 import {Loading} from 'src/Loading';
 import {AssetView} from 'src/assets/AssetView';
 import {AssetsCatalogTable} from 'src/assets/AssetsCatalogTable';
+import {AssetEntryRootQuery} from 'src/assets/types/AssetEntryRootQuery';
 import {TopNav} from 'src/nav/TopNav';
 
 export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({match}) => {
@@ -14,7 +15,7 @@ export const AssetEntryRoot: React.FunctionComponent<RouteComponentProps> = ({ma
     .split('/')
     .filter((x: string) => x)
     .map(decodeURIComponent);
-  const queryResult = useQuery(ASSET_ENTRY_ROOT_QUERY, {
+  const queryResult = useQuery<AssetEntryRootQuery>(ASSET_ENTRY_ROOT_QUERY, {
     variables: {assetKey: {path: currentPath}},
   });
 

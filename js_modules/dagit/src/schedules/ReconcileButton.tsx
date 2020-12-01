@@ -3,6 +3,7 @@ import {Button, Intent, Spinner} from '@blueprintjs/core';
 import * as React from 'react';
 
 import {SCHEDULES_ROOT_QUERY} from 'src/schedules/ScheduleUtils';
+import {ReconcileSchedulerState} from 'src/schedules/types/ReconcileSchedulerState';
 import {useRepositorySelector} from 'src/workspace/WorkspaceContext';
 
 export const ReconcileButton = () => {
@@ -16,10 +17,9 @@ export const ReconcileButton = () => {
     },
   ];
 
-  const [
-    reconcileScheduleState,
-    {loading: reconcileInFlight},
-  ] = useMutation(RECONCILE_SCHEDULE_STATE_MUTATION, {refetchQueries});
+  const [reconcileScheduleState, {loading: reconcileInFlight}] = useMutation<
+    ReconcileSchedulerState
+  >(RECONCILE_SCHEDULE_STATE_MUTATION, {refetchQueries});
 
   if (reconcileInFlight) {
     return <Spinner />;

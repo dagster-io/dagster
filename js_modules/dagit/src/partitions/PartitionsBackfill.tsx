@@ -29,6 +29,7 @@ import {
   TopLabel,
   TopLabelTilted,
 } from 'src/partitions/RunMatrixUtils';
+import {LaunchPartitionBackfill} from 'src/partitions/types/LaunchPartitionBackfill';
 import {PartitionsBackfillSelectorQuery} from 'src/partitions/types/PartitionsBackfillSelectorQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
 import {ButtonLink} from 'src/ui/ButtonLink';
@@ -476,7 +477,7 @@ const LaunchBackfillButton: React.FC<{
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
   const mounted = React.useRef(true);
-  const [launchBackfill] = useMutation(LAUNCH_PARTITION_BACKFILL_MUTATION);
+  const [launchBackfill] = useMutation<LaunchPartitionBackfill>(LAUNCH_PARTITION_BACKFILL_MUTATION);
   React.useEffect(() => {
     mounted.current = true;
     return () => {

@@ -7,7 +7,10 @@ import styled from 'styled-components';
 
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {AssetsTableQuery_assetsOrError_AssetConnection_nodes} from 'src/assets/types/AssetsTableQuery';
+import {
+  AssetsTableQuery,
+  AssetsTableQuery_assetsOrError_AssetConnection_nodes,
+} from 'src/assets/types/AssetsTableQuery';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {Table} from 'src/ui/Table';
 
@@ -16,7 +19,7 @@ type Asset = AssetsTableQuery_assetsOrError_AssetConnection_nodes;
 export const AssetsCatalogTable: React.FunctionComponent<{prefixPath: string[]}> = ({
   prefixPath,
 }) => {
-  const queryResult = useQuery(ASSETS_TABLE_QUERY, {
+  const queryResult = useQuery<AssetsTableQuery>(ASSETS_TABLE_QUERY, {
     variables: {prefixPath},
   });
 

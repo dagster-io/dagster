@@ -3,7 +3,10 @@ import * as React from 'react';
 
 import {LaunchButton} from 'src/execute/LaunchButton';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from 'src/runs/RunUtils';
-import {LaunchPipelineExecutionVariables} from 'src/runs/types/LaunchPipelineExecution';
+import {
+  LaunchPipelineExecution,
+  LaunchPipelineExecutionVariables,
+} from 'src/runs/types/LaunchPipelineExecution';
 
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
@@ -14,7 +17,9 @@ interface LaunchRootExecutionButtonProps {
 export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = (
   props,
 ) => {
-  const [launchPipelineExecution] = useMutation(LAUNCH_PIPELINE_EXECUTION_MUTATION);
+  const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
+    LAUNCH_PIPELINE_EXECUTION_MUTATION,
+  );
 
   const onLaunch = async () => {
     const variables = props.getVariables();

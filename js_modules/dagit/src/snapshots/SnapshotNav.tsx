@@ -5,6 +5,7 @@ import styled from 'styled-components';
 
 import {explorerPathToString, PipelineExplorerPath} from 'src/PipelinePathUtils';
 import {TopNav} from 'src/nav/TopNav';
+import {SnapshotQuery} from 'src/snapshots/types/SnapshotQuery';
 import {FontFamily} from 'src/ui/styles';
 import {useActivePipelineForName} from 'src/workspace/WorkspaceContext';
 
@@ -35,7 +36,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   const currentPipelineState = useActivePipelineForName(pipelineName);
   const currentSnapshotID = currentPipelineState?.pipelineSnapshotId;
 
-  const {data, loading} = useQuery(SNAPSHOT_PARENT_QUERY, {
+  const {data, loading} = useQuery<SnapshotQuery>(SNAPSHOT_PARENT_QUERY, {
     variables: {snapshotId},
   });
 
@@ -51,6 +52,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
     if (
       !currentSnapshotID ||
       (currentSnapshotID !== snapshotId &&
+        data?.pipelineSnapshotOrError.__typename === 'PipelineSnapshot' &&
         data?.pipelineSnapshotOrError?.parentSnapshotId !== currentSnapshotID)
     ) {
       return (
