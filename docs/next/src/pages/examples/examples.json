@@ -93,5 +93,10 @@
         "name": "pipeline_unittesting",
         "title": "Pipeline Unit Test",
         "description": "Unit-test a pipeline"
+    },
+    {
+        "name": "deploy_docker",
+        "title": "",
+        "description": ""
     }
 ]
