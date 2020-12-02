@@ -32,13 +32,21 @@ class ResourceDefinition(ConfigurableDefinition):
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data
             available in `init_context.resource_config`.
         description (Optional[str]): A human-readable description of the resource.
+        required_resource_keys: (Optional[Set[str]]) Keys for the resources required by this
+            resource. A DagsterInvariantViolationError will be raised during initialization if
+            dependencies are cyclic.
         version (Optional[str]): (Experimental) The version of the resource's definition fn. Two
             wrapped resource functions should only have the same version if they produce the same
             resource definition when provided with the same inputs.
     """
 
     def __init__(
-        self, resource_fn=None, config_schema=None, description=None, version=None,
+        self,
+        resource_fn=None,
+        config_schema=None,
+        description=None,
+        required_resource_keys=None,
+        version=None,
     ):
         EXPECTED_POSITIONALS = ["*"]
         fn_positionals, _ = split_function_parameters(resource_fn, EXPECTED_POSITIONALS)
@@ -56,6 +64,9 @@ class ResourceDefinition(ConfigurableDefinition):
         self._resource_fn = check.opt_callable_param(resource_fn, "resource_fn")
         self._config_schema = convert_user_facing_definition_config_schema(config_schema)
         self._description = check.opt_str_param(description, "description")
+        self._required_resource_keys = check.opt_set_param(
+            required_resource_keys, "required_resource_keys"
+        )
         self._version = check.opt_str_param(version, "version")
         if version:
             experimental_arg_warning("version", "ResourceDefinition.__init__")
@@ -75,6 +86,10 @@ class ResourceDefinition(ConfigurableDefinition):
     @property
     def version(self):
         return self._version
+
+    @property
+    def required_resource_keys(self):
+        return self._required_resource_keys
 
     @staticmethod
     def none_resource(description=None):
@@ -130,14 +145,20 @@ class ResourceDefinition(ConfigurableDefinition):
             config_schema=config_schema,
             description=description or self.description,
             resource_fn=self.resource_fn,
+            required_resource_keys=self.required_resource_keys,
         )
 
 
 class _ResourceDecoratorCallable:
-    def __init__(self, config_schema=None, description=None, version=None):
+    def __init__(
+        self, config_schema=None, description=None, required_resource_keys=None, version=None,
+    ):
         self.config_schema = config_schema  # checked by underlying definition
         self.description = check.opt_str_param(description, "description")
         self.version = check.opt_str_param(version, "version")
+        self.required_resource_keys = check.opt_set_param(
+            required_resource_keys, "required_resource_keys"
+        )
 
     def __call__(self, fn):
         check.callable_param(fn, "fn")
@@ -147,6 +168,7 @@ class _ResourceDecoratorCallable:
             config_schema=self.config_schema,
             description=self.description,
             version=self.version,
+            required_resource_keys=self.required_resource_keys,
         )
 
         update_wrapper(resource_def, wrapped=fn)
@@ -154,7 +176,7 @@ class _ResourceDecoratorCallable:
         return resource_def
 
 
-def resource(config_schema=None, description=None, version=None):
+def resource(config_schema=None, description=None, required_resource_keys=None, version=None):
     """Define a resource.
 
     The decorated function should accept an :py:class:`InitResourceContext` and return an instance of
@@ -173,6 +195,7 @@ def resource(config_schema=None, description=None, version=None):
         version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
             definition when provided with the same inputs.
+        required_resource_keys (Optional[Set[str]]): Keys for the resources required by this resource.
     """
 
     # This case is for when decorator is used bare, without arguments.
@@ -182,7 +205,10 @@ def resource(config_schema=None, description=None, version=None):
 
     def _wrap(resource_fn):
         return _ResourceDecoratorCallable(
-            config_schema=config_schema, description=description, version=version,
+            config_schema=config_schema,
+            description=description,
+            required_resource_keys=required_resource_keys,
+            version=version,
         )(resource_fn)
 
     return _wrap

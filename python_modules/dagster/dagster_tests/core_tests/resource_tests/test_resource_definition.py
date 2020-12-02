@@ -1,6 +1,7 @@
 import pytest
 from dagster import (
     DagsterEventType,
+    DagsterInvariantViolationError,
     DagsterResourceFunctionError,
     Enum,
     EnumValue,
@@ -74,6 +75,77 @@ def test_basic_resource():
 
     assert result.success
     assert called["yup"]
+
+
+def test_resource_with_dependencies():
+    called = {}
+
+    @resource
+    def foo_resource(_):
+        called["foo_resource"] = True
+        return "foo"
+
+    @resource(required_resource_keys={"foo_resource"})
+    def bar_resource(init_context):
+        called["bar_resource"] = True
+        return init_context.resources.foo_resource + "bar"
+
+    @solid(required_resource_keys={"bar_resource"})
+    def dep_solid(context):
+        called["dep_solid"] = True
+        assert context.resources.bar_resource == "foobar"
+
+    pipeline_def = PipelineDefinition(
+        name="with_dep_resource",
+        solid_defs=[dep_solid],
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"foo_resource": foo_resource, "bar_resource": bar_resource}
+            )
+        ],
+    )
+
+    result = execute_pipeline(pipeline_def)
+
+    assert result.success
+    assert called["foo_resource"]
+    assert called["bar_resource"]
+    assert called["dep_solid"]
+
+
+def test_resource_cyclic_dependencies():
+    called = {}
+
+    @resource(required_resource_keys={"bar_resource"})
+    def foo_resource(init_context):
+        called["foo_resource"] = True
+        return init_context.resources.bar_resource + "foo"
+
+    @resource(required_resource_keys={"foo_resource"})
+    def bar_resource(init_context):
+        called["bar_resource"] = True
+        return init_context.resources.foo_resource + "bar"
+
+    @solid(required_resource_keys={"bar_resource"})
+    def dep_solid(context):
+        called["dep_solid"] = True
+        assert context.resources.bar_resource == "foobar"
+
+    pipeline_def = PipelineDefinition(
+        name="with_dep_resource",
+        solid_defs=[dep_solid],
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"foo_resource": foo_resource, "bar_resource": bar_resource}
+            )
+        ],
+    )
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match='Resource key "(foo_resource|bar_resource)" transitively depends on itself.',
+    ):
+        execute_pipeline(pipeline_def)
 
 
 def test_yield_resource():

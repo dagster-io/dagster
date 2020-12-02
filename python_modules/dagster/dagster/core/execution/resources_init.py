@@ -3,6 +3,7 @@ from collections import deque
 from dagster import check
 from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.errors import (
+    DagsterInvariantViolationError,
     DagsterResourceFunctionError,
     DagsterUserCodeExecutionError,
     user_code_error_boundary,
@@ -12,6 +13,7 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.utils import toposort
 from dagster.utils import EventGenerationManager, ensure_gen
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration, time_execution_scope
@@ -26,6 +28,42 @@ def resource_initialization_manager(
         execution_plan, environment_config, pipeline_run, log_manager, resource_keys_to_init,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
+
+
+def _resolve_resource_dependencies(resource_defs):
+    """Generates a dictionary that maps resource key to resource keys it requires for initialization
+    """
+    resource_dependencies = {
+        key: resource_def.required_resource_keys for key, resource_def in resource_defs.items()
+    }
+    return resource_dependencies
+
+
+def _get_dependencies(resource_name, resource_deps):
+    """Get all resources that must be initialized before resource_name can be initialized.
+
+    Uses dfs to get all required dependencies from a particular resource. If dependencies are
+        cyclic, raise a DagsterInvariantViolationError.
+    """
+    path = set()  # resources we are currently checking the dependencies of
+    reqd_resources = set()
+
+    # adds dependencies for a given resource key to reqd_resources
+    def _get_deps_helper(resource_key):
+        path.add(resource_key)
+        for reqd_resource_key in resource_deps[resource_key]:
+            if reqd_resource_key in path:
+                raise DagsterInvariantViolationError(
+                    'Resource key "{key}" transitively depends on itself.'.format(
+                        key=reqd_resource_key
+                    )
+                )
+            _get_deps_helper(reqd_resource_key)
+        path.remove(resource_key)
+        reqd_resources.add(resource_key)
+
+    _get_deps_helper(resource_name)
+    return set(reqd_resources)
 
 
 def _core_resource_initialization_event_generator(
@@ -46,31 +84,39 @@ def _core_resource_initialization_event_generator(
                 execution_plan, resource_log_manager, resource_keys_to_init,
             )
 
-        for resource_name, resource_def in sorted(mode_definition.resource_defs.items()):
-            if not resource_name in resource_keys_to_init:
-                continue
+        resource_dependencies = _resolve_resource_dependencies(mode_definition.resource_defs)
 
-            resource_context = InitResourceContext(
-                pipeline_def=pipeline_def,
-                resource_def=resource_def,
-                resource_config=environment_config.resources.get(resource_name, {}).get("config"),
-                run_id=pipeline_run.run_id,
-                # Add tags with information about the resource
-                log_manager=resource_log_manager.with_tags(
-                    resource_name=resource_name,
-                    resource_fn_name=str(resource_def.resource_fn.__name__),
-                ),
-            )
-            manager = single_resource_generation_manager(
-                resource_context, resource_name, resource_def
-            )
-            for event in manager.generate_setup_events():
-                if event:
-                    yield event
-            initialized_resource = check.inst(manager.get_object(), InitializedResource)
-            resource_instances[resource_name] = initialized_resource.resource
-            resource_init_times[resource_name] = initialized_resource.duration
-            resource_managers.append(manager)
+        for level in toposort(resource_dependencies):
+            for resource_name in level:
+                resource_def = mode_definition.resource_defs[resource_name]
+                if not resource_name in resource_keys_to_init:
+                    continue
+
+                resource_context = InitResourceContext(
+                    pipeline_def=pipeline_def,
+                    resource_def=resource_def,
+                    resource_config=environment_config.resources.get(resource_name, {}).get(
+                        "config"
+                    ),
+                    run_id=pipeline_run.run_id,
+                    # Add tags with information about the resource
+                    log_manager=resource_log_manager.with_tags(
+                        resource_name=resource_name,
+                        resource_fn_name=str(resource_def.resource_fn.__name__),
+                    ),
+                    resource_instance_dict=resource_instances,
+                    required_resource_keys=resource_def.required_resource_keys,
+                )
+                manager = single_resource_generation_manager(
+                    resource_context, resource_name, resource_def
+                )
+                for event in manager.generate_setup_events():
+                    if event:
+                        yield event
+                initialized_resource = check.inst(manager.get_object(), InitializedResource)
+                resource_instances[resource_name] = initialized_resource.resource
+                resource_init_times[resource_name] = initialized_resource.duration
+                resource_managers.append(manager)
 
         if resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
@@ -204,6 +250,12 @@ def get_required_resource_keys_to_init(execution_plan, intermediate_storage_def)
 def get_required_resource_keys_for_step(execution_step, execution_plan, intermediate_storage_def):
     resource_keys = set()
 
+    mode_definition = execution_plan.pipeline_def.get_mode_definition(
+        execution_plan.environment_config.mode
+    )
+
+    resource_dependencies = _resolve_resource_dependencies(mode_definition.resource_defs)
+
     # add all the intermediate storage resource keys
     if intermediate_storage_def is not None:
         resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
@@ -241,4 +293,9 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
             if intermediate_storage_def is not None:
                 if auto_plugin.compatible_with_storage_def(intermediate_storage_def):
                     resource_keys = resource_keys.union(auto_plugin.required_resource_keys())
+
+    for resource_name in resource_keys:
+        resource_keys = resource_keys.union(
+            set(_get_dependencies(resource_name, resource_dependencies))
+        )
     return frozenset(resource_keys)
