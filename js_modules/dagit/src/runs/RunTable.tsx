@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 import {Checkbox, NonIdealState} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
 import {PipelineSnapshotLink} from 'src/PipelinePathUtils';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
@@ -21,12 +22,13 @@ interface RunTableProps {
   onSetFilter: (search: TokenizingFieldValue[]) => void;
   nonIdealState?: React.ReactNode;
 
+  highlightedIds?: string[];
   additionalColumnHeaders?: React.ReactNode[];
   additionalColumnsForRow?: (run: RunTableRunFragment) => React.ReactNode[];
 }
 
 export const RunTable = (props: RunTableProps) => {
-  const {runs, onSetFilter, nonIdealState} = props;
+  const {runs, onSetFilter, nonIdealState, highlightedIds} = props;
   const [checked, setChecked] = React.useState<RunTableRunFragment[]>(() => []);
 
   // This is slightly complicated because we want to be able to select runs on a
@@ -98,6 +100,7 @@ export const RunTable = (props: RunTableProps) => {
                   : [...checkedRuns, run],
               )
             }
+            isHighlighted={highlightedIds && highlightedIds.includes(run.runId)}
           />
         ))}
       </tbody>
@@ -137,9 +140,10 @@ const RunRow: React.FunctionComponent<{
   checked?: boolean;
   onToggleChecked?: () => void;
   additionalColumns?: React.ReactNode[];
-}> = ({run, onSetFilter, checked, onToggleChecked, additionalColumns}) => {
+  isHighlighted?: boolean;
+}> = ({run, onSetFilter, checked, onToggleChecked, additionalColumns, isHighlighted}) => {
   return (
-    <tr key={run.runId}>
+    <Row key={run.runId} highlighted={!!isHighlighted}>
       <td
         onClick={(e) => {
           e.preventDefault();
@@ -180,7 +184,7 @@ const RunRow: React.FunctionComponent<{
       <td style={{maxWidth: '52px'}}>
         <RunActionsMenu run={run} />
       </td>
-    </tr>
+    </Row>
   );
 };
 
@@ -203,3 +207,18 @@ const RunTags: React.FC<{
     </Box>
   );
 });
+
+const Row = styled.tr<{
+  highlighted: boolean;
+}>`
+  & > td {
+    border-top: 3px solid ${({highlighted}) => (highlighted ? '#bfccd6' : 'transparent')};
+    border-bottom: 3px solid ${({highlighted}) => (highlighted ? '#bfccd6' : 'transparent')};
+  }
+  & > td:first-child {
+    border-left: 3px solid ${({highlighted}) => (highlighted ? '#bfccd6' : 'transparent')};
+  }
+  & > td:last-child {
+    border-right: 3px solid ${({highlighted}) => (highlighted ? '#bfccd6' : 'transparent')};
+  }
+`;

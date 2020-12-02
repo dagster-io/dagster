@@ -27,6 +27,11 @@ export interface SensorsRootQuery_sensorsOrError_PythonError {
   cause: SensorsRootQuery_sensorsOrError_PythonError_cause | null;
 }
 
+export interface SensorsRootQuery_sensorsOrError_Sensors_results_nextTick {
+  __typename: "FutureJobTick";
+  timestamp: number;
+}
+
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
@@ -108,6 +113,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  nextTick: SensorsRootQuery_sensorsOrError_Sensors_results_nextTick | null;
   sensorState: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState;
 }
 

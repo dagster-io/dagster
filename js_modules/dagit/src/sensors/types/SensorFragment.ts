@@ -10,6 +10,11 @@ import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../ty
 // GraphQL fragment: SensorFragment
 // ====================================================
 
+export interface SensorFragment_nextTick {
+  __typename: "FutureJobTick";
+  timestamp: number;
+}
+
 export interface SensorFragment_sensorState_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
@@ -91,5 +96,6 @@ export interface SensorFragment {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  nextTick: SensorFragment_nextTick | null;
   sensorState: SensorFragment_sensorState;
 }

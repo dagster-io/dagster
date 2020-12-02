@@ -14,6 +14,11 @@ export interface SensorRootQuery_sensorOrError_SensorNotFoundError {
   __typename: "SensorNotFoundError" | "PythonError";
 }
 
+export interface SensorRootQuery_sensorOrError_Sensor_nextTick {
+  __typename: "FutureJobTick";
+  timestamp: number;
+}
+
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
@@ -95,13 +100,30 @@ export interface SensorRootQuery_sensorOrError_Sensor {
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  nextTick: SensorRootQuery_sensorOrError_Sensor_nextTick | null;
   sensorState: SensorRootQuery_sensorOrError_Sensor_sensorState;
 }
 
 export type SensorRootQuery_sensorOrError = SensorRootQuery_sensorOrError_SensorNotFoundError | SensorRootQuery_sensorOrError_Sensor;
 
+export interface SensorRootQuery_instance_daemonHealth_daemonStatus {
+  __typename: "DaemonStatus";
+  healthy: boolean | null;
+}
+
+export interface SensorRootQuery_instance_daemonHealth {
+  __typename: "DaemonHealth";
+  daemonStatus: SensorRootQuery_instance_daemonHealth_daemonStatus;
+}
+
+export interface SensorRootQuery_instance {
+  __typename: "Instance";
+  daemonHealth: SensorRootQuery_instance_daemonHealth;
+}
+
 export interface SensorRootQuery {
   sensorOrError: SensorRootQuery_sensorOrError;
+  instance: SensorRootQuery_instance;
 }
 
 export interface SensorRootQueryVariables {

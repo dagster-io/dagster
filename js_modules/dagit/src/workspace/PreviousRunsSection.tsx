@@ -8,14 +8,11 @@ import {Group} from 'src/ui/Group';
 import {Subheading} from 'src/ui/Text';
 import {PreviousRunsFragment} from 'src/workspace/types/PreviousRunsFragment';
 
-interface Props {
+export const PreviousRunsSection: React.FC<{
   loading: boolean;
   data: PreviousRunsFragment | null | undefined;
-}
-
-export const PreviousRunsSection = (props: Props) => {
-  const {loading, data} = props;
-
+  highlightedIds?: string[];
+}> = ({loading, data, highlightedIds}) => {
   const content = () => {
     if (loading) {
       return <Box margin={{top: 8}}>Loading...</Box>;
@@ -24,7 +21,7 @@ export const PreviousRunsSection = (props: Props) => {
       return <Box margin={{top: 8}}>Error!</Box>;
     }
     const runs = data?.results;
-    return <RunTable onSetFilter={() => {}} runs={runs} />;
+    return <RunTable onSetFilter={() => {}} runs={runs} highlightedIds={highlightedIds} />;
   };
 
   return (

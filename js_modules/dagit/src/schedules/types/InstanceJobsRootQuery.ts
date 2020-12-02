@@ -149,6 +149,11 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   futureTicks: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks;
 }
 
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick {
+  __typename: "FutureJobTick";
+  timestamp: number;
+}
+
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
@@ -230,6 +235,7 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
+  nextTick: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick | null;
   sensorState: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState;
 }
 
