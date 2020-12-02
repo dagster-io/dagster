@@ -1,0 +1,69 @@
+version: "3.7"
+
+services:
+  docker_example_postgresql:
+    image: postgres:11
+    container_name: docker_example_postgresql
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "postgres"
+    networks:
+      - postgres
+
+  docker_example_user_code:
+    build:
+      context: .
+      dockerfile: ./user_code/Dockerfile
+    container_name: docker_example_user_code
+    ports:
+      - "4000:4000"
+    environment:
+      DAGSTER_POSTGRES_USER: "postgres"
+      DAGSTER_POSTGRES_PASSWORD: "postgres"
+      DAGSTER_POSTGRES_DB: "postgres"
+      DAGSTER_CURRENT_IMAGE: "deploy_docker_docker_example_user_code"
+    networks:
+      - postgres
+
+  docker_example_dagit:
+    build:
+      context: .
+      dockerfile: ./dagit/Dockerfile
+    container_name: docker_example_dagit
+    ports:
+      - "3000:3000"
+    environment:
+      DAGSTER_POSTGRES_USER: "postgres"
+      DAGSTER_POSTGRES_PASSWORD: "postgres"
+      DAGSTER_POSTGRES_DB: "postgres"
+    volumes: # See: https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - postgres
+    depends_on:
+      - docker_example_postgresql
+      - docker_example_user_code
+
+  docker_example_daemon:
+    build:
+      context: .
+      dockerfile: ./daemon/Dockerfile
+    container_name: docker_example_daemon
+    environment:
+      DAGSTER_POSTGRES_USER: "postgres"
+      DAGSTER_POSTGRES_PASSWORD: "postgres"
+      DAGSTER_POSTGRES_DB: "postgres"
+    networks:
+      - postgres
+    depends_on:
+      - docker_example_postgresql
+      - docker_example_user_code
+
+networks:
+  postgres:
+    driver: bridge
+    name: postgres
