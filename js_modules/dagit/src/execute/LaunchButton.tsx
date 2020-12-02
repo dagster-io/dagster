@@ -139,6 +139,7 @@ export const LaunchButtonDropdown: React.FunctionComponent<LaunchButtonDropdownP
         icon={icon}
         tooltip={tooltip}
         onClick={() => onConfigSelected(primary)}
+        disabled={!!disabled}
         {...forced}
       />
       <Popover
@@ -190,6 +191,7 @@ interface ButtonWithConfigurationProps {
   tooltip?: string | JSX.Element;
   small?: boolean;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 // Basic helper components
@@ -203,6 +205,7 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
   style,
   onClick,
   joined,
+  disabled,
 }) => {
   const sizeStyles = small ? {height: 24, minWidth: 120, paddingLeft: 15, paddingRight: 15} : {};
 
@@ -220,6 +223,7 @@ const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationPr
         status={status}
         onClick={onClick}
         joined={joined}
+        disabled={disabled}
       >
         {icon === 'dagster-spinner' ? (
           <span style={{paddingRight: 6}}>
