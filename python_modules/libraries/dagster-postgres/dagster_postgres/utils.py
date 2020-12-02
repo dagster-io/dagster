@@ -78,8 +78,10 @@ def retry_pg_connection_fn(fn, retry_limit=5, retry_wait=0.2):
         retry_limit -= 1
 
 
-def wait_for_connection(conn_string):
-    retry_pg_connection_fn(lambda: psycopg2.connect(conn_string))
+def wait_for_connection(conn_string, retry_limit=5, retry_wait=0.2):
+    retry_pg_connection_fn(
+        lambda: psycopg2.connect(conn_string), retry_limit=retry_limit, retry_wait=retry_wait
+    )
     return True
 
 

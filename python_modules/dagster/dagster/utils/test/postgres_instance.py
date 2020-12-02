@@ -130,7 +130,7 @@ class TestPostgresInstance:
                 )
 
         conn_str = TestPostgresInstance.conn_string(**conn_args)
-        wait_for_connection(conn_str)
+        wait_for_connection(conn_str, retry_limit=10, retry_wait=3)
         yield conn_str
 
     @staticmethod
