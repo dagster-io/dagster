@@ -38,16 +38,6 @@ Executors
 
 System Storage
 --------------
-.. autodecorator:: system_storage
-
-.. autoclass:: SystemStorageDefinition
-
-.. autoclass:: InitSystemStorageContext
-   :members:
-
-.. currentmodule:: dagster.core.storage.system_storage
-
-.. autoclass:: SystemStorageData
 
 .. currentmodule:: dagster.core.storage.file_manager
 

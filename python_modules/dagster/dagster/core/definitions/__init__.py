@@ -72,4 +72,3 @@ from .run_config_schema import RunConfigSchema, create_environment_type, create_
 from .schedule import ScheduleDefinition, ScheduleExecutionContext
 from .solid import CompositeSolidDefinition, NodeDefinition, SolidDefinition
 from .solid_container import create_execution_structure
-from .system_storage import SystemStorageData, SystemStorageDefinition, system_storage

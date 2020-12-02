@@ -19,7 +19,10 @@ Use `load_from:` instead when specifying how to load the repositories in your wo
 
 We have removed the property `config_field` on definition classes. Use `config_schema` instead.
 
-## Removal: `system_storage_defs`
+## Removal: System Storage
+
+We have removed "system storage", i.e. `SystemStorageDefinition` and `@system_storage`, which we
+deprecated in 0.9.0 as described [here](##deprecation-system_storage_defs).
 
 - We have removed the argument `system_storage_defs` to the `ModeDefinition`, which we deprecated in
   0.9.0, in favor of `intermediate_storage_defs`, as described [here](##deprecation-system_storage_defs).
@@ -34,7 +37,6 @@ We have removed the property `config_field` on definition classes. Use `config_s
 
   it is recommended to make it look like this:
   `{"intermediate_storage": {"filesystem": {}}}` or `{"intermediate_storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket}}}}`
-
 
 - As we have removed the system storages, if you are using file managers which live inside system
   storages, you should update it to be configured on resources via the `"file_manager"` resource key.

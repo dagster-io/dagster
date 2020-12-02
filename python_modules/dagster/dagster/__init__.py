@@ -38,8 +38,6 @@ from dagster.core.definitions import (
     ScheduleExecutionContext,
     SolidDefinition,
     SolidInvocation,
-    SystemStorageData,
-    SystemStorageDefinition,
     TextMetadataEntryData,
     TypeCheck,
     UrlMetadataEntryData,
@@ -62,7 +60,6 @@ from dagster.core.definitions import (
     schedule,
     solid,
     success_hook,
-    system_storage,
     weekly_schedule,
 )
 from dagster.core.definitions.configurable import configured
@@ -119,7 +116,7 @@ from dagster.core.storage.asset_store import (
     mem_asset_store,
 )
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
-from dagster.core.storage.init import InitIntermediateStorageContext, InitSystemStorageContext
+from dagster.core.storage.init import InitIntermediateStorageContext
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
@@ -183,7 +180,6 @@ __all__ = [
     "ResourceDefinition",
     "SolidDefinition",
     "SolidInvocation",
-    "SystemStorageDefinition",
     "TextMetadataEntryData",
     "UrlMetadataEntryData",
     # Decorators
@@ -197,7 +193,6 @@ __all__ = [
     "resource",
     "schedule",
     "solid",
-    "system_storage",
     "success_hook",
     "failure_hook",
     # Execution
@@ -209,14 +204,12 @@ __all__ = [
     "InitExecutorContext",
     "InitLoggerContext",
     "InitResourceContext",
-    "InitSystemStorageContext",
     "InitIntermediateStorageContext",
     "PipelineExecutionResult",
     "RetryRequested",
     "SolidExecutionResult",
     "SystemComputeExecutionContext",
     "SolidExecutionContext",
-    "SystemStorageData",
     "HookContext",
     "TypeCheckContext",
     "AssetStoreContext",
