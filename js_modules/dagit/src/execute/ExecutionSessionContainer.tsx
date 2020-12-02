@@ -564,7 +564,7 @@ const LoadingOverlayContainer = styled.div<{isLoading: boolean}>`
   bottom: 0;
   background-color: #fff;
   z-index: 20;
-  display: flex;
+  display: ${({isLoading}) => (!isLoading ? 'none' : 'flex')};
   align-items: center;
   justify-content: center;
   opacity: ${({isLoading}) => (isLoading ? '0.7' : '0')};
