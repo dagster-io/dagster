@@ -1,14 +1,15 @@
 FROM python:3.7-slim
 
-
 WORKDIR /tmp
 
+ARG DAGSTER_GIT_COMMIT
+
 # Install git
-RUN apt-get update && apt-get install -yqq git
+RUN apt-get update -y && apt-get install -y git
 
 RUN git clone https://github.com/dagster-io/dagster.git dagster \
     && cd dagster \
-    && git checkout origin/docker3
+    && git checkout ${DAGSTER_GIT_COMMIT}
 
 WORKDIR /tmp/dagster
 
