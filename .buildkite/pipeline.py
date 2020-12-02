@@ -76,6 +76,18 @@ def dbt_example_extra_cmds_fn(_):
     ]
 
 
+def deploy_docker_example_extra_cmds_fn(_):
+    return [
+        "pushd examples/deploy_docker",
+        "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit
+        network_buildkite_container("docker_example_network"),
+        connect_sibling_docker_container(
+            "docker_example_network", "docker_example_dagit", "DEPLOY_DOCKER_DAGIT_HOST",
+        ),
+        "popd",
+    ]
+
+
 def celery_extra_cmds_fn(version):
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
@@ -227,6 +239,13 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         supported_pythons=SupportedPythons,
         extra_cmds_fn=dbt_example_extra_cmds_fn,
         buildkite_label="dbt_example",
+    ),
+    ModuleBuildSpec(
+        "examples/deploy_docker",
+        supported_pythons=SupportedPythons,
+        extra_cmds_fn=deploy_docker_example_extra_cmds_fn,
+        buildkite_label="deploy_docker_example",
+        upload_coverage=False,
     ),
     # Examples: Events Demo
     # TODO: https://github.com/dagster-io/dagster/issues/2617
@@ -407,6 +426,7 @@ def examples_tests():
         "legacy_examples",
         "airline_demo",
         "dbt_example",
+        "deploy_docker",
     ]
 
     examples_root = os.path.join(SCRIPT_PATH, "..", "examples")

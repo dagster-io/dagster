@@ -1,0 +1,49 @@
+# Dagster libraries to run both dagit and the dagster-daemon. Does not
+# need to have access to any pipeline code.
+
+FROM python:3.7-slim
+
+ARG DAGSTER_GIT_COMMIT=origin/master
+
+WORKDIR /tmp
+
+# Install git and curl
+RUN apt-get update -y && apt-get install -y git curl
+
+# Add yarn repo
+RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
+    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
+    && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
+    && apt-get update -yqq \
+    && apt-get upgrade -yqq
+
+# Install yarn
+RUN apt-get install -y yarn
+
+# Checkout and install dagster libraries needed for dagit and to load the DagsterInstance
+RUN git clone https://github.com/dagster-io/dagster.git dagster \
+    && cd dagster \
+    && git checkout ${DAGSTER_GIT_COMMIT}
+
+WORKDIR /tmp/dagster/
+
+RUN pip install \
+    -e python_modules/dagster \
+    -e python_modules/dagster-graphql \
+    -e python_modules/dagit \
+    -e python_modules/libraries/dagster-postgres \
+    -e python_modules/libraries/dagster-docker
+
+WORKDIR /tmp/dagster/js_modules/dagit/
+
+RUN yarn install
+RUN yarn build-for-python
+
+# Set $DAGSTER_HOME and copy dagster instance and workspace YAML there
+ENV DAGSTER_HOME=/opt/dagster/dagster_home/
+
+RUN mkdir -p $DAGSTER_HOME
+
+COPY dagster.yaml workspace.yaml $DAGSTER_HOME
+
+WORKDIR $DAGSTER_HOME
