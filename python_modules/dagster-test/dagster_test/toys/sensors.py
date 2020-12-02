@@ -84,6 +84,9 @@ def get_toys_sensors():
 
     @directory_file_sensor(directory_name=directory_name, pipeline_name="log_file_pipeline")
     def toy_file_sensor(_, modified_fileinfo):
+        if not modified_fileinfo:
+            yield SkipReason("No modified files")
+
         for filename, mtime in modified_fileinfo:
             yield RunRequest(
                 run_key="{}:{}".format(filename, str(mtime)),

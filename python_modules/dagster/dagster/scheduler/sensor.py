@@ -48,7 +48,13 @@ class SensorLaunchContext:
         return len(self._tick.run_ids)
 
     def update_state(self, status, **kwargs):
-        self._tick = self._tick.with_status(status=status, **kwargs)
+        skip_reason = kwargs.get("skip_reason")
+        if "skip_reason" in kwargs:
+            del kwargs["skip_reason"]
+
+        self._tick = self._tick.with_status(status=status, **kwargs).with_reason(
+            skip_reason=skip_reason
+        )
 
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
@@ -143,7 +149,9 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                         )
                     )
                 else:
-                    tick = latest_tick.with_status(JobTickStatus.STARTED, timestamp=now.timestamp())
+                    tick = latest_tick.with_reason(None).with_status(
+                        JobTickStatus.STARTED, timestamp=now.timestamp()
+                    )
                     instance.update_job_tick(tick)
 
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
@@ -201,9 +209,12 @@ def _evaluate_sensor(
                 f"Sensor returned false for {external_sensor.name}, skipping: "
                 f"{sensor_runtime_data.skip_message}"
             )
+            context.update_state(
+                JobTickStatus.SKIPPED, skip_reason=sensor_runtime_data.skip_message
+            )
         else:
             context.logger.info(f"Sensor returned false for {external_sensor.name}, skipping")
-        context.update_state(JobTickStatus.SKIPPED)
+            context.update_state(JobTickStatus.SKIPPED)
         return
 
     pipeline_selector = PipelineSelector(

@@ -119,6 +119,10 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
         check.inst_param(status, "status", JobTickStatus)
         return self._replace(job_tick_data=self.job_tick_data.with_status(status, **kwargs))
 
+    def with_reason(self, skip_reason):
+        check.opt_str_param(skip_reason, "skip_reason")
+        return self._replace(job_tick_data=self.job_tick_data.with_reason(skip_reason))
+
     def with_run(self, run_id, run_key=None):
         return self._replace(job_tick_data=self.job_tick_data.with_run(run_id, run_key))
 
@@ -154,11 +158,16 @@ class JobTick(namedtuple("_JobTick", "tick_id job_tick_data")):
     def error(self):
         return self.job_tick_data.error
 
+    @property
+    def skip_reason(self):
+        return self.job_tick_data.skip_reason
+
 
 @whitelist_for_serdes
 class JobTickData(
     namedtuple(
-        "_JobTickData", "job_origin_id job_name job_type status timestamp run_ids run_keys error"
+        "_JobTickData",
+        "job_origin_id job_name job_type status timestamp run_ids run_keys error skip_reason",
     )
 ):
     def __new__(
@@ -171,6 +180,7 @@ class JobTickData(
         run_ids=None,
         run_keys=None,
         error=None,
+        skip_reason=None,
     ):
         """
         This class defines the data that is serialized and stored in ``JobStorage``. We depend
@@ -189,9 +199,10 @@ class JobTickData(
             run_id (str): The run created by the tick.
             error (SerializableErrorInfo): The error caught during job execution. This is set
                 only when the status is ``JobTickStatus.Failure``
+            skip_reason (str): message for why the tick was skipped
         """
 
-        _validate_job_tick_args(job_type, status, run_ids, error)
+        _validate_job_tick_args(job_type, status, run_ids, error, skip_reason)
         return super(JobTickData, cls).__new__(
             cls,
             check.str_param(job_origin_id, "job_origin_id"),
@@ -202,6 +213,7 @@ class JobTickData(
             check.opt_list_param(run_ids, "run_ids", of_type=str),
             check.opt_list_param(run_keys, "run_keys", of_type=str),
             error,  # validated in _validate_job_tick_args
+            skip_reason,  # validated in _validate_job_tick_args
         )
 
     def with_status(self, status, error=None, timestamp=None):
@@ -215,6 +227,7 @@ class JobTickData(
             run_ids=self.run_ids,
             run_keys=self.run_keys,
             error=error if error is not None else self.error,
+            skip_reason=self.skip_reason,
         )
 
     def with_run(self, run_id, run_key=None):
@@ -228,10 +241,25 @@ class JobTickData(
             run_ids=[*self.run_ids, run_id],
             run_keys=[*self.run_keys, run_key] if run_key else self.run_keys,
             error=self.error,
+            skip_reason=self.skip_reason,
+        )
+
+    def with_reason(self, skip_reason):
+        check.opt_str_param(skip_reason, "skip_reason")
+        return JobTickData(
+            job_origin_id=self.job_origin_id,
+            job_name=self.job_name,
+            job_type=self.job_type,
+            status=self.status,
+            timestamp=self.timestamp,
+            run_ids=self.run_ids,
+            run_keys=self.run_keys,
+            error=self.error,
+            skip_reason=skip_reason,
         )
 
 
-def _validate_job_tick_args(job_type, status, run_ids=None, error=None):
+def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_reason=None):
     check.inst_param(job_type, "job_type", JobType)
     check.inst_param(status, "status", JobTickStatus)
 
@@ -242,6 +270,12 @@ def _validate_job_tick_args(job_type, status, run_ids=None, error=None):
         check.inst_param(error, "error", SerializableErrorInfo)
     else:
         check.invariant(error is None, "Job tick status was not FAILURE but error was provided")
+
+    if skip_reason:
+        check.invariant(
+            status == JobTickStatus.SKIPPED,
+            "Job tick status was not SKIPPED but skip_reason was provided",
+        )
 
 
 class JobTickStatsSnapshot(

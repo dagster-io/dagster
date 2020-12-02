@@ -41,6 +41,7 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
                   message
                   stack
               }
+              skipReason
           }
         }
       }

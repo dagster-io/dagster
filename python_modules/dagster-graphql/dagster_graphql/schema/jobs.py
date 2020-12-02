@@ -21,6 +21,7 @@ class DauphinJobTick(dauphin.ObjectType):
     timestamp = dauphin.NonNull(dauphin.Float)
     runIds = dauphin.non_null_list(dauphin.String)
     error = dauphin.Field("PythonError")
+    skipReason = dauphin.String()
 
     runs = dauphin.non_null_list("PipelineRun")
 
@@ -32,6 +33,7 @@ class DauphinJobTick(dauphin.ObjectType):
             timestamp=job_tick.timestamp,
             runIds=job_tick.run_ids,
             error=job_tick.error,
+            skipReason=job_tick.skip_reason,
         )
 
     def resolve_id(self, _):

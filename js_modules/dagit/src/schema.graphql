@@ -505,6 +505,7 @@ type JobTick {
   timestamp: Float!
   runIds: [String!]!
   error: PythonError
+  skipReason: String
   runs: [PipelineRun!]!
 }
 
