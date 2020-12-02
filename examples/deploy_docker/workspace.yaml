@@ -1,2 +1,5 @@
 load_from:
-  - python_file: repo.py
+  - grpc_server:
+      host: docker_example_user_code
+      port: 4000
+      location_name: "user_code"

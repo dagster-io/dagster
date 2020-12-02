@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import weakref
 
 import docker
@@ -10,6 +11,7 @@ from dagster.core.launcher.base import RunLauncher
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass, serialize_dagster_namedtuple
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 DOCKER_CONTAINER_ID_TAG = "docker_container_id"
 
@@ -119,31 +121,55 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         client = self._get_client()
 
+        print("LOADED DOCKER CLIENT")
+
         try:
             container = client.containers.create(
                 image=docker_image,
                 command=command,
                 detach=True,
-                auto_remove=True,
                 environment=docker_env,
                 network=self._network,
             )
+
+            print("FOUND IMAGE AND CREATED CONTAINER")
         except docker.errors.ImageNotFound:
+            print("IMAGE NOT FOUND, PULLING IMAGE")
+
             client.images.pull(docker_image)
+
+            print("IMAGE PULLED CREATING CONTAINER")
+
             container = client.containers.create(
                 image=docker_image,
                 command=command,
                 detach=True,
-                auto_remove=True,
                 environment=docker_env,
                 network=self._network,
             )
+
+            print("CREATED CONTAINER")
 
         self._instance.add_run_tags(
             run.run_id, {DOCKER_CONTAINER_ID_TAG: container.id},
         )
 
+        print("STARTING CONTAINER WITH ID: " + str(container.id))
+
         container.start()
+
+        #        print("STARTED CONTAINER, LOGS????")
+
+        #        out = container.logs(stream=True, follow=True)
+
+        #        for line in out:
+        #            print("LOG: " + str(line))
+
+        #        print("NOW WIATING, WAITING!")
+
+        #        exit_status = container.wait()["StatusCode"]
+
+        #        print("EXIT STATUS: " + str(exit_status))
 
         return run
 
@@ -156,7 +182,14 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         if not container_id:
             return None
 
-        return self._get_client().containers.get(container_id)
+        try:
+            return self._get_client().containers.get(container_id)
+        except:
+            print(
+                "Error loading container: "
+                + str(serializable_error_info_from_exc_info(sys.exc_info()))
+            )
+            return None
 
     def can_terminate(self, run_id):
         run = self._instance.get_run_by_id(run_id)
