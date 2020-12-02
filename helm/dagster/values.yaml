@@ -356,6 +356,11 @@ redis:
 flower:
   enabled: false
 
+  image:
+    repository: "mher/flower"
+    tag: "0.9.5"
+    pullPolicy: Always
+
   service:
     annotations: {}
     port: 5555
