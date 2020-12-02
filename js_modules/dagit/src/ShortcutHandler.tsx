@@ -8,7 +8,7 @@ const SHORTCUT_VISIBILITY_EVENT_TYPE = 'shortcut-visibility';
 const SHORTCUT_VISIBLITY_DELAY = 800;
 
 // Global page state / handling of "shortcut mode". Press any modifier key
-// for 400ms to show shortcuts. This code emits a custom event that React
+// for 800ms to show shortcuts. This code emits a custom event that React
 // components on the page can listen for to update their states and vends
 // the current state via getShortcutsVisible. (Always having a correct
 // "initial state" based on previous keyboard events is why this cannot be
@@ -27,17 +27,32 @@ function setShortcutsVisible(state: boolean) {
 }
 
 function hideShortcuts() {
-  if (shortcutsVisible) {
-    setShortcutsVisible(false);
-  }
   if (shortcutsTimer) {
     clearTimeout(shortcutsTimer);
     shortcutsTimer = null;
   }
+  if (shortcutsVisible) {
+    setShortcutsVisible(false);
+  }
 }
 
+const otherModifiersUsed = (event: KeyboardEvent) => {
+  const {key} = event;
+  return (
+    event.shiftKey ||
+    (key !== 'Alt' && event.altKey) ||
+    (key !== 'Ctrl' && event.ctrlKey) ||
+    (key !== 'Meta' && event.metaKey)
+  );
+};
+
 window.addEventListener('keydown', (event) => {
-  if (!shortcutsTimer && !shortcutsVisible && MODIFIER_KEYCODES.includes(event.keyCode)) {
+  const isModifier = MODIFIER_KEYCODES.includes(event.keyCode);
+  if (!isModifier || otherModifiersUsed(event)) {
+    // If any non-modifiers are pressed or if multiple modifiers are in use, kill the timeout
+    // and hide the shortcuts.
+    hideShortcuts();
+  } else if (!shortcutsTimer && !shortcutsVisible) {
     shortcutsTimer = setTimeout(() => setShortcutsVisible(true), SHORTCUT_VISIBLITY_DELAY);
   }
 });
