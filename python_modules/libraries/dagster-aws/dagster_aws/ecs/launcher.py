@@ -147,7 +147,7 @@ class ECSRunLauncher(RunLauncher, ConfigurableClass):
         # this way we can pass in parameters from the dagit configuration that user has entered in the UI
         overrides = self.generate_task_overrides(run)
         self.client.run_task(
-            command=["api", "execute_run_with_structured_logs", input_json], overrides=overrides,
+            command=["api", "execute_run", input_json], overrides=overrides,
         )
         self.run_id_to_task_offset[run.run_id] = self.client.offset
 

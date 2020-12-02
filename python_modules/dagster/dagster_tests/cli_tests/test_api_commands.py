@@ -10,13 +10,13 @@ from dagster.serdes import serialize_dagster_namedtuple
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
-def runner_execute_run_with_structured_logs(runner, cli_args):
-    result = runner.invoke(api.execute_run_with_structured_logs_command, cli_args)
+def runner_execute_run(runner, cli_args):
+    result = runner.invoke(api.execute_run_command, cli_args)
     if result.exit_code != 0:
         # CliRunner captures stdout so printing it out here
         raise Exception(
             (
-                "dagster runner_execute_run_with_structured_logs commands with cli_args {cli_args} "
+                "dagster runner_execute_run commands with cli_args {cli_args} "
                 'returned exit_code {exit_code} with stdout:\n"{stdout}"'
                 '\n exception: "\n{exception}"'
                 '\n and result as string: "{result}"'
@@ -31,7 +31,7 @@ def runner_execute_run_with_structured_logs(runner, cli_args):
     return result
 
 
-def test_execute_run_with_structured_logs():
+def test_execute_run():
     with get_foo_pipeline_handle() as pipeline_handle:
         runner = CliRunner()
 
@@ -54,7 +54,7 @@ def test_execute_run_with_structured_logs():
                 )
             )
 
-            result = runner_execute_run_with_structured_logs(runner, [input_json],)
+            result = runner_execute_run(runner, [input_json],)
 
         assert "PIPELINE_SUCCESS" in result.stdout, "no match, result: {}".format(result)
 

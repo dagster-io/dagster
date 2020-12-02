@@ -47,7 +47,7 @@ spec:
       containers:
       - args:
         - api
-        - execute_run_with_structured_logs
+        - execute_run
         command:
         - dagster
         env:
@@ -112,7 +112,7 @@ spec:
       containers:
       - args:
         - api
-        - execute_run_with_structured_logs
+        - execute_run
         command:
         - dagster
         env:
@@ -161,7 +161,7 @@ def test_valid_job_format(run_launcher):
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
         command=["dagster"],
-        args=["api", "execute_run_with_structured_logs"],
+        args=["api", "execute_run"],
         job_name=job_name,
         pod_name=pod_name,
         component="run_coordinator",
@@ -202,7 +202,7 @@ def test_valid_job_format_with_backcompat_resources(run_launcher):
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
         command=["dagster"],
-        args=["api", "execute_run_with_structured_logs"],
+        args=["api", "execute_run"],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
         pod_name=pod_name,
@@ -278,7 +278,7 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
         command=["dagster"],
-        args=["api", "execute_run_with_structured_logs"],
+        args=["api", "execute_run"],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
         pod_name=pod_name,

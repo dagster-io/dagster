@@ -67,14 +67,28 @@ class ExecuteRunArgsLoadComplete(namedtuple("_ExecuteRunArgsLoadComplete", "")):
     ),
 )
 @click.argument("input_json", type=click.STRING)
-def execute_run_with_structured_logs_command(input_json):
+@click.pass_context
+def execute_run_with_structured_logs_command(ctx, input_json):  # pylint: disable=unused-argument
+    warnings.warn("execute_run_with_structured_logs is deprecated. Use execute_run instead.")
+    ctx.forward(execute_run_command)
+
+
+@click.command(
+    name="execute_run",
+    help=(
+        "[INTERNAL] This is an internal utility. Users should generally not invoke this command "
+        "interactively."
+    ),
+)
+@click.argument("input_json", type=click.STRING)
+def execute_run_command(input_json):
     try:
         signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGINT))
     except ValueError:
         warnings.warn(
             (
                 "Unexpected error attempting to manage signal handling on thread {thread_name}. "
-                "You should not invoke this API (execute_run_with_structured_logs) from threads "
+                "You should not invoke this API (execute_run) from threads "
                 "other than the main thread."
             ).format(thread_name=threading.current_thread().name)
         )
@@ -652,9 +666,10 @@ def create_api_cli_group():
         ),
     )
 
+    group.add_command(execute_run_command)
     group.add_command(execute_run_with_structured_logs_command)
-    group.add_command(execute_step_with_structured_logs_command)
     group.add_command(execute_step_command)
+    group.add_command(execute_step_with_structured_logs_command)
     group.add_command(launch_scheduled_execution)
     group.add_command(grpc_command)
     group.add_command(grpc_health_check_command)

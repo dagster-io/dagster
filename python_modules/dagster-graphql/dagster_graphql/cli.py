@@ -204,7 +204,7 @@ def ui(text, file, predefined, variables, remote, output, remap_sigterm, **kwarg
             warnings.warn(
                 (
                     "Unexpected error attempting to manage signal handling on thread {thread_name}. "
-                    "You should not invoke this API (execute_run_with_structured_logs) from threads "
+                    "You should not invoke this API (ui) from threads "
                     "other than the main thread."
                 ).format(thread_name=threading.current_thread().name)
             )

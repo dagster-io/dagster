@@ -62,7 +62,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             the Job.
         job_image (Optional[str]): The ``name`` of the image to use for the Job's Dagster container.
             This image will be run with the command
-            ``dagster api execute_run_with_structured_logs``.
+            ``dagster api execute_run``.
             When using user code deployments, the image should not be specified.
         instance_config_map (str): The ``name`` of an existing Volume to mount into the pod in
             order to provide a ConfigMap for the Dagster instance. This Volume should contain a
@@ -292,7 +292,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         job = construct_dagster_k8s_job(
             job_config=job_config,
             command=["dagster"],
-            args=["api", "execute_run_with_structured_logs", input_json],
+            args=["api", "execute_run", input_json],
             job_name=job_name,
             pod_name=pod_name,
             component="run_coordinator",
