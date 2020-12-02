@@ -278,12 +278,7 @@ class SystemStepExecutionContext(SystemExecutionContext):
     def for_hook(self, hook_def):
         return HookContext(self._execution_context_data, self.log, hook_def, self.step)
 
-    def for_asset_store(self, step_output_handle, asset_store_handle):
-        from dagster.core.storage.asset_store import AssetStoreHandle
-
-        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-        check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
-
+    def _get_source_run_id(self, step_output_handle):
         # determine if the step is skipped
         if (
             # this is re-execution
@@ -293,16 +288,23 @@ class SystemStepExecutionContext(SystemExecutionContext):
             # this step is not being executed
             and step_output_handle.step_key not in self.pipeline_run.step_keys_to_execute
         ):
-            source_run_id = self.pipeline_run.parent_run_id
+            return self.pipeline_run.parent_run_id
         else:
-            source_run_id = self.pipeline_run.run_id
+            return self.pipeline_run.run_id
 
+    def _step_output_version(self, step_output_handle):
         step_output_versions = self.execution_plan.resolve_step_output_versions()
-        version = (
+        return (
             step_output_versions[step_output_handle]
             if step_output_handle in step_output_versions
             else None
         )
+
+    def for_asset_store(self, step_output_handle, asset_store_handle):
+        from dagster.core.storage.asset_store import AssetStoreHandle
+
+        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
+        check.inst_param(asset_store_handle, "asset_store_handle", AssetStoreHandle)
 
         return AssetStoreContext(
             step_key=step_output_handle.step_key,
@@ -310,8 +312,28 @@ class SystemStepExecutionContext(SystemExecutionContext):
             asset_metadata=asset_store_handle.asset_metadata,
             pipeline_name=self.pipeline_def.name,
             solid_def=self.solid_def,
-            source_run_id=source_run_id,
-            version=version,
+            source_run_id=self._get_source_run_id(step_output_handle),
+            version=self._step_output_version(step_output_handle),
+        )
+
+    def for_input_manager(self, input_name, input_config, input_metadata, source_handle=None):
+        if source_handle:
+            upstream_output_info = StepOutputInfo(
+                step_key=source_handle.step_key,
+                name=source_handle.output_name,
+                metadata=self.execution_plan.get_asset_store_handle(source_handle).asset_metadata,
+                run_id=self._get_source_run_id(source_handle),
+                version=self._step_output_version(source_handle),
+            )
+        else:
+            upstream_output_info = None
+        return LoadContext(
+            input_name=input_name,
+            input_config=input_config,
+            input_metadata=input_metadata,
+            pipeline_name=self.pipeline_def.name,
+            solid_def=self.solid_def,
+            upstream_output=upstream_output_info,
         )
 
     def get_asset_store(self, asset_store_key):
@@ -408,13 +430,69 @@ class HookContext(SystemExecutionContext):
         return solid_config.config if solid_config else None
 
 
+class StepOutputInfo(namedtuple("_StepOutputInfo", "step_key name metadata run_id version")):
+    """
+    Attributes:
+        step_key (str): The step_key for the compute step that produced the output.
+        name (str): The name of the output that produced the output.
+        metadata (Dict[str, Any]): A dict of the metadata that is assigned to the
+            OutputDefinition that produced the output.
+        run_id (str): The id of the run that produced the output.
+        version (Optional[str]): (Experimental) The version of the output.
+    """
+
+
+class LoadContext(
+    namedtuple(
+        "_LoadContext",
+        "input_name pipeline_name solid_def input_config input_metadata upstream_output",
+    )
+):
+    """
+    The ``context`` object available to the load method of :py:class:`InputManager`.
+
+    Attributes:
+        input_name (str): The name of the input that we're loading.
+        pipeline_name (str): The name of the pipeline.
+        solid_def (Optional[SolidDefinition]): The definition of the solid that's loading the input.
+        input_config (Optional[Any]): The config attached to the input that we're loading.
+        input_metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
+            InputDefinition that we're loading for.
+        upstream_output (Optional[StepOutputInfo]): Info about the output that produced the object
+            we're loading.
+    """
+
+    def __new__(
+        cls,
+        input_name,
+        pipeline_name,
+        solid_def=None,
+        input_config=None,
+        input_metadata=None,
+        upstream_output=None,
+    ):
+
+        return super(LoadContext, cls).__new__(
+            cls,
+            input_name=check.str_param(input_name, "input_name"),
+            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            solid_def=check.opt_inst_param(solid_def, "solid_def", SolidDefinition),
+            input_config=input_config,
+            input_metadata=input_metadata,
+            upstream_output=check.opt_inst_param(
+                upstream_output, "upstream_output", StepOutputInfo
+            ),
+        )
+
+
 class AssetStoreContext(
     namedtuple(
         "_AssetStoreContext",
         "step_key output_name asset_metadata pipeline_name solid_def source_run_id version",
     )
 ):
-    """The ``context`` object available to :py:class:`AssetStore`.
+    """
+    The ``context`` object available to the methods of :py:class:`AssetStore`.
 
     Attributes:
         step_key (str): The step_key for the compute step.

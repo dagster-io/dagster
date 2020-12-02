@@ -264,6 +264,7 @@ def test_solid_config_error():
         ignored_solids=None,
         dependency_structure=pipeline_def.dependency_structure,
         parent_handle=None,
+        resource_defs={},
     )
 
     int_solid_config_type = solid_dict_type.fields["int_config_solid"].config_type

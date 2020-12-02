@@ -726,6 +726,7 @@ def _validate_inputs(dependency_structure, solid_dict):
                 if (
                     not handle.input_def.dagster_type.loader
                     and not handle.input_def.dagster_type.kind == DagsterTypeKind.NOTHING
+                    and not handle.input_def.manager_key
                 ):
                     raise DagsterInvalidDefinitionError(
                         'Input "{input_name}" in solid "{solid_name}" is not connected to '

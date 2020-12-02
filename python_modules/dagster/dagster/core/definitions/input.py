@@ -57,9 +57,20 @@ class InputDefinition:
             :py:func:`PythonObjectDagsterType`, or a Python type. Defaults to :py:class:`Any`.
         description (Optional[str]): Human-readable description of the input.
         default_value (Optional[Any]): The default value to use if no input is provided.
+        manager_key (Optional[str]): The resource key for the InputManager used for loading this
+            input.
+        metadata (Optional[Dict[str, Any]]): A dict of metadata for the input.
     """
 
-    def __init__(self, name, dagster_type=None, description=None, default_value=_NoValueSentinel):
+    def __init__(
+        self,
+        name,
+        dagster_type=None,
+        description=None,
+        default_value=_NoValueSentinel,
+        manager_key=None,
+        metadata=None,
+    ):
         ""
         self._name = check_valid_name(name)
 
@@ -68,6 +79,10 @@ class InputDefinition:
         self._description = check.opt_str_param(description, "description")
 
         self._default_value = _check_default_value(self._name, self._dagster_type, default_value)
+
+        self._manager_key = check.opt_str_param(manager_key, "manager_key")
+
+        self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
     @property
     def name(self):
@@ -89,6 +104,14 @@ class InputDefinition:
     def default_value(self):
         check.invariant(self.has_default_value, "Can only fetch default_value if has_default_value")
         return self._default_value
+
+    @property
+    def manager_key(self):
+        return self._manager_key
+
+    @property
+    def metadata(self):
+        return self._metadata
 
     def mapping_to(self, solid_name, input_name):
         """Create an input mapping to an input of a child solid.

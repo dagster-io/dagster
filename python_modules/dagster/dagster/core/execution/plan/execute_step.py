@@ -330,7 +330,7 @@ def _create_step_events_for_output(step_context, output):
 
 def _set_addressable_asset(step_context, step_output_handle, value):
     asset_store_handle = step_context.execution_plan.get_asset_store_handle(step_output_handle)
-    asset_store = step_context.get_asset_store(asset_store_handle.asset_store_key)
+    asset_store = getattr(step_context.resources, asset_store_handle.asset_store_key)
     asset_store_context = step_context.for_asset_store(step_output_handle, asset_store_handle)
 
     materializations = asset_store.set_asset(asset_store_context, value)

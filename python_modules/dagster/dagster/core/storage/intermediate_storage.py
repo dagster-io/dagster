@@ -9,6 +9,7 @@ from dagster.core.execution.plan.inputs import (
     FromConfig,
     FromDefaultValue,
     FromMultipleSources,
+    FromRootInputManager,
     FromStepOutput,
 )
 from dagster.core.execution.plan.objects import StepOutputHandle
@@ -62,7 +63,7 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
                 self.is_input_source_missing(context, inner_source)
                 for inner_source in source.sources
             )
-        elif isinstance(source, (FromConfig, FromDefaultValue)):
+        elif isinstance(source, (FromConfig, FromDefaultValue, FromRootInputManager)):
             pass  # value is sourced directly
         else:
             check.failed(f"Unhandled step input source: {source}")
