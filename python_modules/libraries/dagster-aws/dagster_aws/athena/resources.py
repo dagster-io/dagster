@@ -7,11 +7,7 @@ import uuid
 import boto3
 from botocore.stub import Stubber
 from dagster import Field, StringSource, check, resource
-
-try:
-    from urlparse import urlparse
-except ImportError:
-    from urllib.parse import urlparse
+from dagster.seven import urlparse
 
 
 class AthenaError(Exception):
