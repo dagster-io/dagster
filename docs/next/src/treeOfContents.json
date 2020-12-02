@@ -119,10 +119,6 @@
         "path": "/overview/modes-resources-presets/modes-resources"
       },
       {
-        "name": "Asset Stores",
-        "path": "/overview/asset-stores/asset-stores"
-      },
-      {
         "name": "Types",
         "path": "/overview/types"
       },
