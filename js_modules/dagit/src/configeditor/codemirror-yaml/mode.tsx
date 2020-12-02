@@ -8,6 +8,9 @@ import * as yaml from 'yaml';
 
 import {ConfigEditorRunConfigSchemaFragment} from 'src/configeditor/types/ConfigEditorRunConfigSchemaFragment';
 
+// Example YAML for testing this parser:
+// https://gist.github.com/bengotow/0b700e7d0367750cb31eaf697f865d70
+
 interface IParseStateParent {
   key: string;
   indent: number;
@@ -25,7 +28,7 @@ interface IParseState {
   escaped: boolean;
   inValue: boolean;
   inBlockLiteral: boolean;
-  lastIndent: number;
+  inBlockLiteralIndentation: number;
   parents: IParseStateParent[];
 }
 
@@ -68,17 +71,14 @@ export const RegExps = {
   DICT_COLON: /^:\s*/,
   // eslint-disable-next-line no-useless-escape
   DICT_KEY: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:)/,
-  // same as above, but to avoid clasifiyng "a" as a sub-dict in "value: a:b", we require whitespace after the colon
   // eslint-disable-next-line no-useless-escape
-  DICT_KEY_IN_VALUE: /^\s*(?:[,\[\]{}&*!|>'"%@`][^\s'":]|[^,\[\]{}#&*!|>'"%@`])[^# ,]*?(?=\s*:\s+)/,
   QUOTED_STRING: /^('([^']|\\.)*'?|"([^"\\]|\\.)*"?)/,
-  UNQUOTED_STRING: /^.*$/,
   // eslint-disable-next-line no-useless-escape
   BLOCKSTART_PIPE_OR_ARROW: /^\s*(\||\>)\s*/,
   // eslint-disable-next-line no-useless-escape
-  NUMBER: /^\s*-?[0-9\.]+(?![0-9\.]*[^0-9.\s])\s?/,
+  NUMBER: /^\s*-?[0-9\.]+(?![0-9\.]+)$/,
   // eslint-disable-next-line no-useless-escape
-  VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+\b/i,
+  VARIABLE: /^\s*(\&|\*)[a-z0-9\._-]+$/i,
 };
 
 CodeMirror.defineMode('yaml', () => {
@@ -91,8 +91,8 @@ CodeMirror.defineMode('yaml', () => {
         escaped: false,
         inValue: false,
         inBlockLiteral: false,
+        inBlockLiteralIndentation: 0,
         inlineContainers: [],
-        lastIndent: 0,
         parents: [],
       };
     },
@@ -102,8 +102,6 @@ CodeMirror.defineMode('yaml', () => {
       // reset escape, indent and trailing
       const wasEscaped = state.escaped;
       const wasTrailingSpace = state.trailingSpace;
-      const lastIndent = state.lastIndent;
-      state.lastIndent = stream.indentation();
       state.escaped = false;
       state.trailingSpace = false;
 
@@ -129,10 +127,11 @@ CodeMirror.defineMode('yaml', () => {
 
       if (state.inBlockLiteral) {
         // continuation of a literal string that was started on a previous line
-        if (stream.indentation() > lastIndent) {
+        if (stream.indentation() > state.inBlockLiteralIndentation) {
           stream.skipToEnd();
           return 'string';
         }
+        state.inBlockLiteralIndentation = 0;
         state.inBlockLiteral = false;
       }
 
@@ -167,6 +166,7 @@ CodeMirror.defineMode('yaml', () => {
           state.inValue = state.inlineContainers.length > 0;
         } else if (ch === '[') {
           state.inlineContainers = [...state.inlineContainers, ContainerType.List];
+          state.inValue = true;
         } else if (ch === ']') {
           state.inlineContainers = state.inlineContainers.slice(
             0,
@@ -196,11 +196,6 @@ CodeMirror.defineMode('yaml', () => {
         return 'meta';
       }
 
-      // general strings
-      if (stream.match(RegExps.QUOTED_STRING)) {
-        return 'string';
-      }
-
       // Handle dict key fragments. May be the first element on a line or nested within an inline
       // (eg: {a: 1, b: 2}). We add the new key to the current `parent` and push a new parent
       // in case the dict key has subkeys.
@@ -217,25 +212,10 @@ CodeMirror.defineMode('yaml', () => {
       if (state.inValue) {
         let result = null;
 
-        if (stream.match(RegExps.QUOTED_STRING)) {
-          result = 'string';
-        }
-        if (stream.match(RegExps.BLOCKSTART_PIPE_OR_ARROW)) {
-          state.inBlockLiteral = true;
-          result = 'meta';
-        }
-        if (stream.match(RegExps.VARIABLE)) {
-          result = 'variable-2';
-        }
-        if (stream.match(RegExps.NUMBER)) {
-          result = 'number';
-        }
-        if (stream.match(RegExps.KEYWORD)) {
-          result = 'keyword';
-        }
-
-        // Child dicts can start within a value if the user is creating a list
-        const match = stream.match(RegExps.DICT_KEY_IN_VALUE);
+        // Child dicts can start within a value if the user is creating a list, but we don't want to
+        // clasifiy "my" as a sub-dict in "- my:weird:key". As a balance we require that the colon
+        // be followed by the end-of-line or whitespace.
+        const match = !stream.string.match(/[^\s]:[^\s]/) ? stream.match(RegExps.DICT_KEY) : false;
         if (match) {
           const key = match[0];
           const keyIndent = stream.pos - key.length;
@@ -244,23 +224,44 @@ CodeMirror.defineMode('yaml', () => {
           result = 'atom';
         }
 
-        // "In YAML, you can write a string without quotes, if it doesn't have a special meaning.",
-        // so if we can't match the content to any other type and we are inValue, we make it a string.
-        // http://blogs.perl.org/users/tinita/2018/03/strings-in-yaml---to-quote-or-not-to-quote.html
-        if (!result && stream.match(RegExps.UNQUOTED_STRING)) {
-          result = 'string';
+        if (stream.match(RegExps.BLOCKSTART_PIPE_OR_ARROW)) {
+          state.inBlockLiteralIndentation = stream.indentation();
+          state.inBlockLiteral = true;
+          result = 'meta';
         }
-        stream.eatSpace();
+
+        if (!result) {
+          // First, read any value that is a quoted string until we reach the end quote.
+          let match = stream.match(RegExps.QUOTED_STRING);
+          if (!match) {
+            // If the value is not a string in quotes, read until a separator (,) or container closing character,
+            // then we'll decide what to do with it.
+            const parentContainer = state.inlineContainers[state.inlineContainers.length - 1];
+            match =
+              parentContainer === ContainerType.List
+                ? stream.match(/^[^,\]]+/)
+                : parentContainer === ContainerType.Dict
+                ? stream.match(/^[^,\}]+/)
+                : stream.match(/^.+$/);
+          }
+          const value = match ? match[0] : '';
+          if (value.match(RegExps.VARIABLE)) {
+            result = 'variable-2';
+          } else if (value.match(RegExps.NUMBER)) {
+            result = 'number';
+          } else if (value.match(RegExps.KEYWORD)) {
+            result = 'keyword';
+          } else {
+            // "In YAML, you can write a string without quotes, if it doesn't have a special meaning.",
+            // so if we can't match the content to any other type and we are inValue, we make it a string.
+            // http://blogs.perl.org/users/tinita/2018/03/strings-in-yaml---to-quote-or-not-to-quote.html
+            result = 'string';
+          }
+        }
 
         // If after consuming the value and trailing spaces we're at the end of the
         // line, terminate the value and look for another key on the following line.
         if (stream.eol() && !state.inBlockLiteral) {
-          state.inValue = false;
-        }
-
-        // If we can't identify the value, bail out and abort parsing the line
-        if (!result) {
-          stream.skipToEnd();
           state.inValue = false;
         }
 
@@ -374,22 +375,31 @@ CodeMirror.registerHelper(
       start: any,
       token: CodemirrorToken,
       prevToken: CodemirrorToken,
+      inList: boolean,
     ) => {
       let replacement = `${field.name}`;
+      let postReplacementIndentation = start;
 
-      const isCompositeOrList = isCompOrList(field.configTypeKey);
-
-      const tokenIsColon = token.string.startsWith(':');
-
-      if (isCompositeOrList && tokenIsColon) {
-        replacement = `\n${' '.repeat(prevToken.start + 2)}${field.name}:\n${' '.repeat(
-          prevToken.start + 4,
-        )}`;
-      } else if (isCompositeOrList) {
-        replacement = `${field.name}:\n${' '.repeat(start + 2)}`;
-      } else if (tokenIsColon) {
-        replacement = `\n${' '.repeat(prevToken.start + 2)}${field.name}`;
+      const listMarkerPresent = prevToken.string === ' ' || prevToken.string === '-';
+      if (inList && !listMarkerPresent) {
+        replacement = `- ${replacement}`;
+        postReplacementIndentation += 2;
       }
+
+      const cursorAtColon = token.string.startsWith(':');
+      if (cursorAtColon) {
+        const nextLineIndent = prevToken.start + 2;
+        replacement = `\n${' '.repeat(nextLineIndent)}${replacement}`;
+        postReplacementIndentation = nextLineIndent;
+      }
+
+      const completionHasChildren = isCompOrList(field.configTypeKey);
+      if (completionHasChildren) {
+        replacement += `:\n${' '.repeat(postReplacementIndentation + 2)}`;
+      } else {
+        replacement += ': ';
+      }
+
       return replacement;
     };
 
@@ -436,7 +446,7 @@ CodeMirror.registerHelper(
           .map((field) =>
             buildSuggestion(
               field.name,
-              formatReplacement(field, start, token, prevToken),
+              formatReplacement(field, start, token, prevToken, context.inArray),
               field.description,
             ),
           ),
@@ -489,7 +499,7 @@ CodeMirror.registerHelper(
           .map((field) =>
             buildSuggestion(
               field.name,
-              formatReplacement(field, start, token, prevToken),
+              formatReplacement(field, start, token, prevToken, false),
               field.description,
             ),
           );
@@ -526,6 +536,7 @@ function findAutocompletionContext(
 
   let available = type.fields;
   let closestCompositeType = type;
+  let inArray = false;
 
   if (available && parents.length > 0) {
     for (const parent of parents) {
@@ -543,7 +554,8 @@ function findAutocompletionContext(
       let childTypeKey = parentConfigType.key;
       let childEntriesUnique = true;
 
-      if (parentConfigType.__typename === 'ArrayConfigType') {
+      inArray = parentConfigType.__typename === 'ArrayConfigType';
+      if (inArray) {
         childTypeKey = parentConfigType.typeParamKeys[0];
         childEntriesUnique = false;
       }
@@ -575,7 +587,7 @@ function findAutocompletionContext(
     }
   }
 
-  return {type, closestCompositeType, availableFields: available};
+  return {type, closestCompositeType, availableFields: available, inArray};
 }
 
 // Find context for a fully- or partially- typed key or value in the YAML document
@@ -759,14 +771,16 @@ export function findRangeInDocumentFromPath(
   pathPart: 'key' | 'value',
 ): {start: number; end: number} | null {
   let node = nodeAtPath(doc, path);
-  if (!node || !('type' in node) || node.type !== 'PAIR') {
+  if (!node || !('type' in node)) {
     return null;
   }
 
-  if (pathPart === 'value' && node.value) {
-    node = node.value;
-  } else {
-    node = node.key;
+  if (node.type === 'PAIR') {
+    if (pathPart === 'value' && node.value) {
+      node = node.value;
+    } else {
+      node = node.key;
+    }
   }
 
   if (node && node.range) {
