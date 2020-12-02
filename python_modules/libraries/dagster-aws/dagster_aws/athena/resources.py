@@ -94,7 +94,7 @@ class FakeAthenaResource(AthenaResource):
         self.polling_interval = 0
         self.stubber = Stubber(self.client)
 
-        s3 = boto3.resource("s3")
+        s3 = boto3.resource("s3", region_name="us-east-1")
         self.bucket = s3.Bucket("fake-athena-results-bucket")
         self.bucket.create()
 
@@ -256,7 +256,7 @@ def athena_resource(context):
 )
 def fake_athena_resource(context):
     return FakeAthenaResource(
-        client=boto3.client("athena"),
+        client=boto3.client("athena", region_name="us-east-1"),
         workgroup=context.resource_config.get("workgroup"),
         polling_interval=context.resource_config.get("polling_interval"),
         max_polls=context.resource_config.get("max_polls"),
