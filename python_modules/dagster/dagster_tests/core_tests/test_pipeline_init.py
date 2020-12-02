@@ -9,7 +9,6 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.intermediate_storage import IntermediateStorageDefinition
-from dagster.core.definitions.system_storage import SystemStorageDefinition
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context_creation_pipeline import PipelineExecutionContextManager

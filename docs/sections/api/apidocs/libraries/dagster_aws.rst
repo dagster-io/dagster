@@ -34,16 +34,6 @@ S3
             key: my-key
 
 
-.. autodata:: dagster_aws.s3.s3_system_storage
-  :annotation: SystemStorageDefinition
-
-.. autodata:: dagster_aws.s3.s3_plus_default_storage_defs
-  :annotation: List[SystemStorageDefinition]
-
-  The default system storages available on any :py:class:`~dagster.ModeDefinition` that does not
-  provide custom system storages, i.e., :py:class:`~dagster.default_system_storage_defs` plus the
-  :py:class:`s3_system_storage`.
-
 
 Redshift
 --------

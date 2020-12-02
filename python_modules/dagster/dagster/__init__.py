@@ -124,11 +124,8 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
     default_intermediate_storage_defs,
-    default_system_storage_defs,
     fs_intermediate_storage,
-    fs_system_storage,
     mem_intermediate_storage,
-    mem_system_storage,
 )
 from dagster.core.types.config_schema import dagster_type_loader, dagster_type_materializer
 from dagster.core.types.dagster_type import DagsterType, List, Optional, PythonObjectDagsterType
@@ -226,15 +223,12 @@ __all__ = [
     "PipelineRun",
     "default_executors",
     "default_intermediate_storage_defs",
-    "default_system_storage_defs",
     "execute_pipeline_iterator",
     "execute_pipeline",
     "execute_solid_within_pipeline",
     "fs_intermediate_storage",
-    "fs_system_storage",
     "in_process_executor",
     "mem_intermediate_storage",
-    "mem_system_storage",
     "multiprocess_executor",
     "reconstructable",
     "reexecute_pipeline_iterator",

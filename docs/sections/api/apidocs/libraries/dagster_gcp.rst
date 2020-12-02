@@ -36,10 +36,6 @@ Dataproc
 GCS
 ---
 
-.. autodata:: gcs_system_storage
-  :annotation: SystemStorageDefinition
-
-
 .. autodata:: dagster_gcp.gcs.gcs_intermediate_storage
   :annotation: IntermediateStorageDefinition
 

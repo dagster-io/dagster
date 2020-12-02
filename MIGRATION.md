@@ -24,6 +24,9 @@ We have removed the property `config_field` on definition classes. Use `config_s
 - We have removed the argument `system_storage_defs` to the `ModeDefinition`, which we deprecated in
   0.9.0, in favor of `intermediate_storage_defs`, as described [here](##deprecation-system_storage_defs).
 
+- We have removed the built-in system storages, e.g. `default_system_storage_defs`, which we
+  deprecated in 0.9.0.
+
 - We have deprecated the field `"storage"` on run config, in favor of `"intermediate_storage"`.
 
   For example, if your run config yaml look like this:
