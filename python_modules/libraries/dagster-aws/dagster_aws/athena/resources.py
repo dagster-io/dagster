@@ -26,8 +26,9 @@ class AthenaResource:
         self.polling_interval = polling_interval
 
     def execute_query(self, query, fetch_results=False):
-        """Synchronously execute a single query against Athena. Will return a list of rows, where
-        each row is a tuple of stringified values, e.g. SELECT 1 will return [("1",)].
+        """Synchronously execute a single query against Athena. If fetch_results is set to true,
+        will return a list of rows, where each row is a tuple of stringified values,
+        e.g. SELECT 1 will return [("1",)].
 
         Args:
             query (str): The query to execute.
