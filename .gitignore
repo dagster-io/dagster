@@ -148,3 +148,6 @@ examples/**/**/example.db
 .telemetry
 
 test_results.xml
+
+# GitHub Codespaces
+pythonenv*/
