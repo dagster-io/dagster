@@ -1273,23 +1273,6 @@ class DagsterInstance:
         return self._event_storage.get_addresses_for_step_output_versions(step_output_versions)
 
     # dagster daemon
-
-    def daemon_required(self):
-        """
-        True if the instance is configured to require the dagster-daemon
-        """
-        from dagster.daemon.controller import DagsterDaemonController
-
-        return DagsterDaemonController.required(self)
-
-    def daemon_healthy(self):
-        """
-        True if the dagster-daemon has sent a heartbeat recently
-        """
-        from dagster.daemon.controller import DagsterDaemonController
-
-        return DagsterDaemonController.daemon_healthy(self)
-
     def add_daemon_heartbeat(self, daemon_heartbeat):
         """Called on a regular interval by the daemon"""
         self._run_storage.add_daemon_heartbeat(daemon_heartbeat)

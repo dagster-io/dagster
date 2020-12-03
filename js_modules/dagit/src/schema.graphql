@@ -880,10 +880,29 @@ type Instance {
   runLauncher: RunLauncher
   assetsSupported: Boolean!
   executablePath: String!
+  daemonHealth: DaemonHealth!
 }
 
 type RunLauncher {
   name: String!
+}
+
+type DaemonHealth {
+  daemonStatus(daemonType: DaemonType): DaemonStatus!
+  allDaemonStatuses: [DaemonStatus!]!
+}
+
+type DaemonStatus {
+  daemonType: DaemonType!
+  required: Boolean!
+  healthy: Boolean
+  lastHeartbeatTime: Float
+}
+
+enum DaemonType {
+  SENSOR
+  SCHEDULER
+  QUEUED_RUN_COORDINATOR
 }
 
 union AssetsOrError = AssetConnection | AssetsNotSupportedError | PythonError

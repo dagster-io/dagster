@@ -1,5 +1,7 @@
 import time
 
+from dagster.daemon.controller import all_daemons_healthy
+
 from .utils import setup_instance, start_daemon
 
 
@@ -16,11 +18,11 @@ def test_heartbeat(tmpdir,):
     """,
     ) as instance:
 
-        assert instance.daemon_healthy() is False
+        assert all_daemons_healthy(instance) is False
 
         with start_daemon():
             time.sleep(5)
-            assert instance.daemon_healthy() is True
+            assert all_daemons_healthy(instance) is True
 
         time.sleep(5)
-        assert instance.daemon_healthy() is False
+        assert all_daemons_healthy(instance) is False

@@ -17,7 +17,7 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster.core.storage.tags import ROOT_RUN_ID_TAG
-from dagster.daemon.types import DaemonHeartbeat
+from dagster.daemon.types import DaemonHeartbeat, DaemonType
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts
@@ -539,7 +539,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 conn.execute(
                     DaemonHeartbeatsTable.insert().values(  # pylint: disable=no-value-for-parameter
                         timestamp=daemon_heartbeat.timestamp,
-                        daemon_type=daemon_heartbeat.daemon_type,
+                        daemon_type=daemon_heartbeat.daemon_type.value,
                         daemon_id=daemon_heartbeat.daemon_id,
                         info=daemon_heartbeat.info,
                     )
@@ -547,7 +547,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             except db.exc.IntegrityError:
                 conn.execute(
                     DaemonHeartbeatsTable.update()  # pylint: disable=no-value-for-parameter
-                    .where(DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type)
+                    .where(
+                        DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type.value
+                    )
                     .values(  # pylint: disable=no-value-for-parameter
                         timestamp=daemon_heartbeat.timestamp,
                         daemon_id=daemon_heartbeat.daemon_id,
@@ -556,12 +558,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
 
     def get_daemon_heartbeats(self):
+
         with self.connect() as conn:
             rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
             return {
-                row.daemon_type: DaemonHeartbeat(
+                DaemonType(row.daemon_type): DaemonHeartbeat(
                     timestamp=row.timestamp,
-                    daemon_type=row.daemon_type,
+                    daemon_type=DaemonType(row.daemon_type),
                     daemon_id=row.daemon_id,
                     info=row.info,
                 )

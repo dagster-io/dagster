@@ -5,9 +5,10 @@ import re
 import pendulum
 import pytest
 from dagster.core.test_utils import instance_for_test
-from dagster.daemon.controller import DagsterDaemonController
+from dagster.daemon.controller import DagsterDaemonController, all_daemons_healthy
 from dagster.daemon.daemon import SchedulerDaemon
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
+from dagster.daemon.types import DaemonType
 
 
 def test_scheduler_instance():
@@ -88,8 +89,8 @@ def test_different_intervals(caplog):
 
         controller.run_iteration(init_time)
 
-        scheduler_daemon = controller.get_daemon(SchedulerDaemon.__name__)
-        run_daemon = controller.get_daemon(QueuedRunCoordinatorDaemon.__name__)
+        scheduler_daemon = controller.get_daemon(DaemonType.SCHEDULER)
+        run_daemon = controller.get_daemon(DaemonType.QUEUED_RUN_COORDINATOR)
 
         assert scheduler_daemon
         assert scheduler_daemon.last_iteration_time == init_time
@@ -122,19 +123,6 @@ def test_different_intervals(caplog):
         assert _run_coordinator_ran(caplog)
 
 
-def test_required():
-
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster.core.run_coordinator.queued_run_coordinator",
-                "class": "QueuedRunCoordinator",
-            },
-        }
-    ) as instance:
-        assert DagsterDaemonController.required(instance)
-
-
 def test_healthy():
 
     with instance_for_test(
@@ -149,12 +137,12 @@ def test_healthy():
         beyond_tolerated_time = init_time + datetime.timedelta(seconds=60)
 
         controller = DagsterDaemonController(instance)
-        assert not controller.daemon_healthy(instance, curr_time=init_time)
+        assert not all_daemons_healthy(instance, curr_time=init_time)
 
         controller.run_iteration(init_time)
-        assert controller.daemon_healthy(instance, curr_time=init_time)
+        assert all_daemons_healthy(instance, curr_time=init_time)
 
-        assert not controller.daemon_healthy(instance, curr_time=beyond_tolerated_time)
+        assert not all_daemons_healthy(instance, curr_time=beyond_tolerated_time)
 
 
 def test_healthy_with_different_daemons():
@@ -171,4 +159,4 @@ def test_healthy_with_different_daemons():
             },
         }
     ) as instance:
-        assert not DagsterDaemonController.daemon_healthy(instance, curr_time=init_time)
+        assert not all_daemons_healthy(instance, curr_time=init_time)

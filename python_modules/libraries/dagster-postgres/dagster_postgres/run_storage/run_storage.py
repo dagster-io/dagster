@@ -88,7 +88,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 db.dialects.postgresql.insert(DaemonHeartbeatsTable)
                 .values(  # pylint: disable=no-value-for-parameter
                     timestamp=daemon_heartbeat.timestamp,
-                    daemon_type=daemon_heartbeat.daemon_type,
+                    daemon_type=daemon_heartbeat.daemon_type.value,
                     daemon_id=daemon_heartbeat.daemon_id,
                     info=daemon_heartbeat.info,
                 )

@@ -7,7 +7,7 @@ from dagster.core.run_coordinator import QueuedRunCoordinator
 from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.daemon.daemon import SchedulerDaemon, SensorDaemon, get_default_daemon_logger
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
-from dagster.daemon.types import DaemonHeartbeat
+from dagster.daemon.types import DaemonHeartbeat, DaemonStatus, DaemonType
 
 # How many expected heartbeats can be skipped before the daemon is considered unhealthy.
 # E.g, if a daemon has an interval of 30s, tolerating 1 skip means that it will be considered
@@ -35,7 +35,7 @@ class DagsterDaemonController:
             self._add_daemon(
                 SchedulerDaemon(
                     instance,
-                    interval_seconds=self._get_interval_seconds(instance, SchedulerDaemon.__name__),
+                    interval_seconds=_get_interval_seconds(instance, SchedulerDaemon.daemon_type()),
                     max_catchup_runs=max_catchup_runs,
                 )
             )
@@ -43,7 +43,7 @@ class DagsterDaemonController:
         self._add_daemon(
             SensorDaemon(
                 instance,
-                interval_seconds=self._get_interval_seconds(instance, SensorDaemon.__name__),
+                interval_seconds=_get_interval_seconds(instance, SensorDaemon.daemon_type()),
             )
         )
 
@@ -52,14 +52,14 @@ class DagsterDaemonController:
             self._add_daemon(
                 QueuedRunCoordinatorDaemon(
                     instance,
-                    interval_seconds=self._get_interval_seconds(
-                        instance, QueuedRunCoordinatorDaemon.__name__
+                    interval_seconds=_get_interval_seconds(
+                        instance, QueuedRunCoordinatorDaemon.daemon_type()
                     ),
                     max_concurrent_runs=max_concurrent_runs,
                 )
             )
 
-        assert set(self._expected_daemons(instance)) == self._daemons.keys()
+        assert set(required_daemons(instance)) == self._daemons.keys()
 
         if not self._daemons:
             raise Exception("No daemons configured on the DagsterInstance")
@@ -71,7 +71,7 @@ class DagsterDaemonController:
         )
 
     def _add_daemon(self, daemon):
-        self._daemons[type(daemon).__name__] = daemon
+        self._daemons[daemon.daemon_type()] = daemon
 
     def get_daemon(self, daemon_type):
         return self._daemons.get(daemon_type)
@@ -94,67 +94,76 @@ class DagsterDaemonController:
         Add a heartbeat for the given daemon
         """
         self._instance.add_daemon_heartbeat(
-            DaemonHeartbeat(pendulum.now("UTC"), type(daemon).__name__, None, None)
+            DaemonHeartbeat(pendulum.now("UTC"), daemon.daemon_type(), None, None)
         )
 
-    @staticmethod
-    def _get_interval_seconds(instance, daemon_type):
-        """
-        Return the interval in which each daemon is configured to run
-        """
-        if daemon_type == QueuedRunCoordinatorDaemon.__name__:
-            return instance.run_coordinator.dequeue_interval_seconds
 
-        # default
-        return 30
+def _get_interval_seconds(instance, daemon_type):
+    """
+    Return the interval in which each daemon is configured to run
+    """
+    if daemon_type == DaemonType.QUEUED_RUN_COORDINATOR:
+        return instance.run_coordinator.dequeue_interval_seconds
 
-    @staticmethod
-    def required(instance):
-        """
-        True if the instance configuration has classes that require the daemon to be enabled.
+    # default
+    return 30
 
-        Note: this is currently always true due to the SensorDaemon
-        """
-        return len(DagsterDaemonController._expected_daemons(instance)) > 0
 
-    @staticmethod
-    def _expected_daemons(instance):
-        """
-        Return which daemon types are required by the instance
-        """
-        daemons = [SensorDaemon.__name__]
-        if isinstance(instance.scheduler, DagsterDaemonScheduler):
-            daemons.append(SchedulerDaemon.__name__)
-        if isinstance(instance.run_coordinator, QueuedRunCoordinator):
-            daemons.append(QueuedRunCoordinatorDaemon.__name__)
-        return daemons
+def required_daemons(instance):
+    """
+    Return which daemon types are required by the instance
+    """
+    daemons = [DaemonType.SENSOR]
+    if isinstance(instance.scheduler, DagsterDaemonScheduler):
+        daemons.append(DaemonType.SCHEDULER)
+    if isinstance(instance.run_coordinator, QueuedRunCoordinator):
+        daemons.append(DaemonType.QUEUED_RUN_COORDINATOR)
+    return daemons
 
-    @staticmethod
-    def daemon_healthy(instance, curr_time=None):
-        """
-        True if the daemon process has had a recent heartbeat
 
-        Note: this method (and its dependencies) are static because it is called by the dagit
-        process, which shouldn't need to instantiate each of the daemons.
-        """
-        curr_time = check.opt_inst_param(
-            curr_time, "curr_time", datetime.datetime, default=pendulum.now()
+def all_daemons_healthy(instance, curr_time=None):
+    """
+    True if all required daemons have had a recent heartbeat
+
+    Note: this method (and its dependencies) are static because it is called by the dagit
+    process, which shouldn't need to instantiate each of the daemons.
+    """
+
+    statuses = [
+        get_daemon_status(instance, daemon_type, curr_time=curr_time)
+        for daemon_type in required_daemons(instance)
+    ]
+    return all([status.healthy for status in statuses])
+
+
+def get_daemon_status(instance, daemon_type, curr_time=None):
+    curr_time = check.opt_inst_param(
+        curr_time, "curr_time", datetime.datetime, default=pendulum.now("UTC")
+    )
+
+    # daemon not required
+    if daemon_type not in required_daemons(instance):
+        return DaemonStatus(
+            daemon_type=daemon_type, required=False, healthy=None, last_heartbeat=None
         )
-        assert DagsterDaemonController.required(instance)
 
-        daemon_types = DagsterDaemonController._expected_daemons(instance)
-        for daemon_type in daemon_types:
-            heartbeat = instance.get_daemon_heartbeats().get(daemon_type, None)
+    # daemon not present
+    heartbeats = instance.get_daemon_heartbeats()
+    if daemon_type not in heartbeats:
+        return DaemonStatus(
+            daemon_type=daemon_type, required=True, healthy=False, last_heartbeat=None
+        )
 
-            if not heartbeat:
-                return False
+    hearbeat_timestamp = pendulum.instance(heartbeats[daemon_type].timestamp)
 
-            heartbeat_time = pendulum.instance(heartbeat.timestamp)
-            maximum_tolerated_time = heartbeat_time.add(
-                seconds=(DAEMON_HEARTBEAT_SKIP_TOLERANCE + 1)
-                * DagsterDaemonController._get_interval_seconds(instance, daemon_type)
-            )
-            if curr_time > maximum_tolerated_time:
-                return False
+    maximum_tolerated_time = hearbeat_timestamp.add(
+        seconds=(DAEMON_HEARTBEAT_SKIP_TOLERANCE + 1) * _get_interval_seconds(instance, daemon_type)
+    )
+    healthy = curr_time <= maximum_tolerated_time
 
-        return True
+    return DaemonStatus(
+        daemon_type=daemon_type,
+        required=True,
+        healthy=healthy,
+        last_heartbeat=heartbeats[daemon_type],
+    )

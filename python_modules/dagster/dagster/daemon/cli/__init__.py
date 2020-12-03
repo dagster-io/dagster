@@ -6,7 +6,7 @@ import click
 import pendulum
 from dagster import __version__
 from dagster.core.instance import DagsterInstance
-from dagster.daemon import DagsterDaemonController
+from dagster.daemon.controller import DagsterDaemonController, all_daemons_healthy
 
 
 @click.command(
@@ -27,7 +27,7 @@ def run_command():
 )
 def health_check_command():
     with DagsterInstance.get() as instance:
-        if DagsterDaemonController.daemon_healthy(instance):
+        if all_daemons_healthy(instance):
             click.echo("Daemon healthy")
         else:
             click.echo("Daemon not healthy")

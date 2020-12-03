@@ -5,6 +5,7 @@ from dagster import DagsterEvent, DagsterEventType, check
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.daemon.daemon import DagsterDaemon
+from dagster.daemon.types import DaemonType
 from dagster.utils.backcompat import experimental
 from dagster.utils.external import external_pipeline_from_run
 
@@ -24,6 +25,10 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
     def __init__(self, instance, interval_seconds, max_concurrent_runs):
         super(QueuedRunCoordinatorDaemon, self).__init__(instance, interval_seconds)
         self._max_concurrent_runs = check.int_param(max_concurrent_runs, "max_concurrent_runs")
+
+    @classmethod
+    def daemon_type(cls):
+        return DaemonType.QUEUED_RUN_COORDINATOR
 
     def run_iteration(self):
         in_progress = self._count_in_progress_runs()

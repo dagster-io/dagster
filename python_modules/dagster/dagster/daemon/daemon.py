@@ -1,9 +1,10 @@
 import logging
 import sys
-from abc import abstractmethod
+from abc import abstractclassmethod, abstractmethod
 
 import pendulum
 from dagster import DagsterInstance, check
+from dagster.daemon.types import DaemonType
 from dagster.scheduler import execute_scheduler_iteration
 from dagster.scheduler.sensor import execute_sensor_iteration
 from dagster.utils.log import default_format_string
@@ -35,6 +36,12 @@ class DagsterDaemon:
         self.interval_seconds = check.int_param(interval_seconds, "interval_seconds")
         self.last_iteration_time = None
 
+    @abstractclassmethod
+    def daemon_type(cls):
+        """
+        returns: DaemonType
+        """
+
     @abstractmethod
     def run_iteration(self):
         pass
@@ -45,10 +52,18 @@ class SchedulerDaemon(DagsterDaemon):
         super(SchedulerDaemon, self).__init__(instance, interval_seconds)
         self._max_catchup_runs = max_catchup_runs
 
+    @classmethod
+    def daemon_type(cls):
+        return DaemonType.SCHEDULER
+
     def run_iteration(self):
         execute_scheduler_iteration(self._instance, self._logger, self._max_catchup_runs)
 
 
 class SensorDaemon(DagsterDaemon):
+    @classmethod
+    def daemon_type(cls):
+        return DaemonType.SENSOR
+
     def run_iteration(self):
         execute_sensor_iteration(self._instance, self._logger)
