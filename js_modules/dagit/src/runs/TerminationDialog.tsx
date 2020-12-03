@@ -185,16 +185,17 @@ export const TerminationDialog = (props: Props) => {
         {successCount ? (
           <Group direction="horizontal" spacing={8} alignItems="flex-start">
             <Icon icon="tick-circle" iconSize={16} color={Colors.GREEN3} />
-            <div>{`Successfully terminated ${successCount} ${
-              successCount === 1 ? 'run' : 'runs'
-            }.`}</div>
+            <div>{`Successfully requested termination for ${successCount}
+              ${successCount === 1 ? 'run' : `runs`}.`}</div>
           </Group>
         ) : null}
         {errorCount ? (
           <Group direction="vertical" spacing={8}>
             <Group direction="horizontal" spacing={8} alignItems="flex-start">
               <Icon icon="warning-sign" iconSize={16} color={Colors.GOLD3} />
-              <div>{`Could not terminate ${errorCount} ${errorCount === 1 ? 'run' : 'runs'}:`}</div>
+              <div>{`Could not request termination for ${errorCount} ${
+                errorCount === 1 ? 'run' : 'runs'
+              }:`}</div>
             </Group>
             <ul>
               {Object.keys(errors).map((runId) => (
