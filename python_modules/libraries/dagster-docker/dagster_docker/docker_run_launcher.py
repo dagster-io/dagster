@@ -113,7 +113,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
         )
 
-        command = "dagster api execute_run_with_structured_logs {}".format(json.dumps(input_json))
+        command = "dagster api execute_rurrrrrn_with_structured_logs {}".format(
+            json.dumps(input_json)
+        )
 
         docker_env = (
             {env_name: os.getenv(env_name) for env_name in self._env_vars} if self._env_vars else {}

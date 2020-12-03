@@ -10,7 +10,7 @@ RUN mkdir -p /tmp/cache_clear_fdsfdlfdsakfdssglfakfakfajfdsgasgash
 
 RUN git clone https://github.com/dagster-io/dagster.git dagster \
     && cd dagster \
-    && git checkout origin/docker4
+    && git checkout origin/docker5
 
 WORKDIR /tmp/dagster
 
