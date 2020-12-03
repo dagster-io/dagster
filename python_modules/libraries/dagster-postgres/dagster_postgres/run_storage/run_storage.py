@@ -1,6 +1,7 @@
 import sqlalchemy as db
 from dagster import check
 from dagster.core.storage.runs import RunStorageSqlMetadata, SqlRunStorage
+from dagster.core.storage.runs.schema import DaemonHeartbeatsTable
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
@@ -78,3 +79,25 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
         run_alembic_upgrade(alembic_config, self._engine)
+
+    def add_daemon_heartbeat(self, daemon_heartbeat):
+        with self.connect() as conn:
+
+            # insert or update if already present, using postgres specific on_conflict
+            conn.execute(
+                db.dialects.postgresql.insert(DaemonHeartbeatsTable)
+                .values(  # pylint: disable=no-value-for-parameter
+                    timestamp=daemon_heartbeat.timestamp,
+                    daemon_type=daemon_heartbeat.daemon_type,
+                    daemon_id=daemon_heartbeat.daemon_id,
+                    info=daemon_heartbeat.info,
+                )
+                .on_conflict_do_update(
+                    index_elements=[DaemonHeartbeatsTable.c.daemon_type],
+                    set_={
+                        "timestamp": daemon_heartbeat.timestamp,
+                        "daemon_id": daemon_heartbeat.daemon_id,
+                        "info": daemon_heartbeat.info,
+                    },
+                )
+            )
