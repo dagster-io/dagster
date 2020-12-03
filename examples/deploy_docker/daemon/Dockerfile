@@ -1,8 +1,8 @@
 FROM python:3.7-slim
 
-WORKDIR /tmp
-
 ARG DAGSTER_GIT_COMMIT
+
+WORKDIR /tmp
 
 # Install git
 RUN apt-get update -y && apt-get install -y git
@@ -26,5 +26,7 @@ RUN mkdir -p $DAGSTER_HOME
 
 # Copy dagster instance YAML to $DAGSTER_HOME
 COPY dagster.yaml $DAGSTER_HOME
+
+WORKDIR $DAGSTER_HOME
 
 ENTRYPOINT ["dagster-daemon", "run"]

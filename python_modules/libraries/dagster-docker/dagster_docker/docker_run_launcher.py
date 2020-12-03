@@ -95,6 +95,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
 
+        print("LAUNCHING RUN")
+
         docker_image = external_pipeline.get_python_origin().repository_origin.container_image
 
         if not docker_image:
@@ -116,6 +118,8 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         docker_env = (
             {env_name: os.getenv(env_name) for env_name in self._env_vars} if self._env_vars else {}
         )
+
+        print("CREATING CONTAINER")
 
         client = self._get_client()
 
@@ -142,7 +146,11 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             run.run_id, {DOCKER_CONTAINER_ID_TAG: container.id},
         )
 
+        print("STARTIN CONTAINER WITH ID " + str(container.id))
+
         container.start()
+
+        print("STARTED, RETURNING " + str(container.id))
 
         return run
 

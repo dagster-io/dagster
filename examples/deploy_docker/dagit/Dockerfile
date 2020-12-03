@@ -1,22 +1,24 @@
 FROM python:3.7-slim
 
+ARG DAGSTER_GIT_COMMIT
+
 WORKDIR /tmp
 
-# Install git
-RUN apt-get update && apt-get install -yqq git curl
+# Install git and curl
+RUN apt-get update -y && apt-get install -y git curl
 
+# Add yarn repo
 RUN curl -sL https://deb.nodesource.com/setup_12.x | bash - \
-    # Add yarn repo
     && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
     && echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list \
     && apt-get update -yqq \
     && apt-get upgrade -yqq
 
-RUN apt-get install -yqq yarn
+RUN apt-get install -y yarn
 
 RUN git clone https://github.com/dagster-io/dagster.git dagster \
     && cd dagster \
-    && git checkout origin/docker3
+    && git checkout ${DAGSTER_GIT_COMMIT}
 
 WORKDIR /tmp/dagster/
 
@@ -27,9 +29,7 @@ RUN pip install \
     -e python_modules/libraries/dagster-postgres \
     -e python_modules/libraries/dagster-docker
 
-
 WORKDIR /tmp/dagster/js_modules/dagit/
-
 
 RUN yarn install
 RUN yarn build-for-python
@@ -43,8 +43,8 @@ RUN mkdir -p $DAGSTER_HOME
 # Copy dagster instance YAML to $DAGSTER_HOME
 COPY dagster.yaml workspace.yaml $DAGSTER_HOME
 
-EXPOSE 3000
+WORKDIR $DAGSTER_HOME
 
-WORKDIR /opt/dagster/dagster_home/
+EXPOSE 3000
 
 ENTRYPOINT ["dagit", "-h", "0.0.0.0", "-p", "3000", "-w", "workspace.yaml"]
