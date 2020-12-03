@@ -10,9 +10,30 @@ interface ILoadingProps<TData> {
   allowStaleData?: boolean;
 }
 
+const BLANK_LOADING_DELAY_MSEC = 500;
+
 export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<TData>) => {
   const {children, allowStaleData = false} = props;
   const {error, data, loading} = props.queryResult;
+
+  const [blankLoading, setBlankLoading] = React.useState(true);
+  const isLoading = !data || (loading && !allowStaleData) || Object.keys(data as any).length === 0;
+
+  React.useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    // Wait a brief moment so that we don't awkwardly flash the loading bar.
+    // This is often enough time for data to become available.
+    if (isLoading) {
+      timer = setTimeout(() => setBlankLoading(false), BLANK_LOADING_DELAY_MSEC);
+    } else {
+      setBlankLoading(true);
+    }
+
+    return () => {
+      timer && clearTimeout(timer);
+    };
+  }, [isLoading]);
 
   if (error) {
     console.error(error);
@@ -24,9 +45,11 @@ export const Loading = <TData extends Record<string, any>>(props: ILoadingProps<
       </LoadingContainer>
     );
   }
-  if (!data || (loading && !allowStaleData) || Object.keys(data).length === 0) {
-    return <LoadingWithProgress />;
+
+  if (!data || (loading && !allowStaleData) || Object.keys(data as any).length === 0) {
+    return blankLoading ? null : <LoadingWithProgress />;
   }
+
   return <>{children(data as TData)}</>;
 };
 
