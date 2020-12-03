@@ -2,9 +2,14 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
-from dagster.core.definitions import AssetMaterialization, Materialization, Solid, SolidHandle
+from dagster.core.definitions import (
+    AssetMaterialization,
+    Materialization,
+    OutputDefinition,
+    Solid,
+    SolidHandle,
+)
 from dagster.core.definitions.events import EventMetadataEntry
-from dagster.core.types.dagster_type import DagsterType
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import merge_dicts
 from dagster.utils.error import SerializableErrorInfo
@@ -131,29 +136,19 @@ class StepKind(Enum):
     COMPUTE = "COMPUTE"
 
 
-class StepOutput(
-    namedtuple("_StepOutput", "name dagster_type optional should_materialize asset_store_handle")
-):
+class StepOutput(namedtuple("_StepOutput", "output_def should_materialize")):
     def __new__(
-        cls,
-        name,
-        dagster_type=None,
-        optional=None,
-        should_materialize=None,
-        asset_store_handle=None,
+        cls, output_def, should_materialize=None,
     ):
-        from dagster.core.storage.asset_store import AssetStoreHandle
-
         return super(StepOutput, cls).__new__(
             cls,
-            name=check.str_param(name, "name"),
-            optional=check.bool_param(optional, "optional"),
+            output_def=check.inst_param(output_def, "output_def", OutputDefinition),
             should_materialize=check.bool_param(should_materialize, "should_materialize"),
-            dagster_type=check.inst_param(dagster_type, "dagster_type", DagsterType),
-            asset_store_handle=check.opt_inst_param(
-                asset_store_handle, "asset_store_handle", AssetStoreHandle
-            ),
         )
+
+    @property
+    def name(self):
+        return self.output_def.name
 
 
 class ExecutionStep(

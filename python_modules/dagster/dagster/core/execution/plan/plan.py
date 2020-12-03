@@ -361,9 +361,13 @@ class ExecutionPlan(
         return step.step_output_named(step_output_handle.output_name)
 
     def get_asset_store_handle(self, step_output_handle):
+        from dagster.core.storage.asset_store import AssetStoreHandle
+
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         step_output = self.get_step_output(step_output_handle)
-        return step_output.asset_store_handle
+        return AssetStoreHandle(
+            step_output.output_def.asset_store_key, step_output.output_def.asset_metadata
+        )
 
     def get_asset_store_key(self, step_output_handle):
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)

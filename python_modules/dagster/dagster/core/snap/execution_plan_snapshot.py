@@ -121,7 +121,7 @@ def _snapshot_from_step_input(step_input):
 def _snapshot_from_step_output(step_output):
     check.inst_param(step_output, "step_output", StepOutput)
     return ExecutionStepOutputSnap(
-        name=step_output.name, dagster_type_key=step_output.dagster_type.key
+        name=step_output.name, dagster_type_key=step_output.output_def.dagster_type.key
     )
 
 

@@ -458,7 +458,7 @@ class DagsterEvent(
                 output_name=step_output_data.step_output_handle.output_name,
                 output_type=step_context.step.step_output_named(
                     step_output_data.step_output_handle.output_name
-                ).dagster_type.display_name,
+                ).output_def.dagster_type.display_name,
                 type_check_clause=(
                     " Warning! Type check failed."
                     if not step_output_data.type_check_data.success

@@ -154,7 +154,7 @@ def _assert_missing_sources_from_optional_outputs(missing_sources, execution_pla
         if isinstance(source, FromMultipleSources):
             _assert_missing_sources_from_optional_outputs(source.sources, execution_plan, step_key)
         elif isinstance(source, FromStepOutput):
-            if not execution_plan.get_step_output(source.step_output_handle).optional:
+            if not execution_plan.get_step_output(source.step_output_handle).output_def.optional:
                 raise DagsterStepOutputNotFoundError(
                     (
                         "When executing {step} discovered required output missing "

@@ -16,8 +16,6 @@ from .objects import ExecutionStep, StepKind, StepOutput
 
 
 def create_compute_step(pipeline_name, environment_config, solid, step_inputs, handle):
-    from dagster.core.storage.asset_store import AssetStoreHandle
-
     check.str_param(pipeline_name, "pipeline_name")
     check.inst_param(solid, "solid", Solid)
     check.list_param(step_inputs, "step_inputs", of_type=StepInput)
@@ -37,15 +35,7 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
         key_suffix="compute",
         step_inputs=step_inputs,
         step_outputs=[
-            StepOutput(
-                name=name,
-                dagster_type=output_def.dagster_type,
-                optional=output_def.optional,
-                should_materialize=name in config_output_names,
-                asset_store_handle=AssetStoreHandle(
-                    output_def.asset_store_key, output_def.asset_metadata
-                ),
-            )
+            StepOutput(output_def=output_def, should_materialize=name in config_output_names)
             for name, output_def in solid.definition.output_dict.items()
         ],
         compute_fn=lambda step_context, inputs: _execute_core_compute(
