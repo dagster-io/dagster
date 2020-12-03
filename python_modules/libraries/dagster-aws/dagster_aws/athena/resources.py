@@ -20,6 +20,10 @@ class AthenaTimeout(AthenaError):
 
 class AthenaResource:
     def __init__(self, client, workgroup="primary", polling_interval=5, max_polls=120):
+        check.invariant(
+            polling_interval >= 0, "polling_interval must be greater than or equal to 0"
+        )
+        check.invariant(max_polls > 0, "max_polls must be greater than 0")
         self.client = client
         self.workgroup = workgroup
         self.max_polls = max_polls
@@ -199,13 +203,13 @@ def athena_config():
         ),
         "polling_interval": Field(
             int,
-            description="Time in seconds between checks to see if a query execution is finished. 5 seconds by default.",
+            description="Time in seconds between checks to see if a query execution is finished. 5 seconds by default. Must be non-negative.",
             is_required=False,
             default_value=5,
         ),
         "max_polls": Field(
             int,
-            description="Number of times to poll before timing out. 120 attempts by default. When coupled with the default polling_interval, queries will timeout after 10 minutes (120 * 5 seconds).",
+            description="Number of times to poll before timing out. 120 attempts by default. When coupled with the default polling_interval, queries will timeout after 10 minutes (120 * 5 seconds). Must be greater than 0.",
             is_required=False,
             default_value=120,
         ),
