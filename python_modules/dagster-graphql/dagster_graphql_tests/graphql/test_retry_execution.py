@@ -184,7 +184,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "mode": "default",
                     "selector": selector,
-                    "runConfigData": {"storage": {"filesystem": {}}},
+                    "runConfigData": {"intermediate_storage": {"filesystem": {}}},
                 }
             },
         )
@@ -203,7 +203,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "mode": "default",
                     "selector": selector,
-                    "runConfigData": {"storage": {"filesystem": {}}},
+                    "runConfigData": {"intermediate_storage": {"filesystem": {}}},
                     "executionMetadata": {
                         "rootRunId": run_id,
                         "parentRunId": run_id,
@@ -614,7 +614,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
                             "get_input_one": {"config": {"wait_to_terminate": True}},
                             "get_input_two": {"config": {"wait_to_terminate": True}},
                         },
-                        "storage": {"filesystem": {}},
+                        "intermediate_storage": {"filesystem": {}},
                     },
                     "executionMetadata": {"runId": run_id},
                 }
@@ -656,7 +656,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
                             "get_input_one": {"config": {"wait_to_terminate": False}},
                             "get_input_two": {"config": {"wait_to_terminate": False}},
                         },
-                        "storage": {"filesystem": {}},
+                        "intermediate_storage": {"filesystem": {}},
                     },
                     "executionMetadata": {
                         "runId": new_run_id,

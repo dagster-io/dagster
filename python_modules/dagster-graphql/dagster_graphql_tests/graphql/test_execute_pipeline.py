@@ -336,7 +336,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": merge_dicts(
-                        csv_hello_world_solids_config(), {"storage": {"filesystem": {}}}
+                        csv_hello_world_solids_config(),
+                        {"intermediate_storage": {"filesystem": {}}},
                     ),
                     "mode": "default",
                 }

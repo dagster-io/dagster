@@ -808,7 +808,10 @@ def test_multiprocessing_resource_teardown_failure():
         pipeline = reconstructable(define_resource_teardown_failure_pipeline)
         result = execute_pipeline(
             pipeline,
-            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+            run_config={
+                "intermediate_storage": {"filesystem": {}},
+                "execution": {"multiprocess": {}},
+            },
             instance=instance,
             raise_on_error=False,
         )

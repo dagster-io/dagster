@@ -43,12 +43,18 @@ class DagsterDockerOperator(DockerOperator):
         self.host_tmp_dir = host_tmp_dir
 
         run_config = dagster_operator_parameters.run_config
-        if "filesystem" in run_config["storage"]:
+        if "filesystem" in run_config["intermediate_storage"]:
             if (
-                "config" in (run_config["storage"].get("filesystem", {}) or {})
+                "config" in (run_config["intermediate_storage"].get("filesystem", {}) or {})
                 and "base_dir"
-                in ((run_config["storage"].get("filesystem", {}) or {}).get("config", {}) or {})
-                and run_config["storage"]["filesystem"]["config"]["base_dir"] != tmp_dir
+                in (
+                    (run_config["intermediate_storage"].get("filesystem", {}) or {}).get(
+                        "config", {}
+                    )
+                    or {}
+                )
+                and run_config["intermediate_storage"]["filesystem"]["config"]["base_dir"]
+                != tmp_dir
             ):
                 warnings.warn(
                     "Found base_dir '{base_dir}' set in filesystem storage config, which was not "
@@ -56,20 +62,22 @@ class DagsterDockerOperator(DockerOperator):
                     "'{host_tmp_dir}' from the host). We assume you know what you are doing, but "
                     "if you are having trouble executing containerized workloads, this may be the "
                     "issue".format(
-                        base_dir=run_config["storage"]["filesystem"]["config"]["base_dir"],
+                        base_dir=run_config["intermediate_storage"]["filesystem"]["config"][
+                            "base_dir"
+                        ],
                         tmp_dir=tmp_dir,
                         host_tmp_dir=host_tmp_dir,
                     )
                 )
             else:
-                run_config["storage"]["filesystem"] = dict(
-                    run_config["storage"]["filesystem"] or {},
+                run_config["intermediate_storage"]["filesystem"] = dict(
+                    run_config["intermediate_storage"]["filesystem"] or {},
                     **{
                         "config": dict(
                             (
-                                (run_config["storage"].get("filesystem", {}) or {}).get(
-                                    "config", {}
-                                )
+                                (
+                                    run_config["intermediate_storage"].get("filesystem", {}) or {}
+                                ).get("config", {})
                                 or {}
                             ),
                             **{"base_dir": tmp_dir},

@@ -121,7 +121,7 @@ def test_using_adls2_for_subplan(storage_account, file_system):
                 "config": {"storage_account": storage_account, "credential": get_azure_credential()}
             }
         },
-        "storage": {"adls2": {"config": {"adls2_file_system": file_system}}},
+        "intermediate_storage": {"adls2": {"config": {"adls2_file_system": file_system}}},
     }
 
     run_id = make_new_run_id()
@@ -348,7 +348,7 @@ def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
                 "config": {"storage_account": storage_account, "credential": get_azure_credential()}
             }
         },
-        "storage": {
+        "intermediate_storage": {
             "adls2": {"config": {"adls2_file_system": file_system, "adls2_prefix": adls2_prefix}}
         },
     }

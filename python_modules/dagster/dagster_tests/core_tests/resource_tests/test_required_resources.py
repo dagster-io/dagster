@@ -446,13 +446,15 @@ def define_plugin_pipeline(
 def test_custom_type_with_resource_dependent_storage_plugin():
     under_required_pipeline = define_plugin_pipeline(should_require_resources=False)
     with pytest.raises(DagsterUnknownResourceError):
-        execute_pipeline(under_required_pipeline, {"storage": {"filesystem": {}}})
+        execute_pipeline(under_required_pipeline, {"intermediate_storage": {"filesystem": {}}})
 
     resources_initted = {}
     sufficiently_required_pipeline = define_plugin_pipeline(
         should_require_resources=True, resources_initted=resources_initted
     )
-    assert execute_pipeline(sufficiently_required_pipeline, {"storage": {"filesystem": {}}}).success
+    assert execute_pipeline(
+        sufficiently_required_pipeline, {"intermediate_storage": {"filesystem": {}}}
+    ).success
     assert set(resources_initted.keys()) == set("a")
 
     resources_initted = {}

@@ -45,7 +45,7 @@ def test_execute_on_dask_local():
             result = execute_pipeline(
                 reconstructable(dask_engine_pipeline),
                 run_config={
-                    "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                    "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
                     "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
                 },
                 instance=instance,
@@ -64,7 +64,7 @@ def test_composite_execute():
         result = execute_pipeline(
             reconstructable(dask_composite_pipeline),
             run_config={
-                "storage": {"filesystem": {}},
+                "intermediate_storage": {"filesystem": {}},
                 "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
             },
             instance=instance,
@@ -95,7 +95,7 @@ def test_pandas_dask():
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, pandas_pipeline.name),
             run_config={
-                "storage": {"filesystem": {}},
+                "intermediate_storage": {"filesystem": {}},
                 "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
                 **run_config,
             },
@@ -128,7 +128,7 @@ def test_dask():
         result = execute_pipeline(
             ReconstructablePipeline.for_file(__file__, dask_pipeline.name),
             run_config={
-                "storage": {"filesystem": {}},
+                "intermediate_storage": {"filesystem": {}},
                 "execution": {"dask": {"config": {"cluster": {"local": {"timeout": 30}}}}},
                 **run_config,
             },

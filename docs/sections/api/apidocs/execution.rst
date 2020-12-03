@@ -140,7 +140,7 @@ Run Config Schema
         },
 
         # optionally use an available system storage for intermediates etc.
-        storage: {
+        intermediate_storage: {
           # the name of one, and only one available system storage, typically 'filesystem' or
           # 'in_memory'
           __storage_name__: {

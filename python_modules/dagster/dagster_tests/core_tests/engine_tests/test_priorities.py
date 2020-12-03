@@ -43,7 +43,7 @@ def test_priorities_mp():
             pipe,
             {
                 "execution": {"multiprocess": {"config": {"max_concurrent": 1}}},
-                "storage": {"filesystem": {}},
+                "intermediate_storage": {"filesystem": {}},
             },
             instance=instance,
         )

@@ -146,7 +146,7 @@ def get_external_pipeline_from_managed_grpc_python_env_repository(pipeline_name)
 def run_configs():
     return [
         None,
-        {"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
+        {"execution": {"multiprocess": {}}, "intermediate_storage": {"filesystem": {}}},
     ]
 
 

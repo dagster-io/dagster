@@ -40,7 +40,10 @@ def test_diamond_multi_execution():
         pipe = reconstructable(define_diamond_pipeline)
         result = execute_pipeline(
             pipe,
-            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+            run_config={
+                "intermediate_storage": {"filesystem": {}},
+                "execution": {"multiprocess": {}},
+            },
             instance=instance,
         )
         assert result.success
@@ -78,7 +81,7 @@ def define_diamond_pipeline():
             PresetDefinition(
                 "just_adder",
                 {
-                    "storage": {"filesystem": {}},
+                    "intermediate_storage": {"filesystem": {}},
                     "execution": {"multiprocess": {}},
                     "solids": {"adder": {"inputs": {"left": {"value": 1}, "right": {"value": 1}}}},
                 },
@@ -119,7 +122,10 @@ def test_error_pipeline_multiprocess():
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(define_error_pipeline),
-            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+            run_config={
+                "intermediate_storage": {"filesystem": {}},
+                "execution": {"multiprocess": {}},
+            },
             instance=instance,
         )
         assert not result.success
@@ -141,7 +147,7 @@ def test_mem_storage_error_pipeline_multiprocess():
 def test_invalid_instance():
     result = execute_pipeline(
         reconstructable(define_diamond_pipeline),
-        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+        run_config={"intermediate_storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
     )
@@ -158,7 +164,7 @@ def test_invalid_instance():
 def test_no_handle():
     result = execute_pipeline(
         define_diamond_pipeline(),
-        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+        run_config={"intermediate_storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
         instance=DagsterInstance.ephemeral(),
         raise_on_error=False,
     )
@@ -225,7 +231,7 @@ def test_separate_sub_dags():
             result = execute_pipeline(
                 pipe,
                 run_config={
-                    "storage": {"filesystem": {}},
+                    "intermediate_storage": {"filesystem": {}},
                     "execution": {"multiprocess": {"config": {"max_concurrent": 2}}},
                     "solids": {"waiter": {"config": filename}, "writer": {"config": filename},},
                 },
@@ -257,7 +263,10 @@ def test_ephemeral_event_log():
 
         result = execute_pipeline(
             pipe,
-            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+            run_config={
+                "intermediate_storage": {"filesystem": {}},
+                "execution": {"multiprocess": {}},
+            },
             instance=instance,
         )
         assert result.success
@@ -296,7 +305,10 @@ def test_optional_outputs():
 
         multi_result = execute_pipeline(
             reconstructable(optional_stuff),
-            run_config={"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+            run_config={
+                "intermediate_storage": {"filesystem": {}},
+                "execution": {"multiprocess": {}},
+            },
             instance=instance,
         )
         assert multi_result.success
@@ -323,7 +335,10 @@ def test_failure_multiprocessing():
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(failure),
-            run_config={"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
+            run_config={
+                "execution": {"multiprocess": {}},
+                "intermediate_storage": {"filesystem": {}},
+            },
             instance=instance,
             raise_on_error=False,
         )
@@ -358,7 +373,10 @@ def test_crash_multiprocessing():
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(sys_exit_pipeline),
-            run_config={"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
+            run_config={
+                "execution": {"multiprocess": {}},
+                "intermediate_storage": {"filesystem": {}},
+            },
             instance=instance,
             raise_on_error=False,
         )
@@ -406,7 +424,10 @@ def test_crash_hard_multiprocessing():
     with instance_for_test() as instance:
         result = execute_pipeline(
             reconstructable(segfault_pipeline),
-            run_config={"execution": {"multiprocess": {}}, "storage": {"filesystem": {}}},
+            run_config={
+                "execution": {"multiprocess": {}},
+                "intermediate_storage": {"filesystem": {}},
+            },
             instance=instance,
             raise_on_error=False,
         )

@@ -164,7 +164,7 @@ def csv_hello_world_solids_config_fs_storage():
         "solids": {
             "sum_solid": {"inputs": {"num": file_relative_path(__file__, "../data/num.csv")}}
         },
-        "storage": {"filesystem": {}},
+        "intermediate_storage": {"filesystem": {}},
     }
 
 
@@ -627,7 +627,7 @@ def spew_pipeline():
 def retry_config(count):
     return {
         "resources": {"retry_count": {"config": {"count": count}}},
-        "storage": {"filesystem": {}},
+        "intermediate_storage": {"filesystem": {}},
     }
 
 
@@ -803,7 +803,7 @@ def get_retry_multi_execution_params(graphql_context, should_fail, retry_id=None
         "mode": "default",
         "selector": selector,
         "runConfigData": {
-            "storage": {"filesystem": {}},
+            "intermediate_storage": {"filesystem": {}},
             "solids": {"can_fail": {"config": {"fail": should_fail}}},
         },
         "executionMetadata": {
@@ -819,7 +819,7 @@ def define_schedules():
         name="scheduled_integer_partitions",
         pipeline_name="no_config_pipeline",
         partition_fn=lambda: [Partition(x) for x in range(1, 10)],
-        run_config_fn_for_partition=lambda _partition: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _partition: {"intermediate_storage": {"filesystem": {}}},
         tags_fn_for_partition=lambda _partition: {"test": "1234"},
     )
 
@@ -827,21 +827,21 @@ def define_schedules():
         name="no_config_pipeline_hourly_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        run_config={"storage": {"filesystem": {}}},
+        run_config={"intermediate_storage": {"filesystem": {}}},
     )
 
     no_config_pipeline_hourly_schedule_with_config_fn = ScheduleDefinition(
         name="no_config_pipeline_hourly_schedule_with_config_fn",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        run_config_fn=lambda _context: {"storage": {"filesystem": {}}},
+        run_config_fn=lambda _context: {"intermediate_storage": {"filesystem": {}}},
     )
 
     no_config_should_execute = ScheduleDefinition(
         name="no_config_should_execute",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        run_config={"storage": {"filesystem": {}}},
+        run_config={"intermediate_storage": {"filesystem": {}}},
         should_execute=lambda _context: False,
     )
 
@@ -849,7 +849,7 @@ def define_schedules():
         name="dynamic_config",
         cron_schedule="0 0 * * *",
         pipeline_name="no_config_pipeline",
-        run_config_fn=lambda _context: {"storage": {"filesystem": {}}},
+        run_config_fn=lambda _context: {"intermediate_storage": {"filesystem": {}}},
     )
 
     partition_based = integer_partition_set.create_schedule_definition(
@@ -868,7 +868,7 @@ def define_schedules():
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
     )
     def partition_based_decorator(_date):
-        return {"storage": {"filesystem": {}}}
+        return {"intermediate_storage": {"filesystem": {}}}
 
     @daily_schedule(
         pipeline_name="multi_mode_with_loggers",
@@ -877,7 +877,7 @@ def define_schedules():
         mode="foo_mode",
     )
     def partition_based_multi_mode_decorator(_date):
-        return {"storage": {"filesystem": {}}}
+        return {"intermediate_storage": {"filesystem": {}}}
 
     @hourly_schedule(
         pipeline_name="no_config_chain_pipeline",
@@ -886,7 +886,7 @@ def define_schedules():
         solid_selection=["return_foo"],
     )
     def solid_selection_hourly_decorator(_date):
-        return {"storage": {"filesystem": {}}}
+        return {"intermediate_storage": {"filesystem": {}}}
 
     @daily_schedule(
         pipeline_name="no_config_chain_pipeline",
@@ -895,7 +895,7 @@ def define_schedules():
         solid_selection=["return_foo"],
     )
     def solid_selection_daily_decorator(_date):
-        return {"storage": {"filesystem": {}}}
+        return {"intermediate_storage": {"filesystem": {}}}
 
     @monthly_schedule(
         pipeline_name="no_config_chain_pipeline",
@@ -904,7 +904,7 @@ def define_schedules():
         solid_selection=["return_foo"],
     )
     def solid_selection_monthly_decorator(_date):
-        return {"storage": {"filesystem": {}}}
+        return {"intermediate_storage": {"filesystem": {}}}
 
     @weekly_schedule(
         pipeline_name="no_config_chain_pipeline",
@@ -913,7 +913,7 @@ def define_schedules():
         solid_selection=["return_foo"],
     )
     def solid_selection_weekly_decorator(_date):
-        return {"storage": {"filesystem": {}}}
+        return {"intermediate_storage": {"filesystem": {}}}
 
     # Schedules for testing the user error boundary
     @daily_schedule(
@@ -922,7 +922,7 @@ def define_schedules():
         should_execute=lambda _: asdf,  # pylint: disable=undefined-variable
     )
     def should_execute_error_schedule(_date):
-        return {"storage": {"filesystem": {}}}
+        return {"intermediate_storage": {"filesystem": {}}}
 
     @daily_schedule(
         pipeline_name="no_config_pipeline",
@@ -930,7 +930,7 @@ def define_schedules():
         tags_fn_for_date=lambda _: asdf,  # pylint: disable=undefined-variable
     )
     def tags_error_schedule(_date):
-        return {"storage": {"filesystem": {}}}
+        return {"intermediate_storage": {"filesystem": {}}}
 
     @daily_schedule(
         pipeline_name="no_config_pipeline", start_date=today_at_midnight().subtract(days=1),
@@ -944,20 +944,20 @@ def define_schedules():
         execution_timezone="US/Central",
     )
     def timezone_schedule(_date):
-        return {"storage": {"filesystem": {}}}
+        return {"intermediate_storage": {"filesystem": {}}}
 
     tagged_pipeline_schedule = ScheduleDefinition(
         name="tagged_pipeline_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="tagged_pipeline",
-        run_config={"storage": {"filesystem": {}}},
+        run_config={"intermediate_storage": {"filesystem": {}}},
     )
 
     tagged_pipeline_override_schedule = ScheduleDefinition(
         name="tagged_pipeline_override_schedule",
         cron_schedule="0 0 * * *",
         pipeline_name="tagged_pipeline",
-        run_config={"storage": {"filesystem": {}}},
+        run_config={"intermediate_storage": {"filesystem": {}}},
         tags={"foo": "notbar"},
     )
 
@@ -998,7 +998,7 @@ def define_partitions():
         solid_selection=["return_hello"],
         mode="default",
         partition_fn=lambda: [Partition(i) for i in range(10)],
-        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
         tags_fn_for_partition=lambda partition: {"foo": partition.name},
     )
 
@@ -1006,7 +1006,7 @@ def define_partitions():
         name="enum_partition",
         pipeline_name="noop_pipeline",
         partition_fn=lambda: ["one", "two", "three"],
-        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
     )
 
     chained_partition_set = PartitionSetDefinition(
@@ -1014,7 +1014,7 @@ def define_partitions():
         pipeline_name="chained_failure_pipeline",
         mode="default",
         partition_fn=lambda: [Partition(i) for i in range(10)],
-        run_config_fn_for_partition=lambda _: {"storage": {"filesystem": {}}},
+        run_config_fn_for_partition=lambda _: {"intermediate_storage": {"filesystem": {}}},
     )
 
     return [integer_set, enum_set, chained_partition_set]
@@ -1024,13 +1024,17 @@ def define_sensors():
     @sensor(pipeline_name="no_config_pipeline", mode="default")
     def always_no_config_sensor(_):
         return RunRequest(
-            run_key=None, run_config={"storage": {"filesystem": {}}}, tags={"test": "1234"}
+            run_key=None,
+            run_config={"intermediate_storage": {"filesystem": {}}},
+            tags={"test": "1234"},
         )
 
     @sensor(pipeline_name="no_config_pipeline", mode="default")
     def once_no_config_sensor(_):
         return RunRequest(
-            run_key="once", run_config={"storage": {"filesystem": {}}}, tags={"test": "1234"}
+            run_key="once",
+            run_config={"intermediate_storage": {"filesystem": {}}},
+            tags={"test": "1234"},
         )
 
     @sensor(pipeline_name="no_config_pipeline", mode="default")

@@ -71,7 +71,7 @@ def total(_, in_1, in_2, in_3, in_4):
         PresetDefinition(
             "multi",
             {
-                "storage": {"filesystem": {}},
+                "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
                 "solids": {"giver": {"config": [2, 2, 2, 2]}},
             },

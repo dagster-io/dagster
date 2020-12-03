@@ -130,7 +130,7 @@ def test_terminate_pipeline_on_celery():
 
         with instance_for_test_tempdir(tempdir) as instance:
             run_config = {
-                "storage": {"filesystem": {"config": {"base_dir": tempdir}}},
+                "intermediate_storage": {"filesystem": {"config": {"base_dir": tempdir}}},
                 "execution": {"celery": {}},
             }
 
@@ -315,7 +315,7 @@ def test_bad_broker():
     #                 __file__, "test_diamond_pipeline"
     #             ).build_pipeline_definition(),
     #             run_config={
-    #                 "storage": {"filesystem": {}},
+    #                 "intermediate_storage": {"filesystem": {}},
     #                 "execution": {"celery": {"config": {"broker": "notlocal.bad"}}},
     #             },
     #             instance=instance,
@@ -332,7 +332,7 @@ def test_engine_error():
                 execute_pipeline(
                     ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
                     run_config={
-                        "storage": {"filesystem": {"config": {"base_dir": storage}}},
+                        "intermediate_storage": {"filesystem": {"config": {"base_dir": storage}}},
                         "execution": {
                             "celery": {"config": {"config_source": {"task_always_eager": True}}}
                         },

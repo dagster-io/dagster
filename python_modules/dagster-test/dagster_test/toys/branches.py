@@ -37,7 +37,7 @@ def branch(name, arg, solid_num):
         PresetDefinition(
             "sleep_failed",
             {
-                "storage": {"filesystem": {}},
+                "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
                 "solids": {"root": {"config": {"sleep_secs": [-10, 30]}}},
             },
@@ -45,7 +45,7 @@ def branch(name, arg, solid_num):
         PresetDefinition(
             "sleep",
             {
-                "storage": {"filesystem": {}},
+                "intermediate_storage": {"filesystem": {}},
                 "execution": {"multiprocess": {}},
                 "solids": {"root": {"config": {"sleep_secs": [0, 10]}}},
             },

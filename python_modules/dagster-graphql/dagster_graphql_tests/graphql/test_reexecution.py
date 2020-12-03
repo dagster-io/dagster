@@ -134,7 +134,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": {"storage": {"filesystem": {}}},
+                    "runConfigData": {"intermediate_storage": {"filesystem": {}}},
                     "executionMetadata": {"runId": run_id},
                     "mode": "default",
                 }
@@ -160,7 +160,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
             variables={
                 "executionParams": {
                     "selector": selector,
-                    "runConfigData": {"storage": {"filesystem": {}}},
+                    "runConfigData": {"intermediate_storage": {"filesystem": {}}},
                     "executionMetadata": {
                         "runId": new_run_id,
                         "rootRunId": run_id,

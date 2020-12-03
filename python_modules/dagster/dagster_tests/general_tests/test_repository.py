@@ -90,7 +90,7 @@ def define_multi_mode_with_resources_pipeline():
                 run_config={
                     "resources": {"op": {"config": 2}},
                     "execution": {"multiprocess": {}},
-                    "storage": {"filesystem": {}},
+                    "intermediate_storage": {"filesystem": {}},
                 },
             ),
         ],

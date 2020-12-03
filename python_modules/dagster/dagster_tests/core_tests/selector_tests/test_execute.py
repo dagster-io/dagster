@@ -111,7 +111,7 @@ def test_execute_pipeline_iterator_with_solid_selection_query():
 
 def test_reexecute_pipeline_with_step_selection_single_clause():
     instance = DagsterInstance.ephemeral()
-    run_config = {"storage": {"filesystem": {}}}
+    run_config = {"intermediate_storage": {"filesystem": {}}}
     pipeline_result_full = execute_pipeline(foo_pipeline, run_config=run_config, instance=instance)
     assert pipeline_result_full.success
     assert pipeline_result_full.result_for_solid("add_one").output_value() == 7
@@ -152,7 +152,7 @@ def test_reexecute_pipeline_with_step_selection_single_clause():
 
 def test_reexecute_pipeline_with_step_selection_multi_clauses():
     instance = DagsterInstance.ephemeral()
-    run_config = {"storage": {"filesystem": {}}}
+    run_config = {"intermediate_storage": {"filesystem": {}}}
     pipeline_result_full = execute_pipeline(foo_pipeline, run_config=run_config, instance=instance)
     assert pipeline_result_full.success
     assert pipeline_result_full.result_for_solid("add_one").output_value() == 7
@@ -193,7 +193,7 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
 
 def test_reexecute_pipeline_iterator():
     instance = DagsterInstance.ephemeral()
-    run_config = {"storage": {"filesystem": {}}}
+    run_config = {"intermediate_storage": {"filesystem": {}}}
     pipeline_result_full = execute_pipeline(foo_pipeline, run_config=run_config, instance=instance)
     assert pipeline_result_full.success
     assert pipeline_result_full.result_for_solid("add_one").output_value() == 7

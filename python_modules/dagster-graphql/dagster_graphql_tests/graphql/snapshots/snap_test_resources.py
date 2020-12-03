@@ -84,20 +84,3 @@ snapshots['test_mode_fetch_resources 1'] = {
         ]
     }
 }
-
-snapshots['test_required_resources 1'] = {
-    'pipelineOrError': {
-        'name': 'required_resource_pipeline',
-        'solids': [
-            {
-                'definition': {
-                    'requiredResources': [
-                        {
-                            'resourceKey': 'R1'
-                        }
-                    ]
-                }
-            }
-        ]
-    }
-}

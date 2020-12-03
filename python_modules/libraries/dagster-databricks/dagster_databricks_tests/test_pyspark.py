@@ -180,7 +180,7 @@ def test_do_it_live_databricks_s3():
             "resources": {
                 "pyspark_step_launcher": {"config": BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG},
             },
-            "storage": {
+            "intermediate_storage": {
                 "s3": {
                     "config": {
                         "s3_bucket": "dagster-databricks-tests",
@@ -221,7 +221,7 @@ def test_do_it_live_databricks_adls2():
                     }
                 },
             },
-            "storage": {
+            "intermediate_storage": {
                 "adls2": {
                     "config": {
                         "adls2_file_system": ADLS2_CONTAINER,

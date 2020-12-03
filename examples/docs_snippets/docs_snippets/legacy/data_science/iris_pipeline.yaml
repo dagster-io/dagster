@@ -1,4 +1,4 @@
-storage:
+intermediate_storage:
   filesystem:
 solids:
   download_file:

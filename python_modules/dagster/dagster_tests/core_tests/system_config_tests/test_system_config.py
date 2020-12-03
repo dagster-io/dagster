@@ -623,10 +623,10 @@ def test_storage_in_memory_config():
     env_type = create_environment_type(pipeline_def)
     assert "storage" in env_type.fields
 
-    config_value = process_config(env_type, {"storage": {"in_memory": {}}})
+    config_value = process_config(env_type, {"intermediate_storage": {"in_memory": {}}})
     assert config_value.success
 
-    assert config_value.value["storage"] == {"in_memory": {}}
+    assert config_value.value["intermediate_storage"] == {"in_memory": {}}
 
 
 def test_directly_init_environment_config():

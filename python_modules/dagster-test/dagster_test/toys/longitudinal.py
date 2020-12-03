@@ -166,7 +166,7 @@ def longitudinal_config(partition):
     traffic_data_size = TRAFFIC_CONSTANTS[partition_date.weekday()] * 10000 * growth_rate
 
     return {
-        "storage": {"filesystem": {}},
+        "intermediate_storage": {"filesystem": {}},
         "solids": {
             "ingest_costs": {
                 "config": {

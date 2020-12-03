@@ -32,7 +32,7 @@ def test_init_modified_docker_operator(dagster_docker_image):
     with instance_for_test() as instance:
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
-            run_config={"storage": {"filesystem": {}}},
+            run_config={"intermediate_storage": {"filesystem": {}}},
             pipeline_name="",
             mode="default",
             op_kwargs={"image": dagster_docker_image, "api_version": "auto",},
@@ -48,7 +48,7 @@ def test_modified_docker_operator_bad_docker_conn(dagster_docker_image):
     with instance_for_test() as instance:
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
-            run_config={"storage": {"filesystem": {}}},
+            run_config={"intermediate_storage": {"filesystem": {}}},
             pipeline_name="",
             mode="default",
             op_kwargs={
@@ -71,7 +71,7 @@ def test_modified_docker_operator_env(dagster_docker_image):
     with instance_for_test() as instance:
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
-            run_config={"storage": {"filesystem": {}}},
+            run_config={"intermediate_storage": {"filesystem": {}}},
             pipeline_name="",
             mode="default",
             op_kwargs={
@@ -92,7 +92,7 @@ def test_modified_docker_operator_bad_command(dagster_docker_image):
     with instance_for_test() as instance:
         dagster_operator_parameters = DagsterOperatorParameters(
             task_id="nonce",
-            run_config={"storage": {"filesystem": {}}},
+            run_config={"intermediate_storage": {"filesystem": {}}},
             pipeline_name="",
             mode="default",
             op_kwargs={
@@ -122,7 +122,7 @@ def test_modified_docker_operator_url(dagster_docker_image):
         with instance_for_test() as instance:
             dagster_operator_parameters = DagsterOperatorParameters(
                 task_id="nonce",
-                run_config={"storage": {"filesystem": {}}},
+                run_config={"intermediate_storage": {"filesystem": {}}},
                 pipeline_name="",
                 mode="default",
                 op_kwargs={

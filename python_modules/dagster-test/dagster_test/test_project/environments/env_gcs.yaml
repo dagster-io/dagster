@@ -1,4 +1,4 @@
-storage:
+intermediate_storage:
   gcs:
     config:
       gcs_bucket: dagster-scratch-ccdfe1e

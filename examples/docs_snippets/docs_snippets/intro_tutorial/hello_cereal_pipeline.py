@@ -16,7 +16,7 @@ from dagster_airflow.factory import make_airflow_dag
 # #
 ################################################################################
 ENVIRONMENT = """
-storage:
+intermediate_storage:
   filesystem:
     config:
       base_dir: /tmp/dagster-airflow/hello_cereal_pipeline

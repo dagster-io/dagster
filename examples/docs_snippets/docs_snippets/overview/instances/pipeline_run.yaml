@@ -20,10 +20,10 @@ execution:
       max_concurrent: 4
 
 # ==================================================================================================
-# Storage
+# Intermediate Storage
 # ==================================================================================================
-# The storage key in pipeline run config is used to set where inputs/outputs are stored during
-# pipeline execution. Custom storage backends can be defined with the @system_storage decorator.
+# The intermediate storage key in pipeline run config is used to set where inputs/outputs are stored
+# during pipeline execution. Custom storage backends can be defined with the @intermediate_storage decorator.
 #
 # **NOTE**: setting pipeline run storage globally on the Dagster instance is not currently
 # supported!
@@ -41,7 +41,7 @@ execution:
 # - filesystem
 # - s3 (provided by dagster_aws.s3)
 # - gcs (provided by dagster_gcp)
-storage:
+intermediate_storage:
   filesystem:
 
 # ==================================================================================================

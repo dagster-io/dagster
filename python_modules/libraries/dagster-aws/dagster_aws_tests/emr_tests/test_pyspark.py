@@ -219,7 +219,9 @@ def test_do_it_live_emr():
             "resources": {
                 "pyspark_step_launcher": {"config": BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG},
             },
-            "storage": {"s3": {"config": {"s3_bucket": S3_BUCKET, "s3_prefix": "test_pyspark"}}},
+            "intermediate_storage": {
+                "s3": {"config": {"s3_bucket": S3_BUCKET, "s3_prefix": "test_pyspark"}}
+            },
         },
     )
     assert result.success

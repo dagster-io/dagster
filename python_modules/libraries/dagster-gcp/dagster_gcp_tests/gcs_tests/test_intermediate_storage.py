@@ -95,7 +95,7 @@ def get_step_output(step_events, step_key, output_name="result"):
 def test_using_gcs_for_subplan(gcs_bucket):
     pipeline_def = define_inty_pipeline()
 
-    run_config = {"storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket}}}}
+    run_config = {"intermediate_storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket}}}}
 
     run_id = make_new_run_id()
 
@@ -326,7 +326,9 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
 
     pipe = define_inty_pipeline(should_throw=False)
     run_config = {
-        "storage": {"gcs": {"config": {"gcs_bucket": gcs_bucket, "gcs_prefix": gcs_prefix}}}
+        "intermediate_storage": {
+            "gcs": {"config": {"gcs_bucket": gcs_bucket, "gcs_prefix": gcs_prefix}}
+        }
     }
 
     pipeline_run = PipelineRun(pipeline_name=pipe.name, run_config=run_config)

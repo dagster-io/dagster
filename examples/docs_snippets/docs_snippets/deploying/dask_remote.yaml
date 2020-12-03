@@ -1,4 +1,4 @@
-storage:
+intermediate_storage:
   s3:
     config:
       s3_bucket: your_bucket_name

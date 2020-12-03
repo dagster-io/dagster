@@ -118,7 +118,7 @@ def test_interrupt_multiproc():
                             "write_4": {"config": {"tempfile": file_4}},
                         },
                         "execution": {"multiprocess": {"config": {"max_concurrent": 4}}},
-                        "storage": {"filesystem": {}},
+                        "intermediate_storage": {"filesystem": {}},
                     },
                     instance=instance,
                 ):

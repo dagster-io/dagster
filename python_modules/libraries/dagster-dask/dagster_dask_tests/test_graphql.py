@@ -26,7 +26,7 @@ def test_execute_hammer_through_dagit():
             variables = {
                 "executionParams": {
                     "runConfigData": {
-                        "storage": {"filesystem": {}},
+                        "intermediate_storage": {"filesystem": {}},
                         "execution": {"dask": {"config": {"cluster": {"local": {}}}}},
                     },
                     "selector": selector,

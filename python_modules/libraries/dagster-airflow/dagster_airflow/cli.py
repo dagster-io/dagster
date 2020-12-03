@@ -29,10 +29,10 @@ def construct_environment_yaml(preset_name, config, pipeline_name, module_name):
         run_config = load_yaml_from_glob_list(config) if config else {}
 
     # If not provided by the user, ensure we have storage location defined
-    if "storage" not in run_config:
+    if "intermediate_storage" not in run_config:
         system_tmp_path = seven.get_system_temp_directory()
         dagster_tmp_path = os.path.join(system_tmp_path, "dagster-airflow", pipeline_name)
-        run_config["storage"] = {
+        run_config["intermediate_storage"] = {
             "filesystem": {"config": {"base_dir": six.ensure_str(dagster_tmp_path)}}
         }
 

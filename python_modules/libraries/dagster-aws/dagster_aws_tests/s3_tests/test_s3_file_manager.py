@@ -80,7 +80,7 @@ def test_depends_on_s3_resource_intermediates(mock_s3_bucket):
             "solids": {
                 "add_numbers": {"inputs": {"num_one": {"value": 2}, "num_two": {"value": 4}}}
             },
-            "storage": {"s3": {"config": {"s3_bucket": mock_s3_bucket.name}}},
+            "intermediate_storage": {"s3": {"config": {"s3_bucket": mock_s3_bucket.name}}},
         },
     )
 
@@ -130,7 +130,7 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
                     "config": {"s3_bucket": mock_s3_bucket.name, "s3_prefix": "some-prefix"}
                 }
             },
-            "storage": {"s3": {"config": {"s3_bucket": mock_s3_bucket.name}}},
+            "intermediate_storage": {"s3": {"config": {"s3_bucket": mock_s3_bucket.name}}},
         },
     )
 

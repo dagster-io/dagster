@@ -164,7 +164,7 @@ mutation(
 
 def default_execution_params():
     return {
-        "runConfigData": {"storage": {"filesystem": None}},
+        "runConfigData": {"intermediate_storage": {"filesystem": None}},
         "selector": {"name": "no_config_pipeline", "solidSelection": None},
         "mode": "default",
     }

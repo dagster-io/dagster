@@ -118,7 +118,7 @@ def test_depends_on_adls2_resource_intermediates(storage_account, file_system):
             "solids": {
                 "add_numbers": {"inputs": {"num_one": {"value": 2}, "num_two": {"value": 4}}}
             },
-            "storage": {"adls2": {"config": {"adls2_file_system": file_system}}},
+            "intermediate_storage": {"adls2": {"config": {"adls2_file_system": file_system}}},
         },
     )
 
@@ -179,7 +179,9 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
 
     result = execute_pipeline(
         adls2_file_manager_test,
-        run_config={"storage": {"adls2": {"config": {"adls2_file_system": file_system}}}},
+        run_config={
+            "intermediate_storage": {"adls2": {"config": {"adls2_file_system": file_system}}}
+        },
     )
 
     assert result.success

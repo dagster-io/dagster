@@ -23,7 +23,7 @@ from dagster.utils import merge_dicts
 
 
 def env_with_fs(run_config):
-    return merge_dicts(run_config, {"storage": {"filesystem": {}}})
+    return merge_dicts(run_config, {"intermediate_storage": {"filesystem": {}}})
 
 
 def define_addy_pipeline():

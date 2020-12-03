@@ -48,7 +48,7 @@ def make_run_config(scratch_dir, mode):
                 step_launcher_resource_key: {"config": {"scratch_dir": scratch_dir}}
                 for step_launcher_resource_key in step_launcher_resource_keys
             },
-            "storage": {"filesystem": {"config": {"base_dir": scratch_dir}}},
+            "intermediate_storage": {"filesystem": {"config": {"base_dir": scratch_dir}}},
         },
     )
 
@@ -236,7 +236,7 @@ def test_interrupt_step_launcher(mode):
 
             sleepy_run_config = {
                 "resources": {"first_step_launcher": {"config": {"scratch_dir": tmpdir}}},
-                "storage": {"filesystem": {"config": {"base_dir": tmpdir}}},
+                "intermediate_storage": {"filesystem": {"config": {"base_dir": tmpdir}}},
                 "solids": {"sleepy_solid": {"config": {"tempfile": success_tempfile}}},
             }
 

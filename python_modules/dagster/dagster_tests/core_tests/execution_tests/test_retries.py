@@ -25,8 +25,8 @@ from dagster.core.test_utils import instance_for_test
 executors = pytest.mark.parametrize(
     "environment",
     [
-        {"storage": {"filesystem": {}}},
-        {"storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
+        {"intermediate_storage": {"filesystem": {}}},
+        {"intermediate_storage": {"filesystem": {}}, "execution": {"multiprocess": {}}},
     ],
 )
 

@@ -52,5 +52,8 @@ def resource_pipeline():
 if __name__ == "__main__":
     result = execute_pipeline(
         reconstructable(resource_pipeline),
-        run_config={"storage": {"filesystem": {}}, "execution": {"multiprocessing": {}}},
+        run_config={
+            "intermediate_storage": {"filesystem": {}},
+            "execution": {"multiprocessing": {}},
+        },
     )
