@@ -17,8 +17,10 @@ import {StopSchedule} from 'src/schedules/types/StopSchedule';
 import {JobStatus, JobType} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
+import {CountdownStatus, useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
 import {MetadataTable} from 'src/ui/MetadataTable';
+import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Code, Heading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 import {useScheduleSelector} from 'src/workspace/WorkspaceContext';
@@ -45,8 +47,11 @@ const TimestampDisplay = (props: TimestampDisplayProps) => {
 export const ScheduleDetails: React.FC<{
   schedule: ScheduleFragment;
   repoAddress: RepoAddress;
+  countdownDuration: number;
+  countdownStatus: CountdownStatus;
+  onRefresh: () => void;
 }> = (props) => {
-  const {repoAddress, schedule} = props;
+  const {repoAddress, schedule, countdownDuration, countdownStatus, onRefresh} = props;
   const {cronSchedule, executionTimezone, futureTicks, name, partitionSet, pipelineName} = schedule;
 
   const [copyText, setCopyText] = React.useState('Click to copy');
@@ -65,6 +70,11 @@ export const ScheduleDetails: React.FC<{
   );
 
   const scheduleSelector = useScheduleSelector(name);
+
+  const timeRemaining = useCountdown({
+    duration: countdownDuration,
+    status: countdownStatus,
+  });
 
   // Restore the tooltip text after a delay.
   React.useEffect(() => {
@@ -118,6 +128,8 @@ export const ScheduleDetails: React.FC<{
   };
 
   const running = status === JobStatus.RUNNING;
+  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
+  const seconds = Math.floor(timeRemaining / 1000);
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-start'}}>
@@ -201,11 +213,18 @@ export const ScheduleDetails: React.FC<{
         />
       </Group>
       <Box margin={{top: 4}}>
-        <Tooltip content={copyText}>
-          <ButtonLink color={{link: Colors.GRAY3, hover: Colors.GRAY1}} onClick={copyId}>
-            <span style={{fontFamily: FontFamily.monospace}}>{`id: ${id.slice(0, 8)}`}</span>
-          </ButtonLink>
-        </Tooltip>
+        <Group direction="vertical" spacing={8} alignItems="flex-end">
+          <RefreshableCountdown
+            refreshing={countdownRefreshing}
+            seconds={seconds}
+            onRefresh={onRefresh}
+          />
+          <Tooltip content={copyText}>
+            <ButtonLink color={{link: Colors.GRAY3, hover: Colors.GRAY1}} onClick={copyId}>
+              <span style={{fontFamily: FontFamily.monospace}}>{`id: ${id.slice(0, 8)}`}</span>
+            </ButtonLink>
+          </Tooltip>
+        </Group>
       </Box>
     </Box>
   );

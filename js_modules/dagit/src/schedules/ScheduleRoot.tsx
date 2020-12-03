@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, NetworkStatus, useQuery} from '@apollo/client';
 import {IBreadcrumbProps} from '@blueprintjs/core';
 import * as React from 'react';
 
@@ -28,6 +28,8 @@ interface Props {
   runTab?: string;
 }
 
+const INTERVAL = 15 * 1000;
+
 export const ScheduleRoot: React.FC<Props> = (props) => {
   const {scheduleName, repoAddress, runTab} = props;
   useDocumentTitle(`Schedule: ${scheduleName}`);
@@ -42,9 +44,20 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
       scheduleSelector,
     },
     fetchPolicy: 'cache-and-network',
-    pollInterval: 15 * 1000,
+    pollInterval: INTERVAL,
     partialRefetch: true,
+    notifyOnNetworkStatusChange: true,
   });
+
+  const {networkStatus, refetch, stopPolling, startPolling} = queryResult;
+
+  const onRefresh = async () => {
+    stopPolling();
+    await refetch();
+    startPolling(INTERVAL);
+  };
+
+  const countdownStatus = networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
@@ -74,7 +87,13 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
           <ScrollContainer>
             <TopNav breadcrumbs={breadcrumbs} />
             <Group direction="vertical" spacing={24} padding={{vertical: 20, horizontal: 24}}>
-              <ScheduleDetails repoAddress={repoAddress} schedule={scheduleOrError} />
+              <ScheduleDetails
+                repoAddress={repoAddress}
+                schedule={scheduleOrError}
+                countdownDuration={INTERVAL}
+                countdownStatus={countdownStatus}
+                onRefresh={() => onRefresh()}
+              />
               <SchedulePreviousRuns
                 repoAddress={repoAddress}
                 schedule={scheduleOrError}
