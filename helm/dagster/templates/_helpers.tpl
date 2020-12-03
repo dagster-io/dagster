@@ -55,6 +55,13 @@ If release name contains chart name it will be used as a full name.
 {{- required "Celery worker image tag .Values.celery.image.tag is required" .Values.celery.image.tag }}
 {{- end -}}
 
+# Flower service image e.g. mher/flower:0.9.5
+{{- define "dagster.flower_image" -}}
+{{ required "Flower image repository .Values.flower.image.repository is required" .Values.flower.image.repository -}}
+:
+{{- required "Flower worker image tag .Values.flower.image.tag is required" .Values.flower.image.tag }}
+{{- end -}}
+
 {{- define "dagster.dagit.scheduleUpCommand" -}}
 {{- if .Values.userDeployments.enabled }}
 {{- range $deployment := .Values.userDeployments.deployments }}

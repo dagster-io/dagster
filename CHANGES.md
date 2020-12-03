@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.9.20
+**New**
+
+- [Dagit] Show recent runs on individual schedule pages
+- [Dagit] It’s no longer required to run `dagster schedule up` or press the Reconcile button before turning on a new schedule for the first time
+- [Dagit] Various improvements to the asset view. Expanded the Last Materialization Event view. Expansions to the materializations over time view, allowing for both a list view and a graphical view of materialization data.
+
+**Community Contributions**
+
+- Updated many dagster-aws tests to use mocked resources instead of depending on real cloud resources, making it possible to run these tests locally. (thanks @jmsanders!)
+
+**Bugfixes**
+
+- fixed an issue with retries in step launchers
+- [Dagit] bugfixes and improvements
+- Fixed an issue where dagit sometimes left hanging processes behind after exiting
+
+**Experimental**
+- [K8s] The dagster daemon is now optionally deployed by the helm chart. This enables run-level queuing with the QueuedRunCoordinator.
+
 ## 0.9.19
 
 **New**
