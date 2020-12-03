@@ -17,7 +17,7 @@ setup(
     packages=find_packages(exclude=["test"]),
     install_requires=[
         "autoflake",
-        "boto3==1.9.*",
+        "boto3",
         "click>=6.7",
         "dagster",
         "packaging==18.0",
