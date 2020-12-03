@@ -25,21 +25,23 @@ query SensorsQuery($repositorySelector: RepositorySelector!) {
         pipelineName
         solidSelection
         mode
-        status
-        runs {
-            id
-            runId
-        }
-        runsCount
-        ticks {
-            id
-            status
-            timestamp
-            runIds
-            error {
-                message
-                stack
-            }
+        sensorState {
+          status
+          runs {
+              id
+              runId
+          }
+          runsCount
+          ticks {
+              id
+              status
+              timestamp
+              runIds
+              error {
+                  message
+                  stack
+              }
+          }
         }
       }
     }
@@ -61,21 +63,23 @@ query SensorQuery($sensorSelector: SensorSelector!) {
       pipelineName
       solidSelection
       mode
-      status
-      runs {
-        id
-        runId
-      }
-      runsCount
-      ticks {
+      sensorState {
+        status
+        runs {
           id
-          status
-          timestamp
-          runIds
-          error {
-              message
-              stack
-          }
+          runId
+        }
+        runsCount
+        ticks {
+            id
+            status
+            timestamp
+            runIds
+            error {
+                message
+                stack
+            }
+        }
       }
     }
   }
@@ -92,23 +96,27 @@ mutation($sensorSelector: SensorSelector!) {
     }
     ... on Sensor {
       id
-      status
+      jobOriginId
+      sensorState {
+        status
+      }
     }
   }
 }
 """
 
 STOP_SENSORS_QUERY = """
-mutation($sensorSelector: SensorSelector!) {
-  stopSensor(sensorSelector: $sensorSelector) {
+mutation($jobOriginId: String!) {
+  stopSensor(jobOriginId: $jobOriginId) {
     ... on PythonError {
       message
       className
       stack
     }
-    ... on Sensor {
-      id
-      status
+    ... on StopSensorMutationResult {
+      jobState {
+        status
+      }
     }
   }
 }
@@ -148,12 +156,21 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             graphql_context, START_SENSORS_QUERY, variables={"sensorSelector": sensor_selector},
         )
         assert result.data
-        assert result.data["startSensor"]["status"] == JobStatus.RUNNING.value
+
+        assert result.data["startSensor"]["sensorState"]["status"] == JobStatus.RUNNING.value
 
     def test_stop_sensor(self, graphql_context):
         sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+
+        # start sensor
+        start_result = execute_dagster_graphql(
+            graphql_context, START_SENSORS_QUERY, variables={"sensorSelector": sensor_selector},
+        )
+        assert start_result.data["startSensor"]["sensorState"]["status"] == JobStatus.RUNNING.value
+
+        job_origin_id = start_result.data["startSensor"]["jobOriginId"]
         result = execute_dagster_graphql(
-            graphql_context, STOP_SENSORS_QUERY, variables={"sensorSelector": sensor_selector},
+            graphql_context, STOP_SENSORS_QUERY, variables={"jobOriginId": job_origin_id},
         )
         assert result.data
-        assert result.data["stopSensor"]["status"] == JobStatus.STOPPED.value
+        assert result.data["stopSensor"]["jobState"]["status"] == JobStatus.STOPPED.value

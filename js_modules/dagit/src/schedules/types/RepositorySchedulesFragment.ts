@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobTickStatus, PipelineRunStatus, ScheduleStatus, JobStatus } from "./../../types/globalTypes";
+import { JobTickStatus, PipelineRunStatus, ScheduleStatus, JobType, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RepositorySchedulesFragment
@@ -124,14 +124,53 @@ export interface RepositorySchedulesFragment_scheduleDefinitions {
   futureTicks: RepositorySchedulesFragment_scheduleDefinitions_futureTicks;
 }
 
+export interface RepositorySchedulesFragment_sensors_sensorState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
+  lastRunKey: string | null;
+}
+
+export interface RepositorySchedulesFragment_sensors_sensorState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
+  cronSchedule: string;
+}
+
+export type RepositorySchedulesFragment_sensors_sensorState_jobSpecificData = RepositorySchedulesFragment_sensors_sensorState_jobSpecificData_SensorJobData | RepositorySchedulesFragment_sensors_sensorState_jobSpecificData_ScheduleJobData;
+
+export interface RepositorySchedulesFragment_sensors_sensorState_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  pipelineName: string;
+  status: PipelineRunStatus;
+}
+
+export interface RepositorySchedulesFragment_sensors_sensorState_ticks {
+  __typename: "JobTick";
+  id: string;
+  status: JobTickStatus;
+  timestamp: number;
+}
+
+export interface RepositorySchedulesFragment_sensors_sensorState {
+  __typename: "JobState";
+  id: string;
+  name: string;
+  jobType: JobType;
+  status: JobStatus;
+  jobSpecificData: RepositorySchedulesFragment_sensors_sensorState_jobSpecificData | null;
+  runs: RepositorySchedulesFragment_sensors_sensorState_runs[];
+  ticks: RepositorySchedulesFragment_sensors_sensorState_ticks[];
+}
+
 export interface RepositorySchedulesFragment_sensors {
   __typename: "Sensor";
   id: string;
+  jobOriginId: string;
   name: string;
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
-  status: JobStatus;
+  sensorState: RepositorySchedulesFragment_sensors_sensorState;
 }
 
 export interface RepositorySchedulesFragment_origin_repositoryLocationMetadata {

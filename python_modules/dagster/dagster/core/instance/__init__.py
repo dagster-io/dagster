@@ -4,6 +4,7 @@ import sys
 import time
 import warnings
 from collections import defaultdict
+from datetime import datetime
 from enum import Enum
 
 import yaml
@@ -1193,6 +1194,23 @@ class DagsterInstance:
         )
 
     # Schedule Storage
+
+    def start_sensor(self, external_sensor):
+        from dagster.core.scheduler.job import JobState, JobStatus
+        from dagster.core.definitions.job import JobType
+
+        job_state = self.get_job_state(external_sensor.get_external_origin_id())
+        if not job_state:
+            self.add_job_state(
+                JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+            )
+        else:
+            self.update_job_state(job_state.with_status(JobStatus.RUNNING))
+
+    def stop_sensor(self, job_origin_id):
+        job_state = self.get_job_state(job_origin_id)
+        if job_state:
+            self.delete_job_state(job_origin_id)
 
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):
         return self._schedule_storage.all_stored_job_state(repository_origin_id, job_type)

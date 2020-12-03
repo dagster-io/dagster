@@ -12,7 +12,10 @@ export const START_SENSOR_MUTATION = gql`
       __typename
       ... on Sensor {
         id
-        status
+        sensorState {
+          id
+          status
+        }
       }
       ... on PythonError {
         message
@@ -23,12 +26,14 @@ export const START_SENSOR_MUTATION = gql`
 `;
 
 export const STOP_SENSOR_MUTATION = gql`
-  mutation StopSensor($sensorSelector: SensorSelector!) {
-    stopSensor(sensorSelector: $sensorSelector) {
+  mutation StopSensor($jobOriginId: String!) {
+    stopSensor(jobOriginId: $jobOriginId) {
       __typename
-      ... on Sensor {
-        id
-        status
+      ... on StopSensorMutationResult {
+        jobState {
+          id
+          status
+        }
       }
       ... on PythonError {
         message

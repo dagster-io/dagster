@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, JobTickStatus, PipelineRunStatus, ScheduleStatus, JobStatus } from "./../../types/globalTypes";
+import { RepositorySelector, JobTickStatus, PipelineRunStatus, ScheduleStatus, JobType, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
@@ -128,14 +128,53 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinit
   futureTicks: SchedulesRootQuery_repositoryOrError_Repository_scheduleDefinitions_futureTicks;
 }
 
+export interface SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
+  lastRunKey: string | null;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
+  cronSchedule: string;
+}
+
+export type SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_jobSpecificData = SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_jobSpecificData_SensorJobData | SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_jobSpecificData_ScheduleJobData;
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  pipelineName: string;
+  status: PipelineRunStatus;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_ticks {
+  __typename: "JobTick";
+  id: string;
+  status: JobTickStatus;
+  timestamp: number;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState {
+  __typename: "JobState";
+  id: string;
+  name: string;
+  jobType: JobType;
+  status: JobStatus;
+  jobSpecificData: SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_jobSpecificData | null;
+  runs: SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_runs[];
+  ticks: SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState_ticks[];
+}
+
 export interface SchedulesRootQuery_repositoryOrError_Repository_sensors {
   __typename: "Sensor";
   id: string;
+  jobOriginId: string;
   name: string;
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
-  status: JobStatus;
+  sensorState: SchedulesRootQuery_repositoryOrError_Repository_sensors_sensorState;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_origin_repositoryLocationMetadata {

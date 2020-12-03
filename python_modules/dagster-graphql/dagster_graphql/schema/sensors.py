@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.host_representation import ExternalSensor, SensorSelector
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.scheduler.job import JobState
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_sensors import start_sensor, stop_sensor
 from dagster_graphql.schema.errors import (
@@ -15,15 +15,12 @@ class DauphinSensor(dauphin.ObjectType):
         name = "Sensor"
 
     id = dauphin.NonNull(dauphin.ID)
+    jobOriginId = dauphin.NonNull(dauphin.String)
     name = dauphin.NonNull(dauphin.String)
     pipelineName = dauphin.NonNull(dauphin.String)
     solidSelection = dauphin.List(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
-
-    status = dauphin.NonNull("JobStatus")
-    runs = dauphin.Field(dauphin.non_null_list("PipelineRun"), limit=dauphin.Int())
-    runsCount = dauphin.NonNull(dauphin.Int)
-    ticks = dauphin.Field(dauphin.non_null_list("JobTick"), limit=dauphin.Int())
+    sensorState = dauphin.NonNull("JobState")
 
     def resolve_id(self, _):
         return "%s:%s" % (self.name, self.pipelineName)
@@ -41,37 +38,14 @@ class DauphinSensor(dauphin.ObjectType):
 
         super(DauphinSensor, self).__init__(
             name=external_sensor.name,
+            jobOriginId=external_sensor.get_external_origin_id(),
             pipelineName=external_sensor.pipeline_name,
             solidSelection=external_sensor.solid_selection,
             mode=external_sensor.mode,
         )
 
-    def resolve_status(self, _graphene_info):
-        return self._sensor_state.status
-
-    def resolve_runs(self, graphene_info, **kwargs):
-        return [
-            graphene_info.schema.type_named("PipelineRun")(r)
-            for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter.for_sensor(self._external_sensor),
-                limit=kwargs.get("limit"),
-            )
-        ]
-
-    def resolve_runsCount(self, graphene_info):
-        return graphene_info.context.instance.get_runs_count(
-            filters=PipelineRunsFilter.for_sensor(self._external_sensor)
-        )
-
-    def resolve_ticks(self, graphene_info, limit=None):
-        ticks = graphene_info.context.instance.get_job_ticks(
-            self._external_sensor.get_external_origin_id()
-        )
-
-        if limit:
-            ticks = ticks[:limit]
-
-        return [graphene_info.schema.type_named("JobTick")(graphene_info, tick) for tick in ticks]
+    def resolve_sensorState(self, graphene_info):
+        return graphene_info.schema.type_named("JobState")(self._sensor_state)
 
 
 class DauphinSensorOrError(dauphin.Union):
@@ -115,9 +89,31 @@ class DauphinStopSensorMutation(dauphin.Mutation):
         name = "StopSensorMutation"
 
     class Arguments:
-        sensor_selector = dauphin.NonNull("SensorSelector")
+        job_origin_id = dauphin.NonNull(dauphin.String)
 
-    Output = dauphin.NonNull("SensorOrError")
+    Output = dauphin.NonNull("StopSensorMutationResultOrError")
 
-    def mutate(self, graphene_info, sensor_selector):
-        return stop_sensor(graphene_info, SensorSelector.from_graphql_input(sensor_selector))
+    def mutate(self, graphene_info, job_origin_id):
+        return stop_sensor(graphene_info, job_origin_id)
+
+
+class DauphinStopSensorMutationResult(dauphin.ObjectType):
+    class Meta:
+        name = "StopSensorMutationResult"
+
+    jobState = dauphin.Field("JobState")
+
+    def __init__(self, job_state):
+        self._job_state = check.inst_param(job_state, "job_state", JobState)
+
+    def resolve_jobState(self, graphene_info):
+        if not self._job_state:
+            return None
+
+        return graphene_info.schema.type_named("JobState")(job_state=self._job_state)
+
+
+class DauphinStopSensorMutationResultOrError(dauphin.Union):
+    class Meta:
+        name = "StopSensorMutationResultOrError"
+        types = ("StopSensorMutationResult", "PythonError")

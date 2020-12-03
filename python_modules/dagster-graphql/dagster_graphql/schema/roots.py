@@ -55,7 +55,11 @@ from dagster_graphql.implementation.fetch_schedules import (
     get_schedule_states_or_error,
     get_scheduler_or_error,
 )
-from dagster_graphql.implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
+from dagster_graphql.implementation.fetch_sensors import (
+    get_sensor_or_error,
+    get_sensors_or_error,
+    get_unloadable_sensor_states_or_error,
+)
 from dagster_graphql.implementation.run_config_schema import (
     resolve_is_run_config_valid,
     resolve_run_config_schema_or_error,
@@ -124,6 +128,7 @@ class DauphinQuery(dauphin.ObjectType):
     sensorsOrError = dauphin.Field(
         dauphin.NonNull("SensorsOrError"), repositorySelector=dauphin.NonNull("RepositorySelector"),
     )
+    unloadableSensorStatesOrError = dauphin.Field(dauphin.NonNull("JobStatesOrError"))
 
     partitionSetsOrError = dauphin.Field(
         dauphin.NonNull("PartitionSetsOrError"),
@@ -263,6 +268,9 @@ class DauphinQuery(dauphin.ObjectType):
         return get_sensors_or_error(
             graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
+
+    def resolve_unloadableSensorStatesOrError(self, graphene_info):
+        return get_unloadable_sensor_states_or_error(graphene_info)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(

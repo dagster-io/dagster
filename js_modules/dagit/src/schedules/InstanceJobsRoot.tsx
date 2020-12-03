@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Colors, IBreadcrumbProps, NonIdealState} from '@blueprintjs/core';
+import {Colors, NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 
@@ -7,7 +7,6 @@ import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {TopNav} from 'src/nav/TopNav';
 import {
   REPOSITORY_SCHEDULES_FRAGMENT,
   SCHEDULE_DEFINITION_FRAGMENT,
@@ -16,27 +15,31 @@ import {
 } from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {SchedulesTable, UnLoadableSchedules} from 'src/schedules/SchedulesRoot';
-import {SchedulerRootQuery} from 'src/schedules/types/SchedulerRootQuery';
+import {InstanceJobsRootQuery} from 'src/schedules/types/InstanceJobsRootQuery';
+import {JOB_STATE_FRAGMENT, SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
+import {SensorsTable, UnloadableSensors} from 'src/sensors/SensorsTable';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Heading, Subheading} from 'src/ui/Text';
 
-export const SchedulerRoot = () => {
+export const InstanceJobsRoot = () => {
   useDocumentTitle('Scheduler');
-  const queryResult = useQuery<SchedulerRootQuery>(SCHEDULER_ROOT_QUERY, {
+  const queryResult = useQuery<InstanceJobsRootQuery>(INSTANCE_JOBS_ROOT_QUERY, {
     variables: {},
     fetchPolicy: 'cache-and-network',
   });
 
-  const breadcrumbs: IBreadcrumbProps[] = [{icon: 'time', text: 'Scheduler'}];
-
   return (
     <ScrollContainer>
-      <TopNav breadcrumbs={breadcrumbs} />
       <div style={{padding: '16px'}}>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {(result) => {
-            const {scheduler, repositoriesOrError, unLoadableScheduleStates} = result;
+            const {
+              scheduler,
+              repositoriesOrError,
+              unLoadableScheduleStates,
+              unloadableSensorStatesOrError,
+            } = result;
 
             let unLoadableSchedules = null;
 
@@ -50,14 +53,14 @@ export const SchedulerRoot = () => {
                 <NonIdealState
                   icon={IconNames.ERROR}
                   title="Unexpected RepositoryNotFoundError"
-                  description="SchedulerRootQuery unexpectedly returned a RepositoryNotFoundError."
+                  description="InstanceJobsRootQuery unexpectedly returned a RepositoryNotFoundError."
                 />
               );
             } else {
               unLoadableSchedules = unLoadableScheduleStates.results;
             }
 
-            const repositoryDefinitionsSection = (
+            const scheduleDefinitionsSection = (
               <Group direction="vertical" spacing={32}>
                 <Box
                   flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
@@ -76,12 +79,48 @@ export const SchedulerRoot = () => {
               </Group>
             );
 
+            const hasSensors = repositoriesOrError.nodes.some(
+              (repository) => repository.sensors.length,
+            );
+            const unloadableSensors =
+              unloadableSensorStatesOrError.__typename === 'JobStates'
+                ? unloadableSensorStatesOrError.results
+                : [];
+
+            const sensorDefinitionsSection =
+              hasSensors || unloadableSensors.length ? (
+                <Group direction="vertical" spacing={32}>
+                  <Box
+                    flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
+                    padding={{bottom: 12}}
+                    border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+                  >
+                    <Heading>All sensors</Heading>
+                  </Box>
+                  {repositoriesOrError.nodes.map((repository) =>
+                    repository.sensors.length ? (
+                      <Group direction="vertical" spacing={12} key={repository.name}>
+                        <Subheading>{`${repository.name}@${repository.location.name}`}</Subheading>
+                        <SensorsTable
+                          repoAddress={{name: repository.name, location: repository.location.name}}
+                          sensors={repository.sensors}
+                        />
+                      </Group>
+                    ) : null,
+                  )}
+                </Group>
+              ) : null;
+
             return (
               <Group direction="vertical" spacing={32}>
                 <SchedulerInfo schedulerOrError={scheduler} />
-                {repositoryDefinitionsSection}
+                {scheduleDefinitionsSection}
                 {unLoadableSchedules.length > 0 && (
                   <UnLoadableSchedules unLoadableSchedules={unLoadableSchedules} />
+                )}
+                {sensorDefinitionsSection}
+                {unloadableSensors.length > 0 && (
+                  <UnloadableSensors sensorStates={unloadableSensors} />
                 )}
               </Group>
             );
@@ -92,8 +131,8 @@ export const SchedulerRoot = () => {
   );
 };
 
-const SCHEDULER_ROOT_QUERY = gql`
-  query SchedulerRootQuery {
+const INSTANCE_JOBS_ROOT_QUERY = gql`
+  query InstanceJobsRootQuery {
     repositoriesOrError {
       __typename
       ... on RepositoryConnection {
@@ -117,11 +156,22 @@ const SCHEDULER_ROOT_QUERY = gql`
       }
       ...PythonErrorFragment
     }
+    unloadableSensorStatesOrError {
+      ... on JobStates {
+        results {
+          id
+          ...JobStateFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
   }
 
   ${SCHEDULE_DEFINITION_FRAGMENT}
   ${SCHEDULER_FRAGMENT}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
   ${REPOSITORY_SCHEDULES_FRAGMENT}
+  ${SENSOR_FRAGMENT}
   ${SCHEDULE_STATE_FRAGMENT}
+  ${JOB_STATE_FRAGMENT}
 `;

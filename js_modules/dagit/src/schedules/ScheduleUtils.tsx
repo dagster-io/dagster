@@ -6,6 +6,7 @@ import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT, REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
+import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 
 export const SCHEDULE_STATE_FRAGMENT = gql`
   fragment ScheduleStateFragment on ScheduleState {
@@ -69,15 +70,12 @@ export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
     }
     sensors {
       id
-      name
-      pipelineName
-      solidSelection
-      mode
-      status
+      ...SensorFragment
     }
     ...RepositoryInfoFragment
   }
   ${REPOSITORY_INFO_FRAGMENT}
+  ${SENSOR_FRAGMENT}
 `;
 
 export const SCHEDULE_DEFINITION_FRAGMENT = gql`

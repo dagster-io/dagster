@@ -39,6 +39,11 @@ export enum JobTickStatus {
   SUCCESS = "SUCCESS",
 }
 
+export enum JobType {
+  SCHEDULE = "SCHEDULE",
+  SENSOR = "SENSOR",
+}
+
 export enum LocationStateChangeEventType {
   LOCATION_DISCONNECTED = "LOCATION_DISCONNECTED",
   LOCATION_ERROR = "LOCATION_ERROR",

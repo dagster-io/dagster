@@ -4,13 +4,25 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: SensorFragment
 // ====================================================
 
-export interface SensorFragment_runs {
+export interface SensorFragment_sensorState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
+  lastRunKey: string | null;
+}
+
+export interface SensorFragment_sensorState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
+  cronSchedule: string;
+}
+
+export type SensorFragment_sensorState_jobSpecificData = SensorFragment_sensorState_jobSpecificData_SensorJobData | SensorFragment_sensorState_jobSpecificData_ScheduleJobData;
+
+export interface SensorFragment_sensorState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
@@ -18,21 +30,31 @@ export interface SensorFragment_runs {
   status: PipelineRunStatus;
 }
 
-export interface SensorFragment_ticks {
+export interface SensorFragment_sensorState_ticks {
   __typename: "JobTick";
   id: string;
   status: JobTickStatus;
   timestamp: number;
 }
 
+export interface SensorFragment_sensorState {
+  __typename: "JobState";
+  id: string;
+  name: string;
+  jobType: JobType;
+  status: JobStatus;
+  jobSpecificData: SensorFragment_sensorState_jobSpecificData | null;
+  runs: SensorFragment_sensorState_runs[];
+  ticks: SensorFragment_sensorState_ticks[];
+}
+
 export interface SensorFragment {
   __typename: "Sensor";
   id: string;
+  jobOriginId: string;
   name: string;
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
-  status: JobStatus;
-  runs: SensorFragment_runs[];
-  ticks: SensorFragment_ticks[];
+  sensorState: SensorFragment_sensorState;
 }

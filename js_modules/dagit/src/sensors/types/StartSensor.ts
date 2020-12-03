@@ -14,10 +14,16 @@ export interface StartSensor_startSensor_SensorNotFoundError {
   __typename: "SensorNotFoundError";
 }
 
+export interface StartSensor_startSensor_Sensor_sensorState {
+  __typename: "JobState";
+  id: string;
+  status: JobStatus;
+}
+
 export interface StartSensor_startSensor_Sensor {
   __typename: "Sensor";
   id: string;
-  status: JobStatus;
+  sensorState: StartSensor_startSensor_Sensor_sensorState;
 }
 
 export interface StartSensor_startSensor_PythonError {

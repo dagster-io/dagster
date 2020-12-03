@@ -11,6 +11,7 @@ type Query {
   scheduleStatesOrError(repositorySelector: RepositorySelector, withNoScheduleDefinition: Boolean): ScheduleStatesOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
+  unloadableSensorStatesOrError: JobStatesOrError!
   partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
   partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
   pipelineRunsOrError(filter: PipelineRunsFilter, cursor: String, limit: Int): PipelineRunsOrError!
@@ -596,19 +597,45 @@ type SolidInvocationSite {
 
 type Sensor {
   id: ID!
+  jobOriginId: String!
   name: String!
   pipelineName: String!
   solidSelection: [String]
   mode: String!
+  sensorState: JobState!
+}
+
+type JobState {
+  id: ID!
+  name: String!
+  jobType: JobType!
   status: JobStatus!
+  jobSpecificData: JobSpecificData
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!
   ticks(limit: Int): [JobTick!]!
 }
 
+enum JobType {
+  SCHEDULE
+  SENSOR
+}
+
 enum JobStatus {
   RUNNING
   STOPPED
+}
+
+union JobSpecificData = SensorJobData | ScheduleJobData
+
+type SensorJobData {
+  lastCompletedTimestamp: Float
+  lastRunKey: String
+}
+
+type ScheduleJobData {
+  cronSchedule: String!
+  startTimestamp: Float
 }
 
 type JobTick {
@@ -738,6 +765,12 @@ union SensorsOrError = Sensors | RepositoryNotFoundError | PythonError
 
 type Sensors {
   results: [Sensor!]!
+}
+
+union JobStatesOrError = JobStates | PythonError
+
+type JobStates {
+  results: [JobState!]!
 }
 
 union PartitionSetsOrError = PartitionSets | PipelineNotFoundError | PythonError
@@ -880,7 +913,7 @@ type Mutation {
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
-  stopSensor(sensorSelector: SensorSelector!): SensorOrError!
+  stopSensor(jobOriginId: String!): StopSensorMutationResultOrError!
   terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
@@ -943,6 +976,12 @@ union ScheduleMutationResult = PythonError | ScheduleStateResult
 
 type ScheduleStateResult {
   scheduleState: ScheduleState!
+}
+
+union StopSensorMutationResultOrError = StopSensorMutationResult | PythonError
+
+type StopSensorMutationResult {
+  jobState: JobState
 }
 
 union TerminatePipelineExecutionResult = TerminatePipelineExecutionSuccess | TerminatePipelineExecutionFailure | PipelineRunNotFoundError | PythonError

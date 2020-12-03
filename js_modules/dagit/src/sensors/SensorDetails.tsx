@@ -29,13 +29,17 @@ interface Props {
 
 export const SensorDetails = (props: Props) => {
   const {sensor, repoAddress} = props;
-  const {name, pipelineName, status, ticks} = sensor;
+  const {
+    name,
+    pipelineName,
+    sensorState: {status, ticks},
+  } = sensor;
 
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
     sensorName: name,
   };
-
+  const {jobOriginId} = sensor;
   const [startSensor, {loading: toggleOnInFlight}] = useMutation<StartSensor>(
     START_SENSOR_MUTATION,
     {onCompleted: displaySensorMutationErrors},
@@ -46,7 +50,7 @@ export const SensorDetails = (props: Props) => {
 
   const onChangeSwitch = () => {
     if (status === JobStatus.RUNNING) {
-      stopSensor({variables: {sensorSelector}});
+      stopSensor({variables: {jobOriginId}});
     } else {
       startSensor({variables: {sensorSelector}});
     }
