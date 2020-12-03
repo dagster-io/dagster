@@ -1,11 +1,11 @@
 import pytest
 
 
-@pytest.fixture
-def emr_cluster_config(mock_s3_bucket):
+@pytest.fixture(scope="session")
+def emr_cluster_config():
     return {
         "Name": "test-emr",
-        "LogUri": "s3n://{bucket}/elasticmapreduce/".format(bucket=mock_s3_bucket.name),
+        "LogUri": "s3n://emr-cluster-logs/elasticmapreduce/",
         "ReleaseLabel": "emr-5.23.0",
         "Instances": {
             "MasterInstanceType": "m4.large",

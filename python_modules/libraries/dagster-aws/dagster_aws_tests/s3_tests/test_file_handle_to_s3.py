@@ -15,23 +15,21 @@ def create_file_handle_pipeline(temp_file_handle):
     return test
 
 
-def test_successful_file_handle_to_s3(mock_s3_bucket):
+def test_successful_file_handle_to_s3(bucket):
     foo_bytes = "foo".encode()
     with get_temp_file_handle_with_data(foo_bytes) as temp_file_handle:
         result = execute_pipeline(
             create_file_handle_pipeline(temp_file_handle),
             run_config={
                 "solids": {
-                    "file_handle_to_s3": {
-                        "config": {"Bucket": mock_s3_bucket.name, "Key": "some-key"}
-                    }
+                    "file_handle_to_s3": {"config": {"Bucket": bucket.name, "Key": "some-key"}}
                 }
             },
         )
 
         assert result.success
 
-        assert mock_s3_bucket.Object(key="some-key").get()["Body"].read() == foo_bytes
+        assert bucket.Object(key="some-key").get()["Body"].read() == foo_bytes
 
         materializations = result.result_for_solid(
             "file_handle_to_s3"
@@ -40,5 +38,5 @@ def test_successful_file_handle_to_s3(mock_s3_bucket):
         assert len(materializations[0].metadata_entries) == 1
         assert materializations[0].metadata_entries[
             0
-        ].entry_data.path == "s3://{bucket}/some-key".format(bucket=mock_s3_bucket.name)
+        ].entry_data.path == "s3://{bucket}/some-key".format(bucket=bucket.name)
         assert materializations[0].metadata_entries[0].label == "some-key"

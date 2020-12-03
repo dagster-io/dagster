@@ -27,7 +27,6 @@ from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 S3_BUCKET = "dagster-scratch-80542c2"
 
-
 BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG = {
     "local_pipeline_package_path": os.path.abspath(os.path.dirname(__file__)),
     "cluster_id": os.environ.get("EMR_CLUSTER_ID"),
@@ -111,7 +110,7 @@ def test_local():
 @mock_emr
 @mock.patch("dagster_aws.emr.pyspark_step_launcher.EmrPySparkStepLauncher.read_events")
 @mock.patch("dagster_aws.emr.emr.EmrJobRunner.is_emr_step_complete")
-def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket):
+def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events):
     mock_read_events.return_value = execute_pipeline(
         reconstructable(define_do_nothing_pipe), mode="local"
     ).events_by_step_key["do_nothing_solid.compute"]
@@ -125,7 +124,7 @@ def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket
             "SlaveInstanceType": "c3.xlarge",
         },
         JobFlowRole="EMR_EC2_DefaultRole",
-        LogUri="s3://{bucket}/log".format(bucket=mock_s3_bucket.name),
+        LogUri="s3://mybucket/log",
         Name="cluster",
         ServiceRole="EMR_DefaultRole",
         VisibleToAllUsers=True,
@@ -144,8 +143,7 @@ def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket
             "resources": {
                 "pyspark_step_launcher": {
                     "config": deep_merge_dicts(
-                        BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG,
-                        {"cluster_id": cluster_id, "staging_bucket": mock_s3_bucket.name},
+                        BASE_EMR_PYSPARK_STEP_LAUNCHER_CONFIG, {"cluster_id": cluster_id}
                     ),
                 }
             },
