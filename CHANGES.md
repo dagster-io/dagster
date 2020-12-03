@@ -10,6 +10,16 @@
 - Changed `ExecuteStepArgs` parameters. Replaced `execute_step_with_structured_logs` CLI command
   with `execute_step`, and `execute_run_with_structured_logs` with `execute_run`.
 - The `.compute` suffix is no longer applied to all step keys.
+## 0.9.21
+**Community Contributions**
+
+- Fixed helm chart to only add flower to the K8s ingress when enabled (thanks [@PenguinToast](https://github.com/PenguinToast)!)
+- Updated helm chart to use more lenient timeouts for liveness probes on user code deployments (thanks [@PenguinToast](https://github.com/PenguinToast)!)
+
+**Bugfixes**
+
+- [Helm/K8s] Due to Flower being incompatible with Celery 5.0, the Helm chart for Dagster now uses a specific image `mher/flower:0.9.5` for the Flower pod.
+
 
 ## 0.9.20
 
