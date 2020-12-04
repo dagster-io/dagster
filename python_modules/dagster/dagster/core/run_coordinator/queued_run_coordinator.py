@@ -80,7 +80,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         )
         self._instance.handle_new_event(event_record)
 
-        return pipeline_run
+        return self._instance.get_run_by_id(pipeline_run.run_id)
 
     def can_cancel_run(self, run_id):
         run = self._instance.get_run_by_id(run_id)

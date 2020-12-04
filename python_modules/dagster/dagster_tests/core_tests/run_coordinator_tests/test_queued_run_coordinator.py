@@ -48,6 +48,7 @@ def test_submit_run(instance, coordinator):  # pylint: disable=redefined-outer-n
     with create_run(instance, run_id="foo-1", status=PipelineRunStatus.NOT_STARTED) as run:
         returned_run = call_submit_run(coordinator, run)
         assert returned_run.run_id == "foo-1"
+        assert returned_run.status == PipelineRunStatus.QUEUED
 
         assert len(instance.run_launcher.queue()) == 0
         stored_run = instance.get_run_by_id("foo-1")
