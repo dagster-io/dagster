@@ -1,7 +1,6 @@
 import sqlalchemy as db
 from dagster import check
-from dagster.core.storage.runs import RunStorageSqlMetadata, SqlRunStorage
-from dagster.core.storage.runs.schema import DaemonHeartbeatsTable
+from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
