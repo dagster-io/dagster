@@ -10,7 +10,6 @@ from dagster.core.definitions.events import AssetKey, Materialization
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
-from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import datetime_as_float, utc_datetime_from_timestamp
@@ -19,7 +18,6 @@ from ..pipeline_run import PipelineRunStatsSnapshot
 from .base import AssetAwareEventLogStorage, EventLogStorage
 from .migration import migrate_asset_key_data
 from .schema import AssetKeyTable, SecondaryIndexMigrationTable, SqlEventLogStorageTable
-from .version_addresses import get_addresses_for_step_output_versions_helper
 
 SECONDARY_INDEX_ASSET_KEY = "asset_key_table"
 
@@ -460,42 +458,6 @@ class SqlEventLogStorage(EventLogStorage):
                     .where(SecondaryIndexMigrationTable.c.name == name)
                     .values(migration_completed=datetime.now())
                 )
-
-    def get_addresses_for_step_output_versions(self, step_output_versions):
-        """
-        For each given step output, finds whether an output exists with the given
-        version, and returns its address if it does.
-
-        Args:
-            step_output_versions (Dict[(str, StepOutputHandle), str]):
-                (pipeline name, step output handle) -> version.
-
-        Returns:
-            Dict[(str, StepOutputHandle), str]: (pipeline name, step output handle) -> address.
-                For each step output, an address if there is one and None otherwise.
-        """
-        check.dict_param(step_output_versions, "step_output_versions", value_type=str)
-        for pipeline_name, step_output_handle in step_output_versions.keys():
-            check.str_param(pipeline_name, "step_output_versions key[0]")
-            check.inst_param(step_output_handle, "step_output_versions key[1]", StepOutputHandle)
-
-        c = SqlEventLogStorageTable.c
-        object_store_operation_events_query = db.select([c.id, c.timestamp, c.event]).where(
-            c.dagster_event_type == DagsterEventType.OBJECT_STORE_OPERATION.value
-        )
-        with self.connect() as conn:
-            step_output_records = conn.execute(object_store_operation_events_query).fetchall()
-
-        return get_addresses_for_step_output_versions_helper(
-            step_output_versions,
-            [
-                (
-                    (record.timestamp - datetime(1970, 1, 1)).total_seconds(),
-                    deserialize_json_to_dagster_namedtuple(record.event).dagster_event,
-                )
-                for record in step_output_records
-            ],
-        )
 
 
 class AssetAwareSqlEventLogStorage(AssetAwareEventLogStorage, SqlEventLogStorage):

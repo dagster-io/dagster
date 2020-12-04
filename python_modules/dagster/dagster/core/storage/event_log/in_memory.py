@@ -2,12 +2,10 @@ from collections import OrderedDict, defaultdict
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.serdes import ConfigurableClass
 
 from .base import AssetAwareEventLogStorage, EventLogSequence, EventLogStorage
-from .version_addresses import get_addresses_for_step_output_versions_helper
 
 
 class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, ConfigurableClass):
@@ -176,29 +174,3 @@ class InMemoryEventLogStorage(EventLogStorage, AssetAwareEventLogStorage, Config
 
     def enable_secondary_index(self, name, run_id=None):
         pass
-
-    def get_addresses_for_step_output_versions(self, step_output_versions):
-        """
-        For each given step output, finds whether an output exists with the given
-        version, and returns its address if it does.
-
-        Args:
-            step_output_versions (Dict[(str, StepOutputHandle), str]):
-                (pipeline name, step output handle) -> version.
-
-        Returns:
-            Dict[(str, StepOutputHandle), str]: (pipeline name, step output handle) -> address.
-                For each step output, an address if there is one and None otherwise.
-        """
-        object_store_operation_records = (
-            record
-            for records in self._logs.values()
-            for record in records
-            if record.is_dagster_event
-            and record.dagster_event.event_type == DagsterEventType.OBJECT_STORE_OPERATION
-        )
-
-        return get_addresses_for_step_output_versions_helper(
-            step_output_versions,
-            [(record.timestamp, record.dagster_event) for record in object_store_operation_records],
-        )

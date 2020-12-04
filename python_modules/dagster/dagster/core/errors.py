@@ -474,13 +474,6 @@ class JobError(DagsterUserCodeExecutionError):
     """Errors raised during the execution of user-provided functions for a defined Job."""
 
 
-class DagsterAddressIOError(DagsterError):
-    """ IO error raised while operating data assets. """
-
-    def __init__(self, msg):
-        super(DagsterAddressIOError, self).__init__(msg if msg else "")
-
-
 class DagsterUnknownStepStateError(DagsterError):
     """When pipeline execution complete with steps in an unknown state"""
 

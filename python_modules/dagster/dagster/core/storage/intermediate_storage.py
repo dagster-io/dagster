@@ -3,11 +3,10 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
-from dagster.core.errors import DagsterAddressIOError, DagsterObjectStoreError
+from dagster.core.errors import DagsterObjectStoreError
 from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
-from dagster.utils.backcompat import experimental
 
 from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStore
 from .type_storage import TypeStoragePluginRegistry
@@ -26,10 +25,6 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
 
     @abstractmethod
     def has_intermediate(self, context, step_output_handle):
-        pass
-
-    @abstractmethod
-    def has_intermediate_at_address(self, address=None):
         pass
 
     @abstractmethod
@@ -211,91 +206,6 @@ class ObjectStoreIntermediateStorage(IntermediateStorage):
             dest_key=dst_uri,
             object_store_name=self.object_store.name,
         )
-
-    @experimental
-    def set_intermediate_to_address(
-        self,
-        context,
-        dagster_type=None,
-        step_output_handle=None,
-        value=None,
-        address=None,
-        version=None,
-    ):
-        """
-        This is an experimental method.
-        This will likely to be merged into `set_intermediate_object`. To do so, we will need to
-        update the `set_intermediate_object` to take `address` as an arg
-        """
-        dagster_type = resolve_dagster_type(dagster_type)
-        check.opt_inst_param(context, "context", SystemExecutionContext)
-        check.inst_param(dagster_type, "dagster_type", DagsterType)
-        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-        check.str_param(address, "address")
-        check.opt_str_param(version, "version")
-
-        # currently it doesn't support type_storage_plugin_registry
-        try:
-            uri = self.object_store.set_object(
-                key=address, obj=value, serialization_strategy=dagster_type.serialization_strategy
-            )
-            return ObjectStoreOperation(
-                op=ObjectStoreOperationType.SET_OBJECT,
-                key=uri,
-                dest_key=None,
-                obj=value,
-                serialization_strategy_name=dagster_type.serialization_strategy.name,
-                object_store_name=self.object_store.name,
-                version=version,
-            )
-        except (IOError, OSError) as e:
-            raise DagsterAddressIOError(str(e))
-
-    @experimental
-    def has_intermediate_at_address(self, address=None):
-        """
-        This is an experimental method.
-        This will likely to be merged into `has_intermediate`. To do so, we will need to
-        update the `has_intermediate` to take `address` as an arg
-        """
-        check.str_param(address, "address")
-
-        # currently it doesn't support type_storage_plugin_registry
-        try:
-            return self.object_store.has_object(key=address)
-        except (IOError, OSError) as e:
-            raise DagsterAddressIOError(str(e))
-
-    @experimental
-    def get_intermediate_from_address(
-        self, context, dagster_type=None, step_output_handle=None, address=None,
-    ):
-        """
-        This is an experimental method.
-        This will likely to be merged into `get_intermediate_object`. To do so, we will need to
-        update the `get_intermediate_object` to take `address` as an arg
-        """
-        dagster_type = resolve_dagster_type(dagster_type)
-        check.opt_inst_param(context, "context", SystemExecutionContext)
-        check.inst_param(dagster_type, "dagster_type", DagsterType)
-        check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
-        check.str_param(address, "address")
-
-        # currently it doesn't support type_storage_plugin_registry
-        try:
-            obj, uri = self.object_store.get_object(
-                key=address, serialization_strategy=dagster_type.serialization_strategy
-            )
-            return ObjectStoreOperation(
-                op=ObjectStoreOperationType.GET_OBJECT,
-                key=uri,
-                dest_key=None,
-                obj=obj,
-                serialization_strategy_name=dagster_type.serialization_strategy.name,
-                object_store_name=self.object_store.name,
-            )
-        except (IOError, OSError) as e:
-            raise DagsterAddressIOError(str(e))
 
     def uri_for_paths(self, paths, protocol=None):
         check.list_param(paths, "paths", of_type=str)
