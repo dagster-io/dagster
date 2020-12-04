@@ -232,6 +232,11 @@ class ScheduleDefinition(JobDefinition):
 
         check.is_list(result, of_type=RunRequest)
 
+        check.invariant(
+            not any(not data.run_key for data in result),
+            "Schedules that return multiple RunRequests must specify a run_key in each RunRequest",
+        )
+
         # clone all the run requests with the required schedule tags
         return [
             RunRequest(

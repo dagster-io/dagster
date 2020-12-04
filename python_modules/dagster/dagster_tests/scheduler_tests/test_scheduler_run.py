@@ -211,6 +211,25 @@ def define_multi_run_schedule():
     )
 
 
+def define_multi_run_schedule_with_missing_run_key():
+    def gen_runs(context):
+        if not context.scheduled_execution_time:
+            date = pendulum.now().subtract(days=1)
+        else:
+            date = pendulum.instance(context.scheduled_execution_time).subtract(days=1)
+
+        yield RunRequest(run_key="A", run_config=_solid_config(date), tags={"label": "A"})
+        yield RunRequest(run_key=None, run_config=_solid_config(date), tags={"label": "B"})
+
+    return ScheduleDefinition(
+        name="multi_run_schedule_with_missing_run_key",
+        cron_schedule="0 0 * * *",
+        pipeline_name="the_pipeline",
+        execution_timezone="UTC",
+        execution_fn=gen_runs,
+    )
+
+
 @repository
 def the_repo():
     return [
@@ -231,6 +250,7 @@ def the_repo():
         skip_schedule,
         wrong_config_schedule,
         define_multi_run_schedule(),
+        define_multi_run_schedule_with_missing_run_key(),
     ]
 
 
@@ -1151,4 +1171,48 @@ def test_multi_runs(external_repo_context, capfd):
 2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[1].run_id} for multi_run_schedule
 2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[0].run_id} for multi_run_schedule
 """
+            )
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_multi_runs_missing_run_key(external_repo_context, capfd):
+    freeze_datetime = pendulum.datetime(year=2019, month=2, day=27).in_tz("US/Central")
+    with instance_with_schedules(external_repo_context) as (instance, external_repo):
+        with pendulum.test(freeze_datetime):
+            external_schedule = external_repo.get_external_schedule(
+                "multi_run_schedule_with_missing_run_key"
+            )
+            schedule_origin = external_schedule.get_external_origin()
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                freeze_datetime,
+                JobTickStatus.FAILURE,
+                [],
+                "Error occurred during the execution function for schedule "
+                "multi_run_schedule_with_missing_run_key",
+            )
+
+            captured = capfd.readouterr()
+
+            assert (
+                "Failed to fetch schedule data for multi_run_schedule_with_missing_run_key: "
+                in captured.out
+            )
+
+            assert (
+                "Error occurred during the execution function for schedule "
+                "multi_run_schedule_with_missing_run_key" in captured.out
+            )
+
+            assert (
+                "Schedules that return multiple RunRequests must specify a "
+                "run_key in each RunRequest" in captured.out
             )
