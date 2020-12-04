@@ -46,7 +46,9 @@ class DagsterEventType(Enum):
 
     PIPELINE_ENQUEUED = "PIPELINE_ENQUEUED"
     PIPELINE_DEQUEUED = "PIPELINE_DEQUEUED"
-    PIPELINE_START = "PIPELINE_START"
+    PIPELINE_STARTING = "PIPELINE_STARTING"  # Launch is happening, execution hasn't started yet
+
+    PIPELINE_START = "PIPELINE_START"  # Execution has started
     PIPELINE_SUCCESS = "PIPELINE_SUCCESS"
     PIPELINE_FAILURE = "PIPELINE_FAILURE"
 
@@ -83,6 +85,7 @@ FAILURE_EVENTS = {
 PIPELINE_EVENTS = {
     DagsterEventType.PIPELINE_ENQUEUED,
     DagsterEventType.PIPELINE_DEQUEUED,
+    DagsterEventType.PIPELINE_STARTING,
     DagsterEventType.PIPELINE_START,
     DagsterEventType.PIPELINE_SUCCESS,
     DagsterEventType.PIPELINE_FAILURE,

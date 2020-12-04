@@ -76,5 +76,5 @@ def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name
 
     logs = dagster_instance_for_run_coordinator.all_logs(run.run_id)
     assert_events_in_order(
-        logs, ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_SUCCESS"],
+        logs, ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_STARTING", "PIPELINE_SUCCESS"],
     )

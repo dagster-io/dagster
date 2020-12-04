@@ -48,10 +48,11 @@ def test_submit_run(instance, coodinator):  # pylint: disable=redefined-outer-na
     with create_run(instance, run_id="foo-1") as run:
         returned_run = call_submit_run(coodinator, run)
         assert returned_run.run_id == "foo-1"
+        assert returned_run.status == PipelineRunStatus.STARTING
 
         assert len(instance.run_launcher.queue()) == 1
         assert instance.run_launcher.queue()[0].run_id == "foo-1"
-        assert instance.run_launcher.queue()[0].status == PipelineRunStatus.NOT_STARTED
+        assert instance.run_launcher.queue()[0].status == PipelineRunStatus.STARTING
         assert instance.get_run_by_id("foo-1")
 
 

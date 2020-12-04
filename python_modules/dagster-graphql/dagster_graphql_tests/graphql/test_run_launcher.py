@@ -34,7 +34,7 @@ class TestBasicLaunch(
         )
 
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        assert result.data["launchPipelineExecution"]["run"]["status"] == "NOT_STARTED"
+        assert result.data["launchPipelineExecution"]["run"]["status"] == "STARTING"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 
@@ -57,7 +57,7 @@ class TestBasicLaunch(
         )
 
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        assert result.data["launchPipelineExecution"]["run"]["status"] == "NOT_STARTED"
+        assert result.data["launchPipelineExecution"]["run"]["status"] == "STARTING"
 
         run_id = result.data["launchPipelineExecution"]["run"]["runId"]
 

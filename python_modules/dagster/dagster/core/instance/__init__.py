@@ -1109,13 +1109,32 @@ class DagsterInstance:
         """
         run = self.get_run_by_id(run_id)
 
-        try:
-            launched_run = self._run_launcher.launch_run(
-                self, run, external_pipeline=external_pipeline
-            )
-        except:
-            from dagster.core.events import EngineEventData
+        from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
+        from dagster.core.events.log import DagsterEventRecord
 
+        launch_started_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_STARTING.value,
+            pipeline_name=run.pipeline_name,
+        )
+
+        event_record = DagsterEventRecord(
+            message="",
+            user_message="",
+            level=logging.INFO,
+            pipeline_name=run.pipeline_name,
+            run_id=run.run_id,
+            error_info=None,
+            timestamp=time.time(),
+            dagster_event=launch_started_event,
+        )
+
+        self.handle_new_event(event_record)
+
+        run = self.get_run_by_id(run_id)
+
+        try:
+            self._run_launcher.launch_run(self, run, external_pipeline=external_pipeline)
+        except:
             error = serializable_error_info_from_exc_info(sys.exc_info())
             self.report_engine_event(
                 error.message, run, EngineEventData.engine_error(error),
@@ -1123,7 +1142,7 @@ class DagsterInstance:
             self.report_run_failed(run)
             raise
 
-        return launched_run
+        return run
 
     # Scheduler
 

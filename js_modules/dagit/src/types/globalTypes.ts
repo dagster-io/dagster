@@ -72,6 +72,7 @@ export enum PipelineRunStatus {
   NOT_STARTED = "NOT_STARTED",
   QUEUED = "QUEUED",
   STARTED = "STARTED",
+  STARTING = "STARTING",
   SUCCESS = "SUCCESS",
 }
 

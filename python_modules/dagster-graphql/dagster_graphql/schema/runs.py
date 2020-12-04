@@ -389,6 +389,12 @@ class DauphinPipelineDequeuedEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
+class DauphinPipelineStartingEvent(dauphin.ObjectType):
+    class Meta:
+        name = "PipelineStartingEvent"
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
+
+
 class DauphinPipelineStartEvent(dauphin.ObjectType):
     class Meta:
         name = "PipelineStartEvent"
@@ -788,6 +794,7 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinPipelineStartEvent,
             DauphinPipelineEnqueuedEvent,
             DauphinPipelineDequeuedEvent,
+            DauphinPipelineStartingEvent,
             DauphinPipelineSuccessEvent,
             DauphinObjectStoreOperationEvent,
             DauphinAssetStoreOperationEvent,
@@ -868,6 +875,8 @@ def from_dagster_event_record(event_record, pipeline_name):
         return DauphinPipelineEnqueuedEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_DEQUEUED:
         return DauphinPipelineDequeuedEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_STARTING:
+        return DauphinPipelineStartingEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
         return DauphinPipelineStartEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS:

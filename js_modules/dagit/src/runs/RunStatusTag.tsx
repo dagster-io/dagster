@@ -21,6 +21,12 @@ export const RunStatusTag = (props: {status: IRunStatus}) => {
           Succeeded
         </StatusTag>
       );
+    case 'STARTING':
+      return (
+        <StatusTag minimal intent="none">
+          Starting
+        </StatusTag>
+      );
     case 'NOT_STARTED':
       return (
         <StatusTag minimal intent="none">

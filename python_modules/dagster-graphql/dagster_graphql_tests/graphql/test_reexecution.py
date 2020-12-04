@@ -142,7 +142,7 @@ class TestReexecution(ExecutingGraphQLContextTestMatrix):
         )
 
         assert result.data["launchPipelineExecution"]["__typename"] == "LaunchPipelineRunSuccess"
-        assert result.data["launchPipelineExecution"]["run"]["status"] == "NOT_STARTED"
+        assert result.data["launchPipelineExecution"]["run"]["status"] == "STARTING"
 
         graphql_context.instance.run_launcher.join()
 

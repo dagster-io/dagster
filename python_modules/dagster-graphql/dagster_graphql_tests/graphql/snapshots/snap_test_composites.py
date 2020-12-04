@@ -6,7 +6,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['TestComposites.test_composites[readonly_in_memory_instance_managed_grpc_env] 1'] = {
+snapshots['TestComposites.test_composites[readonly_sqlite_instance_managed_grpc_env] 1'] = {
     'pipelineOrError': {
         '__typename': 'Pipeline',
         'name': 'composites_pipeline',

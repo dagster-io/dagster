@@ -4,11 +4,19 @@ import styled from 'styled-components/macro';
 
 import {RunStats} from 'src/runs/RunStats';
 
-export type IRunStatus = 'SUCCESS' | 'QUEUED' | 'NOT_STARTED' | 'FAILURE' | 'STARTED' | 'MANAGED';
+export type IRunStatus =
+  | 'SUCCESS'
+  | 'QUEUED'
+  | 'NOT_STARTED'
+  | 'FAILURE'
+  | 'STARTED'
+  | 'MANAGED'
+  | 'STARTING';
 
 export const RUN_STATUS_COLORS = {
   QUEUED: Colors.BLUE1,
   NOT_STARTED: Colors.GRAY1,
+  STARTING: Colors.GRAY3,
   MANAGED: Colors.GRAY3,
   STARTED: Colors.GRAY3,
   SUCCESS: Colors.GREEN2,
@@ -18,6 +26,7 @@ export const RUN_STATUS_COLORS = {
 export const RUN_STATUS_HOVER_COLORS = {
   QUEUED: Colors.BLUE3,
   NOT_STARTED: Colors.GRAY3,
+  STARTING: Colors.GRAY5,
   MANAGED: Colors.GRAY3,
   STARTED: Colors.GRAY5,
   SUCCESS: Colors.GREEN4,

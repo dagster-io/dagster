@@ -283,7 +283,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(run, "run", PipelineRun)
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.invariant(run.status == PipelineRunStatus.NOT_STARTED)
+        check.invariant(run.status == PipelineRunStatus.STARTING)
         self._queue.append(run)
         return run
 

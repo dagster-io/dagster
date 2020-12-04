@@ -44,5 +44,12 @@ def test_queued_runs(tmpdir, foo_pipeline_handle):
 
                 logs = instance.all_logs(run.run_id)
                 assert_events_in_order(
-                    logs, ["PIPELINE_ENQUEUED", "PIPELINE_DEQUEUED", "PIPELINE_SUCCESS"],
+                    logs,
+                    [
+                        "PIPELINE_ENQUEUED",
+                        "PIPELINE_DEQUEUED",
+                        "PIPELINE_STARTING",
+                        "PIPELINE_START",
+                        "PIPELINE_SUCCESS",
+                    ],
                 )

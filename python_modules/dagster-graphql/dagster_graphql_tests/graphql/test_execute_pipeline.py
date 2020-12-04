@@ -233,6 +233,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             if message["__typename"] != "EngineEvent"
         ]
         expected_non_engine_event_types = [
+            "PipelineStartingEvent",
             "PipelineStartEvent",
             "ExecutionStepStartEvent",
             "ExecutionStepInputEvent",
