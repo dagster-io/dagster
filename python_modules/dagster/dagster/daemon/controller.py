@@ -48,11 +48,13 @@ class DagsterDaemonController:
 
         if isinstance(instance.run_coordinator, QueuedRunCoordinator):
             max_concurrent_runs = instance.run_coordinator.max_concurrent_runs
+            tag_concurrency_limits = instance.run_coordinator.tag_concurrency_limits
             self._add_daemon(
                 QueuedRunCoordinatorDaemon(
                     instance,
                     interval_seconds=instance.run_coordinator.dequeue_interval_seconds,
                     max_concurrent_runs=max_concurrent_runs,
+                    tag_concurrency_limits=tag_concurrency_limits,
                 )
             )
 

@@ -2,6 +2,7 @@ import contextlib
 
 import pytest
 from dagster.check import CheckError
+from dagster.core.errors import DagsterInvalidConfigError
 from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import create_run_for_test, instance_for_test
@@ -42,6 +43,37 @@ def create_run(instance, **kwargs):  # pylint: disable=redefined-outer-name
             kwargs,
         )
         yield create_run_for_test(instance, **pipeline_args)
+
+
+def test_config():
+    with instance_for_test(
+        overrides={
+            "run_coordinator": {
+                "module": "dagster.core.run_coordinator",
+                "class": "QueuedRunCoordinator",
+                "config": {
+                    "max_concurrent_runs": 10,
+                    "tag_concurrency_limits": [
+                        {"key": "foo", "value": "bar", "limit": 3},
+                        {"key": "backfill", "limit": 2},
+                    ],
+                },
+            }
+        }
+    ) as _:
+        pass
+
+    with pytest.raises(DagsterInvalidConfigError):
+        with instance_for_test(
+            overrides={
+                "run_coordinator": {
+                    "module": "dagster.core.run_coordinator",
+                    "class": "QueuedRunCoordinator",
+                    "config": {"tag_concurrency_limits": [{"key": "backfill"},],},
+                }
+            }
+        ) as _:
+            pass
 
 
 def test_submit_run(instance, coordinator):  # pylint: disable=redefined-outer-name
