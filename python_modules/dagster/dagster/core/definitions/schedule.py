@@ -180,9 +180,7 @@ class ScheduleDefinition(JobDefinition):
                     evaluated_tags = tags_fn(context)
 
                 yield RunRequest(
-                    run_key=str(context.scheduled_execution_time),
-                    run_config=evaluated_run_config,
-                    tags=evaluated_tags,
+                    run_key=None, run_config=evaluated_run_config, tags=evaluated_tags,
                 )
 
             self._execution_fn = _execution_fn
