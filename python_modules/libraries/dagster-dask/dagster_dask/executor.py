@@ -157,7 +157,7 @@ class DaskExecutor(Executor):
             "Dask execution requires a persistent DagsterInstance",
         )
 
-        step_levels = execution_plan.execution_step_levels()
+        step_levels = execution_plan.get_steps_to_execute_by_level()
 
         pipeline_name = pipeline_context.pipeline_def.name
 

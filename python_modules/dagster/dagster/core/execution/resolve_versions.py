@@ -95,7 +95,7 @@ def resolve_step_versions_helper(execution_plan):
 
     step_versions = {}  # step_key (str) -> version (str)
 
-    for step in execution_plan.topological_steps():
+    for step in execution_plan.get_all_steps_in_topo_order():
         input_version_dict = {
             input_name: step_input.source.compute_version(step_versions)
             for input_name, step_input in step.step_input_dict.items()

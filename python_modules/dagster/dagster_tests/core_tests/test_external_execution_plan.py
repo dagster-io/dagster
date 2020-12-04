@@ -280,23 +280,25 @@ def test_execute_step_wrong_step_key():
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
-            execution_plan.build_subset_plan(["nope"]), instance, pipeline_run=pipeline_run
+            execution_plan.build_subset_plan(["nope.compute"]), instance, pipeline_run=pipeline_run
         )
 
-    assert exc_info.value.step_keys == ["nope"]
+    assert exc_info.value.step_keys == ["nope.compute"]
 
-    assert str(exc_info.value) == "Execution plan does not contain step: nope"
+    assert str(exc_info.value) == "Execution plan does not contain step: nope.compute"
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
-            execution_plan.build_subset_plan(["nope", "nuh_uh"]),
+            execution_plan.build_subset_plan(["nope.compute", "nuh_uh.compute"]),
             instance,
             pipeline_run=pipeline_run,
         )
 
-    assert exc_info.value.step_keys == ["nope", "nuh_uh"]
+    assert exc_info.value.step_keys == ["nope.compute", "nuh_uh.compute"]
 
-    assert str(exc_info.value) == "Execution plan does not contain steps: nope, nuh_uh"
+    assert (
+        str(exc_info.value) == "Execution plan does not contain steps: nope.compute, nuh_uh.compute"
+    )
 
 
 def test_using_file_system_for_subplan_missing_input():
@@ -334,7 +336,7 @@ def test_using_file_system_for_subplan_invalid_step():
 
     with pytest.raises(DagsterExecutionStepNotFoundError):
         execute_plan(
-            execution_plan.build_subset_plan(["nope"]),
+            execution_plan.build_subset_plan(["nope.compute"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,

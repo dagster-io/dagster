@@ -29,7 +29,7 @@ class ActiveExecution:
         self._step_outputs = set()
 
         # All steps to be executed start out here in _pending
-        self._pending = self._plan.execution_deps()
+        self._pending = self._plan.get_executable_step_deps()
 
         # steps move in to these buckets as a result of _update calls
         self._executable = []
@@ -316,7 +316,7 @@ class ActiveExecution:
             if at_time:
                 self._waiting_to_retry[step_key] = at_time
             else:
-                self._pending[step_key] = self._plan.execution_deps()[step_key]
+                self._pending[step_key] = self._plan.get_executable_step_deps()[step_key]
 
         elif self._retries.deferred:
             # do not attempt to execute again

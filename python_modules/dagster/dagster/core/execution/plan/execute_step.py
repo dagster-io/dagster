@@ -175,8 +175,8 @@ def _create_step_output_event(step_context, output, type_check, success, version
     return DagsterEvent.step_output_event(
         step_context=step_context,
         step_output_data=StepOutputData(
-            step_output_handle=StepOutputHandle.from_step(
-                step=step_context.step, output_name=output.output_name
+            step_output_handle=StepOutputHandle(
+                step_key=step_context.step.key, output_name=output.output_name
             ),
             type_check_data=TypeCheckData(
                 success=success,
@@ -327,7 +327,7 @@ def _create_step_events_for_output(step_context, output):
     for output_event in _type_checked_step_output_event_sequence(step_context, output, version):
         yield output_event
 
-    step_output_handle = StepOutputHandle.from_step(step=step, output_name=output.output_name)
+    step_output_handle = StepOutputHandle(step_key=step.key, output_name=output.output_name)
 
     for evt in _set_objects(step_context, step_output, step_output_handle, output, version):
         yield evt

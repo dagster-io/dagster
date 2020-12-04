@@ -235,8 +235,8 @@ def get_required_resource_keys_to_init(execution_plan, intermediate_storage_def)
     if intermediate_storage_def is not None:
         resource_keys = resource_keys.union(intermediate_storage_def.required_resource_keys)
 
-    for step_key, step in execution_plan.step_dict.items():
-        if step_key not in execution_plan.step_keys_to_execute:
+    for step_handle, step in execution_plan.step_dict.items():
+        if step_handle not in execution_plan.step_handles_to_execute:
             continue
         resource_keys = resource_keys.union(
             get_required_resource_keys_for_step(step, execution_plan, intermediate_storage_def)

@@ -28,7 +28,7 @@ from ..engine_tests.test_multiprocessing import define_diamond_pipeline
 def test_topological_sort():
     plan = create_execution_plan(define_diamond_pipeline())
 
-    levels = plan.topological_step_levels()
+    levels = plan.get_steps_to_execute_by_level()
 
     assert len(levels) == 3
 
