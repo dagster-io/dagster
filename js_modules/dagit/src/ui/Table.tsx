@@ -8,10 +8,4 @@ export const Table = styled(HTMLTable)`
     text-transform: uppercase;
     vertical-align: bottom;
   }
-
-  & tr td,
-  tr td div {
-    overflow: hidden;
-    white-space: nowrap;
-  }
 `;

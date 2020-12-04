@@ -74,7 +74,7 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
         <thead>
           <tr>
             <th>Pipeline name</th>
-            <th>Recent runs</th>
+            <th style={{width: '30%'}}>Recent runs</th>
           </tr>
         </thead>
         <tbody>
@@ -82,7 +82,7 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
             const {name, runs} = pipeline;
             return (
               <tr key={name}>
-                <td style={{width: '60%'}}>
+                <td>
                   <div>
                     <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${name}`)}>
                       {name}
@@ -94,7 +94,7 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
                 </td>
                 <td>
                   <div style={{display: 'flex', flexDirection: 'row'}}>
-                    {runs.map((run) => (
+                    {runs.slice(0, 10).map((run) => (
                       <RunStatusWithStats
                         key={run.runId}
                         runId={run.runId}

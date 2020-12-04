@@ -168,7 +168,7 @@ const RunRow: React.FunctionComponent<{
           <div>{`Mode: ${run.mode}`}</div>
         </div>
       </td>
-      <td style={{maxWidth: '150px'}}>
+      <td style={{maxWidth: '150px', whiteSpace: 'nowrap'}}>
         <RunTime run={run} />
         <RunElapsed run={run} />
       </td>
