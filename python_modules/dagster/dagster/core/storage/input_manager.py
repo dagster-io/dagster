@@ -50,7 +50,7 @@ class InputManager(ABC):
         """The user-defined read method that loads data given its metadata.
 
         Args:
-            context (LoadContext): The context of the step output that produces this asset.
+            context (InputContext): The context of the step output that produces this asset.
 
         Returns:
             Any: The data object.
@@ -60,7 +60,7 @@ class InputManager(ABC):
 def input_manager(config_schema=None, description=None, input_config_schema=None, version=None):
     """Define an input manager.
 
-    The decorated function should accept a :py:class:`LoadContext` and resource config, and return
+    The decorated function should accept a :py:class:`InputContext` and resource config, and return
     a loaded object that will be passed into one of the inputs of a solid.
 
     The decorator produces an :py:class:`InputManagerDefinition`.

@@ -232,7 +232,9 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
             resource_keys = resource_keys.union(
                 step_output.output_def.dagster_type.materializer.required_resource_keys()
             )
-        if step_output.output_def.asset_store_key:
+        if step_output.output_def.manager_key:
+            resource_keys = resource_keys.union({step_output.output_def.manager_key})
+        elif step_output.output_def.asset_store_key:
             resource_keys = resource_keys.union({step_output.output_def.asset_store_key})
 
     # add all the storage-compatible plugin resource keys

@@ -341,9 +341,13 @@ def _set_addressable_asset(step_context, step_output_handle, value):
     asset_store = getattr(step_context.resources, asset_store_handle.asset_store_key)
     asset_store_context = step_context.for_asset_store(step_output_handle, asset_store_handle)
 
+    # Allow zero, one, or multiple AssetMaterialization yielded by set_asset
     materializations = asset_store.set_asset(asset_store_context, value)
 
-    # Allow zero, one, or multiple AssetMaterialization yielded by set_asset
+    return _materializations_to_events(step_context, step_output_handle, materializations)
+
+
+def _materializations_to_events(step_context, step_output_handle, materializations):
     if materializations is not None:
         for materialization in ensure_gen(materializations):
             if not isinstance(materialization, AssetMaterialization):
@@ -359,22 +363,34 @@ def _set_addressable_asset(step_context, step_output_handle, value):
                     )
                 )
 
-            yield materialization
-
-    # SET_ASSET operation by AssetStore
-    yield AssetStoreOperation(
-        AssetStoreOperationType.SET_ASSET, step_output_handle, asset_store_handle
-    )
+            yield DagsterEvent.step_materialization(step_context, materialization)
 
 
 def _set_intermediates(step_context, step_output, step_output_handle, output, version):
+    from dagster.core.storage.asset_store import AssetStoreHandle
+
+    output_def = step_output.output_def
+    if output_def.manager_key:
+        output_manager = getattr(step_context.resources, output_def.manager_key)
+        output_context = step_context.get_output_context(step_output_handle)
+        materializations = output_manager.handle_output(output_context, output.value)
+
+        for evt in _materializations_to_events(step_context, step_output_handle, materializations):
+            yield evt
     if step_context.using_asset_store(step_output_handle):
         res = _set_addressable_asset(step_context, step_output_handle, output.value)
         for evt in res:
-            if isinstance(evt, AssetStoreOperation):
-                yield DagsterEvent.asset_store_operation(step_context, evt)
-            if isinstance(evt, AssetMaterialization):
-                yield DagsterEvent.step_materialization(step_context, evt)
+            yield evt
+
+        # SET_ASSET operation by AssetStore
+        yield DagsterEvent.asset_store_operation(
+            step_context,
+            AssetStoreOperation(
+                AssetStoreOperationType.SET_ASSET,
+                step_output_handle,
+                AssetStoreHandle(output_def.asset_store_key, output_def.asset_metadata),
+            ),
+        )
     else:
         res = step_context.intermediate_storage.set_intermediate(
             context=step_context,
@@ -402,7 +418,7 @@ def _create_output_materializations(step_context, output_name, value):
         if solid_config is None:
             continue
 
-        for output_spec in solid_config.outputs:
+        for output_spec in solid_config.outputs.type_materializer_specs:
             check.invariant(len(output_spec) == 1)
             config_output_name, output_spec = list(output_spec.items())[0]
             if config_output_name == output_name:

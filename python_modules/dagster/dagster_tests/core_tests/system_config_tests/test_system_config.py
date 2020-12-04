@@ -141,7 +141,10 @@ def test_solid_dictionary_type():
     value = env_obj.solids
 
     assert set(["int_config_solid", "string_config_solid"]) == set(value.keys())
-    assert value == {"int_config_solid": SolidConfig(1), "string_config_solid": SolidConfig("bar")}
+    assert value == {
+        "int_config_solid": SolidConfig.from_dict({"config": 1}),
+        "string_config_solid": SolidConfig.from_dict({"config": "bar"}),
+    }
 
 
 def define_test_solids_config_pipeline():
@@ -214,7 +217,10 @@ def test_solid_dictionary_some_no_config():
     env = EnvironmentConfig.build(pipeline_def, {"solids": {"int_config_solid": {"config": 1}}})
 
     assert {"int_config_solid", "no_config_solid"} == set(env.solids.keys())
-    assert env.solids == {"int_config_solid": SolidConfig(1), "no_config_solid": SolidConfig()}
+    assert env.solids == {
+        "int_config_solid": SolidConfig.from_dict({"config": 1}),
+        "no_config_solid": SolidConfig.from_dict({}),
+    }
 
 
 def test_whole_environment():
@@ -253,7 +259,10 @@ def test_whole_environment():
     )
 
     assert isinstance(env, EnvironmentConfig)
-    assert env.solids == {"int_config_solid": SolidConfig(123), "no_config_solid": SolidConfig()}
+    assert env.solids == {
+        "int_config_solid": SolidConfig.from_dict({"config": 123}),
+        "no_config_solid": SolidConfig.from_dict({}),
+    }
     assert env.resources == {"test_resource": {"config": 1}, "asset_store": {}}
 
 

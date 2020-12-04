@@ -91,7 +91,9 @@ def test_basic_json_default_output_config_schema():
     )
 
     assert env.solids["return_one"]
-    assert env.solids["return_one"].outputs == [{"result": {"json": {"path": "foo"}}}]
+    assert env.solids["return_one"].outputs.type_materializer_specs == [
+        {"result": {"json": {"path": "foo"}}}
+    ]
 
 
 def test_basic_json_named_output_config_schema():
@@ -101,7 +103,9 @@ def test_basic_json_named_output_config_schema():
     )
 
     assert env.solids["return_named_one"]
-    assert env.solids["return_named_one"].outputs == [{"named": {"json": {"path": "foo"}}}]
+    assert env.solids["return_named_one"].outputs.type_materializer_specs == [
+        {"named": {"json": {"path": "foo"}}}
+    ]
 
 
 def test_basic_json_misnamed_output_config_schema():

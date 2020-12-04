@@ -316,24 +316,35 @@ class SystemStepExecutionContext(SystemExecutionContext):
             version=self._step_output_version(step_output_handle),
         )
 
-    def for_input_manager(self, input_name, input_config, input_metadata, source_handle=None):
-        if source_handle:
-            upstream_output_info = StepOutputInfo(
-                step_key=source_handle.step_key,
-                name=source_handle.output_name,
-                metadata=self.execution_plan.get_asset_store_handle(source_handle).asset_metadata,
-                run_id=self._get_source_run_id(source_handle),
-                version=self._step_output_version(source_handle),
-            )
+    def get_output_context(self, step_output_handle):
+        # get config
+        step = self.execution_plan.get_step_by_key(step_output_handle.step_key)
+        solid_config = self.environment_config.solids.get(step.solid_handle.to_string())
+        outputs_config = solid_config.outputs
+
+        if outputs_config:
+            output_config = outputs_config.get_output_manager_config(step_output_handle.output_name)
         else:
-            upstream_output_info = None
-        return LoadContext(
+            output_config = None
+
+        return OutputContext(
+            step_key=step_output_handle.step_key,
+            name=step_output_handle.output_name,
+            metadata=self.execution_plan.get_asset_store_handle(step_output_handle).asset_metadata,
+            run_id=self._get_source_run_id(step_output_handle),
+            version=self._step_output_version(step_output_handle),
+            pipeline_name=self.pipeline_def.name,
+            config=output_config,
+        )
+
+    def for_input_manager(self, input_name, input_config, input_metadata, source_handle=None):
+        return InputContext(
             input_name=input_name,
             input_config=input_config,
             input_metadata=input_metadata,
             pipeline_name=self.pipeline_def.name,
             solid_def=self.solid_def,
-            upstream_output=upstream_output_info,
+            upstream_output=self.get_output_context(source_handle) if source_handle else None,
         )
 
     def get_asset_store(self, asset_store_key):
@@ -430,7 +441,9 @@ class HookContext(SystemExecutionContext):
         return solid_config.config if solid_config else None
 
 
-class StepOutputInfo(namedtuple("_StepOutputInfo", "step_key name metadata run_id version")):
+class OutputContext(
+    namedtuple("_OutputContext", "step_key name metadata run_id pipeline_name config version")
+):
     """
     Attributes:
         step_key (str): The step_key for the compute step that produced the output.
@@ -438,13 +451,15 @@ class StepOutputInfo(namedtuple("_StepOutputInfo", "step_key name metadata run_i
         metadata (Dict[str, Any]): A dict of the metadata that is assigned to the
             OutputDefinition that produced the output.
         run_id (str): The id of the run that produced the output.
+        pipeline_name (str): The name of the pipeline definition.
+        config (Optional[Any]): The configuration for the output.
         version (Optional[str]): (Experimental) The version of the output.
     """
 
 
-class LoadContext(
+class InputContext(
     namedtuple(
-        "_LoadContext",
+        "_InputContext",
         "input_name pipeline_name solid_def input_config input_metadata upstream_output",
     )
 ):
@@ -458,7 +473,7 @@ class LoadContext(
         input_config (Optional[Any]): The config attached to the input that we're loading.
         input_metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
             InputDefinition that we're loading for.
-        upstream_output (Optional[StepOutputInfo]): Info about the output that produced the object
+        upstream_output (Optional[OutputContext]): Info about the output that produced the object
             we're loading.
     """
 
@@ -472,16 +487,14 @@ class LoadContext(
         upstream_output=None,
     ):
 
-        return super(LoadContext, cls).__new__(
+        return super(InputContext, cls).__new__(
             cls,
             input_name=check.str_param(input_name, "input_name"),
             pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
             solid_def=check.opt_inst_param(solid_def, "solid_def", SolidDefinition),
             input_config=input_config,
             input_metadata=input_metadata,
-            upstream_output=check.opt_inst_param(
-                upstream_output, "upstream_output", StepOutputInfo
-            ),
+            upstream_output=check.opt_inst_param(upstream_output, "upstream_output", OutputContext),
         )
 
 

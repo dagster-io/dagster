@@ -27,8 +27,7 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
     while current_handle:
         solid_config = environment_config.solids.get(current_handle.to_string())
         current_handle = current_handle.parent
-        for output_spec in solid_config.outputs:
-            config_output_names = config_output_names.union(output_spec.keys())
+        config_output_names = config_output_names.union(solid_config.outputs.output_names)
 
     return ExecutionStep(
         pipeline_name=pipeline_name,

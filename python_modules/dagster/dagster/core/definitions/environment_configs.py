@@ -7,6 +7,7 @@ from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Shape, all_opt
 from dagster.config.iterate_types import iterate_config_types
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.storage.input_manager import InputManagerDefinition
+from dagster.core.storage.output_manager import OutputManagerDefinition
 from dagster.core.storage.system_storage import default_intermediate_storage_defs
 from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster.utils import check, ensure_single_item
@@ -236,25 +237,52 @@ def get_type_loader_input_field(solid, input_name, input_def):
     )
 
 
-def get_outputs_field(solid, handle):
+def get_outputs_field(solid, handle, resource_defs):
     check.inst_param(solid, "solid", Solid)
     check.inst_param(handle, "handle", SolidHandle)
+    check.dict_param(resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition)
 
-    solid_def = solid.definition
+    # if any outputs have configurable output managers, use those for the schema and ignore all type
+    # materializers
+    output_manager_fields = {}
+    for name, output_def in solid.definition.output_dict.items():
+        output_manager_output_field = get_output_manager_output_field(output_def, resource_defs)
+        if output_manager_output_field:
+            output_manager_fields[name] = output_manager_output_field
 
-    if not solid_def.has_configurable_outputs:
-        return None
+    if output_manager_fields:
+        return Field(Shape(output_manager_fields))
 
-    output_dict_fields = {}
-    for name, out in solid_def.output_dict.items():
-        if out.dagster_type.materializer:
-            output_dict_fields[name] = Field(
-                out.dagster_type.materializer.schema_type, is_required=False
-            )
+    # otherwise, use any type materializers for the schema
+    type_materializer_fields = {}
+    for name, output_def in solid.definition.output_dict.items():
+        type_output_field = get_type_output_field(output_def)
+        if type_output_field:
+            type_materializer_fields[name] = type_output_field
 
-    output_entry_dict = Shape(output_dict_fields)
+    if type_materializer_fields:
+        return Field(Array(Shape(type_materializer_fields)), is_required=False)
 
-    return Field(Array(output_entry_dict), is_required=False)
+    return None
+
+
+def get_output_manager_output_field(output_def, resource_defs):
+    output_manager_def = resource_defs.get(output_def.manager_key)
+    if (
+        output_manager_def
+        and isinstance(output_manager_def, OutputManagerDefinition)
+        and output_manager_def.output_config_schema
+    ):
+        return output_manager_def.output_config_schema.config_type
+
+    return None
+
+
+def get_type_output_field(output_def):
+    if output_def.dagster_type.materializer:
+        return Field(output_def.dagster_type.materializer.schema_type, is_required=False)
+
+    return None
 
 
 def solid_config_field(fields, ignored):
@@ -281,7 +309,7 @@ def construct_leaf_solid_config(
     return solid_config_field(
         {
             "inputs": get_inputs_field(solid, handle, dependency_structure, resource_defs),
-            "outputs": get_outputs_field(solid, handle),
+            "outputs": get_outputs_field(solid, handle, resource_defs),
             "config": config_schema.as_field() if config_schema else None,
         },
         ignored=ignored,
@@ -332,7 +360,7 @@ def define_isolid_field(solid, handle, dependency_structure, resource_defs, igno
         return solid_config_field(
             {
                 "inputs": get_inputs_field(solid, handle, dependency_structure, resource_defs),
-                "outputs": get_outputs_field(solid, handle),
+                "outputs": get_outputs_field(solid, handle, resource_defs),
                 "solids": Field(
                     define_solid_dictionary_cls(
                         solids=graph_def.solids,
