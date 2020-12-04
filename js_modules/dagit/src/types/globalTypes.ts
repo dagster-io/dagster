@@ -128,7 +128,7 @@ export interface PipelineRunsFilter {
   runId?: string | null;
   pipelineName?: string | null;
   tags?: ExecutionTag[] | null;
-  status?: PipelineRunStatus | null;
+  statuses?: PipelineRunStatus[] | null;
   snapshotId?: string | null;
 }
 

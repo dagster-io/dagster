@@ -556,7 +556,7 @@ input PipelineRunsFilter {
   runId: String
   pipelineName: String
   tags: [ExecutionTag!]
-  status: PipelineRunStatus
+  statuses: [PipelineRunStatus!]
   snapshotId: String
 }
 

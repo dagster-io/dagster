@@ -833,20 +833,23 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
     run_id = dauphin.Field(dauphin.String)
     pipeline_name = dauphin.Field(dauphin.String)
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
-    status = dauphin.Field(DauphinPipelineRunStatus)
+    statuses = dauphin.List(dauphin.NonNull(DauphinPipelineRunStatus))
     snapshot_id = dauphin.Field(dauphin.String)
 
     def to_selector(self):
-        if self.status:
-            statuses = [PipelineRunStatus[self.status]]
-        else:
-            statuses = []
-
         if self.tags:
             # We are wrapping self.tags in a list because dauphin.List is not marked as iterable
             tags = {tag["key"]: tag["value"] for tag in list(self.tags)}
         else:
             tags = None
+
+        if self.statuses:
+            statuses = [
+                PipelineRunStatus[status]
+                for status in self.statuses  # pylint: disable=not-an-iterable
+            ]
+        else:
+            statuses = None
 
         run_ids = [self.run_id] if self.run_id else []
         return PipelineRunsFilter(

@@ -70,7 +70,10 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     } else if (item.token === 'id') {
       obj.runId = item.value;
     } else if (item.token === 'status') {
-      obj.status = item.value as PipelineRunStatus;
+      if (!obj.statuses) {
+        obj.statuses = [];
+      }
+      obj.statuses.push(item.value as PipelineRunStatus);
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
     } else if (item.token === 'tag') {
@@ -174,8 +177,8 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
       return [];
     }
 
-    // Can only have one filter value for pipeline, status, or id
-    const limitedTokens = new Set<string>(['id', 'pipeline', 'status', 'snapshotId']);
+    // Can only have one filter value for pipeline or id
+    const limitedTokens = new Set<string>(['id', 'pipeline', 'snapshotId']);
     const presentLimitedTokens = tokens.filter((token) => limitedTokens.has(token));
 
     return suggestionProviders.filter((provider) => !presentLimitedTokens.includes(provider.token));

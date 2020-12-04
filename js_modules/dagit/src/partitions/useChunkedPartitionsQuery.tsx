@@ -147,7 +147,7 @@ export function useChunkedPartitionsQuery(
         // Fetch runs in the partition set that are in the STARTED state, indicating active updates
         const pending = await fetchRunsForFilter(client, {
           filter: {
-            status: PipelineRunStatus.STARTED,
+            statuses: [PipelineRunStatus.STARTED],
             tags: [...runTags, {key: DagsterTag.PartitionSet, value: partitionSetName}],
           },
         });

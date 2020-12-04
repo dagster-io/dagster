@@ -3,6 +3,7 @@ import copy
 from dagster import execute_pipeline, lambda_solid, pipeline, repository
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.test_utils import instance_for_test
 from dagster_graphql.test.utils import (
@@ -546,6 +547,50 @@ def test_filtered_runs():
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
             assert len(run_ids) == 1
             assert run_ids[0] == run_id_1
+
+
+def test_filtered_runs_status():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        _ = instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.STARTED
+        ).run_id
+        run_id_2 = instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.FAILURE
+        ).run_id
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context, FILTERED_RUN_QUERY, variables={"filter": {"statuses": ["FAILURE"]}}
+            )
+            assert result.data
+            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            assert len(run_ids) == 1
+            assert run_ids[0] == run_id_2
+
+
+def test_filtered_runs_multiple_statuses():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        _ = instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.STARTED
+        ).run_id
+        run_id_2 = instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.FAILURE
+        ).run_id
+        run_id_3 = instance.create_run_for_pipeline(
+            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.SUCCESS
+        ).run_id
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                FILTERED_RUN_QUERY,
+                variables={"filter": {"statuses": ["FAILURE", "SUCCESS"]}},
+            )
+            assert result.data
+            run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
+            assert len(run_ids) == 2
+            assert run_id_2 in run_ids
+            assert run_id_3 in run_ids
 
 
 def test_run_group():
