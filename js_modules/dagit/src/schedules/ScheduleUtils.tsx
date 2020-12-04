@@ -6,7 +6,7 @@ import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT, REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
-import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
+import {JOB_STATE_FRAGMENT, SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 
 export const SCHEDULE_STATE_FRAGMENT = gql`
   fragment ScheduleStateFragment on ScheduleState {
@@ -103,18 +103,8 @@ export const SCHEDULE_DEFINITION_FRAGMENT = gql`
   ${SCHEDULE_STATE_FRAGMENT}
 `;
 
-export const SCHEDULE_STATES_FRAGMENT = gql`
-  fragment ScheduleStatesFragment on ScheduleStates {
-    results {
-      id
-      ...ScheduleStateFragment
-    }
-  }
-  ${SCHEDULE_STATE_FRAGMENT}
-`;
-
 export const SCHEDULES_ROOT_QUERY = gql`
-  query SchedulesRootQuery($repositorySelector: RepositorySelector!) {
+  query SchedulesRootQuery($repositorySelector: RepositorySelector!, $jobType: JobType!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       __typename
       ... on Repository {
@@ -126,13 +116,12 @@ export const SCHEDULES_ROOT_QUERY = gql`
     scheduler {
       ...SchedulerFragment
     }
-    unLoadableScheduleStates: scheduleStatesOrError(
-      repositorySelector: $repositorySelector
-      withNoScheduleDefinition: true
-    ) {
-      __typename
-      ... on ScheduleStates {
-        ...ScheduleStatesFragment
+    unloadableJobStatesOrError(jobType: $jobType) {
+      ... on JobStates {
+        results {
+          id
+          ...JobStateFragment
+        }
       }
       ...PythonErrorFragment
     }
@@ -142,7 +131,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
   ${SCHEDULER_FRAGMENT}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
   ${REPOSITORY_SCHEDULES_FRAGMENT}
-  ${SCHEDULE_STATES_FRAGMENT}
+  ${JOB_STATE_FRAGMENT}
 `;
 
 export const SchedulerTimezoneNote: React.FC<{

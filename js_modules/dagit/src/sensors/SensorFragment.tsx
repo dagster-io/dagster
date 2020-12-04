@@ -1,11 +1,16 @@
 import {gql} from '@apollo/client';
 
+import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
+
 export const JOB_STATE_FRAGMENT = gql`
   fragment JobStateFragment on JobState {
     id
     name
     jobType
     status
+    repositoryOrigin {
+      ...RepositoryOriginFragment
+    }
     jobSpecificData {
       ... on SensorJobData {
         lastRunKey
@@ -21,12 +26,14 @@ export const JOB_STATE_FRAGMENT = gql`
       pipelineName
       status
     }
+    runsCount
     ticks(limit: 1) {
       id
       status
       timestamp
     }
   }
+  ${REPOSITORY_ORIGIN_FRAGMENT}
 `;
 
 export const SENSOR_FRAGMENT = gql`

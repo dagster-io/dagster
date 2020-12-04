@@ -54,6 +54,7 @@ class DauphinJobState(dauphin.ObjectType):
     name = dauphin.NonNull(dauphin.String)
     jobType = dauphin.NonNull("JobType")
     status = dauphin.NonNull("JobStatus")
+    repositoryOrigin = dauphin.NonNull("RepositoryOrigin")
     jobSpecificData = dauphin.Field("JobSpecificData")
     runs = dauphin.Field(dauphin.non_null_list("PipelineRun"), limit=dauphin.Int())
     runsCount = dauphin.NonNull(dauphin.Int)
@@ -68,7 +69,11 @@ class DauphinJobState(dauphin.ObjectType):
             status=job_state.status,
         )
 
-    def resolveJobSpecificData(self, graphene_info):
+    def resolve_repositoryOrigin(self, graphene_info):
+        origin = self._job_state.origin.external_repository_origin
+        return graphene_info.schema.type_named("RepositoryOrigin")(origin)
+
+    def resolve_jobSpecificData(self, graphene_info):
         if not self._job_state.job_specific_data:
             return None
 
@@ -85,17 +90,23 @@ class DauphinJobState(dauphin.ObjectType):
         return None
 
     def resolve_runs(self, graphene_info, **kwargs):
+        if self._job_state.job_type == JobType.SENSOR:
+            filters = PipelineRunsFilter.for_sensor(self._job_state)
+        else:
+            filters = PipelineRunsFilter.for_schedule(self._job_state)
         return [
             graphene_info.schema.type_named("PipelineRun")(r)
             for r in graphene_info.context.instance.get_runs(
-                filters=PipelineRunsFilter.for_sensor(self._job_state), limit=kwargs.get("limit"),
+                filters=filters, limit=kwargs.get("limit"),
             )
         ]
 
     def resolve_runsCount(self, graphene_info):
-        return graphene_info.context.instance.get_runs_count(
-            filters=PipelineRunsFilter.for_sensor(self._job_state)
-        )
+        if self._job_state.job_type == JobType.SENSOR:
+            filters = PipelineRunsFilter.for_sensor(self._job_state)
+        else:
+            filters = PipelineRunsFilter.for_schedule(self._job_state)
+        return graphene_info.context.instance.get_runs_count(filters=filters)
 
     def resolve_ticks(self, graphene_info, limit=None):
         ticks = graphene_info.context.instance.get_job_ticks(self._job_state.job_origin_id)
@@ -119,7 +130,7 @@ class DauphinSensorJobData(dauphin.ObjectType):
     lastTickTimestamp = dauphin.Float()
     lastRunKey = dauphin.String()
 
-    def __init__(self, _graphene_info, job_specific_data):
+    def __init__(self, job_specific_data):
         check.inst_param(job_specific_data, "job_specific_data", SensorJobData)
         super(DauphinSensorJobData, self).__init__(
             lastTickTimestamp=job_specific_data.last_tick_timestamp,
@@ -134,7 +145,7 @@ class DauphinScheduleJobData(dauphin.ObjectType):
     cronSchedule = dauphin.NonNull(dauphin.String)
     startTimestamp = dauphin.Float()
 
-    def __init__(self, _graphene_info, job_specific_data):
+    def __init__(self, job_specific_data):
         check.inst_param(job_specific_data, "job_specific_data", ScheduleJobData)
         super(DauphinScheduleJobData, self).__init__(
             cronSchedule=job_specific_data.cron_schedule,

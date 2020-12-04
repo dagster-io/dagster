@@ -1,7 +1,6 @@
 import {useMutation, gql} from '@apollo/client';
 import {
   Button,
-  Callout,
   Colors,
   Intent,
   Menu,
@@ -14,14 +13,11 @@ import {
   Tooltip,
 } from '@blueprintjs/core';
 import * as React from 'react';
-import {useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
-import {ConfirmationOptions, useConfirmation} from 'src/CustomConfirmationProvider';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {RepositoryOriginInformation} from 'src/RepositoryInformation';
 import {assertUnreachable} from 'src/Util';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {DagsterTag} from 'src/runs/RunTag';
@@ -32,7 +28,6 @@ import {
   ScheduleDefinitionFragment,
   ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData,
 } from 'src/schedules/types/ScheduleDefinitionFragment';
-import {ScheduleStateFragment} from 'src/schedules/types/ScheduleStateFragment';
 import {
   StartSchedule,
   StartSchedule_startSchedule_PythonError,
@@ -42,12 +37,9 @@ import {
   StopSchedule_stopRunningSchedule_PythonError,
 } from 'src/schedules/types/StopSchedule';
 import {ScheduleStatus, JobTickStatus} from 'src/types/globalTypes';
-import {ButtonLink} from 'src/ui/ButtonLink';
-import {Group} from 'src/ui/Group';
 import {Code} from 'src/ui/Text';
-import {DagsterRepoOption, scheduleSelectorWithRepository} from 'src/workspace/WorkspaceContext';
 import {RepoAddress} from 'src/workspace/types';
-import {workspacePath, workspacePathFromAddress} from 'src/workspace/workspacePath';
+import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
 
@@ -350,204 +342,6 @@ export const ScheduleRowHeader: React.FunctionComponent<{
       </tr>
     );
   }
-};
-
-export const ScheduleStateRow: React.FunctionComponent<{
-  scheduleState: ScheduleStateFragment;
-  showStatus?: boolean;
-  dagsterRepoOption?: DagsterRepoOption;
-}> = ({scheduleState, showStatus = false, dagsterRepoOption}) => {
-  const [startSchedule, {loading: toggleOnInFlight}] = useMutation<StartSchedule>(
-    START_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-  const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
-    STOP_SCHEDULE_MUTATION,
-    {
-      onCompleted: displayScheduleMutationErrors,
-    },
-  );
-
-  const confirm = useConfirmation();
-  const [showRepositoryOrigin, setShowRepositoryOrigin] = useState(false);
-
-  const {
-    status,
-    scheduleName,
-    cronSchedule,
-    ticks,
-    runs,
-    runsCount,
-    scheduleOriginId,
-    repositoryOrigin,
-  } = scheduleState;
-  const latestTick = ticks.length > 0 ? ticks[0] : null;
-
-  const switchScheduleStatus = async (
-    status: ScheduleStatus,
-    confirm: (options: ConfirmationOptions) => Promise<void>,
-    dagsterRepoOption?: DagsterRepoOption,
-  ) => {
-    if (!dagsterRepoOption) {
-      if (status === ScheduleStatus.RUNNING) {
-        // If we don't have the dagster repo in context, then we can only switch the schedule off.
-        // Before doing so, we alert the user that we can't switch the schedule back on
-        await confirm({
-          title: 'Are you sure you want to stop this schedule?',
-          description:
-            'The schedule definition for this schedule is not available. ' +
-            'If you turn off this schedule, you will not be able to turn it back on from ' +
-            'the currently loaded workspace.',
-        });
-        stopSchedule({
-          variables: {scheduleOriginId},
-        });
-      }
-      return;
-    }
-
-    if (status === ScheduleStatus.RUNNING) {
-      stopSchedule({
-        variables: {scheduleOriginId},
-      });
-    } else {
-      const scheduleSelector = scheduleSelectorWithRepository(scheduleName, {
-        repositoryLocationName: dagsterRepoOption.repository.location.name,
-        repositoryName: dagsterRepoOption.repository.name,
-      });
-
-      startSchedule({
-        variables: {scheduleSelector},
-      });
-    }
-  };
-
-  return (
-    <tr key={scheduleName}>
-      {showStatus && (
-        <td style={{maxWidth: 60, paddingLeft: 0, textAlign: 'center'}}>
-          <Switch
-            checked={status === ScheduleStatus.RUNNING}
-            large={true}
-            disabled={
-              (!dagsterRepoOption && status !== ScheduleStatus.RUNNING) ||
-              toggleOffInFlight ||
-              toggleOnInFlight
-            }
-            innerLabelChecked="on"
-            innerLabel="off"
-            onChange={() => switchScheduleStatus(status, confirm, dagsterRepoOption)}
-          />
-        </td>
-      )}
-
-      {dagsterRepoOption ? (
-        <td>
-          <Link
-            to={workspacePath(
-              dagsterRepoOption?.repository.name,
-              dagsterRepoOption?.repositoryLocation.name,
-              scheduleName,
-            )}
-          >
-            {scheduleName}
-          </Link>
-        </td>
-      ) : (
-        <td>
-          <Group direction="horizontal" spacing={8} alignItems="center">
-            <div>{scheduleName}</div>
-            <ButtonLink
-              onClick={() => {
-                setShowRepositoryOrigin(!showRepositoryOrigin);
-              }}
-            >
-              show info
-            </ButtonLink>
-          </Group>
-          {showRepositoryOrigin && (
-            <Callout style={{marginTop: 10}}>
-              <RepositoryOriginInformation origin={repositoryOrigin} />
-            </Callout>
-          )}
-        </td>
-      )}
-      <td
-        style={{
-          maxWidth: 150,
-        }}
-      >
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            whiteSpace: 'pre-wrap',
-            display: 'block',
-          }}
-        >
-          {cronSchedule ? (
-            <Tooltip position={'bottom'} content={cronSchedule}>
-              {humanCronString(cronSchedule)}
-            </Tooltip>
-          ) : (
-            <div>-</div>
-          )}
-        </div>
-      </td>
-      <td>
-        {latestTick ? (
-          <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
-        ) : null}
-      </td>
-      <td>
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <div style={{display: 'flex'}}>
-            {runs.map((run) => {
-              return (
-                <div
-                  style={{
-                    cursor: 'pointer',
-                    marginRight: '4px',
-                  }}
-                  key={run.runId}
-                >
-                  <Link to={`/instance/runs/${run.runId}`}>
-                    <Tooltip
-                      position={'top'}
-                      content={titleForRun(run)}
-                      wrapperTagName="div"
-                      targetTagName="div"
-                    >
-                      <RunStatus status={run.status} />
-                    </Tooltip>
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-          {runsCount > NUM_RUNS_TO_DISPLAY && (
-            <Link
-              to={`/instance/runs/?q=${encodeURIComponent(
-                `tag:dagster/schedule_name=${scheduleName}`,
-              )}`}
-              style={{verticalAlign: 'top'}}
-            >
-              {' '}
-              +{runsCount - NUM_RUNS_TO_DISPLAY} more
-            </Link>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
 };
 
 export const TickTag: React.FunctionComponent<{

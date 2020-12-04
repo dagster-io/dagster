@@ -124,6 +124,19 @@ export interface RepositorySchedulesFragment_scheduleDefinitions {
   futureTicks: RepositorySchedulesFragment_scheduleDefinitions_futureTicks;
 }
 
+export interface RepositorySchedulesFragment_sensors_sensorState_repositoryOrigin_repositoryLocationMetadata {
+  __typename: "RepositoryMetadata";
+  key: string;
+  value: string;
+}
+
+export interface RepositorySchedulesFragment_sensors_sensorState_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: RepositorySchedulesFragment_sensors_sensorState_repositoryOrigin_repositoryLocationMetadata[];
+}
+
 export interface RepositorySchedulesFragment_sensors_sensorState_jobSpecificData_SensorJobData {
   __typename: "SensorJobData";
   lastRunKey: string | null;
@@ -157,8 +170,10 @@ export interface RepositorySchedulesFragment_sensors_sensorState {
   name: string;
   jobType: JobType;
   status: JobStatus;
+  repositoryOrigin: RepositorySchedulesFragment_sensors_sensorState_repositoryOrigin;
   jobSpecificData: RepositorySchedulesFragment_sensors_sensorState_jobSpecificData | null;
   runs: RepositorySchedulesFragment_sensors_sensorState_runs[];
+  runsCount: number;
   ticks: RepositorySchedulesFragment_sensors_sensorState_ticks[];
 }
 

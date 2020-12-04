@@ -1,17 +1,18 @@
 import {useQuery} from '@apollo/client';
-import {Button, Callout, Intent, NonIdealState} from '@blueprintjs/core';
+import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
-import React, {useState} from 'react';
+import React from 'react';
 
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {ScheduleRow, ScheduleStateRow} from 'src/schedules/ScheduleRow';
+import {UnloadableJobs} from 'src/jobs/UnloadableJobs';
+import {ScheduleRow} from 'src/schedules/ScheduleRow';
 import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {RepositorySchedulesFragment} from 'src/schedules/types/RepositorySchedulesFragment';
-import {ScheduleStatesFragment_results} from 'src/schedules/types/ScheduleStatesFragment';
 import {SchedulesRootQuery} from 'src/schedules/types/SchedulesRootQuery';
+import {JobType} from 'src/types/globalTypes';
 import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
@@ -30,6 +31,7 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
   const queryResult = useQuery<SchedulesRootQuery>(SCHEDULES_ROOT_QUERY, {
     variables: {
       repositorySelector: repositorySelector,
+      jobType: JobType.SCHEDULE,
     },
     fetchPolicy: 'cache-and-network',
     pollInterval: 50 * 1000,
@@ -40,18 +42,15 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
     <Page>
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
-          const {repositoryOrError, scheduler, unLoadableScheduleStates} = result;
+          const {repositoryOrError, scheduler, unloadableJobStatesOrError} = result;
           let scheduleDefinitionsSection = null;
-          let unLoadableSchedulesSection = null;
+          let unloadableSchedulesSection = null;
 
           if (repositoryOrError.__typename === 'PythonError') {
             scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
-          } else if (unLoadableScheduleStates.__typename === 'PythonError') {
-            scheduleDefinitionsSection = <PythonErrorInfo error={unLoadableScheduleStates} />;
-          } else if (
-            repositoryOrError.__typename === 'RepositoryNotFoundError' ||
-            unLoadableScheduleStates.__typename === 'RepositoryNotFoundError'
-          ) {
+          } else if (unloadableJobStatesOrError.__typename === 'PythonError') {
+            scheduleDefinitionsSection = <PythonErrorInfo error={unloadableJobStatesOrError} />;
+          } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
             scheduleDefinitionsSection = (
               <NonIdealState
                 icon={IconNames.ERROR}
@@ -85,8 +84,11 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
                 </Group>
               );
             }
-            unLoadableSchedulesSection = unLoadableScheduleStates.results.length > 0 && (
-              <UnLoadableSchedules unLoadableSchedules={unLoadableScheduleStates.results} />
+            unloadableSchedulesSection = unloadableJobStatesOrError.results.length > 0 && (
+              <UnloadableJobs
+                jobStates={unloadableJobStatesOrError.results}
+                jobType={JobType.SCHEDULE}
+              />
             );
           }
 
@@ -94,7 +96,7 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
             <Group direction="vertical" spacing={20}>
               <SchedulerInfo schedulerOrError={scheduler} />
               {scheduleDefinitionsSection}
-              {unLoadableSchedulesSection}
+              {unloadableSchedulesSection}
             </Group>
           );
         }}
@@ -137,72 +139,5 @@ export const SchedulesTable: React.FunctionComponent<SchedulesTableProps> = (pro
         </tbody>
       </Table>
     </>
-  );
-};
-
-export interface UnloadableSchedulesProps {
-  unLoadableSchedules: ScheduleStatesFragment_results[];
-}
-
-export const UnLoadableSchedules: React.FunctionComponent<UnloadableSchedulesProps> = (props) => {
-  const {unLoadableSchedules} = props;
-
-  return (
-    <>
-      <h3 style={{marginTop: 20}}>Unloadable schedules:</h3>
-      <UnloadableScheduleInfo />
-
-      <Table striped style={{width: '100%'}}>
-        <thead>
-          <tr>
-            <th style={{maxWidth: '60px'}}></th>
-            <th>Schedule Name</th>
-            <th style={{width: '150px'}}>Schedule</th>
-            <th style={{width: '100px'}}>Last Tick</th>
-            <th>Latest Runs</th>
-          </tr>
-        </thead>
-        <tbody>
-          {unLoadableSchedules.map((scheduleState) => (
-            <ScheduleStateRow
-              scheduleState={scheduleState}
-              key={scheduleState.scheduleOriginId}
-              showStatus={true}
-            />
-          ))}
-        </tbody>
-      </Table>
-    </>
-  );
-};
-
-export const UnloadableScheduleInfo = () => {
-  const [showMore, setShowMore] = useState(false);
-
-  return (
-    <Callout style={{marginBottom: 20}} intent={Intent.WARNING}>
-      <div style={{display: 'flex', justifyContent: 'space-between'}}>
-        <h4 style={{margin: 0}}>
-          Note: You can turn off any of the following schedules, but you cannot turn them back on.{' '}
-        </h4>
-
-        {!showMore && (
-          <Button small={true} onClick={() => setShowMore(true)}>
-            Show more info
-          </Button>
-        )}
-      </div>
-
-      {showMore && (
-        <div style={{marginTop: 10}}>
-          <p>
-            The following schedules were previously started but now cannot be loaded. They may be
-            part of a different workspace or from a schedule or repository that no longer exists in
-            code. You can turn them off, but you cannot turn them back on since they can’t be
-            loaded.
-          </p>
-        </div>
-      )}
-    </Callout>
   );
 };

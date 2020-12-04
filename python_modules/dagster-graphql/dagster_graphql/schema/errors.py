@@ -625,21 +625,6 @@ class DauphinSensorNotFoundError(dauphin.ObjectType):
         self.message = f"Sensor {sensor_name} is not present in the currently loaded repository."
 
 
-class DauphinScheduleStateNotFoundError(dauphin.ObjectType):
-    class Meta:
-        name = "ScheduleStateNotFoundError"
-        interfaces = (DauphinError,)
-
-    schedule_origin_id = dauphin.NonNull(dauphin.String)
-
-    def __init__(self, schedule_origin_id):
-        super(DauphinScheduleStateNotFoundError, self).__init__()
-        self.schedule_origin_id = check.str_param(schedule_origin_id, "schedule_origin_id")
-        self.message = "State for schedule {schedule_origin_id} could not be found.".format(
-            schedule_origin_id=self.schedule_origin_id
-        )
-
-
 class DauphinPartitionSetNotFoundError(dauphin.ObjectType):
     class Meta:
         name = "PartitionSetNotFoundError"

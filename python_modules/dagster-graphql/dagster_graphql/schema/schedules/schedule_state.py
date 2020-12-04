@@ -2,32 +2,8 @@ from dagster import check
 from dagster.core.scheduler.job import JobState
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster_graphql import dauphin
-from dagster_graphql.schema.errors import (
-    DauphinPythonError,
-    DauphinRepositoryNotFoundError,
-    DauphinScheduleStateNotFoundError,
-)
 
 from .ticks import tick_specific_data_from_dagster_tick
-
-
-class DapuphinScheduleStateOrError(dauphin.Union):
-    class Meta:
-        name = "ScheduleStateOrError"
-        types = ("ScheduleState", DauphinScheduleStateNotFoundError, DauphinPythonError)
-
-
-class DauphinScheduleStates(dauphin.ObjectType):
-    class Meta:
-        name = "ScheduleStates"
-
-    results = dauphin.non_null_list("ScheduleState")
-
-
-class DauphinScheduleStatesOrError(dauphin.Union):
-    class Meta:
-        name = "ScheduleStatesOrError"
-        types = (DauphinScheduleStates, DauphinRepositoryNotFoundError, DauphinPythonError)
 
 
 class DauphinScheduleState(dauphin.ObjectType):

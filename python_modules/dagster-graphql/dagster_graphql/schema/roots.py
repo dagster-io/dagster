@@ -2,6 +2,7 @@ import sys
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.job import JobType
 from dagster.core.execution.retries import Retries
 from dagster.core.host_representation import (
     RepositorySelector,
@@ -33,6 +34,7 @@ from dagster_graphql.implementation.external import (
     get_full_external_pipeline_or_raise,
 )
 from dagster_graphql.implementation.fetch_assets import get_asset, get_assets
+from dagster_graphql.implementation.fetch_jobs import get_unloadable_job_states_or_error
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_set,
     get_partition_sets_or_error,
@@ -54,14 +56,9 @@ from dagster_graphql.implementation.fetch_runs import (
 from dagster_graphql.implementation.fetch_schedules import (
     get_schedule_definition_or_error,
     get_schedule_definitions_or_error,
-    get_schedule_states_or_error,
     get_scheduler_or_error,
 )
-from dagster_graphql.implementation.fetch_sensors import (
-    get_sensor_or_error,
-    get_sensors_or_error,
-    get_unloadable_sensor_states_or_error,
-)
+from dagster_graphql.implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from dagster_graphql.implementation.run_config_schema import (
     resolve_is_run_config_valid,
     resolve_run_config_schema_or_error,
@@ -118,19 +115,15 @@ class DauphinQuery(dauphin.ObjectType):
         dauphin.NonNull("ScheduleDefinitionsOrError"),
         repositorySelector=dauphin.NonNull("RepositorySelector"),
     )
-    scheduleStatesOrError = dauphin.Field(
-        dauphin.NonNull("ScheduleStatesOrError"),
-        repositorySelector=dauphin.Argument("RepositorySelector"),
-        withNoScheduleDefinition=dauphin.Boolean(),
-    )
-
     sensorOrError = dauphin.Field(
         dauphin.NonNull("SensorOrError"), sensorSelector=dauphin.NonNull("SensorSelector"),
     )
     sensorsOrError = dauphin.Field(
         dauphin.NonNull("SensorsOrError"), repositorySelector=dauphin.NonNull("RepositorySelector"),
     )
-    unloadableSensorStatesOrError = dauphin.Field(dauphin.NonNull("JobStatesOrError"))
+    unloadableJobStatesOrError = dauphin.Field(
+        dauphin.NonNull("JobStatesOrError"), jobType=dauphin.Argument("JobType")
+    )
 
     partitionSetsOrError = dauphin.Field(
         dauphin.NonNull("PartitionSetsOrError"),
@@ -254,15 +247,6 @@ class DauphinQuery(dauphin.ObjectType):
             graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector"))
         )
 
-    def resolve_scheduleStatesOrError(self, graphene_info, **kwargs):
-        return get_schedule_states_or_error(
-            graphene_info,
-            RepositorySelector.from_graphql_input(kwargs["repositorySelector"])
-            if kwargs.get("repositorySelector")
-            else None,
-            kwargs.get("withNoScheduleDefinition"),
-        )
-
     def resolve_sensorOrError(self, graphene_info, sensorSelector):
         return get_sensor_or_error(graphene_info, SensorSelector.from_graphql_input(sensorSelector))
 
@@ -271,8 +255,9 @@ class DauphinQuery(dauphin.ObjectType):
             graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
 
-    def resolve_unloadableSensorStatesOrError(self, graphene_info):
-        return get_unloadable_sensor_states_or_error(graphene_info)
+    def resolve_unloadableJobStatesOrError(self, graphene_info, **kwargs):
+        job_type = JobType(kwargs["jobType"]) if "jobType" in kwargs else None
+        return get_unloadable_job_states_or_error(graphene_info, job_type)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(

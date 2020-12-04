@@ -6,9 +6,12 @@ import React from 'react';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
+import {UnloadableJobs} from 'src/jobs/UnloadableJobs';
+import {JOB_STATE_FRAGMENT, SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {SensorsTable} from 'src/sensors/SensorsTable';
 import {SensorsRootQuery} from 'src/sensors/types/SensorsRootQuery';
+import {JobType} from 'src/types/globalTypes';
+import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -25,6 +28,7 @@ export const SensorsRoot = (props: Props) => {
   const queryResult = useQuery<SensorsRootQuery>(SENSORS_ROOT_QUERY, {
     variables: {
       repositorySelector: repositorySelector,
+      jobType: JobType.SENSOR,
     },
     fetchPolicy: 'cache-and-network',
     pollInterval: 50 * 1000,
@@ -35,10 +39,13 @@ export const SensorsRoot = (props: Props) => {
     <Page>
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
-          const {sensorsOrError} = result;
+          const {sensorsOrError, unloadableJobStatesOrError} = result;
           const content = () => {
             if (sensorsOrError.__typename === 'PythonError') {
               return <PythonErrorInfo error={sensorsOrError} />;
+            }
+            if (unloadableJobStatesOrError.__typename === 'PythonError') {
+              return <PythonErrorInfo error={unloadableJobStatesOrError} />;
             }
             if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
               return (
@@ -49,7 +56,15 @@ export const SensorsRoot = (props: Props) => {
                 />
               );
             }
-            return <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />;
+            return (
+              <Group direction="vertical" spacing={20}>
+                <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
+                <UnloadableJobs
+                  jobStates={unloadableJobStatesOrError.results}
+                  jobType={JobType.SENSOR}
+                />
+              </Group>
+            );
           };
 
           return <div>{content()}</div>;
@@ -60,7 +75,7 @@ export const SensorsRoot = (props: Props) => {
 };
 
 const SENSORS_ROOT_QUERY = gql`
-  query SensorsRootQuery($repositorySelector: RepositorySelector!) {
+  query SensorsRootQuery($repositorySelector: RepositorySelector!, $jobType: JobType!) {
     sensorsOrError(repositorySelector: $repositorySelector) {
       __typename
       ...PythonErrorFragment
@@ -71,7 +86,17 @@ const SENSORS_ROOT_QUERY = gql`
         }
       }
     }
+    unloadableJobStatesOrError(jobType: $jobType) {
+      ... on JobStates {
+        results {
+          id
+          ...JobStateFragment
+        }
+      }
+      ...PythonErrorFragment
+    }
   }
   ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${JOB_STATE_FRAGMENT}
   ${SENSOR_FRAGMENT}
 `;

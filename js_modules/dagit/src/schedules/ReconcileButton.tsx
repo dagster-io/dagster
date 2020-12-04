@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {SCHEDULES_ROOT_QUERY} from 'src/schedules/ScheduleUtils';
 import {ReconcileSchedulerState} from 'src/schedules/types/ReconcileSchedulerState';
+import {JobType} from 'src/types/globalTypes';
 import {useRepositorySelector} from 'src/workspace/WorkspaceContext';
 
 export const ReconcileButton = () => {
@@ -13,6 +14,7 @@ export const ReconcileButton = () => {
       query: SCHEDULES_ROOT_QUERY,
       variables: {
         repositorySelector: repositorySelector,
+        jobType: JobType.SCHEDULE,
       },
     },
   ];

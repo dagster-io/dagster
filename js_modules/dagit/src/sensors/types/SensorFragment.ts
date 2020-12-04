@@ -10,6 +10,19 @@ import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../ty
 // GraphQL fragment: SensorFragment
 // ====================================================
 
+export interface SensorFragment_sensorState_repositoryOrigin_repositoryLocationMetadata {
+  __typename: "RepositoryMetadata";
+  key: string;
+  value: string;
+}
+
+export interface SensorFragment_sensorState_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: SensorFragment_sensorState_repositoryOrigin_repositoryLocationMetadata[];
+}
+
 export interface SensorFragment_sensorState_jobSpecificData_SensorJobData {
   __typename: "SensorJobData";
   lastRunKey: string | null;
@@ -43,8 +56,10 @@ export interface SensorFragment_sensorState {
   name: string;
   jobType: JobType;
   status: JobStatus;
+  repositoryOrigin: SensorFragment_sensorState_repositoryOrigin;
   jobSpecificData: SensorFragment_sensorState_jobSpecificData | null;
   runs: SensorFragment_sensorState_runs[];
+  runsCount: number;
   ticks: SensorFragment_sensorState_ticks[];
 }
 

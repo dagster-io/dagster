@@ -14,6 +14,19 @@ export interface SensorRootQuery_sensorOrError_SensorNotFoundError {
   __typename: "SensorNotFoundError" | "PythonError";
 }
 
+export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin_repositoryLocationMetadata {
+  __typename: "RepositoryMetadata";
+  key: string;
+  value: string;
+}
+
+export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin_repositoryLocationMetadata[];
+}
+
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_SensorJobData {
   __typename: "SensorJobData";
   lastRunKey: string | null;
@@ -47,8 +60,10 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState {
   name: string;
   jobType: JobType;
   status: JobStatus;
+  repositoryOrigin: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin;
   jobSpecificData: SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData | null;
   runs: SensorRootQuery_sensorOrError_Sensor_sensorState_runs[];
+  runsCount: number;
   ticks: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks[];
 }
 
