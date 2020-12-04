@@ -28,6 +28,7 @@ from dagster.core.errors import (
     DagsterLaunchFailedError,
 )
 from dagster.core.execution.api import create_execution_plan
+from dagster.core.execution.resolve_versions import resolve_memoized_execution_plan
 from dagster.core.host_representation import (
     ExternalPipeline,
     ExternalRepository,
@@ -263,32 +264,29 @@ def execute_list_versions_command(instance, kwargs):
     pipeline_origin = get_pipeline_python_origin_from_kwargs(kwargs)
     pipeline = recon_pipeline_from_origin(pipeline_origin)
     run_config = get_run_config_from_file_list(config)
-    pipeline_def = pipeline.get_definition()
-    pipeline_name = pipeline_def.name
     execution_plan = create_execution_plan(
         pipeline.get_definition(), run_config=run_config, mode=mode
     )
     step_output_versions = execution_plan.resolve_step_output_versions()
-    step_output_addresses = instance.get_addresses_for_step_output_versions(
-        {
-            (pipeline_name, step_output_handle): version
-            for step_output_handle, version in step_output_versions.items()
-            if version
-        }
-    )
+    memoized_plan = resolve_memoized_execution_plan(execution_plan)
+    # the step keys that we need to execute are those which do not have their inputs populated.
+    step_keys_not_stored = set(memoized_plan.step_keys_to_execute)
     table = []
     for step_output_handle, version in step_output_versions.items():
-        address = step_output_addresses.get((pipeline_name, step_output_handle), "None")
         table.append(
             [
                 "{key}.{output}".format(
                     key=step_output_handle.step_key, output=step_output_handle.output_name
                 ),
                 version,
-                address,
+                "stored"
+                if step_output_handle.step_key not in step_keys_not_stored
+                else "to-be-recomputed",
             ]
         )
-    table_str = tabulate(table, headers=["Step Output", "Version", "Address"], tablefmt="github")
+    table_str = tabulate(
+        table, headers=["Step Output", "Version", "Status of Output"], tablefmt="github"
+    )
     click.echo(table_str)
 
 
