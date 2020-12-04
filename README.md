@@ -163,6 +163,13 @@ Dagster works with the tools and systems that you're already using with your dat
 			</td>
 		</tr>
 		<tr>
+			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/10677263/84651682-a7ebbe80-af0a-11ea-9da2-9fb726680a59.png"></td>
+			<td style="border-left: 0px"> <b>Dynatrace</b></td>
+			<td><a href="https://docs.dagster.io/docs/apidocs/libraries/dagster_dynatrace" />dagster-dynatrace</a>
+			<br />A library for interacting with the Dynatrace API v1 and v2
+			</td>
+		</tr>
+		<tr>
 			<td align="center" style="border-right: 0px"><img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987809-bf245800-7a3b-11e9-8905-494ed99d0852.png" />
 			&nbsp;/&nbsp; <img style="vertical-align:middle" src="https://user-images.githubusercontent.com/609349/57987827-fa268b80-7a3b-11e9-8a18-b675d76c19aa.png">
 			</td>
