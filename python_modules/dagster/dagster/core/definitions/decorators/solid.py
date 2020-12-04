@@ -53,6 +53,8 @@ class _Solid:
         if not self.name:
             self.name = fn.__name__
 
+        self._fn = fn
+
         input_defs = (
             self.input_defs
             if self.input_defs is not None
