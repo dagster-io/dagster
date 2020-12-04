@@ -12,7 +12,7 @@ import yaml
 from dagster import check
 from dagster.utils import git_repository_root
 from dagster_k8s.utils import wait_for_pod
-from dagster_test.test_project import test_project_docker_image
+from dagster_test.test_project import get_test_project_docker_image
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
 
@@ -44,7 +44,7 @@ def _helm_namespace_helper(helm_chart_fn, request):
 
         with test_namespace(should_cleanup) as namespace:
             with helm_test_resources(namespace, should_cleanup):
-                docker_image = test_project_docker_image()
+                docker_image = get_test_project_docker_image()
                 with helm_chart_fn(namespace, docker_image, should_cleanup):
                     print("Helm chart successfully installed in namespace %s" % namespace)
                     yield namespace

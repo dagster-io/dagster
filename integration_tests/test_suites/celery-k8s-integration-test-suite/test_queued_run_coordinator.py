@@ -8,8 +8,8 @@ from dagster.utils.yaml_utils import merge_yamls
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
+    get_test_project_environments_path,
     get_test_project_external_pipeline,
-    test_project_environments_path,
 )
 from marks import mark_run_coordinator
 
@@ -46,8 +46,8 @@ def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name
     run_config = merge_dicts(
         merge_yamls(
             [
-                os.path.join(test_project_environments_path(), "env.yaml"),
-                os.path.join(test_project_environments_path(), "env_s3.yaml"),
+                os.path.join(get_test_project_environments_path(), "env.yaml"),
+                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
             ]
         ),
         get_celery_engine_config(

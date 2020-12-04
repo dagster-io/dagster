@@ -5,7 +5,7 @@ import pytest
 from celery.contrib.testing import worker
 from celery.contrib.testing.app import setup_default_app
 from dagster_celery.make_app import make_app
-from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -26,7 +26,7 @@ def dagster_celery_worker(dagster_celery_app):  # pylint: disable=redefined-oute
 
 @pytest.fixture(scope="session")
 def dagster_docker_image():
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
 
     if not IS_BUILDKITE:
         try:

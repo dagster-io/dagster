@@ -23,14 +23,14 @@ from dagster.utils import file_relative_path, git_repository_root
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
-def test_repo_path():
+def get_test_repo_path():
     return os.path.join(
         git_repository_root(), "python_modules", "dagster-test", "dagster_test", "test_project"
     )
 
 
-def test_project_environments_path():
-    return os.path.join(test_repo_path(), "environments")
+def get_test_project_environments_path():
+    return os.path.join(get_test_repo_path(), "environments")
 
 
 def get_buildkite_registry_config():
@@ -70,7 +70,7 @@ def build_and_tag_test_image(tag):
     base_python = "3.7.8"
 
     # Build and tag local dagster test image
-    return subprocess.check_output(["./build.sh", base_python, tag], cwd=test_repo_path())
+    return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
 
 
 def get_test_project_recon_pipeline(pipeline_name, container_image=None):
@@ -187,7 +187,7 @@ def get_test_project_external_pipeline(pipeline_name, container_image=None):
     )
 
 
-def test_project_docker_image():
+def get_test_project_docker_image():
     docker_repository = os.getenv("DAGSTER_DOCKER_REPOSITORY")
     image_name = os.getenv("DAGSTER_DOCKER_IMAGE", "dagster-docker-buildkite")
     docker_image_tag = os.getenv("DAGSTER_DOCKER_IMAGE_TAG")

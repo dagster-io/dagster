@@ -18,7 +18,7 @@ from dagster_airflow_tests.test_fixtures import (  # pylint: disable=unused-impo
     dagster_airflow_python_operator_pipeline,
     execute_tasks_in_dag,
 )
-from dagster_test.test_project import test_project_environments_path
+from dagster_test.test_project import get_test_project_environments_path
 
 from .utils import validate_pipeline_execution, validate_skip_pipeline_execution
 
@@ -28,7 +28,7 @@ def test_fs_storage_no_explicit_base_dir(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = "demo_pipeline"
-    environments_path = test_project_environments_path()
+    environments_path = get_test_project_environments_path()
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
@@ -47,7 +47,7 @@ def test_fs_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = "demo_pipeline"
-    environments_path = test_project_environments_path()
+    environments_path = get_test_project_environments_path()
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
@@ -67,7 +67,7 @@ def test_s3_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = "demo_pipeline"
-    environments_path = test_project_environments_path()
+    environments_path = get_test_project_environments_path()
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
@@ -87,7 +87,7 @@ def test_gcs_storage(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = "demo_pipeline_gcs"
-    environments_path = test_project_environments_path()
+    environments_path = get_test_project_environments_path()
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
@@ -106,7 +106,7 @@ def test_skip_operator(
     dagster_airflow_python_operator_pipeline,
 ):  # pylint: disable=redefined-outer-name
     pipeline_name = "optional_outputs"
-    environments_path = test_project_environments_path()
+    environments_path = get_test_project_environments_path()
     results = dagster_airflow_python_operator_pipeline(
         pipeline_name=pipeline_name,
         recon_repo=ReconstructableRepository.for_module(
@@ -140,7 +140,7 @@ def test_error_dag_python():
     recon_repo = ReconstructableRepository.for_module(
         "dagster_test.test_project.test_pipelines.repo", pipeline_name
     )
-    environments_path = test_project_environments_path()
+    environments_path = get_test_project_environments_path()
     environment_yaml = [
         os.path.join(environments_path, "env_filesystem.yaml"),
     ]
@@ -161,7 +161,7 @@ def test_airflow_execution_date_tags():
     recon_repo = ReconstructableRepository.for_module(
         "dagster_test.test_project.test_pipelines.repo", pipeline_name
     )
-    environments_path = test_project_environments_path()
+    environments_path = get_test_project_environments_path()
     environment_yaml = [
         os.path.join(environments_path, "env_filesystem.yaml"),
     ]

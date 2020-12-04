@@ -13,8 +13,8 @@ from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s.utils import wait_for_job
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
+    get_test_project_environments_path,
     get_test_project_external_pipeline,
-    test_project_environments_path,
 )
 
 
@@ -30,7 +30,7 @@ def test_k8s_run_launcher_default(
     celery_pod_names = [p.metadata.name for p in pods.items if "celery-workers" in p.metadata.name]
     check.invariant(not celery_pod_names)
 
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
     pipeline_name = "demo_pipeline"
     tags = {"key": "value"}
     run = create_run_for_test(

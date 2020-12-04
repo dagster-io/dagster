@@ -8,7 +8,7 @@ from dagster_airflow_tests.test_fixtures import (  # pylint: disable=unused-impo
     dagster_airflow_custom_operator_pipeline,
 )
 from dagster_test.dagster_airflow.custom_operator import CustomOperator
-from dagster_test.test_project import test_project_environments_path
+from dagster_test.test_project import get_test_project_environments_path
 
 
 @requires_airflow_db
@@ -19,7 +19,7 @@ def test_my_custom_operator(
     pipeline_name = "demo_pipeline"
     operator = CustomOperator
 
-    environments_path = test_project_environments_path()
+    environments_path = get_test_project_environments_path()
 
     results = dagster_airflow_custom_operator_pipeline(
         pipeline_name=pipeline_name,

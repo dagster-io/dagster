@@ -16,9 +16,9 @@ from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, remove_none_recursively
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
+    get_test_project_docker_image,
+    get_test_project_environments_path,
     get_test_project_external_pipeline,
-    test_project_docker_image,
-    test_project_environments_path,
 )
 
 EXPECTED_JOB_SPEC = """
@@ -150,9 +150,9 @@ spec:
 
 
 def test_valid_job_format(run_launcher):
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
 
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
     pipeline_name = "demo_pipeline"
     run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
@@ -180,9 +180,9 @@ def test_valid_job_format(run_launcher):
 
 
 def test_valid_job_format_with_backcompat_resources(run_launcher):
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
 
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
     pipeline_name = "demo_pipeline"
     run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
@@ -229,9 +229,9 @@ def test_valid_job_format_with_backcompat_resources(run_launcher):
 
 
 def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
 
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
     pipeline_name = "demo_pipeline"
     run = PipelineRun(pipeline_name=pipeline_name, run_config=run_config)
 
@@ -320,7 +320,7 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
 def test_k8s_run_launcher(
     dagster_instance_for_k8s_run_launcher, helm_namespace_for_k8s_run_launcher
 ):
-    run_config = load_yaml_from_path(os.path.join(test_project_environments_path(), "env.yaml"))
+    run_config = load_yaml_from_path(os.path.join(get_test_project_environments_path(), "env.yaml"))
     pipeline_name = "demo_pipeline"
     run = create_run_for_test(
         dagster_instance_for_k8s_run_launcher,

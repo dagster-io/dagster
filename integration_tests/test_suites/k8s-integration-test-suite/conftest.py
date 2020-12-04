@@ -15,7 +15,7 @@ from dagster_k8s_test_infra.cluster import (
 )
 from dagster_k8s_test_infra.helm import helm_namespace_for_k8s_run_launcher
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
-from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -51,7 +51,7 @@ def k8s_scheduler(
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
-        job_image=test_project_docker_image(),
+        job_image=get_test_project_docker_image(),
         load_incluster_config=False,
         kubeconfig_file=cluster_provider.kubeconfig_file,
         image_pull_policy=image_pull_policy(),
@@ -82,7 +82,7 @@ def run_launcher(
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",
         dagster_home="/opt/dagster/dagster_home",
-        job_image=test_project_docker_image(),
+        job_image=get_test_project_docker_image(),
         load_incluster_config=False,
         kubeconfig_file=cluster_provider.kubeconfig_file,
         image_pull_policy=image_pull_policy(),
@@ -94,7 +94,7 @@ def run_launcher(
 
 @pytest.fixture(scope="session")
 def dagster_docker_image():
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
 
     if not IS_BUILDKITE:
         try:

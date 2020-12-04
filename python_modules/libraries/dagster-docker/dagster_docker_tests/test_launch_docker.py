@@ -12,10 +12,10 @@ from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     find_local_test_image,
     get_buildkite_registry_config,
+    get_test_project_docker_image,
+    get_test_project_environments_path,
     get_test_project_external_pipeline,
     get_test_project_recon_pipeline,
-    test_project_docker_image,
-    test_project_environments_path,
 )
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -33,7 +33,7 @@ def test_launch_docker_image_on_pipeline_config():
     # Docker image name to use for launch specified as part of the pipeline origin
     # rather than in the run launcher instance config
 
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "network": "container:test-postgres-db-docker",
@@ -46,8 +46,8 @@ def test_launch_docker_image_on_pipeline_config():
 
     run_config = merge_yamls(
         [
-            os.path.join(test_project_environments_path(), "env.yaml"),
-            os.path.join(test_project_environments_path(), "env_s3.yaml"),
+            os.path.join(get_test_project_environments_path(), "env.yaml"),
+            os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
         ]
     )
 
@@ -87,7 +87,7 @@ def _check_event_log_contains(event_log, expected_type_and_message):
 
 
 def test_terminate_launched_docker_run():
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "network": "container:test-postgres-db-docker",
@@ -98,7 +98,7 @@ def test_terminate_launched_docker_run():
     else:
         find_local_test_image(docker_image)
 
-    run_config = merge_yamls([os.path.join(test_project_environments_path(), "env_s3.yaml"),])
+    run_config = merge_yamls([os.path.join(get_test_project_environments_path(), "env_s3.yaml"),])
 
     with docker_postgres_instance(
         overrides={
@@ -146,7 +146,7 @@ def test_terminate_launched_docker_run():
 
 
 def test_launch_docker_image_on_instance_config():
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
     launcher_config = {
         "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "network": "container:test-postgres-db-docker",
@@ -160,8 +160,8 @@ def test_launch_docker_image_on_instance_config():
 
     run_config = merge_yamls(
         [
-            os.path.join(test_project_environments_path(), "env.yaml"),
-            os.path.join(test_project_environments_path(), "env_s3.yaml"),
+            os.path.join(get_test_project_environments_path(), "env.yaml"),
+            os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
         ]
     )
 

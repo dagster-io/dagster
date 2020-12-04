@@ -10,7 +10,7 @@ from dagster_k8s_test_infra.helm import (
     helm_namespace_for_user_deployments,
 )
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
-from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 from dagster_k8s_test_infra.cluster import (  # isort:skip
     dagster_instance,
@@ -26,7 +26,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 @pytest.fixture(scope="session")
 def dagster_docker_image():
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
 
     if not IS_BUILDKITE:
         try:

@@ -12,7 +12,7 @@ from dagster.grpc.client import DagsterGrpcClient
 from dagster.utils import file_relative_path
 from dagster_test.dagster_core_docker_buildkite import (
     build_and_tag_test_image,
-    test_project_docker_image,
+    get_test_project_docker_image,
 )
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -27,7 +27,7 @@ if seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6:
 
 @pytest.fixture(scope="session")
 def dagster_docker_image():
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
 
     if not IS_BUILDKITE:
         # Being conservative here when first introducing this. This could fail
@@ -81,7 +81,7 @@ def docker_service_up(docker_compose_file, service_name):
 
     if not IS_BUILDKITE:
         env = os.environ.copy()
-        env["IMAGE_NAME"] = test_project_docker_image()
+        env["IMAGE_NAME"] = get_test_project_docker_image()
 
         try:
             subprocess.check_output(

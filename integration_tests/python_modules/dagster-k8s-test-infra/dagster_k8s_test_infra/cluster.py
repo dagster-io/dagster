@@ -19,7 +19,7 @@ from dagster.core.storage.schedules import SqliteScheduleStorage
 from dagster.utils import find_free_port
 from dagster_k8s.utils import wait_for_pod
 from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
-from dagster_test.test_project import build_and_tag_test_image, test_project_docker_image
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 from .integration_utils import IS_BUILDKITE, check_output
 
@@ -64,7 +64,7 @@ def define_cluster_provider_fixture(additional_kind_images=None):
 
             with kind_cluster(cluster_name, should_cleanup=should_cleanup) as cluster_config:
                 if not IS_BUILDKITE and not existing_cluster:
-                    docker_image = test_project_docker_image()
+                    docker_image = get_test_project_docker_image()
                     try:
                         client = docker.from_env()
                         client.images.get(docker_image)

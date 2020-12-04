@@ -11,9 +11,9 @@ from dagster.utils.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     find_local_test_image,
     get_buildkite_registry_config,
+    get_test_project_docker_image,
+    get_test_project_environments_path,
     get_test_project_recon_pipeline,
-    test_project_docker_image,
-    test_project_environments_path,
 )
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -28,7 +28,7 @@ def celery_docker_postgres_instance(overrides=None):
 
 
 def test_execute_celery_docker_image_on_executor_config():
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
     docker_config = {
         "image": docker_image,
         "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
@@ -43,8 +43,8 @@ def test_execute_celery_docker_image_on_executor_config():
     run_config = merge_dicts(
         merge_yamls(
             [
-                os.path.join(test_project_environments_path(), "env.yaml"),
-                os.path.join(test_project_environments_path(), "env_s3.yaml"),
+                os.path.join(get_test_project_environments_path(), "env.yaml"),
+                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
             ]
         ),
         {
@@ -70,7 +70,7 @@ def test_execute_celery_docker_image_on_executor_config():
 
 
 def test_execute_celery_docker_image_on_pipeline_config():
-    docker_image = test_project_docker_image()
+    docker_image = get_test_project_docker_image()
     docker_config = {
         "env_vars": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY",],
         "network": "container:test-postgres-db-celery-docker",
@@ -85,8 +85,8 @@ def test_execute_celery_docker_image_on_pipeline_config():
     run_config = merge_dicts(
         merge_yamls(
             [
-                os.path.join(test_project_environments_path(), "env.yaml"),
-                os.path.join(test_project_environments_path(), "env_s3.yaml"),
+                os.path.join(get_test_project_environments_path(), "env.yaml"),
+                os.path.join(get_test_project_environments_path(), "env_s3.yaml"),
             ]
         ),
         {
