@@ -93,7 +93,7 @@ export const SensorDetails = (props: Props) => {
                 <TickTag status={latestTick.status} eventSpecificData={null} />
               </Group>
             ) : (
-              'None'
+              'Sensor has never run'
             ),
           },
         ]}

@@ -159,7 +159,7 @@ export const ScheduleDetails: React.FC<{
                   />
                 </Group>
               ) : (
-                'None'
+                'Schedule has never run'
               ),
             },
             {
