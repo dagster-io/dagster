@@ -5,13 +5,14 @@ from dagster.core.errors import DagsterIncompleteExecutionPlanError, DagsterUnkn
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.plan.inputs import FromMultipleSources, FromStepOutput
 from dagster.core.execution.retries import Retries
+from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.utils import pop_delayed_interrupts
 
 from .plan import ExecutionPlan
 
 
 def _default_sort_key(step):
-    return int(step.tags.get("dagster/priority", 0)) * -1
+    return int(step.tags.get(PRIORITY_TAG, 0)) * -1
 
 
 class ActiveExecution:

@@ -1,6 +1,3 @@
-# Default (non-Celery) tag used for configuring Dagster step execution priorities
-DAGSTER_STEP_PRIORITY_TAG = "dagster/priority"
-
 # Used to set the priority for a particular step execution
 DAGSTER_CELERY_STEP_PRIORITY_TAG = "dagster-celery/priority"
 

@@ -7,6 +7,7 @@ from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
 from dagster.core.execution.plan.plan import ExecutionPlan
+from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -16,7 +17,6 @@ from .tags import (
     DAGSTER_CELERY_QUEUE_TAG,
     DAGSTER_CELERY_RUN_PRIORITY_TAG,
     DAGSTER_CELERY_STEP_PRIORITY_TAG,
-    DAGSTER_STEP_PRIORITY_TAG,
 )
 
 TICK_SECONDS = 1
@@ -188,7 +188,7 @@ def _warn_on_priority_misuse(context, execution_plan):
     for key in execution_plan.step_keys_to_execute:
         step = execution_plan.get_step_by_key(key)
         if (
-            step.tags.get(DAGSTER_STEP_PRIORITY_TAG) is not None
+            step.tags.get(PRIORITY_TAG) is not None
             and step.tags.get(DAGSTER_CELERY_STEP_PRIORITY_TAG) is None
         ):
             bad_keys.append(key)
