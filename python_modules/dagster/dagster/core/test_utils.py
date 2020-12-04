@@ -356,3 +356,20 @@ def get_crash_signals():
         ]  # Windows keeps resources open after termination in a way that messes up tests
     else:
         return [get_terminate_signal(), signal.SIGINT]
+
+
+_mocked_system_timezone = {"timezone": None}
+
+
+@contextmanager
+def mock_system_timezone(override_timezone):
+    with pendulum.tz.LocalTimezone.test(pendulum.Timezone.load(override_timezone)):
+        try:
+            _mocked_system_timezone["timezone"] = override_timezone
+            yield
+        finally:
+            _mocked_system_timezone["timezone"] = None
+
+
+def get_mocked_system_timezone():
+    return _mocked_system_timezone["timezone"]

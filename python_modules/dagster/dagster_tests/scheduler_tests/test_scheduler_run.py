@@ -27,7 +27,7 @@ from dagster.core.host_representation import (
 from dagster.core.scheduler.job import JobState, JobStatus, JobTickStatus, JobType, ScheduleJobData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import instance_for_test, mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.daemon import get_default_daemon_logger
 from dagster.scheduler.scheduler import launch_scheduled_runs
@@ -291,7 +291,7 @@ def default_repo():
     with RepositoryLocationHandle.create_from_repository_location_origin(
         ManagedGrpcPythonEnvRepositoryLocationOrigin(
             loadable_target_origin=loadable_target_origin, location_name="test_location",
-        )
+        ),
     ) as handle:
         yield RepositoryLocation.from_handle(handle).get_repository("the_repo")
 
@@ -505,36 +505,63 @@ def test_no_started_schedules(external_repo_context, capfd):
 
 @pytest.mark.parametrize("external_repo_context", repos())
 def test_schedule_without_timezone(external_repo_context, capfd):
-    with instance_with_schedules(external_repo_context) as (instance, external_repo):
-        external_schedule = external_repo.get_external_schedule("daily_schedule_without_timezone")
-        schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = pendulum.datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
-
-        with pendulum.test(initial_datetime):
-
-            instance.start_schedule_and_update_storage_state(external_schedule)
-
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
-
-            assert instance.get_runs_count() == 0
-
-            ticks = instance.get_job_ticks(schedule_origin.get_id())
-
-            assert len(ticks) == 0
-
-            captured = capfd.readouterr()
-
-            assert (
-                "Scheduler could not run for daily_schedule_without_timezone as it did not specify "
-                "an execution_timezone in its definition." in captured.out
+    with mock_system_timezone("US/Eastern"):
+        with instance_with_schedules(external_repo_context) as (
+            instance,
+            external_repo,
+        ):
+            external_schedule = external_repo.get_external_schedule(
+                "daily_schedule_without_timezone"
+            )
+            schedule_origin = external_schedule.get_external_origin()
+            initial_datetime = pendulum.create(
+                year=2019, month=2, day=27, hour=0, minute=0, second=0, tz="US/Eastern"
             )
 
-        initial_datetime = initial_datetime.add(days=1)
-        with pendulum.test(initial_datetime):
-            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
-            assert instance.get_runs_count() == 0
-            ticks = instance.get_job_ticks(schedule_origin.get_id())
-            assert len(ticks) == 0
+            with pendulum.test(initial_datetime):
+
+                instance.start_schedule_and_update_storage_state(external_schedule)
+
+                launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+
+                assert instance.get_runs_count() == 1
+
+                ticks = instance.get_job_ticks(schedule_origin.get_id())
+
+                assert len(ticks) == 1
+
+                captured = capfd.readouterr()
+
+                assert (
+                    "Using the system timezone, US/Eastern, for daily_schedule_without_timezone as it did not specify an execution_timezone in its definition. "
+                    "Specifying an execution_timezone on all schedules will be required in the dagster 0.11.0 release."
+                    in captured.out
+                )
+
+                expected_datetime = pendulum.create(
+                    year=2019, month=2, day=27, tz="US/Eastern"
+                ).in_tz("UTC")
+
+                validate_tick(
+                    ticks[0],
+                    external_schedule,
+                    expected_datetime,
+                    JobTickStatus.SUCCESS,
+                    [run.run_id for run in instance.get_runs()],
+                )
+
+                wait_for_all_runs_to_start(instance)
+                validate_run_started(
+                    instance.get_runs()[0],
+                    execution_time=expected_datetime,
+                    partition_time=pendulum.create(2019, 2, 26, tz="US/Eastern"),
+                )
+
+                # Verify idempotence
+                launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+                assert instance.get_runs_count() == 1
+                ticks = instance.get_job_ticks(schedule_origin.get_id())
+                assert len(ticks) == 1
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

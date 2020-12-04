@@ -10,7 +10,8 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 import click
-from dagster import check, seven
+import pendulum
+from dagster import DagsterInvariantViolationError, check, seven
 from dagster.cli.workspace.cli_target import (
     get_repository_location_from_kwargs,
     get_repository_origin_from_kwargs,
@@ -39,6 +40,7 @@ from dagster.core.scheduler.job import JobTickData, JobTickStatus, JobType
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import check_tags
 from dagster.core.telemetry import telemetry_wrapper
+from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs
@@ -48,6 +50,7 @@ from dagster.serdes import (
     whitelist_for_serdes,
 )
 from dagster.serdes.ipc import ipc_write_stream
+from dagster.seven import nullcontext
 from dagster.utils import setup_windows_interrupt_support
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
@@ -398,6 +401,13 @@ def _schedule_tick_context(instance, stream, tick_data):
     help="[INTERNAL] This option should generally not be used by users. Internal param used by "
     "dagster to spawn a gRPC server with the specified server id.",
 )
+@click.option(
+    "--override-system-timezone",
+    type=click.STRING,
+    required=False,
+    help="[INTERNAL] This option should generally not be used by users. Override the system "
+    "timezone for tests.",
+)
 def grpc_command(
     port=None,
     socket=None,
@@ -408,6 +418,7 @@ def grpc_command(
     lazy_load_user_code=False,
     ipc_output_file=None,
     fixed_server_id=None,
+    override_system_timezone=None,
     **kwargs,
 ):
     if seven.IS_WINDOWS and port is None:
@@ -438,20 +449,25 @@ def grpc_command(
             package_name=kwargs["package_name"],
         )
 
-    server = DagsterGrpcServer(
-        port=port,
-        socket=socket,
-        host=host,
-        loadable_target_origin=loadable_target_origin,
-        max_workers=max_workers,
-        heartbeat=heartbeat,
-        heartbeat_timeout=heartbeat_timeout,
-        lazy_load_user_code=lazy_load_user_code,
-        ipc_output_file=ipc_output_file,
-        fixed_server_id=fixed_server_id,
-    )
+    with (
+        mock_system_timezone(override_system_timezone)
+        if override_system_timezone
+        else nullcontext()
+    ):
+        server = DagsterGrpcServer(
+            port=port,
+            socket=socket,
+            host=host,
+            loadable_target_origin=loadable_target_origin,
+            max_workers=max_workers,
+            heartbeat=heartbeat,
+            heartbeat_timeout=heartbeat_timeout,
+            lazy_load_user_code=lazy_load_user_code,
+            ipc_output_file=ipc_output_file,
+            fixed_server_id=fixed_server_id,
+        )
 
-    server.serve()
+        server.serve()
 
 
 @click.command(name="grpc-health-check", help="Check the status of a dagster GRPC server")
@@ -504,45 +520,72 @@ def grpc_health_check_command(port=None, socket=None, host="localhost"):
 @click.argument("output_file", type=click.Path())
 @repository_target_argument
 @click.option("--schedule_name")
-def launch_scheduled_execution(output_file, schedule_name, **kwargs):
-    with ipc_write_stream(output_file) as stream:
-        with DagsterInstance.get() as instance:
-            repository_origin = get_repository_origin_from_kwargs(kwargs)
-            job_origin = repository_origin.get_job_origin(schedule_name)
+@click.option("--override-system-timezone")
+def launch_scheduled_execution(output_file, schedule_name, override_system_timezone, **kwargs):
+    with (
+        mock_system_timezone(override_system_timezone)
+        if override_system_timezone
+        else nullcontext()
+    ):
+        with ipc_write_stream(output_file) as stream:
+            with DagsterInstance.get() as instance:
+                repository_origin = get_repository_origin_from_kwargs(kwargs)
+                job_origin = repository_origin.get_job_origin(schedule_name)
 
-            # open the tick scope before we load any external artifacts so that
-            # load errors are stored in DB
-            with _schedule_tick_context(
-                instance,
-                stream,
-                JobTickData(
-                    job_origin_id=job_origin.get_id(),
-                    job_name=schedule_name,
-                    job_type=JobType.SCHEDULE,
-                    status=JobTickStatus.STARTED,
-                    timestamp=time.time(),
-                ),
-            ) as tick_context:
-                with get_repository_location_from_kwargs(kwargs) as repo_location:
-                    repo_dict = repo_location.get_repositories()
-                    check.invariant(
-                        repo_dict and len(repo_dict) == 1,
-                        "Passed in arguments should reference exactly one repository, instead there are {num_repos}".format(
-                            num_repos=len(repo_dict)
-                        ),
-                    )
-                    external_repo = next(iter(repo_dict.values()))
-                    check.invariant(
-                        schedule_name
-                        in [schedule.name for schedule in external_repo.get_external_schedules()],
-                        "Could not find schedule named {schedule_name}".format(
-                            schedule_name=schedule_name
-                        ),
-                    )
-                    external_schedule = external_repo.get_external_schedule(schedule_name)
-                    _launch_scheduled_executions(
-                        instance, repo_location, external_repo, external_schedule, tick_context
-                    )
+                # open the tick scope before we load any external artifacts so that
+                # load errors are stored in DB
+                with _schedule_tick_context(
+                    instance,
+                    stream,
+                    JobTickData(
+                        job_origin_id=job_origin.get_id(),
+                        job_name=schedule_name,
+                        job_type=JobType.SCHEDULE,
+                        status=JobTickStatus.STARTED,
+                        timestamp=time.time(),
+                    ),
+                ) as tick_context:
+                    with get_repository_location_from_kwargs(kwargs) as repo_location:
+                        repo_dict = repo_location.get_repositories()
+                        check.invariant(
+                            repo_dict and len(repo_dict) == 1,
+                            "Passed in arguments should reference exactly one repository, instead there are {num_repos}".format(
+                                num_repos=len(repo_dict)
+                            ),
+                        )
+                        external_repo = next(iter(repo_dict.values()))
+                        if not schedule_name in [
+                            schedule.name for schedule in external_repo.get_external_schedules()
+                        ]:
+                            raise DagsterInvariantViolationError(
+                                "Could not find schedule named {schedule_name}".format(
+                                    schedule_name=schedule_name
+                                ),
+                            )
+
+                        external_schedule = external_repo.get_external_schedule(schedule_name)
+
+                        # Validate that either the schedule has no timezone or it matches
+                        # the system timezone
+                        schedule_timezone = external_schedule.execution_timezone
+                        if schedule_timezone:
+                            system_timezone = pendulum.now().timezone.name
+
+                            if system_timezone != external_schedule.execution_timezone:
+                                raise DagsterInvariantViolationError(
+                                    "Schedule {schedule_name} is set to execute in {schedule_timezone}, "
+                                    "but this scheduler can only run in the system timezone, "
+                                    "{system_timezone}. Use DagsterDaemonScheduler if you want to be able "
+                                    "to execute schedules in arbitrary timezones.".format(
+                                        schedule_name=external_schedule.name,
+                                        schedule_timezone=schedule_timezone,
+                                        system_timezone=system_timezone,
+                                    ),
+                                )
+
+                        _launch_scheduled_executions(
+                            instance, repo_location, external_repo, external_schedule, tick_context
+                        )
 
 
 @telemetry_wrapper

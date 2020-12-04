@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 import time
+from contextlib import contextmanager
 from types import MethodType
 
 import pendulum
@@ -316,3 +317,9 @@ def get_import_error_message(import_error):
         return import_error.msg
     else:
         return str(import_error)
+
+
+# Stand-in for contextlib.nullcontext, but available in python 3.6
+@contextmanager
+def nullcontext():
+    yield

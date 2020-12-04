@@ -894,10 +894,14 @@ def open_server_process(
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.int_param(max_workers, "max_workers")
 
+    from dagster.core.test_utils import get_mocked_system_timezone
+
     with seven.TemporaryDirectory() as temp_dir:
         output_file = os.path.join(
             temp_dir, "grpc-server-startup-{uuid}".format(uuid=uuid.uuid4().hex)
         )
+
+        mocked_system_timezone = get_mocked_system_timezone()
 
         subprocess_args = (
             [
@@ -915,6 +919,11 @@ def open_server_process(
             + (["--lazy-load-user-code"] if lazy_load_user_code else [])
             + (["--ipc-output-file", output_file])
             + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
+            + (
+                ["--override-system-timezone", mocked_system_timezone]
+                if mocked_system_timezone
+                else []
+            )
         )
 
         if loadable_target_origin:

@@ -385,6 +385,7 @@ def test_get_single_schedule_definition(graphql_context):
     )
 
     schedule_selector = infer_schedule_selector(context, "partition_based_multi_mode_decorator")
+
     result = execute_dagster_graphql(
         context, GET_SCHEDULE_DEFINITION, variables={"scheduleSelector": schedule_selector}
     )
@@ -393,7 +394,10 @@ def test_get_single_schedule_definition(graphql_context):
 
     assert result.data["scheduleDefinitionOrError"]["__typename"] == "ScheduleDefinition"
     assert result.data["scheduleDefinitionOrError"]["partitionSet"]
-    assert not result.data["scheduleDefinitionOrError"]["executionTimezone"]
+    assert (
+        result.data["scheduleDefinitionOrError"]["executionTimezone"]
+        == pendulum.now().timezone.name
+    )
 
     future_ticks = result.data["scheduleDefinitionOrError"]["futureTicks"]
     assert future_ticks

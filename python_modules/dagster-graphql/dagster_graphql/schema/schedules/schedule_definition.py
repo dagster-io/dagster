@@ -1,3 +1,4 @@
+import pendulum
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
@@ -111,5 +112,9 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
             )
             if self._schedule_state
             else None,
-            execution_timezone=self._external_schedule.execution_timezone,
+            execution_timezone=(
+                self._external_schedule.execution_timezone
+                if self._external_schedule.execution_timezone
+                else pendulum.now().timezone.name
+            ),
         )
