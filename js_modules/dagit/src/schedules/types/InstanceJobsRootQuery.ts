@@ -10,25 +10,44 @@ import { JobTickStatus, PipelineRunStatus, ScheduleStatus, JobType, JobStatus } 
 // GraphQL query operation: InstanceJobsRootQuery
 // ====================================================
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_partitionSet {
-  __typename: "PartitionSet";
-  name: string;
-}
-
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_repositoryOrigin_repositoryLocationMetadata {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata {
   __typename: "RepositoryMetadata";
   key: string;
   value: string;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_repositoryOrigin {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_origin {
   __typename: "RepositoryOrigin";
   repositoryLocationName: string;
   repositoryName: string;
-  repositoryLocationMetadata: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
+  repositoryLocationMetadata: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata[];
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet {
+  __typename: "PartitionSet";
+  name: string;
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {
+  __typename: "RepositoryMetadata";
+  key: string;
+  value: string;
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  repositoryLocationName: string;
+  repositoryName: string;
+  repositoryLocationMetadata: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
   __typename: "PipelineRun";
   id: string;
   pipelineName: string;
@@ -36,82 +55,82 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   runId: string;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData {
   __typename: "ScheduleTickSuccessData";
-  run: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run | null;
+  run: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run | null;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause {
   __typename: "PythonError";
   message: string;
   stack: string[];
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error {
   __typename: "PythonError";
   message: string;
   stack: string[];
-  cause: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause | null;
+  cause: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause | null;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData {
   __typename: "ScheduleTickFailureData";
-  error: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error;
+  error: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error;
 }
 
-export type InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData = InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData | InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData;
+export type InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData = InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData | InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData;
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks {
   __typename: "ScheduleTick";
   tickId: string;
   status: JobTickStatus;
   timestamp: number;
-  tickSpecificData: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks_tickSpecificData | null;
+  tickSpecificData: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData | null;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_runs_tags {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs_tags {
   __typename: "PipelineTag";
   key: string;
   value: string;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_runs {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
-  tags: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_runs_tags[];
+  tags: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs_tags[];
   pipelineName: string;
   status: PipelineRunStatus;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState {
   __typename: "ScheduleState";
   id: string;
   scheduleOriginId: string;
-  repositoryOrigin: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_repositoryOrigin;
+  repositoryOrigin: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin;
   repositoryOriginId: string;
   scheduleName: string;
   cronSchedule: string;
   runningScheduleCount: number;
-  ticks: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_ticks[];
+  ticks: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks[];
   runsCount: number;
-  runs: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState_runs[];
+  runs: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs[];
   ticksCount: number;
   status: ScheduleStatus;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_futureTicks_results {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results {
   __typename: "ScheduleFutureTick";
   timestamp: number;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_futureTicks {
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks {
   __typename: "ScheduleFutureTicks";
-  results: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_futureTicks_results[];
+  results: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results[];
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions {
-  __typename: "ScheduleDefinition";
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules {
+  __typename: "Schedule";
   id: string;
   name: string;
   cronSchedule: string;
@@ -119,9 +138,9 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   pipelineName: string;
   solidSelection: (string | null)[] | null;
   mode: string;
-  partitionSet: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_partitionSet | null;
-  scheduleState: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_scheduleState | null;
-  futureTicks: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions_futureTicks;
+  partitionSet: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet | null;
+  scheduleState: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState | null;
+  futureTicks: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks;
 }
 
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_repositoryOrigin_repositoryLocationMetadata {
@@ -188,33 +207,14 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   sensorState: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_origin {
-  __typename: "RepositoryOrigin";
-  repositoryLocationName: string;
-  repositoryName: string;
-  repositoryLocationMetadata: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_origin_repositoryLocationMetadata[];
-}
-
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_location {
-  __typename: "RepositoryLocation";
-  id: string;
-  name: string;
-}
-
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes {
   __typename: "Repository";
   id: string;
   name: string;
-  scheduleDefinitions: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_scheduleDefinitions[];
-  sensors: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors[];
   origin: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_origin;
   location: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_location;
+  schedules: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules[];
+  sensors: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors[];
 }
 
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection {

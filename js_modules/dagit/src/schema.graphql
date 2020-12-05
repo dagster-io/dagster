@@ -6,8 +6,8 @@ type Query {
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
   scheduler: SchedulerOrError!
-  scheduleDefinitionOrError(scheduleSelector: ScheduleSelector!): ScheduleDefinitionOrError!
-  scheduleDefinitionsOrError(repositorySelector: RepositorySelector!): ScheduleDefinitionsOrError!
+  scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
+  schedulesOrError(repositorySelector: RepositorySelector!): SchedulesOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
   unloadableJobStatesOrError(jobType: JobType): JobStatesOrError!
@@ -41,7 +41,7 @@ type Repository {
   usedSolid(name: String!): UsedSolid
   origin: RepositoryOrigin!
   partitionSets: [PartitionSet!]!
-  scheduleDefinitions: [ScheduleDefinition!]!
+  schedules: [Schedule!]!
   sensors: [Sensor!]!
 }
 
@@ -67,7 +67,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   tags: [PipelineTag!]!
   id: ID!
   runs: [PipelineRun!]!
-  schedules: [ScheduleDefinition!]!
+  schedules: [Schedule!]!
   parentSnapshotId: String
   presets: [PipelinePreset!]!
 }
@@ -450,7 +450,7 @@ type PipelineRunNotFoundError implements Error {
   runId: String!
 }
 
-type ScheduleDefinition {
+type Schedule {
   id: ID!
   name: String!
   cronSchedule: String!
@@ -704,7 +704,7 @@ type PipelineSnapshot implements IPipelineSnapshot & PipelineReference {
   solidSelection: [String!]
   id: ID!
   runs(cursor: String, limit: Int): [PipelineRun!]!
-  schedules: [ScheduleDefinition!]!
+  schedules: [Schedule!]!
   parentSnapshotId: String
 }
 
@@ -723,9 +723,9 @@ type SchedulerNotDefinedError implements Error {
   message: String!
 }
 
-union ScheduleDefinitionOrError = ScheduleDefinition | ScheduleDefinitionNotFoundError | PythonError
+union ScheduleOrError = Schedule | ScheduleNotFoundError | PythonError
 
-type ScheduleDefinitionNotFoundError implements Error {
+type ScheduleNotFoundError implements Error {
   message: String!
   scheduleName: String!
 }
@@ -736,10 +736,10 @@ input ScheduleSelector {
   scheduleName: String!
 }
 
-union ScheduleDefinitionsOrError = ScheduleDefinitions | RepositoryNotFoundError | PythonError
+union SchedulesOrError = Schedules | RepositoryNotFoundError | PythonError
 
-type ScheduleDefinitions {
-  results: [ScheduleDefinition!]!
+type Schedules {
+  results: [Schedule!]!
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | PythonError
@@ -1421,11 +1421,6 @@ type CompositeConfigType implements ConfigType {
   typeParamKeys: [String!]!
   isSelector: Boolean!
   fields: [ConfigTypeField!]!
-}
-
-type ScheduleNotFoundError implements Error {
-  message: String!
-  scheduleName: String!
 }
 
 type RuntimeMismatchConfigError implements PipelineConfigValidationError {

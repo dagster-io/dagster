@@ -11,7 +11,7 @@ import {
   TickTag,
 } from 'src/schedules/ScheduleRow';
 import {humanCronString} from 'src/schedules/humanCronString';
-import {ScheduleDefinitionFragment} from 'src/schedules/types/ScheduleDefinitionFragment';
+import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
 import {StartSchedule} from 'src/schedules/types/StartSchedule';
 import {StopSchedule} from 'src/schedules/types/StopSchedule';
 import {ScheduleStatus} from 'src/types/globalTypes';
@@ -43,7 +43,7 @@ const TimestampDisplay = (props: TimestampDisplayProps) => {
 };
 
 export const ScheduleDetails: React.FC<{
-  schedule: ScheduleDefinitionFragment;
+  schedule: ScheduleFragment;
   repoAddress: RepoAddress;
 }> = (props) => {
   const {repoAddress, schedule} = props;

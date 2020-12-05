@@ -8,15 +8,15 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-GET_SCHEDULE_DEFINITIONS_QUERY = """
-query ScheduleDefinitionsQuery($repositorySelector: RepositorySelector!) {
-  scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
+GET_SCHEDULES_QUERY = """
+query SchedulesQuery($repositorySelector: RepositorySelector!) {
+  schedulesOrError(repositorySelector: $repositorySelector) {
     __typename
     ... on PythonError {
       message
       stack
     }
-    ... on ScheduleDefinitions {
+    ... on Schedules {
       results {
         name
         cronSchedule
@@ -30,15 +30,15 @@ query ScheduleDefinitionsQuery($repositorySelector: RepositorySelector!) {
 }
 """
 
-GET_SCHEDULE_DEFINITION = """
-query getScheduleDefinition($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
-  scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
+GET_SCHEDULE_QUERY = """
+query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
+  scheduleOrError(scheduleSelector: $scheduleSelector) {
     __typename
     ... on PythonError {
       message
       stack
     }
-    ... on ScheduleDefinition {
+    ... on Schedule {
       name
       partitionSet {
         name
@@ -130,18 +130,18 @@ def default_execution_params():
 def test_get_schedule_definitions_for_repository(graphql_context):
     selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
-        graphql_context, GET_SCHEDULE_DEFINITIONS_QUERY, variables={"repositorySelector": selector},
+        graphql_context, GET_SCHEDULES_QUERY, variables={"repositorySelector": selector},
     )
 
     assert result.data
-    assert result.data["scheduleDefinitionsOrError"]
-    assert result.data["scheduleDefinitionsOrError"]["__typename"] == "ScheduleDefinitions"
+    assert result.data["schedulesOrError"]
+    assert result.data["schedulesOrError"]["__typename"] == "Schedules"
 
     external_repository = graphql_context.get_repository_location(
         main_repo_location_name()
     ).get_repository(main_repo_name())
 
-    results = result.data["scheduleDefinitionsOrError"]["results"]
+    results = result.data["schedulesOrError"]["results"]
     assert len(results) == len(external_repository.get_external_schedules())
 
     for schedule in results:
@@ -190,19 +190,16 @@ def test_get_single_schedule_definition(graphql_context):
     schedule_selector = infer_schedule_selector(context, "partition_based_multi_mode_decorator")
 
     result = execute_dagster_graphql(
-        context, GET_SCHEDULE_DEFINITION, variables={"scheduleSelector": schedule_selector}
+        context, GET_SCHEDULE_QUERY, variables={"scheduleSelector": schedule_selector}
     )
 
     assert result.data
 
-    assert result.data["scheduleDefinitionOrError"]["__typename"] == "ScheduleDefinition"
-    assert result.data["scheduleDefinitionOrError"]["partitionSet"]
-    assert (
-        result.data["scheduleDefinitionOrError"]["executionTimezone"]
-        == pendulum.now().timezone.name
-    )
+    assert result.data["scheduleOrError"]["__typename"] == "Schedule"
+    assert result.data["scheduleOrError"]["partitionSet"]
+    assert result.data["scheduleOrError"]["executionTimezone"] == pendulum.now().timezone.name
 
-    future_ticks = result.data["scheduleDefinitionOrError"]["futureTicks"]
+    future_ticks = result.data["scheduleOrError"]["futureTicks"]
     assert future_ticks
     assert len(future_ticks["results"]) == 3
 
@@ -212,15 +209,15 @@ def test_get_single_schedule_definition(graphql_context):
 
     result = execute_dagster_graphql(
         context,
-        GET_SCHEDULE_DEFINITION,
+        GET_SCHEDULE_QUERY,
         variables={"scheduleSelector": schedule_selector, "ticksAfter": future_ticks_start_time},
     )
 
     assert result.data
-    assert result.data["scheduleDefinitionOrError"]["__typename"] == "ScheduleDefinition"
-    assert result.data["scheduleDefinitionOrError"]["executionTimezone"] == "US/Central"
+    assert result.data["scheduleOrError"]["__typename"] == "Schedule"
+    assert result.data["scheduleOrError"]["executionTimezone"] == "US/Central"
 
-    future_ticks = result.data["scheduleDefinitionOrError"]["futureTicks"]
+    future_ticks = result.data["scheduleOrError"]["futureTicks"]
     assert future_ticks
     assert len(future_ticks["results"]) == 3
     timestamps = [future_tick["timestamp"] for future_tick in future_ticks["results"]]
@@ -237,11 +234,11 @@ def test_get_single_schedule_definition(graphql_context):
 
     result = execute_dagster_graphql(
         context,
-        GET_SCHEDULE_DEFINITION,
+        GET_SCHEDULE_QUERY,
         variables={"scheduleSelector": schedule_selector, "ticksAfter": cursor},
     )
 
-    future_ticks = result.data["scheduleDefinitionOrError"]["futureTicks"]
+    future_ticks = result.data["scheduleOrError"]["futureTicks"]
 
     assert future_ticks
     assert len(future_ticks["results"]) == 3

@@ -25,9 +25,9 @@ import {titleForRun} from 'src/runs/RunUtils';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {
-  ScheduleDefinitionFragment,
-  ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData,
-} from 'src/schedules/types/ScheduleDefinitionFragment';
+  ScheduleFragment,
+  ScheduleFragment_scheduleState_ticks_tickSpecificData,
+} from 'src/schedules/types/ScheduleFragment';
 import {
   StartSchedule,
   StartSchedule_startSchedule_PythonError,
@@ -41,7 +41,7 @@ import {Code} from 'src/ui/Text';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-type TickSpecificData = ScheduleDefinitionFragment_scheduleState_ticks_tickSpecificData | null;
+type TickSpecificData = ScheduleFragment_scheduleState_ticks_tickSpecificData | null;
 
 const NUM_RUNS_TO_DISPLAY = 10;
 
@@ -121,7 +121,7 @@ export const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule
 };
 
 export const ScheduleRow: React.FC<{
-  schedule: ScheduleDefinitionFragment;
+  schedule: ScheduleFragment;
   repoAddress: RepoAddress;
 }> = (props) => {
   const {repoAddress, schedule} = props;
@@ -318,7 +318,7 @@ export const ScheduleRow: React.FC<{
 };
 
 export const ScheduleRowHeader: React.FunctionComponent<{
-  schedule: ScheduleDefinitionFragment;
+  schedule: ScheduleFragment;
 }> = ({schedule}) => {
   if (!schedule.scheduleState) {
     return (

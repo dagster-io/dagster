@@ -13,7 +13,7 @@ from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.seven import lru_cache
 from dagster_graphql import dauphin
 from dagster_graphql.implementation.fetch_runs import get_runs
-from dagster_graphql.implementation.fetch_schedules import get_schedule_definitions_for_pipeline
+from dagster_graphql.implementation.fetch_schedules import get_schedules_for_pipeline
 from dagster_graphql.implementation.utils import UserFacingGraphQLError, capture_dauphin_error
 
 from .config_types import DauphinConfigTypeField
@@ -76,7 +76,7 @@ class DauphinIPipelineSnapshotMixin:
     runs = dauphin.Field(
         dauphin.non_null_list("PipelineRun"), cursor=dauphin.String(), limit=dauphin.Int(),
     )
-    schedules = dauphin.non_null_list("ScheduleDefinition")
+    schedules = dauphin.non_null_list("Schedule")
     parent_snapshot_id = dauphin.String()
 
     def resolve_pipeline_snapshot_id(self, _):
@@ -176,7 +176,7 @@ class DauphinIPipelineSnapshotMixin:
             return []
 
         pipeline_selector = represented_pipeline.handle.to_selector()
-        schedules = get_schedule_definitions_for_pipeline(graphene_info, pipeline_selector)
+        schedules = get_schedules_for_pipeline(graphene_info, pipeline_selector)
         return schedules
 
     def resolve_parent_snapshot_id(self, _graphene_info):

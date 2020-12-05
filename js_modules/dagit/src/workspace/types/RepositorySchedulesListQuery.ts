@@ -29,7 +29,7 @@ export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipel
 }
 
 export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipelines_schedules {
-  __typename: "ScheduleDefinition";
+  __typename: "Schedule";
   cronSchedule: string;
   id: string;
   mode: string;

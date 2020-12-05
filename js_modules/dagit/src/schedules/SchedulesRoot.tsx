@@ -43,15 +43,15 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
       <Loading queryResult={queryResult} allowStaleData={true}>
         {(result) => {
           const {repositoryOrError, scheduler, unloadableJobStatesOrError} = result;
-          let scheduleDefinitionsSection = null;
+          let schedulesSection = null;
           let unloadableSchedulesSection = null;
 
           if (repositoryOrError.__typename === 'PythonError') {
-            scheduleDefinitionsSection = <PythonErrorInfo error={repositoryOrError} />;
+            schedulesSection = <PythonErrorInfo error={repositoryOrError} />;
           } else if (unloadableJobStatesOrError.__typename === 'PythonError') {
-            scheduleDefinitionsSection = <PythonErrorInfo error={unloadableJobStatesOrError} />;
+            schedulesSection = <PythonErrorInfo error={unloadableJobStatesOrError} />;
           } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
-            scheduleDefinitionsSection = (
+            schedulesSection = (
               <NonIdealState
                 icon={IconNames.ERROR}
                 title="Repository not found"
@@ -59,9 +59,9 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
               />
             );
           } else {
-            const scheduleDefinitions = repositoryOrError.scheduleDefinitions;
-            if (!scheduleDefinitions.length) {
-              scheduleDefinitionsSection = (
+            const schedules = repositoryOrError.schedules;
+            if (!schedules.length) {
+              schedulesSection = (
                 <NonIdealState
                   icon={IconNames.ERROR}
                   title="No Schedules Found"
@@ -77,7 +77,7 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
                 />
               );
             } else {
-              scheduleDefinitionsSection = scheduleDefinitions.length > 0 && (
+              schedulesSection = schedules.length > 0 && (
                 <Group direction="vertical" spacing={16}>
                   <SchedulerTimezoneNote schedulerOrError={scheduler} />
                   <SchedulesTable repository={repositoryOrError} />
@@ -95,7 +95,7 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
           return (
             <Group direction="vertical" spacing={20}>
               <SchedulerInfo schedulerOrError={scheduler} />
-              {scheduleDefinitionsSection}
+              {schedulesSection}
               {unloadableSchedulesSection}
             </Group>
           );
@@ -116,7 +116,7 @@ export const SchedulesTable: React.FunctionComponent<SchedulesTableProps> = (pro
     name: repository.name,
     location: repository.location.name,
   };
-  const schedules = repository.scheduleDefinitions;
+  const schedules = repository.schedules;
 
   return (
     <>

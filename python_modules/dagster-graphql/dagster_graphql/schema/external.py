@@ -38,7 +38,7 @@ class DauphinRepository(dauphin.ObjectType):
     usedSolid = dauphin.Field("UsedSolid", name=dauphin.NonNull(dauphin.String))
     origin = dauphin.NonNull("RepositoryOrigin")
     partitionSets = dauphin.non_null_list("PartitionSet")
-    scheduleDefinitions = dauphin.non_null_list("ScheduleDefinition")
+    schedules = dauphin.non_null_list("Schedule")
     sensors = dauphin.non_null_list("Sensor")
 
     def resolve_id(self, _graphene_info):
@@ -51,13 +51,13 @@ class DauphinRepository(dauphin.ObjectType):
     def resolve_location(self, graphene_info):
         return graphene_info.schema.type_named("RepositoryLocation")(self._repository_location)
 
-    def resolve_scheduleDefinitions(self, graphene_info):
+    def resolve_schedules(self, graphene_info):
 
         schedules = self._repository.get_external_schedules()
 
         return sorted(
             [
-                graphene_info.schema.type_named("ScheduleDefinition")(graphene_info, schedule)
+                graphene_info.schema.type_named("Schedule")(graphene_info, schedule)
                 for schedule in schedules
             ],
             key=lambda schedule: schedule.name,

@@ -6,32 +6,32 @@ from dagster_graphql import dauphin
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
     DauphinRepositoryNotFoundError,
-    DauphinScheduleDefinitionNotFoundError,
+    DauphinScheduleNotFoundError,
 )
 
 
-class DapuphinScheduleDefinitionOrError(dauphin.Union):
+class DauphinScheduleOrError(dauphin.Union):
     class Meta:
-        name = "ScheduleDefinitionOrError"
-        types = ("ScheduleDefinition", DauphinScheduleDefinitionNotFoundError, DauphinPythonError)
+        name = "ScheduleOrError"
+        types = ("Schedule", DauphinScheduleNotFoundError, DauphinPythonError)
 
 
-class DauphinScheduleDefinitions(dauphin.ObjectType):
+class DauphinSchedules(dauphin.ObjectType):
     class Meta:
-        name = "ScheduleDefinitions"
+        name = "Schedules"
 
-    results = dauphin.non_null_list("ScheduleDefinition")
+    results = dauphin.non_null_list("Schedule")
 
 
-class DauphinScheduleDefintionsOrError(dauphin.Union):
+class DauphinSchedulesOrError(dauphin.Union):
     class Meta:
-        name = "ScheduleDefinitionsOrError"
-        types = (DauphinScheduleDefinitions, DauphinRepositoryNotFoundError, DauphinPythonError)
+        name = "SchedulesOrError"
+        types = (DauphinSchedules, DauphinRepositoryNotFoundError, DauphinPythonError)
 
 
-class DauphinScheduleDefinition(dauphin.ObjectType):
+class DauphinSchedule(dauphin.ObjectType):
     class Meta:
-        name = "ScheduleDefinition"
+        name = "Schedule"
 
     id = dauphin.NonNull(dauphin.ID)
     name = dauphin.NonNull(dauphin.String)
@@ -101,7 +101,7 @@ class DauphinScheduleDefinition(dauphin.ObjectType):
             # have a stored database row yet
             self._schedule_state = self._external_schedule.get_default_job_state()
 
-        super(DauphinScheduleDefinition, self).__init__(
+        super(DauphinSchedule, self).__init__(
             name=external_schedule.name,
             cron_schedule=external_schedule.cron_schedule,
             pipeline_name=external_schedule.pipeline_name,

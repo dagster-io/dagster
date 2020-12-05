@@ -12,16 +12,15 @@ from dagster_graphql.implementation.fetch_schedules import (
 from dagster_graphql.schema.errors import (
     DauphinPythonError,
     DauphinRepositoryNotFoundError,
-    DauphinScheduleDefinitionNotFoundError,
     DauphinScheduleNotFoundError,
     DauphinSchedulerNotDefinedError,
 )
 
 from .schedule_definition import (
-    DapuphinScheduleDefinitionOrError,
-    DauphinScheduleDefinition,
-    DauphinScheduleDefinitions,
-    DauphinScheduleDefintionsOrError,
+    DauphinSchedule,
+    DauphinScheduleOrError,
+    DauphinSchedules,
+    DauphinSchedulesOrError,
 )
 from .schedule_state import DauphinScheduleState
 

@@ -60,7 +60,7 @@ def get_scheduler_or_error(graphene_info):
 
 
 @capture_dauphin_error
-def get_schedule_definitions_or_error(graphene_info, repository_selector):
+def get_schedules_or_error(graphene_info, repository_selector):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(repository_selector, "repository_selector", RepositorySelector)
 
@@ -69,16 +69,16 @@ def get_schedule_definitions_or_error(graphene_info, repository_selector):
     external_schedules = repository.get_external_schedules()
 
     results = [
-        graphene_info.schema.type_named("ScheduleDefinition")(
+        graphene_info.schema.type_named("Schedule")(
             graphene_info, external_schedule=external_schedule
         )
         for external_schedule in external_schedules
     ]
 
-    return graphene_info.schema.type_named("ScheduleDefinitions")(results=results)
+    return graphene_info.schema.type_named("Schedules")(results=results)
 
 
-def get_schedule_definitions_for_pipeline(graphene_info, pipeline_selector):
+def get_schedules_for_pipeline(graphene_info, pipeline_selector):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
 
@@ -87,7 +87,7 @@ def get_schedule_definitions_for_pipeline(graphene_info, pipeline_selector):
     external_schedules = repository.get_external_schedules()
 
     return [
-        graphene_info.schema.type_named("ScheduleDefinition")(
+        graphene_info.schema.type_named("Schedule")(
             graphene_info, external_schedule=external_schedule
         )
         for external_schedule in external_schedules
@@ -96,7 +96,7 @@ def get_schedule_definitions_for_pipeline(graphene_info, pipeline_selector):
 
 
 @capture_dauphin_error
-def get_schedule_definition_or_error(graphene_info, schedule_selector):
+def get_schedule_or_error(graphene_info, schedule_selector):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
     location = graphene_info.context.get_repository_location(schedule_selector.location_name)
@@ -105,11 +105,11 @@ def get_schedule_definition_or_error(graphene_info, schedule_selector):
     external_schedule = repository.get_external_schedule(schedule_selector.schedule_name)
     if not external_schedule:
         raise UserFacingGraphQLError(
-            graphene_info.schema.type_named("ScheduleDefinitionNotFoundError")(
+            graphene_info.schema.type_named("ScheduleNotFoundError")(
                 schedule_name=schedule_selector.schedule_name
             )
         )
 
-    return graphene_info.schema.type_named("ScheduleDefinition")(
+    return graphene_info.schema.type_named("Schedule")(
         graphene_info, external_schedule=external_schedule
     )

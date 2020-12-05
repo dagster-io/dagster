@@ -8,8 +8,8 @@ import {RepositoryOriginInformation} from 'src/RepositoryInformation';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {titleForRun} from 'src/runs/RunUtils';
 import {
-  TickTag,
   STOP_SCHEDULE_MUTATION,
+  TickTag,
   displayScheduleMutationErrors,
 } from 'src/schedules/ScheduleRow';
 import {humanCronString} from 'src/schedules/humanCronString';

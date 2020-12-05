@@ -55,21 +55,6 @@ class DauphinSchedulerNotDefinedError(dauphin.ObjectType):
         self.message = "Scheduler is not defined for the currently loaded repository."
 
 
-class DauphinScheduleNotFoundError(dauphin.ObjectType):
-    class Meta:
-        name = "ScheduleNotFoundError"
-        interfaces = (DauphinError,)
-
-    schedule_name = dauphin.NonNull(dauphin.String)
-
-    def __init__(self, schedule_name):
-        super(DauphinScheduleNotFoundError, self).__init__()
-        self.schedule_name = check.str_param(schedule_name, "schedule_name")
-        self.message = (
-            "Schedule {schedule_name} is not present in the currently loaded repository."
-        ).format(schedule_name=schedule_name)
-
-
 class DauphinPipelineSnapshotNotFoundError(dauphin.ObjectType):
     class Meta:
         name = "PipelineSnapshotNotFoundError"
@@ -597,15 +582,15 @@ class DauphinRunGroupsOrError(dauphin.ObjectType):
     results = dauphin.non_null_list("RunGroup")
 
 
-class DauphinScheduleDefinitionNotFoundError(dauphin.ObjectType):
+class DauphinScheduleNotFoundError(dauphin.ObjectType):
     class Meta:
-        name = "ScheduleDefinitionNotFoundError"
+        name = "ScheduleNotFoundError"
         interfaces = (DauphinError,)
 
     schedule_name = dauphin.NonNull(dauphin.String)
 
     def __init__(self, schedule_name):
-        super(DauphinScheduleDefinitionNotFoundError, self).__init__()
+        super(DauphinScheduleNotFoundError, self).__init__()
         self.schedule_name = check.str_param(schedule_name, "schedule_name")
         self.message = "Schedule {schedule_name} could not be found.".format(
             schedule_name=self.schedule_name

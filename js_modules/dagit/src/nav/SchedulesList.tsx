@@ -41,8 +41,8 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
   });
 
   const repoSchedules =
-    schedules.data?.scheduleDefinitionsOrError?.__typename === 'ScheduleDefinitions'
-      ? schedules.data.scheduleDefinitionsOrError.results
+    schedules.data?.schedulesOrError?.__typename === 'Schedules'
+      ? schedules.data.schedulesOrError.results
       : [];
 
   const items = repoSchedules
@@ -247,8 +247,8 @@ const SelectedItemTooltipStyle = JSON.stringify({
 
 export const SCHEDULES_LIST_QUERY = gql`
   query SchedulesListQuery($repositorySelector: RepositorySelector!) {
-    scheduleDefinitionsOrError(repositorySelector: $repositorySelector) {
-      ... on ScheduleDefinitions {
+    schedulesOrError(repositorySelector: $repositorySelector) {
+      ... on Schedules {
         results {
           id
           name

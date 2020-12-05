@@ -314,7 +314,7 @@ const SecondaryContainer = ({children}: {children: React.ReactNode}) => (
 );
 
 const OverviewScheduleFragment = gql`
-  fragment OverviewScheduleFragment on ScheduleDefinition {
+  fragment OverviewScheduleFragment on Schedule {
     __typename
     id
     name

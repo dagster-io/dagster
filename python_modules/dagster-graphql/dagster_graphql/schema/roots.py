@@ -54,9 +54,9 @@ from dagster_graphql.implementation.fetch_runs import (
     validate_pipeline_config,
 )
 from dagster_graphql.implementation.fetch_schedules import (
-    get_schedule_definition_or_error,
-    get_schedule_definitions_or_error,
+    get_schedule_or_error,
     get_scheduler_or_error,
+    get_schedules_or_error,
 )
 from dagster_graphql.implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from dagster_graphql.implementation.run_config_schema import (
@@ -107,12 +107,11 @@ class DauphinQuery(dauphin.ObjectType):
 
     scheduler = dauphin.Field(dauphin.NonNull("SchedulerOrError"))
 
-    scheduleDefinitionOrError = dauphin.Field(
-        dauphin.NonNull("ScheduleDefinitionOrError"),
-        schedule_selector=dauphin.NonNull("ScheduleSelector"),
+    scheduleOrError = dauphin.Field(
+        dauphin.NonNull("ScheduleOrError"), schedule_selector=dauphin.NonNull("ScheduleSelector"),
     )
-    scheduleDefinitionsOrError = dauphin.Field(
-        dauphin.NonNull("ScheduleDefinitionsOrError"),
+    schedulesOrError = dauphin.Field(
+        dauphin.NonNull("SchedulesOrError"),
         repositorySelector=dauphin.NonNull("RepositorySelector"),
     )
     sensorOrError = dauphin.Field(
@@ -237,13 +236,13 @@ class DauphinQuery(dauphin.ObjectType):
     def resolve_scheduler(self, graphene_info):
         return get_scheduler_or_error(graphene_info)
 
-    def resolve_scheduleDefinitionOrError(self, graphene_info, schedule_selector):
-        return get_schedule_definition_or_error(
+    def resolve_scheduleOrError(self, graphene_info, schedule_selector):
+        return get_schedule_or_error(
             graphene_info, ScheduleSelector.from_graphql_input(schedule_selector)
         )
 
-    def resolve_scheduleDefinitionsOrError(self, graphene_info, **kwargs):
-        return get_schedule_definitions_or_error(
+    def resolve_schedulesOrError(self, graphene_info, **kwargs):
+        return get_schedules_or_error(
             graphene_info, RepositorySelector.from_graphql_input(kwargs.get("repositorySelector"))
         )
 

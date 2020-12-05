@@ -10,32 +10,32 @@ import { RepositorySelector, ScheduleStatus } from "./../../types/globalTypes";
 // GraphQL query operation: SchedulesListQuery
 // ====================================================
 
-export interface SchedulesListQuery_scheduleDefinitionsOrError_RepositoryNotFoundError {
+export interface SchedulesListQuery_schedulesOrError_RepositoryNotFoundError {
   __typename: "RepositoryNotFoundError" | "PythonError";
 }
 
-export interface SchedulesListQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState {
+export interface SchedulesListQuery_schedulesOrError_Schedules_results_scheduleState {
   __typename: "ScheduleState";
   id: string;
   status: ScheduleStatus;
 }
 
-export interface SchedulesListQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results {
-  __typename: "ScheduleDefinition";
+export interface SchedulesListQuery_schedulesOrError_Schedules_results {
+  __typename: "Schedule";
   id: string;
   name: string;
-  scheduleState: SchedulesListQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results_scheduleState | null;
+  scheduleState: SchedulesListQuery_schedulesOrError_Schedules_results_scheduleState | null;
 }
 
-export interface SchedulesListQuery_scheduleDefinitionsOrError_ScheduleDefinitions {
-  __typename: "ScheduleDefinitions";
-  results: SchedulesListQuery_scheduleDefinitionsOrError_ScheduleDefinitions_results[];
+export interface SchedulesListQuery_schedulesOrError_Schedules {
+  __typename: "Schedules";
+  results: SchedulesListQuery_schedulesOrError_Schedules_results[];
 }
 
-export type SchedulesListQuery_scheduleDefinitionsOrError = SchedulesListQuery_scheduleDefinitionsOrError_RepositoryNotFoundError | SchedulesListQuery_scheduleDefinitionsOrError_ScheduleDefinitions;
+export type SchedulesListQuery_schedulesOrError = SchedulesListQuery_schedulesOrError_RepositoryNotFoundError | SchedulesListQuery_schedulesOrError_Schedules;
 
 export interface SchedulesListQuery {
-  scheduleDefinitionsOrError: SchedulesListQuery_scheduleDefinitionsOrError;
+  schedulesOrError: SchedulesListQuery_schedulesOrError;
 }
 
 export interface SchedulesListQueryVariables {

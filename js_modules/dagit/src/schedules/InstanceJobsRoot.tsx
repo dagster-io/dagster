@@ -5,14 +5,10 @@ import React from 'react';
 import {ScrollContainer} from 'src/ListComponents';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
+import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {UnloadableJobs} from 'src/jobs/UnloadableJobs';
-import {
-  REPOSITORY_SCHEDULES_FRAGMENT,
-  SCHEDULE_DEFINITION_FRAGMENT,
-  SCHEDULE_STATE_FRAGMENT,
-  SchedulerTimezoneNote,
-} from 'src/schedules/ScheduleUtils';
+import {SCHEDULE_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {SchedulesTable} from 'src/schedules/SchedulesRoot';
 import {InstanceJobsRootQuery} from 'src/schedules/types/InstanceJobsRootQuery';
@@ -48,7 +44,7 @@ export const InstanceJobsRoot = () => {
               (repository) => repository.sensors.length,
             );
             const hasSchedules = repositoriesOrError.nodes.some(
-              (repository) => repository.scheduleDefinitions.length,
+              (repository) => repository.schedules.length,
             );
 
             const scheduleDefinitionsSection = hasSchedules ? (
@@ -115,7 +111,16 @@ const INSTANCE_JOBS_ROOT_QUERY = gql`
       ... on RepositoryConnection {
         nodes {
           id
-          ...RepositorySchedulesFragment
+          name
+          ...RepositoryInfoFragment
+          schedules {
+            id
+            ...ScheduleFragment
+          }
+          sensors {
+            id
+            ...SensorFragment
+          }
         }
       }
       ...PythonErrorFragment
@@ -134,11 +139,10 @@ const INSTANCE_JOBS_ROOT_QUERY = gql`
     }
   }
 
-  ${SCHEDULE_DEFINITION_FRAGMENT}
+  ${REPOSITORY_INFO_FRAGMENT}
+  ${SCHEDULE_FRAGMENT}
   ${SCHEDULER_FRAGMENT}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
-  ${REPOSITORY_SCHEDULES_FRAGMENT}
   ${SENSOR_FRAGMENT}
-  ${SCHEDULE_STATE_FRAGMENT}
   ${JOB_STATE_FRAGMENT}
 `;

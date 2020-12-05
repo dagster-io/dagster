@@ -8,12 +8,12 @@ import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {TopNav} from 'src/nav/TopNav';
 import {DagsterTag} from 'src/runs/RunTag';
 import {ScheduleDetails} from 'src/schedules/ScheduleDetails';
-import {SCHEDULE_DEFINITION_FRAGMENT} from 'src/schedules/ScheduleUtils';
+import {SCHEDULE_FRAGMENT} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {PreviousRunsForScheduleQuery} from 'src/schedules/types/PreviousRunsForScheduleQuery';
 import {
   ScheduleRootQuery,
-  ScheduleRootQuery_scheduleDefinitionOrError_ScheduleDefinition as ScheduleDefinition,
+  ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
 } from 'src/schedules/types/ScheduleRootQuery';
 import {Group} from 'src/ui/Group';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from 'src/workspace/PreviousRunsSection';
@@ -48,8 +48,8 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
 
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
-      {({scheduleDefinitionOrError}) => {
-        if (scheduleDefinitionOrError.__typename !== 'ScheduleDefinition') {
+      {({scheduleOrError}) => {
+        if (scheduleOrError.__typename !== 'Schedule') {
           return null;
         }
 
@@ -74,10 +74,10 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
           <ScrollContainer>
             <TopNav breadcrumbs={breadcrumbs} />
             <Group direction="vertical" spacing={24} padding={{vertical: 20, horizontal: 24}}>
-              <ScheduleDetails repoAddress={repoAddress} schedule={scheduleDefinitionOrError} />
+              <ScheduleDetails repoAddress={repoAddress} schedule={scheduleOrError} />
               <SchedulePreviousRuns
                 repoAddress={repoAddress}
-                schedule={scheduleDefinitionOrError}
+                schedule={scheduleOrError}
                 runTab={runTab}
               />
             </Group>
@@ -93,7 +93,7 @@ const RUNS_LIMIT = 20;
 interface SchedulePreviousRunsProps {
   repoAddress: RepoAddress;
   runTab?: string;
-  schedule: ScheduleDefinition;
+  schedule: Schedule;
 }
 
 const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
@@ -119,12 +119,12 @@ export const SCHEDULE_ROOT_QUERY = gql`
     scheduler {
       ...SchedulerFragment
     }
-    scheduleDefinitionOrError(scheduleSelector: $scheduleSelector) {
-      ... on ScheduleDefinition {
+    scheduleOrError(scheduleSelector: $scheduleSelector) {
+      ... on Schedule {
         id
-        ...ScheduleDefinitionFragment
+        ...ScheduleFragment
       }
-      ... on ScheduleDefinitionNotFoundError {
+      ... on ScheduleNotFoundError {
         message
       }
       ... on PythonError {
@@ -135,7 +135,7 @@ export const SCHEDULE_ROOT_QUERY = gql`
   }
 
   ${SCHEDULER_FRAGMENT}
-  ${SCHEDULE_DEFINITION_FRAGMENT}
+  ${SCHEDULE_FRAGMENT}
 `;
 
 const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`

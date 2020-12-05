@@ -6,7 +6,7 @@ import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT, REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
-import {JOB_STATE_FRAGMENT, SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
+import {JOB_STATE_FRAGMENT} from 'src/sensors/SensorFragment';
 
 export const SCHEDULE_STATE_FRAGMENT = gql`
   fragment ScheduleStateFragment on ScheduleState {
@@ -64,22 +64,18 @@ export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
   fragment RepositorySchedulesFragment on Repository {
     name
     id
-    scheduleDefinitions {
+    schedules {
       id
-      ...ScheduleDefinitionFragment
-    }
-    sensors {
-      id
-      ...SensorFragment
+      ...ScheduleFragment
     }
     ...RepositoryInfoFragment
   }
   ${REPOSITORY_INFO_FRAGMENT}
-  ${SENSOR_FRAGMENT}
+  ${SCHEDULER_FRAGMENT}
 `;
 
-export const SCHEDULE_DEFINITION_FRAGMENT = gql`
-  fragment ScheduleDefinitionFragment on ScheduleDefinition {
+export const SCHEDULE_FRAGMENT = gql`
+  fragment ScheduleFragment on Schedule {
     id
     name
     cronSchedule
@@ -127,7 +123,7 @@ export const SCHEDULES_ROOT_QUERY = gql`
     }
   }
 
-  ${SCHEDULE_DEFINITION_FRAGMENT}
+  ${SCHEDULE_FRAGMENT}
   ${SCHEDULER_FRAGMENT}
   ${PythonErrorInfo.fragments.PythonErrorFragment}
   ${REPOSITORY_SCHEDULES_FRAGMENT}

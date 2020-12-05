@@ -45,7 +45,7 @@ export interface OverviewScheduleFragment_scheduleState {
 }
 
 export interface OverviewScheduleFragment {
-  __typename: "ScheduleDefinition";
+  __typename: "Schedule";
   id: string;
   name: string;
   scheduleState: OverviewScheduleFragment_scheduleState | null;

@@ -333,7 +333,7 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules {
-  __typename: "ScheduleDefinition";
+  __typename: "Schedule";
   id: string;
   name: string;
   scheduleState: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState | null;
