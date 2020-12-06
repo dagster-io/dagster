@@ -3,18 +3,18 @@ import {Colors, NonIdealState, Switch, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {TickTag} from 'src/JobTick';
 import {timestampToString, TimezoneContext} from 'src/TimeComponents';
 import {
   displayScheduleMutationErrors,
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
-  TickTag,
 } from 'src/schedules/ScheduleRow';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
 import {StartSchedule} from 'src/schedules/types/StartSchedule';
 import {StopSchedule} from 'src/schedules/types/StopSchedule';
-import {ScheduleStatus} from 'src/types/globalTypes';
+import {JobStatus, JobType} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
@@ -97,13 +97,13 @@ export const ScheduleDetails: React.FC<{
     );
   }
 
-  const {status, ticks, scheduleOriginId} = scheduleState;
+  const {status, id, ticks} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
   const onChangeSwitch = () => {
-    if (status === ScheduleStatus.RUNNING) {
+    if (status === JobStatus.RUNNING) {
       stopSchedule({
-        variables: {scheduleOriginId},
+        variables: {scheduleOriginId: id},
       });
     } else {
       startSchedule({
@@ -113,11 +113,11 @@ export const ScheduleDetails: React.FC<{
   };
 
   const copyId = () => {
-    navigator.clipboard.writeText(scheduleOriginId);
+    navigator.clipboard.writeText(id);
     setCopyText('Copied!');
   };
 
-  const running = status === ScheduleStatus.RUNNING;
+  const running = status === JobStatus.RUNNING;
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-start'}}>
@@ -153,10 +153,7 @@ export const ScheduleDetails: React.FC<{
               value: latestTick ? (
                 <Group direction="horizontal" spacing={8} alignItems="center">
                   <TimestampDisplay timestamp={latestTick.timestamp} timezone={executionTimezone} />
-                  <TickTag
-                    status={latestTick.status}
-                    eventSpecificData={latestTick.tickSpecificData}
-                  />
+                  <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
                 </Group>
               ) : (
                 'Schedule has never run'
@@ -206,10 +203,7 @@ export const ScheduleDetails: React.FC<{
       <Box margin={{top: 4}}>
         <Tooltip content={copyText}>
           <ButtonLink color={{link: Colors.GRAY3, hover: Colors.GRAY1}} onClick={copyId}>
-            <span style={{fontFamily: FontFamily.monospace}}>{`id: ${scheduleOriginId.slice(
-              0,
-              8,
-            )}`}</span>
+            <span style={{fontFamily: FontFamily.monospace}}>{`id: ${id.slice(0, 8)}`}</span>
           </ButtonLink>
         </Tooltip>
       </Box>

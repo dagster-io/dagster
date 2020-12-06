@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, ScheduleStatus } from "./../../types/globalTypes";
+import { RepositorySelector, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesListQuery
@@ -15,9 +15,9 @@ export interface SchedulesListQuery_schedulesOrError_RepositoryNotFoundError {
 }
 
 export interface SchedulesListQuery_schedulesOrError_Schedules_results_scheduleState {
-  __typename: "ScheduleState";
+  __typename: "JobState";
   id: string;
-  status: ScheduleStatus;
+  status: JobStatus;
 }
 
 export interface SchedulesListQuery_schedulesOrError_Schedules_results {

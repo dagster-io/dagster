@@ -22,7 +22,6 @@ from .schedule_definition import (
     DauphinSchedules,
     DauphinSchedulesOrError,
 )
-from .schedule_state import DauphinScheduleState
 
 
 class DauphinScheduleStatus(dauphin.Enum):
@@ -154,7 +153,7 @@ class DauphinScheduleStateResult(dauphin.ObjectType):
     class Meta:
         name = "ScheduleStateResult"
 
-    schedule_state = dauphin.NonNull("ScheduleState")
+    scheduleState = dauphin.NonNull("JobState")
 
 
 class DauphinScheduleMutationResult(dauphin.Union):

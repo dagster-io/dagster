@@ -35,12 +35,39 @@ export interface JobStateFragment_jobSpecificData_ScheduleJobData {
 
 export type JobStateFragment_jobSpecificData = JobStateFragment_jobSpecificData_SensorJobData | JobStateFragment_jobSpecificData_ScheduleJobData;
 
+export interface JobStateFragment_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface JobStateFragment_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
   pipelineName: string;
   status: PipelineRunStatus;
+  tags: JobStateFragment_runs_tags[];
+}
+
+export interface JobStateFragment_ticks_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  status: PipelineRunStatus;
+}
+
+export interface JobStateFragment_ticks_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface JobStateFragment_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: JobStateFragment_ticks_error_cause | null;
 }
 
 export interface JobStateFragment_ticks {
@@ -48,6 +75,8 @@ export interface JobStateFragment_ticks {
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  runs: JobStateFragment_ticks_runs[];
+  error: JobStateFragment_ticks_error | null;
 }
 
 export interface JobStateFragment {
@@ -61,4 +90,5 @@ export interface JobStateFragment {
   runs: JobStateFragment_runs[];
   runsCount: number;
   ticks: JobStateFragment_ticks[];
+  runningCount: number;
 }

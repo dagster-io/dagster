@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineSelector, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { PipelineSelector, PipelineRunStatus, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: PipelineOverviewQuery
@@ -324,12 +324,12 @@ export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState {
-  __typename: "ScheduleState";
+  __typename: "JobState";
   id: string;
   runsCount: number;
   lastRuns: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_lastRuns[];
   runs: PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules_scheduleState_runs[];
-  status: ScheduleStatus;
+  status: JobStatus;
 }
 
 export interface PipelineOverviewQuery_pipelineSnapshotOrError_PipelineSnapshot_schedules {

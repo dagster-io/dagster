@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, ScheduleStatus, PipelineRunStatus } from "./../../types/globalTypes";
+import { RepositorySelector, JobStatus, PipelineRunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: RepositorySchedulesListQuery
@@ -22,9 +22,9 @@ export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipel
 }
 
 export interface RepositorySchedulesListQuery_repositoryOrError_Repository_pipelines_schedules_scheduleState {
-  __typename: "ScheduleState";
+  __typename: "JobState";
   id: string;
-  status: ScheduleStatus;
+  status: JobStatus;
   runs: RepositorySchedulesListQuery_repositoryOrError_Repository_pipelines_schedules_scheduleState_runs[];
 }
 

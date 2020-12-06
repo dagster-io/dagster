@@ -4,14 +4,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {useConfirmation} from 'src/CustomConfirmationProvider';
+import {TickTag} from 'src/JobTick';
 import {RepositoryOriginInformation} from 'src/RepositoryInformation';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {titleForRun} from 'src/runs/RunUtils';
-import {
-  STOP_SCHEDULE_MUTATION,
-  TickTag,
-  displayScheduleMutationErrors,
-} from 'src/schedules/ScheduleRow';
+import {STOP_SCHEDULE_MUTATION, displayScheduleMutationErrors} from 'src/schedules/ScheduleRow';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {StopSchedule} from 'src/schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from 'src/sensors/SensorMutations';
@@ -225,7 +222,7 @@ export const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) =
       <td></td>
       <td>
         {latestTick ? (
-          <TickTag status={latestTick.status} eventSpecificData={null} />
+          <TickTag tick={latestTick} jobType={JobType.SENSOR} />
         ) : (
           <span style={{color: Colors.GRAY4}}>None</span>
         )}
@@ -350,7 +347,7 @@ export const ScheduleStateRow: React.FunctionComponent<{
           )}
         </div>
       </td>
-      <td>{latestTick ? <TickTag status={latestTick.status} eventSpecificData={null} /> : null}</td>
+      <td>{latestTick ? <TickTag tick={latestTick} jobType={JobType.SCHEDULE} /> : null}</td>
       <td>
         <div style={{display: 'flex'}}>
           {runs.map((run) => {

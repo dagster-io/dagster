@@ -35,12 +35,39 @@ export interface RepositorySensorsFragment_sensors_sensorState_jobSpecificData_S
 
 export type RepositorySensorsFragment_sensors_sensorState_jobSpecificData = RepositorySensorsFragment_sensors_sensorState_jobSpecificData_SensorJobData | RepositorySensorsFragment_sensors_sensorState_jobSpecificData_ScheduleJobData;
 
+export interface RepositorySensorsFragment_sensors_sensorState_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface RepositorySensorsFragment_sensors_sensorState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
   pipelineName: string;
   status: PipelineRunStatus;
+  tags: RepositorySensorsFragment_sensors_sensorState_runs_tags[];
+}
+
+export interface RepositorySensorsFragment_sensors_sensorState_ticks_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  status: PipelineRunStatus;
+}
+
+export interface RepositorySensorsFragment_sensors_sensorState_ticks_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface RepositorySensorsFragment_sensors_sensorState_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: RepositorySensorsFragment_sensors_sensorState_ticks_error_cause | null;
 }
 
 export interface RepositorySensorsFragment_sensors_sensorState_ticks {
@@ -48,6 +75,8 @@ export interface RepositorySensorsFragment_sensors_sensorState_ticks {
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  runs: RepositorySensorsFragment_sensors_sensorState_ticks_runs[];
+  error: RepositorySensorsFragment_sensors_sensorState_ticks_error | null;
 }
 
 export interface RepositorySensorsFragment_sensors_sensorState {
@@ -61,6 +90,7 @@ export interface RepositorySensorsFragment_sensors_sensorState {
   runs: RepositorySensorsFragment_sensors_sensorState_runs[];
   runsCount: number;
   ticks: RepositorySensorsFragment_sensors_sensorState_ticks[];
+  runningCount: number;
 }
 
 export interface RepositorySensorsFragment_sensors {

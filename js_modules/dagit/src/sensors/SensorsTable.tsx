@@ -3,9 +3,9 @@ import {Colors, Switch, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {TickTag} from 'src/JobTick';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {titleForRun} from 'src/runs/RunUtils';
-import {TickTag} from 'src/schedules/ScheduleRow';
 import {
   displaySensorMutationErrors,
   START_SENSOR_MUTATION,
@@ -14,7 +14,7 @@ import {
 import {SensorFragment} from 'src/sensors/types/SensorFragment';
 import {StartSensor} from 'src/sensors/types/StartSensor';
 import {StopSensor} from 'src/sensors/types/StopSensor';
-import {JobStatus} from 'src/types/globalTypes';
+import {JobStatus, JobType} from 'src/types/globalTypes';
 import {Table} from 'src/ui/Table';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
@@ -78,7 +78,7 @@ const SensorRow = (props: RowProps) => {
       </td>
       <td>
         {latestTick ? (
-          <TickTag status={latestTick.status} eventSpecificData={null} />
+          <TickTag tick={latestTick} jobType={JobType.SENSOR} />
         ) : (
           <span style={{color: Colors.GRAY4}}>None</span>
         )}

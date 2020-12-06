@@ -4,17 +4,17 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, ScheduleStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL mutation operation: StartSchedule
 // ====================================================
 
 export interface StartSchedule_startSchedule_ScheduleStateResult_scheduleState {
-  __typename: "ScheduleState";
+  __typename: "JobState";
   id: string;
-  runningScheduleCount: number;
-  status: ScheduleStatus;
+  status: JobStatus;
+  runningCount: number;
 }
 
 export interface StartSchedule_startSchedule_ScheduleStateResult {

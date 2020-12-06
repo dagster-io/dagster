@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobTickStatus, PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: ScheduleFragment
@@ -28,46 +28,17 @@ export interface ScheduleFragment_scheduleState_repositoryOrigin {
   repositoryLocationMetadata: ScheduleFragment_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
-  __typename: "PipelineRun";
-  id: string;
-  pipelineName: string;
-  status: PipelineRunStatus;
-  runId: string;
+export interface ScheduleFragment_scheduleState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
+  lastRunKey: string | null;
 }
 
-export interface ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData {
-  __typename: "ScheduleTickSuccessData";
-  run: ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run | null;
+export interface ScheduleFragment_scheduleState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
+  cronSchedule: string;
 }
 
-export interface ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause | null;
-}
-
-export interface ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData {
-  __typename: "ScheduleTickFailureData";
-  error: ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error;
-}
-
-export type ScheduleFragment_scheduleState_ticks_tickSpecificData = ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData | ScheduleFragment_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData;
-
-export interface ScheduleFragment_scheduleState_ticks {
-  __typename: "ScheduleTick";
-  tickId: string;
-  status: JobTickStatus;
-  timestamp: number;
-  tickSpecificData: ScheduleFragment_scheduleState_ticks_tickSpecificData | null;
-}
+export type ScheduleFragment_scheduleState_jobSpecificData = ScheduleFragment_scheduleState_jobSpecificData_SensorJobData | ScheduleFragment_scheduleState_jobSpecificData_ScheduleJobData;
 
 export interface ScheduleFragment_scheduleState_runs_tags {
   __typename: "PipelineTag";
@@ -79,25 +50,52 @@ export interface ScheduleFragment_scheduleState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
-  tags: ScheduleFragment_scheduleState_runs_tags[];
   pipelineName: string;
+  status: PipelineRunStatus;
+  tags: ScheduleFragment_scheduleState_runs_tags[];
+}
+
+export interface ScheduleFragment_scheduleState_ticks_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
   status: PipelineRunStatus;
 }
 
-export interface ScheduleFragment_scheduleState {
-  __typename: "ScheduleState";
+export interface ScheduleFragment_scheduleState_ticks_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface ScheduleFragment_scheduleState_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: ScheduleFragment_scheduleState_ticks_error_cause | null;
+}
+
+export interface ScheduleFragment_scheduleState_ticks {
+  __typename: "JobTick";
   id: string;
-  scheduleOriginId: string;
+  status: JobTickStatus;
+  timestamp: number;
+  runs: ScheduleFragment_scheduleState_ticks_runs[];
+  error: ScheduleFragment_scheduleState_ticks_error | null;
+}
+
+export interface ScheduleFragment_scheduleState {
+  __typename: "JobState";
+  id: string;
+  name: string;
+  jobType: JobType;
+  status: JobStatus;
   repositoryOrigin: ScheduleFragment_scheduleState_repositoryOrigin;
-  repositoryOriginId: string;
-  scheduleName: string;
-  cronSchedule: string;
-  runningScheduleCount: number;
-  ticks: ScheduleFragment_scheduleState_ticks[];
-  runsCount: number;
+  jobSpecificData: ScheduleFragment_scheduleState_jobSpecificData | null;
   runs: ScheduleFragment_scheduleState_runs[];
-  ticksCount: number;
-  status: ScheduleStatus;
+  runsCount: number;
+  ticks: ScheduleFragment_scheduleState_ticks[];
+  runningCount: number;
 }
 
 export interface ScheduleFragment_futureTicks_results {

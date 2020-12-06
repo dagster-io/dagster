@@ -14,20 +14,16 @@ import {
 } from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
+import {TickTag} from 'src/JobTick';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {assertUnreachable} from 'src/Util';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {DagsterTag} from 'src/runs/RunTag';
 import {titleForRun} from 'src/runs/RunUtils';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {humanCronString} from 'src/schedules/humanCronString';
-import {
-  ScheduleFragment,
-  ScheduleFragment_scheduleState_ticks_tickSpecificData,
-} from 'src/schedules/types/ScheduleFragment';
+import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
 import {
   StartSchedule,
   StartSchedule_startSchedule_PythonError,
@@ -36,28 +32,26 @@ import {
   StopSchedule,
   StopSchedule_stopRunningSchedule_PythonError,
 } from 'src/schedules/types/StopSchedule';
-import {ScheduleStatus, JobTickStatus} from 'src/types/globalTypes';
+import {JobStatus, JobType} from 'src/types/globalTypes';
 import {Code} from 'src/ui/Text';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-type TickSpecificData = ScheduleFragment_scheduleState_ticks_tickSpecificData | null;
-
 const NUM_RUNS_TO_DISPLAY = 10;
 
-const errorDisplay = (status: ScheduleStatus, runningScheduleCount: number) => {
-  if (status === ScheduleStatus.STOPPED && runningScheduleCount === 0) {
+const errorDisplay = (status: JobStatus, runningScheduleCount: number) => {
+  if (status === JobStatus.STOPPED && runningScheduleCount === 0) {
     return null;
-  } else if (status === ScheduleStatus.RUNNING && runningScheduleCount === 1) {
+  } else if (status === JobStatus.RUNNING && runningScheduleCount === 1) {
     return null;
   }
 
   const errors = [];
-  if (status === ScheduleStatus.RUNNING && runningScheduleCount === 0) {
+  if (status === JobStatus.RUNNING && runningScheduleCount === 0) {
     errors.push(
       'Schedule is set to be running, but either the scheduler is not configured or the scheduler is not running the schedule',
     );
-  } else if (status === ScheduleStatus.STOPPED && runningScheduleCount > 0) {
+  } else if (status === JobStatus.STOPPED && runningScheduleCount > 0) {
     errors.push('Schedule is set to be stopped, but the scheduler is still running the schedule');
   }
 
@@ -188,7 +182,7 @@ export const ScheduleRow: React.FC<{
     );
   }
 
-  const {status, runningScheduleCount, ticks, runs, runsCount, scheduleOriginId} = scheduleState;
+  const {id, status, runs, runsCount, ticks, runningCount: runningScheduleCount} = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
@@ -196,15 +190,15 @@ export const ScheduleRow: React.FC<{
     <tr key={name}>
       <td style={{maxWidth: '64px'}}>
         <Switch
-          checked={status === ScheduleStatus.RUNNING}
+          checked={status === JobStatus.RUNNING}
           large={true}
           disabled={toggleOffInFlight || toggleOnInFlight}
           innerLabelChecked="on"
           innerLabel="off"
           onChange={() => {
-            if (status === ScheduleStatus.RUNNING) {
+            if (status === JobStatus.RUNNING) {
               stopSchedule({
-                variables: {scheduleOriginId},
+                variables: {scheduleOriginId: id},
               });
             } else {
               startSchedule({
@@ -237,7 +231,7 @@ export const ScheduleRow: React.FC<{
       </td>
       <td style={{maxWidth: 100}}>
         {latestTick ? (
-          <TickTag status={latestTick.status} eventSpecificData={latestTick.tickSpecificData} />
+          <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
         ) : (
           <span style={{color: Colors.GRAY4}}>None</span>
         )}
@@ -344,70 +338,6 @@ export const ScheduleRowHeader: React.FunctionComponent<{
   }
 };
 
-export const TickTag: React.FunctionComponent<{
-  status: JobTickStatus;
-  eventSpecificData: TickSpecificData;
-}> = ({status, eventSpecificData}) => {
-  switch (status) {
-    case JobTickStatus.STARTED:
-      return (
-        <Tag minimal={true} intent={Intent.PRIMARY}>
-          Started
-        </Tag>
-      );
-    case JobTickStatus.SUCCESS:
-      if (!eventSpecificData || eventSpecificData.__typename !== 'ScheduleTickSuccessData') {
-        return (
-          <Tag minimal={true} intent={Intent.SUCCESS}>
-            Success
-          </Tag>
-        );
-      } else {
-        return (
-          <a
-            href={`/instance/runs/${eventSpecificData.run?.runId}`}
-            style={{textDecoration: 'none'}}
-          >
-            <Tag minimal={true} intent={Intent.SUCCESS} interactive={true}>
-              Success
-            </Tag>
-          </a>
-        );
-      }
-    case JobTickStatus.SKIPPED:
-      return (
-        <Tag minimal={true} intent={Intent.WARNING}>
-          Skipped
-        </Tag>
-      );
-    case JobTickStatus.FAILURE:
-      if (!eventSpecificData || eventSpecificData.__typename !== 'ScheduleTickFailureData') {
-        return (
-          <Tag minimal={true} intent={Intent.DANGER}>
-            Failure
-          </Tag>
-        );
-      } else {
-        return (
-          <LinkButton
-            onClick={() =>
-              showCustomAlert({
-                title: 'Schedule Response',
-                body: <PythonErrorInfo error={eventSpecificData.error} />,
-              })
-            }
-          >
-            <Tag minimal={true} intent={Intent.DANGER} interactive={true}>
-              Failure
-            </Tag>
-          </LinkButton>
-        );
-      }
-    default:
-      return assertUnreachable(status);
-  }
-};
-
 export const START_SCHEDULE_MUTATION = gql`
   mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
     startSchedule(scheduleSelector: $scheduleSelector) {
@@ -416,8 +346,8 @@ export const START_SCHEDULE_MUTATION = gql`
         scheduleState {
           __typename
           id
-          runningScheduleCount
           status
+          runningCount
         }
       }
       ... on PythonError {
@@ -436,8 +366,8 @@ export const STOP_SCHEDULE_MUTATION = gql`
         scheduleState {
           __typename
           id
-          runningScheduleCount
           status
+          runningCount
         }
       }
       ... on PythonError {
@@ -446,13 +376,4 @@ export const STOP_SCHEDULE_MUTATION = gql`
       }
     }
   }
-`;
-
-const LinkButton = styled.button`
-  background: inherit;
-  border: none;
-  cursor: pointer;
-  font-size: inherit;
-  text-decoration: none;
-  padding: 0;
 `;

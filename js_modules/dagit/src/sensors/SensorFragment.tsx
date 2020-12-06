@@ -1,5 +1,7 @@
 import {gql} from '@apollo/client';
 
+import {TICK_TAG_FRAGMENT} from 'src/JobTick';
+import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT, REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 
 export const JOB_STATE_FRAGMENT = gql`
@@ -25,15 +27,21 @@ export const JOB_STATE_FRAGMENT = gql`
       runId
       pipelineName
       status
+      tags {
+        key
+        value
+      }
     }
     runsCount
     ticks(limit: 1) {
       id
-      status
-      timestamp
+      ...TickTagFragment
     }
+    runningCount
   }
   ${REPOSITORY_ORIGIN_FRAGMENT}
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
+  ${TICK_TAG_FRAGMENT}
 `;
 
 export const SENSOR_FRAGMENT = gql`

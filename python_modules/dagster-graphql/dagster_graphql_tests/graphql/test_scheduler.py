@@ -88,7 +88,7 @@ mutation(
     }
     ... on ScheduleStateResult {
       scheduleState {
-        scheduleOriginId
+        id
         status
       }
     }
@@ -111,6 +111,7 @@ mutation(
     }
     ... on ScheduleStateResult {
       scheduleState {
+        id
         status
       }
     }
@@ -165,7 +166,7 @@ def test_start_and_stop_schedule(graphql_context):
     )
     assert start_result.data["startSchedule"]["scheduleState"]["status"] == JobStatus.RUNNING.value
 
-    schedule_origin_id = start_result.data["startSchedule"]["scheduleState"]["scheduleOriginId"]
+    schedule_origin_id = start_result.data["startSchedule"]["scheduleState"]["id"]
 
     # Stop a single schedule
     stop_result = execute_dagster_graphql(

@@ -3,62 +3,10 @@ import {Colors} from '@blueprintjs/core';
 import React from 'react';
 
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {REPOSITORY_INFO_FRAGMENT, REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
+import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
 import {JOB_STATE_FRAGMENT} from 'src/sensors/SensorFragment';
-
-export const SCHEDULE_STATE_FRAGMENT = gql`
-  fragment ScheduleStateFragment on ScheduleState {
-    __typename
-    id
-    scheduleOriginId
-    repositoryOrigin {
-      ...RepositoryOriginFragment
-    }
-    repositoryOriginId
-    scheduleName
-    cronSchedule
-    runningScheduleCount
-    ticks(limit: 1) {
-      tickId
-      status
-      timestamp
-      tickSpecificData {
-        __typename
-        ... on ScheduleTickSuccessData {
-          run {
-            id
-            pipelineName
-            status
-            runId
-          }
-        }
-        ... on ScheduleTickFailureData {
-          error {
-            ...PythonErrorFragment
-          }
-        }
-      }
-    }
-    runsCount
-    runs(limit: 10) {
-      id
-      runId
-      tags {
-        key
-        value
-      }
-      pipelineName
-      status
-    }
-    ticksCount
-    status
-  }
-
-  ${PythonErrorInfo.fragments.PythonErrorFragment}
-  ${REPOSITORY_ORIGIN_FRAGMENT}
-`;
 
 export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
   fragment RepositorySchedulesFragment on Repository {
@@ -88,7 +36,7 @@ export const SCHEDULE_FRAGMENT = gql`
     }
     scheduleState {
       id
-      ...ScheduleStateFragment
+      ...JobStateFragment
     }
     futureTicks(limit: 1) {
       results {
@@ -96,7 +44,7 @@ export const SCHEDULE_FRAGMENT = gql`
       }
     }
   }
-  ${SCHEDULE_STATE_FRAGMENT}
+  ${JOB_STATE_FRAGMENT}
 `;
 
 export const SCHEDULES_ROOT_QUERY = gql`

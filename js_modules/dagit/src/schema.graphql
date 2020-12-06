@@ -458,39 +458,53 @@ type Schedule {
   solidSelection: [String]
   mode: String!
   executionTimezone: String
-  scheduleState: ScheduleState
+  scheduleState: JobState
   partitionSet: PartitionSet
   futureTicks(cursor: Float, limit: Int): ScheduleFutureTicks!
 }
 
-type ScheduleState {
-  scheduleOriginId: String!
-  scheduleName: String!
-  cronSchedule: String!
-  status: ScheduleStatus!
+type JobState {
+  id: ID!
+  name: String!
+  jobType: JobType!
+  status: JobStatus!
+  repositoryOrigin: RepositoryOrigin!
+  jobSpecificData: JobSpecificData
   runs(limit: Int): [PipelineRun!]!
   runsCount: Int!
-  ticks(limit: Int): [ScheduleTick!]!
-  ticksCount: Int!
-  stats: ScheduleTickStatsSnapshot!
-  logsPath: String!
-  runningScheduleCount: Int!
-  repositoryOrigin: RepositoryOrigin!
-  repositoryOriginId: String!
-  id: ID!
+  ticks(limit: Int): [JobTick!]!
+  runningCount: Int!
 }
 
-enum ScheduleStatus {
+enum JobType {
+  SCHEDULE
+  SENSOR
+}
+
+enum JobStatus {
   RUNNING
   STOPPED
-  ENDED
 }
 
-type ScheduleTick {
-  tickId: String!
+union JobSpecificData = SensorJobData | ScheduleJobData
+
+type SensorJobData {
+  lastTickTimestamp: Float
+  lastRunKey: String
+}
+
+type ScheduleJobData {
+  cronSchedule: String!
+  startTimestamp: Float
+}
+
+type JobTick {
+  id: ID!
   status: JobTickStatus!
   timestamp: Float!
-  tickSpecificData: ScheduleTickSpecificData
+  runIds: [String!]!
+  error: PythonError
+  runs: [PipelineRun!]!
 }
 
 enum JobTickStatus {
@@ -498,23 +512,6 @@ enum JobTickStatus {
   SKIPPED
   SUCCESS
   FAILURE
-}
-
-union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
-
-type ScheduleTickSuccessData {
-  run: PipelineRun
-}
-
-type ScheduleTickFailureData {
-  error: PythonError!
-}
-
-type ScheduleTickStatsSnapshot {
-  ticksStarted: Int!
-  ticksSucceeded: Int!
-  ticksSkipped: Int!
-  ticksFailed: Int!
 }
 
 type PartitionSet {
@@ -602,49 +599,6 @@ type Sensor {
   solidSelection: [String]
   mode: String!
   sensorState: JobState!
-}
-
-type JobState {
-  id: ID!
-  name: String!
-  jobType: JobType!
-  status: JobStatus!
-  repositoryOrigin: RepositoryOrigin!
-  jobSpecificData: JobSpecificData
-  runs(limit: Int): [PipelineRun!]!
-  runsCount: Int!
-  ticks(limit: Int): [JobTick!]!
-}
-
-enum JobType {
-  SCHEDULE
-  SENSOR
-}
-
-enum JobStatus {
-  RUNNING
-  STOPPED
-}
-
-union JobSpecificData = SensorJobData | ScheduleJobData
-
-type SensorJobData {
-  lastTickTimestamp: Float
-  lastRunKey: String
-}
-
-type ScheduleJobData {
-  cronSchedule: String!
-  startTimestamp: Float
-}
-
-type JobTick {
-  id: ID!
-  status: JobTickStatus!
-  timestamp: Float!
-  runIds: [String!]!
-  error: PythonError
-  run: [PipelineRun!]!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
@@ -988,7 +942,7 @@ type ReconcileSchedulerStateSuccess {
 union ScheduleMutationResult = PythonError | ScheduleStateResult
 
 type ScheduleStateResult {
-  scheduleState: ScheduleState!
+  scheduleState: JobState!
 }
 
 union StopSensorMutationResultOrError = StopSensorMutationResult | PythonError
@@ -1589,4 +1543,28 @@ type EventIntMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String
   intValue: Int!
+}
+
+type ScheduleTick {
+  tickId: String!
+  status: JobTickStatus!
+  timestamp: Float!
+  tickSpecificData: ScheduleTickSpecificData
+}
+
+union ScheduleTickSpecificData = ScheduleTickSuccessData | ScheduleTickFailureData
+
+type ScheduleTickSuccessData {
+  run: PipelineRun
+}
+
+type ScheduleTickFailureData {
+  error: PythonError!
+}
+
+type ScheduleTickStatsSnapshot {
+  ticksStarted: Int!
+  ticksSucceeded: Int!
+  ticksSkipped: Int!
+  ticksFailed: Int!
 }

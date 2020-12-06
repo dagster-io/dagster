@@ -29,9 +29,7 @@ def start_schedule(graphene_info, schedule_selector):
         repository.get_external_schedule(schedule_selector.schedule_name)
     )
     return graphene_info.schema.type_named("ScheduleStateResult")(
-        schedule_state=graphene_info.schema.type_named("ScheduleState")(
-            graphene_info, schedule_state=schedule_state
-        )
+        graphene_info.schema.type_named("JobState")(schedule_state)
     )
 
 
@@ -41,9 +39,7 @@ def stop_schedule(graphene_info, schedule_origin_id):
     instance = graphene_info.context.instance
     schedule_state = instance.stop_schedule_and_update_storage_state(schedule_origin_id)
     return graphene_info.schema.type_named("ScheduleStateResult")(
-        schedule_state=graphene_info.schema.type_named("ScheduleState")(
-            graphene_info, schedule_state=schedule_state
-        )
+        graphene_info.schema.type_named("JobState")(schedule_state)
     )
 
 

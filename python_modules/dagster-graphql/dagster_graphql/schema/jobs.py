@@ -22,7 +22,7 @@ class DauphinJobTick(dauphin.ObjectType):
     runIds = dauphin.non_null_list(dauphin.String)
     error = dauphin.Field("PythonError")
 
-    run = dauphin.non_null_list("PipelineRun")
+    runs = dauphin.non_null_list("PipelineRun")
 
     def __init__(self, _, job_tick):
         self._job_tick = check.inst_param(job_tick, "job_tick", JobTick)
@@ -59,6 +59,7 @@ class DauphinJobState(dauphin.ObjectType):
     runs = dauphin.Field(dauphin.non_null_list("PipelineRun"), limit=dauphin.Int())
     runsCount = dauphin.NonNull(dauphin.Int)
     ticks = dauphin.Field(dauphin.non_null_list("JobTick"), limit=dauphin.Int())
+    runningCount = dauphin.NonNull(dauphin.Int)  # remove with cron scheduler
 
     def __init__(self, job_state):
         self._job_state = check.inst_param(job_state, "job_state", JobState)
@@ -115,6 +116,14 @@ class DauphinJobState(dauphin.ObjectType):
             ticks = ticks[:limit]
 
         return [graphene_info.schema.type_named("JobTick")(graphene_info, tick) for tick in ticks]
+
+    def resolve_runningCount(self, graphene_info):
+        if self._job_state.job_type == JobType.SENSOR:
+            return 1 if self._job_state.status == JobStatus.RUNNING else 0
+        else:
+            return graphene_info.context.instance.running_schedule_count(
+                self._job_state.job_origin_id
+            )
 
 
 class DauphinJobSpecificData(dauphin.Union):

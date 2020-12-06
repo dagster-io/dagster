@@ -52,12 +52,39 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_job
 
 export type SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_jobSpecificData = SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_jobSpecificData_SensorJobData | SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_jobSpecificData_ScheduleJobData;
 
+export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
   pipelineName: string;
   status: PipelineRunStatus;
+  tags: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_runs_tags[];
+}
+
+export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  status: PipelineRunStatus;
+}
+
+export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error_cause | null;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks {
@@ -65,6 +92,8 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_tic
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  runs: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_runs[];
+  error: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks_error | null;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState {
@@ -78,6 +107,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState {
   runs: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_runs[];
   runsCount: number;
   ticks: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks[];
+  runningCount: number;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors_results {
@@ -123,12 +153,39 @@ export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_j
 
 export type SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData = SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_SensorJobData | SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_ScheduleJobData;
 
+export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
   pipelineName: string;
   status: PipelineRunStatus;
+  tags: SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_runs_tags[];
+}
+
+export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  status: PipelineRunStatus;
+}
+
+export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error_cause | null;
 }
 
 export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks {
@@ -136,6 +193,8 @@ export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_t
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  runs: SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs[];
+  error: SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error | null;
 }
 
 export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results {
@@ -149,6 +208,7 @@ export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates_results {
   runs: SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_runs[];
   runsCount: number;
   ticks: SensorsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks[];
+  runningCount: number;
 }
 
 export interface SensorsRootQuery_unloadableJobStatesOrError_JobStates {

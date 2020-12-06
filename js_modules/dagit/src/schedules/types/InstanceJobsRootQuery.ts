@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobTickStatus, PipelineRunStatus, ScheduleStatus, JobType, JobStatus } from "./../../types/globalTypes";
+import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceJobsRootQuery
@@ -47,46 +47,17 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   repositoryLocationMetadata: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata[];
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run {
-  __typename: "PipelineRun";
-  id: string;
-  pipelineName: string;
-  status: PipelineRunStatus;
-  runId: string;
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_SensorJobData {
+  __typename: "SensorJobData";
+  lastRunKey: string | null;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData {
-  __typename: "ScheduleTickSuccessData";
-  run: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData_run | null;
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_ScheduleJobData {
+  __typename: "ScheduleJobData";
+  cronSchedule: string;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error_cause | null;
-}
-
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData {
-  __typename: "ScheduleTickFailureData";
-  error: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData_error;
-}
-
-export type InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData = InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickSuccessData | InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData_ScheduleTickFailureData;
-
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks {
-  __typename: "ScheduleTick";
-  tickId: string;
-  status: JobTickStatus;
-  timestamp: number;
-  tickSpecificData: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_tickSpecificData | null;
-}
+export type InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData = InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_SensorJobData | InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData_ScheduleJobData;
 
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs_tags {
   __typename: "PipelineTag";
@@ -98,25 +69,52 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   __typename: "PipelineRun";
   id: string;
   runId: string;
-  tags: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs_tags[];
   pipelineName: string;
+  status: PipelineRunStatus;
+  tags: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs_tags[];
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
   status: PipelineRunStatus;
 }
 
-export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState {
-  __typename: "ScheduleState";
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error_cause | null;
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks {
+  __typename: "JobTick";
   id: string;
-  scheduleOriginId: string;
+  status: JobTickStatus;
+  timestamp: number;
+  runs: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_runs[];
+  error: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error | null;
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState {
+  __typename: "JobState";
+  id: string;
+  name: string;
+  jobType: JobType;
+  status: JobStatus;
   repositoryOrigin: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_repositoryOrigin;
-  repositoryOriginId: string;
-  scheduleName: string;
-  cronSchedule: string;
-  runningScheduleCount: number;
-  ticks: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks[];
-  runsCount: number;
+  jobSpecificData: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_jobSpecificData | null;
   runs: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_runs[];
-  ticksCount: number;
-  status: ScheduleStatus;
+  runsCount: number;
+  ticks: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks[];
+  runningCount: number;
 }
 
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results {
@@ -168,12 +166,39 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
 
 export type InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_jobSpecificData = InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_jobSpecificData_SensorJobData | InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_jobSpecificData_ScheduleJobData;
 
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
   pipelineName: string;
   status: PipelineRunStatus;
+  tags: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_runs_tags[];
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  status: PipelineRunStatus;
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error_cause | null;
 }
 
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks {
@@ -181,6 +206,8 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  runs: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_runs[];
+  error: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error | null;
 }
 
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState {
@@ -194,6 +221,7 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   runs: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_runs[];
   runsCount: number;
   ticks: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks[];
+  runningCount: number;
 }
 
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_sensors {
@@ -287,12 +315,39 @@ export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_resu
 
 export type InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData = InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_SensorJobData | InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_ScheduleJobData;
 
+export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_runs_tags {
+  __typename: "PipelineTag";
+  key: string;
+  value: string;
+}
+
 export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
   pipelineName: string;
   status: PipelineRunStatus;
+  tags: InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_runs_tags[];
+}
+
+export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs {
+  __typename: "PipelineRun";
+  id: string;
+  runId: string;
+  status: PipelineRunStatus;
+}
+
+export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error_cause | null;
 }
 
 export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks {
@@ -300,6 +355,8 @@ export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_resu
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  runs: InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs[];
+  error: InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error | null;
 }
 
 export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results {
@@ -313,6 +370,7 @@ export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_resu
   runs: InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_runs[];
   runsCount: number;
   ticks: InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates_results_ticks[];
+  runningCount: number;
 }
 
 export interface InstanceJobsRootQuery_unloadableJobStatesOrError_JobStates {

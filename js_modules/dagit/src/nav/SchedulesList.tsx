@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from 'src/ShortcutHandler';
 import {SchedulesListQuery} from 'src/nav/types/SchedulesListQuery';
-import {ScheduleStatus} from 'src/types/globalTypes';
+import {JobStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {BorderSetting} from 'src/ui/types';
 import {DagsterRepoOption} from 'src/workspace/WorkspaceContext';
@@ -146,7 +146,7 @@ export const SchedulesList: React.FunctionComponent<SchedulesListProps> = ({repo
                 padding={{vertical: 8, right: 8, left: 12}}
               >
                 <Label>{p.label}</Label>
-                {p.status === ScheduleStatus.RUNNING ? (
+                {p.status === JobStatus.RUNNING ? (
                   <Box margin={{left: 4}}>
                     <ScheduleStatusDot size={9} />
                   </Box>

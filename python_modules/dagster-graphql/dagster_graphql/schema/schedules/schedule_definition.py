@@ -40,8 +40,7 @@ class DauphinSchedule(dauphin.ObjectType):
     solid_selection = dauphin.List(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
     execution_timezone = dauphin.Field(dauphin.String)
-    schedule_state = dauphin.Field("ScheduleState")
-
+    scheduleState = dauphin.Field("JobState")
     partition_set = dauphin.Field("PartitionSet")
 
     futureTicks = dauphin.NonNull(
@@ -107,11 +106,7 @@ class DauphinSchedule(dauphin.ObjectType):
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,
             mode=external_schedule.mode,
-            schedule_state=graphene_info.schema.type_named("ScheduleState")(
-                graphene_info, self._schedule_state
-            )
-            if self._schedule_state
-            else None,
+            scheduleState=graphene_info.schema.type_named("JobState")(self._schedule_state),
             execution_timezone=(
                 self._external_schedule.execution_timezone
                 if self._external_schedule.execution_timezone

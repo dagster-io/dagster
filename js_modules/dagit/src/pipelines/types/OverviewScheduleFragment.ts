@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { PipelineRunStatus, ScheduleStatus } from "./../../types/globalTypes";
+import { PipelineRunStatus, JobStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: OverviewScheduleFragment
@@ -36,12 +36,12 @@ export interface OverviewScheduleFragment_scheduleState_runs {
 }
 
 export interface OverviewScheduleFragment_scheduleState {
-  __typename: "ScheduleState";
+  __typename: "JobState";
   id: string;
   runsCount: number;
   lastRuns: OverviewScheduleFragment_scheduleState_lastRuns[];
   runs: OverviewScheduleFragment_scheduleState_runs[];
-  status: ScheduleStatus;
+  status: JobStatus;
 }
 
 export interface OverviewScheduleFragment {
