@@ -47,12 +47,7 @@ def create_default_partition_selector_fn(
         # e.g. midnight on 12/31 is actually the 12/30 partition
         partition_time = delta_fn(context.scheduled_execution_time)
 
-        partition_name = partition_time.strftime(fmt)
-
-        if not partition_name in partition_set_def.get_partition_names():
-            return None
-
-        return partition_set_def.get_partition(partition_name)
+        return Partition(value=partition_time, name=partition_time.strftime(fmt))
 
     return default_partition_selector
 

@@ -4,6 +4,7 @@ import warnings
 import pendulum
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.utils.schedules import schedule_execution_time_iterator
 from dateutil.relativedelta import relativedelta
 
 DEFAULT_MONTHLY_FORMAT = "%Y-%m"
@@ -42,6 +43,60 @@ def _delta_to_delta_range(delta):
         check.failed(
             "Unable to create a partition range with delta {delta}".format(delta=repr(delta))
         )
+
+
+def schedule_partition_range(
+    start, end, cron_schedule, fmt, timezone, execution_time_to_partition_fn,
+):
+    from dagster.core.definitions.partition import Partition
+
+    check.inst_param(start, "start", datetime.datetime)
+    check.opt_inst_param(end, "end", datetime.datetime)
+    check.str_param(cron_schedule, "cron_schedule")
+    check.str_param(fmt, "fmt")
+    check.opt_str_param(timezone, "timezone")
+    check.callable_param(execution_time_to_partition_fn, "execution_time_to_partition_fn")
+
+    if end and start > end:
+        raise DagsterInvariantViolationError(
+            'Selected date range start "{start}" is after date range end "{end}'.format(
+                start=start.strftime(fmt), end=end.strftime(fmt),
+            )
+        )
+
+    def get_schedule_range_partitions():
+        tz = timezone if timezone else pendulum.now().timezone.name
+        _start = (
+            start.in_tz(tz)
+            if isinstance(start, pendulum.Pendulum)
+            else pendulum.instance(start, tz=tz)
+        )
+
+        if not end:
+            _end = pendulum.now(tz)
+        elif isinstance(end, pendulum.Pendulum):
+            _end = end.in_tz(tz)
+        else:
+            _end = pendulum.instance(end, tz=tz)
+
+        end_timestamp = _end.timestamp()
+
+        partitions = []
+        for next_time in schedule_execution_time_iterator(_start.timestamp(), cron_schedule, tz):
+
+            partition_time = execution_time_to_partition_fn(next_time)
+
+            if partition_time.timestamp() > end_timestamp:
+                break
+
+            if partition_time.timestamp() < _start.timestamp():
+                continue
+
+            partitions.append(Partition(value=partition_time, name=partition_time.strftime(fmt)))
+
+        return partitions[:-1]
+
+    return get_schedule_range_partitions
 
 
 def date_partition_range(

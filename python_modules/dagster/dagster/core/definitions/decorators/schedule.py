@@ -13,7 +13,7 @@ from dagster.utils.partitions import (
     DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
     DEFAULT_MONTHLY_FORMAT,
-    date_partition_range,
+    schedule_partition_range,
 )
 
 from ..mode import DEFAULT_MODE_NAME
@@ -182,8 +182,19 @@ def my_schedule_definition(_):
 
     fmt = DEFAULT_MONTHLY_FORMAT
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta_range="months", fmt=fmt, timezone=execution_timezone
+    execution_time_to_partition_fn = (
+        lambda d: pendulum.instance(d)
+        .replace(hour=0, minute=0)
+        .subtract(months=1, days=execution_day_of_month - 1)
+    )
+
+    partition_fn = schedule_partition_range(
+        start_date,
+        end=end_date,
+        cron_schedule=cron_schedule,
+        fmt=fmt,
+        timezone=execution_timezone,
+        execution_time_to_partition_fn=execution_time_to_partition_fn,
     )
 
     def inner(fn):
@@ -211,7 +222,7 @@ def my_schedule_definition(_):
             should_execute=should_execute,
             environment_vars=environment_vars,
             partition_selector=create_default_partition_selector_fn(
-                delta_fn=lambda d: pendulum.instance(d).subtract(months=1), fmt=fmt
+                delta_fn=execution_time_to_partition_fn, fmt=fmt
             ),
             execution_timezone=execution_timezone,
         )
@@ -245,7 +256,7 @@ def weekly_schedule(
         start_date (datetime.datetime): The date from which to run the schedule.
         name (Optional[str]): The name of the schedule to create.
         execution_day_of_week (int): The day of the week on which to run the schedule. Must be
-            between 0 (Monday) and 6 (Sunday).
+            between 0 (Sunday) and 6 (Saturday).
         execution_time (datetime.time): The time at which to execute the schedule.
         tags_fn_for_date (Optional[Callable[[datetime.datetime], Optional[Dict[str, str]]]]): A
             function that generates tags to attach to the schedules runs. Takes the date of the
@@ -307,10 +318,21 @@ def my_schedule_definition(_):
 
     fmt = DEFAULT_DATE_FORMAT
 
-    day_difference = (execution_day_of_week - start_date.weekday()) % 7
+    day_difference = (execution_day_of_week - (start_date.weekday() + 1)) % 7
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta_range="weeks", fmt=fmt, timezone=execution_timezone
+    execution_time_to_partition_fn = (
+        lambda d: pendulum.instance(d)
+        .replace(hour=0, minute=0)
+        .subtract(weeks=1, days=day_difference)
+    )
+
+    partition_fn = schedule_partition_range(
+        start_date,
+        end=end_date,
+        cron_schedule=cron_schedule,
+        fmt=fmt,
+        timezone=execution_timezone,
+        execution_time_to_partition_fn=execution_time_to_partition_fn,
     )
 
     def inner(fn):
@@ -338,8 +360,7 @@ def my_schedule_definition(_):
             should_execute=should_execute,
             environment_vars=environment_vars,
             partition_selector=create_default_partition_selector_fn(
-                delta_fn=lambda d: pendulum.instance(d).subtract(weeks=1, days=day_difference),
-                fmt=fmt,
+                delta_fn=execution_time_to_partition_fn, fmt=fmt,
             ),
             execution_timezone=execution_timezone,
         )
@@ -424,8 +445,17 @@ def my_schedule_definition(_):
 
     fmt = DEFAULT_DATE_FORMAT
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta_range="days", timezone=execution_timezone,
+    execution_time_to_partition_fn = (
+        lambda d: pendulum.instance(d).replace(hour=0, minute=0).subtract(days=1,)
+    )
+
+    partition_fn = schedule_partition_range(
+        start_date,
+        end=end_date,
+        cron_schedule=cron_schedule,
+        fmt=fmt,
+        timezone=execution_timezone,
+        execution_time_to_partition_fn=execution_time_to_partition_fn,
     )
 
     def inner(fn):
@@ -453,7 +483,7 @@ def my_schedule_definition(_):
             should_execute=should_execute,
             environment_vars=environment_vars,
             partition_selector=create_default_partition_selector_fn(
-                fmt=fmt, delta_fn=lambda d: pendulum.instance(d).subtract(days=1)
+                fmt=fmt, delta_fn=execution_time_to_partition_fn,
             ),
             execution_timezone=execution_timezone,
         )
@@ -552,8 +582,17 @@ def my_schedule_definition(_):
         else DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
     )
 
-    partition_fn = date_partition_range(
-        start_date, end=end_date, delta_range="hours", fmt=fmt, timezone=execution_timezone
+    execution_time_to_partition_fn = lambda d: pendulum.instance(d).subtract(
+        hours=1, minutes=(execution_time.minute - start_date.minute) % 60
+    )
+
+    partition_fn = schedule_partition_range(
+        start_date,
+        end=end_date,
+        cron_schedule=cron_schedule,
+        fmt=fmt,
+        timezone=execution_timezone,
+        execution_time_to_partition_fn=execution_time_to_partition_fn,
     )
 
     def inner(fn):
@@ -581,10 +620,7 @@ def my_schedule_definition(_):
             should_execute=should_execute,
             environment_vars=environment_vars,
             partition_selector=create_default_partition_selector_fn(
-                delta_fn=lambda d: pendulum.instance(d).subtract(
-                    hours=1, minutes=(execution_time.minute - start_date.minute) % 60
-                ),
-                fmt=fmt,
+                delta_fn=execution_time_to_partition_fn, fmt=fmt,
             ),
             execution_timezone=execution_timezone,
         )

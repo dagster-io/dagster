@@ -486,7 +486,9 @@ def test_partitions_for_hourly_schedule_decorators_without_timezone():
             execution_data = hourly_foo_schedule.get_execution_data(context_with_invalid_time)
             assert len(execution_data) == 0
 
-            valid_time = datetime(year=2019, month=1, day=27, hour=1, minute=25)
+            valid_time = pendulum.create(
+                year=2019, month=1, day=27, hour=1, minute=25, tz="US/Central"
+            )
             context_with_valid_time = ScheduleExecutionContext(instance, valid_time)
 
             execution_data = hourly_foo_schedule.get_execution_data(context_with_valid_time)
@@ -585,7 +587,9 @@ def test_partitions_for_daily_schedule_decorators_without_timezone():
                 relativedelta(days=1),
             )
 
-            valid_daily_time = datetime(year=2019, month=1, day=27, hour=9, minute=30)
+            valid_daily_time = pendulum.create(
+                year=2019, month=1, day=27, hour=9, minute=30, tz="US/Central"
+            )
             context_with_valid_time = ScheduleExecutionContext(instance, valid_daily_time)
 
             execution_data = daily_foo_schedule.get_execution_data(context_with_valid_time)
@@ -655,14 +659,16 @@ def test_partitions_for_weekly_schedule_decorators_without_timezone():
 
             @weekly_schedule(
                 pipeline_name="foo_pipeline",
-                execution_day_of_week=2,
+                execution_day_of_week=3,
                 start_date=start_date,
                 execution_time=time(9, 30),
             )
             def weekly_foo_schedule(weekly_time):
                 return {"weekly_time": weekly_time.isoformat()}
 
-            valid_weekly_time = datetime(year=2019, month=1, day=30, hour=9, minute=30)
+            valid_weekly_time = pendulum.create(
+                year=2019, month=1, day=30, hour=9, minute=30, tz="US/Central"
+            )
             context_with_valid_time = ScheduleExecutionContext(instance, valid_weekly_time)
 
             execution_data = weekly_foo_schedule.get_execution_data(context_with_valid_time)
@@ -696,7 +702,7 @@ def test_partitions_for_weekly_schedule_decorators_with_timezone():
 
             @weekly_schedule(
                 pipeline_name="foo_pipeline",
-                execution_day_of_week=2,
+                execution_day_of_week=3,
                 start_date=start_date,
                 execution_time=time(9, 30),
                 execution_timezone="US/Central",
@@ -745,7 +751,9 @@ def test_partitions_for_monthly_schedule_decorators_without_timezone():
             def monthly_foo_schedule(monthly_time):
                 return {"monthly_time": monthly_time.isoformat()}
 
-            valid_monthly_time = datetime(year=2019, month=2, day=3, hour=9, minute=30)
+            valid_monthly_time = pendulum.create(
+                year=2019, month=2, day=3, hour=9, minute=30, tz="US/Central"
+            )
             context_with_valid_time = ScheduleExecutionContext(instance, valid_monthly_time)
 
             execution_data = monthly_foo_schedule.get_execution_data(context_with_valid_time)

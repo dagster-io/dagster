@@ -8,6 +8,7 @@ from .test_scheduler_run import (
     instance_with_schedules,
     logger,
     repos,
+    the_repo,
     validate_run_started,
     validate_tick,
     wait_for_all_runs_to_start,
@@ -604,22 +605,32 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
 
             wait_for_all_runs_to_start(instance)
 
-            assert instance.get_runs_count() == 2
+            assert instance.get_runs_count() == 3
             ticks = instance.get_job_ticks(schedule_origin.get_id())
-            assert len(ticks) == 2
+            assert len(ticks) == 3
 
-            # skipped 3/10 since 2:30AM never happened
             expected_datetimes_utc = [
                 pendulum.create(2019, 3, 11, 2, 30, 0, tz="US/Central").in_tz("UTC"),
+                pendulum.create(2019, 3, 10, 3, 00, 0, tz="US/Central").in_tz("UTC"),
                 pendulum.create(2019, 3, 9, 2, 30, 0, tz="US/Central").in_tz("UTC"),
             ]
 
             expected_partition_times = [
                 pendulum.create(2019, 3, 10, tz="US/Central"),
+                pendulum.create(2019, 3, 9, tz="US/Central"),
                 pendulum.create(2019, 3, 8, tz="US/Central"),
             ]
 
-            for i in range(2):
+            partition_set_def = the_repo.get_partition_set_def(
+                "daily_dst_transition_schedule_skipped_time_partitions"
+            )
+            partition_names = partition_set_def.get_partition_names()
+
+            assert "2019-03-08" in partition_names
+            assert "2019-03-09" in partition_names
+            assert "2019-03-10" in partition_names
+
+            for i in range(3):
                 validate_tick(
                     ticks[i],
                     external_schedule,
@@ -638,9 +649,9 @@ def test_execute_during_dst_transition_spring_forward(external_repo_context):
             launch_scheduled_runs(
                 instance, logger(), pendulum.now("UTC"),
             )
-            assert instance.get_runs_count() == 2
+            assert instance.get_runs_count() == 3
             ticks = instance.get_job_ticks(schedule_origin.get_id())
-            assert len(ticks) == 2
+            assert len(ticks) == 3
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
@@ -679,7 +690,7 @@ def test_execute_during_dst_transition_fall_back(external_repo_context):
 
             expected_datetimes_utc = [
                 pendulum.create(2019, 11, 4, 7, 30, 0, tz="UTC"),
-                pendulum.create(2019, 11, 3, 6, 30, 0, tz="UTC"),
+                pendulum.create(2019, 11, 3, 7, 30, 0, tz="UTC"),
                 pendulum.create(2019, 11, 2, 6, 30, 0, tz="UTC"),
             ]
 
