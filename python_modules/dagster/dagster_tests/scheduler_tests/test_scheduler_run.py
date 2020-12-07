@@ -331,7 +331,11 @@ def validate_run_started(
         assert run.tags[PARTITION_NAME_TAG] == partition_time.strftime(partition_fmt)
 
     if expected_success:
-        assert run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.SUCCESS
+        assert (
+            run.status == PipelineRunStatus.STARTED
+            or run.status == PipelineRunStatus.STARTING
+            or run.status == PipelineRunStatus.SUCCESS
+        )
 
         if partition_time:
             assert run.run_config == _solid_config(partition_time)
