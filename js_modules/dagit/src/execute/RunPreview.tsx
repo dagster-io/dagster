@@ -180,6 +180,7 @@ interface RunPreviewProps {
   onHighlightPath: (path: string[]) => void;
   onRemoveExtraPaths: (paths: string[]) => void;
   onScaffoldMissingConfig: () => void;
+  solidSelection: string[] | null;
 }
 
 interface RunPreviewState {
@@ -284,6 +285,7 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
       onHighlightPath,
       onRemoveExtraPaths,
       onScaffoldMissingConfig,
+      solidSelection,
     } = this.props;
     const {errorsOnly} = this.state;
 
@@ -341,6 +343,11 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
     const itemsIn = (parents: string[], names: string[]) => {
       const boxes = names
         .map((name) => {
+          // If a solid selection is in use, discard anything not in it.
+          if (solidSelection?.length && !solidSelection?.includes(name)) {
+            return null;
+          }
+
           const path = [...parents, name];
           const pathKey = path.join('.');
           const pathErrors = errorsAndPaths

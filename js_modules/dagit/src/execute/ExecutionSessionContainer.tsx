@@ -471,6 +471,7 @@ export class ExecutionSessionContainer extends React.Component<
             <RunPreview
               document={previewedDocument}
               validation={preview ? preview.isPipelineConfigValid : null}
+              solidSelection={currentSession.solidSelection}
               runConfigSchema={runConfigSchema}
               onHighlightPath={(path) => this.editor.current?.moveCursorToPath(path)}
               onRemoveExtraPaths={(paths) => this.onRemoveExtraPaths(paths)}
