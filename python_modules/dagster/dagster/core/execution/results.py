@@ -472,11 +472,10 @@ class SolidExecutionResult:
     def _get_value(self, context, step_output_data):
         step_output_handle = step_output_data.step_output_handle
         if context.using_asset_store(step_output_handle):
-            asset_store_handle = context.execution_plan.get_asset_store_handle(step_output_handle)
-            asset_store = context.get_asset_store(asset_store_handle.asset_store_key)
-            asset_store_context = context.for_asset_store(step_output_handle, asset_store_handle)
-
-            return asset_store.get_asset(asset_store_context)
+            manager = context.get_output_manager(step_output_handle)
+            return manager.load(
+                context.for_input_manager(None, context.pipeline_def.name, None, step_output_handle)
+            )
 
         else:
             value = context.intermediate_storage.get_intermediate(

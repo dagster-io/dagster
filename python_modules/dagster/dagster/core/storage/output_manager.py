@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from functools import update_wrapper
 
 from dagster import check
@@ -9,7 +9,14 @@ from dagster.core.definitions.definition_config_schema import (
 from dagster.core.definitions.resource import ResourceDefinition
 
 
-class OutputManagerDefinition(ResourceDefinition):
+class IOutputManagerDefinition:
+    @abstractproperty
+    def output_config_schema(self):
+        """The schema for per-output configuration for outputs that are managed by this
+        input manager"""
+
+
+class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
     """Definition of an output manager resource.
 
     An OutputManagerDefinition is a ResourceDefinition whose resource_fn returns an

@@ -24,12 +24,12 @@ class OutputDefinition:
         name (Optional[str]): Name of the output. (default: "result")
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
-        asset_store_key (Optional[str]): The resource key of the asset store used for this output.
+        manager_key (Optional[str]): The resource key of the output manager used for this output.
             (default: "asset_store").
-        asset_metadata (Optional[Dict[str, Any]]): A dict of the metadata that is used for the
-            output to store the given data object. For example, users can provide a file path if
-            the data object will be stored in a filesystem, or provide information of a database
-            table when it is going to load the data into the table.
+        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output. For example,
+            users can provide a file path if the data object will be stored in a filesystem, or
+            provide information of a database table when it is going to load the data into the
+            table.
     """
 
     def __init__(
@@ -47,11 +47,10 @@ class OutputDefinition:
         self._dagster_type = resolve_dagster_type(dagster_type)
         self._description = check.opt_str_param(description, "description")
         self._is_required = check.opt_bool_param(is_required, "is_required", default=True)
-        self._asset_store_key = check.opt_str_param(
-            asset_store_key, "asset_store_key", default="asset_store"
+        self._manager_key = check.opt_str_param(
+            asset_store_key, "asset_store_key", default=manager_key or "asset_store"
         )
-        self._manager_key = check.opt_str_param(manager_key, "manager_key")
-        self._asset_metadata = asset_metadata or metadata
+        self._metadata = asset_metadata or metadata
 
     @property
     def name(self):
@@ -74,20 +73,16 @@ class OutputDefinition:
         return self._is_required
 
     @property
-    def asset_store_key(self):
-        return self._asset_store_key
-
-    @property
     def manager_key(self):
         return self._manager_key
 
     @property
-    def asset_metadata(self):
-        return self._asset_metadata
+    def asset_store_key(self):
+        return self._manager_key
 
     @property
     def metadata(self):
-        return self._asset_metadata
+        return self._metadata
 
     def mapping_from(self, solid_name, output_name=None):
         """Create an output mapping from an output of a child solid.

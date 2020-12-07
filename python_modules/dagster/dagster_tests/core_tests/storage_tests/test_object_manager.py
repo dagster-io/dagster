@@ -1,8 +1,8 @@
 import os
-import pickle
 
 import pytest
 from dagster import (
+    AssetMaterialization,
     DagsterInstance,
     DagsterInvariantViolationError,
     ModeDefinition,
@@ -10,42 +10,64 @@ from dagster import (
     execute_pipeline,
     pipeline,
     reexecute_pipeline,
-    resource,
     seven,
     solid,
 )
-from dagster.core.definitions.events import AssetMaterialization, AssetStoreOperationType
+from dagster.core.definitions.events import AssetStoreOperationType
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.storage.asset_store import (
-    AssetStore,
-    AssetStoreContext,
-    VersionedPickledObjectFilesystemAssetStore,
-    custom_path_fs_asset_store,
-    fs_asset_store,
-    mem_asset_store,
-)
+from dagster.core.storage.asset_store import mem_asset_store
+from dagster.core.storage.fs_object_manager import custom_path_fs_object_manager, fs_object_manager
+from dagster.core.storage.object_manager import ObjectManager, object_manager
 
 
-def define_asset_pipeline(asset_store, asset_metadata_dict):
-    @solid(output_defs=[OutputDefinition(asset_metadata=asset_metadata_dict.get("solid_a"),)],)
+def test_object_manager_with_config():
+    @solid
+    def my_solid(_):
+        pass
+
+    class MyObjectManager(ObjectManager):
+        def load(self, context):
+            assert context.upstream_output.config["some_config"] == "some_value"
+            return 1
+
+        def handle_output(self, context, obj):
+            assert context.config["some_config"] == "some_value"
+
+    @object_manager(output_config_schema={"some_config": str})
+    def configurable_object_manager(_):
+        return MyObjectManager()
+
+    @pipeline(
+        mode_defs=[ModeDefinition(resource_defs={"asset_store": configurable_object_manager})]
+    )
+    def my_pipeline():
+        my_solid()
+
+    run_config = {"solids": {"my_solid": {"outputs": {"result": {"some_config": "some_value"}}}}}
+    result = execute_pipeline(my_pipeline, run_config=run_config)
+    assert result.output_for_solid("my_solid") == 1
+
+
+def define_pipeline(manager, metadata_dict):
+    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_a"),)],)
     def solid_a(_context):
         return [1, 2, 3]
 
-    @solid(output_defs=[OutputDefinition(asset_metadata=asset_metadata_dict.get("solid_b"),)],)
+    @solid(output_defs=[OutputDefinition(metadata=metadata_dict.get("solid_b"),)],)
     def solid_b(_context, _df):
         return 1
 
-    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"asset_store": asset_store})])
-    def asset_pipeline():
+    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"asset_store": manager})])
+    def my_pipeline():
         solid_b(solid_a())
 
-    return asset_pipeline
+    return my_pipeline
 
 
 def test_result_output():
     with seven.TemporaryDirectory() as tmpdir_path:
-        asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_asset_pipeline(asset_store, {})
+        asset_store = fs_object_manager.configured({"base_dir": tmpdir_path})
+        pipeline_def = define_pipeline(asset_store, {})
 
         result = execute_pipeline(pipeline_def)
         assert result.success
@@ -55,51 +77,10 @@ def test_result_output():
         assert result.result_for_solid("solid_b").output_value() == 1
 
 
-def test_fs_asset_store():
+def test_default_object_manager_reexecution():
     with seven.TemporaryDirectory() as tmpdir_path:
-        asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_asset_pipeline(asset_store, {})
-
-        result = execute_pipeline(pipeline_def)
-        assert result.success
-
-        asset_store_operation_events = list(
-            filter(lambda evt: evt.is_asset_store_operation, result.event_list)
-        )
-
-        assert len(asset_store_operation_events) == 3
-        # SET ASSET for step "solid_a.compute" output "result"
-        assert (
-            asset_store_operation_events[0].event_specific_data.op
-            == AssetStoreOperationType.SET_ASSET
-        )
-        filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a.compute", "result")
-        assert os.path.isfile(filepath_a)
-        with open(filepath_a, "rb") as read_obj:
-            assert pickle.load(read_obj) == [1, 2, 3]
-
-        # GET ASSET for step "solid_b.compute" input "_df"
-        assert (
-            asset_store_operation_events[1].event_specific_data.op
-            == AssetStoreOperationType.GET_ASSET
-        )
-        assert "solid_a.compute" == asset_store_operation_events[1].event_specific_data.step_key
-
-        # SET ASSET for step "solid_b.compute" output "result"
-        assert (
-            asset_store_operation_events[2].event_specific_data.op
-            == AssetStoreOperationType.SET_ASSET
-        )
-        filepath_b = os.path.join(tmpdir_path, result.run_id, "solid_b.compute", "result")
-        assert os.path.isfile(filepath_b)
-        with open(filepath_b, "rb") as read_obj:
-            assert pickle.load(read_obj) == 1
-
-
-def test_default_asset_store_reexecution():
-    with seven.TemporaryDirectory() as tmpdir_path:
-        default_asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
-        pipeline_def = define_asset_pipeline(default_asset_store, {})
+        default_asset_store = fs_object_manager.configured({"base_dir": tmpdir_path})
+        pipeline_def = define_pipeline(default_asset_store, {})
         instance = DagsterInstance.ephemeral()
 
         result = execute_pipeline(pipeline_def, instance=instance)
@@ -133,14 +114,14 @@ def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
 
 def test_step_subset_with_custom_paths():
     with seven.TemporaryDirectory() as tmpdir_path:
-        asset_store = custom_path_fs_asset_store
+        asset_store = custom_path_fs_object_manager
         # pass hardcoded file path via asset_metadata
         test_asset_metadata_dict = {
             "solid_a": {"path": os.path.join(tmpdir_path, "a")},
             "solid_b": {"path": os.path.join(tmpdir_path, "b")},
         }
 
-        pipeline_def = define_asset_pipeline(asset_store, test_asset_metadata_dict)
+        pipeline_def = define_pipeline(asset_store, test_asset_metadata_dict)
         events = execute_pipeline_with_steps(pipeline_def)
         for evt in events:
             assert not evt.is_failure
@@ -168,31 +149,31 @@ def test_step_subset_with_custom_paths():
         )
 
 
-def test_asset_store_multi_materialization():
-    class DummyAssetStore(AssetStore):
+def test_multi_materialization():
+    class DummyObjectManager(ObjectManager):
         def __init__(self):
             self.values = {}
 
-        def set_asset(self, context, obj):
+        def handle_output(self, context, obj):
             keys = tuple(context.get_run_scoped_output_identifier())
             self.values[keys] = obj
 
             yield AssetMaterialization(asset_key="yield_one")
             yield AssetMaterialization(asset_key="yield_two")
 
-        def get_asset(self, context):
-            keys = tuple(context.get_run_scoped_output_identifier())
+        def load(self, context):
+            keys = tuple(context.upstream_output.get_run_scoped_output_identifier())
             return self.values[keys]
 
         def has_asset(self, context):
             keys = tuple(context.get_run_scoped_output_identifier())
             return keys in self.values
 
-    @resource
-    def dummy_asset_store(_):
-        return DummyAssetStore()
+    @object_manager
+    def dummy_object_manager(_):
+        return DummyObjectManager()
 
-    @solid(output_defs=[OutputDefinition(asset_store_key="store")])
+    @solid(output_defs=[OutputDefinition(manager_key="my_object_manager")])
     def solid_a(_context):
         return 1
 
@@ -200,11 +181,11 @@ def test_asset_store_multi_materialization():
     def solid_b(_context, a):
         assert a == 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"store": dummy_asset_store})])
-    def asset_pipeline():
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_object_manager": dummy_object_manager})])
+    def my_pipeline():
         solid_b(solid_a())
 
-    result = execute_pipeline(asset_pipeline)
+    result = execute_pipeline(my_pipeline)
     assert result.success
     # Asset Materialization events
     step_materialization_events = list(
@@ -213,8 +194,8 @@ def test_asset_store_multi_materialization():
     assert len(step_materialization_events) == 2
 
 
-def test_different_asset_stores():
-    @solid(output_defs=[OutputDefinition(asset_store_key="store")],)
+def test_different_object_managers():
+    @solid(output_defs=[OutputDefinition(manager_key="my_object_manager")],)
     def solid_a(_context):
         return 1
 
@@ -222,19 +203,19 @@ def test_different_asset_stores():
     def solid_b(_context, a):
         assert a == 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"store": mem_asset_store})])
-    def asset_pipeline():
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_object_manager": mem_asset_store})])
+    def my_pipeline():
         solid_b(solid_a())
 
-    assert execute_pipeline(asset_pipeline).success
+    assert execute_pipeline(my_pipeline).success
 
 
-@resource
-def my_asset_store(_):
+@object_manager
+def my_object_manager(_):
     pass
 
 
-def test_set_asset_store_and_intermediate_storage():
+def test_set_object_manager_and_intermediate_storage():
     from dagster import intermediate_storage, fs_intermediate_storage
 
     @intermediate_storage()
@@ -246,7 +227,7 @@ def test_set_asset_store_and_intermediate_storage():
         @pipeline(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={"asset_store": my_asset_store},
+                    resource_defs={"asset_store": my_object_manager},
                     intermediate_storage_defs=[my_intermediate_storage, fs_intermediate_storage],
                 )
             ]
@@ -260,7 +241,7 @@ def test_set_asset_store_and_intermediate_storage():
 def test_set_asset_store_configure_intermediate_storage():
     with pytest.raises(DagsterInvariantViolationError):
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": my_asset_store})])
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": my_object_manager})])
         def my_pipeline():
             pass
 
@@ -269,7 +250,7 @@ def test_set_asset_store_configure_intermediate_storage():
 
 def test_fan_in():
     with seven.TemporaryDirectory() as tmpdir_path:
-        asset_store = fs_asset_store.configured({"base_dir": tmpdir_path})
+        asset_store = fs_object_manager.configured({"base_dir": tmpdir_path})
 
         @solid
         def input_solid1(_):
@@ -296,30 +277,3 @@ def get_fake_solid():
         pass
 
     return fake_solid
-
-
-def test_versioned_asset_store():
-    with seven.TemporaryDirectory() as temp_dir:
-        store = VersionedPickledObjectFilesystemAssetStore(temp_dir)
-        context = AssetStoreContext(
-            step_key="foo",
-            output_name="bar",
-            asset_metadata={},
-            pipeline_name="fake",
-            solid_def=get_fake_solid(),
-            source_run_id=None,
-            version="version1",
-        )
-        store.set_asset(context, "cat")
-        assert store.has_asset(context)
-        assert store.get_asset(context) == "cat"
-        context_diff_version = AssetStoreContext(
-            step_key="foo",
-            output_name="bar",
-            asset_metadata={},
-            pipeline_name="fake",
-            solid_def=get_fake_solid(),
-            source_run_id=None,
-            version="version2",
-        )
-        assert not store.has_asset(context_diff_version)

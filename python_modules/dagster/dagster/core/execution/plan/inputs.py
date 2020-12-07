@@ -6,6 +6,7 @@ from dagster import check
 from dagster.core.definitions.events import AssetStoreOperation, AssetStoreOperationType
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.errors import DagsterTypeLoadingError, user_code_error_boundary
+from dagster.core.storage.input_manager import InputManager
 
 
 def join_and_hash(*args):
@@ -115,23 +116,39 @@ class FromStepOutput(
             context=step_context, step_output_handle=source_handle,
         )
 
+    def get_load_context(self, step_context):
+        return step_context.for_input_manager(
+            self.input_def.name, self.config_data, self.input_def.metadata, self.step_output_handle
+        )
+
     def load_input_object(self, step_context):
         source_handle = self.step_output_handle
         if self.input_def.manager_key:
             loader = getattr(step_context.resources, self.input_def.manager_key)
-            load_context = step_context.for_input_manager(
-                self.input_def.name, self.config_data, self.input_def.metadata, source_handle
-            )
-            return loader.load(load_context)
-        if step_context.using_asset_store(source_handle):
-            asset_store_handle = step_context.execution_plan.get_asset_store_handle(source_handle)
-            loader = getattr(step_context.resources, asset_store_handle.asset_store_key)
+            return loader.load(self.get_load_context(step_context))
+        elif step_context.using_asset_store(source_handle):
+            object_manager = step_context.get_output_manager(source_handle)
 
-            asset_store_context = step_context.for_asset_store(source_handle, asset_store_handle)
-            obj = loader.get_asset(asset_store_context)
+            check.invariant(
+                isinstance(object_manager, InputManager),
+                f'Input "{self.input_def.name}" for step "{step_context.step.key}" is depending on '
+                f'the manager of upstream output "{source_handle.output_name}" from step '
+                f'"{source_handle.step_key}" to load it, but that manager is not an InputManager. '
+                f"Please ensure that the resource returned for resource key "
+                f'"{step_context.execution_plan.get_manager_key(source_handle)}" is an InputManager.',
+            )
+
+            obj = object_manager.load(self.get_load_context(step_context))
+
+            output_def = step_context.execution_plan.get_step_output(source_handle).output_def
+
+            from dagster.core.storage.asset_store import AssetStoreHandle
 
             return AssetStoreOperation(
-                AssetStoreOperationType.GET_ASSET, source_handle, asset_store_handle, obj=obj,
+                AssetStoreOperationType.GET_ASSET,
+                source_handle,
+                AssetStoreHandle(output_def.manager_key, output_def.metadata),
+                obj=obj,
             )
         else:
             return step_context.intermediate_storage.get_intermediate(

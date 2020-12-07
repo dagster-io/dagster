@@ -1,16 +1,16 @@
 import os
 import pickle
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from collections import namedtuple
 
-import six
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource
 from dagster.core.definitions.events import AssetKey, EventMetadataEntry
 from dagster.core.definitions.resource import resource
+from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.events import AssetMaterialization
-from dagster.core.execution.context.system import AssetStoreContext
+from dagster.core.storage.object_manager import ObjectManager
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.utils.backcompat import experimental
@@ -26,14 +26,20 @@ class AssetStoreHandle(namedtuple("_AssetStoreHandle", "asset_store_key asset_me
         )
 
 
-class AssetStore(six.with_metaclass(ABCMeta)):
+class AssetStore(ObjectManager):
     """
     Base class for user-provided asset store.
 
-    Extend this class to handle asset operations. Users should implement ``set_asset`` to store a
-    data object that can be tracked by the Dagster machinery and ``get_asset`` to retrieve a data
+    Extend this class to handle asset operations. Users should implement ``materialize`` to store a
+    data object that can be tracked by the Dagster machinery and ``load`` to retrieve a data
     object.
     """
+
+    def handle_output(self, context, obj):
+        return self.set_asset(AssetStoreContext.from_output_context(context), obj)
+
+    def load(self, context):
+        return self.get_asset(AssetStoreContext.from_load_context(context))
 
     @abstractmethod
     def set_asset(self, context, obj):
@@ -47,12 +53,8 @@ class AssetStore(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def get_asset(self, context):
         """The user-defined read method that loads data given its metadata.
-
         Args:
             context (AssetStoreContext): The context of the step output that produces this asset.
-
-        Returns:
-            Any: The data object.
         """
 
 
@@ -332,3 +334,89 @@ def versioned_filesystem_asset_store(init_context):
     output.
     """
     return VersionedPickledObjectFilesystemAssetStore(init_context.resource_config["base_dir"])
+
+
+class AssetStoreContext(
+    namedtuple(
+        "_AssetStoreContext",
+        "step_key output_name asset_metadata pipeline_name solid_def source_run_id version",
+    )
+):
+    """
+    The ``context`` object available to the methods of :py:class:`AssetStore`.
+
+    Attributes:
+        step_key (str): The step_key for the compute step.
+        output_name (str): The name of the output. (default: 'result').
+        asset_metadata ([Dict[str, Any]]): A dict of the metadata that is used for the asset store
+            to store or retrieve the data object.
+        pipeline_name (str): The name of the pipeline.
+        solid_def (SolidDefinition): The definition of the solid that uses the asset store.
+        source_run_id (Optional[str]): The id of the run which generates the output.
+        version (Optional[str]): The version corresponding to the provided step output.
+    """
+
+    def __new__(
+        cls,
+        step_key,
+        output_name,
+        asset_metadata,
+        pipeline_name,
+        solid_def,
+        source_run_id=None,
+        version=None,
+    ):
+
+        return super(AssetStoreContext, cls).__new__(
+            cls,
+            step_key=check.str_param(step_key, "step_key"),
+            output_name=check.str_param(output_name, "output_name"),
+            asset_metadata=check.opt_dict_param(asset_metadata, "asset_metadata", key_type=str),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
+            solid_def=check.inst_param(solid_def, "solid_def", SolidDefinition),
+            source_run_id=check.opt_str_param(source_run_id, "source_run_id"),
+            version=check.opt_str_param(version, "version"),
+        )
+
+    def get_run_scoped_output_identifier(self):
+        """Utility method to get a collection of identifiers that as a whole represent a unique
+        step output.
+
+        The unique identifier collection consists of
+
+        - ``source_run_id``: the id of the run which generates the output.
+            Note: This method also handles the re-execution memoization logic. If the step that
+            generates the output is skipped in the re-execution, the ``run_id`` will be the id
+            of its parent run.
+        - ``step_key``: the key for a compute step.
+        - ``output_name``: the name of the output. (default: 'result').
+
+        Returns:
+            List[str, ...]: A list of identifiers, i.e. run id, step key, and output name
+        """
+        return [self.source_run_id, self.step_key, self.output_name]
+
+    @staticmethod
+    def from_output_context(output_context):
+        return AssetStoreContext(
+            step_key=output_context.step_key,
+            output_name=output_context.name,
+            asset_metadata=output_context.metadata,
+            pipeline_name=output_context.pipeline_name,
+            solid_def=output_context.solid_def,
+            source_run_id=output_context.run_id,
+            version=output_context.version,
+        )
+
+    @staticmethod
+    def from_load_context(load_context):
+        output_context = load_context.upstream_output
+        return AssetStoreContext(
+            step_key=output_context.step_key,
+            output_name=output_context.name,
+            asset_metadata=output_context.metadata,
+            pipeline_name=output_context.pipeline_name,
+            solid_def=load_context.solid_def,
+            source_run_id=output_context.run_id,
+            version=output_context.version,
+        )

@@ -60,13 +60,13 @@ def check_all_asset_stores_non_mem_for_reexecution(pipeline_context, execution_p
         # check if all its inputs' upstream step outputs have non-in-memory asset store configured
         for step_input in step.step_inputs:
             for step_output_handle in step_input.source.step_output_handle_dependencies:
-                asset_store_key = execution_plan.get_asset_store_key(step_output_handle)
-                asset_store = pipeline_context.mode_def.resource_defs.get(asset_store_key)
+                manager_key = execution_plan.get_manager_key(step_output_handle)
+                manager_def = pipeline_context.mode_def.resource_defs.get(manager_key)
                 if (
                     # no asset store is configured
-                    not asset_store
+                    not manager_def
                     # asset store is non persistent
-                    or asset_store == mem_asset_store  # pylint: disable=comparison-with-callable
+                    or manager_def == mem_asset_store  # pylint: disable=comparison-with-callable
                 ):
                     return False
     return True

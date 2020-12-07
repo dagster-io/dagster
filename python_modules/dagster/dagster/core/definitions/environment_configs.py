@@ -6,8 +6,8 @@ from dagster.config.field import check_opt_field_param
 from dagster.config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Shape, all_optional_type
 from dagster.config.iterate_types import iterate_config_types
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.core.storage.input_manager import InputManagerDefinition
-from dagster.core.storage.output_manager import OutputManagerDefinition
+from dagster.core.storage.input_manager import IInputManagerDefinition
+from dagster.core.storage.output_manager import IOutputManagerDefinition
 from dagster.core.storage.system_storage import default_intermediate_storage_defs
 from dagster.core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
 from dagster.utils import check, ensure_single_item
@@ -214,11 +214,11 @@ def get_input_manager_input_field(solid, input_def, resource_defs):
             f"resource definition for that key in the resource_defs of your ModeDefinition."
         )
 
-    if not isinstance(resource_defs[input_def.manager_key], InputManagerDefinition):
+    if not isinstance(resource_defs[input_def.manager_key], IInputManagerDefinition):
         raise DagsterInvalidDefinitionError(
             f'Input "{input_def.name}" for solid "{solid.name}" requires manager_key '
             f'"{input_def.manager_key}", but the resource definition provided is not an '
-            "InputManagerDefinition"
+            "IInputManagerDefinition"
         )
 
     input_config_schema = resource_defs[input_def.manager_key].input_config_schema
@@ -270,7 +270,7 @@ def get_output_manager_output_field(output_def, resource_defs):
     output_manager_def = resource_defs.get(output_def.manager_key)
     if (
         output_manager_def
-        and isinstance(output_manager_def, OutputManagerDefinition)
+        and isinstance(output_manager_def, IOutputManagerDefinition)
         and output_manager_def.output_config_schema
     ):
         return output_manager_def.output_config_schema.config_type

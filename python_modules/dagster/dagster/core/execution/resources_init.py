@@ -219,9 +219,9 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
         resource_keys = resource_keys.union(step_input.source.required_resource_keys())
 
         for source_handle in step_input.source.step_output_handle_dependencies:
-            source_asset_store_key = execution_plan.get_asset_store_key(source_handle)
-            if source_asset_store_key:
-                resource_keys = resource_keys.union([source_asset_store_key])
+            source_manager_key = execution_plan.get_manager_key(source_handle)
+            if source_manager_key:
+                resource_keys = resource_keys.union([source_manager_key])
 
     # add output type, output materializer, and output asset store resource keys
     for step_output in execution_step.step_outputs:
@@ -233,9 +233,7 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
                 step_output.output_def.dagster_type.materializer.required_resource_keys()
             )
         if step_output.output_def.manager_key:
-            resource_keys = resource_keys.union({step_output.output_def.manager_key})
-        elif step_output.output_def.asset_store_key:
-            resource_keys = resource_keys.union({step_output.output_def.asset_store_key})
+            resource_keys = resource_keys.union([step_output.output_def.manager_key])
 
     # add all the storage-compatible plugin resource keys
     for dagster_type in solid_def.all_dagster_types():

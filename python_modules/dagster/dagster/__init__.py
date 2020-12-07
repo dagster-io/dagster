@@ -94,7 +94,6 @@ from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.system import (
-    AssetStoreContext,
     HookContext,
     SystemComputeExecutionContext,
     TypeCheckContext,
@@ -111,6 +110,7 @@ from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.asset_store import (
     AssetStore,
+    AssetStoreContext,
     custom_path_fs_asset_store,
     fs_asset_store,
     mem_asset_store,

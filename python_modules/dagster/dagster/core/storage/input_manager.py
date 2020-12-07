@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 from functools import update_wrapper
 
 from dagster import check
@@ -9,7 +9,14 @@ from dagster.core.definitions.definition_config_schema import (
 from dagster.core.definitions.resource import ResourceDefinition
 
 
-class InputManagerDefinition(ResourceDefinition):
+class IInputManagerDefinition:
+    @abstractproperty
+    def input_config_schema(self):
+        """The schema for per-input configuration for inputs that are managed by this
+        input manager"""
+
+
+class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
     """Definition of an input manager resource.
 
     An InputManagerDefinition is a ResourceDefinition whose resource_fn returns an
