@@ -2,6 +2,7 @@
 
 import time
 
+import pytest
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import open_server_process
 from dagster.grpc.server_watcher import create_grpc_watch_thread
@@ -154,6 +155,7 @@ def test_grpc_watch_thread_server_error():
     assert called["on_error"]
 
 
+@pytest.mark.skip
 def test_grpc_watch_thread_server_complex_cycle():
     # Server goes down, comes back up as the same server three times, then goes away and comes
     # back as a new server
@@ -216,6 +218,7 @@ def test_grpc_watch_thread_server_complex_cycle():
     assert events[-1] == "on_updated"
 
 
+@pytest.mark.skip
 def test_grpc_watch_thread_server_complex_cycle_2():
     # Server goes down, comes back up as the same server three times, then goes away and comes
     # back as a new server
