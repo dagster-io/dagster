@@ -196,16 +196,29 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
 
   const onError = (data: LaunchPartitionBackfill | null | undefined) => {
     const result = data?.launchPartitionBackfill;
+    let errors = <></>;
+    if (result?.__typename == 'PythonError' || result?.__typename == 'PartitionSetNotFoundError') {
+      errors = <PythonErrorInfo error={result} />;
+    } else if (result && 'errors' in result) {
+      errors = (
+        <>
+          {result['errors'].map((error, idx) => (
+            <PythonErrorInfo error={error} key={idx} />
+          ))}
+        </>
+      );
+    }
+
     const message = (
       <Group direction="vertical" spacing={4}>
         <div>An unexpected error occurred. This backfill was not launched.</div>
-        {result && 'message' in result ? (
+        {errors ? (
           <ButtonLink
             color={Colors.WHITE}
             underline="always"
             onClick={() => {
               showCustomAlert({
-                body: <PythonErrorInfo error={result} />,
+                body: errors,
               });
             }}
           >
@@ -669,6 +682,15 @@ export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
       ... on PythonError {
         message
         stack
+      }
+      ... on PipelineConfigValidationInvalid {
+        pipelineName
+        errors {
+          __typename
+          message
+          path
+          reason
+        }
       }
     }
   }
