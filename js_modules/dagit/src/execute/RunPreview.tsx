@@ -132,6 +132,7 @@ interface RunPreviewProps {
   runConfigSchema?: ConfigEditorRunConfigSchemaFragment;
   onHighlightPath: (path: string[]) => void;
   onRemoveExtraPaths: (paths: string[]) => void;
+  solidSelection: string[] | null;
 }
 
 interface RunPreviewState {
@@ -229,7 +230,14 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
   };
 
   render() {
-    const {actions, document, validation, onHighlightPath, onRemoveExtraPaths} = this.props;
+    const {
+      actions,
+      document,
+      validation,
+      onHighlightPath,
+      onRemoveExtraPaths,
+      solidSelection,
+    } = this.props;
     const {errorsOnly} = this.state;
 
     const extraNodes: string[] = [];
@@ -286,6 +294,11 @@ export class RunPreview extends React.Component<RunPreviewProps, RunPreviewState
     const itemsIn = (parents: string[], names: string[]) => {
       const boxes = names
         .map((name) => {
+          // If a solid selection is in use, discard anything not in it.
+          if (solidSelection?.length && !solidSelection?.includes(name)) {
+            return null;
+          }
+
           const path = [...parents, name];
           const pathKey = path.join('.');
           const pathErrors = errorsAndPaths
