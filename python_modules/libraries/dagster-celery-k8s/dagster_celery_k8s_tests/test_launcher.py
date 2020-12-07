@@ -1,7 +1,8 @@
 import json
 
 import pytest
-from dagster import check, pipeline, reconstructable
+from dagster import pipeline, reconstructable
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.host_representation import (
     InProcessRepositoryLocationOrigin,
     RepositoryHandle,
@@ -35,9 +36,8 @@ def test_get_validated_celery_k8s_executor_config():
     }
 
     with pytest.raises(
-        check.CheckError,
-        match="Description: celery-k8s execution must be configured in pipeline execution config to"
-        " launch runs with CeleryK8sRunLauncher",
+        DagsterInvariantViolationError,
+        match="celery-k8s execution configuration must be present in the run config to use the CeleryK8sRunLauncher.",
     ):
         _get_validated_celery_k8s_executor_config({})
 

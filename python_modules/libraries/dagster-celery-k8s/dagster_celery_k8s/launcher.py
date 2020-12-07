@@ -175,15 +175,14 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         job_image = None
         pipeline_origin = None
         env_vars = None
+
+        job_image_from_executor_config = exc_config.get("job_image")
+
+        # If the user is using user-code deployments, we grab the image from the gRPC server.
         if isinstance(
             external_pipeline.get_external_origin().external_repository_origin.repository_location_origin,
             GrpcServerRepositoryLocationOrigin,
         ):
-            if exc_config.get("job_image"):
-                raise DagsterInvariantViolationError(
-                    "Cannot specify job_image in executor config when loading pipeline "
-                    "from GRPC server."
-                )
 
             repository_location_handle = (
                 external_pipeline.repository_handle.repository_location_handle
@@ -198,24 +197,38 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                 )
 
             repository_name = external_pipeline.repository_handle.repository_name
-
             repository_origin = repository_location_handle.reload_repository_python_origin(
                 repository_name
+            )
+            pipeline_origin = PipelinePythonOrigin(
+                pipeline_name=external_pipeline.name, repository_origin=repository_origin
             )
 
             job_image = repository_origin.container_image
             env_vars = {"DAGSTER_CURRENT_IMAGE": job_image}
 
-            pipeline_origin = PipelinePythonOrigin(
-                pipeline_name=external_pipeline.name, repository_origin=repository_origin
-            )
+            if job_image_from_executor_config:
+                raise DagsterInvariantViolationError(
+                    "You have specified a job_image {job_image_from_executor_config} in your executor configuration, "
+                    "but also {job_image} in your user-code deployment. You cannot specify a job_image "
+                    "in your executor config when using user-code deployments because the job image is "
+                    "pulled from the deployment. To resolve this error, remove the job_image "
+                    "configuration from your executor configuration (which is a part of your run configuration)"
+                )
 
         else:
-            job_image = exc_config.get("job_image")
-            if not job_image:
+            if not job_image_from_executor_config:
                 raise DagsterInvariantViolationError(
-                    "Cannot find job_image in celery-k8s executor config."
+                    "You have not specified a job_image in your executor configuration. "
+                    "To resolve this error, specify the job_image configuration in the executor "
+                    "config section in your run config. \n"
+                    "Note: You may also be seeing this error because you are using the configured API. "
+                    "Using configured with the celery-k8s executor is not supported at this time, "
+                    "and the job_image must be configured at the top-level executor config without "
+                    "using configured."
                 )
+
+            job_image = job_image_from_executor_config
             pipeline_origin = external_pipeline.get_python_origin()
 
         job_config = DagsterK8sJobConfig(
@@ -348,11 +361,16 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 def _get_validated_celery_k8s_executor_config(run_config):
     check.dict_param(run_config, "run_config")
 
-    check.invariant(
-        CELERY_K8S_CONFIG_KEY in run_config.get("execution", {}),
-        "{} execution must be configured in pipeline execution config to launch runs with "
-        "CeleryK8sRunLauncher".format(CELERY_K8S_CONFIG_KEY),
-    )
+    executor_config = run_config.get("execution", {})
+    if not CELERY_K8S_CONFIG_KEY in executor_config:
+        raise DagsterInvariantViolationError(
+            "{config_key} execution configuration must be present in the run config to use the CeleryK8sRunLauncher. "
+            "Note: You may also be seeing this error because you are using the configured API. "
+            "Using configured with the {config_key} executor is not supported at this time, "
+            "and all executor config must be directly in the run config without using configured.".format(
+                config_key=CELERY_K8S_CONFIG_KEY,
+            ),
+        )
 
     execution_config_schema = resolve_to_config_type(celery_k8s_config())
     execution_run_config = run_config["execution"][CELERY_K8S_CONFIG_KEY].get("config", {})
