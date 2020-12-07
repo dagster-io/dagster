@@ -467,17 +467,35 @@ class DauphinLaunchPipelineReexecutionMutation(dauphin.Mutation):
         )
 
 
+class DauphinTerminatePipelinePolicy(dauphin.Enum):
+    class Meta:
+        name = "TerminatePipelinePolicy"
+
+    # Default behavior: Only mark as canceled if the termination is successful, and after all
+    # resources peforming the execution have been shut down.
+    SAFE_TERMINATE = "SAFE_TERMINATE"
+
+    # Immediately mark the pipelie as canceled, whether or not the termination was successful.
+    # No guarantee that the execution has actually stopped.
+    MARK_AS_CANCELED_IMMEDIATELY = "MARK_AS_CANCELED_IMMEDIATELY"
+
+
 class DauphinTerminatePipelineExecutionMutation(dauphin.Mutation):
     class Meta:
         name = "TerminatePipelineExecutionMutation"
 
     class Arguments:
         runId = dauphin.NonNull(dauphin.String)
+        terminatePolicy = dauphin.Argument("TerminatePipelinePolicy")
 
     Output = dauphin.NonNull("TerminatePipelineExecutionResult")
 
     def mutate(self, graphene_info, **kwargs):
-        return terminate_pipeline_execution(graphene_info, kwargs["runId"])
+        return terminate_pipeline_execution(
+            graphene_info,
+            kwargs["runId"],
+            kwargs.get("terminatePolicy", DauphinTerminatePipelinePolicy.SAFE_TERMINATE),
+        )
 
 
 class DauphinReloadRepositoryLocationMutationResult(dauphin.Union):

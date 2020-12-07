@@ -42,42 +42,76 @@ from .backfill import create_and_launch_partition_backfill
 from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
 
 
+def _force_mark_as_canceled(graphene_info, run_id):
+    instance = graphene_info.context.instance
+
+    reloaded_run = instance.get_run_by_id(run_id)
+
+    if not reloaded_run.is_finished:
+        message = (
+            "This pipeline was forcibly marked as canceled from outside the execution context. The "
+            "computational resources created by the run may not have been fully cleaned up."
+        )
+        instance.report_run_canceled(reloaded_run, message=message)
+        reloaded_run = graphene_info.schema.type_named("PipelineRun")(
+            instance.get_run_by_id(run_id)
+        )
+
+    return graphene_info.schema.type_named("TerminatePipelineExecutionSuccess")(reloaded_run)
+
+
 @capture_dauphin_error
-def terminate_pipeline_execution(graphene_info, run_id):
+def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
+
+    from dagster_graphql.schema.roots import DauphinTerminatePipelinePolicy
+
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
 
     instance = graphene_info.context.instance
     run = instance.get_run_by_id(run_id)
 
+    force_mark_as_canceled = (
+        terminate_policy == DauphinTerminatePipelinePolicy.MARK_AS_CANCELED_IMMEDIATELY
+    )
+
     if not run:
         return graphene_info.schema.type_named("PipelineRunNotFoundError")(run_id)
 
     dauphin_run = graphene_info.schema.type_named("PipelineRun")(run)
 
-    if run.status != PipelineRunStatus.STARTED and run.status != PipelineRunStatus.QUEUED:
+    valid_status = not run.is_finished and (
+        force_mark_as_canceled
+        or (run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.QUEUED)
+    )
+
+    if not valid_status:
         return graphene_info.schema.type_named("TerminatePipelineExecutionFailure")(
             run=dauphin_run,
-            message="Run {run_id} is not in a started or queued state. Current status is {status}".format(
+            message="Run {run_id} could not be terminated due to having status {status}.".format(
                 run_id=run.run_id, status=run.status.value
             ),
         )
 
-    can_not_cancel = graphene_info.schema.type_named("TerminatePipelineExecutionFailure")(
-        run=dauphin_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
-    )
-
     if (
         graphene_info.context.instance.run_coordinator
         and graphene_info.context.instance.run_coordinator.can_cancel_run(run_id)
+        and graphene_info.context.instance.run_coordinator.cancel_run(run_id)
     ):
-        if not graphene_info.context.instance.run_coordinator.cancel_run(run_id):
-            return can_not_cancel
 
-        return graphene_info.schema.type_named("TerminatePipelineExecutionSuccess")(dauphin_run)
+        return (
+            _force_mark_as_canceled(graphene_info, run_id)
+            if force_mark_as_canceled
+            else graphene_info.schema.type_named("TerminatePipelineExecutionSuccess")(dauphin_run)
+        )
 
-    else:
-        return can_not_cancel
+    return (
+        _force_mark_as_canceled(graphene_info, run_id)
+        if force_mark_as_canceled
+        else graphene_info.schema.type_named("TerminatePipelineExecutionFailure")(
+            run=dauphin_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
+        )
+    )
 
 
 @capture_dauphin_error

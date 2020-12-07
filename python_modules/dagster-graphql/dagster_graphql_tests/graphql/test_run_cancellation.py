@@ -3,6 +3,7 @@ import time
 
 from dagster import execute_pipeline
 from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.grpc.types import CancelExecutionRequest
 from dagster.utils import file_relative_path, safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
@@ -10,8 +11,8 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
 RUN_CANCELLATION_QUERY = """
-mutation($runId: String!) {
-  terminatePipelineExecution(runId: $runId){
+mutation($runId: String!, $terminatePolicy: TerminatePipelinePolicy) {
+  terminatePipelineExecution(runId: $runId, terminatePolicy:$terminatePolicy){
     __typename
     ... on TerminatePipelineExecutionSuccess{
       run {
@@ -26,6 +27,10 @@ mutation($runId: String!) {
     }
     ... on PipelineRunNotFoundError {
       runId
+    }
+    ... on PythonError {
+      message
+      stack
     }
   }
 }
@@ -121,16 +126,27 @@ class TestRunVariantTermination(
                 "Unable to terminate run"
             )
 
-            graphql_context.instance.run_launcher.terminate = old_terminate
-
             result = execute_dagster_graphql(
-                graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": run_id}
+                graphql_context,
+                RUN_CANCELLATION_QUERY,
+                variables={"runId": run_id, "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY"},
             )
 
             assert (
                 result.data["terminatePipelineExecution"]["__typename"]
                 == "TerminatePipelineExecutionSuccess"
             )
+
+            graphql_context.instance.run_launcher.terminate = old_terminate
+
+            # Clean up the run process on the gRPC server
+            handles = (
+                graphql_context.instance.run_launcher._run_id_to_repository_location_handle_cache.values()  # pylint: disable=protected-access
+            )
+            for repository_location_handle in handles:
+                repository_location_handle.client.cancel_execution(
+                    CancelExecutionRequest(run_id=run_id)
+                )
 
     def test_run_finished(self, graphql_context):
         instance = graphql_context.instance
@@ -154,6 +170,25 @@ class TestRunVariantTermination(
             == "TerminatePipelineExecutionFailure"
         )
         assert (
-            "is not in a started or queued state. Current status is SUCCESS"
+            "could not be terminated due to having status SUCCESS."
+            in result.data["terminatePipelineExecution"]["message"]
+        )
+
+        # Still fails even if you change the terminate policy to fail immediately
+        result = execute_dagster_graphql(
+            graphql_context,
+            RUN_CANCELLATION_QUERY,
+            variables={
+                "runId": pipeline_result.run_id,
+                "terminatePolicy": "MARK_AS_CANCELED_IMMEDIATELY",
+            },
+        )
+
+        assert (
+            result.data["terminatePipelineExecution"]["__typename"]
+            == "TerminatePipelineExecutionFailure"
+        )
+        assert (
+            "could not be terminated due to having status SUCCESS."
             in result.data["terminatePipelineExecution"]["message"]
         )

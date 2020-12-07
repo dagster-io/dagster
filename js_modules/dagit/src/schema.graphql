@@ -897,7 +897,7 @@ type Mutation {
   stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!): StopSensorMutationResultOrError!
-  terminatePipelineExecution(runId: String!): TerminatePipelineExecutionResult!
+  terminatePipelineExecution(runId: String!, terminatePolicy: TerminatePipelinePolicy): TerminatePipelineExecutionResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   launchPartitionBackfill(backfillParams: PartitionBackfillParams!): PartitionBackfillResult!
@@ -976,6 +976,11 @@ type TerminatePipelineExecutionSuccess {
 type TerminatePipelineExecutionFailure {
   run: PipelineRun!
   message: String!
+}
+
+enum TerminatePipelinePolicy {
+  SAFE_TERMINATE
+  MARK_AS_CANCELED_IMMEDIATELY
 }
 
 union DeletePipelineRunResult = DeletePipelineRunSuccess | PythonError | PipelineRunNotFoundError

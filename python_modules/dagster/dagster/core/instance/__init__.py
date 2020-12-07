@@ -1014,11 +1014,13 @@ class DagsterInstance:
         self.handle_new_event(event_record)
         return dagster_event
 
-    def report_run_canceling(self, run, message="Sending pipeline termination request."):
+    def report_run_canceling(self, run, message=None):
 
         from dagster.core.events import DagsterEvent, DagsterEventType
         from dagster.core.events.log import DagsterEventRecord
 
+        check.inst_param(run, "run", PipelineRun)
+        message = check.opt_str_param(message, "message", "Sending pipeline termination request.",)
         canceling_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
             pipeline_name=run.pipeline_name,
@@ -1038,13 +1040,18 @@ class DagsterInstance:
 
         self.handle_new_event(event_record)
 
-    def report_run_canceled(self, pipeline_run):
+    def report_run_canceled(
+        self, pipeline_run, message=None,
+    ):
         from dagster.core.events import DagsterEvent, DagsterEventType
         from dagster.core.events.log import DagsterEventRecord
 
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        message = (
-            "This pipeline run has been marked as canceled from outside the execution context."
+
+        message = check.opt_str_param(
+            message,
+            "mesage",
+            "This pipeline run has been marked as canceled from outside the execution context.",
         )
 
         dagster_event = DagsterEvent(
@@ -1066,12 +1073,17 @@ class DagsterInstance:
         self.handle_new_event(event_record)
         return dagster_event
 
-    def report_run_failed(self, pipeline_run):
+    def report_run_failed(self, pipeline_run, message=None):
         from dagster.core.events import DagsterEvent, DagsterEventType
         from dagster.core.events.log import DagsterEventRecord
 
         check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        message = "This pipeline run has been marked as failed from outside the execution context."
+
+        message = check.opt_str_param(
+            message,
+            "message",
+            "This pipeline run has been marked as failed from outside the execution context.",
+        )
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
