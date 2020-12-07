@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql, NetworkStatus} from '@apollo/client';
 import {Colors, NonIdealState, Tab, Tabs} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -17,12 +17,14 @@ import {
   useQueryPersistedRunFilters,
 } from 'src/runs/RunsFilter';
 import {RunsRootQuery, RunsRootQueryVariables} from 'src/runs/types/RunsRootQuery';
-import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
+import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
+import {useCountdown} from 'src/ui/Countdown';
 import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
+import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Heading} from 'src/ui/Text';
 
 const PAGE_SIZE = 25;
@@ -69,6 +71,12 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
     pageSize: PAGE_SIZE,
   });
 
+  const countdownStatus = queryResult.networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
+  const timeRemaining = useCountdown({
+    duration: POLL_INTERVAL,
+    status: countdownStatus,
+  });
+
   const setStatusFilter = (statuses: PipelineRunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
@@ -79,11 +87,16 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
   const tabColor = (match: string) =>
     selectedTab === match ? Colors.BLUE1 : {link: Colors.GRAY2, hover: Colors.BLUE1};
 
+  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
+
   return (
     <Page>
       <Group direction="vertical" spacing={8}>
         <Heading>Runs</Heading>
-        <Box border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}>
+        <Box
+          border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}
+        >
           <Tabs selectedTabId={selectedTab} id="run-tabs">
             <Tab
               title={
@@ -138,6 +151,13 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
               id="done"
             />
           </Tabs>
+          <Box padding={{bottom: 8}}>
+            <RefreshableCountdown
+              refreshing={countdownRefreshing}
+              seconds={Math.floor(timeRemaining / 1000)}
+              onRefresh={() => queryResult.refetch()}
+            />
+          </Box>
         </Box>
         <RunsFilter
           tokens={filterTokens}

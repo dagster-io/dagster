@@ -17,7 +17,7 @@ export const RefreshableCountdown = (props: Props) => {
       <span style={{color: Colors.GRAY3, fontVariantNumeric: 'tabular-nums'}}>
         {refreshing ? 'Refreshing data…' : `0:${seconds < 10 ? `0${seconds}` : seconds}`}
       </span>
-      <Tooltip content="Refresh now">
+      <Tooltip content="Refresh now" position="bottom">
         <RefreshButton onClick={onRefresh}>
           <Icon iconSize={11} icon="refresh" color={Colors.GRAY3} />
         </RefreshButton>
