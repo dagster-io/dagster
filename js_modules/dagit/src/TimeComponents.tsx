@@ -3,7 +3,7 @@ import {Select} from '@blueprintjs/select';
 import moment from 'moment-timezone';
 import React from 'react';
 
-const browserTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+export const browserTimezone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 const browserTimezoneAbbreviation = () => moment.tz(browserTimezone()).format('z');
 
 type TimestampProps = ({ms: number} | {unix: number}) & {

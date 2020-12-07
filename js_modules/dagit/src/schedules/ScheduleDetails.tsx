@@ -4,12 +4,12 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/JobTick';
-import {timestampToString, TimezoneContext} from 'src/TimeComponents';
 import {
   displayScheduleMutationErrors,
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
 } from 'src/schedules/ScheduleRow';
+import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
 import {StartSchedule} from 'src/schedules/types/StartSchedule';
@@ -27,22 +27,6 @@ import {useScheduleSelector} from 'src/workspace/WorkspaceContext';
 import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
-
-interface TimestampDisplayProps {
-  timestamp: number;
-  timezone: string | null;
-}
-
-const TimestampDisplay = (props: TimestampDisplayProps) => {
-  const {timestamp, timezone} = props;
-  const [userTimezone] = React.useContext(TimezoneContext);
-
-  return (
-    <span>
-      {timestampToString({unix: timestamp, format: 'MMM DD, h:mm A z'}, timezone || userTimezone)}
-    </span>
-  );
-};
 
 export const ScheduleDetails: React.FC<{
   schedule: ScheduleFragment;

@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/JobTick';
-import {Timestamp} from 'src/TimeComponents';
+import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {
   displaySensorMutationErrors,
   START_SENSOR_MUTATION,
@@ -89,7 +89,7 @@ export const SensorDetails = (props: Props) => {
             key: 'Latest tick',
             value: latestTick ? (
               <Group direction="horizontal" spacing={8} alignItems="center">
-                <Timestamp unix={latestTick.timestamp} />
+                <TimestampDisplay timestamp={latestTick.timestamp} />
                 <TickTag tick={latestTick} jobType={JobType.SENSOR} />
               </Group>
             ) : (
