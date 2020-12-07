@@ -231,8 +231,9 @@ def test_start_schedule_cron_job(
 
             schedule_def = external_schedules_dict[schedule_origin_id]
             assert cron_schedule == schedule_def.cron_schedule
-            assert command == ["dagster"]
-            assert args[:4] == [
+            assert command == None
+            assert args[:5] == [
+                "dagster",
                 "api",
                 "launch_scheduled_execution",
                 "/tmp/launch_scheduled_execution_output",
@@ -424,9 +425,8 @@ def test_script_execution(
                     cron_job_name, helm_namespace_for_k8s_run_launcher
                 )
                 container = cron_job.spec.job_template.spec.template.spec.containers[0]
-                command = container.command
                 args = container.args
-                cli_cmd = [sys.executable, "-m"] + command + args
+                cli_cmd = [sys.executable, "-m"] + args
 
                 p = subprocess.Popen(
                     cli_cmd,

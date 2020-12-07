@@ -353,11 +353,10 @@ def create_k8s_job_task(celery_app, **task_kwargs):
             pod_name = "dagster-job-%s" % (k8s_name_key)
 
         input_json = serialize_dagster_namedtuple(execute_step_args)
-        command = ["dagster"]
-        args = ["api", "execute_step", input_json]
+        args = ["dagster", "api", "execute_step", input_json]
 
         job = construct_dagster_k8s_job(
-            job_config, command, args, job_name, user_defined_k8s_config, pod_name
+            job_config, args, job_name, user_defined_k8s_config, pod_name
         )
 
         # Running list of events generated from this task execution

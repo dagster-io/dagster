@@ -360,7 +360,6 @@ class DagsterK8sJobConfig(
 
 def construct_dagster_k8s_job(
     job_config,
-    command,
     args,
     job_name,
     user_defined_k8s_config=None,
@@ -373,7 +372,6 @@ def construct_dagster_k8s_job(
     Args:
         job_config (DagsterK8sJobConfig): Job configuration to use for constructing the Kubernetes
             Job object.
-        command (List[str]): Command to run.
         args (List[str]): CLI arguments to use with dagster-graphql in this Job.
         job_name (str): The name of the Job. Note that this name must be <= 63 characters in length.
         resources (Dict[str, Dict[str, str]]): The resource requirements for the container
@@ -387,7 +385,6 @@ def construct_dagster_k8s_job(
         kubernetes.client.V1Job: A Kubernetes Job object.
     """
     check.inst_param(job_config, "job_config", DagsterK8sJobConfig)
-    command = check.list_param(command, "command", of_type=str)
     check.list_param(args, "args", of_type=str)
     check.str_param(job_name, "job_name")
     user_defined_k8s_config = check.opt_inst_param(
@@ -432,7 +429,6 @@ def construct_dagster_k8s_job(
     job_container = kubernetes.client.V1Container(
         name=job_name,
         image=job_config.job_image,
-        command=command,
         args=args,
         image_pull_policy=job_config.image_pull_policy,
         env=[

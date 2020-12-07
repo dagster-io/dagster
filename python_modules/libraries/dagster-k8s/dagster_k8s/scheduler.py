@@ -116,8 +116,8 @@ class K8sScheduler(Scheduler, ConfigurableClass):
 
         job_template = construct_dagster_k8s_job(
             job_config=job_config,
-            command=["dagster"],
             args=[
+                "dagster",
                 "api",
                 "launch_scheduled_execution",
                 "/tmp/launch_scheduled_execution_output",  # https://bugs.python.org/issue20074 prevents using /dev/stdout

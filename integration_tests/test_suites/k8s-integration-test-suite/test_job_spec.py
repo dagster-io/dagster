@@ -46,10 +46,9 @@ spec:
     spec:
       containers:
       - args:
+        - dagster
         - api
         - execute_run
-        command:
-        - dagster
         env:
         - name: DAGSTER_HOME
           value: /opt/dagster/dagster_home
@@ -111,10 +110,9 @@ spec:
       {affinity}
       containers:
       - args:
+        - dagster
         - api
         - execute_run
-        command:
-        - dagster
         env:
         - name: DAGSTER_HOME
           value: /opt/dagster/dagster_home
@@ -160,8 +158,7 @@ def test_valid_job_format(run_launcher):
     pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
-        command=["dagster"],
-        args=["api", "execute_run"],
+        args=["dagster", "api", "execute_run"],
         job_name=job_name,
         pod_name=pod_name,
         component="run_coordinator",
@@ -201,8 +198,7 @@ def test_valid_job_format_with_backcompat_resources(run_launcher):
     pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
-        command=["dagster"],
-        args=["api", "execute_run"],
+        args=["dagster", "api", "execute_run"],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
         pod_name=pod_name,
@@ -277,8 +273,7 @@ def test_valid_job_format_with_user_defined_k8s_config(run_launcher):
     pod_name = "dagster-run-%s" % run.run_id
     job = construct_dagster_k8s_job(
         job_config=run_launcher.job_config,
-        command=["dagster"],
-        args=["api", "execute_run"],
+        args=["dagster", "api", "execute_run"],
         job_name=job_name,
         user_defined_k8s_config=user_defined_k8s_config,
         pod_name=pod_name,
