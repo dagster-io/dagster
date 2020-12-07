@@ -22,7 +22,7 @@ const REPOSITORY_PIPELINES_LIST_QUERY = gql`
           id
           name
           description
-          runs {
+          runs(limit: 10) {
             id
             runId
             status
@@ -94,12 +94,12 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
                 </td>
                 <td>
                   <div style={{display: 'flex', flexDirection: 'row'}}>
-                    {runs.slice(0, 10).map((run) => (
+                    {runs.map((run) => (
                       <RunStatusWithStats
                         key={run.runId}
                         runId={run.runId}
                         status={run.status}
-                        size={16}
+                        size={12}
                       />
                     ))}
                   </div>
