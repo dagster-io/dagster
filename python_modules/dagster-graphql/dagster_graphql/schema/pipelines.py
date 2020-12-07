@@ -217,7 +217,9 @@ class DauphinPipeline(DauphinIPipelineSnapshotMixin, dauphin.ObjectType):
 
     id = dauphin.NonNull(dauphin.ID)
     presets = dauphin.non_null_list("PipelinePreset")
-    runs = dauphin.non_null_list("PipelineRun")
+    runs = dauphin.Field(
+        dauphin.non_null_list("PipelineRun"), cursor=dauphin.String(), limit=dauphin.Int(),
+    )
 
     def __init__(self, external_pipeline):
         self._external_pipeline = check.inst_param(
