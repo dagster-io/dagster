@@ -587,3 +587,29 @@ def test_input_mapping_fan_in():
     result = execute_pipeline(example_computation_pipeline)
     assert result.success
     assert result.output_for_solid("example_computation") == 2.0
+
+
+@pytest.mark.parametrize(
+    "composition_decorator",
+    [pytest.param(composite_solid, id="composite_solid"), pytest.param(pipeline, id="pipeline")],
+)
+def test_convertable_config_schema(composition_decorator):
+    @solid(config_schema=int)
+    def add_one(context) -> int:
+        return context.solid_config + 1
+
+    @composition_decorator(
+        config_schema=int,
+        config_fn=lambda cfg: {"add_one": {"config": 3}},
+        # need to do this because pipeline still requires explicit output
+        # defintion with return value
+        # TODO ensure issue is filed
+        output_defs=[OutputDefinition(int)],
+    )
+    def comp() -> int:
+        return add_one()
+
+    result = execute_solid(comp, run_config={"solids": {"comp": {"config": 3}}})
+    assert result.success
+
+    assert result.output_value() == 4

@@ -1,6 +1,9 @@
 from functools import update_wrapper
 
 from dagster import check
+from dagster.core.definitions.definition_config_schema import (
+    convert_user_facing_definition_config_schema,
+)
 
 from ..composition import do_composition
 from ..input import InputDefinition
@@ -23,10 +26,7 @@ class _CompositeSolid:
         self.output_defs = check.opt_nullable_list_param(output_defs, "output", OutputDefinition)
         self.description = check.opt_str_param(description, "description")
 
-        check.opt_dict_param(
-            config_schema, "config_schema"
-        )  # don't want to assign dict below if config is None
-        self.config_schema = config_schema
+        self.config_schema = convert_user_facing_definition_config_schema(config_schema)
         self.config_fn = check.opt_callable_param(config_fn, "config_fn")
 
     def __call__(self, fn):
