@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import {assertUnreachable} from 'src/Util';
 import {RunStats} from 'src/runs/RunStats';
 import {IRunStatus} from 'src/runs/RunStatusDots';
+import {Group} from 'src/ui/Group';
 
 export const RunStatusTag = (props: {status: IRunStatus}) => {
   const {status} = props;
@@ -42,12 +43,10 @@ export const RunStatusTag = (props: {status: IRunStatus}) => {
     case 'STARTED':
       return (
         <StatusTag minimal intent="primary">
-          <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center'}}>
-            <div style={{marginRight: '4px'}}>
-              <Spinner size={10} />
-            </div>
-            Running
-          </div>
+          <Group direction="horizontal" spacing={4} alignItems="center">
+            <Spinner size={10} />
+            <div>Started</div>
+          </Group>
         </StatusTag>
       );
     case 'MANAGED':

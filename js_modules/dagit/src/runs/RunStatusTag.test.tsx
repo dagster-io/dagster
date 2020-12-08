@@ -17,7 +17,7 @@ describe('RunStatusTag', () => {
 
     it('renders `started`', () => {
       render(<RunStatusTag status="STARTED" />);
-      expect(screen.getByText(/running/i)).toBeVisible();
+      expect(screen.getByText(/started/i)).toBeVisible();
     });
   });
 });
