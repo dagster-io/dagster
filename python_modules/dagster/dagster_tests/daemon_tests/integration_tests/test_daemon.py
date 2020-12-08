@@ -1,6 +1,11 @@
 import time
 
-from dagster.daemon.controller import all_daemons_healthy
+import pendulum
+from dagster.daemon.controller import (
+    DAEMON_HEARTBEAT_INTERVAL_SECONDS,
+    DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+    all_daemons_healthy,
+)
 
 from .utils import setup_instance, start_daemon
 
@@ -8,15 +13,7 @@ from .utils import setup_instance, start_daemon
 def test_heartbeat(tmpdir,):
 
     dagster_home_path = tmpdir.strpath
-    with setup_instance(
-        dagster_home_path,
-        """run_coordinator:
-    module: dagster.core.run_coordinator
-    class: QueuedRunCoordinator
-    config:
-        dequeue_interval_seconds: 1
-    """,
-    ) as instance:
+    with setup_instance(dagster_home_path, "") as instance:
 
         assert all_daemons_healthy(instance) is False
 
@@ -24,5 +21,8 @@ def test_heartbeat(tmpdir,):
             time.sleep(5)
             assert all_daemons_healthy(instance) is True
 
-        time.sleep(5)
-        assert all_daemons_healthy(instance) is False
+        frozen_datetime = pendulum.now().add(
+            seconds=DAEMON_HEARTBEAT_INTERVAL_SECONDS + DAEMON_HEARTBEAT_TOLERANCE_SECONDS + 5
+        )
+        with pendulum.test(frozen_datetime):
+            assert all_daemons_healthy(instance) is False

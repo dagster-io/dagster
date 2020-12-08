@@ -134,7 +134,7 @@ def test_healthy():
         }
     ) as instance:
         init_time = pendulum.now("UTC")
-        beyond_tolerated_time = init_time + datetime.timedelta(seconds=60)
+        beyond_tolerated_time = init_time + datetime.timedelta(seconds=100)
 
         controller = DagsterDaemonController(instance)
         assert not all_daemons_healthy(instance, curr_time=init_time)
