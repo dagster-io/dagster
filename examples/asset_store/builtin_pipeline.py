@@ -30,8 +30,8 @@ def train_model(context, df):
 
 @pipeline(
     mode_defs=[
-        ModeDefinition("test", resource_defs={"asset_store": fs_asset_store}),
-        ModeDefinition("local", resource_defs={"asset_store": local_asset_store}),
+        ModeDefinition("test", resource_defs={"object_manager": fs_asset_store}),
+        ModeDefinition("local", resource_defs={"object_manager": local_asset_store}),
     ],
 )
 def asset_store_pipeline():

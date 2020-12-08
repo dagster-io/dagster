@@ -6,38 +6,10 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_create_noop_execution_plan 1'] = '''{
-  "__class__": "ExecutionPlanSnapshot",
-  "artifacts_persisted": false,
-  "pipeline_snapshot_id": "1c2b11984311606d105ccf19239e31d825bd5ba7",
-  "step_keys_to_execute": [
-    "noop_solid.compute"
-  ],
-  "steps": [
-    {
-      "__class__": "ExecutionStepSnap",
-      "inputs": [],
-      "key": "noop_solid.compute",
-      "kind": {
-        "__enum__": "StepKind.COMPUTE"
-      },
-      "metadata_items": [],
-      "outputs": [
-        {
-          "__class__": "ExecutionStepOutputSnap",
-          "dagster_type_key": "Any",
-          "name": "result"
-        }
-      ],
-      "solid_handle_id": "noop_solid"
-    }
-  ]
-}'''
-
 snapshots['test_create_execution_plan_with_dep 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": false,
-  "pipeline_snapshot_id": "af05e14a8928208d6363b28f80cc83fdfbea77f0",
+  "pipeline_snapshot_id": "5a16b2831c744857410c929e59a4834383c5aa90",
   "step_keys_to_execute": [
     "solid_one.compute",
     "solid_two.compute"
@@ -93,10 +65,77 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
   ]
 }'''
 
+snapshots['test_create_noop_execution_plan 1'] = '''{
+  "__class__": "ExecutionPlanSnapshot",
+  "artifacts_persisted": false,
+  "pipeline_snapshot_id": "cae61a6e51582cd9e784d0d265771aa93f1bf60e",
+  "step_keys_to_execute": [
+    "noop_solid.compute"
+  ],
+  "steps": [
+    {
+      "__class__": "ExecutionStepSnap",
+      "inputs": [],
+      "key": "noop_solid.compute",
+      "kind": {
+        "__enum__": "StepKind.COMPUTE"
+      },
+      "metadata_items": [],
+      "outputs": [
+        {
+          "__class__": "ExecutionStepOutputSnap",
+          "dagster_type_key": "Any",
+          "name": "result"
+        }
+      ],
+      "solid_handle_id": "noop_solid"
+    }
+  ]
+}'''
+
+snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
+  "__class__": "ExecutionPlanSnapshot",
+  "artifacts_persisted": false,
+  "pipeline_snapshot_id": "325f998a50f98fa94b993d694071c0955f439c1d",
+  "step_keys_to_execute": [
+    "noop_solid.compute"
+  ],
+  "steps": [
+    {
+      "__class__": "ExecutionStepSnap",
+      "inputs": [],
+      "key": "noop_solid.compute",
+      "kind": {
+        "__enum__": "StepKind.COMPUTE"
+      },
+      "metadata_items": [
+        {
+          "__class__": "ExecutionPlanMetadataItemSnap",
+          "key": "bar",
+          "value": "baaz"
+        },
+        {
+          "__class__": "ExecutionPlanMetadataItemSnap",
+          "key": "foo",
+          "value": "bar"
+        }
+      ],
+      "outputs": [
+        {
+          "__class__": "ExecutionStepOutputSnap",
+          "dagster_type_key": "Any",
+          "name": "result"
+        }
+      ],
+      "solid_handle_id": "noop_solid"
+    }
+  ]
+}'''
+
 snapshots['test_create_with_composite 1'] = '''{
   "__class__": "ExecutionPlanSnapshot",
   "artifacts_persisted": false,
-  "pipeline_snapshot_id": "739dfb75e745ab7cfb5783b98894084e1472576d",
+  "pipeline_snapshot_id": "b7bbf0d7094776b17e997ed0e973b2032e126fb4",
   "step_keys_to_execute": [
     "comp_1.return_one.compute",
     "comp_1.add_one.compute",
@@ -240,45 +279,6 @@ snapshots['test_create_with_composite 1'] = '''{
         }
       ],
       "solid_handle_id": "comp_2.return_one"
-    }
-  ]
-}'''
-
-snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
-  "__class__": "ExecutionPlanSnapshot",
-  "artifacts_persisted": false,
-  "pipeline_snapshot_id": "7d0ade1cd11078c1295e2f39be57eeb800e69de8",
-  "step_keys_to_execute": [
-    "noop_solid.compute"
-  ],
-  "steps": [
-    {
-      "__class__": "ExecutionStepSnap",
-      "inputs": [],
-      "key": "noop_solid.compute",
-      "kind": {
-        "__enum__": "StepKind.COMPUTE"
-      },
-      "metadata_items": [
-        {
-          "__class__": "ExecutionPlanMetadataItemSnap",
-          "key": "bar",
-          "value": "baaz"
-        },
-        {
-          "__class__": "ExecutionPlanMetadataItemSnap",
-          "key": "foo",
-          "value": "bar"
-        }
-      ],
-      "outputs": [
-        {
-          "__class__": "ExecutionStepOutputSnap",
-          "dagster_type_key": "Any",
-          "name": "result"
-        }
-      ],
-      "solid_handle_id": "noop_solid"
     }
   ]
 }'''

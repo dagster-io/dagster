@@ -40,20 +40,20 @@ def get_step_output(step_events, step_key, output_name="result"):
 
 
 def define_inty_pipeline(asset_store):
-    @lambda_solid(output_def=OutputDefinition(Int, asset_store_key="asset_store"))
+    @lambda_solid(output_def=OutputDefinition(Int, asset_store_key="object_manager"))
     def return_one():
         return 1
 
     @lambda_solid(
         input_defs=[InputDefinition("num", Int)],
-        output_def=OutputDefinition(Int, asset_store_key="asset_store"),
+        output_def=OutputDefinition(Int, asset_store_key="object_manager"),
     )
     def add_one(num):
         return num + 1
 
     @pipeline(
         mode_defs=[
-            ModeDefinition(resource_defs={"asset_store": fake_asset_store_factory(asset_store)})
+            ModeDefinition(resource_defs={"object_manager": fake_asset_store_factory(asset_store)})
         ]
     )
     def basic_external_plan_execution():

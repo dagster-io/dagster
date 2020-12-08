@@ -20,7 +20,7 @@ def solid_b(_context, _df):
     return 1
 
 
-@pipeline(mode_defs=[ModeDefinition("local", resource_defs={"asset_store": fs_asset_store})])
+@pipeline(mode_defs=[ModeDefinition("local", resource_defs={"object_manager": fs_asset_store})])
 def asset_pipeline():
     solid_b(solid_a())
 
@@ -32,7 +32,7 @@ def test_asset_store_with_multi_process_executor():
                 reconstructable(asset_pipeline),
                 run_config={
                     "execution": {"multiprocess": {}},
-                    "resources": {"asset_store": {"config": {"base_dir": tmpdir_path}}},
+                    "resources": {"object_manager": {"config": {"base_dir": tmpdir_path}}},
                 },
                 instance=instance,
             )

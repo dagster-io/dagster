@@ -11,6 +11,6 @@ def solid2(_, a):
     return a + 1
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": fs_asset_store})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": fs_asset_store})])
 def my_pipeline():
     solid2(solid1())

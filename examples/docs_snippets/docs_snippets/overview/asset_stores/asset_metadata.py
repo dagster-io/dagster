@@ -53,6 +53,6 @@ def my_asset_store(_):
 # asset_store_end_marker
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": my_asset_store})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": my_asset_store})])
 def my_pipeline():
     solid2(solid1())

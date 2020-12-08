@@ -15,7 +15,7 @@ def define_pipeline(object_manager):
     def solid_b(_context, _df):
         return 1
 
-    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"asset_store": object_manager})])
+    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"object_manager": object_manager})])
     def asset_pipeline():
         solid_b(solid_a())
 

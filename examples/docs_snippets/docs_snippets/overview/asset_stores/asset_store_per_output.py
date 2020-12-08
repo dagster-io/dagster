@@ -19,7 +19,7 @@ def solid2(_, _input_dataframe):
     mode_defs=[
         ModeDefinition(
             resource_defs={
-                "asset_store": fs_asset_store,
+                "object_manager": fs_asset_store,
                 "db_asset_store": my_asset_store,  # defined in code snippet above
             }
         )

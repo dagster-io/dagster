@@ -39,7 +39,7 @@ def test_dev_loop_changing_versions():
                 "create_string_1_asset": {"config": {"input_str": "apple"}},
                 "take_string_1_asset": {"config": {"input_str": "apple"}},
             },
-            "resources": {"asset_store": {"config": {"base_dir": temp_dir}}},
+            "resources": {"object_manager": {"config": {"base_dir": temp_dir}}},
         }
 
         result = execute_pipeline(

@@ -16,7 +16,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                     {
                         'configField': None,
                         'description': None,
-                        'name': 'asset_store'
+                        'name': 'object_manager'
                     },
                     {
                         'configField': {
@@ -35,7 +35,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                     {
                         'configField': None,
                         'description': None,
-                        'name': 'asset_store'
+                        'name': 'object_manager'
                     },
                     {
                         'configField': {
@@ -68,7 +68,7 @@ snapshots['test_mode_fetch_resources 1'] = {
                     {
                         'configField': None,
                         'description': None,
-                        'name': 'asset_store'
+                        'name': 'object_manager'
                     },
                     {
                         'configField': {
@@ -80,6 +80,23 @@ snapshots['test_mode_fetch_resources 1'] = {
                         'name': 'op'
                     }
                 ]
+            }
+        ]
+    }
+}
+
+snapshots['test_required_resources 1'] = {
+    'pipelineOrError': {
+        'name': 'required_resource_pipeline',
+        'solids': [
+            {
+                'definition': {
+                    'requiredResources': [
+                        {
+                            'resourceKey': 'R1'
+                        }
+                    ]
+                }
             }
         ]
     }

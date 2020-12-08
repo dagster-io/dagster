@@ -37,7 +37,7 @@ def filter_over_50(_, people):
     return people.filter(people["age"] > 50)
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": local_parquet_store})])
+@pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": local_parquet_store})])
 def my_pipeline():
     filter_over_50(make_people())
 

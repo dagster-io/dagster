@@ -152,7 +152,7 @@ def fs_asset_store(init_context):
 
     Example usage:
 
-    1. Specify a pipeline-level asset store using the reserved resource key ``"asset_store"``,
+    1. Specify a pipeline-level asset store using the reserved resource key ``"object_manager"``,
     which will set the given asset store on all solids across a pipeline.
 
     .. code-block:: python
@@ -165,7 +165,7 @@ def fs_asset_store(init_context):
         def solid_b(context, df):
             return df[:5]
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": fs_asset_store})])
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": fs_asset_store})])
         def pipe():
             solid_b(solid_a())
 
@@ -261,7 +261,7 @@ def custom_path_fs_asset_store(init_context):
         @solid(
             output_defs=[
                 OutputDefinition(
-                    asset_store_key="asset_store", asset_metadata={"path": "path/to/sample_output"}
+                    asset_store_key="object_manager", asset_metadata={"path": "path/to/sample_output"}
                 )
             ]
         )
@@ -270,7 +270,7 @@ def custom_path_fs_asset_store(init_context):
 
         @pipeline(
             mode_defs=[
-                ModeDefinition(resource_defs={"asset_store": custom_path_fs_asset_store}),
+                ModeDefinition(resource_defs={"object_manager": custom_path_fs_asset_store}),
             ],
         )
         def pipe():

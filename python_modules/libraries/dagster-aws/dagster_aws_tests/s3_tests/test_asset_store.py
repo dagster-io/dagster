@@ -28,18 +28,18 @@ def get_step_output(step_events, step_key, output_name="result"):
 
 
 def define_inty_pipeline():
-    @lambda_solid(output_def=OutputDefinition(Int, asset_store_key="asset_store"))
+    @lambda_solid(output_def=OutputDefinition(Int, asset_store_key="object_manager"))
     def return_one():
         return 1
 
     @lambda_solid(
         input_defs=[InputDefinition("num", Int)],
-        output_def=OutputDefinition(Int, asset_store_key="asset_store"),
+        output_def=OutputDefinition(Int, asset_store_key="object_manager"),
     )
     def add_one(num):
         return num + 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": s3_asset_store},)])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": s3_asset_store},)])
     def basic_external_plan_execution():
         add_one(return_one())
 
@@ -49,7 +49,7 @@ def define_inty_pipeline():
 def test_s3_asset_store_execution(mock_s3_bucket):
     pipeline_def = define_inty_pipeline()
 
-    run_config = {"resources": {"asset_store": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
+    run_config = {"resources": {"object_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
 
     run_id = make_new_run_id()
 

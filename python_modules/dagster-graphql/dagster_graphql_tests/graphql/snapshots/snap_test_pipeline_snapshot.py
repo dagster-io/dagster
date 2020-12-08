@@ -6,61 +6,9 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots['test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found 1'] = '''{
-  "pipelineSnapshotOrError": {
-    "__typename": "PipelineSnapshotNotFoundError",
-    "snapshotId": "notthere"
-  }
-}'''
-
 snapshots['test_fetch_snapshot_or_error_by_active_pipeline_name_not_found 1'] = '''{
   "pipelineSnapshotOrError": {
     "__typename": "PipelineNotFoundError"
-  }
-}'''
-
-snapshots['test_fetch_snapshot_or_error_by_snapshot_id_success 1'] = '''{
-  "pipelineSnapshotOrError": {
-    "__typename": "PipelineSnapshot",
-    "dagsterTypes": [
-      {
-        "key": "Any"
-      },
-      {
-        "key": "Bool"
-      },
-      {
-        "key": "Float"
-      },
-      {
-        "key": "Int"
-      },
-      {
-        "key": "Nothing"
-      },
-      {
-        "key": "String"
-      }
-    ],
-    "description": null,
-    "modes": [
-      {
-        "name": "default"
-      }
-    ],
-    "name": "noop_pipeline",
-    "pipelineSnapshotId": "1c2b11984311606d105ccf19239e31d825bd5ba7",
-    "solidHandles": [
-      {
-        "handleID": "noop_solid"
-      }
-    ],
-    "solids": [
-      {
-        "name": "noop_solid"
-      }
-    ],
-    "tags": []
   }
 }'''
 
@@ -97,7 +45,7 @@ snapshots['test_fetch_snapshot_or_error_by_active_pipeline_name_success 1'] = ''
       }
     ],
     "name": "csv_hello_world",
-    "pipelineSnapshotId": "9a51b2a71e7e0de6514c4c35cb01af1e79e1b065",
+    "pipelineSnapshotId": "4071a0ef193d9cd9694c68a4d1438ffd22075a36",
     "solidHandles": [
       {
         "handleID": "sum_solid"
@@ -112,6 +60,58 @@ snapshots['test_fetch_snapshot_or_error_by_active_pipeline_name_success 1'] = ''
       },
       {
         "name": "sum_sq_solid"
+      }
+    ],
+    "tags": []
+  }
+}'''
+
+snapshots['test_fetch_snapshot_or_error_by_snapshot_id_snapshot_not_found 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshotNotFoundError",
+    "snapshotId": "notthere"
+  }
+}'''
+
+snapshots['test_fetch_snapshot_or_error_by_snapshot_id_success 1'] = '''{
+  "pipelineSnapshotOrError": {
+    "__typename": "PipelineSnapshot",
+    "dagsterTypes": [
+      {
+        "key": "Any"
+      },
+      {
+        "key": "Bool"
+      },
+      {
+        "key": "Float"
+      },
+      {
+        "key": "Int"
+      },
+      {
+        "key": "Nothing"
+      },
+      {
+        "key": "String"
+      }
+    ],
+    "description": null,
+    "modes": [
+      {
+        "name": "default"
+      }
+    ],
+    "name": "noop_pipeline",
+    "pipelineSnapshotId": "cae61a6e51582cd9e784d0d265771aa93f1bf60e",
+    "solidHandles": [
+      {
+        "handleID": "noop_solid"
+      }
+    ],
+    "solids": [
+      {
+        "name": "noop_solid"
       }
     ],
     "tags": []

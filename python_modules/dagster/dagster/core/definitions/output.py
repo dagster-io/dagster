@@ -25,7 +25,7 @@ class OutputDefinition:
         description (Optional[str]): Human-readable description of the output.
         is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
         manager_key (Optional[str]): The resource key of the output manager used for this output.
-            (default: "asset_store").
+            (default: "object_manager").
         metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output. For example,
             users can provide a file path if the data object will be stored in a filesystem, or
             provide information of a database table when it is going to load the data into the
@@ -48,7 +48,7 @@ class OutputDefinition:
         self._description = check.opt_str_param(description, "description")
         self._is_required = check.opt_bool_param(is_required, "is_required", default=True)
         self._manager_key = check.opt_str_param(
-            asset_store_key, "asset_store_key", default=manager_key or "asset_store"
+            asset_store_key, "asset_store_key", default=manager_key or "object_manager"
         )
         self._metadata = asset_metadata or metadata
 

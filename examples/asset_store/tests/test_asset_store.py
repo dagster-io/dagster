@@ -82,7 +82,7 @@ def test_builtin_pipeline():
         instance = DagsterInstance.ephemeral()
 
         run_config = {
-            "resources": {"asset_store": {"config": {"base_dir": tmpdir_path}}},
+            "resources": {"object_manager": {"config": {"base_dir": tmpdir_path}}},
         }
 
         result = execute_pipeline(

@@ -38,7 +38,7 @@ def test_object_manager_with_config():
         return MyObjectManager()
 
     @pipeline(
-        mode_defs=[ModeDefinition(resource_defs={"asset_store": configurable_object_manager})]
+        mode_defs=[ModeDefinition(resource_defs={"object_manager": configurable_object_manager})]
     )
     def my_pipeline():
         my_solid()
@@ -57,7 +57,7 @@ def define_pipeline(manager, metadata_dict):
     def solid_b(_context, _df):
         return 1
 
-    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"asset_store": manager})])
+    @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"object_manager": manager})])
     def my_pipeline():
         solid_b(solid_a())
 
@@ -227,7 +227,7 @@ def test_set_object_manager_and_intermediate_storage():
         @pipeline(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={"asset_store": my_object_manager},
+                    resource_defs={"object_manager": my_object_manager},
                     intermediate_storage_defs=[my_intermediate_storage, fs_intermediate_storage],
                 )
             ]
@@ -241,7 +241,7 @@ def test_set_object_manager_and_intermediate_storage():
 def test_set_asset_store_configure_intermediate_storage():
     with pytest.raises(DagsterInvariantViolationError):
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": my_object_manager})])
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": my_object_manager})])
         def my_pipeline():
             pass
 
@@ -264,7 +264,7 @@ def test_fan_in():
         def solid1(_, input1):
             assert input1 == [1, 2]
 
-        @pipeline(mode_defs=[ModeDefinition(resource_defs={"asset_store": asset_store})])
+        @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": asset_store})])
         def my_pipeline():
             solid1(input1=[input_solid1(), input_solid2()])
 

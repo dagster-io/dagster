@@ -7,5 +7,5 @@ def test_asset_store_per_output():
     with TemporaryDirectory() as tmpdir:
         execute_pipeline(
             my_pipeline,
-            run_config={"resources": {"asset_store": {"config": {"base_dir": tmpdir}}}},
+            run_config={"resources": {"object_manager": {"config": {"base_dir": tmpdir}}}},
         )

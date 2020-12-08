@@ -240,7 +240,7 @@ def _check_persistent_storage_requirement(pipeline_def, mode_def, intermediate_s
             "includes solid outputs that will not be stored somewhere where other processes can"
             "retrieve them. "
             "Please make sure that your pipeline definition includes a ModeDefinition whose "
-            'resource_keys assign the "asset_store" key to an AssetStore resource '
+            'resource_keys assign the "object_manager" key to an AssetStore resource '
             "that stores outputs outside of the process, such as the fs_asset_store."
         )
 

@@ -468,7 +468,7 @@ def check_asset_store_intermediate_storage(mode_def, environment_config):
         intermediate_storage_def is None or intermediate_storage_def == mem_intermediate_storage
     )
 
-    asset_store = mode_def.resource_defs["asset_store"]
+    asset_store = mode_def.resource_defs["object_manager"]
     asset_store_is_default = asset_store == mem_asset_store
 
     if not intermediate_storage_is_default and not asset_store_is_default:
@@ -477,7 +477,7 @@ def check_asset_store_intermediate_storage(mode_def, environment_config):
             "also specified a default asset store. You must specify only one. To avoid specifying "
             "an intermediate storage, omit the intermediate_storage_defs argument to your"
             'ModeDefinition and omit "intermediate_storage" in your run config. To avoid '
-            'specifying a default asset store, omit the "asset_store" key from the '
+            'specifying a default asset store, omit the "object_manager" key from the '
             "resource_defs argument to your ModeDefinition.".format(
                 intermediate_storage_name=intermediate_storage_def.name
             )

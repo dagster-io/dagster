@@ -101,7 +101,7 @@ def versioned_pipeline_factory(asset_store=None):
             ModeDefinition(
                 name="main",
                 resource_defs=(
-                    {"asset_store": asset_store_factory(asset_store)} if asset_store else {}
+                    {"object_manager": asset_store_factory(asset_store)} if asset_store else {}
                 ),
             )
         ]
@@ -123,7 +123,7 @@ def partially_versioned_pipeline_factory(asset_store=None):
             ModeDefinition(
                 name="main",
                 resource_defs=(
-                    {"asset_store": asset_store_factory(asset_store)} if asset_store else {}
+                    {"object_manager": asset_store_factory(asset_store)} if asset_store else {}
                 ),
             )
         ]
