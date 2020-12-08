@@ -114,7 +114,7 @@ def passthrough_flags_only(solid_config, additional_flags):
 @solid(
     description="A solid to invoke dbt run via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=DbtCliOutput)],
+    output_defs=[OutputDefinition(name="dbt_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "threads": Field(
@@ -194,13 +194,13 @@ def dbt_cli_run(context) -> DbtCliOutput:
         metadata_entries=[EventMetadataEntry.json(cli_output_dict, label="CLI Output")],
     )
 
-    yield Output(cli_output)
+    yield Output(cli_output, output_name="dbt_output")
 
 
 @solid(
     description="A solid to invoke dbt test via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=DbtCliOutput)],
+    output_defs=[OutputDefinition(name="dbt_output", dagster_type=DbtCliOutput)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "data": Field(
@@ -271,13 +271,13 @@ def dbt_cli_test(context) -> DbtCliOutput:
             metadata_entries=[EventMetadataEntry.json(cli_output, label="CLI Output")],
         )
 
-    yield Output(DbtCliOutput.from_dict(cli_output))
+    yield Output(DbtCliOutput.from_dict(cli_output), output_name="dbt_output")
 
 
 @solid(
     description="A solid to invoke dbt snapshot via CLI.",
     input_defs=[InputDefinition(name="start_after", dagster_type=Nothing)],
-    output_defs=[OutputDefinition(name="result", dagster_type=Dict)],
+    output_defs=[OutputDefinition(dagster_type=Dict)],
     config_schema={
         **CLI_CONFIG_SCHEMA,
         "threads": Field(
