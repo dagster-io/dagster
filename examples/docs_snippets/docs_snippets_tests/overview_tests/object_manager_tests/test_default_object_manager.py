@@ -1,9 +1,9 @@
 from dagster import execute_pipeline
 from dagster.seven import TemporaryDirectory
-from docs_snippets.overview.asset_stores.asset_store_per_output import my_pipeline
+from docs_snippets.overview.object_managers.default_object_manager import my_pipeline
 
 
-def test_asset_store_per_output():
+def test_default_object_manager():
     with TemporaryDirectory() as tmpdir:
         execute_pipeline(
             my_pipeline,

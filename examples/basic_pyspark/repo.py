@@ -1,25 +1,24 @@
 # start_repo_marker_0
 import os
 
-from dagster import ModeDefinition, pipeline, repository, resource, solid
-from dagster.core.storage.asset_store import AssetStore
+from dagster import ModeDefinition, ObjectManager, object_manager, pipeline, repository, solid
 from pyspark.sql import Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 
-class LocalParquetStore(AssetStore):
+class LocalParquetStore(ObjectManager):
     def _get_path(self, context):
-        return os.path.join(context.source_run_id, context.step_key, context.output_name)
+        return os.path.join(context.run_id, context.step_key, context.name)
 
-    def set_asset(self, context, obj):
+    def handle_output(self, context, obj):
         obj.write.parquet(self._get_path(context))
 
-    def get_asset(self, context):
+    def load_input(self, context):
         spark = SparkSession.builder.getOrCreate()
-        return spark.read.parquet(self._get_path(context))
+        return spark.read.parquet(self._get_path(context.upstream_output))
 
 
-@resource
+@object_manager
 def local_parquet_store(_):
     return LocalParquetStore()
 

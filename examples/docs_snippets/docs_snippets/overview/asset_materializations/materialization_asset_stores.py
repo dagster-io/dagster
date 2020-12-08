@@ -1,16 +1,16 @@
 import os
 
 import pandas as pd
-from dagster import AssetKey, AssetMaterialization, AssetStore, EventMetadataEntry
+from dagster import AssetKey, AssetMaterialization, EventMetadataEntry, ObjectManager
 
 
 # start_marker_0
-class PandasCsvAssetStore(AssetStore):
-    def get_asset(self, context):
+class PandasCsvObjectManager(ObjectManager):
+    def load_input(self, context):
         file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
         return pd.read_csv(file_path)
 
-    def set_asset(self, context, obj):
+    def handle_output(self, context, obj):
         file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
 
         obj.to_csv(file_path)
@@ -24,12 +24,12 @@ class PandasCsvAssetStore(AssetStore):
 
 
 # start_marker_1
-class PandasCsvAssetStoreWithMetadata(AssetStore):
-    def get_asset(self, context):
+class PandasCsvObjectManagerWithMetadata(ObjectManager):
+    def load_input(self, context):
         file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
         return pd.read_csv(file_path)
 
-    def set_asset(self, context, obj):
+    def handle_output(self, context, obj):
         file_path = os.path.join(["my_base_dir", context.step_key, context.output_name])
 
         obj.to_csv(file_path)

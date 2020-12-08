@@ -119,8 +119,8 @@
         "path": "/overview/modes-resources-presets/modes-resources"
       },
       {
-        "name": "Asset Stores",
-        "path": "/overview/asset-stores/asset-stores"
+        "name": "Object Managers",
+        "path": "/overview/object-managers/object-managers"
       },
       {
         "name": "Types",
