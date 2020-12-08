@@ -158,7 +158,10 @@ def launch_scheduled_runs_for_schedule(
         logger.info(f"No new runs for {schedule_name}")
         return
 
-    if len(tick_times) > max_catchup_runs:
+    if not external_schedule.partition_set_name and len(tick_times) > 1:
+        logger.warning(f"{schedule_name} has no partition set, so not trying to catch up")
+        tick_times = tick_times[-1:]
+    elif len(tick_times) > max_catchup_runs:
         logger.warning(f"{schedule_name} has fallen behind, only launching {max_catchup_runs} runs")
         tick_times = tick_times[-max_catchup_runs:]
 

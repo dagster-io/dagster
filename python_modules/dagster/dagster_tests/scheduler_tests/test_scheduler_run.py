@@ -13,6 +13,7 @@ from dagster import (
     hourly_schedule,
     pipeline,
     repository,
+    schedule,
     solid,
 )
 from dagster.core.definitions.job import RunRequest
@@ -84,6 +85,13 @@ def daily_schedule_without_timezone(date):
 )
 def daily_central_time_schedule(date):
     return _solid_config(date)
+
+
+@schedule(
+    pipeline_name="the_pipeline", cron_schedule="*/5 * * * *", execution_timezone="US/Central"
+)
+def partitionless_schedule(context):
+    return _solid_config(context.scheduled_execution_time)
 
 
 # Schedule that runs on a different day in Central Time vs UTC
@@ -251,6 +259,7 @@ def the_repo():
         wrong_config_schedule,
         define_multi_run_schedule(),
         define_multi_run_schedule_with_missing_run_key(),
+        partitionless_schedule,
     ]
 
 
@@ -1039,6 +1048,53 @@ def test_launch_failure(external_repo_context, capfd):
             )
 
 
+def test_partitionless_schedule(capfd):
+    initial_datetime = pendulum.create(year=2019, month=2, day=27, tz="US/Central")
+    with instance_with_schedules(default_repo) as (instance, external_repo):
+        with pendulum.test(initial_datetime):
+            external_schedule = external_repo.get_external_schedule("partitionless_schedule")
+            schedule_origin = external_schedule.get_external_origin()
+            instance.start_schedule_and_update_storage_state(external_schedule)
+
+        # Travel enough in the future that many ticks have passed, but only one run executes
+        initial_datetime = initial_datetime.add(days=5)
+        with pendulum.test(initial_datetime):
+            launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
+            assert instance.get_runs_count() == 1
+
+            wait_for_all_runs_to_start(instance)
+
+            ticks = instance.get_job_ticks(schedule_origin.get_id())
+            assert len(ticks) == 1
+
+            validate_tick(
+                ticks[0],
+                external_schedule,
+                pendulum.create(year=2019, month=3, day=4, tz="US/Central"),
+                JobTickStatus.SUCCESS,
+                [run.run_id for run in instance.get_runs()],
+            )
+
+            validate_run_started(
+                instance.get_runs()[0],
+                execution_time=pendulum.create(year=2019, month=3, day=4, tz="US/Central"),
+                partition_time=None,
+            )
+
+            captured = capfd.readouterr()
+
+            assert (
+                captured.out
+                == """2019-03-04 00:00:00 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: partitionless_schedule
+2019-03-04 00:00:00 - SchedulerDaemon - WARNING - partitionless_schedule has no partition set, so not trying to catch up
+2019-03-04 00:00:00 - SchedulerDaemon - INFO - Evaluating schedule `partitionless_schedule` at 2019-03-04 00:00:00-0600
+2019-03-04 00:00:00 - SchedulerDaemon - INFO - Completed scheduled launch of run {run_id} for partitionless_schedule
+""".format(
+                    run_id=instance.get_runs()[0].run_id
+                )
+            )
+
+
 def test_max_catchup_runs(capfd):
     initial_datetime = pendulum.datetime(
         year=2019, month=2, day=27, hour=23, minute=59, second=59
@@ -1179,28 +1235,26 @@ def test_multi_runs(external_repo_context, capfd):
             assert len(ticks) == 1
             assert ticks[0].status == JobTickStatus.SUCCESS
 
-        freeze_datetime = freeze_datetime.add(days=2)
+        freeze_datetime = freeze_datetime.add(days=1)
         with pendulum.test(freeze_datetime):
             capfd.readouterr()
 
-            # Traveling two more days in the future before running results in two new ticks
+            # Traveling one more day in the future before running results in a tick
             launch_scheduled_runs(instance, logger(), pendulum.now("UTC"))
-            assert instance.get_runs_count() == 6
+            assert instance.get_runs_count() == 4
             ticks = instance.get_job_ticks(schedule_origin.get_id())
-            assert len(ticks) == 3
-            assert len([tick for tick in ticks if tick.status == JobTickStatus.SUCCESS]) == 3
+            assert len(ticks) == 2
+            assert len([tick for tick in ticks if tick.status == JobTickStatus.SUCCESS]) == 2
             runs = instance.get_runs()
 
             captured = capfd.readouterr()
 
             assert (
                 captured.out
-                == f"""2019-03-01 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
-2019-03-01 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `multi_run_schedule` at the following times: 2019-03-01 00:00:00+0000, 2019-03-02 00:00:00+0000
-2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[3].run_id} for multi_run_schedule
-2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[2].run_id} for multi_run_schedule
-2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[1].run_id} for multi_run_schedule
-2019-03-01 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[0].run_id} for multi_run_schedule
+                == f"""2019-02-28 18:00:01 - SchedulerDaemon - INFO - Checking for new runs for the following schedules: multi_run_schedule
+2019-02-28 18:00:01 - SchedulerDaemon - INFO - Evaluating schedule `multi_run_schedule` at 2019-03-01 00:00:00+0000
+2019-02-28 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[1].run_id} for multi_run_schedule
+2019-02-28 18:00:01 - SchedulerDaemon - INFO - Completed scheduled launch of run {runs[0].run_id} for multi_run_schedule
 """
             )
 
