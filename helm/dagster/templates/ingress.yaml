@@ -31,7 +31,7 @@ spec:
               serviceName: {{ .serviceName }}
               servicePort: {{ .servicePort }}
           {{- end }}
-    {{- if .Values.flower.enabled -}}
+    {{- if .Values.flower.enabled }}
     - host: {{ .Values.ingress.flower.host }}
       http:
         paths:
