@@ -34,6 +34,33 @@ class IDefinitionConfigSchema(ABC):
         field = self.as_field()
         return field.config_type if field else None
 
+    @property
+    def is_required(self):
+        field = self.as_field()
+        return field.is_required if field else False
+
+    @property
+    def default_provided(self):
+        field = self.as_field()
+        return field.default_provided if field else False
+
+    @property
+    def default_value(self):
+        field = self.as_field()
+        check.invariant(self.default_provided, "Asking for default value when none was provided")
+        return field.default_value if field else None
+
+    @property
+    def default_value_as_json_str(self):
+        field = self.as_field()
+        check.invariant(self.default_provided, "Asking for default value when none was provided")
+        return field.default_value_as_json_str
+
+    @property
+    def description(self):
+        field = self.as_field()
+        return field.description if field else False
+
 
 class DefinitionConfigSchema(IDefinitionConfigSchema):
     def __init__(self, config_field):
