@@ -16,6 +16,7 @@ from dagster.core.snap import ConfigSchemaSnapshot
 from dagster.utils.error import SerializableErrorInfo
 from dagster_graphql import dauphin
 
+from ..implementation.fetch_runs import get_runs, get_runs_count
 from ..implementation.utils import PipelineSelector
 from .config_types import DauphinConfigTypeField
 
@@ -559,7 +560,19 @@ class DauphinPipelineRuns(dauphin.ObjectType):
     class Meta:
         name = "PipelineRuns"
 
+    def __init__(self, filters, cursor, limit):
+        self._filters = filters
+        self._cursor = cursor
+        self._limit = limit
+
     results = dauphin.non_null_list("PipelineRun")
+    count = dauphin.Int()
+
+    def resolve_results(self, graphene_info):
+        return get_runs(graphene_info, self._filters, self._cursor, self._limit)
+
+    def resolve_count(self, graphene_info):
+        return get_runs_count(graphene_info, self._filters)
 
 
 class DauphinPipelineRunsOrError(dauphin.Union):

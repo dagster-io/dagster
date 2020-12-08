@@ -741,6 +741,7 @@ union PipelineRunsOrError = PipelineRuns | InvalidPipelineRunsFilterError | Pyth
 
 type PipelineRuns {
   results: [PipelineRun!]!
+  count: Int
 }
 
 type InvalidPipelineRunsFilterError implements Error {

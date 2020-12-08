@@ -115,6 +115,16 @@ query PipelineRunsRootQuery($filter: PipelineRunsFilter!) {
 }
 """
 
+FILTERED_RUN_COUNT_QUERY = """
+query PipelineRunsRootQuery($filter: PipelineRunsFilter!) {
+  pipelineRunsOrError(filter: $filter) {
+    ... on PipelineRuns {
+      count
+    }
+  }
+}
+"""
+
 
 RUN_GROUP_QUERY = """
 query RunGroupQuery($runId: ID!) {
@@ -591,6 +601,24 @@ def test_filtered_runs_multiple_statuses():
             assert len(run_ids) == 2
             assert run_id_2 in run_ids
             assert run_id_3 in run_ids
+
+
+def test_filtered_runs_count():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        instance.create_run_for_pipeline(  # pylint: disable=expression-not-assigned
+            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.STARTED
+        ).run_id
+        instance.create_run_for_pipeline(  # pylint: disable=expression-not-assigned
+            repo.get_pipeline("foo_pipeline"), status=PipelineRunStatus.FAILURE
+        ).run_id
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context, FILTERED_RUN_COUNT_QUERY, variables={"filter": {"statuses": ["FAILURE"]}}
+            )
+            assert result.data
+            count = result.data["pipelineRunsOrError"]["count"]
+            assert count == 1
 
 
 def test_run_group():

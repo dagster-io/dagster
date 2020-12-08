@@ -94,6 +94,10 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     return [graphene_info.schema.type_named("PipelineRun")(run) for run in runs]
 
 
+def get_runs_count(graphene_info, filters):
+    return graphene_info.context.instance.get_runs_count(filters)
+
+
 def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
     from ..schema.runs import DauphinRunGroup
 
