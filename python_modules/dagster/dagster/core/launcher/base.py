@@ -29,8 +29,7 @@ class RunLauncher(six.with_metaclass(ABCMeta)):
              optional during migration)
 
         Returns:
-            PipelineRun: The launched run. This should be in the ``PipelineRunStatus.STARTED``
-                state, or, if a synchronous failure occurs, the ``PipelineRunStatus.FAILURE`` state.
+            PipelineRun: The launched run.
         """
 
     @abstractmethod

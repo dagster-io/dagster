@@ -87,7 +87,7 @@ def test_single_proc_interrupt():
             pass
 
         assert DagsterEventType.STEP_FAILURE in results
-        assert DagsterEventType.PIPELINE_FAILURE in results
+        assert DagsterEventType.PIPELINE_CANCELED in results
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
@@ -130,7 +130,7 @@ def test_interrupt_multiproc():
             assert [result.event_type for result in results].count(
                 DagsterEventType.STEP_FAILURE
             ) == 4
-            assert DagsterEventType.PIPELINE_FAILURE in [result.event_type for result in results]
+            assert DagsterEventType.PIPELINE_CANCELED in [result.event_type for result in results]
 
 
 def test_interrupt_resource_teardown():
@@ -181,7 +181,7 @@ def test_interrupt_resource_teardown():
             pass
 
         assert DagsterEventType.STEP_FAILURE in results
-        assert DagsterEventType.PIPELINE_FAILURE in results
+        assert DagsterEventType.PIPELINE_CANCELED in results
         assert "A" in cleaned
 
 

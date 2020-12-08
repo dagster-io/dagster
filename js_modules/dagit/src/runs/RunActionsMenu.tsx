@@ -129,7 +129,7 @@ export const RunActionsMenu: React.FC<{
                 const result = await cancel({variables: {runId: run.runId}});
                 showToastFor(
                   result.data?.terminatePipelineExecution,
-                  `Run ${run.runId} cancelled.`,
+                  `Run ${run.runId} canceled.`,
                   `Something went wrong when trying to cancel Run ${run.runId}`,
                 );
               }}

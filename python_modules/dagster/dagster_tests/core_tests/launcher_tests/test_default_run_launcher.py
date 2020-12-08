@@ -156,10 +156,14 @@ def _is_multiprocess(run_config):
 
 def _check_event_log_contains(event_log, expected_type_and_message):
     types_and_messages = [(e.dagster_event.event_type_value, e.message) for e in event_log]
+
     for expected_event_type, expected_message_fragment in expected_type_and_message:
         assert any(
             event_type == expected_event_type and expected_message_fragment in message
             for event_type, message in types_and_messages
+        ), "Missing {expected_event_type}:{expected_message_fragment}".format(
+            expected_event_type=expected_event_type,
+            expected_message_fragment=expected_message_fragment,
         )
 
 
@@ -321,7 +325,7 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
 
             terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
             terminated_pipeline_run = instance.get_run_by_id(run_id)
-            assert terminated_pipeline_run.status == PipelineRunStatus.FAILURE
+            assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
 
             poll_for_event(
                 instance, run_id, event_type="ENGINE_EVENT", message="Process for pipeline exited",
@@ -333,16 +337,13 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
                 _check_event_log_contains(
                     run_logs,
                     [
-                        ("ENGINE_EVENT", "Received pipeline termination request"),
+                        ("PIPELINE_CANCELING", "Sending pipeline termination request."),
                         (
                             "ENGINE_EVENT",
                             "Multiprocess executor: received termination signal - forwarding to active child process",
                         ),
                         ("STEP_FAILURE", 'Execution of step "sleepy_solid.compute" failed.'),
-                        (
-                            "PIPELINE_FAILURE",
-                            'Execution of pipeline "sleepy_pipeline" failed. An exception was thrown during execution.',
-                        ),
+                        ("PIPELINE_CANCELED", 'Execution of pipeline "sleepy_pipeline" canceled.',),
                         ("ENGINE_EVENT", "Process for pipeline exited"),
                     ],
                 )
@@ -350,9 +351,9 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
                 _check_event_log_contains(
                     run_logs,
                     [
-                        ("ENGINE_EVENT", "Received pipeline termination request"),
+                        ("PIPELINE_CANCELING", "Sending pipeline termination request."),
                         ("STEP_FAILURE", 'Execution of step "sleepy_solid.compute" failed.'),
-                        ("PIPELINE_FAILURE", 'Execution of pipeline "sleepy_pipeline" failed.'),
+                        ("PIPELINE_CANCELED", 'Execution of pipeline "sleepy_pipeline" canceled.',),
                         ("ENGINE_EVENT", "Pipeline execution terminated by interrupt"),
                         ("ENGINE_EVENT", "Process for pipeline exited"),
                     ],

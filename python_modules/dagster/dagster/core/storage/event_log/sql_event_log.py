@@ -195,7 +195,10 @@ class SqlEventLogStorage(EventLogStorage):
             start_time = times.get(DagsterEventType.PIPELINE_START.value, None)
             end_time = times.get(
                 DagsterEventType.PIPELINE_SUCCESS.value,
-                times.get(DagsterEventType.PIPELINE_FAILURE.value, None),
+                times.get(
+                    DagsterEventType.PIPELINE_FAILURE.value,
+                    times.get(DagsterEventType.PIPELINE_CANCELED.value, None),
+                ),
             )
 
             return PipelineRunStatsSnapshot(

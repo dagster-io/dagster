@@ -228,7 +228,11 @@ class SqliteEventLogStorageWatchdog(PatternMatchingEventHandler):
         for event in events:
             status = self._cb(event)
 
-            if status == PipelineRunStatus.SUCCESS or status == PipelineRunStatus.FAILURE:
+            if (
+                status == PipelineRunStatus.SUCCESS
+                or status == PipelineRunStatus.FAILURE
+                or status == PipelineRunStatus.CANCELED
+            ):
                 self._event_log_storage.end_watch(self._run_id, self._cb)
 
     def on_modified(self, event):

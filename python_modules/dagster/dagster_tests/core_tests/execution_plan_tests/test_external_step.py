@@ -27,7 +27,6 @@ from dagster.core.execution.plan.external_step import (
     step_context_to_step_run_ref,
     step_run_ref_to_step_context,
 )
-from dagster.core.execution.retries import Retries, RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.utils import safe_tempfile_path, send_interrupt
@@ -258,7 +257,7 @@ def test_interrupt_step_launcher(mode):
                 pass
 
             assert DagsterEventType.STEP_FAILURE in results
-            assert DagsterEventType.PIPELINE_FAILURE in results
+            assert DagsterEventType.PIPELINE_CANCELED in results
 
             interrupt_thread.join()
 

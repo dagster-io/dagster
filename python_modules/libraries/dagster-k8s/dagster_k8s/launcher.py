@@ -332,10 +332,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         if not run:
             return False
 
-        self._instance.report_engine_event(
-            message="Received pipeline termination request.", pipeline_run=run, cls=self.__class__
-        )
-
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
@@ -346,6 +342,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 cls=self.__class__,
             )
             return False
+
+        self._instance.report_run_cancelling(run)
 
         job_name = get_job_name_from_run_id(run_id)
 

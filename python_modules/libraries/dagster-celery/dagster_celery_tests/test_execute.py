@@ -170,7 +170,7 @@ def test_terminate_pipeline_on_celery():
             assert len(revoke_steps) > 0
 
             # The overall pipeline failed
-            assert DagsterEventType.PIPELINE_FAILURE in result_types
+            assert DagsterEventType.PIPELINE_CANCELED in result_types
 
 
 def test_execute_eagerly_on_celery():

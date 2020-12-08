@@ -176,12 +176,10 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         run = self._instance.get_run_by_id(run_id)
         container = self._get_container(run)
 
-        self._instance.report_engine_event(
-            message="Received pipeline termination request.", pipeline_run=run, cls=self.__class__
-        )
-
         if not container:
             return False
+
+        self._instance.report_run_cancelling(run)
 
         container.stop()
 

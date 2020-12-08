@@ -190,7 +190,12 @@ class MultiprocessExecutor(Executor):
                     yield from active_execution.plan_events_iterator(pipeline_context)
 
                 errs = {pid: err for pid, err in errors.items() if err}
-                if errs:
+
+                are_canceled_errors = stopping and all(
+                    [err.cls_name == "KeyboardInterrupt" for err in errors.values()]
+                )
+
+                if errs and not are_canceled_errors:
                     raise DagsterSubprocessError(
                         "During multiprocess execution errors occurred in child processes:\n{error_list}".format(
                             error_list="\n".join(
@@ -202,6 +207,10 @@ class MultiprocessExecutor(Executor):
                         ),
                         subprocess_error_infos=list(errs.values()),
                     )
+
+                if stopping:
+                    # Signal to parent execution loop to terminate
+                    raise KeyboardInterrupt()
 
         yield DagsterEvent.engine_event(
             pipeline_context,

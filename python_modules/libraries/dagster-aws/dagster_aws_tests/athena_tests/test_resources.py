@@ -38,11 +38,11 @@ def test_execute_query_state_transitions(mock_athena_client, expected_states):
     "expected_states",
     [
         ["FAILED"],
-        ["CANCELLED"],
+        ["CANCELED"],
         ["QUEUED", "FAILED"],
         ["QUEUED", "RUNNING", "FAILED"],
-        ["QUEUED", "CANCELLED"],
-        ["QUEUED", "RUNNING", "CANCELLED"],
+        ["QUEUED", "CANCELED"],
+        ["QUEUED", "RUNNING", "CANCELED"],
     ],
 )
 def test_execute_query_raises(mock_athena_client, expected_states):

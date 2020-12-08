@@ -225,7 +225,11 @@ export function extractMetadataFromLogs(
       metadata.initFailed = true;
       metadata.exitedAt = timestamp;
     }
-    if (log.__typename === 'PipelineFailureEvent' || log.__typename === 'PipelineSuccessEvent') {
+    if (
+      log.__typename === 'PipelineFailureEvent' ||
+      log.__typename === 'PipelineSuccessEvent' ||
+      log.__typename === 'PipelineCancelledEvent'
+    ) {
       metadata.exitedAt = timestamp;
       for (const step of Object.values(metadata.steps)) {
         if (step.state === IStepState.RUNNING) {

@@ -235,16 +235,16 @@ def _test_termination(dagster_instance, run_config):
     assert dagster_instance.run_launcher.can_terminate(run_id=run.run_id)
     assert dagster_instance.run_launcher.terminate(run_id=run.run_id)
 
-    # Check that pipeline run is marked as failed
-    pipeline_run_status_failure = False
+    # Check that pipeline run is marked as canceled
+    pipeline_run_status_canceled = False
     start_time = datetime.datetime.now()
     while datetime.datetime.now() < start_time + timeout:
         pipeline_run = dagster_instance.get_run_by_id(run.run_id)
-        if pipeline_run.status == PipelineRunStatus.FAILURE:
-            pipeline_run_status_failure = True
+        if pipeline_run.status == PipelineRunStatus.CANCELED:
+            pipeline_run_status_canceled = True
             break
         time.sleep(5)
-    assert pipeline_run_status_failure
+    assert pipeline_run_status_canceled
 
     # Check that terminate cannot be called again
     assert not dagster_instance.run_launcher.can_terminate(run_id=run.run_id)
@@ -264,13 +264,14 @@ def _test_termination(dagster_instance, run_config):
             if event_record.dagster_event:
                 if event_record.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
                     step_failures_count += 1
-                elif event_record.dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
+                elif event_record.dagster_event.event_type == DagsterEventType.PIPELINE_CANCELING:
                     if (
                         event_record.dagster_event.message
-                        == "[CeleryK8sRunLauncher] Received pipeline termination request."
+                        == "Sending pipeline termination request."
                     ):
                         termination_request_count += 1
-                    elif (
+                elif event_record.dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
+                    if (
                         event_record.dagster_event.message
                         == "[CeleryK8sRunLauncher] Pipeline was terminated successfully."
                     ):

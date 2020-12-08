@@ -31,7 +31,7 @@ class EmrStepState(PyEnum):
     Running = "RUNNING"
     Continue = "CONTINUE"
     Completed = "COMPLETED"
-    Cancelled = "CANCELLED"
+    Cancelled = "CANCELED"
     Failed = "FAILED"
     Interrupted = "INTERRUPTED"
 

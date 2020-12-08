@@ -77,8 +77,13 @@ export const RunActionButtons: React.FC<RunActionButtonsProps> = ({
     [IStepState.FAILED, IStepState.SUCCEEDED].includes(stepState),
   );
   const isFinalStatus =
-    run?.status === PipelineRunStatus.FAILURE || run?.status === PipelineRunStatus.SUCCESS;
-  const isFailedWithPlan = executionPlan && run && run.status === PipelineRunStatus.FAILURE;
+    run?.status === PipelineRunStatus.FAILURE ||
+    run?.status === PipelineRunStatus.SUCCESS ||
+    run?.status === PipelineRunStatus.CANCELED;
+  const isFailedWithPlan =
+    executionPlan &&
+    run &&
+    (run.status === PipelineRunStatus.FAILURE || run.status == PipelineRunStatus.CANCELED);
   const isFailureInSelection = selection.keys.length && selectionStates.includes(IStepState.FAILED);
 
   const full: LaunchButtonConfiguration = {

@@ -9,7 +9,10 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFil
 def _recent_failed_runs_text(instance):
     lines = []
     runs = instance.get_runs(
-        limit=5, filters=PipelineRunsFilter(statuses=[PipelineRunStatus.FAILURE])
+        limit=5,
+        filters=PipelineRunsFilter(
+            statuses=[PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED]
+        ),
     )
     if len(runs) <= 0:
         return ""

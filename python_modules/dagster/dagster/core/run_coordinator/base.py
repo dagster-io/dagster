@@ -28,7 +28,7 @@ class RunCoordinator(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def can_cancel_run(self, run_id):
         """
-        Can this run_id be cancelled
+        Can this run_id be canceled
         """
 
     @abstractmethod
@@ -36,7 +36,7 @@ class RunCoordinator(six.with_metaclass(ABCMeta)):
         """
         Cancels a run. The run may be queued in the coordinator, or it may have been launched.
 
-        Returns False is the process was already cancelled. Returns true if the cancellation was
+        Returns False is the process was already canceled. Returns true if the cancellation was
         successful.
         """
 
