@@ -38,7 +38,7 @@ class AssetStore(ObjectManager):
     def handle_output(self, context, obj):
         return self.set_asset(AssetStoreContext.from_output_context(context), obj)
 
-    def load(self, context):
+    def load_input(self, context):
         return self.get_asset(AssetStoreContext.from_load_context(context))
 
     @abstractmethod

@@ -58,7 +58,7 @@ class FromRootInputManager(
         load_input_context = step_context.for_input_manager(
             self.input_def.name, self.config_data, input_metadata=self.input_def.metadata
         )
-        return loader.load(load_input_context)
+        return loader.load_input(load_input_context)
 
     def compute_version(self, step_versions):
         # TODO: support versioning for root loaders
@@ -125,7 +125,7 @@ class FromStepOutput(
         source_handle = self.step_output_handle
         if self.input_def.manager_key:
             loader = getattr(step_context.resources, self.input_def.manager_key)
-            return loader.load(self.get_load_context(step_context))
+            return loader.load_input(self.get_load_context(step_context))
         elif step_context.using_asset_store(source_handle):
             object_manager = step_context.get_output_manager(source_handle)
 
@@ -138,7 +138,7 @@ class FromStepOutput(
                 f'"{step_context.execution_plan.get_manager_key(source_handle)}" is an InputManager.',
             )
 
-            obj = object_manager.load(self.get_load_context(step_context))
+            obj = object_manager.load_input(self.get_load_context(step_context))
 
             output_def = step_context.execution_plan.get_step_output(source_handle).output_def
 

@@ -26,7 +26,7 @@ def test_object_manager_with_config():
         pass
 
     class MyObjectManager(ObjectManager):
-        def load(self, context):
+        def load_input(self, context):
             assert context.upstream_output.config["some_config"] == "some_value"
             return 1
 
@@ -161,7 +161,7 @@ def test_multi_materialization():
             yield AssetMaterialization(asset_key="yield_one")
             yield AssetMaterialization(asset_key="yield_two")
 
-        def load(self, context):
+        def load_input(self, context):
             keys = tuple(context.upstream_output.get_run_scoped_output_identifier())
             return self.values[keys]
 

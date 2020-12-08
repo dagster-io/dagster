@@ -53,7 +53,7 @@ class InputManager(ABC):
     """
 
     @abstractmethod
-    def load(self, context):
+    def load_input(self, context):
         """The user-defined read method that loads data given its metadata.
 
         Args:
@@ -123,7 +123,7 @@ class ResourceConfigPassthroughInputManager(InputManager):
         self._config = config
         self._load_fn = load_fn
 
-    def load(self, context):
+    def load_input(self, context):
         return self._load_fn(context, self._config)
 
 

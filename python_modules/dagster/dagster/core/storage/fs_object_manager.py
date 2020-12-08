@@ -100,7 +100,7 @@ class PickledObjectFilesystemObjectManager(ObjectManager):
         with open(filepath, self.write_mode) as write_obj:
             pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
 
-    def load(self, context):
+    def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
 
@@ -150,7 +150,7 @@ class CustomPathPickledObjectFilesystemObjectManager(ObjectManager):
             metadata_entries=[EventMetadataEntry.fspath(os.path.abspath(filepath))],
         )
 
-    def load(self, context):
+    def load_input(self, context):
         """Unpickle the file from a given file path and Load it to a data object."""
         check.inst_param(context, "context", InputContext)
         metadata = context.upstream_output.metadata
