@@ -6,9 +6,14 @@ import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {IStepState, RunMetadataProvider} from 'src/RunMetadataProvider';
+import {IRunMetadataDict, IStepState, RunMetadataProvider} from 'src/RunMetadataProvider';
 import {FirstOrSecondPanelToggle, SplitPanelContainer} from 'src/SplitPanelContainer';
-import {GaantChart, GaantChartMode, queryStringToSelection} from 'src/gaant/GaantChart';
+import {
+  GaantChart,
+  GaantChartMode,
+  queryStringToSelection,
+  QueuedState,
+} from 'src/gaant/GaantChart';
 import {LogFilter, LogsProvider} from 'src/runs/LogsProvider';
 import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
 import {LogsToolbar} from 'src/runs/LogsToolbar';
@@ -207,6 +212,50 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
 
   const onHideNonMatches = (checked: boolean) => setHideNonMatches(checked);
 
+  const gaant = (metadata: IRunMetadataDict) => {
+    if (logsLoading) {
+      return <GaantChart.LoadingState runId={runId} />;
+    }
+
+    if (run?.status === 'QUEUED') {
+      return <QueuedState runId={runId} />;
+    }
+
+    if (run?.executionPlan) {
+      return (
+        <GaantChart
+          options={{
+            mode: GaantChartMode.WATERFALL_TIMED,
+          }}
+          toolbarLeftActions={
+            <FirstOrSecondPanelToggle axis={'vertical'} container={splitPanelContainer} />
+          }
+          toolbarActions={
+            <RunActionButtons
+              run={run}
+              executionPlan={run.executionPlan}
+              artifactsPersisted={run.executionPlan.artifactsPersisted}
+              onLaunch={onLaunch}
+              selection={selection}
+              selectionStates={selection.keys.map(
+                (key) => (key && metadata.steps[key]?.state) || IStepState.PREPARING,
+              )}
+            />
+          }
+          runId={runId}
+          plan={run.executionPlan}
+          metadata={metadata}
+          selection={selection}
+          onClickStep={onClickStep}
+          onSetSelection={onSetSelection}
+          focusedTime={logsFilter.focusedTime}
+        />
+      );
+    }
+
+    return <NonIdealState icon={IconNames.ERROR} title="Unable to build execution plan" />;
+  };
+
   return (
     <RunMetadataProvider logs={allNodes}>
       {(metadata) => (
@@ -216,41 +265,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
           identifier="run-gaant"
           firstInitialPercent={35}
           firstMinSize={40}
-          first={
-            logsLoading ? (
-              <GaantChart.LoadingState runId={runId} />
-            ) : run?.executionPlan ? (
-              <GaantChart
-                options={{
-                  mode: GaantChartMode.WATERFALL_TIMED,
-                }}
-                toolbarLeftActions={
-                  <FirstOrSecondPanelToggle axis={'vertical'} container={splitPanelContainer} />
-                }
-                toolbarActions={
-                  <RunActionButtons
-                    run={run}
-                    executionPlan={run.executionPlan}
-                    artifactsPersisted={run.executionPlan.artifactsPersisted}
-                    onLaunch={onLaunch}
-                    selection={selection}
-                    selectionStates={selection.keys.map(
-                      (key) => (key && metadata.steps[key]?.state) || IStepState.PREPARING,
-                    )}
-                  />
-                }
-                runId={runId}
-                plan={run.executionPlan}
-                metadata={metadata}
-                selection={selection}
-                onClickStep={onClickStep}
-                onSetSelection={onSetSelection}
-                focusedTime={logsFilter.focusedTime}
-              />
-            ) : (
-              <NonIdealState icon={IconNames.ERROR} title="Unable to build execution plan" />
-            )
-          }
+          first={gaant(metadata)}
           second={
             <LogsContainer>
               <LogsToolbar

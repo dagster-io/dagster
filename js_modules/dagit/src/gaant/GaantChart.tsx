@@ -1,7 +1,9 @@
 import {gql} from '@apollo/client';
 import {Checkbox, Colors, NonIdealState, Spinner} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import {isEqual} from 'lodash';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {GraphQueryItem, filterByQuery} from 'src/GraphQueryImpl';
@@ -751,6 +753,32 @@ GaantChart.LoadingState = ({runId}: {runId: string}) => (
       identifier="gaant-split"
       axis="horizontal"
       first={<NonIdealState icon={<Spinner size={24} />} />}
+      firstInitialPercent={70}
+      second={
+        <GaantStatusPanel
+          metadata={EMPTY_RUN_METADATA}
+          selection={{keys: [], query: '*'}}
+          runId={runId}
+          nowMs={0}
+        />
+      }
+    />
+  </GaantChartContainer>
+);
+
+export const QueuedState = ({runId}: {runId: string}) => (
+  <GaantChartContainer>
+    <OptionsContainer />
+    <SplitPanelContainer
+      identifier="gaant-split"
+      axis="horizontal"
+      first={
+        <NonIdealState
+          icon={IconNames.TIME}
+          description="This run is currently queued."
+          action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queue</Link>}
+        />
+      }
       firstInitialPercent={70}
       second={
         <GaantStatusPanel
