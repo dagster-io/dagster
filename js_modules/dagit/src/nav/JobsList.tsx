@@ -149,8 +149,6 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
           return (
             <Item
               key={p.label}
-              data-tooltip={p.label}
-              data-tooltip-style={isSelected ? SelectedItemTooltipStyle : ItemTooltipStyle}
               className={`${isSelected ? 'selected' : ''} ${isFocused ? 'focused' : ''}`}
               to={p.to}
             >
@@ -160,9 +158,17 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
                 flex={{alignItems: 'center', justifyContent: 'space-between'}}
                 padding={{vertical: 8, right: 8, left: 12}}
               >
-                <Box flex={{alignItems: 'center', justifyContent: 'flex-start'}}>
+                <Box
+                  flex={{alignItems: 'center', justifyContent: 'flex-start'}}
+                  style={{overflow: 'hidden'}}
+                >
                   <Icon icon={icon} iconSize={14} />
-                  <Label>{p.label}</Label>
+                  <Label
+                    data-tooltip={p.label}
+                    data-tooltip-style={isSelected ? SelectedItemTooltipStyle : ItemTooltipStyle}
+                  >
+                    {p.label}
+                  </Label>
                 </Box>
                 {p.status === JobStatus.RUNNING ? (
                   <Box margin={{left: 4}}>
@@ -190,6 +196,7 @@ const Label = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   margin-left: 8px;
+  white-space: nowrap;
 `;
 
 const StatusDot = styled.div<{
@@ -203,7 +210,7 @@ const StatusDot = styled.div<{
 
 const Items = styled.div`
   flex: 1;
-  overflow: auto;
+  overflow-y: auto;
   max-height: calc((100vh - 405px) / 2);
   &::-webkit-scrollbar {
     width: 11px;
