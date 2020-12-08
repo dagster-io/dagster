@@ -15,6 +15,7 @@ import {JobsList} from 'src/nav/JobsList';
 import {RepositoryContentList} from 'src/nav/RepositoryContentList';
 import {RepositoryLocationStateObserver} from 'src/nav/RepositoryLocationStateObserver';
 import {RepositoryPicker} from 'src/nav/RepositoryPicker';
+import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Caption} from 'src/ui/Text';
 import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
@@ -104,7 +105,7 @@ export const LeftNav = () => {
   const history = useHistory();
   return (
     <LeftNavContainer>
-      <div>
+      <Box padding={{bottom: 8}}>
         <LogoContainer>
           <img
             alt="logo"
@@ -131,8 +132,7 @@ export const LeftNav = () => {
             </Tab>
           </ShortcutHandler>
         ))}
-      </div>
-      <div style={{height: 20}} />
+      </Box>
       <LeftNavRepositorySection />
       <TimezonePicker />
     </LeftNavContainer>
