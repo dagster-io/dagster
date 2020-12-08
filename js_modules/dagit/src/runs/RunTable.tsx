@@ -11,6 +11,8 @@ import {RunStatusTagWithStats} from 'src/runs/RunStatusTag';
 import {RunTag} from 'src/runs/RunTag';
 import {RunComponentFragments, RunElapsed, RunTime, titleForRun} from 'src/runs/RunUtils';
 import {RunTableRunFragment, RunTableRunFragment_tags} from 'src/runs/types/RunTableRunFragment';
+import {Box} from 'src/ui/Box';
+import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
 
@@ -154,8 +156,10 @@ const RunRow: React.FunctionComponent<{
         <RunStatusTagWithStats status={run.status} runId={run.runId} />
       </td>
       <td style={{width: '100%'}}>
-        {run.pipelineName}
-        <RunTags tags={run.tags} onSetFilter={onSetFilter} />
+        <Group direction="vertical" spacing={4}>
+          <div>{run.pipelineName}</div>
+          <RunTags tags={run.tags} onSetFilter={onSetFilter} />
+        </Group>
       </td>
       <td style={{width: '90px'}}>
         <PipelineSnapshotLink
@@ -180,7 +184,7 @@ const RunRow: React.FunctionComponent<{
   );
 };
 
-const RunTags: React.FunctionComponent<{
+const RunTags: React.FC<{
   tags: RunTableRunFragment_tags[];
   onSetFilter: (search: TokenizingFieldValue[]) => void;
 }> = React.memo(({tags, onSetFilter}) => {
@@ -192,19 +196,10 @@ const RunTags: React.FunctionComponent<{
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        width: '100%',
-        position: 'relative',
-        overflow: 'hidden',
-        paddingTop: 7,
-      }}
-    >
+    <Box flex={{direction: 'row', wrap: 'wrap'}}>
       {tags.map((tag, idx) => (
         <RunTag tag={tag} key={idx} onClick={onClick} />
       ))}
-    </div>
+    </Box>
   );
 });

@@ -1,22 +1,10 @@
-import {
-  Button,
-  Classes,
-  Colors,
-  Dialog,
-  IBreadcrumbProps,
-  NonIdealState,
-  Spinner,
-  Tag,
-} from '@blueprintjs/core';
+import {Button, Classes, Colors, Dialog, NonIdealState, Spinner, Tag} from '@blueprintjs/core';
 import React from 'react';
 import styled from 'styled-components';
 
-import {LoadingCentering, LoadingContainer, LoadingWithProgress} from 'src/Loading';
 import {useRepositoryLocationReload} from 'src/nav/ReloadRepositoryLocationButton';
-import {TopNav} from 'src/nav/TopNav';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
-import {Page} from 'src/ui/Page';
 import {Table} from 'src/ui/Table';
 import {FontFamily} from 'src/ui/styles';
 import {useNetworkedRepositoryLocations} from 'src/workspace/WorkspaceContext';
@@ -91,28 +79,17 @@ const ReloadButton: React.FC<{location: string; onReload: (location: string) => 
   );
 };
 
-export const WorkspaceRepositoryLocationsRoot = () => {
+export const RepositoryLocationsList = () => {
   const {locations, loading, refetch} = useNetworkedRepositoryLocations();
   const [reloading, setReloading] = React.useState<string | null>(null);
 
   if (loading && !locations.length) {
-    return <LoadingWithProgress />;
+    return <div style={{color: Colors.GRAY3}}>Loading…</div>;
   }
 
   if (!locations.length) {
-    return (
-      <LoadingContainer>
-        <LoadingCentering>
-          <NonIdealState icon="cube" title="No repository locations!" />
-        </LoadingCentering>
-      </LoadingContainer>
-    );
+    return <NonIdealState icon="cube" title="No repository locations!" />;
   }
-
-  const breadcrumbs: IBreadcrumbProps[] = [
-    {text: 'Workspace', icon: 'cube'},
-    {text: 'Repository locations'},
-  ];
 
   const onReload = async (name: string) => {
     setReloading(name);
@@ -125,35 +102,27 @@ export const WorkspaceRepositoryLocationsRoot = () => {
   };
 
   return (
-    <>
-      <TopNav breadcrumbs={breadcrumbs} />
-      <Page>
-        <Table striped style={{width: '100%'}}>
-          <thead>
-            <tr>
-              <th>Repository location</th>
-              <th colSpan={2}>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {locations.map((location) => (
-              <tr key={location.name}>
-                <td style={{width: '30%'}}>{location.name}</td>
-                <td style={{width: '20%'}}>
-                  <LocationStatus
-                    locationOrError={location}
-                    reloading={location.name === reloading}
-                  />
-                </td>
-                <td style={{width: '100%'}}>
-                  <ReloadButton location={location.name} onReload={onReload} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </Page>
-    </>
+    <Table striped style={{width: '100%'}}>
+      <thead>
+        <tr>
+          <th>Repository location</th>
+          <th colSpan={2}>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {locations.map((location) => (
+          <tr key={location.name}>
+            <td style={{width: '30%'}}>{location.name}</td>
+            <td style={{width: '20%'}}>
+              <LocationStatus locationOrError={location} reloading={location.name === reloading} />
+            </td>
+            <td style={{width: '100%'}}>
+              <ReloadButton location={location.name} onReload={onReload} />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </Table>
   );
 };
 

@@ -85,7 +85,7 @@ const LeftNavRepositorySection = () => {
           <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
           <Caption color={Colors.DARK_GRAY3}>
             An error occurred while loading a repository.{' '}
-            <DetailLink to="/workspace/repository-locations">View details</DetailLink>
+            <DetailLink to="/instance/health#repository-locations">View details</DetailLink>
           </Caption>
         </Group>
       ) : null}

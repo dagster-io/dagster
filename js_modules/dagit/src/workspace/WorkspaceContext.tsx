@@ -88,32 +88,39 @@ const ROOT_REPOSITORIES_QUERY = gql`
   ${REPOSITORY_INFO_FRAGMENT}
 `;
 
-const REPOSITORY_LOCATIONS_QUERY = gql`
-  query RepositoryLocationsQuery {
-    repositoryLocationsOrError {
-      __typename
-      ... on RepositoryLocationConnection {
-        nodes {
-          __typename
-          ... on RepositoryLocation {
-            id
-            isReloadSupported
-            serverId
-            name
-          }
-          ... on RepositoryLocationLoadFailure {
-            id
-            name
-            error {
-              message
-            }
+export const REPOSITORY_LOCATIONS_FRAGMENT = gql`
+  fragment RepositoryLocationsFragment on RepositoryLocationsOrError {
+    __typename
+    ... on RepositoryLocationConnection {
+      nodes {
+        __typename
+        ... on RepositoryLocation {
+          id
+          isReloadSupported
+          serverId
+          name
+        }
+        ... on RepositoryLocationLoadFailure {
+          id
+          name
+          error {
+            message
           }
         }
       }
-      ...PythonErrorFragment
     }
+    ...PythonErrorFragment
   }
   ${PythonErrorInfo.fragments.PythonErrorFragment}
+`;
+
+const REPOSITORY_LOCATIONS_QUERY = gql`
+  query RepositoryLocationsQuery {
+    repositoryLocationsOrError {
+      ...RepositoryLocationsFragment
+    }
+  }
+  ${REPOSITORY_LOCATIONS_FRAGMENT}
 `;
 
 const getRepositoryOptionHash = (a: DagsterRepoOption) =>

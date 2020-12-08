@@ -61,7 +61,7 @@ export const LoadingWithProgress = () => (
   </LoadingContainer>
 );
 
-export const LoadingContainer = styled.div`
+const LoadingContainer = styled.div`
   width: 100%;
   height: 100%;
   display: flex;
@@ -69,7 +69,7 @@ export const LoadingContainer = styled.div`
   justify-content: center;
 `;
 
-export const LoadingCentering = styled.div`
+const LoadingCentering = styled.div`
   max-width: 600px;
   width: 75%;
 `;

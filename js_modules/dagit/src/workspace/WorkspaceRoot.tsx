@@ -10,7 +10,6 @@ import {WorkspaceContext} from 'src/workspace/WorkspaceContext';
 import {WorkspaceOverviewRoot} from 'src/workspace/WorkspaceOverviewRoot';
 import {WorkspacePipelineRoot} from 'src/workspace/WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from 'src/workspace/WorkspaceRepoRoot';
-import {WorkspaceRepositoryLocationsRoot} from 'src/workspace/WorkspaceRepositoryLocationsRoot';
 import {repoAddressFromPath} from 'src/workspace/repoAddressFromPath';
 
 const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
@@ -97,11 +96,6 @@ export const WorkspaceRoot = () => (
   <MainContent>
     <Switch>
       <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
-      <Route
-        path="/workspace/repository-locations"
-        exact
-        component={WorkspaceRepositoryLocationsRoot}
-      />
       <Route
         path="/workspace/pipelines/:pipelinePath"
         render={(props: RouteComponentProps<{pipelinePath: string}>) => (

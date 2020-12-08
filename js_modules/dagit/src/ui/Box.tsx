@@ -22,7 +22,10 @@ const flexPropertiesToCSS = (flex: FlexProperties) => {
     ${flex.justifyContent
       ? `justify-content: ${flex.justifyContent};`
       : null}
-    ${flex.grow ? `flex-grow: ${flex.grow}` : null}
+    ${flex.grow ? `flex-grow: ${flex.grow};` : null}
+    ${flex.wrap
+      ? `flex-wrap: ${flex.wrap};`
+      : null}
   `;
 };
 

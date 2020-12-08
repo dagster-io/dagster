@@ -33,6 +33,7 @@ import {
   StopSchedule_stopRunningSchedule_PythonError,
 } from 'src/schedules/types/StopSchedule';
 import {JobStatus, JobType} from 'src/types/globalTypes';
+import {Group} from 'src/ui/Group';
 import {Code} from 'src/ui/Text';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
@@ -201,7 +202,7 @@ export const ScheduleRow: React.FC<{
       </td>
       <td>
         <div style={{display: 'flex'}}>
-          {runs.map((run) => {
+          {runs.slice(0, NUM_RUNS_TO_DISPLAY).map((run) => {
             const [partition] = run.tags
               .filter((tag) => tag.key === DagsterTag.Partition)
               .map((tag) => tag.value);
@@ -246,7 +247,7 @@ export const ScheduleRow: React.FC<{
         )}
       </td>
       <td>
-        <div style={{display: 'flex', alignItems: 'center'}}>
+        <Group direction="horizontal" spacing={2} alignItems="center">
           <div>{`Mode: ${mode}`}</div>
           <Popover
             content={
@@ -268,7 +269,7 @@ export const ScheduleRow: React.FC<{
           >
             <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
           </Popover>
-        </div>
+        </Group>
       </td>
     </tr>
   );

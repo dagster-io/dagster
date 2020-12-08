@@ -116,7 +116,7 @@ export const RepositoryLocationStateObserver = ({client}: StateObserverProps) =>
           <Icon icon="warning-sign" color={Colors.DARK_GRAY3} iconSize={14} />
           <Caption color={Colors.DARK_GRAY3}>
             An error occurred in a repository location.{' '}
-            <DetailLink to="/workspace/repository-locations">View details</DetailLink>
+            <DetailLink to="/instance/health#repository-locations">View details</DetailLink>
           </Caption>
         </Group>
       ) : null}
