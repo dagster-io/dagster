@@ -199,10 +199,10 @@ def test_k8s_run_launcher_terminate(
     pipeline_run = None
     while datetime.datetime.now() < start_time + timeout:
         pipeline_run = dagster_instance_for_k8s_run_launcher.get_run_by_id(run.run_id)
-        if pipeline_run.status == PipelineRunStatus.FAILURE:
+        if pipeline_run.status == PipelineRunStatus.CANCELED:
             break
         time.sleep(5)
 
-    assert pipeline_run.status == PipelineRunStatus.FAILURE
+    assert pipeline_run.status == PipelineRunStatus.CANCELED
 
     assert not dagster_instance_for_k8s_run_launcher.run_launcher.terminate(run_id=run.run_id)

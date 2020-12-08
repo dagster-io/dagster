@@ -1014,6 +1014,58 @@ class DagsterInstance:
         self.handle_new_event(event_record)
         return dagster_event
 
+    def report_run_canceling(self, run, message="Sending pipeline termination request."):
+
+        from dagster.core.events import DagsterEvent, DagsterEventType
+        from dagster.core.events.log import DagsterEventRecord
+
+        canceling_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_CANCELING.value,
+            pipeline_name=run.pipeline_name,
+            message=message,
+        )
+
+        event_record = DagsterEventRecord(
+            message=message,
+            user_message="",
+            level=logging.INFO,
+            pipeline_name=run.pipeline_name,
+            run_id=run.run_id,
+            error_info=None,
+            timestamp=time.time(),
+            dagster_event=canceling_event,
+        )
+
+        self.handle_new_event(event_record)
+
+    def report_run_canceled(self, pipeline_run):
+        from dagster.core.events import DagsterEvent, DagsterEventType
+        from dagster.core.events.log import DagsterEventRecord
+
+        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        message = (
+            "This pipeline run has been marked as canceled from outside the execution context."
+        )
+
+        dagster_event = DagsterEvent(
+            event_type_value=DagsterEventType.PIPELINE_CANCELED.value,
+            pipeline_name=pipeline_run.pipeline_name,
+            message=message,
+        )
+        event_record = DagsterEventRecord(
+            message=message,
+            user_message=message,
+            level=logging.ERROR,
+            pipeline_name=pipeline_run.pipeline_name,
+            run_id=pipeline_run.run_id,
+            error_info=None,
+            timestamp=time.time(),
+            dagster_event=dagster_event,
+        )
+
+        self.handle_new_event(event_record)
+        return dagster_event
+
     def report_run_failed(self, pipeline_run):
         from dagster.core.events import DagsterEvent, DagsterEventType
         from dagster.core.events.log import DagsterEventRecord

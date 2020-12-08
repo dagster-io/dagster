@@ -109,6 +109,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             DagsterEventType.PIPELINE_INIT_FAILURE: PipelineRunStatus.FAILURE,
             DagsterEventType.PIPELINE_ENQUEUED: PipelineRunStatus.QUEUED,
             DagsterEventType.PIPELINE_STARTING: PipelineRunStatus.STARTING,
+            DagsterEventType.PIPELINE_CANCELING: PipelineRunStatus.CANCELING,
+            DagsterEventType.PIPELINE_CANCELED: PipelineRunStatus.CANCELED,
         }
 
         if event.event_type not in lookup:

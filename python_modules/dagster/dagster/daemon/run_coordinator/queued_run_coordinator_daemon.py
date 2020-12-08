@@ -162,6 +162,17 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
 
     def _dequeue_run(self, run):
         with external_pipeline_from_run(run) as external_pipeline:
+            # double check that the run is still queued before dequeing
+            reloaded_run = self._instance.get_run_by_id(run.run_id)
+
+            if reloaded_run.status != PipelineRunStatus.QUEUED:
+                self._logger.info(
+                    "Run {run_id} is now {status} instead of QUEUED, skipping".format(
+                        run_id=reloaded_run.run_id, status=reloaded_run.status
+                    )
+                )
+                return
+
             dequeued_event = DagsterEvent(
                 event_type_value=DagsterEventType.PIPELINE_DEQUEUED.value,
                 pipeline_name=run.pipeline_name,

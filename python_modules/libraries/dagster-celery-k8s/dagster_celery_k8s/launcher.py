@@ -302,10 +302,6 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         if not run:
             return False
 
-        self._instance.report_engine_event(
-            message="Received pipeline termination request.", pipeline_run=run, cls=self.__class__,
-        )
-
         can_terminate = self.can_terminate(run_id)
         if not can_terminate:
             self._instance.report_engine_event(
@@ -320,6 +316,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         job_name = get_job_name_from_run_id(run_id)
 
         job_namespace = self.get_namespace_from_run_config(run_id)
+
+        self._instance.report_run_canceling(run)
 
         try:
             termination_result = delete_job(job_name=job_name, namespace=job_namespace)

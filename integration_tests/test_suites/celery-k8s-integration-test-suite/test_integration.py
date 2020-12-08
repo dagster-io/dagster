@@ -224,6 +224,10 @@ def _test_termination(dagster_instance, run_config):
             ):
                 step_start_found = True
                 break
+
+        if step_start_found:
+            break
+
         time.sleep(5)
     assert step_start_found
 
@@ -231,16 +235,16 @@ def _test_termination(dagster_instance, run_config):
     assert dagster_instance.run_launcher.can_terminate(run_id=run.run_id)
     assert dagster_instance.run_launcher.terminate(run_id=run.run_id)
 
-    # Check that pipeline run is marked as failed
-    pipeline_run_status_failure = False
+    # Check that pipeline run is marked as canceled
+    pipeline_run_status_canceled = False
     start_time = datetime.datetime.now()
     while datetime.datetime.now() < start_time + timeout:
         pipeline_run = dagster_instance.get_run_by_id(run.run_id)
-        if pipeline_run.status == PipelineRunStatus.FAILURE:
-            pipeline_run_status_failure = True
+        if pipeline_run.status == PipelineRunStatus.CANCELED:
+            pipeline_run_status_canceled = True
             break
         time.sleep(5)
-    assert pipeline_run_status_failure
+    assert pipeline_run_status_canceled
 
     # Check that terminate cannot be called again
     assert not dagster_instance.run_launcher.can_terminate(run_id=run.run_id)
@@ -260,17 +264,10 @@ def _test_termination(dagster_instance, run_config):
             if event_record.dagster_event:
                 if event_record.dagster_event.event_type == DagsterEventType.STEP_FAILURE:
                     step_failures_count += 1
-                elif event_record.dagster_event.event_type == DagsterEventType.ENGINE_EVENT:
-                    if (
-                        event_record.dagster_event.message
-                        == "[CeleryK8sRunLauncher] Received pipeline termination request."
-                    ):
-                        termination_request_count += 1
-                    elif (
-                        event_record.dagster_event.message
-                        == "[CeleryK8sRunLauncher] Pipeline was terminated successfully."
-                    ):
-                        termination_success_count += 1
+                elif event_record.dagster_event.event_type == DagsterEventType.PIPELINE_CANCELING:
+                    termination_request_count += 1
+                elif event_record.dagster_event.event_type == DagsterEventType.PIPELINE_CANCELED:
+                    termination_success_count += 1
             elif event_record.message:
                 if "initializing s3_resource_with_context_manager" in event_record.message:
                     resource_init_count += 1
@@ -280,7 +277,7 @@ def _test_termination(dagster_instance, run_config):
             step_failures_count == 1
             and resource_init_count == 1
             and resource_tear_down_count == 1
-            and termination_request_count == 2
+            and termination_request_count == 1
             and termination_success_count == 1
         ):
             expected_events_found = True

@@ -52,6 +52,9 @@ class DagsterEventType(Enum):
     PIPELINE_SUCCESS = "PIPELINE_SUCCESS"
     PIPELINE_FAILURE = "PIPELINE_FAILURE"
 
+    PIPELINE_CANCELING = "PIPELINE_CANCELING"
+    PIPELINE_CANCELED = "PIPELINE_CANCELED"
+
     OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION"
     ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION"
 
@@ -80,6 +83,7 @@ FAILURE_EVENTS = {
     DagsterEventType.PIPELINE_INIT_FAILURE,
     DagsterEventType.PIPELINE_FAILURE,
     DagsterEventType.STEP_FAILURE,
+    DagsterEventType.PIPELINE_CANCELED,
 }
 
 PIPELINE_EVENTS = {
@@ -90,6 +94,8 @@ PIPELINE_EVENTS = {
     DagsterEventType.PIPELINE_SUCCESS,
     DagsterEventType.PIPELINE_INIT_FAILURE,
     DagsterEventType.PIPELINE_FAILURE,
+    DagsterEventType.PIPELINE_CANCELING,
+    DagsterEventType.PIPELINE_CANCELED,
 }
 
 HOOK_EVENTS = {
@@ -636,6 +642,19 @@ class DagsterEvent(
         )
 
     @staticmethod
+    def pipeline_canceled(pipeline_context, error_info=None):
+        return DagsterEvent.from_pipeline(
+            DagsterEventType.PIPELINE_CANCELED,
+            pipeline_context,
+            message='Execution of pipeline "{pipeline_name}" canceled.'.format(
+                pipeline_name=pipeline_context.pipeline_def.name
+            ),
+            event_specific_data=PipelineCanceledData(
+                check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
+            ),
+        )
+
+    @staticmethod
     def resource_init_start(execution_plan, log_manager, resource_keys):
         from dagster.core.execution.plan.plan import ExecutionPlan
 
@@ -1042,6 +1061,14 @@ class PipelineInitFailureData(namedtuple("_PipelineInitFailureData", "error")):
 class PipelineFailureData(namedtuple("_PipelineFailureData", "error")):
     def __new__(cls, error):
         return super(PipelineFailureData, cls).__new__(
+            cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
+        )
+
+
+@whitelist_for_serdes
+class PipelineCanceledData(namedtuple("_PipelineCanceledData", "error")):
+    def __new__(cls, error):
+        return super(PipelineCanceledData, cls).__new__(
             cls, error=check.opt_inst_param(error, "error", SerializableErrorInfo)
         )
 

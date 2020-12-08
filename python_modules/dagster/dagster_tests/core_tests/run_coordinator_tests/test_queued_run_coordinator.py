@@ -102,5 +102,5 @@ def test_cancel_run(instance, coordinator):  # pylint: disable=redefined-outer-n
 
         coordinator.cancel_run(run.run_id)
         stored_run = instance.get_run_by_id("foo-1")
-        assert stored_run.status == PipelineRunStatus.FAILURE
+        assert stored_run.status == PipelineRunStatus.CANCELED
         assert not coordinator.can_cancel_run(run.run_id)

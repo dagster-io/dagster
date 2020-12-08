@@ -193,6 +193,10 @@ export const LogsRowStructuredContent: React.FunctionComponent<IStructuredConten
       return <DefaultContent message={node.message} eventType="Pipeline Dequeued" />;
     case 'PipelineStartingEvent':
       return <DefaultContent message={node.message} eventType="Pipeline Starting" />;
+    case 'PipelineCancelingEvent':
+      return <DefaultContent message={node.message} eventType="Canceling Pipeline" />;
+    case 'PipelineCanceledEvent':
+      return <FailureContent message={node.message} eventType="Pipeline Canceled" />;
     case 'EngineEvent':
       if (node.engineError) {
         return (
@@ -265,7 +269,7 @@ const DefaultContent: React.FunctionComponent<{
 const FailureContent: React.FunctionComponent<{
   message?: string;
   eventType: string;
-  error: PythonErrorFragment;
+  error?: PythonErrorFragment;
   metadataEntries?: MetadataEntryFragment[];
 }> = ({message, error, eventType, metadataEntries}) => (
   <>
@@ -283,10 +287,10 @@ const FailureContent: React.FunctionComponent<{
       ) : (
         <></>
       )}
-      <span style={{color: Colors.RED3}}>{`${error.message}`}</span>
+      {error ? <span style={{color: Colors.RED3}}>{`${error.message}`}</span> : null}
       <MetadataEntries entries={metadataEntries} />
-      <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.stack}`}</span>
-      {error.cause ? (
+      {error ? <span style={{color: Colors.RED3}}>{`\nStack Trace:\n${error.stack}`}</span> : null}
+      {error?.cause ? (
         <>
           {`The above exception was caused by the following exception:\n`}
           <span style={{color: Colors.RED3}}>{`${error.cause.message}`}</span>

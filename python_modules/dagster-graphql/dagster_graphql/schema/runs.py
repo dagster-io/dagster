@@ -397,6 +397,18 @@ class DauphinPipelineStartingEvent(dauphin.ObjectType):
         interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
 
 
+class DauphinPipelineCancelingEvent(dauphin.ObjectType):
+    class Meta:
+        name = "PipelineCancelingEvent"
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
+
+
+class DauphinPipelineCanceledEvent(dauphin.ObjectType):
+    class Meta:
+        name = "PipelineCanceledEvent"
+        interfaces = (DauphinMessageEvent, DauphinPipelineEvent)
+
+
 class DauphinPipelineStartEvent(dauphin.ObjectType):
     class Meta:
         name = "PipelineStartEvent"
@@ -797,6 +809,8 @@ class DauphinPipelineRunEvent(dauphin.Union):
             DauphinPipelineEnqueuedEvent,
             DauphinPipelineDequeuedEvent,
             DauphinPipelineStartingEvent,
+            DauphinPipelineCancelingEvent,
+            DauphinPipelineCanceledEvent,
             DauphinPipelineSuccessEvent,
             DauphinObjectStoreOperationEvent,
             DauphinAssetStoreOperationEvent,
@@ -879,6 +893,10 @@ def from_dagster_event_record(event_record, pipeline_name):
         return DauphinPipelineDequeuedEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_STARTING:
         return DauphinPipelineStartingEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_CANCELING:
+        return DauphinPipelineCancelingEvent(pipelineName=pipeline_name, **basic_params)
+    elif dagster_event.event_type == DagsterEventType.PIPELINE_CANCELED:
+        return DauphinPipelineCanceledEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_START:
         return DauphinPipelineStartEvent(pipelineName=pipeline_name, **basic_params)
     elif dagster_event.event_type == DagsterEventType.PIPELINE_SUCCESS:

@@ -123,10 +123,10 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         # NOTE: possible race condition if the dequeuer acts on this run at the same time
         # https://github.com/dagster-io/dagster/issues/3323
         if run.status == PipelineRunStatus.QUEUED:
-            self._instance.report_engine_event(
-                message="Cancelling pipeline from the queue.", pipeline_run=run, cls=self.__class__,
+            self._instance.report_run_canceling(
+                run, message="Canceling run from the queue.",
             )
-            self._instance.report_run_failed(run)
+            self._instance.report_run_canceled(run)
             return True
         else:
             return self._instance.run_launcher.terminate(run_id)

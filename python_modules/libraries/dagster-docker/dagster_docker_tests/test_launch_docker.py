@@ -129,16 +129,16 @@ def test_terminate_launched_docker_run():
 
         terminated_pipeline_run = poll_for_finished_run(instance, run_id, timeout=30)
         terminated_pipeline_run = instance.get_run_by_id(run_id)
-        assert terminated_pipeline_run.status == PipelineRunStatus.FAILURE
+        assert terminated_pipeline_run.status == PipelineRunStatus.CANCELED
 
         run_logs = instance.all_logs(run_id)
 
         _check_event_log_contains(
             run_logs,
             [
-                ("ENGINE_EVENT", "Received pipeline termination request"),
+                ("PIPELINE_CANCELING", "Sending pipeline termination request"),
                 ("STEP_FAILURE", 'Execution of step "hanging_solid" failed.'),
-                ("PIPELINE_FAILURE", 'Execution of pipeline "hanging_pipeline" failed.'),
+                ("PIPELINE_CANCELED", 'Execution of pipeline "hanging_pipeline" canceled.'),
                 ("ENGINE_EVENT", "Pipeline execution terminated by interrupt"),
                 ("ENGINE_EVENT", "Process for pipeline exited"),
             ],

@@ -117,6 +117,10 @@ export class LogsProvider extends React.Component<
           nextPipelineStatus = PipelineRunStatus.QUEUED;
         } else if (__typename === 'PipelineStartingEvent') {
           nextPipelineStatus = PipelineRunStatus.STARTING;
+        } else if (__typename === 'PipelineCancelingEvent') {
+          nextPipelineStatus = PipelineRunStatus.CANCELING;
+        } else if (__typename === 'PipelineCanceledEvent') {
+          nextPipelineStatus = PipelineRunStatus.CANCELED;
         } else if (__typename === 'PipelineSuccessEvent') {
           nextPipelineStatus = PipelineRunStatus.SUCCESS;
         } else if (
@@ -143,7 +147,13 @@ export class LogsProvider extends React.Component<
 
     if (local) {
       const toWrite = {...local, status};
-      if (status === PipelineRunStatus.FAILURE || status === PipelineRunStatus.SUCCESS) {
+      if (
+        status === PipelineRunStatus.FAILURE ||
+        status === PipelineRunStatus.SUCCESS ||
+        status === PipelineRunStatus.STARTING ||
+        status === PipelineRunStatus.CANCELING ||
+        status === PipelineRunStatus.CANCELED
+      ) {
         toWrite.canTerminate = false;
       }
       this.props.client.writeFragment({

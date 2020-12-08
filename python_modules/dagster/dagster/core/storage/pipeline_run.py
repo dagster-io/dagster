@@ -26,12 +26,15 @@ class PipelineRunStatus(Enum):
     STARTED = "STARTED"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
+    CANCELING = "CANCELING"
+    CANCELED = "CANCELED"
 
 
 # These statuses that indicate a run may be using compute resources
 IN_PROGRESS_RUN_STATUSES = [
     PipelineRunStatus.STARTING,
     PipelineRunStatus.STARTED,
+    PipelineRunStatus.CANCELING,
 ]
 
 # This serves as an explicit list of run statuses that indicate that the run is not using compute
@@ -42,6 +45,7 @@ NON_IN_PROGRESS_RUN_STATUSES = [
     PipelineRunStatus.SUCCESS,
     PipelineRunStatus.FAILURE,
     PipelineRunStatus.MANAGED,
+    PipelineRunStatus.CANCELED,
 ]
 
 
@@ -304,7 +308,11 @@ class PipelineRun(
 
     @property
     def is_finished(self):
-        return self.status == PipelineRunStatus.SUCCESS or self.status == PipelineRunStatus.FAILURE
+        return (
+            self.status == PipelineRunStatus.SUCCESS
+            or self.status == PipelineRunStatus.FAILURE
+            or self.status == PipelineRunStatus.CANCELED
+        )
 
     @property
     def is_success(self):
@@ -312,7 +320,7 @@ class PipelineRun(
 
     @property
     def is_failure(self):
-        return self.status == PipelineRunStatus.FAILURE
+        return self.status == PipelineRunStatus.FAILURE or self.status == PipelineRunStatus.CANCELED
 
     @property
     def is_resume_retry(self):

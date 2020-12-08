@@ -219,7 +219,11 @@ function extractMetadataFromLogs(logs: RunMetadataProviderMessageFragment[]): IR
       metadata.initFailed = true;
       metadata.exitedAt = timestamp;
     }
-    if (log.__typename === 'PipelineFailureEvent' || log.__typename === 'PipelineSuccessEvent') {
+    if (
+      log.__typename === 'PipelineFailureEvent' ||
+      log.__typename === 'PipelineSuccessEvent' ||
+      log.__typename === 'PipelineCanceledEvent'
+    ) {
       metadata.exitedAt = timestamp;
       for (const step of Object.values(metadata.steps)) {
         if (step.state === IStepState.RUNNING) {

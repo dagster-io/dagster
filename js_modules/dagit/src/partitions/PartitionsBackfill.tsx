@@ -258,7 +258,12 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
     .filter((x) => x.runs.length && x.runs[0].status === PipelineRunStatus.SUCCESS)
     .map((x) => x.name);
   const partitionsWithLastRunFailure = runPartitions
-    .filter((x) => x.runs.length && x.runs[0].status === PipelineRunStatus.FAILURE)
+    .filter(
+      (x) =>
+        x.runs.length &&
+        (x.runs[0].status === PipelineRunStatus.FAILURE ||
+          x.runs[0].status === PipelineRunStatus.CANCELED),
+    )
     .map((x) => x.name);
   const selectablePartitions = options.reexecute
     ? options.fromFailure

@@ -32,8 +32,16 @@ import {Heading} from 'src/ui/Text';
 const PAGE_SIZE = 25;
 
 const queuedStatuses = new Set([PipelineRunStatus.QUEUED]);
-const inProgressStatuses = new Set([PipelineRunStatus.STARTED, PipelineRunStatus.STARTING]);
-const doneStatuses = new Set([PipelineRunStatus.FAILURE, PipelineRunStatus.SUCCESS]);
+const inProgressStatuses = new Set([
+  PipelineRunStatus.STARTED,
+  PipelineRunStatus.STARTING,
+  PipelineRunStatus.CANCELING,
+]);
+const doneStatuses = new Set([
+  PipelineRunStatus.FAILURE,
+  PipelineRunStatus.SUCCESS,
+  PipelineRunStatus.CANCELED,
+]);
 
 const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
   const statusTokens = new Set(

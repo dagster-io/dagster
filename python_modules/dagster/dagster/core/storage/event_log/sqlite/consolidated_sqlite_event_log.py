@@ -141,7 +141,11 @@ class ConsolidatedSqliteEventLogStorage(AssetAwareSqlEventLogStorage, Configurab
 
             for event in events:
                 status = callback(event)
-                if status == PipelineRunStatus.SUCCESS or status == PipelineRunStatus.FAILURE:
+                if (
+                    status == PipelineRunStatus.SUCCESS
+                    or status == PipelineRunStatus.FAILURE
+                    or status == PipelineRunStatus.CANCELED
+                ):
                     self.end_watch(run_id, callback)
 
     def end_watch(self, run_id, handler):

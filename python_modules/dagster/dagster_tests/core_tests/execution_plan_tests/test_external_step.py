@@ -256,7 +256,7 @@ def test_interrupt_step_launcher(mode):
                 pass
 
             assert DagsterEventType.STEP_FAILURE in results
-            assert DagsterEventType.PIPELINE_FAILURE in results
+            assert DagsterEventType.PIPELINE_CANCELED in results
 
             interrupt_thread.join()
 

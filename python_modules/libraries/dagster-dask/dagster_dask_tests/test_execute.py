@@ -215,7 +215,7 @@ def test_dask_terminate():
         interrupt_thread.join()
 
         assert DagsterEventType.STEP_FAILURE in result_types
-        assert DagsterEventType.PIPELINE_FAILURE in result_types
+        assert DagsterEventType.PIPELINE_CANCELED in result_types
 
 
 def test_existing_scheduler():
