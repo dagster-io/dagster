@@ -19,7 +19,7 @@ class IInputManagerDefinition:
 class InputManagerDefinition(ResourceDefinition, IInputManagerDefinition):
     """Definition of an input manager resource.
 
-    An InputManagerDefinition is a ResourceDefinition whose resource_fn returns an
+    An InputManagerDefinition is a :py:class:`ResourceDefinition` whose resource_fn returns an
     :py:class:`InputManager`.  InputManagers are used to load the inputs to solids.
     """
 

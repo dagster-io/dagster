@@ -95,6 +95,8 @@ from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.context.system import (
     HookContext,
+    InputContext,
+    OutputContext,
     SystemComputeExecutionContext,
     TypeCheckContext,
 )
@@ -116,7 +118,20 @@ from dagster.core.storage.asset_store import (
     mem_asset_store,
 )
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
+from dagster.core.storage.fs_object_manager import custom_path_fs_object_manager, fs_object_manager
 from dagster.core.storage.init import InitIntermediateStorageContext
+from dagster.core.storage.input_manager import InputManager, InputManagerDefinition, input_manager
+from dagster.core.storage.mem_object_manager import mem_object_manager
+from dagster.core.storage.object_manager import (
+    ObjectManager,
+    ObjectManagerDefinition,
+    object_manager,
+)
+from dagster.core.storage.output_manager import (
+    OutputManager,
+    OutputManagerDefinition,
+    output_manager,
+)
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.system_storage import (
     build_intermediate_storage_from_object_store,
@@ -213,6 +228,8 @@ __all__ = [
     "HookContext",
     "TypeCheckContext",
     "AssetStoreContext",
+    "InputContext",
+    "OutputContext",
     "PipelineRun",
     "default_executors",
     "default_intermediate_storage_defs",
@@ -307,4 +324,17 @@ __all__ = [
     "mem_asset_store",
     "fs_asset_store",
     "custom_path_fs_asset_store",
+    # object managers
+    "ObjectManager",
+    "ObjectManagerDefinition",
+    "object_manager",
+    "InputManager",
+    "InputManagerDefinition",
+    "input_manager",
+    "OutputManager",
+    "OutputManagerDefinition",
+    "output_manager",
+    "fs_object_manager",
+    "mem_object_manager",
+    "custom_path_fs_object_manager",
 ]

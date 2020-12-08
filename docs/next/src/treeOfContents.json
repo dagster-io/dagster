@@ -305,8 +305,8 @@
             "path": "/_apidocs/hooks"
           },
           {
-            "name": "Asset Stores (Experimental)",
-            "path": "/_apidocs/assets"
+            "name": "Object Managers",
+            "path": "/_apidocs/object-managers"
           },
           {
             "name": "Utilities",

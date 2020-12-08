@@ -13,6 +13,12 @@ from dagster.core.storage.output_manager import IOutputManagerDefinition, Output
 class ObjectManagerDefinition(
     ResourceDefinition, IInputManagerDefinition, IOutputManagerDefinition
 ):
+    """Definition of an output manager resource.
+
+    An OutputManagerDefinition is a :py:class:`ResourceDefinition` whose resource_fn returns an
+    :py:class:`ObjectManager`.
+    """
+
     def __init__(
         self,
         resource_fn=None,
@@ -43,21 +49,63 @@ class ObjectManagerDefinition(
 
 class ObjectManager(InputManager, OutputManager):
     """
-    Base class for user-provided asset store.
+    Base class for user-provided object managers.
 
-    Extend this class to handle asset operations. Users should implement ``handle_object`` to store
-    a data object that can be tracked by the Dagster machinery and ``load`` to retrieve a data
-    object.
+    Extend this class to handle how objects are loaded and stored. Users should implement
+    ``handle_object`` to store an object and ``load_input`` to retrieve an object.
     """
 
 
 def object_manager(
     config_schema=None,
     description=None,
-    version=None,
     output_config_schema=None,
     input_config_schema=None,
+    version=None,
 ):
+    """
+    Define an object manager.
+
+    The decorated function should accept an :py:class:`InitResourceContext and return an
+    py:class:`ObjectManager`.
+
+    Args:
+        config_schema (Optional[ConfigSchema]): The schema for the resource config. Configuration
+            data available in `init_context.resource_config`.
+        description(Optional[str]): A human-readable description of the resource.
+        output_config_schema (Optional[ConfigSchema]): The schema for per-output config.
+        input_config_schema (Optional[ConfigSchema]): The schema for per-input config.
+        version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
+            resource functions should only have the same version if they produce the same resource
+            definition when provided with the same inputs.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        class MyObjectManager(ObjectManager):
+            def handle_output(self, context, obj):
+                write_csv("some/path")
+
+            def load_input(self, context):
+                return read_csv("some/path")
+
+        @object_manager
+        def my_object_manager(init_context):
+            return MyObjectManager()
+
+        @solid(output_defs=[OutputDefinition(manager_key="my_object_manager_key")])
+        def my_solid(_):
+            return do_stuff()
+
+        @pipeline(
+            mode_defs=[ModeDefinition(resource_defs={"my_object_manager_key": my_object_manager})]
+        )
+        def my_pipeline():
+            my_solid()
+
+        execute_pipeline(my_pipeline)
+    """
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
         return _ObjectManagerDecoratorCallable()(config_schema)
 
