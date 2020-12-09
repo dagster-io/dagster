@@ -88,15 +88,25 @@ it is consistent with the schedule definitions in code.
 To preview the changes, first run:
 
 ```bash
-dagster schedule up --preview
-Planned Changes:
+dagster schedule up --preview -f scheduler.py
+```
+
+We see the preview like below:
+
+```bash
+Planned Schedule Changes:
   + good_morning_schedule (add)
 ```
 
 After confirming schedule changes are as expected, run:
 
 ```bash
-dagster schedule up
+dagster schedule up -f scheduler.py
+```
+
+We can see:
+
+```bash
 Changes:
   + good_morning_schedule (add)
 ```
@@ -104,7 +114,13 @@ Changes:
 To start running the schedule, run:
 
 ```bash
-dagster schedule start good_morning_schedule
+dagster schedule start -f scheduler.py good_morning_schedule
+```
+
+It tells us:
+
+```bash
+Started schedule good_morning_schedule
 ```
 
 Verify that the `good_morning_schedule` scheduled job has been added to `cron`:
@@ -113,11 +129,28 @@ Verify that the `good_morning_schedule` scheduled job has been added to `cron`:
 crontab -l
 ```
 
+We will find the schedule has been written to a script under the directory `/dagster_home/schedules/scripts/`.
+
+```bash
+45 6 * * * /Users/a16502/dagster_home/schedules/scripts/8c3aa045e25b5ec48557d5340777bc7db2e4f84e.sh
+> /Users/a16502/dagster_home/schedules/logs/8c3aa045e25b5ec48557d5340777bc7db2e4f84e/scheduler.log
+2>&1 # dagster-schedule: 8c3aa045e25b5ec48557d5340777bc7db2e4f84e
+```
+
 Now, we can load Dagit to view the schedule and monitor runs:
 
 ```bash
-dagit
+dagit -f scheduler.py
 ```
+
+Our Dagit now displays a Schedules section on the left sidebar.
+
+![schedules.png](/assets/images/tutorial/schedules.png)
+
+Clicking on the `good_morning_schedule` will lead us to the Schedules view.
+We can see the schedule is turned on for 6:45 AM.
+
+![good_morning_schedule.png](/assets/images/tutorial/good_morning_schedule.png)
 
 ### Cron filters
 

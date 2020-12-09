@@ -1855,3 +1855,64 @@ describe("for the repo", () => {
     expect(image).toMatchImageSnapshot(setConfig("repos"));
   });
 });
+
+describe("for the scheduling", () => {
+  let browser;
+  let page;
+  let dagit;
+
+  beforeAll(async (done) => {
+    // dagit -f scheduler.py
+    dagit = await runDagit(["-f", "scheduler.py"], 3000, "advanced", "scheduling");
+    browser = await puppeteer.launch({ args: ["--disable-dev-shm-usage"] });
+    done();
+  });
+
+  afterAll(async (done) => {
+    try {
+      await browser.close();
+    } catch { }
+    await tearDownDagit(dagit);
+    done();
+  });
+
+  beforeEach(async (done) => {
+    let existingPage;
+    for (existingPage of await browser.pages()) {
+      await existingPage.close();
+    }
+    browser.removeAllListeners("targetcreated");
+    page = await browser.newPage();
+    await page.setViewport({ width: 1680, height: 946 });
+    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
+    done();
+  });
+
+  it("renders the pipeline with Schedules section ", async () => {
+    await page.goto("http://127.0.0.1:3000/pipeline/hello_cereal_pipeline/", {
+      waitUntil: "networkidle0",
+    });
+    await sleep(500);
+
+    const image = await page.screenshot({
+      path: screenshotPath("/schedules.png"),
+    });
+    expect(image).toMatchImageSnapshot(setConfig("schedules"));
+  });
+
+  it("renders the pipeline with scheduled runs ", async () => {
+    await page.goto("http://127.0.0.1:3000/pipeline/hello_cereal_pipeline/", {
+      waitUntil: "networkidle0",
+    });
+    await sleep(500);
+
+    const [goodMorningSchedule] = await page.$x('//div[@class="SchedulesList__Label-iq7kk9-1 lojUag"]');
+    await goodMorningSchedule.click();
+    await page.waitForSelector(".bp3-switch-inner-text");
+
+    const image = await page.screenshot({
+      path: screenshotPath("/good_morning_schedule.png"),
+    });
+    expect(image).toMatchImageSnapshot(setConfig("good_morning_schedule"));
+  });
+});
