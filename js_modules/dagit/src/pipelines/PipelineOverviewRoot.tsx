@@ -208,10 +208,7 @@ const OverviewAssets = ({runs}: {runs: Run[]}) => {
 };
 
 const OverviewSchedule = ({schedule}: {schedule: Schedule}) => {
-  const lastRun =
-    schedule.scheduleState &&
-    schedule.scheduleState.lastRuns.length &&
-    schedule.scheduleState.lastRuns[0];
+  const lastRun = schedule.scheduleState.lastRuns.length && schedule.scheduleState.lastRuns[0];
   return (
     <tr>
       <td>
@@ -221,7 +218,7 @@ const OverviewSchedule = ({schedule}: {schedule: Schedule}) => {
             Last Run: <Timestamp unix={lastRun.stats.endTime || 0} />
           </div>
         ) : null}
-        {schedule.scheduleState?.runs && (
+        {schedule.scheduleState.runs && (
           <div style={{marginTop: '4px'}}>
             {schedule.scheduleState.runs.map((run) => {
               return (

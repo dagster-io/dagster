@@ -1,5 +1,5 @@
 import {useMutation} from '@apollo/client';
-import {Colors, NonIdealState, Switch, Tooltip} from '@blueprintjs/core';
+import {Colors, Switch, Tooltip} from '@blueprintjs/core';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -24,7 +24,6 @@ import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 import {Code, Heading} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 import {useScheduleSelector} from 'src/workspace/WorkspaceContext';
-import {repoAddressAsString} from 'src/workspace/repoAddressAsString';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
@@ -74,23 +73,6 @@ export const ScheduleDetails: React.FC<{
   }, [copyText]);
 
   const {scheduleState} = schedule;
-
-  // TODO dish: Port over something like the existing UI
-  if (!scheduleState) {
-    return (
-      <NonIdealState
-        icon="time"
-        title="Schedule not found"
-        description={
-          <>
-            Schedule <strong>{name}</strong> not found in{' '}
-            <strong>{repoAddressAsString(repoAddress)}</strong>
-          </>
-        }
-      />
-    );
-  }
-
   const {status, id, ticks} = scheduleState;
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 

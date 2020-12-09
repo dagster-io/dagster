@@ -143,7 +143,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule {
   solidSelection: (string | null)[] | null;
   mode: string;
   partitionSet: ScheduleRootQuery_scheduleOrError_Schedule_partitionSet | null;
-  scheduleState: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState | null;
+  scheduleState: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState;
   futureTicks: ScheduleRootQuery_scheduleOrError_Schedule_futureTicks;
 }
 

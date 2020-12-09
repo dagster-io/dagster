@@ -118,6 +118,6 @@ export interface ScheduleFragment {
   solidSelection: (string | null)[] | null;
   mode: string;
   partitionSet: ScheduleFragment_partitionSet | null;
-  scheduleState: ScheduleFragment_scheduleState | null;
+  scheduleState: ScheduleFragment_scheduleState;
   futureTicks: ScheduleFragment_futureTicks;
 }

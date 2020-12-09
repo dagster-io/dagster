@@ -137,7 +137,7 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
   solidSelection: (string | null)[] | null;
   mode: string;
   partitionSet: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_partitionSet | null;
-  scheduleState: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState | null;
+  scheduleState: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState;
   futureTicks: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks;
 }
 

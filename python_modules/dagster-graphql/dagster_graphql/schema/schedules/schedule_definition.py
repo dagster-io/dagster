@@ -40,7 +40,7 @@ class DauphinSchedule(dauphin.ObjectType):
     solid_selection = dauphin.List(dauphin.String)
     mode = dauphin.NonNull(dauphin.String)
     execution_timezone = dauphin.Field(dauphin.String)
-    scheduleState = dauphin.Field("JobState")
+    scheduleState = dauphin.NonNull("JobState")
     partition_set = dauphin.Field("PartitionSet")
 
     futureTicks = dauphin.NonNull(

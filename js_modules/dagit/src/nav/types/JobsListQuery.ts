@@ -24,7 +24,7 @@ export interface JobsListQuery_schedulesOrError_Schedules_results {
   __typename: "Schedule";
   id: string;
   name: string;
-  scheduleState: JobsListQuery_schedulesOrError_Schedules_results_scheduleState | null;
+  scheduleState: JobsListQuery_schedulesOrError_Schedules_results_scheduleState;
 }
 
 export interface JobsListQuery_schedulesOrError_Schedules {

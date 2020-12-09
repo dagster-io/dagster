@@ -145,43 +145,6 @@ export const ScheduleRow: React.FC<{
     <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
   );
 
-  if (!scheduleState) {
-    return (
-      <tr key={name}>
-        <td>{displayName}</td>
-        <td>
-          <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
-            {pipelineName}
-          </Link>
-        </td>
-        <td
-          style={{
-            maxWidth: 150,
-          }}
-        >
-          {cronSchedule ? (
-            <Tooltip position={'bottom'} content={cronSchedule}>
-              {humanCronString(cronSchedule)}
-            </Tooltip>
-          ) : (
-            <div>-</div>
-          )}
-        </td>
-        <td
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            flex: 1,
-          }}
-        >
-          <div style={{flex: 1}}>
-            <div>{`Mode: ${mode}`}</div>
-          </div>
-        </td>
-      </tr>
-    );
-  }
-
   const {id, status, runs, runsCount, ticks, runningCount: runningScheduleCount} = scheduleState;
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
@@ -309,33 +272,6 @@ export const ScheduleRow: React.FC<{
       </td>
     </tr>
   );
-};
-
-export const ScheduleRowHeader: React.FunctionComponent<{
-  schedule: ScheduleFragment;
-}> = ({schedule}) => {
-  if (!schedule.scheduleState) {
-    return (
-      <tr>
-        <th>Schedule Name</th>
-        <th>Pipeline</th>
-        <th>Schedule</th>
-        <th>Execution Params</th>
-      </tr>
-    );
-  } else {
-    return (
-      <tr>
-        <th></th>
-        <th>Schedule Name</th>
-        <th>Pipeline</th>
-        <th>Schedule</th>
-        <th>Last Tick</th>
-        <th>Latest Runs</th>
-        <th>Execution Params</th>
-      </tr>
-    );
-  }
 };
 
 export const START_SCHEDULE_MUTATION = gql`

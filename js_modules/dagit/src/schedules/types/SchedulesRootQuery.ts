@@ -122,7 +122,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules {
   solidSelection: (string | null)[] | null;
   mode: string;
   partitionSet: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet | null;
-  scheduleState: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState | null;
+  scheduleState: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState;
   futureTicks: SchedulesRootQuery_repositoryOrError_Repository_schedules_futureTicks;
 }
 

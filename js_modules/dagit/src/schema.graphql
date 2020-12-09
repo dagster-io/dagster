@@ -459,7 +459,7 @@ type Schedule {
   solidSelection: [String]
   mode: String!
   executionTimezone: String
-  scheduleState: JobState
+  scheduleState: JobState!
   partitionSet: PartitionSet
   futureTicks(cursor: Float, limit: Int): ScheduleFutureTicks!
 }

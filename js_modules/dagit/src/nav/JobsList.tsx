@@ -55,7 +55,7 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
         to: workspacePath(repoName, repoLocation, `/schedules/${name}`),
         label: name,
         jobType: 'schedule',
-        status: scheduleState?.status,
+        status: scheduleState.status,
       })),
     ...repoSensors
       .filter(({name}) => !q || iincludes(name, q))
