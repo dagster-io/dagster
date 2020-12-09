@@ -109,7 +109,11 @@ def validate_tick(
 
 def validate_run_started(run, expected_success=True):
     if expected_success:
-        assert run.status == PipelineRunStatus.STARTED or run.status == PipelineRunStatus.SUCCESS
+        assert (
+            run.status == PipelineRunStatus.STARTED
+            or run.status == PipelineRunStatus.SUCCESS
+            or run.status == PipelineRunStatus.STARTING
+        )
     else:
         assert run.status == PipelineRunStatus.FAILURE
 
