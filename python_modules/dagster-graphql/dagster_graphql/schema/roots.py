@@ -828,12 +828,11 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
         description = """This type represents a filter on pipeline runs.
         Currently, you may only pass one of the filter options."""
 
-    # Currently you may choose one of the following
-    run_id = dauphin.Field(dauphin.String)
-    pipeline_name = dauphin.Field(dauphin.String)
+    runIds = dauphin.List(dauphin.String)
+    pipelineName = dauphin.Field(dauphin.String)
     tags = dauphin.List(dauphin.NonNull(DauphinExecutionTag))
     statuses = dauphin.List(dauphin.NonNull(DauphinPipelineRunStatus))
-    snapshot_id = dauphin.Field(dauphin.String)
+    snapshotId = dauphin.Field(dauphin.String)
 
     def to_selector(self):
         if self.tags:
@@ -850,13 +849,12 @@ class DauphinPipelineRunsFilter(dauphin.InputObjectType):
         else:
             statuses = None
 
-        run_ids = [self.run_id] if self.run_id else []
         return PipelineRunsFilter(
-            run_ids=run_ids,
-            pipeline_name=self.pipeline_name,
+            run_ids=self.runIds,
+            pipeline_name=self.pipelineName,
             tags=tags,
             statuses=statuses,
-            snapshot_id=self.snapshot_id,
+            snapshot_id=self.snapshotId,
         )
 
 

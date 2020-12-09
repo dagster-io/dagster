@@ -557,7 +557,7 @@ type PartitionTags {
 }
 
 input PipelineRunsFilter {
-  runId: String
+  runIds: [String]
   pipelineName: String
   tags: [ExecutionTag!]
   statuses: [PipelineRunStatus!]

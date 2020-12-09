@@ -131,7 +131,7 @@ export interface PartitionSetSelector {
 }
 
 export interface PipelineRunsFilter {
-  runId?: string | null;
+  runIds?: (string | null)[] | null;
   pipelineName?: string | null;
   tags?: ExecutionTag[] | null;
   statuses?: PipelineRunStatus[] | null;

@@ -68,7 +68,7 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     if (item.token === 'pipeline') {
       obj.pipelineName = item.value;
     } else if (item.token === 'id') {
-      obj.runId = item.value;
+      obj.runIds = [item.value];
     } else if (item.token === 'status') {
       if (!obj.statuses) {
         obj.statuses = [];

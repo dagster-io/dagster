@@ -541,7 +541,7 @@ def test_filtered_runs():
         ).run_id
         with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
             result = execute_dagster_graphql(
-                context, FILTERED_RUN_QUERY, variables={"filter": {"runId": run_id_1}}
+                context, FILTERED_RUN_QUERY, variables={"filter": {"runIds": [run_id_1]}}
             )
             assert result.data
             run_ids = [run["runId"] for run in result.data["pipelineRunsOrError"]["results"]]
