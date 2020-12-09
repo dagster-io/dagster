@@ -2,11 +2,11 @@ import {gql} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import React from 'react';
 
+import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
 import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
-import {JOB_STATE_FRAGMENT} from 'src/sensors/SensorFragment';
 
 const REPOSITORY_SCHEDULES_FRAGMENT = gql`
   fragment RepositorySchedulesFragment on Repository {
@@ -33,6 +33,14 @@ export const SCHEDULE_FRAGMENT = gql`
     mode
     partitionSet {
       name
+      partitionsOrError {
+        ... on Partitions {
+          results {
+            name
+            status
+          }
+        }
+      }
     }
     scheduleState {
       id

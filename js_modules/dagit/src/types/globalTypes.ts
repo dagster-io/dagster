@@ -72,6 +72,13 @@ export enum ObjectStoreOperationType {
   SET_OBJECT = "SET_OBJECT",
 }
 
+export enum PartitionRunStatus {
+  FAILURE = "FAILURE",
+  MISSING = "MISSING",
+  PENDING = "PENDING",
+  SUCCESS = "SUCCESS",
+}
+
 export enum PipelineRunStatus {
   FAILURE = "FAILURE",
   MANAGED = "MANAGED",

@@ -153,7 +153,7 @@ export const ScheduleDetails: React.FC<{
                   <Code>({cronSchedule})</Code>
                 </Group>
               ) : (
-                <div>-</div>
+                <div>&mdash;</div>
               ),
             },
             executionTimezone

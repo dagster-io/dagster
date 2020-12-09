@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./globalTypes";
 
 // ====================================================
 // GraphQL fragment: JobStateFragment
@@ -35,26 +35,16 @@ export interface JobStateFragment_jobSpecificData_ScheduleJobData {
 
 export type JobStateFragment_jobSpecificData = JobStateFragment_jobSpecificData_SensorJobData | JobStateFragment_jobSpecificData_ScheduleJobData;
 
-export interface JobStateFragment_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
 export interface JobStateFragment_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
-  pipelineName: string;
   status: PipelineRunStatus;
-  tags: JobStateFragment_runs_tags[];
 }
 
 export interface JobStateFragment_ticks_runs {
   __typename: "PipelineRun";
   id: string;
-  runId: string;
-  status: PipelineRunStatus;
 }
 
 export interface JobStateFragment_ticks_error_cause {
@@ -75,6 +65,7 @@ export interface JobStateFragment_ticks {
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  skipReason: string | null;
   runs: JobStateFragment_ticks_runs[];
   error: JobStateFragment_ticks_error | null;
 }
@@ -88,7 +79,6 @@ export interface JobStateFragment {
   repositoryOrigin: JobStateFragment_repositoryOrigin;
   jobSpecificData: JobStateFragment_jobSpecificData | null;
   runs: JobStateFragment_runs[];
-  runsCount: number;
   ticks: JobStateFragment_ticks[];
   runningCount: number;
 }

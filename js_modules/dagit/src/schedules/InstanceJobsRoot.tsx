@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import React from 'react';
 
+import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
@@ -11,7 +12,7 @@ import {SCHEDULE_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUt
 import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {SchedulesTable} from 'src/schedules/SchedulesTable';
 import {InstanceJobsRootQuery} from 'src/schedules/types/InstanceJobsRootQuery';
-import {JOB_STATE_FRAGMENT, SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
+import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {SensorsTable} from 'src/sensors/SensorsTable';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';

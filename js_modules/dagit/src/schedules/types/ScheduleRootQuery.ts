@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { ScheduleSelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { ScheduleSelector, PartitionRunStatus, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: ScheduleRootQuery
@@ -35,9 +35,27 @@ export interface ScheduleRootQuery_scheduler_PythonError {
 
 export type ScheduleRootQuery_scheduler = ScheduleRootQuery_scheduler_SchedulerNotDefinedError | ScheduleRootQuery_scheduler_Scheduler | ScheduleRootQuery_scheduler_PythonError;
 
+export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionsOrError_PythonError {
+  __typename: "PythonError";
+}
+
+export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionsOrError_Partitions_results {
+  __typename: "Partition";
+  name: string;
+  status: PartitionRunStatus;
+}
+
+export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionsOrError_Partitions {
+  __typename: "Partitions";
+  results: ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionsOrError_Partitions_results[];
+}
+
+export type ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionsOrError = ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionsOrError_PythonError | ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionsOrError_Partitions;
+
 export interface ScheduleRootQuery_scheduleOrError_Schedule_partitionSet {
   __typename: "PartitionSet";
   name: string;
+  partitionsOrError: ScheduleRootQuery_scheduleOrError_Schedule_partitionSet_partitionsOrError;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin_repositoryLocationMetadata {
@@ -65,26 +83,16 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpe
 
 export type ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData = ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_SensorJobData | ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData_ScheduleJobData;
 
-export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
-  pipelineName: string;
   status: PipelineRunStatus;
-  tags: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs_tags[];
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_runs {
   __typename: "PipelineRun";
   id: string;
-  runId: string;
-  status: PipelineRunStatus;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error_cause {
@@ -105,6 +113,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks 
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  skipReason: string | null;
   runs: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_runs[];
   error: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error | null;
 }
@@ -118,7 +127,6 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState {
   repositoryOrigin: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_repositoryOrigin;
   jobSpecificData: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_jobSpecificData | null;
   runs: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_runs[];
-  runsCount: number;
   ticks: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks[];
   runningCount: number;
 }

@@ -1,49 +1,94 @@
-import {gql} from '@apollo/client';
-import {Intent, Tag} from '@blueprintjs/core';
+import {gql, useQuery} from '@apollo/client';
+import {
+  Tag,
+  Tooltip,
+  Dialog,
+  Button,
+  Intent,
+  NonIdealState,
+  Classes,
+  Colors,
+  Spinner,
+} from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from 'src/CustomAlertProvider';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {assertUnreachable} from 'src/Util';
+import {RunTable} from 'src/runs/RunTable';
+import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from 'src/types/LaunchedRunListQuery';
 import {TickTagFragment} from 'src/types/TickTagFragment';
 import {JobTickStatus, JobType} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
+import {ButtonLink} from 'src/ui/ButtonLink';
 
 export const TickTag: React.FunctionComponent<{
   tick: TickTagFragment;
   jobType: JobType;
 }> = ({tick, jobType}) => {
+  const [open, setOpen] = React.useState<boolean>(false);
   switch (tick.status) {
     case JobTickStatus.STARTED:
       return (
-        <Tag minimal={true} intent={Intent.PRIMARY}>
+        <Tag minimal={true} intent={Intent.NONE}>
           Started
         </Tag>
       );
     case JobTickStatus.SUCCESS:
       if (!tick.runs.length) {
         return (
-          <Tag minimal={true} intent={Intent.SUCCESS}>
-            Success
+          <Tag minimal={true} intent={Intent.PRIMARY}>
+            Requested
           </Tag>
         );
-      } else {
-        // do something smarter here
-        // https://github.com/dagster-io/dagster/issues/3352
-        const run = tick.runs[0];
+      }
+      return (
+        <>
+          <Tag minimal={true} intent={Intent.PRIMARY} interactive={true}>
+            <ButtonLink underline="never" onClick={() => setOpen(true)}>
+              {tick.runs.length} Requested
+            </ButtonLink>
+          </Tag>
+          <Dialog
+            isOpen={open}
+            onClose={() => setOpen(false)}
+            style={{width: '90vw'}}
+            title={`Launched runs`}
+          >
+            <Box background={Colors.WHITE} padding={16} margin={{bottom: 16}}>
+              {open && <RunList runIds={tick.runs.map((x) => x.id)} />}
+            </Box>
+            <div className={Classes.DIALOG_FOOTER}>
+              <div className={Classes.DIALOG_FOOTER_ACTIONS}>
+                <Button intent="primary" onClick={() => setOpen(false)}>
+                  OK
+                </Button>
+              </div>
+            </div>
+          </Dialog>
+        </>
+      );
+    case JobTickStatus.SKIPPED:
+      if (!tick.skipReason) {
         return (
-          <a href={`/instance/runs/${run.runId}`} style={{textDecoration: 'none'}}>
-            <Tag minimal={true} intent={Intent.SUCCESS} interactive={true}>
-              Success
-            </Tag>
-          </a>
+          <Tag minimal={true} intent={Intent.WARNING}>
+            Skipped
+          </Tag>
         );
       }
-    case JobTickStatus.SKIPPED:
       return (
-        <Tag minimal={true} intent={Intent.WARNING}>
-          Skipped
-        </Tag>
+        <Tooltip
+          position={'right'}
+          content={tick.skipReason}
+          wrapperTagName="div"
+          targetTagName="div"
+        >
+          <Tag minimal={true} intent={Intent.WARNING}>
+            Skipped
+          </Tag>
+        </Tooltip>
       );
     case JobTickStatus.FAILURE:
       if (!tick.error) {
@@ -74,6 +119,39 @@ export const TickTag: React.FunctionComponent<{
   }
 };
 
+const RunList: React.FunctionComponent<{
+  runIds: string[];
+}> = ({runIds}) => {
+  const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
+    LAUNCHED_RUN_LIST_QUERY,
+    {
+      variables: {
+        filter: {
+          runIds,
+        },
+      },
+    },
+  );
+
+  if (loading || !data) {
+    return <Spinner />;
+  }
+  if (data.pipelineRunsOrError.__typename !== 'PipelineRuns') {
+    return (
+      <NonIdealState
+        icon={IconNames.ERROR}
+        title="Query Error"
+        description={data.pipelineRunsOrError.message}
+      />
+    );
+  }
+  return (
+    <div>
+      <RunTable runs={data.pipelineRunsOrError.results} onSetFilter={() => {}} />
+    </div>
+  );
+};
+
 const LinkButton = styled.button`
   background: inherit;
   border: none;
@@ -88,13 +166,34 @@ export const TICK_TAG_FRAGMENT = gql`
     id
     status
     timestamp
+    skipReason
     runs {
       id
-      runId
-      status
     }
     error {
       ...PythonErrorFragment
     }
   }
+`;
+
+const LAUNCHED_RUN_LIST_QUERY = gql`
+  query LaunchedRunListQuery($filter: PipelineRunsFilter!) {
+    pipelineRunsOrError(filter: $filter, limit: 500) {
+      ... on PipelineRuns {
+        results {
+          ...RunTableRunFragment
+          id
+          runId
+        }
+      }
+      ... on InvalidPipelineRunsFilterError {
+        message
+      }
+      ... on PythonError {
+        ...PythonErrorFragment
+      }
+    }
+  }
+  ${RunTable.fragments.RunTableRunFragment}
+  ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;

@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobTickStatus, PipelineRunStatus } from "./globalTypes";
+import { JobTickStatus } from "./globalTypes";
 
 // ====================================================
 // GraphQL fragment: TickTagFragment
@@ -13,8 +13,6 @@ import { JobTickStatus, PipelineRunStatus } from "./globalTypes";
 export interface TickTagFragment_runs {
   __typename: "PipelineRun";
   id: string;
-  runId: string;
-  status: PipelineRunStatus;
 }
 
 export interface TickTagFragment_error_cause {
@@ -35,6 +33,7 @@ export interface TickTagFragment {
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  skipReason: string | null;
   runs: TickTagFragment_runs[];
   error: TickTagFragment_error | null;
 }

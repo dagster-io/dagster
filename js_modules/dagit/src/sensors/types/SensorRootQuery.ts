@@ -39,26 +39,16 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificDat
 
 export type SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData = SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_SensorJobData | SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData_ScheduleJobData;
 
-export interface SensorRootQuery_sensorOrError_Sensor_sensorState_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
-  pipelineName: string;
   status: PipelineRunStatus;
-  tags: SensorRootQuery_sensorOrError_Sensor_sensorState_runs_tags[];
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_runs {
   __typename: "PipelineRun";
   id: string;
-  runId: string;
-  status: PipelineRunStatus;
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error_cause {
@@ -79,6 +69,7 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks {
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  skipReason: string | null;
   runs: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_runs[];
   error: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error | null;
 }
@@ -92,7 +83,6 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState {
   repositoryOrigin: SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrigin;
   jobSpecificData: SensorRootQuery_sensorOrError_Sensor_sensorState_jobSpecificData | null;
   runs: SensorRootQuery_sensorOrError_Sensor_sensorState_runs[];
-  runsCount: number;
   ticks: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks[];
   runningCount: number;
 }

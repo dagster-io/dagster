@@ -2,6 +2,7 @@ import {useMutation} from '@apollo/client';
 import {
   Button,
   Colors,
+  Icon,
   Intent,
   Menu,
   MenuItem,
@@ -12,36 +13,48 @@ import {
   Tag,
   Tooltip,
 } from '@blueprintjs/core';
+import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {TickTag} from 'src/JobTick';
-import {RunStatus} from 'src/runs/RunStatusDots';
-import {DagsterTag} from 'src/runs/RunTag';
-import {titleForRun} from 'src/runs/RunUtils';
+import {JobRunStatus} from 'src/JobUtils';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
 import {
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
   displayScheduleMutationErrors,
 } from 'src/schedules/ScheduleMutations';
+import {SchedulePartitionStatus} from 'src/schedules/SchedulePartitionStatus';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
 import {StartSchedule} from 'src/schedules/types/StartSchedule';
 import {StopSchedule} from 'src/schedules/types/StopSchedule';
 import {JobStatus, JobType} from 'src/types/globalTypes';
+import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
 import {Code} from 'src/ui/Text';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
-const NUM_RUNS_TO_DISPLAY = 10;
-
 export const SchedulesTable: React.FunctionComponent<{
   schedules: ScheduleFragment[];
   repoAddress: RepoAddress;
 }> = ({repoAddress, schedules}) => {
+  const lastTick = 'Status of the last tick: One of `Started`, `Skipped`, `Requested`, `Failed`';
+  const lastRun = 'The status of the last run requested by this schedule';
+  const partitionStatus = (
+    <div style={{width: 300}}>
+      <p>The status of each partition in the partition set associated with this schedule.</p>
+      <p>
+        Partitions have a `Success` status if the last run for that partition completed
+        successfully.
+      </p>
+      <p>Partititons have a `Missing` status if no run has been executed for that partition.</p>
+    </div>
+  );
+
   return (
     <Table striped style={{width: '100%'}}>
       <thead>
@@ -50,8 +63,30 @@ export const SchedulesTable: React.FunctionComponent<{
           <th>Schedule Name</th>
           <th>Pipeline</th>
           <th style={{width: '150px'}}>Schedule</th>
-          <th style={{width: '100px'}}>Last Tick</th>
-          <th>Latest Runs</th>
+          <th style={{width: '120px'}}>
+            <Box flex={{direction: 'row', alignItems: 'center'}}>
+              Last Tick
+              <Tooltip position={'right'} content={lastTick} wrapperTagName="div">
+                <Icon icon={IconNames.INFO_SIGN} style={{marginLeft: 10}} iconSize={15} />
+              </Tooltip>
+            </Box>
+          </th>
+          <th>
+            <Box flex={{direction: 'row', alignItems: 'center'}}>
+              Last Run
+              <Tooltip position={'right'} content={lastRun} wrapperTagName="div">
+                <Icon icon={IconNames.INFO_SIGN} style={{marginLeft: 10}} iconSize={15} />
+              </Tooltip>
+            </Box>
+          </th>
+          <th>
+            <Box flex={{direction: 'row', alignItems: 'center'}}>
+              Partition Status
+              <Tooltip position={'right'} content={partitionStatus} wrapperTagName="div">
+                <Icon icon={IconNames.INFO_SIGN} style={{marginLeft: 10}} iconSize={15} />
+              </Tooltip>
+            </Box>
+          </th>
           <th>Execution Params</th>
         </tr>
       </thead>
@@ -132,7 +167,7 @@ const ScheduleRow: React.FC<{
   );
 
   const {name, cronSchedule, pipelineName, mode, scheduleState} = schedule;
-  const {id, status, runs, runsCount, ticks, runningCount: runningScheduleCount} = scheduleState;
+  const {id, status, ticks, runningCount: runningScheduleCount} = scheduleState;
 
   const scheduleSelector = {
     repositoryLocationName: repoAddress.location,
@@ -156,7 +191,7 @@ const ScheduleRow: React.FC<{
 
   return (
     <tr key={name}>
-      <td style={{maxWidth: '64px'}}>
+      <td style={{width: 60}}>
         <Switch
           checked={status === JobStatus.RUNNING}
           large={true}
@@ -175,20 +210,16 @@ const ScheduleRow: React.FC<{
           {pipelineName}
         </Link>
       </td>
-      <td
-        style={{
-          maxWidth: 150,
-        }}
-      >
+      <td style={{maxWidth: 150}}>
         {cronSchedule ? (
           <Tooltip position={'bottom'} content={cronSchedule}>
             {humanCronString(cronSchedule)}
           </Tooltip>
         ) : (
-          <div>-</div>
+          <div>&mdash;</div>
         )}
       </td>
-      <td style={{maxWidth: 100}}>
+      <td style={{maxWidth: 120}}>
         {latestTick ? (
           <TickTag tick={latestTick} jobType={JobType.SCHEDULE} />
         ) : (
@@ -196,58 +227,18 @@ const ScheduleRow: React.FC<{
         )}
       </td>
       <td>
-        <div style={{display: 'flex'}}>
-          {runs.slice(0, NUM_RUNS_TO_DISPLAY).map((run) => {
-            const [partition] = run.tags
-              .filter((tag) => tag.key === DagsterTag.Partition)
-              .map((tag) => tag.value);
-            const runLabel = partition ? (
-              <>
-                <div>Run id: {titleForRun(run)}</div>
-                <div>Partition: {partition}</div>
-              </>
-            ) : (
-              titleForRun(run)
-            );
-            return (
-              <div
-                style={{
-                  cursor: 'pointer',
-                  marginRight: '4px',
-                }}
-                key={run.runId}
-              >
-                <Link to={`/instance/runs/${run.runId}`}>
-                  <Tooltip
-                    position={'top'}
-                    content={runLabel}
-                    wrapperTagName="div"
-                    targetTagName="div"
-                  >
-                    <RunStatus status={run.status} />
-                  </Tooltip>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-        {runsCount > NUM_RUNS_TO_DISPLAY && (
-          <Link
-            to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}
-            style={{verticalAlign: 'top'}}
-          >
-            {' '}
-            +{runsCount - NUM_RUNS_TO_DISPLAY} more
-          </Link>
-        )}
+        <JobRunStatus jobState={scheduleState} />
+      </td>
+      <td>
+        <SchedulePartitionStatus schedule={schedule} repoAddress={repoAddress} />
       </td>
       <td>
         <Group direction="horizontal" spacing={2} alignItems="center">
           <div>{`Mode: ${mode}`}</div>
-          <Popover
-            content={
-              <Menu>
-                {schedule.partitionSet?.name ? (
+          {schedule.partitionSet ? (
+            <Popover
+              content={
+                <Menu>
                   <MenuItem
                     text="View Partition History..."
                     icon="multi-select"
@@ -257,13 +248,22 @@ const ScheduleRow: React.FC<{
                       `/pipelines/${pipelineName}/partitions`,
                     )}
                   />
-                ) : null}
-              </Menu>
-            }
-            position="bottom"
-          >
-            <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
-          </Popover>
+                  <MenuItem
+                    text="Launch Partition Backfill..."
+                    icon="add"
+                    target="_blank"
+                    href={workspacePathFromAddress(
+                      repoAddress,
+                      `/pipelines/${pipelineName}/partitions`,
+                    )}
+                  />
+                </Menu>
+              }
+              position="bottom"
+            >
+              <Button small minimal icon="chevron-down" style={{marginLeft: '4px'}} />
+            </Popover>
+          ) : null}
         </Group>
       </td>
     </tr>

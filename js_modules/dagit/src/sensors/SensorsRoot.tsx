@@ -3,11 +3,12 @@ import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import React from 'react';
 
+import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {UnloadableJobs} from 'src/jobs/UnloadableJobs';
-import {JOB_STATE_FRAGMENT, SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
+import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {SensorsTable} from 'src/sensors/SensorsTable';
 import {SensorsRootQuery} from 'src/sensors/types/SensorsRootQuery';
 import {JobType} from 'src/types/globalTypes';

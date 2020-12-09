@@ -4,7 +4,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositorySelector, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { RepositorySelector, JobType, PartitionRunStatus, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: SchedulesRootQuery
@@ -14,9 +14,27 @@ export interface SchedulesRootQuery_repositoryOrError_RepositoryNotFoundError {
   __typename: "RepositoryNotFoundError";
 }
 
+export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_PythonError {
+  __typename: "PythonError";
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_Partitions_results {
+  __typename: "Partition";
+  name: string;
+  status: PartitionRunStatus;
+}
+
+export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_Partitions {
+  __typename: "Partitions";
+  results: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_Partitions_results[];
+}
+
+export type SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError = SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_PythonError | SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError_Partitions;
+
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet {
   __typename: "PartitionSet";
   name: string;
+  partitionsOrError: SchedulesRootQuery_repositoryOrError_Repository_schedules_partitionSet_partitionsOrError;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {
@@ -44,26 +62,16 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
 
 export type SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_jobSpecificData = SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_jobSpecificData_SensorJobData | SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_jobSpecificData_ScheduleJobData;
 
-export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
-  pipelineName: string;
   status: PipelineRunStatus;
-  tags: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_runs_tags[];
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_runs {
   __typename: "PipelineRun";
   id: string;
-  runId: string;
-  status: PipelineRunStatus;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_error_cause {
@@ -84,6 +92,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  skipReason: string | null;
   runs: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_runs[];
   error: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks_error | null;
 }
@@ -97,7 +106,6 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
   repositoryOrigin: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_repositoryOrigin;
   jobSpecificData: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_jobSpecificData | null;
   runs: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_runs[];
-  runsCount: number;
   ticks: SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks[];
   runningCount: number;
 }
@@ -219,26 +227,16 @@ export interface SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results
 
 export type SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData = SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_SensorJobData | SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData_ScheduleJobData;
 
-export interface SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
 export interface SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
-  pipelineName: string;
   status: PipelineRunStatus;
-  tags: SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_runs_tags[];
 }
 
 export interface SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs {
   __typename: "PipelineRun";
   id: string;
-  runId: string;
-  status: PipelineRunStatus;
 }
 
 export interface SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error_cause {
@@ -259,6 +257,7 @@ export interface SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  skipReason: string | null;
   runs: SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_runs[];
   error: SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_ticks_error | null;
 }
@@ -272,7 +271,6 @@ export interface SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results
   repositoryOrigin: SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_repositoryOrigin;
   jobSpecificData: SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_jobSpecificData | null;
   runs: SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_runs[];
-  runsCount: number;
   ticks: SchedulesRootQuery_unloadableJobStatesOrError_JobStates_results_ticks[];
   runningCount: number;
 }

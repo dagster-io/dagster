@@ -4,15 +4,33 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
+import { PartitionRunStatus, JobType, JobStatus, PipelineRunStatus, JobTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL fragment: RepositorySchedulesFragment
 // ====================================================
 
+export interface RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_PythonError {
+  __typename: "PythonError";
+}
+
+export interface RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_Partitions_results {
+  __typename: "Partition";
+  name: string;
+  status: PartitionRunStatus;
+}
+
+export interface RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_Partitions {
+  __typename: "Partitions";
+  results: RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_Partitions_results[];
+}
+
+export type RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError = RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_PythonError | RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError_Partitions;
+
 export interface RepositorySchedulesFragment_schedules_partitionSet {
   __typename: "PartitionSet";
   name: string;
+  partitionsOrError: RepositorySchedulesFragment_schedules_partitionSet_partitionsOrError;
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin_repositoryLocationMetadata {
@@ -40,26 +58,16 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_jobSpecific
 
 export type RepositorySchedulesFragment_schedules_scheduleState_jobSpecificData = RepositorySchedulesFragment_schedules_scheduleState_jobSpecificData_SensorJobData | RepositorySchedulesFragment_schedules_scheduleState_jobSpecificData_ScheduleJobData;
 
-export interface RepositorySchedulesFragment_schedules_scheduleState_runs_tags {
-  __typename: "PipelineTag";
-  key: string;
-  value: string;
-}
-
 export interface RepositorySchedulesFragment_schedules_scheduleState_runs {
   __typename: "PipelineRun";
   id: string;
   runId: string;
-  pipelineName: string;
   status: PipelineRunStatus;
-  tags: RepositorySchedulesFragment_schedules_scheduleState_runs_tags[];
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_runs {
   __typename: "PipelineRun";
   id: string;
-  runId: string;
-  status: PipelineRunStatus;
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_ticks_error_cause {
@@ -80,6 +88,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {
   id: string;
   status: JobTickStatus;
   timestamp: number;
+  skipReason: string | null;
   runs: RepositorySchedulesFragment_schedules_scheduleState_ticks_runs[];
   error: RepositorySchedulesFragment_schedules_scheduleState_ticks_error | null;
 }
@@ -93,7 +102,6 @@ export interface RepositorySchedulesFragment_schedules_scheduleState {
   repositoryOrigin: RepositorySchedulesFragment_schedules_scheduleState_repositoryOrigin;
   jobSpecificData: RepositorySchedulesFragment_schedules_scheduleState_jobSpecificData | null;
   runs: RepositorySchedulesFragment_schedules_scheduleState_runs[];
-  runsCount: number;
   ticks: RepositorySchedulesFragment_schedules_scheduleState_ticks[];
   runningCount: number;
 }
