@@ -156,37 +156,4 @@ def get_toys_schedules():
             run_config_fn=lambda _: {"intermediate_storage": {"filesystem": {}}},
             execution_timezone=_toys_tz_info(),
         ),
-        ScheduleDefinition(
-            name="pandas_hello_world_hourly",
-            cron_schedule="0 * * * *",
-            pipeline_name="pandas_hello_world_pipeline",
-            run_config_fn=lambda _: {
-                "solids": {
-                    "mult_solid": {
-                        "inputs": {
-                            "num_df": {
-                                "csv": {
-                                    "path": file_relative_path(
-                                        __file__, "pandas_hello_world/data/num.csv"
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    "sum_solid": {
-                        "inputs": {
-                            "num_df": {
-                                "csv": {
-                                    "path": file_relative_path(
-                                        __file__, "pandas_hello_world/data/num.csv"
-                                    )
-                                }
-                            }
-                        }
-                    },
-                },
-                "intermediate_storage": {"filesystem": {}},
-            },
-            execution_timezone=_toys_tz_info(),
-        ),
     ]
