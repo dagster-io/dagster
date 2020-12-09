@@ -1,3 +1,4 @@
+import pendulum
 import pytest
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import DagsterRunAlreadyExists, DagsterSnapshotDoesNotExist
@@ -890,8 +891,6 @@ class TestRunStorage:
         assert storage.get_daemon_heartbeats() == {}
 
     def test_add_heartbeat(self, storage):
-        import pendulum
-
         self._skip_in_memory(storage)
 
         # test insert
@@ -917,3 +916,17 @@ class TestRunStorage:
         assert len(storage.get_daemon_heartbeats()) == 1
         stored_heartbeat = storage.get_daemon_heartbeats()[DaemonType.SENSOR]
         assert stored_heartbeat == second_added_heartbeat
+
+    def test_wipe_heartbeats(self, storage):
+        self._skip_in_memory(storage)
+
+        added_heartbeat = DaemonHeartbeat(
+            timestamp=pendulum.from_timestamp(1000),
+            daemon_type=DaemonType.SENSOR,
+            daemon_id=None,
+            info=None,
+        )
+        storage.add_daemon_heartbeat(added_heartbeat)
+        storage.wipe_daemon_heartbeats()
+
+        assert storage.get_daemon_heartbeats() == {}

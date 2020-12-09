@@ -258,3 +258,7 @@ class RunStorage(six.with_metaclass(ABCMeta)):
     @abstractmethod
     def get_daemon_heartbeats(self):
         """Latest heartbeats of all daemon types"""
+
+    @abstractmethod
+    def wipe_daemon_heartbeats(self):
+        """Wipe all daemon heartbeats"""

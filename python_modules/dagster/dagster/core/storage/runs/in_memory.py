@@ -236,3 +236,8 @@ class InMemoryRunStorage(RunStorage):
         raise NotImplementedError(
             "The dagster daemon lives in a separate process. It cannot use in memory storage."
         )
+
+    def wipe_daemon_heartbeats(self):
+        raise NotImplementedError(
+            "The dagster daemon lives in a separate process. It cannot use in memory storage."
+        )

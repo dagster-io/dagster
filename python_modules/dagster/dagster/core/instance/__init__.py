@@ -1310,3 +1310,6 @@ class DagsterInstance:
     def get_daemon_heartbeats(self):
         """Latest heartbeats of all daemon types"""
         return self._run_storage.get_daemon_heartbeats()
+
+    def wipe_daemon_heartbeats(self):
+        self._run_storage.wipe_daemon_heartbeats()
