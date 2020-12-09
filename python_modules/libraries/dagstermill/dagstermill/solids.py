@@ -304,6 +304,8 @@ def define_dagstermill_solid(
     required_resource_keys = check.opt_set_param(
         required_resource_keys, "required_resource_keys", of_type=str
     )
+    if output_notebook is not None:
+        required_resource_keys.add("file_manager")
 
     return SolidDefinition(
         name=name,
