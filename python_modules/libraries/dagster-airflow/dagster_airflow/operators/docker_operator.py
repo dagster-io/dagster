@@ -3,8 +3,9 @@ import json
 import warnings
 from contextlib import contextmanager
 
-from airflow.exceptions import AirflowException
+from airflow.exceptions import AirflowException, AirflowSkipException
 from dagster import check, seven
+from dagster.cli.api import StepExecutionSkipped
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 from dagster.grpc.types import ExecuteStepArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
@@ -280,9 +281,15 @@ class DagsterDockerOperator(DockerOperator):
 
             try:
                 events = [deserialize_json_to_dagster_namedtuple(line) for line in res if line]
+
             except Exception:  # pylint: disable=broad-except
                 raise AirflowException(
                     "Could not parse response {response}".format(response=repr(res))
+                )
+
+            if len(events) == 1 and isinstance(events[0], StepExecutionSkipped):
+                raise AirflowSkipException(
+                    "Dagster emitted skip event, skipping execution in Airflow"
                 )
 
             check_events_for_failures(events)

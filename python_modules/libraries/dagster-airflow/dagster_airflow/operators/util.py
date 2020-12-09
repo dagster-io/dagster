@@ -5,6 +5,7 @@ from airflow.exceptions import AirflowException, AirflowSkipException
 from dagster import DagsterEventType, check
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.api import create_execution_plan, execute_plan
+from dagster.core.execution.plan.plan import should_skip_step
 from dagster.core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
 
 
@@ -137,7 +138,10 @@ def invoke_steps_within_python_operator(
                 step_keys_to_execute=step_keys,
                 mode=mode,
             )
-
+            if should_skip_step(execution_plan, instance, pipeline_run.run_id):
+                raise AirflowSkipException(
+                    "Dagster emitted skip event, skipping execution in Airflow"
+                )
             events = execute_plan(execution_plan, instance, pipeline_run, run_config=run_config)
             check_events_for_failures(events)
             check_events_for_skips(events)

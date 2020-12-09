@@ -108,6 +108,34 @@ def test_execute_step():
         assert "STEP_SUCCESS" in result.stdout
 
 
+def test_execute_step_1():
+    with get_foo_pipeline_handle() as pipeline_handle:
+        runner = CliRunner()
+
+        with instance_for_test(
+            overrides={
+                "compute_logs": {
+                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "class": "NoOpComputeLogManager",
+                }
+            }
+        ) as instance:
+            run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
+
+            input_json = serialize_dagster_namedtuple(
+                ExecuteStepArgs(
+                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_run_id=run.run_id,
+                    step_keys_to_execute=None,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            result = runner_execute_step(runner, [input_json],)
+
+        assert "STEP_SUCCESS" in result.stdout
+
+
 def test_execute_step_verify_step():
     with get_foo_pipeline_handle() as pipeline_handle:
         runner = CliRunner()

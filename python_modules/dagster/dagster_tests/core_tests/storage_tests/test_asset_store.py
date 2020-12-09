@@ -6,6 +6,7 @@ from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
     ModeDefinition,
+    Output,
     OutputDefinition,
     execute_pipeline,
     pipeline,
@@ -323,3 +324,58 @@ def test_versioned_asset_store():
             version="version2",
         )
         assert not store.has_asset(context_diff_version)
+
+
+def test_asset_store_optional_output():
+    with seven.TemporaryDirectory() as tmpdir_dir:
+        asset_store = fs_asset_store.configured({"base_dir": tmpdir_dir})
+
+        skip = True
+
+        @solid(output_defs=[OutputDefinition(is_required=False)])
+        def solid_a(_context):
+            if not skip:
+                yield Output([1, 2])
+
+        @solid
+        def solid_skipped(_context, array):
+            return array
+
+        @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"asset_store": asset_store})])
+        def asset_pipeline_optional_output():
+            solid_skipped(solid_a())
+
+        result = execute_pipeline(asset_pipeline_optional_output)
+        assert result.success
+        assert result.result_for_solid("solid_skipped").skipped
+
+
+def test_asset_store_optional_output_path_exists():
+    with seven.TemporaryDirectory() as tmpdir_dir:
+        asset_store = custom_path_fs_asset_store.configured({"base_dir": tmpdir_dir})
+        filepath = os.path.join(tmpdir_dir, "foo")
+        # file exists already
+        with open(filepath, "wb") as write_obj:
+            pickle.dump([1], write_obj)
+
+        assert os.path.exists(filepath)
+
+        skip = True
+
+        @solid(output_defs=[OutputDefinition(is_required=False, asset_metadata={"path": filepath})])
+        def solid_a(_context):
+            if not skip:
+                yield Output([1, 2])
+
+        @solid(output_defs=[OutputDefinition(asset_metadata={"path": "bar"})])
+        def solid_b(_context, array):
+            return array
+
+        @pipeline(mode_defs=[ModeDefinition("local", resource_defs={"asset_store": asset_store})])
+        def asset_pipeline_optional_output_path_exists():
+            solid_b(solid_a())
+
+        result = execute_pipeline(asset_pipeline_optional_output_path_exists)
+        assert result.success
+        # won't skip solid_b because filepath exists
+        assert result.result_for_solid("solid_b").skipped

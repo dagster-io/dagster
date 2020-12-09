@@ -332,13 +332,16 @@ def test_using_file_system_for_subplan_missing_input():
         pipeline_def=pipeline, execution_plan=execution_plan
     )
 
-    with pytest.raises(DagsterStepOutputNotFoundError):
-        execute_plan(
-            execution_plan.build_subset_plan(["add_one.compute"]),
-            instance,
-            run_config=run_config,
-            pipeline_run=pipeline_run,
-        )
+    events = execute_plan(
+        execution_plan.build_subset_plan(["add_one.compute"]),
+        instance,
+        run_config=run_config,
+        pipeline_run=pipeline_run,
+    )
+    failures = [event for event in events if event.event_type_value == "STEP_FAILURE"]
+    assert len(failures) == 1
+    assert failures[0].step_key == "add_one.compute"
+    assert "DagsterStepOutputNotFoundError" in failures[0].event_specific_data.error.message
 
 
 def test_using_file_system_for_subplan_invalid_step():

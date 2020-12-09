@@ -325,18 +325,24 @@ def test_bad_broker():
 
 
 def test_engine_error():
-    with pytest.raises(DagsterSubprocessError):
-        with seven.TemporaryDirectory() as tempdir:
-            with instance_for_test_tempdir(tempdir) as instance:
-                storage = os.path.join(tempdir, "flakey_storage")
-                execute_pipeline(
-                    ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
-                    run_config={
-                        "intermediate_storage": {"filesystem": {"config": {"base_dir": storage}}},
-                        "execution": {
-                            "celery": {"config": {"config_source": {"task_always_eager": True}}}
+    with seven.mock.patch(
+        "dagster.core.execution.context.system.SystemExecutionContextData.raise_on_error",
+        return_value=True,
+    ):
+        with pytest.raises(DagsterSubprocessError):
+            with seven.TemporaryDirectory() as tempdir:
+                with instance_for_test_tempdir(tempdir) as instance:
+                    storage = os.path.join(tempdir, "flakey_storage")
+                    execute_pipeline(
+                        ReconstructablePipeline.for_file(REPO_FILE, "engine_error"),
+                        run_config={
+                            "intermediate_storage": {
+                                "filesystem": {"config": {"base_dir": storage}}
+                            },
+                            "execution": {
+                                "celery": {"config": {"config_source": {"task_always_eager": True}}}
+                            },
+                            "solids": {"destroy": {"config": storage}},
                         },
-                        "solids": {"destroy": {"config": storage}},
-                    },
-                    instance=instance,
-                )
+                        instance=instance,
+                    )

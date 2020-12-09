@@ -17,6 +17,7 @@ from dagster.core.execution.resolve_versions import (
     resolve_step_output_versions_helper,
     resolve_step_versions_helper,
 )
+from dagster.core.instance import DagsterInstance
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.core.utils import toposort
@@ -482,3 +483,57 @@ def check_asset_store_intermediate_storage(mode_def, environment_config):
                 intermediate_storage_name=intermediate_storage_def.name
             )
         )
+
+
+def should_skip_step(execution_plan, instance, run_id):
+    """[INTERNAL] Check if it should skip executing the plan. Primarily used by execution without
+    run-level plan process, e.g. Airflow step execution. Note: this only checks one step at a time.
+
+    For each Dagster execution step
+    - if none of its inputs come from optional outputs, do not skip
+    - if there is at least one input, where none of the upstream steps have yielded an
+      output, we should skip the step.
+    """
+    check.inst_param(execution_plan, "execution_plan", ExecutionPlan)
+    check.inst_param(instance, "instance", DagsterInstance)
+    check.str_param(run_id, "run_id")
+
+    # only checks one step at a time
+    if len(execution_plan.step_keys_to_execute) != 1:
+        return
+
+    step_key = execution_plan.step_keys_to_execute[0]
+    optional_source_handles = set()
+    step = execution_plan.get_step_by_key(step_key)
+    for step_input in step.step_inputs:
+        for source_handle in step_input.source.step_output_handle_dependencies:
+            if execution_plan.get_step_output(source_handle).output_def.optional:
+                optional_source_handles.add(source_handle)
+
+    # early terminate to avoid unnecessary instance/db calls
+    if len(optional_source_handles) == 0:
+        # do not skip when all the inputs come from non-optional outputs
+        return False
+
+    # find all yielded step outputs
+    all_logs = instance.all_logs(run_id)
+    yielded_step_output_handles = set()
+    for event_record in all_logs:
+        if event_record.dagster_event and event_record.dagster_event.is_successful_output:
+            yielded_step_output_handles.add(
+                event_record.dagster_event.event_specific_data.step_output_handle
+            )
+
+    # If there is at least one of the step's inputs, none of whose upstream steps has
+    # yielded an output, we should skip that step.
+    for step_input in step.step_inputs:
+        missing_source_handles = [
+            source_handle
+            for source_handle in step_input.source.step_output_handle_dependencies
+            if source_handle in optional_source_handles
+            and source_handle not in yielded_step_output_handles
+        ]
+        if len(missing_source_handles) == len(step_input.source.step_output_handle_dependencies):
+            return True
+
+    return False

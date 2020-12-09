@@ -5,7 +5,11 @@ from collections import namedtuple
 from dagster import check
 from dagster.core.definitions.events import AssetStoreOperation, AssetStoreOperationType
 from dagster.core.definitions.input import InputDefinition
-from dagster.core.errors import DagsterTypeLoadingError, user_code_error_boundary
+from dagster.core.errors import (
+    DagsterStepOutputNotFoundError,
+    DagsterTypeLoadingError,
+    user_code_error_boundary,
+)
 from dagster.core.storage.input_manager import InputManager
 
 
@@ -151,6 +155,15 @@ class FromStepOutput(
                 obj=obj,
             )
         else:
+            if not step_context.intermediate_storage.has_intermediate(step_context, source_handle):
+                raise DagsterStepOutputNotFoundError(
+                    (
+                        "When executing {step}, discovered required output missing "
+                        "from previous step: {previous_step}"
+                    ).format(previous_step=source_handle.step_key, step=step_context.step.key),
+                    step_key=source_handle.step_key,
+                    output_name=source_handle.output_name,
+                )
             return step_context.intermediate_storage.get_intermediate(
                 context=step_context,
                 step_output_handle=source_handle,

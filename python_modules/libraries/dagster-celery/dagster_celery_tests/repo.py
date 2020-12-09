@@ -1,4 +1,3 @@
-import shutil
 import time
 
 from dagster import (
@@ -132,8 +131,7 @@ def test_retries():
 
 @solid(config_schema=str)
 def destroy(context, x):
-    shutil.rmtree(context.solid_config)
-    return x
+    raise ValueError()
 
 
 @pipeline(mode_defs=celery_mode_defs)
