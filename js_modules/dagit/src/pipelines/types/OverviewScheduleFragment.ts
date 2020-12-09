@@ -16,6 +16,7 @@ export interface OverviewScheduleFragment_scheduleState_lastRuns_stats_PythonErr
 
 export interface OverviewScheduleFragment_scheduleState_lastRuns_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
+  id: string;
   endTime: number | null;
 }
 

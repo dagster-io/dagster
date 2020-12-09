@@ -43,6 +43,7 @@ class DauphinPipelineRunStatsSnapshot(dauphin.ObjectType):
     class Meta:
         name = "PipelineRunStatsSnapshot"
 
+    id = dauphin.NonNull(dauphin.String)
     runId = dauphin.NonNull(dauphin.String)
     stepsSucceeded = dauphin.NonNull(dauphin.Int)
     stepsFailed = dauphin.NonNull(dauphin.Int)
@@ -53,6 +54,7 @@ class DauphinPipelineRunStatsSnapshot(dauphin.ObjectType):
 
     def __init__(self, stats):
         super(DauphinPipelineRunStatsSnapshot, self).__init__(
+            id="stats-" + stats.run_id,
             runId=stats.run_id,
             stepsSucceeded=stats.steps_succeeded,
             stepsFailed=stats.steps_failed,

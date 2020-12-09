@@ -66,6 +66,7 @@ export const RUN_STATS_QUERY = gql`
         pipelineName
         stats {
           ... on PipelineRunStatsSnapshot {
+            id
             stepsSucceeded
             stepsFailed
             expectations

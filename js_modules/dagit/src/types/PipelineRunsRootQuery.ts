@@ -18,6 +18,7 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_PipelineRuns_results_
 
 export interface PipelineRunsRootQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
+  id: string;
   startTime: number | null;
   endTime: number | null;
 }

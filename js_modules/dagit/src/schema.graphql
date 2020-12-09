@@ -301,6 +301,7 @@ interface PipelineReference {
 union PipelineRunStatsOrError = PipelineRunStatsSnapshot | PythonError
 
 type PipelineRunStatsSnapshot {
+  id: String!
   runId: String!
   stepsSucceeded: Int!
   stepsFailed: Int!

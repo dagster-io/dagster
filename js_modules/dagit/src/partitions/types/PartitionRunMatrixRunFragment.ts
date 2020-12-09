@@ -22,6 +22,7 @@ export interface PartitionRunMatrixRunFragment_stats_PythonError {
 
 export interface PartitionRunMatrixRunFragment_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
+  id: string;
   startTime: number | null;
 }
 

@@ -18,6 +18,7 @@ export interface PartitionGraphSetRunFragment_tags {
 
 export interface PartitionGraphSetRunFragment_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
+  id: string;
   startTime: number | null;
   endTime: number | null;
   materializations: number;

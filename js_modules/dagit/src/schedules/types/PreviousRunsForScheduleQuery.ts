@@ -22,6 +22,7 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_r
 
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
+  id: string;
   startTime: number | null;
   endTime: number | null;
 }

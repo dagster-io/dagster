@@ -13,6 +13,7 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
     runId
     stats {
       ... on PipelineRunStatsSnapshot {
+        id
         startTime
         endTime
         materializations

@@ -22,6 +22,7 @@ export interface PreviousRunsFragment_PipelineRuns_results_tags {
 
 export interface PreviousRunsFragment_PipelineRuns_results_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
+  id: string;
   startTime: number | null;
   endTime: number | null;
 }

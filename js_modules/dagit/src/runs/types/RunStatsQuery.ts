@@ -28,6 +28,7 @@ export interface RunStatsQuery_pipelineRunOrError_PipelineRunNotFoundError {
 
 export interface RunStatsQuery_pipelineRunOrError_PipelineRun_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
+  id: string;
   stepsSucceeded: number;
   stepsFailed: number;
   expectations: number;

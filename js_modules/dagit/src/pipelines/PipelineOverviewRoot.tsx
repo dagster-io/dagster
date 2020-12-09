@@ -322,6 +322,7 @@ const OverviewScheduleFragment = gql`
         id
         stats {
           ... on PipelineRunStatsSnapshot {
+            id
             endTime
           }
         }

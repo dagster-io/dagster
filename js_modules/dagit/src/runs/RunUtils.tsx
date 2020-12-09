@@ -373,6 +373,7 @@ export const RunComponentFragments = {
       status
       stats {
         ... on PipelineRunStatsSnapshot {
+          id
           startTime
           endTime
         }

@@ -12,6 +12,7 @@ import { StepEventStatus } from "./../../types/globalTypes";
 
 export interface PartitionGraphFragment_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
+  id: string;
   startTime: number | null;
   endTime: number | null;
   materializations: number;

@@ -150,6 +150,7 @@ def get_execution_plan(graphene_info, selector, run_config, mode):
 @capture_dauphin_error
 def get_stats(graphene_info, run_id):
     stats = graphene_info.context.instance.get_run_stats(run_id)
+    stats.id = "stats-{run_id}"
     return graphene_info.schema.type_named("PipelineRunStatsSnapshot")(stats)
 
 

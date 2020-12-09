@@ -389,6 +389,7 @@ export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`
     stats {
       __typename
       ... on PipelineRunStatsSnapshot {
+        id
         startTime
       }
     }

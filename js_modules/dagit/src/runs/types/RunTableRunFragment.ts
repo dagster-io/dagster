@@ -18,6 +18,7 @@ export interface RunTableRunFragment_tags {
 
 export interface RunTableRunFragment_stats_PipelineRunStatsSnapshot {
   __typename: "PipelineRunStatsSnapshot";
+  id: string;
   startTime: number | null;
   endTime: number | null;
 }
