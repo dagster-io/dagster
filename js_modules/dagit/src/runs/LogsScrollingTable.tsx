@@ -223,7 +223,6 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     const lastRowStyles = isLastRow
       ? {
           borderBottom: `1px solid ${Colors.LIGHT_GRAY3}`,
-          paddingBottom: '100px',
         }
       : {};
 
@@ -273,6 +272,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
           width={width}
           height={height}
           overscanRowCount={10}
+          style={{paddingBottom: 50}}
         />
       </div>
     );
