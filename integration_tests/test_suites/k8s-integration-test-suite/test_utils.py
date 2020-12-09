@@ -4,7 +4,7 @@ import kubernetes
 import pytest
 from dagster_k8s.client import DagsterK8sError, WaitForPodState
 from dagster_k8s.utils import retrieve_pod_logs, wait_for_job_success, wait_for_pod
-from dagster_k8s_test_infra.helm import test_namespace
+from dagster_k8s_test_infra.helm import get_helm_test_namespace
 
 
 def construct_pod_spec(name, cmd):
@@ -36,7 +36,7 @@ def construct_job_manifest(name, cmd):
 def test_wait_for_pod(cluster_provider):  # pylint: disable=unused-argument
     api = kubernetes.client.CoreV1Api()
 
-    with test_namespace() as namespace:
+    with get_helm_test_namespace() as namespace:
         # Without this sleep, we get the following error on kind:
         # HTTP response body:
         # {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"No API
@@ -86,7 +86,7 @@ def test_wait_for_pod(cluster_provider):  # pylint: disable=unused-argument
 
 
 def test_wait_for_job(cluster_provider):  # pylint: disable=unused-argument
-    with test_namespace() as namespace:
+    with get_helm_test_namespace() as namespace:
         # Without this sleep, we get the following error on kind:
         # HTTP response body:
         # {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"No API

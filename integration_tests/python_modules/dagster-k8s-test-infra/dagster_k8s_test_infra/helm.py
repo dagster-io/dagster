@@ -16,6 +16,7 @@ from dagster_test.test_project import get_test_project_docker_image
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
 
+TEST_AWS_CONFIGMAP_NAME = "test-aws-env-configmap"
 TEST_CONFIGMAP_NAME = "test-env-configmap"
 TEST_SECRET_NAME = "test-env-secret"
 
@@ -42,7 +43,7 @@ def _helm_namespace_helper(helm_chart_fn, request):
         else:
             should_cleanup = not request.config.getoption("--no-cleanup")
 
-        with test_namespace(should_cleanup) as namespace:
+        with get_helm_test_namespace(should_cleanup) as namespace:
             with helm_test_resources(namespace, should_cleanup):
                 docker_image = get_test_project_docker_image()
                 with helm_chart_fn(namespace, docker_image, should_cleanup):
@@ -83,7 +84,7 @@ def helm_namespace_for_k8s_run_launcher(
 
 
 @contextmanager
-def test_namespace(should_cleanup=True):
+def get_helm_test_namespace(should_cleanup=True):
     # Will be something like dagster-test-3fcd70 to avoid ns collisions in shared test environment
     namespace = get_test_namespace()
 
@@ -127,6 +128,28 @@ def helm_test_resources(namespace, should_cleanup=True):
             metadata=kubernetes.client.V1ObjectMeta(name=TEST_CONFIGMAP_NAME),
         )
         kube_api.create_namespaced_config_map(namespace=namespace, body=configmap)
+
+        if not IS_BUILDKITE:
+            aws_data = {
+                "AWS_ACCOUNT_ID": os.getenv("AWS_ACCOUNT_ID"),
+                "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID"),
+                "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
+            }
+
+            if not aws_data["AWS_ACCESS_KEY_ID"] or not aws_data["AWS_SECRET_ACCESS_KEY"]:
+                raise Exception(
+                    "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
+                    "to be able to run Helm tests locally"
+                )
+
+            print("Creating ConfigMap %s with AWS credentials" % (TEST_AWS_CONFIGMAP_NAME))
+            aws_configmap = kubernetes.client.V1ConfigMap(
+                api_version="v1",
+                kind="ConfigMap",
+                data=aws_data,
+                metadata=kubernetes.client.V1ObjectMeta(name=TEST_AWS_CONFIGMAP_NAME),
+            )
+            kube_api.create_namespaced_config_map(namespace=namespace, body=aws_configmap)
 
         # Secret values are expected to be base64 encoded
         secret_val = six.ensure_str(base64.b64encode(six.ensure_binary("foobar")))
@@ -208,6 +231,23 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config):
             for pod_name in pod_names:
                 print("Waiting for Celery worker pod %s" % pod_name)
                 wait_for_pod(pod_name, namespace=namespace)
+
+            rabbitmq_enabled = ("rabbitmq" not in helm_config) or helm_config.get("rabbitmq")
+            if rabbitmq_enabled:
+                print("Waiting for rabbitmq pod to exist...")
+                while True:
+                    pods = kube_api.list_namespaced_pod(namespace=namespace)
+                    pod_names = [
+                        p.metadata.name for p in pods.items if "rabbitmq" in p.metadata.name
+                    ]
+                    if pod_names:
+                        assert len(pod_names) == 1
+                        print("Waiting for rabbitmq pod to be ready: " + str(pod_names[0]))
+
+                        wait_for_pod(pod_names[0], namespace=namespace)
+                        break
+                    time.sleep(1)
+
         else:
             assert (
                 len(pod_names) == 0

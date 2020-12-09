@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 import datetime
 import os
-import sys
 import time
 
 import boto3
@@ -14,11 +13,15 @@ from dagster.utils import merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
+from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
+from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     get_test_project_environments_path,
     get_test_project_external_pipeline,
 )
+
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 def get_celery_engine_config(dagster_docker_image, job_namespace):
@@ -28,17 +31,16 @@ def get_celery_engine_config(dagster_docker_image, job_namespace):
                 "config": {
                     "job_image": dagster_docker_image,
                     "job_namespace": job_namespace,
-                    "image_pull_policy": "Always",
-                    "env_config_maps": ["dagster-pipeline-env"],
+                    "image_pull_policy": image_pull_policy(),
+                    "env_config_maps": ["dagster-pipeline-env"]
+                    + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                 }
             }
         },
     }
 
 
-@pytest.mark.integration
-@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
-def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name
+def test_execute_on_celery_k8s_default(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, helm_namespace
 ):
     run_config = merge_dicts(
@@ -70,8 +72,6 @@ def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
 
 
-@pytest.mark.integration
-@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
 def test_execute_subset_on_celery_k8s(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, helm_namespace
 ):
@@ -108,8 +108,6 @@ def test_execute_subset_on_celery_k8s(  # pylint: disable=redefined-outer-name
     assert "PIPELINE_SUCCESS" in result, "no match, result: {}".format(result)
 
 
-@pytest.mark.integration
-@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
 def test_execute_on_celery_k8s_retry_pipeline(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, helm_namespace
 ):
@@ -164,8 +162,6 @@ def test_execute_on_celery_k8s_retry_pipeline(  # pylint: disable=redefined-oute
     ]
 
 
-@pytest.mark.integration
-@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
 def test_execute_on_celery_k8s_with_resource_requirements(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, helm_namespace
 ):
@@ -298,7 +294,6 @@ def _test_termination(dagster_instance, run_config):
     assert s3.get_object(Bucket=bucket, Key=key)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
 def test_execute_on_celery_k8s_with_termination(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, helm_namespace
 ):
@@ -323,7 +318,6 @@ def set_dagster_k8s_pipeline_run_namespace_env(helm_namespace):
             os.environ["DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"] = old_value
 
 
-@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
 def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env
 ):
@@ -338,7 +332,6 @@ def test_execute_on_celery_k8s_with_env_var_and_termination(  # pylint: disable=
     _test_termination(dagster_instance, run_config)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 5), reason="Very slow on Python 2")
 def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-outer-name
     dagster_docker_image, dagster_instance, set_dagster_k8s_pipeline_run_namespace_env
 ):
