@@ -524,6 +524,7 @@ type PartitionSet {
   mode: String!
   partitionsOrError(cursor: String, limit: Int, reverse: Boolean): PartitionsOrError!
   partition(partitionName: String!): Partition
+  status: PartitionRunStatus!
 }
 
 union PartitionsOrError = Partitions | PythonError
@@ -540,6 +541,7 @@ type Partition {
   runConfigOrError: PartitionRunConfigOrError!
   tagsOrError: PartitionTagsOrError!
   runs(filter: PipelineRunsFilter, cursor: String, limit: Int): [PipelineRun!]!
+  status: PartitionRunStatus!
 }
 
 union PartitionRunConfigOrError = PartitionRunConfig | PythonError
@@ -565,6 +567,13 @@ input PipelineRunsFilter {
 input ExecutionTag {
   key: String!
   value: String!
+}
+
+enum PartitionRunStatus {
+  SUCCESS
+  FAILURE
+  MISSING
+  PENDING
 }
 
 type ScheduleFutureTicks {
