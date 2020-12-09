@@ -458,7 +458,7 @@ class DagsterEvent(
             event_type=DagsterEventType.STEP_OUTPUT,
             step_context=step_context,
             event_specific_data=step_output_data,
-            message='Yielded output "{output_name}" of type "{output_type}".{type_check_clause}'.format(
+            message='Yielded output "{output_name}"{mapping_clause} of type "{output_type}".{type_check_clause}'.format(
                 output_name=step_output_data.step_output_handle.output_name,
                 output_type=step_context.step.step_output_named(
                     step_output_data.step_output_handle.output_name
@@ -470,6 +470,9 @@ class DagsterEvent(
                 )
                 if step_output_data.type_check_data
                 else " (No type check).",
+                mapping_clause=f' mapping key "{step_output_data.step_output_handle.mapping_key}"'
+                if step_output_data.step_output_handle.mapping_key
+                else "",
             ),
         )
 

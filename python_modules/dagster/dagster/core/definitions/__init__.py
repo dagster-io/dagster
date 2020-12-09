@@ -33,6 +33,7 @@ from .events import (
     HookExecutionResult,
     IntMetadataEntryData,
     JsonMetadataEntryData,
+    MappableOutput,
     MarkdownMetadataEntryData,
     Materialization,
     Output,

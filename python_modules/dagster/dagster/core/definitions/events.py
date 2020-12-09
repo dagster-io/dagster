@@ -8,7 +8,7 @@ from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import Persistable, whitelist_for_persistence, whitelist_for_serdes
 
-from .utils import DEFAULT_OUTPUT
+from .utils import DEFAULT_OUTPUT, check_valid_name
 
 
 def last_file_comp(path):
@@ -488,6 +488,31 @@ class Output(namedtuple("_Output", "value output_name")):
 
     def __new__(cls, value, output_name=DEFAULT_OUTPUT):
         return super(Output, cls).__new__(cls, value, check.str_param(output_name, "output_name"),)
+
+
+class MappableOutput(namedtuple("_MappableOutput", "value mapping_key output_name")):
+    """
+    Variant of :py:class:`Output` used to support mapping. Each MappableOutput produced by a solid
+    will result in the downstream dag being cloned to run on that individual value. Each MappableOutput
+    must have a unique mapping_key to distinguish it.
+
+    Args:
+        value (Any):
+            The value returned by the compute function.
+        mapping_key (str):
+            The key that uniquely identifies this mappable value relative to its peers.
+        output_name (Optional[str]):
+            Name of the corresponding output definition. (default: "result")
+    """
+
+    def __new__(cls, value, mapping_key, output_name=DEFAULT_OUTPUT):
+
+        return super(MappableOutput, cls).__new__(
+            cls,
+            value,
+            check_valid_name(check.str_param(mapping_key, "mapping_key")),
+            check.str_param(output_name, "output_name"),
+        )
 
 
 @whitelist_for_persistence

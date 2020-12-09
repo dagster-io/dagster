@@ -272,11 +272,6 @@ class SolidExecutionResult:
         """List[DagsterEvent]: All events of type ``STEP_INPUT``."""
         return self._compute_steps_of_type(DagsterEventType.STEP_INPUT)
 
-    @property
-    def compute_output_event_dict(self):
-        """Dict[str, DagsterEvent]: All events of type ``STEP_OUTPUT``, keyed by output name"""
-        return {se.event_specific_data.output_name: se for se in self.output_events_during_compute}
-
     def get_output_event_for_compute(self, output_name="result"):
         """The ``STEP_OUTPUT`` event for the given output name.
 
@@ -288,7 +283,33 @@ class SolidExecutionResult:
         Returns:
             DagsterEvent: The corresponding event.
         """
-        return self.compute_output_event_dict[output_name]
+        events = self.get_output_events_for_compute(output_name)
+        check.invariant(
+            len(events) == 1, "Multiple output events returned, use get_output_events_for_compute"
+        )
+        return events[0]
+
+    @property
+    def compute_output_events_dict(self):
+        """Dict[str, List[DagsterEvent]]: All events of type ``STEP_OUTPUT``, keyed by output name"""
+        results = defaultdict(list)
+        for se in self.output_events_during_compute:
+            results[se.step_output_data.output_name].append(se)
+
+        return dict(results)
+
+    def get_output_events_for_compute(self, output_name="result"):
+        """The ``STEP_OUTPUT`` event for the given output name.
+
+        Throws if not present.
+
+        Args:
+            output_name (Optional[str]): The name of the output. (default: 'result')
+
+        Returns:
+            List[DagsterEvent]: The corresponding events.
+        """
+        return self.compute_output_events_dict[output_name]
 
     @property
     def output_events_during_compute(self):
@@ -379,11 +400,13 @@ class SolidExecutionResult:
 
     @property
     def output_values(self):
-        """Union[None, Dict[str, Any]]: The computed output values.
-
-        Keys of this dictionary are output names, values are output values.
+        """Union[None, Dict[str, Union[Any, Dict[str, Any]]]: The computed output values.
 
         Returns ``None`` if execution did not succeed.
+
+        Returns a dictionary where keys are output names and the values are:
+            * the output values in the normal case
+            * a dictionary from mapping key to corresponding value in the mapped case
 
         Note that accessing this property will reconstruct the pipeline context (including, e.g.,
         resources) to retrieve materialized output values.
@@ -398,17 +421,25 @@ class SolidExecutionResult:
                     mode=context.pipeline_run.mode,
                     step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
                 )
-                values = {}
+                results = {}
                 for compute_step_event in self.compute_step_events:
                     if compute_step_event.is_successful_output:
-                        values[compute_step_event.step_output_data.output_name] = self._get_value(
+                        output = compute_step_event.step_output_data
+                        value = self._get_value(
                             context.for_step(
                                 execution_plan.get_step_by_key(compute_step_event.step_key)
                             ),
-                            compute_step_event.step_output_data,
+                            output,
                         )
+                        if output.mapping_key:
+                            if results.get(output.output_name) is None:
+                                results[output.output_name] = {output.mapping_key: value}
+                            else:
+                                results[output.output_name][output.mapping_key] = value
+                        else:
+                            results[output.output_name] = value
 
-                return values
+                return results
         else:
             return None
 
@@ -422,7 +453,8 @@ class SolidExecutionResult:
             output_name(str): The output name for which to retrieve the value. (default: 'result')
 
         Returns:
-            Union[None, Any]: ``None`` if execution did not succeed, otherwise the output value.
+            Union[None, Any, Dict[str, Any]]: ``None`` if execution did not succeed, the output value
+                in the normal case, and a dict of mapping keys to values in the mapped case.
         """
         from .api import create_execution_plan
 
@@ -439,26 +471,38 @@ class SolidExecutionResult:
             )
 
         if self.success:
+            with self.reconstruct_context() as context:
+                execution_plan = create_execution_plan(
+                    pipeline=context.pipeline,
+                    run_config=context.run_config,
+                    mode=context.pipeline_run.mode,
+                    step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
+                )
+            found = False
+            result = None
             for compute_step_event in self.compute_step_events:
                 if (
                     compute_step_event.is_successful_output
                     and compute_step_event.step_output_data.output_name == output_name
                 ):
-                    with self.reconstruct_context() as context:
-                        execution_plan = create_execution_plan(
-                            pipeline=context.pipeline,
-                            run_config=context.run_config,
-                            mode=context.pipeline_run.mode,
-                            step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
-                        )
+                    found = True
+                    output = compute_step_event.step_output_data
+                    value = self._get_value(
+                        context.for_step(
+                            execution_plan.get_step_by_key(compute_step_event.step_key)
+                        ),
+                        output,
+                    )
+                    if output.mapping_key:
+                        if result is None:
+                            result = {output.mapping_key: value}
+                        else:
+                            result[output.mapping_key] = value
+                    else:
+                        result = value
 
-                        value = self._get_value(
-                            context.for_step(
-                                execution_plan.get_step_by_key(compute_step_event.step_key)
-                            ),
-                            compute_step_event.step_output_data,
-                        )
-                    return value
+            if found:
+                return result
 
             raise DagsterInvariantViolationError(
                 (

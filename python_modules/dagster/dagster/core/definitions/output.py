@@ -84,6 +84,10 @@ class OutputDefinition:
     def metadata(self):
         return self._metadata
 
+    @property
+    def is_mappable(self):
+        return False
+
     def mapping_from(self, solid_name, output_name=None):
         """Create an output mapping from an output of a child solid.
 
@@ -101,6 +105,12 @@ class OutputDefinition:
                 output_mapping = OutputDefinition(Int).mapping_from('child_solid')
         """
         return OutputMapping(self, OutputPointer(solid_name, output_name))
+
+
+class MappableOutputDefinition(OutputDefinition):
+    @property
+    def is_mappable(self):
+        return True
 
 
 class OutputPointer(namedtuple("_OutputPointer", "solid_name output_name")):

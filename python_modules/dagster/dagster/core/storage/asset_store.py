@@ -405,6 +405,7 @@ class AssetStoreContext(
         """
         if self.mapping_key:
             return [self.source_run_id, self.step_key, self.output_name, self.mapping_key]
+
         return [self.source_run_id, self.step_key, self.output_name]
 
     @staticmethod

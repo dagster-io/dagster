@@ -10,6 +10,7 @@
 - Changed `ExecuteStepArgs` parameters. Replaced `execute_step_with_structured_logs` CLI command
   with `execute_step`, and `execute_run_with_structured_logs` with `execute_run`.
 - The `.compute` suffix is no longer applied to all step keys.
+- `SolidExecutionResult.compute_output_event_dict` changed to `SolidExecutionResult.compute_output_events_dict`
 
 
 ## 0.9.22.post0

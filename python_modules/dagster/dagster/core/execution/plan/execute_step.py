@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from dagster import check
 from dagster.core.definitions import (
     AssetMaterialization,
@@ -11,6 +13,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import (
     AssetStoreOperation,
     AssetStoreOperationType,
+    MappableOutput,
     ObjectStoreOperation,
 )
 from dagster.core.errors import (
@@ -51,9 +54,10 @@ def _step_output_error_checked_user_event_sequence(step_context, user_event_sequ
     step = step_context.step
     output_names = list([output_def.name for output_def in step.step_outputs])
     seen_outputs = set()
+    seen_mapping_keys = defaultdict(set)
 
     for user_event in user_event_sequence:
-        if not isinstance(user_event, Output):
+        if not isinstance(user_event, (Output, MappableOutput)):
             yield user_event
             continue
 
@@ -68,13 +72,31 @@ def _step_output_error_checked_user_event_sequence(step_context, user_event_sequ
                 )
             )
 
-        if output.output_name in seen_outputs:
-            raise DagsterInvariantViolationError(
-                'Core compute for solid "{handle}" returned an output '
-                '"{output.output_name}" multiple times'.format(
-                    handle=str(step.solid_handle), output=output
+        if isinstance(output, Output):
+            if output.output_name in seen_outputs:
+                raise DagsterInvariantViolationError(
+                    'Compute for solid "{handle}" returned an output '
+                    '"{output.output_name}" multiple times'.format(
+                        handle=str(step.solid_handle), output=output
+                    )
                 )
-            )
+            if step.step_output_named(output.output_name).output_def.is_mappable:
+                raise DagsterInvariantViolationError(
+                    f'Compute for solid "{step.solid_handle}" for output "{output.output_name}" '
+                    "defined as mappable must yield MappableOutput, got Output."
+                )
+        else:
+            if not step.step_output_named(output.output_name).output_def.is_mappable:
+                raise DagsterInvariantViolationError(
+                    f'Compute for solid "{step.solid_handle}" yielded a MappableOutput, '
+                    "but did not use MappableOutputDefinition."
+                )
+            if output.mapping_key in seen_mapping_keys[output.output_name]:
+                raise DagsterInvariantViolationError(
+                    f'Compute for solid "{step.solid_handle}" yielded a MappableOutput with '
+                    f'mapping_key "{output.mapping_key}" multiple times.'
+                )
+            seen_mapping_keys[output.output_name].add(output.mapping_key)
 
         yield output
         seen_outputs.add(output.output_name)
@@ -171,16 +193,14 @@ def _type_checked_event_sequence_for_input(step_context, input_name, input_value
             )
 
 
-def _create_step_output_event(step_context, output, type_check, success, version):
+def _create_step_output_event(step_context, step_output_handle, type_check, success, version):
     return DagsterEvent.step_output_event(
         step_context=step_context,
         step_output_data=StepOutputData(
-            step_output_handle=StepOutputHandle(
-                step_key=step_context.step.key, output_name=output.output_name
-            ),
+            step_output_handle=step_output_handle,
             type_check_data=TypeCheckData(
                 success=success,
-                label=output.output_name,
+                label=step_output_handle.output_name,
                 description=type_check.description if type_check else None,
                 metadata_entries=type_check.metadata_entries if type_check else [],
             ),
@@ -189,9 +209,9 @@ def _create_step_output_event(step_context, output, type_check, success, version
     )
 
 
-def _type_checked_step_output_event_sequence(step_context, output, version):
+def _type_checked_step_output_event_sequence(step_context, step_output_handle, output, version):
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
-    check.inst_param(output, "output", Output)
+    check.inst_param(output, "output", (Output, MappableOutput))
 
     step_output = step_context.step.step_output_named(output.output_name)
     dagster_type = step_output.output_def.dagster_type
@@ -215,7 +235,7 @@ def _type_checked_step_output_event_sequence(step_context, output, version):
 
         yield _create_step_output_event(
             step_context,
-            output,
+            step_output_handle,
             type_check=type_check,
             success=type_check.success,
             version=version,
@@ -293,7 +313,7 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
             _step_output_error_checked_user_event_sequence(step_context, user_event_sequence)
         ):
 
-            if isinstance(user_event, Output):
+            if isinstance(user_event, (Output, MappableOutput)):
                 for evt in _create_step_events_for_output(step_context, user_event):
                     yield evt
             elif isinstance(user_event, (AssetMaterialization, Materialization)):
@@ -315,19 +335,23 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
 def _create_step_events_for_output(step_context, output):
 
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
-    check.inst_param(output, "output", Output)
+    check.inst_param(output, "output", (Output, MappableOutput))
 
     step = step_context.step
     step_output = step.step_output_named(output.output_name)
 
-    version = step_context.execution_plan.resolve_step_output_versions()[
-        StepOutputHandle(step_context.step.key, output.output_name)
-    ]
+    mapping_key = output.mapping_key if isinstance(output, MappableOutput) else None
 
-    for output_event in _type_checked_step_output_event_sequence(step_context, output, version):
+    step_output_handle = StepOutputHandle(
+        step_key=step.key, output_name=output.output_name, mapping_key=mapping_key
+    )
+
+    version = step_context.execution_plan.resolve_step_output_versions().get(step_output_handle)
+
+    for output_event in _type_checked_step_output_event_sequence(
+        step_context, step_output_handle, output, version
+    ):
         yield output_event
-
-    step_output_handle = StepOutputHandle(step_key=step.key, output_name=output.output_name)
 
     for evt in _set_objects(step_context, step_output, step_output_handle, output, version):
         yield evt

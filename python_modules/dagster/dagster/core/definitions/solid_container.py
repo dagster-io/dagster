@@ -288,3 +288,9 @@ def _validate_input_output_pair(input_def, output_def, from_solid, dep):
                 else "",
             )
         )
+
+    # temp disable til things actually work
+    if output_def.is_mappable:
+        raise DagsterInvalidDefinitionError(
+            "Taking a dependency on a MappableOutput not yet supported"
+        )

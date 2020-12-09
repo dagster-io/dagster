@@ -92,6 +92,10 @@ class StepOutputData(
     def output_name(self):
         return self.step_output_handle.output_name
 
+    @property
+    def mapping_key(self):
+        return self.step_output_handle.mapping_key
+
 
 @whitelist_for_serdes
 class StepFailureData(namedtuple("_StepFailureData", "error user_failure_data")):

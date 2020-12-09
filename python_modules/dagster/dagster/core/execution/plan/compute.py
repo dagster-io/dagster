@@ -2,6 +2,7 @@ from dagster import check
 from dagster.core.definitions import (
     AssetMaterialization,
     ExpectationResult,
+    MappableOutput,
     Materialization,
     Output,
     Solid,
@@ -63,7 +64,10 @@ def _yield_compute_results(compute_context, inputs, compute_fn):
         return
 
     for event in user_event_sequence:
-        if isinstance(event, (Output, AssetMaterialization, Materialization, ExpectationResult),):
+        if isinstance(
+            event,
+            (MappableOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
+        ):
             yield event
         else:
             raise DagsterInvariantViolationError(
@@ -93,13 +97,13 @@ def _execute_core_compute(compute_context, inputs, compute_fn):
     all_results = []
     for step_output in _yield_compute_results(compute_context, inputs, compute_fn):
         yield step_output
-        if isinstance(step_output, Output):
+        if isinstance(step_output, (MappableOutput, Output)):
             all_results.append(step_output)
 
-    if len(all_results) != len(step.step_outputs):
-        emitted_result_names = {r.output_name for r in all_results}
-        solid_output_names = {output.name for output in step.step_outputs}
-        omitted_outputs = solid_output_names.difference(emitted_result_names)
+    emitted_result_names = {r.output_name for r in all_results}
+    solid_output_names = {output.name for output in step.step_outputs}
+    omitted_outputs = solid_output_names.difference(emitted_result_names)
+    if omitted_outputs:
         compute_context.log.info(
             "Solid {solid} did not fire outputs {outputs}".format(
                 solid=str(step.solid_handle), outputs=repr(omitted_outputs)
