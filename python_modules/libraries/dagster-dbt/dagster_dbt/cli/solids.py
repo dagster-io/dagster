@@ -1,6 +1,7 @@
 from typing import Dict
 
 from dagster import (
+    Array,
     AssetMaterialization,
     Bool,
     EventMetadataEntry,
@@ -162,6 +163,15 @@ def passthrough_flags_only(solid_config, additional_flags):
                 "be yielded when the solid executes. Default: True"
             ),
         ),
+        "asset_key_prefix": Field(
+            config=Array(str),
+            is_required=False,
+            default_value=[],
+            description=(
+                "If provided and yield_materializations is True, these components will be used to "
+                "prefix the generated asset keys."
+            ),
+        ),
     },
     tags={"kind": "dbt"},
 )
@@ -185,7 +195,9 @@ def dbt_cli_run(context) -> DbtCliOutput:
     cli_output = DbtCliOutput.from_dict(cli_output_dict)
 
     if context.solid_config["yield_materializations"]:
-        for materialization in generate_materializations(cli_output):
+        for materialization in generate_materializations(
+            cli_output, asset_key_prefix=context.solid_config["asset_key_prefix"]
+        ):
             yield materialization
 
     yield AssetMaterialization(

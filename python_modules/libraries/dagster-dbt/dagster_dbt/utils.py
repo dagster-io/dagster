@@ -1,15 +1,18 @@
-from typing import Iterator, Union
+from typing import Iterator, List, Optional, Union
 
-from dagster import AssetMaterialization, EventMetadataEntry
+from dagster import AssetMaterialization, EventMetadataEntry, check
 
 from .cli.types import DbtCliOutput
 from .rpc.types import DbtRpcOutput
 
 
 def generate_materializations(
-    dbt_output: Union[DbtRpcOutput, DbtCliOutput]
+    dbt_output: Union[DbtRpcOutput, DbtCliOutput], asset_key_prefix: Optional[List[str]] = None
 ) -> Iterator[AssetMaterialization]:
     """Yields ``AssetMaterializations`` for metadata in the dbt RPC ``DbtRpcOutput``."""
+
+    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+
     for node_result in dbt_output.result.results:
         if node_result.node["resource_type"] in ["model", "snapshot"]:
             success = not node_result.fail and not node_result.skip and not node_result.error
@@ -71,5 +74,5 @@ def generate_materializations(
                 yield AssetMaterialization(
                     description="dbt node: {unique_id}".format(unique_id=unique_id),
                     metadata_entries=entries,
-                    asset_key=unique_id,
+                    asset_key=asset_key_prefix + unique_id.split("."),
                 )
