@@ -57,10 +57,10 @@ export const useRepositoryLocationReload = (location: string, onReload: OnReload
         intent: Intent.SUCCESS,
       });
       onReload(location, {type: 'success'});
-
-      // clears and re-fetches all the queries bound to the UI
-      apollo.resetStore();
     }
+
+    // clears and re-fetches all the queries bound to the UI
+    apollo.resetStore();
   };
 
   return {reloading, onClick};
