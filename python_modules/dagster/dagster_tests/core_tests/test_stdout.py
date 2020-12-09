@@ -125,7 +125,7 @@ def test_compute_log_manager():
             if event.event_type == DagsterEventType.STEP_START
         ]
         assert len(compute_steps) == 3
-        step_key = "spew.compute"
+        step_key = "spew"
         assert manager.is_watch_completed(result.run_id, step_key)
 
         stdout = manager.read_logs_file(result.run_id, step_key, ComputeIOType.STDOUT)
@@ -146,7 +146,7 @@ def test_compute_log_manager():
 def test_compute_log_manager_subscriptions():
     with instance_for_test() as instance:
         spew_pipeline = define_pipeline()
-        step_key = "spew.compute"
+        step_key = "spew"
         result = execute_pipeline(spew_pipeline, instance=instance)
         stdout_observable = instance.compute_log_manager.observable(
             result.run_id, step_key, ComputeIOType.STDOUT

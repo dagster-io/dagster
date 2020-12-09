@@ -35,29 +35,29 @@ def test_fs_object_manager():
         )
 
         assert len(asset_store_operation_events) == 3
-        # SET ASSET for step "solid_a.compute" output "result"
+        # SET ASSET for step "solid_a" output "result"
         assert (
             asset_store_operation_events[0].event_specific_data.op
             == AssetStoreOperationType.SET_ASSET
         )
-        filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a.compute", "result")
+        filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a", "result")
         assert os.path.isfile(filepath_a)
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
-        # GET ASSET for step "solid_b.compute" input "_df"
+        # GET ASSET for step "solid_b" input "_df"
         assert (
             asset_store_operation_events[1].event_specific_data.op
             == AssetStoreOperationType.GET_ASSET
         )
-        assert "solid_a.compute" == asset_store_operation_events[1].event_specific_data.step_key
+        assert "solid_a" == asset_store_operation_events[1].event_specific_data.step_key
 
-        # SET ASSET for step "solid_b.compute" output "result"
+        # SET ASSET for step "solid_b" output "result"
         assert (
             asset_store_operation_events[2].event_specific_data.op
             == AssetStoreOperationType.SET_ASSET
         )
-        filepath_b = os.path.join(tmpdir_path, result.run_id, "solid_b.compute", "result")
+        filepath_b = os.path.join(tmpdir_path, result.run_id, "solid_b", "result")
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 1

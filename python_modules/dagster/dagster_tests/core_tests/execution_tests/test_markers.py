@@ -48,4 +48,4 @@ def test_multiproc_markers():
             assert end_markers[key] - start_markers[key] > 0
             seen.add(key)
 
-        assert "ping.compute.multiprocess_subprocess_init" in end_markers
+        assert "ping.multiprocess_subprocess_init" in end_markers

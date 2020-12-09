@@ -89,7 +89,7 @@ def test_depends_on_s3_resource_intermediates(mock_s3_bucket):
     assert result.result_for_solid("add_numbers").output_value() == 6
 
     keys = set()
-    for step_key, output_name in [("add_numbers.compute", "result")]:
+    for step_key, output_name in [("add_numbers", "result")]:
         keys.add(build_key(result.run_id, step_key, output_name))
 
     assert set(keys_in_bucket) == keys
@@ -139,8 +139,8 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
     keys_in_bucket = [obj.key for obj in mock_s3_bucket.objects.all()]
 
     for step_key, output_name in [
-        ("emit_file.compute", "result"),
-        ("accept_file.compute", "result"),
+        ("emit_file", "result"),
+        ("accept_file", "result"),
     ]:
         keys_in_bucket.remove(build_key(result.run_id, step_key, output_name))
 

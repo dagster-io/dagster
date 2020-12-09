@@ -55,7 +55,7 @@ def test_multi_mode_successful(graphql_context):
             }
         },
     )
-    assert get_step_output(add_mode_logs, "apply_to_three.compute")
+    assert get_step_output(add_mode_logs, "apply_to_three")
 
     mult_mode_logs = sync_execute_get_events(
         context=graphql_context,
@@ -67,7 +67,7 @@ def test_multi_mode_successful(graphql_context):
             }
         },
     )
-    assert get_step_output(mult_mode_logs, "apply_to_three.compute")
+    assert get_step_output(mult_mode_logs, "apply_to_three")
 
     double_adder_mode_logs = sync_execute_get_events(
         context=graphql_context,
@@ -79,7 +79,7 @@ def test_multi_mode_successful(graphql_context):
             }
         },
     )
-    get_step_output(double_adder_mode_logs, "apply_to_three.compute")
+    get_step_output(double_adder_mode_logs, "apply_to_three")
 
 
 class TestModeDefinitions(ReadonlyGraphQLContextTestMatrix):

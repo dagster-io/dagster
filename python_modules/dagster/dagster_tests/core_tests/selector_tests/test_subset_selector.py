@@ -141,62 +141,58 @@ def test_parse_solid_selection_invalid():
 
 
 step_deps = {
-    "return_one.compute": set(),
-    "return_two.compute": set(),
-    "add_nums.compute": {"return_one.compute", "return_two.compute"},
-    "multiply_two.compute": {"add_nums.compute"},
-    "add_one.compute": {"multiply_two.compute"},
+    "return_one": set(),
+    "return_two": set(),
+    "add_nums": {"return_one", "return_two"},
+    "multiply_two": {"add_nums"},
+    "add_one": {"multiply_two"},
 }
 
 
 def test_parse_step_selection_single():
-    step_selection_single = parse_step_selection(step_deps, ["add_nums.compute"])
+    step_selection_single = parse_step_selection(step_deps, ["add_nums"])
     assert len(step_selection_single) == 1
-    assert step_selection_single == {"add_nums.compute"}
+    assert step_selection_single == {"add_nums"}
 
-    step_selection_star = parse_step_selection(step_deps, ["add_nums.compute*"])
+    step_selection_star = parse_step_selection(step_deps, ["add_nums*"])
     assert len(step_selection_star) == 3
     assert set(step_selection_star) == {
-        "add_nums.compute",
-        "multiply_two.compute",
-        "add_one.compute",
+        "add_nums",
+        "multiply_two",
+        "add_one",
     }
 
-    step_selection_both = parse_step_selection(step_deps, ["*add_nums.compute+"])
+    step_selection_both = parse_step_selection(step_deps, ["*add_nums+"])
     assert len(step_selection_both) == 4
     assert set(step_selection_both) == {
-        "return_one.compute",
-        "return_two.compute",
-        "add_nums.compute",
-        "multiply_two.compute",
+        "return_one",
+        "return_two",
+        "add_nums",
+        "multiply_two",
     }
 
 
 def test_parse_step_selection_multi():
-    step_selection_multi_disjoint = parse_step_selection(
-        step_deps, ["return_one.compute", "add_nums.compute+"]
-    )
+    step_selection_multi_disjoint = parse_step_selection(step_deps, ["return_one", "add_nums+"])
     assert len(step_selection_multi_disjoint) == 3
     assert set(step_selection_multi_disjoint) == {
-        "return_one.compute",
-        "add_nums.compute",
-        "multiply_two.compute",
+        "return_one",
+        "add_nums",
+        "multiply_two",
     }
 
-    step_selection_multi_overlap = parse_step_selection(
-        step_deps, ["*add_nums.compute", "return_one.compute+"]
-    )
+    step_selection_multi_overlap = parse_step_selection(step_deps, ["*add_nums", "return_one+"])
     assert len(step_selection_multi_overlap) == 3
     assert set(step_selection_multi_overlap) == {
-        "return_one.compute",
-        "return_two.compute",
-        "add_nums.compute",
+        "return_one",
+        "return_two",
+        "add_nums",
     }
 
     with pytest.raises(
         DagsterInvalidSubsetError, match="No qualified steps to execute found for step_selection",
     ):
-        parse_step_selection(step_deps, ["*add_nums.compute", "a"])
+        parse_step_selection(step_deps, ["*add_nums", "a"])
 
 
 def test_parse_step_selection_invalid():
@@ -204,4 +200,4 @@ def test_parse_step_selection_invalid():
     with pytest.raises(
         DagsterInvalidSubsetError, match="No qualified steps to execute found for step_selection",
     ):
-        parse_step_selection(step_deps, ["1+some_solid.compute"])
+        parse_step_selection(step_deps, ["1+some_solid"])

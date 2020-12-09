@@ -61,14 +61,8 @@ def test_execution_plan_reexecution():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, result.run_id
     )
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
-        == 4
-    )
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two.compute")).obj
-        == 6
-    )
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 4
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two")).obj == 6
 
     ## re-execute add_two
 
@@ -83,7 +77,7 @@ def test_execution_plan_reexecution():
     )
 
     step_events = execute_plan(
-        execution_plan.build_subset_plan(["add_two.compute"]),
+        execution_plan.build_subset_plan(["add_two"]),
         run_config=run_config,
         pipeline_run=pipeline_run,
         instance=instance,
@@ -92,17 +86,11 @@ def test_execution_plan_reexecution():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, result.run_id
     )
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
-        == 4
-    )
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two.compute")).obj
-        == 6
-    )
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 4
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two")).obj == 6
 
-    assert not get_step_output_event(step_events, "add_one.compute")
-    assert get_step_output_event(step_events, "add_two.compute")
+    assert not get_step_output_event(step_events, "add_one")
+    assert get_step_output_event(step_events, "add_two")
 
 
 def test_execution_plan_wrong_run_id():
@@ -157,7 +145,7 @@ def test_execution_plan_reexecution_with_in_memory():
 
     with pytest.raises(DagsterInvariantViolationError):
         execute_plan(
-            execution_plan.build_subset_plan(["add_two.compute"]),
+            execution_plan.build_subset_plan(["add_two"]),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
@@ -175,14 +163,8 @@ def test_pipeline_step_key_subset_execution():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, result.run_id
     )
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
-        == 4
-    )
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two.compute")).obj
-        == 6
-    )
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 4
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two")).obj == 6
 
     ## re-execute add_two
 
@@ -190,7 +172,7 @@ def test_pipeline_step_key_subset_execution():
         pipeline_def,
         parent_run_id=result.run_id,
         run_config=run_config,
-        step_selection=["add_two.compute"],
+        step_selection=["add_two"],
         instance=instance,
     )
 
@@ -202,17 +184,11 @@ def test_pipeline_step_key_subset_execution():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, result.run_id
     )
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
-        == 4
-    )
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two.compute")).obj
-        == 6
-    )
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 4
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_two")).obj == 6
 
-    assert not get_step_output_event(step_events, "add_one.compute")
-    assert get_step_output_event(step_events, "add_two.compute")
+    assert not get_step_output_event(step_events, "add_one")
+    assert get_step_output_event(step_events, "add_two")
 
     with pytest.raises(
         DagsterInvalidSubsetError, match="No qualified steps to execute found for step_selection"
@@ -221,6 +197,6 @@ def test_pipeline_step_key_subset_execution():
             pipeline_def,
             parent_run_id=result.run_id,
             run_config=run_config,
-            step_selection=["nope.compute"],
+            step_selection=["nope"],
             instance=instance,
         )

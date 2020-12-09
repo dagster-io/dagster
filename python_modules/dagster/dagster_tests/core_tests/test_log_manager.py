@@ -12,14 +12,12 @@ def test_construct_log_string_for_event():
     step_output_event = DagsterEvent(
         event_type_value="STEP_OUTPUT",
         pipeline_name="my_pipeline",
-        step_key="solid2.compute",
+        step_key="solid2",
         solid_handle=SolidHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
-        event_specific_data=StepOutputData(
-            step_output_handle=StepOutputHandle("solid2.compute", "result")
-        ),
-        message='Yielded output "result" of type "Any" for step "solid2.compute". (Type check passed).',
+        event_specific_data=StepOutputData(step_output_handle=StepOutputHandle("solid2", "result")),
+        message='Yielded output "result" of type "Any" for step "solid2". (Type check passed).',
         pid=54348,
     )
     message_props = {"dagster_event": step_output_event, "pipeline_name": "my_pipeline"}
@@ -30,7 +28,7 @@ def test_construct_log_string_for_event():
     }
     assert (
         construct_log_string(message_props=message_props, logging_tags={}, synth_props=synth_props)
-        == 'my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded output "result" of type "Any" for step "solid2.compute". (Type check passed).'
+        == 'my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded output "result" of type "Any" for step "solid2". (Type check passed).'
     )
 
 
@@ -56,12 +54,12 @@ def test_construct_log_string_with_error():
     step_failure_event = DagsterEvent(
         event_type_value="STEP_FAILURE",
         pipeline_name="my_pipeline",
-        step_key="solid2.compute",
+        step_key="solid2",
         solid_handle=SolidHandle("solid2", None),
         step_kind_value="COMPUTE",
         logging_tags={},
         event_specific_data=StepFailureData(error=error, user_failure_data=None),
-        message='Execution of step "solid2.compute" failed.',
+        message='Execution of step "solid2" failed.',
         pid=54348,
     )
 
@@ -76,7 +74,7 @@ def test_construct_log_string_with_error():
     )
     expected_start = textwrap.dedent(
         """
-        my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "solid2.compute" failed.
+        my_pipeline - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "solid2" failed.
 
         ValueError: some error
 

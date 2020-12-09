@@ -43,8 +43,8 @@ def test_execution_plan_simple_two_steps():
     assert isinstance(execution_plan.steps, list)
     assert len(execution_plan.steps) == 2
 
-    assert execution_plan.get_step_by_key("return_one.compute")
-    assert execution_plan.get_step_by_key("add_one.compute")
+    assert execution_plan.get_step_by_key("return_one")
+    assert execution_plan.get_step_by_key("add_one")
 
     events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
     step_starts = find_events(events, event_type="STEP_START")
@@ -54,10 +54,10 @@ def test_execution_plan_simple_two_steps():
 
     output_events = find_events(events, event_type="STEP_OUTPUT")
 
-    assert output_events[0].step_key == "return_one.compute"
+    assert output_events[0].step_key == "return_one"
     assert output_events[0].is_successful_output
 
-    assert output_events[1].step_key == "add_one.compute"
+    assert output_events[1].step_key == "add_one"
     assert output_events[1].is_successful_output
 
 
@@ -78,9 +78,9 @@ def test_execution_plan_two_outputs():
     events = execute_plan(execution_plan, pipeline_run=pipeline_run, instance=instance)
 
     output_events = find_events(events, event_type="STEP_OUTPUT")
-    assert output_events[0].step_key == "return_one_two.compute"
+    assert output_events[0].step_key == "return_one_two"
     assert output_events[0].step_output_data.output_name == "num_one"
-    assert output_events[1].step_key == "return_one_two.compute"
+    assert output_events[1].step_key == "return_one_two"
     assert output_events[1].step_output_data.output_name == "num_two"
 
 

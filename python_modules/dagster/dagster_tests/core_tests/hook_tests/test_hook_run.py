@@ -101,15 +101,12 @@ def test_hook_accumulation():
     # make sure we gather hooks from all places and invoke them with the right steps
     assert called_hook_to_step_keys == {
         "pipeline_hook": {
-            "composite_2.composite_1.solid_1.compute",
-            "composite_2.composite_1.solid_2.compute",
-            "composite_2.solid_3.compute",
+            "composite_2.composite_1.solid_1",
+            "composite_2.composite_1.solid_2",
+            "composite_2.solid_3",
         },
-        "solid_1_hook": {"composite_2.composite_1.solid_1.compute"},
-        "composite_1_hook": {
-            "composite_2.composite_1.solid_1.compute",
-            "composite_2.composite_1.solid_2.compute",
-        },
+        "solid_1_hook": {"composite_2.composite_1.solid_1"},
+        "composite_1_hook": {"composite_2.composite_1.solid_1", "composite_2.composite_1.solid_2",},
     }
 
 

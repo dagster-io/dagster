@@ -128,9 +128,9 @@ def test_using_adls2_for_subplan(storage_account, file_system):
 
     execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
-    assert execution_plan.get_step_by_key("return_one.compute")
+    assert execution_plan.get_step_by_key("return_one")
 
-    step_keys = ["return_one.compute"]
+    step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
     pipeline_run = PipelineRun(
         pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
@@ -145,12 +145,9 @@ def test_using_adls2_for_subplan(storage_account, file_system):
         )
     )
 
-    assert get_step_output(return_one_step_events, "return_one.compute")
+    assert get_step_output(return_one_step_events, "return_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one.compute"]),
-        run_config,
-        pipeline_run,
-        instance,
+        execution_plan.build_subset_plan(["return_one"]), run_config, pipeline_run, instance,
     ) as context:
 
         resource = context.scoped_resources_builder.build(required_resource_keys={"adls2"}).adls2
@@ -160,24 +157,24 @@ def test_using_adls2_for_subplan(storage_account, file_system):
             adls2_client=resource.adls2_client,
             blob_client=resource.blob_client,
         )
-        step_output_handle = StepOutputHandle("return_one.compute")
+        step_output_handle = StepOutputHandle("return_one")
         assert intermediate_storage.has_intermediate(context, step_output_handle)
         assert intermediate_storage.get_intermediate(context, Int, step_output_handle).obj == 1
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one.compute"]),
+            execution_plan.build_subset_plan(["add_one"]),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
         )
     )
 
-    assert get_step_output(add_one_step_events, "add_one.compute")
+    assert get_step_output(add_one_step_events, "add_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["add_one.compute"]), run_config, pipeline_run, instance,
+        execution_plan.build_subset_plan(["add_one"]), run_config, pipeline_run, instance,
     ) as context:
-        step_output_handle = StepOutputHandle("add_one.compute")
+        step_output_handle = StepOutputHandle("add_one")
         assert intermediate_storage.has_intermediate(context, step_output_handle)
         assert intermediate_storage.get_intermediate(context, Int, step_output_handle).obj == 2
 
@@ -371,15 +368,11 @@ def test_adls2_pipeline_with_custom_prefix(storage_account, file_system):
         )
         assert intermediate_storage.root == "/".join(["custom_prefix", "storage", result.run_id])
         assert (
-            intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle("return_one.compute")
-            ).obj
+            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("return_one")).obj
             == 1
         )
         assert (
-            intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle("add_one.compute")
-            ).obj
+            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("add_one")).obj
             == 2
         )
 

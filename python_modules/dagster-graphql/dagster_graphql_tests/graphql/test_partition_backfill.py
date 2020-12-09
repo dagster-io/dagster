@@ -67,12 +67,12 @@ class TestPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
                 "pipelineRunLogs"
             ]["messages"]
-            assert step_did_succeed(logs, "always_succeed.compute")
-            assert step_did_succeed(logs, "conditionally_fail.compute")
-            assert step_did_succeed(logs, "after_failure.compute")
+            assert step_did_succeed(logs, "always_succeed")
+            assert step_did_succeed(logs, "conditionally_fail")
+            assert step_did_succeed(logs, "after_failure")
 
         # reexecute a partial pipeline
-        partial_steps = ["after_failure.compute"]
+        partial_steps = ["after_failure"]
         result = execute_dagster_graphql_and_finish_runs(
             graphql_context,
             LAUNCH_PARTITION_BACKFILL_MUTATION,
@@ -93,9 +93,9 @@ class TestPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
                 "pipelineRunLogs"
             ]["messages"]
-            assert step_did_not_run(logs, "always_succeed.compute")
-            assert step_did_not_run(logs, "conditionally_fail.compute")
-            assert step_did_succeed(logs, "after_failure.compute")
+            assert step_did_not_run(logs, "always_succeed")
+            assert step_did_not_run(logs, "conditionally_fail")
+            assert step_did_succeed(logs, "after_failure")
 
 
 class TestLaunchBackfillFromFailure(
@@ -140,9 +140,9 @@ class TestLaunchBackfillFromFailure(
             logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
                 "pipelineRunLogs"
             ]["messages"]
-            assert step_did_succeed(logs, "always_succeed.compute")
-            assert step_did_fail(logs, "conditionally_fail.compute")
-            assert step_did_not_run(logs, "after_failure.compute")
+            assert step_did_succeed(logs, "always_succeed")
+            assert step_did_fail(logs, "conditionally_fail")
+            assert step_did_not_run(logs, "after_failure")
 
         # re-execute from failure (without the failure file)
         result = execute_dagster_graphql_and_finish_runs(
@@ -164,6 +164,6 @@ class TestLaunchBackfillFromFailure(
             logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
                 "pipelineRunLogs"
             ]["messages"]
-            assert step_did_not_run(logs, "always_succeed.compute")
-            assert step_did_succeed(logs, "conditionally_fail.compute")
-            assert step_did_succeed(logs, "after_failure.compute")
+            assert step_did_not_run(logs, "always_succeed")
+            assert step_did_succeed(logs, "conditionally_fail")
+            assert step_did_succeed(logs, "after_failure")

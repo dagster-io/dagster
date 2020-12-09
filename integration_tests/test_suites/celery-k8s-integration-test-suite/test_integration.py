@@ -386,7 +386,7 @@ def test_execute_on_celery_k8s_with_hard_failure(  # pylint: disable=redefined-o
             if event_record.dagster_event:
                 if (
                     event_record.dagster_event.event_type == DagsterEventType.STEP_FAILURE
-                    and event_record.dagster_event.step_key == "hard_fail_or_0.compute"
+                    and event_record.dagster_event.step_key == "hard_fail_or_0"
                 ):
                     step_failure_found = True
                     break

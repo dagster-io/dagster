@@ -11,10 +11,10 @@ def test_notif_all_pipeline():
     for event in result.event_list:
         if event.is_hook_event:
             if event.event_type == DagsterEventType.HOOK_SKIPPED:
-                assert event.step_key == "a.compute"
+                assert event.step_key == "a"
 
             if event.event_type == DagsterEventType.HOOK_COMPLETED:
-                assert event.step_key == "b.compute"
+                assert event.step_key == "b"
 
 
 def test_selective_notif_pipeline():
@@ -24,9 +24,9 @@ def test_selective_notif_pipeline():
     for event in result.event_list:
         if event.is_hook_event:
             if event.event_type == DagsterEventType.HOOK_SKIPPED:
-                assert event.step_key == "a.compute"
+                assert event.step_key == "a"
             if event.event_type == DagsterEventType.HOOK_COMPLETED:
-                assert event.step_key == "a.compute"
+                assert event.step_key == "a"
 
 
 def test_hook_resource():

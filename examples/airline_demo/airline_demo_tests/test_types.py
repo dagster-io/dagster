@@ -76,10 +76,7 @@ def test_spark_data_frame_serialization_file_system_file_handle(spark_config):
 
     assert result.success
     result_dir = os.path.join(
-        intermediate_storage.root,
-        "intermediates",
-        "ingest_csv_file_handle_to_spark.compute",
-        "result",
+        intermediate_storage.root, "intermediates", "ingest_csv_file_handle_to_spark", "result",
     )
 
     assert "_SUCCESS" in os.listdir(result_dir)
@@ -121,7 +118,7 @@ def test_spark_data_frame_serialization_s3_file_handle(s3_bucket, spark_config):
         [
             intermediate_storage.root.strip("/"),
             "intermediates",
-            "ingest_csv_file_handle_to_spark.compute",
+            "ingest_csv_file_handle_to_spark",
             "result",
             "_SUCCESS",
         ]

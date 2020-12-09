@@ -280,7 +280,7 @@ def test_crashy_run(get_external_pipeline, run_config):  # pylint: disable=redef
             if _is_multiprocess(run_config):
                 message = (
                     "Multiprocess executor: child process for "
-                    "step crashy_solid.compute unexpectedly exited"
+                    "step crashy_solid unexpectedly exited"
                 )
             else:
                 message = "Pipeline execution process for {run_id} unexpectedly exited.".format(
@@ -338,7 +338,7 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
                             "ENGINE_EVENT",
                             "Multiprocess executor: received termination signal - forwarding to active child process",
                         ),
-                        ("STEP_FAILURE", 'Execution of step "sleepy_solid.compute" failed.'),
+                        ("STEP_FAILURE", 'Execution of step "sleepy_solid" failed.'),
                         (
                             "PIPELINE_FAILURE",
                             'Execution of pipeline "sleepy_pipeline" failed. An exception was thrown during execution.',
@@ -351,7 +351,7 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
                     run_logs,
                     [
                         ("ENGINE_EVENT", "Received pipeline termination request"),
-                        ("STEP_FAILURE", 'Execution of step "sleepy_solid.compute" failed.'),
+                        ("STEP_FAILURE", 'Execution of step "sleepy_solid" failed.'),
                         ("PIPELINE_FAILURE", 'Execution of pipeline "sleepy_pipeline" failed.'),
                         ("ENGINE_EVENT", "Pipeline execution terminated by interrupt"),
                         ("ENGINE_EVENT", "Process for pipeline exited"),
@@ -413,7 +413,7 @@ def test_single_solid_selection_execution(
             assert finished_pipeline_run.run_id == run_id
             assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
-            assert _get_successful_step_keys(event_records) == {"return_one.compute"}
+            assert _get_successful_step_keys(event_records) == {"return_one"}
 
 
 @pytest.mark.parametrize(
@@ -450,8 +450,8 @@ def test_multi_solid_selection_execution(
             assert finished_pipeline_run.status == PipelineRunStatus.SUCCESS
 
             assert _get_successful_step_keys(event_records) == {
-                "return_one.compute",
-                "multiply_by_2.compute",
+                "return_one",
+                "multiply_by_2",
             }
 
 
@@ -495,8 +495,8 @@ def test_engine_events(get_external_pipeline, run_config):  # pylint: disable=re
                     "Starting initialization of resources",
                     "Finished initialization of resources",
                     "Executing steps using multiprocess executor",
-                    "Launching subprocess for return_one.compute",
-                    "Executing step return_one.compute in subprocess",
+                    "Launching subprocess for return_one",
+                    "Executing step return_one in subprocess",
                     "Starting initialization of resources",
                     "Finished initialization of resources",
                     # multiply_by_2 and multiply_by_3 launch and execute in non-deterministic order
@@ -508,8 +508,8 @@ def test_engine_events(get_external_pipeline, run_config):  # pylint: disable=re
                     "",
                     "",
                     "",
-                    "Launching subprocess for add.compute",
-                    "Executing step add.compute in subprocess",
+                    "Launching subprocess for add",
+                    "Executing step add in subprocess",
                     "Starting initialization of resources",
                     "Finished initialization of resources",
                     "Multiprocess executor: parent process exiting",

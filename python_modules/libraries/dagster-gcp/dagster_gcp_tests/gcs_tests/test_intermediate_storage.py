@@ -101,9 +101,9 @@ def test_using_gcs_for_subplan(gcs_bucket):
 
     execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
-    assert execution_plan.get_step_by_key("return_one.compute")
+    assert execution_plan.get_step_by_key("return_one")
 
-    step_keys = ["return_one.compute"]
+    step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
     pipeline_run = PipelineRun(
         pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
@@ -118,49 +118,37 @@ def test_using_gcs_for_subplan(gcs_bucket):
         )
     )
 
-    assert get_step_output(return_one_step_events, "return_one.compute")
+    assert get_step_output(return_one_step_events, "return_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one.compute"]),
-        run_config,
-        pipeline_run,
-        instance,
+        execution_plan.build_subset_plan(["return_one"]), run_config, pipeline_run, instance,
     ) as context:
         intermediate_storage = GCSIntermediateStorage(
             gcs_bucket,
             run_id,
             client=context.scoped_resources_builder.build(required_resource_keys={"gcs"},).gcs,
         )
-        assert intermediate_storage.has_intermediate(
-            context, StepOutputHandle("return_one.compute")
-        )
+        assert intermediate_storage.has_intermediate(context, StepOutputHandle("return_one"))
         assert (
-            intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle("return_one.compute")
-            ).obj
+            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("return_one")).obj
             == 1
         )
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one.compute"]),
+            execution_plan.build_subset_plan(["add_one"]),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
         )
     )
 
-    assert get_step_output(add_one_step_events, "add_one.compute")
+    assert get_step_output(add_one_step_events, "add_one")
     with scoped_pipeline_context(
-        execution_plan.build_subset_plan(["return_one.compute"]),
-        run_config,
-        pipeline_run,
-        instance,
+        execution_plan.build_subset_plan(["return_one"]), run_config, pipeline_run, instance,
     ) as context:
-        assert intermediate_storage.has_intermediate(context, StepOutputHandle("add_one.compute"))
+        assert intermediate_storage.has_intermediate(context, StepOutputHandle("add_one"))
         assert (
-            intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle("add_one.compute")
-            ).obj
+            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("add_one")).obj
             == 2
         )
 
@@ -347,15 +335,11 @@ def test_gcs_pipeline_with_custom_prefix(gcs_bucket):
         )
         assert intermediate_storage.root == "/".join(["custom_prefix", "storage", result.run_id])
         assert (
-            intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle("return_one.compute")
-            ).obj
+            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("return_one")).obj
             == 1
         )
         assert (
-            intermediate_storage.get_intermediate(
-                context, Int, StepOutputHandle("add_one.compute")
-            ).obj
+            intermediate_storage.get_intermediate(context, Int, StepOutputHandle("add_one")).obj
             == 2
         )
 

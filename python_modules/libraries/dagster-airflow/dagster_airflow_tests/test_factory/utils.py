@@ -4,16 +4,16 @@ from dagster.core.events.log import DagsterEventRecord
 
 def validate_pipeline_execution(pipeline_exc_result):
     expected_airflow_demo_events = {
-        ("STEP_START", "multiply_the_word.compute"),
-        ("STEP_INPUT", "multiply_the_word.compute"),
-        ("STEP_OUTPUT", "multiply_the_word.compute"),
-        ("OBJECT_STORE_OPERATION", "multiply_the_word.compute"),
-        ("STEP_SUCCESS", "multiply_the_word.compute"),
-        ("STEP_START", "count_letters.compute"),
-        ("OBJECT_STORE_OPERATION", "count_letters.compute"),
-        ("STEP_INPUT", "count_letters.compute"),
-        ("STEP_OUTPUT", "count_letters.compute"),
-        ("STEP_SUCCESS", "count_letters.compute"),
+        ("STEP_START", "multiply_the_word"),
+        ("STEP_INPUT", "multiply_the_word"),
+        ("STEP_OUTPUT", "multiply_the_word"),
+        ("OBJECT_STORE_OPERATION", "multiply_the_word"),
+        ("STEP_SUCCESS", "multiply_the_word"),
+        ("STEP_START", "count_letters"),
+        ("OBJECT_STORE_OPERATION", "count_letters"),
+        ("STEP_INPUT", "count_letters"),
+        ("STEP_OUTPUT", "count_letters"),
+        ("STEP_SUCCESS", "count_letters"),
     }
 
     seen_events = set()

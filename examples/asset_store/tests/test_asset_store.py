@@ -22,12 +22,12 @@ def test_builtin_default():
 
         assert result.success
 
-        filepath_call_api = os.path.join(tmpdir_path, result.run_id, "call_api.compute", "result")
+        filepath_call_api = os.path.join(tmpdir_path, result.run_id, "call_api", "result")
         assert os.path.isfile(filepath_call_api)
         with open(filepath_call_api, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-        filepath_parse_df = os.path.join(tmpdir_path, result.run_id, "parse_df.compute", "result")
+        filepath_parse_df = os.path.join(tmpdir_path, result.run_id, "parse_df", "result")
         assert os.path.isfile(filepath_parse_df)
         with open(filepath_parse_df, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3, 4, 5]
@@ -38,7 +38,7 @@ def test_builtin_default():
             run_config=run_config,
             mode="test",
             instance=instance,
-            step_selection=["parse_df.compute"],
+            step_selection=["parse_df"],
         ).success
 
 
@@ -73,7 +73,7 @@ def test_custom_path_asset_store():
             run_config=run_config,
             mode="test",
             instance=instance,
-            step_selection=["parse_df.compute*"],
+            step_selection=["parse_df*"],
         ).success
 
 
@@ -91,12 +91,12 @@ def test_builtin_pipeline():
 
         assert result.success
 
-        filepath_call_api = os.path.join(tmpdir_path, result.run_id, "call_api.compute", "result")
+        filepath_call_api = os.path.join(tmpdir_path, result.run_id, "call_api", "result")
         assert os.path.isfile(filepath_call_api)
         with open(filepath_call_api, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-        filepath_parse_df = os.path.join(tmpdir_path, result.run_id, "parse_df.compute", "result")
+        filepath_parse_df = os.path.join(tmpdir_path, result.run_id, "parse_df", "result")
         assert os.path.isfile(filepath_parse_df)
         with open(filepath_parse_df, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3, 4, 5]

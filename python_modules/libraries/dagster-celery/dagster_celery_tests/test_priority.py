@@ -35,17 +35,17 @@ def test_eager_priority_pipeline():
     with execute_eagerly_on_celery("simple_priority_pipeline") as result:
         assert result.success
         assert list(OrderedDict.fromkeys([evt.step_key for evt in result.step_event_list])) == [
-            "ten.compute",
-            "nine.compute",
-            "eight.compute",
-            "seven_.compute",
-            "six.compute",
-            "five.compute",
-            "four.compute",
-            "three.compute",
-            "two.compute",
-            "one.compute",
-            "zero.compute",
+            "ten",
+            "nine",
+            "eight",
+            "seven_",
+            "six",
+            "five",
+            "four",
+            "three",
+            "two",
+            "one",
+            "zero",
         ]
 
 

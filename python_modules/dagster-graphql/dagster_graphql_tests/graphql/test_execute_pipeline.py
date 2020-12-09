@@ -260,13 +260,13 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         assert run_logs["__typename"] == "PipelineRunLogsSubscriptionSuccess"
 
         step_run_log_entry = _get_step_run_log_entry(
-            run_logs, "throw_a_thing.compute", "ExecutionStepFailureEvent"
+            run_logs, "throw_a_thing", "ExecutionStepFailureEvent"
         )
 
         assert step_run_log_entry
         # Confirm that it is the user stack
 
-        assert step_run_log_entry["message"] == 'Execution of step "throw_a_thing.compute" failed.'
+        assert step_run_log_entry["message"] == 'Execution of step "throw_a_thing" failed.'
         assert step_run_log_entry["error"]
         assert step_run_log_entry["level"] == "ERROR"
         assert isinstance(step_run_log_entry["error"]["stack"], list)
@@ -326,8 +326,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert first_event_of_type(logs, "PipelineStartEvent")["level"] == "DEBUG"
 
-        sum_solid_output = get_step_output_event(logs, "sum_solid.compute")
-        assert sum_solid_output["stepKey"] == "sum_solid.compute"
+        sum_solid_output = get_step_output_event(logs, "sum_solid")
+        assert sum_solid_output["stepKey"] == "sum_solid"
 
     def test_basic_filesystem_sync_execution(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -353,8 +353,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         assert first_event_of_type(logs, "PipelineStartEvent")["level"] == "DEBUG"
 
-        sum_solid_output = get_step_output_event(logs, "sum_solid.compute")
-        assert sum_solid_output["stepKey"] == "sum_solid.compute"
+        sum_solid_output = get_step_output_event(logs, "sum_solid")
+        assert sum_solid_output["stepKey"] == "sum_solid"
         assert sum_solid_output["outputName"] == "result"
 
     def test_basic_start_pipeline_execution_with_tags(self, graphql_context):

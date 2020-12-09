@@ -123,7 +123,7 @@ Before we run the pipeline, don't forget to add the config:
 When we run the pipeline with this solid, we'll see an error in your terminal like:
 
 ```bash
-2020-10-01 17:20:54 - dagster - ERROR - custom_type_pipeline - c3267e86-10e9-472d-80e9-15a61d2b6360 - 8649 - bad_read_csv.compute - STEP_FAILURE - Execution of step "bad_read_csv.compute" failed.
+2020-10-01 17:20:54 - dagster - ERROR - custom_type_pipeline - c3267e86-10e9-472d-80e9-15a61d2b6360 - 8649 - bad_read_csv.compute - STEP_FAILURE - Execution of step "bad_read_csv" failed.
 
 AttributeError: 'str' object has no attribute 'keys'
 ```
@@ -173,7 +173,6 @@ A function decorated with <PyObject module="dagster" object="dagster_type_loader
 take the context object, as usual, and a parameter
 representing the parsed config field. The schema for this field is
 defined by the argument to the <PyObject module="dagster" object="dagster_type_loader" displayText="@dagster_type_loader" /> decorator.
-
 
 Then insert this into the original declaration:
 

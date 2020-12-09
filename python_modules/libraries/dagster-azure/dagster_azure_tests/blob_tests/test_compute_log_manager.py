@@ -16,9 +16,9 @@ from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
 EXPECTED_LOGS = [
-    'STEP_START - Started execution of step "easy.compute".',
+    'STEP_START - Started execution of step "easy".',
     'STEP_OUTPUT - Yielded output "result" of type "Any"',
-    'STEP_SUCCESS - Finished execution of step "easy.compute"',
+    'STEP_SUCCESS - Finished execution of step "easy"',
 ]
 
 
@@ -79,7 +79,7 @@ def test_compute_log_manager(
         # Check ADLS2 directly
         adls2_object = fake_client.get_blob_client(
             container=container,
-            blob="{prefix}/storage/{run_id}/compute_logs/easy.compute.err".format(
+            blob="{prefix}/storage/{run_id}/compute_logs/easy.err".format(
                 prefix="my_prefix", run_id=result.run_id
             ),
         )

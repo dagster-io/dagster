@@ -390,7 +390,7 @@ def test_crash_multiprocessing():
         assert (
             "Crashy output to stdout"
             in instance.compute_log_manager.read_logs_file(
-                result.run_id, "sys_exit.compute", ComputeIOType.STDOUT
+                result.run_id, "sys_exit", ComputeIOType.STDOUT
             ).data
         )
 
@@ -401,7 +401,7 @@ def test_crash_multiprocessing():
         # assert (
         #     'Crashy output to stderr'
         #     not in instance.compute_log_manager.read_logs_file(
-        #         result.run_id, 'sys_exit.compute', ComputeIOType.STDERR
+        #         result.run_id, 'sys_exit', ComputeIOType.STDERR
         #     ).data
         # )
 
@@ -444,13 +444,13 @@ def test_crash_hard_multiprocessing():
         # assert (
         #     'Crashy output to stdout'
         #     not in instance.compute_log_manager.read_logs_file(
-        #         result.run_id, 'segfault_solid.compute', ComputeIOType.STDOUT
+        #         result.run_id, 'segfault_solid', ComputeIOType.STDOUT
         #     ).data
         # )
 
         # assert (
         #     instance.compute_log_manager.read_logs_file(
-        #         result.run_id, 'sys_exit.compute', ComputeIOType.STDERR
+        #         result.run_id, 'sys_exit', ComputeIOType.STDERR
         #     ).data
         #     is None
         # )

@@ -126,9 +126,9 @@ def test_template_task_dag():
         ]
 
         assert compute_steps == [
-            "airflow_print_hello.compute",
-            "airflow_sleep.compute",
-            "airflow_templated.compute",
+            "airflow_print_hello",
+            "airflow_sleep",
+            "airflow_templated",
         ]
 
         for step_key in compute_steps:
@@ -138,16 +138,16 @@ def test_template_task_dag():
             file_contents = normalize_file_content(stdout_file.read())
             stdout_file.close()
 
-            if step_key == "airflow_print_hello.compute":
+            if step_key == "airflow_print_hello":
                 assert file_contents.count("INFO - Running command: echo hello dagsir\n") == 1
                 assert file_contents.count("INFO - Command exited with return code 0") == 1
 
-            elif step_key == "airflow_sleep.compute":
+            elif step_key == "airflow_sleep":
                 assert file_contents.count("INFO - Running command: sleep 2\n") == 1
                 assert file_contents.count("INFO - Output:\n") == 1
                 assert file_contents.count("INFO - Command exited with return code 0") == 1
 
-            elif step_key == "airflow_templated.compute":
+            elif step_key == "airflow_templated":
                 assert (
                     file_contents.count(
                         "INFO - Running command: \n    \n        "

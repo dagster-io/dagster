@@ -37,7 +37,7 @@ def check_compute_logs(manager, result, execution_date_fmt):
     ]
 
     assert compute_steps == [
-        "airflow_templated.compute",
+        "airflow_templated",
     ]
 
     for step_key in compute_steps:
@@ -111,7 +111,7 @@ def test_pipeline_auto_tag():
         post_execute_time = get_current_datetime_in_utc()
 
         compute_io_path = manager.get_local_path(
-            result.run_id, "airflow_templated.compute", ComputeIOType.STDOUT
+            result.run_id, "airflow_templated", ComputeIOType.STDOUT
         )
         assert os.path.exists(compute_io_path)
         stdout_file = open(compute_io_path, "r")

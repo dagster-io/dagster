@@ -39,8 +39,8 @@ def test_execution_plan_snapshot_api_grpc():
 
         assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
         assert execution_plan_snapshot.step_keys_to_execute == [
-            "do_something.compute",
-            "do_input.compute",
+            "do_something",
+            "do_input",
         ]
         assert len(execution_plan_snapshot.steps) == 2
 
@@ -55,12 +55,12 @@ def test_execution_plan_with_step_keys_to_execute_snapshot_api_grpc():
             run_config={},
             mode="default",
             pipeline_snapshot_id="12345",
-            step_keys_to_execute=["do_something.compute"],
+            step_keys_to_execute=["do_something"],
         )
 
         assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
         assert execution_plan_snapshot.step_keys_to_execute == [
-            "do_something.compute",
+            "do_something",
         ]
         assert len(execution_plan_snapshot.steps) == 2
 
@@ -80,6 +80,6 @@ def test_execution_plan_with_subset_snapshot_api_grpc():
 
         assert isinstance(execution_plan_snapshot, ExecutionPlanSnapshot)
         assert execution_plan_snapshot.step_keys_to_execute == [
-            "do_input.compute",
+            "do_input",
         ]
         assert len(execution_plan_snapshot.steps) == 1

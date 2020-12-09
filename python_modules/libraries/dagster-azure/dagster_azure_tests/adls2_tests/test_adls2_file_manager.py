@@ -128,7 +128,7 @@ def test_depends_on_adls2_resource_intermediates(storage_account, file_system):
     assert file_system in adls2_fake_resource.adls2_client.file_systems
 
     keys = set()
-    for step_key, output_name in [("add_numbers.compute", "result")]:
+    for step_key, output_name in [("add_numbers", "result")]:
         keys.add(create_adls2_key(result.run_id, step_key, output_name))
 
     assert set(adls2_fake_resource.adls2_client.file_systems[file_system].keys()) == keys
@@ -189,8 +189,8 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
     keys_in_bucket = set(adls2_fake_resource.adls2_client.file_systems[file_system].keys())
 
     for step_key, output_name in [
-        ("emit_file.compute", "result"),
-        ("accept_file.compute", "result"),
+        ("emit_file", "result"),
+        ("accept_file", "result"),
     ]:
         keys_in_bucket.remove(create_adls2_key(result.run_id, step_key, output_name))
 

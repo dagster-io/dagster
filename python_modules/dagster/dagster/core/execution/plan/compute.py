@@ -31,7 +31,6 @@ def create_compute_step(pipeline_name, environment_config, solid, step_inputs, h
 
     return ExecutionStep(
         pipeline_name=pipeline_name,
-        key_suffix="compute",
         step_inputs=step_inputs,
         step_outputs=[
             StepOutput(output_def=output_def, should_materialize=name in config_output_names)

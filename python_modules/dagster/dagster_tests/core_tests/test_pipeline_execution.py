@@ -757,7 +757,7 @@ def test_reexecution_fs_storage_with_solid_selection():
         pipeline_def,
         parent_run_id=pipeline_result.run_id,
         run_config=run_config,
-        step_selection=["return_one.compute"],
+        step_selection=["return_one"],
         instance=instance,
     )
     assert reexecution_result_no_solid_selection.success
@@ -798,7 +798,7 @@ def test_reexecution_fs_storage_with_solid_selection():
             pipeline_def,
             parent_run_id=pipeline_result_solid_selection.run_id,
             run_config=run_config,
-            step_selection=["add_one.compute"],
+            step_selection=["add_one"],
             instance=instance,
         )
 
@@ -809,7 +809,7 @@ def test_reexecution_fs_storage_with_solid_selection():
         parent_run_id=reexecution_result_solid_selection.run_id,
         run_config=run_config,
         instance=instance,
-        step_selection=["return_one.compute"],
+        step_selection=["return_one"],
     )
 
     assert re_reexecution_result.success
@@ -842,7 +842,7 @@ def test_single_step_reexecution():
         parent_run_id=pipeline_result.run_id,
         run_config=run_config,
         instance=instance,
-        step_selection=["add_one.compute"],
+        step_selection=["add_one"],
     )
 
     assert reexecution_result.success
@@ -874,7 +874,7 @@ def test_two_step_reexecution():
         parent_run_id=pipeline_result.run_id,
         run_config=run_config,
         instance=instance,
-        step_selection=["add_one.compute", "add_one_2.compute"],
+        step_selection=["add_one", "add_one_2"],
     )
     assert reexecution_result.success
     assert reexecution_result.result_for_solid("return_one").output_value() == None

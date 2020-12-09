@@ -133,7 +133,7 @@ def test_reexecute_pipeline_with_step_selection_single_clause():
         parent_run_id=pipeline_result_full.run_id,
         run_config=run_config,
         instance=instance,
-        step_selection=["*add_nums.compute"],
+        step_selection=["*add_nums"],
     )
 
     assert reexecution_result_up.success
@@ -144,7 +144,7 @@ def test_reexecute_pipeline_with_step_selection_single_clause():
         parent_run_id=pipeline_result_full.run_id,
         run_config=run_config,
         instance=instance,
-        step_selection=["add_nums.compute++"],
+        step_selection=["add_nums++"],
     )
     assert reexecution_result_down.success
     assert reexecution_result_down.result_for_solid("add_one").output_value() == 7
@@ -163,7 +163,7 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
         parent_run_id=pipeline_result_full.run_id,
         run_config=run_config,
         instance=instance,
-        step_selection=["return_one.compute", "return_two.compute", "add_nums.compute+"],
+        step_selection=["return_one", "return_two", "add_nums+"],
     )
     assert result_multi_disjoint.success
     assert result_multi_disjoint.result_for_solid("multiply_two").output_value() == 6
@@ -173,7 +173,7 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
         parent_run_id=pipeline_result_full.run_id,
         run_config=run_config,
         instance=instance,
-        step_selection=["return_one.compute++", "return_two.compute", "add_nums.compute+"],
+        step_selection=["return_one++", "return_two", "add_nums+"],
     )
     assert result_multi_overlap.success
     assert result_multi_overlap.result_for_solid("multiply_two").output_value() == 6
@@ -187,7 +187,7 @@ def test_reexecute_pipeline_with_step_selection_multi_clauses():
             parent_run_id=pipeline_result_full.run_id,
             run_config=run_config,
             instance=instance,
-            step_selection=["a", "*add_nums.compute"],
+            step_selection=["a", "*add_nums"],
         )
 
 
@@ -216,7 +216,7 @@ def test_reexecute_pipeline_iterator():
             parent_run_id=pipeline_result_full.run_id,
             run_config=run_config,
             instance=instance,
-            step_selection=["*add_nums.compute"],
+            step_selection=["*add_nums"],
         )
     )
     events_up = list(output_event_iterator_up)

@@ -144,7 +144,7 @@ def test_local():
 def test_pyspark_databricks(mock_wait, mock_get_step_events, mock_put_file, mock_submit_run):
     mock_get_step_events.return_value = execute_pipeline(
         pipeline=reconstructable(define_do_nothing_pipe), mode="local"
-    ).events_by_step_key["do_nothing_solid.compute"]
+    ).events_by_step_key["do_nothing_solid"]
 
     result = execute_pipeline(
         pipeline=reconstructable(define_do_nothing_pipe),

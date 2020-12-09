@@ -78,27 +78,22 @@ def test_file_system_intermediate_storage():
     _, _, intermediate_storage = define_intermediate_storage()
 
     assert (
-        intermediate_storage.set_intermediate(
-            None, Int, StepOutputHandle("return_one.compute"), 21
-        ).op
+        intermediate_storage.set_intermediate(None, Int, StepOutputHandle("return_one"), 21).op
         == ObjectStoreOperationType.SET_OBJECT
     )
 
     assert (
-        intermediate_storage.rm_intermediate(None, StepOutputHandle("return_one.compute")).op
+        intermediate_storage.rm_intermediate(None, StepOutputHandle("return_one")).op
         == ObjectStoreOperationType.RM_OBJECT
     )
 
     assert (
-        intermediate_storage.set_intermediate(
-            None, Int, StepOutputHandle("return_one.compute"), 42
-        ).op
+        intermediate_storage.set_intermediate(None, Int, StepOutputHandle("return_one"), 42).op
         == ObjectStoreOperationType.SET_OBJECT
     )
 
     assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one.compute")).obj
-        == 42
+        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one")).obj == 42
     )
 
 
@@ -106,13 +101,13 @@ def test_file_system_intermediate_storage_composite_types():
     _, _, intermediate_storage = define_intermediate_storage()
 
     assert intermediate_storage.set_intermediate(
-        None, List[Bool], StepOutputHandle("return_true_lst.compute"), [True]
+        None, List[Bool], StepOutputHandle("return_true_lst"), [True]
     )
 
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_true_lst.compute"))
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_true_lst"))
 
     assert intermediate_storage.get_intermediate(
-        None, List[Bool], StepOutputHandle("return_true_lst.compute")
+        None, List[Bool], StepOutputHandle("return_true_lst")
     ).obj == [True]
 
 

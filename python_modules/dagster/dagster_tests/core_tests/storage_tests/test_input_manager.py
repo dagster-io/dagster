@@ -106,7 +106,7 @@ def test_override_asset_store():
         output = context.upstream_output
         assert output.metadata == asset_metadata
         assert output.name == "my_output"
-        assert output.step_key == "solid1.compute"
+        assert output.step_key == "solid1"
         assert context.pipeline_name == "my_pipeline"
         assert context.solid_def.name == solid2.name
         return 5

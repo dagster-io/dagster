@@ -81,5 +81,5 @@ if __name__ == "__main__":
         result.run_id,
         mode="local",
         instance=instance,
-        step_selection=["parse_df.compute*"],
+        step_selection=["parse_df*"],
     )

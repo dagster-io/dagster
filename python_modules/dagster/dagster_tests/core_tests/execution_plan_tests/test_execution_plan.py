@@ -32,9 +32,9 @@ def test_topological_sort():
 
     assert len(levels) == 3
 
-    assert [step.key for step in levels[0]] == ["return_two.compute"]
-    assert [step.key for step in levels[1]] == ["add_three.compute", "mult_three.compute"]
-    assert [step.key for step in levels[2]] == ["adder.compute"]
+    assert [step.key for step in levels[0]] == ["return_two"]
+    assert [step.key for step in levels[1]] == ["add_three", "mult_three"]
+    assert [step.key for step in levels[2]] == ["adder"]
 
 
 def test_create_execution_plan_with_bad_inputs():
@@ -52,7 +52,7 @@ def test_active_execution_plan():
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
-        assert step_1.key == "return_two.compute"
+        assert step_1.key == "return_two"
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -64,8 +64,8 @@ def test_active_execution_plan():
         assert len(steps) == 2
         step_2 = steps[0]
         step_3 = steps[1]
-        assert step_2.key == "add_three.compute"
-        assert step_3.key == "mult_three.compute"
+        assert step_2.key == "add_three"
+        assert step_3.key == "mult_three"
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -83,7 +83,7 @@ def test_active_execution_plan():
         assert len(steps) == 1
         step_4 = steps[0]
 
-        assert step_4.key == "adder.compute"
+        assert step_4.key == "adder"
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -104,7 +104,7 @@ def test_failing_execution_plan():
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
-        assert step_1.key == "return_two.compute"
+        assert step_1.key == "return_two"
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -116,8 +116,8 @@ def test_failing_execution_plan():
         assert len(steps) == 2
         step_2 = steps[0]
         step_3 = steps[1]
-        assert step_2.key == "add_three.compute"
-        assert step_3.key == "mult_three.compute"
+        assert step_2.key == "add_three"
+        assert step_3.key == "mult_three"
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -142,7 +142,7 @@ def test_failing_execution_plan():
         assert len(steps) == 1
         step_4 = steps[0]
 
-        assert step_4.key == "adder.compute"
+        assert step_4.key == "adder"
         active_execution.mark_abandoned(step_4.key)
 
         assert active_execution.is_complete
@@ -157,7 +157,7 @@ def test_retries_active_execution():
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
-        assert step_1.key == "return_two.compute"
+        assert step_1.key == "return_two"
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -166,13 +166,13 @@ def test_retries_active_execution():
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
-        assert steps[0].key == "return_two.compute"
+        assert steps[0].key == "return_two"
 
         active_execution.mark_up_for_retry(step_1.key)
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
-        assert steps[0].key == "return_two.compute"
+        assert steps[0].key == "return_two"
 
         active_execution.mark_success(step_1.key)
         active_execution.mark_step_produced_output(StepOutputHandle(step_1.key, "result"))
@@ -181,8 +181,8 @@ def test_retries_active_execution():
         assert len(steps) == 2
         step_2 = steps[0]
         step_3 = steps[1]
-        assert step_2.key == "add_three.compute"
-        assert step_3.key == "mult_three.compute"
+        assert step_2.key == "add_three"
+        assert step_3.key == "mult_three"
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -206,7 +206,7 @@ def test_retries_active_execution():
         assert len(steps) == 1
         step_4 = steps[0]
 
-        assert step_4.key == "adder.compute"
+        assert step_4.key == "adder"
         active_execution.mark_abandoned(step_4.key)
 
         assert active_execution.is_complete
@@ -222,7 +222,7 @@ def test_retries_disabled_active_execution():
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 1
             step_1 = steps[0]
-            assert step_1.key == "return_two.compute"
+            assert step_1.key == "return_two"
 
             steps = active_execution.get_steps_to_execute()
             assert len(steps) == 0  # cant progress
@@ -240,7 +240,7 @@ def test_retries_deferred_active_execution():
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 1
         step_1 = steps[0]
-        assert step_1.key == "return_two.compute"
+        assert step_1.key == "return_two"
 
         steps = active_execution.get_steps_to_execute()
         assert len(steps) == 0  # cant progress
@@ -306,12 +306,12 @@ def test_priorities():
     plan = create_execution_plan(priorities)
     with plan.start(Retries(RetryMode.DISABLED), sort_key_fn) as active_execution:
         steps = active_execution.get_steps_to_execute()
-        assert steps[0].key == "pri_5.compute"
-        assert steps[1].key == "pri_4.compute"
-        assert steps[2].key == "pri_3.compute"
-        assert steps[3].key == "pri_2.compute"
-        assert steps[4].key == "pri_none.compute"
-        assert steps[5].key == "pri_neg_1.compute"
+        assert steps[0].key == "pri_5"
+        assert steps[1].key == "pri_4"
+        assert steps[2].key == "pri_3"
+        assert steps[3].key == "pri_2"
+        assert steps[4].key == "pri_none"
+        assert steps[5].key == "pri_neg_1"
         _ = [active_execution.mark_skipped(step.key) for step in steps]
 
 
@@ -391,23 +391,23 @@ def test_fan_out_should_skip_step():
     instance = DagsterInstance.ephemeral()
     pipeline_run = PipelineRun(pipeline_name="optional_outputs", run_id=make_new_run_id())
     execute_plan(
-        create_execution_plan(optional_outputs, step_keys_to_execute=["foo.compute"]),
+        create_execution_plan(optional_outputs, step_keys_to_execute=["foo"]),
         instance,
         pipeline_run,
     )
 
     assert not should_skip_step(
-        create_execution_plan(optional_outputs, step_keys_to_execute=["bar_1.compute"]),
+        create_execution_plan(optional_outputs, step_keys_to_execute=["bar_1"]),
         instance,
         pipeline_run.run_id,
     )
     assert should_skip_step(
-        create_execution_plan(optional_outputs, step_keys_to_execute=["bar_2.compute"]),
+        create_execution_plan(optional_outputs, step_keys_to_execute=["bar_2"]),
         instance,
         pipeline_run.run_id,
     )
     assert should_skip_step(
-        create_execution_plan(optional_outputs, step_keys_to_execute=["bar_3.compute"]),
+        create_execution_plan(optional_outputs, step_keys_to_execute=["bar_3"]),
         instance,
         pipeline_run.run_id,
     )
@@ -446,8 +446,8 @@ def test_fan_in_should_skip_step():
         create_execution_plan(
             optional_outputs_composite,
             step_keys_to_execute=[
-                "composite_all_upstream_skip.skip.compute",
-                "composite_all_upstream_skip.skip_2.compute",
+                "composite_all_upstream_skip.skip",
+                "composite_all_upstream_skip.skip_2",
             ],
         ),
         instance,
@@ -456,8 +456,7 @@ def test_fan_in_should_skip_step():
     # skip when all the step's sources weren't yield
     assert should_skip_step(
         create_execution_plan(
-            optional_outputs_composite,
-            step_keys_to_execute=["composite_all_upstream_skip.fan_in.compute"],
+            optional_outputs_composite, step_keys_to_execute=["composite_all_upstream_skip.fan_in"],
         ),
         instance,
         pipeline_run.run_id,
@@ -467,8 +466,8 @@ def test_fan_in_should_skip_step():
         create_execution_plan(
             optional_outputs_composite,
             step_keys_to_execute=[
-                "composite_one_upstream_skip.one.compute",
-                "composite_one_upstream_skip.skip.compute",
+                "composite_one_upstream_skip.one",
+                "composite_one_upstream_skip.skip",
             ],
         ),
         instance,
@@ -477,8 +476,7 @@ def test_fan_in_should_skip_step():
     # do not skip when some of the sources exist
     assert not should_skip_step(
         create_execution_plan(
-            optional_outputs_composite,
-            step_keys_to_execute=["composite_one_upstream_skip.fan_in.compute"],
+            optional_outputs_composite, step_keys_to_execute=["composite_one_upstream_skip.fan_in"],
         ),
         instance,
         pipeline_run.run_id,

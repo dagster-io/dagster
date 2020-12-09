@@ -55,9 +55,9 @@ def test_s3_asset_store_execution(mock_s3_bucket):
 
     execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
-    assert execution_plan.get_step_by_key("return_one.compute")
+    assert execution_plan.get_step_by_key("return_one")
 
-    step_keys = ["return_one.compute"]
+    step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
     pipeline_run = PipelineRun(
         pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
@@ -72,10 +72,10 @@ def test_s3_asset_store_execution(mock_s3_bucket):
         )
     )
 
-    assert get_step_output(return_one_step_events, "return_one.compute")
+    assert get_step_output(return_one_step_events, "return_one")
 
     asset_store = PickledObjectS3AssetStore(mock_s3_bucket.name, s3_prefix="dagster")
-    step_output_handle = StepOutputHandle("return_one.compute")
+    step_output_handle = StepOutputHandle("return_one")
     context = AssetStoreContext(
         step_output_handle.step_key,
         step_output_handle.output_name,
@@ -88,14 +88,14 @@ def test_s3_asset_store_execution(mock_s3_bucket):
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one.compute"]),
+            execution_plan.build_subset_plan(["add_one"]),
             run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
         )
     )
 
-    step_output_handle = StepOutputHandle("add_one.compute")
+    step_output_handle = StepOutputHandle("add_one")
     context = AssetStoreContext(
         step_output_handle.step_key,
         step_output_handle.output_name,
@@ -105,5 +105,5 @@ def test_s3_asset_store_execution(mock_s3_bucket):
         run_id,
     )
 
-    assert get_step_output(add_one_step_events, "add_one.compute")
+    assert get_step_output(add_one_step_events, "add_one")
     assert asset_store.get_asset(context) == 2

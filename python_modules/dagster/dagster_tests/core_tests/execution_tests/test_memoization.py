@@ -31,8 +31,8 @@ def test_output_handles_from_execution_plan():
 
     assert output_handles_from_execution_plan(execution_plan) == set()
     assert output_handles_from_execution_plan(
-        execution_plan.build_subset_plan(["add_two.compute", "add_three.compute"])
-    ) == {StepOutputHandle("add_one.compute", "result")}
-    assert output_handles_from_execution_plan(
-        execution_plan.build_subset_plan(["add_three.compute"])
-    ) == {StepOutputHandle("add_two.compute", "result")}
+        execution_plan.build_subset_plan(["add_two", "add_three"])
+    ) == {StepOutputHandle("add_one", "result")}
+    assert output_handles_from_execution_plan(execution_plan.build_subset_plan(["add_three"])) == {
+        StepOutputHandle("add_two", "result")
+    }

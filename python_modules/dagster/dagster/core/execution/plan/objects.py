@@ -155,7 +155,7 @@ class ExecutionStep(
     namedtuple(
         "_ExecutionStep",
         (
-            "pipeline_name key_suffix step_inputs step_input_dict step_outputs step_output_dict "
+            "pipeline_name step_inputs step_input_dict step_outputs step_output_dict "
             "compute_fn kind solid_handle solid logging_tags tags hook_defs"
         ),
     )
@@ -163,7 +163,6 @@ class ExecutionStep(
     def __new__(
         cls,
         pipeline_name,
-        key_suffix,
         step_inputs,
         step_outputs,
         compute_fn,
@@ -177,7 +176,6 @@ class ExecutionStep(
         return super(ExecutionStep, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            key_suffix=check.str_param(key_suffix, "key_suffix"),
             step_inputs=check.list_param(step_inputs, "step_inputs", of_type=StepInput),
             step_input_dict={si.name: si for si in step_inputs},
             step_outputs=check.list_param(step_outputs, "step_outputs", of_type=StepOutput),
@@ -191,7 +189,7 @@ class ExecutionStep(
             solid=check.inst_param(solid, "solid", Solid),
             logging_tags=merge_dicts(
                 {
-                    "step_key": str(solid_handle) + "." + key_suffix,
+                    "step_key": str(solid_handle),
                     "pipeline": pipeline_name,
                     "solid": solid_handle.name,
                     "solid_definition": solid.definition.name,
@@ -204,7 +202,7 @@ class ExecutionStep(
 
     @property
     def key(self):
-        return str(self.solid_handle) + "." + self.key_suffix
+        return str(self.solid_handle)
 
     @property
     def solid_name(self):

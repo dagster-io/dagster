@@ -185,11 +185,11 @@ def test_run_step_stats():
         result = execute_pipeline(simple, instance=instance, raise_on_error=False)
         step_stats = sorted(instance.get_run_step_stats(result.run_id), key=lambda x: x.end_time)
         assert len(step_stats) == 2
-        assert step_stats[0].step_key == "should_succeed.compute"
+        assert step_stats[0].step_key == "should_succeed"
         assert step_stats[0].status == StepEventStatus.SUCCESS
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 1
-        assert step_stats[1].step_key == "should_fail.compute"
+        assert step_stats[1].step_key == "should_fail"
         assert step_stats[1].status == StepEventStatus.FAILURE
         assert step_stats[1].end_time > step_stats[0].start_time
         assert step_stats[1].attempts == 1
@@ -226,9 +226,9 @@ def test_run_step_stats_with_retries():
     with seven.TemporaryDirectory() as tmpdir_path:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(tmpdir_path))
         result = execute_pipeline(simple, instance=instance, raise_on_error=False)
-        step_stats = instance.get_run_step_stats(result.run_id, step_keys=["should_retry.compute"])
+        step_stats = instance.get_run_step_stats(result.run_id, step_keys=["should_retry"])
         assert len(step_stats) == 1
-        assert step_stats[0].step_key == "should_retry.compute"
+        assert step_stats[0].step_key == "should_retry"
         assert step_stats[0].status == StepEventStatus.FAILURE
         assert step_stats[0].end_time > step_stats[0].start_time
         assert step_stats[0].attempts == 4

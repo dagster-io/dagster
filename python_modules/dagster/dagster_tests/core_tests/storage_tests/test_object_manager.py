@@ -87,7 +87,7 @@ def test_default_object_manager_reexecution():
         assert result.success
 
         re_result = reexecute_pipeline(
-            pipeline_def, result.run_id, instance=instance, step_selection=["solid_b.compute"],
+            pipeline_def, result.run_id, instance=instance, step_selection=["solid_b"],
         )
 
         # re-execution should yield asset_store_operation events instead of intermediate events
@@ -100,7 +100,7 @@ def test_default_object_manager_reexecution():
             )
         )
         assert len(get_asset_events) == 1
-        assert get_asset_events[0].event_specific_data.step_key == "solid_a.compute"
+        assert get_asset_events[0].event_specific_data.step_key == "solid_a"
 
 
 def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
@@ -130,12 +130,12 @@ def test_step_subset_with_custom_paths():
         # plan when the ascendant outputs were not previously created by dagster-controlled
         # computations
         step_subset_events = execute_pipeline_with_steps(
-            pipeline_def, step_keys_to_execute=["solid_b.compute"]
+            pipeline_def, step_keys_to_execute=["solid_b"]
         )
         for evt in step_subset_events:
             assert not evt.is_failure
         # only the selected step subset was executed
-        assert set([evt.step_key for evt in step_subset_events]) == {"solid_b.compute"}
+        assert set([evt.step_key for evt in step_subset_events]) == {"solid_b"}
 
         # Asset Materialization events
         step_materialization_events = list(

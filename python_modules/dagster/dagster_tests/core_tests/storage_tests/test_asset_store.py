@@ -69,29 +69,29 @@ def test_fs_asset_store():
         )
 
         assert len(asset_store_operation_events) == 3
-        # SET ASSET for step "solid_a.compute" output "result"
+        # SET ASSET for step "solid_a" output "result"
         assert (
             asset_store_operation_events[0].event_specific_data.op
             == AssetStoreOperationType.SET_ASSET
         )
-        filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a.compute", "result")
+        filepath_a = os.path.join(tmpdir_path, result.run_id, "solid_a", "result")
         assert os.path.isfile(filepath_a)
         with open(filepath_a, "rb") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
-        # GET ASSET for step "solid_b.compute" input "_df"
+        # GET ASSET for step "solid_b" input "_df"
         assert (
             asset_store_operation_events[1].event_specific_data.op
             == AssetStoreOperationType.GET_ASSET
         )
-        assert "solid_a.compute" == asset_store_operation_events[1].event_specific_data.step_key
+        assert "solid_a" == asset_store_operation_events[1].event_specific_data.step_key
 
-        # SET ASSET for step "solid_b.compute" output "result"
+        # SET ASSET for step "solid_b" output "result"
         assert (
             asset_store_operation_events[2].event_specific_data.op
             == AssetStoreOperationType.SET_ASSET
         )
-        filepath_b = os.path.join(tmpdir_path, result.run_id, "solid_b.compute", "result")
+        filepath_b = os.path.join(tmpdir_path, result.run_id, "solid_b", "result")
         assert os.path.isfile(filepath_b)
         with open(filepath_b, "rb") as read_obj:
             assert pickle.load(read_obj) == 1
@@ -107,7 +107,7 @@ def test_default_asset_store_reexecution():
         assert result.success
 
         re_result = reexecute_pipeline(
-            pipeline_def, result.run_id, instance=instance, step_selection=["solid_b.compute"],
+            pipeline_def, result.run_id, instance=instance, step_selection=["solid_b"],
         )
 
         # re-execution should yield asset_store_operation events instead of intermediate events
@@ -120,7 +120,7 @@ def test_default_asset_store_reexecution():
             )
         )
         assert len(get_asset_events) == 1
-        assert get_asset_events[0].event_specific_data.step_key == "solid_a.compute"
+        assert get_asset_events[0].event_specific_data.step_key == "solid_a"
 
 
 def execute_pipeline_with_steps(pipeline_def, step_keys_to_execute=None):
@@ -150,12 +150,12 @@ def test_step_subset_with_custom_paths():
         # plan when the ascendant outputs were not previously created by dagster-controlled
         # computations
         step_subset_events = execute_pipeline_with_steps(
-            pipeline_def, step_keys_to_execute=["solid_b.compute"]
+            pipeline_def, step_keys_to_execute=["solid_b"]
         )
         for evt in step_subset_events:
             assert not evt.is_failure
         # only the selected step subset was executed
-        assert set([evt.step_key for evt in step_subset_events]) == {"solid_b.compute"}
+        assert set([evt.step_key for evt in step_subset_events]) == {"solid_b"}
 
         # Asset Materialization events
         step_materialization_events = list(

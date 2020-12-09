@@ -2,7 +2,6 @@ import pytest
 from dagster import (
     DagsterEventType,
     DagsterExecutionStepNotFoundError,
-    DagsterStepOutputNotFoundError,
     DependencyDefinition,
     InputDefinition,
     Int,
@@ -60,11 +59,11 @@ def test_using_file_system_for_subplan():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
-    assert execution_plan.get_step_by_key("return_one.compute")
+    assert execution_plan.get_step_by_key("return_one")
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["return_one.compute"]),
+            execution_plan.build_subset_plan(["return_one"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -74,28 +73,22 @@ def test_using_file_system_for_subplan():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, pipeline_run.run_id
     )
-    assert get_step_output(return_one_step_events, "return_one.compute")
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one.compute")).obj
-        == 1
-    )
+    assert get_step_output(return_one_step_events, "return_one")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one"))
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one")).obj == 1
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one.compute"]),
+            execution_plan.build_subset_plan(["add_one"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
         )
     )
 
-    assert get_step_output(add_one_step_events, "add_one.compute")
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one.compute"))
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
-        == 2
-    )
+    assert get_step_output(add_one_step_events, "add_one")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one"))
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 2
 
 
 def test_using_intermediates_file_system_is_persistent():
@@ -117,11 +110,11 @@ def test_using_intermediates_file_system_for_subplan():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
-    assert execution_plan.get_step_by_key("return_one.compute")
+    assert execution_plan.get_step_by_key("return_one")
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["return_one.compute"]),
+            execution_plan.build_subset_plan(["return_one"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -131,28 +124,22 @@ def test_using_intermediates_file_system_for_subplan():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, pipeline_run.run_id
     )
-    assert get_step_output(return_one_step_events, "return_one.compute")
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one.compute")).obj
-        == 1
-    )
+    assert get_step_output(return_one_step_events, "return_one")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one"))
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one")).obj == 1
 
     add_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["add_one.compute"]),
+            execution_plan.build_subset_plan(["add_one"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
         )
     )
 
-    assert get_step_output(add_one_step_events, "add_one.compute")
-    assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one.compute"))
-    assert (
-        intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one.compute")).obj
-        == 2
-    )
+    assert get_step_output(add_one_step_events, "add_one")
+    assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one"))
+    assert intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 2
 
 
 def test_using_intermediates_to_override():
@@ -165,11 +152,11 @@ def test_using_intermediates_to_override():
     pipeline_run = instance.create_run_for_pipeline(
         pipeline_def=pipeline, execution_plan=execution_plan
     )
-    assert execution_plan.get_step_by_key("return_one.compute")
+    assert execution_plan.get_step_by_key("return_one")
 
     return_one_step_events = list(
         execute_plan(
-            execution_plan.build_subset_plan(["return_one.compute"]),
+            execution_plan.build_subset_plan(["return_one"]),
             instance,
             run_config=run_config,
             pipeline_run=pipeline_run,
@@ -179,8 +166,8 @@ def test_using_intermediates_to_override():
     intermediate_storage = build_fs_intermediate_storage(
         instance.intermediates_directory, pipeline_run.run_id
     )
-    assert get_step_output(return_one_step_events, "return_one.compute")
-    assert not intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
+    assert get_step_output(return_one_step_events, "return_one")
+    assert not intermediate_storage.has_intermediate(None, StepOutputHandle("return_one"))
 
 
 def test_using_file_system_for_subplan_multiprocessing():
@@ -194,11 +181,11 @@ def test_using_file_system_for_subplan_multiprocessing():
             pipeline_def=pipeline.get_definition(), execution_plan=execution_plan
         )
 
-        assert execution_plan.get_step_by_key("return_one.compute")
+        assert execution_plan.get_step_by_key("return_one")
 
         return_one_step_events = list(
             execute_plan(
-                execution_plan.build_subset_plan(["return_one.compute"]),
+                execution_plan.build_subset_plan(["return_one"]),
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
                 pipeline_run=pipeline_run,
@@ -209,31 +196,26 @@ def test_using_file_system_for_subplan_multiprocessing():
             instance.intermediates_directory, pipeline_run.run_id
         )
 
-        assert get_step_output(return_one_step_events, "return_one.compute")
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
+        assert get_step_output(return_one_step_events, "return_one")
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one"))
         assert (
-            intermediate_storage.get_intermediate(
-                None, Int, StepOutputHandle("return_one.compute")
-            ).obj
+            intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one")).obj
             == 1
         )
 
         add_one_step_events = list(
             execute_plan(
-                execution_plan.build_subset_plan(["add_one.compute"]),
+                execution_plan.build_subset_plan(["add_one"]),
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
                 pipeline_run=pipeline_run,
             )
         )
 
-        assert get_step_output(add_one_step_events, "add_one.compute")
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one.compute"))
+        assert get_step_output(add_one_step_events, "add_one")
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one"))
         assert (
-            intermediate_storage.get_intermediate(
-                None, Int, StepOutputHandle("add_one.compute")
-            ).obj
-            == 2
+            intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 2
         )
 
 
@@ -249,11 +231,11 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
             pipeline_def=pipeline.get_definition(), execution_plan=execution_plan
         )
 
-        assert execution_plan.get_step_by_key("return_one.compute")
+        assert execution_plan.get_step_by_key("return_one")
 
         return_one_step_events = list(
             execute_plan(
-                execution_plan.build_subset_plan(["return_one.compute"]),
+                execution_plan.build_subset_plan(["return_one"]),
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
                 pipeline_run=pipeline_run,
@@ -264,31 +246,26 @@ def test_using_intermediate_file_system_for_subplan_multiprocessing():
             instance.intermediates_directory, pipeline_run.run_id
         )
 
-        assert get_step_output(return_one_step_events, "return_one.compute")
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one.compute"))
+        assert get_step_output(return_one_step_events, "return_one")
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle("return_one"))
         assert (
-            intermediate_storage.get_intermediate(
-                None, Int, StepOutputHandle("return_one.compute")
-            ).obj
+            intermediate_storage.get_intermediate(None, Int, StepOutputHandle("return_one")).obj
             == 1
         )
 
         add_one_step_events = list(
             execute_plan(
-                execution_plan.build_subset_plan(["add_one.compute"]),
+                execution_plan.build_subset_plan(["add_one"]),
                 instance,
                 run_config=dict(run_config, execution={"multiprocess": {}}),
                 pipeline_run=pipeline_run,
             )
         )
 
-        assert get_step_output(add_one_step_events, "add_one.compute")
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one.compute"))
+        assert get_step_output(add_one_step_events, "add_one")
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle("add_one"))
         assert (
-            intermediate_storage.get_intermediate(
-                None, Int, StepOutputHandle("add_one.compute")
-            ).obj
-            == 2
+            intermediate_storage.get_intermediate(None, Int, StepOutputHandle("add_one")).obj == 2
         )
 
 
@@ -333,14 +310,14 @@ def test_using_file_system_for_subplan_missing_input():
     )
 
     events = execute_plan(
-        execution_plan.build_subset_plan(["add_one.compute"]),
+        execution_plan.build_subset_plan(["add_one"]),
         instance,
         run_config=run_config,
         pipeline_run=pipeline_run,
     )
     failures = [event for event in events if event.event_type_value == "STEP_FAILURE"]
     assert len(failures) == 1
-    assert failures[0].step_key == "add_one.compute"
+    assert failures[0].step_key == "add_one"
     assert "DagsterStepOutputNotFoundError" in failures[0].event_specific_data.error.message
 
 

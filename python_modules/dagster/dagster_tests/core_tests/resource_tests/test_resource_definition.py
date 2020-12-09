@@ -932,7 +932,7 @@ def test_single_step_resource_event_logs():
         pipeline_run = instance.create_run_for_pipeline(
             pipeline,
             run_config={"loggers": {"callback": {}}},
-            step_keys_to_execute=["resource_solid.compute"],
+            step_keys_to_execute=["resource_solid"],
         )
 
         result = execute_run(InMemoryPipeline(pipeline), pipeline_run, instance)
@@ -950,7 +950,7 @@ def test_single_step_resource_event_logs():
                 ]
             )
         )
-        assert resource_log_message.step_key == "resource_solid.compute"
+        assert resource_log_message.step_key == "resource_solid"
 
 
 def test_configured_with_config():

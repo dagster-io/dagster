@@ -172,14 +172,9 @@ def test_resolve_step_versions_no_external_dependencies():
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
     versions = speculative_execution_plan.resolve_step_versions()
 
-    assert (
-        versions["versioned_solid_no_input.compute"] == versioned_pipeline_expected_step1_version()
-    )
+    assert versions["versioned_solid_no_input"] == versioned_pipeline_expected_step1_version()
 
-    assert (
-        versions["versioned_solid_takes_input.compute"]
-        == versioned_pipeline_expected_step2_version()
-    )
+    assert versions["versioned_solid_takes_input"] == versioned_pipeline_expected_step2_version()
 
 
 def test_resolve_step_output_versions_no_external_dependencies():
@@ -190,11 +185,11 @@ def test_resolve_step_output_versions_no_external_dependencies():
     versions = speculative_execution_plan.resolve_step_output_versions()
 
     assert (
-        versions[StepOutputHandle("versioned_solid_no_input.compute", "result")]
+        versions[StepOutputHandle("versioned_solid_no_input", "result")]
         == versioned_pipeline_expected_step1_output_version()
     )
     assert (
-        versions[StepOutputHandle("versioned_solid_takes_input.compute", "result")]
+        versions[StepOutputHandle("versioned_solid_takes_input", "result")]
         == versioned_pipeline_expected_step2_output_version()
     )
 
@@ -234,8 +229,8 @@ def test_resolve_memoized_execution_plan_no_stored_results():
     memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan)
 
     assert set(memoized_execution_plan.step_keys_to_execute) == {
-        "versioned_solid_no_input.compute",
-        "versioned_solid_takes_input.compute",
+        "versioned_solid_no_input",
+        "versioned_solid_takes_input",
     }
 
 
@@ -243,7 +238,7 @@ def test_resolve_memoized_execution_plan_yes_stored_results():
     asset_store = VersionedInMemoryAssetStore()
     versioned_pipeline = versioned_pipeline_factory(asset_store)
     speculative_execution_plan = create_execution_plan(versioned_pipeline)
-    step_output_handle = StepOutputHandle("versioned_solid_no_input.compute", "result")
+    step_output_handle = StepOutputHandle("versioned_solid_no_input", "result")
     step_output_version = speculative_execution_plan.resolve_step_output_versions()[
         step_output_handle
     ]
@@ -253,14 +248,12 @@ def test_resolve_memoized_execution_plan_yes_stored_results():
 
     memoized_execution_plan = resolve_memoized_execution_plan(speculative_execution_plan)
 
-    assert memoized_execution_plan.step_keys_to_execute == ["versioned_solid_takes_input.compute"]
+    assert memoized_execution_plan.step_keys_to_execute == ["versioned_solid_takes_input"]
 
-    expected_handle = StepOutputHandle(
-        step_key="versioned_solid_no_input.compute", output_name="result"
-    )
+    expected_handle = StepOutputHandle(step_key="versioned_solid_no_input", output_name="result")
 
     assert (
-        memoized_execution_plan.step_dict["versioned_solid_takes_input.compute"]
+        memoized_execution_plan.get_step_by_key("versioned_solid_takes_input")
         .step_input_dict["intput"]
         .source.step_output_handle
         == expected_handle
@@ -272,7 +265,7 @@ def test_resolve_memoized_execution_plan_partial_versioning():
 
     partially_versioned_pipeline = partially_versioned_pipeline_factory(asset_store)
     speculative_execution_plan = create_execution_plan(partially_versioned_pipeline)
-    step_output_handle = StepOutputHandle("versioned_solid_no_input.compute", "result")
+    step_output_handle = StepOutputHandle("versioned_solid_no_input", "result")
 
     step_output_version = speculative_execution_plan.resolve_step_output_versions()[
         step_output_handle
@@ -282,7 +275,7 @@ def test_resolve_memoized_execution_plan_partial_versioning():
     ] = 4
 
     assert resolve_memoized_execution_plan(speculative_execution_plan).step_keys_to_execute == [
-        "solid_takes_input.compute"
+        "solid_takes_input"
     ]
 
 
@@ -342,7 +335,7 @@ def run_test_with_builtin_type(type_to_test, loader_version, type_value):
     )
 
     step1_version = join_and_hash(input_version, solid1_version)
-    assert versions["versioned_solid_ext_input_builtin_type.compute"] == step1_version
+    assert versions["versioned_solid_ext_input_builtin_type"] == step1_version
 
     output_version = join_and_hash(step1_version, "result")
     hashed_input2 = output_version
@@ -355,7 +348,7 @@ def run_test_with_builtin_type(type_to_test, loader_version, type_value):
     )
 
     step2_version = join_and_hash(hashed_input2, solid2_version)
-    assert versions["versioned_solid_takes_input.compute"] == step2_version
+    assert versions["versioned_solid_takes_input"] == step2_version
 
 
 @solid(
@@ -382,7 +375,7 @@ def test_resolve_step_versions_default_value():
     solid_version = join_and_hash(solid_def_version, solid_config_version, solid_resources_version)
 
     step_version = join_and_hash(input_version, solid_version)
-    assert versions["versioned_solid_default_value.compute"] == step_version
+    assert versions["versioned_solid_default_value"] == step_version
 
 
 def test_step_keys_already_provided():
@@ -395,7 +388,7 @@ def test_step_keys_already_provided():
         instance.create_run_for_pipeline(
             pipeline_def=no_version_pipeline,
             tags={MEMOIZED_RUN_TAG: "true"},
-            step_keys_to_execute=["basic_takes_input_solid.compute"],
+            step_keys_to_execute=["basic_takes_input_solid"],
         )
 
 
@@ -521,7 +514,7 @@ def test_step_versions_with_resources():
 
     step_version = join_and_hash(solid_version)
 
-    assert versions["fake_solid_resources_versioned.compute"] == step_version
+    assert versions["fake_solid_resources_versioned"] == step_version
 
 
 def test_step_versions_composite_solid():
@@ -549,4 +542,4 @@ def test_step_versions_composite_solid():
 
     versions = speculative_execution_plan.resolve_step_versions()
 
-    assert versions["do_stuff.scalar_config_solid.compute"] == None
+    assert versions["do_stuff.scalar_config_solid"] == None

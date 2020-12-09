@@ -114,7 +114,7 @@ def test_local():
 def test_pyspark_emr(mock_is_emr_step_complete, mock_read_events, mock_s3_bucket):
     mock_read_events.return_value = execute_pipeline(
         reconstructable(define_do_nothing_pipe), mode="local"
-    ).events_by_step_key["do_nothing_solid.compute"]
+    ).events_by_step_key["do_nothing_solid"]
 
     run_job_flow_args = dict(
         Instances={

@@ -563,11 +563,11 @@ def test_run_step_stats(conn_string):
         event_log_storage.get_step_stats_for_run(result.run_id), key=lambda x: x.end_time
     )
     assert len(step_stats) == 2
-    assert step_stats[0].step_key == "should_succeed.compute"
+    assert step_stats[0].step_key == "should_succeed"
     assert step_stats[0].status == StepEventStatus.SUCCESS
     assert step_stats[0].end_time > step_stats[0].start_time
     assert step_stats[0].attempts == 1
-    assert step_stats[1].step_key == "should_fail.compute"
+    assert step_stats[1].step_key == "should_fail"
     assert step_stats[1].status == StepEventStatus.FAILURE
     assert step_stats[1].end_time > step_stats[0].start_time
     assert step_stats[1].attempts == 1
@@ -587,11 +587,9 @@ def test_run_step_stats_with_retries(conn_string):
     for event in events:
         event_log_storage.store_event(event)
 
-    step_stats = event_log_storage.get_step_stats_for_run(
-        result.run_id, step_keys=["should_retry.compute"]
-    )
+    step_stats = event_log_storage.get_step_stats_for_run(result.run_id, step_keys=["should_retry"])
     assert len(step_stats) == 1
-    assert step_stats[0].step_key == "should_retry.compute"
+    assert step_stats[0].step_key == "should_retry"
     assert step_stats[0].status == StepEventStatus.FAILURE
     assert step_stats[0].end_time > step_stats[0].start_time
     assert step_stats[0].attempts == 4

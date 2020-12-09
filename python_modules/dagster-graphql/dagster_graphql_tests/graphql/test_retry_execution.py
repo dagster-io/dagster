@@ -85,11 +85,11 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             "pipelineRunLogs"
         ]["messages"]
 
-        assert step_did_succeed(logs, "spawn.compute")
-        assert step_did_fail(logs, "fail.compute")
-        assert step_did_not_run(logs, "fail_2.compute")
-        assert step_did_not_run(logs, "fail_3.compute")
-        assert step_did_not_run(logs, "reset.compute")
+        assert step_did_succeed(logs, "spawn")
+        assert step_did_fail(logs, "fail")
+        assert step_did_not_run(logs, "fail_2")
+        assert step_did_not_run(logs, "fail_3")
+        assert step_did_not_run(logs, "reset")
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -112,11 +112,11 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
-        assert step_did_not_run(logs, "spawn.compute")
-        assert step_did_succeed(logs, "fail.compute")
-        assert step_did_fail(logs, "fail_2.compute")
-        assert step_did_not_run(logs, "fail_3.compute")
-        assert step_did_not_run(logs, "reset.compute")
+        assert step_did_not_run(logs, "spawn")
+        assert step_did_succeed(logs, "fail")
+        assert step_did_fail(logs, "fail_2")
+        assert step_did_not_run(logs, "fail_3")
+        assert step_did_not_run(logs, "reset")
 
         retry_two = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -140,11 +140,11 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             "pipelineRunLogs"
         ]["messages"]
 
-        assert step_did_not_run(logs, "spawn.compute")
-        assert step_did_not_run(logs, "fail.compute")
-        assert step_did_succeed(logs, "fail_2.compute")
-        assert step_did_fail(logs, "fail_3.compute")
-        assert step_did_not_run(logs, "reset.compute")
+        assert step_did_not_run(logs, "spawn")
+        assert step_did_not_run(logs, "fail")
+        assert step_did_succeed(logs, "fail_2")
+        assert step_did_fail(logs, "fail_3")
+        assert step_did_not_run(logs, "reset")
 
         retry_three = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -168,11 +168,11 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
             "pipelineRunLogs"
         ]["messages"]
 
-        assert step_did_not_run(logs, "spawn.compute")
-        assert step_did_not_run(logs, "fail.compute")
-        assert step_did_not_run(logs, "fail_2.compute")
-        assert step_did_succeed(logs, "fail_3.compute")
-        assert step_did_succeed(logs, "reset.compute")
+        assert step_did_not_run(logs, "spawn")
+        assert step_did_not_run(logs, "fail")
+        assert step_did_not_run(logs, "fail_2")
+        assert step_did_succeed(logs, "fail_3")
+        assert step_did_succeed(logs, "reset")
 
     def test_retry_resource_pipeline(self, graphql_context):
         context = graphql_context
@@ -193,8 +193,8 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
-        assert step_did_succeed(logs, "start.compute")
-        assert step_did_fail(logs, "will_fail.compute")
+        assert step_did_succeed(logs, "start")
+        assert step_did_fail(logs, "will_fail")
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             context,
@@ -216,8 +216,8 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
-        assert step_did_not_run(logs, "start.compute")
-        assert step_did_fail(logs, "will_fail.compute")
+        assert step_did_not_run(logs, "start")
+        assert step_did_fail(logs, "will_fail")
 
     def test_retry_multi_output(self, graphql_context):
         context = graphql_context
@@ -233,12 +233,12 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
-        assert step_did_succeed(logs, "multi.compute")
-        assert step_did_skip(logs, "child_multi_skip.compute")
-        assert step_did_fail(logs, "can_fail.compute")
-        assert step_did_not_run(logs, "child_fail.compute")
-        assert step_did_not_run(logs, "child_skip.compute")
-        assert step_did_not_run(logs, "grandchild_fail.compute")
+        assert step_did_succeed(logs, "multi")
+        assert step_did_skip(logs, "child_multi_skip")
+        assert step_did_fail(logs, "can_fail")
+        assert step_did_not_run(logs, "child_fail")
+        assert step_did_not_run(logs, "child_skip")
+        assert step_did_not_run(logs, "grandchild_fail")
 
         retry_one = execute_dagster_graphql_and_finish_runs(
             context,
@@ -254,12 +254,12 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
-        assert step_did_not_run(logs, "multi.compute")
-        assert step_did_not_run(logs, "child_multi_skip.compute")
-        assert step_did_fail(logs, "can_fail.compute")
-        assert step_did_not_run(logs, "child_fail.compute")
-        assert step_did_not_run(logs, "child_skip.compute")
-        assert step_did_not_run(logs, "grandchild_fail.compute")
+        assert step_did_not_run(logs, "multi")
+        assert step_did_not_run(logs, "child_multi_skip")
+        assert step_did_fail(logs, "can_fail")
+        assert step_did_not_run(logs, "child_fail")
+        assert step_did_not_run(logs, "child_skip")
+        assert step_did_not_run(logs, "grandchild_fail")
 
         retry_two = execute_dagster_graphql_and_finish_runs(
             context,
@@ -275,12 +275,12 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         logs = get_all_logs_for_finished_run_via_subscription(context, run_id)["pipelineRunLogs"][
             "messages"
         ]
-        assert step_did_not_run(logs, "multi.compute")
-        assert step_did_not_run(logs, "child_multi_skip.compute")
-        assert step_did_succeed(logs, "can_fail.compute")
-        assert step_did_succeed(logs, "child_fail.compute")
-        assert step_did_skip(logs, "child_skip.compute")
-        assert step_did_succeed(logs, "grandchild_fail.compute")
+        assert step_did_not_run(logs, "multi")
+        assert step_did_not_run(logs, "child_multi_skip")
+        assert step_did_succeed(logs, "can_fail")
+        assert step_did_succeed(logs, "child_fail")
+        assert step_did_skip(logs, "child_skip")
+        assert step_did_succeed(logs, "grandchild_fail")
 
     def test_successful_pipeline_reexecution(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "csv_hello_world")
@@ -313,12 +313,12 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         intermediate_storage = build_fs_intermediate_storage(
             instance.intermediates_directory, run_id
         )
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_solid.compute"))
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_sq_solid.compute"))
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_solid"))
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_sq_solid"))
         assert (
             str(
                 intermediate_storage.get_intermediate(
-                    None, PoorMansDataFrame, StepOutputHandle("sum_sq_solid.compute")
+                    None, PoorMansDataFrame, StepOutputHandle("sum_sq_solid")
                 ).obj
             )
             == expected_value_repr
@@ -334,7 +334,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": csv_hello_world_solids_config_fs_storage(),
-                    "stepKeys": ["sum_sq_solid.compute"],
+                    "stepKeys": ["sum_sq_solid"],
                     "executionMetadata": {
                         "runId": new_run_id,
                         "rootRunId": run_id,
@@ -357,8 +357,8 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert has_event_of_type(logs, "PipelineSuccessEvent")
         assert not has_event_of_type(logs, "PipelineFailureEvent")
 
-        assert not get_step_output_event(logs, "sum_solid.compute")
-        assert get_step_output_event(logs, "sum_sq_solid.compute")
+        assert not get_step_output_event(logs, "sum_solid")
+        assert get_step_output_event(logs, "sum_sq_solid")
 
         intermediate_storage = build_fs_intermediate_storage(
             instance.intermediates_directory, new_run_id
@@ -366,12 +366,12 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         assert not intermediate_storage.has_intermediate(
             None, StepOutputHandle("sum_solid.inputs.num.read", "input_thunk_output")
         )
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_solid.compute"))
-        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_sq_solid.compute"))
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_solid"))
+        assert intermediate_storage.has_intermediate(None, StepOutputHandle("sum_sq_solid"))
         assert (
             str(
                 intermediate_storage.get_intermediate(
-                    None, PoorMansDataFrame, StepOutputHandle("sum_sq_solid.compute")
+                    None, PoorMansDataFrame, StepOutputHandle("sum_sq_solid")
                 ).obj
             )
             == expected_value_repr
@@ -404,7 +404,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
                 "executionParams": {
                     "selector": selector,
                     "runConfigData": csv_hello_world_solids_config_fs_storage(),
-                    "stepKeys": ["sum_sq_solid.compute"],
+                    "stepKeys": ["sum_sq_solid"],
                     "executionMetadata": {
                         "runId": new_run_id,
                         "rootRunId": run_id,
@@ -495,9 +495,9 @@ class TestHardFailures(OutOfProcessExecutingGraphQLContextTestMatrix):
             "pipelineRunLogs"
         ]["messages"]
 
-        assert step_started(logs, "hard_fail_or_0.compute")
-        assert step_did_not_run(logs, "hard_fail_or_0.compute")
-        assert step_did_not_run(logs, "increment.compute")
+        assert step_started(logs, "hard_fail_or_0")
+        assert step_did_not_run(logs, "hard_fail_or_0")
+        assert step_did_not_run(logs, "increment")
 
         retry = execute_dagster_graphql_and_finish_runs(
             graphql_context,
@@ -520,8 +520,8 @@ class TestHardFailures(OutOfProcessExecutingGraphQLContextTestMatrix):
         logs = get_all_logs_for_finished_run_via_subscription(graphql_context, run_id)[
             "pipelineRunLogs"
         ]["messages"]
-        assert step_did_succeed(logs, "hard_fail_or_0.compute")
-        assert step_did_succeed(logs, "increment.compute")
+        assert step_did_succeed(logs, "hard_fail_or_0")
+        assert step_did_succeed(logs, "increment")
 
 
 def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
@@ -537,11 +537,11 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
         },
     )
 
-    assert step_did_succeed(logs, "spawn.compute")
-    assert step_did_fail(logs, "fail.compute")
-    assert step_did_not_run(logs, "fail_2.compute")
-    assert step_did_not_run(logs, "fail_3.compute")
-    assert step_did_not_run(logs, "reset.compute")
+    assert step_did_succeed(logs, "spawn")
+    assert step_did_fail(logs, "fail")
+    assert step_did_not_run(logs, "fail_2")
+    assert step_did_not_run(logs, "fail_3")
+    assert step_did_not_run(logs, "reset")
 
     retry_one = execute_dagster_graphql_and_finish_runs(
         graphql_context,
@@ -630,16 +630,16 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
         # The first step should succeed, the second should fail or not start,
         # and the following steps should not appear in records
-        assert step_did_succeed_in_records(records, "return_one.compute")
-        assert not step_did_fail_in_records(records, "return_one.compute")
+        assert step_did_succeed_in_records(records, "return_one")
+        assert not step_did_fail_in_records(records, "return_one")
         assert any(
             [
-                step_did_fail_in_records(records, "get_input_one.compute"),
-                step_did_not_run_in_records(records, "get_input_one.compute"),
+                step_did_fail_in_records(records, "get_input_one"),
+                step_did_not_run_in_records(records, "get_input_one"),
             ]
         )
-        assert step_did_not_run_in_records(records, "get_input_two.compute")
-        assert step_did_not_run_in_records(records, "sum_inputs.compute")
+        assert step_did_not_run_in_records(records, "get_input_two")
+        assert step_did_not_run_in_records(records, "sum_inputs")
 
         # Start retry
         new_run_id = make_new_run_id()
@@ -670,7 +670,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
 
         retry_records = instance.all_logs(new_run_id)
         # The first step should not run and the other three steps should succeed in retry
-        assert step_did_not_run_in_records(retry_records, "return_one.compute")
-        assert step_did_succeed_in_records(retry_records, "get_input_one.compute")
-        assert step_did_succeed_in_records(retry_records, "get_input_two.compute")
-        assert step_did_succeed_in_records(retry_records, "sum_inputs.compute")
+        assert step_did_not_run_in_records(retry_records, "return_one")
+        assert step_did_succeed_in_records(retry_records, "get_input_one")
+        assert step_did_succeed_in_records(retry_records, "get_input_two")
+        assert step_did_succeed_in_records(retry_records, "sum_inputs")

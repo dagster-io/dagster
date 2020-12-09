@@ -55,7 +55,7 @@ def test_dev_loop_changing_versions():
         run_config["solids"]["take_string_1_asset"]["config"]["input_str"] = "banana"
 
         assert get_step_keys_to_execute(asset_pipeline, run_config, "only_mode") == [
-            "take_string_1_asset.compute"
+            "take_string_1_asset"
         ]
         result = execute_pipeline(
             asset_pipeline,

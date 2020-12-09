@@ -166,29 +166,25 @@ def test_execute_step_verify_step():
 
             # Check that verify succeeds for step that has hasn't been fun (case 3)
             retries = Retries.from_config({"enabled": {}})
-            assert verify_step(
-                instance, run, retries, step_keys_to_execute=["do_something.compute"]
-            )
+            assert verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
             # Check that verify fails when trying to retry with no original attempt (case 3)
             retries = Retries.from_config({"enabled": {}})
-            retries.mark_attempt("do_something.compute")
-            assert not verify_step(
-                instance, run, retries, step_keys_to_execute=["do_something.compute"]
-            )
+            retries.mark_attempt("do_something")
+            assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
             # Test trying to re-run a retry fails verify_step (case 2)
             with mock.patch("dagster.cli.api.get_step_stats_by_key") as _step_stats_by_key:
                 _step_stats_by_key.return_value = {
-                    "do_something.compute": RunStepKeyStatsSnapshot(
-                        run_id=run.run_id, step_key="do_something.compute", attempts=2
+                    "do_something": RunStepKeyStatsSnapshot(
+                        run_id=run.run_id, step_key="do_something", attempts=2
                     )
                 }
 
                 retries = Retries.from_config({"enabled": {}})
-                retries.mark_attempt("do_something.compute")
+                retries.mark_attempt("do_something")
                 assert not verify_step(
-                    instance, run, retries, step_keys_to_execute=["do_something.compute"]
+                    instance, run, retries, step_keys_to_execute=["do_something"]
                 )
 
             runner_execute_step(
@@ -197,6 +193,4 @@ def test_execute_step_verify_step():
 
             # # Check that verify fails for step that has already run (case 1)
             retries = Retries.from_config({"enabled": {}})
-            assert not verify_step(
-                instance, run, retries, step_keys_to_execute=["do_something.compute"]
-            )
+            assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])

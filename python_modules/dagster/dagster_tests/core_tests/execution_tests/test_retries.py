@@ -160,7 +160,7 @@ def test_step_retry_limit(environment):
         assert not result.success
 
         events = defaultdict(list)
-        for ev in result.events_by_step_key["default_max.compute"]:
+        for ev in result.events_by_step_key["default_max"]:
             events[ev.event_type].append(ev)
 
         assert len(events[DagsterEventType.STEP_START]) == 1
@@ -169,7 +169,7 @@ def test_step_retry_limit(environment):
         assert len(events[DagsterEventType.STEP_FAILURE]) == 1
 
         events = defaultdict(list)
-        for ev in result.events_by_step_key["three_max.compute"]:
+        for ev in result.events_by_step_key["three_max"]:
             events[ev.event_type].append(ev)
 
         assert len(events[DagsterEventType.STEP_START]) == 1

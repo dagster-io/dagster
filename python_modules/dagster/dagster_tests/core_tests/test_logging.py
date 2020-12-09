@@ -224,9 +224,9 @@ def test_resource_logging(capsys):
 
     expected_log_regexes = [
         r"dagster - INFO - resource:foo - [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-"
-        r"[a-f0-9]{12} - process.compute - test logging from foo resource",
+        r"[a-f0-9]{12} - process - test logging from foo resource",
         r"dagster - INFO - resource:bar - [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-"
-        r"[a-f0-9]{12} - process.compute - test logging from bar resource",
+        r"[a-f0-9]{12} - process - test logging from bar resource",
     ]
     for expected_log_regex in expected_log_regexes:
         assert re.search(expected_log_regex, captured.err, re.MULTILINE)

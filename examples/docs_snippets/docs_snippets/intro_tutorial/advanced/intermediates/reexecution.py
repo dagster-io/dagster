@@ -58,11 +58,11 @@ if __name__ == "__main__":
 
     assert result.success
 
-    # skip 'read_csv' and only re-execute step 'sort_by_calories.compute'
+    # skip 'read_csv' and only re-execute step 'sort_by_calories'
     reexecution_result = reexecute_pipeline(
         reexecution_pipeline,
         parent_run_id=result.run_id,
-        step_keys_to_execute=["sort_by_calories.compute"],
+        step_keys_to_execute=["sort_by_calories"],
         instance=instance,
         run_config=run_config,
     )

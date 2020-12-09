@@ -15,9 +15,9 @@ from dagster_aws.s3 import S3ComputeLogManager
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"
 EXPECTED_LOGS = [
-    'STEP_START - Started execution of step "easy.compute".',
+    'STEP_START - Started execution of step "easy".',
     'STEP_OUTPUT - Yielded output "result" of type "Any"',
-    'STEP_SUCCESS - Finished execution of step "easy.compute"',
+    'STEP_SUCCESS - Finished execution of step "easy"',
 ]
 
 
@@ -65,7 +65,7 @@ def test_compute_log_manager(mock_s3_bucket):
 
         # Check S3 directly
         s3_object = mock_s3_bucket.Object(
-            key="{prefix}/storage/{run_id}/compute_logs/easy.compute.err".format(
+            key="{prefix}/storage/{run_id}/compute_logs/easy.err".format(
                 prefix="my_prefix", run_id=result.run_id
             ),
         )
