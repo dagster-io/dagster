@@ -305,6 +305,7 @@ def test_versioned_asset_store():
         context = AssetStoreContext(
             step_key="foo",
             output_name="bar",
+            mapping_key=None,
             asset_metadata={},
             pipeline_name="fake",
             solid_def=get_fake_solid(),
@@ -317,6 +318,7 @@ def test_versioned_asset_store():
         context_diff_version = AssetStoreContext(
             step_key="foo",
             output_name="bar",
+            mapping_key=None,
             asset_metadata={},
             pipeline_name="fake",
             solid_def=get_fake_solid(),

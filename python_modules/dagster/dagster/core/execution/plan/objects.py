@@ -13,12 +13,13 @@ from .handle import StepHandle
 
 
 @whitelist_for_serdes
-class StepOutputHandle(namedtuple("_StepOutputHandle", "step_key output_name")):
-    def __new__(cls, step_key, output_name="result"):
+class StepOutputHandle(namedtuple("_StepOutputHandle", "step_key output_name mapping_key")):
+    def __new__(cls, step_key, output_name="result", mapping_key=None):
         return super(StepOutputHandle, cls).__new__(
             cls,
             step_key=check.str_param(step_key, "step_key"),
             output_name=check.str_param(output_name, "output_name"),
+            mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         )
 
 

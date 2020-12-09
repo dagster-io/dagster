@@ -97,6 +97,7 @@ def test_adls2_asset_store_execution(storage_account, file_system, credential):
     context = AssetStoreContext(
         step_output_handle.step_key,
         step_output_handle.output_name,
+        step_output_handle.mapping_key,
         {},
         pipeline_def.name,
         pipeline_def.solid_def_named("return_one"),
@@ -116,6 +117,7 @@ def test_adls2_asset_store_execution(storage_account, file_system, credential):
     context = AssetStoreContext(
         step_output_handle.step_key,
         step_output_handle.output_name,
+        step_output_handle.mapping_key,
         {},
         pipeline_def.name,
         pipeline_def.solid_def_named("add_one"),

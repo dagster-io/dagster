@@ -42,6 +42,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
           "upstream_output_handles": [
             {
               "__class__": "StepOutputHandle",
+              "mapping_key": null,
               "output_name": "result",
               "step_key": "solid_one"
             }
@@ -154,6 +155,7 @@ snapshots['test_create_with_composite 1'] = '''{
           "upstream_output_handles": [
             {
               "__class__": "StepOutputHandle",
+              "mapping_key": null,
               "output_name": "result",
               "step_key": "comp_1.add_one"
             }
@@ -166,6 +168,7 @@ snapshots['test_create_with_composite 1'] = '''{
           "upstream_output_handles": [
             {
               "__class__": "StepOutputHandle",
+              "mapping_key": null,
               "output_name": "result",
               "step_key": "comp_2.add_one"
             }
@@ -196,6 +199,7 @@ snapshots['test_create_with_composite 1'] = '''{
           "upstream_output_handles": [
             {
               "__class__": "StepOutputHandle",
+              "mapping_key": null,
               "output_name": "out_num",
               "step_key": "comp_1.return_one"
             }
@@ -243,6 +247,7 @@ snapshots['test_create_with_composite 1'] = '''{
           "upstream_output_handles": [
             {
               "__class__": "StepOutputHandle",
+              "mapping_key": null,
               "output_name": "out_num",
               "step_key": "comp_2.return_one"
             }

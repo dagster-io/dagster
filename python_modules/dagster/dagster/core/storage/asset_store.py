@@ -339,7 +339,7 @@ def versioned_filesystem_asset_store(init_context):
 class AssetStoreContext(
     namedtuple(
         "_AssetStoreContext",
-        "step_key output_name asset_metadata pipeline_name solid_def source_run_id version",
+        "step_key output_name mapping_key asset_metadata pipeline_name solid_def source_run_id version",
     )
 ):
     """
@@ -348,6 +348,7 @@ class AssetStoreContext(
     Attributes:
         step_key (str): The step_key for the compute step.
         output_name (str): The name of the output. (default: 'result').
+        mapping_key (Optional[str]): The key that identifies a unique mapped output. None for regular outputs.
         asset_metadata ([Dict[str, Any]]): A dict of the metadata that is used for the asset store
             to store or retrieve the data object.
         pipeline_name (str): The name of the pipeline.
@@ -360,6 +361,7 @@ class AssetStoreContext(
         cls,
         step_key,
         output_name,
+        mapping_key,
         asset_metadata,
         pipeline_name,
         solid_def,
@@ -371,6 +373,7 @@ class AssetStoreContext(
             cls,
             step_key=check.str_param(step_key, "step_key"),
             output_name=check.str_param(output_name, "output_name"),
+            mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
             asset_metadata=check.opt_dict_param(asset_metadata, "asset_metadata", key_type=str),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_def=check.inst_param(solid_def, "solid_def", SolidDefinition),
@@ -394,6 +397,8 @@ class AssetStoreContext(
         Returns:
             List[str, ...]: A list of identifiers, i.e. run id, step key, and output name
         """
+        if self.mapping_key:
+            return [self.source_run_id, self.step_key, self.output_name, self.mapping_key]
         return [self.source_run_id, self.step_key, self.output_name]
 
     @staticmethod
@@ -401,6 +406,7 @@ class AssetStoreContext(
         return AssetStoreContext(
             step_key=output_context.step_key,
             output_name=output_context.name,
+            mapping_key=output_context.mapping_key,
             asset_metadata=output_context.metadata,
             pipeline_name=output_context.pipeline_name,
             solid_def=output_context.solid_def,
@@ -414,6 +420,7 @@ class AssetStoreContext(
         return AssetStoreContext(
             step_key=output_context.step_key,
             output_name=output_context.name,
+            mapping_key=output_context.mapping_key,
             asset_metadata=output_context.metadata,
             pipeline_name=output_context.pipeline_name,
             solid_def=load_context.solid_def,
