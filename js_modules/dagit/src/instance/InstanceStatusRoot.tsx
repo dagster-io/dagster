@@ -90,7 +90,7 @@ export const InstanceStatusRoot = (props: Props) => {
   );
 };
 
-const INSTANCE_HEALTH_FRAGMENT = gql`
+export const INSTANCE_HEALTH_FRAGMENT = gql`
   fragment InstanceHealthFragment on Instance {
     daemonHealth {
       ...DaemonHealthFragment

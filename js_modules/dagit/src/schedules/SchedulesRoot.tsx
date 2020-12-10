@@ -6,7 +6,7 @@ import React from 'react';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {UnloadableJobs} from 'src/jobs/UnloadableJobs';
+import {UnloadableSchedules} from 'src/jobs/UnloadableJobs';
 import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {SchedulesTable} from 'src/schedules/SchedulesTable';
@@ -37,12 +37,9 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
         {(result) => {
           const {repositoryOrError, scheduler, unloadableJobStatesOrError} = result;
           let schedulesSection = null;
-          let unloadableSchedulesSection = null;
 
           if (repositoryOrError.__typename === 'PythonError') {
             schedulesSection = <PythonErrorInfo error={repositoryOrError} />;
-          } else if (unloadableJobStatesOrError.__typename === 'PythonError') {
-            schedulesSection = <PythonErrorInfo error={unloadableJobStatesOrError} />;
           } else if (repositoryOrError.__typename === 'RepositoryNotFoundError') {
             schedulesSection = (
               <NonIdealState
@@ -51,40 +48,28 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
                 description="Could not load this repository."
               />
             );
-          } else {
-            const schedules = repositoryOrError.schedules;
-            if (!schedules.length) {
-              schedulesSection = (
-                <NonIdealState
-                  icon={IconNames.ERROR}
-                  title="No Schedules Found"
-                  description={
-                    <p>
-                      This repository does not have any schedules defined. Visit the{' '}
-                      <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
-                        scheduler documentation
-                      </a>{' '}
-                      for more information about scheduling pipeline runs in Dagster. .
-                    </p>
-                  }
-                />
-              );
-            } else {
-              schedulesSection = schedules.length > 0 && (
-                <Group direction="column" spacing={16}>
-                  <SchedulerTimezoneNote schedulerOrError={scheduler} />
-                  <SchedulesTable
-                    schedules={repositoryOrError.schedules}
-                    repoAddress={repoAddress}
-                  />
-                </Group>
-              );
-            }
-            unloadableSchedulesSection = unloadableJobStatesOrError.results.length > 0 && (
-              <UnloadableJobs
-                jobStates={unloadableJobStatesOrError.results}
-                jobType={JobType.SCHEDULE}
+          } else if (!repositoryOrError.schedules.length) {
+            schedulesSection = (
+              <NonIdealState
+                icon={IconNames.ERROR}
+                title="No Schedules Found"
+                description={
+                  <p>
+                    This repository does not have any schedules defined. Visit the{' '}
+                    <a href="https://docs.dagster.io/overview/scheduling-partitions/schedules">
+                      scheduler documentation
+                    </a>{' '}
+                    for more information about scheduling pipeline runs in Dagster. .
+                  </p>
+                }
               />
+            );
+          } else {
+            schedulesSection = repositoryOrError.schedules.length > 0 && (
+              <Group direction="column" spacing={16}>
+                <SchedulerTimezoneNote schedulerOrError={scheduler} />
+                <SchedulesTable schedules={repositoryOrError.schedules} repoAddress={repoAddress} />
+              </Group>
             );
           }
 
@@ -92,7 +77,11 @@ export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
             <Group direction="column" spacing={20}>
               <SchedulerInfo schedulerOrError={scheduler} />
               {schedulesSection}
-              {unloadableSchedulesSection}
+              {unloadableJobStatesOrError.__typename === 'PythonError' ? (
+                <PythonErrorInfo error={unloadableJobStatesOrError} />
+              ) : (
+                <UnloadableSchedules scheduleStates={unloadableJobStatesOrError.results} />
+              )}
             </Group>
           );
         }}

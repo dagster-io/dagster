@@ -7,33 +7,36 @@ import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {REPOSITORY_INFO_FRAGMENT} from 'src/RepositoryInformation';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {UnloadableJobs} from 'src/jobs/UnloadableJobs';
+import {DaemonList} from 'src/instance/DaemonList';
+import {INSTANCE_HEALTH_FRAGMENT} from 'src/instance/InstanceStatusRoot';
+import {InstanceDaemonRootQuery} from 'src/instance/types/InstanceDaemonRootQuery';
+import {UnloadableSchedules, UnloadableSensors} from 'src/jobs/UnloadableJobs';
 import {SCHEDULE_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
 import {SchedulesTable} from 'src/schedules/SchedulesTable';
-import {InstanceJobsRootQuery} from 'src/schedules/types/InstanceJobsRootQuery';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {SensorsTable} from 'src/sensors/SensorsTable';
+import {JobType} from 'src/types/globalTypes';
 import {Box} from 'src/ui/Box';
 import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
 import {PageHeader} from 'src/ui/PageHeader';
 import {Subheading} from 'src/ui/Text';
 
-export const InstanceJobsRoot = () => {
-  useDocumentTitle('Scheduler');
-  const queryResult = useQuery<InstanceJobsRootQuery>(INSTANCE_JOBS_ROOT_QUERY, {
+export const InstanceDaemonRoot = () => {
+  useDocumentTitle('Daemons');
+  const queryResult = useQuery<InstanceDaemonRootQuery>(INSTANCE_DAEMON_ROOT_QUERY, {
     variables: {},
     fetchPolicy: 'cache-and-network',
   });
 
   return (
     <Page>
-      <PageHeader text="Scheduler" />
+      <PageHeader text="Daemons" />
       <Group direction="column" spacing={12}>
         <Loading queryResult={queryResult} allowStaleData={true}>
           {(result) => {
-            const {scheduler, repositoriesOrError, unloadableJobStatesOrError} = result;
+            const {instance, scheduler, repositoriesOrError, unloadableJobStatesOrError} = result;
 
             if (repositoriesOrError.__typename === 'PythonError') {
               return <PythonErrorInfo error={repositoriesOrError} />;
@@ -49,27 +52,40 @@ export const InstanceJobsRoot = () => {
             const hasSchedules = repositoriesOrError.nodes.some(
               (repository) => repository.schedules.length,
             );
+            const hasDaemonScheduler =
+              scheduler.__typename === 'Scheduler' &&
+              scheduler.schedulerClass === 'DagsterDaemonScheduler';
+
+            const daemonStatusSection = (
+              <Group direction="column" spacing={16}>
+                <Subheading>Daemon statuses</Subheading>
+                <DaemonList daemonHealth={instance.daemonHealth} />
+              </Group>
+            );
 
             const scheduleDefinitionsSection = hasSchedules ? (
-              <Group direction="column" spacing={12}>
-                <Box
-                  flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
-                  padding={{bottom: 8}}
-                  border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
-                >
-                  <Subheading>Schedules</Subheading>
-                  <SchedulerTimezoneNote schedulerOrError={scheduler} />
-                </Box>
-                {repositoriesOrError.nodes.map((repository) => (
-                  <Group direction="column" spacing={12} key={repository.name}>
-                    <strong>{`${repository.name}@${repository.location.name}`}</strong>
-                    <SchedulesTable
-                      repoAddress={{name: repository.name, location: repository.location.name}}
-                      schedules={repository.schedules}
-                    />
-                  </Group>
-                ))}
-              </Group>
+              <Box padding={{top: 16}}>
+                <Group direction="column" spacing={12}>
+                  <Box
+                    flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
+                    padding={{bottom: 8}}
+                    border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
+                  >
+                    <Subheading>Schedules</Subheading>
+                    <SchedulerTimezoneNote schedulerOrError={scheduler} />
+                  </Box>
+                  {hasDaemonScheduler ? null : <SchedulerInfo schedulerOrError={scheduler} />}
+                  {repositoriesOrError.nodes.map((repository) => (
+                    <Group direction="column" spacing={12} key={repository.name}>
+                      <strong>{`${repository.name}@${repository.location.name}`}</strong>
+                      <SchedulesTable
+                        repoAddress={{name: repository.name, location: repository.location.name}}
+                        schedules={repository.schedules}
+                      />
+                    </Group>
+                  ))}
+                </Group>
+              </Box>
             ) : null;
 
             const sensorDefinitionsSection = hasSensors ? (
@@ -97,10 +113,17 @@ export const InstanceJobsRoot = () => {
 
             return (
               <Group direction="column" spacing={32}>
-                <SchedulerInfo schedulerOrError={scheduler} />
+                {daemonStatusSection}
                 {scheduleDefinitionsSection}
                 {sensorDefinitionsSection}
-                <UnloadableJobs jobStates={unloadableJobs} />
+                <UnloadableSchedules
+                  scheduleStates={unloadableJobs.filter(
+                    (state) => state.jobType === JobType.SCHEDULE,
+                  )}
+                />
+                <UnloadableSensors
+                  sensorStates={unloadableJobs.filter((state) => state.jobType === JobType.SENSOR)}
+                />
               </Group>
             );
           }}
@@ -110,8 +133,11 @@ export const InstanceJobsRoot = () => {
   );
 };
 
-const INSTANCE_JOBS_ROOT_QUERY = gql`
-  query InstanceJobsRootQuery {
+const INSTANCE_DAEMON_ROOT_QUERY = gql`
+  query InstanceDaemonRootQuery {
+    instance {
+      ...InstanceHealthFragment
+    }
     repositoriesOrError {
       __typename
       ... on RepositoryConnection {
@@ -145,6 +171,7 @@ const INSTANCE_JOBS_ROOT_QUERY = gql`
     }
   }
 
+  ${INSTANCE_HEALTH_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
   ${SCHEDULE_FRAGMENT}
   ${SCHEDULER_FRAGMENT}

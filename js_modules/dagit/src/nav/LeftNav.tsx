@@ -36,10 +36,10 @@ const INSTANCE_TABS = [
     label: 'Assets',
   },
   {
-    to: `/instance/scheduler`,
-    tab: `scheduler`,
-    icon: <Icon icon="time" iconSize={18} />,
-    label: 'Scheduler',
+    to: `/instance/daemons`,
+    tab: `jobs`,
+    icon: <Icon icon="social-media" iconSize={18} />,
+    label: 'Daemons',
   },
 ];
 
@@ -93,7 +93,7 @@ const LeftNavRepositorySection = () => {
         <div style={{display: 'flex', flex: 1, flexDirection: 'column', minHeight: 0}}>
           <ItemHeader>{'Pipelines & Solids:'}</ItemHeader>
           <RepositoryContentList {...match?.params} repo={activeRepo.repo} />
-          <ItemHeader>Schedules and Sensors:</ItemHeader>
+          <ItemHeader>Schedules & Sensors:</ItemHeader>
           <JobsList {...match?.params} repo={activeRepo.repo} />
         </div>
       ) : null}

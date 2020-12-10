@@ -69,13 +69,10 @@ export const SensorRoot: React.FC<{
             href: workspacePathFromAddress(repoAddress),
           },
           {
-            icon: 'send-to-graph',
             text: 'Sensors',
             href: workspacePathFromAddress(repoAddress, '/sensors'),
           },
         ];
-
-        console.log(instance);
 
         return (
           <ScrollContainer>

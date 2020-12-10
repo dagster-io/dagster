@@ -7,7 +7,7 @@ import {JOB_STATE_FRAGMENT} from 'src/JobUtils';
 import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
-import {UnloadableJobs} from 'src/jobs/UnloadableJobs';
+import {UnloadableSensors} from 'src/jobs/UnloadableJobs';
 import {SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {SensorsTable} from 'src/sensors/SensorsTable';
 import {SensorsRootQuery} from 'src/sensors/types/SensorsRootQuery';
@@ -44,11 +44,9 @@ export const SensorsRoot = (props: Props) => {
           const content = () => {
             if (sensorsOrError.__typename === 'PythonError') {
               return <PythonErrorInfo error={sensorsOrError} />;
-            }
-            if (unloadableJobStatesOrError.__typename === 'PythonError') {
+            } else if (unloadableJobStatesOrError.__typename === 'PythonError') {
               return <PythonErrorInfo error={unloadableJobStatesOrError} />;
-            }
-            if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
+            } else if (sensorsOrError.__typename === 'RepositoryNotFoundError') {
               return (
                 <NonIdealState
                   icon={IconNames.ERROR}
@@ -56,16 +54,14 @@ export const SensorsRoot = (props: Props) => {
                   description="Could not load this repository."
                 />
               );
+            } else {
+              return (
+                <Group direction="row" spacing={20}>
+                  <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
+                  <UnloadableSensors sensorStates={unloadableJobStatesOrError.results} />
+                </Group>
+              );
             }
-            return (
-              <Group direction="column" spacing={20}>
-                <SensorsTable repoAddress={repoAddress} sensors={sensorsOrError.results} />
-                <UnloadableJobs
-                  jobStates={unloadableJobStatesOrError.results}
-                  jobType={JobType.SENSOR}
-                />
-              </Group>
-            );
           };
 
           return <div>{content()}</div>;

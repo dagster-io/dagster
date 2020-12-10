@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Button, Colors, Icon, InputGroup} from '@blueprintjs/core';
+import {Button, ButtonGroup, Colors, Icon, InputGroup} from '@blueprintjs/core';
 import React from 'react';
 import {useHistory} from 'react-router';
 import {Link} from 'react-router-dom';
@@ -40,6 +40,7 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
     },
   });
 
+  const [type, setType] = React.useState<'schedules' | 'sensors'>('schedules');
   const repoSchedules =
     jobs.data?.schedulesOrError?.__typename === 'Schedules'
       ? jobs.data.schedulesOrError.results
@@ -48,24 +49,24 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
   const repoSensors =
     jobs.data?.sensorsOrError?.__typename === 'Sensors' ? jobs.data.sensorsOrError.results : [];
 
-  const items = [
-    ...repoSchedules
-      .filter(({name}) => !q || iincludes(name, q))
-      .map(({name, scheduleState}) => ({
-        to: workspacePath(repoName, repoLocation, `/schedules/${name}`),
-        label: name,
-        jobType: 'schedule',
-        status: scheduleState.status,
-      })),
-    ...repoSensors
-      .filter(({name}) => !q || iincludes(name, q))
-      .map(({name, sensorState}) => ({
-        to: workspacePath(repoName, repoLocation, `/sensors/${name}`),
-        label: name,
-        jobType: 'sensor',
-        status: sensorState?.status,
-      })),
-  ];
+  const items =
+    type === 'schedules'
+      ? repoSchedules
+          .filter(({name}) => !q || iincludes(name, q))
+          .map(({name, scheduleState}) => ({
+            to: workspacePath(repoName, repoLocation, `/schedules/${name}`),
+            label: name,
+            jobType: 'schedule',
+            status: scheduleState.status,
+          }))
+      : repoSensors
+          .filter(({name}) => !q || iincludes(name, q))
+          .map(({name, sensorState}) => ({
+            to: workspacePath(repoName, repoLocation, `/sensors/${name}`),
+            label: name,
+            jobType: 'sensor',
+            status: sensorState?.status,
+          }));
 
   const onShiftFocus = (dir: 1 | -1) => {
     const idx = items.findIndex((p) => p.label === focused);
@@ -102,15 +103,15 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
       <Header>
         <ShortcutHandler
           onShortcut={() => inputRef.current?.focus()}
-          shortcutFilter={(e) => e.altKey && e.keyCode === 80}
-          shortcutLabel={`⌥P then Up / Down`}
+          shortcutFilter={(e) => e.altKey && e.keyCode === 83}
+          shortcutLabel={`⌥S then Up / Down`}
         >
           <InputGroup
             type="text"
             inputRef={(c) => (inputRef.current = c)}
             value={q}
             small
-            placeholder={`Search ...`}
+            placeholder={`Search ${type}...`}
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') {
                 onShiftFocus(1);
@@ -130,13 +131,35 @@ export const JobsList: React.FunctionComponent<JobsListProps> = ({repo, selector
           />
         </ShortcutHandler>
         <div style={{width: 4}} />
-        <Link to={workspacePath(repoName, repoLocation, '/jobs')}>
-          <Button small={true} icon={<Icon icon="diagram-tree" iconSize={13} />}>
-            View All
-          </Button>
-        </Link>
+        <ButtonGroup>
+          <Button
+            small={true}
+            active={type === 'schedules'}
+            intent={type === 'schedules' ? 'primary' : 'none'}
+            icon={<Icon icon="time" iconSize={13} />}
+            onClick={() => setType('schedules')}
+          />
+          <Button
+            small={true}
+            active={type === 'sensors'}
+            intent={type === 'sensors' ? 'primary' : 'none'}
+            icon={<Icon icon="automatic-updates" iconSize={13} />}
+            onClick={() => setType('sensors')}
+          />
+        </ButtonGroup>
       </Header>
       <Items>
+        <Box
+          border={{width: 1, side: 'bottom', color: Colors.DARK_GRAY4}}
+          padding={12}
+          margin={{top: 0, bottom: 12, horizontal: 12}}
+        >
+          {items.length ? (
+            <Item to={workspacePath(repoName, repoLocation, `/${type}`)}>All {type}</Item>
+          ) : (
+            <div>No {type} found</div>
+          )}
+        </Box>
         {items.map((p) => {
           const isFocused = p.label === focused;
           const isSelected = p.label === selector;

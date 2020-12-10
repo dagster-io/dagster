@@ -16,52 +16,20 @@ import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from 'src/sensors/Sen
 import {StopSensor} from 'src/sensors/types/StopSensor';
 import {JobStateFragment} from 'src/types/JobStateFragment';
 import {JobType, JobStatus} from 'src/types/globalTypes';
-import {Box} from 'src/ui/Box';
 import {ButtonLink} from 'src/ui/ButtonLink';
 import {Group} from 'src/ui/Group';
 import {Table} from 'src/ui/Table';
-import {Heading} from 'src/ui/Text';
+import {Subheading} from 'src/ui/Text';
 
-export const UnloadableJobs: React.FunctionComponent<{
-  jobStates: JobStateFragment[];
-  jobType?: JobType;
-}> = ({jobStates, jobType}) => {
-  if (!jobStates.length) {
-    return null;
-  }
-  const unloadableSchedules = jobStates.filter((state) => state.jobType === JobType.SCHEDULE);
-  const unloadableSensors = jobStates.filter((state) => state.jobType === JobType.SENSOR);
-  if (jobType === JobType.SENSOR) {
-    return unloadableSensors.length ? <UnloadableSensors sensorStates={unloadableSensors} /> : null;
-  }
-  if (jobType === JobType.SCHEDULE) {
-    return unloadableSchedules.length ? (
-      <UnloadableSchedules scheduleStates={unloadableSchedules} />
-    ) : null;
-  }
-  return (
-    <Group direction="column" spacing={8}>
-      <Box
-        flex={{justifyContent: 'space-between', alignItems: 'flex-end'}}
-        padding={{bottom: 12}}
-        border={{side: 'bottom', width: 1, color: Colors.LIGHT_GRAY3}}
-      >
-        <Heading>Unloadable</Heading>
-      </Box>
-      {unloadableSchedules.length ? (
-        <UnloadableSchedules scheduleStates={unloadableSchedules} />
-      ) : null}
-      {unloadableSensors.length ? <UnloadableSensors sensorStates={unloadableSensors} /> : null}
-    </Group>
-  );
-};
-
-const UnloadableSensors: React.FunctionComponent<{
+export const UnloadableSensors: React.FunctionComponent<{
   sensorStates: JobStateFragment[];
 }> = ({sensorStates}) => {
+  if (!sensorStates.length) {
+    return null;
+  }
   return (
     <>
-      <h3>Unloadable sensors:</h3>
+      <Subheading>Unloadable sensors:</Subheading>
       <UnloadableSensorInfo />
 
       <Table striped style={{width: '100%'}}>
@@ -83,12 +51,15 @@ const UnloadableSensors: React.FunctionComponent<{
   );
 };
 
-const UnloadableSchedules: React.FunctionComponent<{
+export const UnloadableSchedules: React.FunctionComponent<{
   scheduleStates: JobStateFragment[];
 }> = ({scheduleStates}) => {
+  if (!scheduleStates.length) {
+    return null;
+  }
   return (
     <>
-      <h3>Unloadable schedules:</h3>
+      <Subheading>Unloadable schedules:</Subheading>
       <UnloadableScheduleInfo />
 
       <Table striped style={{width: '100%'}}>
@@ -116,7 +87,7 @@ const UnloadableSensorInfo = () => {
   const [showMore, setShowMore] = React.useState(false);
 
   return (
-    <Callout style={{marginBottom: 20}} intent={Intent.WARNING}>
+    <Callout style={{marginBottom: 20, marginTop: 20}} intent={Intent.WARNING}>
       <div style={{display: 'flex', justifyContent: 'space-between'}}>
         <h4 style={{margin: 0}}>
           Note: You can turn off any of the following sensors, but you cannot turn them back on.{' '}
@@ -146,7 +117,7 @@ const UnloadableScheduleInfo = () => {
   const [showMore, setShowMore] = React.useState(false);
 
   return (
-    <Callout style={{marginBottom: 20}} intent={Intent.WARNING}>
+    <Callout style={{marginBottom: 20, marginTop: 20}} intent={Intent.WARNING}>
       <div style={{display: 'flex', justifyContent: 'space-between'}}>
         <h4 style={{margin: 0}}>
           Note: You can turn off any of the following schedules, but you cannot turn them back on.{' '}
