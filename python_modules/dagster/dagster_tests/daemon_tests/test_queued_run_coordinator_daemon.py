@@ -1,13 +1,10 @@
 # pylint: disable=redefined-outer-name
 
 import pytest
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.test_utils import create_run_for_test, instance_for_test
-from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import (
-    IN_PROGRESS_STATUSES,
-    QueuedRunCoordinatorDaemon,
-)
+from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
@@ -75,7 +72,7 @@ def test_get_queued_runs_max_runs(instance, num_in_progress_runs):
     in_progress_run_ids = ["in_progress-run-{}".format(i) for i in range(num_in_progress_runs)]
     for i, run_id in enumerate(in_progress_run_ids):
         # get a selection of all in progress statuses
-        status = IN_PROGRESS_STATUSES[i % len(IN_PROGRESS_STATUSES)]
+        status = IN_PROGRESS_RUN_STATUSES[i % len(IN_PROGRESS_RUN_STATUSES)]
         create_run(
             instance, run_id=run_id, status=status,
         )

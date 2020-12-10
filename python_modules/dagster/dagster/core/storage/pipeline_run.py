@@ -28,6 +28,23 @@ class PipelineRunStatus(Enum):
     FAILURE = "FAILURE"
 
 
+# These statuses that indicate a run may be using compute resources
+IN_PROGRESS_RUN_STATUSES = [
+    PipelineRunStatus.STARTING,
+    PipelineRunStatus.STARTED,
+]
+
+# This serves as an explicit list of run statuses that indicate that the run is not using compute
+# resources. This and the enum above should cover all run statuses.
+NON_IN_PROGRESS_RUN_STATUSES = [
+    PipelineRunStatus.QUEUED,
+    PipelineRunStatus.NOT_STARTED,
+    PipelineRunStatus.SUCCESS,
+    PipelineRunStatus.FAILURE,
+    PipelineRunStatus.MANAGED,
+]
+
+
 @whitelist_for_serdes
 class PipelineRunStatsSnapshot(
     namedtuple(

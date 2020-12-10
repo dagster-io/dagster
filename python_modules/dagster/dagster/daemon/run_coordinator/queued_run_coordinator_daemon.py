@@ -3,17 +3,16 @@ import time
 
 from dagster import DagsterEvent, DagsterEventType, check
 from dagster.core.events.log import DagsterEventRecord
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import (
+    IN_PROGRESS_RUN_STATUSES,
+    PipelineRunStatus,
+    PipelineRunsFilter,
+)
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.daemon.daemon import DagsterDaemon
 from dagster.daemon.types import DaemonType
 from dagster.utils.backcompat import experimental
 from dagster.utils.external import external_pipeline_from_run
-
-IN_PROGRESS_STATUSES = [
-    PipelineRunStatus.NOT_STARTED,
-    PipelineRunStatus.STARTED,
-]
 
 
 class QueuedRunCoordinatorDaemon(DagsterDaemon):
@@ -83,7 +82,7 @@ class QueuedRunCoordinatorDaemon(DagsterDaemon):
 
     def _count_in_progress_runs(self):
         return self._instance.get_runs_count(
-            filters=PipelineRunsFilter(statuses=IN_PROGRESS_STATUSES)
+            filters=PipelineRunsFilter(statuses=IN_PROGRESS_RUN_STATUSES)
         )
 
     def _priority_sort(self, runs):
