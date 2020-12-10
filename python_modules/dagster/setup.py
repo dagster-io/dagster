@@ -62,7 +62,7 @@ if __name__ == "__main__":
             'pathlib2>=2.3.4; python_version<"3"',
             # cli
             "click>=5.0",
-            "coloredlogs>=6.1",
+            "coloredlogs>=6.1, <=14.0",
             "PyYAML",
             # core (not explicitly expressed atm)
             "alembic>=1.2.1",
