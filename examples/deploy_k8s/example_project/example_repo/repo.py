@@ -36,9 +36,16 @@ def count_letters(_context, word):
     ],
     preset_defs=[
         PresetDefinition.from_files(
-            "example",
+            "celery_k8s",
             config_files=[
                 file_relative_path(__file__, os.path.join("..", "run_config", "celery_k8s.yaml")),
+                file_relative_path(__file__, os.path.join("..", "run_config", "pipeline.yaml")),
+            ],
+            mode="default",
+        ),
+        PresetDefinition.from_files(
+            "default",
+            config_files=[
                 file_relative_path(__file__, os.path.join("..", "run_config", "pipeline.yaml")),
             ],
             mode="default",
