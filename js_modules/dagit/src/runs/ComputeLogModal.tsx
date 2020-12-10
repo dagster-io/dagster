@@ -72,12 +72,7 @@ interface ComputeLogModalProps {
   onRequestClose: () => void;
 }
 
-export const ComputeLogModal = ({
-  runId,
-  onRequestClose,
-  stepKey,
-  runState,
-}: ComputeLogModalProps) => {
+const ComputeLogModal = ({runId, onRequestClose, stepKey, runState}: ComputeLogModalProps) => {
   return (
     <ComputeLogsProvider runId={runId} stepKey={stepKey} maxBytes={MAX_STREAMING_LOG_BYTES}>
       {({isLoading, stdout, stderr, maxBytes}) => {
@@ -120,7 +115,7 @@ interface IComputeLogsProviderState {
   isLoading: boolean;
 }
 
-export class ComputeLogsProvider extends React.Component<
+class ComputeLogsProvider extends React.Component<
   IComputeLogsProviderProps,
   IComputeLogsProviderState
 > {

@@ -150,7 +150,7 @@ const AssetViewWithData: React.FunctionComponent<{asset: AssetQuery_assetOrError
   );
 };
 
-export const ASSET_QUERY = gql`
+const ASSET_QUERY = gql`
   query AssetQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {

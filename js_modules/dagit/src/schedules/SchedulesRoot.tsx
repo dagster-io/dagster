@@ -105,7 +105,7 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
   );
 };
 
-export interface SchedulesTableProps {
+interface SchedulesTableProps {
   repository: RepositorySchedulesFragment;
 }
 

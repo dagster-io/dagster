@@ -13,7 +13,7 @@ export type IRunStatus =
   | 'MANAGED'
   | 'STARTING';
 
-export const RUN_STATUS_COLORS = {
+const RUN_STATUS_COLORS = {
   QUEUED: Colors.BLUE1,
   NOT_STARTED: Colors.GRAY1,
   STARTING: Colors.GRAY3,
@@ -23,7 +23,7 @@ export const RUN_STATUS_COLORS = {
   FAILURE: Colors.RED3,
 };
 
-export const RUN_STATUS_HOVER_COLORS = {
+const RUN_STATUS_HOVER_COLORS = {
   QUEUED: Colors.BLUE3,
   NOT_STARTED: Colors.GRAY3,
   STARTING: Colors.GRAY5,

@@ -1,7 +1,7 @@
 import {Button, Classes, Dialog, Intent} from '@blueprintjs/core';
 import * as React from 'react';
 
-export interface ConfirmationOptions {
+interface ConfirmationOptions {
   catchOnCancel?: boolean;
   title?: string;
   description?: JSX.Element | string;
@@ -13,7 +13,7 @@ interface ConfirmationDialogProps extends ConfirmationOptions {
   onClose: () => void;
 }
 
-export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
+const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   open,
   title,
   description,

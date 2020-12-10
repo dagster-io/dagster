@@ -145,7 +145,7 @@ interface ITagEditorLinkProps {
   children: React.ReactNode;
 }
 
-export const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
+const TagEditorLink = ({onRequestOpen, children}: ITagEditorLinkProps) => (
   <ShortcutHandler
     shortcutLabel={'⌥T'}
     shortcutFilter={(e) => e.keyCode === 84 && e.altKey}

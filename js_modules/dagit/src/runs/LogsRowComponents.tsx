@@ -141,7 +141,7 @@ export const EventTypeColumn: React.FC = (props) => {
   );
 };
 
-export const EventTypeColumnContainer = styled.div`
+const EventTypeColumnContainer = styled.div`
   flex-shrink: 0;
   color: ${Colors.GRAY3};
 `;

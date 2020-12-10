@@ -9,7 +9,7 @@ import {SolidColumn} from 'src/runs/LogsRowComponents';
 import {Code} from 'src/ui/Text';
 import {FontFamily} from 'src/ui/styles';
 
-export type SolidLinkInfo = {
+type SolidLinkInfo = {
   solid: {name: string};
   definition: {name: string};
 };
@@ -36,7 +36,7 @@ export const TypeWrapper = styled.div`
   margin-bottom: 10px;
 `;
 
-export const SolidLink = (props: SolidLinkInfo) => (
+const SolidLink = (props: SolidLinkInfo) => (
   <Link to={`./${props.solid.name}`}>
     <Code>{titleOfIO(props)}</Code>
   </Link>
@@ -123,23 +123,16 @@ export const ResourceContainer = styled.div`
   }
 `;
 
-export const DependencyLocalIOName = styled.div`
-  font-family: ${FontFamily.monospace};
-  font-size: smaller;
-  font-weight: 500;
-  color: ${Colors.BLACK};
-`;
-
 export const DependencyTable = styled.table`
   width: 100%;
 `;
 
-export const DependencyHeaderCell = styled.td`
+const DependencyHeaderCell = styled.td`
   font-size: 0.7rem;
   color: ${Colors.GRAY3};
 `;
 
-export const InvocationContainer = styled.div`
+const InvocationContainer = styled.div`
   margin: 0 -10px;
   padding: 10px;
   pointer: default;

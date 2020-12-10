@@ -213,7 +213,7 @@ export class LogsProvider extends React.Component<
   }
 }
 
-export const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
+const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   subscription PipelineRunLogsSubscription($runId: ID!, $after: Cursor) {
     pipelineRunLogs(runId: $runId, after: $after) {
       __typename
@@ -235,7 +235,7 @@ export const PIPELINE_RUN_LOGS_SUBSCRIPTION = gql`
   ${RunFragments.RunPipelineRunEventFragment}
 `;
 
-export const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
+const PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT = gql`
   fragment PipelineRunLogsSubscriptionStatusFragment on PipelineRun {
     id
     runId

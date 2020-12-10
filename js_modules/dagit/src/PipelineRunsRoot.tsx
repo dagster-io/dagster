@@ -124,7 +124,7 @@ const Filters = styled.div`
   margin-bottom: 14px;
 `;
 
-export const PIPELINE_RUNS_ROOT_QUERY = gql`
+const PIPELINE_RUNS_ROOT_QUERY = gql`
   query PipelineRunsRootQuery($limit: Int, $cursor: String, $filter: PipelineRunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on PipelineRuns {

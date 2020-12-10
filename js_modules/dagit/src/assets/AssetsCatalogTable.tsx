@@ -260,7 +260,7 @@ const Wrapper = styled.div`
   overflow: auto;
 `;
 
-export const ASSETS_TABLE_QUERY = gql`
+const ASSETS_TABLE_QUERY = gql`
   query AssetsTableQuery($prefixPath: [String!]) {
     assetsOrError(prefixPath: $prefixPath) {
       __typename

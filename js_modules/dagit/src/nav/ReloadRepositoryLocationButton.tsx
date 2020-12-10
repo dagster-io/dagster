@@ -9,8 +9,8 @@ import {
   ReloadRepositoryLocationMutationVariables,
 } from 'src/nav/types/ReloadRepositoryLocationMutation';
 
-export type ReloadResult = {type: 'success'} | {type: 'error'; message: string};
-export type OnReload = (location: string, result: ReloadResult) => void;
+type ReloadResult = {type: 'success'} | {type: 'error'; message: string};
+type OnReload = (location: string, result: ReloadResult) => void;
 
 export const useRepositoryLocationReload = (location: string, onReload: OnReload = () => {}) => {
   const apollo = useApolloClient();

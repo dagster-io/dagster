@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 
 import {TICK_TAG_FRAGMENT} from 'src/JobTick';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
-import {REPOSITORY_INFO_FRAGMENT, REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
+import {REPOSITORY_ORIGIN_FRAGMENT} from 'src/RepositoryInformation';
 
 export const JOB_STATE_FRAGMENT = gql`
   fragment JobStateFragment on JobState {
@@ -58,18 +58,4 @@ export const SENSOR_FRAGMENT = gql`
     }
   }
   ${JOB_STATE_FRAGMENT}
-`;
-
-export const REPOSITORY_SENSORS_FRAGMENT = gql`
-  fragment RepositorySensorsFragment on Repository {
-    name
-    id
-    sensors {
-      id
-      ...SensorFragment
-    }
-    ...RepositoryInfoFragment
-  }
-  ${REPOSITORY_INFO_FRAGMENT}
-  ${SENSOR_FRAGMENT}
 `;

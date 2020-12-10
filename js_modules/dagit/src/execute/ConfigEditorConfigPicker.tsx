@@ -202,7 +202,7 @@ interface ConfigEditorPartitionPickerProps {
   repoAddress: RepoAddress;
 }
 
-export const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = React.memo(
+const ConfigEditorPartitionPicker: React.FC<ConfigEditorPartitionPickerProps> = React.memo(
   (props) => {
     const {partitionSetName, value, onSelect, repoAddress} = props;
     const repositorySelector = repoAddressToSelector(repoAddress);
@@ -313,7 +313,7 @@ interface ConfigEditorConfigGeneratorPickerProps {
   onSelectPartitionSet: (partitionSet: PartitionSet, pipeline?: Pipeline) => void;
 }
 
-export const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorConfigGeneratorPickerProps> = React.memo(
+const ConfigEditorConfigGeneratorPicker: React.FunctionComponent<ConfigEditorConfigGeneratorPickerProps> = React.memo(
   (props) => {
     const {pipeline, presets, partitionSets, onSelectPreset, onSelectPartitionSet, value} = props;
 

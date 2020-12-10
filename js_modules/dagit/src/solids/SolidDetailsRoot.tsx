@@ -55,7 +55,7 @@ export const UsedSolidDetails: React.FC<UsedSolidDetailsProps> = (props) => {
   );
 };
 
-export const USED_SOLID_DETAILS_QUERY = gql`
+const USED_SOLID_DETAILS_QUERY = gql`
   query UsedSolidDetailsQuery($name: String!, $repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {

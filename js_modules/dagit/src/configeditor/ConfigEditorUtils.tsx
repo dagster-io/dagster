@@ -65,7 +65,7 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
   }
 `;
 
-export type StackEntry =
+type StackEntry =
   | {
       __typename: 'EvaluationStackPathEntry';
       fieldName: string;

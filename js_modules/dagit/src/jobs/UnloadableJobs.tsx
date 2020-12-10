@@ -57,7 +57,7 @@ export const UnloadableJobs: React.FunctionComponent<{
   );
 };
 
-export const UnloadableSensors: React.FunctionComponent<{
+const UnloadableSensors: React.FunctionComponent<{
   sensorStates: JobStateFragment[];
 }> = ({sensorStates}) => {
   return (
@@ -85,7 +85,7 @@ export const UnloadableSensors: React.FunctionComponent<{
   );
 };
 
-export const UnloadableSchedules: React.FunctionComponent<{
+const UnloadableSchedules: React.FunctionComponent<{
   scheduleStates: JobStateFragment[];
 }> = ({scheduleStates}) => {
   return (
@@ -113,7 +113,7 @@ export const UnloadableSchedules: React.FunctionComponent<{
   );
 };
 
-export const UnloadableSensorInfo = () => {
+const UnloadableSensorInfo = () => {
   const [showMore, setShowMore] = React.useState(false);
 
   return (
@@ -143,7 +143,7 @@ export const UnloadableSensorInfo = () => {
   );
 };
 
-export const UnloadableScheduleInfo = () => {
+const UnloadableScheduleInfo = () => {
   const [showMore, setShowMore] = React.useState(false);
 
   return (
@@ -174,7 +174,7 @@ export const UnloadableScheduleInfo = () => {
   );
 };
 
-export const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
+const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) => {
   const {id, name, status, repositoryOrigin, runs, ticks} = sensorState;
 
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<StopSensor>(STOP_SENSOR_MUTATION, {
@@ -261,7 +261,7 @@ export const SensorStateRow = ({sensorState}: {sensorState: JobStateFragment}) =
   );
 };
 
-export const ScheduleStateRow: React.FunctionComponent<{
+const ScheduleStateRow: React.FunctionComponent<{
   scheduleState: JobStateFragment;
 }> = ({scheduleState}) => {
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(

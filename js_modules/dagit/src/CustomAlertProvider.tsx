@@ -15,7 +15,7 @@ interface ICustomAlert {
 
 let CurrentAlert: ICustomAlert | null = null;
 
-export const setCustomAlert = (alert: ICustomAlert | null) => {
+const setCustomAlert = (alert: ICustomAlert | null) => {
   CurrentAlert = alert;
   document.dispatchEvent(new CustomEvent(CURRENT_ALERT_CHANGED));
 };

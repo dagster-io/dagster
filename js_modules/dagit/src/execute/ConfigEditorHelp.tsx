@@ -1,4 +1,3 @@
-import {gql} from '@apollo/client';
 import {Colors} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -27,13 +26,6 @@ export const ConfigEditorHelp: React.FunctionComponent<ConfigEditorHelpProps> = 
   },
   (prev, next) => isHelpContextEqual(prev.context, next.context),
 );
-
-export const ConfigEditorHelpConfigTypeFragment = gql`
-  fragment ConfigEditorHelpConfigTypeFragment on ConfigType {
-    ...ConfigTypeSchemaFragment
-  }
-  ${ConfigTypeSchema.fragments.ConfigTypeSchemaFragment}
-`;
 
 const AutocompletionsNote = styled.div`
   font-size: 0.75rem;

@@ -338,7 +338,7 @@ const OverviewScheduleFragment = gql`
   }
 `;
 
-export const PIPELINE_OVERVIEW_QUERY = gql`
+const PIPELINE_OVERVIEW_QUERY = gql`
   query PipelineOverviewQuery($pipelineSelector: PipelineSelector!, $limit: Int!) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {

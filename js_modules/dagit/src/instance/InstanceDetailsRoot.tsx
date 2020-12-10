@@ -57,7 +57,7 @@ export const InstanceDetailsRoot: React.FunctionComponent = () => {
   );
 };
 
-export const INSTANCE_DETAILS_QUERY = gql`
+const INSTANCE_DETAILS_QUERY = gql`
   query InstanceDetailsQuery {
     version
     instance {

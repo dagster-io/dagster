@@ -22,11 +22,6 @@ import {RunTableRunFragment} from 'src/runs/types/RunTableRunFragment';
 import {RunTimeFragment} from 'src/runs/types/RunTimeFragment';
 import {ExecutionParams} from 'src/types/globalTypes';
 
-export function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
-  const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
-  return stepsTag ? stepsTag.value : 'Full Pipeline';
-}
-
 export function titleForRun(run: {runId: string}) {
   return run.runId.split('-').shift();
 }
@@ -322,7 +317,7 @@ export const RunElapsed: React.FunctionComponent<RunTimeProps> = ({run}) => {
   return <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />;
 };
 
-export class TimeElapsed extends React.Component<{
+class TimeElapsed extends React.Component<{
   startUnix: number | null;
   endUnix: number | null;
 }> {

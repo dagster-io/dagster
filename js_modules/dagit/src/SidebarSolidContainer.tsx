@@ -71,7 +71,7 @@ export const SidebarSolidContainer: React.FunctionComponent<SidebarSolidContaine
   );
 };
 
-export const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
+const SIDEBAR_TABBED_CONTAINER_SOLID_QUERY = gql`
   query SidebarTabbedContainerSolidQuery($selector: PipelineSelector!, $handleID: String!) {
     pipelineOrError(params: $selector) {
       __typename

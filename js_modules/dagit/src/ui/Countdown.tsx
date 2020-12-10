@@ -53,7 +53,7 @@ export const useCountdown = (config: Config) => {
   return remainingTime;
 };
 
-export interface Props extends Config {
+interface Props extends Config {
   message: (timeRemaining: number) => React.ReactNode;
 }
 

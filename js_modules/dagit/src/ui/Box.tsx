@@ -3,7 +3,7 @@ import styled, {css} from 'styled-components';
 import {assertUnreachable} from 'src/Util';
 import {BorderSetting, DirectionalSpacing, FlexProperties} from 'src/ui/types';
 
-export interface Props {
+interface Props {
   background?: string | null;
   border?: BorderSetting | null;
   flex?: FlexProperties | null;

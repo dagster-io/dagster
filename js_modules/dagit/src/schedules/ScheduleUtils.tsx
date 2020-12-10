@@ -8,7 +8,7 @@ import {SCHEDULER_FRAGMENT} from 'src/schedules/SchedulerInfo';
 import {SchedulerFragment} from 'src/schedules/types/SchedulerFragment';
 import {JOB_STATE_FRAGMENT} from 'src/sensors/SensorFragment';
 
-export const REPOSITORY_SCHEDULES_FRAGMENT = gql`
+const REPOSITORY_SCHEDULES_FRAGMENT = gql`
   fragment RepositorySchedulesFragment on Repository {
     name
     id

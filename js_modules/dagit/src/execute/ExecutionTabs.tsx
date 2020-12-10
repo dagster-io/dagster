@@ -127,7 +127,7 @@ export const ExecutionTabs = (props: ExecutionTabsProps) => {
   );
 };
 
-export const ExecutionTabsContainer = styled.div`
+const ExecutionTabsContainer = styled.div`
   padding-left: 10px;
   padding-top: 10px;
   display; flex;

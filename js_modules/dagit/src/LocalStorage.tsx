@@ -8,19 +8,9 @@ export interface IStorageData {
   current: string;
 }
 
-export enum ExecutionType {
+enum ExecutionType {
   START = 'start',
   LAUNCH = 'launch',
-}
-
-export interface IExecutionSessionPlan {
-  steps: Array<{
-    name: string;
-    kind: string;
-    solid: {
-      name: string;
-    };
-  }>;
 }
 
 export interface PipelineRunTag {
@@ -107,7 +97,7 @@ export function applyCreateSession(
 
 // StorageProvider component that vends `IStorageData` via a render prop
 
-export type StorageHook = [IStorageData, React.Dispatch<React.SetStateAction<IStorageData>>];
+type StorageHook = [IStorageData, React.Dispatch<React.SetStateAction<IStorageData>>];
 
 let _data: IStorageData | null = null;
 let _dataNamespace = '';

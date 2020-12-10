@@ -211,15 +211,17 @@ export const StepSelector = ({
   );
 };
 
-export const NavSectionHeader = styled.div`
+const NavSectionHeader = styled.div`
   border-bottom: 1px solid ${Colors.GRAY5};
   margin-bottom: 10px;
   padding-bottom: 5px;
   display: flex;
 `;
-export const NavSection = styled.div`
+
+const NavSection = styled.div`
   margin-bottom: 30px;
 `;
+
 const Item = styled.div`
   list-style-type: none;
   padding: 5px 2px;

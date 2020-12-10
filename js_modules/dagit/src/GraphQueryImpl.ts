@@ -1,4 +1,4 @@
-export const MAX_RENDERED_FOR_EMPTY_QUERY = 100;
+const MAX_RENDERED_FOR_EMPTY_QUERY = 100;
 
 export interface GraphQueryItem {
   name: string;

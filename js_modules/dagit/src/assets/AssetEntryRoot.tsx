@@ -86,7 +86,7 @@ const Wrapper = styled.div`
   overflow: auto;
 `;
 
-export const ASSET_ENTRY_ROOT_QUERY = gql`
+const ASSET_ENTRY_ROOT_QUERY = gql`
   query AssetEntryRootQuery($assetKey: AssetKeyInput!) {
     assetOrError(assetKey: $assetKey) {
       __typename

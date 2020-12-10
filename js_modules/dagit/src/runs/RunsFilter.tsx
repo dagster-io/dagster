@@ -15,7 +15,7 @@ import {useRepository, useRepositorySelector} from 'src/workspace/WorkspaceConte
 
 export type RunFilterTokenType = 'id' | 'status' | 'pipeline' | 'snapshotId' | 'tag';
 
-export const RUN_PROVIDERS_EMPTY = [
+const RUN_PROVIDERS_EMPTY = [
   {
     token: 'id',
     values: () => [],
@@ -195,7 +195,7 @@ export const RunsFilter: React.FunctionComponent<RunsFilterProps> = ({
   );
 };
 
-export const RUNS_SEARCH_SPACE_QUERY = gql`
+const RUNS_SEARCH_SPACE_QUERY = gql`
   query RunsSearchSpaceQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {

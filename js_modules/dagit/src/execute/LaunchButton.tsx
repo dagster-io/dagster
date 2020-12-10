@@ -25,7 +25,7 @@ export interface LaunchButtonConfiguration {
   tooltip?: string | JSX.Element;
 }
 
-export enum LaunchButtonStatus {
+enum LaunchButtonStatus {
   Ready = 'ready',
   Starting = 'starting',
   Disabled = 'disabled',

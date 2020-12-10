@@ -14,18 +14,14 @@ export enum IStepState {
   UNKNOWN = 'unknown',
 }
 
-export const BOX_EXIT_STATES = [
-  IStepState.RETRY_REQUESTED,
-  IStepState.SUCCEEDED,
-  IStepState.FAILED,
-];
+const BOX_EXIT_STATES = [IStepState.RETRY_REQUESTED, IStepState.SUCCEEDED, IStepState.FAILED];
 
-export enum IExpectationResultStatus {
+enum IExpectationResultStatus {
   PASSED = 'Passed',
   FAILED = 'Failed',
 }
 
-export enum IStepDisplayIconType {
+enum IStepDisplayIconType {
   SUCCESS = 'dot-success',
   FAILURE = 'dot-failure',
   PENDING = 'dot-pending',
@@ -34,7 +30,7 @@ export enum IStepDisplayIconType {
   NONE = 'none',
 }
 
-export enum IStepDisplayActionType {
+enum IStepDisplayActionType {
   OPEN_IN_TAB = 'open-in-tab',
   COPY = 'copy',
   SHOW_IN_MODAL = 'show-in-modal',
@@ -48,19 +44,19 @@ interface IDisplayEventItem {
   actionValue: string; // value passed to the click action
 }
 
-export interface IStepDisplayEvent {
+interface IStepDisplayEvent {
   text: string;
   icon: IStepDisplayIconType;
   items: IDisplayEventItem[];
 }
 
-export interface IExpectationResult extends IStepDisplayEvent {
+interface IExpectationResult extends IStepDisplayEvent {
   status: IExpectationResultStatus;
 }
 
-export interface IMaterialization extends IStepDisplayEvent {}
+interface IMaterialization extends IStepDisplayEvent {}
 
-export interface IMarker {
+interface IMarker {
   key: string;
   start?: number;
   end?: number;
@@ -184,9 +180,7 @@ function itemsForMetadataEntries(
   return items;
 }
 
-export function extractMetadataFromLogs(
-  logs: RunMetadataProviderMessageFragment[],
-): IRunMetadataDict {
+function extractMetadataFromLogs(logs: RunMetadataProviderMessageFragment[]): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
     mostRecentLogAt: 0,

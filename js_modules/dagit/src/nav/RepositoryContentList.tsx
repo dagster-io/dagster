@@ -265,7 +265,7 @@ const SelectedItemTooltipStyle = JSON.stringify({
   fontWeight: 600,
 });
 
-export const CONTENT_LIST_SOLIDS_QUERY = gql`
+const CONTENT_LIST_SOLIDS_QUERY = gql`
   query ContentListSolidsQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       ... on Repository {

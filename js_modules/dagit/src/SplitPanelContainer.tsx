@@ -84,7 +84,7 @@ interface IDividerProps {
   onMove: (vw: number) => void;
 }
 
-export class PanelDivider extends React.Component<IDividerProps> {
+class PanelDivider extends React.Component<IDividerProps> {
   ref = React.createRef<any>();
 
   onMouseDown = (e: React.MouseEvent) => {

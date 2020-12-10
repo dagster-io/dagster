@@ -39,7 +39,7 @@ TypeWithTooltip.fragments = {
   `,
 };
 
-export const TypeName = styled.code`
+const TypeName = styled.code`
   background: #d6ecff;
   border: none;
   padding: 1px 4px;

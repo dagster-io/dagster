@@ -50,7 +50,7 @@ export const RunStats = ({runId}: {runId: string}) => {
   );
 };
 
-export const RUN_STATS_QUERY = gql`
+const RUN_STATS_QUERY = gql`
   query RunStatsQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       __typename
@@ -82,7 +82,7 @@ export const RUN_STATS_QUERY = gql`
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
-export const RunStatsDetailsContainer = styled.div`
+const RunStatsDetailsContainer = styled.div`
   min-width: 200px;
   padding: 20px;
   color: white;

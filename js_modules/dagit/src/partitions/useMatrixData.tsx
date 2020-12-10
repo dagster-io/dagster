@@ -12,7 +12,7 @@ import {StepEventStatus} from 'src/types/globalTypes';
 
 type SolidHandle = PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles;
 
-export type StatusSquareColor =
+type StatusSquareColor =
   | 'SUCCESS'
   | 'FAILURE'
   | 'FAILURE-SUCCESS'

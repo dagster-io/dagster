@@ -33,7 +33,7 @@ export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps>
   );
 };
 
-export const TYPE_LIST_CONTAINER_QUERY = gql`
+const TYPE_LIST_CONTAINER_QUERY = gql`
   query TypeListContainerQuery($pipelineSelector: PipelineSelector!) {
     pipelineOrError(params: $pipelineSelector) {
       __typename

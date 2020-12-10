@@ -26,7 +26,7 @@ export class SidebarSection extends React.Component<ISidebarSectionProps, ISideb
         true: true,
         false: false,
         null: this.props.collapsedByDefault === true ? false : true,
-      }[`${window.localStorage.getItem(this.storageKey)}`],
+      }[`${window.localStorage.getItem(this.storageKey)}`] as boolean,
     };
   }
 
@@ -53,7 +53,7 @@ export class SidebarSection extends React.Component<ISidebarSectionProps, ISideb
   }
 }
 
-export const DisclosureIcon = styled(Icon)`
+const DisclosureIcon = styled(Icon)`
   float: right;
   opacity: 0.5;
 `;
@@ -77,11 +77,6 @@ export const SectionSmallHeader = styled.h4`
   font-size: 14px;
   font-weight: 500;
   margin: 6px 0;
-`;
-
-export const SidebarDivider = styled.div`
-  height: 2px;
-  background: ${Colors.GRAY4};
 `;
 
 export const SidebarSubhead = styled.div`

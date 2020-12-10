@@ -252,7 +252,7 @@ function assemblePartitions(data: {
   return results;
 }
 
-export const PARTITION_SET_LOADER_RUN_FRAGMENT = gql`
+const PARTITION_SET_LOADER_RUN_FRAGMENT = gql`
   fragment PartitionSetLoaderRunFragment on PipelineRun {
     id
     ...PartitionGraphSetRunFragment

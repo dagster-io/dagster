@@ -167,7 +167,7 @@ export function getFeatureFlags(): FeatureFlag[] {
   return getJSONForKey(DAGIT_FLAGS_KEY) || [];
 }
 
-export function featureEnabled(flag: FeatureFlag): boolean {
+function featureEnabled(flag: FeatureFlag): boolean {
   return getFeatureFlags().includes(flag);
 }
 

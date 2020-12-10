@@ -407,7 +407,7 @@ export const PARTITION_RUN_MATRIX_RUN_FRAGMENT = gql`
   }
 `;
 
-export const PARTITION_RUN_MATRIX_PIPELINE_QUERY = gql`
+const PARTITION_RUN_MATRIX_PIPELINE_QUERY = gql`
   query PartitionRunMatrixPipelineQuery($pipelineSelector: PipelineSelector) {
     pipelineSnapshotOrError(activePipelineSelector: $pipelineSelector) {
       ... on PipelineSnapshot {

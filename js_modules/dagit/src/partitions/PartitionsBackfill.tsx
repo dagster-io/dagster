@@ -595,7 +595,7 @@ const LaunchBackfillButton: React.FC<{
   );
 };
 
-export const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
+const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
   query PartitionsBackfillSelectorQuery(
     $partitionSetName: String!
     $repositorySelector: RepositorySelector!
@@ -669,7 +669,7 @@ export const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
   ${PythonErrorInfo.fragments.PythonErrorFragment}
 `;
 
-export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
+const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
   mutation LaunchPartitionBackfill($backfillParams: PartitionBackfillParams!) {
     launchPartitionBackfill(backfillParams: $backfillParams) {
       __typename

@@ -13,7 +13,7 @@ export interface IPluginSidebarProps {
   definition: SidebarSolidDefinitionFragment;
 }
 
-export interface IPluginInterface {
+interface IPluginInterface {
   SidebarComponent: React.ComponentClass<IPluginSidebarProps> | React.SFC<IPluginSidebarProps>;
 }
 

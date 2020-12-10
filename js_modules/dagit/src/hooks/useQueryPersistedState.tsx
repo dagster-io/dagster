@@ -9,7 +9,7 @@ type QueryPersistedDataType =
   | (string | undefined | number)
   | null;
 
-export interface QuerySerializer<T extends QueryPersistedDataType> {
+interface QuerySerializer<T extends QueryPersistedDataType> {
   decode: (raw: {[key: string]: any}) => T;
   encode: (raw: T) => {[key: string]: any};
 }

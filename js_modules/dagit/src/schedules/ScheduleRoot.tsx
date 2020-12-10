@@ -133,7 +133,7 @@ const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
   return <PreviousRunsSection loading={loading} data={data?.pipelineRunsOrError} />;
 };
 
-export const SCHEDULE_ROOT_QUERY = gql`
+const SCHEDULE_ROOT_QUERY = gql`
   query ScheduleRootQuery($scheduleSelector: ScheduleSelector!) {
     scheduler {
       ...SchedulerFragment

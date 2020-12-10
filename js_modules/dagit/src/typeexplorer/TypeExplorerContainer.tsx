@@ -48,7 +48,7 @@ export const TypeExplorerContainer: React.FunctionComponent<ITypeExplorerContain
   );
 };
 
-export const TYPE_EXPLORER_CONTAINER_QUERY = gql`
+const TYPE_EXPLORER_CONTAINER_QUERY = gql`
   query TypeExplorerContainerQuery(
     $pipelineSelector: PipelineSelector!
     $dagsterTypeName: String!

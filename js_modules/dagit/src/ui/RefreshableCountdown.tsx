@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 import {Group} from 'src/ui/Group';
 
-export interface Props {
+interface Props {
   refreshing: boolean;
   seconds: number;
   onRefresh: () => void;

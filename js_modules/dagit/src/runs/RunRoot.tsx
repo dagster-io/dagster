@@ -99,7 +99,7 @@ const RunById: React.FC<{data: RunRootQuery | undefined; runId: string}> = (prop
   );
 };
 
-export const RUN_ROOT_QUERY = gql`
+const RUN_ROOT_QUERY = gql`
   query RunRootQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       __typename

@@ -271,7 +271,7 @@ const SelectedItemTooltipStyle = JSON.stringify({
   fontWeight: 600,
 });
 
-export const JOBS_LIST_QUERY = gql`
+const JOBS_LIST_QUERY = gql`
   query JobsListQuery($repositorySelector: RepositorySelector!) {
     schedulesOrError(repositorySelector: $repositorySelector) {
       ... on Schedules {

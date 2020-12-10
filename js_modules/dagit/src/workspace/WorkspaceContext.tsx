@@ -46,7 +46,7 @@ export const WorkspaceContext = React.createContext<WorkspaceState>(
   new Error('WorkspaceContext should never be uninitialized') as any,
 );
 
-export const ROOT_REPOSITORIES_QUERY = gql`
+const ROOT_REPOSITORIES_QUERY = gql`
   query RootRepositoriesQuery {
     repositoryLocationsOrError {
       __typename
@@ -88,7 +88,7 @@ export const ROOT_REPOSITORIES_QUERY = gql`
   ${REPOSITORY_INFO_FRAGMENT}
 `;
 
-export const REPOSITORY_LOCATIONS_QUERY = gql`
+const REPOSITORY_LOCATIONS_QUERY = gql`
   query RepositoryLocationsQuery {
     repositoryLocationsOrError {
       __typename
@@ -319,15 +319,5 @@ export const optionToRepoAddress = (option: DagsterRepoOption) => {
   return {
     name: option.repository.name,
     location: option.repository.location.name,
-  };
-};
-
-export const scheduleSelectorWithRepository = (
-  scheduleName: string,
-  repositorySelector?: RepositorySelector,
-) => {
-  return {
-    ...repositorySelector,
-    scheduleName,
   };
 };

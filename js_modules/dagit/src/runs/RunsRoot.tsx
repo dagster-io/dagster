@@ -197,7 +197,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
   );
 };
 
-export const RUNS_ROOT_QUERY = gql`
+const RUNS_ROOT_QUERY = gql`
   query RunsRootQuery($limit: Int, $cursor: String, $filter: PipelineRunsFilter!) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on PipelineRuns {

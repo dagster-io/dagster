@@ -30,4 +30,11 @@ const _asyncDagrePipelineLayout = (solids: ILayoutSolid[], parentSolid?: ILayout
 
 export const asyncDagrePipelineLayout = asyncMemoize(_asyncDagrePipelineLayout, _layoutCacheKey);
 
-export * from 'src/graph/layout';
+export {layoutSolid} from 'src/graph/layout';
+export type {
+  IFullPipelineLayout,
+  IFullSolidLayout,
+  ILayout,
+  ILayoutConnection,
+  IPoint,
+} from 'src/graph/layout';

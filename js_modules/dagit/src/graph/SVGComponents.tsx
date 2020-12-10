@@ -8,7 +8,7 @@ interface ISize {
   compressionPriority?: number;
 }
 
-export interface ISVGEllipseInRectProps extends React.SVGProps<SVGEllipseElement> {
+interface ISVGEllipseInRectProps extends React.SVGProps<SVGEllipseElement> {
   x?: number;
   y?: number;
   width: number;
@@ -26,7 +26,7 @@ export const SVGEllipseInRect = React.memo<ISVGEllipseInRectProps>((props) => {
   return <ellipse cx={(x || 0) + rx} cy={(y || 0) + ry} rx={rx} ry={ry} {...rest} />;
 });
 
-export interface ISVGMonospaceTextProps {
+interface ISVGMonospaceTextProps {
   width?: number;
   size: number;
   text: string;
@@ -106,7 +106,7 @@ export class SVGMonospaceText extends React.PureComponent<
   }
 }
 
-export interface ISVGFlowLayoutRectProps {
+interface ISVGFlowLayoutRectProps {
   x?: number;
   y?: number;
   width?: number;
