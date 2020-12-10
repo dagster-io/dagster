@@ -1,2 +1,2 @@
 pandas
-pyarrow
+pyarrow; python_version < "3.9"

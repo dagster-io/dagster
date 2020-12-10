@@ -1,3 +1,6 @@
+import sys
+import warnings
+
 from dagster import repository
 
 
@@ -20,12 +23,19 @@ def get_lakehouse_pipelines():
 
 
 def get_bay_bikes_pipelines():
-    from dagster_examples.bay_bikes.pipelines import (
-        daily_weather_pipeline,
-        generate_training_set_and_train_model,
-    )
+    if sys.version_info >= (3, 9):
+        return []
+    try:
+        import tensorflow as _
+        from dagster_examples.bay_bikes.pipelines import (
+            daily_weather_pipeline,
+            generate_training_set_and_train_model,
+        )
 
-    return [generate_training_set_and_train_model, daily_weather_pipeline]
+        return [generate_training_set_and_train_model, daily_weather_pipeline]
+    except ImportError:
+        warnings.warn("tensorflow not installed, skipping bay bikes pipeline")
+        return []
 
 
 @repository

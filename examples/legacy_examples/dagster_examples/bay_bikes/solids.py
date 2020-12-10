@@ -38,6 +38,8 @@ from dagster_examples.bay_bikes.types import (
     WeatherDataFrame,
 )
 from dagster_pandas import DataFrame as DagsterPandasDataFrame
+from keras.layers import LSTM, Dense
+from keras.models import Sequential
 from numpy import array, ndarray, transpose
 from pandas import (
     DataFrame,
@@ -477,9 +479,6 @@ def produce_training_set(
     required_resource_keys={"gcs_client"},
 )
 def train_lstm_model_and_upload_to_gcs(context, training_set: TrainingSet, bucket_name: str):
-    from keras.layers import LSTM, Dense
-    from keras.models import Sequential
-
     X, y = training_set
     breakpoint = context.solid_config["timeseries_train_test_breakpoint"]  # pylint: disable=W0622
     X_train, X_test = X[0:breakpoint], X[breakpoint:]

@@ -1,2 +1,2 @@
 # we need `pyarrow` for testing read/write parquet files.
-pyarrow
+pyarrow; python_version < '3.9'

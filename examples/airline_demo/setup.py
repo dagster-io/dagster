@@ -46,7 +46,7 @@ setup(
             "seaborn",
             "sqlalchemy-redshift>=0.7.2",
             "SQLAlchemy-Utils==0.33.8",
-            "tensorflow",
+            'tensorflow; python_version < "3.9"',
         ],
         "airflow": ["dagster_airflow", "docker-compose==1.23.2"],
     },
