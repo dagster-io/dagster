@@ -110,13 +110,16 @@ class DauphinStepKind(dauphin.Enum):
         name = "StepKind"
 
     COMPUTE = "COMPUTE"
+    UNRESOLVED = "UNRESOLVED"
 
     @property
     def description(self):
         # self ends up being the internal class "EnumMeta" in dauphin
         # so we can't do a dictionary lookup which is awesome
         if self == DauphinStepKind.COMPUTE:
-            return "This is the user-defined computation step"
+            return "This is a user-defined computation step"
+        if self == DauphinStepKind.UNRESOLVED:
+            return "This is a computation step that has not yet been resolved"
         else:
             return None
 

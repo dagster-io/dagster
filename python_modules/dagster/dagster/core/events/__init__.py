@@ -19,7 +19,7 @@ from dagster.core.execution.context.system import (
     SystemExecutionContext,
     SystemStepExecutionContext,
 )
-from dagster.core.execution.plan.handle import StepHandle
+from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.execution.plan.outputs import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
@@ -234,7 +234,9 @@ class DagsterEvent(
         event_type, pipeline_context, message=None, event_specific_data=None, step_handle=None
     ):
         check.inst_param(pipeline_context, "pipeline_context", SystemExecutionContext)
-        check.opt_inst_param(step_handle, "step_handle", StepHandle)
+        check.opt_inst_param(
+            step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
+        )
         pipeline_name = pipeline_context.pipeline_def.name
 
         event = DagsterEvent(
@@ -300,7 +302,9 @@ class DagsterEvent(
             cls,
             check.str_param(event_type_value, "event_type_value"),
             check.str_param(pipeline_name, "pipeline_name"),
-            check.opt_inst_param(step_handle, "step_handle", StepHandle),
+            check.opt_inst_param(
+                step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
+            ),
             check.opt_inst_param(solid_handle, "solid_handle", SolidHandle),
             check.opt_str_param(step_kind_value, "step_kind_value"),
             check.opt_dict_param(logging_tags, "logging_tags"),

@@ -67,8 +67,14 @@ def copy_required_intermediates_for_execution(pipeline_context, execution_plan):
 
     intermediate_storage = pipeline_context.intermediate_storage
     for step in execution_plan.get_all_steps_in_topo_order():
+        handles_to_copy = output_handles_to_copy_by_step.get(step.key, [])
+
+        # exit early to avoid trying to make a context from an UnresolvedExecutionStep
+        if not handles_to_copy:
+            continue
+
         step_context = pipeline_context.for_step(step)
-        for handle in output_handles_to_copy_by_step.get(step.key, []):
+        for handle in handles_to_copy:
             if intermediate_storage.has_intermediate(pipeline_context, handle):
                 continue
 

@@ -9,6 +9,7 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.events import DagsterEvent
+from dagster.core.execution.plan.inputs import StepInput, UnresolvedStepInput
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
@@ -283,7 +284,16 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
 
         resource_keys = resource_keys.union(step_input.source.required_resource_keys())
 
-        for source_handle in step_input.get_step_output_handle_dependencies():
+        if isinstance(step_input, StepInput):
+            source_handles = step_input.get_step_output_handle_dependencies()
+        elif isinstance(step_input, UnresolvedStepInput):
+            # Placeholder handles will allow lookup of the unresolved execution steps
+            # for what resources will be needed once the steps resolve
+            source_handles = step_input.get_step_output_handle_deps_with_placeholders()
+        else:
+            check.failed(f"Unexpected step input type {step_input}")
+
+        for source_handle in source_handles:
             source_manager_key = execution_plan.get_manager_key(source_handle)
             if source_manager_key:
                 resource_keys = resource_keys.union([source_manager_key])

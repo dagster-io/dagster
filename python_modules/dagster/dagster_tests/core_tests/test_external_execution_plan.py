@@ -285,7 +285,7 @@ def test_execute_step_wrong_step_key():
 
     assert exc_info.value.step_keys == ["nope.compute"]
 
-    assert str(exc_info.value) == "Execution plan does not contain step: nope.compute"
+    assert str(exc_info.value) == "Can not build subset plan from unknown step: nope.compute"
 
     with pytest.raises(DagsterExecutionStepNotFoundError) as exc_info:
         execute_plan(
@@ -297,7 +297,8 @@ def test_execute_step_wrong_step_key():
     assert exc_info.value.step_keys == ["nope.compute", "nuh_uh.compute"]
 
     assert (
-        str(exc_info.value) == "Execution plan does not contain steps: nope.compute, nuh_uh.compute"
+        str(exc_info.value)
+        == "Can not build subset plan from unknown steps: nope.compute, nuh_uh.compute"
     )
 
 

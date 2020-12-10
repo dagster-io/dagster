@@ -411,37 +411,30 @@ class SolidExecutionResult:
         Note that accessing this property will reconstruct the pipeline context (including, e.g.,
         resources) to retrieve materialized output values.
         """
-        from .api import create_execution_plan
-
-        if self.success and self.compute_step_events:
-            with self.reconstruct_context() as context:
-                execution_plan = create_execution_plan(
-                    pipeline=context.pipeline,
-                    run_config=context.run_config,
-                    mode=context.pipeline_run.mode,
-                    step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
-                )
-                results = {}
-                for compute_step_event in self.compute_step_events:
-                    if compute_step_event.is_successful_output:
-                        output = compute_step_event.step_output_data
-                        value = self._get_value(
-                            context.for_step(
-                                execution_plan.get_step_by_key(compute_step_event.step_key)
-                            ),
-                            output,
-                        )
-                        if output.mapping_key:
-                            if results.get(output.output_name) is None:
-                                results[output.output_name] = {output.mapping_key: value}
-                            else:
-                                results[output.output_name][output.mapping_key] = value
-                        else:
-                            results[output.output_name] = value
-
-                return results
-        else:
+        if not self.success or not self.compute_step_events:
             return None
+
+        results = {}
+        with self.reconstruct_context() as context:
+            for compute_step_event in self.compute_step_events:
+                if compute_step_event.is_successful_output:
+                    output = compute_step_event.step_output_data
+                    step = context.execution_plan.get_step_by_key(compute_step_event.step_key)
+                    value = self._get_value(context.for_step(step), output)
+                    check.invariant(
+                        not (output.mapping_key and step.get_mapping_key()),
+                        "Not set up to handle mapped outputs downstream of mapped steps",
+                    )
+                    mapping_key = output.mapping_key or step.get_mapping_key()
+                    if mapping_key:
+                        if results.get(output.output_name) is None:
+                            results[output.output_name] = {mapping_key: value}
+                        else:
+                            results[output.output_name][mapping_key] = value
+                    else:
+                        results[output.output_name] = value
+
+        return results
 
     def output_value(self, output_name=DEFAULT_OUTPUT):
         """Get a computed output value.
@@ -456,8 +449,6 @@ class SolidExecutionResult:
             Union[None, Any, Dict[str, Any]]: ``None`` if execution did not succeed, the output value
                 in the normal case, and a dict of mapping keys to values in the mapped case.
         """
-        from .api import create_execution_plan
-
         check.str_param(output_name, "output_name")
 
         if not self.solid.definition.has_output(output_name):
@@ -470,14 +461,10 @@ class SolidExecutionResult:
                 )
             )
 
-        if self.success:
-            with self.reconstruct_context() as context:
-                execution_plan = create_execution_plan(
-                    pipeline=context.pipeline,
-                    run_config=context.run_config,
-                    mode=context.pipeline_run.mode,
-                    step_keys_to_execute=context.pipeline_run.step_keys_to_execute,
-                )
+        if not self.success:
+            return None
+
+        with self.reconstruct_context() as context:
             found = False
             result = None
             for compute_step_event in self.compute_step_events:
@@ -487,17 +474,18 @@ class SolidExecutionResult:
                 ):
                     found = True
                     output = compute_step_event.step_output_data
-                    value = self._get_value(
-                        context.for_step(
-                            execution_plan.get_step_by_key(compute_step_event.step_key)
-                        ),
-                        output,
+                    step = context.execution_plan.get_step_by_key(compute_step_event.step_key)
+                    value = self._get_value(context.for_step(step), output)
+                    check.invariant(
+                        not (output.mapping_key and step.get_mapping_key()),
+                        "Not set up to handle mapped outputs downstream of mapped steps",
                     )
-                    if output.mapping_key:
+                    mapping_key = output.mapping_key or step.get_mapping_key()
+                    if mapping_key:
                         if result is None:
-                            result = {output.mapping_key: value}
+                            result = {mapping_key: value}
                         else:
-                            result[output.mapping_key] = value
+                            result[mapping_key] = value
                     else:
                         result = value
 
@@ -510,8 +498,6 @@ class SolidExecutionResult:
                     "execution result"
                 ).format(output_name=output_name, self=self)
             )
-        else:
-            return None
 
     def _get_value(self, context, step_output_data):
         step_output_handle = step_output_data.step_output_handle

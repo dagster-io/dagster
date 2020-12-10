@@ -1,4 +1,5 @@
 import time
+from collections import defaultdict
 
 from dagster import check
 from dagster.core.errors import (
@@ -35,11 +36,15 @@ class ActiveExecution:
         # All steps to be executed start out here in _pending
         self._pending = self._plan.get_executable_step_deps()
 
+        # track mapping keys from DynamicOutputs, step_key, output_name -> list of keys
+        self._successful_dynamic_outputs = defaultdict(lambda: defaultdict(list))
+
         # steps move in to these buckets as a result of _update calls
         self._executable = []
         self._pending_skip = []
         self._pending_retry = []
         self._pending_abandon = []
+        self._pending_resolve = []
         self._waiting_to_retry = {}
 
         # then are considered _in_flight when vended via get_steps_to_*
@@ -118,6 +123,16 @@ class ActiveExecution:
 
         successful_or_skipped_steps = self._success | self._skipped
         failed_or_abandoned_steps = self._failed | self._abandoned
+
+        # make a copy since we are mutating during iteration
+        pending_resolve_snapshot = list(self._pending_resolve)
+        for idx, key in enumerate(pending_resolve_snapshot):
+            new_step_deps = self._plan.resolve(key, self._successful_dynamic_outputs[key])
+            for step_key, deps in new_step_deps.items():
+                # does this work right with step_keys_to_execute?
+                self._pending[step_key] = deps
+
+            del self._pending_resolve[idx]
 
         for step_key, requirements in self._pending.items():
             # If any upstream deps failed - this is not executable
@@ -298,6 +313,8 @@ class ActiveExecution:
     def mark_success(self, step_key):
         self._success.add(step_key)
         self._mark_complete(step_key)
+        if step_key in self._successful_dynamic_outputs:
+            self._pending_resolve.append(step_key)
 
     def mark_skipped(self, step_key):
         self._skipped.add(step_key)
@@ -362,6 +379,10 @@ class ActiveExecution:
             )
         elif dagster_event.is_successful_output:
             self.mark_step_produced_output(dagster_event.event_specific_data.step_output_handle)
+            if dagster_event.step_output_data.step_output_handle.mapping_key:
+                self._successful_dynamic_outputs[dagster_event.step_key][
+                    dagster_event.step_output_data.step_output_handle.output_name
+                ].append(dagster_event.step_output_data.step_output_handle.mapping_key)
 
     def verify_complete(self, pipeline_context, step_key):
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure
