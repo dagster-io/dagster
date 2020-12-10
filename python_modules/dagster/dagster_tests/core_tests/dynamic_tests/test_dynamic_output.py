@@ -1,5 +1,5 @@
 import pytest
-from dagster import execute_solid, pipeline, solid
+from dagster import execute_solid, solid
 from dagster.core.definitions.events import Output
 from dagster.core.definitions.output import OutputDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -65,25 +65,6 @@ def test_invalid_mapping_keys():
 
     with pytest.raises(DagsterInvalidDefinitionError):
         DynamicOutput(True, mapping_key="foo.baz")
-
-
-def test_temp_fail_on_dep():
-    # to be removed in upcoming diff
-
-    @solid(output_defs=[DynamicOutputDefinition()])
-    def should_work(_):
-        yield DynamicOutput(1, mapping_key="1")
-        yield DynamicOutput(2, mapping_key="2")
-
-    @solid
-    def echo(_, x):
-        return x
-
-    with pytest.raises(DagsterInvalidDefinitionError, match="not yet supported"):
-
-        @pipeline
-        def _uh_oh():
-            echo(should_work())
 
 
 def test_multi_output():

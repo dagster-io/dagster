@@ -7,6 +7,7 @@ from dagster import (
 )
 from dagster.utils.temp_file import get_temp_dir
 from dagster_test.toys.composition import composition
+from dagster_test.toys.dynamic import dynamic_pipeline
 from dagster_test.toys.error_monster import error_monster
 from dagster_test.toys.hammer import hammer_pipeline
 from dagster_test.toys.log_spew import log_spew
@@ -19,6 +20,10 @@ from dagster_test.toys.sleepy import sleepy_pipeline
 
 def test_repo():
     assert toys_repository
+
+
+def test_dynamic_pipeline():
+    assert execute_pipeline(dynamic_pipeline).success
 
 
 def test_many_events_pipeline():

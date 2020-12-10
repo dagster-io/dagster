@@ -1,6 +1,7 @@
 from dagster import repository
 from dagster_test.toys.branches import branch_pipeline
 from dagster_test.toys.composition import composition
+from dagster_test.toys.dynamic import dynamic_pipeline
 from dagster_test.toys.error_monster import error_monster
 from dagster_test.toys.hammer import hammer_pipeline
 from dagster_test.toys.log_file import log_file_pipeline
@@ -30,6 +31,7 @@ def toys_repository():
             retry_pipeline,
             branch_pipeline,
             unreliable_pipeline,
+            dynamic_pipeline,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

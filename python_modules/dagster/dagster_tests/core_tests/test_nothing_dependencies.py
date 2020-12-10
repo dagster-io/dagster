@@ -304,7 +304,7 @@ def test_execution_plan():
     )
     plan = create_execution_plan(pipe)
 
-    levels = plan.get_all_steps_by_level()
+    levels = plan.get_steps_to_execute_by_level()
 
     assert "emit_nothing" in levels[0][0].key
     assert "consume_nothing" in levels[1][0].key
