@@ -462,7 +462,7 @@ type Schedule {
   executionTimezone: String
   scheduleState: JobState!
   partitionSet: PartitionSet
-  futureTicks(cursor: Float, limit: Int): ScheduleFutureTicks!
+  futureTicks(cursor: Float, limit: Int): FutureJobTicks!
 }
 
 type JobState {
@@ -576,12 +576,12 @@ enum PartitionRunStatus {
   PENDING
 }
 
-type ScheduleFutureTicks {
-  results: [ScheduleFutureTick!]!
+type FutureJobTicks {
+  results: [FutureJobTick!]!
   cursor: Float!
 }
 
-type ScheduleFutureTick {
+type FutureJobTick {
   timestamp: Float!
 }
 
@@ -611,6 +611,7 @@ type Sensor {
   solidSelection: [String]
   mode: String!
   sensorState: JobState!
+  nextTick: FutureJobTick
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError

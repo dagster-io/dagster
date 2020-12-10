@@ -16,7 +16,7 @@ from dagster_graphql.schema.errors import (
     DauphinSchedulerNotDefinedError,
 )
 
-from .schedule_definition import (
+from .schedules import (
     DauphinSchedule,
     DauphinScheduleOrError,
     DauphinSchedules,
@@ -40,26 +40,6 @@ class DauphinSchedulerOrError(dauphin.Union):
 
 
 DauphinJobTickStatus = dauphin.Enum.from_enum(JobTickStatus)
-
-
-class DauphinScheduleFutureTick(dauphin.ObjectType):
-    class Meta(object):
-        name = "ScheduleFutureTick"
-
-    timestamp = dauphin.NonNull(dauphin.Float)
-
-    def __init__(self, timestamp):
-        super(DauphinScheduleFutureTick, self).__init__(
-            timestamp=check.float_param(timestamp, "timestamp"),
-        )
-
-
-class DauphinScheduleFutureTicks(dauphin.ObjectType):
-    class Meta(object):
-        name = "ScheduleFutureTicks"
-
-    results = dauphin.non_null_list("ScheduleFutureTick")
-    cursor = dauphin.NonNull(dauphin.Float)
 
 
 class DauphinScheduleTick(dauphin.ObjectType):

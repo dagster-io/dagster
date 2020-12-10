@@ -99,12 +99,12 @@ export interface RepositorySchedulesFragment_schedules_scheduleState {
 }
 
 export interface RepositorySchedulesFragment_schedules_futureTicks_results {
-  __typename: "ScheduleFutureTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface RepositorySchedulesFragment_schedules_futureTicks {
-  __typename: "ScheduleFutureTicks";
+  __typename: "FutureJobTicks";
   results: RepositorySchedulesFragment_schedules_futureTicks_results[];
 }
 

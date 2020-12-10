@@ -1,8 +1,13 @@
-from dagster.core.scheduler.job import JobStatus
+from dagster.core.definitions.job import JobType
+from dagster.core.scheduler.job import JobState, JobStatus
+from dagster.daemon import get_default_daemon_logger
+from dagster.scheduler.sensor import execute_sensor_iteration
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
     infer_sensor_selector,
+    main_repo_location_name,
+    main_repo_name,
 )
 
 from .graphql_context_test_suite import (
@@ -64,6 +69,9 @@ query SensorQuery($sensorSelector: SensorSelector!) {
       pipelineName
       solidSelection
       mode
+      nextTick {
+        timestamp
+      }
       sensorState {
         status
         runs {
@@ -175,3 +183,48 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
         assert result.data
         assert result.data["stopSensor"]["jobState"]["status"] == JobStatus.STOPPED.value
+
+
+def test_sensor_next_ticks(graphql_context):
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+    graphql_context.instance.reconcile_scheduler_state(external_repository)
+
+    sensor_name = "always_no_config_sensor"
+    external_sensor = external_repository.get_external_sensor(sensor_name)
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    result = execute_dagster_graphql(
+        graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
+    )
+
+    # test default sensor off
+    assert result.data
+    assert result.data["sensorOrError"]["__typename"] == "Sensor"
+    next_tick = result.data["sensorOrError"]["nextTick"]
+    assert not next_tick
+
+    # test default sensor with no tick
+    graphql_context.instance.add_job_state(
+        JobState(external_sensor.get_external_origin(), JobType.SENSOR, JobStatus.RUNNING)
+    )
+    result = execute_dagster_graphql(
+        graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
+    )
+    assert result.data
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 0
+    assert result.data["sensorOrError"]["__typename"] == "Sensor"
+    next_tick = result.data["sensorOrError"]["nextTick"]
+    assert not next_tick
+
+    # test default sensor with last tick
+    execute_sensor_iteration(graphql_context.instance, get_default_daemon_logger("SensorDaemon"))
+    result = execute_dagster_graphql(
+        graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    assert result.data
+    assert result.data["sensorOrError"]["__typename"] == "Sensor"
+    next_tick = result.data["sensorOrError"]["nextTick"]
+    assert next_tick

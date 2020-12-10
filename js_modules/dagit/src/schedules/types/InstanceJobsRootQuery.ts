@@ -118,12 +118,12 @@ export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_
 }
 
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results {
-  __typename: "ScheduleFutureTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks {
-  __typename: "ScheduleFutureTicks";
+  __typename: "FutureJobTicks";
   results: InstanceJobsRootQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_futureTicks_results[];
 }
 

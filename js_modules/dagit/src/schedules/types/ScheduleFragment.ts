@@ -99,12 +99,12 @@ export interface ScheduleFragment_scheduleState {
 }
 
 export interface ScheduleFragment_futureTicks_results {
-  __typename: "ScheduleFutureTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface ScheduleFragment_futureTicks {
-  __typename: "ScheduleFutureTicks";
+  __typename: "FutureJobTicks";
   results: ScheduleFragment_futureTicks_results[];
 }
 

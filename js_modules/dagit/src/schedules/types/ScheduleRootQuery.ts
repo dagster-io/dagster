@@ -124,12 +124,12 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState {
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_futureTicks_results {
-  __typename: "ScheduleFutureTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_futureTicks {
-  __typename: "ScheduleFutureTicks";
+  __typename: "FutureJobTicks";
   results: ScheduleRootQuery_scheduleOrError_Schedule_futureTicks_results[];
 }
 

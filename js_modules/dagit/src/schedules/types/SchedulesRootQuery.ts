@@ -103,12 +103,12 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_futureTicks_results {
-  __typename: "ScheduleFutureTick";
+  __typename: "FutureJobTick";
   timestamp: number;
 }
 
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_futureTicks {
-  __typename: "ScheduleFutureTicks";
+  __typename: "FutureJobTicks";
   results: SchedulesRootQuery_repositoryOrError_Repository_schedules_futureTicks_results[];
 }
 

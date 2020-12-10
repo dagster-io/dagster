@@ -48,6 +48,26 @@ class DauphinJobTick(dauphin.ObjectType):
         ]
 
 
+class DauphinFutureJobTick(dauphin.ObjectType):
+    class Meta(object):
+        name = "FutureJobTick"
+
+    timestamp = dauphin.NonNull(dauphin.Float)
+
+    def __init__(self, timestamp):
+        super(DauphinFutureJobTick, self).__init__(
+            timestamp=check.float_param(timestamp, "timestamp"),
+        )
+
+
+class DauphinFutureJobTicks(dauphin.ObjectType):
+    class Meta(object):
+        name = "FutureJobTicks"
+
+    results = dauphin.non_null_list("FutureJobTick")
+    cursor = dauphin.NonNull(dauphin.Float)
+
+
 class DauphinJobState(dauphin.ObjectType):
     class Meta:
         name = "JobState"
