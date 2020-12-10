@@ -122,13 +122,13 @@
             "title": "LivenessProbe",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/livenessProbe"
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "StartupProbe": {
             "title": "StartupProbe",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.16.0/_definitions.json#/definitions/io.k8s.api.core.v1.Container/properties/startupProbe"
+            "$ref": "https://kubernetesjsonschema.dev/v1.16.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "Dagit": {
             "title": "Dagit",
