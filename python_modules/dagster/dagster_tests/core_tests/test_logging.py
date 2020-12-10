@@ -8,7 +8,7 @@ from dagster import ModeDefinition, check, execute_solid, pipeline, resource, so
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
-from dagster.core.execution.plan.objects import StepFailureData
+from dagster.core.execution.plan.objects import StepFailureData, StepOutputHandle
 from dagster.core.log_manager import DagsterLogManager
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
@@ -230,3 +230,22 @@ def test_resource_logging(capsys):
     ]
     for expected_log_regex in expected_log_regexes:
         assert re.search(expected_log_regex, captured.err, re.MULTILINE)
+
+
+def test_io_context_logging(capsys):
+    @solid
+    def logged_solid(context):
+        context.get_system_context().get_output_context(
+            StepOutputHandle("logged_solid", "result")
+        ).log.debug("test OUTPUT debug logging from logged_solid.")
+        context.get_system_context().for_input_manager(
+            "logged_solid", {}, {}, None, source_handle=None
+        ).log.debug("test INPUT debug logging from logged_solid.")
+
+    result = execute_solid(logged_solid)
+    assert result.success
+
+    captured = capsys.readouterr()
+
+    assert re.search("test OUTPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
+    assert re.search("test INPUT debug logging from logged_solid.", captured.err, re.MULTILINE)
