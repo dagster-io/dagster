@@ -11,6 +11,7 @@ from dagster.core.definitions.resource import resource
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.events import AssetMaterialization
 from dagster.core.storage.object_manager import ObjectManager
+from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import PICKLE_PROTOCOL, mkdir_p
 from dagster.utils.backcompat import experimental
@@ -339,7 +340,7 @@ def versioned_filesystem_asset_store(init_context):
 class AssetStoreContext(
     namedtuple(
         "_AssetStoreContext",
-        "step_key output_name mapping_key asset_metadata pipeline_name solid_def source_run_id version",
+        "step_key output_name mapping_key asset_metadata pipeline_name solid_def dagster_type source_run_id version",
     )
 ):
     """
@@ -353,6 +354,7 @@ class AssetStoreContext(
             to store or retrieve the data object.
         pipeline_name (str): The name of the pipeline.
         solid_def (SolidDefinition): The definition of the solid that uses the asset store.
+        dagster_type ([DagsterType]): The type of the step output.
         source_run_id (Optional[str]): The id of the run which generates the output.
         version (Optional[str]): The version corresponding to the provided step output.
     """
@@ -365,6 +367,7 @@ class AssetStoreContext(
         asset_metadata,
         pipeline_name,
         solid_def,
+        dagster_type,
         source_run_id=None,
         version=None,
     ):
@@ -377,6 +380,9 @@ class AssetStoreContext(
             asset_metadata=check.opt_dict_param(asset_metadata, "asset_metadata", key_type=str),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_def=check.inst_param(solid_def, "solid_def", SolidDefinition),
+            dagster_type=check.inst_param(
+                resolve_dagster_type(dagster_type), "dagster_type", DagsterType
+            ),  # this allows the user to mock the context with unresolved dagster type
             source_run_id=check.opt_str_param(source_run_id, "source_run_id"),
             version=check.opt_str_param(version, "version"),
         )
@@ -410,6 +416,7 @@ class AssetStoreContext(
             asset_metadata=output_context.metadata,
             pipeline_name=output_context.pipeline_name,
             solid_def=output_context.solid_def,
+            dagster_type=output_context.dagster_type,
             source_run_id=output_context.run_id,
             version=output_context.version,
         )
@@ -424,6 +431,7 @@ class AssetStoreContext(
             asset_metadata=output_context.metadata,
             pipeline_name=output_context.pipeline_name,
             solid_def=load_context.solid_def,
+            dagster_type=output_context.dagster_type,
             source_run_id=output_context.run_id,
             version=output_context.version,
         )

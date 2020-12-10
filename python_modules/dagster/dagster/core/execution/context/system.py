@@ -22,6 +22,7 @@ from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.output_manager import OutputManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.system_config.objects import EnvironmentConfig
+from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 
 
 class SystemExecutionContextData(
@@ -301,11 +302,14 @@ class SystemStepExecutionContext(SystemExecutionContext):
             self._get_source_run_id(step_output_handle),
         )
 
-    def for_input_manager(self, input_name, input_config, input_metadata, source_handle=None):
+    def for_input_manager(
+        self, input_name, input_config, input_metadata, dagster_type, source_handle=None,
+    ):
         return InputContext(
             input_name=input_name,
             input_config=input_config,
             input_metadata=input_metadata,
+            dagster_type=dagster_type,
             pipeline_name=self.pipeline_def.name,
             solid_def=self.solid_def,
             upstream_output=self.get_output_context(source_handle) if source_handle else None,
@@ -408,7 +412,7 @@ class HookContext(SystemExecutionContext):
 class OutputContext(
     namedtuple(
         "_OutputContext",
-        "step_key name mapping_key metadata run_id pipeline_name config solid_def version",
+        "step_key name mapping_key metadata run_id pipeline_name config solid_def dagster_type version",
     )
 ):
     """
@@ -422,6 +426,7 @@ class OutputContext(
         pipeline_name (str): The name of the pipeline definition.
         config (Optional[Any]): The configuration for the output.
         solid_def (Optional[SolidDefinition]): The definition of the solid that produced the output.
+        dagster_type (Optional[DagsterType]): The type of this output.
         version (Optional[str]): (Experimental) The version of the output.
     """
 
@@ -450,7 +455,7 @@ class OutputContext(
 class InputContext(
     namedtuple(
         "_InputContext",
-        "input_name pipeline_name solid_def input_config input_metadata upstream_output",
+        "input_name pipeline_name solid_def input_config input_metadata upstream_output dagster_type",
     )
 ):
     """
@@ -465,6 +470,7 @@ class InputContext(
             InputDefinition that we're loading for.
         upstream_output (Optional[OutputContext]): Info about the output that produced the object
             we're loading.
+        dagster_type (Optional[DagsterType]): The type of this input.
     """
 
     def __new__(
@@ -476,6 +482,7 @@ class InputContext(
         input_config=None,
         input_metadata=None,
         upstream_output=None,
+        dagster_type=None,
     ):
 
         return super(InputContext, cls).__new__(
@@ -486,6 +493,9 @@ class InputContext(
             input_config=input_config,
             input_metadata=input_metadata,
             upstream_output=check.opt_inst_param(upstream_output, "upstream_output", OutputContext),
+            dagster_type=check.inst_param(
+                resolve_dagster_type(dagster_type), "dagster_type", DagsterType
+            ),  # this allows the user to mock the context with unresolved dagster type
         )
 
 
@@ -531,4 +541,5 @@ def get_output_context(execution_plan, environment_config, step_output_handle, r
         solid_def=step.solid.definition,
         pipeline_name=execution_plan.pipeline.get_definition().name,
         config=output_config,
+        dagster_type=execution_plan.get_step_output(step_output_handle).output_def.dagster_type,
     )

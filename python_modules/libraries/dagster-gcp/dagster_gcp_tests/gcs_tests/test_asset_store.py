@@ -78,13 +78,14 @@ def test_gcs_asset_store_execution(gcs_bucket):
     asset_store = PickledObjectGCSAssetStore(gcs_bucket, storage.Client())
     step_output_handle = StepOutputHandle("return_one")
     context = AssetStoreContext(
-        step_output_handle.step_key,
-        step_output_handle.output_name,
-        step_output_handle.mapping_key,
-        {},
-        pipeline_def.name,
-        pipeline_def.solid_def_named("return_one"),
-        run_id,
+        step_key=step_output_handle.step_key,
+        output_name=step_output_handle.output_name,
+        mapping_key=step_output_handle.mapping_key,
+        asset_metadata={},
+        pipeline_name=pipeline_def.name,
+        solid_def=pipeline_def.solid_def_named("return_one"),
+        dagster_type=execution_plan.get_step_output(step_output_handle).output_def.dagster_type,
+        source_run_id=run_id,
     )
     assert asset_store.get_asset(context) == 1
 
@@ -99,13 +100,14 @@ def test_gcs_asset_store_execution(gcs_bucket):
 
     step_output_handle = StepOutputHandle("add_one")
     context = AssetStoreContext(
-        step_output_handle.step_key,
-        step_output_handle.output_name,
-        step_output_handle.mapping_key,
-        {},
-        pipeline_def.name,
-        pipeline_def.solid_def_named("add_one"),
-        run_id,
+        step_key=step_output_handle.step_key,
+        output_name=step_output_handle.output_name,
+        mapping_key=step_output_handle.mapping_key,
+        asset_metadata={},
+        pipeline_name=pipeline_def.name,
+        solid_def=pipeline_def.solid_def_named("add_one"),
+        dagster_type=execution_plan.get_step_output(step_output_handle).output_def.dagster_type,
+        source_run_id=run_id,
     )
 
     assert get_step_output(add_one_step_events, "add_one")

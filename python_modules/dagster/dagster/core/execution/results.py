@@ -474,7 +474,13 @@ class SolidExecutionResult:
         if context.using_asset_store(step_output_handle):
             manager = context.get_output_manager(step_output_handle)
             return manager.load_input(
-                context.for_input_manager(None, context.pipeline_def.name, None, step_output_handle)
+                context.for_input_manager(
+                    None,
+                    context.pipeline_def.name,
+                    None,
+                    self.solid.output_def_named(step_output_data.output_name).dagster_type,
+                    step_output_handle,
+                )
             )
 
         else:
