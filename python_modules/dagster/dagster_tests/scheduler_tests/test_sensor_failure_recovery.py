@@ -80,8 +80,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             )
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
-            # reuses the skipped tick
-            assert len(ticks) == 1
+            assert len(ticks) == 2
             assert ticks[0].status == JobTickStatus.STARTED
             assert not int(ticks[0].timestamp) % 2  # skip condition for simple_sensor
             assert instance.get_runs_count() == 0
@@ -110,8 +109,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             )
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
-            # reuses the started tick
-            assert len(ticks) == 1
+            assert len(ticks) == 3
             assert ticks[0].status == JobTickStatus.SUCCESS
 
 
@@ -180,7 +178,7 @@ def test_failure_after_run_created_before_run_launched(
             )
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
-            assert len(ticks) == 1
+            assert len(ticks) == 2
             assert ticks[0].status == JobTickStatus.SUCCESS
 
 
@@ -244,5 +242,5 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
             )
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
-            assert len(ticks) == 1
+            assert len(ticks) == 2
             assert ticks[0].status == JobTickStatus.SKIPPED

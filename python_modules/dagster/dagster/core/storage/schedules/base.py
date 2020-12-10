@@ -87,6 +87,16 @@ class ScheduleStorage(six.with_metaclass(abc.ABCMeta)):
         """
 
     @abc.abstractmethod
+    def purge_job_ticks(self, job_origin_id, tick_status, before):
+        """Wipe ticks for a job for a certain status and timestamp.
+
+        Args:
+            job_origin_id (str): The id of the ExternalJob target to delete
+            tick_status (JobTickStatus): The tick status to wipe
+            before (datetime): All ticks before this datetime will get purged
+        """
+
+    @abc.abstractmethod
     def get_job_tick_stats(self, job_origin_id):
         """Get tick stats for a given job.
 

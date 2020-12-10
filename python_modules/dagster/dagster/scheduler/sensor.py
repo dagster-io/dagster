@@ -136,23 +136,16 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                 if not external_repo.has_external_job(job_state.job_name):
                     continue
 
-                now = pendulum.now()
-                latest_tick = instance.get_latest_job_tick(job_state.job_origin_id)
-                if not latest_tick or latest_tick.status in RECORDED_TICK_STATES:
-                    tick = instance.create_job_tick(
-                        JobTickData(
-                            job_origin_id=job_state.job_origin_id,
-                            job_name=job_state.job_name,
-                            job_type=JobType.SENSOR,
-                            status=JobTickStatus.STARTED,
-                            timestamp=now.timestamp(),
-                        )
+                now = pendulum.now("UTC")
+                tick = instance.create_job_tick(
+                    JobTickData(
+                        job_origin_id=job_state.job_origin_id,
+                        job_name=job_state.job_name,
+                        job_type=JobType.SENSOR,
+                        status=JobTickStatus.STARTED,
+                        timestamp=now.timestamp(),
                     )
-                else:
-                    tick = latest_tick.with_reason(None).with_status(
-                        JobTickStatus.STARTED, timestamp=now.timestamp()
-                    )
-                    instance.update_job_tick(tick)
+                )
 
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
@@ -168,6 +161,12 @@ def execute_sensor_iteration(instance, logger, debug_crash_flags=None):
                         job_state,
                         sensor_debug_crash_flags,
                     )
+
+                instance.purge_job_ticks(
+                    job_state.job_origin_id,
+                    tick_status=JobTickStatus.SKIPPED,
+                    before=now.subtract(days=7),  #  keep the last 7 days
+                )
         except Exception:  # pylint: disable=broad-except
             logger.error(
                 "Sensor failed for {sensor_name} : {error_info}".format(

@@ -174,7 +174,7 @@ def test_simple_sensor(external_repo_context, capfd):
             run = instance.get_runs()[0]
             validate_run_started(run)
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())
-            assert len(ticks) == 1  # reuse the skipped tick
+            assert len(ticks) == 2
 
             expected_datetime = pendulum.datetime(year=2019, month=2, day=28)
             validate_tick(

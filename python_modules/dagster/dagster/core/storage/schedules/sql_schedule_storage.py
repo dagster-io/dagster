@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from datetime import datetime
 
 import six
 import sqlalchemy as db
@@ -193,6 +194,21 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
         return tick
+
+    def purge_job_ticks(self, job_origin_id, tick_status, before):
+        check.str_param(job_origin_id, "job_origin_id")
+        check.inst_param(tick_status, "tick_status", JobTickStatus)
+        check.inst_param(before, "before", datetime)
+
+        utc_before = utc_datetime_from_timestamp(before.timestamp())
+
+        with self.connect() as conn:
+            conn.execute(
+                JobTickTable.delete()  # pylint: disable=no-value-for-parameter
+                .where(JobTickTable.c.status == tick_status.value)
+                .where(JobTickTable.c.timestamp < utc_before)
+                .where(JobTickTable.c.job_origin_id == job_origin_id)
+            )
 
     def get_job_tick_stats(self, job_origin_id):
         check.str_param(job_origin_id, "job_origin_id")

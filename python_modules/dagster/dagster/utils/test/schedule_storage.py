@@ -1,6 +1,7 @@
 import sys
 import time
 
+import pendulum
 import pytest
 from dagster import DagsterInvariantViolationError
 from dagster.core.host_representation import (
@@ -511,3 +512,23 @@ class TestScheduleStorage:
         assert tick.status == JobTickStatus.FAILURE
         assert tick.run_ids == []
         assert tick.error == error
+
+    def test_purge_job_ticks(self, storage):
+        assert storage
+
+        now = pendulum.now()
+        five_minutes_ago = now.subtract(minutes=5).timestamp()
+        four_minutes_ago = now.subtract(minutes=4).timestamp()
+        one_minute_ago = now.subtract(minutes=1).timestamp()
+        storage.create_job_tick(self.build_sensor_tick(five_minutes_ago, JobTickStatus.SKIPPED))
+        storage.create_job_tick(
+            self.build_sensor_tick(four_minutes_ago, JobTickStatus.SUCCESS, run_id="fake_run_id")
+        )
+        storage.create_job_tick(self.build_sensor_tick(one_minute_ago, JobTickStatus.SKIPPED))
+        ticks = storage.get_job_ticks("my_sensor")
+        assert len(ticks) == 3
+
+        storage.purge_job_ticks("my_sensor", JobTickStatus.SKIPPED, now.subtract(minutes=2))
+
+        ticks = storage.get_job_ticks("my_sensor")
+        assert len(ticks) == 2

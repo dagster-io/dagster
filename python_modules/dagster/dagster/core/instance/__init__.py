@@ -1272,6 +1272,9 @@ class DagsterInstance:
     def get_job_tick_stats(self, job_origin_id):
         return self._schedule_storage.get_job_tick_stats(job_origin_id)
 
+    def purge_job_ticks(self, job_origin_id, tick_status, before):
+        self._schedule_storage.purge_job_ticks(job_origin_id, tick_status, before)
+
     def wipe_all_schedules(self):
         if self._scheduler:
             self._scheduler.wipe(self)
