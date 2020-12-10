@@ -16,7 +16,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import get_step_output_event
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.utils import merge_dicts

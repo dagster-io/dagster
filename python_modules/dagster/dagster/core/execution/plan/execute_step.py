@@ -27,13 +27,9 @@ from dagster.core.errors import (
 )
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.system import SystemStepExecutionContext
-from dagster.core.execution.plan.objects import (
-    StepInputData,
-    StepOutputData,
-    StepOutputHandle,
-    StepSuccessData,
-    TypeCheckData,
-)
+from dagster.core.execution.plan.inputs import StepInputData
+from dagster.core.execution.plan.objects import StepSuccessData, TypeCheckData
+from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster.core.types.dagster_type import DagsterTypeKind
 from dagster.utils import ensure_gen, iterate_with_context, raise_interrupts_immediately
 from dagster.utils.timing import time_execution_scope

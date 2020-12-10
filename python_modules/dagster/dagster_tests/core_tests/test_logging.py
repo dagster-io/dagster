@@ -8,7 +8,8 @@ from dagster import ModeDefinition, check, execute_solid, pipeline, resource, so
 from dagster.core.definitions import SolidHandle
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
-from dagster.core.execution.plan.objects import StepFailureData, StepOutputHandle
+from dagster.core.execution.plan.objects import StepFailureData
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.log_manager import DagsterLogManager
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo

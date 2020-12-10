@@ -20,7 +20,7 @@ from dagster import (
 from dagster.core.definitions import InputDefinition
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.resolve_versions import (
     join_and_hash,
     resolve_config_version,

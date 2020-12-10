@@ -16,7 +16,7 @@ from dagster import (
 )
 from dagster.core.definitions.events import ObjectStoreOperationType
 from dagster.core.errors import DagsterObjectStoreError
-from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.core.storage.type_storage import TypeStoragePlugin, TypeStoragePluginRegistry

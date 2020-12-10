@@ -17,7 +17,7 @@ from dagster import (
     solid,
 )
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.execution.plan.objects import StepKind
+from dagster.core.execution.plan.step import StepKind
 from dagster.core.system_config.objects import EnvironmentConfig
 from dagster.core.types.dagster_type import create_any_type
 from dagster.utils.test import get_temp_file_name, get_temp_file_names

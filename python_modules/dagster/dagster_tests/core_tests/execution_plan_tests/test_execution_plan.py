@@ -16,7 +16,7 @@ from dagster.core.errors import (
     DagsterUnknownStepStateError,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import should_skip_step
 from dagster.core.execution.retries import Retries, RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun

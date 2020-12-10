@@ -14,7 +14,8 @@ from dagster.core.execution.context.system import SystemComputeExecutionContext
 from dagster.core.execution.plan.handle import StepHandle
 
 from .inputs import StepInput
-from .objects import ExecutionStep, StepOutput
+from .outputs import StepOutput
+from .step import ExecutionStep
 
 
 def create_compute_step(pipeline_name, environment_config, solid, step_inputs, handle):

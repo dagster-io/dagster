@@ -2,7 +2,7 @@ from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.init import InitResourceContext
 from dagster.core.execution.context.system import get_output_context
-from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.asset_store import AssetStoreContext
 from dagster.utils.backcompat import experimental
 

@@ -6,7 +6,7 @@ from dagster.core.definitions.events import ObjectStoreOperation
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.plan.objects import StepKind
+from dagster.core.execution.plan.step import StepKind
 
 
 def _construct_events_by_step_key(event_list):

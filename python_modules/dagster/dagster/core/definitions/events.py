@@ -791,7 +791,7 @@ class AssetStoreOperation(
     """
 
     def __new__(cls, op, step_output_handle, asset_store_handle, obj=None):
-        from dagster.core.execution.plan.objects import StepOutputHandle
+        from dagster.core.execution.plan.outputs import StepOutputHandle
         from dagster.core.storage.asset_store import AssetStoreHandle
 
         return super(AssetStoreOperation, cls).__new__(

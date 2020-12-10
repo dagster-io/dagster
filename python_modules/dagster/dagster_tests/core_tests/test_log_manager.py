@@ -3,7 +3,8 @@ import textwrap
 
 from dagster import DagsterEvent
 from dagster.core.definitions.dependency import SolidHandle
-from dagster.core.execution.plan.objects import StepFailureData, StepOutputData, StepOutputHandle
+from dagster.core.execution.plan.objects import StepFailureData
+from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster.core.log_manager import construct_log_string
 from dagster.utils.error import serializable_error_info_from_exc_info
 

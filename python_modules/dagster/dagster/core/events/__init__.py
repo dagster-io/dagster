@@ -19,7 +19,7 @@ from dagster.core.execution.context.system import (
     SystemExecutionContext,
     SystemStepExecutionContext,
 )
-from dagster.core.execution.plan.objects import StepOutputData
+from dagster.core.execution.plan.outputs import StepOutputData
 from dagster.core.log_manager import DagsterLogManager
 from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -109,7 +109,8 @@ def _assert_type(method, expected_type, actual_type):
 
 
 def _validate_event_specific_data(event_type, event_specific_data):
-    from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData, StepInputData
+    from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
+    from dagster.core.execution.plan.inputs import StepInputData
 
     if event_type == DagsterEventType.STEP_OUTPUT:
         check.inst_param(event_specific_data, "event_specific_data", StepOutputData)
@@ -308,7 +309,7 @@ class DagsterEvent(
 
     @property
     def step_kind(self):
-        from dagster.core.execution.plan.objects import StepKind
+        from dagster.core.execution.plan.step import StepKind
 
         return StepKind(self.step_kind_value)
 

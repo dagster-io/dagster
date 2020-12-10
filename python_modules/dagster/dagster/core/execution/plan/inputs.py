@@ -11,6 +11,44 @@ from dagster.core.errors import (
     user_code_error_boundary,
 )
 from dagster.core.storage.input_manager import InputManager
+from dagster.serdes import whitelist_for_serdes
+
+from .objects import TypeCheckData
+
+
+@whitelist_for_serdes
+class StepInputData(namedtuple("_StepInputData", "input_name type_check_data")):
+    """"Serializable payload of information for the result of processing a step input"""
+
+    def __new__(cls, input_name, type_check_data):
+        return super(StepInputData, cls).__new__(
+            cls,
+            input_name=check.str_param(input_name, "input_name"),
+            type_check_data=check.opt_inst_param(type_check_data, "type_check_data", TypeCheckData),
+        )
+
+
+class StepInput(namedtuple("_StepInput", "name dagster_type source")):
+    """Holds information for how to prepare an input for an ExecutionStep"""
+
+    def __new__(
+        cls, name, dagster_type, source,
+    ):
+        from dagster import DagsterType
+
+        return super(StepInput, cls).__new__(
+            cls,
+            name=check.str_param(name, "name"),
+            dagster_type=check.inst_param(dagster_type, "dagster_type", DagsterType),
+            source=check.inst_param(source, "source", StepInputSource),
+        )
+
+    @property
+    def dependency_keys(self):
+        return self.source.step_key_dependencies
+
+    def get_step_output_handle_dependencies(self):
+        return self.source.step_output_handle_dependencies
 
 
 def join_and_hash(*args):
@@ -85,7 +123,7 @@ class FromStepOutput(
     """This step input source is the output of a previous step"""
 
     def __new__(cls, step_output_handle, input_def, config_data, fan_in):
-        from .objects import StepOutputHandle
+        from .outputs import StepOutputHandle
 
         return super(FromStepOutput, cls).__new__(
             cls,
@@ -307,21 +345,3 @@ class FromMultipleSources(namedtuple("_FromMultipleSources", "sources"), StepInp
         return join_and_hash(
             *[inner_source.compute_version(step_versions) for inner_source in self.sources]
         )
-
-
-class StepInput(namedtuple("_StepInput", "name dagster_type source")):
-    def __new__(
-        cls, name, dagster_type, source,
-    ):
-        from dagster import DagsterType
-
-        return super(StepInput, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            dagster_type=check.inst_param(dagster_type, "dagster_type", DagsterType),
-            source=check.inst_param(source, "source", StepInputSource),
-        )
-
-    @property
-    def dependency_keys(self):
-        return self.source.step_key_dependencies

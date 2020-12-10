@@ -1,6 +1,6 @@
 from time import sleep
 
-from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.storage.intermediate_storage import build_fs_intermediate_storage
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id

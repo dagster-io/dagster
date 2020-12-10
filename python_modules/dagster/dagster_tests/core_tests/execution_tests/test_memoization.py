@@ -1,7 +1,7 @@
 from dagster import pipeline, solid
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.memoization import output_handles_from_execution_plan
-from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputHandle
 
 
 def define_pipeline():

@@ -6,7 +6,7 @@ from dagster.core.errors import DagsterInvariantViolationError, DagsterRunNotFou
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.events.log import EventRecord
 from dagster.core.execution.context.system import SystemExecutionContext
-from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.storage.asset_store import mem_asset_store
 
@@ -59,7 +59,7 @@ def check_all_asset_stores_non_mem_for_reexecution(pipeline_context, execution_p
     for step in execution_plan.get_steps_to_execute_by_level()[0]:
         # check if all its inputs' upstream step outputs have non-in-memory asset store configured
         for step_input in step.step_inputs:
-            for step_output_handle in step_input.source.step_output_handle_dependencies:
+            for step_output_handle in step_input.get_step_output_handle_dependencies():
                 manager_key = execution_plan.get_manager_key(step_output_handle)
                 manager_def = pipeline_context.mode_def.resource_defs.get(manager_key)
                 if (
@@ -156,7 +156,7 @@ def output_handles_from_execution_plan(execution_plan):
     for step_level in execution_plan.get_steps_to_execute_by_level():
         for step in step_level:
             for step_input in step.step_inputs:
-                for step_output_handle in step_input.source.step_output_handle_dependencies:
+                for step_output_handle in step_input.get_step_output_handle_dependencies():
                     # Only include handles that won't be satisfied by steps included in this
                     # execution.
                     if step_output_handle.step_key not in execution_plan.step_keys_to_execute:

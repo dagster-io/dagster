@@ -15,7 +15,8 @@ from dagster.core.definitions.resource import ScopedResourcesBuilder
 from dagster.core.definitions.solid import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
-from dagster.core.execution.plan.objects import StepOutputHandle
+from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.execution.plan.step import ExecutionStep
 from dagster.core.execution.retries import Retries
 from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
@@ -184,7 +185,6 @@ class SystemExecutionContext:
         return self.logging_tags.get(key)
 
     def for_step(self, step):
-        from dagster.core.execution.plan.objects import ExecutionStep
 
         check.inst_param(step, "step", ExecutionStep)
 
@@ -212,7 +212,6 @@ class SystemStepExecutionContext(SystemExecutionContext):
     __slots__ = ["_step", "_resources", "_required_resource_keys", "_step_launcher"]
 
     def __init__(self, execution_context_data, log_manager, step):
-        from dagster.core.execution.plan.objects import ExecutionStep
         from dagster.core.execution.resources_init import get_required_resource_keys_for_step
 
         self._step = check.inst_param(step, "step", ExecutionStep)
@@ -375,7 +374,6 @@ class HookContext(SystemExecutionContext):
     """
 
     def __init__(self, execution_context_data, log_manager, hook_def, step):
-        from dagster.core.execution.plan.objects import ExecutionStep
 
         super(HookContext, self).__init__(execution_context_data, log_manager)
         self._log_manager = log_manager

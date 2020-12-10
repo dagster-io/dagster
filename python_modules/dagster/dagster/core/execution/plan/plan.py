@@ -33,7 +33,8 @@ from .inputs import (
     StepInput,
     StepInputSource,
 )
-from .objects import ExecutionStep, StepOutputHandle
+from .outputs import StepOutputHandle
+from .step import ExecutionStep
 
 
 class _PlanBuilder:
@@ -532,7 +533,7 @@ def should_skip_step(execution_plan, instance, run_id):
     optional_source_handles = set()
     step = execution_plan.get_step_by_key(step_key)
     for step_input in step.step_inputs:
-        for source_handle in step_input.source.step_output_handle_dependencies:
+        for source_handle in step_input.get_step_output_handle_dependencies():
             if execution_plan.get_step_output(source_handle).output_def.optional:
                 optional_source_handles.add(source_handle)
 
@@ -555,11 +556,11 @@ def should_skip_step(execution_plan, instance, run_id):
     for step_input in step.step_inputs:
         missing_source_handles = [
             source_handle
-            for source_handle in step_input.source.step_output_handle_dependencies
+            for source_handle in step_input.get_step_output_handle_dependencies()
             if source_handle in optional_source_handles
             and source_handle not in yielded_step_output_handles
         ]
-        if len(missing_source_handles) == len(step_input.source.step_output_handle_dependencies):
+        if len(missing_source_handles) == len(step_input.get_step_output_handle_dependencies()):
             return True
 
     return False

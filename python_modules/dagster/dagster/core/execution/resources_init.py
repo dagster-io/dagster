@@ -270,7 +270,7 @@ def get_required_resource_keys_for_step(execution_step, execution_plan, intermed
 
         resource_keys = resource_keys.union(step_input.source.required_resource_keys())
 
-        for source_handle in step_input.source.step_output_handle_dependencies:
+        for source_handle in step_input.get_step_output_handle_dependencies():
             source_manager_key = execution_plan.get_manager_key(source_handle)
             if source_manager_key:
                 resource_keys = resource_keys.union([source_manager_key])

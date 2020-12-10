@@ -127,13 +127,13 @@ class ActiveExecution:
                 for step_input in step.step_inputs:
                     missing_source_handles = [
                         source_handle
-                        for source_handle in step_input.source.step_output_handle_dependencies
+                        for source_handle in step_input.get_step_output_handle_dependencies()
                         if source_handle.step_key in requirements
                         and source_handle not in self._step_outputs
                     ]
                     if missing_source_handles:
                         if len(missing_source_handles) == len(
-                            step_input.source.step_output_handle_dependencies
+                            step_input.get_step_output_handle_dependencies()
                         ):
                             should_skip = True
                             break
