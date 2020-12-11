@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.22
+
+**New**
+
+- When using a solid selection in the Dagit Playground, non-matching solids are hidden in the RunPreview panel.
+
+**Bugfixes**
+
+- [Helm/K8s] Fixed whitespacing bug in ingress.yaml Helm template.
+
+
 ## 0.9.21
 **Community Contributions**
 
