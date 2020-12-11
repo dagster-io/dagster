@@ -59,6 +59,13 @@ class StartRunInSubprocessSuccessful:
     """Sentinel passed over multiprocessing Queue when launch is successful in subprocess."""
 
 
+def _report_run_failed_if_not_finished(instance, pipeline_run_id):
+    check.inst_param(instance, "instance", DagsterInstance)
+    pipeline_run = instance.get_run_by_id(pipeline_run_id)
+    if pipeline_run and (not pipeline_run.is_finished):
+        yield instance.report_run_failed(pipeline_run)
+
+
 def _core_execute_run(recon_pipeline, pipeline_run, instance):
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
@@ -76,7 +83,12 @@ def _core_execute_run(recon_pipeline, pipeline_run, instance):
                 pipeline_run,
                 EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             )
-            instance.report_run_failed(pipeline_run)
+            yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+    except KeyboardInterrupt:
+        yield instance.report_engine_event(
+            message="Pipeline execution terminated by interrupt", pipeline_run=pipeline_run,
+        )
+        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
     except Exception:  # pylint: disable=broad-except
         yield instance.report_engine_event(
             "An exception was thrown during execution that is likely a framework error, "
@@ -84,7 +96,7 @@ def _core_execute_run(recon_pipeline, pipeline_run, instance):
             pipeline_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
-        instance.report_run_failed(pipeline_run)
+        yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
 
 
 def _run_in_subprocess(
@@ -143,13 +155,6 @@ def _run_in_subprocess(
     try:
         for event in _core_execute_run(recon_pipeline, pipeline_run, instance):
             run_event_handler(event)
-    except KeyboardInterrupt:
-        run_event_handler(
-            instance.report_engine_event(
-                message="Pipeline execution terminated by interrupt", pipeline_run=pipeline_run,
-            )
-        )
-        raise
     except GeneratorExit:
         closed = True
         raise

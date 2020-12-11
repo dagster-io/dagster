@@ -13,7 +13,7 @@ from dagster_k8s_test_infra.cluster import (
     dagster_instance_with_k8s_scheduler,
     define_cluster_provider_fixture,
 )
-from dagster_k8s_test_infra.helm import helm_namespace_for_k8s_run_launcher
+from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME, helm_namespace_for_k8s_run_launcher
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
@@ -87,7 +87,8 @@ def run_launcher(
         kubeconfig_file=cluster_provider.kubeconfig_file,
         image_pull_policy=image_pull_policy(),
         job_namespace=helm_namespace_for_k8s_run_launcher,
-        env_config_maps=["dagster-pipeline-env", "test-env-configmap"],
+        env_config_maps=["dagster-pipeline-env", "test-env-configmap"]
+        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
         env_secrets=["test-env-secret"],
     )
 

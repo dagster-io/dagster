@@ -119,6 +119,13 @@ def execute_run_command(input_json):
             click.echo(line)
 
 
+def _report_run_failed_if_not_finished(instance, pipeline_run_id):
+    check.inst_param(instance, "instance", DagsterInstance)
+    pipeline_run = instance.get_run_by_id(pipeline_run_id)
+    if pipeline_run and (not pipeline_run.is_finished):
+        instance.report_run_failed(pipeline_run)
+
+
 def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
 
     # we need to send but the fact that we have loaded the args so the calling
@@ -145,6 +152,7 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
         instance.report_engine_event(
             message="Pipeline execution terminated by interrupt", pipeline_run=pipeline_run,
         )
+        _report_run_failed_if_not_finished(instance, pipeline_run_id)
     except DagsterSubprocessError as err:
         if not all(
             [err_info.cls_name == "KeyboardInterrupt" for err_info in err.subprocess_error_infos]
@@ -155,6 +163,7 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
                 pipeline_run,
                 EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
             )
+        _report_run_failed_if_not_finished(instance, pipeline_run_id)
     except Exception:  # pylint: disable=broad-except
         instance.report_engine_event(
             "An exception was thrown during execution that is likely a framework error, "
@@ -162,6 +171,7 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
             pipeline_run,
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
+        _report_run_failed_if_not_finished(instance, pipeline_run_id)
     finally:
         instance.report_engine_event(
             "Process for pipeline exited (pid: {pid}).".format(pid=pid), pipeline_run,
