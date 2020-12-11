@@ -15,6 +15,7 @@ from dagster import (
 )
 from dagster.cli.api import ExecuteStepArgs
 from dagster.core.definitions.executor import check_cross_process_constraints
+from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import EngineEventData
 from dagster.core.events.log import DagsterEventRecord
 from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
@@ -106,12 +107,11 @@ def celery_k8s_job_executor(init_context):
     run_launcher = init_context.instance.run_launcher
     exc_cfg = init_context.executor_config
 
-    check.inst(
-        run_launcher,
-        CeleryK8sRunLauncher,
-        "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
-        "CeleryK8sRunLauncher on your instance to use it.",
-    )
+    if not isinstance(run_launcher, CeleryK8sRunLauncher):
+        raise DagsterUnmetExecutorRequirementsError(
+            "This engine is only compatible with a CeleryK8sRunLauncher; configure the "
+            "CeleryK8sRunLauncher on your instance to use it.",
+        )
 
     job_config = DagsterK8sJobConfig(
         dagster_home=run_launcher.dagster_home,
