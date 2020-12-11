@@ -106,7 +106,7 @@ function searchSuggestionsForRuns(
     },
     {
       token: 'status',
-      values: () => ['QUEUED', 'NOT_STARTED', 'STARTED', 'SUCCESS', 'FAILURE', 'MANAGED'],
+      values: () => Object.keys(PipelineRunStatus),
     },
     {
       token: 'pipeline',

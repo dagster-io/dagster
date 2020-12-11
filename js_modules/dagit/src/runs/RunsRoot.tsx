@@ -128,7 +128,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
                   color={tabColor('in-progress')}
                   underline="never"
                   onClick={() =>
-                    setStatusFilter([PipelineRunStatus.STARTED, PipelineRunStatus.NOT_STARTED])
+                    setStatusFilter([PipelineRunStatus.STARTING, PipelineRunStatus.STARTED])
                   }
                 >
                   In progress
