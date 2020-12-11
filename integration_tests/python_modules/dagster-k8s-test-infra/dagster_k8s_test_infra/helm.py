@@ -20,6 +20,9 @@ TEST_AWS_CONFIGMAP_NAME = "test-aws-env-configmap"
 TEST_CONFIGMAP_NAME = "test-env-configmap"
 TEST_SECRET_NAME = "test-env-secret"
 
+# By default, dagster.workers.fullname is ReleaseName-celery-workers
+CELERY_WORKER_NAME_PREFIX = "dagster-celery-workers"
+
 
 @contextmanager
 def _helm_namespace_helper(helm_chart_fn, request):
@@ -219,12 +222,18 @@ def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name
 
         # Wait for Celery worker queues to become ready
         pods = kubernetes.client.CoreV1Api().list_namespaced_pod(namespace=namespace)
-        pod_names = [p.metadata.name for p in pods.items if "celery-workers" in p.metadata.name]
+        pod_names = [
+            p.metadata.name for p in pods.items if CELERY_WORKER_NAME_PREFIX in p.metadata.name
+        ]
         if helm_config.get("celery", {}).get("enabled"):
-            extra_worker_queues = helm_config.get("celery").get("extraWorkerQueues", [])
-            for queue in extra_worker_queues:
+            worker_queues = helm_config.get("celery").get("workerQueues", [])
+            for queue in worker_queues:
                 num_pods_for_queue = len(
-                    [pod_name for pod_name in pod_names if queue.get("name") in pod_name]
+                    [
+                        pod_name
+                        for pod_name in pod_names
+                        if f"{CELERY_WORKER_NAME_PREFIX}-{queue.get('name')}" in pod_name
+                    ]
                 )
                 assert queue.get("replicaCount") == num_pods_for_queue
 
@@ -323,7 +332,10 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
             "enabled": True,
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "replicaCount": 1,
-            "extraWorkerQueues": [{"name": "extra-queue-1", "replicaCount": 1},],
+            "workerQueues": [
+                {"name": "dagster", "replicaCount": 2},
+                {"name": "extra-queue-1", "replicaCount": 1},
+            ],
             "livenessProbe": {
                 "initialDelaySeconds": 15,
                 "periodSeconds": 10,
@@ -440,7 +452,10 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
             "enabled": True,
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "replicaCount": 1,
-            "extraWorkerQueues": [{"name": "extra-queue-1", "replicaCount": 1},],
+            "workerQueues": [
+                {"name": "dagster", "replicaCount": 2},
+                {"name": "extra-queue-1", "replicaCount": 1},
+            ],
             "livenessProbe": {
                 "initialDelaySeconds": 15,
                 "periodSeconds": 10,
@@ -511,7 +526,10 @@ def helm_chart_for_run_coordinator(namespace, docker_image, should_cleanup=True)
             "enabled": True,
             "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
             "replicaCount": 1,
-            "extraWorkerQueues": [{"name": "extra-queue-1", "replicaCount": 1},],
+            "workerQueues": [
+                {"name": "dagster", "replicaCount": 2},
+                {"name": "extra-queue-1", "replicaCount": 1},
+            ],
             "livenessProbe": {
                 "initialDelaySeconds": 15,
                 "periodSeconds": 10,

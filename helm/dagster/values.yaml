@@ -224,21 +224,15 @@ celery:
   # support overriding the name of Celery workers
   workers:
     nameOverride: ""
-  # Number of replicas for the default Celery queue
-  replicaCount: 2
   # additional config options for Celery, applied to all queues. See:
   # https://docs.celeryproject.org/en/stable/userguide/configuration.html for available options
   configSource:
 
-  # Additional Celery worker queues can be configured here. Off by default.
-  # Each additional queue specified will be provisioned as an additional deployment alongside the
-  # default Celery worker deployment.
-  # Example:
-  #
-  # extraWorkerQueues:
-  #   - name: "redshift"
-  #     replicaCount: 3
-  extraWorkerQueues:
+  # Additional Celery worker queues can be configured here. When overriding, be sure to provision
+  # a "dagster" worker queue, as this is the default queue used by Dagster.
+  workerQueues:
+    - name: "dagster"
+      replicaCount: 2
 
   # Additional environment variables to set on the celery/job containers
   # A Kubernetes ConfigMap will be created with these environment variables.

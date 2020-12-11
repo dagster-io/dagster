@@ -1,5 +1,6 @@
-{{- if and .Values.celery.enabled .Values.celery.extraWorkerQueues }}
-{{ range $queue := .Values.celery.extraWorkerQueues }}
+{{- if .Values.celery.enabled }}
+{{ range $queue := .Values.celery.workerQueues }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
