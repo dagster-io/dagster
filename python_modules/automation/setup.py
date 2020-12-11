@@ -29,6 +29,7 @@ setup(
         "twine==1.15.0",
         "virtualenv==16.5.0",
         "wheel==0.33.6",
+        "urllib3==1.25.9",
     ],
     entry_points={
         "console_scripts": [
