@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.22.post0
+
+**Bugfixes**
+
+- [Dask] Pin dask[dataframe] to <=2.30.0 and distributed to <=2.30.1
+
 ## 0.9.22
 
 **New**
