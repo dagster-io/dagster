@@ -9,6 +9,7 @@ import grpc
 import pytest
 from dagster import check, seven
 from dagster.grpc.client import DagsterGrpcClient
+from dagster.seven import nullcontext
 from dagster.utils import file_relative_path
 from dagster_test.dagster_core_docker_buildkite import (
     build_and_tag_test_image,
@@ -72,6 +73,7 @@ def wait_for_connection(host, port):
     )
 
 
+@contextmanager
 def docker_service_up(docker_compose_file, service_name):
     check.str_param(service_name, "service_name")
     check.str_param(docker_compose_file, "docker_compose_file")
@@ -97,6 +99,18 @@ def docker_service_up(docker_compose_file, service_name):
             ["docker-compose", "-f", docker_compose_file, "up", "-d", service_name], env=env,
         )
 
+        yield
+
+        try:
+            subprocess.check_output(
+                ["docker-compose", "-f", docker_compose_file, "stop", service_name], env=env,
+            )
+            subprocess.check_output(
+                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name], env=env,
+            )
+        except Exception:  # pylint: disable=broad-except
+            pass
+
 
 @pytest.fixture(scope="session")
 def grpc_host():
@@ -117,8 +131,8 @@ def grpc_port():
 def docker_grpc_client(
     dagster_docker_image, grpc_host, grpc_port
 ):  # pylint: disable=redefined-outer-name, unused-argument
-    if not IS_BUILDKITE:
-        docker_service_up(file_relative_path(__file__, "docker-compose.yml"), "dagster-grpc-server")
-
-    wait_for_connection(grpc_host, grpc_port)
-    yield DagsterGrpcClient(port=grpc_port, host=grpc_host)
+    with docker_service_up(
+        file_relative_path(__file__, "docker-compose.yml"), "dagster-grpc-server"
+    ) if not IS_BUILDKITE else nullcontext():
+        wait_for_connection(grpc_host, grpc_port)
+        yield DagsterGrpcClient(port=grpc_port, host=grpc_host)

@@ -143,32 +143,40 @@ class TestPostgresInstance:
             )  # buildkite docker is handled in pipeline setup
             return
 
-        if not is_postgres_running(service_name):
-            try:
-                subprocess.check_output(
-                    ["docker-compose", "-f", docker_compose_file, "stop", service_name]
-                )
-                subprocess.check_output(
-                    ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
-                )
-            except subprocess.CalledProcessError:
-                pass
+        try:
+            subprocess.check_output(
+                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+            )
+            subprocess.check_output(
+                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
+            )
+        except subprocess.CalledProcessError:
+            pass
 
-            try:
-                subprocess.check_output(
-                    ["docker-compose", "-f", docker_compose_file, "up", "-d", service_name],
-                    stderr=subprocess.STDOUT,  # capture STDERR for error handling
-                )
-            except subprocess.CalledProcessError as ex:
-                err_text = ex.output.decode()
-                raise PostgresDockerError(
-                    "Failed to launch docker container(s) via docker-compose: {}".format(err_text),
-                    ex,
-                )
+        try:
+            subprocess.check_output(
+                ["docker-compose", "-f", docker_compose_file, "up", "-d", service_name],
+                stderr=subprocess.STDOUT,  # capture STDERR for error handling
+            )
+        except subprocess.CalledProcessError as ex:
+            err_text = ex.output.decode()
+            raise PostgresDockerError(
+                "Failed to launch docker container(s) via docker-compose: {}".format(err_text), ex,
+            )
 
         conn_str = TestPostgresInstance.conn_string(**conn_args)
         wait_for_connection(conn_str, retry_limit=10, retry_wait=3)
         yield conn_str
+
+        try:
+            subprocess.check_output(
+                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+            )
+            subprocess.check_output(
+                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
+            )
+        except subprocess.CalledProcessError:
+            pass
 
     @staticmethod
     @contextmanager
