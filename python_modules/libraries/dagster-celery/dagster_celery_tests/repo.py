@@ -65,13 +65,6 @@ def test_parallel_pipeline():
         add_one.alias("add_one_" + str(i))(value)
 
 
-@pipeline(mode_defs=celery_mode_defs)
-def test_more_parallel_pipeline():
-    value = simple()
-    for i in range(500):
-        add_one.alias("add_one_" + str(i))(value)
-
-
 COMPOSITE_DEPTH = 3
 
 

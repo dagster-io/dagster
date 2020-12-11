@@ -5,32 +5,17 @@ import threading
 import time
 from collections import OrderedDict
 
-import pytest
 from dagster import ModeDefinition, default_executors, seven
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.test_utils import instance_for_test_tempdir
 from dagster_celery import celery_executor
+from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
 
-from .utils import (
-    execute_eagerly_on_celery,
-    execute_on_thread,
-    execute_pipeline_on_celery,
-    skip_ci,
-    start_celery_worker,
-)
+from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
 
 celery_mode_defs = [ModeDefinition(executor_defs=default_executors + [celery_executor])]
 
 
-@pytest.mark.skip
-@skip_ci
-def test_priority_pipeline():
-    with execute_pipeline_on_celery("priority_pipeline") as result:
-        assert result.success
-
-
-@pytest.mark.skip
-@skip_ci
 def test_eager_priority_pipeline():
     with execute_eagerly_on_celery("simple_priority_pipeline") as result:
         assert result.success
@@ -49,8 +34,9 @@ def test_eager_priority_pipeline():
         ]
 
 
-@skip_ci
-def test_run_priority_pipeline():
+# If this test is failing locally, it likely means that there is a rogue
+# celery worker still running on your machine.
+def test_run_priority_pipeline(rabbitmq):
     with seven.TemporaryDirectory() as tempdir:
         with instance_for_test_tempdir(tempdir) as instance:
             low_done = threading.Event()
@@ -59,8 +45,8 @@ def test_run_priority_pipeline():
             # enqueue low-priority tasks
             low_thread = threading.Thread(
                 target=execute_on_thread,
-                args=("low_pipeline", low_done),
-                kwargs={"tempdir": tempdir, "tags": {"dagster-celery/run_priority": -3}},
+                args=("low_pipeline", low_done, instance.get_ref()),
+                kwargs={"tempdir": tempdir, "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "-3"}},
             )
             low_thread.daemon = True
             low_thread.start()
@@ -70,8 +56,8 @@ def test_run_priority_pipeline():
             # enqueue hi-priority tasks
             hi_thread = threading.Thread(
                 target=execute_on_thread,
-                args=("hi_pipeline", hi_done),
-                kwargs={"tempdir": tempdir, "tags": {"dagster-celery/run_priority": 3}},
+                args=("hi_pipeline", hi_done, instance.get_ref()),
+                kwargs={"tempdir": tempdir, "tags": {DAGSTER_CELERY_RUN_PRIORITY_TAG: "3"}},
             )
             hi_thread.daemon = True
             hi_thread.start()

@@ -1,19 +1,15 @@
 import os
+import signal
+import subprocess
 from contextlib import contextmanager
 
-import pytest
-from click.testing import CliRunner
 from dagster import execute_pipeline, seven
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
-from dagster_celery.cli import main
 
 BUILDKITE = os.getenv("BUILDKITE")
 
-skip_ci = pytest.mark.skipif(
-    bool(BUILDKITE),
-    reason="Tests hang forever on buildkite for reasons we don't currently understand",
-)
 
 REPO_FILE = os.path.join(os.path.dirname(__file__), "repo.py")
 
@@ -75,24 +71,28 @@ def execute_eagerly_on_celery(pipeline_name, instance=None, tempdir=None, tags=N
             yield result
 
 
-def execute_on_thread(pipeline_name, done, tempdir=None, tags=None):
-    with execute_pipeline_on_celery(pipeline_name, tempdir=tempdir, tags=tags):
-        done.set()
+def execute_on_thread(pipeline_name, done, instance_ref, tempdir=None, tags=None):
+    with DagsterInstance.from_ref(instance_ref) as instance:
+        with execute_pipeline_on_celery(
+            pipeline_name, tempdir=tempdir, tags=tags, instance=instance
+        ):
+            done.set()
 
 
 @contextmanager
 def start_celery_worker(queue=None):
-    runner = CliRunner()
-    runargs = ["worker", "start", "-d"]
-    if queue:
-        runargs += ["-q", queue]
-    result = runner.invoke(main, runargs)
-    assert result.exit_code == 0, str(result.exception)
+    process = subprocess.Popen(
+        ["dagster-celery", "worker", "start", "-A", "dagster_celery.app"]
+        + (["-q", queue] if queue else [])
+        + (["--", "--concurrency", "1"])
+    )
+
     try:
         yield
     finally:
-        result = runner.invoke(main, ["worker", "terminate"])
-        assert result.exit_code == 0, str(result.exception)
+        os.kill(process.pid, signal.SIGINT)
+        process.wait()
+        subprocess.check_output(["dagster-celery", "worker", "terminate"])
 
 
 def events_of_type(result, event_type):
