@@ -29,7 +29,7 @@ class BuildkiteQueue(Enum):
     """
 
     DOCKER = "docker-p"
-    MEDIUM = "medium-v4-3-2"
+    MEDIUM = "buildkite-medium-v5-0-1"
     WINDOWS = "windows-medium"
 
     @classmethod
