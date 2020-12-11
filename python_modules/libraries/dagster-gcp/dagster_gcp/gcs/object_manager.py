@@ -1,7 +1,7 @@
 import logging
 import pickle
 
-from dagster import AssetStore, Field, StringSource, check, resource
+from dagster import Field, ObjectManager, StringSource, check, object_manager
 from dagster.utils import PICKLE_PROTOCOL
 from dagster.utils.backoff import backoff
 from google.api_core.exceptions import TooManyRequests
@@ -10,7 +10,7 @@ from google.cloud import storage
 DEFAULT_LEASE_DURATION = 60  # One minute
 
 
-class PickledObjectGCSAssetStore(AssetStore):
+class PickledObjectGCSObjectManager(ObjectManager):
     def __init__(self, bucket, client=None, prefix="dagster"):
         self.bucket = check.str_param(bucket, "bucket")
         self.client = client or storage.Client()
@@ -19,16 +19,8 @@ class PickledObjectGCSAssetStore(AssetStore):
         self.prefix = check.str_param(prefix, "prefix")
 
     def _get_path(self, context):
-        return "/".join(
-            [
-                self.prefix,
-                "storage",
-                context.source_run_id,
-                "files",
-                context.step_key,
-                context.output_name,
-            ]
-        )
+        run_id, step_key, name = context.get_run_scoped_output_identifier()
+        return "/".join([self.prefix, "storage", run_id, "files", step_key, name,])
 
     def _rm_object(self, key):
         check.str_param(key, "key")
@@ -47,14 +39,14 @@ class PickledObjectGCSAssetStore(AssetStore):
         check.str_param(key, "key")
         return "gs://" + self.bucket + "/" + "{key}".format(key=key)
 
-    def get_asset(self, context):
-        key = self._get_path(context)
+    def load_input(self, context):
+        key = self._get_path(context.upstream_output)
         bytes_obj = self.bucket_obj.blob(key).download_as_bytes()
         obj = pickle.loads(bytes_obj)
 
         return obj
 
-    def set_asset(self, context, obj):
+    def handle_output(self, context, obj):
         key = self._get_path(context)
         logging.info("Writing GCS object at: " + self._uri_for_key(key))
 
@@ -71,16 +63,16 @@ class PickledObjectGCSAssetStore(AssetStore):
         )
 
 
-@resource(
+@object_manager(
     config_schema={
         "gcs_bucket": Field(StringSource),
         "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
     },
 )
-def gcs_asset_store(init_context):
-    """Persistent asset store using GCS for storage.
+def gcs_object_manager(init_context):
+    """Persistent object manager using GCS for storage.
 
-    Suitable for assets storage for distributed executors, so long as
+    Suitable for objects storage for distributed executors, so long as
     each execution node has network connectivity and credentials for GCS and
     the backing bucket.
 
@@ -92,7 +84,7 @@ def gcs_asset_store(init_context):
         pipeline_def = PipelineDefinition(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={'asset_store': gcs_asset_store, ...},
+                    resource_defs={'object_manager': gcs_object_manager, ...},
                 ), ...
             ], ...
         )
@@ -102,16 +94,16 @@ def gcs_asset_store(init_context):
     .. code-block:: YAML
 
         resources:
-            asset_store:
+            object_manager:
                 config:
                     gcs_bucket: my-cool-bucket
                     gcs_prefix: good/prefix-for-files-
     """
     # TODO: Add gcs client resource once resource dependencies are enabled.
     client = storage.Client()
-    asset_store = PickledObjectGCSAssetStore(
+    pickled_object_manager = PickledObjectGCSObjectManager(
         init_context.resource_config["gcs_bucket"],
         client,
         init_context.resource_config["gcs_prefix"],
     )
-    return asset_store
+    return pickled_object_manager

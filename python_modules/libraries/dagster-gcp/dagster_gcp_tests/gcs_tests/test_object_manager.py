@@ -1,9 +1,10 @@
 from dagster import (
-    AssetStoreContext,
     DagsterInstance,
+    InputContext,
     InputDefinition,
     Int,
     ModeDefinition,
+    OutputContext,
     OutputDefinition,
     PipelineRun,
     lambda_solid,
@@ -13,7 +14,7 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.objects import StepOutputHandle
 from dagster.core.utils import make_new_run_id
-from dagster_gcp.gcs.asset_store import PickledObjectGCSAssetStore, gcs_asset_store
+from dagster_gcp.gcs.object_manager import PickledObjectGCSObjectManager, gcs_object_manager
 from google.cloud import storage
 
 
@@ -40,14 +41,14 @@ def define_inty_pipeline():
     def add_one(num):
         return num + 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": gcs_asset_store},)])
+    @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": gcs_object_manager},)])
     def basic_external_plan_execution():
         add_one(return_one())
 
     return basic_external_plan_execution
 
 
-def test_gcs_asset_store_execution(gcs_bucket):
+def test_gcs_object_manager_execution(gcs_bucket):
     pipeline_def = define_inty_pipeline()
 
     run_config = {"resources": {"object_manager": {"config": {"gcs_bucket": gcs_bucket,}}}}
@@ -75,19 +76,20 @@ def test_gcs_asset_store_execution(gcs_bucket):
 
     assert get_step_output(return_one_step_events, "return_one")
 
-    asset_store = PickledObjectGCSAssetStore(gcs_bucket, storage.Client())
+    object_manager = PickledObjectGCSObjectManager(gcs_bucket, storage.Client())
     step_output_handle = StepOutputHandle("return_one")
-    context = AssetStoreContext(
-        step_key=step_output_handle.step_key,
-        output_name=step_output_handle.output_name,
-        mapping_key=step_output_handle.mapping_key,
-        asset_metadata={},
+    context = InputContext(
         pipeline_name=pipeline_def.name,
         solid_def=pipeline_def.solid_def_named("return_one"),
-        dagster_type=execution_plan.get_step_output(step_output_handle).output_def.dagster_type,
-        source_run_id=run_id,
+        upstream_output=OutputContext(
+            step_key=step_output_handle.step_key,
+            name=step_output_handle.output_name,
+            pipeline_name=pipeline_def.name,
+            run_id=run_id,
+            solid_def=pipeline_def.solid_def_named("return_one"),
+        ),
     )
-    assert asset_store.get_asset(context) == 1
+    assert object_manager.load_input(context) == 1
 
     add_one_step_events = list(
         execute_plan(
@@ -99,16 +101,17 @@ def test_gcs_asset_store_execution(gcs_bucket):
     )
 
     step_output_handle = StepOutputHandle("add_one")
-    context = AssetStoreContext(
-        step_key=step_output_handle.step_key,
-        output_name=step_output_handle.output_name,
-        mapping_key=step_output_handle.mapping_key,
-        asset_metadata={},
+    context = InputContext(
         pipeline_name=pipeline_def.name,
         solid_def=pipeline_def.solid_def_named("add_one"),
-        dagster_type=execution_plan.get_step_output(step_output_handle).output_def.dagster_type,
-        source_run_id=run_id,
+        upstream_output=OutputContext(
+            step_key=step_output_handle.step_key,
+            name=step_output_handle.output_name,
+            pipeline_name=pipeline_def.name,
+            run_id=run_id,
+            solid_def=pipeline_def.solid_def_named("add_one"),
+        ),
     )
 
     assert get_step_output(add_one_step_events, "add_one")
-    assert asset_store.get_asset(context) == 2
+    assert object_manager.load_input(context) == 2
