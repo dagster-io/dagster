@@ -1,10 +1,11 @@
 import pytest
 from dagster import (
-    AssetStoreContext,
     DagsterInstance,
+    InputContext,
     InputDefinition,
     Int,
     ModeDefinition,
+    OutputContext,
     OutputDefinition,
     PipelineRun,
     lambda_solid,
@@ -16,16 +17,16 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.utils import make_new_run_id
 from dagster_azure.adls2 import FakeADLS2ServiceClient
-from dagster_azure.adls2.asset_store import PickledObjectADLS2AssetStore
+from dagster_azure.adls2.object_manager import PickledObjectADLS2ObjectManager
 from dagster_azure.blob import FakeBlobServiceClient
 
 
-def fake_asset_store_factory(asset_store):
+def fake_object_manager_factory(object_manager):
     @resource
-    def fake_asset_store(_):
-        return asset_store
+    def fake_object_manager(_):
+        return object_manager
 
-    return fake_asset_store
+    return fake_object_manager
 
 
 def get_step_output(step_events, step_key, output_name="result"):
@@ -39,7 +40,7 @@ def get_step_output(step_events, step_key, output_name="result"):
     return None
 
 
-def define_inty_pipeline(asset_store):
+def define_inty_pipeline(object_manager):
     @lambda_solid(output_def=OutputDefinition(Int, asset_store_key="object_manager"))
     def return_one():
         return 1
@@ -53,7 +54,9 @@ def define_inty_pipeline(asset_store):
 
     @pipeline(
         mode_defs=[
-            ModeDefinition(resource_defs={"object_manager": fake_asset_store_factory(asset_store)})
+            ModeDefinition(
+                resource_defs={"object_manager": fake_object_manager_factory(object_manager)}
+            )
         ]
     )
     def basic_external_plan_execution():
@@ -66,13 +69,13 @@ nettest = pytest.mark.nettest
 
 
 @nettest
-def test_adls2_asset_store_execution(storage_account, file_system, credential):
-    asset_store = PickledObjectADLS2AssetStore(
+def test_adls2_object_manager_execution(storage_account, file_system, credential):
+    object_manager = PickledObjectADLS2ObjectManager(
         file_system,
         FakeADLS2ServiceClient(storage_account, credential),
         FakeBlobServiceClient(storage_account, credential),
     )
-    pipeline_def = define_inty_pipeline(asset_store)
+    pipeline_def = define_inty_pipeline(object_manager)
 
     run_id = make_new_run_id()
 
@@ -94,17 +97,18 @@ def test_adls2_asset_store_execution(storage_account, file_system, credential):
 
     assert get_step_output(return_one_step_events, "return_one")
     step_output_handle = StepOutputHandle("return_one")
-    context = AssetStoreContext(
-        step_key=step_output_handle.step_key,
-        output_name=step_output_handle.output_name,
-        mapping_key=step_output_handle.mapping_key,
-        asset_metadata={},
+    context = InputContext(
         pipeline_name=pipeline_def.name,
         solid_def=pipeline_def.solid_def_named("return_one"),
-        dagster_type=execution_plan.get_step_output(step_output_handle).output_def.dagster_type,
-        source_run_id=run_id,
+        upstream_output=OutputContext(
+            step_key=step_output_handle.step_key,
+            name=step_output_handle.output_name,
+            pipeline_name=pipeline_def.name,
+            run_id=run_id,
+            solid_def=pipeline_def.solid_def_named("return_one"),
+        ),
     )
-    assert asset_store.get_asset(context) == 1
+    assert object_manager.load_input(context) == 1
 
     add_one_step_events = list(
         execute_plan(
@@ -115,16 +119,17 @@ def test_adls2_asset_store_execution(storage_account, file_system, credential):
     )
 
     step_output_handle = StepOutputHandle("add_one")
-    context = AssetStoreContext(
-        step_key=step_output_handle.step_key,
-        output_name=step_output_handle.output_name,
-        mapping_key=step_output_handle.mapping_key,
-        asset_metadata={},
+    context = InputContext(
         pipeline_name=pipeline_def.name,
         solid_def=pipeline_def.solid_def_named("add_one"),
-        dagster_type=execution_plan.get_step_output(step_output_handle).output_def.dagster_type,
-        source_run_id=run_id,
+        upstream_output=OutputContext(
+            step_key=step_output_handle.step_key,
+            name=step_output_handle.output_name,
+            pipeline_name=pipeline_def.name,
+            run_id=run_id,
+            solid_def=pipeline_def.solid_def_named("add_one"),
+        ),
     )
 
     assert get_step_output(add_one_step_events, "add_one")
-    assert asset_store.get_asset(context) == 2
+    assert object_manager.load_input(context) == 2

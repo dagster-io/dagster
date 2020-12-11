@@ -1,7 +1,7 @@
 import logging
 import pickle
 
-from dagster import AssetStore, Field, Selector, StringSource, check, resource
+from dagster import Field, ObjectManager, Selector, StringSource, check, object_manager
 from dagster.utils import PICKLE_PROTOCOL
 from dagster_azure.adls2.resources import _adls2_resource_from_config
 from dagster_azure.adls2.utils import ResourceNotFoundError
@@ -9,7 +9,7 @@ from dagster_azure.adls2.utils import ResourceNotFoundError
 _LEASE_DURATION = 60  # One minute
 
 
-class PickledObjectADLS2AssetStore(AssetStore):
+class PickledObjectADLS2ObjectManager(ObjectManager):
     def __init__(self, file_system, adls2_client, blob_client, prefix="dagster"):
         self.adls2_client = adls2_client
         self.file_system_client = self.adls2_client.get_file_system_client(file_system)
@@ -22,16 +22,8 @@ class PickledObjectADLS2AssetStore(AssetStore):
         self.file_system_client.get_file_system_properties()
 
     def _get_path(self, context):
-        return "/".join(
-            [
-                self.prefix,
-                "storage",
-                context.source_run_id,
-                "files",
-                context.step_key,
-                context.output_name,
-            ]
-        )
+        run_id, step_key, output_name = context.get_run_scoped_output_identifier()
+        return "/".join([self.prefix, "storage", run_id, "files", step_key, output_name,])
 
     def _rm_object(self, key):
         check.str_param(key, "key")
@@ -61,15 +53,15 @@ class PickledObjectADLS2AssetStore(AssetStore):
             key=key,
         )
 
-    def get_asset(self, context):
-        key = self._get_path(context)
+    def load_input(self, context):
+        key = self._get_path(context.upstream_output)
         file = self.file_system_client.get_file_client(key)
         stream = file.download_file()
         obj = pickle.loads(stream.readall())
 
         return obj
 
-    def set_asset(self, context, obj):
+    def handle_output(self, context, obj):
         key = self._get_path(context)
         logging.info("Writing ADLS2 object at: " + self._uri_for_key(key))
 
@@ -84,7 +76,7 @@ class PickledObjectADLS2AssetStore(AssetStore):
             file.upload_data(pickled_obj, lease=lease, overwrite=True)
 
 
-@resource(
+@object_manager(
     config_schema={
         "adls2_file_system": Field(StringSource, description="ADLS Gen2 file system name"),
         "adls2_prefix": Field(StringSource, is_required=False, default_value="dagster"),
@@ -100,10 +92,10 @@ class PickledObjectADLS2AssetStore(AssetStore):
         ),
     },
 )
-def adls2_asset_store(init_context):
-    """Persistent asset store using Azure Data Lake Storage Gen2 for storage.
+def adls2_object_manager(init_context):
+    """Persistent object manager using Azure Data Lake Storage Gen2 for storage.
 
-    Suitable for assets storage for distributed executors, so long as
+    Suitable for objects storage for distributed executors, so long as
     each execution node has network connectivity and credentials for ADLS and
     the backing container.
 
@@ -115,7 +107,7 @@ def adls2_asset_store(init_context):
         pipeline_def = PipelineDefinition(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={'asset_store': adls2_asset_store, ...},
+                    resource_defs={'object_manager': adls2_object_manager, ...},
                 ), ...
             ], ...
         )
@@ -125,7 +117,7 @@ def adls2_asset_store(init_context):
     .. code-block:: YAML
 
         resources:
-            asset_store:
+            object_manager:
                 config:
                     adls2_file_system: my-cool-file-system
                     adls2_prefix: good/prefix-for-files-
@@ -135,10 +127,10 @@ def adls2_asset_store(init_context):
     # TODO: Add adls2 client resource once resource dependencies are enabled.
     adls2_client = _adls2_resource_from_config(init_context.resource_config).adls2_client
     blob_client = _adls2_resource_from_config(init_context.resource_config).blob_client
-    asset_store = PickledObjectADLS2AssetStore(
+    pickled_object_manager = PickledObjectADLS2ObjectManager(
         init_context.resource_config["adls2_file_system"],
         adls2_client,
         blob_client,
         init_context.resource_config.get("adls2_prefix"),
     )
-    return asset_store
+    return pickled_object_manager
