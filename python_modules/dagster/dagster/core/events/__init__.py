@@ -88,6 +88,7 @@ PIPELINE_EVENTS = {
     DagsterEventType.PIPELINE_STARTING,
     DagsterEventType.PIPELINE_START,
     DagsterEventType.PIPELINE_SUCCESS,
+    DagsterEventType.PIPELINE_INIT_FAILURE,
     DagsterEventType.PIPELINE_FAILURE,
 }
 

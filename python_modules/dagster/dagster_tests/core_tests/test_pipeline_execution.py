@@ -32,7 +32,7 @@ from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViola
 from dagster.core.execution.results import SolidExecutionResult
 from dagster.core.host_representation import RepositoryLocation, RepositoryLocationHandle
 from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import step_output_event_filter
+from dagster.core.test_utils import instance_for_test, step_output_event_filter
 from dagster.core.utility_solids import (
     create_root_solid,
     create_solid_with_deps,
@@ -676,14 +676,32 @@ def test_pipeline_init_failure():
     def failing_init_pipeline():
         stub_solid()
 
+    mem_instance = DagsterInstance.ephemeral()
     result = execute_pipeline(
-        failing_init_pipeline, run_config=dict(env_config), raise_on_error=False
+        failing_init_pipeline,
+        run_config=dict(env_config),
+        raise_on_error=False,
+        instance=mem_instance,
     )
 
     assert result.success is False
     event = result.event_list[-1]
     assert event.event_type_value == "PIPELINE_INIT_FAILURE"
     assert event.pipeline_init_failure_data
+    assert mem_instance.get_run_by_id(result.run_id).is_failure
+
+    with instance_for_test() as fs_instance:
+        result = execute_pipeline(
+            failing_init_pipeline,
+            run_config=dict(env_config),
+            raise_on_error=False,
+            instance=fs_instance,
+        )
+        assert result.success is False
+        event = result.event_list[-1]
+        assert event.event_type_value == "PIPELINE_INIT_FAILURE"
+        assert event.pipeline_init_failure_data
+        assert fs_instance.get_run_by_id(result.run_id).is_failure
 
 
 def test_reexecution_fs_storage():
