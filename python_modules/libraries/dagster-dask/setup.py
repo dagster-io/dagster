@@ -26,7 +26,12 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
         ],
         packages=find_packages(exclude=["test"]),
-        install_requires=["bokeh", "dagster", "dask[dataframe]>=1.2.2", "distributed>=1.28.1",],
+        install_requires=[
+            "bokeh",
+            "dagster",
+            "dask[dataframe]>=1.2.2,<=2.30.0",
+            "distributed>=1.28.1,<=2.30.1",
+        ],
         extras_require={
             "yarn": ["dask-yarn"],
             "pbs": ["dask-jobqueue"],
