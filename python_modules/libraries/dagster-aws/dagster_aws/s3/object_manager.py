@@ -1,13 +1,13 @@
 import logging
 import pickle
 
-from dagster import AssetStore, Field, StringSource, check, resource
+from dagster import Field, ObjectManager, StringSource, check, object_manager
 from dagster.utils import PICKLE_PROTOCOL
 
 from .utils import construct_s3_client
 
 
-class PickledObjectS3AssetStore(AssetStore):
+class PickledObjectS3ObjectManager(ObjectManager):
     def __init__(
         self, s3_bucket, s3_session=None, s3_prefix=None,
     ):
@@ -59,13 +59,13 @@ class PickledObjectS3AssetStore(AssetStore):
         check.str_param(key, "key")
         return "s3://" + self.bucket + "/" + "{key}".format(key=key)
 
-    def get_asset(self, context):
-        key = self._get_path(context)
+    def load_input(self, context):
+        key = self._get_path(context.upstream_output)
         obj = pickle.loads(self.s3.get_object(Bucket=self.bucket, Key=key)["Body"].read())
 
         return obj
 
-    def set_asset(self, context, obj):
+    def handle_output(self, context, obj):
         key = self._get_path(context)
         logging.info("Writing S3 object at: " + self._uri_for_key(key))
 
@@ -77,16 +77,16 @@ class PickledObjectS3AssetStore(AssetStore):
         self.s3.put_object(Bucket=self.bucket, Key=key, Body=pickled_obj)
 
 
-@resource(
+@object_manager(
     config_schema={
         "s3_bucket": Field(StringSource),
         "s3_prefix": Field(StringSource, is_required=False, default_value="dagster"),
     }
 )
-def s3_asset_store(init_context):
-    """Persistent asset store using S3 for storage.
+def s3_object_manager(init_context):
+    """Persistent object manager using S3 for storage.
 
-    Suitable for assets storage for distributed executors, so long as
+    Suitable for objects storage for distributed executors, so long as
     each execution node has network connectivity and credentials for S3 and
     the backing bucket.
 
@@ -98,7 +98,7 @@ def s3_asset_store(init_context):
         pipeline_def = PipelineDefinition(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={'asset_store': s3_asset_store, ...},
+                    resource_defs={'object_manager': s3_object_manager, ...},
                 ), ...
             ], ...
         )
@@ -108,7 +108,7 @@ def s3_asset_store(init_context):
     .. code-block:: YAML
 
         resources:
-            asset_store:
+            object_manager:
                 config:
                     s3_bucket: my-cool-bucket
                     s3_prefix: good/prefix-for-files-
@@ -116,5 +116,5 @@ def s3_asset_store(init_context):
     # TODO: Add s3_session resource once resource dependencies are enabled.
     s3_bucket = init_context.resource_config["s3_bucket"]
     s3_prefix = init_context.resource_config.get("s3_prefix")  # s3_prefix is optional
-    asset_store = PickledObjectS3AssetStore(s3_bucket, s3_prefix=s3_prefix)
-    return asset_store
+    pickled_object_manager = PickledObjectS3ObjectManager(s3_bucket, s3_prefix=s3_prefix)
+    return pickled_object_manager
