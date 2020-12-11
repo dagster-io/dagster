@@ -7,24 +7,17 @@ import {Loading} from 'src/Loading';
 import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {UnloadableJobs} from 'src/jobs/UnloadableJobs';
-import {ScheduleRow} from 'src/schedules/ScheduleRow';
 import {SCHEDULES_ROOT_QUERY, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {SchedulerInfo} from 'src/schedules/SchedulerInfo';
-import {RepositorySchedulesFragment} from 'src/schedules/types/RepositorySchedulesFragment';
+import {SchedulesTable} from 'src/schedules/SchedulesTable';
 import {SchedulesRootQuery} from 'src/schedules/types/SchedulesRootQuery';
 import {JobType} from 'src/types/globalTypes';
 import {Group} from 'src/ui/Group';
 import {Page} from 'src/ui/Page';
-import {Table} from 'src/ui/Table';
 import {repoAddressToSelector} from 'src/workspace/repoAddressToSelector';
 import {RepoAddress} from 'src/workspace/types';
 
-interface Props {
-  repoAddress: RepoAddress;
-}
-
-export const SchedulesRoot: React.FC<Props> = (props) => {
-  const {repoAddress} = props;
+export const SchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useDocumentTitle('Schedules');
   const repositorySelector = repoAddressToSelector(repoAddress);
 
@@ -80,7 +73,10 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
               schedulesSection = schedules.length > 0 && (
                 <Group direction="vertical" spacing={16}>
                   <SchedulerTimezoneNote schedulerOrError={scheduler} />
-                  <SchedulesTable repository={repositoryOrError} />
+                  <SchedulesTable
+                    schedules={repositoryOrError.schedules}
+                    repoAddress={repoAddress}
+                  />
                 </Group>
               );
             }
@@ -102,42 +98,5 @@ export const SchedulesRoot: React.FC<Props> = (props) => {
         }}
       </Loading>
     </Page>
-  );
-};
-
-interface SchedulesTableProps {
-  repository: RepositorySchedulesFragment;
-}
-
-export const SchedulesTable: React.FunctionComponent<SchedulesTableProps> = (props) => {
-  const {repository} = props;
-
-  const repoAddress = {
-    name: repository.name,
-    location: repository.location.name,
-  };
-  const schedules = repository.schedules;
-
-  return (
-    <>
-      <Table striped style={{width: '100%'}}>
-        <thead>
-          <tr>
-            <th style={{maxWidth: '60px'}}></th>
-            <th>Schedule Name</th>
-            <th>Pipeline</th>
-            <th style={{width: '150px'}}>Schedule</th>
-            <th style={{width: '100px'}}>Last Tick</th>
-            <th>Latest Runs</th>
-            <th>Execution Params</th>
-          </tr>
-        </thead>
-        <tbody>
-          {schedules.map((schedule) => (
-            <ScheduleRow repoAddress={repoAddress} schedule={schedule} key={schedule.name} />
-          ))}
-        </tbody>
-      </Table>
-    </>
   );
 };

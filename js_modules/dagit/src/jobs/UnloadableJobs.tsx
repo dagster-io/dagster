@@ -8,7 +8,10 @@ import {TickTag} from 'src/JobTick';
 import {RepositoryOriginInformation} from 'src/RepositoryInformation';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {titleForRun} from 'src/runs/RunUtils';
-import {STOP_SCHEDULE_MUTATION, displayScheduleMutationErrors} from 'src/schedules/ScheduleRow';
+import {
+  STOP_SCHEDULE_MUTATION,
+  displayScheduleMutationErrors,
+} from 'src/schedules/ScheduleMutations';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {StopSchedule} from 'src/schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from 'src/sensors/SensorMutations';

@@ -1,4 +1,4 @@
-import {useMutation, gql} from '@apollo/client';
+import {useMutation} from '@apollo/client';
 import {
   Button,
   Colors,
@@ -15,30 +15,54 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {showCustomAlert} from 'src/CustomAlertProvider';
 import {TickTag} from 'src/JobTick';
-import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RunStatus} from 'src/runs/RunStatusDots';
 import {DagsterTag} from 'src/runs/RunTag';
 import {titleForRun} from 'src/runs/RunUtils';
 import {ReconcileButton} from 'src/schedules/ReconcileButton';
+import {
+  START_SCHEDULE_MUTATION,
+  STOP_SCHEDULE_MUTATION,
+  displayScheduleMutationErrors,
+} from 'src/schedules/ScheduleMutations';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';
-import {
-  StartSchedule,
-  StartSchedule_startSchedule_PythonError,
-} from 'src/schedules/types/StartSchedule';
-import {
-  StopSchedule,
-  StopSchedule_stopRunningSchedule_PythonError,
-} from 'src/schedules/types/StopSchedule';
+import {StartSchedule} from 'src/schedules/types/StartSchedule';
+import {StopSchedule} from 'src/schedules/types/StopSchedule';
 import {JobStatus, JobType} from 'src/types/globalTypes';
 import {Group} from 'src/ui/Group';
+import {Table} from 'src/ui/Table';
 import {Code} from 'src/ui/Text';
 import {RepoAddress} from 'src/workspace/types';
 import {workspacePathFromAddress} from 'src/workspace/workspacePath';
 
 const NUM_RUNS_TO_DISPLAY = 10;
+
+export const SchedulesTable: React.FunctionComponent<{
+  schedules: ScheduleFragment[];
+  repoAddress: RepoAddress;
+}> = ({repoAddress, schedules}) => {
+  return (
+    <Table striped style={{width: '100%'}}>
+      <thead>
+        <tr>
+          <th style={{maxWidth: '60px'}}></th>
+          <th>Schedule Name</th>
+          <th>Pipeline</th>
+          <th style={{width: '150px'}}>Schedule</th>
+          <th style={{width: '100px'}}>Last Tick</th>
+          <th>Latest Runs</th>
+          <th>Execution Params</th>
+        </tr>
+      </thead>
+      <tbody>
+        {schedules.map((schedule) => (
+          <ScheduleRow repoAddress={repoAddress} schedule={schedule} key={schedule.name} />
+        ))}
+      </tbody>
+    </Table>
+  );
+};
 
 const errorDisplay = (status: JobStatus, runningScheduleCount: number) => {
   if (status === JobStatus.STOPPED && runningScheduleCount === 0) {
@@ -88,34 +112,7 @@ const errorDisplay = (status: JobStatus, runningScheduleCount: number) => {
   );
 };
 
-export const displayScheduleMutationErrors = (data: StartSchedule | StopSchedule) => {
-  let error:
-    | StartSchedule_startSchedule_PythonError
-    | StopSchedule_stopRunningSchedule_PythonError
-    | null = null;
-
-  if ('startSchedule' in data && data.startSchedule.__typename === 'PythonError') {
-    error = data.startSchedule;
-  } else if (
-    'stopRunningSchedule' in data &&
-    data.stopRunningSchedule.__typename === 'PythonError'
-  ) {
-    error = data.stopRunningSchedule;
-  }
-
-  if (error) {
-    showCustomAlert({
-      title: 'Schedule Response',
-      body: (
-        <>
-          <PythonErrorInfo error={error} />
-        </>
-      ),
-    });
-  }
-};
-
-export const ScheduleRow: React.FC<{
+const ScheduleRow: React.FC<{
   schedule: ScheduleFragment;
   repoAddress: RepoAddress;
 }> = (props) => {
@@ -135,6 +132,7 @@ export const ScheduleRow: React.FC<{
   );
 
   const {name, cronSchedule, pipelineName, mode, scheduleState} = schedule;
+  const {id, status, runs, runsCount, ticks, runningCount: runningScheduleCount} = scheduleState;
 
   const scheduleSelector = {
     repositoryLocationName: repoAddress.location,
@@ -142,11 +140,17 @@ export const ScheduleRow: React.FC<{
     scheduleName: name,
   };
 
-  const displayName = (
-    <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
-  );
-
-  const {id, status, runs, runsCount, ticks, runningCount: runningScheduleCount} = scheduleState;
+  const onStatusChange = () => {
+    if (status === JobStatus.RUNNING) {
+      stopSchedule({
+        variables: {scheduleOriginId: id},
+      });
+    } else {
+      startSchedule({
+        variables: {scheduleSelector},
+      });
+    }
+  };
 
   const latestTick = ticks.length > 0 ? ticks[0] : null;
 
@@ -159,22 +163,13 @@ export const ScheduleRow: React.FC<{
           disabled={toggleOffInFlight || toggleOnInFlight}
           innerLabelChecked="on"
           innerLabel="off"
-          onChange={() => {
-            if (status === JobStatus.RUNNING) {
-              stopSchedule({
-                variables: {scheduleOriginId: id},
-              });
-            } else {
-              startSchedule({
-                variables: {scheduleSelector},
-              });
-            }
-          }}
+          onChange={onStatusChange}
         />
-
         {errorDisplay(status, runningScheduleCount)}
       </td>
-      <td>{displayName}</td>
+      <td>
+        <Link to={workspacePathFromAddress(repoAddress, `/schedules/${name}`)}>{name}</Link>
+      </td>
       <td>
         <Link to={workspacePathFromAddress(repoAddress, `/pipelines/${pipelineName}/`)}>
           {pipelineName}
@@ -274,43 +269,3 @@ export const ScheduleRow: React.FC<{
     </tr>
   );
 };
-
-export const START_SCHEDULE_MUTATION = gql`
-  mutation StartSchedule($scheduleSelector: ScheduleSelector!) {
-    startSchedule(scheduleSelector: $scheduleSelector) {
-      __typename
-      ... on ScheduleStateResult {
-        scheduleState {
-          __typename
-          id
-          status
-          runningCount
-        }
-      }
-      ... on PythonError {
-        message
-        stack
-      }
-    }
-  }
-`;
-
-export const STOP_SCHEDULE_MUTATION = gql`
-  mutation StopSchedule($scheduleOriginId: String!) {
-    stopRunningSchedule(scheduleOriginId: $scheduleOriginId) {
-      __typename
-      ... on ScheduleStateResult {
-        scheduleState {
-          __typename
-          id
-          status
-          runningCount
-        }
-      }
-      ... on PythonError {
-        message
-        stack
-      }
-    }
-  }
-`;

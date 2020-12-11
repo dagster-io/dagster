@@ -8,7 +8,7 @@ import {
   displayScheduleMutationErrors,
   START_SCHEDULE_MUTATION,
   STOP_SCHEDULE_MUTATION,
-} from 'src/schedules/ScheduleRow';
+} from 'src/schedules/ScheduleMutations';
 import {TimestampDisplay} from 'src/schedules/TimestampDisplay';
 import {humanCronString} from 'src/schedules/humanCronString';
 import {ScheduleFragment} from 'src/schedules/types/ScheduleFragment';

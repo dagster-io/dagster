@@ -9,7 +9,7 @@ import {useDocumentTitle} from 'src/hooks/useDocumentTitle';
 import {UnloadableJobs} from 'src/jobs/UnloadableJobs';
 import {SCHEDULE_FRAGMENT, SchedulerTimezoneNote} from 'src/schedules/ScheduleUtils';
 import {SCHEDULER_FRAGMENT, SchedulerInfo} from 'src/schedules/SchedulerInfo';
-import {SchedulesTable} from 'src/schedules/SchedulesRoot';
+import {SchedulesTable} from 'src/schedules/SchedulesTable';
 import {InstanceJobsRootQuery} from 'src/schedules/types/InstanceJobsRootQuery';
 import {JOB_STATE_FRAGMENT, SENSOR_FRAGMENT} from 'src/sensors/SensorFragment';
 import {SensorsTable} from 'src/sensors/SensorsTable';
@@ -62,7 +62,10 @@ export const InstanceJobsRoot = () => {
                 {repositoriesOrError.nodes.map((repository) => (
                   <Group direction="vertical" spacing={12} key={repository.name}>
                     <strong>{`${repository.name}@${repository.location.name}`}</strong>
-                    <SchedulesTable repository={repository} />
+                    <SchedulesTable
+                      repoAddress={{name: repository.name, location: repository.location.name}}
+                      schedules={repository.schedules}
+                    />
                   </Group>
                 ))}
               </Group>
