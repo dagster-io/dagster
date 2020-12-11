@@ -10,6 +10,19 @@
 - Changed `ExecuteStepArgs` parameters. Replaced `execute_step_with_structured_logs` CLI command
   with `execute_step`, and `execute_run_with_structured_logs` with `execute_run`.
 - The `.compute` suffix is no longer applied to all step keys.
+
+
+## 0.9.22
+
+**New**
+
+- When using a solid selection in the Dagit Playground, non-matching solids are hidden in the RunPreview panel.
+
+**Bugfixes**
+
+- [Helm/K8s] Fixed whitespacing bug in ingress.yaml Helm template.
+
+
 ## 0.9.21
 **Community Contributions**
 
