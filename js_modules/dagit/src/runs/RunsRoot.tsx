@@ -1,6 +1,7 @@
 import {gql, NetworkStatus} from '@apollo/client';
-import {Colors, NonIdealState, Tab, Tabs} from '@blueprintjs/core';
+import {Colors, NonIdealState, Spinner, Tab, Tabs, Tag} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
+import {isEqual} from 'lodash';
 import * as React from 'react';
 import {RouteComponentProps} from 'react-router';
 import styled from 'styled-components';
@@ -16,6 +17,7 @@ import {
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
 } from 'src/runs/RunsFilter';
+import {CountFragment} from 'src/runs/types/CountFragment';
 import {RunsRootQuery, RunsRootQueryVariables} from 'src/runs/types/RunsRootQuery';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {PipelineRunStatus} from 'src/types/globalTypes';
@@ -29,20 +31,22 @@ import {Heading} from 'src/ui/Text';
 
 const PAGE_SIZE = 25;
 
+const queuedStatuses = new Set([PipelineRunStatus.QUEUED]);
+const inProgressStatuses = new Set([PipelineRunStatus.STARTED, PipelineRunStatus.STARTING]);
+const doneStatuses = new Set([PipelineRunStatus.FAILURE, PipelineRunStatus.SUCCESS]);
+
 const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
   const statusTokens = new Set(
     filterTokens.filter((token) => token.token === 'status').map((token) => token.value),
   );
-  if (statusTokens.size === 1 && statusTokens.has('QUEUED')) {
+  if (isEqual(queuedStatuses, statusTokens)) {
     return 'queued';
   }
-  if (statusTokens.size === 2) {
-    if (statusTokens.has('STARTED') && statusTokens.has('NOT_STARTED')) {
-      return 'in-progress';
-    }
-    if (statusTokens.has('FAILURE') && statusTokens.has('SUCCESS')) {
-      return 'done';
-    }
+  if (isEqual(inProgressStatuses, statusTokens)) {
+    return 'in-progress';
+  }
+  if (isEqual(doneStatuses, statusTokens)) {
+    return 'done';
   }
   return 'all';
 };
@@ -66,7 +70,11 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
       }
       return data.pipelineRunsOrError.results;
     },
-    variables: {filter: runsFilterForSearchTokens(filterTokens)},
+    variables: {
+      filter: runsFilterForSearchTokens(filterTokens),
+      queuedFilter: {statuses: Array.from(queuedStatuses)},
+      inProgressFilter: {statuses: Array.from(inProgressStatuses)},
+    },
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
   });
@@ -115,9 +123,19 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
                 <TabButton
                   color={tabColor('queued')}
                   underline="never"
-                  onClick={() => setStatusFilter([PipelineRunStatus.QUEUED])}
+                  onClick={() => setStatusFilter(Array.from(queuedStatuses))}
                 >
-                  Queued
+                  <Group direction="horizontal" spacing={4} alignItems="center">
+                    <div>Queued</div>
+                    <CountTag
+                      loading={queryResult.loading}
+                      fragment={
+                        queryResult.data?.queuedCount?.__typename === 'PipelineRuns'
+                          ? queryResult.data?.queuedCount
+                          : undefined
+                      }
+                    />
+                  </Group>
                 </TabButton>
               }
               id="queued"
@@ -127,11 +145,19 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
                 <TabButton
                   color={tabColor('in-progress')}
                   underline="never"
-                  onClick={() =>
-                    setStatusFilter([PipelineRunStatus.STARTING, PipelineRunStatus.STARTED])
-                  }
+                  onClick={() => setStatusFilter(Array.from(inProgressStatuses))}
                 >
-                  In progress
+                  <Group direction="horizontal" spacing={4} alignItems="center">
+                    <div>In progress</div>
+                    <CountTag
+                      loading={queryResult.loading}
+                      fragment={
+                        queryResult.data?.inProgressCount?.__typename === 'PipelineRuns'
+                          ? queryResult.data?.inProgressCount
+                          : undefined
+                      }
+                    />
+                  </Group>
                 </TabButton>
               }
               id="in-progress"
@@ -141,9 +167,7 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
                 <TabButton
                   color={tabColor('done')}
                   underline="never"
-                  onClick={() =>
-                    setStatusFilter([PipelineRunStatus.FAILURE, PipelineRunStatus.SUCCESS])
-                  }
+                  onClick={() => setStatusFilter(Array.from(doneStatuses))}
                 >
                   Done
                 </TabButton>
@@ -197,8 +221,20 @@ export const RunsRoot: React.FunctionComponent<RouteComponentProps> = () => {
   );
 };
 
+const COUNT_FRAGMENT = gql`
+  fragment CountFragment on PipelineRuns {
+    count
+  }
+`;
+
 const RUNS_ROOT_QUERY = gql`
-  query RunsRootQuery($limit: Int, $cursor: String, $filter: PipelineRunsFilter!) {
+  query RunsRootQuery(
+    $limit: Int
+    $cursor: String
+    $filter: PipelineRunsFilter!
+    $queuedFilter: PipelineRunsFilter!
+    $inProgressFilter: PipelineRunsFilter!
+  ) {
     pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
       ... on PipelineRuns {
         results {
@@ -213,11 +249,46 @@ const RUNS_ROOT_QUERY = gql`
         message
       }
     }
+    queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
+      ...CountFragment
+    }
+    inProgressCount: pipelineRunsOrError(filter: $inProgressFilter) {
+      ...CountFragment
+    }
   }
 
   ${RunTable.fragments.RunTableRunFragment}
+  ${COUNT_FRAGMENT}
 `;
 
 const TabButton = styled(ButtonLink)`
-  line-height: 30px;
+  line-height: 34px;
+`;
+
+interface CountTagProps {
+  loading: boolean;
+  fragment: CountFragment | undefined;
+}
+
+const CountTag = (props: CountTagProps) => {
+  const {loading, fragment} = props;
+  if (loading) {
+    return (
+      <CountTagStyled minimal intent="none">
+        <Spinner size={10} />
+      </CountTagStyled>
+    );
+  }
+  if (typeof fragment?.count === 'number') {
+    return (
+      <CountTagStyled minimal intent="none">
+        {fragment.count}
+      </CountTagStyled>
+    );
+  }
+  return null;
+};
+
+const CountTagStyled = styled(Tag)`
+  min-width: 24px;
 `;

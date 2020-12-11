@@ -72,12 +72,38 @@ export interface RunsRootQuery_pipelineRunsOrError_PythonError {
 
 export type RunsRootQuery_pipelineRunsOrError = RunsRootQuery_pipelineRunsOrError_PipelineRuns | RunsRootQuery_pipelineRunsOrError_InvalidPipelineRunsFilterError | RunsRootQuery_pipelineRunsOrError_PythonError;
 
+export interface RunsRootQuery_queuedCount_InvalidPipelineRunsFilterError {
+  __typename: "InvalidPipelineRunsFilterError" | "PythonError";
+}
+
+export interface RunsRootQuery_queuedCount_PipelineRuns {
+  __typename: "PipelineRuns";
+  count: number | null;
+}
+
+export type RunsRootQuery_queuedCount = RunsRootQuery_queuedCount_InvalidPipelineRunsFilterError | RunsRootQuery_queuedCount_PipelineRuns;
+
+export interface RunsRootQuery_inProgressCount_InvalidPipelineRunsFilterError {
+  __typename: "InvalidPipelineRunsFilterError" | "PythonError";
+}
+
+export interface RunsRootQuery_inProgressCount_PipelineRuns {
+  __typename: "PipelineRuns";
+  count: number | null;
+}
+
+export type RunsRootQuery_inProgressCount = RunsRootQuery_inProgressCount_InvalidPipelineRunsFilterError | RunsRootQuery_inProgressCount_PipelineRuns;
+
 export interface RunsRootQuery {
   pipelineRunsOrError: RunsRootQuery_pipelineRunsOrError;
+  queuedCount: RunsRootQuery_queuedCount;
+  inProgressCount: RunsRootQuery_inProgressCount;
 }
 
 export interface RunsRootQueryVariables {
   limit?: number | null;
   cursor?: string | null;
   filter: PipelineRunsFilter;
+  queuedFilter: PipelineRunsFilter;
+  inProgressFilter: PipelineRunsFilter;
 }
