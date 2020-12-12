@@ -362,7 +362,7 @@ class ActiveExecution:
                 pipeline_context.log.error(
                     "Step {key} did not complete due to being interrupted.".format(key=step_key)
                 )
-                self.mark_abandoned(step_key)
+                self.mark_unknown_state(step_key)
             else:
                 pipeline_context.log.error(
                     "Step {key} finished without success or failure event. Downstream steps will not execute.".format(

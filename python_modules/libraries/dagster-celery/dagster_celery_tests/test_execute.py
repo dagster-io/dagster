@@ -108,7 +108,6 @@ def test_execute_fails_pipeline_on_celery(dagster_celery_worker):
         assert result.result_for_solid("should_never_execute").skipped
 
 
-@pytest.mark.skip("Celery termination currently flaky")
 def test_terminate_pipeline_on_celery(rabbitmq):
     with start_celery_worker():
         with seven.TemporaryDirectory() as tempdir:
