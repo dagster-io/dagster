@@ -1,12 +1,17 @@
 import datetime
 import json
+import os
 import sys
 
 import kubernetes
 import pytest
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
+from dagster_k8s_test_infra.helm import TEST_AWS_CONFIGMAP_NAME
+from dagster_k8s_test_infra.integration_utils import image_pull_policy
 from kubernetes.stream import stream
 from marks import mark_user_code_deployment
+
+IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 
 # This test spins up a user code deployment, and then executes a launch pipeline command in the
@@ -40,8 +45,9 @@ def test_execute_on_celery_k8s(  # pylint: disable=redefined-outer-name,unused-a
         "execution": {
             "celery-k8s": {
                 "config": {
-                    "image_pull_policy": "Always",
-                    "env_config_maps": ["dagster-pipeline-env"],
+                    "image_pull_policy": image_pull_policy(),
+                    "env_config_maps": ["dagster-pipeline-env"]
+                    + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
                     "job_namespace": namespace,
                 }
             }
