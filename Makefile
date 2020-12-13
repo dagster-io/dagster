@@ -42,9 +42,12 @@ install_dev_python_modules:
 # https://stackoverflow.com/a/31526029/11295366
 	pip --no-cache-dir install pyspark\>=3.0.0 $(QUIET)
 
+# This is to ensure we can build Pandas on 3.9
+	-python scripts/is_39.py && pip install Cython==0.29.21
+
 # Need to do this for 3.9 compat
 # See: https://github.com/numpy/numpy/issues/17784,
-	pip install --only-binary=:all: numpy==1.19.4
+	-python scripts/is_39.py && pip install numpy==1.18.5
 
 # Need to manually install Airflow because we no longer explicitly depend on it
 # dagster-pandas must come before dagstermill because of dependency
@@ -100,11 +103,11 @@ install_dev_python_modules:
 
 # incompatible with python 3.9 below
 # minus prefix ignores non-zero exit code
-	-pip install -e python_modules/libraries/dagster-snowflake
-	-pip install -e python_modules/libraries/dagstermill 
-	-pip install	-e examples/legacy_examples[full]
-	-pip install -e examples/airline_demo[full]
-	-pip install -r docs-requirements.txt $(QUIET)
+	-python scripts/is_39.py || pip install -e python_modules/libraries/dagster-snowflake
+	-python scripts/is_39.py || pip install -e python_modules/libraries/dagstermill 
+	-python scripts/is_39.py || pip install	-e examples/legacy_examples[full]
+	-python scripts/is_39.py || pip install -e examples/airline_demo[full]
+	-python scripts/is_39.py || pip install -r docs-requirements.txt $(QUIET)
 
 install_dev_python_modules_verbose:
 	make QUIET="" install_dev_python_modules
