@@ -43,9 +43,7 @@ def dagster_docker_image():
 
 
 @pytest.fixture(scope="session")
-def run_launcher(
-    cluster_provider, helm_namespace
-):  # pylint: disable=redefined-outer-name,unused-argument
+def run_launcher(cluster_provider):  # pylint: disable=redefined-outer-name,unused-argument
     return CeleryK8sRunLauncher(
         instance_config_map="dagster-instance",
         postgres_password_secret="dagster-postgresql-secret",

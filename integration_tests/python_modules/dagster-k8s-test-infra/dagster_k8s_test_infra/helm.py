@@ -172,13 +172,14 @@ def helm_test_resources(namespace, should_cleanup=True):
 
 
 @contextmanager
-def _helm_chart_helper(namespace, should_cleanup, helm_config):
+def _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name):
     """Install helm chart.
     """
     check.str_param(namespace, "namespace")
     check.bool_param(should_cleanup, "should_cleanup")
+    check.str_param(helm_install_name, "helm_install_name")
 
-    print("--- \033[32m:helm: Installing Helm chart\033[0m")
+    print("--- \033[32m:helm: Installing Helm chart {}\033[0m".format(helm_install_name))
 
     try:
         helm_config_yaml = yaml.dump(helm_config, default_flow_style=False)
@@ -338,7 +339,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
         "postgresqlUser": "test",
     }
 
-    with _helm_chart_helper(namespace, should_cleanup, helm_config):
+    with _helm_chart_helper(namespace, should_cleanup, helm_config, helm_install_name="helm_chart"):
         yield
 
 
@@ -376,7 +377,9 @@ def helm_chart_for_k8s_run_launcher(namespace, docker_image, should_cleanup=True
         "postgresqlUser": "test",
     }
 
-    with _helm_chart_helper(namespace, should_cleanup, helm_config):
+    with _helm_chart_helper(
+        namespace, should_cleanup, helm_config, helm_install_name="helm_chart_for_k8s_run_launcher"
+    ):
         yield
 
 
@@ -457,7 +460,9 @@ def helm_chart_for_user_deployments(namespace, docker_image, should_cleanup=True
         "postgresqlUser": "test",
     }
 
-    with _helm_chart_helper(namespace, should_cleanup, helm_config):
+    with _helm_chart_helper(
+        namespace, should_cleanup, helm_config, helm_install_name="helm_chart_for_user_deployments"
+    ):
         yield
 
 
@@ -530,5 +535,7 @@ def helm_chart_for_run_coordinator(namespace, docker_image, should_cleanup=True)
         },
     }
 
-    with _helm_chart_helper(namespace, should_cleanup, helm_config):
+    with _helm_chart_helper(
+        namespace, should_cleanup, helm_config, helm_install_name="helm_chart_for_run_coordinator"
+    ):
         yield
