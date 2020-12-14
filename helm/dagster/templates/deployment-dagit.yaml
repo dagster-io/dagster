@@ -17,6 +17,7 @@ spec:
         {{- include "dagster.selectorLabels" . | nindent 8 }}
         component: dagit
       annotations:
+        checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") . | sha256sum }}
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
     spec:
     {{- with .Values.imagePullSecrets }}
