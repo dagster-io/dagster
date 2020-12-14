@@ -319,6 +319,7 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
             },
         },
         "flower": {
+            "enabled": True,
             "livenessProbe": {
                 "tcpSocket": {"port": "flower"},
                 "periodSeconds": 20,
@@ -345,6 +346,11 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
                 "successThreshold": 1,
                 "failureThreshold": 3,
             },
+        },
+        "ingress": {
+            "enabled": True,
+            "dagit": {"host": "dagit.example.com"},
+            "flower": {"flower": "flower.example.com"},
         },
         "scheduler": {"k8sEnabled": True, "schedulerNamespace": namespace},
         "serviceAccount": {"name": "dagit-admin"},
