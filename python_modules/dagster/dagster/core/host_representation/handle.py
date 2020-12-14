@@ -437,7 +437,7 @@ class InProcessRepositoryLocationHandle(RepositoryLocationHandle):
             sys.executable,
             self.repository_code_pointer_dict,
             repository_name,
-            None,
+            self.origin.recon_repo.container_image,
         )
 
     def create_location(self):

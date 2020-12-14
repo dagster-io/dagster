@@ -14,6 +14,7 @@ from dagster_celery_k8s.launcher import (
     _get_validated_celery_k8s_executor_config,
 )
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
+from dagster_test.test_project import get_test_project_external_pipeline
 
 
 def test_get_validated_celery_k8s_executor_config():
@@ -182,6 +183,52 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
     assert method_name == "create_namespaced_job"
     job_resources = kwargs["body"].spec.template.spec.containers[0].resources
     assert job_resources == expected_resources
+
+
+def test_k8s_executor_config_override(kubeconfig_file):
+    # Construct a K8s run launcher in a fake k8s environment.
+    mock_k8s_client_batch_api = mock.MagicMock()
+    celery_k8s_run_launcher = CeleryK8sRunLauncher(
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+    )
+
+    external_pipeline = get_test_project_external_pipeline("demo_pipeline", "my_image:tag")
+
+    # Launch the run in a fake Dagster instance.
+    with instance_for_test() as instance:
+        celery_k8s_run_launcher.register_instance(instance)
+        pipeline_name = "demo_pipeline"
+
+        # Launch without custom job_image
+        run = create_run_for_test(
+            instance,
+            pipeline_name=pipeline_name,
+            run_config={"execution": {"celery-k8s": {}}},
+        )
+        celery_k8s_run_launcher.launch_run(run, external_pipeline)
+
+        # Launch with custom job_image
+        run = create_run_for_test(
+            instance,
+            pipeline_name=pipeline_name,
+            run_config={"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}},
+        )
+        celery_k8s_run_launcher.launch_run(run, external_pipeline)
+
+    # Check that user defined k8s config was passed down to the k8s job.
+    mock_method_calls = mock_k8s_client_batch_api.method_calls
+    assert len(mock_method_calls) > 0
+
+    _, _args, kwargs = mock_method_calls[0]
+    assert kwargs["body"].spec.template.spec.containers[0].image == "my_image:tag"
+
+    _, _args, kwargs = mock_method_calls[1]
+    assert kwargs["body"].spec.template.spec.containers[0].image == "fake-image-name"
 
 
 @pipeline
