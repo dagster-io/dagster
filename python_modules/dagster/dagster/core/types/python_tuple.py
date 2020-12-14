@@ -8,7 +8,7 @@ from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_
 PythonTuple = PythonObjectDagsterType(tuple, "PythonTuple", description="Represents a python tuple")
 
 
-class TypedTupleInputHydrationConfig(DagsterTypeLoader):
+class TypedTupleDagsterTypeLoader(DagsterTypeLoader):
     def __init__(self, dagster_types):
         self._dagster_types = check.list_param(dagster_types, "dagster_types", of_type=DagsterType)
 
@@ -32,9 +32,7 @@ class _TypedPythonTuple(DagsterType):
         super(_TypedPythonTuple, self).__init__(
             key="TypedPythonTuple" + ".".join(map(lambda t: t.key, dagster_types)),
             name=None,
-            loader=(
-                TypedTupleInputHydrationConfig(dagster_types) if all_have_input_configs else None
-            ),
+            loader=(TypedTupleDagsterTypeLoader(dagster_types) if all_have_input_configs else None),
             type_check_fn=self.type_check_method,
         )
 

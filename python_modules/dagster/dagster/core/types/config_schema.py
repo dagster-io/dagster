@@ -35,12 +35,6 @@ class DagsterTypeLoader:
         return frozenset()
 
 
-class InputHydrationConfig(DagsterTypeLoader):
-    def __init__(self):
-        rename_warning("DagsterTypeLoader", "InputHydrationConfig", "0.10.0")
-        super(InputHydrationConfig, self).__init__()
-
-
 class DagsterTypeMaterializer:
     @property
     def schema_type(self):
@@ -56,12 +50,6 @@ class DagsterTypeMaterializer:
 
     def required_resource_keys(self):
         return frozenset()
-
-
-class OutputMaterializationConfig(DagsterTypeMaterializer):
-    def __init__(self):
-        rename_warning("DagsterTypeMaterializer", "OutputMaterializationConfig", "0.10.0")
-        super(OutputMaterializationConfig, self).__init__()
 
 
 class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
