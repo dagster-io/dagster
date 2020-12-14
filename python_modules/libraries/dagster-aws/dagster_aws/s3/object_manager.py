@@ -4,16 +4,14 @@ import pickle
 from dagster import Field, ObjectManager, StringSource, check, object_manager
 from dagster.utils import PICKLE_PROTOCOL
 
-from .utils import construct_s3_client
-
 
 class PickledObjectS3ObjectManager(ObjectManager):
     def __init__(
-        self, s3_bucket, s3_session=None, s3_prefix=None,
+        self, s3_bucket, s3_session, s3_prefix=None,
     ):
         self.bucket = check.str_param(s3_bucket, "s3_bucket")
         self.s3_prefix = check.str_param(s3_prefix, "s3_prefix")
-        self.s3 = s3_session or construct_s3_client(max_attempts=5)
+        self.s3 = s3_session
         self.s3.head_bucket(Bucket=self.bucket)
 
     def _get_path(self, context):
@@ -81,7 +79,8 @@ class PickledObjectS3ObjectManager(ObjectManager):
     config_schema={
         "s3_bucket": Field(StringSource),
         "s3_prefix": Field(StringSource, is_required=False, default_value="dagster"),
-    }
+    },
+    required_resource_keys={"s3"},
 )
 def s3_object_manager(init_context):
     """Persistent object manager using S3 for storage.
@@ -98,7 +97,7 @@ def s3_object_manager(init_context):
         pipeline_def = PipelineDefinition(
             mode_defs=[
                 ModeDefinition(
-                    resource_defs={'object_manager': s3_object_manager, ...},
+                    resource_defs={'object_manager': s3_object_manager, "s3": s3_resource, ...},
                 ), ...
             ], ...
         )
@@ -113,8 +112,10 @@ def s3_object_manager(init_context):
                     s3_bucket: my-cool-bucket
                     s3_prefix: good/prefix-for-files-
     """
-    # TODO: Add s3_session resource once resource dependencies are enabled.
+    s3_session = init_context.resources.s3
     s3_bucket = init_context.resource_config["s3_bucket"]
     s3_prefix = init_context.resource_config.get("s3_prefix")  # s3_prefix is optional
-    pickled_object_manager = PickledObjectS3ObjectManager(s3_bucket, s3_prefix=s3_prefix)
+    pickled_object_manager = PickledObjectS3ObjectManager(
+        s3_bucket, s3_session, s3_prefix=s3_prefix
+    )
     return pickled_object_manager

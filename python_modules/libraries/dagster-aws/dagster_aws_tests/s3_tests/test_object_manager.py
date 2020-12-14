@@ -9,12 +9,14 @@ from dagster import (
     PipelineRun,
     lambda_solid,
     pipeline,
+    resource,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.utils import make_new_run_id
 from dagster_aws.s3.object_manager import PickledObjectS3ObjectManager, s3_object_manager
+from dagster_aws.s3.utils import construct_s3_client
 
 
 def get_step_output(step_events, step_key, output_name="result"):
@@ -29,6 +31,10 @@ def get_step_output(step_events, step_key, output_name="result"):
 
 
 def define_inty_pipeline():
+    @resource
+    def test_s3_resource(_):
+        return construct_s3_client(max_attempts=5)
+
     @lambda_solid(output_def=OutputDefinition(Int, asset_store_key="object_manager"))
     def return_one():
         return 1
@@ -40,7 +46,13 @@ def define_inty_pipeline():
     def add_one(num):
         return num + 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": s3_object_manager},)])
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"object_manager": s3_object_manager, "s3": test_s3_resource,},
+            )
+        ]
+    )
     def basic_external_plan_execution():
         add_one(return_one())
 
@@ -75,7 +87,9 @@ def test_s3_object_manager_execution(mock_s3_bucket):
 
     assert get_step_output(return_one_step_events, "return_one")
 
-    object_manager = PickledObjectS3ObjectManager(mock_s3_bucket.name, s3_prefix="dagster")
+    object_manager = PickledObjectS3ObjectManager(
+        mock_s3_bucket.name, construct_s3_client(max_attempts=5), s3_prefix="dagster"
+    )
     step_output_handle = StepOutputHandle("return_one")
     context = InputContext(
         pipeline_name=pipeline_def.name,
