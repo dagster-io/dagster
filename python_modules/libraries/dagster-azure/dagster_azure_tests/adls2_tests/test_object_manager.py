@@ -16,9 +16,10 @@ from dagster.core.events import DagsterEventType
 from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.utils import make_new_run_id
-from dagster_azure.adls2 import FakeADLS2ServiceClient
-from dagster_azure.adls2.object_manager import PickledObjectADLS2ObjectManager
-from dagster_azure.blob import FakeBlobServiceClient
+from dagster_azure.adls2 import create_adls2_client
+from dagster_azure.adls2.object_manager import PickledObjectADLS2ObjectManager, adls2_object_manager
+from dagster_azure.adls2.resources import adls2_resource
+from dagster_azure.blob import create_blob_client
 
 
 def fake_object_manager_factory(object_manager):
@@ -40,7 +41,7 @@ def get_step_output(step_events, step_key, output_name="result"):
     return None
 
 
-def define_inty_pipeline(object_manager):
+def define_inty_pipeline():
     @lambda_solid(output_def=OutputDefinition(Int, asset_store_key="object_manager"))
     def return_one():
         return 1
@@ -55,7 +56,7 @@ def define_inty_pipeline(object_manager):
     @pipeline(
         mode_defs=[
             ModeDefinition(
-                resource_defs={"object_manager": fake_object_manager_factory(object_manager)}
+                resource_defs={"object_manager": adls2_object_manager, "adls2": adls2_resource}
             )
         ]
     )
@@ -70,26 +71,33 @@ nettest = pytest.mark.nettest
 
 @nettest
 def test_adls2_object_manager_execution(storage_account, file_system, credential):
-    object_manager = PickledObjectADLS2ObjectManager(
-        file_system,
-        FakeADLS2ServiceClient(storage_account, credential),
-        FakeBlobServiceClient(storage_account, credential),
-    )
-    pipeline_def = define_inty_pipeline(object_manager)
+    pipeline_def = define_inty_pipeline()
+
+    run_config = {
+        "resources": {
+            "object_manager": {"config": {"adls2_file_system": file_system}},
+            "adls2": {
+                "config": {"storage_account": storage_account, "credential": {"key": credential}}
+            },
+        }
+    }
 
     run_id = make_new_run_id()
 
-    execution_plan = create_execution_plan(pipeline_def)
+    execution_plan = create_execution_plan(pipeline_def, run_config=run_config)
 
     assert execution_plan.get_step_by_key("return_one")
 
     step_keys = ["return_one"]
     instance = DagsterInstance.ephemeral()
-    pipeline_run = PipelineRun(pipeline_name=pipeline_def.name, run_id=run_id)
+    pipeline_run = PipelineRun(
+        pipeline_name=pipeline_def.name, run_id=run_id, run_config=run_config
+    )
 
     return_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(step_keys),
+            run_config=run_config,
             pipeline_run=pipeline_run,
             instance=instance,
         )
@@ -108,12 +116,19 @@ def test_adls2_object_manager_execution(storage_account, file_system, credential
             solid_def=pipeline_def.solid_def_named("return_one"),
         ),
     )
+
+    object_manager = PickledObjectADLS2ObjectManager(
+        file_system=file_system,
+        adls2_client=create_adls2_client(storage_account, credential),
+        blob_client=create_blob_client(storage_account, credential),
+    )
     assert object_manager.load_input(context) == 1
 
     add_one_step_events = list(
         execute_plan(
             execution_plan.build_subset_plan(["add_one"]),
             pipeline_run=pipeline_run,
+            run_config=run_config,
             instance=instance,
         )
     )
