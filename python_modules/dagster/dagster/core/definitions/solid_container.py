@@ -290,7 +290,7 @@ def _validate_input_output_pair(input_def, output_def, from_solid, dep):
         )
 
     # temp disable til things actually work
-    if output_def.is_mappable:
+    if output_def.is_dynamic:
         raise DagsterInvalidDefinitionError(
-            "Taking a dependency on a MappableOutput not yet supported"
+            "Taking a dependency on a DynamicOutput not yet supported"
         )

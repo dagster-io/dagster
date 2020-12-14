@@ -1,8 +1,8 @@
 from dagster import check
 from dagster.core.definitions import (
     AssetMaterialization,
+    DynamicOutput,
     ExpectationResult,
-    MappableOutput,
     Materialization,
     Output,
     Solid,
@@ -67,7 +67,7 @@ def _yield_compute_results(compute_context, inputs, compute_fn):
     for event in user_event_sequence:
         if isinstance(
             event,
-            (MappableOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
+            (DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
         ):
             yield event
         else:
@@ -98,7 +98,7 @@ def _execute_core_compute(compute_context, inputs, compute_fn):
     all_results = []
     for step_output in _yield_compute_results(compute_context, inputs, compute_fn):
         yield step_output
-        if isinstance(step_output, (MappableOutput, Output)):
+        if isinstance(step_output, (DynamicOutput, Output)):
             all_results.append(step_output)
 
     emitted_result_names = {r.output_name for r in all_results}

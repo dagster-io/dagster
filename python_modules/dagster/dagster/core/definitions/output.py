@@ -85,7 +85,7 @@ class OutputDefinition:
         return self._metadata
 
     @property
-    def is_mappable(self):
+    def is_dynamic(self):
         return False
 
     def mapping_from(self, solid_name, output_name=None):
@@ -107,9 +107,9 @@ class OutputDefinition:
         return OutputMapping(self, OutputPointer(solid_name, output_name))
 
 
-class MappableOutputDefinition(OutputDefinition):
+class DynamicOutputDefinition(OutputDefinition):
     @property
-    def is_mappable(self):
+    def is_dynamic(self):
         return True
 
 

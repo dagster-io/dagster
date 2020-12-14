@@ -13,7 +13,7 @@ from dagster.core.definitions import (
 from dagster.core.definitions.events import (
     AssetStoreOperation,
     AssetStoreOperationType,
-    MappableOutput,
+    DynamicOutput,
     ObjectStoreOperation,
 )
 from dagster.core.errors import (
@@ -53,7 +53,7 @@ def _step_output_error_checked_user_event_sequence(step_context, user_event_sequ
     seen_mapping_keys = defaultdict(set)
 
     for user_event in user_event_sequence:
-        if not isinstance(user_event, (Output, MappableOutput)):
+        if not isinstance(user_event, (Output, DynamicOutput)):
             yield user_event
             continue
 
@@ -76,20 +76,20 @@ def _step_output_error_checked_user_event_sequence(step_context, user_event_sequ
                         handle=str(step.solid_handle), output=output
                     )
                 )
-            if step.step_output_named(output.output_name).output_def.is_mappable:
+            if step.step_output_named(output.output_name).output_def.is_dynamic:
                 raise DagsterInvariantViolationError(
                     f'Compute for solid "{step.solid_handle}" for output "{output.output_name}" '
-                    "defined as mappable must yield MappableOutput, got Output."
+                    "defined as dynamic must yield DynamicOutput, got Output."
                 )
         else:
-            if not step.step_output_named(output.output_name).output_def.is_mappable:
+            if not step.step_output_named(output.output_name).output_def.is_dynamic:
                 raise DagsterInvariantViolationError(
-                    f'Compute for solid "{step.solid_handle}" yielded a MappableOutput, '
-                    "but did not use MappableOutputDefinition."
+                    f'Compute for solid "{step.solid_handle}" yielded a DynamicOutput, '
+                    "but did not use DynamicOutputDefinition."
                 )
             if output.mapping_key in seen_mapping_keys[output.output_name]:
                 raise DagsterInvariantViolationError(
-                    f'Compute for solid "{step.solid_handle}" yielded a MappableOutput with '
+                    f'Compute for solid "{step.solid_handle}" yielded a DynamicOutput with '
                     f'mapping_key "{output.mapping_key}" multiple times.'
                 )
             seen_mapping_keys[output.output_name].add(output.mapping_key)
@@ -207,7 +207,7 @@ def _create_step_output_event(step_context, step_output_handle, type_check, succ
 
 def _type_checked_step_output_event_sequence(step_context, step_output_handle, output, version):
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
-    check.inst_param(output, "output", (Output, MappableOutput))
+    check.inst_param(output, "output", (Output, DynamicOutput))
 
     step_output = step_context.step.step_output_named(output.output_name)
     dagster_type = step_output.output_def.dagster_type
@@ -311,7 +311,7 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
             _step_output_error_checked_user_event_sequence(step_context, user_event_sequence)
         ):
 
-            if isinstance(user_event, (Output, MappableOutput)):
+            if isinstance(user_event, (Output, DynamicOutput)):
                 for evt in _create_step_events_for_output(step_context, user_event):
                     yield evt
             elif isinstance(user_event, (AssetMaterialization, Materialization)):
@@ -333,12 +333,12 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
 def _create_step_events_for_output(step_context, output):
 
     check.inst_param(step_context, "step_context", SystemStepExecutionContext)
-    check.inst_param(output, "output", (Output, MappableOutput))
+    check.inst_param(output, "output", (Output, DynamicOutput))
 
     step = step_context.step
     step_output = step.step_output_named(output.output_name)
 
-    mapping_key = output.mapping_key if isinstance(output, MappableOutput) else None
+    mapping_key = output.mapping_key if isinstance(output, DynamicOutput) else None
 
     step_output_handle = StepOutputHandle(
         step_key=step.key, output_name=output.output_name, mapping_key=mapping_key

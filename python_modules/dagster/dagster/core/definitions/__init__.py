@@ -26,6 +26,7 @@ from .dependency import (
 from .events import (
     AssetKey,
     AssetMaterialization,
+    DynamicOutput,
     EventMetadataEntry,
     ExpectationResult,
     Failure,
@@ -33,7 +34,6 @@ from .events import (
     HookExecutionResult,
     IntMetadataEntryData,
     JsonMetadataEntryData,
-    MappableOutput,
     MarkdownMetadataEntryData,
     Materialization,
     Output,

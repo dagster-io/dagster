@@ -490,24 +490,24 @@ class Output(namedtuple("_Output", "value output_name")):
         return super(Output, cls).__new__(cls, value, check.str_param(output_name, "output_name"),)
 
 
-class MappableOutput(namedtuple("_MappableOutput", "value mapping_key output_name")):
+class DynamicOutput(namedtuple("_DynamicOutput", "value mapping_key output_name")):
     """
-    Variant of :py:class:`Output` used to support mapping. Each MappableOutput produced by a solid
-    will result in the downstream dag being cloned to run on that individual value. Each MappableOutput
+    Variant of :py:class:`Output` used to support mapping. Each DynamicOutput produced by a solid
+    will result in the downstream dag being cloned to run on that individual value. Each DynamicOutput
     must have a unique mapping_key to distinguish it.
 
     Args:
         value (Any):
             The value returned by the compute function.
         mapping_key (str):
-            The key that uniquely identifies this mappable value relative to its peers.
+            The key that uniquely identifies this dynamic value relative to its peers.
         output_name (Optional[str]):
             Name of the corresponding output definition. (default: "result")
     """
 
     def __new__(cls, value, mapping_key, output_name=DEFAULT_OUTPUT):
 
-        return super(MappableOutput, cls).__new__(
+        return super(DynamicOutput, cls).__new__(
             cls,
             value,
             check_valid_name(check.str_param(mapping_key, "mapping_key")),
