@@ -129,6 +129,9 @@ class SolidDefinition(NodeDefinition):
     def default_value_for_input(self, input_name):
         return self.input_def_named(input_name).default_value
 
+    def input_supports_dynamic_output_dep(self, input_name):
+        return True
+
     def copy_for_configured(self, name, description, config_schema, config_or_config_fn):
         return SolidDefinition(
             name=self._name_for_configured_node(self.name, name, config_or_config_fn),

@@ -125,6 +125,10 @@ class NodeDefinition(ConfigurableDefinition):
     def default_value_for_input(self, input_name):
         raise NotImplementedError()
 
+    @abstractmethod
+    def input_supports_dynamic_output_dep(self, input_name):
+        raise NotImplementedError()
+
     def all_input_output_types(self):
         for input_def in self._input_defs:
             yield input_def.dagster_type
