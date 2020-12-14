@@ -148,7 +148,7 @@ pipeline_run:
 # Scheduler: Configuration for scheduler
 ####################################################################################################
 scheduler:
-  # If k8sEnabled is true, then use K8sScheduler; else, use CronScheduler
+  # If k8sEnabled is true, then use K8sScheduler; else, use DagsterDaemonScheduler
   k8sEnabled: false
 
   # (K8sScheduler only) Image for K8s CronJob(s) to launch K8s Job(s). This image does
@@ -173,6 +173,13 @@ scheduler:
   # the Secrets enumerated as a list here
   env_secrets:
     - ""
+
+####################################################################################################
+# Telemetry: Allow aggregated usage statistics to be uploaded. No solid definitions (including
+# generated context) or pipeline definitions (including modes and resources) will be uploaded.
+####################################################################################################
+telemetry:
+  enabled: true
 
 ####################################################################################################
 # PostgreSQL: Configuration values for postgresql
@@ -459,7 +466,7 @@ ingress:
 # Dagster Daemon [EXPERIMENTAL]: (Optional) Deploy a daemon for run coordination, etc.
 ####################################################################################################
 dagsterDaemon:
-  enabled: false
+  enabled: true
 
   image:
     repository: "dagster/k8s-dagit"
@@ -467,7 +474,7 @@ dagsterDaemon:
     pullPolicy: Always
 
   queuedRunCoordinator:
-    enabled: true
+    enabled: false
     config: {}
 
   env:

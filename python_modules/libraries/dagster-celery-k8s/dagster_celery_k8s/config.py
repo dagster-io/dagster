@@ -49,8 +49,7 @@ def celery_k8s_config():
     return cfg
 
 
-def get_celery_engine_config():
-
+def get_celery_engine_config(additional_env_config_maps=None):
     return {
         "execution": {
             CELERY_K8S_CONFIG_KEY: {
@@ -58,7 +57,10 @@ def get_celery_engine_config():
                     "job_image": {"env": "DAGSTER_K8S_PIPELINE_RUN_IMAGE"},
                     "job_namespace": {"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
                     "image_pull_policy": {"env": "DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY"},
-                    "env_config_maps": [{"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"}],
+                    "env_config_maps": (
+                        [{"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"},]
+                        + (additional_env_config_maps if additional_env_config_maps else [])
+                    ),
                 }
             }
         }

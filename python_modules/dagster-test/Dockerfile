@@ -2,14 +2,11 @@ ARG PYTHON_VERSION
 
 
 # The tag value here must stay in sync with UNIT_IMAGE_VERSION in defines.py
-FROM 968703565975.dkr.ecr.us-west-1.amazonaws.com/buildkite-unit:py${PYTHON_VERSION}-2020-12-11T192450
+FROM 968703565975.dkr.ecr.us-west-1.amazonaws.com/buildkite-unit:py${PYTHON_VERSION}-2020-12-16T022932
 
 COPY . /
 
 ENV GOOGLE_APPLICATION_CREDENTIALS="/modules/gac.json"
-
-# Prevent telemetry from being sent in image
-ENV BUILDKITE=true
 
 # This makes sure that logs show up immediately instead of being buffered
 ENV PYTHONUNBUFFERED=1

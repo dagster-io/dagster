@@ -11,11 +11,16 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.host_representation import (
     ExternalPipeline,
+    ExternalSchedule,
     InProcessRepositoryLocationOrigin,
     RepositoryLocation,
     RepositoryLocationHandle,
 )
-from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
+from dagster.core.host_representation.origin import (
+    ExternalJobOrigin,
+    ExternalPipelineOrigin,
+    ExternalRepositoryOrigin,
+)
 from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
@@ -169,21 +174,62 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
         )
 
 
-def get_test_project_external_pipeline(pipeline_name, container_image=None):
-    return (
-        RepositoryLocation.from_handle(
-            RepositoryLocationHandle.create_from_repository_location_origin(
-                InProcessRepositoryLocationOrigin(
-                    ReconstructableRepository.for_file(
-                        file_relative_path(__file__, "test_pipelines/repo.py"),
-                        "define_demo_execution_repo",
-                        container_image=container_image,
+class ReOriginatedExternalScheduleForTest(ExternalSchedule):
+    def __init__(
+        self, external_schedule, container_image=None,
+    ):
+        self._container_image = container_image
+        super(ReOriginatedExternalScheduleForTest, self).__init__(
+            external_schedule._external_schedule_data, external_schedule.handle.repository_handle,
+        )
+
+    def get_external_origin(self):
+        """
+        Hack! Inject origin that the k8s images will use. The BK image uses a different directory
+        structure (/workdir/python_modules/dagster-test/dagster_test/test_project) than the images
+        inside the kind cluster (/dagster_test/test_project). As a result the normal origin won't
+        work, we need to inject this one.
+        """
+
+        return ExternalJobOrigin(
+            external_repository_origin=ExternalRepositoryOrigin(
+                repository_location_origin=InProcessRepositoryLocationOrigin(
+                    recon_repo=ReconstructableRepository(
+                        pointer=FileCodePointer(
+                            python_file="/dagster_test/test_project/test_pipelines/repo.py",
+                            fn_name="define_demo_execution_repo",
+                        )
                     )
+                ),
+                repository_name="demo_execution_repo",
+            ),
+            job_name=self.name,
+        )
+
+
+def get_test_project_external_repo(container_image=None):
+    return RepositoryLocation.from_handle(
+        RepositoryLocationHandle.create_from_repository_location_origin(
+            InProcessRepositoryLocationOrigin(
+                ReconstructableRepository.for_file(
+                    file_relative_path(__file__, "test_pipelines/repo.py"),
+                    "define_demo_execution_repo",
+                    container_image=container_image,
                 )
             )
         )
-        .get_repository("demo_execution_repo")
-        .get_full_external_pipeline(pipeline_name)
+    ).get_repository("demo_execution_repo")
+
+
+def get_test_project_external_pipeline(pipeline_name, container_image=None):
+    return get_test_project_external_repo(
+        container_image=container_image
+    ).get_full_external_pipeline(pipeline_name)
+
+
+def get_test_project_external_schedule(schedule_name, container_image=None):
+    return get_test_project_external_repo(container_image=container_image).get_external_schedule(
+        schedule_name
     )
 
 
