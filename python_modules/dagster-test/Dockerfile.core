@@ -3,9 +3,6 @@ ARG PYTHON_VERSION
 
 FROM "${BASE_IMAGE}"
 
-# Prevent telemetry from being sent in image
-ENV BUILDKITE=true
-
 COPY . .
 
 RUN pip install \

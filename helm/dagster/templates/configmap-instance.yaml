@@ -41,8 +41,8 @@ data:
           {{- end }}
           {{- end }}
     {{- else }}
-      module: dagster_cron.cron_scheduler
-      class: SystemCronScheduler
+      module: dagster.core.scheduler
+      class: DagsterDaemonScheduler
     {{- end }}
 
     schedule_storage:
@@ -138,3 +138,6 @@ data:
       config:
       {{- toYaml .Values.dagsterDaemon.queuedRunCoordinator.config | nindent 8 }}
     {{- end }}
+
+    telemetry:
+      enabled: {{ .Values.telemetry.enabled }}

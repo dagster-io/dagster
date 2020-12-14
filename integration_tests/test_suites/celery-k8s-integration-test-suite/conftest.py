@@ -6,7 +6,7 @@ import pytest
 from dagster_celery_k8s.launcher import CeleryK8sRunLauncher
 from dagster_k8s_test_infra.helm import (
     helm_namespace,
-    helm_namespace_for_run_coordinator,
+    helm_namespace_for_daemon,
     helm_namespace_for_user_deployments,
 )
 from dagster_k8s_test_infra.integration_utils import image_pull_policy
@@ -15,7 +15,7 @@ from dagster_test.test_project import build_and_tag_test_image, get_test_project
 from dagster_k8s_test_infra.cluster import (  # isort:skip
     dagster_instance,
     dagster_instance_for_user_deployments,
-    dagster_instance_for_run_coordinator,
+    dagster_instance_for_daemon,
     define_cluster_provider_fixture,
 )
 
