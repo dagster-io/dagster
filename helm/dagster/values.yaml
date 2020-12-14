@@ -10,6 +10,10 @@ rbacEnabled: true
 # The DAGSTER_HOME env var is set by default on all nodes from this value
 dagster_home: "/opt/dagster/dagster_home"
 
+# Specify secrets to run containers based on images in private registries. See:
+# https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod
+imagePullSecrets: []
+
 ####################################################################################################
 # Dagit: Configuration for the Dagit webserver
 ####################################################################################################

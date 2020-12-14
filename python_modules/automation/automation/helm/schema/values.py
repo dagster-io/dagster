@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import BaseModel  # pylint: disable=E0611
 
 from . import subschema
@@ -14,3 +16,4 @@ class HelmValues(BaseModel):
     redis: subschema.Redis
     flower: subschema.Flower
     ingress: subschema.Ingress
+    imagePullSecrets: List[subschema.kubernetes.SecretRef]

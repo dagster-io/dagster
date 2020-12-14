@@ -1,3 +1,4 @@
+from . import kubernetes
 from .dagit import Dagit
 from .flower import Flower
 from .ingress import Ingress

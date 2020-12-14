@@ -20,6 +20,13 @@
         },
         "ingress": {
             "$ref": "#/definitions/Ingress"
+        },
+        "imagePullSecrets": {
+            "title": "Imagepullsecrets",
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/SecretRef"
+            }
         }
     },
     "required": [
@@ -28,7 +35,8 @@
         "rabbitmq",
         "redis",
         "flower",
-        "ingress"
+        "ingress",
+        "imagePullSecrets"
     ],
     "definitions": {
         "PullPolicy": {
@@ -519,6 +527,12 @@
                 "dagit",
                 "flower"
             ]
+        },
+        "SecretRef": {
+            "title": "SecretRef",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
         }
     }
 }

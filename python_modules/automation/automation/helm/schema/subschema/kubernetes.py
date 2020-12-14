@@ -83,3 +83,8 @@ class Annotations(BaseModel):
                 "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
             )
         }
+
+
+class SecretRef(BaseModel):
+    class Config:
+        schema_extra = {"$ref": create_definition_ref("io.k8s.api.core.v1.LocalObjectReference")}
