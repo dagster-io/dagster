@@ -320,7 +320,12 @@ class SystemStepExecutionContext(SystemExecutionContext):
 
     def get_output_manager(self, step_output_handle):
         step_output = self.execution_plan.get_step_output(step_output_handle)
-        output_manager = getattr(self.resources, step_output.output_def.manager_key)
+        if self.using_asset_store(step_output_handle):
+            output_manager = getattr(self.resources, step_output.output_def.manager_key)
+        else:
+            from dagster.core.storage.intermediate_storage import IntermediateStorageAdapter
+
+            output_manager = IntermediateStorageAdapter(self.intermediate_storage)
         return check.inst(output_manager, OutputManager)
 
     def using_asset_store(self, step_output_handle):

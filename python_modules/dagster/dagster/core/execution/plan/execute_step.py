@@ -263,6 +263,7 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
 
     inputs = {}
     for input_name, input_value in _load_input_values(step_context):
+        # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
         if isinstance(input_value, ObjectStoreOperation):
             yield DagsterEvent.object_store_operation(
                 step_context, ObjectStoreOperation.serializable(input_value, value_name=input_name)
@@ -272,6 +273,7 @@ def core_dagster_event_sequence_for_step(step_context, prior_attempt_count):
             final_values = []
             for inner_value in input_value:
                 # inner value is either a store interaction
+                # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
                 if isinstance(inner_value, ObjectStoreOperation):
                     yield DagsterEvent.object_store_operation(
                         step_context,
@@ -349,7 +351,7 @@ def _create_step_events_for_output(step_context, output):
     ):
         yield output_event
 
-    for evt in _set_objects(step_context, step_output, step_output_handle, output, version):
+    for evt in _set_objects(step_context, step_output, step_output_handle, output):
         yield evt
 
     for evt in _create_output_materializations(step_context, output.output_name, output.value):
@@ -375,15 +377,23 @@ def _materializations_to_events(step_context, step_output_handle, materializatio
             yield DagsterEvent.step_materialization(step_context, materialization)
 
 
-def _set_objects(step_context, step_output, step_output_handle, output, version):
+def _set_objects(step_context, step_output, step_output_handle, output):
     from dagster.core.storage.asset_store import AssetStoreHandle
 
     output_def = step_output.output_def
-    if step_context.using_asset_store(step_output_handle):
-        output_manager = getattr(step_context.resources, output_def.manager_key)
-        output_context = step_context.get_output_context(step_output_handle)
-        materializations = output_manager.handle_output(output_context, output.value)
+    output_manager = step_context.get_output_manager(step_output_handle)
+    output_context = step_context.get_output_context(step_output_handle)
+    materializations = output_manager.handle_output(output_context, output.value)
 
+    # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
+    if isinstance(materializations, ObjectStoreOperation):
+        yield DagsterEvent.object_store_operation(
+            step_context,
+            ObjectStoreOperation.serializable(
+                materializations, value_name=step_output_handle.output_name
+            ),
+        )
+    else:
         for evt in _materializations_to_events(step_context, step_output_handle, materializations):
             yield evt
 
@@ -396,19 +406,6 @@ def _set_objects(step_context, step_output, step_output_handle, output, version)
                 AssetStoreHandle(output_def.manager_key, output_def.metadata),
             ),
         )
-    else:
-        res = step_context.intermediate_storage.set_intermediate(
-            context=step_context,
-            dagster_type=step_output.output_def.dagster_type,
-            step_output_handle=step_output_handle,
-            value=output.value,
-            version=version,
-        )
-
-        if isinstance(res, ObjectStoreOperation):
-            yield DagsterEvent.object_store_operation(
-                step_context, ObjectStoreOperation.serializable(res, value_name=output.output_name),
-            )
 
 
 def _create_output_materializations(step_context, output_name, value):

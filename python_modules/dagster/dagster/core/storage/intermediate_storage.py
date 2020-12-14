@@ -3,9 +3,10 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import six
 from dagster import check
 from dagster.core.definitions.events import ObjectStoreOperation, ObjectStoreOperationType
-from dagster.core.errors import DagsterObjectStoreError
+from dagster.core.errors import DagsterObjectStoreError, DagsterStepOutputNotFoundError
 from dagster.core.execution.context.system import SystemExecutionContext
 from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.storage.object_manager import ObjectManager
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 
 from .object_store import FilesystemObjectStore, InMemoryObjectStore, ObjectStore
@@ -34,6 +35,51 @@ class IntermediateStorage(six.with_metaclass(ABCMeta)):  # pylint: disable=no-in
     @abstractproperty
     def is_persistent(self):
         pass
+
+
+class IntermediateStorageAdapter(ObjectManager):
+    def __init__(self, intermediate_storage):
+        self.intermediate_storage = check.inst_param(
+            intermediate_storage, "intermediate_storage", IntermediateStorage
+        )
+
+    def handle_output(self, context, obj):
+        res = self.intermediate_storage.set_intermediate(
+            context=context.step_context,
+            dagster_type=context.dagster_type,
+            step_output_handle=StepOutputHandle(
+                context.step_key, context.name, context.mapping_key
+            ),
+            value=obj,
+            version=context.version,
+        )
+        # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
+        # we set loose constraint on the return type of a custom `set_intermediate_object`, so
+        # in the deprecation cycle, we will filter out values other than structured `ObjectStoreOperation`
+        if isinstance(res, ObjectStoreOperation):
+            return res
+
+    def load_input(self, context):
+        step_context = context.step_context
+        source_handle = StepOutputHandle(
+            context.upstream_output.step_key,
+            context.upstream_output.name,
+            context.upstream_output.mapping_key,
+        )
+        if not self.intermediate_storage.has_intermediate(step_context, source_handle):
+            raise DagsterStepOutputNotFoundError(
+                (
+                    "When executing {step}, discovered required output missing "
+                    "from previous step: {previous_step}"
+                ).format(previous_step=source_handle.step_key, step=step_context.step.key),
+                step_key=source_handle.step_key,
+                output_name=source_handle.output_name,
+            )
+        return self.intermediate_storage.get_intermediate(
+            context=step_context,
+            dagster_type=context.dagster_type,
+            step_output_handle=source_handle,
+        )
 
 
 class ObjectStoreIntermediateStorage(IntermediateStorage):

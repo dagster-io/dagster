@@ -515,28 +515,22 @@ class SolidExecutionResult:
 
     def _get_value(self, context, step_output_data):
         step_output_handle = step_output_data.step_output_handle
-        if context.using_asset_store(step_output_handle):
-            manager = context.get_output_manager(step_output_handle)
-            return manager.load_input(
-                context.for_input_manager(
-                    None,
-                    context.pipeline_def.name,
-                    None,
-                    self.solid.output_def_named(step_output_data.output_name).dagster_type,
-                    step_output_handle,
-                )
-            )
+        manager = context.get_output_manager(step_output_handle)
 
-        else:
-            value = context.intermediate_storage.get_intermediate(
-                context=context,
+        # TODO yuhan retire ObjectStoreOperation https://github.com/dagster-io/dagster/issues/3043
+        res = manager.load_input(
+            context.for_input_manager(
+                input_name=None,
+                input_config=None,
+                input_metadata=None,
                 dagster_type=self.solid.output_def_named(step_output_data.output_name).dagster_type,
-                step_output_handle=step_output_handle,
+                source_handle=step_output_handle,
             )
-            if isinstance(value, ObjectStoreOperation):
-                return value.obj
-
-        return value
+        )
+        if isinstance(res, ObjectStoreOperation):
+            return res.obj
+        else:
+            return res
 
     @property
     def failure_data(self):
