@@ -10,6 +10,7 @@ from dagster import (
     execute_pipeline,
     pipeline,
     reexecute_pipeline,
+    resource,
     seven,
     solid,
 )
@@ -46,6 +47,46 @@ def test_object_manager_with_config():
     run_config = {"solids": {"my_solid": {"outputs": {"result": {"some_config": "some_value"}}}}}
     result = execute_pipeline(my_pipeline, run_config=run_config)
     assert result.output_for_solid("my_solid") == 1
+
+
+def test_object_manager_with_required_resource_keys():
+    @solid
+    def my_solid(_):
+        pass
+
+    class MyObjectManager(ObjectManager):
+        def __init__(self, prefix):
+            self._prefix = prefix
+
+        def load_input(self, _context):
+            return self._prefix + "bar"
+
+        def handle_output(self, _context, obj):
+            pass
+
+    @object_manager(required_resource_keys={"foo_resource"})
+    def object_manager_requires_resource(init_context):
+        return MyObjectManager(init_context.resources.foo_resource)
+
+    @resource
+    def foo_resource(_):
+        return "foo"
+
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={
+                    "object_manager": object_manager_requires_resource,
+                    "foo_resource": foo_resource,
+                }
+            )
+        ]
+    )
+    def my_pipeline():
+        my_solid()
+
+    result = execute_pipeline(my_pipeline)
+    assert result.output_for_solid("my_solid") == "foobar"
 
 
 def define_pipeline(manager, metadata_dict):

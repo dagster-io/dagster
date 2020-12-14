@@ -24,6 +24,7 @@ class ObjectManagerDefinition(
         resource_fn=None,
         config_schema=None,
         description=None,
+        required_resource_keys=None,
         _configured_config_mapping_fn=None,
         version=None,
         input_config_schema=None,
@@ -35,6 +36,7 @@ class ObjectManagerDefinition(
             resource_fn=resource_fn,
             config_schema=config_schema,
             description=description,
+            required_resource_keys=required_resource_keys,
             version=version,
         )
 
@@ -61,6 +63,7 @@ def object_manager(
     description=None,
     output_config_schema=None,
     input_config_schema=None,
+    required_resource_keys=None,
     version=None,
 ):
     """
@@ -75,6 +78,8 @@ def object_manager(
         description(Optional[str]): A human-readable description of the resource.
         output_config_schema (Optional[ConfigSchema]): The schema for per-output config.
         input_config_schema (Optional[ConfigSchema]): The schema for per-input config.
+        required_resource_keys (Optional[Set[str]]): Keys for the resources required by the object
+            manager.
         version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
             definition when provided with the same inputs.
@@ -113,6 +118,7 @@ def object_manager(
         return _ObjectManagerDecoratorCallable(
             config_schema=config_schema,
             description=description,
+            required_resource_keys=required_resource_keys,
             version=version,
             output_config_schema=output_config_schema,
             input_config_schema=input_config_schema,
@@ -126,12 +132,16 @@ class _ObjectManagerDecoratorCallable:
         self,
         config_schema=None,
         description=None,
+        required_resource_keys=None,
         version=None,
         output_config_schema=None,
         input_config_schema=None,
     ):
         self.config_schema = convert_user_facing_definition_config_schema(config_schema)
         self.description = check.opt_str_param(description, "description")
+        self.required_resource_keys = check.opt_set_param(
+            required_resource_keys, "required_resource_keys", of_type=str
+        )
         self.version = check.opt_str_param(version, "version")
         self.output_config_schema = convert_user_facing_definition_config_schema(
             output_config_schema
@@ -145,6 +155,7 @@ class _ObjectManagerDecoratorCallable:
             resource_fn=fn,
             config_schema=self.config_schema,
             description=self.description,
+            required_resource_keys=self.required_resource_keys,
             version=self.version,
             output_config_schema=self.output_config_schema,
             input_config_schema=self.input_config_schema,
