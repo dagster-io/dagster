@@ -22,6 +22,7 @@ from dagster import (
     RetryRequested,
     String,
     default_executors,
+    file_relative_path,
     lambda_solid,
     pipeline,
     repository,
@@ -30,10 +31,13 @@ from dagster import (
 )
 from dagster.core.definitions.decorators import daily_schedule, schedule
 from dagster.core.test_utils import nesting_composite_pipeline
-from dagster.utils import segfault
+from dagster.utils import merge_dicts, segfault
+from dagster.utils.yaml_utils import merge_yamls
 from dagster_aws.s3 import s3_plus_default_intermediate_storage_defs, s3_resource
 from dagster_gcp.gcs.resources import gcs_resource
 from dagster_gcp.gcs.system_storage import gcs_plus_default_intermediate_storage_defs
+
+IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
 
 def celery_mode_defs(resources=None):
@@ -310,10 +314,29 @@ def define_schedules():
         cfg["storage"] = {"s3": {"config": {"s3_bucket": "dagster-scratch-80542c2"}}}
         return cfg
 
+    @schedule(
+        pipeline_name="demo_pipeline_celery", cron_schedule="* * * * *",
+    )
+    def frequent_celery(_):
+        from dagster_celery_k8s.config import get_celery_engine_config
+
+        additional_env_config_maps = ["test-aws-env-configmap"] if not IS_BUILDKITE else []
+
+        return merge_dicts(
+            merge_yamls(
+                [
+                    file_relative_path(__file__, os.path.join("..", "environments", "env.yaml")),
+                    file_relative_path(__file__, os.path.join("..", "environments", "env_s3.yaml")),
+                ]
+            ),
+            get_celery_engine_config(additional_env_config_maps=additional_env_config_maps),
+        )
+
     return {
         "daily_optional_outputs": daily_optional_outputs,
         "frequent_large_pipe": frequent_large_pipe,
         "frequent_large_grpc_pipe": frequent_large_grpc_pipe,
+        "frequent_celery": frequent_celery,
     }
 
 

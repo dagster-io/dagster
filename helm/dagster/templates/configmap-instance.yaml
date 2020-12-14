@@ -139,3 +139,6 @@ data:
       config:
       {{- toYaml .Values.dagsterDaemon.queuedRunCoordinator.config | nindent 8 }}
     {{- end }}
+
+    telemetry:
+      enabled: false

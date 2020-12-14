@@ -12,6 +12,7 @@ import pytest
 from dagster import check
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.run_coordinator import DefaultRunCoordinator, QueuedRunCoordinator
+from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
@@ -216,14 +217,12 @@ def dagster_instance_for_user_deployments(
 
 
 @pytest.fixture(scope="session")
-def dagster_instance_for_run_coordinator(
-    helm_namespace_for_run_coordinator, run_launcher
+def dagster_instance_for_daemon(
+    helm_namespace_for_daemon, run_launcher
 ):  # pylint: disable=redefined-outer-name
     tempdir = DagsterInstance.temp_storage()
 
-    with local_port_forward_postgres(
-        namespace=helm_namespace_for_run_coordinator
-    ) as local_forward_port:
+    with local_port_forward_postgres(namespace=helm_namespace_for_daemon) as local_forward_port:
         postgres_url = "postgresql://test:test@localhost:{local_forward_port}/test".format(
             local_forward_port=local_forward_port
         )
@@ -234,9 +233,11 @@ def dagster_instance_for_run_coordinator(
             local_artifact_storage=LocalArtifactStorage(tempdir),
             run_storage=PostgresRunStorage(postgres_url),
             event_storage=PostgresEventLogStorage(postgres_url),
+            schedule_storage=PostgresScheduleStorage(postgres_url),
             compute_log_manager=NoOpComputeLogManager(),
             run_coordinator=QueuedRunCoordinator(),
             run_launcher=run_launcher,
+            scheduler=DagsterDaemonScheduler(),
         )
         yield instance
 

@@ -469,7 +469,11 @@ SLACK_PROMPT = """
 
 
 def is_running_in_test():
-    return os.getenv("BUILDKITE") is not None or os.getenv("TF_BUILD") is not None
+    return (
+        os.getenv("BUILDKITE") is not None
+        or os.getenv("TF_BUILD") is not None
+        or os.getenv("DAGSTER_DISABLE_TELEMETRY") is not None
+    )
 
 
 def upload_logs(stop_event, raise_errors=False):

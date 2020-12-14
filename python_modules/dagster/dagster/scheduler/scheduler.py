@@ -300,7 +300,7 @@ def _schedule_runs_at_time(
 
         if run.status != PipelineRunStatus.FAILURE:
             try:
-                instance.launch_run(run.run_id, external_pipeline)
+                instance.submit_run(run.run_id, external_pipeline)
                 logger.info(f"Completed scheduled launch of run {run.run_id} for {schedule_name}")
             except Exception:  # pylint: disable=broad-except
                 logger.error(f"Run {run.run_id} created successfully but failed to launch.")
