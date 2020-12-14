@@ -19,7 +19,7 @@ from dagster.cli.workspace.cli_target import (
     python_origin_target_argument,
     repository_target_argument,
 )
-from dagster.core.errors import DagsterSubprocessError
+from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import (
     create_execution_plan,
@@ -148,21 +148,10 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
     try:
         for event in execute_run_iterator(recon_pipeline, pipeline_run, instance):
             write_stream_fn(event)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         instance.report_engine_event(
             message="Pipeline execution terminated by interrupt", pipeline_run=pipeline_run,
         )
-        _report_run_failed_if_not_finished(instance, pipeline_run_id)
-    except DagsterSubprocessError as err:
-        if not all(
-            [err_info.cls_name == "KeyboardInterrupt" for err_info in err.subprocess_error_infos]
-        ):
-            instance.report_engine_event(
-                "An exception was thrown during execution that is likely a framework error, "
-                "rather than an error in user code.",
-                pipeline_run,
-                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
-            )
         _report_run_failed_if_not_finished(instance, pipeline_run_id)
     except Exception:  # pylint: disable=broad-except
         instance.report_engine_event(

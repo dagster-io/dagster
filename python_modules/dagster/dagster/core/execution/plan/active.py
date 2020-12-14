@@ -1,7 +1,11 @@
 import time
 
 from dagster import check
-from dagster.core.errors import DagsterIncompleteExecutionPlanError, DagsterUnknownStepStateError
+from dagster.core.errors import (
+    DagsterExecutionInterruptedError,
+    DagsterInvariantViolationError,
+    DagsterUnknownStepStateError,
+)
 from dagster.core.events import DagsterEvent
 from dagster.core.execution.retries import Retries
 from dagster.core.storage.tags import PRIORITY_TAG
@@ -49,7 +53,8 @@ class ActiveExecution:
 
         # see verify_complete
         self._unknown_state = set()
-        self._interrupted = set()
+
+        self._interrupted = False
 
         # Start the show by loading _executable with the set of _pending steps that have no deps
         self._update()
@@ -65,14 +70,12 @@ class ActiveExecution:
         if exc_type or exc_value or traceback:
             return
 
-        # Requested termination is the only time we should be exiting incomplete without an exception
         if not self.is_complete:
             pending_action = (
                 self._executable + self._pending_abandon + self._pending_retry + self._pending_skip
             )
-            raise DagsterIncompleteExecutionPlanError(
-                "Execution of pipeline finished without completing the execution plan, "
-                "likely as a result of a termination request."
+            raise DagsterInvariantViolationError(
+                "Execution of pipeline finished without completing the execution plan,."
                 "{pending_str}{in_flight_str}{action_str}{retry_str}".format(
                     in_flight_str="\nSteps still in flight: {}".format(self._in_flight)
                     if self._in_flight
@@ -92,12 +95,18 @@ class ActiveExecution:
         # See verify_complete - steps for which we did not observe a failure/success event are in an unknown
         # state so we raise to ensure pipeline failure.
         if len(self._unknown_state) > 0:
-            raise DagsterUnknownStepStateError(
-                "Execution of pipeline exited with steps {step_list} in an unknown state to this process.\n"
-                "This was likely caused by losing communication with the process performing step execution.".format(
-                    step_list=self._unknown_state
+            if self._interrupted:
+                raise DagsterExecutionInterruptedError(
+                    "Execution of pipeline exited with steps {step_list} in an unknown state after "
+                    "being interrupted.".format(step_list=self._unknown_state)
                 )
-            )
+            else:
+                raise DagsterUnknownStepStateError(
+                    "Execution of pipeline exited with steps {step_list} in an unknown state to this process.\n"
+                    "This was likely caused by losing communication with the process performing step execution.".format(
+                        step_list=self._unknown_state
+                    )
+                )
 
     def _update(self):
         """Moves steps from _pending to _executable / _pending_skip / _pending_retry
@@ -298,8 +307,8 @@ class ActiveExecution:
         self._abandoned.add(step_key)
         self._mark_complete(step_key)
 
-    def mark_interrupted(self, step_key):
-        self._interrupted.add(step_key)
+    def mark_interrupted(self):
+        self._interrupted = True
 
     def check_for_interrupts(self):
         return pop_delayed_interrupts()
@@ -358,18 +367,12 @@ class ActiveExecution:
         """Ensure that a step has reached a terminal state, if it has not mark it as an unexpected failure
         """
         if step_key in self._in_flight:
-            if step_key in self._interrupted:
-                pipeline_context.log.error(
-                    "Step {key} did not complete due to being interrupted.".format(key=step_key)
+            pipeline_context.log.error(
+                "Step {key} finished without success or failure event. Downstream steps will not execute.".format(
+                    key=step_key
                 )
-                self.mark_unknown_state(step_key)
-            else:
-                pipeline_context.log.error(
-                    "Step {key} finished without success or failure event. Downstream steps will not execute.".format(
-                        key=step_key
-                    )
-                )
-                self.mark_unknown_state(step_key)
+            )
+            self.mark_unknown_state(step_key)
 
     # factored out for test
     def mark_unknown_state(self, step_key):

@@ -338,6 +338,10 @@ def test_terminated_run(get_external_pipeline, run_config):  # pylint: disable=r
                             "ENGINE_EVENT",
                             "Multiprocess executor: received termination signal - forwarding to active child process",
                         ),
+                        (
+                            "ENGINE_EVENT",
+                            "Multiprocess executor: interrupted all active child processes",
+                        ),
                         ("STEP_FAILURE", 'Execution of step "sleepy_solid" failed.'),
                         (
                             "PIPELINE_FAILURE",

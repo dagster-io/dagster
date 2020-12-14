@@ -6,7 +6,6 @@ from threading import Thread
 import pytest
 from dagster import (
     DagsterEventType,
-    DagsterSubprocessError,
     Field,
     ModeDefinition,
     String,
@@ -17,6 +16,7 @@ from dagster import (
     seven,
     solid,
 )
+from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.test_utils import instance_for_test_tempdir
 from dagster.utils import (
     check_received_delayed_interrupt,
@@ -124,7 +124,7 @@ def test_interrupt_multiproc():
                 ):
                     results.append(result)
                 assert False  # should never reach
-            except (DagsterSubprocessError, KeyboardInterrupt):
+            except (DagsterExecutionInterruptedError, KeyboardInterrupt):
                 pass
 
             assert [result.event_type for result in results].count(

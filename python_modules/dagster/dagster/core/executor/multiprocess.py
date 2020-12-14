@@ -3,7 +3,7 @@ import sys
 
 from dagster import EventMetadataEntry, check
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.errors import DagsterSubprocessError
+from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.context.system import SystemPipelineExecutionContext
@@ -122,9 +122,9 @@ class MultiprocessExecutor(Executor):
                             EngineEventData.interrupted(list(term_events.keys())),
                         )
                         stopping = True
+                        active_execution.mark_interrupted()
                         for key, event in term_events.items():
                             event.set()
-                            active_execution.mark_interrupted(key)
 
                     # start iterators
                     while len(active_iters) < limit and not stopping:
@@ -190,7 +190,21 @@ class MultiprocessExecutor(Executor):
                     yield from active_execution.plan_events_iterator(pipeline_context)
 
                 errs = {pid: err for pid, err in errors.items() if err}
-                if errs:
+
+                if (
+                    errs
+                    and stopping
+                    and all(
+                        [err_info.cls_name == "KeyboardInterrupt" for err_info in errs.values()]
+                    )
+                ):
+                    yield DagsterEvent.engine_event(
+                        pipeline_context,
+                        "Multiprocess executor: interrupted all active child processes",
+                        event_specific_data=EngineEventData(),
+                    )
+                    raise DagsterExecutionInterruptedError()
+                elif errs:
                     raise DagsterSubprocessError(
                         "During multiprocess execution errors occurred in child processes:\n{error_list}".format(
                             error_list="\n".join(

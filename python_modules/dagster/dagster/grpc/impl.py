@@ -12,9 +12,9 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.definitions.sensor import SensorExecutionContext
 from dagster.core.errors import (
+    DagsterExecutionInterruptedError,
     DagsterInvalidSubsetError,
     DagsterRunNotFoundError,
-    DagsterSubprocessError,
     PartitionExecutionError,
     ScheduleExecutionError,
     SensorExecutionError,
@@ -73,18 +73,7 @@ def _core_execute_run(recon_pipeline, pipeline_run, instance):
 
     try:
         yield from execute_run_iterator(recon_pipeline, pipeline_run, instance)
-    except DagsterSubprocessError as err:
-        if not all(
-            [err_info.cls_name == "KeyboardInterrupt" for err_info in err.subprocess_error_infos]
-        ):
-            yield instance.report_engine_event(
-                "An exception was thrown during execution that is likely a framework error, "
-                "rather than an error in user code.",
-                pipeline_run,
-                EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
-            )
-            yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, DagsterExecutionInterruptedError):
         yield instance.report_engine_event(
             message="Pipeline execution terminated by interrupt", pipeline_run=pipeline_run,
         )

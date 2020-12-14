@@ -66,9 +66,9 @@ def core_celery_execution_loop(pipeline_context, execution_plan, step_execution_
                     EngineEventData.interrupted(list(step_results.keys())),
                 )
                 stopping = True
-                for key, result in step_results.items():
+                active_execution.mark_interrupted()
+                for result in step_results.values():
                     result.revoke()
-                    active_execution.mark_interrupted(key)
             results_to_pop = []
             for step_key, result in sorted(
                 step_results.items(), key=lambda x: priority_for_key(x[0])

@@ -14,7 +14,7 @@ from dagster import (
     seven,
 )
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.errors import DagsterSubprocessError, DagsterUnknownStepStateError
+from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
 from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import instance_for_test, instance_for_test_tempdir
 from dagster.utils import send_interrupt
@@ -139,7 +139,7 @@ def test_terminate_pipeline_on_celery(rabbitmq):
                         result_types.append(result.event_type)
 
                     assert False
-                except DagsterUnknownStepStateError:
+                except DagsterExecutionInterruptedError:
                     pass
 
                 interrupt_thread.join()

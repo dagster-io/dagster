@@ -11,8 +11,8 @@ from dagster import (
     solid,
 )
 from dagster.core.errors import (
-    DagsterIncompleteExecutionPlanError,
     DagsterInvalidConfigError,
+    DagsterInvariantViolationError,
     DagsterUnknownStepStateError,
 )
 from dagster.core.execution.api import create_execution_plan, execute_plan
@@ -331,7 +331,10 @@ def test_executor_not_created_for_execute_plan():
 def test_incomplete_execution_plan():
     plan = create_execution_plan(define_diamond_pipeline())
 
-    with pytest.raises(DagsterIncompleteExecutionPlanError):
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Execution of pipeline finished without completing the execution plan.",
+    ):
         with plan.start(retries=Retries(RetryMode.DISABLED)) as active_execution:
 
             steps = active_execution.get_steps_to_execute()

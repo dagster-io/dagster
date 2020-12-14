@@ -478,8 +478,8 @@ class DagsterUnknownStepStateError(DagsterError):
     """When pipeline execution complete with steps in an unknown state"""
 
 
-class DagsterIncompleteExecutionPlanError(DagsterError):
-    """When pipeline execution completes with an active execution in an incomplete state"""
+class DagsterExecutionInterruptedError(DagsterError):
+    """Pipeline execution was interrupted during the execution process."""
 
 
 class DagsterObjectStoreError(DagsterError):
