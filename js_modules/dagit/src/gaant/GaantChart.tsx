@@ -776,7 +776,7 @@ export const QueuedState = ({runId}: {runId: string}) => (
         <NonIdealState
           icon={IconNames.TIME}
           description="This run is currently queued."
-          action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queue</Link>}
+          action={<Link to={`/instance/runs?q=status%3AQUEUED`}>View queued runs</Link>}
         />
       }
       firstInitialPercent={70}
