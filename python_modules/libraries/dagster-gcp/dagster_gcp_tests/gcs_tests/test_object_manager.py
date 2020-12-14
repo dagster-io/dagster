@@ -15,6 +15,7 @@ from dagster.core.execution.api import create_execution_plan, execute_plan
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.utils import make_new_run_id
 from dagster_gcp.gcs.object_manager import PickledObjectGCSObjectManager, gcs_object_manager
+from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage
 
 
@@ -41,7 +42,13 @@ def define_inty_pipeline():
     def add_one(num):
         return num + 1
 
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"object_manager": gcs_object_manager},)])
+    @pipeline(
+        mode_defs=[
+            ModeDefinition(
+                resource_defs={"object_manager": gcs_object_manager, "gcs": gcs_resource},
+            )
+        ]
+    )
     def basic_external_plan_execution():
         add_one(return_one())
 
