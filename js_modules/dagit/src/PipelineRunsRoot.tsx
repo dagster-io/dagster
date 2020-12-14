@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql, NetworkStatus} from '@apollo/client';
 import {NonIdealState} from '@blueprintjs/core';
 import {IconNames} from '@blueprintjs/icons';
 import * as React from 'react';
@@ -17,11 +17,15 @@ import {
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
 } from 'src/runs/RunsFilter';
-import {useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
+import {POLL_INTERVAL, useCursorPaginatedQuery} from 'src/runs/useCursorPaginatedQuery';
 import {
   PipelineRunsRootQuery,
   PipelineRunsRootQueryVariables,
 } from 'src/types/PipelineRunsRootQuery';
+import {Box} from 'src/ui/Box';
+import {useCountdown} from 'src/ui/Countdown';
+import {Page} from 'src/ui/Page';
+import {RefreshableCountdown} from 'src/ui/RefreshableCountdown';
 
 const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['id', 'snapshotId', 'status', 'tag'];
@@ -60,6 +64,13 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
     },
   });
 
+  const countdownStatus = queryResult.networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
+  const timeRemaining = useCountdown({
+    duration: POLL_INTERVAL,
+    status: countdownStatus,
+  });
+  const countdownRefreshing = countdownStatus === 'idle' || timeRemaining === 0;
+
   const tokens = [{token: 'pipeline', value: pipelineName}, ...filterTokens];
   if (snapshotId) {
     tokens.push({token: 'snapshotId', value: snapshotId});
@@ -68,14 +79,8 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <ScrollContainer>
-        <div style={{padding: '16px'}}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              justifyContent: 'space-between',
-            }}
-          >
+        <Page>
+          <Box flex={{alignItems: 'flex-start', justifyContent: 'space-between'}}>
             <Filters>
               <RunsFilter
                 enabledFilters={ENABLED_FILTERS}
@@ -84,7 +89,12 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                 loading={queryResult.loading}
               />
             </Filters>
-          </div>
+            <RefreshableCountdown
+              refreshing={countdownRefreshing}
+              seconds={Math.floor(timeRemaining / 1000)}
+              onRefresh={() => queryResult.refetch()}
+            />
+          </Box>
 
           <Loading queryResult={queryResult} allowStaleData={true}>
             {({pipelineRunsOrError}) => {
@@ -112,7 +122,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
               );
             }}
           </Loading>
-        </div>
+        </Page>
       </ScrollContainer>
     </RunsQueryRefetchContext.Provider>
   );
