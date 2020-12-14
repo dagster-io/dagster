@@ -7,7 +7,7 @@ import {Box} from 'src/ui/Box';
 type Row = {key: string; value: React.ReactNode};
 
 interface Props {
-  rows: Row[];
+  rows: (Row | null | undefined)[];
 }
 
 export const MetadataTable: React.FC<Props> = (props) => {
@@ -16,7 +16,7 @@ export const MetadataTable: React.FC<Props> = (props) => {
   return (
     <StyledTable>
       <tbody>
-        {rows.map((pair) => {
+        {rows.filter(Boolean).map((pair: Row) => {
           const {key, value} = pair;
           return (
             <tr key={key}>

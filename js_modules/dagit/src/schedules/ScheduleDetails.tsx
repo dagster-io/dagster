@@ -156,6 +156,12 @@ export const ScheduleDetails: React.FC<{
                 <div>-</div>
               ),
             },
+            executionTimezone
+              ? {
+                  key: 'Execution timezone',
+                  value: executionTimezone,
+                }
+              : null,
             {
               key: 'Mode',
               value: schedule.mode,
@@ -175,7 +181,7 @@ export const ScheduleDetails: React.FC<{
                 'None'
               ),
             },
-          ]}
+          ].filter(Boolean)}
         />
       </Group>
       <Box margin={{top: 4}}>
