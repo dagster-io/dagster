@@ -8,32 +8,30 @@ import {Group} from 'src/ui/Group';
 interface Props {
   timestamp: number;
   timezone?: string | null;
+  format: string;
 }
 
 export const TimestampDisplay = (props: Props) => {
-  const {timestamp, timezone} = props;
+  const {timestamp, timezone, format} = props;
   const [userTimezone] = React.useContext(TimezoneContext);
+  console.log(userTimezone);
 
-  const timestampString = timestampToString(
-    {unix: timestamp, format: 'MMM D, YYYY, h:mm A z'},
-    timezone || userTimezone,
-  );
+  const timestampString = timestampToString({unix: timestamp, format}, timezone || userTimezone);
 
   return (
     <Group direction="row" spacing={8} alignItems="center">
       <div>{timestampString}</div>
       {timezone && timezone !== userTimezone ? (
-        <TimestampTooltip
-          content={timestampToString(
-            {unix: timestamp, format: 'MMM D, YYYY, h:mm A z'},
-            browserTimezone(),
-          )}
-        >
+        <TimestampTooltip content={timestampToString({unix: timestamp, format}, browserTimezone())}>
           <Icon icon="time" iconSize={12} color={Colors.GRAY3} style={{display: 'block'}} />
         </TimestampTooltip>
       ) : null}
     </Group>
   );
+};
+
+TimestampDisplay.defaultProps = {
+  format: 'MMM D, YYYY, h:mm A z',
 };
 
 const TimestampTooltip = styled(Tooltip)`

@@ -63,6 +63,19 @@ export interface RunFragment_repositoryOrigin {
   repositoryLocationName: string;
 }
 
+export interface RunFragment_stats_PythonError {
+  __typename: "PythonError";
+}
+
+export interface RunFragment_stats_PipelineRunStatsSnapshot {
+  __typename: "PipelineRunStatsSnapshot";
+  id: string;
+  endTime: number | null;
+  startTime: number | null;
+}
+
+export type RunFragment_stats = RunFragment_stats_PythonError | RunFragment_stats_PipelineRunStatsSnapshot;
+
 export interface RunFragment {
   __typename: "PipelineRun";
   id: string;
@@ -79,4 +92,5 @@ export interface RunFragment {
   executionPlan: RunFragment_executionPlan | null;
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunFragment_repositoryOrigin | null;
+  stats: RunFragment_stats;
 }

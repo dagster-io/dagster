@@ -67,6 +67,19 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun_repositoryOrigin {
   repositoryLocationName: string;
 }
 
+export interface RunRootQuery_pipelineRunOrError_PipelineRun_stats_PythonError {
+  __typename: "PythonError";
+}
+
+export interface RunRootQuery_pipelineRunOrError_PipelineRun_stats_PipelineRunStatsSnapshot {
+  __typename: "PipelineRunStatsSnapshot";
+  id: string;
+  endTime: number | null;
+  startTime: number | null;
+}
+
+export type RunRootQuery_pipelineRunOrError_PipelineRun_stats = RunRootQuery_pipelineRunOrError_PipelineRun_stats_PythonError | RunRootQuery_pipelineRunOrError_PipelineRun_stats_PipelineRunStatsSnapshot;
+
 export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   __typename: "PipelineRun";
   id: string;
@@ -83,6 +96,7 @@ export interface RunRootQuery_pipelineRunOrError_PipelineRun {
   executionPlan: RunRootQuery_pipelineRunOrError_PipelineRun_executionPlan | null;
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunRootQuery_pipelineRunOrError_PipelineRun_repositoryOrigin | null;
+  stats: RunRootQuery_pipelineRunOrError_PipelineRun_stats;
 }
 
 export type RunRootQuery_pipelineRunOrError = RunRootQuery_pipelineRunOrError_PipelineRunNotFoundError | RunRootQuery_pipelineRunOrError_PipelineRun;

@@ -4,10 +4,9 @@ exports[`correctly renders keywords inside a comment 1`] = `
 <pre
   style={
     Object {
-      "fontSize": "0.9em",
-      "height": 510,
+      "backgroundColor": "transparent",
       "margin": 0,
-      "overflow": "scroll",
+      "padding": 0,
     }
   }
 >

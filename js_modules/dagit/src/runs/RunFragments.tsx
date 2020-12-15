@@ -4,6 +4,7 @@ import {PythonErrorInfo} from 'src/PythonErrorInfo';
 import {RunMetadataProvider} from 'src/RunMetadataProvider';
 import {GanttChart} from 'src/gantt/GanttChart';
 import {LogsScrollingTable} from 'src/runs/LogsScrollingTable';
+import {RUN_DETAILS_FRAGMENT} from 'src/runs/RunDetails';
 import {RunStatusToPageAttributes} from 'src/runs/RunStatusToPageAttributes';
 
 export const RUN_FRAGMENT_FOR_REPOSITORY_MATCH = gql`
@@ -65,11 +66,13 @@ export const RunFragments = {
       }
       stepKeysToExecute
       ...RunFragmentForRepositoryMatch
+      ...RunDetailsFragment
     }
 
     ${RunStatusToPageAttributes.fragments.RunStatusPipelineRunFragment}
     ${GanttChart.fragments.GanttChartExecutionPlanFragment}
     ${RUN_FRAGMENT_FOR_REPOSITORY_MATCH}
+    ${RUN_DETAILS_FRAGMENT}
   `,
   RunPipelineRunEventFragment: gql`
     fragment RunPipelineRunEventFragment on PipelineRunEvent {
