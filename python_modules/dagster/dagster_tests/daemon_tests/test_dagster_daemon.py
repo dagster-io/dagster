@@ -1,11 +1,9 @@
 import datetime
 import logging
-import re
 
 import pendulum
-import pytest
 from dagster.core.test_utils import instance_for_test
-from dagster.daemon.controller import DagsterDaemonController, all_daemons_healthy
+from dagster.daemon.controller import DagsterDaemonController
 from dagster.daemon.daemon import SchedulerDaemon
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster.daemon.types import DaemonType
@@ -121,42 +119,3 @@ def test_different_intervals(caplog):
 
         assert run_daemon.last_iteration_time == next_time
         assert _run_coordinator_ran(caplog)
-
-
-def test_healthy():
-
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster.core.run_coordinator.queued_run_coordinator",
-                "class": "QueuedRunCoordinator",
-            },
-        }
-    ) as instance:
-        init_time = pendulum.now("UTC").float_timestamp
-        beyond_tolerated_time = init_time + 100
-
-        controller = DagsterDaemonController(instance)
-        assert not all_daemons_healthy(instance, curr_time_seconds=init_time)
-
-        controller.run_iteration(init_time)
-        assert all_daemons_healthy(instance, curr_time_seconds=init_time)
-
-        assert not all_daemons_healthy(instance, curr_time_seconds=beyond_tolerated_time)
-
-
-def test_healthy_with_different_daemons():
-    with instance_for_test() as instance:
-        init_time = pendulum.now("UTC").float_timestamp
-        controller = DagsterDaemonController(instance)
-        controller.run_iteration(init_time)
-
-    with instance_for_test(
-        overrides={
-            "run_coordinator": {
-                "module": "dagster.core.run_coordinator.queued_run_coordinator",
-                "class": "QueuedRunCoordinator",
-            },
-        }
-    ) as instance:
-        assert not all_daemons_healthy(instance, curr_time_seconds=init_time)

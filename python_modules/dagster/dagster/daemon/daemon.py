@@ -35,6 +35,7 @@ class DagsterDaemon:
         self._logger = get_default_daemon_logger(type(self).__name__)
         self.interval_seconds = check.int_param(interval_seconds, "interval_seconds")
         self.last_iteration_time = None
+        self.last_iteration_exception = None
 
     @abstractclassmethod
     def daemon_type(cls):

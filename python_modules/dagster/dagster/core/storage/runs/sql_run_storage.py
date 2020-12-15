@@ -5,7 +5,6 @@ from collections import defaultdict
 from datetime import datetime
 from enum import Enum
 
-import pendulum
 import six
 import sqlalchemy as db
 from dagster import check
@@ -18,7 +17,6 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster.core.storage.tags import ROOT_RUN_ID_TAG
-from dagster.daemon.types import DaemonHeartbeat, DaemonType
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
@@ -545,7 +543,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_type=daemon_heartbeat.daemon_type.value,
                         daemon_id=daemon_heartbeat.daemon_id,
-                        info=daemon_heartbeat.info,
+                        body=serialize_dagster_namedtuple(daemon_heartbeat),
                     )
                 )
             except db.exc.IntegrityError:
@@ -557,7 +555,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     .values(  # pylint: disable=no-value-for-parameter
                         timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_id=daemon_heartbeat.daemon_id,
-                        info=daemon_heartbeat.info,
+                        body=serialize_dagster_namedtuple(daemon_heartbeat),
                     )
                 )
 
@@ -565,15 +563,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         with self.connect() as conn:
             rows = conn.execute(db.select(DaemonHeartbeatsTable.columns))
-            return {
-                DaemonType(row.daemon_type): DaemonHeartbeat(
-                    timestamp=pendulum.instance(row.timestamp).float_timestamp,
-                    daemon_type=DaemonType(row.daemon_type),
-                    daemon_id=row.daemon_id,
-                    info=row.info,
-                )
-                for row in rows
-            }
+            heartbeats = [deserialize_json_to_dagster_namedtuple(row.body) for row in rows]
+            return {heartbeat.daemon_type: heartbeat for heartbeat in heartbeats}
 
     def wipe(self):
         """Clears the run storage."""

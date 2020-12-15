@@ -1,3 +1,4 @@
+import sys
 import uuid
 
 import pendulum
@@ -7,6 +8,7 @@ from dagster.core.scheduler import DagsterDaemonScheduler
 from dagster.daemon.daemon import SchedulerDaemon, SensorDaemon, get_default_daemon_logger
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster.daemon.types import DaemonHeartbeat, DaemonStatus, DaemonType
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 # How long beyond the expected heartbeat will the daemon be considered healthy
 DAEMON_HEARTBEAT_TOLERANCE_SECONDS = 10
@@ -84,7 +86,15 @@ class DagsterDaemonController:
                 (curr_time - daemon.last_iteration_time).total_seconds() >= daemon.interval_seconds
             ):
                 daemon.last_iteration_time = curr_time
-                daemon.run_iteration()
+                daemon.last_iteration_exception = None
+                try:
+                    daemon.run_iteration()
+                except Exception:  # pylint: disable=broad-except
+                    error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                    daemon.last_iteration_exception = error_info
+                    self._logger.error(
+                        "Caught error in {}:\n{}".format(daemon.daemon_type(), error_info)
+                    )
 
         if (not self._last_heartbeat_time) or (
             (curr_time - self._last_heartbeat_time).total_seconds()
@@ -99,7 +109,12 @@ class DagsterDaemonController:
         Add a heartbeat for the given daemon
         """
         self._instance.add_daemon_heartbeat(
-            DaemonHeartbeat(pendulum.now("UTC").float_timestamp, daemon.daemon_type(), None, None)
+            DaemonHeartbeat(
+                pendulum.now("UTC").float_timestamp,
+                daemon.daemon_type(),
+                None,
+                daemon.last_iteration_exception,
+            )
         )
 
 
@@ -135,25 +150,29 @@ def get_daemon_status(instance, daemon_type, curr_time_seconds=None):
         curr_time_seconds, "curr_time_seconds", default=pendulum.now("UTC").float_timestamp
     )
 
-    # daemon not required
+    # check if daemon required
     if daemon_type not in required_daemons(instance):
         return DaemonStatus(
             daemon_type=daemon_type, required=False, healthy=None, last_heartbeat=None
         )
 
-    # daemon not present
+    # check if daemon present
     heartbeats = instance.get_daemon_heartbeats()
     if daemon_type not in heartbeats:
         return DaemonStatus(
             daemon_type=daemon_type, required=True, healthy=False, last_heartbeat=None
         )
 
-    hearbeat_timestamp = heartbeats[daemon_type].timestamp
-
+    # check if daemon has sent a recent heartbeat
+    latest_heartbeat = heartbeats[daemon_type]
+    hearbeat_timestamp = latest_heartbeat.timestamp
     maximum_tolerated_time = (
         hearbeat_timestamp + DAEMON_HEARTBEAT_INTERVAL_SECONDS + DAEMON_HEARTBEAT_TOLERANCE_SECONDS
     )
-    healthy = curr_time_seconds <= maximum_tolerated_time
+    has_recent_heartbeat = curr_time_seconds <= maximum_tolerated_time
+
+    # check if daemon has an error
+    healthy = has_recent_heartbeat and not latest_heartbeat.error
 
     return DaemonStatus(
         daemon_type=daemon_type,

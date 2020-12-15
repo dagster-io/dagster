@@ -2,7 +2,7 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
 from dagster.core.storage.sql import create_engine, get_alembic_config, run_alembic_upgrade
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
 from ..utils import (
@@ -96,14 +96,14 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                     timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type.value,
                     daemon_id=daemon_heartbeat.daemon_id,
-                    info=daemon_heartbeat.info,
+                    body=serialize_dagster_namedtuple(daemon_heartbeat),
                 )
                 .on_conflict_do_update(
                     index_elements=[DaemonHeartbeatsTable.c.daemon_type],
                     set_={
                         "timestamp": utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
                         "daemon_id": daemon_heartbeat.daemon_id,
-                        "info": daemon_heartbeat.info,
+                        "body": serialize_dagster_namedtuple(daemon_heartbeat),
                     },
                 )
             )

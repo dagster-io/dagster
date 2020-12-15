@@ -54,7 +54,7 @@ DaemonHeartbeatsTable = db.Table(
     db.Column("daemon_type", db.String(255), unique=True, nullable=False),
     db.Column("daemon_id", db.String(255)),
     db.Column("timestamp", db.types.TIMESTAMP, nullable=False),
-    db.Column("info", db.String),
+    db.Column("body", db.Text),  # serialized DaemonHeartbeat
 )
 
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value)

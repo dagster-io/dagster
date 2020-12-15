@@ -2,29 +2,45 @@ from collections import namedtuple
 from enum import Enum
 
 from dagster import check
+from dagster.serdes import whitelist_for_serdes
+from dagster.utils.error import SerializableErrorInfo
 
 
+@whitelist_for_serdes
 class DaemonType(Enum):
-    """
-    Note: string values are used for serialization into db
-    """
-
+    # Note: string values are used for serdes in storage
     SENSOR = "SENSOR"
     SCHEDULER = "SCHEDULER"
     QUEUED_RUN_COORDINATOR = "QUEUED_RUN_COORDINATOR"
 
 
-class DaemonHeartbeat(namedtuple("_DaemonHeartbeat", "timestamp daemon_type daemon_id info")):
-    def __new__(cls, timestamp, daemon_type, daemon_id, info):
-        check.float_param(timestamp, "timestamp")
-        check.inst_param(daemon_type, "daemon_type", DaemonType)
-        return super(DaemonHeartbeat, cls).__new__(cls, timestamp, daemon_type, daemon_id, info)
+@whitelist_for_serdes
+class DaemonHeartbeat(namedtuple("_DaemonHeartbeat", "timestamp daemon_type daemon_id error")):
+    """
+    Heartbeats are placed in storage by the daemon to show liveness
+    """
+
+    def __new__(cls, timestamp, daemon_type, daemon_id, error):
+        return super(DaemonHeartbeat, cls).__new__(
+            cls,
+            timestamp=check.float_param(timestamp, "timestamp"),
+            daemon_type=check.inst_param(daemon_type, "daemon_type", DaemonType),
+            daemon_id=daemon_id,
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+        )
 
 
 class DaemonStatus(namedtuple("_DaemonStatus", "daemon_type required healthy last_heartbeat")):
+    """
+    Daemon statuses are derived from daemon heartbeats and instance configuration to provide an
+    overview about the daemon's liveness.
+    """
+
     def __new__(cls, daemon_type, required, healthy, last_heartbeat):
-        check.inst_param(daemon_type, "daemon_type", DaemonType)
-        check.bool_param(required, "required")
-        check.opt_bool_param(healthy, "healthy")
-        check.opt_inst_param(last_heartbeat, "last_heartbeat", DaemonHeartbeat)
-        return super(DaemonStatus, cls).__new__(cls, daemon_type, required, healthy, last_heartbeat)
+        return super(DaemonStatus, cls).__new__(
+            cls,
+            daemon_type=check.inst_param(daemon_type, "daemon_type", DaemonType),
+            required=check.bool_param(required, "required"),
+            healthy=check.opt_bool_param(healthy, "healthy"),
+            last_heartbeat=check.opt_inst_param(last_heartbeat, "last_heartbeat", DaemonHeartbeat),
+        )
