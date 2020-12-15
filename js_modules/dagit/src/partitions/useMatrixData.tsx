@@ -2,7 +2,6 @@ import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
 import React from 'react';
 
 import {filterByQuery} from 'src/GraphQueryImpl';
-import {formatStepKey} from 'src/Util';
 import {GaantChartLayout} from 'src/gaant/Constants';
 import {GaantChartMode} from 'src/gaant/GaantChart';
 import {buildLayout} from 'src/gaant/GaantChartLayout';
@@ -61,7 +60,7 @@ function buildMatrixData(
     runs: p.runs,
     steps: layout.boxes.map(({node}) => {
       const statuses = p.runs.map(
-        (r) => r.stepStats.find((stats) => formatStepKey(stats.stepKey) === node.name)?.status,
+        (r) => r.stepStats.find((stats) => stats.stepKey === node.name)?.status,
       );
 
       // If there was a successful run, calculate age relative to that run since it's the age of materializations.

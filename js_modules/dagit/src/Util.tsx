@@ -40,10 +40,6 @@ function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
 }
 
-export function formatStepKey(stepKey: string | null | false) {
-  return (stepKey || '').replace(/\.compute$/, '');
-}
-
 export function formatElapsedTime(msec: number) {
   let text = '';
 

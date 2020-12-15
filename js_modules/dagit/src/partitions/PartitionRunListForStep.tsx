@@ -79,8 +79,8 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
                 {
                   openInNewWindow: true,
                   query: {
-                    steps: `${props.stepName}.compute`,
-                    logs: `step:${props.stepName}.compute`,
+                    steps: props.stepName,
+                    logs: `step:${props.stepName}`,
                   },
                 },
               )

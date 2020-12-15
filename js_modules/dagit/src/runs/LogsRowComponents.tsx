@@ -3,7 +3,6 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from 'src/TimeComponents';
-import {formatStepKey} from 'src/Util';
 import {LogLevel} from 'src/runs/LogLevel';
 import {ColumnWidthsContext} from 'src/runs/LogsScrollingTableHeader';
 import {FontFamily} from 'src/ui/styles';
@@ -74,7 +73,7 @@ export const StructuredContent = styled.div`
 //
 export const SolidColumn = (props: {stepKey: string | false | null}) => {
   const widths = React.useContext(ColumnWidthsContext);
-  const parts = formatStepKey(props.stepKey).split('.');
+  const parts = String(props.stepKey).split('.');
   return (
     <SolidColumnContainer style={{width: widths.solid}}>
       {props.stepKey
